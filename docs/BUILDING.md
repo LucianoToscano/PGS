@@ -108,11 +108,11 @@ Both upload and publication verify all three downloads against their checksums a
 
 ## Discord release announcements
 
-Create an incoming webhook in Discord channel `1562582290536726598` under **Edit Channel → Integrations → Webhooks**. Save its URL as the repository Actions secret **DISCORD_RELEASE_WEBHOOK**. Do not commit the URL.
+Create an incoming webhook in a PGS-owned Discord channel under **Edit Channel → Integrations → Webhooks**. Save its URL as the repository Actions secret **PGS_DISCORD_RELEASE_WEBHOOK**, its numeric channel ID as variable `PGS_DISCORD_CHANNEL_ID`, and explicitly set `PGS_DISCORD_ENABLED` to `true` only when ready. Leave it unset or `false` otherwise. Do not commit the URL.
 
-The **Discord release announcement** workflow posts published releases (including labeled prereleases) with release notes, a GitHub link, links to the non-root APK, Root installer APK, and module ZIP when present, and the optional Ko-fi support link. It verifies the webhook's channel before sending. Drafts are not announced. The APK release workflow calls it directly because releases created with `GITHUB_TOKEN` do not trigger another release-event workflow.
+The **PGS Discord release announcement** workflow posts published releases (including labeled prereleases) with release notes, a GitHub link, links to the non-root APK, Root installer APK, and module ZIP when present, and the optional Ko-fi support link. It verifies the webhook's channel before sending. Drafts are not announced. The APK release workflow calls it directly because releases created with `GITHUB_TOKEN` do not trigger another release-event workflow.
 
-To ping a release subscriber role, set the repository Actions **variable** `DISCORD_RELEASE_ROLE_ID` to its numeric role ID (Discord Developer Mode → right-click the role → Copy Role ID). Ensure Discord allows the webhook to mention that role. Only this role is allowed to ping; other roles, users, and everyone mentions remain disabled. Leave the variable unset to send without a ping. This also applies to prereleases and manual announcements.
+To ping a release subscriber role, set the repository Actions **variable** `PGS_DISCORD_RELEASE_ROLE_ID` to its numeric role ID (Discord Developer Mode → right-click the role → Copy Role ID). Ensure Discord allows the webhook to mention that role. Only this role is allowed to ping; other roles, users, and everyone mentions remain disabled. Leave the variable unset to send without a ping. This also applies to prereleases and manual announcements.
 
 Without the secret, the announcement step logs a warning and sends nothing. To announce an existing release after setup, manually run **Discord release announcement** with its tag. Manual runs and reruns can post another announcement, so check the channel before retrying. This posts a channel message; it does not crosspost to channel followers.
 

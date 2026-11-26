@@ -171,9 +171,10 @@ jobs:
           fi
           gh release create "$RELEASE_TAG" "${assets[@]}" --target "$RELEASE_COMMIT" --title "PGS $RELEASE_TAG" --latest --notes-file "$RUNNER_TEMP/release-notes.md"
   discord:
+    if: vars.PGS_DISCORD_ENABLED == 'true'
     needs: release
     uses: ./.github/workflows/discord-release.yml
     with:
       tag: ${{ inputs.tag }}
     secrets:
-      DISCORD_RELEASE_WEBHOOK: ${{ secrets.DISCORD_RELEASE_WEBHOOK }}
+      PGS_DISCORD_RELEASE_WEBHOOK: ${{ secrets.PGS_DISCORD_RELEASE_WEBHOOK }}

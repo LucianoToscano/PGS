@@ -1,7 +1,5 @@
-name: Discord release announcement
+name: PGS Discord release announcement
 on:
-  release:
-    types: [published]
   workflow_dispatch:
     inputs:
       tag:
@@ -14,12 +12,13 @@ on:
         required: true
         type: string
     secrets:
-      DISCORD_RELEASE_WEBHOOK:
+      PGS_DISCORD_RELEASE_WEBHOOK:
         required: false
 permissions:
   contents: read
 jobs:
   announce:
+    if: vars.PGS_DISCORD_ENABLED == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 3
     steps:
@@ -29,8 +28,8 @@ jobs:
       - name: Announce published release
         env:
           GITHUB_TOKEN: ${{ github.token }}
-          RELEASE_TAG: ${{ inputs.tag || github.event.release.tag_name }}
-          DISCORD_RELEASE_WEBHOOK: ${{ secrets.DISCORD_RELEASE_WEBHOOK }}
-          DISCORD_CHANNEL_ID: '1562582290536726598'
-          DISCORD_RELEASE_ROLE_ID: ${{ vars.DISCORD_RELEASE_ROLE_ID }}
+          RELEASE_TAG: ${{ inputs.tag }}
+          PGS_DISCORD_RELEASE_WEBHOOK: ${{ secrets.PGS_DISCORD_RELEASE_WEBHOOK }}
+          PGS_DISCORD_CHANNEL_ID: ${{ vars.PGS_DISCORD_CHANNEL_ID }}
+          PGS_DISCORD_RELEASE_ROLE_ID: ${{ vars.PGS_DISCORD_RELEASE_ROLE_ID }}
         run: python3 -B tools/discord_release.py

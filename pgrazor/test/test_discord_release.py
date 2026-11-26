@@ -1,14 +1,15 @@
 import sys
 from pathlib import Path
 import unittest
+from unittest.mock import patch
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[2] / 'tools'))
 import discord_release
 
 
 def release(assets, **extra):
-    base = {'tag_name': 'v0.1.6', 'name': 'PGRazor v0.1.6',
-            'html_url': 'https://github.com/example/pgrazor/releases/tag/v0.1.6',
+    base = {'tag_name': 'v0.1.6', 'name': 'PGS v0.1.6',
+            'html_url': 'https://github.com/example/pgs/releases/tag/v0.1.6',
             'body': 'Quick menu improvements.', 'assets': assets}
     base.update(extra)
     return base
@@ -27,6 +28,17 @@ class DiscordReleaseTests(unittest.TestCase):
         fields = discord_release.message(release([APK, *roots]))['embeds'][0]['fields']
         for asset in [APK, *roots]:
             self.assertTrue(any(asset['browser_download_url'] in field['value'] for field in fields))
+
+    def test_no_upstream_promotion_and_pgs_brand(self):
+        payload = discord_release.message(release([APK]))
+        self.assertEqual(payload['username'], 'PGS Releases')
+        self.assertNotIn('ko-fi.com/pgrazor', str(payload))
+
+    def test_missing_channel_never_sends(self):
+        with patch.dict('os.environ', {'PGS_DISCORD_RELEASE_WEBHOOK': 'https://discord.com/api/webhooks/123456789012345678/example'}, clear=True), patch.object(discord_release, 'request') as request:
+            with self.assertRaises(ValueError):
+                discord_release.main()
+            request.assert_not_called()
 
     def test_highlight_image_present_sets_embed_image(self):
         payload = discord_release.message(release([APK, HIGHLIGHT]))
@@ -47,7 +59,7 @@ class DiscordReleaseTests(unittest.TestCase):
         # Without a role id there is no ping content at all.
         self.assertNotIn('content', discord_release.message(release([APK, HIGHLIGHT])))
         payload = discord_release.message(release([APK, HIGHLIGHT]), role)
-        self.assertEqual(payload['content'], '<@&' + role + '> A new PGRazor release is available!')
+        self.assertEqual(payload['content'], '<@&' + role + '> A new PGS release is available!')
         self.assertEqual(payload['allowed_mentions']['roles'], [role])
         self.assertEqual(payload['allowed_mentions']['parse'], [])
         self.assertEqual(payload['embeds'][0]['image']['url'], HIGHLIGHT['browser_download_url'])

@@ -49,8 +49,8 @@ import org.json.JSONObject;
 final class Updater {
     private Updater() {}
 
-    private static final String LATEST = "https://api.github.com/repos/jpitty03/PGRazor/releases/latest";
-    private static final String RELEASES = "https://github.com/jpitty03/PGRazor/releases/latest";
+    private static final String LATEST = "https://api.github.com/repos/LucianoToscano/PGS/releases/latest";
+    private static final String RELEASES = "https://github.com/LucianoToscano/PGS/releases/latest";
     private static final String STATUS_ACTION = "dev.pgrazor.UPDATE_STATUS";
     private static final String INSTALL_PERMISSION = "android.permission.REQUEST_INSTALL_PACKAGES";
 
@@ -138,7 +138,7 @@ final class Updater {
                     else if (name.equals("SHA256SUMS.txt")) sums = url;
                 }
                 String page = release.optString("html_url", "");
-                if (!page.startsWith("https://github.com/jpitty03/PGRazor/")) page = RELEASES;
+                if (!page.startsWith("https://github.com/LucianoToscano/PGS/")) page = RELEASES;
                 // A release still uploading its files is offered on a later check.
                 if (apk.isEmpty()) return;
                 tag = latest; pageUrl = page; apkUrl = apk; sumsUrl = sums; size = bytes; note = ""; asset = wanted;

@@ -6,7 +6,7 @@ from pathlib import Path
 import zipfile
 
 
-DOWNLOADS = ('PGRazor.apk', 'PGRazor-Root.apk', 'PGRazor-Root-module.zip')
+DOWNLOADS = ('PGS.apk', 'PGS-Root.apk', 'PGS-Root-module.zip')
 
 
 def digest(path):

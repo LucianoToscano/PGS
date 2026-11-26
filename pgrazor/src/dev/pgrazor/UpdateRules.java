@@ -42,7 +42,7 @@ final class UpdateRules {
     }
 
     /** The release file this build updates from: the full APK, or for PGRazor Root its installer. */
-    static String assetName(boolean rooted) { return rooted ? "PGRazor-Root.apk" : "PGRazor.apk"; }
+    static String assetName(boolean rooted) { return rooted ? "PGS-Root.apk" : "PGS.apk"; }
 
     /**
      * The SHA-256 of {@code file} from a checksum list ("<64 hex>  <name>" per line, a leading '*' on the

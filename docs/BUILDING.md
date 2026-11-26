@@ -56,7 +56,7 @@ python -B pgrazor/nonroot.py --apk pgrazor/input/game.apkm
 python -B pgrazor/release_apk.py --run pgrazor/build/nonroot/RUN-ID --output pgrazor/build/release
 ```
 
-Use the run directory printed by the first command. The second command merges the library-only ARM64 configuration split, removes split-install requirements, labels the installed application Pokémon GO (the in-game menu remains PGRazor), aligns and signs **PGRazor.apk**, and writes checksums. It rejects resource/code splits rather than silently dropping them. No command installs anything on a phone.
+Use the run directory printed by the first command. The second command merges the library-only ARM64 configuration split, removes split-install requirements, labels the installed application Pokémon GO (the in-game menu is branded PGS), aligns and signs **PGS.apk**, and writes checksums. It rejects resource/code splits rather than silently dropping them. No command installs anything on a phone.
 
 Single-APK packaging is new and still needs a disconnected-phone install/launch check. Existing split builds remain available in the run directory as a rollback option. Preserve a tested installation until the new candidate has been checked.
 
@@ -100,7 +100,7 @@ Configure these PGS repository Actions secrets. The workflow maps them to the in
 
 For a private GitHub input asset, use its `https://api.github.com/repos/OWNER/REPO/releases/assets/ID` URL. The workflow supplies its scoped token; authorization is removed when GitHub redirects to the signed download host.
 
-Run **Actions → PGS Android release (non-root and rooted) → Run workflow**, enter a version tag such as `v0.1.0`, and leave `publish` off for a candidate. Download **PGRazor-android** from the completed run. It contains **PGRazor.apk** (non-root), **PGRazor-Root.apk** (root installer), and **PGRazor-Root-module.zip** (manual root module). Repository read access is required to download private [workflow artifacts](https://docs.github.com/en/actions/how-tos/manage-workflow-runs/download-workflow-artifacts).
+Run **Actions → PGS Android release (non-root and rooted) → Run workflow**, enter a version tag such as `v0.00.01`, and leave `publish` off for a candidate. Download **PGS-android** from the completed run. It contains **PGS.apk** (non-root), **PGS-Root.apk** (root installer), and **PGS-Root-module.zip** (manual root module). Repository read access is required to download private [workflow artifacts](https://docs.github.com/en/actions/how-tos/manage-workflow-runs/download-workflow-artifacts).
 
 After device testing, run with `publish` enabled to create one release containing all three downloads, checksums, and both build receipts. An existing tag/release is not overwritten. The workflow installs the pinned NDKs/build tools and prepares native dependencies before checks and packaging. Its PowerShell setup writes paths to `GITHUB_ENV` so later steps inherit the same compilers and cache. The workflow is manually triggered, does not run on pull requests, and requires a versioned release-notes file at `docs/releases/TAG.md`. The shared `docs/releases/footer.md` is appended automatically, including the optional Ko-fi support link. No secrets or game files are uploaded by source CI.
 
@@ -118,7 +118,7 @@ Without the secret, the announcement step logs a warning and sends nothing. To a
 
 ## Installation and updates
 
-Install the single APK with Android's package installer, or use `adb install -r PGRazor.apk` from a computer. Never uninstall a working PGRazor build just to bypass a signing error; use a build signed with its existing key. An official-store game cannot be replaced in place by a differently signed build. Local application data may be lost if you choose to uninstall it.
+Install the single APK with Android's package installer, or use `adb install -r PGS.apk` from a computer. Never uninstall a working build just to bypass a signing error; use a build signed with its existing key. An official-store game cannot be replaced in place by a differently signed build. Local application data may be lost if you choose to uninstall it.
 
 The minimum SDK is Android 9 (API 28), but native gameplay hooks are supported only on the pinned ARM64 game build. No emulator, future-version, or all-device compatibility is implied.
 

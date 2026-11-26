@@ -16,36 +16,36 @@ class ReleaseBundleTests(unittest.TestCase):
         self.addCleanup(self.temp.cleanup)
         self.folder = Path(self.temp.name)
         self.tag = 'v0.2.6'
-        with zipfile.ZipFile(self.folder / 'PGRazor.apk', 'w') as apk:
+        with zipfile.ZipFile(self.folder / 'PGS.apk', 'w') as apk:
             apk.writestr('assets/pgrazor/mode.json', json.dumps({'version': '17.24.2', 'pgrazorVersion': self.tag}))
-        with zipfile.ZipFile(self.folder / 'PGRazor-Root-module.zip', 'w') as module:
+        with zipfile.ZipFile(self.folder / 'PGS-Root-module.zip', 'w') as module:
             module.writestr('module.prop', 'id=pgrazor\nversion=' + self.tag + '\n')
-        self.installer(self.folder / 'PGRazor-Root-module.zip')
+        self.installer(self.folder / 'PGS-Root-module.zip')
         self.receipts()
 
     def installer(self, module):
-        with zipfile.ZipFile(self.folder / 'PGRazor-Root.apk', 'w') as apk:
+        with zipfile.ZipFile(self.folder / 'PGS-Root.apk', 'w') as apk:
             apk.write(module, 'assets/module.zip')
 
     def receipts(self):
         hashes = {name: verify_release.digest(self.folder / name) for name in verify_release.DOWNLOADS}
         (self.folder / 'SHA256SUMS.txt').write_text(''.join(h + '  ' + n + '\n' for n, h in hashes.items()))
         (self.folder / 'build-info.json').write_text(json.dumps({
-            'game_version': '0.435.2', 'game_version_code': 2026110702, 'apk_sha256': hashes['PGRazor.apk']}))
+            'game_version': '0.435.2', 'game_version_code': 2026110702, 'apk_sha256': hashes['PGS.apk']}))
         (self.folder / 'root-build-info.json').write_text(json.dumps({
             'version': self.tag, 'target': {'versionName': '0.435.2', 'versionCode': 2026110702},
-            'installer_sha256': hashes['PGRazor-Root.apk'], 'module_sha256': hashes['PGRazor-Root-module.zip']}))
+            'installer_sha256': hashes['PGS-Root.apk'], 'module_sha256': hashes['PGS-Root-module.zip']}))
 
     def test_complete_bundle(self):
         self.assertEqual(set(verify_release.verify(self.folder, self.tag)), set(verify_release.DOWNLOADS))
 
     def test_missing_download_blocks_publication(self):
-        (self.folder / 'PGRazor-Root-module.zip').unlink()
+        (self.folder / 'PGS-Root-module.zip').unlink()
         with self.assertRaisesRegex(ValueError, 'Missing'):
             verify_release.verify(self.folder, self.tag)
 
     def test_corrupted_download_blocks_publication(self):
-        with (self.folder / 'PGRazor.apk').open('ab') as stream:
+        with (self.folder / 'PGS.apk').open('ab') as stream:
             stream.write(b'changed')
         with self.assertRaisesRegex(ValueError, 'checksums'):
             verify_release.verify(self.folder, self.tag)
@@ -67,7 +67,7 @@ class ReleaseBundleTests(unittest.TestCase):
             verify_release.verify(self.folder, self.tag)
 
     def test_stale_nonroot_apk_even_when_receipts_match(self):
-        with zipfile.ZipFile(self.folder / 'PGRazor.apk', 'w') as apk:
+        with zipfile.ZipFile(self.folder / 'PGS.apk', 'w') as apk:
             apk.writestr('assets/pgrazor/mode.json', json.dumps({'version': '17.24.2', 'pgrazorVersion': 'v0.2.5'}))
         self.receipts()
         with self.assertRaisesRegex(ValueError, 'Non-rooted build version'):

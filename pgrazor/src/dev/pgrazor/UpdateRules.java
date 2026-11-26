@@ -67,7 +67,7 @@ final class UpdateRules {
 
     /** Only release files served by GitHub over HTTPS are downloaded. */
     static boolean trustedUrl(String url) {
-        return url != null && url.startsWith("https://github.com/jpitty03/PGRazor/releases/download/");
+        return url != null && url.startsWith("https://github.com/LucianoToscano/PGS/releases/download/");
     }
 
     static boolean sizeAllowed(long bytes) { return bytes > 0 && bytes <= MAX_BYTES; }

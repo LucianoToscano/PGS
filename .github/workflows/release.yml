@@ -3,7 +3,7 @@ on:
   workflow_dispatch:
     inputs:
       tag:
-        description: Release tag (for example v0.1.0)
+        description: Release tag (for example v0.00.01)
         required: true
         type: string
       publish:
@@ -78,7 +78,7 @@ jobs:
         env:
           RELEASE_TAG: ${{ inputs.tag }}
         run: |
-          if ($env:RELEASE_TAG -notmatch '^v[0-9]+\.[0-9]+\.[0-9]+(?:-[A-Za-z0-9.-]+)?$') { throw 'Use a version tag such as v0.1.0' }
+          if ($env:RELEASE_TAG -notmatch '^v[0-9]+\.[0-9]+\.[0-9]+(?:-[A-Za-z0-9.-]+)?$') { throw 'Use a version tag such as v0.00.01' }
           if (!(Test-Path -LiteralPath "docs/releases/$env:RELEASE_TAG.md")) { throw "Add release notes in docs/releases/$env:RELEASE_TAG.md" }
       - name: Prepare pinned DEX test dependencies
         run: python -c "import sys; sys.path.insert(0, 'pgrazor'); import dex_bridges; dex_bridges.dependencies(download=True)"
@@ -169,7 +169,7 @@ jobs:
             cp "$highlight" release/release-highlight.png
             assets+=(release/release-highlight.png)
           fi
-          gh release create "$RELEASE_TAG" "${assets[@]}" --target "$RELEASE_COMMIT" --title "PGRazor $RELEASE_TAG" --latest --notes-file "$RUNNER_TEMP/release-notes.md"
+          gh release create "$RELEASE_TAG" "${assets[@]}" --target "$RELEASE_COMMIT" --title "PGS $RELEASE_TAG" --latest --notes-file "$RUNNER_TEMP/release-notes.md"
   discord:
     needs: release
     uses: ./.github/workflows/discord-release.yml

@@ -109,7 +109,7 @@ export const steps = [
   {
     n: '01',
     title: 'Download',
-    body: 'Open the latest release and download PGRazor.apk — not a source archive, and not the Root files unless your device is rooted.',
+    body: 'For upstream reference only, open a PGRazor release and download PGRazor.apk — not a source archive, and not the Root files unless your device is rooted.',
   },
   {
     n: '02',

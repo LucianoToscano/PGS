@@ -1,6 +1,9 @@
-<p align="center"><img src="pgrazor/branding/pgrazor.svg" width="88" alt="PGRazor logo"></p>
-<h1 align="center">PGRazor</h1>
-<p align="center">A compact Android interface for location controls and Pokémon GO automation.</p>
+<h1 align="center">PGS — Pokémon GO Spoofers</h1>
+<p align="center">One World. No Borders.</p>
+
+> **Development status:** PGS is an independent project under reconstruction from the MIT-licensed PGRazor source. No PGS APK has been validated or published yet. The inherited guides below describe the upstream implementation, not a PGS release.
+
+Upstream baseline: [PGRazor at `1106592a`](https://github.com/jpitty03/PGRazor/commit/1106592aa045759f55f594ff6968f783ff636fe9). The original license and attribution are retained. PGS is not affiliated with the Pokémon GO publisher.
 
 PGRazor adds an in-game menu, an independent joystick, encounter controls, and optional automation to Pokémon GO. Settings persist across restarts, with light and dark themes.
 
@@ -16,7 +19,7 @@ The feature list and how-to guides live on the website, so there is one place to
 - **[Feature guides](https://jpitty03.github.io/PGRazor/?guide=all)**: where each feature is in the app and how to use it.
 - **[Changelog](CHANGELOG.md)** and [release notes](https://github.com/jpitty03/PGRazor/releases): what each version added.
 
-## Install
+## Upstream installation reference (not a PGS release)
 
 There are two builds. Each release lists the Pokémon GO version it supports; native features are built for that exact version.
 
@@ -36,7 +39,7 @@ Each release includes a changelog, SHA-256 checksums, and build information. See
 
 These are experimental client modifications. Server outcomes are not guaranteed, the cooldown timer is a local estimate, and nothing here prevents account action by the game's publisher.
 
-## Community
+## Upstream community and attribution
 
 Join the [PGRazor Discord](https://discord.gg/9QqfkDSQX3), also linked from the settings footer. If you enjoy PGRazor, you can support development on [Ko-fi](https://ko-fi.com/pgrazor). Donations are optional.
 
@@ -74,4 +77,4 @@ website/              React site and feature guides, deployed to GitHub Pages
 
 ## License
 
-Original PGRazor source is available under the [MIT License](LICENSE). Third-party components retain their own licenses. Pokémon GO and its assets are not covered by this license. PGRazor is an independent project and is not affiliated with the game publisher.
+Original PGRazor source is available under the [MIT License](LICENSE). Third-party components retain their own licenses. Pokémon GO and its assets are not covered by this license. PGS and PGRazor are independent projects and are not affiliated with the game publisher.

@@ -35,11 +35,11 @@ def message(release, role_id=''):
     if len(notes) > 3000:
         notes = notes[:2997] + '...'
     assets = release.get('assets', [])
-    apk = next((a['browser_download_url'] for a in assets if a.get('name') == 'PGRazor.apk'), None)
+    apk = next((a['browser_download_url'] for a in assets if a.get('name') == 'PGS.apk'), None)
     highlight = next((a['browser_download_url'] for a in assets if a.get('name') == 'release-highlight.png'), None)
-    fields = [{'name': 'Download', 'value': '[Install PGRazor.apk](' + apk + ')'}] if apk else []
-    for filename, label in (('PGRazor-Root.apk', 'Root installer APK'),
-                            ('PGRazor-Root-module.zip', 'Root module ZIP')):
+    fields = [{'name': 'Download', 'value': '[Install PGS.apk](' + apk + ')'}] if apk else []
+    for filename, label in (('PGS-Root.apk', 'Root installer APK'),
+                            ('PGS-Root-module.zip', 'Root module ZIP')):
         asset = next((a for a in assets if a.get('name') == filename), None)
         if asset:
             fields.append({'name': label, 'value': '[' + filename + '](' + asset['browser_download_url'] + ')'})

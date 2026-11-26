@@ -32,6 +32,26 @@ jobs:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
         with:
           persist-credentials: false
+      - name: Validate PGS release configuration
+        env:
+          RELEASE_TAG: ${{ inputs.tag }}
+          PGS_INPUT_URL: ${{ secrets.PGS_INPUT_URL }}
+          PGS_KEYSTORE_BASE64: ${{ secrets.PGS_KEYSTORE_BASE64 }}
+          PGS_KEY_ALIAS: ${{ secrets.PGS_KEY_ALIAS }}
+          PGS_KEY_PASSWORD: ${{ secrets.PGS_KEY_PASSWORD }}
+          PGS_STORE_PASSWORD: ${{ secrets.PGS_STORE_PASSWORD }}
+          PGS_PUBLISH_REQUESTED: ${{ inputs.publish }}
+          PGS_PUBLISH_ENABLED: ${{ vars.PGS_PUBLISH_ENABLED }}
+        run: |
+          $missing = @()
+          foreach ($name in @('PGS_INPUT_URL','PGS_KEYSTORE_BASE64','PGS_KEY_ALIAS','PGS_KEY_PASSWORD','PGS_STORE_PASSWORD')) {
+            if ([string]::IsNullOrWhiteSpace([Environment]::GetEnvironmentVariable($name))) { $missing += $name }
+          }
+          if ($missing.Count -gt 0) { throw ('Missing repository secrets: ' + ($missing -join ', ')) }
+          if ($env:RELEASE_TAG -notmatch '^v[0-9]+\.[0-9]+\.[0-9]+(?:-[A-Za-z0-9.-]+)?$') { throw 'Use a version tag such as v0.00.01' }
+          if (!(Test-Path -LiteralPath "docs/releases/$env:RELEASE_TAG.md")) { throw 'Release notes are missing for this tag' }
+          if ($env:PGS_PUBLISH_REQUESTED -eq 'true' -and ($env:PGS_PUBLISH_ENABLED -ne 'true' -or $env:GITHUB_REF -ne 'refs/heads/main')) { throw 'Publication requires main and PGS_PUBLISH_ENABLED=true' }
+          Write-Output 'PGS configuration present; no secret values displayed.'
       - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5
         with:
           python-version: '3.12'
@@ -73,13 +93,6 @@ jobs:
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
           python -B pgrazor/art_build.py --check
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
-      - name: Validate release tag
-        shell: pwsh
-        env:
-          RELEASE_TAG: ${{ inputs.tag }}
-        run: |
-          if ($env:RELEASE_TAG -notmatch '^v[0-9]+\.[0-9]+\.[0-9]+(?:-[A-Za-z0-9.-]+)?$') { throw 'Use a version tag such as v0.00.01' }
-          if (!(Test-Path -LiteralPath "docs/releases/$env:RELEASE_TAG.md")) { throw "Add release notes in docs/releases/$env:RELEASE_TAG.md" }
       - name: Prepare pinned DEX test dependencies
         run: python -c "import sys; sys.path.insert(0, 'pgrazor'); import dex_bridges; dex_bridges.dependencies(download=True)"
       - run: python -B tools/check.py
@@ -138,7 +151,7 @@ jobs:
           if (Test-Path -LiteralPath $keyPath) { Remove-Item -LiteralPath $keyPath }
   release:
     needs: build
-    if: inputs.publish == true
+    if: inputs.publish == true && vars.PGS_PUBLISH_ENABLED == 'true' && github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     permissions:
       contents: write

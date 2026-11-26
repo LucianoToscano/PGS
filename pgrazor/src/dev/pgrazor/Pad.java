@@ -97,7 +97,7 @@ public final class Pad {
     }
     private final class RazorIcon extends View {
         private final Paint paint=new Paint(Paint.ANTI_ALIAS_FLAG);
-        RazorIcon(Context c){super(c);setContentDescription("Open PGRazor settings. Drag to reposition.");setFocusable(true);setClickable(true);}
+        RazorIcon(Context c){super(c);setContentDescription("Open PGS settings. Drag to reposition.");setFocusable(true);setClickable(true);}
         protected void onDraw(Canvas c){super.onDraw(c);float scale=Math.min(getWidth(),getHeight())/48f;c.save();c.scale(scale,scale);
             paint.setStyle(Paint.Style.FILL);paint.setColor(surface());c.drawCircle(24,24,22.5f,paint);
             paint.setStyle(Paint.Style.STROKE);paint.setStrokeWidth(1.3f);paint.setColor(SettingsUi.border());c.drawCircle(24,24,22.1f,paint);
@@ -197,7 +197,7 @@ public final class Pad {
         routesLayout.rightMargin=dp(14);routesLayout.topMargin=dp(100);overlays.addView(gameRoutesOverlay,routesLayout);
         gameRoutesOverlay.setVisibility(View.GONE);gameRoutesDrag=OverlayDrag.attach(overlays,gameRoutesOverlay,"game-routes");
         launcher=new RazorIcon(host);FrameLayout.LayoutParams iconLayout=new FrameLayout.LayoutParams(dp(48),dp(48),Gravity.TOP|Gravity.LEFT);iconLayout.leftMargin=dp(12);iconLayout.topMargin=dp(100);overlays.addView(launcher,iconLayout);
-        launcher.setContentDescription("Open PGRazor quick menu. Drag to reposition.");
+        launcher.setContentDescription("Open PGS quick menu. Drag to reposition.");
         // The R launcher now toggles the compact quick menu; Settings there opens this panel full screen.
         quickMenu=new QuickMenu(host,parent,launcher,new QuickMenu.Listener(){
             public void onMap(){openWorldMap();}
@@ -447,7 +447,7 @@ public final class Pad {
         if(closed||overlaysHidden||activity.isFinishing()||activity.isDestroyed()||hideOverlaysDialog!=null)return;
         AlertDialog dialog=new AlertDialog.Builder(dialogContext())
             .setTitle("Hide overlay?")
-            .setMessage("All PGRazor buttons, status bars, messages and in-game IV text will be hidden so the game looks stock. To show them again, tap the screen with three fingers at once.")
+            .setMessage("All PGS buttons, status bars, messages and in-game IV text will be hidden so the game looks stock. To show them again, tap the screen with three fingers at once.")
             .setNegativeButton("Cancel",null)
             .setPositiveButton("Hide",(d,w)->setOverlaysHidden(true)).create();
         hideOverlaysDialog=dialog;
@@ -461,7 +461,7 @@ public final class Pad {
         if(hidden){stick.release(true);if(quickMenu!=null&&quickMenu.isShowing())quickMenu.hide();}
         overlays.setVisibility(hidden?View.GONE:View.VISIBLE);
         Control.event("overlays",hidden?"hidden":"shown");
-        if(!hidden){Toast.makeText(activity,"PGRazor overlay shown",Toast.LENGTH_SHORT).show();refresh();}
+        if(!hidden){Toast.makeText(activity,"PGS overlay shown",Toast.LENGTH_SHORT).show();refresh();}
     }
     /**
      * Sees every finger that touches down anywhere on screen and never takes the touch, so the game

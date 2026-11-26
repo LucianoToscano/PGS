@@ -1,0 +1,36 @@
+name: PGS AUTO SYNC
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '17 10 * * *'
+permissions:
+  contents: read
+concurrency:
+  group: pgs-upstream-monitor
+  cancel-in-progress: false
+jobs:
+  monitor:
+    if: github.event_name == 'workflow_dispatch' || vars.PGS_AUTO_SYNC_ENABLED == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          persist-credentials: false
+      - name: Test monitor
+        run: python3 -B -m unittest discover -s pgrazor/test -p test_pgs_upstream_monitor.py
+      - name: Check public upstream revision
+        env:
+          REVIEWED_REVISION: ${{ vars.PGS_UPSTREAM_REVIEWED_SHA }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          args=()
+          if [ -n "$REVIEWED_REVISION" ]; then args+=(--reviewed "$REVIEWED_REVISION"); fi
+          python3 -B tools/pgs_upstream_monitor.py "${args[@]}" | tee "$RUNNER_TEMP/pgs-upstream.json"
+          {
+            echo '### PGS upstream monitor (read-only)'
+            echo '~~~json'
+            cat "$RUNNER_TEMP/pgs-upstream.json"
+            echo '~~~'
+          } >> "$GITHUB_STEP_SUMMARY"

@@ -86,7 +86,7 @@ The `build.py` output named `pgrazor-preview.apk` is a controls preview, **not t
 
 ## GitHub Actions: non-root and rooted releases
 
-Write concise release notes using [the release-note rules](releases/README.md) and [template](releases/TEMPLATE.md). GitHub and Discord share the same notes. Include version-specific download and GitHub release links; the shared footer adds Ko-fi and repository links. Omit verification sections and website-only changes from public notes and the changelog.
+Write concise release notes using [the release-note rules](releases/README.md) and [template](releases/TEMPLATE.md). GitHub and Discord share the same notes. Include version-specific download and GitHub release links; the shared footer adds project and upstream attribution. Omit verification sections and website-only changes from public notes and the changelog.
 
 Configure these PGS repository Actions secrets. The workflow maps them to the inherited internal build environment; local environment names have not yet changed:
 
@@ -98,11 +98,13 @@ Configure these PGS repository Actions secrets. The workflow maps them to the in
 | `PGS_STORE_PASSWORD` | Keystore password |
 | `PGS_KEY_PASSWORD` | Private-key password |
 
+The release workflow checks that all five secrets exist and that the versioned notes file is present before installing the Android SDK. It logs only missing secret names, never their values. Leave `PGS_PUBLISH_ENABLED` unset or `false` until authorized publication is appropriate.
+
 For a private GitHub input asset, use its `https://api.github.com/repos/OWNER/REPO/releases/assets/ID` URL. The workflow supplies its scoped token; authorization is removed when GitHub redirects to the signed download host.
 
 Run **Actions → PGS Android release (non-root and rooted) → Run workflow**, enter a version tag such as `v0.00.01`, and leave `publish` off for a candidate. Download **PGS-android** from the completed run. It contains **PGS.apk** (non-root), **PGS-Root.apk** (root installer), and **PGS-Root-module.zip** (manual root module). Repository read access is required to download private [workflow artifacts](https://docs.github.com/en/actions/how-tos/manage-workflow-runs/download-workflow-artifacts).
 
-After device testing, run with `publish` enabled to create one release containing all three downloads, checksums, and both build receipts. An existing tag/release is not overwritten. The workflow installs the pinned NDKs/build tools and prepares native dependencies before checks and packaging. Its PowerShell setup writes paths to `GITHUB_ENV` so later steps inherit the same compilers and cache. The workflow is manually triggered, does not run on pull requests, and requires a versioned release-notes file at `docs/releases/TAG.md`. The shared `docs/releases/footer.md` is appended automatically, including the optional Ko-fi support link. No secrets or game files are uploaded by source CI.
+After device testing, explicitly set the repository Actions variable `PGS_PUBLISH_ENABLED` to `true` and run on `main` with `publish` enabled to create one release containing all three downloads, checksums, and both build receipts. An existing tag/release is not overwritten. The workflow installs the pinned NDKs/build tools and prepares native dependencies before checks and packaging. Its PowerShell setup writes paths to `GITHUB_ENV` so later steps inherit the same compilers and cache. The workflow is manually triggered, does not run on pull requests, and requires a versioned release-notes file at `docs/releases/TAG.md`. The shared `docs/releases/footer.md` is appended automatically with project and upstream attribution. No secrets or game files are uploaded by source CI.
 
 Both upload and publication verify all three downloads against their checksums and build receipts, check that the game/release versions match, and confirm that the Root APK embeds the exact published module ZIP. Source CI also compiles the Root installer without game input or signing secrets. The signing key remains an Actions secret; keep it unchanged across releases.
 
@@ -110,11 +112,11 @@ Both upload and publication verify all three downloads against their checksums a
 
 Create an incoming webhook in a PGS-owned Discord channel under **Edit Channel → Integrations → Webhooks**. Save its URL as the repository Actions secret **PGS_DISCORD_RELEASE_WEBHOOK**, its numeric channel ID as variable `PGS_DISCORD_CHANNEL_ID`, and explicitly set `PGS_DISCORD_ENABLED` to `true` only when ready. Leave it unset or `false` otherwise. Do not commit the URL.
 
-The **PGS Discord release announcement** workflow posts published releases (including labeled prereleases) with release notes, a GitHub link, links to the non-root APK, Root installer APK, and module ZIP when present, and the optional Ko-fi support link. It verifies the webhook's channel before sending. Drafts are not announced. The APK release workflow calls it directly because releases created with `GITHUB_TOKEN` do not trigger another release-event workflow.
+The **PGS Discord release announcement** workflow posts published releases (including labeled prereleases) with release notes, a GitHub link, links to the non-root APK, Root installer APK, and module ZIP when present, when present. It verifies the webhook's channel before sending. Drafts are not announced. The APK release workflow calls it directly because releases created with `GITHUB_TOKEN` do not trigger another release-event workflow.
 
 To ping a release subscriber role, set the repository Actions **variable** `PGS_DISCORD_RELEASE_ROLE_ID` to its numeric role ID (Discord Developer Mode → right-click the role → Copy Role ID). Ensure Discord allows the webhook to mention that role. Only this role is allowed to ping; other roles, users, and everyone mentions remain disabled. Leave the variable unset to send without a ping. This also applies to prereleases and manual announcements.
 
-Without the secret, the announcement step logs a warning and sends nothing. To announce an existing release after setup, manually run **Discord release announcement** with its tag. Manual runs and reruns can post another announcement, so check the channel before retrying. This posts a channel message; it does not crosspost to channel followers.
+Without the secret, the announcement step logs a warning and sends nothing. To announce an existing release after setup, manually run **PGS Discord release announcement** with its tag. Manual runs and reruns can post another announcement, so check the channel before retrying. This posts a channel message; it does not crosspost to channel followers.
 
 ## Installation and updates
 

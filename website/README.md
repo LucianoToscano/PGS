@@ -44,7 +44,7 @@ Release-specific availability and validation details belong in the release notes
 
 ## Screenshots and artwork
 
-- `public/logo.svg`: PGS website mark. The Android branding at `pgrazor/branding/pgrazor.svg` is still upstream and is not changed by this website migration.
+- `public/logo.svg`: PGS website mark. The same PGS mark is used in `pgrazor/branding/pgrazor.svg`; the legacy path remains during migration.
 - `public/images/main-menu.png`: canonical app settings screenshot (the v0.3.5 Settings home on MuMu), also referenced by the repository README.
 - `public/images/encounter.png`: real encounter capture showing the IV/level, transfer and berry overlays.
 - `public/images/world-map.png`: November 2026 MuMu capture of the app's world map (v0.3.5 interface). OpenStreetMap attribution is visible in the capture.

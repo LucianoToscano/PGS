@@ -5,7 +5,9 @@ test('production page loads its assets and stays within the viewport', async ({ 
   page.on('pageerror', error => errors.push(error.message));
   await page.goto('./');
   await expect(page.locator('h1')).toBeVisible();
-  await expect(page.locator('a[href="https://github.com/jpitty03/PGRazor/releases/latest"]').first()).toBeVisible();
+  await expect(page).toHaveTitle(/PGS/);
+  await expect(page.locator('.brand__name').first()).toHaveText('PGS');
+  await expect(page.locator('a[href="https://github.com/LucianoToscano/PGS/releases"]').first()).toBeVisible();
   for (const image of await page.locator('img').all()) {
     await image.scrollIntoViewIfNeeded();
     await expect.poll(() => image.evaluate(img => img.complete && img.naturalWidth > 0)).toBeTruthy();
@@ -96,7 +98,7 @@ test('cooldown trigger and safe groups expand', async ({ page }) => {
   await expect(safe.getByText('Teleporting by itself')).toBeVisible();
 });
 
-test('current stable release notes accompany the latest download', async ({ page }) => {
+test('upstream release notes remain distinct from PGS release status', async ({ page }) => {
   await page.goto('./');
   const releaseNotes = page.locator(
     'a[href="https://github.com/jpitty03/PGRazor/releases/tag/v0.3.0"]'
@@ -105,5 +107,5 @@ test('current stable release notes accompany the latest download', async ({ page
   await expect(releaseNotes).toBeVisible();
   // It must not masquerade as the primary "latest release" call to action.
   await expect(releaseNotes).not.toHaveClass(/btn--primary/);
-  await expect(page.locator('.cta__badge')).toHaveText('Stable');
+  await expect(page.locator('.cta__badge')).toHaveText('Upstream reference');
 });

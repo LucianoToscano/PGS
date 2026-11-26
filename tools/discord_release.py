@@ -14,7 +14,7 @@ class NoRedirect(urllib.request.HTTPRedirectHandler):
 
 
 def request(url, *, token=None, payload=None):
-    headers = {'User-Agent': 'PGRazor-release-announcer', 'Accept': 'application/json'}
+    headers = {'User-Agent': 'PGS-release-announcer', 'Accept': 'application/json'}
     if token:
         headers['Authorization'] = 'Bearer ' + token
     data = None
@@ -29,7 +29,7 @@ def request(url, *, token=None, payload=None):
 def message(release, role_id=''):
     role_id = role_id.strip()
     if role_id and not re.fullmatch(r'[0-9]{17,20}', role_id):
-        raise ValueError('DISCORD_RELEASE_ROLE_ID must be a numeric Discord role ID')
+        raise ValueError('PGS_DISCORD_RELEASE_ROLE_ID must be a numeric Discord role ID')
     kind = 'Prerelease' if release.get('prerelease') else 'Release'
     notes = (release.get('body') or 'See GitHub for release details.').strip()
     if len(notes) > 3000:
@@ -43,40 +43,40 @@ def message(release, role_id=''):
         asset = next((a for a in assets if a.get('name') == filename), None)
         if asset:
             fields.append({'name': label, 'value': '[' + filename + '](' + asset['browser_download_url'] + ')'})
-    # Keep the support link visible even when long release notes are truncated.
-    if 'https://ko-fi.com/pgrazor' not in notes:
-        fields.append({'name': 'Support development', 'value': '[Ko-fi](https://ko-fi.com/pgrazor) (optional)'})
     embed = {'title': (release.get('name') or release['tag_name'])[:256],
              'url': release['html_url'], 'description': notes,
              'color': 0x35DAB4, 'fields': fields,
-             'footer': {'text': 'PGRazor | ' + kind}}
+             'footer': {'text': 'PGS | ' + kind}}
     # Optional release highlight screenshot shown inline in the embed when present.
     if highlight:
         embed['image'] = {'url': highlight}
-    payload = {'username': 'PGRazor Releases', 'allowed_mentions': {'parse': []},
+    payload = {'username': 'PGS Releases', 'allowed_mentions': {'parse': []},
             'embeds': [embed]}
     if role_id:
-        payload['content'] = '<@&' + role_id + '> A new PGRazor release is available!'
+        payload['content'] = '<@&' + role_id + '> A new PGS release is available!'
         payload['allowed_mentions']['roles'] = [role_id]
     return payload
 
 
 def main():
-    webhook = os.environ.get('DISCORD_RELEASE_WEBHOOK', '').strip()
+    webhook = os.environ.get('PGS_DISCORD_RELEASE_WEBHOOK', '').strip()
     if not webhook:
-        print('::warning::Add the DISCORD_RELEASE_WEBHOOK Actions secret to enable announcements.')
+        print('::warning::Add the PGS_DISCORD_RELEASE_WEBHOOK Actions secret to enable announcements.')
         return
     if not re.fullmatch(r'https://discord\.com/api(?:/v\d+)?/webhooks/\d+/[A-Za-z0-9_.-]+', webhook):
-        raise ValueError('DISCORD_RELEASE_WEBHOOK must be a Discord webhook URL')
+        raise ValueError('PGS_DISCORD_RELEASE_WEBHOOK must be a Discord webhook URL')
+    channel = os.environ.get('PGS_DISCORD_CHANNEL_ID', '').strip()
+    if not re.fullmatch(r'[0-9]{17,20}', channel):
+        raise ValueError('PGS_DISCORD_CHANNEL_ID must be configured before sending')
     repo = os.environ['GITHUB_REPOSITORY']
     tag = urllib.parse.quote(os.environ['RELEASE_TAG'], safe='')
     release = request('https://api.github.com/repos/' + repo + '/releases/tags/' + tag,
                       token=os.environ['GITHUB_TOKEN'])
     if release.get('draft') or not release.get('published_at'):
         raise ValueError('Only published releases can be announced')
-    payload = message(release, os.environ.get('DISCORD_RELEASE_ROLE_ID', ''))
+    payload = message(release, os.environ.get('PGS_DISCORD_RELEASE_ROLE_ID', ''))
     hook = request(webhook)
-    if str(hook.get('channel_id')) != os.environ['DISCORD_CHANNEL_ID']:
+    if str(hook.get('channel_id')) != channel:
         raise ValueError('Webhook belongs to a different channel; nothing sent')
     # No automatic POST retry: a lost response must not blindly duplicate announcements.
     result = request(webhook + '?wait=true', payload=payload)

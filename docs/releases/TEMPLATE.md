@@ -1,4 +1,4 @@
-# PGRazor vVERSION
+# PGS vVERSION
 
 ## New features
 
@@ -9,4 +9,4 @@
 - Brief description of a fix or improvement.
 - Various UI improvements and minor fixes.
 
-[Non-root APK](https://github.com/jpitty03/PGRazor/releases/download/vVERSION/PGRazor.apk) · [Root installer APK](https://github.com/jpitty03/PGRazor/releases/download/vVERSION/PGRazor-Root.apk) · [Root module ZIP](https://github.com/jpitty03/PGRazor/releases/download/vVERSION/PGRazor-Root-module.zip) · [GitHub release](https://github.com/jpitty03/PGRazor/releases/tag/vVERSION)
+[Non-root APK](https://github.com/LucianoToscano/PGS/releases/download/vVERSION/PGS.apk) · [Root installer APK](https://github.com/LucianoToscano/PGS/releases/download/vVERSION/PGS-Root.apk) · [Root module ZIP](https://github.com/LucianoToscano/PGS/releases/download/vVERSION/PGS-Root-module.zip) · [GitHub release](https://github.com/LucianoToscano/PGS/releases/tag/vVERSION)

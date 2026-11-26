@@ -17,10 +17,12 @@
 | #4 | Nomes dos artefatos PGS | Integrada |
 | #5 | Isolamento de anúncios Discord | Integrada em `fa525bd638a037cfab58708395e7545527f0e422` |
 
+| #6 | Preflight de configuração e MESTRE.md | Integrada em `3f18312872b92f83300b30e4ba19c9807974b303` |
+
 ## Fila
 
-- [ ] Validar e integrar preflight de configuração.
-- [ ] Inventariar referências técnicas antes de migrar caminhos, namespaces e bibliotecas; não substituir em massa.
+- [x] Validar e integrar preflight de configuração.
+- [ ] Inventariar referências técnicas antes de migrar caminhos, namespaces e bibliotecas; não substituir em massa. Ferramenta de inventário adicionada nesta branch, aguardando CI. Execute `python -B tools/pgs_identity_inventory.py --json` para relatório por arquivo, sem conteúdo ou valores de Secrets.
 - [ ] Configurar credenciais próprias de assinatura e entrada autorizada; não copiar valores secretos para o Git ou chat.
 - [ ] Validar CI e preparar testes de compatibilidade autorizados.
 - [ ] Planejar monitoramento de versões e upstream sem baixar ou publicar conteúdo não autorizado; automação desativada até aprovação.

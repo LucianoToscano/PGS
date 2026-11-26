@@ -20,17 +20,17 @@ public final class UpdateRulesTest {
         check(UpdateRules.parse("v1234567.0.0") == null, "over-long numbers are rejected");
 
         String hash = "0123456789abcdef0123456789abcdef0123456789abcdef0123456789ABCDEF";
-        String list = hash + "  PGRazor.apk\n" + "ff" + hash.substring(2) + " *PGRazor-Root.apk\n";
-        check(hash.toLowerCase(java.util.Locale.US).equals(UpdateRules.checksum(list, "PGRazor.apk")), "checksum is found and lower-cased");
-        check(UpdateRules.checksum(list, "PGRazor-Root.apk").startsWith("ff"), "a starred name is accepted");
-        check(UpdateRules.checksum(list, "PGRazor-Root-module.zip") == null, "an unlisted file has no checksum");
-        check(UpdateRules.checksum(list + hash + "  PGRazor.apk\n", "PGRazor.apk") == null, "a file listed twice is rejected");
-        check(UpdateRules.checksum("zz" + hash.substring(2) + "  PGRazor.apk\n", "PGRazor.apk") == null, "a non-hex checksum is rejected");
-        check(UpdateRules.checksum(hash.substring(1) + "  PGRazor.apk\n", "PGRazor.apk") == null, "a short checksum is rejected");
+        String list = hash + "  PGS.apk\n" + "ff" + hash.substring(2) + " *PGS-Root.apk\n";
+        check(hash.toLowerCase(java.util.Locale.US).equals(UpdateRules.checksum(list, "PGS.apk")), "checksum is found and lower-cased");
+        check(UpdateRules.checksum(list, "PGS-Root.apk").startsWith("ff"), "a starred name is accepted");
+        check(UpdateRules.checksum(list, "PGS-Root-module.zip") == null, "an unlisted file has no checksum");
+        check(UpdateRules.checksum(list + hash + "  PGS.apk\n", "PGS.apk") == null, "a file listed twice is rejected");
+        check(UpdateRules.checksum("zz" + hash.substring(2) + "  PGS.apk\n", "PGS.apk") == null, "a non-hex checksum is rejected");
+        check(UpdateRules.checksum(hash.substring(1) + "  PGS.apk\n", "PGS.apk") == null, "a short checksum is rejected");
 
-        check(UpdateRules.trustedUrl("https://github.com/LucianoToscano/PGS/releases/download/v0.3.7/PGRazor.apk"), "the release URL is trusted");
-        check(!UpdateRules.trustedUrl("http://github.com/LucianoToscano/PGS/releases/download/v0.3.7/PGRazor.apk"), "plain HTTP is refused");
-        check(!UpdateRules.trustedUrl("https://github.com/someone/PGRazor/releases/download/v0.3.7/PGRazor.apk"), "another repository is refused");
+        check(UpdateRules.trustedUrl("https://github.com/LucianoToscano/PGS/releases/download/v0.3.7/PGS.apk"), "the release URL is trusted");
+        check(!UpdateRules.trustedUrl("http://github.com/LucianoToscano/PGS/releases/download/v0.3.7/PGS.apk"), "plain HTTP is refused");
+        check(!UpdateRules.trustedUrl("https://github.com/someone/PGRazor/releases/download/v0.3.7/PGS.apk"), "another repository is refused");
         check(!UpdateRules.trustedUrl("https://github.com/jpitty03/PGRazor/releases/download/v0.3.7/PGRazor.apk"), "upstream release is refused by PGS");
         check(UpdateRules.newer("v0.00.02", "v0.00.01"), "PGS padded version increments numerically");
         check(!UpdateRules.newer("v0.0.1", "v0.00.01"), "equivalent numeric versions do not update");
@@ -38,7 +38,7 @@ public final class UpdateRulesTest {
 
         check(UpdateRules.sizeAllowed(186_207_943L) && !UpdateRules.sizeAllowed(0) && !UpdateRules.sizeAllowed(UpdateRules.MAX_BYTES + 1), "sizes are bounded");
         check("178 MB".equals(UpdateRules.megabytes(186_207_943L)) && "".equals(UpdateRules.megabytes(0)), "size label");
-        check("PGRazor.apk".equals(UpdateRules.assetName(false)) && "PGRazor-Root.apk".equals(UpdateRules.assetName(true)), "asset per build");
+        check("PGS.apk".equals(UpdateRules.assetName(false)) && "PGS-Root.apk".equals(UpdateRules.assetName(true)), "asset per build");
         System.out.println("UpdateRulesTest passed");
     }
 }

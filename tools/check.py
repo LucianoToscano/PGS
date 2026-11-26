@@ -15,6 +15,7 @@ def run(*args, **kwargs):
 
 
 def main():
+    run(sys.executable, '-B', ROOT / 'tools/pgs_identity_inventory.py')
     run(sys.executable, '-B', ROOT / 'tools/game_update.py', 'generate', '--check')
     run(sys.executable, '-B', ROOT / 'tools/game_update.py', 'audit')
     run(sys.executable, '-B', ROOT / 'tools/native_routes_schema.py', '--check')

@@ -2,10 +2,10 @@
 // edits (wording, new settings, extra screenshots) never touch layout code.
 
 export const links = {
-  releasesLatest: 'https://github.com/jpitty03/PGRazor/releases/latest',
+  releasesLatest: 'https://github.com/LucianoToscano/PGS/releases',
   releasesCurrent:
     'https://github.com/jpitty03/PGRazor/releases/tag/v0.3.0',
-  github: 'https://github.com/jpitty03/PGRazor',
+  github: 'https://github.com/LucianoToscano/PGS',
   discord: 'https://discord.gg/9QqfkDSQX3',
   kofi: 'https://ko-fi.com/pgrazor',
 };

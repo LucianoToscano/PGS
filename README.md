@@ -1,3 +1,4 @@
+<p align="center"><img src="website/public/logo.svg" width="88" alt="PGS logo"></p>
 <h1 align="center">PGS — Pokémon GO Spoofers</h1>
 <p align="center">One World. No Borders.</p>
 

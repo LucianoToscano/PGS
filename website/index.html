@@ -4,27 +4,27 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <link rel="icon" type="image/svg+xml" href="%BASE_URL%logo.svg" />
-    <title>PGRazor — smoother Pokémon GO sessions</title>
+    <title>PGS — Pokémon GO Spoofers</title>
     <meta
       name="description"
-      content="PGRazor is a compact, open-source Android interface for Pokémon GO: location controls, catching helpers, and optional automation. One APK for ARM64 Android phones and the MuMu emulator, no root required."
+      content="PGS is an independent open-source project under development, based on PGRazor. No PGS APK has been validated or published yet."
     />
     <meta name="color-scheme" content="dark light" />
     <meta name="theme-color" content="#141b25" />
-    <link rel="canonical" href="https://jpitty03.github.io/PGRazor/" />
-    <meta property="og:title" content="PGRazor" />
+    <link rel="canonical" href="https://lucianotoscano.github.io/PGS/" />
+    <meta property="og:title" content="PGS" />
     <meta
       property="og:description"
       content="A compact Android interface for Pokémon GO location controls, catching, and optional automation. Independent and open source."
     />
     <meta property="og:type" content="website" />
-    <meta property="og:url" content="https://jpitty03.github.io/PGRazor/" />
-    <meta property="og:image" content="https://jpitty03.github.io/PGRazor/images/main-menu.png" />
+    <meta property="og:url" content="https://lucianotoscano.github.io/PGS/" />
+    <meta property="og:image" content="https://lucianotoscano.github.io/PGS/images/main-menu.png" />
     <!-- Apply the saved theme before first paint (default dark) to avoid a flash. -->
     <script>
       (function () {
         try {
-          var stored = localStorage.getItem('pgrazor-theme');
+          var stored = localStorage.getItem('pgs-theme');
           document.documentElement.dataset.theme = stored === 'light' ? 'light' : 'dark';
         } catch (error) {
           document.documentElement.dataset.theme = 'dark';
@@ -35,7 +35,7 @@
   </head>
   <body>
     <div id="root"></div>
-    <noscript>PGRazor is an open-source Android toolkit for Pokémon GO. <a href="https://github.com/jpitty03/PGRazor/releases/latest">Download the latest release</a>. Enable JavaScript to explore the settings guide.</noscript>
+    <noscript>PGS is an open-source Android toolkit for Pokémon GO. <a href="https://github.com/LucianoToscano/PGS/releases">View release status</a>. Enable JavaScript to explore the settings guide.</noscript>
     <script type="module" src="/src/main.jsx"></script>
   </body>
 </html>

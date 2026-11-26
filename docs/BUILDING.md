@@ -88,19 +88,19 @@ The `build.py` output named `pgrazor-preview.apk` is a controls preview, **not t
 
 Write concise release notes using [the release-note rules](releases/README.md) and [template](releases/TEMPLATE.md). GitHub and Discord share the same notes. Include version-specific download and GitHub release links; the shared footer adds Ko-fi and repository links. Omit verification sections and website-only changes from public notes and the changelog.
 
-Configure these Actions secrets:
+Configure these PGS repository Actions secrets. The workflow maps them to the inherited internal build environment; local environment names have not yet changed:
 
 | Secret | Value |
 | --- | --- |
-| `PGRAZOR_INPUT_URL` | HTTPS URL to the supported original APKM, or a GitHub release-asset API URL in this repository |
-| `PGRAZOR_KEYSTORE_BASE64` | Base64-encoded release keystore |
-| `PGRAZOR_KEY_ALIAS` | Signing alias, e.g. `pgrazor` for PGRazor |
-| `PGRAZOR_STORE_PASSWORD` | Keystore password |
-| `PGRAZOR_KEY_PASSWORD` | Private-key password |
+| `PGS_INPUT_URL` | HTTPS URL to the supported original APKM, or a GitHub release-asset API URL in this repository |
+| `PGS_KEYSTORE_BASE64` | Base64-encoded release keystore |
+| `PGS_KEY_ALIAS` | Signing alias, e.g. `pgs` for PGS |
+| `PGS_STORE_PASSWORD` | Keystore password |
+| `PGS_KEY_PASSWORD` | Private-key password |
 
 For a private GitHub input asset, use its `https://api.github.com/repos/OWNER/REPO/releases/assets/ID` URL. The workflow supplies its scoped token; authorization is removed when GitHub redirects to the signed download host.
 
-Run **Actions → Android release (non-root and rooted) → Run workflow**, enter a version tag such as `v0.1.0`, and leave `publish` off for a candidate. Download **PGRazor-android** from the completed run. It contains **PGRazor.apk** (non-root), **PGRazor-Root.apk** (root installer), and **PGRazor-Root-module.zip** (manual root module). Repository read access is required to download private [workflow artifacts](https://docs.github.com/en/actions/how-tos/manage-workflow-runs/download-workflow-artifacts).
+Run **Actions → PGS Android release (non-root and rooted) → Run workflow**, enter a version tag such as `v0.1.0`, and leave `publish` off for a candidate. Download **PGRazor-android** from the completed run. It contains **PGRazor.apk** (non-root), **PGRazor-Root.apk** (root installer), and **PGRazor-Root-module.zip** (manual root module). Repository read access is required to download private [workflow artifacts](https://docs.github.com/en/actions/how-tos/manage-workflow-runs/download-workflow-artifacts).
 
 After device testing, run with `publish` enabled to create one release containing all three downloads, checksums, and both build receipts. An existing tag/release is not overwritten. The workflow installs the pinned NDKs/build tools and prepares native dependencies before checks and packaging. Its PowerShell setup writes paths to `GITHUB_ENV` so later steps inherit the same compilers and cache. The workflow is manually triggered, does not run on pull requests, and requires a versioned release-notes file at `docs/releases/TAG.md`. The shared `docs/releases/footer.md` is appended automatically, including the optional Ko-fi support link. No secrets or game files are uploaded by source CI.
 
@@ -128,9 +128,9 @@ The minimum SDK is Android 9 (API 28), but native gameplay hooks are supported o
 
 ### Hosted game input
 
-The release workflow reads `PGRAZOR_INPUT_URL`; `tools/private_input.py` verifies its checksum against the selected profile in `pgrazor/native/schema/game/` before packaging. The current input is stored as an asset of the **unpublished** `build-inputs` draft release. Keep that release in draft status; original game packages must not be published as release assets.
+The release workflow reads the repository secret `PGS_INPUT_URL` and maps it to `PGRAZOR_INPUT_URL`; `tools/private_input.py` verifies its checksum against the selected profile in `pgrazor/native/schema/game/` before packaging. The current input is stored as an asset of the **unpublished** `build-inputs` draft release. Keep that release in draft status; original game packages must not be published as release assets.
 
-For a game update, upload the new original package under a versioned filename, verify its downloaded SHA-256, and update `PGRAZOR_INPUT_URL` to its GitHub API asset URL. The workflow authenticates that download with its repository token. GitHub restricts draft assets to push-capable callers, so the manually dispatched build job has `contents: write`; checkout does not persist that token in Git credentials. Update the pinned checksum and native compatibility bindings together before running the release workflow.
+For a game update, upload the new original package under a versioned filename, verify its downloaded SHA-256, and update `PGS_INPUT_URL` to its GitHub API asset URL. The workflow authenticates that download with its repository token. GitHub restricts draft assets to push-capable callers, so the manually dispatched build job has `contents: write`; checkout does not persist that token in Git credentials. Update the pinned checksum and native compatibility bindings together before running the release workflow.
 
 ## Game-version updates
 

@@ -1,4 +1,4 @@
-// Resolve a path inside /public against Vite's configured base (e.g. /PGRazor/),
+// Resolve a path inside /public against Vite's configured base (e.g. /PGS/),
 // so links work both at the repo root and on GitHub Pages.
 const base = import.meta.env.BASE_URL;
 

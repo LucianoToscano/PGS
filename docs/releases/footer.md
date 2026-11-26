@@ -1,9 +1,3 @@
+[PGS on GitHub](https://github.com/LucianoToscano/PGS)
 
-
----
-
-Enjoying PGRazor? You can support development on [Ko-fi](https://ko-fi.com/pgrazor). Donations are optional.
-
-[GitHub](https://github.com/jpitty03/PGRazor)
-
-[Join the Discord community](https://discord.gg/9QqfkDSQX3)
+PGS is an independent project derived from the MIT-licensed PGRazor source. [Upstream project](https://github.com/jpitty03/PGRazor). No affiliation with the game publisher.

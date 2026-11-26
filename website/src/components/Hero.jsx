@@ -11,19 +11,18 @@ export default function Hero() {
         <div className="hero__copy">
           <p className="eyebrow">
             <span className="eyebrow__dot" aria-hidden="true" />
-            Independent, open-source project
+            PGS — independent project in development
           </p>
           <h1 className="hero__title">
-            Smoother sessions.{' '}
-            <span className="accent-text">One small menu.</span>
+            One world.{' '}
+            <span className="accent-text">No borders.</span>
           </h1>
           <p className="hero__lead">
-            Location controls, faster catches, and optional automation for Pokémon GO.
-            One APK for ARM64 Android and the MuMu emulator, with no root required.
+            Based on the original PGRazor source. The screenshots and guides describe the upstream implementation; a PGS APK has not yet been validated or published.
           </p>
           <div className="hero__actions">
             <a className="btn btn--primary" href={links.releasesLatest}>
-              Download latest release
+              View PGS release status
               <ArrowIcon />
             </a>
             <a className="btn btn--ghost" href={links.github}>
@@ -52,7 +51,7 @@ export default function Hero() {
           />
           <figcaption className="shot-tag">
             <span className="shot-tag__num" aria-hidden="true">01</span>
-            Overlays drawn over a live encounter
+            Upstream PGRazor reference screenshot
           </figcaption>
         </figure>
       </div>

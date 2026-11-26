@@ -28,9 +28,12 @@ public final class UpdateRulesTest {
         check(UpdateRules.checksum("zz" + hash.substring(2) + "  PGRazor.apk\n", "PGRazor.apk") == null, "a non-hex checksum is rejected");
         check(UpdateRules.checksum(hash.substring(1) + "  PGRazor.apk\n", "PGRazor.apk") == null, "a short checksum is rejected");
 
-        check(UpdateRules.trustedUrl("https://github.com/jpitty03/PGRazor/releases/download/v0.3.7/PGRazor.apk"), "the release URL is trusted");
-        check(!UpdateRules.trustedUrl("http://github.com/jpitty03/PGRazor/releases/download/v0.3.7/PGRazor.apk"), "plain HTTP is refused");
+        check(UpdateRules.trustedUrl("https://github.com/LucianoToscano/PGS/releases/download/v0.3.7/PGRazor.apk"), "the release URL is trusted");
+        check(!UpdateRules.trustedUrl("http://github.com/LucianoToscano/PGS/releases/download/v0.3.7/PGRazor.apk"), "plain HTTP is refused");
         check(!UpdateRules.trustedUrl("https://github.com/someone/PGRazor/releases/download/v0.3.7/PGRazor.apk"), "another repository is refused");
+        check(!UpdateRules.trustedUrl("https://github.com/jpitty03/PGRazor/releases/download/v0.3.7/PGRazor.apk"), "upstream release is refused by PGS");
+        check(UpdateRules.newer("v0.00.02", "v0.00.01"), "PGS padded version increments numerically");
+        check(!UpdateRules.newer("v0.0.1", "v0.00.01"), "equivalent numeric versions do not update");
         check(!UpdateRules.trustedUrl(null), "a missing URL is refused");
 
         check(UpdateRules.sizeAllowed(186_207_943L) && !UpdateRules.sizeAllowed(0) && !UpdateRules.sizeAllowed(UpdateRules.MAX_BYTES + 1), "sizes are bounded");

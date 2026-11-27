@@ -5,7 +5,7 @@
 #undef main
 #include <vector>
 
-int pgrazor_hook(void *address,void *replacement,void **original) {
+int pgs_hook(void *address,void *replacement,void **original) {
  *original=address;
  if (address==(void*)target_owned) call_owned=reinterpret_cast<decltype(call_owned)>(replacement);
  else if (address==(void*)target_setup) call_setup=reinterpret_cast<decltype(call_setup)>(replacement);

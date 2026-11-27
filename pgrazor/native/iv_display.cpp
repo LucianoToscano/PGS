@@ -1592,7 +1592,7 @@ int api_install(const PgrIvDisplayConfig *config) {
   // g_orig_setup stays null (hook_setup never runs). The owned panel hook is always a Dobby hook.
   if (config->external_catch_observer == 0) {
     void *orig_setup = nullptr;
-    if (pgrazor_hook(config->setup_address, reinterpret_cast<void *>(&hook_setup), &orig_setup) !=
+    if (pgs_hook(config->setup_address, reinterpret_cast<void *>(&hook_setup), &orig_setup) !=
             0 ||
         orig_setup == nullptr) {
       return g_install_error = PGR_IV_ERR_HOOK_SETUP;
@@ -1601,7 +1601,7 @@ int api_install(const PgrIvDisplayConfig *config) {
   }
 
   void *orig_owned = nullptr;
-  if (pgrazor_hook(config->owned_update_address, reinterpret_cast<void *>(&hook_owned),
+  if (pgs_hook(config->owned_update_address, reinterpret_cast<void *>(&hook_owned),
                    &orig_owned) != 0 ||
       orig_owned == nullptr) {
     return g_install_error = PGR_IV_ERR_HOOK_OWNED;

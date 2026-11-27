@@ -120,6 +120,20 @@ class PgsNativeRenameTests(unittest.TestCase):
                 self.assertEqual(source.count("pgs_hook("), expected)
                 self.assertIn("int pgs_hook(", fixture)
 
+    def test_phase7_iv_and_inventory_hook_consumers_use_pgs_name(self):
+        for name, expected in (("iv_display.cpp", 2), ("inventory_host.cpp", 1)):
+            with self.subTest(module=name):
+                source = (NATIVE / name).read_text(encoding="utf-8")
+                self.assertNotIn("pgrazor_hook(", source)
+                self.assertEqual(source.count("pgs_hook("), expected)
+        for path in (NATIVE / "iv_owned_refresh_test.cpp",
+                     NATIVE / "inventory_berries_policy_test.cpp",
+                     ROOT / "test" / "test_iv_owned_refresh_native.py"):
+            with self.subTest(fixture=path.name):
+                fixture = path.read_text(encoding="utf-8")
+                self.assertNotIn("pgrazor_hook(", fixture)
+                self.assertIn("int pgs_hook(", fixture)
+
     def test_pgs_cmd_is_primary_and_legacy_launcher_forwards(self):
         primary = (ROOT / "pgs.cmd").read_text(encoding="utf-8")
         legacy = (ROOT / "nonroot.cmd").read_text(encoding="utf-8")

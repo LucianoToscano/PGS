@@ -45,7 +45,7 @@ extern "C" const void *pgrazor_shared_host_api(uint32_t) { return nullptr; }
 extern "C" const void *pgrazor_runtime_bootstrap_api(uint32_t) { return nullptr; }
 extern "C" const void *pgrazor_unity_scheduler_api(uint32_t) { return nullptr; }
 extern "C" const void *pgrazor_catch_canvas_api(uint32_t) { return nullptr; }
-int pgrazor_hook(void *, void *, void **) { assert(false && "no social hooks in this fixture"); return -1; }
+int pgs_hook(void *, void *, void **) { assert(false && "no social hooks in this fixture"); return -1; }
 
 int main() {
     using namespace pgr_shared_meta;

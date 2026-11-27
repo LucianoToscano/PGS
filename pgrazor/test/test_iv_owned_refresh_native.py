@@ -17,7 +17,7 @@ class IvOwnedRefreshNativeTests(unittest.TestCase):
         with tempfile.TemporaryDirectory(prefix='pgs-iv-refresh-') as folder:
             folder = Path(folder)
             # hook_engine.h mentions this Dobby callback type, unused by iv_display.cpp.
-            # The fixture supplies pgrazor_hook dispatch; no instruction patching is claimed.
+            # The fixture supplies pgs_hook dispatch; no instruction patching is claimed.
             (folder / 'dobby.h').write_text(
                 '#pragma once\ntypedef void (*dobby_instrument_callback_t)(void*, void*);\n', encoding='utf-8')
             executable = folder / 'iv-refresh'
@@ -45,7 +45,7 @@ class IvOwnedRefreshNativeTests(unittest.TestCase):
 #include "iv_display.h"
 #include "pgs_native_api.h"
 extern "C" int fixture_hook_dispatch(void *, void *, void **);
-int pgrazor_hook(void *address, void *replacement, void **original) {
+int pgs_hook(void *address, void *replacement, void **original) {
     return fixture_hook_dispatch(address, replacement, original);
 }
 extern "C" const void *pgrazor_runtime_bootstrap_api(uint32_t) { return nullptr; }

@@ -1,6 +1,6 @@
-# PGRazor website
+# PGS website
 
-The public app showcase lives at [jpitty03.github.io/PGRazor](https://jpitty03.github.io/PGRazor/). It is a static React site built with Vite. The Android app and APK release workflows are independent of this site.
+The public app showcase lives at [lucianotoscano.github.io/PGS](https://lucianotoscano.github.io/PGS/). It is a static React site built with Vite. The Android app and APK release workflows are independent of this site.
 
 ## Local development
 
@@ -12,7 +12,7 @@ npm ci
 npm run dev
 ```
 
-Open the printed local URL with the `/PGRazor/` path. To verify the production build:
+Open the printed local URL with the `/PGS/` path. To verify the production build:
 
 ```sh
 npm run build
@@ -26,7 +26,7 @@ The browser checks use the production preview server. Generated output, installe
 
 The `Website` workflow builds and checks pull requests. Changes to `website/` or the workflow on `main` also deploy to GitHub Pages. Repository Pages must use **GitHub Actions** as its source. Only the deployment job receives Pages write and OIDC permissions. It cannot publish APK releases or send release announcements.
 
-The Vite base path is `/PGRazor/`. Keep image links base-aware when adding screenshots. Download buttons point to GitHub's `/releases/latest` so publishing an APK does not require a website edit.
+The Vite base path is `/PGS/`. Keep image links base-aware when adding screenshots. Download buttons temporarily point to the last verified PGS candidate build while the v0.0.1 release is being built. Switch them to the PGS release URL only after publishing a verified APK.
 
 ## Feature guides and routing
 
@@ -36,7 +36,7 @@ The site has three views selected by a query string, so the static GitHub Pages 
 - `?guide=all` — the feature-guide index (`GuideIndex`): the guides grouped by `category` with a text filter.
 - `?guide=<id>` — one guide (`GuideDetail`). An unknown id renders an in-page "Guide not found" with a link back to the index.
 
-`App.jsx` reads `window.location.search` once on load, picks the view, and updates `document.title` and the `meta[name="description"]` to match. Guide links are ordinary `<a>` elements whose `href` changes the query, which triggers a full load of the same `index.html`. On guide views the header/footer logo and nav point back at the homepage and its section anchors (`/PGRazor/#features`, …) instead of dead in-page fragments.
+`App.jsx` reads `window.location.search` once on load, picks the view, and updates `document.title` and the `meta[name="description"]` to match. Guide links are ordinary `<a>` elements whose `href` changes the query, which triggers a full load of the same `index.html`. On guide views the header/footer logo and nav point back at the homepage and its section anchors (`/PGS/#features`, …) instead of dead in-page fragments.
 
 Guide content lives in `src/featureGuides.js`, which exports `featureGuides` — an array of `{ id, title, category, summary, where, steps[], notes[] }`. That file is maintained separately from the layout. `src/components/guideData.js` re-exports the catalog and provides base-aware links. To add or edit a guide, update `featureGuides.js`; the index and detail pages pick it up without component edits. The homepage Features section links to the guide index.
 

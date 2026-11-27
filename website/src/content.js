@@ -2,11 +2,11 @@
 // edits (wording, new settings, extra screenshots) never touch layout code.
 
 export const links = {
-  releasesLatest: 'https://github.com/jpitty03/PGRazor/releases/latest',
+  releasesLatest: 'https://github.com/LucianoToscano/PGS/actions/runs/45963966748',
   releasesCurrent:
-    'https://github.com/jpitty03/PGRazor/releases/tag/v0.3.0',
-  github: 'https://github.com/jpitty03/PGRazor',
-  discord: 'https://discord.gg/9QqfkDSQX3',
+    'https://github.com/LucianoToscano/PGS/actions/runs/45963966748',
+  github: 'https://github.com/LucianoToscano/PGS',
+  discord: 'https://discord.gg/SdwU4VnfW',
   kofi: 'https://ko-fi.com/pgrazor',
 };
 
@@ -19,7 +19,7 @@ export const nav = [
 
 export const heroFacts = [
   { term: 'Runs on', detail: 'ARM64 Android & MuMu — one APK' },
-  { term: 'Root option', detail: 'PGRazor Root for the official game (experimental)' },
+  { term: 'Root option', detail: 'Not yet released in the PGS line' },
   { term: 'License', detail: 'MIT (original source)' },
 ];
 
@@ -69,7 +69,7 @@ export const settingGroups = [
       { name: 'Quick menu entries', detail: 'Hide Quick Menu entries you don’t use. This changes visibility only, not whether a feature is on; Settings always stays visible.' },
       { name: 'Account & data', detail: 'Accounts switches between remembered accounts with separate settings. Export / import settings saves a JSON backup without tokens, location, or routes. Run log / export opens the log.' },
       { name: 'Reposition overlays', detail: 'Drag the cooldown timer, local time clock, VGP icon, and Keep All toggle anywhere.' },
-      { name: 'Hide overlay', detail: 'From the Quick Menu, make the game look stock: hide every PGRazor button, status, and IV text; tap with three fingers to bring them back.' },
+      { name: 'Hide overlay', detail: 'From the Quick Menu, make the game look stock: hide every PGS button, status, and IV text; tap with three fingers to bring them back.' },
     ],
   },
 ];
@@ -81,7 +81,7 @@ export const screenshots = [
     id: 'world-map',
     src: 'images/world-map.png',
     title: 'World map',
-    caption: 'The PGRazor world map, with saved places, hotspots, routes, nearby layers, copy-location buttons, and Walk here / Teleport controls. Map data © OpenStreetMap contributors.',
+    caption: 'The PGS world map, with saved places, hotspots, routes, nearby layers, copy-location buttons, and Walk here / Teleport controls. Map data © OpenStreetMap contributors.',
     width: 1080,
     height: 1920,
   },
@@ -109,7 +109,7 @@ export const steps = [
   {
     n: '01',
     title: 'Download',
-    body: 'Open the latest release and download PGRazor.apk — not a source archive, and not the Root files unless your device is rooted.',
+    body: 'Open the verified PGS build, download its artifact and extract PGS.apk. Do not install a source archive or a preview package.',
   },
   {
     n: '02',
@@ -126,15 +126,15 @@ export const steps = [
 export const faqs = [
   {
     q: 'What does it run on?',
-    a: 'One APK runs on ARM64 Android phones and the MuMu emulator. No root is required. Rooted devices can use the experimental PGRazor Root installer with the official game instead.',
+    a: 'PGS targets ARM64 Android phones and the MuMu emulator without root. A PGS Root release has not yet been validated or published.',
   },
   {
     q: 'Can I install it over the Play Store app?',
-    a: 'No. A store install is signed with a different certificate, so a PGRazor build can’t update it in place. Installing PGRazor replaces that copy instead of upgrading it.',
+    a: 'A Play Store installation has a different certificate, so it cannot be updated in place by PGS. Only an existing package signed with the permanent PGS certificate can receive PGS updates while retaining its data.',
   },
   {
-    q: 'What is PGRazor Root?',
-    a: 'A separate, experimental installer for rooted devices. It loads PGRazor into the official Pokémon GO app through a Zygisk module, so the game’s own APK and signature stay untouched. It needs Magisk 27 or newer, KernelSU, or APatch, and the exact game version each release supports.',
+    q: 'Is a PGS Root build available?',
+    a: 'Not yet. The PGS v0.0.1 work targets the non-root APK. PGRazor Root is a separate upstream project and is not a PGS update.',
   },
   {
     q: 'Is LivePokeMap included?',
@@ -155,7 +155,7 @@ export const faqs = [
 // Cooldown component for how trigger / safe groups and the chart are rendered.
 export const cooldown = {
   intro:
-    'Measure the distance between your last location-sensitive action and the next one. Time already spent waiting counts; teleporting alone does not restart the clock. The community chart below reaches a two-hour maximum. Acting too early can cause fleeing catches or refused spins. PGRazor estimates the wait locally; it does not read a server countdown.',
+    'Measure the distance between your last location-sensitive action and the next one. Time already spent waiting counts; teleporting alone does not restart the clock. The community chart below reaches a two-hour maximum. Acting too early can cause fleeing catches or refused spins. PGS estimates the wait locally; it does not read a server countdown.',
   // Actions widely reported to start the clock.
   triggers: [
     'Wild catches, including incense and lure spawns',

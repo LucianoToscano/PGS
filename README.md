@@ -2,7 +2,7 @@
 <h1 align="center">PGS — Pokémon GO Spoofers</h1>
 <p align="center">A compact Android interface for location controls and Pokémon GO automation.</p>
 
-PGRazor adds an in-game menu, an independent joystick, encounter controls, and optional automation to Pokémon GO. Settings persist across restarts, with light and dark themes.
+PGS, based on PGRazor, adds an in-game menu, an independent joystick, encounter controls, and optional automation to Pokémon GO. Settings persist across restarts, with light and dark themes.
 
 ## PGS community integration
 
@@ -33,11 +33,14 @@ See [the language guide and translation workflow](docs/PGS_LANGUAGES.md) for the
 
 The feature list and how-to guides live on the website, so there is one place to keep them current:
 
-- **[PGRazor website](https://jpitty03.github.io/PGRazor/)**: overview, screenshots, and the cooldown chart.
-- **[Feature guides](https://jpitty03.github.io/PGRazor/?guide=all)**: where each feature is in the app and how to use it.
-- **[Changelog](CHANGELOG.md)** and [release notes](https://github.com/jpitty03/PGRazor/releases): what each version added.
+- **[PGS website](https://lucianotoscano.github.io/PGS/)**: overview, screenshots, and the cooldown chart.
+- **[Feature guides](https://lucianotoscano.github.io/PGS/?guide=all)**: where each feature is in the app and how to use it.
+- **[Changelog](CHANGELOG.md)** and [PGS releases](https://github.com/LucianoToscano/PGS/releases): PGS-only version history.
 
 ## Install PGS (Android, non-root)
+
+**PGS version line:** v0.0.1 is the first public PGS version being prepared. The original PGRazor 0.3.8 base and the game 0.439.0 are separate version numbers. The previous v0.3.8-pgs.3 APK remains the last verified candidate until the new full release succeeds.
+
 
 The latest **PGS** candidate verified by GitHub Actions is **v0.3.8-pgs.3**, based on **Pokémon GO 0.439.0** for ARM64. It is a complete APK, not the small source/preview package. **Installation, login and gameplay on a real device have not yet been confirmed.**
 
@@ -58,7 +61,7 @@ These are experimental client modifications. Server outcomes are not guaranteed,
 
 ## Community
 
-Join the [PGRazor Discord](https://discord.gg/9QqfkDSQX3), also linked from the settings footer. If you enjoy PGRazor, you can support development on [Ko-fi](https://ko-fi.com/pgrazor). Donations are optional.
+Join the [PGS Discord](https://discord.gg/SdwU4VnfW), also linked from the settings footer. PGS acknowledges the independent upstream PGRazor project and its contributors.
 
 ## Build and contribute
 
@@ -74,7 +77,7 @@ Join the [PGRazor Discord](https://discord.gg/9QqfkDSQX3), also linked from the 
 python -B tools/check.py
 ```
 
-Source CI runs device-free checks and compiles both the Android controls and the Root installer. Its downloadable artifact contains source and tools only, not a playable APK. Playable releases come from the manually triggered **Android release (non-root and rooted)** workflow. Signing keys, original build inputs, and investigation logs are kept out of Git.
+Source CI runs device-free checks and compiles both the Android controls and the Root installer. Its downloadable artifact contains source and tools only, not a playable APK. The legacy **Android release (non-root and rooted)** workflow is intentionally blocked for PGS; only a dedicated PGS workflow may prepare a new signed game APK. Signing keys, original build inputs, and investigation logs are kept out of Git.
 
 ## Repository layout
 

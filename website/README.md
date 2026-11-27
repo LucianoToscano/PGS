@@ -48,7 +48,7 @@ Release-specific availability and validation details belong in the release notes
 - `public/pgs-full.png`: original 4096 × 4096 complete official PGS logo; used by the repository README and social preview.
 - `public/pgs-wordmark.png`: original 4096 × 1704 horizontal PGS logo; used by the website hero.
 - Each PNG is byte-for-byte identical to the Drive original. The PGS branding source copies are stored in `pgrazor/branding/`. The in-game menu icon is intentionally preserved independently for Android compatibility.
-- `public/images/main-menu.png`: canonical app settings screenshot (the v0.3.5 Settings home on MuMu), also referenced by the repository README.
+- A captura antiga do menu foi retirada: mostrava o cabeçalho de outro projeto e não corresponde à interface PGS atual. Não divulgar capturas antigas como prova da versão atual.
 - `public/images/encounter.png`: real encounter capture showing the IV/level, transfer and berry overlays.
 - `public/images/world-map.png`: November 2026 MuMu capture of the app's world map (v0.3.5 interface). OpenStreetMap attribution is visible in the capture.
 

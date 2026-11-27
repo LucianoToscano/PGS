@@ -88,19 +88,33 @@ public class RetiredAuthTest {
         self.assertIn("inputs.authorized_input == true", flow)
         self.assertIn("github.ref == 'refs/heads/main'", flow)
         self.assertIn("contents: read", flow)
-        self.assertNotIn("contents: write", flow)
+        self.assertEqual(flow.count("contents: write"), 1)
+        self.assertIn("    permissions:\n      contents: write", flow)
+        self.assertIn("persist-credentials: false", flow)
+        self.assertNotIn("PGS_INPUT_URL", flow)
+        self.assertNotIn("PGS_INPUT_TOKEN", flow)
+        self.assertNotIn("gh release upload", flow)
+        self.assertNotIn("gh release edit", flow)
         self.assertNotIn("gh release create", flow)
         self.assertNotIn("--google-browser-login", flow)
         self.assertIn("test -f \"$PGS_KEYSTORE\"", flow)
         early = flow.split("name: Check required private configuration before installing tools", 1)[1].split("      - uses:", 1)[0]
         self.assertLess(flow.index("name: Check required private configuration"), flow.index("name: Install pinned toolchain"))
-        for name in ("PGS_INPUT_URL", "PGS_KEYSTORE_BASE64", "PGS_KEY_ALIAS", "PGS_STORE_PASSWORD", "PGS_KEY_PASSWORD"):
+        for name in ("PGS_KEYSTORE_BASE64", "PGS_KEY_ALIAS", "PGS_STORE_PASSWORD", "PGS_KEY_PASSWORD"):
             self.assertIn(name + ":", early)
         self.assertIn('[[ -z "${!name}" ]]', early)
         self.assertIn('echo "::error::Missing required configuration: $name.', early)
         self.assertIn('test "$missing" = 0', early)
         self.assertNotIn("set -x", early)
         self.assertNotIn("private_input.py", early)
+        self.assertLess(flow.index("name: Check authorized draft input"), flow.index("name: Install pinned toolchain"))
+        self.assertIn("tools/pgs_pinned_input.py --preflight", flow)
+        retrieval = flow.split("name: Retrieve and verify authorized original", 1)[1].split("      - name:", 1)[0]
+        self.assertIn("GH_TOKEN:", retrieval)
+        self.assertNotIn("KEYSTORE", retrieval)
+        key_load = flow.split("name: Load existing signer only after input verification", 1)[1].split("      - name:", 1)[0]
+        self.assertIn("tools/pgs_pinned_input.py --load-key", key_load)
+        self.assertNotIn("GH_TOKEN:", key_load)
         self.assertIn("= 2026111605", flow)
         self.assertIn("d['version_code']==2026111606", flow)
         upload = flow.split("name: Upload verification receipts only", 1)[1].split("      - name:", 1)[0]

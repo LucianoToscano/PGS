@@ -1,14 +1,14 @@
 {
   "scope": "Git-indexed regular UTF-8 text, excluding NUL-containing files and the snapshot itself",
-  "tracked_files": 2107,
-  "text_files": 1032,
+  "tracked_files": 2109,
+  "text_files": 1034,
   "changed_files": 37,
   "added_files": 1,
   "previous_occurrences": 1041,
   "remaining_files": 136,
-  "remaining_occurrences": 779,
+  "remaining_occurrences": 777,
   "remaining_by_category": {
-    "workflows": 10,
+    "workflows": 8,
     "other": 84,
     "documentation": 277,
     "legal": 3,
@@ -23,7 +23,7 @@
     {
       "path": ".github/workflows/pgs-v0.0.3-candidate.yml",
       "category": "workflows",
-      "occurrences": 10
+      "occurrences": 8
     },
     {
       "path": ".gitignore",
@@ -1132,7 +1132,7 @@
     "limitations": "Counts are exact deltas from the verified indexed baseline; full CI must independently reconcile the snapshot. Older backup readers do not support version 2."
   },
   "current_retention_review": {
-    "base_commit": "f0115d78b159c11e43231a3c2a1b4dde8f980ba1",
+    "base_commit": "73c27e725d6d89691ecb637e4a21921d80f379fc",
     "scope": "Current per-file triage; all matching indexed text paths classified exactly once, not a claim of necessity of each individual occurrence.",
     "groups": {
       "historical_records": {
@@ -1201,7 +1201,7 @@
       "build_signing_contracts": {
         "status": "retain_compatibility",
         "reason": "PGS-first build and signing configuration, old configuration aliases and historical guarded rebuilds. No new signing key.",
-        "occurrences": 31,
+        "occurrences": 29,
         "paths": [
           ".github/workflows/pgs-v0.0.3-candidate.yml",
           "CONTRIBUTING.md",
@@ -1367,7 +1367,7 @@
     "installed_contracts_unchanged": true,
     "raw_source_rename_complete_claim": false,
     "remaining_references_individually_justified_claim": false,
-    "remaining_full_name_occurrences": 779,
+    "remaining_full_name_occurrences": 777,
     "remaining_abbreviations": 14,
     "retained_contracts": [
       "existing Android package and module identity",
@@ -1411,5 +1411,17 @@
     "remaining_occurrences": 779,
     "remaining_files": 136,
     "limitations": "CI must reconcile counts. External input authorization and secret configuration require the maintainer; no APK produced. Individual retention review and binary resource inspection remain incomplete."
+  },
+  "draft_input_followup": {
+    "base_commit": "73c27e725d6d89691ecb637e4a21921d80f379fc",
+    "replaced_proposal": 68,
+    "source": "PGBR same-repository draft model",
+    "manual_authorization_preserved": true,
+    "receipt_only": true,
+    "release_mutation": false,
+    "requires_maintainer_input": true,
+    "draft_present": false,
+    "job_contents_permission": "write (manual validation job only)",
+    "signed_apk_generated": false
   }
 }

@@ -96,8 +96,9 @@ exit status indicates report generation, not compatibility approval.
    the intended binding changes. Build both native ABIs and run relevant fixtures.
 5. Package and verify on MuMu, then test affected gameplay. Record unavailable
    scenarios rather than treating metadata matches as successful gameplay tests.
-6. Update the private input asset/secret using `BUILDING.md`, retain deployed and
-   rollback builds, and use the normal release workflow when authorized.
+6. When storage and use are authorized, attach the exact verified input to the unpublished
+   `build-inputs` draft as described in `BUILDING.md`, record the approved archive size and
+   profile together, retain deployed and rollback builds, and use the manual candidate workflow.
 
 Next work: replace the one-off metadata extractor and add a preparation command that ties input
 inspection, extraction and targeted fixture selection together.

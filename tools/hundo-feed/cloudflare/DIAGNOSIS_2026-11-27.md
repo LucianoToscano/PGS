@@ -225,3 +225,15 @@ O mapa Poke100IV usa /api/pokemon com limites geográficos, limit=101 e ivFilter
 Feed com 76 encontros e 217 spots, todos futuros. Wrangler informou ausência de autenticação administrativa.
 
 PogoTrades divulga trocas no domínio pogotrades.com. TWPkInfo mantém um portal em twpkinfo.com. Nenhum contrato gratuito de spawns foi comprovado nesses dois serviços. Coords GO continua sem canal oficial e feed selvagem confirmados. Pokedex100 publica uma prévia com links criptografados. PoGO Alerts Network informa que o plano gratuito não inclui a camada Pokémon. PokeXperience divulga um feed, mas a interface de integração gratuita permanece sem validação. PoGoCoordinates e LivePokéMap continuam classificados como dependentes de autenticação no catálogo de produção. RocketMap exige identificar uma instância concreta disponível ao projeto.
+
+### Implantação confirmada na Cloudflare
+
+Em 27/11/2026 às 19h00 de Fortaleza, o commit 7776bc2 foi publicado pontualmente no Worker oficial. A Cloudflare confirmou 100% do tráfego na versão ad96424c-b507-4c26-808b-7955d86bea49. A versão anterior para reversão é f1d3a806-66aa-4bc8-b254-92e8585e7627. O vínculo FEED foi conferido e as duas chaves de estado foram copiadas e verificadas antes da publicação.
+
+| Ciclo (Fortaleza) | Fontes online | Com resultados | Encontros | Spots | Expirados na leitura |
+|---|---:|---:|---:|---:|---:|
+| 19h05 | 10 | 8 | 67 | 183 | 0 |
+| 19h10 | 10 | 7 | 76 | 121 | 0 |
+| 19h15 | 10 | 6 | 62 | 126 | 0 |
+
+Os cinco mapas regionais responderam HTTP 200 na Cloudflare às 19h05, com resultados em Singapura, Londres e Sydney. No último ciclo, o iFlowGo consultou quatro páginas e contribuiu com 45 registros únicos. FaustusFoundry contribuiu com 56, Moonani com 73, GOCoords com sete e Poke100IV com sete. Todos os ciclos apresentaram linhas de oito campos e coordinate_precision igual a exact. O faturamento da conta não foi medido neste ensaio.

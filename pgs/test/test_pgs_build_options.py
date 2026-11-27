@@ -72,14 +72,14 @@ class PgsBuildOptionTests(unittest.TestCase):
 
     def test_workflows_use_pgs_nonsecret_build_options(self):
         workflows = Path(__file__).resolve().parents[2] / '.github' / 'workflows'
-        for name in ('ci.yml', 'pgs-v0.0.4-candidate.yml'):
+        for name in ('ci.yml', 'pgs-build.yml'):
             with self.subTest(workflow=name):
                 source = (workflows / name).read_text(encoding='utf-8')
                 for option in ('BUILD_TOOLS', 'ANDROID_PLATFORM', 'VERSION'):
                     self.assertNotIn('PGRAZOR_' + option + ':', source)
                 self.assertIn('PGS_BUILD_TOOLS:', source)
                 self.assertIn('PGS_ANDROID_PLATFORM:', source)
-                if name == 'pgs-v0.0.4-candidate.yml':
+                if name == 'pgs-build.yml':
                     self.assertIn('PGS_VERSION:', source)
 
     def test_historical_publication_workflows_are_inert(self):

@@ -72,7 +72,7 @@ The original in-game icon and joystick are untouched. The previous project's Ko-
 
 ## Current full-candidate path
 
-All four historical publication/rebuild workflows are inert, read-only refusals. To validate the next full candidate, use [PGS v0.0.4 candidate validation](https://github.com/LucianoToscano/PGS/actions/workflows/pgs-v0.0.4-candidate.yml), select `main`, and confirm `authorized_input` only if you are authorized to use the configured hash-pinned game input and existing signer. By default, the run uploads receipts only, not a downloadable APK or a public release. The bundle verifier expects PGS artifact names by default; archived bundles require explicit `--legacy-names`. The installed package, signer and release ledger are unchanged.
+All four historical publication/rebuild workflows are inert, read-only refusals. To validate the next full candidate, use [PGS v0.0.4 candidate validation](https://github.com/LucianoToscano/PGS/actions/workflows/pgs-build.yml), select `main`, and confirm `authorized_input` only if you are authorized to use the configured hash-pinned game input and existing signer. By default, the run uploads receipts only, not a downloadable APK or a public release. The bundle verifier expects PGS artifact names by default; archived bundles require explicit `--legacy-names`. The installed package, signer and release ledger are unchanged.
 
 ### Required private configuration
 
@@ -94,3 +94,10 @@ The workflow still defaults to receipt-only validation. If the maintainer has au
 ### v0.0.4 candidate preparation
 
 The signed v0.0.3 draft was retained by Actions run [46057980490](https://github.com/LucianoToscano/PGS/actions/runs/46057980490), source `004a0fa584da8fac35661aa28ff3c2622746864a`, APK SHA-256 `4dcc5408070732de2241facafd2e624531f56ad99382aa22f1d06dcbe8277843`. The ledger now records the last verified signed candidate code `2026111606`; it does not certify device testing or publication. The successor workflow targets `v0.0.4`, code `2026111607`, and a new unused draft with the existing signer. Both authorizations remain explicit and the prior drafts remain untouched. The preceding retention description is historical for v0.0.3. No v0.0.4 APK or device test is claimed before successful execution.
+
+
+## Permanent request-scoped signed build
+
+The permanent [PGS AUTO BUILD](https://github.com/LucianoToscano/PGS/actions/workflows/pgs-build.yml) supersedes the version-specific workflow. It triggers on a change to `build-request.json` merged into canonical `main`, or an explicitly authorized manual retry. An initial disabled request prevents a second v0.0.4 build while the existing run 46070917440 finishes. No signing occurs on ordinary pushes, pull requests, or disabled requests.
+
+For a requested next patch, first confirm the previous signed candidate and record its version and Android code in `pgs/VERSION` and `pgs/PGS_LAST_VERSION_CODE`. In the same reviewed commit, set the request's schema to 1, enabled and authorized_input to true only with applicable authorization, the next version, previous_version_code, previous_apk_sha256, the pinned game_version, game_version_code and input_sha256, and an explicit boolean retain_authorized_candidate. The gate verifies the changed request at the exact commit, canonical repository and branch, monotonic allocation, and the previous candidate receipt/digest and existing signer before the full source checks and signing. A manual retry requires its own affirmative input and retention confirmations; no existing draft or tag is overwritten. Output remains an unpublished candidate with verification receipts, never automatic public distribution. The ledger records the last verified candidate, not an unverified future version. Only one request should be submitted at a time. Prior descriptions of fixed v0.0.3/v0.0.4 runs are historical.

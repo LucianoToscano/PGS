@@ -70,7 +70,7 @@ O símbolo interno e o joystick são mantidos exatamente como na base anterior. 
 
 ## Validação atual do candidato completo
 
-Os quatro workflows históricos de publicação/recompilação são bloqueios explícitos, somente leitura. Para validar a próxima candidata completa, abra [Validação PGS v0.0.4](https://github.com/LucianoToscano/PGS/actions/workflows/pgs-v0.0.4-candidate.yml), selecione `main` e confirme `authorized_input` somente se tiver autorização para usar a entrada de jogo verificada por hash e o certificado existente. Por padrão, a execução envia somente recibos, não um APK para download nem release público. O verificador exige nomes de artefatos PGS por padrão; conjuntos arquivados exigem `--legacy-names`. Package instalado, certificado e ledger de releases permanecem inalterados.
+Os quatro workflows históricos de publicação/recompilação são bloqueios explícitos, somente leitura. Para validar a próxima candidata completa, abra [Validação PGS v0.0.4](https://github.com/LucianoToscano/PGS/actions/workflows/pgs-build.yml), selecione `main` e confirme `authorized_input` somente se tiver autorização para usar a entrada de jogo verificada por hash e o certificado existente. Por padrão, a execução envia somente recibos, não um APK para download nem release público. O verificador exige nomes de artefatos PGS por padrão; conjuntos arquivados exigem `--legacy-names`. Package instalado, certificado e ledger de releases permanecem inalterados.
 
 ### Configuração privada obrigatória
 
@@ -92,3 +92,10 @@ Por padrão, o workflow continua enviando somente recibos. Se o mantenedor tiver
 ### Preparação da candidata v0.0.4
 
 O rascunho assinado v0.0.3 foi preservado pela execução [46057980490](https://github.com/LucianoToscano/PGS/actions/runs/46057980490), commit `004a0fa584da8fac35661aa28ff3c2622746864a`, SHA-256 do APK `4dcc5408070732de2241facafd2e624531f56ad99382aa22f1d06dcbe8277843`. O ledger registra o último código de candidata assinada verificada `2026111606`, sem declarar homologação física ou publicação. O workflow sucessor prepara `v0.0.4`, código `2026111607`, em um novo rascunho não utilizado, mantendo a assinatura existente. Ambas as autorizações continuam explícitas e os rascunhos anteriores permanecem intactos. A descrição de retenção anterior é o registro histórico da v0.0.3. Nenhum APK v0.0.4 ou teste físico é declarado antes de execução bem-sucedida.
+
+
+## Compilação assinada permanente por solicitação
+
+O [PGS AUTO BUILD](https://github.com/LucianoToscano/PGS/actions/workflows/pgs-build.yml) substitui o workflow por versão. É acionado por alteração de `build-request.json` integrada à `main` canônica ou nova tentativa manual explicitamente autorizada. A solicitação inicial desativada evita uma segunda build v0.0.4 enquanto termina a execução existente 46070917440. Não há assinatura em pushes comuns, PRs ou solicitações desativadas.
+
+Para a próxima versão patch solicitada, confirme a candidata anterior assinada e registre versão e código Android em `pgs/VERSION` e `pgs/PGS_LAST_VERSION_CODE`. No mesmo commit revisado, configure schema 1, enabled e authorized_input como true apenas quando autorizado, version seguinte, previous_version_code, previous_apk_sha256, game_version, game_version_code e input_sha256 fixados no perfil, e retain_authorized_candidate booleano explícito. A validação confere alteração da solicitação no commit exato, repositório e branch canônicos, incremento monotônico, recibo e digest do APK anterior e certificado existente antes dos testes completos e assinatura. A nova tentativa manual exige confirmações próprias; nenhum rascunho ou tag existente é sobrescrito. A saída permanece candidata não publicada com recibos de verificação, nunca distribuição pública automática. O ledger registra a última candidata verificada, não versão futura não comprovada. Envie apenas uma solicitação de cada vez. As descrições anteriores das execuções fixas v0.0.3/v0.0.4 são históricas.

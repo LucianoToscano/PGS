@@ -46,7 +46,7 @@ The GitHub Actions artifact uses `PGS v0.0.2.apk`. GitHub normalizes spaces in r
 
 Do not mistake source archives or preview-only packages for the full game APK.
 
-The full **PGS v0.0.3** signed candidate is retained in an unpublished draft; device testing remains pending. The next full source build is **PGS v0.0.4**, not yet compiled. Maintainers can use the [authorized candidate validation workflow](https://github.com/LucianoToscano/PGS/actions/workflows/pgs-v0.0.4-candidate.yml) for receipt-only validation. The v0.0.2 link above is an existing historical build run, not an instruction to rebuild it. Actions artifacts can expire.
+The full **PGS v0.0.3** signed candidate is retained in an unpublished draft; device testing remains pending. The full **PGS v0.0.4** candidate has its own validation run. Subsequent signed candidates use the permanent request-scoped build workflow. Maintainers can use the [authorized candidate validation workflow](https://github.com/LucianoToscano/PGS/actions/workflows/pgs-build.yml) for receipt-only validation. The v0.0.2 link above is an existing historical build run, not an instruction to rebuild it. Actions artifacts can expire.
 
 ## Features
 

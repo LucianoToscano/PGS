@@ -1,0 +1,35 @@
+name: PGS AUTO DEV — Review
+on:
+  pull_request:
+    branches: [main]
+permissions:
+  contents: read
+concurrency:
+  group: pgs-auto-dev-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+jobs:
+  review:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Test review classifier
+        run: python3 -B -m unittest discover -s pgrazor/test -p test_pgs_review_report.py
+      - name: Report change scope
+        env:
+          PGS_BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          PGS_HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 -B tools/pgs_review_report.py --base "$PGS_BASE_SHA" --head "$PGS_HEAD_SHA" | tee "$RUNNER_TEMP/pgs-review.json"
+          {
+            echo '### PGS AUTO DEV — review scope'
+            echo '~~~json'
+            cat "$RUNNER_TEMP/pgs-review.json"
+            echo '~~~'
+            echo 'Classification only; not a security audit or authorization to merge.'
+          } >> "$GITHUB_STEP_SUMMARY"

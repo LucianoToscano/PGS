@@ -6,8 +6,8 @@ import re
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
-SOURCE = ROOT / 'pgrazor/native/schema/gifts.json'
-OUTPUT = ROOT / 'pgrazor/native/shared_gift_code.h'
+SOURCE = ROOT / 'pgs/native/schema/gifts.json'
+OUTPUT = ROOT / 'pgs/native/shared_gift_code.h'
 
 def unique_pairs(pairs):
     result = {}

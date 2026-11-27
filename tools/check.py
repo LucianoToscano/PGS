@@ -5,7 +5,7 @@ import subprocess
 import sys
 
 ROOT = Path(__file__).resolve().parents[1]
-PROJECT = ROOT / 'pgrazor'
+PROJECT = ROOT / 'pgs'
 sys.path.insert(0, str(PROJECT))
 from script_bundle import bundle
 

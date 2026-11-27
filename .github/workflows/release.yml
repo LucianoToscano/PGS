@@ -75,7 +75,7 @@ jobs:
         run: |
           python -B tools/prepare_native.py --download
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
-          python -B pgrazor/art_build.py --check
+          python -B pgs/art_build.py --check
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
       - name: Validate release tag
         shell: pwsh
@@ -85,7 +85,7 @@ jobs:
           if ($env:RELEASE_TAG -notmatch '^v[0-9]+\.[0-9]+\.[0-9]+(?:-[A-Za-z0-9.-]+)?$') { throw 'Use a version tag such as v0.1.0' }
           if (!(Test-Path -LiteralPath "docs/releases/$env:RELEASE_TAG.md")) { throw "Add release notes in docs/releases/$env:RELEASE_TAG.md" }
       - name: Prepare pinned DEX test dependencies
-        run: python -c "import sys; sys.path.insert(0, 'pgrazor'); import dex_bridges; dex_bridges.dependencies(download=True)"
+        run: python -c "import sys; sys.path.insert(0, 'pgs'); import dex_bridges; dex_bridges.dependencies(download=True)"
       - run: python -B tools/check.py
       - name: Configure temporary signing path
         shell: pwsh
@@ -100,21 +100,21 @@ jobs:
         env:
           PGS_VERSION: ${{ inputs.tag }}
           GITHUB_TOKEN: ${{ github.token }}
-        run: python -B pgrazor/nonroot.py --apk pgrazor/input/game.apkm --google-browser-login
+        run: python -B pgs/nonroot.py --apk pgs/input/game.apkm --google-browser-login
       - name: Produce single installable APK
         shell: pwsh
         env:
           PGS_VERSION: ${{ inputs.tag }}
         run: |
-          $candidate = Get-ChildItem -LiteralPath pgrazor/build/nonroot -Directory | Sort-Object Name -Descending | Select-Object -First 1
+          $candidate = Get-ChildItem -LiteralPath pgs/build/nonroot -Directory | Sort-Object Name -Descending | Select-Object -First 1
           if (!$candidate) { throw 'Non-root package run is missing' }
-          python -B pgrazor/release_apk.py --run $candidate.FullName --output dist/release
+          python -B pgs/release_apk.py --run $candidate.FullName --output dist/release
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
       - name: Build rooted installer and manual module
         # Keep this after release_apk.py: rooted.py appends both Root checksums.
         env:
           PGS_VERSION: ${{ inputs.tag }}
-        run: python -B pgrazor/rooted.py pgrazor/input/game.apkm --skip-build --download --output dist/release
+        run: python -B pgs/rooted.py pgs/input/game.apkm --skip-build --download --output dist/release
       - name: Verify all three release downloads
         env:
           RELEASE_TAG: ${{ inputs.tag }}

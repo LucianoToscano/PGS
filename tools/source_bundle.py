@@ -6,18 +6,18 @@ import zipfile
 ROOT=Path(__file__).resolve().parents[1]
 BLOCKED={'.apk','.apkm','.apks','.aab','.jks','.keystore','.p12','.key','.pem','.log','.pyc','.so','.a','.o','.dex'}
 DENIED={'build','input','.artifacts','.local','hermes-swarm','frida-monitor','__pycache__','node_modules','.git'}
-NEW_MODULES={'pgrazor/art_build.py','pgrazor/dex_bridges.py','pgrazor/native_build.py',
- 'tools/game_update.py','tools/game_bindings.py','docs/GAME_UPDATES.md','pgrazor/native/schema/game/catch_wait.h.in',
- 'pgrazor/native_harness.py','pgrazor/runtime_audit.py','tools/native_routes_schema.py','tools/native_gift_schema.py','tools/prepare_native.py',
- 'docs/NATIVE_MIGRATION.md','pgrazor/research/README.txt',
- 'pgrazor/runtime/compiled-google-signin.js','pgrazor/runtime/compiled-location.js',
- 'pgrazor/runtime/native-core.js','pgrazor/runtime/native-transport.js',
- 'pgrazor/runtime/native-camera-metadata.js','pgrazor/runtime/native-camera-sampler.js'}
+NEW_MODULES={'pgs/art_build.py','pgs/dex_bridges.py','pgs/native_build.py',
+ 'tools/game_update.py','tools/game_bindings.py','docs/GAME_UPDATES.md','pgs/native/schema/game/catch_wait.h.in',
+ 'pgs/native_harness.py','pgs/runtime_audit.py','tools/native_routes_schema.py','tools/native_gift_schema.py','tools/prepare_native.py',
+ 'docs/NATIVE_MIGRATION.md','pgs/research/README.txt',
+ 'pgs/runtime/compiled-google-signin.js','pgs/runtime/compiled-location.js',
+ 'pgs/runtime/native-core.js','pgs/runtime/native-transport.js',
+ 'pgs/runtime/native-camera-metadata.js','pgs/runtime/native-camera-sampler.js'}
 
 def allowed_addition(name):
     path=Path(name)
-    return name in NEW_MODULES or (name.startswith(('pgrazor/native/','pgrazor/art/',
-      'pgrazor/src/','pgrazor/test/','tools/dex_bridge/')) and
+    return name in NEW_MODULES or (name.startswith(('pgs/native/','pgs/art/',
+      'pgs/src/','pgs/test/','tools/dex_bridge/')) and
       (path.suffix.lower() in {'.cpp','.c','.h','.hpp','.inc','.java','.py','.json','.map','.md','.cjs'} or path.name=='CMakeLists.txt'))
 
 def validate(root,name):
@@ -25,7 +25,7 @@ def validate(root,name):
     parts={part.lower() for part in path.parts}
     if path.is_absolute() or '..' in path.parts or '\\' in name or ':' in name:
         raise ValueError('Unsafe archive path: '+name)
-    if (path.suffix.lower() in BLOCKED or parts & DENIED or name=='pgrazor/build-retention.json' or
+    if (path.suffix.lower() in BLOCKED or parts & DENIED or path.name=='build-retention.json' or
         any(part.startswith(('.env','login-info-')) or any(word in part for word in
           ('handoff','credential','secret','private-key')) for part in parts)):
         raise ValueError('Private/generated source refused: '+name)

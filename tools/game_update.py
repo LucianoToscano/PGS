@@ -8,7 +8,7 @@ from pathlib import Path
 import re
 
 ROOT = Path(__file__).resolve().parents[1]
-SCHEMA = ROOT / 'pgrazor/native/schema/game'
+SCHEMA = ROOT / 'pgs/native/schema/game'
 
 
 def helper(name):
@@ -21,9 +21,9 @@ def helper(name):
 def generated_outputs(profile):
     """Validate everything before touching any generated output."""
     outputs = {
-        ROOT / 'pgrazor/native/catch_wait_schema.h': render(
+        ROOT / 'pgs/native/catch_wait_schema.h': render(
             (SCHEMA / 'catch_wait.h.in').read_text(encoding='utf-8'), profile['modules']['catch_wait'], profile['bindings']),
-        ROOT / 'pgrazor/native/game_bindings.h': helper('game_bindings').render(profile['bindings']),
+        ROOT / 'pgs/native/game_bindings.h': helper('game_bindings').render(profile['bindings']),
     }
     for name in ('routes', 'gifts'):
         source = json.dumps(profile['schemas'][name], indent=2) + '\n'
@@ -180,7 +180,7 @@ def main():
         print(json.dumps(report['counts']))
         print('Report written; candidates are NOT verified compatibility.')
     elif args.command == 'audit':
-        issues = helper('game_bindings').audit(ROOT / 'pgrazor/native')
+        issues = helper('game_bindings').audit(ROOT / 'pgs/native')
         if issues:
             raise ValueError('\n'.join(issues))
         print('No inline address candidates in the audited ARM64 address range.')

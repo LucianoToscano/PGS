@@ -4,7 +4,7 @@ O monitor do PGS consulta **somente o catálogo público de metadados** do APKMi
 
 ## Origem da versão de referência
 
-A versão aprovada do PGS é lida de `pgrazor/native/schema/game/current.json` por `tools/game_update.py`. Em 27/11/2026, a base é **0.439.0**. Isso evita que o monitor fique inativo quando nenhuma variável do GitHub estiver configurada.
+A versão aprovada do PGS é lida de `pgs/native/schema/game/current.json` por `tools/game_update.py`. Em 27/11/2026, a base é **0.439.0**. Isso evita que o monitor fique inativo quando nenhuma variável do GitHub estiver configurada.
 
 Opcionalmente, a variável do repositório `PGS_GAME_REVIEWED_VERSION` pode elevar a referência, mas não reduzi-la abaixo do perfil versionado. A variável não aprova uma atualização técnica nem altera o APK.
 

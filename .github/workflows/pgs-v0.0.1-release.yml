@@ -30,7 +30,7 @@ jobs:
       - name: Prevent obsolete v0.0.1 rebuilds from newer PGS sources
         shell: bash
         run: |
-          test "$(cat pgrazor/VERSION)" = "0.0.1" || {
+          test "$(cat pgs/VERSION)" = "0.0.1" || {
             echo "::error::v0.0.1 is historical; use the v0.0.2 release workflow."
             exit 1
           }
@@ -56,7 +56,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          python -B -m unittest discover -s pgrazor/test -p 'test_pgs_*.py' -v
+          python -B -m unittest discover -s pgs/test -p 'test_pgs_*.py' -v
       - name: Retrieve complete signed PGS v0.3.8-pgs.3
         uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
         with:
@@ -90,15 +90,15 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          python -B pgrazor/build.py
-          test -s pgrazor/build/pgrazor.dex
+          python -B pgs/build.py
+          test -s pgs/build/pgrazor.dex
       - name: Repack full signed APK, preserving native/game assets
         shell: bash
         run: |
           set -euo pipefail
-          python -B pgrazor/pgs_rebrand.py \
+          python -B pgs/pgs_rebrand.py \
             --source prebuilt/PGS.apk \
-            --controls pgrazor/build/pgrazor.dex \
+            --controls pgs/build/pgrazor.dex \
             --output 'dist/PGS/PGS v0.0.1.apk'
           cd dist/PGS
           sha256sum -c SHA256SUMS.txt

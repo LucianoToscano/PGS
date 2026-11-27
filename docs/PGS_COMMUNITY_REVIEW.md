@@ -94,10 +94,10 @@ Comandos de referência:
 
 ```bash
 python -B tools/check.py
-python -B pgrazor/build.py
-python -B pgrazor/rooted_installer.py --check
-python -B -m unittest discover -s pgrazor/test -p 'test_*_native.py' -v
-python -B pgrazor/native_build.py --abi arm64-v8a
+python -B pgs/build.py
+python -B pgs/rooted_installer.py --check
+python -B -m unittest discover -s pgs/test -p 'test_*_native.py' -v
+python -B pgs/native_build.py --abi arm64-v8a
 python -B tools/source_bundle.py
 ```
 

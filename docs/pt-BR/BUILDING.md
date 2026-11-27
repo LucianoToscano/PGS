@@ -39,7 +39,7 @@ O CI também executa testes nativos em Linux e compila os controles Android no a
 O projeto continua usando um diretório técnico de origem compatível com o runtime já instalado. A compilação de controles pode ser acionada por:
 
 ```sh
-python -B pgrazor/build.py
+python -B pgs/build.py
 ```
 
 Este comando depende de JDK e Android SDK compatíveis. O arquivo de preview gerado **não** é um instalador completo nem substitui o jogo. O arquivo completo deve ser produzido pelo workflow dedicado da versão, combinando os controles compilados com o APK-base autorizado e executando a verificação de todas as entradas.

@@ -3,7 +3,7 @@
   py -3.12 -B tools/pvp_data.py refresh [--ref <commit>] [--source <dir>]
                                                             download PvPoke at a commit (or read a local
                                                             copy of it), rewrite the snapshot
-  py -3.12 -B tools/pvp_data.py generate                    rewrite pgrazor/native/pvp_data.h from the snapshot
+  py -3.12 -B tools/pvp_data.py generate                    rewrite pgs/native/pvp_data.h from the snapshot
   py -3.12 -B tools/pvp_data.py check                       fail if pvp_data.h is stale
 
 Only refresh touches the network. The snapshot keeps base stats, forward evolutions, the game form
@@ -18,10 +18,10 @@ import urllib.request
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
-DATA = ROOT / 'pgrazor/native/schema/pvp'
+DATA = ROOT / 'pgs/native/schema/pvp'
 SNAPSHOT = DATA / 'snapshot.json'
-OUTPUT = ROOT / 'pgrazor/native/pvp_data.h'
-ICONS = ROOT / 'pgrazor/native/pvp_icons.h'
+OUTPUT = ROOT / 'pgs/native/pvp_data.h'
+ICONS = ROOT / 'pgs/native/pvp_icons.h'
 # League crests (Great, Ultra, Master) from PokeMiners/pogo_assets, pinned in icons/provenance.json.
 ICON_FILES = ('pogo_great_league.png', 'pogo_ultra_league.png', 'pogo_master_league.png')
 REPO = 'pvpoke/pvpoke'

@@ -21,9 +21,9 @@ This certificate must never change. Signing secrets belong in GitHub Actions and
 | **v0.0.1** | Pokémon GO 0.439.0 | **2026111604** |
 | **v0.0.2 (candidate)** | Pokémon GO 0.439.0 | **2026111605** |
 
-The latest verified PGS code is tracked in [`pgrazor/PGS_LAST_VERSION_CODE`](../../pgrazor/PGS_LAST_VERSION_CODE). For each full release, `pgrazor/release_apk.py` uses `max(game_code, previous_pgs_code+1)` before signing the non-root APK. The original `game_version_code` is retained for Root-module compatibility checks. The actual signed code is recorded in `build-info.json` as `apk_version_code`.
+The latest verified PGS code is tracked in [`pgs/PGS_LAST_VERSION_CODE`](../../pgs/PGS_LAST_VERSION_CODE). For each full release, `pgs/release_apk.py` uses `max(game_code, previous_pgs_code+1)` before signing the non-root APK. The original `game_version_code` is retained for Root-module compatibility checks. The actual signed code is recorded in `build-info.json` as `apk_version_code`.
 
-**After completing and verifying each signed APK**, record its `apk_version_code` in `PGS_LAST_VERSION_CODE` before the next build. The targeted update tool `pgrazor/pgs_update.py` also validates the source APK, signing certificate, package, manifest-only changes, and output signature.
+**After completing and verifying each signed APK**, record its `apk_version_code` in `PGS_LAST_VERSION_CODE` before the next build. The targeted update tool `pgs/pgs_update.py` also validates the source APK, signing certificate, package, manifest-only changes, and output signature.
 
 ## Verification before distribution
 
@@ -36,7 +36,7 @@ PGS `v0.3.8-pgs.3` was built and signed in [Actions #45963966748](https://github
 
 ## Protecting the full-release path
 
-The PGS ledger `PGS_LAST_VERSION_CODE` distinguishes PGS output from a legacy build. `pgrazor/release_apk.py` requires `PGRAZOR_KEYSTORE` to reference **the existing PGS key**, names its internal output `PGS.apk`, and rejects output unless its certificate fingerprint matches the permanent PGS certificate. The build is blocked if the ledger is missing.
+The PGS ledger `PGS_LAST_VERSION_CODE` distinguishes PGS output from a legacy build. `pgs/release_apk.py` requires `PGRAZOR_KEYSTORE` to reference **the existing PGS key**, names its internal output `PGS.apk`, and rejects output unless its certificate fingerprint matches the permanent PGS certificate. The build is blocked if the ledger is missing.
 
 The inherited `Android release (non-root and rooted)` workflow is **explicitly disabled for PGS** because it still follows an old distribution path and must not publish packages with mixed signing configuration. The current candidate uses `.github/workflows/pgs-v0.0.2-release.yml`. This compiles the current PGS Java controls and preserves the other contents of the previous complete APK, verified by hashing every archive member. The disabled legacy workflow does not modify existing signed builds.
 

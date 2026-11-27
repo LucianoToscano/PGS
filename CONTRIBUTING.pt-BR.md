@@ -28,7 +28,7 @@ Para mudanças no código, execute:
 python -B tools/check.py
 ```
 
-Mudanças Android também exigem `python -B pgrazor/build.py`. Alterações nativas precisam de testes adequados e, quando disponível, verificação em Android ou MuMu. Informe versão do jogo e cenários testados. Quando não houver dispositivo, registre essa limitação explicitamente.
+Mudanças Android também exigem `python -B pgs/build.py`. Alterações nativas precisam de testes adequados e, quando disponível, verificação em Android ou MuMu. Informe versão do jogo e cenários testados. Quando não houver dispositivo, registre essa limitação explicitamente.
 
 Para alterações no site, consulte [website/README.md](website/README.md): compilação e testes de navegador. Para documentação, confira links, comandos e coerência com a implementação.
 
@@ -48,7 +48,7 @@ Mantenha os dois READMEs atualizados na mesma PR. Revise descrições e guias do
 
 - Comece por [arquitetura](docs/ARCHITECTURE.md) e [manutenibilidade](docs/MAINTAINABILITY.md); preserve os limites entre política, interface e código nativo.
 - Cada módulo deve ter dependências explícitas e responsabilizar-se por timers, hooks e objetos retidos. A construção não pode inicializar classes do jogo fora da thread correta.
-- O gameplay de produção usa código Java/nativo compilado. Scripts antigos de pesquisa permanecem em `pgrazor/runtime/bundles.json`, não devem retornar como runtime de produção.
+- O gameplay de produção usa código Java/nativo compilado. Scripts antigos de pesquisa permanecem em `pgs/runtime/bundles.json`, não devem retornar como runtime de produção.
 - Nomeie testes Python como `test_*.py` e testes Node como `*-test.cjs`. Testes Java precisam de um runner mapeado no CI.
 - Prefira testes pela API do módulo, evitando refatorar em massa junto a mudanças de comportamento.
 - Informe resultados de compilação, testes de fixture e observações físicas separadamente.
@@ -61,4 +61,4 @@ O CI ainda define os aliases `PGRAZOR_BUILD_TOOLS=36.0.0` e `PGRAZOR_ANDROID_PLA
 
 O inglês é o idioma principal para títulos de PRs, issues, commits, releases e documentos canônicos. Português brasileiro tem versões correspondentes para README, changelog, contribuição e guias essenciais de compilação, atualização e idiomas. Atualize os dois idiomas juntos.
 
-O site oferece seletor EN/PT-BR, separado da internacionalização do aplicativo Android (`pgrazor/i18n/`). Preserve nomes de arquivos, comandos, hashes, códigos Android, URLs e a licença original exatamente como estão.
+O site oferece seletor EN/PT-BR, separado da internacionalização do aplicativo Android (`pgs/i18n/`). Preserve nomes de arquivos, comandos, hashes, códigos Android, URLs e a licença original exatamente como estão.

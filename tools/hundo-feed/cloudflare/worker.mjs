@@ -201,7 +201,21 @@ export default {
     ]}));
     await refresh(env);
   },
-  async fetch(request,env) {
+  async fetch(request,env,ctx) {
+    const path=new URL(request.url).pathname;
+    if (env.PUBLIC_LIMIT && !(await env.PUBLIC_LIMIT.limit({key:path==="/admin"?"admin":"public"})).success)
+      return new Response(null,{status:429,headers:{"Retry-After":"60","Cache-Control":"no-store"}});
+    if (path==="/admin") return admin(request,env);
+    const cache=ctx && globalThis.caches?.default;
+    const key=new Request(new URL(path,request.url).href);
+    if (cache && request.method==="GET") {const hit=await cache.match(key); if (hit) return hit;}
+    const response=await readFeed(request,env);
+    if (cache && request.method==="GET" && response.ok) ctx.waitUntil(cache.put(key,response.clone()));
+    return response;
+  }
+};
+
+async function readFeed(request,env) {
     const path=new URL(request.url).pathname;
     const simulation=path==="/simulation/hundos.json";
     const catalog=path==="/sources.json";
@@ -244,5 +258,22 @@ export default {
     if (simulation) body.simulated=true;
     return new Response(request.method==="HEAD"?null:JSON.stringify(body),{headers:{
       "Content-Type":"application/json; charset=utf-8","Cache-Control":"public, max-age=15"}});
-  }
-};
+}
+
+async function admin(request,env) {
+  const headers={"Cache-Control":"no-store","X-Content-Type-Options":"nosniff"};
+  if (!env.ADMIN_PASSWORD) return new Response(null,{status:503,headers});
+  if (request.method!=="GET") return new Response(null,{status:405,headers});
+  const encoder=new TextEncoder();
+  const digest=s=>crypto.subtle.digest("SHA-256",encoder.encode(s));
+  const expected="Basic "+btoa("admin:"+env.ADMIN_PASSWORD);
+  const [a,b]=await Promise.all([digest(request.headers.get("Authorization") || ""),digest(expected)]);
+  if (!crypto.subtle.timingSafeEqual(a,b)) return new Response(null,{status:401,headers:{...headers,"WWW-Authenticate":'Basic realm="PGS Hundo Feed"'}});
+  const state=await env.FEED.get(stateKey,"json");
+  const sources=new Set(JSON.parse(env.SOURCES || "[]").map(s=>s.name+" "+s.url));
+  const entries=(state?.entries || []).filter(s=>sources.has(s.name+" "+s.url));
+  const summary=feed({entries},Date.now());
+  const report={updated:state?.time || null,hundos:summary.hundos.length,spots:summary.spots.length,
+    by_source:summary.sources,history:state?.history || []};
+  return new Response(JSON.stringify(report,null,2),{headers:{...headers,"Content-Type":"application/json; charset=utf-8"}});
+}

@@ -26,6 +26,7 @@ A five-minute cron writes 288 simulated snapshots per day plus up to 288 product
 | FaustusFoundry | Compact v1, 5 min | Agregado; cada registro mantém o formato do APK. Aggregate provenance only. Alternate PGS path returned 404 on 2026-11-27. |
 | NYC, SG, London, Sydney, Vancouver PokéMap | One city adapter, five instances, 10 min each | Only 15/15/15 spawns with known expiry. City sources may overlap the aggregate. |
 | iFlowGo | One global search page plus one bounded nearby request, 10 min each | One provider. Pokémon: global page 1. Raids: Times Square, 2 km. No worldwide raid coverage claim. |
+| PGSharp Free 100% IV | Candidate only · `pgsharp-free-100iv` · [identified service](https://f.pgsharp.com/peanuts) | Independent provider; zero verified records. No scheduled requests. |
 | Moonani / PokeList | Public v2 sample | A 2 km species-25 query at Times Square returned an empty list. Zero confirmed records. |
 | PoGoCoordinates / LivePokéMap | Existing operator-account Python adapters | Direct collection needs operator credentials. The Worker does not use third-party accounts. |
 | ARSpoofing / WeCatch / PokeCoords | Public validation | ARSpoofing returned 403 for snipe and nests. WeCatch timed out. No validated PokeCoords response. |
@@ -35,3 +36,9 @@ A five-minute cron writes 288 simulated snapshots per day plus up to 288 product
 PT-BR — `/pokemon.json` e `/raids.json` publicam apenas registros reais válidos. Consultas a categorias sem registros validados não geram um catálogo fictício. O campo `source` identifica o provedor. Em `/hundos.json`, as contagens por origem são calculadas depois de filtrar expirados e comparar duplicatas. A rota de simulação nunca alimenta essas categorias.
 
 EN — Pokémon and raid responses use separate routes and include only validated, unexpired records. Each item retains its provider. Hundo source counts report active and unique records after merging. Rare Pokémon, quests, rare candy, Rocket, nests, power spots, gyms and stops await confirmed category-specific records and contracts.
+
+### PGSharp Free 100% IV
+
+PT-BR — A autorização declarada pelo operador já está registrada. O [estudo do PGBR](https://github.com/LucianoToscano/PGBR/blob/main/docs/PGSHARP_FREE_FEED_KEY_DESIGN_2026-11-22.md) identificou o serviço e separou a modalidade Free da Standard. A política e o diálogo existentes não implementam o transporte externo. O cofre protege a licença pessoal no aparelho. O material consultado não especifica o método HTTP de terceiros, o formato de resposta, a autenticação de servidor, os limites ou os termos de republicação pelo Worker. A homologação depende de um contrato do fornecedor e de uma amostra verificável com IV, coordenadas e expiração. Não atribuir ao PGSharp resultados de outros provedores.
+
+EN — The operator's authorization is recorded. The [official feature list](https://www.pgsharp.com/features/) describes the product. PGBR's policy, dialog and Android key vault do not establish a server API. Activate only after verifying the provider's request and response contract, authentication, limits, redistribution scope and a real sample. Personal device licenses stay on the device. Candidate entries do not contribute to source counts.

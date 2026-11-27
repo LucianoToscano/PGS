@@ -24,7 +24,7 @@
 #include <unistd.h>
 #include <thread>
 #ifndef PGR_BATTLE_DIRECT_TEST
-#include "pgrazor_native_api.h"
+#include "pgs_native_api.h"
 #include <dlfcn.h>
 static const pgrazor_native_api_v2 *loaded_core=nullptr;
 extern "C" const void *pgrazor_battles_api(uint32_t version){return loaded_core?loaded_core->query_feature(19,version):nullptr;}

@@ -30,7 +30,7 @@
 // the two filter delegates are durable roots retained until clear(), so a "balanced" idle state is
 // owned_roots == 3 outside a pass and 0 only after clear(). This harness is never packaged.
 #include "items.h"
-#include "pgrazor_native_api.h"
+#include "pgs_native_api.h"
 #include <dlfcn.h>
 #include <unistd.h>
 #include <sys/wait.h>

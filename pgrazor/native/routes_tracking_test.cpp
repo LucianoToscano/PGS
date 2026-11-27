@@ -14,7 +14,7 @@
 
 #include "routes_tracking.h"
 #include "routes_observers.h"
-#include "pgrazor_native_api.h"
+#include "pgs_native_api.h"
 #include <dlfcn.h>
 
 static_assert(sizeof(PgrRoutesTrackingConfig) == 64, "config 64");

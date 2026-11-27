@@ -1,6 +1,6 @@
 // Standalone Android policy test, never packaged in the APK.
 #include "transfer_policy.h"
-#include "pgrazor_native_api.h"
+#include "pgs_native_api.h"
 #include <dlfcn.h>
 #include <cstdio>
 #include <cstring>

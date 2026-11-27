@@ -1,5 +1,5 @@
 #include "map_poi.h"
-#include "pgrazor_native_api.h"
+#include "pgs_native_api.h"
 
 #include <cassert>
 #include <cmath>

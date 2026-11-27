@@ -9,7 +9,7 @@
 //    host execution can call compiled NOP-padded functions through Dobby trampolines.
 
 #include "account_host.cpp"
-#include "pgrazor_native_api.h"
+#include "pgs_native_api.h"
 
 #include <cassert>
 #include <cstdlib>

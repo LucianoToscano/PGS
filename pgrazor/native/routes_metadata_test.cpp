@@ -3,7 +3,7 @@
 // Sparse virtual module reservation touches only the known confirmation prefix
 // page. Injected segment permissions are synthetic, not a /proc/Houdini test.
 #include "routes_metadata.h"
-#include "pgrazor_native_api.h"
+#include "pgs_native_api.h"
 #include <cassert>
 #include <cstdio>
 #include <cstdlib>

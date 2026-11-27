@@ -11,7 +11,7 @@
 //   * Feature 52 (runtime_transport) direct event/snapshot/action emission (opcodes 7, 8, 9, 19)
 //   * Feature 48 (unity_scheduler) on_unity_pulse subscriber callback + stop(tid) root drain
 #include "routes_host.h"
-#include "pgrazor_native_api.h"
+#include "pgs_native_api.h"
 #include "routes_metadata.h"
 #include "runtime_transport.h"
 

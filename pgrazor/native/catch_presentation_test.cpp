@@ -1,6 +1,6 @@
 // Standalone device harness, never linked into or packaged with the app.
 #include "catch_presentation.h"
-#include "pgrazor_native_api.h"
+#include "pgs_native_api.h"
 #include <dlfcn.h>
 #include <unistd.h>
 #include <cstdio>

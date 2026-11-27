@@ -1,7 +1,7 @@
 // Executes ACTUAL production65 and real14/12/9 from dlopened core. Only complete56
 // metadata output and managed world are synthetic, supplied via the native config.
 #include "inventory_host.h"
-#include "pgrazor_native_api.h"
+#include "pgs_native_api.h"
 #include <cassert>
 #include <cstdio>
 #include <cstring>

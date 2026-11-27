@@ -5,7 +5,7 @@
 // This fixture proves host wiring/leases/shared-site callbacks/telemetry and real
 // Dobby+leaf behavior; it does not prove live metadata resolution or ART/Houdini.
 #include "quickball_host.cpp"
-#include "pgrazor_native_api.h"
+#include "pgs_native_api.h"
 #include <cassert>
 #include <thread>
 #include <vector>

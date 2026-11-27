@@ -49,7 +49,7 @@ extern "C" {
 /* Bound on simultaneously tracked dialogs (matches the JS pending cap). */
 #define PGRAZOR_ADVSYNC_QUEUE_MAX 4u
 
-/* Status codes. 0 == success. Shared spirit with pgrazor_native_api.h. */
+/* Status codes. 0 == success. Shared spirit with pgs_native_api.h. */
 enum {
     PGRAZOR_ADVSYNC_OK = 0,
     PGRAZOR_ADVSYNC_ERR_NULL_ARG = 1,       /* required pointer argument was null */

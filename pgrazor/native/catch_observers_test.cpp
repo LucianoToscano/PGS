@@ -7,7 +7,7 @@
 // The feature8 speed engine is replaced by a recording stub table so the DELEGATION is observable
 // without the real engine; this is the actual-library Dobby harness required for this batch.
 #include "catch_observers.h"       // pulls in catch_animation.h (PgrSpeedApi / PgrSpeedSample)
-#include "pgrazor_native_api.h"
+#include "pgs_native_api.h"
 #include <dlfcn.h>
 #include <unistd.h>
 #include <cstdint>

@@ -17,7 +17,7 @@
 #include "camera_metadata.h"
 #include "camera_sampler.h"
 #include "hook_engine.h"
-#include "pgrazor_native_api.h"
+#include "pgs_native_api.h"
 #include "runtime_bootstrap.h"
 #include "runtime_transport.h"
 

@@ -1,26 +1,28 @@
-# PGS — Registro de alterações
+# PGS — Changelog
 
-Este registro acompanha **somente** as versões do PGS. Os documentos históricos da base original permanecem disponíveis pelo histórico Git e pelos avisos legais, mas não são releases do PGS.
+This changelog records **PGS releases only**. Historical source-base documents remain available through Git history and the legal notices, but are not PGS releases.
 
-## Em desenvolvimento
+**Languages:** 🇺🇸 English · [🇧🇷 Português (Brasil)](CHANGELOG.pt-BR.md)
 
-- Identidade pública PGS consolidada no README, site, arte oficial, contribuição e documentação.
-- Preservação das interfaces JNI, caminhos de runtime e preferências existentes até migração compatível e testada.
-- Testes automáticos para impedir regressão de identidade, versão ou links de instalação.
+## Unreleased
 
-## v0.0.2 — Candidata completa
+- Public PGS identity consolidated across the README, website, official artwork, contributor information, and documentation.
+- Existing JNI interfaces, runtime paths, and saved preferences kept intact until a compatible, tested migration is available.
+- Automated checks added to prevent regressions in identity, versioning, and installation links.
 
-- Pokémon GO `0.439.0`; pacote `com.nianticlabs.pokemongo`; `versionCode=2026111605`.
-- Reorganização de identidade PGS, traduções e links públicos sem alterar a assinatura existente.
-- APK completo e assinado: https://github.com/LucianoToscano/PGS/actions/runs/45980315394
-- SHA-256 do APK: `91865f6242519091a771617f962f17620405624a4a56addec0909d2cdf6b68c1`.
-- Release privado em rascunho. **Ainda não há confirmação de instalação e login em aparelho real.**
+## v0.0.2 — Full APK candidate
 
-## v0.0.1 — Primeira candidata PGS
+- Pokémon GO `0.439.0`; package `com.nianticlabs.pokemongo`; Android `versionCode=2026111605`.
+- PGS branding, translations, and public links updated without changing the signing certificate.
+- Complete signed APK: https://github.com/LucianoToscano/PGS/actions/runs/45980315394
+- APK SHA-256: `91865f6242519091a771617f962f17620405624a4a56addec0909d2cdf6b68c1`.
+- Draft release. **Installation and sign-in on a real device have not been confirmed.**
 
-- APK completo, assinatura PGS definitiva e `versionCode=2026111604`.
-- Atualizador exclusivo do PGS, novo Discord, estatísticas e interface PGS.
-- Melhorias de joystick, mapas, IVs, Buddy e ferramentas comunitárias.
-- Compilação: https://github.com/LucianoToscano/PGS/actions/runs/45973576985
+## v0.0.1 — First PGS candidate
 
-Consulte [LICENSE](LICENSE) e [THIRD_PARTY.md](THIRD_PARTY.md) para os avisos e condições legais.
+- Full APK, permanent PGS signing certificate, and Android `versionCode=2026111604`.
+- PGS-only updater, own Discord, session statistics, and PGS interface identity.
+- Joystick, map, IV, buddy, and community improvements.
+- Build: https://github.com/LucianoToscano/PGS/actions/runs/45973576985
+
+See [LICENSE](LICENSE) and [THIRD_PARTY.md](THIRD_PARTY.md) for legal notices and third-party terms.

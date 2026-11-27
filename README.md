@@ -4,74 +4,80 @@
 
 <h1 align="center">PGS — Pokémon GO Spoofers</h1>
 
-<p align="center">Projeto independente para Android, com controles de localização, joystick, mapas e ferramentas auxiliares para Pokémon GO.</p>
+<p align="center">An independent Android project with location controls, a joystick, maps, and companion tools for Pokémon GO.</p>
 
 <p align="center">
-  <a href="https://github.com/LucianoToscano/PGS/actions">Compilações</a> ·
+  <a href="https://github.com/LucianoToscano/PGS/actions">Builds</a> ·
   <a href="https://github.com/LucianoToscano/PGS/releases">Releases</a> ·
-  <a href="https://discord.gg/SdwU4VnfW">Discord PGS</a> ·
-  <a href="https://lucianotoscano.github.io/PGS/">Site</a>
+  <a href="https://discord.gg/SdwU4VnfW">PGS Discord</a> ·
+  <a href="https://lucianotoscano.github.io/PGS/">Website</a>
 </p>
 
-## Versão do PGS
+<p align="center">
+  <strong>🌐 Languages:</strong>
+  <strong>🇺🇸 English</strong> ·
+  <a href="README.pt-BR.md">🇧🇷 Português (Brasil)</a>
+</p>
 
-| Propriedade | Valor |
+## Current PGS version
+
+| Property | Value |
 |---|---|
-| Linha do projeto | **PGS v0.0.2** |
-| Jogo-base | Pokémon GO **0.439.0** |
-| Nome instalado | **Pokémon GO** |
-| Identificador Android | `com.nianticlabs.pokemongo` |
-| Código Android (`versionCode`) | `2026111605` |
-| Assinatura | **Certificado PGS definitivo, preservado** |
-| Status | **APK completo compilado e verificado; teste físico pendente** |
+| PGS release line | **PGS v0.0.2** |
+| Base game | Pokémon GO **0.439.0** |
+| Installed app name | **Pokémon GO** |
+| Android package | `com.nianticlabs.pokemongo` |
+| Android `versionCode` | `2026111605` |
+| Signing | **Existing permanent PGS certificate, unchanged** |
+| Status | **Full APK compiled and verified; physical device testing pending** |
 
-**PGS v0.0.2** é uma candidata em rascunho. A versão do projeto é independente da versão do jogo. O código Android deve crescer a cada APK para permitir a atualização por cima de versões anteriores do próprio PGS.
+**PGS v0.0.2** is a draft release candidate, not a published stable release. The PGS project version is distinct from the base game's version. Android `versionCode` must increase with each new APK so that supported existing PGS installations can be updated in place.
 
-## Baixar e instalar
+## Download and install
 
-1. Acesse a [compilação completa PGS v0.0.2](https://github.com/LucianoToscano/PGS/actions/runs/45980315394).
-2. Na seção **Artifacts**, baixe `PGS-v0.0.2`, extraia o ZIP e localize o arquivo **`PGS v0.0.2.apk`**.
-3. Confira o arquivo `SHA256SUMS.txt`. O SHA-256 esperado da candidata é `91865f6242519091a771617f962f17620405624a4a56addec0909d2cdf6b68c1`.
-4. Para atualizar um PGS compatível, instale **sem desinstalar o aplicativo anterior**, preservando dados. A assinatura e o identificador Android devem corresponder.
-5. Confira abertura, login, versão exibida, menu, Discord e configurações salvas. Esses testes físicos **ainda precisam de confirmação**.
+1. Open the [verified PGS v0.0.2 full build](https://github.com/LucianoToscano/PGS/actions/runs/45980315394).
+2. Under **Artifacts**, download `PGS-v0.0.2`, extract the ZIP and find **`PGS v0.0.2.apk`**.
+3. Check `SHA256SUMS.txt`. The candidate APK's expected SHA-256 is `91865f6242519091a771617f962f17620405624a4a56addec0909d2cdf6b68c1`.
+4. To update an existing, compatible PGS installation, install **without first uninstalling it**. The Android package and signing certificate must match to preserve app data.
+5. Check startup, sign-in, displayed version, menu, Discord link, and saved settings on the device. These **real-device checks remain unconfirmed**.
 
-O GitHub Actions mantém o nome `PGS v0.0.2.apk`; nos anexos do GitHub Release, os espaços são normalizados, resultando em `PGS.v0.0.2.apk`. O release ainda **não está publicado como versão estável**.
+The GitHub Actions artifact uses `PGS v0.0.2.apk`. GitHub normalizes spaces in release-asset names, resulting in `PGS.v0.0.2.apk` on the draft Release. The release **has not been published as stable**.
 
-Não confunda o APK completo com arquivos de código-fonte ou aplicativos de prévia.
+Do not mistake source archives or preview-only packages for the full game APK.
 
-## Recursos
+## Features
 
-- Controle de localização, joystick, coordenadas, mapas, rotas GPX e cooldown.
-- Estatísticas e contador de encontros; opções de IV, captura e transferência.
-- Ferramentas de Poképaradas, itens, presentes, companheiro e batalhas.
-- Mapas e feeds de Pokémon, automações e ferramentas de navegação.
-- Busca nas configurações, tema claro/escuro, preferências salvas e **12 opções de idioma** (sistema + 11 idiomas).
+- Location controls, joystick, coordinates, maps, GPX routes, and cooldown estimates.
+- Session statistics, encounter counter, IV display, catching, and transfer options.
+- PokéStop, item, gift, buddy, and battle helpers.
+- Pokémon maps and feeds, optional automation, and navigation utilities.
+- Settings search, light/dark themes, saved preferences, and **12 language choices** (system + 11 languages).
 
-Funcionalidades experimentais dependem da versão do jogo e do ambiente e não garantem resultados ou ausência de riscos para a conta.
+Experimental features depend on the game's version and environment. They do not guarantee server-side outcomes or freedom from account restrictions.
 
-## Documentação do PGS
+## Documentation
 
-- [Como compilar e verificar](docs/BUILDING.md)
-- [Atualizações e assinatura definitiva](docs/PGS_UPDATE_POLICY.md)
-- [Idiomas e traduções](docs/PGS_LANGUAGES.md)
-- [Arquitetura e compatibilidade](docs/ARCHITECTURE.md)
-- [Revisão das melhorias da comunidade](docs/PGS_COMMUNITY_REVIEW.md)
-- [Como contribuir](CONTRIBUTING.md)
-- [Registro de mudanças](CHANGELOG.md)
-- [Artes oficiais](docs/PGS_OFFICIAL_LOGOS.md)
-- [Configurações do repositório e GitHub Pages](docs/PGS_REPOSITORY_SETTINGS.md)
+| Topic | 🇺🇸 English | 🇧🇷 Português (Brasil) |
+|---|---|---|
+| Build and verify | [Build guide](docs/en/BUILDING.md) | [Compilação](docs/pt-BR/BUILDING.md) |
+| Update and signing policy | [Updates](docs/en/PGS_UPDATE_POLICY.md) | [Atualizações](docs/pt-BR/PGS_UPDATE_POLICY.md) |
+| In-app languages | [Languages](docs/en/PGS_LANGUAGES.md) | [Idiomas](docs/pt-BR/PGS_LANGUAGES.md) |
+| Contribution guide | [Contributing](CONTRIBUTING.md) | [Como contribuir](CONTRIBUTING.pt-BR.md) |
+| Release history | [Changelog](CHANGELOG.md) | [Registro de alterações](CHANGELOG.pt-BR.md) |
 
-Os arquivos de código, bibliotecas nativas, símbolos Java/JNI, preferências de instalações anteriores e documentação de procedência permanecem preservados para que futuras atualizações não destruam compatibilidade. Registros históricos não devem ser confundidos com releases atuais.
+More technical references: [Architecture](docs/ARCHITECTURE.md), [community improvements](docs/PGS_COMMUNITY_REVIEW.md), [official artwork](docs/PGS_OFFICIAL_LOGOS.md), and [repository/Pages setup](docs/PGS_REPOSITORY_SETTINGS.md). These additional technical references are not all translated yet; their language is indicated by the document itself.
 
-## Comunidade
+Existing code, native libraries, Java/JNI symbols, saved-setting keys, and provenance records remain intact for update compatibility. Historical records should not be confused with current PGS releases.
+
+## Community
 
 **Discord:** https://discord.gg/SdwU4VnfW
 
 **GitHub:** https://github.com/LucianoToscano/PGS
 
-**Site:** https://lucianotoscano.github.io/PGS/
+**Website:** https://lucianotoscano.github.io/PGS/
 
-O site depende de habilitação do GitHub Pages nas configurações do repositório. A logo dentro do jogo e o joystick não foram modificados por esta revisão de apresentação.
+The website requires GitHub Pages to be enabled in the repository settings. This documentation change does not alter the in-game menu artwork or joystick.
 
 ## License
 

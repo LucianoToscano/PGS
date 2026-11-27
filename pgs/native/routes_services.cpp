@@ -26,7 +26,7 @@ static_assert(sizeof(PgrRoutesServicesApi) == 48, "table 48");
 
 namespace {
 
-constexpr uint64_t kMaxLeaseMs = PGR_RS_MAX_LEASE_MS;
+constexpr uint64_t kMaxLeaseMs = PGS_RS_MAX_LEASE_MS;
 
 // --- il2cpp runtime ABI typedefs ---------------------------------------------------
 using ObjClass = void *(*)(void *obj);
@@ -195,19 +195,19 @@ bool owner_ready(uint64_t tid) {
 
 void init_output(PgrRoutesServicesOutput *out) {
   std::memset(out, 0, sizeof(*out));
-  out->version = PGR_RS_OUTPUT_VERSION;
+  out->version = PGS_RS_OUTPUT_VERSION;
   out->size = sizeof(PgrRoutesServicesOutput);
 }
 
 // --- config validation / install ---------------------------------------------------
 bool validate_config(const PgrRoutesServicesConfig *c, int *rc) {
-  if (c == nullptr) { *rc = PGR_RS_ERR_NULL_ARG; return false; }
-  if (c->version != PGR_RS_CONFIG_VERSION) { *rc = PGR_RS_ERR_BAD_VERSION; return false; }
-  if (c->size != sizeof(PgrRoutesServicesConfig)) { *rc = PGR_RS_ERR_BAD_SIZE; return false; }
+  if (c == nullptr) { *rc = PGS_RS_ERR_NULL_ARG; return false; }
+  if (c->version != PGS_RS_CONFIG_VERSION) { *rc = PGS_RS_ERR_BAD_VERSION; return false; }
+  if (c->size != sizeof(PgrRoutesServicesConfig)) { *rc = PGS_RS_ERR_BAD_SIZE; return false; }
   void *const *ptrs = reinterpret_cast<void *const *>(
       reinterpret_cast<const unsigned char *>(c) + offsetof(PgrRoutesServicesConfig, object_get_class));
-  for (int i = 0; i < PGR_RS_PTR_COUNT; ++i)
-    if (ptrs[i] == nullptr) { *rc = PGR_RS_ERR_MISSING_PTR; return false; }
+  for (int i = 0; i < PGS_RS_PTR_COUNT; ++i)
+    if (ptrs[i] == nullptr) { *rc = PGS_RS_ERR_MISSING_PTR; return false; }
   *rc = 0;
   return true;
 }
@@ -218,7 +218,7 @@ int install_hooks() {
   void *req_orig = nullptr;
   if (pgs_hook(g_cfg.addr_request_nearby, reinterpret_cast<void *>(&hook_request_nearby), &req_orig) != 0 ||
       req_orig == nullptr) {
-    return PGR_RS_ERR_HOOK;
+    return PGS_RS_ERR_HOOK;
   }
   // Publish the trampoline before placing the second hook so a call racing the first patch still chains.
   g_orig_request_nearby.store(reinterpret_cast<RequestNearbyFn>(req_orig), std::memory_order_release);
@@ -226,7 +226,7 @@ int install_hooks() {
   if (pgs_hook(g_cfg.addr_in_range_of_end, reinterpret_cast<void *>(&hook_in_range_of_end), &ir_orig) != 0 ||
       ir_orig == nullptr) {
     pgs_unhook(g_cfg.addr_request_nearby);  // roll back the one we placed (no stale original)
-    return PGR_RS_ERR_HOOK;
+    return PGS_RS_ERR_HOOK;
   }
   g_orig_in_range.store(reinterpret_cast<InRangeFn>(ir_orig), std::memory_order_release);
   return 0;
@@ -236,12 +236,12 @@ int api_install(const PgrRoutesServicesConfig *config) {
   int rc = 0;
   if (!validate_config(config, &rc)) return rc;
   uint64_t probe = 0;
-  if (!read_boottime_ms(&probe)) return PGR_RS_ERR_CLOCK;
+  if (!read_boottime_ms(&probe)) return PGS_RS_ERR_CLOCK;
 
   std::lock_guard<std::mutex> install_lock(g_install_mutex);
-  if (g_hook_failed.load(std::memory_order_acquire)) return PGR_RS_ERR_HOOK;
+  if (g_hook_failed.load(std::memory_order_acquire)) return PGS_RS_ERR_HOOK;
   if (g_installed.load(std::memory_order_acquire)) {
-    return std::memcmp(&g_cfg, config, sizeof(*config)) == 0 ? 0 : PGR_RS_ERR_RECONFIG;
+    return std::memcmp(&g_cfg, config, sizeof(*config)) == 0 ? 0 : PGS_RS_ERR_RECONFIG;
   }
   g_cfg = *config;
   const int hrc = install_hooks();
@@ -264,10 +264,10 @@ uint64_t api_revoke() {
 // error for a hard fault; *skip is set true for a benign gate refusal.
 int gate_request(const PgrRoutesServicesRequest *req, bool require_lease, uint64_t *deadline_out, bool *skip) {
   *skip = false;
-  if (!g_installed.load(std::memory_order_acquire)) return PGR_RS_ERR_NOT_INSTALLED;
-  if (!req) return PGR_RS_ERR_NULL_ARG;
-  if (req->version != PGR_RS_REQUEST_VERSION) return PGR_RS_ERR_BAD_VERSION;
-  if (req->size != sizeof(*req)) return PGR_RS_ERR_BAD_SIZE;
+  if (!g_installed.load(std::memory_order_acquire)) return PGS_RS_ERR_NOT_INSTALLED;
+  if (!req) return PGS_RS_ERR_NULL_ARG;
+  if (req->version != PGS_RS_REQUEST_VERSION) return PGS_RS_ERR_BAD_VERSION;
+  if (req->size != sizeof(*req)) return PGS_RS_ERR_BAD_SIZE;
   if (!req->tid || req->tid != current_tid() ||
       !reinterpret_cast<ThreadCur>(g_cfg.thread_current)() || !owner_ready(req->tid)) {
     *skip = true; return 0;  // off owner thread / not attached -> benign SKIP
@@ -277,7 +277,7 @@ int gate_request(const PgrRoutesServicesRequest *req, bool require_lease, uint64
     uint64_t residual = req->residual_ms > kMaxLeaseMs ? kMaxLeaseMs : req->residual_ms;
     if (!residual) { *skip = true; return 0; }
     uint64_t now = 0;
-    if (!read_boottime_ms(&now)) return PGR_RS_ERR_CLOCK;
+    if (!read_boottime_ms(&now)) return PGS_RS_ERR_CLOCK;
     *deadline_out = now + residual;
   }
   return 0;
@@ -302,15 +302,15 @@ bool poll_live(uint64_t gen, uint64_t deadline) {
 }
 
 int api_poll(const PgrRoutesServicesRequest *req, PgrRoutesServicesOutput *out) {
-  if (!out) return PGR_RS_ERR_NULL_ARG;
+  if (!out) return PGS_RS_ERR_NULL_ARG;
   init_output(out);
   uint64_t deadline = 0;
   bool skip = false;
   const int grc = gate_request(req, true, &deadline, &skip);
   if (grc != 0) return out->status = grc;
-  if (skip) return out->status = PGR_RS_SKIP;
+  if (skip) return out->status = PGS_RS_SKIP;
   if (g_hook_busy.exchange(true, std::memory_order_acq_rel))
-    return out->status = PGR_RS_ERR_BUSY;
+    return out->status = PGS_RS_ERR_BUSY;
   const uint64_t gen = req->generation;
   uint32_t flags = 0;
   if (g_active_gen != gen) clear_roots();
@@ -318,7 +318,7 @@ int api_poll(const PgrRoutesServicesRequest *req, PgrRoutesServicesOutput *out) 
   bool live = poll_live(gen, deadline);
   if (live) {
     const bool replaced = commit_slot(&g_routes);
-    if (replaced) { flags |= PGR_RS_FLAG_ROUTES_REPLACED; g_derived = false; }
+    if (replaced) { flags |= PGS_RS_FLAG_ROUTES_REPLACED; g_derived = false; }
     live = poll_live(gen, deadline);
     if (live && g_routes.active) {
       free_handle(&g_consumption.pending);
@@ -338,14 +338,14 @@ int api_poll(const PgrRoutesServicesRequest *req, PgrRoutesServicesOutput *out) 
           g_consumption.active = replacement;
           if (old) gc_free()(old);
           g_derived = true;
-          flags |= PGR_RS_FLAG_CONSUMPTION_REPLACED;
+          flags |= PGS_RS_FLAG_CONSUMPTION_REPLACED;
         } else if (!g_derived && g_consumption.active) {
           free_handle(&g_consumption.active);
-          flags |= PGR_RS_FLAG_CONSUMPTION_REPLACED;
+          flags |= PGS_RS_FLAG_CONSUMPTION_REPLACED;
         }
       }
     } else if (live && commit_slot(&g_consumption)) {
-      flags |= PGR_RS_FLAG_CONSUMPTION_REPLACED;
+      flags |= PGS_RS_FLAG_CONSUMPTION_REPLACED;
     }
   }
   live = live && poll_live(gen, deadline);
@@ -354,17 +354,17 @@ int api_poll(const PgrRoutesServicesRequest *req, PgrRoutesServicesOutput *out) 
     // separate generation stamp ensures the old heartbeat cannot revive capture.
     g_capture_gen.store(gen, std::memory_order_release);
     g_capture_deadline.store(deadline, std::memory_order_release);
-    if (g_routes.active) flags |= PGR_RS_FLAG_ROUTES_PRESENT;
-    if (g_consumption.active) flags |= PGR_RS_FLAG_CONSUMPTION_PRESENT;
-    if (g_derived) flags |= PGR_RS_FLAG_CONSUMPTION_FROM_DICA;
+    if (g_routes.active) flags |= PGS_RS_FLAG_ROUTES_PRESENT;
+    if (g_consumption.active) flags |= PGS_RS_FLAG_CONSUMPTION_PRESENT;
+    if (g_derived) flags |= PGS_RS_FLAG_CONSUMPTION_FROM_DICA;
     out->flags = flags;
     out->generation = gen;
     out->routes_handle = g_routes.active;
     out->consumption_handle = g_consumption.active;
-    out->status = PGR_RS_OK;
+    out->status = PGS_RS_OK;
   } else {
     g_capture_deadline.store(0, std::memory_order_release);
-    out->status = PGR_RS_SKIP;
+    out->status = PGS_RS_SKIP;
   }
   g_hook_busy.store(false, std::memory_order_release);
   return out->status;
@@ -375,24 +375,24 @@ int api_drain(const PgrRoutesServicesRequest *req) {
   bool skip = false;
   const int grc = gate_request(req, false, &deadline, &skip);
   if (grc != 0) return grc;
-  if (skip) return PGR_RS_SKIP;
-  if (g_hook_busy.exchange(true, std::memory_order_acq_rel)) return PGR_RS_ERR_BUSY;
+  if (skip) return PGS_RS_SKIP;
+  if (g_hook_busy.exchange(true, std::memory_order_acq_rel)) return PGS_RS_ERR_BUSY;
   g_capture_deadline.store(0, std::memory_order_release);
   g_capture_gen.store(0, std::memory_order_release);
   clear_roots();
   g_hook_busy.store(false, std::memory_order_release);
-  return PGR_RS_OK;
+  return PGS_RS_OK;
 }
 
 
 const PgrRoutesServicesApi kApiTable = {
-    PGR_RS_API_VERSION, static_cast<uint32_t>(sizeof(PgrRoutesServicesApi)),
+    PGS_RS_API_VERSION, static_cast<uint32_t>(sizeof(PgrRoutesServicesApi)),
     &api_install, &api_generation, &api_revoke, &api_poll, &api_drain,
 };
 
 }  // namespace
 
 extern "C" const void *pgs_routes_services_api(uint32_t version) {
-  if (version != PGR_RS_API_VERSION) return nullptr;
+  if (version != PGS_RS_API_VERSION) return nullptr;
   return &kApiTable;
 }

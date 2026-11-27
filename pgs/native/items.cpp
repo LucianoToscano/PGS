@@ -81,7 +81,7 @@ std::mutex                 g_install_mutex;
 pgs_items_config_v1    g_cfg{};
 std::atomic<bool>          g_installed{false};
 bool                       g_install_attempted = false;  // install-mutex guarded; failure latches
-int                        g_install_error = PGR_ITEMS_ERR_NOT_INSTALLED;
+int                        g_install_error = PGS_ITEMS_ERR_NOT_INSTALLED;
 std::atomic<InitFn>        g_orig_init{nullptr};
 std::atomic<ListFn>        g_orig_list{nullptr};
 std::atomic<RecycleFn>     g_orig_recycle{nullptr};
@@ -279,9 +279,9 @@ void push_event(uint32_t kind, int32_t id, int32_t amount, int32_t aux) {
 }
 
 // --- telemetry writers (Unity thread) ---------------------------------------------
-void emit_request(int32_t id, int32_t amount, int32_t keep) { push_event(PGR_ITEMS_EV_REQUEST, id, amount, keep); }
-void emit_confirm(int32_t id, int32_t amount)               { push_event(PGR_ITEMS_EV_CONFIRM, id, amount, 0); }
-void emit_error(int32_t reason, int32_t id, int32_t amount) { push_event(PGR_ITEMS_EV_ERROR, id, amount, reason); }
+void emit_request(int32_t id, int32_t amount, int32_t keep) { push_event(PGS_ITEMS_EV_REQUEST, id, amount, keep); }
+void emit_confirm(int32_t id, int32_t amount)               { push_event(PGS_ITEMS_EV_CONFIRM, id, amount, 0); }
+void emit_error(int32_t reason, int32_t id, int32_t amount) { push_event(PGS_ITEMS_EV_ERROR, id, amount, reason); }
 void emit_bag_ready() { g_bag_ready_serial.fetch_add(1, std::memory_order_release); }
 void set_has_candidate(bool v) { g_has_candidate.store(v ? 1u : 0u, std::memory_order_release); }
 
@@ -504,7 +504,7 @@ void do_lookup(uint64_t now) {
     return;
 
 lerr:
-    emit_error(PGR_ITEMS_REASON_LOOKUP, 0, 0);
+    emit_error(PGS_ITEMS_REASON_LOOKUP, 0, 0);
     note_fault();
     g_st.next_ms = now + kBackoffMs;
     refresh_root_count();
@@ -691,7 +691,7 @@ fail:
         int32_t pid = 0, pamt = 0;
         if (g_st.pending.active) { pid = g_st.pending.id; pamt = g_st.pending.amount; }
         clear_pending(true);                               // uncertain -> quarantine + free bag root
-        emit_error(PGR_ITEMS_REASON_NATIVE, pid, pamt);
+        emit_error(PGS_ITEMS_REASON_NATIVE, pid, pamt);
     }
     note_fault();
     g_st.next_ms = now + kBackoffMs;
@@ -718,7 +718,7 @@ void refresh_berries(uint64_t now, uint64_t deadline) {
         if (!invoke_int(g_cfg.m_quantity, b, args, &counts[i], &err)) break;
         if (counts[i] < 0 || counts[i] > kMaxQty) err = true;
     }
-    if (err) { note_fault(); emit_error(PGR_ITEMS_REASON_NATIVE, 0, 0); g_st.next_ms = now + kBackoffMs; return; }
+    if (err) { note_fault(); emit_error(PGS_ITEMS_REASON_NATIVE, 0, 0); g_st.next_ms = now + kBackoffMs; return; }
     uint64_t t = boottime_ms();
     if (g_revoke || !t || t >= deadline) return;
     for (int i = 0; i < 5; ++i) row_update(ids[i], counts[i]);
@@ -772,7 +772,7 @@ int probe_selected(uint64_t now, uint64_t deadline) {
     g_cleanup_serial.fetch_add(1, std::memory_order_release);
     return 0;
 fail:
-    release_probe(); note_fault(); emit_error(PGR_ITEMS_REASON_NATIVE, 0, 0);
+    release_probe(); note_fault(); emit_error(PGS_ITEMS_REASON_NATIVE, 0, 0);
     g_st.next_ms = now + kBackoffMs; return 2;
 }
 
@@ -801,7 +801,7 @@ void orchestrate(uint64_t now, uint64_t deadline, uint32_t force_poll) {
             // attribution (free the bag root) so no late callback and no restart can resubmit it.
             int32_t id = g_st.pending.id, amount = g_st.pending.amount;
             clear_pending(true);
-            emit_error(PGR_ITEMS_REASON_TIMEOUT, id, amount);
+            emit_error(PGS_ITEMS_REASON_TIMEOUT, id, amount);
             refresh_root_count();                          // JS falls through to enumerate
         } else {
             return;                                        // still awaiting confirmation
@@ -952,7 +952,7 @@ void hook_result(void *self, void *response, void *method) {
         g_st.pending.active && g_st.pending.gen == gen) {
         int32_t id = g_st.pending.id, amount = g_st.pending.amount;
         g_st.next_ms = g_st.scan_handle ? 0 : boottime_ms() + kSettleMs;
-        if (!ok) { clear_pending(false); blocked_add(id); emit_error(PGR_ITEMS_REASON_REJECTED, id, amount); }
+        if (!ok) { clear_pending(false); blocked_add(id); emit_error(PGS_ITEMS_REASON_REJECTED, id, amount); }
         else { clear_pending(false); emit_confirm(id, amount); }
         refresh_root_count();
     }
@@ -977,7 +977,7 @@ void hook_error(void *self, void *str, void *method) {
         g_st.next_ms = g_st.scan_handle ? 0 : boottime_ms() + kSettleMs;
         clear_pending(false);                              // definite game error -> settings-scoped
         blocked_add(id);
-        emit_error(PGR_ITEMS_REASON_REJECTED, id, amount);
+        emit_error(PGS_ITEMS_REASON_REJECTED, id, amount);
         refresh_root_count();
     }
 }
@@ -1013,60 +1013,60 @@ bool hooks_distinct(const pgs_items_config_v1 *c) {
 }
 
 int api_install(const pgs_items_config_v1 *config) {
-    if (config == nullptr) return PGR_ITEMS_ERR_NULL_ARG;
+    if (config == nullptr) return PGS_ITEMS_ERR_NULL_ARG;
     std::lock_guard<std::mutex> lock(g_install_mutex);
     if (config->version != PGS_ITEMS_API_VERSION ||
         config->size != sizeof(pgs_items_config_v1) || !core_ok(config))
-        return PGR_ITEMS_ERR_BAD_CONFIG;
-    if (config->has_lookup && !lookup_ok(config)) return PGR_ITEMS_ERR_BAD_CONFIG;
-    if (!hooks_distinct(config)) return PGR_ITEMS_ERR_DUP_HOOK;
+        return PGS_ITEMS_ERR_BAD_CONFIG;
+    if (config->has_lookup && !lookup_ok(config)) return PGS_ITEMS_ERR_BAD_CONFIG;
+    if (!hooks_distinct(config)) return PGS_ITEMS_ERR_DUP_HOOK;
 
     if (g_installed.load(std::memory_order_acquire))
         return (std::memcmp(&g_cfg, config, sizeof(g_cfg)) == 0)
-                   ? PGR_ITEMS_OK : PGR_ITEMS_ERR_ALREADY_BOUND;
+                   ? PGS_ITEMS_OK : PGS_ITEMS_ERR_ALREADY_BOUND;
     if (g_install_attempted) return g_install_error;       // a prior failure latches
     g_install_attempted = true;
 
-    if (boottime_ms() == 0) return g_install_error = PGR_ITEMS_ERR_NO_CLOCK;
+    if (boottime_ms() == 0) return g_install_error = PGS_ITEMS_ERR_NO_CLOCK;
     g_cfg = *config;
 
     // Install the five hooks, publishing each original before the next. On a partial failure
     // retain any published trampoline (another thread may already use it) and latch.
     void *o = nullptr;
     if (pgs_hook(g_cfg.init_address, reinterpret_cast<void *>(&hook_init), &o) != 0 || !o)
-        return g_install_error = PGR_ITEMS_ERR_HOOK;
+        return g_install_error = PGS_ITEMS_ERR_HOOK;
     g_orig_init.store(reinterpret_cast<InitFn>(o), std::memory_order_release);
     o = nullptr;
     if (pgs_hook(g_cfg.list_address, reinterpret_cast<void *>(&hook_list), &o) != 0 || !o)
-        return g_install_error = PGR_ITEMS_ERR_HOOK;
+        return g_install_error = PGS_ITEMS_ERR_HOOK;
     g_orig_list.store(reinterpret_cast<ListFn>(o), std::memory_order_release);
     o = nullptr;
     if (pgs_hook(g_cfg.recycle_address, reinterpret_cast<void *>(&hook_recycle), &o) != 0 || !o)
-        return g_install_error = PGR_ITEMS_ERR_HOOK;
+        return g_install_error = PGS_ITEMS_ERR_HOOK;
     g_orig_recycle.store(reinterpret_cast<RecycleFn>(o), std::memory_order_release);
     o = nullptr;
     if (pgs_hook(g_cfg.result_address, reinterpret_cast<void *>(&hook_result), &o) != 0 || !o)
-        return g_install_error = PGR_ITEMS_ERR_HOOK;
+        return g_install_error = PGS_ITEMS_ERR_HOOK;
     g_orig_result.store(reinterpret_cast<ResultFn>(o), std::memory_order_release);
     o = nullptr;
     if (pgs_hook(g_cfg.error_address, reinterpret_cast<void *>(&hook_error), &o) != 0 || !o)
-        return g_install_error = PGR_ITEMS_ERR_HOOK;
+        return g_install_error = PGS_ITEMS_ERR_HOOK;
     g_orig_error.store(reinterpret_cast<ErrorFn>(o), std::memory_order_release);
 
     g_installed.store(true, std::memory_order_release);
-    return g_install_error = PGR_ITEMS_OK;
+    return g_install_error = PGS_ITEMS_OK;
 }
 
 int api_tick(const pgs_items_rules_v1 *rules, uint32_t force_poll,
              uint64_t remaining_lease_ms, uint64_t proven_tid) {
-    if (!g_installed.load(std::memory_order_acquire)) return PGR_ITEMS_ERR_NOT_INSTALLED;
+    if (!g_installed.load(std::memory_order_acquire)) return PGS_ITEMS_ERR_NOT_INSTALLED;
 
     // Validate + snapshot the rules before any thread gate (a bad snapshot is a hard error).
     pgs_items_rules_v1 snap;
     if (rules != nullptr) {
         if (rules->version != PGS_ITEMS_API_VERSION ||
             rules->size != sizeof(pgs_items_rules_v1) || rules->count > kMaxRules)
-            return PGR_ITEMS_ERR_BAD_RULES;
+            return PGS_ITEMS_ERR_BAD_RULES;
         snap = *rules;
     } else {
         std::memset(&snap, 0, sizeof(snap));
@@ -1074,10 +1074,10 @@ int api_tick(const pgs_items_rules_v1 *rules, uint32_t force_poll,
         snap.size = sizeof(snap);
     }
 
-    if (!on_unity_thread(proven_tid)) return PGR_ITEMS_OK;
+    if (!on_unity_thread(proven_tid)) return PGS_ITEMS_OK;
     uint64_t expected_unity = 0;
     g_unity_tid.compare_exchange_strong(expected_unity, proven_tid, std::memory_order_acq_rel);
-    if (g_unity_tid.load(std::memory_order_acquire) != proven_tid) return PGR_ITEMS_OK;
+    if (g_unity_tid.load(std::memory_order_acquire) != proven_tid) return PGS_ITEMS_OK;
 
     if (g_depth != 0) {
         // Nested tick (re-entry inside our own managed call): a NO-OP that must NOT reset a stop
@@ -1087,14 +1087,14 @@ int api_tick(const pgs_items_rules_v1 *rules, uint32_t force_poll,
         if (snap.enabled == 0 || remaining_lease_ms == 0 ||
             snap.generation != g_snapshot.generation || snap.epoch != g_snapshot.epoch)
             g_revoke = true;
-        return PGR_ITEMS_OK;
+        return PGS_ITEMS_OK;
     }
     g_stopping.store(false, std::memory_order_release);    // top-level only: resume after a prior stop
     OwnerScope frame; g_revoke = false;
 
     uint64_t expected = 0;
     if (!g_owner_tid.compare_exchange_strong(expected, proven_tid, std::memory_order_acq_rel))
-        return PGR_ITEMS_OK;
+        return PGS_ITEMS_OK;
 
     g_snapshot = snap;                                     // owner-thread snapshot of the rules
     uint64_t lease = remaining_lease_ms > kMaxLeaseMs ? kMaxLeaseMs : remaining_lease_ms;
@@ -1102,26 +1102,26 @@ int api_tick(const pgs_items_rules_v1 *rules, uint32_t force_poll,
     orchestrate(now, now + lease, force_poll);
 
     g_owner_tid.store(0, std::memory_order_release);
-    return PGR_ITEMS_OK;
+    return PGS_ITEMS_OK;
 }
 
 int api_clear(uint64_t proven_tid) {
-    if (!g_installed.load(std::memory_order_acquire)) return PGR_ITEMS_ERR_NOT_INSTALLED;
+    if (!g_installed.load(std::memory_order_acquire)) return PGS_ITEMS_ERR_NOT_INSTALLED;
     if (!on_unity_thread(proven_tid) ||
         g_unity_tid.load(std::memory_order_acquire) != proven_tid)
-        return PGR_ITEMS_OK;                               // never free off the Unity thread
+        return PGS_ITEMS_OK;                               // never free off the Unity thread
 
     g_stopping.store(true, std::memory_order_release);
     g_revoke = true;
-    if (g_depth != 0) { g_deferred_clear = true; return PGR_ITEMS_OK; } // defer under a live pass
+    if (g_depth != 0) { g_deferred_clear = true; return PGS_ITEMS_OK; } // defer under a live pass
     OwnerScope frame;
     release_roots();            // frees service + filters + any in-flight bag root (pins its id)
     g_rows_n = 0;               // display state; pending attribution dropped + id quarantined
-    return PGR_ITEMS_OK;
+    return PGS_ITEMS_OK;
 }
 
 int api_sample(pgs_items_sample_v1 *out) {
-    if (out == nullptr) return PGR_ITEMS_ERR_NULL_ARG;
+    if (out == nullptr) return PGS_ITEMS_ERR_NULL_ARG;
     out->version = PGS_ITEMS_API_VERSION;
     out->size = sizeof(pgs_items_sample_v1);
     out->bag_ready_serial = g_bag_ready_serial.load(std::memory_order_acquire);
@@ -1136,22 +1136,22 @@ int api_sample(pgs_items_sample_v1 *out) {
         out->catalog_count = g_pub_n;
     }
     out->reserved = 0;
-    return PGR_ITEMS_OK;
+    return PGS_ITEMS_OK;
 }
 
 int api_catalog(pgs_item_row *out, uint32_t max, uint32_t *written) {
-    if (!g_installed.load(std::memory_order_acquire)) return PGR_ITEMS_ERR_NOT_INSTALLED;
-    if (out == nullptr || written == nullptr) return PGR_ITEMS_ERR_NULL_ARG;
+    if (!g_installed.load(std::memory_order_acquire)) return PGS_ITEMS_ERR_NOT_INSTALLED;
+    if (out == nullptr || written == nullptr) return PGS_ITEMS_ERR_NULL_ARG;
     std::lock_guard<std::mutex> lock(g_catalog_mutex);
     uint32_t n = g_pub_n < max ? g_pub_n : max;
     std::memcpy(out, g_pub_rows, static_cast<size_t>(n) * sizeof(pgs_item_row));
     *written = n;
-    return PGR_ITEMS_OK;
+    return PGS_ITEMS_OK;
 }
 
 int api_drain(pgs_item_event *out, uint32_t max, uint32_t *written) {
-    if (!g_installed.load(std::memory_order_acquire)) return PGR_ITEMS_ERR_NOT_INSTALLED;
-    if (out == nullptr || written == nullptr) return PGR_ITEMS_ERR_NULL_ARG;
+    if (!g_installed.load(std::memory_order_acquire)) return PGS_ITEMS_ERR_NOT_INSTALLED;
+    if (out == nullptr || written == nullptr) return PGS_ITEMS_ERR_NULL_ARG;
     std::lock_guard<std::mutex> lock(g_event_mutex);
     uint32_t n = 0;
     while (n < max && g_ev_size > 0) {
@@ -1160,7 +1160,7 @@ int api_drain(pgs_item_event *out, uint32_t max, uint32_t *written) {
         --g_ev_size;
     }
     *written = n;
-    return PGR_ITEMS_OK;
+    return PGS_ITEMS_OK;
 }
 
 void *api_service_handle(void) {

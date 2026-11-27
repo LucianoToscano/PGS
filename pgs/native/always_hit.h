@@ -33,16 +33,16 @@
 //
 // btyb (makeThrow) returns the game's 12-byte PokeballThrow BY VALUE. Its il2cpp
 // metadata declares ONE managed parameter, System.Boolean, so the verified native ABI is
-//   PgrThrowValue btyb(void* self, uint8_t missedArg, void* methodInfo)
+//   PgsThrowValue btyb(void* self, uint8_t missedArg, void* methodInfo)
 // i.e. THREE native parameters, not the (self, MethodInfo) pair named in the original
 // task brief. See always_hit.cpp for the coordinator-facing blocker note. Modelling it
 // as a by-value struct return lets the C++ ABI place {item,radius} in x0 and the three
 // Boolean bytes + pad in x1 exactly as the game does, so clearing `missed` here is the
 // same bit operation as the old `x1 & 0xff00ffff` register edit. Never hand-split it.
 
-// 12-byte packed PokeballThrow; identical layout to PgrThrowValue in throws.h. Redefined
+// 12-byte packed PokeballThrow; identical layout to PgsThrowValue in throws.h. Redefined
 // here under a feature-local name so this header is self-contained for the coordinator.
-struct PgrAlwaysHitValue {   // 12 bytes, 4-byte aligned
+struct PgsAlwaysHitValue {   // 12 bytes, 4-byte aligned
     int32_t item;            // 0  regular/Premier or metadata-resolved inventory Safari item
     float   radius;          // 4  reticle radius (untouched by this layer)
     uint8_t bullseye;        // 8  0/1 (untouched)

@@ -45,7 +45,7 @@ void gcFree(uintptr_t h){
  if(outerOutput){assert(outerOutput->status==0&&outerOutput->camera_id==0&&outerOutput->x==0&&outerOutput->yaw==0);}
  if(reenterCleanup){reenterCleanup=false;const int before=invokes;
   auto r=request(2500);PgrCameraSamplerOutput nested{};
-  nestedResult=api->sample(&r,&nested);assert(nestedResult==PGR_CS_ERR_BUSY&&nested.status==nestedResult&&invokes==before);
+  nestedResult=api->sample(&r,&nested);assert(nestedResult==PGS_CS_ERR_BUSY&&nested.status==nestedResult&&invokes==before);
  }
  if(sleepCleanup&&finalPhase){sleepCleanup=false;sleepMs(250);}
  move();
@@ -92,21 +92,21 @@ int main(int argc,char **argv){
  object(VECTOR)->x=1;object(VECTOR)->y=0;object(VECTOR)->z=0;
  object(LAYER)->integer=13;object(MASK)->integer=8192;object(ID)->integer=1234;
  PgrCameraSamplerOutput out{};reenterCleanup=true;
- assert(sample(2500,out)==PGR_CS_SAMPLE&&firstRoot==CAMERA&&nestedResult==PGR_CS_ERR_BUSY);
+ assert(sample(2500,out)==PGS_CS_SAMPLE&&firstRoot==CAMERA&&nestedResult==PGS_CS_ERR_BUSY);
  assert(out.camera_id==1234&&out.mask==8192&&out.layer==13&&out.x==1&&out.y==0&&out.z==0&&std::fabs(out.yaw-90)<1e-8&&moves>10);
  out={};slept=false;sleepFirstRoot=true;int allocationBefore=invokes;
- assert(sample(100,out)==PGR_CS_UNAVAILABLE&&slept&&out.reason==PGR_CS_REASON_LEASE);
+ assert(sample(100,out)==PGS_CS_UNAVAILABLE&&slept&&out.reason==PGS_CS_REASON_LEASE);
  assert(invokes==allocationBefore); // the first natural-camera root exhausted the window
  out={};slept=false;sleepCleanup=true;
- assert(sample(200,out)==PGR_CS_UNAVAILABLE&&slept&&out.reason==PGR_CS_REASON_LEASE);
+ assert(sample(200,out)==PGS_CS_UNAVAILABLE&&slept&&out.reason==PGS_CS_REASON_LEASE);
  assert(!out.camera_id&&!out.mask&&!out.layer&&out.x==0&&out.yaw==0);
  out={};slept=false;sleepMain=true;const int before=invokes;
- assert(sample(100,out)==PGR_CS_UNAVAILABLE&&slept&&out.reason==PGR_CS_REASON_LEASE);
+ assert(sample(100,out)==PGS_CS_UNAVAILABLE&&slept&&out.reason==PGS_CS_REASON_LEASE);
  assert(invokes==before+1); // no further managed reads after the expired get_main
  auto bad=request(2500);bad.version=99;out={};const int rc=api->sample(&bad,&out);
- assert(rc==PGR_CS_ERR_BAD_VERSION&&out.status==rc&&handles.empty());
+ assert(rc==PGS_CS_ERR_BAD_VERSION&&out.status==rc&&handles.empty());
  object(CAMERA)->klass=&poisonClass;out={};
- assert(sample(2500,out)==PGR_CS_ERR_METADATA&&out.status==PGR_CS_ERR_METADATA);
+ assert(sample(2500,out)==PGS_CS_ERR_METADATA&&out.status==PGS_CS_ERR_METADATA);
  std::puts("PASS native camera lifetime: moving raw inputs/roots, direct args, cleanup busy+expiry, between-call lease, output status");
  return 0;
 }

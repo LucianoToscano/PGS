@@ -27,41 +27,41 @@ extern "C" {
 
 static_assert(sizeof(void *) == 8, "QuickballMetadata native ABI requires LP64");
 
-enum PgrQuickballMetaInfo {
-  PGR_QB_FEATURE_ID   = 55,
-  PGR_QB_API_VERSION  = 2,   // bumped: config now carries the typed EXTRA primitives / export gates
-  PGR_QB_CFG_VERSION  = 2,
-  PGR_QB_OUT_VERSION  = 2,
-  PGR_QB_REASON_MAX   = 120, // prepare() part()/outcomes reason .slice(0,120)
-  PGR_QB_OUTCOME_MAX  = 6    // LITERALS: CatchError/Success/Escape/Flee/Missed/ItemReplacement
+enum PgsQuickballMetaInfo {
+  PGS_QB_FEATURE_ID   = 55,
+  PGS_QB_API_VERSION  = 2,   // bumped: config now carries the typed EXTRA primitives / export gates
+  PGS_QB_CFG_VERSION  = 2,
+  PGS_QB_OUT_VERSION  = 2,
+  PGS_QB_REASON_MAX   = 120, // prepare() part()/outcomes reason .slice(0,120)
+  PGS_QB_OUTCOME_MAX  = 6    // LITERALS: CatchError/Success/Escape/Flee/Missed/ItemReplacement
 };
 
-// Precise negative classifications beyond the feature47 PgrMetaStatus set (returned by resolve()).
-enum PgrQuickballStatus {
-  PGR_QB_NOT_READY = 1, // mandatory classes/domain assemblies not ready; output cleared, retry
-  PGR_QB_ERR_EXTRA_MISSING = -34,  // extra config null/bad-version OR a mandatory extra primitive null
-  PGR_QB_ERR_GC_POINTER    = -35,  // pointerHandleAbi fingerprint mismatch (gc-pointer-abi, fatal)
-  PGR_QB_ERR_SUCCESS_LIT   = -36   // CatchSuccess static literal structural/read fault (fatal)
+// Precise negative classifications beyond the feature47 PgsMetaStatus set (returned by resolve()).
+enum PgsQuickballStatus {
+  PGS_QB_NOT_READY = 1, // mandatory classes/domain assemblies not ready; output cleared, retry
+  PGS_QB_ERR_EXTRA_MISSING = -34,  // extra config null/bad-version OR a mandatory extra primitive null
+  PGS_QB_ERR_GC_POINTER    = -35,  // pointerHandleAbi fingerprint mismatch (gc-pointer-abi, fatal)
+  PGS_QB_ERR_SUCCESS_LIT   = -36   // CatchSuccess static literal structural/read fault (fatal)
 };
 
-// Optional-export presence bits (PgrQuickballExtra.present). The host sets a bit iff it resolved the
+// Optional-export presence bits (PgsQuickballExtra.present). The host sets a bit iff it resolved the
 // export non-null; these mirror prepare()'s OPTIONAL map + the type_get_object findExportByName gate.
-enum PgrQuickballExport {
-  PGR_QB_EXP_OBJECT_NEW            = 1u << 0,
-  PGR_QB_EXP_FIELD_SET_VALUE       = 1u << 1,
-  PGR_QB_EXP_OBJECT_GET_VIRTUAL    = 1u << 2,
-  PGR_QB_EXP_STRING_NEW            = 1u << 3,
-  PGR_QB_EXP_STRING_LENGTH         = 1u << 4,
-  PGR_QB_EXP_STRING_CHARS          = 1u << 5,
-  PGR_QB_EXP_TYPE_GET_OBJECT       = 1u << 6,
-  PGR_QB_EXP_TYPE_IS_BYREF         = 1u << 7,
-  PGR_QB_EXP_CLASS_GET_FIELDS      = 1u << 8
+enum PgsQuickballExport {
+  PGS_QB_EXP_OBJECT_NEW            = 1u << 0,
+  PGS_QB_EXP_FIELD_SET_VALUE       = 1u << 1,
+  PGS_QB_EXP_OBJECT_GET_VIRTUAL    = 1u << 2,
+  PGS_QB_EXP_STRING_NEW            = 1u << 3,
+  PGS_QB_EXP_STRING_LENGTH         = 1u << 4,
+  PGS_QB_EXP_STRING_CHARS          = 1u << 5,
+  PGS_QB_EXP_TYPE_GET_OBJECT       = 1u << 6,
+  PGS_QB_EXP_TYPE_IS_BYREF         = 1u << 7,
+  PGS_QB_EXP_CLASS_GET_FIELDS      = 1u << 8
 };
 
 #ifdef __cplusplus
 }  // extern "C"
 
-namespace pgr_quickball_schema {
+namespace pgs_quickball_schema {
 
 // Optional sub-feature groups, in the exact order prepare() returns them (CORE==the mandatory path).
 // OUTCOMES maps to the top-level p.outcomes; TRACE_PARAMS to p.trace.params. The nested trace parts
@@ -185,7 +185,7 @@ inline constexpr FieldSpec kFields[] = {
   // --- CORE (mandatory) ---
   {GROUP_CORE, C_BALL, PGR_GAME_QUICKBALL_METADATA_H_ANIMATOR_NAME, PGR_GAME_QUICKBALL_METADATA_H_ANIMATOR_OFFSET, PGR_MD_FIELD_ANY, 0, 0x50, 0, "UnityEngine.Animator"},
   {GROUP_CORE, C_BALL, PGR_GAME_QUICKBALL_METADATA_H_HOLDINGBREADBALL_K__BACKINGFIELD_NAME, PGR_GAME_QUICKBALL_METADATA_H_HOLDINGBREADBALL_K__BACKINGFIELD_OFFSET, PGR_MD_FIELD_ANY, 0, 0x50, 0, "System.Boolean"},
-  {GROUP_CORE, C_RESPONSE, PGR_GAME_QUICKBALL_METADATA_H_STATUS_NAME, PGR_GAME_QUICKBALL_METADATA_H_STATUS_OFFSET, PGR_MD_FIELD_ENUM_I32, 4, 0x50, 0, "Holoholo.Rpc.CatchPokemonOutProto.Types.Status"},
+  {GROUP_CORE, C_RESPONSE, PGR_GAME_QUICKBALL_METADATA_H_STATUS_NAME, PGR_GAME_QUICKBALL_METADATA_H_STATUS_OFFSET, PGS_MD_FIELD_ENUM_I32, 4, 0x50, 0, "Holoholo.Rpc.CatchPokemonOutProto.Types.Status"},
   // --- TRACE: AnimatorStateInfo layout (0x10 + i*4) ---
   {GROUP_TRACE, C_INFO, PGR_GAME_QUICKBALL_METADATA_H_M_NAME_NAME, PGR_GAME_QUICKBALL_METADATA_H_M_NAME_OFFSET, PGR_MD_FIELD_ANY, 0, 0x50, 0, "System.Int32"},
   {GROUP_TRACE, C_INFO, PGR_GAME_QUICKBALL_METADATA_H_M_PATH_NAME, PGR_GAME_QUICKBALL_METADATA_H_M_PATH_OFFSET, PGR_MD_FIELD_ANY, 0, 0x50, 0, "System.Int32"},
@@ -303,7 +303,7 @@ inline constexpr MethodSpec kMethods[] = {
   {GROUP_ALWAYSHIT, C_BALL, PGR_GAME_QUICKBALL_METADATA_H_BTRB_NAME, "Niantic.Holoholo.Encounter.PokeballThrow", PGR_MD_MATCH_EXACT, 1, "System.Boolean", nullptr, 0,
    PGR_GAME_QUICKBALL_METADATA_H_ALWAYSHIT_BALL_BTRB_RVA, PGR_GAME_QUICKBALL_METADATA_H_ALWAYSHIT_BALL_BTRB_PROLOGUE},
   // --- ARTHROWS: TryCapture return is checked for exact IPromise(`1)?<CatchPokemonOutProto> in resolve().
-  {GROUP_ARTHROWS, C_MAPPOKEMON, "TryCapture", "Holoholo.Rpc.CatchPokemonOutProto", PGR_MD_MATCH_CONTAINS, 2,
+  {GROUP_ARTHROWS, C_MAPPOKEMON, "TryCapture", "Holoholo.Rpc.CatchPokemonOutProto", PGS_MD_MATCH_CONTAINS, 2,
    "Niantic.Holoholo.Encounter.PokeballThrow", "Holoholo.Rpc.ARPlusEncounterValuesProto", 0,
    PGR_GAME_QUICKBALL_METADATA_H_ARTHROWS_MAPPOKEMON_TRYCAPTURE_RVA, PGR_GAME_QUICKBALL_METADATA_H_ARTHROWS_MAPPOKEMON_TRYCAPTURE_PROLOGUE},
   // --- MAPTAP: GetGroundPosition param1 is checked for Vector3(&) + type_is_byref in resolve().
@@ -393,29 +393,29 @@ inline constexpr uint32_t kGcFreeTail[] = PGR_GAME_QUICKBALL_METADATA_H_KGCFREET
 
 // CatchPokemonOutProto.Types.Status literal names (prepare line 16: LITERALS).
 inline constexpr const char *kStatusEnumName = "Holoholo.Rpc.CatchPokemonOutProto.Types.Status";
-inline constexpr const char *kOutcomeLiterals[PGR_QB_OUTCOME_MAX] = {
+inline constexpr const char *kOutcomeLiterals[PGS_QB_OUTCOME_MAX] = {
   "CatchError", "CatchSuccess", "CatchEscape", "CatchFlee", "CatchMissed", "CatchItemReplacement"};
 
 // 80-byte il2cpp_debug_get_method_info prologue (prepare lines 56..59, 179..180).
 inline constexpr unsigned char kDebugPrologue[] = PGR_GAME_QUICKBALL_METADATA_H_KDEBUGPROLOGUE_FINGERPRINT;
 inline constexpr uint32_t kDebugPrologueLen = sizeof(kDebugPrologue);
 
-}  // namespace pgr_quickball_schema
+}  // namespace pgs_quickball_schema
 
 extern "C" {
 #endif  // __cplusplus
 
 // Per optional sub-feature group result. reason is empty on available==1.
-struct PgrQuickballMetaGroup {
+struct PgsQuickballMetaGroup {
   uint32_t available;
   uint32_t reserved;
-  char reason[PGR_QB_REASON_MAX];
+  char reason[PGS_QB_REASON_MAX];
 };
 
 // Extra typed il2cpp primitives this module OWNS and either calls (field_static_get_value /
 // type_is_byref / class_get_fields) or fingerprints the code of (gchandle_* addresses), plus the
-// optional-export presence bitmask (PgrQuickballExport). Supplied by the JS adapter. Versioned.
-struct PgrQuickballExtra {
+// optional-export presence bitmask (PgsQuickballExport). Supplied by the JS adapter. Versioned.
+struct PgsQuickballExtra {
   uint32_t version, size;
   void *field_static_get_value;    // void (void* field, void* out) ; MANDATORY (success literal)
   void *type_is_byref;             // bool (void* type)              ; optional (mapTap)
@@ -423,50 +423,50 @@ struct PgrQuickballExtra {
   const void *gchandle_new;        // export CODE address (read-only); MANDATORY (pointerHandleAbi)
   const void *gchandle_get_target; // export CODE address (read-only); MANDATORY
   const void *gchandle_free;       // export CODE address (read-only); MANDATORY
-  uint32_t present;                // PgrQuickballExport bits (host-resolved export presence)
+  uint32_t present;                // PgsQuickballExport bits (host-resolved export presence)
   uint32_t reserved;
 };
 
 // Config mirrors feature53's shape/semantics plus the typed extra block (API 2).
-struct PgrQuickballMetaConfig {
+struct PgsQuickballMetaConfig {
   uint32_t version, size;
   PgrMetaBindConfig binding;
   void *thread_current;
   uint64_t owner_tid;
-  const PgrQuickballExtra *extra;
+  const PgsQuickballExtra *extra;
 };
 
 #ifdef __cplusplus
 // Fixed positional output (an ABI; never reordered). classes/conflict are kClassCount; fields/methods/
 // method_code track the schema tables; the scalar literal values and the two trace.params / one
 // alwaysHit discovered handles follow, then the per-group availability array.
-struct PgrQuickballMetaOutput {
+struct PgsQuickballMetaOutput {
   uint32_t version, size;
-  const void *classes[pgr_quickball_schema::kClassCount];
-  uint32_t class_conflict[pgr_quickball_schema::kClassCount];
+  const void *classes[pgs_quickball_schema::kClassCount];
+  uint32_t class_conflict[pgs_quickball_schema::kClassCount];
   const void *enum_class;
-  const void *fields[pgr_quickball_schema::kFieldCount];
-  const void *methods[pgr_quickball_schema::kMethodCount];
-  const void *method_code[pgr_quickball_schema::kMethodCount];  // compiled addr for pinned methods, else null
+  const void *fields[pgs_quickball_schema::kFieldCount];
+  const void *methods[pgs_quickball_schema::kMethodCount];
+  const void *method_code[pgs_quickball_schema::kMethodCount];  // compiled addr for pinned methods, else null
   const void *trace_params_bool;   // GetBool(Int32) MethodInfo (valid iff groups[TRACE_PARAMS].available)
   const void *trace_params_int;    // GetInteger(Int32) MethodInfo
   const void *alwayshit_current;   // SchedulerStateMachine current-state FieldInfo (iff ALWAYSHIT avail)
   int32_t success;                 // CatchSuccess literal value (mandatory)
-  int32_t outcomes_values[PGR_QB_OUTCOME_MAX];  // LITERALS order (valid iff groups[OUTCOMES].available)
+  int32_t outcomes_values[PGS_QB_OUTCOME_MAX];  // LITERALS order (valid iff groups[OUTCOMES].available)
   int32_t iv_overflow_value;       // HorizontalWrapMode.Overflow (valid iff groups[IV].available)
   int32_t iv_alignment_value;      // TextAnchor.MiddleCenter
-  PgrQuickballMetaGroup groups[pgr_quickball_schema::kGroupCount];
+  PgsQuickballMetaGroup groups[pgs_quickball_schema::kGroupCount];
 };
 
-struct PgrQuickballMetaApi {
+struct PgsQuickballMetaApi {
   uint32_t version, size, config_size, output_size;
-  int (*resolve)(const PgrQuickballMetaConfig *, PgrQuickballMetaOutput *);
+  int (*resolve)(const PgsQuickballMetaConfig *, PgsQuickballMetaOutput *);
 };
-static_assert(sizeof(PgrQuickballExtra) == 64, "LP64 extra block");
-static_assert(sizeof(PgrQuickballMetaConfig) == 96, "LP64 config = 88 (feature53) + extra ptr");
-static_assert(sizeof(PgrQuickballMetaGroup) == 128, "group = 8 + 120 reason");
-static_assert(sizeof(PgrQuickballMetaApi) == 24, "LP64 API");
-static_assert(sizeof(PgrQuickballMetaOutput) == 3712, "fixed positional output ABI (adapter mirrors)");
+static_assert(sizeof(PgsQuickballExtra) == 64, "LP64 extra block");
+static_assert(sizeof(PgsQuickballMetaConfig) == 96, "LP64 config = 88 (feature53) + extra ptr");
+static_assert(sizeof(PgsQuickballMetaGroup) == 128, "group = 8 + 120 reason");
+static_assert(sizeof(PgsQuickballMetaApi) == 24, "LP64 API");
+static_assert(sizeof(PgsQuickballMetaOutput) == 3712, "fixed positional output ABI (adapter mirrors)");
 #endif
 
 const void *pgs_quickball_metadata_api(uint32_t version);

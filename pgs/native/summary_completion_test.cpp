@@ -135,7 +135,7 @@ uint64_t this_tid() { return static_cast<uint64_t>(static_cast<pid_t>(::gettid()
 
 PgrSummaryCompletionSample take_sample() {
   PgrSummaryCompletionSample s{};
-  assert(g_api->sample(&s) == PGR_SC_OK);
+  assert(g_api->sample(&s) == PGS_SC_OK);
   assert(s.version == 1 && s.size == sizeof(PgrSummaryCompletionSample));
   return s;
 }
@@ -177,7 +177,7 @@ PgrSummaryCompletionRequest make_req(Scene &s, uint64_t id, uint64_t epoch, uint
 
 uint64_t acquire(uint64_t epoch, uint64_t tid) {
   uint64_t tok = 0;
-  assert(g_api->acquire(epoch, tid, &tok) == PGR_SC_OK);
+  assert(g_api->acquire(epoch, tid, &tok) == PGS_SC_OK);
   return tok;
 }
 
@@ -218,35 +218,35 @@ int main(int argc, char **argv) {
   PgrSummaryCompletionOutput out{};
 
   // 1. Validation + not-installed + idempotence + reconfig.
-  assert(api->install(nullptr) == PGR_SC_ERR_NULL_ARG);
+  assert(api->install(nullptr) == PGS_SC_ERR_NULL_ARG);
   PgrSummaryCompletionConfig bad = cfg; bad.version = 2;
-  assert(api->install(&bad) == PGR_SC_ERR_BAD_VERSION);
+  assert(api->install(&bad) == PGS_SC_ERR_BAD_VERSION);
   bad = cfg; bad.size = sizeof(PgrSummaryCompletionConfig) - 1;
-  assert(api->install(&bad) == PGR_SC_ERR_BAD_SIZE);
+  assert(api->install(&bad) == PGS_SC_ERR_BAD_SIZE);
   bad = cfg; bad.m_dismiss = nullptr;
-  assert(api->install(&bad) == PGR_SC_ERR_MISSING_PTR);
+  assert(api->install(&bad) == PGS_SC_ERR_MISSING_PTR);
   { reset_runtime(); Scene s; wire(s, next_id()); PgrSummaryCompletionRequest r = make_req(s, next_id(), 1, tid);
-    assert(api->validate(&r) == PGR_SC_ERR_NOT_INSTALLED);
-    assert(api->complete(&r, 1, &out) == PGR_SC_ERR_NOT_INSTALLED && out.status == PGR_SC_ERR_NOT_INSTALLED); }
+    assert(api->validate(&r) == PGS_SC_ERR_NOT_INSTALLED);
+    assert(api->complete(&r, 1, &out) == PGS_SC_ERR_NOT_INSTALLED && out.status == PGS_SC_ERR_NOT_INSTALLED); }
 
-  assert(api->install(&cfg) == PGR_SC_OK);
-  assert(api->install(&cfg) == PGR_SC_OK);  // idempotent
+  assert(api->install(&cfg) == PGS_SC_OK);
+  assert(api->install(&cfg) == PGS_SC_OK);  // idempotent
   bad = cfg; bad.state_open = 9;
-  assert(api->install(&bad) == PGR_SC_ERR_RECONFIG);
-  assert(api->complete(nullptr, 1, nullptr) == PGR_SC_ERR_NULL_ARG);  // no output buffer
+  assert(api->install(&bad) == PGS_SC_ERR_RECONFIG);
+  assert(api->complete(nullptr, 1, nullptr) == PGS_SC_ERR_NULL_ARG);  // no output buffer
 
   // 2. Valid summary: validate VALID, acquire, complete DONE, Dismiss invoked once, output flags set.
   { reset_runtime(); Scene s; uint64_t id = next_id(); wire(s, id);
-    assert(api->update(1, 2000, 1, tid) == PGR_SC_OK);
+    assert(api->update(1, 2000, 1, tid) == PGS_SC_OK);
     PgrSummaryCompletionRequest r = make_req(s, id, 1, tid);
-    assert(api->validate(&r) == PGR_SC_DONE);
+    assert(api->validate(&r) == PGS_SC_DONE);
     uint64_t tok = acquire(1, tid); assert(tok != 0);
     g_dismiss_calls = 0;
-    assert(complete(r, tok, out) == PGR_SC_DONE);
+    assert(complete(r, tok, out) == PGS_SC_DONE);
     assert(g_dismiss_calls == 1);
-    assert(out.version == 1 && out.size == 24 && out.status == PGR_SC_DONE);
-    assert((out.flags & PGR_SC_FLAG_INVOKED) && (out.flags & PGR_SC_FLAG_BEFORE_KNOWN));
-    assert((out.flags & PGR_SC_FLAG_AFTER_KNOWN) && !(out.flags & PGR_SC_FLAG_GONE));
+    assert(out.version == 1 && out.size == 24 && out.status == PGS_SC_DONE);
+    assert((out.flags & PGS_SC_FLAG_INVOKED) && (out.flags & PGS_SC_FLAG_BEFORE_KNOWN));
+    assert((out.flags & PGS_SC_FLAG_AFTER_KNOWN) && !(out.flags & PGS_SC_FLAG_GONE));
     assert(out.before == kStateOpen && out.after == 3);  // advanced off STATE_OPEN
     PgrSummaryCompletionSample sm = take_sample();
     assert(sm.validate_ok >= 1 && sm.complete_ok == 1 && sm.last_token == tok && sm.busy == 0);
@@ -254,85 +254,85 @@ int main(int argc, char **argv) {
 
   // 2b. Optional state absent: proto/response/id still validated; complete still works.
   { reset_runtime(); Scene s; uint64_t id = next_id(); wire(s, id);
-    assert(api->update(1, 2000, 1, tid) == PGR_SC_OK);
+    assert(api->update(1, 2000, 1, tid) == PGS_SC_OK);
     PgrSummaryCompletionRequest r = make_req(s, id, 1, tid, /*with_state=*/false);
     assert(r.state == nullptr);
-    assert(api->validate(&r) == PGR_SC_DONE);
+    assert(api->validate(&r) == PGS_SC_DONE);
     uint64_t tok = acquire(1, tid); assert(tok != 0);
     g_dismiss_calls = 0;
-    assert(complete(r, tok, out) == PGR_SC_DONE && g_dismiss_calls == 1 && (out.flags & PGR_SC_FLAG_INVOKED));
+    assert(complete(r, tok, out) == PGS_SC_DONE && g_dismiss_calls == 1 && (out.flags & PGS_SC_FLAG_INVOKED));
   }
 
   // 3. Each identity mismatch -> validate INVALID (0) and complete REFUSED without invoking Dismiss.
   { reset_runtime(); Scene s; uint64_t id = next_id(); wire(s, id);
-    assert(api->update(1, 2000, 1, tid) == PGR_SC_OK);
+    assert(api->update(1, 2000, 1, tid) == PGS_SC_OK);
     g_dismiss_calls = 0;
 
     PgrSummaryCompletionRequest wrong_id = make_req(s, id + 1, 1, tid);  // expected key != response id
-    assert(api->validate(&wrong_id) == PGR_SC_OK);
+    assert(api->validate(&wrong_id) == PGS_SC_OK);
     uint64_t t = acquire(1, tid); assert(t != 0);
-    assert(complete(wrong_id, t, out) == PGR_SC_OK && !(out.flags & PGR_SC_FLAG_INVOKED));
+    assert(complete(wrong_id, t, out) == PGS_SC_OK && !(out.flags & PGS_SC_FLAG_INVOKED));
 
     PgrSummaryCompletionRequest wrong_gui = make_req(s, id, 1, tid);
     wrong_gui.gui = borrow(&s.resp);  // a response where a gui is expected
-    assert(api->validate(&wrong_gui) == PGR_SC_OK);
+    assert(api->validate(&wrong_gui) == PGS_SC_OK);
 
     PgrSummaryCompletionRequest wrong_state = make_req(s, id, 1, tid);
     wrong_state.state = borrow(&s.resp);  // non-null state with the wrong class
-    assert(api->validate(&wrong_state) == PGR_SC_OK);
+    assert(api->validate(&wrong_state) == PGS_SC_OK);
 
     void *saved = s.state.dscx; s.state.dscx = &s.resp;  // dscx != gui
-    assert(vok(make_req(s, id, 1, tid)) == PGR_SC_OK);
+    assert(vok(make_req(s, id, 1, tid)) == PGS_SC_OK);
     s.state.dscx = saved;
 
     saved = s.state.dscy; s.state.dscy = &s.gui;  // dscy != proto
-    assert(vok(make_req(s, id, 1, tid)) == PGR_SC_OK);
+    assert(vok(make_req(s, id, 1, tid)) == PGS_SC_OK);
     s.state.dscy = saved;
 
     s.resp.status = kSuccess + 1;  // not CatchSuccess
-    assert(vok(make_req(s, id, 1, tid)) == PGR_SC_OK);
+    assert(vok(make_req(s, id, 1, tid)) == PGS_SC_OK);
     s.resp.status = kSuccess;
 
     PgrSummaryCompletionRequest resp_split = make_req(s, id, 1, tid);
     FakeResponse other{&cls_response, kSuccess, {0}}; put_id(other.captured, id);
     resp_split.response = borrow(&other);  // response != proto (distinct object)
-    assert(api->validate(&resp_split) == PGR_SC_OK);
+    assert(api->validate(&resp_split) == PGS_SC_OK);
 
-    s.gui.current_state = PGR_SC_STATE_OPENING;  // still opening: Dismiss accepts it
+    s.gui.current_state = PGS_SC_STATE_OPENING;  // still opening: Dismiss accepts it
     assert(vok(make_req(s, id, 1, tid)) == 1);
     s.gui.current_state = 0;  // closed
-    assert(vok(make_req(s, id, 1, tid)) == PGR_SC_OK);
+    assert(vok(make_req(s, id, 1, tid)) == PGS_SC_OK);
     s.gui.current_state = 3;  // already dismissing
-    assert(vok(make_req(s, id, 1, tid)) == PGR_SC_OK);
+    assert(vok(make_req(s, id, 1, tid)) == PGS_SC_OK);
     s.gui.current_state = kStateOpen;
 
     s.gui.on_dismissed = nullptr;  // onDismissed null
-    assert(vok(make_req(s, id, 1, tid)) == PGR_SC_OK);
+    assert(vok(make_req(s, id, 1, tid)) == PGS_SC_OK);
     s.gui.on_dismissed = &s.cb;
 
     FakeAction other_cb{&cls_action};
     PgrSummaryCompletionRequest bad_cb = make_req(s, id, 1, tid);
     bad_cb.dismissed = borrow(&other_cb);  // dismissed != onDismissed
-    assert(api->validate(&bad_cb) == PGR_SC_OK);
+    assert(api->validate(&bad_cb) == PGS_SC_OK);
 
     PgrSummaryCompletionRequest null_cb = make_req(s, id, 1, tid);
     null_cb.dismissed = nullptr;  // dismissed null
-    assert(api->validate(&null_cb) == PGR_SC_OK);
+    assert(api->validate(&null_cb) == PGS_SC_OK);
 
     uint8_t zero[8] = {0};
     PgrSummaryCompletionRequest zero_key = make_req(s, id, 1, tid);
     std::memcpy(zero_key.expected_key, zero, 8);  // zero expected id
-    assert(api->validate(&zero_key) == PGR_SC_OK);
+    assert(api->validate(&zero_key) == PGS_SC_OK);
 
     g_alive_value = 0;  // gui not alive
-    assert(vok(make_req(s, id, 1, tid)) == PGR_SC_OK);
+    assert(vok(make_req(s, id, 1, tid)) == PGS_SC_OK);
     g_alive_value = 1;
     g_alive_fault = 1;  // alive probe throws -> fail closed invalid
-    assert(vok(make_req(s, id, 1, tid)) == PGR_SC_OK);
+    assert(vok(make_req(s, id, 1, tid)) == PGS_SC_OK);
     g_alive_fault = 2;  // wrong boxed class -> invalid
-    assert(vok(make_req(s, id, 1, tid)) == PGR_SC_OK);
+    assert(vok(make_req(s, id, 1, tid)) == PGS_SC_OK);
     g_alive_fault = 3;  // out-of-range boolean byte -> invalid
-    assert(vok(make_req(s, id, 1, tid)) == PGR_SC_OK);
+    assert(vok(make_req(s, id, 1, tid)) == PGS_SC_OK);
     g_alive_fault = 0;
 
     assert(g_dismiss_calls == 0);  // nothing was ever invoked
@@ -341,16 +341,16 @@ int main(int argc, char **argv) {
   // 4. Gate: off / expired lease / wrong epoch -> acquire yields no token and complete is refused.
   { reset_runtime(); Scene s; uint64_t id = next_id(); wire(s, id);
     PgrSummaryCompletionRequest r = make_req(s, id, 1, tid);
-    assert(api->update(0, 0, 1, tid) == PGR_SC_OK);
+    assert(api->update(0, 0, 1, tid) == PGS_SC_OK);
     assert(acquire(1, tid) == 0);
-    assert(complete(r, 999, out) == PGR_SC_OK && !(out.flags & PGR_SC_FLAG_INVOKED));
-    assert(api->update(1, 2000, 2, tid) == PGR_SC_OK);
+    assert(complete(r, 999, out) == PGS_SC_OK && !(out.flags & PGS_SC_FLAG_INVOKED));
+    assert(api->update(1, 2000, 2, tid) == PGS_SC_OK);
     assert(acquire(1, tid) == 0);  // epoch mismatch
     uint64_t t = acquire(2, tid); assert(t != 0);
     PgrSummaryCompletionRequest r2 = make_req(s, id, 2, tid); r2.epoch = 1;  // request epoch 1 != armed 2
     g_dismiss_calls = 0;
-    assert(complete(r2, t, out) == PGR_SC_OK && g_dismiss_calls == 0);
-    assert(api->update(1, 1, 3, tid) == PGR_SC_OK);
+    assert(complete(r2, t, out) == PGS_SC_OK && g_dismiss_calls == 0);
+    assert(api->update(1, 1, 3, tid) == PGS_SC_OK);
     ::usleep(3000);
     assert(acquire(3, tid) == 0);
     assert(g_dismiss_calls == 0);
@@ -358,63 +358,63 @@ int main(int argc, char **argv) {
 
   // 5. Repeated / older token: a token completes at most once; reuse or older is refused.
   { reset_runtime(); Scene s; uint64_t id = next_id(); wire(s, id);
-    assert(api->update(1, 2000, 1, tid) == PGR_SC_OK);
+    assert(api->update(1, 2000, 1, tid) == PGS_SC_OK);
     PgrSummaryCompletionRequest r = make_req(s, id, 1, tid);
     uint64_t t1 = acquire(1, tid); assert(t1 != 0);
     uint64_t t2 = acquire(1, tid); assert(t2 == t1 + 1);  // strictly monotonic
     g_dismiss_calls = 0;
-    assert(complete(r, t2, out) == PGR_SC_DONE && g_dismiss_calls == 1);
+    assert(complete(r, t2, out) == PGS_SC_DONE && g_dismiss_calls == 1);
     s.gui.current_state = kStateOpen;  // reset for the refused retries
-    assert(complete(r, t2, out) == PGR_SC_OK && g_dismiss_calls == 1);  // reused: refused
-    assert(complete(r, t1, out) == PGR_SC_OK && g_dismiss_calls == 1);  // older: refused
+    assert(complete(r, t2, out) == PGS_SC_OK && g_dismiss_calls == 1);  // reused: refused
+    assert(complete(r, t1, out) == PGS_SC_OK && g_dismiss_calls == 1);  // older: refused
     uint64_t t3 = acquire(1, tid); assert(t3 == t2 + 1);
-    assert(complete(r, t3, out) == PGR_SC_DONE && g_dismiss_calls == 2);  // a fresh token works again
+    assert(complete(r, t3, out) == PGS_SC_DONE && g_dismiss_calls == 2);  // a fresh token works again
   }
 
   // 6. Dismiss exception: complete reports ERR_MANAGED (host safe fallback) but still invoked once,
   //    with invoked flag set and the postcondition read.
   { reset_runtime(); Scene s; uint64_t id = next_id(); wire(s, id);
-    assert(api->update(1, 2000, 1, tid) == PGR_SC_OK);
+    assert(api->update(1, 2000, 1, tid) == PGS_SC_OK);
     PgrSummaryCompletionRequest r = make_req(s, id, 1, tid);
     uint64_t t = acquire(1, tid); assert(t != 0);
     g_dismiss_calls = 0; g_throw_on_dismiss = true;
-    assert(complete(r, t, out) == PGR_SC_ERR_MANAGED && g_dismiss_calls == 1);
-    assert((out.flags & PGR_SC_FLAG_INVOKED) && out.status == PGR_SC_ERR_MANAGED);
-    assert((out.flags & PGR_SC_FLAG_AFTER_KNOWN) && out.after == 3);  // postcondition still read
+    assert(complete(r, t, out) == PGS_SC_ERR_MANAGED && g_dismiss_calls == 1);
+    assert((out.flags & PGS_SC_FLAG_INVOKED) && out.status == PGS_SC_ERR_MANAGED);
+    assert((out.flags & PGS_SC_FLAG_AFTER_KNOWN) && out.after == 3);  // postcondition still read
     assert(take_sample().complete_fault >= 1 && take_sample().busy == 0);
   }
 
   // 7. Postcondition "gone": Dismiss leaves the gui not-alive -> gone flag, after unknown, DONE.
   { reset_runtime(); Scene s; uint64_t id = next_id(); wire(s, id);
-    assert(api->update(1, 2000, 1, tid) == PGR_SC_OK);
+    assert(api->update(1, 2000, 1, tid) == PGS_SC_OK);
     PgrSummaryCompletionRequest r = make_req(s, id, 1, tid);
     uint64_t t = acquire(1, tid); assert(t != 0);
     g_dismiss_oneshot = [](){ g_alive_value = 0; };  // becomes unreachable after Dismiss
-    assert(complete(r, t, out) == PGR_SC_DONE);
-    assert((out.flags & PGR_SC_FLAG_INVOKED) && (out.flags & PGR_SC_FLAG_GONE));
-    assert(!(out.flags & PGR_SC_FLAG_AFTER_KNOWN) && out.before == kStateOpen);
+    assert(complete(r, t, out) == PGS_SC_DONE);
+    assert((out.flags & PGS_SC_FLAG_INVOKED) && (out.flags & PGS_SC_FLAG_GONE));
+    assert(!(out.flags & PGS_SC_FLAG_AFTER_KNOWN) && out.before == kStateOpen);
   }
 
   // 8. Reentrancy inside Dismiss: a nested acquire gets no token (busy), a nested complete is refused,
   //    and a nested stop() cannot cause a second invoke. The outer Dismiss happens once.
   { reset_runtime(); Scene s; uint64_t id = next_id(); wire(s, id);
-    assert(api->update(1, 2000, 1, tid) == PGR_SC_OK);
+    assert(api->update(1, 2000, 1, tid) == PGS_SC_OK);
     PgrSummaryCompletionRequest r = make_req(s, id, 1, tid);
     uint64_t t = acquire(1, tid); assert(t != 0);
     g_dismiss_calls = 0;
     bool reentrant_token = true; int reentrant_complete = -1;
     g_dismiss_oneshot = [&]() {
       uint64_t nested = 7;
-      assert(g_api->acquire(1, g_owner, &nested) == PGR_SC_OK);
+      assert(g_api->acquire(1, g_owner, &nested) == PGS_SC_OK);
       reentrant_token = (nested != 0);  // must be 0 while busy
       PgrSummaryCompletionOutput nout{};
       reentrant_complete = g_api->complete(&r, t, &nout);  // reused token + busy -> refused
       g_api->stop(g_owner);  // immediate revoke from inside the callback
     };
-    assert(complete(r, t, out) == PGR_SC_DONE);
+    assert(complete(r, t, out) == PGS_SC_DONE);
     assert(g_dismiss_calls == 1);
     assert(!reentrant_token);
-    assert(reentrant_complete == PGR_SC_OK);
+    assert(reentrant_complete == PGS_SC_OK);
     assert(acquire(1, tid) == 0);  // gate revoked by the in-callback stop()
   }
 
@@ -423,31 +423,31 @@ int main(int argc, char **argv) {
     reset_runtime();
     Scene s; uint64_t id = next_id(); wire(s, id);
     PgrSummaryCompletionRequest r = make_req(s, id, 1, this_tid());
-    assert(g_api->validate(&r) == PGR_SC_OK);  // off-owner validate -> 0
+    assert(g_api->validate(&r) == PGS_SC_OK);  // off-owner validate -> 0
     uint64_t t = 5;
-    assert(g_api->acquire(1, this_tid(), &t) == PGR_SC_OK && t == 0);
+    assert(g_api->acquire(1, this_tid(), &t) == PGS_SC_OK && t == 0);
     PgrSummaryCompletionOutput o{};
-    assert(g_api->complete(&r, 1, &o) == PGR_SC_OK && !(o.flags & PGR_SC_FLAG_INVOKED));
+    assert(g_api->complete(&r, 1, &o) == PGS_SC_OK && !(o.flags & PGS_SC_FLAG_INVOKED));
   }).join();
   { reset_runtime(); Scene s; uint64_t id = next_id(); wire(s, id);
-    assert(api->update(1, 2000, 1, tid) == PGR_SC_OK);
+    assert(api->update(1, 2000, 1, tid) == PGS_SC_OK);
     PgrSummaryCompletionRequest r = make_req(s, id, 1, tid + 1);  // mismatched proven_tid
     uint64_t t = 5;
-    assert(api->acquire(1, tid + 1, &t) == PGR_SC_OK && t == 0);
-    assert(complete(r, 1, out) == PGR_SC_OK && !(out.flags & PGR_SC_FLAG_INVOKED));
+    assert(api->acquire(1, tid + 1, &t) == PGS_SC_OK && t == 0);
+    assert(complete(r, 1, out) == PGS_SC_OK && !(out.flags & PGS_SC_FLAG_INVOKED));
   }
 
   // 10. stop(): immediate revoke; a token acquired before the stop no longer completes.
   { reset_runtime(); Scene s; uint64_t id = next_id(); wire(s, id);
-    assert(api->update(1, 2000, 1, tid) == PGR_SC_OK);
+    assert(api->update(1, 2000, 1, tid) == PGS_SC_OK);
     PgrSummaryCompletionRequest r = make_req(s, id, 1, tid);
     uint64_t t = acquire(1, tid); assert(t != 0);
-    assert(api->stop(tid) == PGR_SC_OK);
+    assert(api->stop(tid) == PGS_SC_OK);
     g_dismiss_calls = 0;
-    assert(complete(r, t, out) == PGR_SC_OK && g_dismiss_calls == 0);  // revoked: refused, no invoke
-    assert(api->update(1, 2000, 1, tid) == PGR_SC_OK);
+    assert(complete(r, t, out) == PGS_SC_OK && g_dismiss_calls == 0);  // revoked: refused, no invoke
+    assert(api->update(1, 2000, 1, tid) == PGS_SC_OK);
     uint64_t t2 = acquire(1, tid); assert(t2 != 0);
-    assert(complete(r, t2, out) == PGR_SC_DONE && g_dismiss_calls == 1);
+    assert(complete(r, t2, out) == PGS_SC_DONE && g_dismiss_calls == 1);
   }
 
   // Coordinator regression: a previously issued token cannot survive same-epoch off/on.

@@ -26,6 +26,6 @@ int main(){
  refresh(&scroll_a,PlayerInfo{&field_stub,nullptr,nullptr,123},&field_stub);
  assert(updated==2&&forwarded==7&&refresh_scroll==nullptr);
  set_position(&scroll_a,1.f,1,nullptr);assert(forwarded==8);
- pgr_profile_scroll_install();assert(!installed); // Retry while bootstrap absent.
+ pgs_profile_scroll_install();assert(!installed); // Retry while bootstrap absent.
  puts("profile_scroll_test: PASS (updates, scoped reset, other lists, nesting, ABI forwarding)");
 }

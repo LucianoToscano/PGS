@@ -44,9 +44,9 @@ bool attached = true, duplicate = false, reenter = false;
 int hide = -1; // index of a class class_from_name should pretend is absent
 unsigned thread_checks = 0, detach_at = 0, names_allocated = 0, names_freed = 0, reentries = 0;
 unsigned char *module_base = nullptr; uint64_t module_size = 0;
-const PgrSharedMetadataApi *api = nullptr;
-PgrSharedMetadataConfig config{};
-PgrSharedMetaExtraExports extra{};
+const PgsSharedMetadataApi *api = nullptr;
+PgsSharedMetadataConfig config{};
+PgsSharedMetaExtraExports extra{};
 constexpr uint64_t gc_new_rva=0x1000,gc_get_rva=0x2000,gc_free_rva=0x3000;
 unsigned char debug_trampoline[16]{};
 void static_value(void *raw,void *out){assert(static_cast<Field*>(raw)->name=="CatchSuccess");*static_cast<int32_t*>(out)=1;}
@@ -154,11 +154,11 @@ void build_fixture() {
   assert(kClassCount == 7 && kFieldCount == 6 && kMethodCount == 7 && kOptionalCount == 21);
   assert(kStatusFieldIndex == 5);
   assert(!std::strcmp(kClasses[3].canonical, "Holoholo.Rpc.CatchPokemonOutProto"));
-  assert(kFields[0].owner == 3 && kFields[0].offset == 0x20 && kFields[0].kind == PGR_MD_FIELD_VALUE && kFields[0].value_size == 8);
+  assert(kFields[0].owner == 3 && kFields[0].offset == 0x20 && kFields[0].kind == PGS_MD_FIELD_VALUE && kFields[0].value_size == 8);
   assert(!std::strcmp(kFields[0].type_name, "System.UInt64"));
-  assert(kFields[1].owner == 0 && kFields[1].offset == 0x70 && kFields[1].kind == PGR_MD_FIELD_ENUM_I32);
-  assert(kFields[2].owner == 1 && kFields[2].offset == 0x2a0 && kFields[2].kind == PGR_MD_FIELD_REF);
-  assert(kFields[5].owner == 3 && kFields[5].offset == 0x10 && kFields[5].kind == PGR_MD_FIELD_ENUM_I32);
+  assert(kFields[1].owner == 0 && kFields[1].offset == 0x70 && kFields[1].kind == PGS_MD_FIELD_ENUM_I32);
+  assert(kFields[2].owner == 1 && kFields[2].offset == 0x2a0 && kFields[2].kind == PGS_MD_FIELD_REF);
+  assert(kFields[5].owner == 3 && kFields[5].offset == 0x10 && kFields[5].kind == PGS_MD_FIELD_ENUM_I32);
   assert(kMethods[2].param_count == 2 && !std::strcmp(kMethods[2].param1, "System.Boolean"));
   assert(kMethods[3].param_count == 2 && !std::strcmp(kMethods[3].param1, "Holoholo.Rpc.Item"));
   assert(kMethods[5].is_static == 1 && kMethods[6].is_static == 1 && kMethods[6].prologue == nullptr);
@@ -195,8 +195,8 @@ void build_fixture() {
 
   for (size_t i = 0; i < kFieldCount; i++) {
     const auto &s = kFields[i];
-    Type *t = s.kind == PGR_MD_FIELD_VALUE ? uint64_class->type
-            : s.kind == PGR_MD_FIELD_ENUM_I32 ? enum_class->type : ref_class->type;
+    Type *t = s.kind == PGS_MD_FIELD_VALUE ? uint64_class->type
+            : s.kind == PGS_MD_FIELD_ENUM_I32 ? enum_class->type : ref_class->type;
     fields.emplace_back(new Field{&classes[s.owner], &classes[s.owner], s.name, t, 0, s.offset});
   }
   fields.emplace_back(new Field{enum_class,enum_class,"CatchSuccess",enum_class->type,0x8050,0});
@@ -220,13 +220,13 @@ PgrSharedMetadataOutput success() {
     assert(kMethods[i].prologue ? out.method_code[i] == module_base + kMethods[i].code_rva : out.method_code[i] == nullptr);
   assert(out.field_type_classes[kStatusFieldIndex] == enum_class); // JS CatchSuccess-literal owner handle
   assert(out.field_type_classes[0] == uint64_class);
-  for (size_t i = 0; i < kOptionalCount; i++) assert(out.optional[i] == PGR_SHARED_OPT_UNAVAILABLE);
+  for (size_t i = 0; i < kOptionalCount; i++) assert(out.optional[i] == PGS_SHARED_OPT_UNAVAILABLE);
   assert(out.success==1&&out.caught_id_size==8&&out.field_meta_count>=6);
   for(size_t i=0;i<6;++i){assert(out.field_meta[i].offset==kFields[i].offset);assert(out.field_meta[i].kind==kFields[i].kind);assert(!std::strcmp(out.field_meta[i].name,kFields[i].name));}
   assert(out.enrichment_flags == 0 && names_allocated == names_freed);
   return out;
 }
-void failure(int expected, const PgrSharedMetadataConfig *c = nullptr) {
+void failure(int expected, const PgsSharedMetadataConfig *c = nullptr) {
   PgrSharedMetadataOutput out; std::memset(&out, 0xa5, sizeof(out));
   assert(api->resolve(c ? c : &config, &out) == expected);
   assert(zero(out) && names_allocated == names_freed);
@@ -237,7 +237,7 @@ int main(int argc, char **argv) {
   assert(argc == 2); void *library = dlopen(argv[1], RTLD_NOW | RTLD_LOCAL); assert(library);
   auto get = reinterpret_cast<const void *(*)(uint32_t)>(dlsym(library, "pgs_native_api")); assert(get);
   auto *core = static_cast<const pgs_native_api_v2 *>(get(2)); assert(core && core->query_feature && !core->query_feature(56, 1));
-  api = static_cast<const PgrSharedMetadataApi *>(core->query_feature(56, 2));
+  api = static_cast<const PgsSharedMetadataApi *>(core->query_feature(56, 2));
   assert(api && api->version == 2 && api->size == 24 && api->config_size == 96 && api->output_size == 67304);
 
   build_fixture();
@@ -255,56 +255,56 @@ int main(int argc, char **argv) {
   success(); success(); // repeated resolve yields identical validated pointers
 
   // Config / argument validation.
-  { auto c = config; c.version = 1; failure(PGR_SHARED_ERR_CONFIG, &c); c = config; c.size--; failure(PGR_SHARED_ERR_CONFIG, &c);
-    c = config; c.thread_current = nullptr; failure(PGR_SHARED_ERR_CONFIG, &c); }
-  {auto c=config;c.extra=nullptr;failure(PGR_SHARED_ERR_CONFIG,&c);
-   auto x=extra;c=config;c.extra=&x;x.field_static_get_value=nullptr;failure(PGR_SHARED_ERR_CONFIG,&c);}
+  { auto c = config; c.version = 1; failure(PGS_SHARED_ERR_CONFIG, &c); c = config; c.size--; failure(PGS_SHARED_ERR_CONFIG, &c);
+    c = config; c.thread_current = nullptr; failure(PGS_SHARED_ERR_CONFIG, &c); }
+  {auto c=config;c.extra=nullptr;failure(PGS_SHARED_ERR_CONFIG,&c);
+   auto x=extra;c=config;c.extra=&x;x.field_static_get_value=nullptr;failure(PGS_SHARED_ERR_CONFIG,&c);}
   { PgrSharedMetadataOutput out; std::memset(&out, 0xa5, sizeof(out));
-    assert(api->resolve(nullptr, &out) == PGR_SHARED_ERR_CONFIG && zero(out));
-    assert(api->resolve(&config, nullptr) == PGR_SHARED_ERR_NULL_ARG); }
+    assert(api->resolve(nullptr, &out) == PGS_SHARED_ERR_CONFIG && zero(out));
+    assert(api->resolve(&config, nullptr) == PGS_SHARED_ERR_NULL_ARG); }
 
   // Thread ownership / attachment.
-  attached = false; failure(PGR_SHARED_ERR_ATTACH); attached = true;
-  { auto c = config; c.owner_tid = 0; failure(PGR_SHARED_ERR_ATTACH, &c); c.owner_tid = config.owner_tid + 1; failure(PGR_SHARED_ERR_ATTACH, &c); }
-  { std::thread foreign([] { failure(PGR_SHARED_ERR_ATTACH); }); foreign.join(); }
-  thread_checks = 0; detach_at = 4; failure(PGR_SHARED_ERR_ATTACH); detach_at = 0; success();
+  attached = false; failure(PGS_SHARED_ERR_ATTACH); attached = true;
+  { auto c = config; c.owner_tid = 0; failure(PGS_SHARED_ERR_ATTACH, &c); c.owner_tid = config.owner_tid + 1; failure(PGS_SHARED_ERR_ATTACH, &c); }
+  { std::thread foreign([] { failure(PGS_SHARED_ERR_ATTACH); }); foreign.join(); }
+  thread_checks = 0; detach_at = 4; failure(PGS_SHARED_ERR_ATTACH); detach_at = 0; success();
 
   // Class resolution: not found (absent in every image) and cross-image duplicate with a different handle.
-  hide = 5; failure(PGR_SHARED_NOT_READY); hide = -1; // SYNC absent
-  {auto saved=fields[2]->name;fields[2]->name="missing";failure(PGR_SHARED_ERR_MEMBER_NOT_FOUND);fields[2]->name=saved;}
-  {auto saved=methods[1]->name;methods[1]->name="missing";failure(PGR_SHARED_ERR_MEMBER_NOT_FOUND);methods[1]->name=saved;}
-  module_base[0x4384]^=1;failure(PGR_SHARED_ERR_GC_ABI);module_base[0x4384]^=1;
-  {auto &literal=*fields[kFieldCount];auto saved=literal.name;literal.name="missing";failure(PGR_SHARED_ERR_MEMBER_NOT_FOUND);literal.name=saved;
-   literal.flags=0x10;failure(PGR_MD_ERR_FLAGS);literal.flags=0x8050;}
-  classes[6].align=4;failure(PGR_MD_ERR_SIZE);classes[6].align=1;
-  duplicate = true; failure(PGR_MD_ERR_DUPLICATE); duplicate = false;
+  hide = 5; failure(PGS_SHARED_NOT_READY); hide = -1; // SYNC absent
+  {auto saved=fields[2]->name;fields[2]->name="missing";failure(PGS_SHARED_ERR_MEMBER_NOT_FOUND);fields[2]->name=saved;}
+  {auto saved=methods[1]->name;methods[1]->name="missing";failure(PGS_SHARED_ERR_MEMBER_NOT_FOUND);methods[1]->name=saved;}
+  module_base[0x4384]^=1;failure(PGS_SHARED_ERR_GC_ABI);module_base[0x4384]^=1;
+  {auto &literal=*fields[kFieldCount];auto saved=literal.name;literal.name="missing";failure(PGS_SHARED_ERR_MEMBER_NOT_FOUND);literal.name=saved;
+   literal.flags=0x10;failure(PGS_MD_ERR_FLAGS);literal.flags=0x8050;}
+  classes[6].align=4;failure(PGS_MD_ERR_SIZE);classes[6].align=1;
+  duplicate = true; failure(PGS_MD_ERR_DUPLICATE); duplicate = false;
 
   // Field faults (precise feature-47 classifications).
-  { auto saved = fields[2]->offset; fields[2]->offset++; failure(PGR_MD_ERR_OFFSET); fields[2]->offset = saved; }
-  fields[2]->flags = 0x10; failure(PGR_MD_ERR_FLAGS); fields[2]->flags = 0;
-  { auto saved = fields[2]->type; fields[2]->type = uint64_class->type; failure(PGR_MD_ERR_KIND); fields[2]->type = saved; } // ref expected, value given
-  { auto saved = fields[0]->type; fields[0]->type = ref_class->type; failure(PGR_MD_ERR_KIND); fields[0]->type = saved; } // value expected, ref given
-  { auto saved = enum_class->base; enum_class->base = void_type; failure(PGR_MD_ERR_KIND); enum_class->base = saved; } // enum basetype != Int32
-  { auto saved = enum_class->size; enum_class->size = 8; failure(PGR_MD_ERR_SIZE); enum_class->size = saved; } // enum size != 4
-  { auto saved = uint64_class->size; uint64_class->size = 4; failure(PGR_MD_ERR_SIZE); uint64_class->size = saved; } // captured id must be 8
+  { auto saved = fields[2]->offset; fields[2]->offset++; failure(PGS_MD_ERR_OFFSET); fields[2]->offset = saved; }
+  fields[2]->flags = 0x10; failure(PGS_MD_ERR_FLAGS); fields[2]->flags = 0;
+  { auto saved = fields[2]->type; fields[2]->type = uint64_class->type; failure(PGS_MD_ERR_KIND); fields[2]->type = saved; } // ref expected, value given
+  { auto saved = fields[0]->type; fields[0]->type = ref_class->type; failure(PGS_MD_ERR_KIND); fields[0]->type = saved; } // value expected, ref given
+  { auto saved = enum_class->base; enum_class->base = void_type; failure(PGS_MD_ERR_KIND); enum_class->base = saved; } // enum basetype != Int32
+  { auto saved = enum_class->size; enum_class->size = 8; failure(PGS_MD_ERR_SIZE); enum_class->size = saved; } // enum size != 4
+  { auto saved = uint64_class->size; uint64_class->size = 4; failure(PGS_MD_ERR_SIZE); uint64_class->size = saved; } // captured id must be 8
   { auto saved = fields[0]->type; auto *other = new_class("System.Int64", true, 8, 8); fields[0]->type = other->type;
-    failure(PGR_MD_ERR_TYPE); fields[0]->type = saved; } // UInt64 name required
+    failure(PGS_MD_ERR_TYPE); fields[0]->type = saved; } // UInt64 name required
 
   // Method faults.
-  { auto saved = methods[1]->result; methods[1]->result = int32_type; failure(PGR_MD_ERR_TYPE); methods[1]->result = saved; }
-  { auto saved = methods[1]->owner; methods[1]->owner = &classes[2]; failure(PGR_MD_ERR_OWNER_MISMATCH); methods[1]->owner = saved; }
-  methods[1]->flags = 0x10; failure(PGR_MD_ERR_STATIC); methods[1]->flags = 0;          // dismiss is instance
-  methods[5]->flags = 0; failure(PGR_MD_ERR_STATIC); methods[5]->flags = 0x10;          // op_Implicit is static
-  methods[1]->generic = true; failure(PGR_MD_ERR_GENERIC); methods[1]->generic = false;
-  methods[1]->inflated = true; failure(PGR_MD_ERR_INFLATED); methods[1]->inflated = false;
-  { auto saved = methods[3]->param1; methods[3]->param1 = int32_type; failure(PGR_MD_ERR_TYPE); methods[3]->param1 = saved; }
-  { void *saved = methods[1]->code; methods[1]->code = module_base + kMethods[1].code_rva + 4; failure(PGR_MD_ERR_CODE_RANGE); methods[1]->code = saved; }
-  { uint64_t rva = kMethods[1].code_rva; module_base[rva] ^= 1; failure(PGR_MD_ERR_PROLOGUE); module_base[rva] ^= 1; }
+  { auto saved = methods[1]->result; methods[1]->result = int32_type; failure(PGS_MD_ERR_TYPE); methods[1]->result = saved; }
+  { auto saved = methods[1]->owner; methods[1]->owner = &classes[2]; failure(PGS_MD_ERR_OWNER_MISMATCH); methods[1]->owner = saved; }
+  methods[1]->flags = 0x10; failure(PGS_MD_ERR_STATIC); methods[1]->flags = 0;          // dismiss is instance
+  methods[5]->flags = 0; failure(PGS_MD_ERR_STATIC); methods[5]->flags = 0x10;          // op_Implicit is static
+  methods[1]->generic = true; failure(PGS_MD_ERR_GENERIC); methods[1]->generic = false;
+  methods[1]->inflated = true; failure(PGS_MD_ERR_INFLATED); methods[1]->inflated = false;
+  { auto saved = methods[3]->param1; methods[3]->param1 = int32_type; failure(PGS_MD_ERR_TYPE); methods[3]->param1 = saved; }
+  { void *saved = methods[1]->code; methods[1]->code = module_base + kMethods[1].code_rva + 4; failure(PGS_MD_ERR_CODE_RANGE); methods[1]->code = saved; }
+  { uint64_t rva = kMethods[1].code_rva; module_base[rva] ^= 1; failure(PGS_MD_ERR_PROLOGUE); module_base[rva] ^= 1; }
 
   // Canonical-bind preconditions (default resolver path rejected before resolve_module here).
-  { auto c = config; c.binding.seg_query = nullptr; unsigned before = thread_checks; failure(PGR_MD_ERR_CODE_RANGE, &c); assert(thread_checks == before); }
+  { auto c = config; c.binding.seg_query = nullptr; unsigned before = thread_checks; failure(PGS_MD_ERR_CODE_RANGE, &c); assert(thread_checks == before); }
   { auto c = config; c.binding.module_base = reinterpret_cast<void *>(UINTPTR_MAX - 3); c.binding.module_size = 8;
-    unsigned before = thread_checks; failure(PGR_MD_ERR_CODE_RANGE, &c); assert(thread_checks == before); }
+    unsigned before = thread_checks; failure(PGS_MD_ERR_CODE_RANGE, &c); assert(thread_checks == before); }
 
   // Reentrant resolve returns BUSY without touching shared state.
   reenter = true; success(); assert(reentries == 1); success();

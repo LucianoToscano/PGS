@@ -14,11 +14,11 @@
 // radius, bool bullseye, bool spinning, bool missed, pad}. It arrives split across
 // x1 (item low32 + radius-bits high32) and the low word of x2 (three Boolean bytes +
 // one pad byte). We model it as a by-value struct and declare the hooked functions as
-// void(void* self, PgrThrowValue, void* methodInfo) so the C++ ABI marshals it exactly
+// void(void* self, PgsThrowValue, void* methodInfo) so the C++ ABI marshals it exactly
 // as the game does (two integer registers on ARM64; the host x86 test ABI may route the
 // float eightbyte through SSE on its own). Never hand-split the value.
 
-struct PgrThrowValue {        // 12 bytes, 4-byte aligned
+struct PgsThrowValue {        // 12 bytes, 4-byte aligned
     int32_t item;             // 0  Pokeball item id (1,2,3,5 are eligible)
     float   radius;           // 4  reticle radius, finite 0..1
     uint8_t bullseye;         // 8  0/1
@@ -27,7 +27,7 @@ struct PgrThrowValue {        // 12 bytes, 4-byte aligned
     uint8_t pad;              // 11 preserved verbatim
 };
 
-struct PgrThrowConfig {       // 72 bytes: 8-byte header then eight pointers
+struct PgsThrowConfig {       // 72 bytes: 8-byte header then eight pointers
     uint32_t version, size;   // 0  { version==1, size==sizeof }
     void *submit_code;        // 8  hook target: submit throw
     void *hit_code;           // 16 hook target: NotifyPokeballHit
@@ -39,7 +39,7 @@ struct PgrThrowConfig {       // 72 bytes: 8-byte header then eight pointers
     void *bread_field;        // 64 FieldInfo* for the submit guard byte
 };
 
-struct PgrThrowSample {       // 24 bytes: pull-only telemetry snapshot
+struct PgsThrowSample {       // 24 bytes: pull-only telemetry snapshot
     uint64_t count;           // 0  throws this layer changed
     uint32_t route;           // 8  of the last change: 0 submit, 1 hit
     uint32_t grade;           // 12 grade applied (0..3)
@@ -47,14 +47,14 @@ struct PgrThrowSample {       // 24 bytes: pull-only telemetry snapshot
     float    radius;          // 20 reticle radius returned to the game
 };
 
-struct PgrThrowApi {          // 40 bytes: ordered, read-only table
+struct PgsThrowApi {          // 40 bytes: ordered, read-only table
     uint32_t version, size;   // 0  { version==1, size==sizeof }
-    int (*install)(const PgrThrowConfig *config);
+    int (*install)(const PgsThrowConfig *config);
     // grade: 0 off, 1 Nice, 2 Great, 3 Excellent; 4-6 throw variety, one grade per throw at even odds
     // from Excellent & Great (4), Excellent, Great & Nice (5), or those and a plain throw (6).
     int (*update)(int grade, int curve, int allowed, uint64_t lease_ms, uint64_t unity_tid);
-    int (*sample)(PgrThrowSample *out);
-    int (*rewrite_submit)(void *self, PgrThrowValue *value);
+    int (*sample)(PgsThrowSample *out);
+    int (*rewrite_submit)(void *self, PgsThrowValue *value);
 };
 
 // Hidden getter. NOT exported by the version script; the coordinator registers it in the
@@ -62,6 +62,6 @@ struct PgrThrowApi {          // 40 bytes: ordered, read-only table
 const void *pgs_throws_api(uint32_t version);
 
 // Native map Auto Throw: same rating/variety RNG and lease, with no scene ball.
-bool pgr_map_throw_value(PgrThrowValue* value);
+bool pgs_map_throw_value(PgsThrowValue* value);
 
-struct PgrMapThrowApi {uint32_t version,size;bool (*value)(PgrThrowValue*);};
+struct PgsMapThrowApi {uint32_t version,size;bool (*value)(PgsThrowValue*);};

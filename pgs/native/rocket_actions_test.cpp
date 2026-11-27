@@ -5,9 +5,9 @@
 #include <sys/wait.h>
 #include <thread>
 #include <cstdio>
-const pgr_rocket_actions_api_v1 *api;
+const pgs_rocket_actions_api_v1 *api;
 int scenario(int n){
- const auto tid=uint64_t(gettid());api->update(7,2500,tid);api->observe(PGR_ROCKET_ENTER,tid);
+ const auto tid=uint64_t(gettid());api->update(7,2500,tid);api->observe(PGS_ROCKET_ENTER,tid);
  auto token=api->begin(tid);if(!token)return 90;
  switch(n){
  case 0: if(!api->claim(token,1,tid)||api->claim(token,1,tid)||api->begin(tid))return 1;break;
@@ -38,7 +38,7 @@ int main(int argc,char **argv){
  if(argc!=2)return 80;void *lib=dlopen(argv[1],RTLD_NOW);if(!lib)return 81;
  auto get=reinterpret_cast<const void *(*)(uint32_t)>(dlsym(lib,"pgs_native_api"));
  auto core=get?static_cast<const pgs_native_api_v2 *>(get(2)):nullptr;if(!core)return 82;
- api=static_cast<const pgr_rocket_actions_api_v1 *>(core->query_feature(20,1));
+ api=static_cast<const pgs_rocket_actions_api_v1 *>(core->query_feature(20,1));
  if(!api||api->size!=48||core->query_feature(20,99))return 83;
  for(int n=0;n<17;++n){pid_t pid=fork();if(pid==0)_exit(scenario(n));int status=0;waitpid(pid,&status,0);
   if(!WIFEXITED(status)||WEXITSTATUS(status)){std::printf("FAIL Rocket actions %d code %d\n",n,WIFEXITED(status)?WEXITSTATUS(status):-1);return 1;}}

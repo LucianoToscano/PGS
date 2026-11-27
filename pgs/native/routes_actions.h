@@ -17,7 +17,7 @@
 // managed call. A busy flag spans ALL temporary-root cleanup; a reentrant call is refused.
 //
 // Authorization is carried per request: a proven owner tid, a residual foreground lease (clamped to
-// PGR_RA_MAX_LEASE_MS, CLOCK_BOOTTIME) and a revocation generation. generation() hands the host the
+// PGS_RA_MAX_LEASE_MS, CLOCK_BOOTTIME) and a revocation generation. generation() hands the host the
 // current token to stamp onto requests; revoke() atomically bumps it from any thread (no managed work,
 // no handle frees on a foreign thread), so a stamped-but-stale request fails the gate. A fresh
 // deadline + generation check precedes every managed call and is re-checked immediately before the one
@@ -33,79 +33,79 @@ extern "C" {
 
 static_assert(sizeof(void *) == 8, "RoutesActions native ABI requires LP64");
 
-enum PgrRoutesActionsInfo {
-  PGR_RA_FEATURE_ID      = 43,
-  PGR_RA_API_VERSION     = 1,
-  PGR_RA_CONFIG_VERSION  = 1,
-  PGR_RA_REQUEST_VERSION = 1,
-  PGR_RA_OUTPUT_VERSION  = 1,
-  PGR_RA_MAX_LEASE_MS    = 2500,  // residual foreground lease ceiling (JS quick-close lease window)
-  PGR_RA_ID_MAX          = 128,   // UTF16 route-id length ceiling (JS id length 1..128)
-  PGR_RA_PTR_COUNT       = 43     // config pointer slots 0..42, all mandatory (non-null)
+enum PgsRoutesActionsInfo {
+  PGS_RA_FEATURE_ID      = 43,
+  PGS_RA_API_VERSION     = 1,
+  PGS_RA_CONFIG_VERSION  = 1,
+  PGS_RA_REQUEST_VERSION = 1,
+  PGS_RA_OUTPUT_VERSION  = 1,
+  PGS_RA_MAX_LEASE_MS    = 2500,  // residual foreground lease ceiling (JS quick-close lease window)
+  PGS_RA_ID_MAX          = 128,   // UTF16 route-id length ceiling (JS id length 1..128)
+  PGS_RA_PTR_COUNT       = 43     // config pointer slots 0..42, all mandatory (non-null)
 };
 
 // execute() action selector (request.action).
-enum PgrRoutesActionsAction {
-  PGR_RA_ACT_CURRENT  = 0,  // read-only authoritative current-route snapshot (seq 0, no mutation)
-  PGR_RA_ACT_DISCOVER = 1,  // RequestNearbyRoutes() on the routes service
-  PGR_RA_ACT_START    = 2,  // build RoutesConsumptionStartData + StartRoute()
-  PGR_RA_ACT_COMPLETE = 3,  // confirm completion (bizv) on the authoritative current route
-  PGR_RA_ACT_PAUSE    = 4   // PauseRoute(true)
+enum PgsRoutesActionsAction {
+  PGS_RA_ACT_CURRENT  = 0,  // read-only authoritative current-route snapshot (seq 0, no mutation)
+  PGS_RA_ACT_DISCOVER = 1,  // RequestNearbyRoutes() on the routes service
+  PGS_RA_ACT_START    = 2,  // build RoutesConsumptionStartData + StartRoute()
+  PGS_RA_ACT_COMPLETE = 3,  // confirm completion (bizv) on the authoritative current route
+  PGS_RA_ACT_PAUSE    = 4   // PauseRoute(true)
 };
 
 // execute() return == out.status: 1 SUCCESS (CURRENT published / mutation submitted), 0 REFUSE (a
 // benign gate / game-state refusal; out.reason carries which), or a negative FAULT. install() returns
-// 0 on success; negatives are faults. out.reason is always one of PgrRoutesActionsReason.
-enum PgrRoutesActionsStatus {
-  PGR_RA_SUCCESS           = 1,
-  PGR_RA_REFUSE            = 0,
-  PGR_RA_OK                = 0,   // install() success (alias of 0)
-  PGR_RA_FAULT             = -1,  // native/managed fault; out.reason = alloc-failed or native-error
-  PGR_RA_ERR_NULL_ARG      = -2,
-  PGR_RA_ERR_BAD_VERSION   = -3,
-  PGR_RA_ERR_BAD_SIZE      = -4,
-  PGR_RA_ERR_MISSING_PTR   = -5,  // install(): a mandatory config pointer was null
-  PGR_RA_ERR_NOT_INSTALLED = -6,
-  PGR_RA_ERR_RECONFIG      = -9,  // install(): a different config at an already-installed table
-  PGR_RA_ERR_CLOCK         = -10
+// 0 on success; negatives are faults. out.reason is always one of PgsRoutesActionsReason.
+enum PgsRoutesActionsStatus {
+  PGS_RA_SUCCESS           = 1,
+  PGS_RA_REFUSE            = 0,
+  PGS_RA_OK                = 0,   // install() success (alias of 0)
+  PGS_RA_FAULT             = -1,  // native/managed fault; out.reason = alloc-failed or native-error
+  PGS_RA_ERR_NULL_ARG      = -2,
+  PGS_RA_ERR_BAD_VERSION   = -3,
+  PGS_RA_ERR_BAD_SIZE      = -4,
+  PGS_RA_ERR_MISSING_PTR   = -5,  // install(): a mandatory config pointer was null
+  PGS_RA_ERR_NOT_INSTALLED = -6,
+  PGS_RA_ERR_RECONFIG      = -9,  // install(): a different config at an already-installed table
+  PGS_RA_ERR_CLOCK         = -10
 };
 
 // out.reason: the enumerated cause. SUCCESS carries NONE. REFUSE carries one of the game-state /
 // gate reasons. A negative FAULT carries ALLOC_FAILED (object_new) or NATIVE_ERROR (managed throw /
 // root failure / reentry / wrong class on a fail-closed path). Values match the host adapter.
-enum PgrRoutesActionsReason {
-  PGR_RA_REASON_NONE          = 0,
-  PGR_RA_REASON_LEASE_EXPIRED = 1,   // gate: thread/attached/residual/generation not fresh
-  PGR_RA_REASON_AWAITING_SVC  = 2,   // service handle did not resolve to the expected class
-  PGR_RA_REASON_NOT_INIT      = 3,   // START: FeatureFlagInitialized false
-  PGR_RA_REASON_NOT_PERMITTED = 4,   // START: RouteConsumptionEnabledForPlayer false
-  PGR_RA_REASON_ALREADY_ACTIVE= 5,   // START: already consuming a route
-  PGR_RA_REASON_NOT_DISCOVERED= 6,   // START: no route handle supplied
-  PGR_RA_REASON_ROUTE_STALE   = 7,   // START: route handle null / wrong class
-  PGR_RA_REASON_ID_MISMATCH   = 8,   // START/COMPLETE: route id != requested id
-  PGR_RA_REASON_NOT_REVERSIBLE= 9,   // START: reverse requested but route not reversible
-  PGR_RA_REASON_ALLOC_FAILED  = 10,  // START: RoutesConsumptionStartData allocation failed
-  PGR_RA_REASON_NO_CURRENT    = 11,  // COMPLETE/PAUSE: no current route
-  PGR_RA_REASON_COMPLETING    = 12,  // COMPLETE: already completing
-  PGR_RA_REASON_REWARDED      = 13,  // COMPLETE: reward already acquired
-  PGR_RA_REASON_NOT_ELIGIBLE  = 14,  // COMPLETE: paused / not started / not walked / out of range
-  PGR_RA_REASON_ALREADY_PAUSED= 15,  // PAUSE: already paused
-  PGR_RA_REASON_STALE_SEQ     = 16,  // mutating: seq not above the process-wide high-water
-  PGR_RA_REASON_NATIVE_ERROR  = 17   // managed exception / root failure / reentry / fail-closed class
+enum PgsRoutesActionsReason {
+  PGS_RA_REASON_NONE          = 0,
+  PGS_RA_REASON_LEASE_EXPIRED = 1,   // gate: thread/attached/residual/generation not fresh
+  PGS_RA_REASON_AWAITING_SVC  = 2,   // service handle did not resolve to the expected class
+  PGS_RA_REASON_NOT_INIT      = 3,   // START: FeatureFlagInitialized false
+  PGS_RA_REASON_NOT_PERMITTED = 4,   // START: RouteConsumptionEnabledForPlayer false
+  PGS_RA_REASON_ALREADY_ACTIVE= 5,   // START: already consuming a route
+  PGS_RA_REASON_NOT_DISCOVERED= 6,   // START: no route handle supplied
+  PGS_RA_REASON_ROUTE_STALE   = 7,   // START: route handle null / wrong class
+  PGS_RA_REASON_ID_MISMATCH   = 8,   // START/COMPLETE: route id != requested id
+  PGS_RA_REASON_NOT_REVERSIBLE= 9,   // START: reverse requested but route not reversible
+  PGS_RA_REASON_ALLOC_FAILED  = 10,  // START: RoutesConsumptionStartData allocation failed
+  PGS_RA_REASON_NO_CURRENT    = 11,  // COMPLETE/PAUSE: no current route
+  PGS_RA_REASON_COMPLETING    = 12,  // COMPLETE: already completing
+  PGS_RA_REASON_REWARDED      = 13,  // COMPLETE: reward already acquired
+  PGS_RA_REASON_NOT_ELIGIBLE  = 14,  // COMPLETE: paused / not started / not walked / out of range
+  PGS_RA_REASON_ALREADY_PAUSED= 15,  // PAUSE: already paused
+  PGS_RA_REASON_STALE_SEQ     = 16,  // mutating: seq not above the process-wide high-water
+  PGS_RA_REASON_NATIVE_ERROR  = 17   // managed exception / root failure / reentry / fail-closed class
 };
 
 // out.flags (CURRENT): the authoritative current-route snapshot. An empty current (no play / null /
 // wrong class) publishes flags 0 and id_length 0. A present route id decodes to id_length 1..128.
-enum PgrRoutesActionsFlags {
-  PGR_RA_FLAG_PRESENT         = 1,
-  PGR_RA_FLAG_STARTED         = 2,
-  PGR_RA_FLAG_PAUSED          = 4,
-  PGR_RA_FLAG_COMPLETED_WALK  = 8,
-  PGR_RA_FLAG_ACQUIRED_REWARD = 16,
-  PGR_RA_FLAG_IN_RANGE_END    = 32,
-  PGR_RA_FLAG_IN_RANGE_RESUME = 64,
-  PGR_RA_FLAG_IS_COMPLETING   = 128,
-  PGR_RA_FLAG_REVERSED        = 256
+enum PgsRoutesActionsFlags {
+  PGS_RA_FLAG_PRESENT         = 1,
+  PGS_RA_FLAG_STARTED         = 2,
+  PGS_RA_FLAG_PAUSED          = 4,
+  PGS_RA_FLAG_COMPLETED_WALK  = 8,
+  PGS_RA_FLAG_ACQUIRED_REWARD = 16,
+  PGS_RA_FLAG_IN_RANGE_END    = 32,
+  PGS_RA_FLAG_IN_RANGE_RESUME = 64,
+  PGS_RA_FLAG_IS_COMPLETING   = 128,
+  PGS_RA_FLAG_REVERSED        = 256
 };
 
 // Fixed LP64 config (352 bytes): 8-byte header + 43 pointers in the EXACT slot order below. Every
@@ -113,7 +113,7 @@ enum PgrRoutesActionsFlags {
 // the host from routes.js metadata. All are MANDATORY (non-null). Reordering is forbidden. install()
 // publishes the config immutably: an identical config is idempotent (0); a different one is rejected.
 struct PgrRoutesActionsConfig {
-  uint32_t version;  // == PGR_RA_CONFIG_VERSION
+  uint32_t version;  // == PGS_RA_CONFIG_VERSION
   uint32_t size;     // == sizeof(PgrRoutesActionsConfig)
 
   // il2cpp runtime exports (slots 0-10).
@@ -183,12 +183,12 @@ static_assert(offsetof(PgrRoutesActionsConfig, string_length) == 336, "slot 41")
 static_assert(offsetof(PgrRoutesActionsConfig, string_chars) == 344, "slot 42");       // 8 + 42*8
 
 // Fixed LP64 request (328 bytes). tid is the proven owner tid. residual_ms is the remaining lease
-// (clamped to PGR_RA_MAX_LEASE_MS; 0 refuses). generation is the revocation token stamped from
+// (clamped to PGS_RA_MAX_LEASE_MS; 0 refuses). generation is the revocation token stamped from
 // generation(). service_handle / route_handle are BORROWED host GC handles (never freed here). seq is
 // the process-wide monotonic mutating sequence (ignored for CURRENT, which uses 0). id is the
 // requested route id (START/COMPLETE), id_length 1..128 units.
 struct PgrRoutesActionsRequest {
-  uint32_t version;        // off 0  == PGR_RA_REQUEST_VERSION
+  uint32_t version;        // off 0  == PGS_RA_REQUEST_VERSION
   uint32_t size;           // off 4  == sizeof(PgrRoutesActionsRequest)
   uint64_t tid;            // off 8  proven owner tid
   uint64_t residual_ms;    // off 16 residual lease; clamped, 0 refuses
@@ -196,11 +196,11 @@ struct PgrRoutesActionsRequest {
   uint64_t service_handle; // off 32 borrowed consumption/routes service GC handle
   uint64_t route_handle;   // off 40 borrowed SharedRouteProto GC handle (START)
   uint64_t seq;            // off 48 mutating sequence (CURRENT: 0, exempt)
-  uint32_t action;         // off 56 PgrRoutesActionsAction
+  uint32_t action;         // off 56 PgsRoutesActionsAction
   uint32_t reversed;       // off 60 START: request reverse walk (0/1)
   uint32_t id_length;      // off 64 UTF16 units in id (START/COMPLETE: 1..128)
   uint32_t reserved;       // off 68 0 in v1
-  uint16_t id[PGR_RA_ID_MAX]; // off 72 requested route id (UTF16, not NUL terminated)
+  uint16_t id[PGS_RA_ID_MAX]; // off 72 requested route id (UTF16, not NUL terminated)
 };
 
 static_assert(sizeof(PgrRoutesActionsRequest) == 328, "PgrRoutesActionsRequest must remain 328 bytes on LP64");
@@ -219,13 +219,13 @@ static_assert(offsetof(PgrRoutesActionsRequest, id) == 72, "request id");
 // Fixed LP64 output (280 bytes). status mirrors the return; reason the enumerated cause. For CURRENT,
 // flags/id carry the snapshot (0/0 when empty). For a mutation, flags 0 and id_length 0.
 struct PgrRoutesActionsOutput {
-  uint32_t version;    // off 0  == PGR_RA_OUTPUT_VERSION
+  uint32_t version;    // off 0  == PGS_RA_OUTPUT_VERSION
   uint32_t size;       // off 4  == sizeof(PgrRoutesActionsOutput)
   int32_t status;      // off 8  == the execute() return
-  int32_t reason;      // off 12 PgrRoutesActionsReason
-  uint32_t flags;      // off 16 PgrRoutesActionsFlags (CURRENT)
+  int32_t reason;      // off 12 PgsRoutesActionsReason
+  uint32_t flags;      // off 16 PgsRoutesActionsFlags (CURRENT)
   uint32_t id_length;  // off 20 UTF16 units in id (CURRENT present route: 1..128)
-  uint16_t id[PGR_RA_ID_MAX]; // off 24 current route id (UTF16, not NUL terminated)
+  uint16_t id[PGS_RA_ID_MAX]; // off 24 current route id (UTF16, not NUL terminated)
 };
 
 static_assert(sizeof(PgrRoutesActionsOutput) == 280, "PgrRoutesActionsOutput must remain 280 bytes on LP64");
@@ -237,10 +237,10 @@ static_assert(offsetof(PgrRoutesActionsOutput, id) == 24, "output id");
 
 // Fixed LP64 table: 8-byte header + 4 function pointers = 40 bytes.
 struct PgrRoutesActionsApi {
-  uint32_t version;  // == PGR_RA_API_VERSION
+  uint32_t version;  // == PGS_RA_API_VERSION
   uint32_t size;     // == sizeof(PgrRoutesActionsApi)
   // Verify + publish the immutable config once for the process lifetime. Idempotent for an identical
-  // config; a different config returns PGR_RA_ERR_RECONFIG. A null pointer or bad header is rejected.
+  // config; a different config returns PGS_RA_ERR_RECONFIG. A null pointer or bad header is rejected.
   int (*install)(const PgrRoutesActionsConfig *config);
   // Current revocation generation (initially 1). The host stamps it onto each request.
   uint64_t (*generation)(void);

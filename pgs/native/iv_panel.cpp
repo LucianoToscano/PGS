@@ -106,7 +106,7 @@ int format(bool owned){
 // the stats when they stand alone, takes the tier color.
 std::string line(int32_t level_half,int atk,int def,int sta,int fmt){
  std::string lv="--";
- if(level_half!=PGR_IV_LEVEL_UNKNOWN&&level_half>0)lv=std::to_string(level_half/2)+(level_half%2?".5":"");
+ if(level_half!=PGS_IV_LEVEL_UNKNOWN&&level_half>0)lv=std::to_string(level_half/2)+(level_half%2?".5":"");
  const bool valid=atk>=0&&atk<=15&&def>=0&&def<=15&&sta>=0&&sta<=15;
  std::string iv="IV --";
  if(valid){
@@ -173,9 +173,9 @@ void *sprite(int crest){
   void *texture_class=class_of("UnityEngine","Texture2D");
   void *texture=fn<void*(*)(void*)>(boot.runtime.object_new)(texture_class);require(texture,"PvP texture");
   int two=2;void *size[]={&two,&two};invoke(overload("UnityEngine","Texture2D",".ctor","System.Int32","System.Int32"),texture,size);
-  const unsigned length=pgr_pvp_icons::size[crest];
+  const unsigned length=pgs_pvp_icons::size[crest];
   void *bytes=fn<void*(*)(void*,uintptr_t)>(boot.runtime.array_new)(class_of("System","Byte"),length);require(bytes,"PvP crest bytes");
-  std::memcpy(static_cast<char*>(bytes)+32,pgr_pvp_icons::png[crest],length);
+  std::memcpy(static_cast<char*>(bytes)+32,pgs_pvp_icons::png[crest],length);
   void *load[]={texture,bytes};
   require(unbox<bool>(invoke(overload("UnityEngine","ImageConversion","LoadImage","UnityEngine.Texture2D","System.Byte[]"),nullptr,load)),"PvP crest decode");
   const float w=float(unbox<int>(call(texture,"get_width"))),h=float(unbox<int>(call(texture,"get_height")));
@@ -353,7 +353,7 @@ void draw_in_front(const Line &l,void *anchor){
  }
 }
 
-bool show(bool owned,void *cp_text,int32_t level_half,int atk,int def,int sta,const PgrPvpBest *pvp){
+bool show(bool owned,void *cp_text,int32_t level_half,int atk,int def,int sta,const PgsPvpBest *pvp){
  if(faulted||busy||!cp_text)return false;
  struct Guard{Guard(){busy=true;}~Guard(){busy=false;}}guard;
  try{
@@ -404,13 +404,13 @@ bool available(){
  catch(...){faulted=true;status("error","IV panel unavailable: native failure");}
  return false;
 }
-const PgrIvPanelHooks kHooks={&available,&show,&hide};
-__attribute__((constructor)) void register_panel(){pgr_iv_display_set_panel_hooks(&kHooks);}
+const PgsIvPanelHooks kHooks={&available,&show,&hide};
+__attribute__((constructor)) void register_panel(){pgs_iv_display_set_panel_hooks(&kHooks);}
 }  // namespace
 
 // The Great (0), Ultra (1) or Master (2) League crest sprite for other displays (the storage list), or
 // null when it cannot be made. Unity owner only.
-extern "C" void *pgr_pvp_crest(int crest){
+extern "C" void *pgs_pvp_crest(int crest){
  if(faulted)return nullptr;
  try{init();return sprite(crest);}
  catch(const Failure &f){status("error",std::string("PvP crest unavailable: ")+f.where);}

@@ -1,5 +1,5 @@
-// Standalone runtime test fixture for auto_raid.cpp; exercises pgr_auto_raid_tick and
-// pgr_auto_raid_stop across transport snapshots, pass accounting, cooldown gating,
+// Standalone runtime test fixture for auto_raid.cpp; exercises pgs_auto_raid_tick and
+// pgs_auto_raid_stop across transport snapshots, pass accounting, cooldown gating,
 // lobby bailout, consecutive losses, bonus catch encounter, shiny/max-raids completion,
 // cancellation, and GC root lifecycle discipline.
 #include <cassert>
@@ -130,21 +130,21 @@ struct FakeWorld {
     bool map_ready = true;
     std::string account = "trainer-1";
     int64_t game_time_ms = 1000000;
-    std::vector<pgr_auto_raid::RaidCandidate> gyms;
+    std::vector<pgs_auto_raid::RaidCandidate> gyms;
     bool gym_alive = true;
     unsigned gym_clicks = 0;
     bool approach_ready = true;
     bool approach_costs_ready = true;
     bool ticket_already_used = false;
     bool remote_ticket_used = false;
-    std::vector<pgr_auto_raid::EntryCostOption> entry_costs;
+    std::vector<pgs_auto_raid::EntryCostOption> entry_costs;
     unsigned join_presses = 0;
     unsigned exit_calls = 0;
 
     bool modal_open = true;
-    pgr_auto_raid::EntryCostOption modal_cost{};
+    pgs_auto_raid::EntryCostOption modal_cost{};
     bool modal_coin_flag = false;
-    pgr_auto_raid::EntryCostOption cycled_modal_cost{};
+    pgs_auto_raid::EntryCostOption cycled_modal_cost{};
     bool has_cycled_cost = false;
     unsigned modal_cycles = 0;
     unsigned modal_confirms = 0;
@@ -159,7 +159,7 @@ struct FakeWorld {
 
     bool battle_active = false;
     bool resolve_open = false;
-    int resolve_status = pgr_auto_raid::BATTLE_STATUS_VICTORY;
+    int resolve_status = pgs_auto_raid::BATTLE_STATUS_VICTORY;
     bool resolve_advance = true;
 
     bool encounter_open = false;
@@ -167,12 +167,12 @@ struct FakeWorld {
     int encounter_ball = 5;
     unsigned throws_submitted = 0;
     unsigned catch_polls = 0;
-    int poll_rc = PGR_VR_DONE;
+    int poll_rc = PGS_VR_DONE;
     int catch_status = 1; // 1 = CatchSuccess
     unsigned summary_closed = 0;
     bool berry_bindings = true, berry_ready = true, berry_feedable = true;
     int active_berry = 0, razz = 5, golden = 5;
-    int berry_rc = PGR_VR_DONE, berry_result = BerryAccepted;
+    int berry_rc = PGS_VR_DONE, berry_result = BerryAccepted;
     unsigned berry_polls = 0, berry_clears = 0;
     std::vector<int> berries;
 };
@@ -183,7 +183,7 @@ bool fake_ensure_ready() { return true; }
 std::string fake_read_account_id() { return world.account; }
 int64_t fake_read_game_time_ms() { return world.game_time_ms; }
 
-void fake_scan_gyms(std::vector<pgr_auto_raid::RaidCandidate>& out_candidates,
+void fake_scan_gyms(std::vector<pgs_auto_raid::RaidCandidate>& out_candidates,
                     std::vector<Root>& out_roots) {
     out_candidates = world.gyms;
     out_roots.clear();
@@ -207,7 +207,7 @@ bool fake_inspect_approach_costs(void*,
                                  bool,
                                  bool& out_ticket_used,
                                  bool& out_remote_used,
-                                 std::vector<pgr_auto_raid::EntryCostOption>& out_options) {
+                                 std::vector<pgs_auto_raid::EntryCostOption>& out_options) {
     if (!world.approach_costs_ready) return false;
     out_ticket_used = world.ticket_already_used;
     out_remote_used = world.remote_ticket_used;
@@ -220,7 +220,7 @@ void fake_exit_raid_or_gym(void*, void*, void*) { ++world.exit_calls; }
 
 bool fake_inspect_ticket_modal(void*,
                                Root& out_modal,
-                               pgr_auto_raid::EntryCostOption& out_selected_cost,
+                               pgs_auto_raid::EntryCostOption& out_selected_cost,
                                bool& out_coin_flag) {
     if (!world.modal_open) return false;
     out_modal = Root(&dummy_ticket_modal_obj);
@@ -269,7 +269,7 @@ bool fake_poll_resolve_state(Root& out_resolve_ui, int& out_battle_status, bool&
     out_resolve_ui = Root(&dummy_resolve_ui_obj);
     out_battle_status = world.resolve_status;
     out_advanced = world.resolve_advance;
-    if (world.resolve_status == pgr_auto_raid::BATTLE_STATUS_VICTORY && world.resolve_advance) {
+    if (world.resolve_status == pgs_auto_raid::BATTLE_STATUS_VICTORY && world.resolve_advance) {
         world.resolve_open = false;
         world.encounter_open = true;
     }
@@ -286,7 +286,7 @@ bool fake_poll_raid_encounter(Root& io_coord, Root& io_pk, bool& out_shiny, int&
 }
 
 Root fake_submit_raid_throw(void*, void*, int ball) {
-    auto value = pgr_raid_throw_value(ball);
+    auto value = pgs_raid_throw_value(ball);
     assert(value.item == ball && value.radius == 0.1f && value.bullseye == 1 && value.spinning == 1 && value.missed == 0);
     assert(!session.berry_promise);
     ++world.throws_submitted;
@@ -314,7 +314,7 @@ Root fake_submit_berry(void*,void*,int item){
 }
 int fake_poll_berry(void*,uint64_t,int& result){
     ++world.berry_polls;result=world.berry_result;
-    if(world.berry_rc==PGR_VR_DONE && result==BerryAccepted)world.active_berry=world.berries.back();
+    if(world.berry_rc==PGS_VR_DONE && result==BerryAccepted)world.active_berry=world.berries.back();
     return world.berry_rc;
 }
 void fake_clear_berry(){world.active_berry=0;++world.berry_clears;}
@@ -350,13 +350,13 @@ RuntimeAdapter g_fake_adapter = {
     fake_clear_berry,
 };
 
-pgr_auto_raid::RaidCandidate make_active_raid(const std::string& fort_id,
+pgs_auto_raid::RaidCandidate make_active_raid(const std::string& fort_id,
                                               int64_t seed,
                                               double lat,
                                               double lon,
-                                              int level = pgr_auto_raid::RAID_LEVEL_5,
+                                              int level = pgs_auto_raid::RAID_LEVEL_5,
                                               int boss_id = 150) {
-    pgr_auto_raid::RaidCandidate c{};
+    pgs_auto_raid::RaidCandidate c{};
     c.fort_id = fort_id;
     c.raid_seed = seed;
     c.latitude = lat;
@@ -376,7 +376,7 @@ pgr_auto_raid::RaidCandidate make_active_raid(const std::string& fort_id,
 
 void reset_fixture() {
     session.reset();
-    tracker = pgr_auto_raid::SessionTracker{};
+    tracker = pgs_auto_raid::SessionTracker{};
     owner = 0;
     boot_ready = false;
     bootstrap_calls = 0;
@@ -434,27 +434,27 @@ int main() {
     // ------------------------------------------------------------------------
     reset_fixture();
     g_test_adapter = nullptr;
-    assert(!pgr_auto_raid_tick(tid, &metadata));
+    assert(!pgs_auto_raid_tick(tid, &metadata));
     assert(bootstrap_calls == 0 && t_events.empty());
 
     // Stop command with enabled=0 (and both pass flags 0) is valid, acks once, and does not bootstrap.
     t_command = "R1|100|0|0|1|1|45|0|0|0|0||0";
-    assert(!pgr_auto_raid_tick(tid, &metadata));
+    assert(!pgs_auto_raid_tick(tid, &metadata));
     assert(bootstrap_calls == 0 && t_events.size() == 1);
     assert(t_events.back().find("\"token\":\"100\"") != std::string::npos);
     assert(t_events.back().find("\"phase\":\"stopped\"") != std::string::npos);
     // Repeated tick with same stopped token is a no-op.
-    assert(!pgr_auto_raid_tick(tid, &metadata));
+    assert(!pgs_auto_raid_tick(tid, &metadata));
     assert(bootstrap_calls == 0 && t_events.size() == 1);
 
     // Real adapter startup/ABI failure stops with named reason and consumes token without replay.
     t_command = "R1|101|1|0|1|1|45|0|1|0|0||0";
-    assert(!pgr_auto_raid_tick(tid, &metadata));
+    assert(!pgs_auto_raid_tick(tid, &metadata));
     assert(bootstrap_calls == 1 && tracker.finished_token == 101);
     assert(t_events.back().find("\"token\":\"101\"") != std::string::npos);
     assert(t_events.back().find("\"phase\":\"error\"") != std::string::npos);
     assert(t_events.back().find("Runtime bootstrap unavailable") != std::string::npos);
-    assert(!pgr_auto_raid_tick(tid, &metadata));
+    assert(!pgs_auto_raid_tick(tid, &metadata));
     assert(bootstrap_calls == 1); // no retry loop on same token
 
     // ------------------------------------------------------------------------
@@ -470,53 +470,53 @@ int main() {
     egg_raid.is_raid_boss_active = false;
     auto expired_raid = make_active_raid("gym-exp", 222, 37.7750, -122.4195);
     expired_raid.end_ms = 1005000; // < 25s remaining at game_time_ms=1000000
-    auto far_raid = make_active_raid("gym-far", 333, 37.7850, -122.4294, pgr_auto_raid::RAID_LEVEL_5, 150);
-    auto near_raid = make_active_raid("gym-near", 444, 37.7790, -122.4194, pgr_auto_raid::RAID_LEVEL_5, 150);
+    auto far_raid = make_active_raid("gym-far", 333, 37.7850, -122.4294, pgs_auto_raid::RAID_LEVEL_5, 150);
+    auto near_raid = make_active_raid("gym-near", 444, 37.7790, -122.4194, pgs_auto_raid::RAID_LEVEL_5, 150);
     world.gyms = {egg_raid, expired_raid, far_raid, near_raid};
 
     // Command: token 200, tierMask 4 (5-star), maxRaids 3, minPlayers 2, wait 45s, free=1, premium=1, stopOnShiny=1, boss 150, cooldownMs=12000
     t_command = "R1|200|1|4|3|2|45|0|1|1|1|150|12000";
 
     // Tick 1: starts session, scans gyms, selects "gym-near", emits travel event with travel=1
-    assert(pgr_auto_raid_tick(tid, &metadata));
+    assert(pgs_auto_raid_tick(tid, &metadata));
     assert(session.active && session.stage == RaidStage::Travel);
     assert(session.target.fort_id == "gym-near");
     assert(t_events.back().find("\"phase\":\"travel\"") != std::string::npos);
     assert(t_events.back().find("\"travel\":1") != std::string::npos);
 
     // Foreign thread cannot tick or stop the owned session.
-    assert(pgr_auto_raid_tick(tid + 1, &metadata));
-    pgr_auto_raid_stop(tid + 1);
+    assert(pgs_auto_raid_tick(tid + 1, &metadata));
+    pgs_auto_raid_stop(tid + 1);
     assert(session.active && session.stage == RaidStage::Travel);
 
     // Arrive at gym coordinates, but cooldownMs is still 12000 -> must wait in Travel and emit cooldown phase!
     t_lat = near_raid.latitude;
     t_lon = near_raid.longitude;
     test_clock_override_ms += 1000;
-    assert(pgr_auto_raid_tick(tid, &metadata));
+    assert(pgs_auto_raid_tick(tid, &metadata));
     assert(session.stage == RaidStage::Travel && world.gym_clicks == 0);
     assert(t_events.back().find("\"phase\":\"cooldown\"") != std::string::npos);
 
     // Clear cooldownMs to 0 -> clicks gym POI and transitions to OpenGym
     t_command = "R1|200|1|4|3|2|45|0|1|1|1|150|0";
     test_clock_override_ms += 1000;
-    assert(pgr_auto_raid_tick(tid, &metadata));
+    assert(pgs_auto_raid_tick(tid, &metadata));
     assert(world.gym_clicks == 1 && session.stage == RaidStage::OpenGym);
 
     // Advance to VerifyPass
     test_clock_override_ms += 600;
-    assert(pgr_auto_raid_tick(tid, &metadata));
+    assert(pgs_auto_raid_tick(tid, &metadata));
     assert(session.stage == RaidStage::VerifyPass);
 
     // Both Free (1401) and Premium (1402) passes are satisfied in bag -> Free pass MUST be prioritized first!
-    pgr_auto_raid::EntryCostOption free_opt{};
-    free_opt.raid_type = pgr_auto_raid::RAID_LOCATION_LOCAL;
-    free_opt.items = {{pgr_auto_raid::ITEM_FREE_RAID_TICKET, 1}};
+    pgs_auto_raid::EntryCostOption free_opt{};
+    free_opt.raid_type = pgs_auto_raid::RAID_LOCATION_LOCAL;
+    free_opt.items = {{pgs_auto_raid::ITEM_FREE_RAID_TICKET, 1}};
     free_opt.satisfied_in_bag = true;
 
-    pgr_auto_raid::EntryCostOption prem_opt{};
-    prem_opt.raid_type = pgr_auto_raid::RAID_LOCATION_LOCAL;
-    prem_opt.items = {{pgr_auto_raid::ITEM_PAID_RAID_TICKET, 1}};
+    pgs_auto_raid::EntryCostOption prem_opt{};
+    prem_opt.raid_type = pgs_auto_raid::RAID_LOCATION_LOCAL;
+    prem_opt.items = {{pgs_auto_raid::ITEM_PAID_RAID_TICKET, 1}};
     prem_opt.satisfied_in_bag = true;
 
     world.entry_costs = {prem_opt, free_opt};
@@ -526,18 +526,18 @@ int main() {
     world.has_cycled_cost = true;
 
     test_clock_override_ms += 600;
-    assert(pgr_auto_raid_tick(tid, &metadata));
+    assert(pgs_auto_raid_tick(tid, &metadata));
     assert(world.join_presses == 1 && session.stage == RaidStage::ConfirmModalPass);
-    assert(session.pass_decision.status == pgr_auto_raid::PassDecisionStatus::SelectFreePass);
+    assert(session.pass_decision.status == pgs_auto_raid::PassDecisionStatus::SelectFreePass);
 
     // First modal check sees Premium pass (mismatch for expected FreeLocal) -> cycles currency!
     test_clock_override_ms += 600;
-    assert(pgr_auto_raid_tick(tid, &metadata));
+    assert(pgs_auto_raid_tick(tid, &metadata));
     assert(world.modal_cycles == 1 && world.modal_confirms == 0 && session.stage == RaidStage::ConfirmModalPass);
 
     // Second modal check sees Free pass -> confirms ticket and enters Lobby!
     test_clock_override_ms += 600;
-    assert(pgr_auto_raid_tick(tid, &metadata));
+    assert(pgs_auto_raid_tick(tid, &metadata));
     assert(world.modal_confirms == 1 && session.stage == RaidStage::Lobby);
 
     // Map itemAccessReady (bool 16) drops to false during lobby/battle/rewards/catch -> must NOT abort!
@@ -545,42 +545,42 @@ int main() {
     world.lobby_players = 3; // >= min_players (2)
     world.lobby_battle_started = true;
     test_clock_override_ms += 600;
-    assert(pgr_auto_raid_tick(tid, &metadata));
+    assert(pgs_auto_raid_tick(tid, &metadata));
     assert(session.stage == RaidStage::Battle);
 
     // Battle finishes -> RaidResolveUIController opens with Victory -> advances to Encounter
     world.resolve_open = true;
-    world.resolve_status = pgr_auto_raid::BATTLE_STATUS_VICTORY;
+    world.resolve_status = pgs_auto_raid::BATTLE_STATUS_VICTORY;
     world.resolve_advance = true;
     world.encounter_shiny = true; // Shiny boss!
     test_clock_override_ms += 600;
-    assert(pgr_auto_raid_tick(tid, &metadata));
+    assert(pgs_auto_raid_tick(tid, &metadata));
     assert(session.stage == RaidStage::Encounter && session.boss_shiny);
 
     // Throw 1 escapes -> stays in Encounter
-    world.poll_rc = PGR_VR_DONE;
+    world.poll_rc = PGS_VR_DONE;
     world.catch_status = 2; // CatchEscape
     test_clock_override_ms += 1500;
-    assert(pgr_auto_raid_tick(tid, &metadata)); // submits throw 1
+    assert(pgs_auto_raid_tick(tid, &metadata)); // submits throw 1
     assert(world.throws_submitted == 1 && session.pending_promise);
     test_clock_override_ms += 500;
-    assert(pgr_auto_raid_tick(tid, &metadata)); // polls throw 1 -> CatchEscape
+    assert(pgs_auto_raid_tick(tid, &metadata)); // polls throw 1 -> CatchEscape
     assert(!session.pending_promise && session.stage == RaidStage::Encounter);
 
     // Throw 2 succeeds -> shiny caught with stopOnShiny=1 -> finishes session with "done"!
     world.catch_status = 1; // CatchSuccess
     test_clock_override_ms += 1500;
-    assert(pgr_auto_raid_tick(tid, &metadata)); // submits throw 2
+    assert(pgs_auto_raid_tick(tid, &metadata)); // submits throw 2
     assert(world.throws_submitted == 2);
     test_clock_override_ms += 500;
-    assert(pgr_auto_raid_tick(tid, &metadata)); // catch succeeds; don't travel during result transition
+    assert(pgs_auto_raid_tick(tid, &metadata)); // catch succeeds; don't travel during result transition
     assert(session.stage==RaidStage::CatchSummary);
-    assert(pgr_auto_raid_tick(tid,&metadata));
+    assert(pgs_auto_raid_tick(tid,&metadata));
     assert(world.summary_closed==1&&session.active);
     t_item_access=true;
-    assert(pgr_auto_raid_tick(tid,&metadata)); // map looks ready, but the catch screen is still closing
+    assert(pgs_auto_raid_tick(tid,&metadata)); // map looks ready, but the catch screen is still closing
     test_clock_override_ms+=kMapSettleMs;
-    assert(!pgr_auto_raid_tick(tid,&metadata)); // map ready -> DoneShinyCaught
+    assert(!pgs_auto_raid_tick(tid,&metadata)); // map ready -> DoneShinyCaught
     assert(!session.active && tracker.finished_token == 200);
     assert(t_events.back().find("\"phase\":\"done\"") != std::string::npos);
     assert(t_events.back().find("\"completed\":1") != std::string::npos);
@@ -594,20 +594,20 @@ int main() {
     auto local_raid = make_active_raid("gym-pass", 555, 37.7749, -122.4194);
     world.gyms = {local_raid};
     // Only Remote pass & Shop coin pass offered
-    pgr_auto_raid::EntryCostOption remote_opt{};
-    remote_opt.raid_type = pgr_auto_raid::RAID_LOCATION_REMOTE;
-    remote_opt.items = {{pgr_auto_raid::ITEM_REMOTE_RAID_TICKET, 1}};
+    pgs_auto_raid::EntryCostOption remote_opt{};
+    remote_opt.raid_type = pgs_auto_raid::RAID_LOCATION_REMOTE;
+    remote_opt.items = {{pgs_auto_raid::ITEM_REMOTE_RAID_TICKET, 1}};
     remote_opt.satisfied_in_bag = true;
     world.entry_costs = {remote_opt};
 
     t_command = "R1|300|1|0|2|1|45|0|1|1|0||0";
-    assert(pgr_auto_raid_tick(tid, &metadata)); // Scan -> Travel
+    assert(pgs_auto_raid_tick(tid, &metadata)); // Scan -> Travel
     test_clock_override_ms += 600;
-    assert(pgr_auto_raid_tick(tid, &metadata)); // Travel -> OpenGym
+    assert(pgs_auto_raid_tick(tid, &metadata)); // Travel -> OpenGym
     test_clock_override_ms += 600;
-    assert(pgr_auto_raid_tick(tid, &metadata)); // OpenGym -> VerifyPass
+    assert(pgs_auto_raid_tick(tid, &metadata)); // OpenGym -> VerifyPass
     test_clock_override_ms += 600;
-    assert(!pgr_auto_raid_tick(tid, &metadata)); // VerifyPass -> refuses remote pass BEFORE join!
+    assert(!pgs_auto_raid_tick(tid, &metadata)); // VerifyPass -> refuses remote pass BEFORE join!
     assert(world.join_presses == 0);
     assert(t_events.back().find("\"phase\":\"error\"") != std::string::npos);
     assert(t_events.back().find("Remote Raid Pass is forbidden") != std::string::npos);
@@ -617,25 +617,25 @@ int main() {
     reset_fixture();
     g_test_adapter = &g_fake_adapter;
     world.gyms = {make_active_raid("gym-award", 556, 37.7749, -122.4194)};
-    pgr_auto_raid::EntryCostOption award_opt{};
-    award_opt.items = {{pgr_auto_raid::ITEM_FREE_RAID_TICKET, 1}};
+    pgs_auto_raid::EntryCostOption award_opt{};
+    award_opt.items = {{pgs_auto_raid::ITEM_FREE_RAID_TICKET, 1}};
     award_opt.satisfied_in_bag = false;
     world.entry_costs = {award_opt};
     t_command = "R1|301|1|0|2|1|45|0|1|0|0||0";
-    assert(pgr_auto_raid_tick(tid, &metadata)); // Scan -> Travel
+    assert(pgs_auto_raid_tick(tid, &metadata)); // Scan -> Travel
     test_clock_override_ms += 600;
-    assert(pgr_auto_raid_tick(tid, &metadata)); // Travel -> OpenGym
+    assert(pgs_auto_raid_tick(tid, &metadata)); // Travel -> OpenGym
     test_clock_override_ms += 600;
-    assert(pgr_auto_raid_tick(tid, &metadata)); // OpenGym -> VerifyPass
+    assert(pgs_auto_raid_tick(tid, &metadata)); // OpenGym -> VerifyPass
     test_clock_override_ms += 100;
-    assert(pgr_auto_raid_tick(tid, &metadata)); // no pass yet: keeps looking
+    assert(pgs_auto_raid_tick(tid, &metadata)); // no pass yet: keeps looking
     assert(session.stage == RaidStage::VerifyPass && world.join_presses == 0 && world.exit_calls == 0);
     assert(t_events.back().find("newly awarded free raid pass") != std::string::npos);
     world.entry_costs[0].satisfied_in_bag = true; // the award arrives
     test_clock_override_ms += 100;
-    assert(pgr_auto_raid_tick(tid, &metadata));
+    assert(pgs_auto_raid_tick(tid, &metadata));
     assert(session.stage == RaidStage::ConfirmModalPass && world.join_presses == 1);
-    pgr_auto_raid_stop(tid);
+    pgs_auto_raid_stop(tid);
     assert(!session.active && test_roots.empty());
 
     // With no award, it still stops once the wait is over, without pressing join.
@@ -644,16 +644,16 @@ int main() {
     world.gyms = {make_active_raid("gym-none", 557, 37.7749, -122.4194)};
     world.entry_costs = {award_opt};
     t_command = "R1|302|1|0|2|1|45|0|1|0|0||0";
-    assert(pgr_auto_raid_tick(tid, &metadata));
+    assert(pgs_auto_raid_tick(tid, &metadata));
     test_clock_override_ms += 600;
-    assert(pgr_auto_raid_tick(tid, &metadata));
+    assert(pgs_auto_raid_tick(tid, &metadata));
     test_clock_override_ms += 600;
-    assert(pgr_auto_raid_tick(tid, &metadata)); // VerifyPass
+    assert(pgs_auto_raid_tick(tid, &metadata)); // VerifyPass
     test_clock_override_ms += 100;
-    assert(pgr_auto_raid_tick(tid, &metadata));
+    assert(pgs_auto_raid_tick(tid, &metadata));
     assert(session.stage == RaidStage::VerifyPass);
     test_clock_override_ms += kPassAwardWaitMs;
-    assert(!pgr_auto_raid_tick(tid, &metadata));
+    assert(!pgs_auto_raid_tick(tid, &metadata));
     assert(world.join_presses == 0 && world.exit_calls == 1);
     assert(t_events.back().find("Out of allowed raid passes") != std::string::npos);
     assert(test_roots.empty());
@@ -672,15 +672,15 @@ int main() {
 
     // minPlayers = 4, waitSeconds = 20
     t_command = "R1|400|1|0|3|4|20|0|1|0|0||0";
-    assert(pgr_auto_raid_tick(tid, &metadata)); // Scan -> Travel (gym-a)
+    assert(pgs_auto_raid_tick(tid, &metadata)); // Scan -> Travel (gym-a)
     test_clock_override_ms += 600;
-    assert(pgr_auto_raid_tick(tid, &metadata)); // Travel -> OpenGym
+    assert(pgs_auto_raid_tick(tid, &metadata)); // Travel -> OpenGym
     test_clock_override_ms += 600;
-    assert(pgr_auto_raid_tick(tid, &metadata)); // OpenGym -> VerifyPass
+    assert(pgs_auto_raid_tick(tid, &metadata)); // OpenGym -> VerifyPass
     test_clock_override_ms += 600;
-    assert(pgr_auto_raid_tick(tid, &metadata)); // VerifyPass -> ConfirmModalPass
+    assert(pgs_auto_raid_tick(tid, &metadata)); // VerifyPass -> ConfirmModalPass
     test_clock_override_ms += 600;
-    assert(pgr_auto_raid_tick(tid, &metadata)); // ConfirmModalPass -> Lobby
+    assert(pgs_auto_raid_tick(tid, &metadata)); // ConfirmModalPass -> Lobby
 
     // In lobby with only 2/4 players; countdown drops to 4000ms (<= 5000ms safety floor) -> must LeaveLobby!
     world.lobby_players = 2;
@@ -688,7 +688,7 @@ int main() {
     world.lobby_has_countdown = true;
     world.lobby_countdown_ms = 4000;
     test_clock_override_ms += 1000;
-    assert(pgr_auto_raid_tick(tid, &metadata));
+    assert(pgs_auto_raid_tick(tid, &metadata));
     // Leaving is asynchronous: the session waits in Leave (no exit request in the same
     // tick as LeaveLobby) and asks the game to close the raid screen until the map is back.
     assert(world.lobby_leaves == 1 && session.stage == RaidStage::Leave && world.exit_calls == 0);
@@ -696,14 +696,14 @@ int main() {
     assert(tracker.is_raid_excluded("gym-a#601", test_clock_override_ms));
     world.map_ready = false;
     test_clock_override_ms += 1000;
-    assert(pgr_auto_raid_tick(tid, &metadata));
+    assert(pgs_auto_raid_tick(tid, &metadata));
     assert(session.stage == RaidStage::Leave && world.exit_calls == 1);
     test_clock_override_ms += 1000;
-    assert(pgr_auto_raid_tick(tid, &metadata));
+    assert(pgs_auto_raid_tick(tid, &metadata));
     assert(session.stage == RaidStage::Leave && world.exit_calls == 2);
     world.map_ready = true;
     test_clock_override_ms += 1000;
-    assert(pgr_auto_raid_tick(tid, &metadata));
+    assert(pgs_auto_raid_tick(tid, &metadata));
     assert(session.stage == RaidStage::Scan && world.exit_calls == 2 && session.target.fort_id.empty());
 
     // No pass was spent, so the left raid is retried after a short delay, not 10 minutes.
@@ -715,27 +715,27 @@ int main() {
     for (int loss_num = 1; loss_num <= 2; ++loss_num) {
         if (session.stage == RaidStage::Leave) {
             test_clock_override_ms += 1000;
-            assert(pgr_auto_raid_tick(tid, &metadata)); // Leave -> Scan
+            assert(pgs_auto_raid_tick(tid, &metadata)); // Leave -> Scan
         }
         test_clock_override_ms += 2000;
-        assert(pgr_auto_raid_tick(tid, &metadata)); // Scan -> Travel
+        assert(pgs_auto_raid_tick(tid, &metadata)); // Scan -> Travel
         assert(session.target.fort_id == (loss_num == 1 ? "gym-b" : "gym-c"));
         if (loss_num == 1) {
             // A tap the game ignored is repeated while the map is still showing.
             const unsigned clicks = world.gym_clicks;
             world.approach_ready = false;
             test_clock_override_ms += 600;
-            assert(pgr_auto_raid_tick(tid, &metadata)); // Travel -> OpenGym (first tap)
+            assert(pgs_auto_raid_tick(tid, &metadata)); // Travel -> OpenGym (first tap)
             assert(world.gym_clicks == clicks + 1 && session.stage == RaidStage::OpenGym);
             test_clock_override_ms += 600;
-            assert(pgr_auto_raid_tick(tid, &metadata));
+            assert(pgs_auto_raid_tick(tid, &metadata));
             assert(world.gym_clicks == clicks + 1);
             test_clock_override_ms += kGymRetapMs;
-            assert(pgr_auto_raid_tick(tid, &metadata));
+            assert(pgs_auto_raid_tick(tid, &metadata));
             assert(world.gym_clicks == clicks + 2 && session.stage == RaidStage::OpenGym);
             world.approach_ready = true;
             test_clock_override_ms += 600;
-            assert(pgr_auto_raid_tick(tid, &metadata)); // OpenGym -> VerifyPass
+            assert(pgs_auto_raid_tick(tid, &metadata)); // OpenGym -> VerifyPass
             assert(session.stage == RaidStage::VerifyPass);
             session.stage = RaidStage::Travel; // rejoin the shared tick sequence below
             session.stage_started_ms = test_clock_override_ms;
@@ -743,23 +743,23 @@ int main() {
             session.target_gym = Root(&dummy_gym_objs[1]);
         }
         test_clock_override_ms += 600;
-        assert(pgr_auto_raid_tick(tid, &metadata)); // Travel -> OpenGym
+        assert(pgs_auto_raid_tick(tid, &metadata)); // Travel -> OpenGym
         test_clock_override_ms += 600;
-        assert(pgr_auto_raid_tick(tid, &metadata)); // OpenGym -> VerifyPass
+        assert(pgs_auto_raid_tick(tid, &metadata)); // OpenGym -> VerifyPass
         test_clock_override_ms += 600;
-        assert(pgr_auto_raid_tick(tid, &metadata)); // VerifyPass -> Lobby (since world.lobby_open is true or modal confirms)
+        assert(pgs_auto_raid_tick(tid, &metadata)); // VerifyPass -> Lobby (since world.lobby_open is true or modal confirms)
         if (session.stage == RaidStage::ConfirmModalPass) {
             test_clock_override_ms += 600;
-            assert(pgr_auto_raid_tick(tid, &metadata));
+            assert(pgs_auto_raid_tick(tid, &metadata));
         }
         test_clock_override_ms += 600;
-        assert(pgr_auto_raid_tick(tid, &metadata)); // Lobby -> Battle
+        assert(pgs_auto_raid_tick(tid, &metadata)); // Lobby -> Battle
         assert(session.stage == RaidStage::Battle);
 
         world.resolve_open = true;
-        world.resolve_status = pgr_auto_raid::BATTLE_STATUS_DEFEAT;
+        world.resolve_status = pgs_auto_raid::BATTLE_STATUS_DEFEAT;
         test_clock_override_ms += 600;
-        const bool cont = pgr_auto_raid_tick(tid, &metadata); // Battle -> Resolve -> Defeat
+        const bool cont = pgs_auto_raid_tick(tid, &metadata); // Battle -> Resolve -> Defeat
         if (loss_num == 1) {
             assert(cont && session.stage == RaidStage::Leave && tracker.consecutive_losses == 1);
         } else {
@@ -776,7 +776,7 @@ int main() {
     for(int revoke=0;revoke<5;++revoke){
         reset_fixture();g_test_adapter=&g_fake_adapter;
         t_command="R1|500|1|0|3|1|45|0|1|0|0||0";
-        assert(pgr_auto_raid_tick(tid,&metadata));
+        assert(pgs_auto_raid_tick(tid,&metadata));
         session.stage=RaidStage::Encounter;
         session.pending_promise=Root(&dummy_catch_promise_obj);
         session.uncertain_action=true;
@@ -785,37 +785,37 @@ int main() {
         if(revoke==2)t_command.clear();
         if(revoke==3)t_command="invalid";
         if(revoke==4)world.account="trainer-2";
-        assert(!pgr_auto_raid_tick(tid,&metadata));
+        assert(!pgs_auto_raid_tick(tid,&metadata));
         assert(world.catch_polls==0&&world.summary_closed==0&&world.throws_submitted==0);
         assert(world.lobby_leaves==0&&world.exit_calls==0&&world.modal_dismisses==0);
         assert(test_roots.empty());
     }
     reset_fixture();g_test_adapter=&g_fake_adapter;
     t_command="R1|600|1|0|3|1|45|0|1|0|0||0";
-    assert(pgr_auto_raid_tick(tid,&metadata));
+    assert(pgs_auto_raid_tick(tid,&metadata));
     t_changing_seq=true;
-    assert(pgr_auto_raid_tick(tid,&metadata)); // Fresh snapshot raced: wait, don't cancel.
+    assert(pgs_auto_raid_tick(tid,&metadata)); // Fresh snapshot raced: wait, don't cancel.
     t_changing_seq=false;
     t_command="R1|600|1|0|3|1|45|0|0|1|0||0";
-    assert(pgr_auto_raid_tick(tid,&metadata));
+    assert(pgs_auto_raid_tick(tid,&metadata));
     assert(session.command.free_pass&&!session.command.premium_pass); // immutable spending policy
     session.stage=RaidStage::Encounter;
     session.pending_promise=Root(&dummy_catch_promise_obj);
     world.catch_status=999;
-    assert(!pgr_auto_raid_tick(tid,&metadata));
+    assert(!pgs_auto_raid_tick(tid,&metadata));
     assert(world.summary_closed==0);
     assert(t_events.back().find("Unknown catch result")!=std::string::npos);
     t_command="R1|599|1|0|3|1|45|0|1|0|0||0";
-    assert(!pgr_auto_raid_tick(tid,&metadata)); // Older token cannot restart a completed session.
+    assert(!pgs_auto_raid_tick(tid,&metadata)); // Older token cannot restart a completed session.
     assert(test_roots.empty()&&root_allocations==root_frees);
     reset_fixture();g_test_adapter=&g_fake_adapter;
     t_command="R1|700|1|0|3|1|45|0|1|0|0||0";
-    assert(pgr_auto_raid_tick(tid,&metadata));
+    assert(pgs_auto_raid_tick(tid,&metadata));
     session.stage=RaidStage::Encounter;
     session.pending_promise=Root(&dummy_catch_promise_obj);
     session.throws_made=kMaxRaidThrows;
     world.catch_status=2; // Our safety cap is not evidence the game's bonus balls ran out.
-    assert(!pgr_auto_raid_tick(tid,&metadata));
+    assert(!pgs_auto_raid_tick(tid,&metadata));
     assert(world.summary_closed==0);
     assert(t_events.back().find("completion not confirmed")!=std::string::npos);
     assert(test_roots.empty());
@@ -830,14 +830,14 @@ int main() {
     }
     world.gyms={skipped,next};
     t_command="R1|800|1|0|3|1|45|0|1|0|0||0";
-    assert(pgr_auto_raid_tick(tid,&metadata));
+    assert(pgs_auto_raid_tick(tid,&metadata));
     assert(session.target.fort_id=="skipped");
     quarantine_and_rescan("underfilled",test_clock_override_ms);
     test_clock_override_ms+=3000;
-    assert(pgr_auto_raid_tick(tid,&metadata)); // Leave -> Scan
-    assert(pgr_auto_raid_tick(tid,&metadata));
+    assert(pgs_auto_raid_tick(tid,&metadata)); // Leave -> Scan
+    assert(pgs_auto_raid_tick(tid,&metadata));
     assert(session.target.fort_id=="next"); // Epoch clock must not instantly expire retry quarantine.
-    pgr_auto_raid_stop(tid);
+    pgs_auto_raid_stop(tid);
     assert(test_roots.empty());
     // Distance limit: a raid beyond 1 km of the start point is never chosen; after drifting away the
     // session returns to the start point once, then keeps waiting there.
@@ -850,59 +850,59 @@ int main() {
         world.gyms={outside};
         const double start_lat=t_lat;
         t_command="R3|850|1|0|3|1|45|0|1|0|0||0|0|1000";
-        assert(pgr_auto_raid_tick(tid,&metadata));
+        assert(pgs_auto_raid_tick(tid,&metadata));
         assert(session.stage==RaidStage::Scan && tracker.travel_seq==0); // at the start point: nothing to return to
         assert(t_events.back().find("1 beyond 1 km")!=std::string::npos);
         t_lat=start_lat+0.008; // ~890 m away, as after an earlier raid
         test_clock_override_ms+=kDiscoveryScanMs;
-        assert(pgr_auto_raid_tick(tid,&metadata));
+        assert(pgs_auto_raid_tick(tid,&metadata));
         assert(session.stage==RaidStage::Scan && tracker.travel_seq==1);
         assert(t_events.back().find("\"phase\":\"travel\"")!=std::string::npos);
         assert(t_events.back().find("returning there")!=std::string::npos);
         char want[64];std::snprintf(want,sizeof(want),"\"latitude\":%.7f",start_lat);
         assert(t_events.back().find(want)!=std::string::npos);
         test_clock_override_ms+=kDiscoveryScanMs;
-        assert(pgr_auto_raid_tick(tid,&metadata));
+        assert(pgs_auto_raid_tick(tid,&metadata));
         assert(session.stage==RaidStage::Scan && tracker.travel_seq==1); // only once per search
         // Without the limit the same raid is taken.
-        pgr_auto_raid_stop(tid);
+        pgs_auto_raid_stop(tid);
         reset_fixture();g_test_adapter=&g_fake_adapter;
         world.game_time_ms=1800000000000LL;world.gyms={outside};
         t_command="R3|860|1|0|3|1|45|0|1|0|0||0|0|0";
-        assert(pgr_auto_raid_tick(tid,&metadata));
+        assert(pgs_auto_raid_tick(tid,&metadata));
         assert(session.stage==RaidStage::Travel && session.target.fort_id=="outside");
-        pgr_auto_raid_stop(tid);
+        pgs_auto_raid_stop(tid);
         assert(test_roots.empty());
     }
     reset_fixture();g_test_adapter=&g_fake_adapter;
     t_command="R1|900|1|0|1|1|45|0|1|0|0||0";
     world.map_ready=false;
-    assert(pgr_auto_raid_tick(tid,&metadata));
+    assert(pgs_auto_raid_tick(tid,&metadata));
     assert(session.stage==RaidStage::Scan && tracker.travel_seq==0);
     // Java item access stays true in gym/encounter screens. It is insufficient
     // to start another trip or count the completed raid before map restoration.
     session.target_key="owned#900";
     await_catch_summary(false,"Caught raid boss",test_clock_override_ms);
-    assert(pgr_auto_raid_tick(tid,&metadata));
+    assert(pgs_auto_raid_tick(tid,&metadata));
     assert(tracker.completed_raids==0 && session.active);
     world.map_ready=true;
     test_clock_override_ms+=kMapSettleMs;
-    assert(!pgr_auto_raid_tick(tid,&metadata));
+    assert(!pgs_auto_raid_tick(tid,&metadata));
     assert(t_events.back().find("\"completed\":1")!=std::string::npos && test_roots.empty());
     auto start_berry_encounter=[&](int mode){
         reset_fixture();g_test_adapter=&g_fake_adapter;
         t_command="R2|1000|1|0|3|1|45|0|1|0|0||0|"+std::to_string(mode);
-        assert(pgr_auto_raid_tick(tid,&metadata));
+        assert(pgs_auto_raid_tick(tid,&metadata));
         session.stage=RaidStage::Encounter;session.last_step_ms=0;
         world.encounter_open=true;
     };
-    auto tick=[&](){return pgr_auto_raid_tick(tid,&metadata);};
+    auto tick=[&](){return pgs_auto_raid_tick(tid,&metadata);};
     auto later=[&](){test_clock_override_ms+=kThrowCadenceMs;return tick();};
     // Golden is sent once, confirmed before the first excellent/curve/non-missed throw.
-    start_berry_encounter(706);world.berry_rc=PGR_VR_PENDING;
+    start_berry_encounter(706);world.berry_rc=PGS_VR_PENDING;
     assert(tick() && world.berries==std::vector<int>{706} && world.throws_submitted==0);
     assert(tick() && world.berries.size()==1 && world.throws_submitted==0);
-    world.berry_rc=PGR_VR_DONE;assert(tick() && world.throws_submitted==0);
+    world.berry_rc=PGS_VR_DONE;assert(tick() && world.throws_submitted==0);
     assert(later() && world.throws_submitted==1);
     // Breakout removes the used effect and feeds the next throw; a miss retains it.
     world.catch_status=2;assert(tick() && world.berry_clears==1);
@@ -910,30 +910,30 @@ int main() {
     assert(tick());assert(later() && world.throws_submitted==2);
     world.catch_status=4;assert(tick());
     assert(later() && world.berries.size()==2 && world.throws_submitted==3 && world.berry_clears==1);
-    pgr_auto_raid_stop(tid);assert(test_roots.empty());
+    pgs_auto_raid_stop(tid);assert(test_roots.empty());
     // Fallback is authorized with Golden alone; regular-only never consumes Golden.
     start_berry_encounter(706);world.golden=0;
-    assert(tick() && world.berries==std::vector<int>{701});pgr_auto_raid_stop(tid);
+    assert(tick() && world.berries==std::vector<int>{701});pgs_auto_raid_stop(tid);
     start_berry_encounter(706);world.golden=world.razz=0;
-    assert(tick() && world.berries.empty() && world.throws_submitted==1);pgr_auto_raid_stop(tid);
+    assert(tick() && world.berries.empty() && world.throws_submitted==1);pgs_auto_raid_stop(tid);
     start_berry_encounter(701);world.razz=0;
-    assert(tick() && world.berries.empty() && world.throws_submitted==1);pgr_auto_raid_stop(tid);
+    assert(tick() && world.berries.empty() && world.throws_submitted==1);pgs_auto_raid_stop(tid);
     start_berry_encounter(701);
-    assert(tick() && world.berries==std::vector<int>{701});pgr_auto_raid_stop(tid);
+    assert(tick() && world.berries==std::vector<int>{701});pgs_auto_raid_stop(tid);
     // Keep an existing effect without spending any selected berry.
     start_berry_encounter(706);world.active_berry=705;world.berry_feedable=false;
-    assert(tick() && world.berries.empty() && world.throws_submitted==1);pgr_auto_raid_stop(tid);
+    assert(tick() && world.berries.empty() && world.throws_submitted==1);pgs_auto_raid_stop(tid);
     // Server NoItem overrides stale positive inventory, including fallback exhaustion.
     start_berry_encounter(706);world.berry_result=BerryNoStock;
     assert(tick());assert(tick());assert(tick());
     assert((world.berries==std::vector<int>{706,701}) && world.throws_submitted==0);
     assert(tick());assert(tick());
-    assert(world.berries.size()==2 && world.throws_submitted==1);pgr_auto_raid_stop(tid);
+    assert(world.berries.size()==2 && world.throws_submitted==1);pgs_auto_raid_stop(tid);
     // Neither an uncertain timeout nor an explicit rejection is retried or followed by a throw.
     for(int scenario=0;scenario<3;++scenario){
         start_berry_encounter(706);assert(tick());
-        if(scenario==0){world.berry_rc=PGR_VR_PENDING;test_clock_override_ms+=kPromiseTimeoutMs;}
-        if(scenario==1)world.berry_rc=PGR_VR_REJECTED;
+        if(scenario==0){world.berry_rc=PGS_VR_PENDING;test_clock_override_ms+=kPromiseTimeoutMs;}
+        if(scenario==1)world.berry_rc=PGS_VR_REJECTED;
         if(scenario==2)world.berry_result=BerryRefused;
         assert(!tick() && world.berries.size()==1 && world.throws_submitted==0 && test_roots.empty());
         assert(!tick() && world.berries.size()==1);
@@ -949,7 +949,7 @@ int main() {
     }
     // A changed policy within the same token cannot authorize a different consumable.
     start_berry_encounter(701);t_command="R2|1000|1|0|3|1|45|0|1|0|0||0|706";
-    assert(tick() && world.berries==std::vector<int>{701});pgr_auto_raid_stop(tid);
+    assert(tick() && world.berries==std::vector<int>{701});pgs_auto_raid_stop(tid);
     // Transient controls wait, but never stall forever or send an unconfirmed throw.
     start_berry_encounter(706);world.berry_ready=false;
     assert(tick() && world.berries.empty() && world.throws_submitted==0);
@@ -957,7 +957,7 @@ int main() {
     assert(!tick() && test_roots.empty());
     start_berry_encounter(706);world.berry_feedable=false;
     assert(tick() && world.berries.empty());world.berry_feedable=true;
-    assert(tick() && world.berries.size()==1);pgr_auto_raid_stop(tid);
+    assert(tick() && world.berries.size()==1);pgs_auto_raid_stop(tid);
     reset_fixture();g_test_adapter=&g_fake_adapter;world.berry_bindings=false;
     t_command="R2|1000|1|0|3|1|45|0|1|0|0||0|706";
     assert(!tick() && world.gym_clicks==0 && world.join_presses==0 && world.modal_confirms==0);
@@ -966,14 +966,14 @@ int main() {
     return 0;
 }
 
-void pgr_catch_chance_enter(void*) {}
+void pgs_catch_chance_enter(void*) {}
 
 const void* pgs_throws_api(uint32_t) {return nullptr;}
 
 const void* pgs_vgp_controller_api(uint32_t){return nullptr;}
 extern "C" const void* pgs_vgp_aux_api(uint32_t){return nullptr;}
-extern "C" int pgr_research_transfer_caught(uint64_t,uint64_t,uint64_t,uint64_t,uint64_t,uint64_t,int){return 0;}
-bool pgr_map_throw_value(PgrThrowValue*){return false;}
-bool pgr_catch_chance_base(void*,double*){return false;}
-bool pgr_catch_chance_offers_ball(void*,int){return false;}
+extern "C" int pgs_research_transfer_caught(uint64_t,uint64_t,uint64_t,uint64_t,uint64_t,uint64_t,int){return 0;}
+bool pgs_map_throw_value(PgsThrowValue*){return false;}
+bool pgs_catch_chance_base(void*,double*){return false;}
+bool pgs_catch_chance_offers_ball(void*,int){return false;}
 int pgs_hook(void*,void*,void**){return -1;}

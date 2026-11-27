@@ -82,24 +82,24 @@ static_assert(sizeof(void *) == 8, "items native ABI requires LP64");
 
 // Status codes returned by every table function. 0 == success.
 enum {
-    PGR_ITEMS_OK               = 0,
-    PGR_ITEMS_ERR_NULL_ARG     = 1,  /* required pointer argument was null */
-    PGR_ITEMS_ERR_BAD_CONFIG   = 2,  /* header/size/pointer/literal invalid */
-    PGR_ITEMS_ERR_ALREADY_BOUND= 3,  /* install() repeated with a different config */
-    PGR_ITEMS_ERR_DUP_HOOK     = 4,  /* two hook addresses collide */
-    PGR_ITEMS_ERR_HOOK         = 5,  /* Dobby could not hook/publish one of the five sites */
-    PGR_ITEMS_ERR_NOT_INSTALLED= 6,  /* operation needs a successful install() */
-    PGR_ITEMS_ERR_NO_CLOCK     = 7,  /* CLOCK_BOOTTIME was unavailable at install */
-    PGR_ITEMS_ERR_BAD_RULES    = 8   /* rules snapshot header/size/count invalid */
+    PGS_ITEMS_OK               = 0,
+    PGS_ITEMS_ERR_NULL_ARG     = 1,  /* required pointer argument was null */
+    PGS_ITEMS_ERR_BAD_CONFIG   = 2,  /* header/size/pointer/literal invalid */
+    PGS_ITEMS_ERR_ALREADY_BOUND= 3,  /* install() repeated with a different config */
+    PGS_ITEMS_ERR_DUP_HOOK     = 4,  /* two hook addresses collide */
+    PGS_ITEMS_ERR_HOOK         = 5,  /* Dobby could not hook/publish one of the five sites */
+    PGS_ITEMS_ERR_NOT_INSTALLED= 6,  /* operation needs a successful install() */
+    PGS_ITEMS_ERR_NO_CLOCK     = 7,  /* CLOCK_BOOTTIME was unavailable at install */
+    PGS_ITEMS_ERR_BAD_RULES    = 8   /* rules snapshot header/size/count invalid */
 };
 
 // Error reason codes surfaced in sample.last_error_code (adapter -> exact JS strings).
 enum {
-    PGR_ITEMS_REASON_NONE    = 0,
-    PGR_ITEMS_REASON_TIMEOUT = 1,  /* "Timed out; item paused until app restart" */
-    PGR_ITEMS_REASON_REJECTED= 2,  /* "Game rejected recycling; item paused until settings change" */
-    PGR_ITEMS_REASON_NATIVE  = 3,  /* generic orchestration fault (reason:native) */
-    PGR_ITEMS_REASON_LOOKUP  = 4   /* service/filter lookup failed (item-lookup-error) */
+    PGS_ITEMS_REASON_NONE    = 0,
+    PGS_ITEMS_REASON_TIMEOUT = 1,  /* "Timed out; item paused until app restart" */
+    PGS_ITEMS_REASON_REJECTED= 2,  /* "Game rejected recycling; item paused until settings change" */
+    PGS_ITEMS_REASON_NATIVE  = 3,  /* generic orchestration fault (reason:native) */
+    PGS_ITEMS_REASON_LOOKUP  = 4   /* service/filter lookup failed (item-lookup-error) */
 };
 
 // One published catalog row (POD; read back through catalog()).
@@ -112,15 +112,15 @@ typedef pgs_item_row pgrazor_item_row;
 // Event kinds carried by the bounded request/confirm/error queue (drain()). Each event owns its
 // own id/amount so asynchronous records can never be misattributed by a shared "last_*" field.
 enum {
-    PGR_ITEMS_EV_REQUEST = 1,  /* item-transfer-requested: aux == kept cap */
-    PGR_ITEMS_EV_CONFIRM = 2,  /* item-transfer-confirmed: aux == 0 */
-    PGR_ITEMS_EV_ERROR   = 3   /* item-transfer-error / item-lookup-error: aux == PGR_ITEMS_REASON_* */
+    PGS_ITEMS_EV_REQUEST = 1,  /* item-transfer-requested: aux == kept cap */
+    PGS_ITEMS_EV_CONFIRM = 2,  /* item-transfer-confirmed: aux == 0 */
+    PGS_ITEMS_EV_ERROR   = 3   /* item-transfer-error / item-lookup-error: aux == PGS_ITEMS_REASON_* */
 };
 
 // One queued telemetry event (POD; FIFO; drained and consumed by drain()). The adapter maps each
 // to the exact JS item-* event in order. A reused id never shares another event's amount.
 typedef struct pgs_item_event {
-    uint32_t kind;    /* PGR_ITEMS_EV_* */
+    uint32_t kind;    /* PGS_ITEMS_EV_* */
     int32_t  id;      /* item id for this event */
     int32_t  amount;  /* recycled amount for this event */
     int32_t  aux;     /* REQUEST: kept cap; ERROR: reason code; CONFIRM: 0 */

@@ -10,16 +10,16 @@
 
 namespace {
 std::mutex state_mutex;
-PgrUnitySchedulerConfig config{};
-std::atomic<PgrUnityInvoke> original_invoke{nullptr};
-std::atomic<PgrUnityConvert> original_convert{nullptr};
+PgsUnitySchedulerConfig config{};
+std::atomic<PgsUnityInvoke> original_invoke{nullptr};
+std::atomic<PgsUnityConvert> original_convert{nullptr};
 bool installed=false,poisoned=false;
 std::atomic<uint64_t> active{0},sequence{0};
 uint64_t next_generation=0;
 std::atomic<int32_t> owner{0};
 // Latched install/hook diagnostic. Only ever written while state_mutex is held
 // (install path); read under the same lock by diagnostics(). Default: no failure.
-PgrUnitySchedulerDiag diag{4,sizeof(PgrUnitySchedulerDiag),PGR_US_OK,PGR_US_STAGE_NONE,0,0,0,0,0,0};
+PgsUnitySchedulerDiag diag{4,sizeof(PgsUnitySchedulerDiag),PGS_US_OK,PGS_US_STAGE_NONE,0,0,0,0,0,0};
 void record_diag(int32_t result,uint32_t stage,int32_t invoke_rc,int32_t convert_rc,
                  uint64_t invoke_target,uint64_t convert_target){
  // Called with state_mutex held. Pure bookkeeping; no managed call, no hook.
@@ -63,13 +63,13 @@ void *invoke_body(void *entry){
 }
 #endif
 
-bool same(const PgrUnitySchedulerConfig &a,const PgrUnitySchedulerConfig &b){
+bool same(const PgsUnitySchedulerConfig &a,const PgsUnitySchedulerConfig &b){
  if(a.version!=b.version||a.size!=b.size||a.runtime_invoke!=b.runtime_invoke||
  a.runtime_invoke_convert_args!=b.runtime_invoke_convert_args||a.execute_tasks!=b.execute_tasks||
  a.thread_current!=b.thread_current||a.verify_metadata!=b.verify_metadata||
  a.expected_owner_tid!=b.expected_owner_tid||a.exclusive_owner!=b.exclusive_owner||
  a.subscriber_count!=b.subscriber_count||a.reserved!=b.reserved)return false;
- for(uint32_t i=0;i<PGR_US_MAX_SUBSCRIBERS;++i){
+ for(uint32_t i=0;i<PGS_US_MAX_SUBSCRIBERS;++i){
  const auto &x=a.subscribers[i];const auto &y=b.subscribers[i];
  if(x.begin!=y.begin||x.end!=y.end||x.context!=y.context)return false;
  }return true;
@@ -125,7 +125,7 @@ uint64_t executing_generation(uint64_t supplied_tid){
  return original_generation;
 }
 void *invoke(const void *method,void *object,void **args,void **exception){
- PgrUnityInvoke original=original_invoke.load(std::memory_order_acquire);
+ PgsUnityInvoke original=original_invoke.load(std::memory_order_acquire);
  if(!original){std::lock_guard<std::mutex> lock(state_mutex);original=original_invoke.load(std::memory_order_acquire);}
  if(!original)std::abort();
  Depth frame(method,object,0);
@@ -136,7 +136,7 @@ void *invoke(const void *method,void *object,void **args,void **exception){
  return result;
 }
 void *convert(const void *method,void *object,void **args,int32_t count,void **exception){
- PgrUnityConvert original=original_convert.load(std::memory_order_acquire);
+ PgsUnityConvert original=original_convert.load(std::memory_order_acquire);
  if(!original){std::lock_guard<std::mutex> lock(state_mutex);original=original_convert.load(std::memory_order_acquire);}
  if(!original)std::abort();
  Depth frame(method,object,count);
@@ -146,50 +146,50 @@ void *convert(const void *method,void *object,void **args,int32_t count,void **e
  if(!result&&exception&&!*exception)pulse(method,object,args,count,entered);
  return result;
 }
-int install(const PgrUnitySchedulerConfig *value){
+int install(const PgsUnitySchedulerConfig *value){
  if(!value||value->version!=2||value->size!=sizeof(*value)||
  !value->runtime_invoke||!value->runtime_invoke_convert_args||
  value->runtime_invoke==value->runtime_invoke_convert_args||!value->execute_tasks||
  !value->thread_current||!value->verify_metadata||value->expected_owner_tid<=0||
- value->exclusive_owner!=1||value->reserved||value->subscriber_count>PGR_US_MAX_SUBSCRIBERS)return PGR_US_BAD_CONFIG;
- for(uint32_t i=0;i<PGR_US_MAX_SUBSCRIBERS;++i){const auto &s=value->subscribers[i];
- if(i<value->subscriber_count){if(!s.begin&&!s.end)return PGR_US_BAD_CONFIG;}
- else if(s.begin||s.end||s.context)return PGR_US_BAD_CONFIG;
+ value->exclusive_owner!=1||value->reserved||value->subscriber_count>PGS_US_MAX_SUBSCRIBERS)return PGS_US_BAD_CONFIG;
+ for(uint32_t i=0;i<PGS_US_MAX_SUBSCRIBERS;++i){const auto &s=value->subscribers[i];
+ if(i<value->subscriber_count){if(!s.begin&&!s.end)return PGS_US_BAD_CONFIG;}
+ else if(s.begin||s.end||s.context)return PGS_US_BAD_CONFIG;
  }
  std::lock_guard<std::mutex> lock(state_mutex);
- if(poisoned)return PGR_US_POISONED;
- if(installed)return same(config,*value)?PGR_US_OK:PGR_US_REBIND;
- if(value->verify_metadata(value)!=1){record_diag(PGR_US_BAD_CONFIG,PGR_US_STAGE_VERIFY,0,0,0,0);return PGR_US_BAD_CONFIG;}
+ if(poisoned)return PGS_US_POISONED;
+ if(installed)return same(config,*value)?PGS_US_OK:PGS_US_REBIND;
+ if(value->verify_metadata(value)!=1){record_diag(PGS_US_BAD_CONFIG,PGS_US_STAGE_VERIFY,0,0,0,0);return PGS_US_BAD_CONFIG;}
  void *invoke_target=value->runtime_invoke,*convert_target=value->runtime_invoke_convert_args;
 #if defined(__aarch64__)
  invoke_target=invoke_body(invoke_target);convert_target=invoke_body(convert_target);
- if(!invoke_target||!convert_target){record_diag(PGR_US_BAD_CONFIG,PGR_US_STAGE_RESOLVE,0,0,uintptr_t(invoke_target),uintptr_t(convert_target));return PGR_US_BAD_CONFIG;}
+ if(!invoke_target||!convert_target){record_diag(PGS_US_BAD_CONFIG,PGS_US_STAGE_RESOLVE,0,0,uintptr_t(invoke_target),uintptr_t(convert_target));return PGS_US_BAD_CONFIG;}
  const auto a=reinterpret_cast<uintptr_t>(invoke_target),b=reinterpret_cast<uintptr_t>(convert_target);
- if((a>b?a-b:b-a)<16){record_diag(PGR_US_BAD_CONFIG,PGR_US_STAGE_RESOLVE,0,0,a,b);return PGR_US_BAD_CONFIG;}
+ if((a>b?a-b:b-a)<16){record_diag(PGS_US_BAD_CONFIG,PGS_US_STAGE_RESOLVE,0,0,a,b);return PGS_US_BAD_CONFIG;}
 #endif
  config=*value;
  void *first=nullptr;
  int rc=pgs_hook(invoke_target,reinterpret_cast<void *>(&invoke),&first);
- original_invoke.store(reinterpret_cast<PgrUnityInvoke>(first),std::memory_order_release);
+ original_invoke.store(reinterpret_cast<PgsUnityInvoke>(first),std::memory_order_release);
  if(rc||!first){
  // Retain every published trampoline: an in-flight replacement may still need it.
  poisoned=true;diag.poisoned=1;
- record_diag(PGR_US_HOOK_FAILED,PGR_US_STAGE_INVOKE_HOOK,rc,0,uintptr_t(invoke_target),uintptr_t(convert_target));
- return PGR_US_HOOK_FAILED;
+ record_diag(PGS_US_HOOK_FAILED,PGS_US_STAGE_INVOKE_HOOK,rc,0,uintptr_t(invoke_target),uintptr_t(convert_target));
+ return PGS_US_HOOK_FAILED;
  }
  void *second=nullptr;
  rc=pgs_hook(convert_target,reinterpret_cast<void *>(&convert),&second);
- original_convert.store(reinterpret_cast<PgrUnityConvert>(second),std::memory_order_release);
+ original_convert.store(reinterpret_cast<PgsUnityConvert>(second),std::memory_order_release);
  if(rc||!second){
  // Remain passive and retain both originals until process exit. Never destroy
  // a trampoline that an already-entered replacement may still be forwarding to.
  poisoned=true;diag.poisoned=1;
- record_diag(PGR_US_HOOK_FAILED,PGR_US_STAGE_CONVERT_HOOK,0,rc,uintptr_t(invoke_target),uintptr_t(convert_target));
- return PGR_US_HOOK_FAILED;
+ record_diag(PGS_US_HOOK_FAILED,PGS_US_STAGE_CONVERT_HOOK,0,rc,uintptr_t(invoke_target),uintptr_t(convert_target));
+ return PGS_US_HOOK_FAILED;
  }
  installed=true;diag.installed=1;
- record_diag(PGR_US_OK,PGR_US_STAGE_NONE,0,0,uintptr_t(invoke_target),uintptr_t(convert_target));
- return PGR_US_OK;
+ record_diag(PGS_US_OK,PGS_US_STAGE_NONE,0,0,uintptr_t(invoke_target),uintptr_t(convert_target));
+ return PGS_US_OK;
 }
 uint64_t activate(){
  std::lock_guard<std::mutex> lock(state_mutex);
@@ -197,24 +197,24 @@ uint64_t activate(){
  const uint64_t value=++next_generation;active.store(value,std::memory_order_release);return value;
 }
 int revoke(uint64_t value){
- if(!value)return PGR_US_STALE;
+ if(!value)return PGS_US_STALE;
  std::lock_guard<std::mutex> guard(state_mutex);
- return active.compare_exchange_strong(value,0,std::memory_order_acq_rel)?PGR_US_OK:PGR_US_STALE;
+ return active.compare_exchange_strong(value,0,std::memory_order_acq_rel)?PGS_US_OK:PGS_US_STALE;
 }
-int snapshot(PgrUnitySchedulerSnapshot *out){
- if(!out)return PGR_US_BAD_CONFIG;
+int snapshot(PgsUnitySchedulerSnapshot *out){
+ if(!out)return PGS_US_BAD_CONFIG;
  std::lock_guard<std::mutex> lock(state_mutex);
- *out={active.load(),sequence.load(),owner.load(),uint32_t(installed),uint32_t(poisoned),0};return PGR_US_OK;
+ *out={active.load(),sequence.load(),owner.load(),uint32_t(installed),uint32_t(poisoned),0};return PGS_US_OK;
 }
-int diagnostics(PgrUnitySchedulerDiag *out){
- if(!out)return PGR_US_BAD_CONFIG;
+int diagnostics(PgsUnitySchedulerDiag *out){
+ if(!out)return PGS_US_BAD_CONFIG;
  std::lock_guard<std::mutex> lock(state_mutex);
- *out=diag;out->version=4;out->size=sizeof(PgrUnitySchedulerDiag);
- out->installed=uint32_t(installed);out->poisoned=uint32_t(poisoned);return PGR_US_OK;
+ *out=diag;out->version=4;out->size=sizeof(PgsUnitySchedulerDiag);
+ out->installed=uint32_t(installed);out->poisoned=uint32_t(poisoned);return PGS_US_OK;
 }
 const PgrUnitySchedulerApi api{2,sizeof(PgrUnitySchedulerApi),install,activate,revoke,valid,snapshot};
 const PgrUnitySchedulerApi3 api3{3,sizeof(PgrUnitySchedulerApi3),install,activate,revoke,valid,snapshot,executing_generation};
-const PgrUnitySchedulerApi4 api4{4,sizeof(PgrUnitySchedulerApi4),install,activate,revoke,valid,snapshot,executing_generation,diagnostics};
+const PgsUnitySchedulerApi4 api4{4,sizeof(PgsUnitySchedulerApi4),install,activate,revoke,valid,snapshot,executing_generation,diagnostics};
 }
 extern "C" const void *pgs_unity_scheduler_api(uint32_t version){
  if(version==2)return &api;if(version==3)return &api3;if(version==4)return &api4;return nullptr;

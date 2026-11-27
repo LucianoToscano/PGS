@@ -2,7 +2,7 @@
 #include "battle_counter.h"
 #include <cstdio>
 #include <cstdlib>
-using namespace pgr_smart_party;
+using namespace pgs_smart_party;
 void check(bool ok,const char *what){if(!ok){std::printf("FAIL %s\n",what);std::exit(1);}}
 int main(){
     // Names from 0.435.1 InvasionCharacter metadata, in HoloPokemonType order.
@@ -19,7 +19,7 @@ int main(){
     // distinct healthy counters. Gyms retain their existing six-slot capacity.
     const std::vector<std::vector<double>> scores={{4},{10},{7},{2}};
     for(int n:{0,1,2,3}){
-        const auto picked=pgr_counter::pick_team(scores,1,team_size(n,true));
+        const auto picked=pgs_counter::pick_team(scores,1,team_size(n,true));
         check(picked==std::vector<int>({1,2,0}),"Rocket fills three strongest distinct candidates");
     }
     check(team_size(6,false)==6,"gym keeps six");
@@ -43,14 +43,14 @@ int main(){
     check(!healing_policy(nullptr).on,"absent healing settings default off");
     // A slightly stronger counter at 60% loses on current HP, but wins when
     // Smart healing is on at 50%. At a 75% threshold it retains its HP penalty.
-    pgr_counter::Fighter better,healthy;
+    pgs_counter::Fighter better,healthy;
     better.attack=healthy.attack=200;better.defense=healthy.defense=150;
     better.hp=60;healthy.hp=100;
-    better.fast=healthy.fast=pgr_counter::Move{1,100,1,10,true};
+    better.fast=healthy.fast=pgs_counter::Move{1,100,1,10,true};
     better.attack=220;
-    pgr_counter::Foe target;
-    auto score=[&](pgr_counter::Fighter f,const HealingPolicy &policy){
-        f.hp=selection_hp(int(f.hp),100,policy);return pgr_counter::matchup(f,target);
+    pgs_counter::Foe target;
+    auto score=[&](pgs_counter::Fighter f,const HealingPolicy &policy){
+        f.hp=selection_hp(int(f.hp),100,policy);return pgs_counter::matchup(f,target);
     };
     check(score(better,{})<score(healthy,{}),"healing off: healthier candidate wins as before");
     check(score(better,{true,50})>score(healthy,{true,50}),"healing on: best counter above threshold wins");

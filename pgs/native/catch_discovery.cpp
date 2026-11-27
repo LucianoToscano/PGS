@@ -24,7 +24,7 @@ static_assert(offsetof(PgrCatchDiscoveryOutput, handles) == 16, "output layout")
 
 namespace {
 
-constexpr uint64_t kMaxLeaseMs = PGR_CD_MAX_LEASE_MS;
+constexpr uint64_t kMaxLeaseMs = PGS_CD_MAX_LEASE_MS;
 constexpr int kConfigPtrCount = 12;  // validated pointers after the 8-byte header
 
 using New        = uintptr_t (*)(void *, int);
@@ -103,16 +103,16 @@ CallResult call(void *method, const Root *receiver, void **args, Root &out, bool
 // result is a managed object that must be rooted before any further managed call.
 bool type_object(void *klass, Root &out, int &err) {
   void *type = reinterpret_cast<ClassType>(g_cfg.class_get_type)(klass);
-  if (!type) { err = PGR_CD_ERR_METADATA; return false; }
+  if (!type) { err = PGS_CD_ERR_METADATA; return false; }
   void *obj = reinterpret_cast<TypeObject>(g_cfg.type_get_object)(type);
-  if (!obj) { err = PGR_CD_ERR_METADATA; return false; }
-  if (!out.set(obj)) { err = PGR_CD_ERR_GCHANDLE; return false; }
+  if (!obj) { err = PGS_CD_ERR_METADATA; return false; }
+  if (!out.set(obj)) { err = PGS_CD_ERR_GCHANDLE; return false; }
   return true;
 }
 
 void init_output(PgrCatchDiscoveryOutput *out) {
   std::memset(out, 0, sizeof(*out));
-  out->version = PGR_CD_OUTPUT_VERSION;
+  out->version = PGS_CD_OUTPUT_VERSION;
   out->size = sizeof(PgrCatchDiscoveryOutput);
 }
 
@@ -130,49 +130,49 @@ bool owner_ready(uint64_t tid) {
 // Shared gate/clock preamble. Fills *deadline, or returns a non-OK code the caller returns verbatim: 0 for
 // a closed lease / owner mismatch, negative for a clock failure. The owner latch and lease clamp run here.
 int gate(const PgrCatchDiscoveryRequest *request, uint64_t *deadline) {
-  if (!owner_ready(request->tid)) return PGR_CD_SKIP;
+  if (!owner_ready(request->tid)) return PGS_CD_SKIP;
   const uint64_t remaining = request->remaining_ms > kMaxLeaseMs ? kMaxLeaseMs : request->remaining_ms;
-  if (remaining == 0) return PGR_CD_SKIP;
+  if (remaining == 0) return PGS_CD_SKIP;
   uint64_t now = 0;
-  if (!read_boottime_ms(&now)) return PGR_CD_ERR_CLOCK_FAILURE;
+  if (!read_boottime_ms(&now)) return PGS_CD_ERR_CLOCK_FAILURE;
   *deadline = now + remaining;
-  return PGR_CD_OK;
+  return PGS_CD_OK;
 }
 
 // Common request header validation; *rc set, returns false on failure (output already initialised).
 bool check_request(const PgrCatchDiscoveryRequest *request, int *rc) {
-  if (!g_installed.load(std::memory_order_acquire)) { *rc = PGR_CD_ERR_NOT_INSTALLED; return false; }
-  if (request == nullptr) { *rc = PGR_CD_ERR_NULL_ARG; return false; }
-  if (request->version != PGR_CD_REQUEST_VERSION) { *rc = PGR_CD_ERR_BAD_VERSION; return false; }
-  if (request->size != sizeof(PgrCatchDiscoveryRequest)) { *rc = PGR_CD_ERR_BAD_SIZE; return false; }
-  *rc = PGR_CD_OK;
+  if (!g_installed.load(std::memory_order_acquire)) { *rc = PGS_CD_ERR_NOT_INSTALLED; return false; }
+  if (request == nullptr) { *rc = PGS_CD_ERR_NULL_ARG; return false; }
+  if (request->version != PGS_CD_REQUEST_VERSION) { *rc = PGS_CD_ERR_BAD_VERSION; return false; }
+  if (request->size != sizeof(PgrCatchDiscoveryRequest)) { *rc = PGS_CD_ERR_BAD_SIZE; return false; }
+  *rc = PGS_CD_OK;
   return true;
 }
 
 // --- config validation / install ---------------------------------------------------
 bool validate_config(const PgrCatchDiscoveryConfig *c, int *rc) {
-  if (c == nullptr) { *rc = PGR_CD_ERR_NULL_ARG; return false; }
-  if (c->version != PGR_CD_CONFIG_VERSION) { *rc = PGR_CD_ERR_BAD_VERSION; return false; }
-  if (c->size != sizeof(PgrCatchDiscoveryConfig)) { *rc = PGR_CD_ERR_BAD_SIZE; return false; }
+  if (c == nullptr) { *rc = PGS_CD_ERR_NULL_ARG; return false; }
+  if (c->version != PGS_CD_CONFIG_VERSION) { *rc = PGS_CD_ERR_BAD_VERSION; return false; }
+  if (c->size != sizeof(PgrCatchDiscoveryConfig)) { *rc = PGS_CD_ERR_BAD_SIZE; return false; }
   void *ptrs[kConfigPtrCount];
   std::memcpy(ptrs, reinterpret_cast<const unsigned char *>(c) + offsetof(PgrCatchDiscoveryConfig, object_get_class),
               sizeof(ptrs));
   for (int i = 0; i < kConfigPtrCount; ++i)
-    if (ptrs[i] == nullptr) { *rc = PGR_CD_ERR_MISSING_PTR; return false; }
-  *rc = PGR_CD_OK;
+    if (ptrs[i] == nullptr) { *rc = PGS_CD_ERR_MISSING_PTR; return false; }
+  *rc = PGS_CD_OK;
   return true;
 }
 
 int api_install(const PgrCatchDiscoveryConfig *config) {
-  int rc = PGR_CD_OK;
+  int rc = PGS_CD_OK;
   if (!validate_config(config, &rc)) return rc;
   uint64_t probe = 0;
-  if (!read_boottime_ms(&probe)) return PGR_CD_ERR_CLOCK_FAILURE;
+  if (!read_boottime_ms(&probe)) return PGS_CD_ERR_CLOCK_FAILURE;
 
   std::lock_guard<std::mutex> install_lock(g_install_mutex);
   if (g_installed.load(std::memory_order_acquire)) {
     std::lock_guard<std::mutex> state_lock(g_state_mutex);
-    return std::memcmp(&g_cfg, config, sizeof(*config)) == 0 ? 0 : PGR_CD_ERR_RECONFIG;
+    return std::memcmp(&g_cfg, config, sizeof(*config)) == 0 ? 0 : PGS_CD_ERR_RECONFIG;
   }
   {
     std::lock_guard<std::mutex> state_lock(g_state_mutex);
@@ -184,56 +184,56 @@ int api_install(const PgrCatchDiscoveryConfig *config) {
 }
 
 int api_top(const PgrCatchDiscoveryRequest *request, PgrCatchDiscoveryOutput *out) {
-  if (out == nullptr) return PGR_CD_ERR_NULL_ARG;  // cannot report
+  if (out == nullptr) return PGS_CD_ERR_NULL_ARG;  // cannot report
   init_output(out);
-  int rc = PGR_CD_OK;
+  int rc = PGS_CD_OK;
   if (!check_request(request, &rc)) return rc;
-  if (request->layer == nullptr) return PGR_CD_ERR_NULL_ARG;  // top requires the borrowed layer handle
+  if (request->layer == nullptr) return PGS_CD_ERR_NULL_ARG;  // top requires the borrowed layer handle
 
   uint64_t deadline = 0;
   const int g = gate(request, &deadline);
-  if (g != PGR_CD_OK) return g;
+  if (g != PGS_CD_OK) return g;
 
-  { std::lock_guard<std::mutex> lock(g_state_mutex); if (g_busy) return PGR_CD_ERR_BUSY; g_busy = true; }
+  { std::lock_guard<std::mutex> lock(g_state_mutex); if (g_busy) return PGS_CD_ERR_BUSY; g_busy = true; }
   BusyExit busy_exit;
 
   // Root the layer and prove it is the exact GuiLayerService before dispatching TopGui.
   Root layer;
-  if (!layer.duplicate(request->layer)) return PGR_CD_ERR_GCHANDLE;
-  if (!is_exact(layer.get(), g_cfg.class_layer)) return PGR_CD_ERR_METADATA;
+  if (!layer.duplicate(request->layer)) return PGS_CD_ERR_GCHANDLE;
+  if (!is_exact(layer.get(), g_cfg.class_layer)) return PGS_CD_ERR_METADATA;
 
   // TopGui() -> IGuiController (any GUI; may be null for excluded opening screens). Instance call, no args.
   Root candidate;
   switch (call(g_cfg.m_top, &layer, nullptr, candidate, /*allowNull=*/true)) {
-    case CALL_THROW:    return PGR_CD_ERR_MANAGED;
-    case CALL_GCHANDLE: return PGR_CD_ERR_GCHANDLE;
-    case CALL_DEAD:     return PGR_CD_ERR_GCHANDLE;
+    case CALL_THROW:    return PGS_CD_ERR_MANAGED;
+    case CALL_GCHANDLE: return PGS_CD_ERR_GCHANDLE;
+    case CALL_DEAD:     return PGS_CD_ERR_GCHANDLE;
     case CALL_OK:       break;
   }
-  if (!candidate.get()) return PGR_CD_SKIP;                       // TopGui excluded this screen: fall to scene
-  if (!is_exact(candidate.get(), g_cfg.class_details)) return PGR_CD_SKIP;  // not a Details screen: benign
+  if (!candidate.get()) return PGS_CD_SKIP;                       // TopGui excluded this screen: fall to scene
+  if (!is_exact(candidate.get(), g_cfg.class_details)) return PGS_CD_SKIP;  // not a Details screen: benign
 
   // Fresh clock AFTER the lookup / root allocation and before publication.
   uint64_t final_now = 0;
-  if (!read_boottime_ms(&final_now)) return PGR_CD_ERR_CLOCK_FAILURE;
-  if (final_now >= deadline) return PGR_CD_SKIP;
+  if (!read_boottime_ms(&final_now)) return PGS_CD_ERR_CLOCK_FAILURE;
+  if (final_now >= deadline) return PGS_CD_SKIP;
 
   out->count = 1;
   out->handles[0] = reinterpret_cast<void *>(candidate.release());
-  return PGR_CD_OK;
+  return PGS_CD_OK;
 }
 
 int api_scene(const PgrCatchDiscoveryRequest *request, PgrCatchDiscoveryOutput *out) {
-  if (out == nullptr) return PGR_CD_ERR_NULL_ARG;
+  if (out == nullptr) return PGS_CD_ERR_NULL_ARG;
   init_output(out);
-  int rc = PGR_CD_OK;
+  int rc = PGS_CD_OK;
   if (!check_request(request, &rc)) return rc;  // layer intentionally ignored
 
   uint64_t deadline = 0;
   const int g = gate(request, &deadline);
-  if (g != PGR_CD_OK) return g;
+  if (g != PGS_CD_OK) return g;
 
-  { std::lock_guard<std::mutex> lock(g_state_mutex); if (g_busy) return PGR_CD_ERR_BUSY; g_busy = true; }
+  { std::lock_guard<std::mutex> lock(g_state_mutex); if (g_busy) return PGS_CD_ERR_BUSY; g_busy = true; }
   BusyExit busy_exit;
 
   int err = 0;
@@ -246,75 +246,75 @@ int api_scene(const PgrCatchDiscoveryRequest *request, PgrCatchDiscoveryOutput *
   Root arrayObj;
   {
     void *type = detailsType.get();
-    if (!type) return PGR_CD_ERR_GCHANDLE;
+    if (!type) return PGS_CD_ERR_GCHANDLE;
     void *args[] = {type};
     switch (call(g_cfg.m_find, nullptr, args, arrayObj, /*allowNull=*/true)) {
-      case CALL_THROW:    return PGR_CD_ERR_MANAGED;
-      case CALL_GCHANDLE: return PGR_CD_ERR_GCHANDLE;
-      case CALL_DEAD:     return PGR_CD_ERR_GCHANDLE;
+      case CALL_THROW:    return PGS_CD_ERR_MANAGED;
+      case CALL_GCHANDLE: return PGS_CD_ERR_GCHANDLE;
+      case CALL_DEAD:     return PGS_CD_ERR_GCHANDLE;
       case CALL_OK:       break;
     }
   }
-  if (!arrayObj.get()) return PGR_CD_SKIP;  // no array yet: not ready
+  if (!arrayObj.get()) return PGS_CD_SKIP;  // no array yet: not ready
 
   const uintptr_t count = reinterpret_cast<ArrayLen>(g_cfg.array_length)(arrayObj.get());
-  if (count > PGR_CD_MAX_CANDIDATES) return PGR_CD_ERR_BAD_COUNT;  // strict ceiling: reject, never truncate
+  if (count > PGS_CD_MAX_CANDIDATES) return PGS_CD_ERR_BAD_COUNT;  // strict ceiling: reject, never truncate
 
   // Root each nonnull exact-Details element individually. A wrong-class element from a TYPED query is a
   // metadata fault; null elements are skipped. On any gchandle failure every rooted candidate is freed
   // (the Root array destructors run before BusyExit resets the guard).
-  Root candidates[PGR_CD_MAX_CANDIDATES];
+  Root candidates[PGS_CD_MAX_CANDIDATES];
   uint32_t found = 0;
   for (uintptr_t i = 0; i < count; ++i) {
     void *base = arrayObj.get();  // re-resolve the (possibly relocated) array base on every indexing
-    if (!base) return PGR_CD_ERR_GCHANDLE;
+    if (!base) return PGS_CD_ERR_GCHANDLE;
     void *element = nullptr;
     std::memcpy(&element,
-                static_cast<char *>(base) + PGR_CD_ARRAY_DATA_OFF + static_cast<size_t>(i) * sizeof(void *),
+                static_cast<char *>(base) + PGS_CD_ARRAY_DATA_OFF + static_cast<size_t>(i) * sizeof(void *),
                 sizeof(void *));
     if (!element) continue;  // null element: skip (not a candidate)
-    if (!candidates[found].set(element)) return PGR_CD_ERR_GCHANDLE;
-    if (!is_exact(candidates[found].get(), g_cfg.class_details)) return PGR_CD_ERR_METADATA;
+    if (!candidates[found].set(element)) return PGS_CD_ERR_GCHANDLE;
+    if (!is_exact(candidates[found].get(), g_cfg.class_details)) return PGS_CD_ERR_METADATA;
     ++found;
   }
 
   // Fresh clock AFTER the walk / root allocation and before publication.
   uint64_t final_now = 0;
-  if (!read_boottime_ms(&final_now)) return PGR_CD_ERR_CLOCK_FAILURE;
-  if (final_now >= deadline) return PGR_CD_SKIP;
+  if (!read_boottime_ms(&final_now)) return PGS_CD_ERR_CLOCK_FAILURE;
+  if (final_now >= deadline) return PGS_CD_SKIP;
 
   out->count = found;
   for (uint32_t i = 0; i < found; ++i) out->handles[i] = reinterpret_cast<void *>(candidates[i].release());
-  return PGR_CD_OK;
+  return PGS_CD_OK;
 }
 
 int api_release(PgrCatchDiscoveryOutput *out) {
-  if (out == nullptr) return PGR_CD_ERR_NULL_ARG;
-  if (!g_installed.load(std::memory_order_acquire)) return PGR_CD_ERR_NOT_INSTALLED;
-  { std::lock_guard<std::mutex> lock(g_state_mutex); if (g_busy) return PGR_CD_ERR_BUSY; g_busy = true; }
+  if (out == nullptr) return PGS_CD_ERR_NULL_ARG;
+  if (!g_installed.load(std::memory_order_acquire)) return PGS_CD_ERR_NOT_INSTALLED;
+  { std::lock_guard<std::mutex> lock(g_state_mutex); if (g_busy) return PGS_CD_ERR_BUSY; g_busy = true; }
   BusyExit busy_exit;
   // Detach the entire batch before any free can reenter a reader using this output.
-  void *detached[PGR_CD_MAX_CANDIDATES];
+  void *detached[PGS_CD_MAX_CANDIDATES];
   std::memcpy(detached, out->handles, sizeof(detached));
   std::memset(out->handles, 0, sizeof(out->handles));
   out->count = 0;
   auto gc_free = reinterpret_cast<FreeH>(g_cfg.gchandle_free);
-  for (int i = 0; i < PGR_CD_MAX_CANDIDATES; ++i) {
+  for (int i = 0; i < PGS_CD_MAX_CANDIDATES; ++i) {
     const auto handle = reinterpret_cast<uintptr_t>(detached[i]);
     if (handle) gc_free(handle);
   }
   out->count = 0;
-  return PGR_CD_OK;
+  return PGS_CD_OK;
 }
 
 const PgrCatchDiscoveryApi kApiTable = {
-    PGR_CD_API_VERSION, static_cast<uint32_t>(sizeof(PgrCatchDiscoveryApi)),
+    PGS_CD_API_VERSION, static_cast<uint32_t>(sizeof(PgrCatchDiscoveryApi)),
     &api_install, &api_top, &api_scene, &api_release,
 };
 
 }  // namespace
 
 extern "C" const void *pgs_catch_discovery_api(uint32_t version) {
-  if (version != PGR_CD_API_VERSION) return nullptr;
+  if (version != PGS_CD_API_VERSION) return nullptr;
   return &kApiTable;
 }

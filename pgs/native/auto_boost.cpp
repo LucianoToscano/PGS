@@ -19,7 +19,7 @@
 // start the boost counts as a miss; after three misses in a row that boost waits 10 minutes.
 namespace {
 using namespace pgr_shared_meta;
-using namespace pgr_auto_boost;
+using namespace pgs_auto_boost;
 struct Failure {const char *where;};
 void require(bool ok,const char *where){if(!ok)throw Failure{where};}
 PgrBootBinding boot{};const PgrSharedMetadataOutput *md=nullptr;
@@ -180,7 +180,7 @@ void tick(const Config &c,uint64_t now){
 }
 }  // namespace
 
-void pgr_auto_boost_tick(uint64_t tid,const PgrSharedMetadataOutput *metadata){
+void pgs_auto_boost_tick(uint64_t tid,const PgrSharedMetadataOutput *metadata){
  if(busy||faulted||!tid||tid!=uint64_t(gettid())||(owner&&owner!=tid))return;
  struct Guard{Guard(){busy=true;}~Guard(){busy=false;}}guard;
  bool on_map=false;const Config c=configured(on_map);const uint64_t now=clock_ms();
@@ -200,7 +200,7 @@ void pgr_auto_boost_tick(uint64_t tid,const PgrSharedMetadataOutput *metadata){
   status("error",std::string("Auto boosts paused: ")+f.where);
  }catch(...){faulted=true;status("error","Auto boosts stopped after an unexpected error");}
 }
-void pgr_auto_boost_stop(uint64_t tid){
+void pgs_auto_boost_stop(uint64_t tid){
  if(!initialized||tid!=owner||tid!=uint64_t(gettid()))return;
  st.buffs_service.reset();st.items.reset();st.master.reset();st.confirm=-1;
  for(auto &b:st.boost){b.pending=false;b.misses=0;b.not_before=0;}

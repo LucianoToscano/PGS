@@ -31,7 +31,7 @@ int emit(uint32_t op,const int64_t *n,uint32_t nc,const PgrRuntimeTransportStrin
 int get_bool(uint32_t index,int *out){assert(index==24);*out=allowed;return 0;}
 int transport_sample(PgrRuntimeTransportSample *p){*p={};p->snapshot_fresh=fresh;++sample_calls;p->snapshot_seq=race_always?sample_calls:(race_once&&sample_calls==1?1:2);return 0;}
 int valid(uint64_t g){return g==9;}
-int shared_sample(PgrSharedHostSample *p){*p={};p->hook_frames=7;return 0;}
+int shared_sample(PgsSharedHostSample *p){*p={};p->hook_frames=7;return 0;}
 const PgrSpinCameraApi camera_table{1,sizeof(PgrSpinCameraApi),camera_install,camera_update,camera_tick,camera_read};
 const PgrQuickSpinApi quick_table{1,sizeof(PgrQuickSpinApi),quick_install,quick_update,quick_tick,quick_read,clear};
 PgrRuntimeTransportApi transport_table{};PgrUnitySchedulerApi scheduler_table{};PgrSharedHostApi shared_table{};
@@ -39,13 +39,13 @@ void *pointer(unsigned i){return reinterpret_cast<void*>(uintptr_t(0x10000+i*16)
 void scenario(unsigned mode){
  transport_table.emit=emit;transport_table.get_bool=get_bool;transport_table.sample=transport_sample;scheduler_table.valid=valid;shared_table.sample=shared_sample;
  PgrSharedMetadataOutput md{};md.version=2;md.size=sizeof(md);
- for(unsigned i=0;i<PGR_OPT_HANDLE_COUNT;++i)md.opt_handles[i]=pointer(i);
+ for(unsigned i=0;i<PGS_OPT_HANDLE_COUNT;++i)md.opt_handles[i]=pointer(i);
  for(unsigned i=0;i<kOptClassCount;++i)md.opt_classes[i]=pointer(1000+i);
  md.classes[6]=pointer(2000);md.fields[1]=pointer(2001);md.methods[5]=pointer(2002);md.opt_ints[I_SPIN_SUCCESS]=23;
  if(mode!=1)md.optional[OPT_SPIN_CAMERA]=PGR_SHARED_OPT_AVAILABLE;
  if(mode!=2)md.optional[OPT_SPIN]=PGR_SHARED_OPT_AVAILABLE;
  if(mode==3)install_quick_error=-7;
- PgrSharedMetaExtraExports ex{};ex.gchandle_new=pointer(2100);ex.gchandle_get_target=pointer(2101);ex.gchandle_free=pointer(2102);
+ PgsSharedMetaExtraExports ex{};ex.gchandle_new=pointer(2100);ex.gchandle_get_target=pointer(2101);ex.gchandle_free=pointer(2102);
  PgsSpinHostConfig c{1,sizeof(c),mode==4?1u:0u,1,&md,&ex,pointer(2110),pointer(2111),pointer(2112),pointer(2113),thread,uint64_t(gettid())};
  const auto a=static_cast<const PgsSpinHostApi*>(pgs_spin_host_api(1));assert(a&&a->size==64&&!pgs_spin_host_api(2));
  auto bad=c;bad.exclusive_owner=0;assert(a->configure(&bad)==PGS_SPH_BAD_CONFIG);

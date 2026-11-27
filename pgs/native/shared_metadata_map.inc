@@ -24,7 +24,7 @@ int do_vgp_marker(Ctx &c) {
 void nested_optional(Ctx &c,OptionalId slot,int (*fn)(Ctx&)) {
   char previous[kReasonMax];std::memcpy(previous,c.reason,sizeof(previous));
   c.reason[0]=0;const int rc=fn(c);
-  c.out->optional[slot]=rc?PGR_SHARED_OPT_UNAVAILABLE:PGR_SHARED_OPT_AVAILABLE;
+  c.out->optional[slot]=rc?PGS_SHARED_OPT_UNAVAILABLE:PGR_SHARED_OPT_AVAILABLE;
   c.out->optional_error[slot]=rc;
   if(rc)std::snprintf(c.out->optional_reason[slot],kReasonMax,"%s",c.reason);
   std::memcpy(c.reason,previous,sizeof(previous));
@@ -65,11 +65,11 @@ int do_vgp(Ctx &c) {
   auto ret=reinterpret_cast<const void *(*)(const void*)>(c.core->method_get_return_type);
   void *iter=nullptr;
   for(unsigned i=0;i<256;++i){const void *m=next(c.out->classes[4],&iter);if(!m)break;std::string n,p,r;
-    if(!read_utf8(name(m),&n))return set_err(c,PGR_MD_ERR_NAME_TOO_LONG,"name-limit");
+    if(!read_utf8(name(m),&n))return set_err(c,PGS_MD_ERR_NAME_TOO_LONG,"name-limit");
     if(n!="FindObjectsOfType"||generic(m)||count(m)!=1)continue;
-    if(!get_type_name(c,param(m,0),&p))return set_err(c,PGR_MD_ERR_NULL_TYPE_NAME,"null-type-name");
+    if(!get_type_name(c,param(m,0),&p))return set_err(c,PGS_MD_ERR_NULL_TYPE_NAME,"null-type-name");
     if(p!="System.Type")continue;
-    if(!get_type_name(c,ret(m),&r))return set_err(c,PGR_MD_ERR_NULL_TYPE_NAME,"null-type-name");
+    if(!get_type_name(c,ret(m),&r))return set_err(c,PGS_MD_ERR_NULL_TYPE_NAME,"null-type-name");
     if(r=="UnityEngine.Object[]"){H[H_VGP_M_FIND_ALL]=m;break;}}
   if(!H[H_VGP_M_FIND_ALL])return set_err(c,PGR_MD_ERR_NOT_FOUND,"vgp-find-objects");
   struct F {OptHandle slot;OptClassId owner;const char *name;uint64_t off;const char *type;};
@@ -94,7 +94,7 @@ int do_vgp(Ctx &c) {
   for(unsigned i=0;i<6;++i)if((rc=enum_literal(c,caught,states[i],false,"vgp-enum",&c.out->opt_ints[I_VGP_CS_SUCCESS+i])))return rc;
   H[H_VGP_EXP_PARENT]=c.ex->class_get_parent;H[H_VGP_EXP_ARRAY]=c.ex->array_new;
   H[H_VGP_EXP_BARRIER]=c.ex->gc_wbarrier_set_field;H[H_VGP_EXP_UNREFLECT]=c.ex->method_get_from_reflection;
-  for(int i=H_VGP_EXP_PARENT;i<=H_VGP_EXP_UNREFLECT;++i)if(!H[i])return set_err(c,PGR_MD_ERR_MISSING_EXPORT,"vgp-export");
+  for(int i=H_VGP_EXP_PARENT;i<=H_VGP_EXP_UNREFLECT;++i)if(!H[i])return set_err(c,PGS_MD_ERR_MISSING_EXPORT,"vgp-export");
   nested_optional(c,OPT_VGP_MARKER,do_vgp_marker);return 0;
 }
 
@@ -104,7 +104,7 @@ int map_field(Ctx &c,const void *owner,const char *name,const char *type,const v
   auto flags=reinterpret_cast<uint32_t (*)(const void*)>(c.core->field_get_flags);
   auto ft=reinterpret_cast<const void *(*)(const void*)>(c.core->field_get_type);
   const void *f=lookup(owner,name);std::string actual;
-  if(!f||(flags(f)&16)||!get_type_name(c,ft(f),&actual)||(actual!=type&&(!alternative||actual!=alternative)))return set_err(c,PGR_MD_ERR_TYPE,"map-field",name);
+  if(!f||(flags(f)&16)||!get_type_name(c,ft(f),&actual)||(actual!=type&&(!alternative||actual!=alternative)))return set_err(c,PGS_MD_ERR_TYPE,"map-field",name);
   *out=f;return 0;
 }
 const void *map_field_class(Ctx &c,const void *field) {
@@ -116,16 +116,16 @@ int map_enum(Ctx &c,const void *klass,PgrSharedEnumEntry *out,uint32_t *length,u
   auto is_enum=reinterpret_cast<bool (*)(const void*)>(c.core->class_is_enum);
   auto base=reinterpret_cast<const void *(*)(const void*)>(c.core->class_enum_basetype);
   std::string type;
-  if(!klass||!is_enum(klass)||!get_type_name(c,base(klass),&type)||type!="System.Int32")return set_err(c,PGR_MD_ERR_TYPE,"enum-basetype");
-  if(!c.ex->class_get_fields||!c.ex->field_get_name)return set_err(c,PGR_MD_ERR_MISSING_EXPORT,"map-enum-export");
+  if(!klass||!is_enum(klass)||!get_type_name(c,base(klass),&type)||type!="System.Int32")return set_err(c,PGS_MD_ERR_TYPE,"enum-basetype");
+  if(!c.ex->class_get_fields||!c.ex->field_get_name)return set_err(c,PGS_MD_ERR_MISSING_EXPORT,"map-enum-export");
   auto next=reinterpret_cast<const void *(*)(const void*,void**)>(c.ex->class_get_fields);
   auto flags=reinterpret_cast<uint32_t (*)(const void*)>(c.core->field_get_flags);
   auto name=reinterpret_cast<const char *(*)(const void*)>(c.ex->field_get_name);
   auto read=reinterpret_cast<void (*)(const void*,void*)>(c.ex->field_static_get_value);
   *length=0;void *iter=nullptr;
   for(unsigned i=0;i<4096;++i){const void *f=next(klass,&iter);if(!f)break;if((flags(f)&0x8050)!=0x8050)continue;
-    int32_t value=0;read(f,&value);std::string text;if(!read_utf8(name(f),&text)||text.size()>=sizeof(out[0].name))return set_err(c,PGR_MD_ERR_NAME_TOO_LONG,"map-enum-name");
-    uint32_t pos=0;while(pos<*length&&out[pos].value!=value)++pos;if(pos>=cap)return set_err(c,PGR_MD_ERR_LIMIT,"map-enum-limit");
+    int32_t value=0;read(f,&value);std::string text;if(!read_utf8(name(f),&text)||text.size()>=sizeof(out[0].name))return set_err(c,PGS_MD_ERR_NAME_TOO_LONG,"map-enum-name");
+    uint32_t pos=0;while(pos<*length&&out[pos].value!=value)++pos;if(pos>=cap)return set_err(c,PGS_MD_ERR_LIMIT,"map-enum-limit");
     if(pos==*length)++*length;out[pos].value=value;std::memcpy(out[pos].name,text.c_str(),text.size()+1);
   }complete=true;return 0;
 }

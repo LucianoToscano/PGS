@@ -21,7 +21,7 @@
 // other allocation, and its raw pointer is never used again. Every managed return is rooted immediately and
 // re-resolved from its root after each invoke/gchandle_new (relocating collector). The owner is latched from
 // a genuine on-thread call (tid nonzero AND == the current OS tid BEFORE the latch; a later foreign tid
-// refuses). The residual lease is clamped to PGR_CS_MAX_LEASE_MS (CLOCK_BOOTTIME) and the deadline is
+// refuses). The residual lease is clamped to PGS_CS_MAX_LEASE_MS (CLOCK_BOOTTIME) and the deadline is
 // re-sampled AFTER the managed reads and before publication (an expired lease is a clean 0). An atomic busy
 // guard spans ALL temporary-root cleanup; reentry refuses. The WorldMap layer is verified == 13 (or reused
 // from a prior verified sample). No GC root survives the call and no per-account state is kept. Managed
@@ -33,60 +33,60 @@ extern "C" {
 
 static_assert(sizeof(void *) == 8, "CameraSampler native ABI requires LP64");
 
-enum PgrCameraSamplerInfo {
-  PGR_CS_FEATURE_ID       = 41,
-  PGR_CS_API_VERSION      = 1,
-  PGR_CS_CONFIG_VERSION   = 1,
-  PGR_CS_REQUEST_VERSION  = 1,
-  PGR_CS_OUTPUT_VERSION   = 1,
-  PGR_CS_MAX_LEASE_MS     = 2500, // residual foreground lease ceiling (JS allowedUntil/deadline gate)
-  PGR_CS_WORLD_MAP_LAYER  = 13    // the sole accepted LayerMask.NameToLayer("WorldMap") result
+enum PgsCameraSamplerInfo {
+  PGS_CS_FEATURE_ID       = 41,
+  PGS_CS_API_VERSION      = 1,
+  PGS_CS_CONFIG_VERSION   = 1,
+  PGS_CS_REQUEST_VERSION  = 1,
+  PGS_CS_OUTPUT_VERSION   = 1,
+  PGS_CS_MAX_LEASE_MS     = 2500, // residual foreground lease ceiling (JS allowedUntil/deadline gate)
+  PGS_CS_WORLD_MAP_LAYER  = 13    // the sole accepted LayerMask.NameToLayer("WorldMap") result
 };
 
 // sample() return == out.status: 1 SAMPLE (reading published) / 0 UNAVAILABLE (benign, output clean save
 // for the reason + time_ms, plus mask/layer on map-hidden) / negative FAULT (output left clean: status +
 // reason only). install() returns 0 on success; negatives are faults.
-enum PgrCameraSamplerStatus {
-  PGR_CS_SAMPLE            = 1,
-  PGR_CS_UNAVAILABLE       = 0,
-  PGR_CS_ERR_NULL_ARG      = -1,
-  PGR_CS_ERR_BAD_VERSION   = -2,
-  PGR_CS_ERR_BAD_SIZE      = -3,
-  PGR_CS_ERR_MISSING_PTR   = -4,  // install(): a required config pointer was null
-  PGR_CS_ERR_BAD_CONFIG    = -5,  // install(): expected_layer != 13 or reserved0 != 0
-  PGR_CS_ERR_NOT_INSTALLED = -6,
-  PGR_CS_ERR_RECONFIG      = -9,  // install(): a different config at an already-installed table
-  PGR_CS_ERR_CLOCK         = -10,
-  PGR_CS_ERR_BUSY          = -11, // reentrant managed call refused (defensive)
-  PGR_CS_ERR_GCHANDLE      = -12, // a temporary root could not be allocated / an expected value was null
-  PGR_CS_ERR_MANAGED       = -13, // a managed getter threw
-  PGR_CS_ERR_METADATA      = -14, // a resolved object had the wrong class
-  PGR_CS_ERR_LAYER         = -15, // LayerMask.NameToLayer("WorldMap") != 13
-  PGR_CS_ERR_VECTOR        = -16  // forward vector non-finite; vertical yaw is temporarily unavailable
+enum PgsCameraSamplerStatus {
+  PGS_CS_SAMPLE            = 1,
+  PGS_CS_UNAVAILABLE       = 0,
+  PGS_CS_ERR_NULL_ARG      = -1,
+  PGS_CS_ERR_BAD_VERSION   = -2,
+  PGS_CS_ERR_BAD_SIZE      = -3,
+  PGS_CS_ERR_MISSING_PTR   = -4,  // install(): a required config pointer was null
+  PGS_CS_ERR_BAD_CONFIG    = -5,  // install(): expected_layer != 13 or reserved0 != 0
+  PGS_CS_ERR_NOT_INSTALLED = -6,
+  PGS_CS_ERR_RECONFIG      = -9,  // install(): a different config at an already-installed table
+  PGS_CS_ERR_CLOCK         = -10,
+  PGS_CS_ERR_BUSY          = -11, // reentrant managed call refused (defensive)
+  PGS_CS_ERR_GCHANDLE      = -12, // a temporary root could not be allocated / an expected value was null
+  PGS_CS_ERR_MANAGED       = -13, // a managed getter threw
+  PGS_CS_ERR_METADATA      = -14, // a resolved object had the wrong class
+  PGS_CS_ERR_LAYER         = -15, // LayerMask.NameToLayer("WorldMap") != 13
+  PGS_CS_ERR_VECTOR        = -16  // forward vector non-finite; vertical yaw is temporarily unavailable
 };
 
 // out.reason classifies both the 0 refusals and the negative faults. Mirrors the JS cameraUnavailable /
 // cameraProbeReason strings; the adapter maps these back to the legacy event reason text.
-enum PgrCameraSamplerReason {
-  PGR_CS_REASON_NONE          = 0,
-  PGR_CS_REASON_OK            = 1,  // status 1 (success)
-  PGR_CS_REASON_OFF           = 2,  // residual lease 0 at entry (sampling window closed)
-  PGR_CS_REASON_LEASE         = 3,  // lease expired at the fresh pre-publication gate
-  PGR_CS_REASON_THREAD        = 4,  // owner-tid mismatch or Unity thread not attached
-  PGR_CS_REASON_NON_MAP_RIG   = 5,  // the getter receiver is not the exact MainCameraRig (off the map)
-  PGR_CS_REASON_NULL_CAMERA   = 6,  // the returned camera (or get_main) was null
-  PGR_CS_REASON_CAMERA_MISMATCH = 7, // get_main did not match the returned camera
-  PGR_CS_REASON_NULL_TRANSFORM = 8, // Component.get_transform returned null
-  PGR_CS_REASON_MAP_HIDDEN    = 9,  // the WorldMap layer bit is clear in the culling mask
+enum PgsCameraSamplerReason {
+  PGS_CS_REASON_NONE          = 0,
+  PGS_CS_REASON_OK            = 1,  // status 1 (success)
+  PGS_CS_REASON_OFF           = 2,  // residual lease 0 at entry (sampling window closed)
+  PGS_CS_REASON_LEASE         = 3,  // lease expired at the fresh pre-publication gate
+  PGS_CS_REASON_THREAD        = 4,  // owner-tid mismatch or Unity thread not attached
+  PGS_CS_REASON_NON_MAP_RIG   = 5,  // the getter receiver is not the exact MainCameraRig (off the map)
+  PGS_CS_REASON_NULL_CAMERA   = 6,  // the returned camera (or get_main) was null
+  PGS_CS_REASON_CAMERA_MISMATCH = 7, // get_main did not match the returned camera
+  PGS_CS_REASON_NULL_TRANSFORM = 8, // Component.get_transform returned null
+  PGS_CS_REASON_MAP_HIDDEN    = 9,  // the WorldMap layer bit is clear in the culling mask
   // fault reasons (negative status)
-  PGR_CS_REASON_CLOCK         = 10,
-  PGR_CS_REASON_GCHANDLE      = 11,
-  PGR_CS_REASON_MANAGED       = 12,
-  PGR_CS_REASON_METADATA      = 13,
-  PGR_CS_REASON_LAYER         = 14,
-  PGR_CS_REASON_NONFINITE     = 15,
-  PGR_CS_REASON_VERTICAL      = 16,
-  PGR_CS_REASON_BUSY          = 17
+  PGS_CS_REASON_CLOCK         = 10,
+  PGS_CS_REASON_GCHANDLE      = 11,
+  PGS_CS_REASON_MANAGED       = 12,
+  PGS_CS_REASON_METADATA      = 13,
+  PGS_CS_REASON_LAYER         = 14,
+  PGS_CS_REASON_NONFINITE     = 15,
+  PGS_CS_REASON_VERTICAL      = 16,
+  PGS_CS_REASON_BUSY          = 17
 };
 
 // Fixed LP64 config (216 bytes): 8-byte header + 25 validated pointers in the EXACT order below + a trailing
@@ -94,7 +94,7 @@ enum PgrCameraSamplerReason {
 // MethodInfo* / Il2CppFieldInfo* packed by the host; the native layer re-checks the header and rejects any
 // null. No hook address. Reordering is forbidden.
 struct PgrCameraSamplerConfig {
-  uint32_t version;  // == PGR_CS_CONFIG_VERSION
+  uint32_t version;  // == PGS_CS_CONFIG_VERSION
   uint32_t size;     // == sizeof(PgrCameraSamplerConfig)
 
   // il2cpp runtime exports (slots 0-9).
@@ -130,7 +130,7 @@ struct PgrCameraSamplerConfig {
   void *f_y; // 23
   void *f_z; // 24
 
-  int32_t expected_layer; // off 208 == PGR_CS_WORLD_MAP_LAYER (13)
+  int32_t expected_layer; // off 208 == PGS_CS_WORLD_MAP_LAYER (13)
   int32_t reserved0;      // off 212 == 0 in v1
 };
 
@@ -138,11 +138,11 @@ static_assert(sizeof(PgrCameraSamplerConfig) == 216,
               "PgrCameraSamplerConfig must remain 216 bytes on LP64");
 
 // Fixed LP64 request (40 bytes). tid is the proven owner tid (nonzero and == the current OS tid). remaining_ms
-// is the residual lease (clamped to PGR_CS_MAX_LEASE_MS; 0 is the benign off refusal). rig and camera are RAW
+// is the residual lease (clamped to PGS_CS_MAX_LEASE_MS; 0 is the benign off refusal). rig and camera are RAW
 // managed pointers borrowed from the getter observer for THIS CALL ONLY (never GC handles): the native layer
 // class-proves rig before any allocation, roots camera first, and never retains either raw pointer.
 struct PgrCameraSamplerRequest {
-  uint32_t version;      // off 0  == PGR_CS_REQUEST_VERSION
+  uint32_t version;      // off 0  == PGS_CS_REQUEST_VERSION
   uint32_t size;         // off 4  == sizeof(PgrCameraSamplerRequest)
   uint64_t tid;          // off 8  proven owner tid
   uint64_t remaining_ms; // off 16 residual lease; clamped, 0 refuses (off)
@@ -157,10 +157,10 @@ static_assert(sizeof(PgrCameraSamplerRequest) == 40,
 // On 1 every field is valid. On 0 only reason + time_ms are set, plus mask/layer when reason == map-hidden.
 // On a negative fault only status + reason are set (no garbage reading).
 struct PgrCameraSamplerOutput {
-  uint32_t version;   // off 0  == PGR_CS_OUTPUT_VERSION
+  uint32_t version;   // off 0  == PGS_CS_OUTPUT_VERSION
   uint32_t size;      // off 4  == sizeof(PgrCameraSamplerOutput)
   int32_t status;     // off 8  == the sample() return
-  uint32_t reason;    // off 12 PgrCameraSamplerReason
+  uint32_t reason;    // off 12 PgsCameraSamplerReason
   int32_t camera_id;  // off 16 Object.GetInstanceID (status 1)
   uint32_t mask;      // off 20 Camera.cullingMask bits (status 1 or map-hidden)
   int32_t layer;      // off 24 verified WorldMap layer index (status 1 or map-hidden)
@@ -177,10 +177,10 @@ static_assert(sizeof(PgrCameraSamplerOutput) == 72,
 
 // Fixed LP64 table: 8-byte header + 2 function pointers = 24 bytes.
 struct PgrCameraSamplerApi {
-  uint32_t version;  // == PGR_CS_API_VERSION
+  uint32_t version;  // == PGS_CS_API_VERSION
   uint32_t size;     // == sizeof(PgrCameraSamplerApi)
   // Verify + publish the immutable config once for the process lifetime. Idempotent for an identical config;
-  // a different config returns PGR_CS_ERR_RECONFIG. Any null required pointer, a bad header or a bad
+  // a different config returns PGS_CS_ERR_RECONFIG. Any null required pointer, a bad header or a bad
   // expected_layer/reserved0 is rejected (fail closed). No hook is installed.
   int (*install)(const PgrCameraSamplerConfig *config);
   // Owner-thread continuous sample. See the file header for the full contract. 1 / 0 / negative.

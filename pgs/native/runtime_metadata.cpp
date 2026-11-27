@@ -77,8 +77,8 @@ int fail(int code) { ++g.sample.failures; return code; }
 bool read_name(const char *p, std::string *out) {
   if (p == nullptr) return false;
   size_t n = 0;
-  while (n < PGR_MD_NAME_MAX && p[n] != '\0') ++n;
-  if (n == PGR_MD_NAME_MAX) return false;  // over the ceiling
+  while (n < PGS_MD_NAME_MAX && p[n] != '\0') ++n;
+  if (n == PGS_MD_NAME_MAX) return false;  // over the ceiling
   out->assign(p, n);
   return true;
 }
@@ -100,10 +100,10 @@ bool match(const std::string &actual, const char *expected, uint32_t mode) {
   if(!read_name(expected,&want))return false;
   switch (mode) {
     case PGR_MD_MATCH_EXACT:    return actual == want;
-    case PGR_MD_MATCH_PREFIX:   return actual.size() >= want.size() && actual.compare(0, want.size(), want) == 0;
-    case PGR_MD_MATCH_SUFFIX:   return actual.size() >= want.size() &&
+    case PGS_MD_MATCH_PREFIX:   return actual.size() >= want.size() && actual.compare(0, want.size(), want) == 0;
+    case PGS_MD_MATCH_SUFFIX:   return actual.size() >= want.size() &&
                                        actual.compare(actual.size() - want.size(), want.size(), want) == 0;
-    case PGR_MD_MATCH_CONTAINS: return actual.find(want) != std::string::npos;
+    case PGS_MD_MATCH_CONTAINS: return actual.find(want) != std::string::npos;
     default:                    return false;
   }
 }
@@ -173,23 +173,23 @@ int default_seg(void *, const void *, uint64_t, PgrMetaSegment *out) {
 
 // ---- core executable + prologue check (quick-close executable() + checkBytes) ------------------
 int check_code(const void *address, uint64_t length, const void *prologue, uint32_t prologue_len) {
-  if (address == nullptr || length == 0 || length > PGR_MD_CODE_MAX) return PGR_MD_ERR_CODE_RANGE;
+  if (address == nullptr || length == 0 || length > PGS_MD_CODE_MAX) return PGS_MD_ERR_CODE_RANGE;
   uintptr_t a = reinterpret_cast<uintptr_t>(address);
-  if ((a & 0x3u) != 0) return PGR_MD_ERR_CODE_RANGE;  // 4-byte instruction alignment
+  if ((a & 0x3u) != 0) return PGS_MD_ERR_CODE_RANGE;  // 4-byte instruction alignment
   uintptr_t base = reinterpret_cast<uintptr_t>(g.module_base);
-  if (!contains(base,g.module_size,a,length)) return PGR_MD_ERR_CODE_RANGE;
+  if (!contains(base,g.module_size,a,length)) return PGS_MD_ERR_CODE_RANGE;
 
   PgrMetaSegment seg{};
-  if (g.seg_query(g.seg_ctx, address, length, &seg) != 0) return PGR_MD_ERR_SEGMENT;
+  if (g.seg_query(g.seg_ctx, address, length, &seg) != 0) return PGS_MD_ERR_SEGMENT;
   if(seg.found!=1||seg.readable!=1||seg.host_exec>1||seg.elf_exec>1||seg.writable>1||seg.reserved||
-     !(seg.host_exec||(!seg.writable&&seg.elf_exec)))return PGR_MD_ERR_SEGMENT;
+     !(seg.host_exec||(!seg.writable&&seg.elf_exec)))return PGS_MD_ERR_SEGMENT;
   uintptr_t sbase = reinterpret_cast<uintptr_t>(seg.seg_base);
-  if (!contains(sbase,seg.seg_size,a,length)) return PGR_MD_ERR_SEGMENT;
+  if (!contains(sbase,seg.seg_size,a,length)) return PGS_MD_ERR_SEGMENT;
 
   if (prologue_len != 0) {
-    if (prologue == nullptr || prologue_len > PGR_MD_PROLOGUE_MAX || prologue_len > length)
-      return PGR_MD_ERR_PROLOGUE;
-    if (std::memcmp(address, prologue, prologue_len) != 0) return PGR_MD_ERR_PROLOGUE;
+    if (prologue == nullptr || prologue_len > PGS_MD_PROLOGUE_MAX || prologue_len > length)
+      return PGS_MD_ERR_PROLOGUE;
+    if (std::memcmp(address, prologue, prologue_len) != 0) return PGS_MD_ERR_PROLOGUE;
   }
   return PGR_MD_OK;
 }
@@ -197,19 +197,19 @@ int check_code(const void *address, uint64_t length, const void *prologue, uint3
 // ================================================================================================
 int api_bind(const PgrMetaBindConfig *config) {
   ApiGuard guard;if(!guard)return PGR_MD_ERR_BUSY;
-  if (config == nullptr || config->exports == nullptr) return fail(PGR_MD_ERR_NULL_ARG);
-  if (config->version != PGR_MD_CONFIG_VERSION) return fail(PGR_MD_ERR_BAD_VERSION);
-  if (config->size != sizeof(PgrMetaBindConfig)) return fail(PGR_MD_ERR_BAD_SIZE);
-  if (config->module_base == nullptr || config->module_size == 0) return fail(PGR_MD_ERR_MISSING_EXPORT);
-  if(!range(reinterpret_cast<uintptr_t>(config->module_base),config->module_size))return fail(PGR_MD_ERR_CODE_RANGE);
-  if(config->reserved)return fail(PGR_MD_ERR_BAD_SIZE);
-  if(config->debug_prologue_len>PGR_MD_PROLOGUE_MAX||
-    (config->debug_prologue_len&&!config->debug_prologue))return fail(PGR_MD_ERR_PROLOGUE);
+  if (config == nullptr || config->exports == nullptr) return fail(PGS_MD_ERR_NULL_ARG);
+  if (config->version != PGR_MD_CONFIG_VERSION) return fail(PGS_MD_ERR_BAD_VERSION);
+  if (config->size != sizeof(PgrMetaBindConfig)) return fail(PGS_MD_ERR_BAD_SIZE);
+  if (config->module_base == nullptr || config->module_size == 0) return fail(PGS_MD_ERR_MISSING_EXPORT);
+  if(!range(reinterpret_cast<uintptr_t>(config->module_base),config->module_size))return fail(PGS_MD_ERR_CODE_RANGE);
+  if(config->reserved)return fail(PGS_MD_ERR_BAD_SIZE);
+  if(config->debug_prologue_len>PGS_MD_PROLOGUE_MAX||
+    (config->debug_prologue_len&&!config->debug_prologue))return fail(PGS_MD_ERR_PROLOGUE);
 
   const void *const *slots = reinterpret_cast<const void *const *>(config->exports);
   const size_t count = sizeof(PgrMetaExports) / sizeof(void *);
   for (size_t i = 0; i < count; ++i)
-    if (slots[i] == nullptr) return fail(PGR_MD_ERR_MISSING_EXPORT);
+    if (slots[i] == nullptr) return fail(PGS_MD_ERR_MISSING_EXPORT);
 
   pgr_meta_seg_fn seg = config->seg_query ? config->seg_query : &default_seg;
 
@@ -217,7 +217,7 @@ int api_bind(const PgrMetaBindConfig *config) {
     if (std::memcmp(&g.exports, config->exports, sizeof(PgrMetaExports)) != 0 ||
         g.module_base != config->module_base || g.module_size != config->module_size ||
         g.seg_query != seg || g.seg_ctx != config->seg_ctx)
-      return fail(PGR_MD_ERR_BOUND_MISMATCH);
+      return fail(PGS_MD_ERR_BOUND_MISMATCH);
     // Bootstrap54 binds early without a game-version fingerprint. Later schema
     // owners must be able to demand their own proof without rebinding exports.
     // Revalidate every supplied proof, including identical repeated requests.
@@ -252,19 +252,19 @@ int api_bind(const PgrMetaBindConfig *config) {
 int api_resolve_class(const PgrMetaClassQuery *q, PgrMetaClassResult *out) {
   if(out)*out={};
   ApiGuard guard;if(!guard)return PGR_MD_ERR_BUSY;
-  if (q == nullptr || out == nullptr) return fail(PGR_MD_ERR_NULL_ARG);
-  if (q->version != PGR_MD_QUERY_VERSION) return fail(PGR_MD_ERR_BAD_VERSION);
-  if (q->size != sizeof(PgrMetaClassQuery)) return fail(PGR_MD_ERR_BAD_SIZE);
-  if (!g.bound) return fail(PGR_MD_ERR_NOT_BOUND);
+  if (q == nullptr || out == nullptr) return fail(PGS_MD_ERR_NULL_ARG);
+  if (q->version != PGR_MD_QUERY_VERSION) return fail(PGS_MD_ERR_BAD_VERSION);
+  if (q->size != sizeof(PgrMetaClassQuery)) return fail(PGS_MD_ERR_BAD_SIZE);
+  if (!g.bound) return fail(PGS_MD_ERR_NOT_BOUND);
 
   std::string ns, name;
   if (!read_name(q->name_space ? q->name_space : "", &ns) || !read_name(q->name, &name))
-    return fail(PGR_MD_ERR_NAME_TOO_LONG);
+    return fail(PGS_MD_ERR_NAME_TOO_LONG);
 
   std::string expected;
   uint32_t expected_mode;
   if (q->canonical != nullptr) {
-    if (!read_name(q->canonical, &expected)) return fail(PGR_MD_ERR_NAME_TOO_LONG);
+    if (!read_name(q->canonical, &expected)) return fail(PGS_MD_ERR_NAME_TOO_LONG);
     expected_mode = q->canonical_match ? q->canonical_match : PGR_MD_MATCH_EXACT;
   } else {
     expected = ns.empty() ? name : ns + "." + name;
@@ -282,7 +282,7 @@ int api_resolve_class(const PgrMetaClassQuery *q, PgrMetaClassResult *out) {
   size_t total = 0;
   void **list = static_cast<void **>(assemblies(domain, &total));
   if (total == 0 || list == nullptr) return fail(PGR_MD_ERR_NOT_FOUND);
-  if (total > PGR_MD_ASM_MAX) return fail(PGR_MD_ERR_LIMIT);
+  if (total > PGS_MD_ASM_MAX) return fail(PGS_MD_ERR_LIMIT);
 
   void *found = nullptr;
   for (size_t i = 0; i < total; ++i) {
@@ -291,9 +291,9 @@ int api_resolve_class(const PgrMetaClassQuery *q, PgrMetaClassResult *out) {
     void *k = from_name(image, ns.c_str(), name.c_str());
     if (k == nullptr) continue;
     std::string full;
-    if (!type_name(get_type(k), &full)) return fail(PGR_MD_ERR_NULL_TYPE_NAME);
-    if (!match(full, expected.c_str(), expected_mode)) return fail(PGR_MD_ERR_NAME_MISMATCH);
-    if (found != nullptr && found != k) return fail(PGR_MD_ERR_DUPLICATE);
+    if (!type_name(get_type(k), &full)) return fail(PGS_MD_ERR_NULL_TYPE_NAME);
+    if (!match(full, expected.c_str(), expected_mode)) return fail(PGS_MD_ERR_NAME_MISMATCH);
+    if (found != nullptr && found != k) return fail(PGS_MD_ERR_DUPLICATE);
     found = k;
   }
   if (found == nullptr) return fail(PGR_MD_ERR_NOT_FOUND);
@@ -310,13 +310,13 @@ int api_validate_field(const PgrMetaFieldQuery *q, PgrMetaFieldResult *out) {
   if(out)*out={};
   ApiGuard guard;if(!guard)return PGR_MD_ERR_BUSY;
   if (q == nullptr || out == nullptr || q->owner == nullptr || q->name == nullptr)
-    return fail(PGR_MD_ERR_NULL_ARG);
-  if (q->version != PGR_MD_QUERY_VERSION) return fail(PGR_MD_ERR_BAD_VERSION);
-  if (q->size != sizeof(PgrMetaFieldQuery)) return fail(PGR_MD_ERR_BAD_SIZE);
-  if (!g.bound) return fail(PGR_MD_ERR_NOT_BOUND);
+    return fail(PGS_MD_ERR_NULL_ARG);
+  if (q->version != PGR_MD_QUERY_VERSION) return fail(PGS_MD_ERR_BAD_VERSION);
+  if (q->size != sizeof(PgrMetaFieldQuery)) return fail(PGS_MD_ERR_BAD_SIZE);
+  if (!g.bound) return fail(PGS_MD_ERR_NOT_BOUND);
 
   std::string name;
-  if (!read_name(q->name, &name)) return fail(PGR_MD_ERR_NAME_TOO_LONG);
+  if (!read_name(q->name, &name)) return fail(PGS_MD_ERR_NAME_TOO_LONG);
 
   auto field_from_name = reinterpret_cast<fn_field_from_name>(g.exports.class_get_field_from_name);
   auto field_parent = reinterpret_cast<fn_field_parent>(g.exports.field_get_parent);
@@ -332,14 +332,14 @@ int api_validate_field(const PgrMetaFieldQuery *q, PgrMetaFieldResult *out) {
   void *owner = const_cast<void *>(q->owner);
   void *f = field_from_name(owner, name.c_str());
   if (f == nullptr) return fail(PGR_MD_ERR_NOT_FOUND);
-  if (field_parent(f) != owner) return fail(PGR_MD_ERR_OWNER_MISMATCH);
+  if (field_parent(f) != owner) return fail(PGS_MD_ERR_OWNER_MISMATCH);
 
   uint32_t flags = static_cast<uint32_t>(field_flags(f));
-  if ((flags & q->forbidden_mask) != 0) return fail(PGR_MD_ERR_FLAGS);
-  if ((flags & q->required_mask) != q->required_mask) return fail(PGR_MD_ERR_FLAGS);
+  if ((flags & q->forbidden_mask) != 0) return fail(PGS_MD_ERR_FLAGS);
+  if ((flags & q->required_mask) != q->required_mask) return fail(PGS_MD_ERR_FLAGS);
 
   uint64_t offset = static_cast<uint64_t>(field_offset(f));
-  if (offset != q->offset) return fail(PGR_MD_ERR_OFFSET);
+  if (offset != q->offset) return fail(PGS_MD_ERR_OFFSET);
 
   void *type = field_type(f);
   void *type_class = class_from_type(type);
@@ -348,36 +348,36 @@ int api_validate_field(const PgrMetaFieldQuery *q, PgrMetaFieldResult *out) {
   switch (q->kind) {
     case PGR_MD_FIELD_ANY:
       break;
-    case PGR_MD_FIELD_REF:
-      if (type_class == nullptr || is_valuetype(type_class)) return fail(PGR_MD_ERR_KIND);
+    case PGS_MD_FIELD_REF:
+      if (type_class == nullptr || is_valuetype(type_class)) return fail(PGS_MD_ERR_KIND);
       break;
-    case PGR_MD_FIELD_VALUE: {
-      if (type_class == nullptr || !is_valuetype(type_class)) return fail(PGR_MD_ERR_KIND);
+    case PGS_MD_FIELD_VALUE: {
+      if (type_class == nullptr || !is_valuetype(type_class)) return fail(PGS_MD_ERR_KIND);
       int align = 0;
       int sz = value_size(type_class, &align);
-      if (q->value_size != 0) { if (sz != static_cast<int>(q->value_size)) return fail(PGR_MD_ERR_SIZE); }
-      else if (sz != 4 && sz != 8) return fail(PGR_MD_ERR_SIZE);
+      if (q->value_size != 0) { if (sz != static_cast<int>(q->value_size)) return fail(PGS_MD_ERR_SIZE); }
+      else if (sz != 4 && sz != 8) return fail(PGS_MD_ERR_SIZE);
       vsize = static_cast<uint32_t>(sz);
       break;
     }
-    case PGR_MD_FIELD_ENUM_I32: {
-      if (type_class == nullptr || !is_enum(type_class)) return fail(PGR_MD_ERR_KIND);
+    case PGS_MD_FIELD_ENUM_I32: {
+      if (type_class == nullptr || !is_enum(type_class)) return fail(PGS_MD_ERR_KIND);
       std::string base;
-      if (!type_name(enum_base(type_class), &base)) return fail(PGR_MD_ERR_NULL_TYPE_NAME);
-      if (base != "System.Int32") return fail(PGR_MD_ERR_KIND);
+      if (!type_name(enum_base(type_class), &base)) return fail(PGS_MD_ERR_NULL_TYPE_NAME);
+      if (base != "System.Int32") return fail(PGS_MD_ERR_KIND);
       int align = 0;
-      if (value_size(type_class, &align) != 4 || align != 4) return fail(PGR_MD_ERR_SIZE);
+      if (value_size(type_class, &align) != 4 || align != 4) return fail(PGS_MD_ERR_SIZE);
       vsize = 4;
       break;
     }
     default:
-      return fail(PGR_MD_ERR_KIND);
+      return fail(PGS_MD_ERR_KIND);
   }
 
   if (q->type_name != nullptr && q->type_match != PGR_MD_MATCH_ANY) {
     std::string tn;
-    if (!type_name(type, &tn)) return fail(PGR_MD_ERR_NULL_TYPE_NAME);
-    if (!match(tn, q->type_name, q->type_match)) return fail(PGR_MD_ERR_TYPE);
+    if (!type_name(type, &tn)) return fail(PGS_MD_ERR_NULL_TYPE_NAME);
+    if (!match(tn, q->type_name, q->type_match)) return fail(PGS_MD_ERR_TYPE);
   }
 
   out->version = PGR_MD_QUERY_VERSION;
@@ -396,14 +396,14 @@ int api_validate_method(const PgrMetaMethodQuery *q, PgrMetaMethodResult *out) {
   if(out)*out={};
   ApiGuard guard;if(!guard)return PGR_MD_ERR_BUSY;
   if (q == nullptr || out == nullptr || q->owner == nullptr || q->name == nullptr)
-    return fail(PGR_MD_ERR_NULL_ARG);
-  if (q->version != PGR_MD_QUERY_VERSION) return fail(PGR_MD_ERR_BAD_VERSION);
-  if (q->size != sizeof(PgrMetaMethodQuery)) return fail(PGR_MD_ERR_BAD_SIZE);
-  if (!g.bound) return fail(PGR_MD_ERR_NOT_BOUND);
-  if (q->param_count > PGR_MD_PARAM_MAX) return fail(PGR_MD_ERR_LIMIT);
+    return fail(PGS_MD_ERR_NULL_ARG);
+  if (q->version != PGR_MD_QUERY_VERSION) return fail(PGS_MD_ERR_BAD_VERSION);
+  if (q->size != sizeof(PgrMetaMethodQuery)) return fail(PGS_MD_ERR_BAD_SIZE);
+  if (!g.bound) return fail(PGS_MD_ERR_NOT_BOUND);
+  if (q->param_count > PGS_MD_PARAM_MAX) return fail(PGS_MD_ERR_LIMIT);
 
   std::string name;
-  if (!read_name(q->name, &name)) return fail(PGR_MD_ERR_NAME_TOO_LONG);
+  if (!read_name(q->name, &name)) return fail(PGS_MD_ERR_NAME_TOO_LONG);
 
   auto method_from_name = reinterpret_cast<fn_method_from_name>(g.exports.class_get_method_from_name);
   auto method_class = reinterpret_cast<fn_method_class>(g.exports.method_get_class);
@@ -419,39 +419,39 @@ int api_validate_method(const PgrMetaMethodQuery *q, PgrMetaMethodResult *out) {
   void *owner = const_cast<void *>(q->owner);
   void *m = method_from_name(owner, name.c_str(), static_cast<int>(q->param_count));
   if (m == nullptr) return fail(PGR_MD_ERR_NOT_FOUND);
-  if (method_class(m) != owner) return fail(PGR_MD_ERR_OWNER_MISMATCH);
+  if (method_class(m) != owner) return fail(PGS_MD_ERR_OWNER_MISMATCH);
 
   std::string actual_name;
-  if (!read_name(method_name(m), &actual_name)) return fail(PGR_MD_ERR_NAME_TOO_LONG);
-  if (actual_name != name) return fail(PGR_MD_ERR_NAME_MISMATCH);
+  if (!read_name(method_name(m), &actual_name)) return fail(PGS_MD_ERR_NAME_TOO_LONG);
+  if (actual_name != name) return fail(PGS_MD_ERR_NAME_MISMATCH);
 
   uint32_t iflags = 0;
   uint32_t flags = method_flags(m, &iflags);
   bool is_static = (flags & 0x10u) != 0;  // METHOD_ATTRIBUTE_STATIC
-  if (is_static != (q->is_static != 0)) return fail(PGR_MD_ERR_STATIC);
-  if (method_pcount(m) != q->param_count) return fail(PGR_MD_ERR_PARAM_COUNT);
-  if (method_is_generic(m)) return fail(PGR_MD_ERR_GENERIC);          // always rejected
-  if (q->allow_inflated == 0 && method_is_inflated(m)) return fail(PGR_MD_ERR_INFLATED);
+  if (is_static != (q->is_static != 0)) return fail(PGS_MD_ERR_STATIC);
+  if (method_pcount(m) != q->param_count) return fail(PGS_MD_ERR_PARAM_COUNT);
+  if (method_is_generic(m)) return fail(PGS_MD_ERR_GENERIC);          // always rejected
+  if (q->allow_inflated == 0 && method_is_inflated(m)) return fail(PGS_MD_ERR_INFLATED);
 
   if (q->return_type != nullptr && q->return_match != PGR_MD_MATCH_ANY) {
     std::string rn;
-    if (!type_name(method_return(m), &rn)) return fail(PGR_MD_ERR_NULL_TYPE_NAME);
-    if (!match(rn, q->return_type, q->return_match)) return fail(PGR_MD_ERR_TYPE);
+    if (!type_name(method_return(m), &rn)) return fail(PGS_MD_ERR_NULL_TYPE_NAME);
+    if (!match(rn, q->return_type, q->return_match)) return fail(PGS_MD_ERR_TYPE);
   }
   for (uint32_t i = 0; i < q->param_count; ++i) {
     if (q->param_types[i] == nullptr || q->param_match[i] == PGR_MD_MATCH_ANY) continue;
     std::string pn;
-    if (!type_name(method_param(m, i), &pn)) return fail(PGR_MD_ERR_NULL_TYPE_NAME);
-    if (!match(pn, q->param_types[i], q->param_match[i])) return fail(PGR_MD_ERR_TYPE);
+    if (!type_name(method_param(m, i), &pn)) return fail(PGS_MD_ERR_NULL_TYPE_NAME);
+    if (!match(pn, q->param_types[i], q->param_match[i])) return fail(PGS_MD_ERR_TYPE);
   }
 
   const void *code = nullptr;
   if (q->expected_code != nullptr) {
-    if (q->prologue == nullptr || q->prologue_len == 0) return fail(PGR_MD_ERR_NULL_ARG);
+    if (q->prologue == nullptr || q->prologue_len == 0) return fail(PGS_MD_ERR_NULL_ARG);
     void *info[3] = {nullptr, nullptr, nullptr};  // >= 24 bytes (quick-close info buffer); addr at [0]
-    if (!debug_info(m, info)) return fail(PGR_MD_ERR_CODE_RANGE);
+    if (!debug_info(m, info)) return fail(PGS_MD_ERR_CODE_RANGE);
     code = info[0];
-    if (code != q->expected_code) return fail(PGR_MD_ERR_CODE_RANGE);
+    if (code != q->expected_code) return fail(PGS_MD_ERR_CODE_RANGE);
     int rc = check_code(code, q->prologue_len, q->prologue, q->prologue_len);
     if (rc != PGR_MD_OK) return fail(rc);
     ++g.sample.code_checks;
@@ -470,10 +470,10 @@ int api_validate_method(const PgrMetaMethodQuery *q, PgrMetaMethodResult *out) {
 
 int api_validate_code(const PgrMetaCodeQuery *q) {
   ApiGuard guard;if(!guard)return PGR_MD_ERR_BUSY;
-  if (q == nullptr) return fail(PGR_MD_ERR_NULL_ARG);
-  if (q->version != PGR_MD_QUERY_VERSION) return fail(PGR_MD_ERR_BAD_VERSION);
-  if (q->size != sizeof(PgrMetaCodeQuery)) return fail(PGR_MD_ERR_BAD_SIZE);
-  if (!g.bound) return fail(PGR_MD_ERR_NOT_BOUND);
+  if (q == nullptr) return fail(PGS_MD_ERR_NULL_ARG);
+  if (q->version != PGR_MD_QUERY_VERSION) return fail(PGS_MD_ERR_BAD_VERSION);
+  if (q->size != sizeof(PgrMetaCodeQuery)) return fail(PGS_MD_ERR_BAD_SIZE);
+  if (!g.bound) return fail(PGS_MD_ERR_NOT_BOUND);
   int rc = check_code(q->address, q->length, q->prologue, q->prologue_len);
   if (rc != PGR_MD_OK) return fail(rc);
   ++g.sample.code_checks;
@@ -484,10 +484,10 @@ int api_resolve_module(const char *soname, const void **base, uint64_t *size) {
   if(base)*base=nullptr;
   if(size)*size=0;
   ApiGuard guard;if(!guard)return PGR_MD_ERR_BUSY;
-  if (soname == nullptr || base == nullptr || size == nullptr) return fail(PGR_MD_ERR_NULL_ARG);
+  if (soname == nullptr || base == nullptr || size == nullptr) return fail(PGS_MD_ERR_NULL_ARG);
   *base = nullptr;
   *size = 0;
-  std::string requested;if(!read_name(soname,&requested)||requested.empty())return fail(PGR_MD_ERR_NAME_TOO_LONG);
+  std::string requested;if(!read_name(soname,&requested)||requested.empty())return fail(PGS_MD_ERR_NAME_TOO_LONG);
 #if defined(__linux__)
   struct Ctx {const std::string *name;const void *base;uint64_t size;unsigned matches;bool invalid;} ctx{&requested,nullptr,0,0,false};
   dl_iterate_phdr([](struct dl_phdr_info *info,size_t,void *data)->int{
@@ -509,8 +509,8 @@ int api_resolve_module(const char *soname, const void **base, uint64_t *size) {
     if(hi>lo){c->base=reinterpret_cast<const void *>(lo);c->size=hi-lo;}else c->invalid=true;
     return 0; // scan ALL loaded images, never silently select first duplicate
   },&ctx);
-  if(ctx.matches>1)return fail(PGR_MD_ERR_DUPLICATE);
-  if(ctx.invalid)return fail(PGR_MD_ERR_CODE_RANGE);
+  if(ctx.matches>1)return fail(PGS_MD_ERR_DUPLICATE);
+  if(ctx.invalid)return fail(PGS_MD_ERR_CODE_RANGE);
   if(!ctx.base)return fail(PGR_MD_ERR_NOT_FOUND);
   *base=ctx.base;*size=ctx.size;return PGR_MD_OK;
 #else
@@ -521,15 +521,15 @@ int api_resolve_module(const char *soname, const void **base, uint64_t *size) {
 int api_sample(PgrMetaSample *out) {
   if(out)*out={};
   ApiGuard guard;if(!guard)return PGR_MD_ERR_BUSY;
-  if (out == nullptr) return PGR_MD_ERR_NULL_ARG;
-  g.sample.version = PGR_MD_SAMPLE_VERSION;
+  if (out == nullptr) return PGS_MD_ERR_NULL_ARG;
+  g.sample.version = PGS_MD_SAMPLE_VERSION;
   g.sample.size = sizeof(PgrMetaSample);
   *out = g.sample;
   return PGR_MD_OK;
 }
 
 const PgrMetaApi g_api = {
-    PGR_MD_API_VERSION,
+    PGS_MD_API_VERSION,
     sizeof(PgrMetaApi),
     api_bind,
     api_resolve_class,
@@ -543,5 +543,5 @@ const PgrMetaApi g_api = {
 }  // namespace
 
 const void *pgs_runtime_metadata_api(uint32_t version) {
-  return version == PGR_MD_API_VERSION ? &g_api : nullptr;
+  return version == PGS_MD_API_VERSION ? &g_api : nullptr;
 }

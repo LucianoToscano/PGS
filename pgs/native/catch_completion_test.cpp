@@ -95,7 +95,7 @@ uint64_t this_tid() { return static_cast<uint64_t>(static_cast<pid_t>(::gettid()
 
 PgrCatchCompletionSample take_sample() {
   PgrCatchCompletionSample s{};
-  assert(g_api->sample(&s) == PGR_CC_OK);
+  assert(g_api->sample(&s) == PGS_CC_OK);
   assert(s.version == 1 && s.size == sizeof(PgrCatchCompletionSample));
   return s;
 }
@@ -134,7 +134,7 @@ PgrCatchCompletionRequest make_req(Scene &s, uint64_t id, uint64_t epoch, uint64
 
 uint64_t acquire(uint64_t epoch, uint64_t tid) {
   uint64_t tok = 0;
-  assert(g_api->acquire(epoch, tid, &tok) == PGR_CC_OK);
+  assert(g_api->acquire(epoch, tid, &tok) == PGS_CC_OK);
   return tok;
 }
 
@@ -165,30 +165,30 @@ int main(int argc, char **argv) {
   uint64_t tok = 0;
 
   // 1. Validation + not-installed + idempotence + reconfig.
-  assert(api->install(nullptr) == PGR_CC_ERR_NULL_ARG);
+  assert(api->install(nullptr) == PGS_CC_ERR_NULL_ARG);
   PgrCatchCompletionConfig bad = cfg; bad.version = 2;
-  assert(api->install(&bad) == PGR_CC_ERR_BAD_VERSION);
+  assert(api->install(&bad) == PGS_CC_ERR_BAD_VERSION);
   bad = cfg; bad.size = sizeof(PgrCatchCompletionConfig) - 1;
-  assert(api->install(&bad) == PGR_CC_ERR_BAD_SIZE);
+  assert(api->install(&bad) == PGS_CC_ERR_BAD_SIZE);
   bad = cfg; bad.m_callback_invoke = nullptr;
-  assert(api->install(&bad) == PGR_CC_ERR_MISSING_PTR);
+  assert(api->install(&bad) == PGS_CC_ERR_MISSING_PTR);
   { Scene s; wire(s, next_id()); PgrCatchCompletionRequest r = make_req(s, s.pk.id, 1, tid);
-    assert(api->validate(&r) == PGR_CC_ERR_NOT_INSTALLED);
-    assert(api->complete(&r, 1) == PGR_CC_ERR_NOT_INSTALLED); }
+    assert(api->validate(&r) == PGS_CC_ERR_NOT_INSTALLED);
+    assert(api->complete(&r, 1) == PGS_CC_ERR_NOT_INSTALLED); }
 
-  assert(api->install(&cfg) == PGR_CC_OK);
-  assert(api->install(&cfg) == PGR_CC_OK);  // idempotent
+  assert(api->install(&cfg) == PGS_CC_OK);
+  assert(api->install(&cfg) == PGS_CC_OK);  // idempotent
   bad = cfg; bad.success_literal = 9;
-  assert(api->install(&bad) == PGR_CC_ERR_RECONFIG);
+  assert(api->install(&bad) == PGS_CC_ERR_RECONFIG);
 
   // 2. Valid first catch: validate VALID, acquire a token, complete DONE, callback invoked exactly once.
   { Scene s; wire(s, next_id());
-    assert(api->update(1, 2000, 1, tid) == PGR_CC_OK);
+    assert(api->update(1, 2000, 1, tid) == PGS_CC_OK);
     PgrCatchCompletionRequest r = make_req(s, s.pk.id, 1, tid);
-    assert(api->validate(&r) == PGR_CC_DONE);
+    assert(api->validate(&r) == PGS_CC_DONE);
     tok = acquire(1, tid); assert(tok != 0);
     g_invoke_calls = 0;
-    assert(api->complete(&r, tok) == PGR_CC_DONE);
+    assert(api->complete(&r, tok) == PGS_CC_DONE);
     assert(g_invoke_calls == 1);
     PgrCatchCompletionSample sm = take_sample();
     assert(sm.validate_ok >= 1 && sm.complete_ok == 1 && sm.last_token == tok && sm.busy == 0);
@@ -196,36 +196,36 @@ int main(int argc, char **argv) {
 
   // 3. Wrong id / class / active / success: validate INVALID (0) and complete REFUSED without invoking.
   { Scene s; wire(s, next_id());
-    assert(api->update(1, 2000, 1, tid) == PGR_CC_OK);
+    assert(api->update(1, 2000, 1, tid) == PGS_CC_OK);
     g_invoke_calls = 0;
 
     PgrCatchCompletionRequest wrong_id = make_req(s, s.pk.id + 1, 1, tid);  // expected id != response/pokemon
-    assert(api->validate(&wrong_id) == PGR_CC_OK);
+    assert(api->validate(&wrong_id) == PGS_CC_OK);
     uint64_t t = acquire(1, tid); assert(t != 0);
-    assert(api->complete(&wrong_id, t) == PGR_CC_OK);  // refused: re-validation fails
+    assert(api->complete(&wrong_id, t) == PGS_CC_OK);  // refused: re-validation fails
 
     FakeResponse other{&cls_response, kSuccess, s.pk.id};  // wrong class in the response slot
     PgrCatchCompletionRequest wrong_class = make_req(s, s.pk.id, 1, tid);
     wrong_class.response = &s.cb;  // an Action object where a response is expected
-    assert(api->validate(&wrong_class) == PGR_CC_OK);
+    assert(api->validate(&wrong_class) == PGS_CC_OK);
 
     s.view.active = 0;  // inactive view
     PgrCatchCompletionRequest inactive = make_req(s, s.pk.id, 1, tid);
-    assert(api->validate(&inactive) == PGR_CC_OK);
+    assert(api->validate(&inactive) == PGS_CC_OK);
     s.view.active = 1;
 
     s.resp.status = kSuccess + 1;  // not CatchSuccess
     PgrCatchCompletionRequest bad_status = make_req(s, s.pk.id, 1, tid);
-    assert(api->validate(&bad_status) == PGR_CC_OK);
+    assert(api->validate(&bad_status) == PGS_CC_OK);
     s.resp.status = kSuccess;
 
     s.cb.target = &s.resp;  // delegate target is not the view
     PgrCatchCompletionRequest bad_target = make_req(s, s.pk.id, 1, tid);
-    assert(api->validate(&bad_target) == PGR_CC_OK);
+    assert(api->validate(&bad_target) == PGS_CC_OK);
     s.cb.target = &s.view;
 
     PgrCatchCompletionRequest zero = make_req(s, 0, 1, tid);  // zero expected id
-    assert(api->validate(&zero) == PGR_CC_OK);
+    assert(api->validate(&zero) == PGS_CC_OK);
 
     (void)other;
     assert(g_invoke_calls == 0);  // nothing was ever invoked
@@ -235,18 +235,18 @@ int main(int argc, char **argv) {
   { Scene s; wire(s, next_id());
     PgrCatchCompletionRequest r = make_req(s, s.pk.id, 1, tid);
     // Disabled.
-    assert(api->update(0, 0, 1, tid) == PGR_CC_OK);
+    assert(api->update(0, 0, 1, tid) == PGS_CC_OK);
     assert(acquire(1, tid) == 0);
-    assert(api->complete(&r, 999) == PGR_CC_OK);  // no live token
+    assert(api->complete(&r, 999) == PGS_CC_OK);  // no live token
     // Armed but wrong epoch.
-    assert(api->update(1, 2000, 2, tid) == PGR_CC_OK);
+    assert(api->update(1, 2000, 2, tid) == PGS_CC_OK);
     assert(acquire(1, tid) == 0);  // epoch mismatch
     uint64_t t = acquire(2, tid); assert(t != 0);
     PgrCatchCompletionRequest r2 = make_req(s, s.pk.id, 1, tid);  // request epoch 1 != armed 2
     g_invoke_calls = 0;
-    assert(api->complete(&r2, t) == PGR_CC_OK && g_invoke_calls == 0);  // refused on epoch
+    assert(api->complete(&r2, t) == PGS_CC_OK && g_invoke_calls == 0);  // refused on epoch
     // Expired lease.
-    assert(api->update(1, 1, 3, tid) == PGR_CC_OK);
+    assert(api->update(1, 1, 3, tid) == PGS_CC_OK);
     ::usleep(3000);
     assert(acquire(3, tid) == 0);
     assert(g_invoke_calls == 0);
@@ -254,47 +254,47 @@ int main(int argc, char **argv) {
 
   // 5. Repeated / older token: a token completes at most once; reusing it or an older one is refused.
   { Scene s; wire(s, next_id());
-    assert(api->update(1, 2000, 1, tid) == PGR_CC_OK);
+    assert(api->update(1, 2000, 1, tid) == PGS_CC_OK);
     PgrCatchCompletionRequest r = make_req(s, s.pk.id, 1, tid);
     uint64_t t1 = acquire(1, tid); assert(t1 != 0);
     uint64_t t2 = acquire(1, tid); assert(t2 == t1 + 1);  // strictly monotonic
     g_invoke_calls = 0;
-    assert(api->complete(&r, t2) == PGR_CC_DONE && g_invoke_calls == 1);  // latest token completes
-    assert(api->complete(&r, t2) == PGR_CC_OK && g_invoke_calls == 1);    // reused: refused, no 2nd invoke
-    assert(api->complete(&r, t1) == PGR_CC_OK && g_invoke_calls == 1);    // older: refused
+    assert(api->complete(&r, t2) == PGS_CC_DONE && g_invoke_calls == 1);  // latest token completes
+    assert(api->complete(&r, t2) == PGS_CC_OK && g_invoke_calls == 1);    // reused: refused, no 2nd invoke
+    assert(api->complete(&r, t1) == PGS_CC_OK && g_invoke_calls == 1);    // older: refused
     uint64_t t3 = acquire(1, tid); assert(t3 == t2 + 1);
-    assert(api->complete(&r, t3) == PGR_CC_DONE && g_invoke_calls == 2);  // a fresh token works again
+    assert(api->complete(&r, t3) == PGS_CC_DONE && g_invoke_calls == 2);  // a fresh token works again
   }
 
   // 6. Callback exception: complete reports ERR_MANAGED (host safe fallback); it still invoked once.
   { Scene s; wire(s, next_id());
-    assert(api->update(1, 2000, 1, tid) == PGR_CC_OK);
+    assert(api->update(1, 2000, 1, tid) == PGS_CC_OK);
     PgrCatchCompletionRequest r = make_req(s, s.pk.id, 1, tid);
     uint64_t t = acquire(1, tid); assert(t != 0);
     g_invoke_calls = 0; g_throw_on_invoke = true;
-    assert(api->complete(&r, t) == PGR_CC_ERR_MANAGED && g_invoke_calls == 1);
+    assert(api->complete(&r, t) == PGS_CC_ERR_MANAGED && g_invoke_calls == 1);
     assert(take_sample().complete_fault >= 1 && take_sample().busy == 0);
   }
 
   // 7. Reentrancy inside the callback: a nested acquire gets no token (busy) and a nested complete is
   //    refused; a nested stop() cannot cause a second invoke either. The outer invoke happens once.
   { Scene s; wire(s, next_id());
-    assert(api->update(1, 2000, 1, tid) == PGR_CC_OK);
+    assert(api->update(1, 2000, 1, tid) == PGS_CC_OK);
     PgrCatchCompletionRequest r = make_req(s, s.pk.id, 1, tid);
     uint64_t t = acquire(1, tid); assert(t != 0);
     g_invoke_calls = 0;
     bool reentrant_token = true; int reentrant_complete = -1;
     g_invoke_oneshot = [&]() {
       uint64_t nested = 7;
-      assert(g_api->acquire(1, g_owner, &nested) == PGR_CC_OK);
+      assert(g_api->acquire(1, g_owner, &nested) == PGS_CC_OK);
       reentrant_token = (nested != 0);                 // must be 0 while busy
       reentrant_complete = g_api->complete(&r, t);     // reused token + busy -> refused
       g_api->stop(g_owner);                            // immediate revoke from inside the callback
     };
-    assert(api->complete(&r, t) == PGR_CC_DONE);
+    assert(api->complete(&r, t) == PGS_CC_DONE);
     assert(g_invoke_calls == 1);                       // single invoke despite reentrancy
     assert(!reentrant_token);                          // nested acquire refused (busy)
-    assert(reentrant_complete == PGR_CC_OK);           // nested complete refused
+    assert(reentrant_complete == PGS_CC_OK);           // nested complete refused
     // After the in-callback stop(), the gate is revoked until re-armed.
     assert(acquire(1, tid) == 0);
   }
@@ -303,31 +303,31 @@ int main(int argc, char **argv) {
   std::thread([&]() {
     Scene s; wire(s, next_id());
     PgrCatchCompletionRequest r = make_req(s, s.pk.id, 1, this_tid());
-    assert(g_api->validate(&r) == PGR_CC_OK);       // off-owner validate -> 0
+    assert(g_api->validate(&r) == PGS_CC_OK);       // off-owner validate -> 0
     uint64_t t = 5;
-    assert(g_api->acquire(1, this_tid(), &t) == PGR_CC_OK && t == 0);
-    assert(g_api->complete(&r, 1) == PGR_CC_OK);    // off-owner complete refused
+    assert(g_api->acquire(1, this_tid(), &t) == PGS_CC_OK && t == 0);
+    assert(g_api->complete(&r, 1) == PGS_CC_OK);    // off-owner complete refused
   }).join();
   { Scene s; wire(s, next_id());
-    assert(api->update(1, 2000, 1, tid) == PGR_CC_OK);
+    assert(api->update(1, 2000, 1, tid) == PGS_CC_OK);
     PgrCatchCompletionRequest r = make_req(s, s.pk.id, 1, tid + 1);  // mismatched proven_tid
     uint64_t t = 5;
-    assert(api->acquire(1, tid + 1, &t) == PGR_CC_OK && t == 0);
-    assert(api->complete(&r, 1) == PGR_CC_OK);
+    assert(api->acquire(1, tid + 1, &t) == PGS_CC_OK && t == 0);
+    assert(api->complete(&r, 1) == PGS_CC_OK);
   }
 
   // 9. stop(): immediate revoke; a token acquired before the stop no longer completes.
   { Scene s; wire(s, next_id());
-    assert(api->update(1, 2000, 1, tid) == PGR_CC_OK);
+    assert(api->update(1, 2000, 1, tid) == PGS_CC_OK);
     PgrCatchCompletionRequest r = make_req(s, s.pk.id, 1, tid);
     uint64_t t = acquire(1, tid); assert(t != 0);
-    assert(api->stop(tid) == PGR_CC_OK);
+    assert(api->stop(tid) == PGS_CC_OK);
     g_invoke_calls = 0;
-    assert(api->complete(&r, t) == PGR_CC_OK && g_invoke_calls == 0);  // revoked: refused, no invoke
+    assert(api->complete(&r, t) == PGS_CC_OK && g_invoke_calls == 0);  // revoked: refused, no invoke
     // Re-arming restores operation.
-    assert(api->update(1, 2000, 1, tid) == PGR_CC_OK);
+    assert(api->update(1, 2000, 1, tid) == PGS_CC_OK);
     uint64_t t2 = acquire(1, tid); assert(t2 != 0);
-    assert(api->complete(&r, t2) == PGR_CC_DONE && g_invoke_calls == 1);
+    assert(api->complete(&r, t2) == PGS_CC_DONE && g_invoke_calls == 1);
   }
 
   // Coordinator regression: a previously issued token cannot survive same-epoch off/on.

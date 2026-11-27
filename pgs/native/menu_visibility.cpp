@@ -118,7 +118,7 @@ void install(){
  __android_log_print(ok?ANDROID_LOG_INFO:ANDROID_LOG_WARN,"PGS","menu-visibility: %s",ok?"installed":"unsupported; joystick hidden");
 }
 }
-void pgr_menu_visibility_tick(uint64_t now_ms){
+void pgs_menu_visibility_tick(uint64_t now_ms){
  if(!attempted)install();
  if(now_ms-last_emit<200)return;
  const auto *tr=static_cast<const PgrRuntimeTransportApi*>(pgs_runtime_transport_api(1));

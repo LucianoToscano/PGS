@@ -71,7 +71,7 @@ bool configured(){
  auto tr=transport();if(!tr||!tr->sample||!tr->get_string)return false;PgrRuntimeTransportSample a{};
  if(tr->sample(&a)||!a.snapshot_fresh||a.fault)return false;
  char s[16];uint32_t n=0;bool on=false;
- return tr->get_string(24,s,sizeof(s),&n)==0&&n<sizeof(s)&&pgr_route_gift::parse_config(s,n,on)&&on;
+ return tr->get_string(24,s,sizeof(s),&n)==0&&n<sizeof(s)&&pgs_route_gift::parse_config(s,n,on)&&on;
 }
 
 // --- Hooks: which NPC encounter is running ----------------------------------------------
@@ -106,22 +106,22 @@ void install(){
 }
 
 // --- Encounter and screens ---------------------------------------------------------------
-pgr_route_gift::State st;
+pgs_route_gift::State st;
 uint64_t seen_serial=0;     // the encounter last classified
 uint64_t last_scan=0;
 bool reported_give_up=false;
 
 // Event values of the encounter's steps, read from the game's own proto (no guessed numbers).
-pgr_route_gift::EncounterKind classify_proto(void *proto,std::string &steps);
-pgr_route_gift::EncounterKind classify(void *state,std::string &steps){
+pgs_route_gift::EncounterKind classify_proto(void *proto,std::string &steps);
+pgs_route_gift::EncounterKind classify(void *state,std::string &steps){
  void *proto=read<void*>(state,field_of_type(klass(state),"Holoholo.Rpc.NpcEncounterProto"));
- if(!proto)return pgr_route_gift::ENC_OTHER;
+ if(!proto)return pgs_route_gift::ENC_OTHER;
  return classify_proto(proto,steps);
 }
-pgr_route_gift::EncounterKind classify_proto(void *proto,std::string &steps){
+pgs_route_gift::EncounterKind classify_proto(void *proto,std::string &steps){
  Root keep(proto);
  // Protobuf property getters are stripped from the game: read the RepeatedField's own fields.
- void *list=read<void*>(proto,field_info(klass(proto),"Steps"));if(!list)return pgr_route_gift::ENC_OTHER;
+ void *list=read<void*>(proto,field_info(klass(proto),"Steps"));if(!list)return pgs_route_gift::ENC_OTHER;
  Root keep_list(list);
  const int count=read<int>(list,field_info(klass(list),"count"));require(count>=0&&count<=64,"step count");
  void *items=read<void*>(list,field_info(klass(list),"array"));require(items||!count,"step array");
@@ -137,7 +137,7 @@ pgr_route_gift::EncounterKind classify_proto(void *proto,std::string &steps){
   const int v=read<int>(ev,f);events.push_back(v);
   if(!steps.empty())steps+=",";steps+=std::to_string(v);
  }
- return pgr_route_gift::classify(events.data(),int(events.size()),gift,trade);
+ return pgs_route_gift::classify(events.data(),int(events.size()),gift,trade);
 }
 
 bool alive(void *o){
@@ -186,7 +186,7 @@ void *style_method(void *stop_class){
  require(m,"stop style method");return m;
 }
 bool try_start(uint64_t now){
- using namespace pgr_route_gift;
+ using namespace pgs_route_gift;
  if(now-last_start_scan<2000||!map_ready())return false;
  last_start_scan=now;
  void *stop_class=cls("Niantic.Holoholo.Pokestop","MapPokestop");
@@ -221,7 +221,7 @@ bool try_start(uint64_t now){
 }
 
 void step(uint64_t now){
- using namespace pgr_route_gift;
+ using namespace pgs_route_gift;
  void *state=target(state_handle);
  if(st.active&&(state_exited||!state)){
   if(st.presses[SC_SEND]&&!last_tapped.empty())tapped[last_tapped]=kDone;
@@ -255,7 +255,7 @@ void step(uint64_t now){
 }
 }  // namespace
 
-void pgr_route_gift_tick(uint64_t tid,const PgrSharedMetadataOutput *){
+void pgs_route_gift_tick(uint64_t tid,const PgrSharedMetadataOutput *){
  if(busy||!tid||tid!=uint64_t(gettid())||faulted.load(std::memory_order_acquire))return;
  if(owner&&owner!=tid)return;
  struct Guard{Guard(){busy=true;}~Guard(){busy=false;}}guard;
@@ -269,4 +269,4 @@ void pgr_route_gift_tick(uint64_t tid,const PgrSharedMetadataOutput *){
  }catch(const Failure &f){faulted.store(true,std::memory_order_release);st.end();status("error",std::string("Mateo gift exchange stopped: ")+f.where);}
  catch(...){faulted.store(true,std::memory_order_release);st.end();status("error","Mateo gift exchange stopped: native failure");}
 }
-void pgr_route_gift_stop(){st.end();}
+void pgs_route_gift_stop(){st.end();}

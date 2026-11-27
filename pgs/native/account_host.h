@@ -16,7 +16,7 @@ extern "C" {
 #endif
 
 enum {
-  PGR_ACCOUNT_HOST_FEATURE_ID = 68u,
+  PGS_ACCOUNT_HOST_FEATURE_ID = 68u,
   PGR_ACCOUNT_HOST_API_VERSION = 1u,
 
   PGR_ACH_CONFIG_VERSION = 1u,
@@ -34,7 +34,7 @@ enum {
   PGR_ACH_TOKEN_MAX_BYTES = 64u
 };
 
-enum PgrAccountHostStatus {
+enum PgsAccountHostStatus {
   PGR_ACH_OK = 0,
   PGR_ACH_NOT_READY = 1,
   PGR_ACH_ERR_BAD_CONFIG = -1,
@@ -49,14 +49,14 @@ enum PgrAccountHostStatus {
   PGR_ACH_ERR_EMPTY = -10
 };
 
-enum PgrAccountHostCaps {
-  PGR_ACH_CAP_NONE = 0u,
+enum PgsAccountHostCaps {
+  PGS_ACH_CAP_NONE = 0u,
   PGR_ACH_CAP_ACCOUNTS = 1u << 0,
   PGR_ACH_CAP_ADVENTURE_SYNC = 1u << 1
 };
 
-enum PgrAccountHostConfigFlags {
-  PGR_ACH_CFG_NONE = 0u,
+enum PgsAccountHostConfigFlags {
+  PGS_ACH_CFG_NONE = 0u,
   PGR_ACH_CFG_USE_TRANSPORT = 1u << 0,
   PGR_ACH_CFG_USE_BOOTSTRAP = 1u << 1,
   PGR_ACH_CFG_SUBSTITUTE_METADATA = 1u << 2,
@@ -66,16 +66,16 @@ enum PgrAccountHostConfigFlags {
   PGR_ACH_CFG_KNOWN_MASK = 0x1Fu
 };
 
-enum PgrAccountHostOptionFlags {
-  PGR_ACH_OPT_NONE = 0u,
+enum PgsAccountHostOptionFlags {
+  PGS_ACH_OPT_NONE = 0u,
   PGR_ACH_OPT_SET_ACCOUNTS = 1u << 0,
   PGR_ACH_OPT_SET_ADVSYNC = 1u << 1,
   PGR_ACH_OPT_REVOKE_ONLY = 1u << 2,
   PGR_ACH_OPT_KNOWN_MASK = 0x7u
 };
 
-enum PgrAccountHostEventKind {
-  PGR_ACH_EVT_NONE = 0u,
+enum PgsAccountHostEventKind {
+  PGS_ACH_EVT_NONE = 0u,
   PGR_ACH_EVT_ACCOUNTS_READY = 1u,
   PGR_ACH_EVT_SESSION_ENDED = 2u,
   PGR_ACH_EVT_LOGOUT_REQUESTED = 3u,

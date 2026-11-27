@@ -5,7 +5,7 @@
 #include <limits>
 #include <string>
 
-namespace pgr_buddy_ep {
+namespace pgs_buddy_ep {
 
 struct Settings {
     bool enabled = false;
@@ -155,4 +155,4 @@ inline void mark_attempt(History& h, Action action, uint64_t now) {
 
 inline void mark_success(History& h, uint64_t now) { h.interaction = now; }
 
-} // namespace pgr_buddy_ep
+} // namespace pgs_buddy_ep

@@ -79,7 +79,7 @@ void scan(){
    if(species<144||species>146)continue;
    Root display(call(pokemon.get(),"get_PokemonDisplay","Holoholo.Rpc.PokemonDisplayProto"));require(display.get(),"visible bird display not loaded");require(klass(display.get())==display_class,"bird display class mismatch");
    int form=0;fn<void(*)(void*,void*,void*)>(boot.runtime.field_get_value)(display.get(),form_field,&form);
-   if(!pgr_incense_guard::bird(species,form,a,z,m))continue;
+   if(!pgs_incense_guard::bird(species,form,a,z,m))continue;
    blocked=true;
    uint64_t id=value<uint64_t>(call(pokemon.get(),"get_EncounterId","System.UInt64"),"System.UInt64");require(id!=0,"visible Galarian bird encounter ID unavailable");
    if(seen.count(id))continue;require(seen.size()<512,"bird session dedup capacity reached");
@@ -91,14 +91,14 @@ void scan(){
  }
 }
 }
-bool pgr_incense_guard_tick(uint64_t tid,const PgrSharedMetadataOutput *metadata){
+bool pgs_incense_guard_tick(uint64_t tid,const PgrSharedMetadataOutput *metadata){
  if(owner&&owner!=tid)return true;
  auto tr=static_cast<const PgrRuntimeTransportApi*>(pgs_runtime_transport_api(1));
- char text[257]{};uint32_t length=0;pgr_incense_guard::Settings settings;
+ char text[257]{};uint32_t length=0;pgs_incense_guard::Settings settings;
  PgrRuntimeTransportSample before{},after{};
- bool valid=tr&&tr->sample(&before)==0&&before.snapshot_fresh&&!before.fault&&tr->get_string(12,text,sizeof(text),&length)==0&&pgr_incense_guard::parse(text,length,settings)&&tr->sample(&after)==0&&after.snapshot_fresh&&!after.fault&&before.snapshot_seq==after.snapshot_seq;
+ bool valid=tr&&tr->sample(&before)==0&&before.snapshot_fresh&&!before.fault&&tr->get_string(12,text,sizeof(text),&length)==0&&pgs_incense_guard::parse(text,length,settings)&&tr->sample(&after)==0&&after.snapshot_fresh&&!after.fault&&before.snapshot_seq==after.snapshot_seq;
  if(!valid){if(active){blocked=true;status("Incense observer settings unavailable; automatic catches paused");}return active;}
- if(!settings.active){pgr_incense_guard_stop(tid);return false;}
+ if(!settings.active){pgs_incense_guard_stop(tid);return false;}
  if(!active||token!=settings.token){pending.reset();seen.clear();last_status.clear();blocked=false;token=settings.token;}
  active=true;owner=tid;
  try{
@@ -109,7 +109,7 @@ bool pgr_incense_guard_tick(uint64_t tid,const PgrSharedMetadataOutput *metadata
  }catch(const Failure &f){blocked=true;status(f.message);}catch(...){blocked=true;status("Incense observer failed; automatic catches paused");}
  return blocked;
 }
-void pgr_incense_guard_open(uint64_t tid){
+void pgs_incense_guard_open(uint64_t tid){
  if(!active||!blocked||!tid||owner!=tid||!pending)return;
  // Consume before any managed work: a throwing/no-op request is never replayed.
  std::unique_ptr<Root> target=std::move(pending);
@@ -138,4 +138,4 @@ void pgr_incense_guard_open(uint64_t tid){
   report("opened","Encounter opening requested; catch manually when the game presents it");
  }catch(const Failure &f){report("error",f.message);}catch(...){report("error","Encounter opening request failed; open it manually");}
 }
-void pgr_incense_guard_stop(uint64_t tid){if(owner&&owner!=tid)return;pending.reset();active=false;blocked=false;owner=0;token.clear();seen.clear();last_status.clear();md=nullptr;}
+void pgs_incense_guard_stop(uint64_t tid){if(owner&&owner!=tid)return;pending.reset();active=false;blocked=false;owner=0;token.clear();seen.clear();last_status.clear();md=nullptr;}

@@ -8,7 +8,7 @@
 // symbol table. Addresses must belong to a loaded PT_LOAD segment of libart.
 // Android 10 maps ARM64 system code execute-only (PF_X without PF_R); those
 // segments count as loaded, and execute_only() lets hookers make them readable.
-class PgrArtSymbols {
+class PgsArtSymbols {
  public:
   bool load();
   void *find(std::string_view name, bool prefix=false) const;

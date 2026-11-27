@@ -31,7 +31,7 @@ public final class NativeRuntimeBootstrap {
             default:return "unknown-status";
         }
     }
-    // PGR_BOOT_NOT_READY detail -> PgrBootLoaderDetail (runtime_bootstrap.h). The rooted bootstrap
+    // PGR_BOOT_NOT_READY detail -> PgsBootLoaderDetail (runtime_bootstrap.h). The rooted bootstrap
     // resolves Android's private __loader_dlopen via RTLD_DEFAULT and, on an isolated payload
     // namespace, through the already-loaded libdl/ld-android handle; these localize a stuck wait.
     // Unknown/0 details (including the ordinary library/domain/thread wait) stay the plain pending.

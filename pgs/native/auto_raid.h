@@ -14,5 +14,5 @@
 
 struct PgrSharedMetadataOutput;
 
-bool pgr_auto_raid_tick(uint64_t tid, const PgrSharedMetadataOutput* metadata);
-void pgr_auto_raid_stop(uint64_t tid);
+bool pgs_auto_raid_tick(uint64_t tid, const PgrSharedMetadataOutput* metadata);
+void pgs_auto_raid_stop(uint64_t tid);

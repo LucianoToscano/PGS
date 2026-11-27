@@ -17,7 +17,7 @@
 #include <unistd.h>
 
 namespace {
-using namespace pgr_routes_schema;
+using namespace pgs_routes_schema;
 struct Class;
 struct Type {std::string name;Class *klass=nullptr;};
 struct Class {Type *type=nullptr;bool value=false,enumeration=false;Type *base=nullptr;int size=0,align=0;};
@@ -41,8 +41,8 @@ void *assemblies[]={&image_a,&image_b};
 bool attached=true,duplicate=false,reenter=false;
 unsigned thread_checks=0,detach_at=0,names_allocated=0,names_freed=0,reentries=0;
 unsigned char *module_base=nullptr;uint64_t module_size=0;
-const PgrRoutesMetadataApi *api=nullptr;
-PgrRoutesMetadataConfig config{};
+const PgsRoutesMetadataApi *api=nullptr;
+PgsRoutesMetadataConfig config{};
 
 Type *new_type(const std::string &name,Class *klass){types.emplace_back(new Type{name,klass});return types.back().get();}
 Class *new_class(const std::string &name,bool value=false,int size=0,int align=0){
@@ -57,9 +57,9 @@ Method *new_method(Class *owner,const char *name,Type *result,Type *param=nullpt
  methods.emplace_back(new Method{nullptr,owner,owner,name,result,param,uint32_t(param?1:0),0,false,inflated});
  return methods.back().get();
 }
-bool zero(const PgrRoutesMetadataOutput &out){PgrRoutesMetadataOutput empty{};return std::memcmp(&out,&empty,sizeof(out))==0;}
+bool zero(const PgsRoutesMetadataOutput &out){PgsRoutesMetadataOutput empty{};return std::memcmp(&out,&empty,sizeof(out))==0;}
 void *domain_get(){
- if(reenter){reenter=false;PgrRoutesMetadataOutput out;std::memset(&out,0xa5,sizeof(out));
+ if(reenter){reenter=false;PgsRoutesMetadataOutput out;std::memset(&out,0xa5,sizeof(out));
   assert(api->resolve(&config,&out)==PGR_MD_ERR_BUSY&&zero(out));++reentries;}
  return &domain_token;
 }
@@ -148,7 +148,7 @@ void build_fixture(){
  list_class=new_class("Fixture.RouteList");waypoint_list_class=new_class("Fixture.WaypointList");
  duplicate_class=new_class("Niantic.Holoholo.Routes.RoutesService");
  for(size_t i=0;i<kFieldCount;i++){
-  const auto &s=kFields[i];Type *t=s.type_name?type(s.type_name):s.kind==PGR_MD_FIELD_ENUM_I32?enum_class->type:generic_ref_type;
+  const auto &s=kFields[i];Type *t=s.type_name?type(s.type_name):s.kind==PGS_MD_FIELD_ENUM_I32?enum_class->type:generic_ref_type;
   if(i==4)t=list_class->type;if(i==11)t=waypoint_list_class->type;
   fields.emplace_back(new Field{&classes[s.owner],&classes[s.owner],s.name,t,0,s.offset});
  }
@@ -163,8 +163,8 @@ void build_fixture(){
  extra_methods[3]=new_method(waypoint_list_class,"get_Item",classes[7].type,int32_type,true);
  extra_methods[4]=new_method(&classes[4],".ctor",void_type);
 }
-PgrRoutesMetadataOutput success(){
- PgrRoutesMetadataOutput out{};assert(api->resolve(&config,&out)==0&&out.version==1&&out.size==sizeof(out));
+PgsRoutesMetadataOutput success(){
+ PgsRoutesMetadataOutput out{};assert(api->resolve(&config,&out)==0&&out.version==1&&out.size==sizeof(out));
  for(size_t i=0;i<kClassCount;i++)assert(out.classes[i]==&classes[i]);
  for(size_t i=0;i<kFieldCount;i++)assert(out.fields[i]==fields[i].get());
  for(size_t i=0;i<kMethodCount;i++)assert(out.methods[i]==methods[i].get());
@@ -172,8 +172,8 @@ PgrRoutesMetadataOutput success(){
  assert(out.waypoint_count==extra_methods[2]&&out.waypoint_item==extra_methods[3]&&out.constructor==extra_methods[4]);
  assert(names_allocated==names_freed);return out;
 }
-void failure(int expected,const PgrRoutesMetadataConfig *c=nullptr){
- PgrRoutesMetadataOutput out;std::memset(&out,0xa5,sizeof(out));assert(api->resolve(c?c:&config,&out)==expected);
+void failure(int expected,const PgsRoutesMetadataConfig *c=nullptr){
+ PgsRoutesMetadataOutput out;std::memset(&out,0xa5,sizeof(out));assert(api->resolve(c?c:&config,&out)==expected);
  assert(zero(out)&&names_allocated==names_freed);
 }
 }
@@ -181,7 +181,7 @@ int main(int argc,char **argv){
  assert(argc==2);void *library=dlopen(argv[1],RTLD_NOW|RTLD_LOCAL);assert(library);
  auto get=reinterpret_cast<const void *(*)(uint32_t)>(dlsym(library,"pgs_native_api"));assert(get);
  auto *core=static_cast<const pgs_native_api_v2 *>(get(2));assert(core&&core->query_feature&&!core->query_feature(53,2));
- api=static_cast<const PgrRoutesMetadataApi *>(core->query_feature(53,1));
+ api=static_cast<const PgsRoutesMetadataApi *>(core->query_feature(53,1));
  assert(api&&api->version==1&&api->size==24&&api->config_size==88&&api->output_size==504);
  build_fixture();PgrMetaExports e=exports();config.version=1;config.size=sizeof(config);
  config.binding.version=1;config.binding.size=sizeof(PgrMetaBindConfig);config.binding.exports=&e;
@@ -189,30 +189,30 @@ int main(int argc,char **argv){
  config.thread_current=reinterpret_cast<void *>(thread_current);config.owner_tid=gettid();
  success();success(); // immutable binding and repeated accessor pointer identity
  {auto c=config;c.version=2;failure(-2,&c);c=config;c.size--;failure(-2,&c);c=config;c.thread_current=nullptr;failure(-2,&c);}
- {PgrRoutesMetadataOutput out;std::memset(&out,0xa5,sizeof(out));assert(api->resolve(nullptr,&out)==-2&&zero(out));assert(api->resolve(&config,nullptr)==-1);}
+ {PgsRoutesMetadataOutput out;std::memset(&out,0xa5,sizeof(out));assert(api->resolve(nullptr,&out)==-2&&zero(out));assert(api->resolve(&config,nullptr)==-1);}
  attached=false;failure(-30);attached=true;
  {auto c=config;c.owner_tid=0;failure(-30,&c);c.owner_tid=config.owner_tid+1;failure(-30,&c);}
  {std::thread foreign([]{failure(-30);});foreign.join();}
  thread_checks=0;detach_at=5;failure(-30);detach_at=0;success();
- {auto saved=fields[2]->offset;fields[2]->offset++;failure(PGR_MD_ERR_OFFSET);fields[2]->offset=saved;}
- {auto saved=fields[10]->type;fields[10]->type=generic_ref_type;failure(PGR_MD_ERR_TYPE);fields[10]->type=saved;}
- fields[2]->flags=0x10;failure(PGR_MD_ERR_FLAGS);fields[2]->flags=0;
- {auto saved=methods[2]->result;methods[2]->result=int32_type;failure(PGR_MD_ERR_TYPE);methods[2]->result=saved;}
- {auto saved=methods[2]->owner;methods[2]->owner=&classes[0];failure(PGR_MD_ERR_OWNER_MISMATCH);methods[2]->owner=saved;}
- methods[2]->flags=0x10;failure(PGR_MD_ERR_STATIC);methods[2]->flags=0;
- methods[2]->generic=true;failure(PGR_MD_ERR_GENERIC);methods[2]->generic=false;
- methods[2]->inflated=true;failure(PGR_MD_ERR_INFLATED);methods[2]->inflated=false;
- {auto saved=methods[16]->param;methods[16]->param=int32_type;failure(PGR_MD_ERR_TYPE);methods[16]->param=saved;}
- duplicate=true;failure(PGR_MD_ERR_DUPLICATE);duplicate=false;
- module_base[CONFIRM_RVA]^=1;failure(PGR_MD_ERR_PROLOGUE);module_base[CONFIRM_RVA]^=1;
+ {auto saved=fields[2]->offset;fields[2]->offset++;failure(PGS_MD_ERR_OFFSET);fields[2]->offset=saved;}
+ {auto saved=fields[10]->type;fields[10]->type=generic_ref_type;failure(PGS_MD_ERR_TYPE);fields[10]->type=saved;}
+ fields[2]->flags=0x10;failure(PGS_MD_ERR_FLAGS);fields[2]->flags=0;
+ {auto saved=methods[2]->result;methods[2]->result=int32_type;failure(PGS_MD_ERR_TYPE);methods[2]->result=saved;}
+ {auto saved=methods[2]->owner;methods[2]->owner=&classes[0];failure(PGS_MD_ERR_OWNER_MISMATCH);methods[2]->owner=saved;}
+ methods[2]->flags=0x10;failure(PGS_MD_ERR_STATIC);methods[2]->flags=0;
+ methods[2]->generic=true;failure(PGS_MD_ERR_GENERIC);methods[2]->generic=false;
+ methods[2]->inflated=true;failure(PGS_MD_ERR_INFLATED);methods[2]->inflated=false;
+ {auto saved=methods[16]->param;methods[16]->param=int32_type;failure(PGS_MD_ERR_TYPE);methods[16]->param=saved;}
+ duplicate=true;failure(PGS_MD_ERR_DUPLICATE);duplicate=false;
+ module_base[CONFIRM_RVA]^=1;failure(PGS_MD_ERR_PROLOGUE);module_base[CONFIRM_RVA]^=1;
  {void *saved=methods[2]->code;methods[2]->code=module_base+DISMISS_RVA+4;failure(-33);methods[2]->code=saved;}
  {void *saved=methods[14]->code;methods[14]->code=module_base+CONFIRM_RVA+4;failure(-33);methods[14]->code=saved;}
- {auto c=config;c.binding.seg_query=nullptr;unsigned before=thread_checks;failure(PGR_MD_ERR_CODE_RANGE,&c);assert(thread_checks==before);}
+ {auto c=config;c.binding.seg_query=nullptr;unsigned before=thread_checks;failure(PGS_MD_ERR_CODE_RANGE,&c);assert(thread_checks==before);}
  {auto c=config;c.binding.module_base=reinterpret_cast<void *>(UINTPTR_MAX-3);c.binding.module_size=8;unsigned before=thread_checks;
-  failure(PGR_MD_ERR_CODE_RANGE,&c);assert(thread_checks==before);}
- {auto saved=extra_methods[0]->result;extra_methods[0]->result=type("System.Int64");failure(PGR_MD_ERR_TYPE);extra_methods[0]->result=saved;}
- {auto saved=extra_methods[3]->result;extra_methods[3]->result=classes[5].type;failure(PGR_MD_ERR_TYPE);extra_methods[3]->result=saved;}
- extra_methods[4]->flags=0x10;failure(PGR_MD_ERR_STATIC);extra_methods[4]->flags=0;
+  failure(PGS_MD_ERR_CODE_RANGE,&c);assert(thread_checks==before);}
+ {auto saved=extra_methods[0]->result;extra_methods[0]->result=type("System.Int64");failure(PGS_MD_ERR_TYPE);extra_methods[0]->result=saved;}
+ {auto saved=extra_methods[3]->result;extra_methods[3]->result=classes[5].type;failure(PGS_MD_ERR_TYPE);extra_methods[3]->result=saved;}
+ extra_methods[4]->flags=0x10;failure(PGS_MD_ERR_STATIC);extra_methods[4]->flags=0;
  reenter=true;success();assert(reentries==1);success();
  assert(names_allocated==names_freed);assert(munmap(module_base,module_size)==0);
  std::puts("PASS Routes metadata actual-library: all15 classes/24 fields/18 methods+5 derived positions, exact source-known mappings, cleared failures, owner/attachment, metadata faults, duplicate class, pinned address/prefix, reentrant BUSY, balanced type-name frees");

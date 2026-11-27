@@ -25,7 +25,7 @@
 // Everything is resolved by name with reflection; no hooks and no fixed addresses. Managed objects
 // are rooted only within a tick.
 namespace {
-using namespace pgr_auto_rocket;
+using namespace pgs_auto_rocket;
 
 struct Failure {std::string where;};
 void require(bool ok,const char *where){if(!ok)throw Failure{where};}
@@ -276,7 +276,7 @@ bool vgp_busy(){
  auto api=static_cast<const PgrVgpControllerApi*>(pgs_vgp_controller_api(1));
  if(!api||!api->sample)return false;
  PgrVgpControllerSample sample{};sample.version=1;sample.size=sizeof(sample);
- return api->sample(&sample)==0&&sample.phase!=PGR_VGC_PH_NONE;
+ return api->sample(&sample)==0&&sample.phase!=PGS_VGC_PH_NONE;
 }
 // A leader battle uses a Rocket Radar, and the game asks first in its generic modal ("Use" / "Cancel",
 // ModalButton.UseCancelButtons = OK, Cancel). Only on a leader stop, once per dialog: its own
@@ -386,7 +386,7 @@ void step_travel(const Permission &p,int64_t now){
  enter(Stage::Heal,now);
 }
 void step_heal(int64_t now){
- if(pgr_heal_busy()&&now-session.stage_ms<kHealWaitMs){if(session.message!="Healing before the battle")status("healing","Healing before the battle");return;}
+ if(pgs_heal_busy()&&now-session.stage_ms<kHealWaitMs){if(session.message!="Healing before the battle")status("healing","Healing before the battle");return;}
  enter(Stage::Open,now);
 }
 void step_open(const Permission &p,int64_t now){
@@ -521,7 +521,7 @@ bool stop_point(){return session.stage==Stage::Scan||session.stage==Stage::Trave
 
 }  // namespace
 
-bool pgr_auto_rocket_tick(uint64_t tid,const PgrSharedMetadataOutput*){
+bool pgs_auto_rocket_tick(uint64_t tid,const PgrSharedMetadataOutput*){
  if(busy||!tid||tid!=uint64_t(gettid()))return session.active;
  if(owner&&owner!=tid)return session.active;
  struct Guard{Guard(){busy=true;}~Guard(){busy=false;}}guard;
@@ -555,13 +555,13 @@ bool pgr_auto_rocket_tick(uint64_t tid,const PgrSharedMetadataOutput*){
  }catch(...){finish("error","Auto Rocket stopped: native failure");}
  return session.active;
 }
-void pgr_auto_rocket_stop(uint64_t){if(session.active)finish("stopped","Stopped");}
-extern "C" int pgr_auto_rocket_keeps_catches(){
+void pgs_auto_rocket_stop(uint64_t){if(session.active)finish("stopped","Stopped");}
+extern "C" int pgs_auto_rocket_keeps_catches(){
  return session.active&&!session.command.transfer?1:0;
 }
-bool pgr_auto_rocket_between_battles(){
+bool pgs_auto_rocket_between_battles(){
  return session.active&&(session.stage==Stage::Scan||session.stage==Stage::Travel||session.stage==Stage::Settle);
 }
-bool pgr_auto_rocket_vgp_window(){
- return pgr_auto_rocket_between_battles()&&session.command.walk&&!session.vgp_closed;
+bool pgs_auto_rocket_vgp_window(){
+ return pgs_auto_rocket_between_battles()&&session.command.walk&&!session.vgp_closed;
 }

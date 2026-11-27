@@ -104,13 +104,13 @@ int transport_emit(uint32_t,const int64_t*,uint32_t,const PgrRuntimeTransportStr
 int inspect(const PgrTransferFactsRequest*q,PgrTransferFactsOut*out){auto*p=static_cast<O*>(q->pokemon);*out={1,sizeof(*out),iv_attack,iv_defense,iv_stamina,int32_t(p->data["pokemonId_"]),255,uint32_t(p->data["favorite_"]?64:0),q->caught_id};return 1;}
 int ready(){return 1;}
 int submit(const PgrTransferExecRequest*q,uint64_t*token){assert(pgs_transfer_policy_api(1));assert(q->captured_id==job.id);assert(q->pokemon==inventory.at(job.id));++release_calls;*token=100+release_calls;
- if(synchronous){inventory.erase(job.id);PgrTransferExecEvent e{PGR_TX_EVENT_COMPLETE,0,*token,1,0};assert(pgr_evolve_transfer_event(&e));}return 1;
+ if(synchronous){inventory.erase(job.id);PgrTransferExecEvent e{PGS_TX_EVENT_COMPLETE,0,*token,1,0};assert(pgs_evolve_transfer_event(&e));}return 1;
 }
 int poll_response(void*,uint32_t,uint64_t,PgrVgpResultsResult*out){*out={};if(poll_error)return -1;if(!response_ready)return 0;
  response->data["Result"]=result_status;response->data["EvolvedPokemon"]=reinterpret_cast<uint64_t>(evolved);response->data["CandyAwarded"]=1;
- evolved->data["id_"]=returned_id;evolved->data["pokemonId_"]=returned_species;out->value_handle=gc_new(response,0);return PGR_VR_DONE;
+ evolved->data["id_"]=returned_id;evolved->data["pokemonId_"]=returned_species;out->value_handle=gc_new(response,0);return PGS_VR_DONE;
 }
-PgrRuntimeTransportApi transport_api{};PgrMetaApi meta_api{};PgrBootApi boot_api{};PgrSharedHostApi host_api{};PgrSharedHostTransferApi broker_api{};PgrTransferFactsApi facts_api{};PgrVgpResultsApi result_api{};
+PgrRuntimeTransportApi transport_api{};PgrMetaApi meta_api{};PgrBootApi boot_api{};PgrSharedHostApi host_api{};PgsSharedHostTransferApi broker_api{};PgrTransferFactsApi facts_api{};PgrVgpResultsApi result_api{};
 void fixture(){
  queue.clear();job=Job{};assert(handles.empty());seen.clear();objects.clear();inventory.clear();messages.clear();initialized=false;busy=false;owner=0;boot={};md=nullptr;
  move_on_root=false;iv_attack=1;iv_defense=2;iv_stamina=3;config="1|1|0|1|";keep_config="";pvp_config="P2|0|0|0|150";allowed=fresh=true;keep_all=pvp_protected=response_ready=poll_error=foreign_bag=batch_busy=not_evolvable=special=cancel_during_check=change_account=false;synchronous=true;protect=127;stock=100;cost=12;evolution_calls=release_calls=0;next_target=2;returned_id=10;returned_species=2;result_status=1;
@@ -130,8 +130,8 @@ void fixture(){
  transport_api.sample=transport_sample;transport_api.get_string=transport_string;transport_api.get_bool=transport_bool;transport_api.get_int=transport_int;transport_api.emit=transport_emit;
  facts_api.inspect=inspect;broker_api.ready=ready;broker_api.submit=submit;result_api.poll=poll_response;
 }
-int offer(bool manual=true){PgrTransferExecRequest q{1,sizeof(q),10,1,uint64_t(gettid()),bag,pk,{}};q.input.species=1;return pgr_evolve_transfer_offer(&q,manual);}
-void tick(){job.next=0;pgr_evolve_transfer_tick(gettid(),&fixture_md);}
+int offer(bool manual=true){PgrTransferExecRequest q{1,sizeof(q),10,1,uint64_t(gettid()),bag,pk,{}};q.input.species=1;return pgs_evolve_transfer_offer(&q,manual);}
+void tick(){job.next=0;pgs_evolve_transfer_tick(gettid(),&fixture_md);}
 void accept(){response_ready=true;tick();assert(job.await_inventory);}
 void reconcile(uint64_t id=10){O *p=object("Holoholo.Rpc.PokemonProto");p->data["id_"]=id;p->data["pokemonId_"]=next_target;inventory.erase(job.sending.id);inventory[id]=p;stock-=cost-1;tick();}
 }
@@ -140,8 +140,8 @@ const void *pgs_runtime_bootstrap_api(uint32_t){return &boot_api;}const void *pg
 const void *pgs_runtime_transport_api(uint32_t){return &transport_api;}
 extern "C" const void *pgs_shared_host_api(uint32_t v){return v==2?static_cast<void*>(&broker_api):static_cast<void*>(&host_api);}
 const void *pgs_transfer_facts_api(uint32_t){return &facts_api;}const void *pgs_vgp_results_api(uint32_t){return &result_api;}
-extern "C" int pgr_pvp_keep(void*,int,int,int,int,uint64_t,char*,uint32_t){return pvp_protected?1:0;}
-bool pgr_evolution_busy(){return batch_busy;}
+extern "C" int pgs_pvp_keep(void*,int,int,int,int,uint64_t,char*,uint32_t){return pvp_protected?1:0;}
+bool pgs_evolution_busy(){return batch_busy;}
 int main(){
  fixture();assert(offer()==1);tick();assert(evolution_calls==1&&release_calls==0);tick();assert(release_calls==0);accept();tick();assert(release_calls==0);reconcile();assert(job.completed==1);tick();assert(release_calls==1);tick();assert(!job.id&&handles.empty());
  fixture();stock=0;assert(offer()==1);tick();assert(evolution_calls==0&&release_calls==1);tick();
@@ -163,16 +163,16 @@ int main(){
  fixture();assert(offer()==1);tick();returned_species=99;response_ready=true;tick();assert(release_calls==0&&!job.id);
  fixture();assert(offer()==1);tick();job.since=clock_ms()-16000;tick();assert(release_calls==0&&!job.id);
  fixture();keep_all=true;assert(offer(true)==2);assert(offer(false)==1);stock=0;tick();assert(release_calls==1);tick();
- fixture();assert(offer()==1);assert(offer()==2);tick();assert(evolution_calls==1);pgr_evolve_transfer_stop(gettid());assert(handles.empty());
- fixture();batch_busy=true;assert(offer()==1);tick();assert(evolution_calls==0);batch_busy=false;tick();assert(evolution_calls==1);pgr_evolve_transfer_stop(gettid());
- fixture();move_on_root=true;assert(offer()==1);tick();assert(evolution_calls==1);pgr_evolve_transfer_stop(gettid());assert(handles.empty());
+ fixture();assert(offer()==1);assert(offer()==2);tick();assert(evolution_calls==1);pgs_evolve_transfer_stop(gettid());assert(handles.empty());
+ fixture();batch_busy=true;assert(offer()==1);tick();assert(evolution_calls==0);batch_busy=false;tick();assert(evolution_calls==1);pgs_evolve_transfer_stop(gettid());
+ fixture();move_on_root=true;assert(offer()==1);tick();assert(evolution_calls==1);pgs_evolve_transfer_stop(gettid());assert(handles.empty());
  fixture();iv_attack=iv_defense=iv_stamina=15;assert(offer()==1);tick();assert(!job.id&&evolution_calls==0&&release_calls==0);
  fixture();not_evolvable=true;assert(offer()==1);tick();assert(release_calls==1&&evolution_calls==0);tick();
  fixture();branch->data["EvolutionItemRequirement"]=1;assert(offer()==1);tick();assert(release_calls==1&&evolution_calls==0);tick();
  fixture();assert(offer()==1);tick();config="1|1|1|2|1";tick();assert(!job.id&&release_calls==0);
  fixture();assert(offer()==1);tick();keep_all=true;tick();assert(!job.id&&release_calls==0);
  fixture();config="broken";assert(offer()==2);fresh=false;config="1|1|0|1|";assert(offer()==2);
- pgr_evolve_transfer::Config c;assert(pgr_evolve_transfer::parse("1|1|1|2|1,10",12,c)&&c.selects(1)&&!c.selects(2));assert(!pgr_evolve_transfer::parse("1|1|1|2|1,1",11,c));
- assert(!pgr_evolve_transfer::another_stage(c,8));
+ pgs_evolve_transfer::Config c;assert(pgs_evolve_transfer::parse("1|1|1|2|1,10",12,c)&&c.selects(1)&&!c.selects(2));assert(!pgs_evolve_transfer::parse("1|1|1|2|1,1",11,c));
+ assert(!pgs_evolve_transfer::another_stage(c,8));
  queue.clear();job=Job{};assert(handles.empty());puts("PASS evolve/transfer: confirmed inventory, once/all stages, insufficient candy, special conditions, independent list, replacement IDs, favorites/keep/PvP, settings/account changes, failures/timeouts, Keep All, duplicate quarantine, batch exclusion and root cleanup");
 }

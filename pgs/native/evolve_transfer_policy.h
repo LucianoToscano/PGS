@@ -2,7 +2,7 @@
 #include <cstdint>
 #include <set>
 #include <string>
-namespace pgr_evolve_transfer {
+namespace pgs_evolve_transfer {
 struct Config {
  bool enabled=false;
  int mode=0,stages=1;

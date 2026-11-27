@@ -1,7 +1,7 @@
 #include "gym_repeat_policy.h"
 #include <cassert>
 #include <cstdio>
-using namespace pgr_gym_repeat;
+using namespace pgs_gym_repeat;
 namespace {
 constexpr uint64_t A=11,B=22;
 Gate good(){Gate g;g.enabled=g.active=g.battles_allowed=true;return g;}

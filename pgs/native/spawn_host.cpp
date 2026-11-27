@@ -48,7 +48,7 @@ int update(const PgsSpawnHostOptions *p){
 }
 int prepare(uint64_t tid){
  if(bootstrap&&!thread_current){PgrBootBinding b{};auto boot=static_cast<const PgrBootApi*>(pgs_runtime_bootstrap_api(1));if(!boot||boot->snapshot(&b)!=0)return PGS_SPAH_NOT_READY;
-  auto scheduler=static_cast<const PgrUnitySchedulerApi*>(pgs_unity_scheduler_api(2));PgrUnitySchedulerSnapshot state{};
+  auto scheduler=static_cast<const PgrUnitySchedulerApi*>(pgs_unity_scheduler_api(2));PgsUnitySchedulerSnapshot state{};
   if(!scheduler||scheduler->snapshot(&state)||state.owner_tid<=0||uint64_t(state.owner_tid)!=tid)return PGS_SPAH_NOT_READY;
   auto sh=static_cast<const PgrSharedHostApi*>(pgs_shared_host_api(1));auto md=sh&&sh->metadata?sh->metadata():nullptr;if(!md)return PGS_SPAH_NOT_READY;
   if(md->version!=2||md->size!=sizeof(*md)){fault(PGS_SPAH_BAD_CONFIG);return PGS_SPAH_BAD_CONFIG;}

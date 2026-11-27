@@ -16,7 +16,7 @@
 #include <utility>
 namespace {
 using namespace pgr_shared_meta;
-using namespace pgr_remote_gym;
+using namespace pgs_remote_gym;
 struct Failure {const char *where;};
 void require(bool ok,const char *where){if(!ok)throw Failure{where};}
 template<class F>F fn(void *p){require(p,"missing runtime export");return reinterpret_cast<F>(p);}
@@ -107,13 +107,13 @@ void event(const char *phase,const std::string &message){
 }
 void finish(const char *phase,const std::string &message){
  if(session.uncertain&&session.cursor<session.targets.size()){
-  auto history=pgr_gym_remote_history(session.account);
+  auto history=pgs_gym_remote_history(session.account);
   if(history)history->refuse(session.targets[session.cursor].id,clock_ms());
  }
  event(phase,message+" ("+std::to_string(session.berries)+" berries, "+std::to_string(session.dust)+" dust)");
  finished_token=session.command.token;
  if(session.enumerator){try{virtual_call(session.enumerator,h(H_INC_M_DISPOSE));}catch(...){}}
- session=Session{};pgr_gym_remote_hold(false);
+ session=Session{};pgs_gym_remote_hold(false);
 }
 std::string player(){Root service=resolve("Niantic.Holoholo","IPlayerService");require(bool(service),"Player service unavailable");return string(call(service.get(),"get_PlayerId"));}
 int stock(int berry){Root bag=resolve("Niantic.Holoholo","IItemBag");require(bool(bag),"Item bag unavailable");void *args[]={&berry};return boxed<int>(call(bag.get(),"GetItemCount",1,args),"System.Int32");}
@@ -121,11 +121,11 @@ bool still_deployed(const Target &target){
  void *args[]={const_cast<uint64_t*>(&target.anchor)};Root pokemon(call(session.bag.get(),"GetPokemon",1,args));
  return pokemon&&klass(pokemon.get())==cls("Holoholo.Rpc","PokemonProto")&&string(field<void*>(pokemon.get(),"deployedFortId_","System.String"))==target.gym;
 }
-void send(const Permission &,pgr_gym::History &history){
+void send(const Permission &,pgs_gym::History &history){
  const Target &target=session.targets[session.cursor];
  Root bag=resolve("Niantic.Holoholo","IItemBag"),id(fn<void*(*)(const char*)>(boot.runtime.string_new)(target.gym.c_str()));
  require(bool(bag),"Item bag unavailable");
- void *feed=pgr_gym_feed::resolve(boot,bag.get());require(feed,"Gym item-bag feeding contract unavailable");
+ void *feed=pgs_gym_feed::resolve(boot,bag.get());require(feed,"Gym item-bag feeding contract unavailable");
  auto final=permission();require(final.allowed&&final.command.mode==1&&final.command.token==session.command.token,"Session changed before feed");
  require(player()==session.account&&still_deployed(target),"Defender ownership changed");
  session.stock=stock(session.berry);require(session.stock>reserve_for(session.command,session.berry),"Berry reserve reached");
@@ -133,7 +133,7 @@ void send(const Permission &,pgr_gym::History &history){
  session.uncertain=true;session.stock_seen=false;session.since=clock_ms();uint64_t pokemon=target.id;
  void *args[]={&session.berry,&pokemon,id.get()};
  session.promise=Root(invoke(feed,bag.get(),args));require(bool(session.promise),"Feed outcome unknown; batch stopped");
- try{pgr_gym_feed::observe_stock(session.stock_seen,session.stock,stock(session.berry));}catch(...){}
+ try{pgs_gym_feed::observe_stock(session.stock_seen,session.stock,stock(session.berry));}catch(...){}
  event("running","Feeding remote gym");
 }
 void discover(){
@@ -151,7 +151,7 @@ void discover(){
   require(session.targets.size()<100,"Deployed defender bound exceeded");session.targets.push_back({gym,id,id});
  }
 }
-void expand_defenders(void *response,pgr_gym::History &history){
+void expand_defenders(void *response,pgs_gym::History &history){
  Target anchor=session.targets[session.cursor];
  Root details(field<void*>(response,"GymStatusAndDefenders","Holoholo.Rpc.GymStatusAndDefendersProto"));
  if(!details)return;
@@ -170,13 +170,13 @@ void expand_defenders(void *response,pgr_gym::History &history){
   if(!found){require(session.targets.size()<256,"Defender batch bound");session.targets.push_back({anchor.gym,anchor.anchor,id});}
  }
 }
-void poll(pgr_gym::History &history){
+void poll(pgs_gym::History &history){
  auto now=clock_ms();auto vr=static_cast<const PgrVgpResultsApi*>(pgs_vgp_results_api(1));require(vr,"Promise observer unavailable");
  PgrVgpResultsResult out{};int rc=vr->poll(session.promise.get(),1,owner,&out);
  if(!rc){if(now-session.since>15000){history.refuse(session.targets[session.cursor].id,now);finish("error","Feed outcome unknown; not retried");}return;}
  Root response;if(out.value_handle)response.h=out.value_handle;
  session.promise.reset();session.reflection.reset();
- if(rc!=PGR_VR_DONE){history.refuse(session.targets[session.cursor].id,now);finish("error","Feed request rejected; batch stopped");return;}
+ if(rc!=PGS_VR_DONE){history.refuse(session.targets[session.cursor].id,now);finish("error","Feed request rejected; batch stopped");return;}
  require(response&&klass(response.get())==cls("Holoholo.Rpc","GymFeedPokemonOutProto"),"Feed response identity mismatch");
  if(success(response.get())){
   int dust=field<int>(response.get(),"StardustAwarded","System.Int32");require(dust>=0&&dust<=100000,"Invalid dust reward");
@@ -199,7 +199,7 @@ void poll(pgr_gym::History &history){
  if(session.canceled)finish("stopped","Batch stopped");
 }
 }
-void pgr_remote_gym_tick(uint64_t tid,const PgrSharedMetadataOutput *metadata){
+void pgs_remote_gym_tick(uint64_t tid,const PgrSharedMetadataOutput *metadata){
  if(!tid||tid!=uint64_t(gettid())||(owner&&owner!=tid))return;
  try{
   auto p=permission();
@@ -212,10 +212,10 @@ void pgr_remote_gym_tick(uint64_t tid,const PgrSharedMetadataOutput *metadata){
    Root all(call(session.bag.get(),"get_AllPokemon"));require(bool(all),"Pokemon collection unavailable");
    session.enumerator=Root(virtual_call(all,h(H_INC_M_ENUMERATE)));require(bool(session.enumerator),"Pokemon enumerator unavailable");event("running","Finding deployed defenders");
   }
-  pgr_gym_remote_hold(true);
+  pgs_gym_remote_hold(true);
   if(!p.valid||!p.allowed||p.command.mode!=1||p.command.token!=session.command.token||clock_ms()-session.started>=1800000)session.canceled=true;
   if(player()!=session.account){finish("stopped","Account changed; any submitted feed is not retried");return;}
-  auto history=pgr_gym_remote_history(session.account);if(!history)return;
+  auto history=pgs_gym_remote_history(session.account);if(!history)return;
   if(session.promise){poll(*history);return;}
   if(session.canceled){finish("stopped","Batch stopped");return;}
   if(session.enumerator){discover();return;}
@@ -233,4 +233,4 @@ void pgr_remote_gym_tick(uint64_t tid,const PgrSharedMetadataOutput *metadata){
   send(p,*history);
  }catch(const Failure &e){if(!session.command.token)session.command=permission().command;finish("error",e.where);}catch(...){finish("error","Remote feeding failed; batch stopped");}
 }
-void pgr_remote_gym_stop(uint64_t tid){if(owner&&owner==tid&&tid==uint64_t(gettid()))finish("stopped","Runtime stopped; submitted requests are not retried");}
+void pgs_remote_gym_stop(uint64_t tid){if(owner&&owner==tid&&tid==uint64_t(gettid()))finish("stopped","Runtime stopped; submitted requests are not retried");}

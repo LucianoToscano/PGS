@@ -43,7 +43,7 @@ void gcFree(uintptr_t h){
  assert(handles.erase(h)==1);
  if(reenterFree){reenterFree=false;const int before=invokes;
   nestedResult=api->scene(&request,reenterOutput);
-  assert(nestedResult==PGR_CD_ERR_BUSY&&invokes==before);
+  assert(nestedResult==PGS_CD_ERR_BUSY&&invokes==before);
  }
 }
 void *objectClass(void *p){assert(current(p));return *static_cast<void**>(p);}
@@ -77,17 +77,17 @@ int main(int argc,char **argv){
  host=gcNew(&heap().layer,0);
  request.version=1;request.size=sizeof(request);request.tid=static_cast<uint64_t>(gettid());request.remaining_ms=2500;request.layer=reinterpret_cast<void*>(host);
  PgrCatchDiscoveryOutput out{};
- assert(api->top(&request,&out)==PGR_CD_OK&&out.count==1);
+ assert(api->top(&request,&out)==PGS_CD_OK&&out.count==1);
  assert(gcGet(reinterpret_cast<uintptr_t>(out.handles[0]))==&heap().details[0]);
- assert(api->release(&out)==PGR_CD_OK);clean(out);assert(handles.size()==1);
- assert(api->scene(&request,&out)==PGR_CD_OK&&out.count==2);
+ assert(api->release(&out)==PGS_CD_OK);clean(out);assert(handles.size()==1);
+ assert(api->scene(&request,&out)==PGS_CD_OK&&out.count==2);
  for(int i=0;i<2;++i)assert(gcGet(reinterpret_cast<uintptr_t>(out.handles[i]))==&heap().details[i]);
  assert(handles.size()==3&&moves>=8);
  // All output roots must be detached before the first free. Rejected nested discovery
  // restamps/zeros this same buffer; it must not erase still-owned roots or invoke managed code.
  reenterOutput=&out;reenterFree=true;
- assert(api->release(&out)==PGR_CD_OK);assert(nestedResult==PGR_CD_ERR_BUSY);clean(out);assert(handles.size()==1);
- assert(api->release(&out)==PGR_CD_OK);clean(out);assert(handles.size()==1);
+ assert(api->release(&out)==PGS_CD_OK);assert(nestedResult==PGS_CD_ERR_BUSY);clean(out);assert(handles.size()==1);
+ assert(api->release(&out)==PGS_CD_OK);clean(out);assert(handles.size()==1);
  gcFree(host);assert(handles.empty());
  std::puts("PASS native discovery lifetime: moving heap and same-output release reentry, balanced roots");
  return 0;

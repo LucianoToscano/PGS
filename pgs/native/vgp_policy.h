@@ -28,7 +28,7 @@
 // QUARANTINE LIFETIME: the `seen` set survives a VGP mask toggle (off/on) exactly as the JS does --
 // clearing the blocked latch does NOT drop the quarantine. Only reset() (owner teardown / detach)
 // drops it. Keys are opaque, bounded UTF-8 byte strings (encounter ids are "p"+decimal uint64, stop
-// ids are the fort id). The host adapter validates length (<= PGR_VP_MAX_KEY_LEN) and never passes a
+// ids are the fort id). The host adapter validates length (<= PGS_VP_MAX_KEY_LEN) and never passes a
 // Number; an over-long key is treated as already-seen by the adapter and never enqueued natively.
 
 #ifdef __cplusplus
@@ -37,35 +37,35 @@ extern "C" {
 
 static_assert(sizeof(void *) == 8, "VgpPolicy native ABI requires LP64");
 
-enum PgrVgpPolicyInfo {
-  PGR_VP_FEATURE_ID     = 25,
-  PGR_VP_API_VERSION    = 1,
-  PGR_VP_CONFIG_VERSION = 1,
-  PGR_VP_SAMPLE_VERSION = 1,
-  PGR_VP_MAX_KEYS       = 2048,  // hard capacity ceiling for the quarantine set
-  PGR_VP_MAX_KEY_LEN    = 1024    // bounded UTF-8 key length (fort ids / "p"+uint64 fit well under)
+enum PgsVgpPolicyInfo {
+  PGS_VP_FEATURE_ID     = 25,
+  PGS_VP_API_VERSION    = 1,
+  PGS_VP_CONFIG_VERSION = 1,
+  PGS_VP_SAMPLE_VERSION = 1,
+  PGS_VP_MAX_KEYS       = 2048,  // hard capacity ceiling for the quarantine set
+  PGS_VP_MAX_KEY_LEN    = 1024    // bounded UTF-8 key length (fort ids / "p"+uint64 fit well under)
 };
 
 // Boolean-style results use 1/0; actions use 0 success. Everything else is a negative error.
-enum PgrVgpPolicyStatus {
-  PGR_VP_YES               = 1,   // due()/sweep()/seen(): affirmative
-  PGR_VP_OK                = 0,   // generic success / affirmative negative
-  PGR_VP_FULL              = 2,   // touch(): the quarantine is at capacity and the key is new
-  PGR_VP_ERR_NULL_ARG      = -1,
-  PGR_VP_ERR_BAD_VERSION   = -2,
-  PGR_VP_ERR_BAD_SIZE      = -3,
-  PGR_VP_ERR_BAD_CONFIG    = -4,  // out-of-range config scalar (e.g. max_keys)
-  PGR_VP_ERR_NOT_INSTALLED = -6,
-  PGR_VP_ERR_RECONFIG      = -9,
-  PGR_VP_ERR_CLOCK_FAILURE = -10,
-  PGR_VP_ERR_OFF_OWNER     = -12, // an owner-gated call arrived on a foreign thread
-  PGR_VP_ERR_BAD_KEY       = -13  // key pointer null or length 0 / > PGR_VP_MAX_KEY_LEN
+enum PgsVgpPolicyStatus {
+  PGS_VP_YES               = 1,   // due()/sweep()/seen(): affirmative
+  PGS_VP_OK                = 0,   // generic success / affirmative negative
+  PGS_VP_FULL              = 2,   // touch(): the quarantine is at capacity and the key is new
+  PGS_VP_ERR_NULL_ARG      = -1,
+  PGS_VP_ERR_BAD_VERSION   = -2,
+  PGS_VP_ERR_BAD_SIZE      = -3,
+  PGS_VP_ERR_BAD_CONFIG    = -4,  // out-of-range config scalar (e.g. max_keys)
+  PGS_VP_ERR_NOT_INSTALLED = -6,
+  PGS_VP_ERR_RECONFIG      = -9,
+  PGS_VP_ERR_CLOCK_FAILURE = -10,
+  PGS_VP_ERR_OFF_OWNER     = -12, // an owner-gated call arrived on a foreign thread
+  PGS_VP_ERR_BAD_KEY       = -13  // key pointer null or length 0 / > PGS_VP_MAX_KEY_LEN
 };
 
 // Fixed LP64 config (128 bytes). All durations are milliseconds; the native layer re-checks the
 // header and the max_keys ceiling. Mirrors the literal policy constants in vgp.js.
 struct PgrVgpPolicyConfig {
-  uint32_t version;            // == PGR_VP_CONFIG_VERSION
+  uint32_t version;            // == PGS_VP_CONFIG_VERSION
   uint32_t size;               // == sizeof(PgrVgpPolicyConfig)
   uint64_t scan_interval_ms;   // cadence between scans (vgp.js r.next = now + 2500)
   uint64_t catch_seen_ms;      // suppression for a newly selected catch target (30000)
@@ -74,7 +74,7 @@ struct PgrVgpPolicyConfig {
   uint64_t terminal_delay_ms;  // CatchSuccess / CatchFlee suppression (3600000)
   uint64_t retry_delay_ms;     // CatchEscape / CatchMissed / CatchItemReplacement (5000)
   uint64_t default_delay_ms;   // any other catch status (30000)
-  uint32_t max_keys;           // <= PGR_VP_MAX_KEYS
+  uint32_t max_keys;           // <= PGS_VP_MAX_KEYS
   uint32_t reserved;           // 0
   int32_t  status_terminal[4]; // catch status literals mapped to terminal_delay_ms; -1 = unused
   int32_t  status_retry[4];    // catch status literals mapped to retry_delay_ms; -1 = unused
@@ -85,7 +85,7 @@ static_assert(sizeof(PgrVgpPolicyConfig) == 128, "PgrVgpPolicyConfig must remain
 
 // Fixed LP64 telemetry gauge (64 bytes). Pull-only; the native layer never calls JS.
 struct PgrVgpPolicySample {
-  uint32_t version;       // == PGR_VP_SAMPLE_VERSION
+  uint32_t version;       // == PGS_VP_SAMPLE_VERSION
   uint32_t size;          // == sizeof(PgrVgpPolicySample)
   uint64_t scans;         // due() that returned YES (a scan was permitted)
   uint64_t marks;         // touch() inserts/updates
@@ -95,17 +95,17 @@ struct PgrVgpPolicySample {
   uint32_t seen_size;     // current quarantine size
   uint32_t turn;          // current catch/spin alternation counter
   uint32_t blocked;       // 1 while the uncertain latch is set
-  uint32_t full_rejects;  // touch() that hit PGR_VP_FULL
+  uint32_t full_rejects;  // touch() that hit PGS_VP_FULL
 };
 
 static_assert(sizeof(PgrVgpPolicySample) == 64, "PgrVgpPolicySample must remain 64 bytes on LP64");
 
 // Fixed LP64 table: 8-byte header + 13 function pointers = 112 bytes. All owner-gated calls carry the
 // caller's proven Unity owner tid; the owner is latched once from a genuine on-thread call and a
-// foreign thread is rejected (PGR_VP_ERR_OFF_OWNER). catch_delay() and sample() are pure / pull-only
+// foreign thread is rejected (PGS_VP_ERR_OFF_OWNER). catch_delay() and sample() are pure / pull-only
 // and run on any thread.
 struct PgrVgpPolicyApi {
-  uint32_t version;  // == PGR_VP_API_VERSION
+  uint32_t version;  // == PGS_VP_API_VERSION
   uint32_t size;     // == sizeof(PgrVgpPolicyApi)
   int (*install)(const PgrVgpPolicyConfig *config);
   // Latch the owner (idempotent) and record the host epoch. Does NOT touch the quarantine or the
@@ -124,7 +124,7 @@ struct PgrVgpPolicyApi {
   int (*sweep)(uint64_t proven_tid, uint32_t *out_size);
   // Is this key currently quarantined (present and unexpired)? YES / OK. Owner only.
   int (*seen)(uint64_t proven_tid, const char *key, uint32_t key_len);
-  // Quarantine the key until now + delay_ms (insert or refresh). PGR_VP_FULL if the set is at capacity
+  // Quarantine the key until now + delay_ms (insert or refresh). PGS_VP_FULL if the set is at capacity
   // and the key is new. Owner only.
   int (*touch)(uint64_t proven_tid, const char *key, uint32_t key_len, uint64_t delay_ms);
   // Set the scan cadence deadline to now + delay_ms. Owner only.

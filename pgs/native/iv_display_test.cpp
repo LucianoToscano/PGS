@@ -123,7 +123,7 @@ void *fake_gc_get(uintptr_t h) {
 void fake_gc_free(uintptr_t h) {
   if (g_reentrant_end_token) {
     const auto token = g_reentrant_end_token; g_reentrant_end_token = 0;
-    assert(g_api->end_catch(token, g_owner) == PGR_IV_ERR_INVALID_ARG);
+    assert(g_api->end_catch(token, g_owner) == PGS_IV_ERR_INVALID_ARG);
   }
   auto it = g_live.find(h);
   assert(it != g_live.end() && "double or invalid gchandle_free");
@@ -251,7 +251,7 @@ void *fake_runtime_invoke(const void *method, void *obj, void **params, void **e
   return nullptr;
 }
 
-#define PGR_NOP8() asm volatile("nop; nop; nop; nop; nop; nop; nop; nop;")
+#define PGS_NOP8() asm volatile("nop; nop; nop; nop; nop; nop; nop; nop;")
 
 // Game labels the originals write into the CP text before the onLeave snapshot.
 const char *g_setup_label = "999";
@@ -262,7 +262,7 @@ void (*volatile call_owned)(void *, void *, void *) = nullptr;
 
 __attribute__((noinline)) void target_setup(void *self, void *map_pokemon, int32_t weather,
                                              void *method) {
-  PGR_NOP8();
+  PGS_NOP8();
   (void)map_pokemon;
   (void)weather;
   (void)method;
@@ -270,7 +270,7 @@ __attribute__((noinline)) void target_setup(void *self, void *map_pokemon, int32
 }
 
 __attribute__((noinline)) void target_owned(void *self, void *proto, void *method) {
-  PGR_NOP8();
+  PGS_NOP8();
   (void)proto;
   (void)method;
   if (self) std::snprintf(static_cast<FakePanel *>(self)->cp_text->text, 512, "%s", g_owned_label);
@@ -379,7 +379,7 @@ PgrIvDisplayConfig make_config() {
 
 PgrIvDisplaySample take_sample() {
   PgrIvDisplaySample s{};
-  assert(g_api->sample(&s) == PGR_IV_OK);
+  assert(g_api->sample(&s) == PGS_IV_OK);
   assert(s.version == 1 && s.size == sizeof(PgrIvDisplaySample));
   return s;
 }
@@ -418,8 +418,8 @@ int run_shared_mode(void *lib) {
   cfg.external_catch_observer = 1;  // shared mode: native must NOT hook setup_address
   // begin/end are inert before install.
   assert(begin_shared(api, nullptr, nullptr, tid) == 0);
-  assert(api->end_catch(1, tid) == PGR_IV_ERR_NOT_INSTALLED);
-  assert(api->install(&cfg) == PGR_IV_OK);
+  assert(api->end_catch(1, tid) == PGS_IV_ERR_NOT_INSTALLED);
+  assert(api->install(&cfg) == PGS_IV_OK);
 
   // Fixture: a perfect-IV (100%) wild encounter at level 10 (mirrors the default-mode block).
   FakeText plate_text; init_text(&plate_text);
@@ -432,7 +432,7 @@ int run_shared_mode(void *lib) {
   const char *kOverlay = "999 \xc2\xb7 Lv 10 \xc2\xb7 <color=\"#ff5252\">IV 100%</color>";
 
   // S1. The Dobby setup hook is SKIPPED: calling the original directly performs no capture.
-  assert(api->update(1, 1, 2000, tid) == PGR_IV_OK);
+  assert(api->update(1, 1, 2000, tid) == PGS_IV_OK);
   target_setup(&plate, &map, 0, &dummy_method);  // un-intercepted: writes only the game label
   assert(std::strcmp(plate_text.text, "999") == 0 && take_sample().catch_active == 0);
 
@@ -443,22 +443,22 @@ int run_shared_mode(void *lib) {
   assert(t1 != 0);
   assert(take_sample().encounter_serial >= 1);  // begin announced the encounter
   target_setup(&plate, &map, 0, &dummy_method);  // the original Gum would chain
-  assert(api->end_catch(t1, tid) == PGR_IV_OK);
+  assert(api->end_catch(t1, tid) == PGS_IV_OK);
   assert(take_sample().catch_active == 1 && std::strcmp(plate_text.text, kOverlay) == 0);
 
   // S3. Duplicate end is rejected (frame already closed) -- no double free, no steal.
-  assert(api->end_catch(t1, tid) == PGR_IV_ERR_INVALID_ARG);
-  assert(api->tick(tid, 1) == PGR_IV_OK);  // clear the record
+  assert(api->end_catch(t1, tid) == PGS_IV_ERR_INVALID_ARG);
+  assert(api->tick(tid, 1) == PGS_IV_OK);  // clear the record
 
   // S4. Monotonic tokens + mismatched end: a wrong token must NOT steal/clear the live frame.
   init_text(&plate_text);
   uint64_t t2 = begin_shared(api, &plate, &map, tid);
   assert(t2 != 0 && t2 != t1);              // monotonic
-  assert(api->end_catch(t2 + 9999, tid) == PGR_IV_ERR_INVALID_ARG);  // mismatch: frame intact
+  assert(api->end_catch(t2 + 9999, tid) == PGS_IV_ERR_INVALID_ARG);  // mismatch: frame intact
   target_setup(&plate, &map, 0, &dummy_method);
-  assert(api->end_catch(t2, tid) == PGR_IV_OK);  // the matching end still completes
+  assert(api->end_catch(t2, tid) == PGS_IV_OK);  // the matching end still completes
   assert(std::strcmp(plate_text.text, kOverlay) == 0);
-  assert(api->tick(tid, 1) == PGR_IV_OK);
+  assert(api->tick(tid, 1) == PGS_IV_OK);
 
   // S5. Non-reentrant: a second begin while a frame is open returns 0 (no second claim).
   init_text(&plate_text);
@@ -466,8 +466,8 @@ int run_shared_mode(void *lib) {
   assert(t3 != 0);
   assert(begin_shared(api, &plate, &map, tid) == 0);  // nested begin refused
   target_setup(&plate, &map, 0, &dummy_method);
-  assert(api->end_catch(t3, tid) == PGR_IV_OK);
-  assert(api->tick(tid, 1) == PGR_IV_OK);
+  assert(api->end_catch(t3, tid) == PGS_IV_OK);
+  assert(api->tick(tid, 1) == PGS_IV_OK);
 
   // S6. Thread identity: a foreign thread cannot claim (not the owner) nor complete a frame.
   init_text(&plate_text);
@@ -475,63 +475,63 @@ int run_shared_mode(void *lib) {
   assert(t4 != 0);
   std::thread([&]() {
     assert(begin_shared(g_api, &plate, &map, this_tid()) == 0);        // foreign: not the owner
-    assert(g_api->end_catch(t4, this_tid()) == PGR_IV_ERR_INVALID_ARG);  // foreign end rejected
+    assert(g_api->end_catch(t4, this_tid()) == PGS_IV_ERR_INVALID_ARG);  // foreign end rejected
   }).join();
   // A proven_tid that does not match the real caller is also refused.
   assert(begin_shared(api, &plate, &map, tid + 1) == 0);
   target_setup(&plate, &map, 0, &dummy_method);
-  assert(api->end_catch(t4, tid) == PGR_IV_OK);  // the real owner still completes its frame
+  assert(api->end_catch(t4, tid) == PGS_IV_OK);  // the real owner still completes its frame
   assert(std::strcmp(plate_text.text, kOverlay) == 0);
-  assert(api->tick(tid, 1) == PGR_IV_OK);
+  assert(api->tick(tid, 1) == PGS_IV_OK);
 
   // S7. Cancellation straddling the original: a disable after begin (before end) must never
   //     apply a stale overlay. The record is retained un-applied (the on-screen label stays the
   //     game's own) and the channel does not fault; a later enable+tick applies it.
   init_text(&plate_text);
-  assert(api->update(1, 1, 2000, tid) == PGR_IV_OK);
+  assert(api->update(1, 1, 2000, tid) == PGS_IV_OK);
   uint64_t t5 = begin_shared(api, &plate, &map, tid);
   assert(t5 != 0);
   target_setup(&plate, &map, 0, &dummy_method);
-  assert(api->update(0, 0, 2000, tid) == PGR_IV_OK);  // preference OFF while in flight
-  assert(api->end_catch(t5, tid) == PGR_IV_OK);
+  assert(api->update(0, 0, 2000, tid) == PGS_IV_OK);  // preference OFF while in flight
+  assert(api->end_catch(t5, tid) == PGS_IV_OK);
   PgrIvDisplaySample s = take_sample();
   assert(std::strcmp(plate_text.text, "999") == 0);                   // stale overlay NOT applied
-  assert(s.catch_active == 1 && (s.fault & PGR_IV_FAULT_CATCH) == 0);  // retained, un-applied
-  assert(api->update(1, 1, 2000, tid) == PGR_IV_OK);
-  assert(api->tick(tid, 0) == PGR_IV_OK);
+  assert(s.catch_active == 1 && (s.fault & PGS_IV_FAULT_CATCH) == 0);  // retained, un-applied
+  assert(api->update(1, 1, 2000, tid) == PGS_IV_OK);
+  assert(api->tick(tid, 0) == PGS_IV_OK);
   assert(std::strcmp(plate_text.text, kOverlay) == 0);               // applied on re-enable
 
   // S7b. OFF then ON during the original still revokes the old generation.
-  assert(api->tick(tid, 1) == PGR_IV_OK);
-  assert(api->update(1, 1, 2000, tid) == PGR_IV_OK);
+  assert(api->tick(tid, 1) == PGS_IV_OK);
+  assert(api->update(1, 1, 2000, tid) == PGS_IV_OK);
   uint64_t t6 = begin_shared(api, &plate, &map, tid);
   target_setup(&plate, &map, 0, &dummy_method);
-  assert(api->update(0, 0, 2000, tid) == PGR_IV_OK);
-  assert(api->update(1, 1, 2000, tid) == PGR_IV_OK);
+  assert(api->update(0, 0, 2000, tid) == PGS_IV_OK);
+  assert(api->update(1, 1, 2000, tid) == PGS_IV_OK);
   g_reentrant_end_token = t6; // cleanup re-entry must not consume this frame twice
-  assert(api->end_catch(t6, tid) == PGR_IV_OK);
+  assert(api->end_catch(t6, tid) == PGS_IV_OK);
   assert(g_reentrant_end_token == 0);
   assert(std::strcmp(plate_text.text, "999") == 0);
-  assert(api->tick(tid, 0) == PGR_IV_OK);
+  assert(api->tick(tid, 0) == PGS_IV_OK);
   assert(std::strcmp(plate_text.text, kOverlay) == 0);
 
   // S7c. Runtime stop while the original runs releases the frame without recapture.
-  assert(api->tick(tid, 1) == PGR_IV_OK);
-  assert(api->update(1, 1, 2000, tid) == PGR_IV_OK);
+  assert(api->tick(tid, 1) == PGS_IV_OK);
+  assert(api->update(1, 1, 2000, tid) == PGS_IV_OK);
   uint64_t t7 = begin_shared(api, &plate, &map, tid);
   target_setup(&plate, &map, 0, &dummy_method);
-  assert(api->disable() == PGR_IV_OK);
-  assert(api->end_catch(t7, tid) == PGR_IV_OK);
+  assert(api->disable() == PGS_IV_OK);
+  assert(api->end_catch(t7, tid) == PGS_IV_OK);
   assert(take_sample().catch_active == 0 && take_sample().owned_root_count == 0);
 
   // S7d. A disabled entry keeps its zero generation even if enabled by the original.
-  assert(api->update(0, 0, 2000, tid) == PGR_IV_OK);
+  assert(api->update(0, 0, 2000, tid) == PGS_IV_OK);
   uint64_t t8 = begin_shared(api, &plate, &map, tid);
   target_setup(&plate, &map, 0, &dummy_method);
-  assert(api->update(1, 1, 2000, tid) == PGR_IV_OK);
-  assert(api->end_catch(t8, tid) == PGR_IV_OK);
+  assert(api->update(1, 1, 2000, tid) == PGS_IV_OK);
+  assert(api->end_catch(t8, tid) == PGS_IV_OK);
   assert(std::strcmp(plate_text.text, "999") == 0);
-  assert(api->tick(tid, 0) == PGR_IV_OK);
+  assert(api->tick(tid, 0) == PGS_IV_OK);
   assert(std::strcmp(plate_text.text, kOverlay) == 0);
 
   // S7e. Gum receives fresh arguments when the rooted plate target changes.
@@ -542,19 +542,19 @@ int run_shared_mode(void *lib) {
   uint64_t t9 = api->begin_catch(&plate, &map, tid, forwarded);
   assert(t9 && forwarded[0] == &moved_plate && forwarded[1] == &map);
   target_setup(forwarded[0], forwarded[1], 0, &dummy_method);
-  assert(api->end_catch(t9, tid) == PGR_IV_OK);
+  assert(api->end_catch(t9, tid) == PGS_IV_OK);
   assert(std::strcmp(moved_text.text, kOverlay) == 0);
   g_redirect_from = g_redirect_to = nullptr;
 
   // S8. The owned panel hook is STILL a Dobby hook in shared mode.
   FakeText panel_text; init_text(&panel_text);
   FakePanel panel{&cls_panel, &panel_text, &mon, gm};
-  assert(api->update(0, 1, 2000, tid) == PGR_IV_OK);
+  assert(api->update(0, 1, 2000, tid) == PGS_IV_OK);
   call_owned(&panel, &mon, &dummy_method);
   assert(take_sample().owned_count == 1 && std::strstr(panel_text.text, "</b>") != nullptr);
 
   // S9. Stop restores+frees everything; every GC handle is balanced.
-  assert(api->tick(tid, 1) == PGR_IV_OK);
+  assert(api->tick(tid, 1) == PGS_IV_OK);
   s = take_sample();
   assert(s.catch_active == 0 && s.owned_count == 0 && s.owned_root_count == 0);
   assert(g_live.empty());
@@ -604,28 +604,28 @@ int main(int argc, char **argv) {
   PgrIvDisplayConfig cfg = make_config();
 
   // Validation before install.
-  assert(api->install(nullptr) == PGR_IV_ERR_INVALID_ARG);
+  assert(api->install(nullptr) == PGS_IV_ERR_INVALID_ARG);
   PgrIvDisplayConfig bad = cfg;
   bad.version = 2;
-  assert(api->install(&bad) == PGR_IV_ERR_BAD_VERSION);
+  assert(api->install(&bad) == PGS_IV_ERR_BAD_VERSION);
   bad = cfg; bad.size = sizeof(PgrIvDisplayConfig) - 1;
-  assert(api->install(&bad) == PGR_IV_ERR_BAD_SIZE);
+  assert(api->install(&bad) == PGS_IV_ERR_BAD_SIZE);
   bad = cfg; bad.class_text = nullptr;  // required pointer
-  assert(api->install(&bad) == PGR_IV_ERR_MISSING_PTR);
+  assert(api->install(&bad) == PGS_IV_ERR_MISSING_PTR);
   bad = cfg; bad.setup_address = bad.owned_update_address;
-  assert(api->install(&bad) == PGR_IV_ERR_DUPLICATE_TARGET);
+  assert(api->install(&bad) == PGS_IV_ERR_DUPLICATE_TARGET);
 
   // Not installed yet.
   PgrIvDisplaySample s{};
-  assert(api->update(1, 1, 1000, tid) == PGR_IV_ERR_NOT_INSTALLED);
-  assert(api->tick(tid, 0) == PGR_IV_ERR_NOT_INSTALLED);
-  assert(api->disable() == PGR_IV_ERR_NOT_INSTALLED);
+  assert(api->update(1, 1, 1000, tid) == PGS_IV_ERR_NOT_INSTALLED);
+  assert(api->tick(tid, 0) == PGS_IV_ERR_NOT_INSTALLED);
+  assert(api->disable() == PGS_IV_ERR_NOT_INSTALLED);
 
   // Install, idempotent re-install, refused rebind.
-  assert(api->install(&cfg) == PGR_IV_OK);
-  assert(api->install(&cfg) == PGR_IV_OK);
+  assert(api->install(&cfg) == PGS_IV_OK);
+  assert(api->install(&cfg) == PGS_IV_OK);
   bad = cfg; bad.class_color = &cls_other;
-  assert(api->install(&bad) == PGR_IV_ERR_RECONFIG_MISMATCH);
+  assert(api->install(&bad) == PGS_IV_ERR_RECONFIG_MISMATCH);
 
   int dummy_method = 0;
   void *gm = &g_gm_obj;
@@ -645,10 +645,10 @@ int main(int argc, char **argv) {
   // 1. Valid catch overlay. SetPokemonUI drives the original (writing "999"), then the
   //    onLeave capture overlays the computed label. The on-screen prefix is the game's own
   //    CP text ("999"); the telemetry label carries the computed CP ("123").
-  assert(api->update(1, 1, 2000, tid) == PGR_IV_OK);
+  assert(api->update(1, 1, 2000, tid) == PGS_IV_OK);
   call_setup(&plate, &map, 0, &dummy_method);
   s = take_sample();
-  assert(s.catch_active == 1 && s.catch_serial >= 1 && s.catch_notice == PGR_IV_NOTICE_LABEL);
+  assert(s.catch_active == 1 && s.catch_serial >= 1 && s.catch_notice == PGS_IV_NOTICE_LABEL);
   assert(s.catch_cp == 123 && s.catch_attack == 15 && s.catch_level_half == 20);
   assert(std::strcmp(s.catch_label, kCatchFull) == 0);
   assert(std::strcmp(plate_text.text, kCatchOverlay) == 0);
@@ -661,32 +661,32 @@ int main(int argc, char **argv) {
 
   // 2. Disable restores the authentic label and style; the record is retained (re-enable
   //    re-applies). Only our own label is restored (ownership check).
-  assert(api->disable() == PGR_IV_OK);
-  assert(api->tick(tid, 0) == PGR_IV_OK);
+  assert(api->disable() == PGS_IV_OK);
+  assert(api->tick(tid, 0) == PGS_IV_OK);
   assert(std::strcmp(plate_text.text, "999") == 0 && plate_text.rich == 0 && plate_text.fit == 1);
   assert(take_sample().catch_active == 1);  // still present, just restored
   // Re-enable re-applies.
-  assert(api->update(1, 1, 2000, tid) == PGR_IV_OK);
-  assert(api->tick(tid, 0) == PGR_IV_OK);
+  assert(api->update(1, 1, 2000, tid) == PGS_IV_OK);
+  assert(api->tick(tid, 0) == PGS_IV_OK);
   assert(std::strcmp(plate_text.text, kCatchOverlay) == 0);
 
   // 3. The game independently refreshed the label: a disable must NOT clobber it.
   std::snprintf(plate_text.text, 512, "%s", "player-edited");
-  assert(api->disable() == PGR_IV_OK);
-  assert(api->tick(tid, 0) == PGR_IV_OK);
+  assert(api->disable() == PGS_IV_OK);
+  assert(api->tick(tid, 0) == PGS_IV_OK);
   assert(std::strcmp(plate_text.text, "player-edited") == 0);  // left intact
-  assert(api->tick(tid, 1) == PGR_IV_OK);  // stop clears the record
+  assert(api->tick(tid, 1) == PGS_IV_OK);  // stop clears the record
   assert(take_sample().catch_active == 0);
 
   // 4. Encounter-id mismatch -> pending, no overlay.
   wild_map.id = 2002;
   init_text(&plate_text);
-  assert(api->update(1, 1, 2000, tid) == PGR_IV_OK);
+  assert(api->update(1, 1, 2000, tid) == PGS_IV_OK);
   uint64_t before = take_sample().catch_serial;
   call_setup(&plate, &map, 0, &dummy_method);
   s = take_sample();
-  assert(s.catch_serial == before + 1 && s.catch_notice == PGR_IV_NOTICE_PENDING &&
-         s.catch_reason == PGR_IV_REASON_ENCOUNTER_ID_MISMATCH && s.catch_active == 0);
+  assert(s.catch_serial == before + 1 && s.catch_notice == PGS_IV_NOTICE_PENDING &&
+         s.catch_reason == PGS_IV_REASON_ENCOUNTER_ID_MISMATCH && s.catch_active == 0);
   assert(std::strcmp(plate_text.text, "999") == 0);
   wild_map.id = 1001;
 
@@ -696,7 +696,7 @@ int main(int argc, char **argv) {
   init_text(&plate_text);
   call_setup(&plate, &tmap, 0, &dummy_method);
   assert(take_sample().catch_active == 1 && std::strcmp(plate_text.text, kCatchOverlay) == 0);
-  assert(api->tick(tid, 1) == PGR_IV_OK);
+  assert(api->tick(tid, 1) == PGS_IV_OK);
 
   // 6. Invalid CP (<=0) and invalid IV (>15): CP fails closed (pending); an out-of-range IV
   //    renders '--' not zero.
@@ -706,7 +706,7 @@ int main(int argc, char **argv) {
   before = take_sample().catch_serial;
   call_setup(&plate, &map, 0, &dummy_method);
   s = take_sample();
-  assert(s.catch_notice == PGR_IV_NOTICE_PENDING && s.catch_reason == PGR_IV_REASON_STATS_NOT_POPULATED);
+  assert(s.catch_notice == PGS_IV_NOTICE_PENDING && s.catch_reason == PGS_IV_REASON_STATS_NOT_POPULATED);
   assert(std::strcmp(plate_text.text, "999") == 0);
 
   init_text(&plate_text);
@@ -714,7 +714,7 @@ int main(int argc, char **argv) {
   wild_resp.pokemon = &bad_iv;
   call_setup(&plate, &map, 0, &dummy_method);
   assert(std::strstr(plate_text.text, "IV --") != nullptr);  // '--' not a number, not zero
-  assert(api->tick(tid, 1) == PGR_IV_OK);
+  assert(api->tick(tid, 1) == PGS_IV_OK);
   wild_resp.pokemon = &mon;
 
   // 7. Gradient thresholds: >=80 band, <80 default (#dedede), and the perfect #ff5252.
@@ -741,16 +741,16 @@ int main(int argc, char **argv) {
   wild_resp.pokemon = &half;
   call_setup(&plate, &map, 0, &dummy_method);
   assert(std::strstr(plate_text.text, "Lv 10.5") != nullptr);
-  assert(api->tick(tid, 1) == PGR_IV_OK);
+  assert(api->tick(tid, 1) == PGS_IV_OK);
   wild_resp.pokemon = &mon;
 
   // 9. Owned overlay is bold; catch and owned toggle independently.
   FakeText panel_text; init_text(&panel_text);
   FakePanel panel{&cls_panel, &panel_text, &mon, gm};
-  assert(api->update(0, 1, 2000, tid) == PGR_IV_OK);  // catch OFF, owned ON
+  assert(api->update(0, 1, 2000, tid) == PGS_IV_OK);  // catch OFF, owned ON
   call_owned(&panel, &mon, &dummy_method);
   s = take_sample();
-  assert(s.owned_count == 1 && s.owned_notice == PGR_IV_NOTICE_LABEL && s.owned_cp == 123);
+  assert(s.owned_count == 1 && s.owned_notice == PGS_IV_NOTICE_LABEL && s.owned_cp == 123);
   assert(std::strncmp(panel_text.text, "<b>CP500 \xc2\xb7", 11) == 0 &&
          std::strstr(panel_text.text, "</b>") != nullptr);
   // Owned records DO snapshot/apply the optional outline (created then enabled here).
@@ -763,16 +763,16 @@ int main(int argc, char **argv) {
   call_setup(&plate, &map, 0, &dummy_method);
   s = take_sample();
   assert(std::strcmp(plate_text.text, "999") == 0);  // original label untouched (not applied)
-  assert(s.catch_active == 1 && (s.fault & PGR_IV_FAULT_CATCH) == 0);  // retained, un-applied
+  assert(s.catch_active == 1 && (s.fault & PGS_IV_FAULT_CATCH) == 0);  // retained, un-applied
   // Toggle catch ON (no new hook pass): the next owner-thread tick applies the retained record.
-  assert(api->update(1, 1, 2000, tid) == PGR_IV_OK);
-  assert(api->tick(tid, 0) == PGR_IV_OK);
+  assert(api->update(1, 1, 2000, tid) == PGS_IV_OK);
+  assert(api->tick(tid, 0) == PGS_IV_OK);
   assert(std::strcmp(plate_text.text, kCatchOverlay) == 0 && take_sample().catch_active == 1);
-  assert(api->tick(tid, 1) == PGR_IV_OK);  // clear catch+owned for the next block
+  assert(api->tick(tid, 1) == PGS_IV_OK);  // clear catch+owned for the next block
   assert(panel_text.go.outline->enabled == 0);  // owned outline restored to its snapshot on stop
 
   // 10. max-8 eviction: nine distinct panels keep only eight overlays (oldest evicted).
-  assert(api->update(0, 1, 2000, tid) == PGR_IV_OK);
+  assert(api->update(0, 1, 2000, tid) == PGS_IV_OK);
   FakeText pt[9];
   FakePanel pp[9];
   for (int i = 0; i < 9; ++i) {
@@ -781,50 +781,50 @@ int main(int argc, char **argv) {
     call_owned(&pp[i], &mon, &dummy_method);
   }
   s = take_sample();
-  assert(s.owned_count == PGR_IV_MAX_OWNED);
+  assert(s.owned_count == PGS_IV_MAX_OWNED);
   // The oldest panel was evicted and restored to its game label.
   assert(std::strcmp(pt[0].text, "CP500") == 0);
   assert(std::strstr(pt[8].text, "</b>") != nullptr);
-  assert(api->tick(tid, 1) == PGR_IV_OK);
+  assert(api->tick(tid, 1) == PGS_IV_OK);
   assert(take_sample().owned_count == 0);
 
   // 10b. Runtime outline unavailable (AddComponent yields a wrong class) fails locally: the
   //      bold overlay still applies and the owned channel does NOT fault.
   FakeText ot; init_text(&ot);
   FakePanel op{&cls_panel, &ot, &mon, gm};
-  assert(api->update(0, 1, 2000, tid) == PGR_IV_OK);
+  assert(api->update(0, 1, 2000, tid) == PGS_IV_OK);
   g_outline_bad_class = true;
   call_owned(&op, &mon, &dummy_method);
   g_outline_bad_class = false;
   s = take_sample();
-  assert(s.owned_count == 1 && (s.fault & PGR_IV_FAULT_OWNED) == 0);
+  assert(s.owned_count == 1 && (s.fault & PGS_IV_FAULT_OWNED) == 0);
   assert(std::strstr(ot.text, "</b>") != nullptr);
-  assert(api->tick(tid, 1) == PGR_IV_OK);
+  assert(api->tick(tid, 1) == PGS_IV_OK);
 
   // 11. Lease expired: a short lease elapses, and the next tick restores the overlay.
   init_text(&plate_text);
-  assert(api->update(1, 1, 10, tid) == PGR_IV_OK);
+  assert(api->update(1, 1, 10, tid) == PGS_IV_OK);
   call_setup(&plate, &map, 0, &dummy_method);
   assert(std::strcmp(plate_text.text, kCatchOverlay) == 0);
   usleep(20000);  // lease (10 ms) expires
-  assert(api->tick(tid, 0) == PGR_IV_OK);
+  assert(api->tick(tid, 0) == PGS_IV_OK);
   assert(std::strcmp(plate_text.text, "999") == 0);  // restored, record kept
-  assert(api->tick(tid, 1) == PGR_IV_OK);
+  assert(api->tick(tid, 1) == PGS_IV_OK);
 
   // 12. Reentrant disable DURING a getter revokes the apply (no overlay written) and never
   //     leaves the owner stolen or the record applied.
   init_text(&plate_text);
-  assert(api->update(1, 1, 2000, tid) == PGR_IV_OK);
+  assert(api->update(1, 1, 2000, tid) == PGS_IV_OK);
   g_getfont_disables = true;
   call_setup(&plate, &map, 0, &dummy_method);
   assert(std::strcmp(plate_text.text, "999") == 0);  // apply revoked by the reentrant disable
-  assert(api->tick(tid, 1) == PGR_IV_OK);
+  assert(api->tick(tid, 1) == PGS_IV_OK);
 
   // 13. A foreign thread cannot steal the owner: its update is refused and a setup call on it
   //     performs no capture.
   init_text(&plate_text);
   std::thread([&]() {
-    assert(g_api->update(1, 1, 2000, this_tid()) == PGR_IV_ERR_INVALID_ARG);
+    assert(g_api->update(1, 1, 2000, this_tid()) == PGS_IV_ERR_INVALID_ARG);
     call_setup(&plate, &map, 0, &dummy_method);  // not owner: chains the original only
   }).join();
   assert(std::strcmp(plate_text.text, "999") == 0 && take_sample().catch_active == 0);
@@ -835,41 +835,41 @@ int main(int argc, char **argv) {
   //      channel ends enabled. The record is retained un-applied; a later tick (now on the
   //      current generation) applies it.
   init_text(&plate_text);
-  assert(api->update(1, 1, 2000, tid) == PGR_IV_OK);
+  assert(api->update(1, 1, 2000, tid) == PGS_IV_OK);
   g_getfont_toggles = true;
   call_setup(&plate, &map, 0, &dummy_method);
   s = take_sample();
   assert(std::strcmp(plate_text.text, "999") == 0);  // apply revoked by the disable+re-enable
-  assert(s.catch_active == 1 && (s.fault & PGR_IV_FAULT_CATCH) == 0);  // retained, un-applied
-  assert(api->tick(tid, 0) == PGR_IV_OK);            // current generation now applies
+  assert(s.catch_active == 1 && (s.fault & PGS_IV_FAULT_CATCH) == 0);  // retained, un-applied
+  assert(api->tick(tid, 0) == PGS_IV_OK);            // current generation now applies
   assert(std::strcmp(plate_text.text, kCatchOverlay) == 0);
-  assert(api->tick(tid, 1) == PGR_IV_OK);
+  assert(api->tick(tid, 1) == PGS_IV_OK);
 
   // 13b. Disable DURING string_new (the set_text allocation) revokes before set_text runs. The
   //      style setters that already ran are restored to the authentic snapshot (a partial apply
   //      must not leave a half-styled label) and the channel does NOT fault -- cancellation is
   //      not an error.
   init_text(&plate_text);
-  assert(api->update(1, 1, 2000, tid) == PGR_IV_OK);
+  assert(api->update(1, 1, 2000, tid) == PGS_IV_OK);
   g_stringnew_disables = true;
   call_setup(&plate, &map, 0, &dummy_method);
   g_stringnew_disables = false;
   s = take_sample();
   assert(std::strcmp(plate_text.text, "999") == 0);       // label never written
   assert(plate_text.rich == 0 && plate_text.fit == 1);    // style restored on cancellation
-  assert(s.catch_active == 1 && (s.fault & PGR_IV_FAULT_CATCH) == 0);
-  assert(api->tick(tid, 1) == PGR_IV_OK);
+  assert(s.catch_active == 1 && (s.fault & PGS_IV_FAULT_CATCH) == 0);
+  assert(api->tick(tid, 1) == PGS_IV_OK);
 
   // 13c. A destroyed target is dropped (never restored) on the next tick; its roots are freed
   //      and the channel does not fault.
   init_text(&plate_text);
-  assert(api->update(1, 1, 2000, tid) == PGR_IV_OK);
+  assert(api->update(1, 1, 2000, tid) == PGS_IV_OK);
   call_setup(&plate, &map, 0, &dummy_method);
   assert(std::strcmp(plate_text.text, kCatchOverlay) == 0 && take_sample().catch_active == 1);
   plate_text.destroyed = 1;  // UnityEngine.Object.op_Implicit now reports the Text dead
-  assert(api->tick(tid, 0) == PGR_IV_OK);
+  assert(api->tick(tid, 0) == PGS_IV_OK);
   s = take_sample();
-  assert(s.catch_active == 0 && (s.fault & PGR_IV_FAULT_CATCH) == 0);  // dropped, no restore call
+  assert(s.catch_active == 0 && (s.fault & PGS_IV_FAULT_CATCH) == 0);  // dropped, no restore call
   plate_text.destroyed = 0;
 
   // 13d. A reentrant STOPPING tick that fires from inside op_Implicit during a free is a guarded
@@ -877,12 +877,12 @@ int main(int argc, char **argv) {
   //      fake gchandle_free asserts on a double free) nor leaks a record.
   FakeText nt; init_text(&nt);
   FakePanel np{&cls_panel, &nt, &mon, gm};
-  assert(api->update(0, 1, 2000, tid) == PGR_IV_OK);
+  assert(api->update(0, 1, 2000, tid) == PGS_IV_OK);
   call_owned(&np, &mon, &dummy_method);
   assert(take_sample().owned_count == 1);
   nt.destroyed = 1;            // forces a drop on the next tick
   g_alive_nested_tick = true;  // op_Implicit re-enters tick(stopping) exactly once
-  assert(api->tick(tid, 0) == PGR_IV_OK);
+  assert(api->tick(tid, 0) == PGS_IV_OK);
   assert(take_sample().owned_count == 0);  // dropped exactly once; the nested stop was a no-op
   nt.destroyed = 0;
 
@@ -892,39 +892,39 @@ int main(int argc, char **argv) {
   //      absent until a fresh capture pass -- see the limitations note to the coordinator).
   FakeText gt; init_text(&gt);
   FakePanel gp{&cls_panel, &gt, &mon, gm};
-  assert(api->update(0, 0, 2000, tid) == PGR_IV_OK);  // owner proven; both channels OFF
+  assert(api->update(0, 0, 2000, tid) == PGS_IV_OK);  // owner proven; both channels OFF
   call_owned(&gp, &mon, &dummy_method);
   s = take_sample();
-  assert(s.owned_count == 1 && (s.fault & PGR_IV_FAULT_OWNED) == 0);
+  assert(s.owned_count == 1 && (s.fault & PGS_IV_FAULT_OWNED) == 0);
   assert(gt.go.outline == nullptr);            // no AddComponent while disabled
   assert(std::strcmp(gt.text, "CP500") == 0);  // captured but not applied
-  assert(api->update(0, 1, 2000, tid) == PGR_IV_OK);
-  assert(api->tick(tid, 0) == PGR_IV_OK);
+  assert(api->update(0, 1, 2000, tid) == PGS_IV_OK);
+  assert(api->tick(tid, 0) == PGS_IV_OK);
   assert(std::strstr(gt.text, "</b>") != nullptr);  // label now applied on enable
-  assert(api->tick(tid, 1) == PGR_IV_OK);
+  assert(api->tick(tid, 1) == PGS_IV_OK);
 
   // 14. Managed exception from a getter faults the channel, writes no overlay, frees roots.
   init_text(&plate_text);
-  assert(api->update(1, 1, 2000, tid) == PGR_IV_OK);
+  assert(api->update(1, 1, 2000, tid) == PGS_IV_OK);
   g_throw_method = &m_get_rich;
   before = take_sample().catch_serial;
   call_setup(&plate, &map, 0, &dummy_method);
   s = take_sample();
-  assert((s.fault & PGR_IV_FAULT_CATCH) != 0 && s.catch_notice == PGR_IV_NOTICE_UNAVAILABLE);
+  assert((s.fault & PGS_IV_FAULT_CATCH) != 0 && s.catch_notice == PGS_IV_NOTICE_UNAVAILABLE);
   assert(std::strcmp(plate_text.text, "999") == 0);
   g_throw_method = nullptr;
 
   // 15. Root allocation failure: no overlay, no leak, owned channel unaffected (independent).
   init_text(&panel_text);
-  assert(api->update(0, 1, 2000, tid) == PGR_IV_OK);
+  assert(api->update(0, 1, 2000, tid) == PGS_IV_OK);
   g_fail_root = true;
   call_owned(&panel, &mon, &dummy_method);
   g_fail_root = false;
   s = take_sample();
-  assert((s.fault & PGR_IV_FAULT_OWNED) != 0 && std::strcmp(panel_text.text, "CP500") == 0);
+  assert((s.fault & PGS_IV_FAULT_OWNED) != 0 && std::strcmp(panel_text.text, "CP500") == 0);
 
   // 16. Stop restores and frees everything; all GC handles are balanced.
-  assert(api->tick(tid, 1) == PGR_IV_OK);
+  assert(api->tick(tid, 1) == PGS_IV_OK);
   s = take_sample();
   assert(s.catch_active == 0 && s.owned_count == 0 && s.owned_root_count == 0);
   assert(g_live.empty());

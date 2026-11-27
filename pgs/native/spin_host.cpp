@@ -15,7 +15,7 @@ namespace {
 using namespace pgr_shared_meta;
 PgsSpinHostConfig config{},accepted{};
 PgrSharedMetadataOutput metadata{};
-PgrSharedMetaExtraExports extra{};
+PgsSharedMetaExtraExports extra{};
 std::mutex setup_mutex,policy_mutex,event_mutex;
 std::atomic<bool> configured{false},stopping{false},busy{false};
 std::atomic<uint32_t> caps{0},owned{0};
@@ -143,7 +143,7 @@ int tick(uint64_t tid,uint64_t sequence,uint64_t opener){
 int sample(PgsSpinHostSample *s){if(!s)return PGS_SPH_BAD_CONFIG;*s={1,sizeof(*s),uint32_t(configured.load()),caps.load(),uint32_t(stopping.load()),owned.load(),camera_error.load(),quick_error.load(),configured?config.owner_tid:0,ticks.load()};return 0;}
 int next_event(PgsSpinHostEvent *e){if(!e)return PGS_SPH_BAD_CONFIG;std::lock_guard<std::mutex> lock(event_mutex);if(!count){*e={};return PGS_SPH_EMPTY;}*e=events[head];head=(head+1)%32;--count;return 0;}
 void pulse(void*,const PgrUnityPulse *p){if(!p||p->reserved||p->tid<=0)return;auto scheduler=static_cast<const PgrUnitySchedulerApi*>(pgs_unity_scheduler_api(2));if(!scheduler||scheduler->valid(p->generation)!=1)return;
- uint64_t opener=1;auto shared=static_cast<const PgrSharedHostApi*>(pgs_shared_host_api(1));PgrSharedHostSample s{};if(shared&&!shared->sample(&s))opener=s.hook_frames;tick(p->tid,p->sequence,opener);
+ uint64_t opener=1;auto shared=static_cast<const PgrSharedHostApi*>(pgs_shared_host_api(1));PgsSharedHostSample s{};if(shared&&!shared->sample(&s))opener=s.hook_frames;tick(p->tid,p->sequence,opener);
 }
 const PgsSpinHostApi api{1,sizeof(PgsSpinHostApi),configure,update,tick,stop,sample,next_event,pulse};
 }

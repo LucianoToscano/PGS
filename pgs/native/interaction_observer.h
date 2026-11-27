@@ -5,7 +5,7 @@ extern "C" const void *pgs_interaction_host_api(uint32_t);
 
 // Private owner-side view of feature69 API2. No dependency on API1's diagnostic
 // snapshot size. Missing API2 is an inert observer, never permission to re-hook.
-namespace pgr_interaction_owner {
+namespace pgs_interaction_owner {
 struct Api {
     uint32_t version,size;
     int (*wants_target)(uint32_t);

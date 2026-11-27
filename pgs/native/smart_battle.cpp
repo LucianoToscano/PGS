@@ -34,7 +34,7 @@
 //
 // All game data (types, base stats, moves) comes from the game master at runtime.
 namespace {
-using namespace pgr_counter;
+using namespace pgs_counter;
 using namespace pgr_shared_meta;
 struct Failure {const char *where;};
 void require(bool ok,const char *where){if(!ok)throw Failure{where};}
@@ -112,12 +112,12 @@ bool configured(){
  if(!tr||tr->sample(&a)||!a.snapshot_fresh||a.fault||tr->get_string(21,s,sizeof(s)-1,&n)||n!=4||std::memcmp(s,"F1|1",4)!=0)return false;
  int active=0,ready=0;tr->get_bool(3,&active);tr->get_bool(16,&ready);return active&&ready;
 }
-pgr_smart_party::HealingPolicy healing_policy(){
+pgs_smart_party::HealingPolicy healing_policy(){
  auto tr=transport();PgrRuntimeTransportSample a{};char s[64]{};uint32_t n=0;
  if(!tr||tr->sample(&a)||!a.snapshot_fresh||a.fault||tr->get_string(18,s,sizeof(s)-1,&n)||n>=sizeof(s))return {};
  int active=0,ready=0;
  if(tr->get_bool(3,&active)||tr->get_bool(16,&ready)||!active||!ready)return {};
- s[n]=0;return pgr_smart_party::healing_policy(s);
+ s[n]=0;return pgs_smart_party::healing_policy(s);
 }
 bool gate(){
  const uint64_t tid=owner.load(std::memory_order_acquire);
@@ -267,7 +267,7 @@ void *counter_party(const std::vector<Foe> &foes,void *original,void *filter,boo
  void *party_class=klass(original);const size_t team_at=off(party_class,"TeamProtos");
  void *old_team=at<void*>(original,team_at);
  const uint64_t old_length=old_team?at<uint64_t>(old_team,0x18):0;if(old_length>6)return nullptr;
- const int old_size=int(old_length),size=pgr_smart_party::team_size(old_size,rocket);if(!size)return nullptr;
+ const int old_size=int(old_length),size=pgs_smart_party::team_size(old_size,rocket);if(!size)return nullptr;
  Root hold;std::vector<void*> all=storage(hold);
  const auto healing=healing_policy();
  struct Rated {void *p;std::vector<double> scores;double best;};
@@ -275,7 +275,7 @@ void *counter_party(const std::vector<Foe> &foes,void *original,void *filter,boo
  for(void *p:all){
   if(at<bool>(p,pf.egg)||has_text(p,pf.fort)||has_text(p,pf.station)||at<int32_t>(p,pf.hp)<=0)continue;
   Fighter f;if(!fighter_of(p,f))continue;
-  f.hp=pgr_smart_party::selection_hp(at<int32_t>(p,pf.hp),at<int32_t>(p,pf.max_hp),healing);
+  f.hp=pgs_smart_party::selection_hp(at<int32_t>(p,pf.hp),at<int32_t>(p,pf.max_hp),healing);
   Rated r{p,{},0};for(const Foe &e:foes){const double s=matchup(f,e);r.scores.push_back(s);r.best=std::max(r.best,s);}
   if(r.best>0)rated.push_back(std::move(r));
  }
@@ -340,7 +340,7 @@ void load_grunt_types(void *hook_method){
   if((fn<int(*)(void*)>(boot.meta.field_get_flags)(f)&0x8050)!=0x8050)continue;
   const char *name=fn<const char*(*)(void*)>(exp("field_get_name"))(f);if(!name)continue;
   int value=0;fn<void(*)(void*,void*)>(boot.runtime.field_static_get_value)(f,&value);
-  const int type_id=pgr_smart_party::grunt_type(name);if(type_id)grunt_types[value]=type_id;
+  const int type_id=pgs_smart_party::grunt_type(name);if(type_id)grunt_types[value]=type_id;
  }
  require(!grunt_types.empty(),"No typed Rocket grunts recognized");
  event("{\"phase\":\"grunt-types\",\"count\":"+std::to_string(grunt_types.size())+"}");
@@ -536,8 +536,8 @@ bool gym_battle(){
  return api->sample(&s)==0&&s.battle_scope_active==1&&s.battle_mode==1;
 }
 bool rocket_battle(){
- auto api=static_cast<const pgr_rocket_combat_api_v1*>(pgs_rocket_combat_api(1));if(!api||!api->sample)return false;
- pgr_rocket_combat_sample_v1 s{};s.version=PGR_RC_API_VERSION;s.size=sizeof(s);
+ auto api=static_cast<const pgs_rocket_combat_api_v1*>(pgs_rocket_combat_api(1));if(!api||!api->sample)return false;
+ pgs_rocket_combat_sample_v1 s{};s.version=PGS_RC_API_VERSION;s.size=sizeof(s);
  return api->sample(&s)==0&&s.scope_active==1;
 }
 
@@ -575,9 +575,9 @@ void install(){
 }
 }  // namespace
 
-bool pgr_smart_battle_enabled(){return enabled.load(std::memory_order_acquire);}
+bool pgs_smart_battle_enabled(){return enabled.load(std::memory_order_acquire);}
 
-int pgr_smart_battle_pick_prompt(void *const *buttons,int count){
+int pgs_smart_battle_pick_prompt(void *const *buttons,int count){
  if(!gate()||!tables_ready()||!pf.k||count<=0||!buttons[0])return -1;
  try{
   void *state=battle_state_of(buttons[0]);if(!state)return -1;
@@ -595,7 +595,7 @@ int pgr_smart_battle_pick_prompt(void *const *buttons,int count){
  return -1;
 }
 
-void pgr_smart_battle_tick(uint64_t tid,const PgrSharedMetadataOutput *metadata){
+void pgs_smart_battle_tick(uint64_t tid,const PgrSharedMetadataOutput *metadata){
  if(busy||!tid||tid!=uint64_t(gettid()))return;
  const uint64_t prior=owner.load(std::memory_order_acquire);if(prior&&prior!=tid)return;
  struct Guard{Guard(){busy=true;}~Guard(){busy=false;}}guard;
@@ -611,4 +611,4 @@ void pgr_smart_battle_tick(uint64_t tid,const PgrSharedMetadataOutput *metadata)
  }catch(const Failure &f){press=Press{};status("error",std::string("Smart battling paused: ")+f.where);}
  catch(...){press=Press{};status("error","Smart battling paused: native failure");}
 }
-void pgr_smart_battle_stop(uint64_t){enabled.store(false,std::memory_order_release);press=Press{};}
+void pgs_smart_battle_stop(uint64_t){enabled.store(false,std::memory_order_release);press=Press{};}

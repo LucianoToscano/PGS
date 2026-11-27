@@ -30,15 +30,15 @@ jlong JNICALL jni_bootstrap_probe(JNIEnv *,jclass){
 }
 
 jint JNICALL jni_runtime_start(JNIEnv *,jclass,jint exclusive_owner){
-    const auto *api=static_cast<const PgrRuntimeHostApi *>(pgs_runtime_host_api(1));
-    PgrRuntimeHostConfig config{1,sizeof(config),static_cast<uint32_t>(exclusive_owner),0};
+    const auto *api=static_cast<const PgsRuntimeHostApi *>(pgs_runtime_host_api(1));
+    PgsRuntimeHostConfig config{1,sizeof(config),static_cast<uint32_t>(exclusive_owner),0};
     return api->configure(&config);
 }
 
 // Read-only atomic host counters; no IL2CPP/managed calls from Java's transport thread.
 jlongArray JNICALL jni_runtime_health(JNIEnv *env,jclass){
-    const auto *api=static_cast<const PgrRuntimeHostApi *>(pgs_runtime_host_api(1));
-    PgrRuntimeHostSample sample{};
+    const auto *api=static_cast<const PgsRuntimeHostApi *>(pgs_runtime_host_api(1));
+    PgsRuntimeHostSample sample{};
     if(!api||api->sample(&sample))return nullptr;
     const jlong values[]={jlong(sample.installed),jlong(sample.stopping),jlong(sample.fault),
         jlong(sample.pulses),jlong(sample.generation),jlong(sample.owner_tid),jlong(sample.ready_mask)};

@@ -14,7 +14,7 @@
 #include <set>
 namespace {
 using namespace pgr_shared_meta;
-using namespace pgr_evolution;
+using namespace pgs_evolution;
 struct Failure {const char *where;};
 void require(bool ok,const char *where){if(!ok)throw Failure{where};}
 PgrBootBinding boot{};const PgrSharedMetadataOutput *md=nullptr;
@@ -150,7 +150,7 @@ void scan(){
 }
 bool authorized(const Permission &p){return p.valid&&p.allowed&&p.cmd.token==batch.token&&p.cmd.tag==batch.tag&&p.cmd.remove_tag==batch.remove_tag&&p.cmd.mode==2&&!batch.canceled;}
 void start_request(){
- if(pgr_evolve_transfer_busy())return;
+ if(pgs_evolve_transfer_busy())return;
  if(batch.index>=int(batch.candidates.size())){publish("done","Batch complete");return;}
  Candidate expected=batch.candidates[batch.index++],fresh;Root current=pokemon(expected.id);
  if(!candidate(current,fresh)||!same(expected,fresh)){++batch.skipped;publish("running","Skipped changed or unavailable Pokemon");return;}
@@ -237,7 +237,7 @@ void poll_request(){
   require(clock_ms()<batch.since+15000,"inventory update not confirmed; inspect before retrying");return;
  }
  auto vr=static_cast<const PgrVgpResultsApi*>(pgs_vgp_results_api(1));require(vr,"promise polling unavailable");PgrVgpResultsResult out{};int rc=vr->poll(batch.promise.get(),1,owner,&out);if(!rc){require(clock_ms()<batch.since+15000,"evolution response timed out; inspect before retrying");return;}
- Root response;response.h=out.value_handle;batch.promise.reset();require(rc==PGR_VR_DONE&&response,"evolution request failed; inspect before retrying");require(klass(response.get())==cls("Holoholo.Rpc","EvolvePokemonOutProto"),"unexpected evolution response");
+ Root response;response.h=out.value_handle;batch.promise.reset();require(rc==PGS_VR_DONE&&response,"evolution request failed; inspect before retrying");require(klass(response.get())==cls("Holoholo.Rpc","EvolvePokemonOutProto"),"unexpected evolution response");
  if(!success(response.get())){uncertain.erase(batch.sending.id);++batch.skipped;publish("error","Evolution declined (result "+std::to_string(result_value(response.get()))+"); batch stopped");return;}
  Root evolved(field<void*>(response.get(),"EvolvedPokemon","Holoholo.Rpc.PokemonProto"));
  uint64_t returned_id=0;int returned_species=0;
@@ -252,7 +252,7 @@ void poll_request(){
  uncertain.insert(batch.result_id);batch.await_inventory=true;batch.since=clock_ms();publish("running","Server accepted evolution; waiting for inventory update");
 }
 } // namespace
-void pgr_evolution_tick(uint64_t tid,const PgrSharedMetadataOutput *metadata){
+void pgs_evolution_tick(uint64_t tid,const PgrSharedMetadataOutput *metadata){
  if(busy||!tid||tid!=uint64_t(gettid())||(owner&&owner!=tid))return;struct Guard{Guard(){busy=true;}~Guard(){busy=false;}}guard;
  try{auto p=permission();
  // Stop can arrive before the first preview tick. Acknowledge that token even
@@ -274,5 +274,5 @@ void pgr_evolution_tick(uint64_t tid,const PgrSharedMetadataOutput *metadata){
  if(batch.phase=="running"&&authorized(p)&&clock_ms()>=batch.next)start_request();
  }catch(const Failure &e){batch.promise.reset();batch.await_inventory=false;batch.tag_pending=false;batch.await_tag=false;publish("error",e.where);}catch(...){batch.promise.reset();batch.await_inventory=false;batch.tag_pending=false;batch.await_tag=false;publish("error","Evolution engine stopped after an unexpected error");}
 }
-void pgr_evolution_stop(uint64_t tid){if(initialized&&tid==owner&&tid==uint64_t(gettid())){batch.canceled=true;batch.promise.reset();batch.await_inventory=false;batch.tag_pending=false;batch.await_tag=false;publish("stopped","Session ended; preview again to continue");}}
-bool pgr_evolution_busy(){return bool(batch.promise)||batch.await_inventory||batch.await_tag||batch.phase=="running";}
+void pgs_evolution_stop(uint64_t tid){if(initialized&&tid==owner&&tid==uint64_t(gettid())){batch.canceled=true;batch.promise.reset();batch.await_inventory=false;batch.tag_pending=false;batch.await_tag=false;publish("stopped","Session ended; preview again to continue");}}
+bool pgs_evolution_busy(){return bool(batch.promise)||batch.await_inventory||batch.await_tag||batch.phase=="running";}

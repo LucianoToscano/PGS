@@ -267,25 +267,25 @@ int main(int argc, char **argv) {
   {
     FakeDisplay d = make_display(); FakePokemon pk = make_pokemon(&d);
     PgrTransferFactsRequest r = make_request(&pk, 0);
-    assert(api->install(nullptr) == PGR_TF_ERR_NULL_ARG);
+    assert(api->install(nullptr) == PGS_TF_ERR_NULL_ARG);
     PgrTransferFactsConfig bad = cfg; bad.version = 2;
-    assert(api->install(&bad) == PGR_TF_ERR_BAD_VERSION);
+    assert(api->install(&bad) == PGS_TF_ERR_BAD_VERSION);
     bad = cfg; bad.size = sizeof(cfg) - 1;
-    assert(api->install(&bad) == PGR_TF_ERR_BAD_SIZE);
+    assert(api->install(&bad) == PGS_TF_ERR_BAD_SIZE);
     bad = cfg; bad.f_art_asset = nullptr;
-    assert(api->install(&bad) == PGR_TF_ERR_MISSING_PTR);
+    assert(api->install(&bad) == PGS_TF_ERR_MISSING_PTR);
     bad = cfg; bad.sizes[1] = bad.sizes[0];  // sizes not distinct
-    assert(api->install(&bad) == PGR_TF_ERR_BAD_CONFIG);
+    assert(api->install(&bad) == PGS_TF_ERR_BAD_CONFIG);
     bad = cfg; bad.xxl = 99;  // xxl not a member of sizes[]
-    assert(api->install(&bad) == PGR_TF_ERR_BAD_CONFIG);
+    assert(api->install(&bad) == PGS_TF_ERR_BAD_CONFIG);
     bad = cfg; bad.xxl = bad.xxs;  // xxs/xxl not distinct
-    assert(api->install(&bad) == PGR_TF_ERR_BAD_CONFIG);
-    assert(api->inspect(&r, &out) == PGR_TF_ERR_NOT_INSTALLED);
+    assert(api->install(&bad) == PGS_TF_ERR_BAD_CONFIG);
+    assert(api->inspect(&r, &out) == PGS_TF_ERR_NOT_INSTALLED);
 
-    assert(api->install(&cfg) == PGR_TF_OK);
-    assert(api->install(&cfg) == PGR_TF_OK);  // idempotent
+    assert(api->install(&cfg) == PGS_TF_OK);
+    assert(api->install(&cfg) == PGS_TF_OK);  // idempotent
     bad = cfg; bad.class_pokemon = &cls_other;
-    assert(api->install(&bad) == PGR_TF_ERR_RECONFIG);
+    assert(api->install(&bad) == PGS_TF_ERR_RECONFIG);
   }
 
   // 2. VALID baseline: no protect, no markers -> flags 0, known 0xFF, full-64 id echoed, NO roots left.
@@ -293,7 +293,7 @@ int main(int argc, char **argv) {
     FakeDisplay d = make_display(); FakePokemon pk = make_pokemon(&d);
     PgrTransferFactsRequest r = make_request(&pk, 0);
     std::memset(&out, 0xee, sizeof(out));
-    assert(api->inspect(&r, &out) == PGR_TF_VALID);
+    assert(api->inspect(&r, &out) == PGS_TF_VALID);
     assert(out.version == 1 && out.size == sizeof(out));
     assert(out.attack == 5 && out.defense == 10 && out.stamina == 15 && out.species == 25);
     assert(out.known == 0xFF && out.flags == 0);
@@ -308,11 +308,11 @@ int main(int argc, char **argv) {
     FakePokemon pk = make_pokemon(&d); pk.favorite = 1; pk.egg = 1;
     g_rare_val = 1; g_shiny_val = 1; g_count_val = 3;
     PgrTransferFactsRequest r = make_request(&pk, 0);
-    assert(api->inspect(&r, &out) == PGR_TF_VALID);
-    uint32_t expect = PGR_TF_FLAG_RARE | PGR_TF_FLAG_SHINY | PGR_TF_FLAG_EVENT |
-                      PGR_TF_FLAG_BACKGROUND | PGR_TF_FLAG_FAVORITE | PGR_TF_FLAG_EGG;
+    assert(api->inspect(&r, &out) == PGS_TF_VALID);
+    uint32_t expect = PGS_TF_FLAG_RARE | PGS_TF_FLAG_SHINY | PGS_TF_FLAG_EVENT |
+                      PGS_TF_FLAG_BACKGROUND | PGS_TF_FLAG_FAVORITE | PGS_TF_FLAG_EGG;
     assert(out.flags == expect && out.known == 0xFF);
-    assert((out.flags & (PGR_TF_FLAG_XXS | PGR_TF_FLAG_XXL)) == 0);  // no size requested
+    assert((out.flags & (PGS_TF_FLAG_XXS | PGS_TF_FLAG_XXL)) == 0);  // no size requested
     assert(g_handles.empty());
   }
 
@@ -321,24 +321,24 @@ int main(int argc, char **argv) {
     FakeDisplay d = make_display(); d.costume = 7;  // != costume_none
     FakePokemon pk = make_pokemon(&d);
     PgrTransferFactsRequest r = make_request(&pk, 0);
-    assert(api->inspect(&r, &out) == PGR_TF_VALID && (out.flags & PGR_TF_FLAG_COSTUME) &&
-           !(out.flags & PGR_TF_FLAG_EVENT));
+    assert(api->inspect(&r, &out) == PGS_TF_VALID && (out.flags & PGS_TF_FLAG_COSTUME) &&
+           !(out.flags & PGS_TF_FLAG_EVENT));
     assert(g_handles.empty());
 
     reset_flags();
     FakeDisplay d2 = make_display(); d2.original_costume = 4;
     FakePokemon pk2 = make_pokemon(&d2);
     PgrTransferFactsRequest r2 = make_request(&pk2, 0);
-    assert(api->inspect(&r2, &out) == PGR_TF_VALID && (out.flags & PGR_TF_FLAG_COSTUME) &&
-           !(out.flags & PGR_TF_FLAG_EVENT));
+    assert(api->inspect(&r2, &out) == PGS_TF_VALID && (out.flags & PGS_TF_FLAG_COSTUME) &&
+           !(out.flags & PGS_TF_FLAG_EVENT));
     assert(g_handles.empty());
 
     reset_flags();
     FakeString limited{&cls_string, 5};  // non-empty limited identifier
     FakeDisplay d3 = make_display(); FakePokemon pk3 = make_pokemon(&d3); pk3.limited = &limited;
     PgrTransferFactsRequest r3 = make_request(&pk3, 0);
-    assert(api->inspect(&r3, &out) == PGR_TF_VALID && (out.flags & PGR_TF_FLAG_EVENT) &&
-           !(out.flags & PGR_TF_FLAG_COSTUME));
+    assert(api->inspect(&r3, &out) == PGS_TF_VALID && (out.flags & PGS_TF_FLAG_EVENT) &&
+           !(out.flags & PGS_TF_FLAG_COSTUME));
     assert(g_handles.empty());
 
     // Empty limited string (length 0) is NOT an event.
@@ -346,45 +346,45 @@ int main(int argc, char **argv) {
     FakeString empty{&cls_string, 0};
     FakeDisplay d4 = make_display(); FakePokemon pk4 = make_pokemon(&d4); pk4.limited = &empty;
     PgrTransferFactsRequest r4 = make_request(&pk4, 0);
-    assert(api->inspect(&r4, &out) == PGR_TF_VALID && !(out.flags & PGR_TF_FLAG_EVENT));
+    assert(api->inspect(&r4, &out) == PGS_TF_VALID && !(out.flags & PGS_TF_FLAG_EVENT));
     assert(g_handles.empty());
   }
 
   // 5. Size path: every CharacterSize value, XXS/XXL flags only with a protect bit, unknown enum rejected.
   { reset_flags(); g_size_val = 10;  // Xxs
     FakeDisplay d = make_display(); FakePokemon pk = make_pokemon(&d);
-    PgrTransferFactsRequest r = make_request(&pk, PGR_TF_PROTECT_SIZE);
-    assert(api->inspect(&r, &out) == PGR_TF_VALID);
-    assert((out.flags & PGR_TF_FLAG_XXS) && !(out.flags & PGR_TF_FLAG_XXL));
+    PgrTransferFactsRequest r = make_request(&pk, PGS_TF_PROTECT_SIZE);
+    assert(api->inspect(&r, &out) == PGS_TF_VALID);
+    assert((out.flags & PGS_TF_FLAG_XXS) && !(out.flags & PGS_TF_FLAG_XXL));
     assert(g_size_calls == 1 && g_handles.empty());
 
     for (int v = 11; v <= 13; ++v) {  // Xs/M/Xl: valid enum but neither xxs nor xxl flag
       reset_flags(); g_size_val = v;
       FakeDisplay dm = make_display(); FakePokemon pm = make_pokemon(&dm);
-      PgrTransferFactsRequest rm = make_request(&pm, PGR_TF_PROTECT_SIZE);
-      assert(api->inspect(&rm, &out) == PGR_TF_VALID);
-      assert((out.flags & (PGR_TF_FLAG_XXS | PGR_TF_FLAG_XXL)) == 0);
+      PgrTransferFactsRequest rm = make_request(&pm, PGS_TF_PROTECT_SIZE);
+      assert(api->inspect(&rm, &out) == PGS_TF_VALID);
+      assert((out.flags & (PGS_TF_FLAG_XXS | PGS_TF_FLAG_XXL)) == 0);
       assert(g_handles.empty());
     }
 
     reset_flags(); g_size_val = 14;  // Xxl
     FakeDisplay dx = make_display(); FakePokemon px = make_pokemon(&dx);
-    PgrTransferFactsRequest rx = make_request(&px, PGR_TF_PROTECT_SIZE);
-    assert(api->inspect(&rx, &out) == PGR_TF_VALID && (out.flags & PGR_TF_FLAG_XXL));
+    PgrTransferFactsRequest rx = make_request(&px, PGS_TF_PROTECT_SIZE);
+    assert(api->inspect(&rx, &out) == PGS_TF_VALID && (out.flags & PGS_TF_FLAG_XXL));
     assert(g_handles.empty());
 
     // Same xxs value but NO protect bit -> size never invoked, xxs flag false.
     reset_flags(); g_size_val = 10;
     FakeDisplay dn = make_display(); FakePokemon pn = make_pokemon(&dn);
     PgrTransferFactsRequest rn = make_request(&pn, 0);
-    assert(api->inspect(&rn, &out) == PGR_TF_VALID && g_size_calls == 0);
-    assert((out.flags & PGR_TF_FLAG_XXS) == 0 && g_handles.empty());
+    assert(api->inspect(&rn, &out) == PGS_TF_VALID && g_size_calls == 0);
+    assert((out.flags & PGS_TF_FLAG_XXS) == 0 && g_handles.empty());
 
     // Unknown size enum -> MALFORMED (keep), no facts, no leak.
     reset_flags(); g_size_val = 99;
     FakeDisplay du = make_display(); FakePokemon pu = make_pokemon(&du);
-    PgrTransferFactsRequest ru = make_request(&pu, PGR_TF_PROTECT_SIZE);
-    assert(api->inspect(&ru, &out) == PGR_TF_ERR_MALFORMED);
+    PgrTransferFactsRequest ru = make_request(&pu, PGS_TF_PROTECT_SIZE);
+    assert(api->inspect(&ru, &out) == PGS_TF_ERR_MALFORMED);
     assert(out.known == 0 && out.flags == 0 && g_handles.empty());
   }
 
@@ -392,94 +392,94 @@ int main(int argc, char **argv) {
   { reset_flags(); g_rare_val = 2;
     FakeDisplay d = make_display(); FakePokemon pk = make_pokemon(&d);
     PgrTransferFactsRequest r = make_request(&pk, 0);
-    assert(api->inspect(&r, &out) == PGR_TF_ERR_MALFORMED && g_handles.empty());
+    assert(api->inspect(&r, &out) == PGS_TF_ERR_MALFORMED && g_handles.empty());
 
     reset_flags();
     FakeDisplay d2 = make_display(); FakePokemon pk2 = make_pokemon(&d2); pk2.favorite = 2;
     PgrTransferFactsRequest r2 = make_request(&pk2, 0);
-    assert(api->inspect(&r2, &out) == PGR_TF_ERR_MALFORMED && g_handles.empty());
+    assert(api->inspect(&r2, &out) == PGS_TF_ERR_MALFORMED && g_handles.empty());
   }
 
   // 7. Wrong classes along the inspection: pokemon / display / events / box / limited string.
   { reset_flags();
     FakeDisplay d = make_display(); FakePokemon pk = make_pokemon(&d); pk.klass = &cls_other;
     PgrTransferFactsRequest r = make_request(&pk, 0);
-    assert(api->inspect(&r, &out) == PGR_TF_ERR_IDENTITY && g_handles.empty());
+    assert(api->inspect(&r, &out) == PGS_TF_ERR_IDENTITY && g_handles.empty());
 
     reset_flags();
     FakeDisplay wd = make_display(); wd.klass = &cls_other; FakePokemon pk2 = make_pokemon(&wd);
     PgrTransferFactsRequest r2 = make_request(&pk2, 0);
-    assert(api->inspect(&r2, &out) == PGR_TF_ERR_IDENTITY && g_handles.empty());
+    assert(api->inspect(&r2, &out) == PGS_TF_ERR_IDENTITY && g_handles.empty());
 
     reset_flags();
     FakeEvents we{&cls_other}; FakeDisplay d3 = make_display(); FakePokemon pk3 = make_pokemon(&d3);
     pk3.events = &we;
     PgrTransferFactsRequest r3 = make_request(&pk3, 0);
-    assert(api->inspect(&r3, &out) == PGR_TF_ERR_IDENTITY && g_handles.empty());
+    assert(api->inspect(&r3, &out) == PGS_TF_ERR_IDENTITY && g_handles.empty());
 
     reset_flags(); g_rare_box.klass = &cls_other;  // rare box is not System.Boolean
     FakeDisplay d4 = make_display(); FakePokemon pk4 = make_pokemon(&d4);
     PgrTransferFactsRequest r4 = make_request(&pk4, 0);
-    assert(api->inspect(&r4, &out) == PGR_TF_ERR_MALFORMED && g_handles.empty());
+    assert(api->inspect(&r4, &out) == PGS_TF_ERR_MALFORMED && g_handles.empty());
 
     reset_flags(); g_count_box.klass = &cls_other;  // count box is not System.Int32
     FakeDisplay d5 = make_display(); FakePokemon pk5 = make_pokemon(&d5);
     PgrTransferFactsRequest r5 = make_request(&pk5, 0);
-    assert(api->inspect(&r5, &out) == PGR_TF_ERR_MALFORMED && g_handles.empty());
+    assert(api->inspect(&r5, &out) == PGS_TF_ERR_MALFORMED && g_handles.empty());
 
     reset_flags();
     FakeString ws{&cls_other, 3};  // limited value is not a System.String
     FakeDisplay d6 = make_display(); FakePokemon pk6 = make_pokemon(&d6); pk6.limited = &ws;
     PgrTransferFactsRequest r6 = make_request(&pk6, 0);
-    assert(api->inspect(&r6, &out) == PGR_TF_ERR_MALFORMED && g_handles.empty());
+    assert(api->inspect(&r6, &out) == PGS_TF_ERR_MALFORMED && g_handles.empty());
   }
 
   // 8. Managed throws (size + rare) -> MANAGED, nothing leaks.
   { reset_flags(); g_throw_rare = true;
     FakeDisplay d = make_display(); FakePokemon pk = make_pokemon(&d);
     PgrTransferFactsRequest r = make_request(&pk, 0);
-    assert(api->inspect(&r, &out) == PGR_TF_ERR_MANAGED && g_handles.empty());
+    assert(api->inspect(&r, &out) == PGS_TF_ERR_MANAGED && g_handles.empty());
 
     reset_flags(); g_throw_size = true;
     FakeDisplay d2 = make_display(); FakePokemon pk2 = make_pokemon(&d2);
-    PgrTransferFactsRequest r2 = make_request(&pk2, PGR_TF_PROTECT_SIZE);
-    assert(api->inspect(&r2, &out) == PGR_TF_ERR_MANAGED && g_handles.empty());
+    PgrTransferFactsRequest r2 = make_request(&pk2, PGS_TF_PROTECT_SIZE);
+    assert(api->inspect(&r2, &out) == PGS_TF_ERR_MANAGED && g_handles.empty());
   }
 
   // 9. Full 64-bit id: zero caught id, high-bit mismatch, and a mid-inspection id shift -> IDENTITY.
   { reset_flags();
     FakeDisplay d = make_display(); FakePokemon pk = make_pokemon(&d);
     PgrTransferFactsRequest r = make_request(&pk, 0); r.caught_id = 0;
-    assert(api->inspect(&r, &out) == PGR_TF_ERR_IDENTITY && g_handles.empty());
+    assert(api->inspect(&r, &out) == PGS_TF_ERR_IDENTITY && g_handles.empty());
 
     reset_flags();
     FakeDisplay d2 = make_display(); FakePokemon pk2 = make_pokemon(&d2);
     PgrTransferFactsRequest r2 = make_request(&pk2, 0);
     r2.caught_id = pk2.id ^ 0x1000000000000000ULL;  // differs only in a high bit
-    assert(api->inspect(&r2, &out) == PGR_TF_ERR_IDENTITY && g_handles.empty());
+    assert(api->inspect(&r2, &out) == PGS_TF_ERR_IDENTITY && g_handles.empty());
 
     reset_flags();  // id matches before the managed work but shifts during it -> caught at recheck
     FakeDisplay d3 = make_display(); FakePokemon pk3 = make_pokemon(&d3);
     g_shiny_oneshot = [&]() { pk3.id ^= 0x0000000100000000ULL; };
     PgrTransferFactsRequest r3 = make_request(&pk3, 0);
-    assert(api->inspect(&r3, &out) == PGR_TF_ERR_IDENTITY && out.known == 0 && g_handles.empty());
+    assert(api->inspect(&r3, &out) == PGS_TF_ERR_IDENTITY && out.known == 0 && g_handles.empty());
   }
 
   // 10. Partial root-allocation failure: pk root (1st gc_new), gm (2nd), rare box (4th) -> GCHANDLE.
   { reset_flags(); g_gcnew_fail_index = 1;
     FakeDisplay d = make_display(); FakePokemon pk = make_pokemon(&d);
     PgrTransferFactsRequest r = make_request(&pk, 0);
-    assert(api->inspect(&r, &out) == PGR_TF_ERR_GCHANDLE && g_rare_calls == 0 && g_handles.empty());
+    assert(api->inspect(&r, &out) == PGS_TF_ERR_GCHANDLE && g_rare_calls == 0 && g_handles.empty());
 
     reset_flags(); g_gcnew_fail_index = 2;
     FakeDisplay d2 = make_display(); FakePokemon pk2 = make_pokemon(&d2);
     PgrTransferFactsRequest r2 = make_request(&pk2, 0);
-    assert(api->inspect(&r2, &out) == PGR_TF_ERR_GCHANDLE && g_handles.empty());
+    assert(api->inspect(&r2, &out) == PGS_TF_ERR_GCHANDLE && g_handles.empty());
 
     reset_flags(); g_gcnew_fail_index = 4;  // the rare box root fails after pk/gm/display succeed
     FakeDisplay d3 = make_display(); FakePokemon pk3 = make_pokemon(&d3);
     PgrTransferFactsRequest r3 = make_request(&pk3, 0);
-    assert(api->inspect(&r3, &out) == PGR_TF_ERR_GCHANDLE && g_handles.empty());
+    assert(api->inspect(&r3, &out) == PGS_TF_ERR_GCHANDLE && g_handles.empty());
   }
 
   // 11. Relocation: during the rare invoke, the collector moves BOTH the pokemon and its display; the
@@ -497,9 +497,9 @@ int main(int argc, char **argv) {
       }
     };
     PgrTransferFactsRequest r = make_request(&pk, 0);
-    assert(api->inspect(&r, &out) == PGR_TF_VALID);
+    assert(api->inspect(&r, &out) == PGS_TF_VALID);
     assert(out.attack == 1 && out.defense == 2 && out.stamina == 3 && out.species == 777);
-    assert(out.flags & PGR_TF_FLAG_BACKGROUND);  // read from the moved display
+    assert(out.flags & PGS_TF_FLAG_BACKGROUND);  // read from the moved display
     assert(g_handles.empty());
 
     // GM relocation during the size invoke must not disturb the result.
@@ -507,8 +507,8 @@ int main(int argc, char **argv) {
     FakeGm moved_gm{&cls_other};
     g_size_oneshot = [&]() { for (auto &kv : g_handles) if (kv.second == &g_gm) kv.second = &moved_gm; g_expected_gm = &moved_gm; };
     FakeDisplay d2 = make_display(); FakePokemon pk2 = make_pokemon(&d2);
-    PgrTransferFactsRequest r2 = make_request(&pk2, PGR_TF_PROTECT_SIZE);
-    assert(api->inspect(&r2, &out) == PGR_TF_VALID && g_handles.empty());
+    PgrTransferFactsRequest r2 = make_request(&pk2, PGS_TF_PROTECT_SIZE);
+    assert(api->inspect(&r2, &out) == PGS_TF_VALID && g_handles.empty());
     g_expected_gm = &g_gm;
   }
 
@@ -516,29 +516,29 @@ int main(int argc, char **argv) {
   { reset_flags();
     FakeDisplay d = make_display(); FakePokemon pk = make_pokemon(&d); pk.attack = 16;
     PgrTransferFactsRequest r = make_request(&pk, 0);
-    assert(api->inspect(&r, &out) == PGR_TF_ERR_MALFORMED && g_handles.empty());
+    assert(api->inspect(&r, &out) == PGS_TF_ERR_MALFORMED && g_handles.empty());
 
     reset_flags();
     FakeDisplay d2 = make_display(); FakePokemon pk2 = make_pokemon(&d2); pk2.defense = -1;
     PgrTransferFactsRequest r2 = make_request(&pk2, 0);
-    assert(api->inspect(&r2, &out) == PGR_TF_ERR_MALFORMED && g_handles.empty());
+    assert(api->inspect(&r2, &out) == PGS_TF_ERR_MALFORMED && g_handles.empty());
 
     reset_flags();
     FakeDisplay d3 = make_display(); FakePokemon pk3 = make_pokemon(&d3); pk3.species = 0;
     PgrTransferFactsRequest r3 = make_request(&pk3, 0);
-    assert(api->inspect(&r3, &out) == PGR_TF_ERR_MALFORMED && g_handles.empty());
+    assert(api->inspect(&r3, &out) == PGS_TF_ERR_MALFORMED && g_handles.empty());
 
     reset_flags();
     FakeDisplay d4 = make_display(); FakePokemon pk4 = make_pokemon(&d4); pk4.species = 2001;
     PgrTransferFactsRequest r4 = make_request(&pk4, 0);
-    assert(api->inspect(&r4, &out) == PGR_TF_ERR_MALFORMED && g_handles.empty());
+    assert(api->inspect(&r4, &out) == PGS_TF_ERR_MALFORMED && g_handles.empty());
   }
 
   // 13. Negative event count -> MALFORMED.
   { reset_flags(); g_count_val = -1;
     FakeDisplay d = make_display(); FakePokemon pk = make_pokemon(&d);
     PgrTransferFactsRequest r = make_request(&pk, 0);
-    assert(api->inspect(&r, &out) == PGR_TF_ERR_MALFORMED && g_handles.empty());
+    assert(api->inspect(&r, &out) == PGS_TF_ERR_MALFORMED && g_handles.empty());
   }
 
   // 14. Gate: zero lease / zero owner / wrong tid refuse (0) without any managed work or roots.
@@ -546,17 +546,17 @@ int main(int argc, char **argv) {
     FakeDisplay d = make_display(); FakePokemon pk = make_pokemon(&d);
     PgrTransferFactsRequest r = make_request(&pk, 0);
     r.lease_ms = 0;
-    assert(api->inspect(&r, &out) == PGR_TF_OK && g_rare_calls == 0 && out.known == 0);
+    assert(api->inspect(&r, &out) == PGS_TF_OK && g_rare_calls == 0 && out.known == 0);
     r.lease_ms = 2000; r.owner_tid = 0;
-    assert(api->inspect(&r, &out) == PGR_TF_OK && g_rare_calls == 0);
+    assert(api->inspect(&r, &out) == PGS_TF_OK && g_rare_calls == 0);
     r.owner_tid = tid + 1;
-    assert(api->inspect(&r, &out) == PGR_TF_OK && g_rare_calls == 0);
+    assert(api->inspect(&r, &out) == PGS_TF_OK && g_rare_calls == 0);
     std::thread([&]() {
       FakeDisplay dt = make_display(); FakePokemon pt = make_pokemon(&dt);
       PgrTransferFactsRequest rt = make_request(&pt, 0);
       rt.owner_tid = this_tid() + 1;  // owner tid never matches this worker thread
       PgrTransferFactsOut ot{};
-      assert(g_api->inspect(&rt, &ot) == PGR_TF_OK && ot.known == 0);
+      assert(g_api->inspect(&rt, &ot) == PGS_TF_OK && ot.known == 0);
     }).join();
     assert(g_handles.empty());
   }
@@ -566,7 +566,7 @@ int main(int argc, char **argv) {
     FakeDisplay d = make_display(); FakePokemon pk = make_pokemon(&d);
     g_rare_oneshot = [&]() { ::usleep(3000); };  // outlast the 1 ms lease
     PgrTransferFactsRequest r = make_request(&pk, 0); r.lease_ms = 1;
-    assert(api->inspect(&r, &out) == PGR_TF_OK && out.known == 0 && g_handles.empty());
+    assert(api->inspect(&r, &out) == PGS_TF_OK && out.known == 0 && g_handles.empty());
   }
 
   // 16. Reentry: a nested inspect fired from inside a managed invoke is refused (busy); outer completes.
@@ -581,8 +581,8 @@ int main(int argc, char **argv) {
       assert(on.known == 0);
     };
     PgrTransferFactsRequest r = make_request(&pk, 0);
-    assert(api->inspect(&r, &out) == PGR_TF_VALID);
-    assert(nested_rc == PGR_TF_OK && g_handles.empty());
+    assert(api->inspect(&r, &out) == PGS_TF_VALID);
+    assert(nested_rc == PGS_TF_OK && g_handles.empty());
   }
 
   std::printf("transfer_facts_test passed: ABI/validation/idempotence/reconfig/bad-config, VALID baseline "

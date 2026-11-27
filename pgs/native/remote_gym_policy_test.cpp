@@ -2,7 +2,7 @@
 #include <cassert>
 #include <cstring>
 #include <cstdio>
-int main(){using namespace pgr_remote_gym;Command c;
+int main(){using namespace pgs_remote_gym;Command c;
  auto parse_text=[&](const char *s){return parse(s,strlen(s),c);};
  assert(parse_text("1|9223372036854775807|1|0|1000|1|50|0"));
  assert(c.token==9223372036854775807ULL&&c.razz_reserve==1000&&c.pinap_enabled);

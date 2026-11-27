@@ -16,7 +16,7 @@
 #include <unistd.h>
 // Catch chance and auto ball for manual encounters. encounter_host's existing
 // EncounterInteractionState.EnterState/ExitState hooks (the berry feature's) report the live
-// encounter through pgr_catch_chance_enter/exit. Each tick reads the server's per-ball capture probabilities
+// encounter through pgs_catch_chance_enter/exit. Each tick reads the server's per-ball capture probabilities
 // (CaptureProbabilityProto, the numbers the game colors the ring with), the active berry, the
 // selected ball and the ball counts, and applies the berry, throw and curve multipliers:
 //   chance = 1 - (1 - p_ball) ^ (berry * throw * curve)
@@ -76,13 +76,13 @@ void event(const std::string &json){auto tr=transport();if(!tr)return;PgrRuntime
 void status(const char *phase,const std::string &message){event(std::string("{\"phase\":\"")+phase+"\",\"message\":\""+message+"\"}");}
 uint64_t clock_ms(){timespec t{};clock_gettime(CLOCK_BOOTTIME,&t);return uint64_t(t.tv_sec)*1000+t.tv_nsec/1000000;}
 
-struct Config : PgrCatchChanceOptions {int grade=0;bool curve=false;};
+struct Config : PgsCatchChanceOptions {int grade=0;bool curve=false;};
 // "C3|show|auto|target|berry|safari|autoThrow|cooldownMs" (C1/C2 accepted) plus throw settings
 // (throw allowed bool 29, curve bool 34, grade int 7).
 Config config(){
  Config c;auto tr=transport();PgrRuntimeTransportSample a{};if(!tr||tr->sample(&a)||!a.snapshot_fresh||a.fault)return c;
  char s[96];uint32_t n=0;if(tr->get_string(15,s,sizeof(s),&n)||n<8||n>=sizeof(s))return c;s[n]=0;
- static_cast<PgrCatchChanceOptions&>(c)=pgr_parse_catch_chance(s);if(!c.valid)return c;
+ static_cast<PgsCatchChanceOptions&>(c)=pgs_parse_catch_chance(s);if(!c.valid)return c;
  int allowed=0,curve=0;int32_t grade=0;
  // Throw variety (4-6) counts as its lowest grade: Great, Nice, or a plain throw.
  if(tr->get_bool(29,&allowed)==0&&allowed==1){if(tr->get_int(7,&grade)==0&&grade>=0&&grade<=6)c.grade=grade>3?6-grade:grade;if(tr->get_bool(34,&curve)==0)c.curve=curve==1;}
@@ -127,7 +127,7 @@ void bind_safari(){
     (fn<int(*)(void*)>(boot.meta.field_get_flags)(literal)&0x8050)==0x8050,"WildBall enum shape");
   int item=0;fn<void(*)(void*,void*)>(boot.runtime.field_static_get_value)(literal,&item);
   require(item>5&&item<256,"WildBall enum value");
-  safari.item=item;pgr_safari_inventory_item.store(item);
+  safari.item=item;pgs_safari_inventory_item.store(item);
   safari.display_class=cls("Holoholo.Rpc","PokemonDisplayProto");
   safari.strong=fn<void*(*)(void*,const char*)>(boot.meta.class_get_field_from_name)(safari.display_class,"IsStrongPokemon");
   require(safari.strong,"Mighty flag missing");
@@ -219,7 +219,7 @@ void step(){
  SafariState wild;
  if(c.safari&&c.autoball){
   wild=safari_state(state);
-  if(pgr_manual_safari_pick(c.autoball,c.safari,wild.mighty,wild.allowed,wild.stock,safari.item))pick=safari.item;
+  if(pgs_manual_safari_pick(c.autoball,c.safari,wild.mighty,wild.allowed,wild.stock,safari.item))pick=safari.item;
   if(wild.mighty&&safari.item){
    double base=offered_probability(probability,safari.item);
    if(base>0){
@@ -246,7 +246,7 @@ void step(){
 }
 }  // namespace
 
-void pgr_catch_chance_tick(uint64_t tid,const PgrSharedMetadataOutput *metadata){
+void pgs_catch_chance_tick(uint64_t tid,const PgrSharedMetadataOutput *metadata){
  if(busy||!tid||tid!=uint64_t(gettid())||(owner&&owner!=tid)||faulted.load())return;
  struct Guard{Guard(){busy=true;}~Guard(){busy=false;}}guard;owner=tid;md=metadata;
  try{
@@ -261,19 +261,19 @@ void pgr_catch_chance_tick(uint64_t tid,const PgrSharedMetadataOutput *metadata)
  catch(const Failure &f){if(reported!=generation.load()){reported=generation.load();status("skipped",f.where);}}
  catch(...){if(reported!=generation.load()){reported=generation.load();status("skipped","native failure");}}
 }
-void pgr_catch_chance_enter(void *state){
+void pgs_catch_chance_enter(void *state){
  if(!ready||!state)return;
  uintptr_t handle=fn<uintptr_t(*)(void*,int)>(boot.runtime.gchandle_new)(state,0);if(!handle)return;
  if(uintptr_t old=live.exchange(handle))fn<void(*)(uintptr_t)>(boot.runtime.gchandle_free)(old);
  generation.fetch_add(1);
 }
-void pgr_catch_chance_exit(void *state){
+void pgs_catch_chance_exit(void *state){
  if(!ready)return;
  uintptr_t current=live.load();
  if(current&&fn<void*(*)(uintptr_t)>(boot.runtime.gchandle_get_target)(current)==state&&live.compare_exchange_strong(current,0))
   fn<void(*)(uintptr_t)>(boot.runtime.gchandle_free)(current);
 }
-bool pgr_catch_chance_base(void *encounter_out,double base[4]){
+bool pgs_catch_chance_base(void *encounter_out,double base[4]){
  if(!base)return false;for(int i=0;i<4;i++)base[i]=0;
  // Needs only the runtime snapshot; a failed manual SelectPokeball install does not matter here.
  if(!ready||busy||!encounter_out||!owner||owner!=uint64_t(gettid()))return false;
@@ -289,12 +289,12 @@ bool pgr_catch_chance_base(void *encounter_out,double base[4]){
   return any;
  }catch(...){for(int i=0;i<4;i++)base[i]=0;return false;}
 }
-bool pgr_catch_chance_offers_ball(void *encounter_out,int item){
+bool pgs_catch_chance_offers_ball(void *encounter_out,int item){
  if(!ready||busy||!encounter_out||!owner||owner!=uint64_t(gettid())||item<=0)return false;
  try{Root probability(ref_field(encounter_out,"CaptureProbability"));return probability&&offered_probability(probability.get(),item)>0;}
  catch(...){return false;}
 }
-void pgr_catch_chance_stop(){
+void pgs_catch_chance_stop(){
  if(owner&&owner!=uint64_t(gettid()))return;
  if(uintptr_t h=live.exchange(0))fn<void(*)(uintptr_t)>(boot.runtime.gchandle_free)(h);
 }

@@ -35,7 +35,7 @@
 // side effect and performs it exactly once.
 namespace {
 using namespace pgr_shared_meta;
-using namespace pgr_gym_repeat;
+using namespace pgs_gym_repeat;
 
 struct Failure { const char *where; };
 void require(bool ok, const char *where) { if (!ok) throw Failure{where}; }
@@ -416,7 +416,7 @@ void hook_prep_battle(void *self, void *method) {
                 // Later rounds compare against the post-heal storage snapshot.
                 const Gate gate = read_gate();
                 if (e.account && gate.enabled && gate.active && gate.battles_allowed && gate.fresh)
-                    pgr_heal_gym_baseline(owner, md);
+                    pgs_heal_gym_baseline(owner, md);
                 push_ev(e);
             }
         }
@@ -629,7 +629,7 @@ bool gym_heal_ready() {
 }
 bool settle_gym_healing() {
     if (!gym_heal_ready()) return false;
-    const int result = pgr_heal_gym_tick(owner, md, policy.won_at, gym_heal_ready);
+    const int result = pgs_heal_gym_tick(owner, md, policy.won_at, gym_heal_ready);
     if (result < 0) { policy.on_action_failed(); status("Gym repeat stopped: healing failed"); return false; }
     if (result > 0) { status("Gym repeat: waiting for Smart healing"); return true; }
     return false;
@@ -762,23 +762,23 @@ void end_session_local(EndReason r) {
 }
 
 // --- API ---------------------------------------------------------------------------
-int api_configure(const PgrGymRepeatConfig *cfg) {
-    if (!cfg) return PGR_GR_ERR_INVALID_ARG;
-    if (cfg->version != PGR_GYM_REPEAT_API_VERSION) return PGR_GR_ERR_VERSION;
-    if (cfg->size != sizeof(PgrGymRepeatConfig)) return PGR_GR_ERR_SIZE;
-    if (!cfg->metadata) return PGR_GR_ERR_METADATA;
-    if (!cfg->owner_tid || cfg->owner_tid != self_tid()) return PGR_GR_ERR_THREAD;
-    if (g_ready.load(std::memory_order_acquire)) return owner == cfg->owner_tid && md == cfg->metadata ? PGR_GR_OK : PGR_GR_ERR_THREAD;
+int api_configure(const PgsGymRepeatConfig *cfg) {
+    if (!cfg) return PGS_GR_ERR_INVALID_ARG;
+    if (cfg->version != PGS_GYM_REPEAT_API_VERSION) return PGS_GR_ERR_VERSION;
+    if (cfg->size != sizeof(PgsGymRepeatConfig)) return PGS_GR_ERR_SIZE;
+    if (!cfg->metadata) return PGS_GR_ERR_METADATA;
+    if (!cfg->owner_tid || cfg->owner_tid != self_tid()) return PGS_GR_ERR_THREAD;
+    if (g_ready.load(std::memory_order_acquire)) return owner == cfg->owner_tid && md == cfg->metadata ? PGS_GR_OK : PGS_GR_ERR_THREAD;
     md = cfg->metadata;
     owner = cfg->owner_tid;
     try {
-        if (!install()) { return PGR_GR_ERR_BINDING; }
+        if (!install()) { return PGS_GR_ERR_BINDING; }
     } catch (const Failure &f) {
         __android_log_print(ANDROID_LOG_WARN, "PGSGymRepeat", "binding unavailable: %s", f.where);
-        return PGR_GR_ERR_BINDING;
-    } catch (...) { return PGR_GR_ERR_BINDING; }
+        return PGS_GR_ERR_BINDING;
+    } catch (...) { return PGS_GR_ERR_BINDING; }
     g_ready.store(true, std::memory_order_release);
-    return PGR_GR_OK;
+    return PGS_GR_OK;
 }
 
 void api_observe_scope(int entered, uint64_t tid) {
@@ -800,15 +800,15 @@ void api_observe_leave(uint64_t tid) {
 }
 
 int api_tick(uint64_t proven_tid) {
-    if (!g_ready.load(std::memory_order_acquire)) return PGR_GR_NOT_READY;
-    if (!proven_tid || proven_tid != owner || self_tid() != owner) return PGR_GR_ERR_THREAD;
-    if (busy) return PGR_GR_OK;
+    if (!g_ready.load(std::memory_order_acquire)) return PGS_GR_NOT_READY;
+    if (!proven_tid || proven_tid != owner || self_tid() != owner) return PGS_GR_ERR_THREAD;
+    if (busy) return PGS_GR_OK;
     struct Guard { Guard() { busy = true; } ~Guard() { busy = false; } } guard;
-    if (!boot.runtime.thread_current || fn<void *(*)()>(boot.runtime.thread_current)() == nullptr) return PGR_GR_ERR_THREAD;
+    if (!boot.runtime.thread_current || fn<void *(*)()>(boot.runtime.thread_current)() == nullptr) return PGS_GR_ERR_THREAD;
 
     // Consume an off-thread stop request on the owner thread (no cross-thread reset).
     if (g_cancel.exchange(false, std::memory_order_acq_rel)) end_session_local(END_BACKGROUND);
-    if (g_faulted.load(std::memory_order_acquire)) return PGR_GR_OK;
+    if (g_faulted.load(std::memory_order_acquire)) return PGS_GR_OK;
 
     const uint64_t now = clock_ms();
     try {
@@ -822,7 +822,7 @@ int api_tick(uint64_t proven_tid) {
             if (st != GYM_UNKNOWN && !visible) map_status_to_end(st);
         }
         policy.observe_map(visible, now);
-        if (!policy.armed()) { cleanup_roots(); report_end(); clear_events(); return PGR_GR_OK; }
+        if (!policy.armed()) { cleanup_roots(); report_end(); clear_events(); return PGS_GR_OK; }
 
         // Account binding: a confirmed different player id ends the session; a transient
         // resolution failure (id == 0) is ordinary world state and is left alone.
@@ -833,14 +833,14 @@ int api_tick(uint64_t proven_tid) {
         if (transport()->sample(&snap) || snap.generation != g_generation) policy.on_account_change();
         if(policy.state==ST_WON && now>policy.deadline)policy.end_session(END_TIMEOUT);
         if (policy.gate_ok(read_gate()) && settle_gym_badge(now)) {
-            cleanup_roots();report_end();return PGR_GR_OK;
+            cleanup_roots();report_end();return PGS_GR_OK;
         }
         if (policy.gate_ok(read_gate()) && settle_gym_healing()) {
-            cleanup_roots(); report_end(); return PGR_GR_OK;
+            cleanup_roots(); report_end(); return PGS_GR_OK;
         }
         if (policy.gate_ok(read_gate())) poll_reentry();
 
-        const bool heal_busy = pgr_heal_busy() != 0;
+        const bool heal_busy = pgs_heal_busy() != 0;
         GymStatus status_in = GYM_UNKNOWN;
         Root map_gym;
         if (policy.needs_gym_resolution(now, g, timing, heal_busy)) {
@@ -850,7 +850,7 @@ int api_tick(uint64_t proven_tid) {
         // Refresh modal discovery immediately before consuming a direct action. A badge
         // may have opened inside the cached 250 ms scan interval or a readiness getter.
         if (policy.pending != ACT_NONE && policy.gate_ok(read_gate()) && settle_gym_badge(now, true)) {
-            cleanup_roots(); report_end(); return PGR_GR_OK;
+            cleanup_roots(); report_end(); return PGS_GR_OK;
         }
         Action a = policy.tick(now, read_gate(), timing, heal_busy, status_in);
         if (a == ACT_RESOLVE_GYM) do_tap(map_gym);
@@ -870,7 +870,7 @@ int api_tick(uint64_t proven_tid) {
         g_faulted.store(true, std::memory_order_release);
         g_approach_root.reset(); g_prep_root.reset(); g_badge_root.reset();g_badge_sent=g_badge_retry=false;g_badge_scan=0; clear_events(); policy.reset();
     }
-    return PGR_GR_OK;
+    return PGS_GR_OK;
 }
 
 void api_stop(uint64_t proven_tid) {
@@ -886,11 +886,11 @@ void api_stop(uint64_t proven_tid) {
     }
 }
 
-int api_sample(PgrGymRepeatSample *out) {
-    if (!out) return PGR_GR_ERR_INVALID_ARG;
+int api_sample(PgsGymRepeatSample *out) {
+    if (!out) return PGS_GR_ERR_INVALID_ARG;
     std::memset(out, 0, sizeof(*out));
-    out->version = PGR_GYM_REPEAT_API_VERSION;
-    out->size = sizeof(PgrGymRepeatSample);
+    out->version = PGS_GYM_REPEAT_API_VERSION;
+    out->size = sizeof(PgsGymRepeatSample);
     out->ready = g_ready.load(std::memory_order_acquire) ? 1u : 0u;
     out->installed_hooks = g_installed_hooks;
     out->state = policy.state;
@@ -904,12 +904,12 @@ int api_sample(PgrGymRepeatSample *out) {
     out->owner_tid = owner;
     out->sessions = g_sessions;
     out->actions = g_actions;
-    return PGR_GR_OK;
+    return PGS_GR_OK;
 }
 
-const PgrGymRepeatApi kApi = {
-    PGR_GYM_REPEAT_API_VERSION,
-    sizeof(PgrGymRepeatApi),
+const PgsGymRepeatApi kApi = {
+    PGS_GYM_REPEAT_API_VERSION,
+    sizeof(PgsGymRepeatApi),
     api_configure,
     api_observe_scope,
     api_observe_leave,
@@ -921,5 +921,5 @@ const PgrGymRepeatApi kApi = {
 } // namespace
 
 const void *pgs_gym_repeat_api(uint32_t version) {
-    return version == PGR_GYM_REPEAT_API_VERSION ? &kApi : nullptr;
+    return version == PGS_GYM_REPEAT_API_VERSION ? &kApi : nullptr;
 }

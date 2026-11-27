@@ -44,7 +44,7 @@ void regression_free(uintptr_t handle) {
     request_target(obj, reinterpret_cast<void *>(0x1234));
   }
 }
-PgrRoutesServicesOutput poll_now(int expected = PGR_RS_OK) {
+PgrRoutesServicesOutput poll_now(int expected = PGS_RS_OK) {
   PgrRoutesServicesRequest r; make_request(&r,self_tid(),2500,api()->generation());
   PgrRoutesServicesOutput out{};
   assert(api()->poll(&r,&out) == expected);
@@ -53,7 +53,7 @@ PgrRoutesServicesOutput poll_now(int expected = PGR_RS_OK) {
 }
 void drain_all() {
   PgrRoutesServicesRequest r; make_request(&r,self_tid(),0,api()->generation());
-  assert(api()->drain(&r) == PGR_RS_OK && g_live_handles == 0);
+  assert(api()->drain(&r) == PGS_RS_OK && g_live_handles == 0);
 }
 void setup_library(const char *path) {
   void *library=dlopen(path,RTLD_NOW|RTLD_LOCAL);assert(library);
@@ -72,7 +72,7 @@ int scenario(const char *name) {
   FakeObj routesA{&kRoutesClass,&consA},routesB{&kRoutesClass,&consB};
   if (!std::strcmp(name,"detached-owner")) {
     g_thread_attached=false;
-    std::thread t([]{poll_now(PGR_RS_SKIP);});t.join();
+    std::thread t([]{poll_now(PGS_RS_SKIP);});t.join();
     g_thread_attached=true;poll_now();
     request_target(&routesA,nullptr);assert(poll_now().routes_handle);
   } else if (!std::strcmp(name,"moving-pending")) {
@@ -93,18 +93,18 @@ int scenario(const char *name) {
   } else if (!std::strcmp(name,"replacement-null-dikx")) {
     poll_now();request_target(&routesA,nullptr);auto old=poll_now();assert(old.consumption_handle);
     routesB.dica=nullptr;request_target(&routesB,nullptr);auto out=poll_now();
-    assert(out.routes_handle && !out.consumption_handle && !(out.flags&PGR_RS_FLAG_CONSUMPTION_PRESENT));
+    assert(out.routes_handle && !out.consumption_handle && !(out.flags&PGS_RS_FLAG_CONSUMPTION_PRESENT));
     assert(!fake_gchandle_get_target(old.consumption_handle));
   } else if (!std::strcmp(name,"revoke-cleanup")) {
     poll_now();request_target(&routesA,nullptr);poll_now();request_target(&routesB,nullptr);
-    revoke_on_free=true;auto out=poll_now(PGR_RS_SKIP);
+    revoke_on_free=true;auto out=poll_now(PGS_RS_SKIP);
     assert(!out.routes_handle&&!out.consumption_handle);
     const auto allocated=g_handle_targets.size();request_target(&routesA,nullptr);
     assert(g_handle_targets.size()==allocated && "revoked heartbeat must not capture");
     out=poll_now();assert(!out.routes_handle&&!out.consumption_handle);
   } else if (!std::strcmp(name,"revoke-derivation")) {
     poll_now();request_target(&routesA,nullptr);revoke_on_new=true;
-    auto out=poll_now(PGR_RS_SKIP);assert(!out.routes_handle&&!out.consumption_handle);
+    auto out=poll_now(PGS_RS_SKIP);assert(!out.routes_handle&&!out.consumption_handle);
     const auto allocated=g_handle_targets.size();request_target(&routesB,nullptr);
     assert(g_handle_targets.size()==allocated);
   } else if (!std::strcmp(name,"cleanup-reentry")) {

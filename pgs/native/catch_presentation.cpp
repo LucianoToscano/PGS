@@ -14,12 +14,12 @@ using Show = void (*)(void *, void *, uint64_t, uint64_t, uint64_t,
     void *, void *, void *, uint64_t, uint64_t, uint64_t, void *);
 std::atomic<Show> original{nullptr};
 std::mutex mutex;
-PgrCatchConfig config{};
-PgrCatchCapture capture{};
+PgsCatchConfig config{};
+PgsCatchCapture capture{};
 void *response_root = nullptr;
 bool failed = false, attached = false, owner = false, enabled = false, captured = false;
 bool passthrough = false;                  // attached by set_bypass before install(): config holds only the address
-std::atomic<PgrCatchBypass> bypass{nullptr};
+std::atomic<PgsCatchBypass> bypass{nullptr};
 int32_t unity_thread = 0;
 template<class T> T field(void *object, size_t offset) {
     T value{}; std::memcpy(&value, static_cast<char *>(object) + offset, sizeof(value)); return value;
@@ -65,10 +65,10 @@ void replacement(void *instance, void *pokemon, uint64_t confirm, uint64_t persi
     }
     // Never call the game under our mutex: it can synchronously re-enter.
     if(consumed) return;
-    if(PgrCatchBypass skip = bypass.load(std::memory_order_acquire); skip && skip(instance, pokemon, dismissed, params)) return;
+    if(PgsCatchBypass skip = bypass.load(std::memory_order_acquire); skip && skip(instance, pokemon, dismissed, params)) return;
     call(instance,pokemon,confirm,persist,hyper,dismissed,displayed,params,hide_ar,post,suppress,info);
 }
-int install(const PgrCatchConfig *value) {
+int install(const PgsCatchConfig *value) {
     if(!value || value->version != 1 || value->size != sizeof(*value) ||
        !value->address || !value->root || !value->free_root || !value->target || !value->object_class ||
        !value->view_class || !value->action_class || !value->pokemon_class) return -1;
@@ -102,7 +102,7 @@ int begin(void *response, int32_t thread) {
     unity_thread = thread; enabled = true;
     return 0;
 }
-int end(PgrCatchCapture *out) {
+int end(PgsCatchCapture *out) {
     if(!out) return -1;
     std::lock_guard<std::mutex> guard(mutex);
     if(!owner || (unity_thread && unity_thread != gettid())) return -2;
@@ -119,7 +119,7 @@ int dispose() {
     // Keep the hook/library/trampoline alive, passing through while unowned.
     return 0;
 }
-const PgrCatchApi api{1, sizeof(PgrCatchApi), install, begin, end, dispose};
+const PgsCatchApi api{1, sizeof(PgsCatchApi), install, begin, end, dispose};
 int attach_passthrough(void *address) {
     std::lock_guard<std::mutex> guard(mutex);
     if(attached) return config.address == address ? 0 : -3;
@@ -131,17 +131,17 @@ int attach_passthrough(void *address) {
     original.store(trampoline, std::memory_order_release);
     attached = true; passthrough = true; return 0;
 }
-static_assert(sizeof(PgrCatchConfig)==72, "catch config ABI");
-static_assert(sizeof(PgrCatchCapture)==48, "capture ABI");
-static_assert(sizeof(PgrCatchApi)==40, "catch API ABI");
+static_assert(sizeof(PgsCatchConfig)==72, "catch config ABI");
+static_assert(sizeof(PgsCatchCapture)==48, "capture ABI");
+static_assert(sizeof(PgsCatchApi)==40, "catch API ABI");
 }
 const void *pgs_catch_presentation_api(uint32_t version) { return version == 1 ? &api : nullptr; }
-int pgr_catch_presentation_set_bypass(PgrCatchBypass fn, void *address) {
+int pgs_catch_presentation_set_bypass(PgsCatchBypass fn, void *address) {
     if(fn) { const int rc = attach_passthrough(address); if(rc) return rc; }
     bypass.store(fn, std::memory_order_release);
     return 0;
 }
-bool pgr_catch_presentation_attached(const void *address) {
+bool pgs_catch_presentation_attached(const void *address) {
     std::lock_guard<std::mutex> guard(mutex);
     return attached && config.address == address;
 }

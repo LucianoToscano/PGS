@@ -265,7 +265,7 @@ int main(int argc, char **argv) {
     // (J2) Observe-only (Catch preview without Quick catch): the outcome is confirmed and the ball
     //      animation is left alone; any mode other than 0/1/2 is refused.
     sleep_ms(1050);
-    if (api->update(3, 2500, gettid(), nullptr) != PGR_OBS_ERR_BAD_ARG) return 81;
+    if (api->update(3, 2500, gettid(), nullptr) != PGS_OBS_ERR_BAD_ARG) return 81;
     api->update(2, 2500, gettid(), nullptr);
     { PgrObsSample k{}; api->sample(&k); const auto before = k.confirmed; const int ac = stub_applied;
       g_next_response = &g_resp_preview; call_btxu(&g_ball, &method_obj);
@@ -344,7 +344,7 @@ int main(int argc, char **argv) {
       g_next_response = &g_resp_q2; call_btxu(&g_ball, &method_obj);   // confirmed + applied = 2 events
       PgrObsSample after{}; api->sample(&after);
       if (after.event_head < before.event_head + 2) return 51;        // nothing lost to a single slot
-      const PgrObsEvent &newest = after.events[after.event_head % PGR_OBS_EVENT_RING];
+      const PgrObsEvent &newest = after.events[after.event_head % PGS_OBS_EVENT_RING];
       if (newest.seq != after.event_head) return 52; }                // ring slot stamped with its seq
 
     // Drain the seen handles accumulated by L..Q and confirm the roots balance to zero.
@@ -372,14 +372,14 @@ int main(int argc, char **argv) {
     api->stop(gettid());api->tick(gettid());sleep_ms(1050);
     api->update(1,2500,gettid(),nullptr);g_ball.bread=1;g_next_response=&g_resp_flee;
     {int before=stub_applied;call_btxu(&g_ball,&method_obj);
-     api->sample(&s);if(stub_applied!=before||s.reason!=PGR_OBS_R_SPECIAL)return 70;}
-    const auto *max_bridge=static_cast<const PgrObsApi3*>(core->query_feature(49,3));
+     api->sample(&s);if(stub_applied!=before||s.reason!=PGS_OBS_R_SPECIAL)return 70;}
+    const auto *max_bridge=static_cast<const PgsObsApi3*>(core->query_feature(49,3));
     if(!max_bridge||max_bridge->size!=16)return 71;
-    if(max_bridge->register_max(&fld_max_speed,&stub_max,gettid()+1)!=PGR_OBS_ERR_BAD_ARG)return 72;
-    if(max_bridge->register_max(nullptr,&stub_max,gettid())!=PGR_OBS_ERR_BAD_CONFIG)return 73;
+    if(max_bridge->register_max(&fld_max_speed,&stub_max,gettid()+1)!=PGS_OBS_ERR_BAD_ARG)return 72;
+    if(max_bridge->register_max(nullptr,&stub_max,gettid())!=PGS_OBS_ERR_BAD_CONFIG)return 73;
     if(max_bridge->register_max(&fld_max_speed,&stub_max,gettid())||
        max_bridge->register_max(&fld_max_speed,&stub_max,gettid()))return 74;
-    if(max_bridge->register_max(&fld_status,&stub_max,gettid())!=PGR_OBS_ERR_BAD_CONFIG)return 75;
+    if(max_bridge->register_max(&fld_status,&stub_max,gettid())!=PGS_OBS_ERR_BAD_CONFIG)return 75;
     for(auto *response:{&g_resp_success_moved,&g_resp_escape,&g_resp_flee}){
      g_next_response=response;int before=max_applied;
      if(call_btxu(&g_ball,&method_obj)!=response||max_applied!=before+1||max_received!=0.7f)return 76;
@@ -388,7 +388,7 @@ int main(int argc, char **argv) {
     if(stub_last_reason!=13)return 77;
     max_baseline=0;
     {int before=max_applied;call_btxu(&g_ball,&method_obj);api->sample(&s);
-     if(max_applied!=before||s.reason!=PGR_OBS_R_MAX_SPEED)return 78;}
+     if(max_applied!=before||s.reason!=PGS_OBS_R_MAX_SPEED)return 78;}
     max_baseline=0.7f;g_next_response=&g_resp_missed;
     {int before=max_applied;call_btxu(&g_ball,&method_obj);if(max_applied!=before)return 79;}
     api->stop(gettid());api->tick(gettid());g_ball.bread=0;
@@ -406,11 +406,11 @@ int main(int argc, char **argv) {
 
     // API2 sole-owner berry filter works independently of the (now faulted/off)
     // speed gate, with rooted receiver refresh and exact HOLD/pass originals.
-    const auto *bridge=static_cast<const PgrObsApi2*>(core->query_feature(49,2));
+    const auto *bridge=static_cast<const PgsObsApi2*>(core->query_feature(49,2));
     if(!bridge||bridge->size!=24||bridge->filter_ready())return 63;
-    if(bridge->register_filter(berry_filter,gettid()+1)!=PGR_OBS_ERR_BAD_ARG)return 64;
+    if(bridge->register_filter(berry_filter,gettid()+1)!=PGS_OBS_ERR_BAD_ARG)return 64;
     if(bridge->register_filter(berry_filter,gettid())||bridge->register_filter(berry_filter,gettid())||!bridge->filter_ready())return 65;
-    if(bridge->register_filter(other_berry_filter,gettid())!=PGR_OBS_ERR_BAD_CONFIG)return 66;
+    if(bridge->register_filter(other_berry_filter,gettid())!=PGS_OBS_ERR_BAD_CONFIG)return 66;
     berry_filter_hold=1;
     {int original=orig_btxu_calls;if(call_btxu(&g_ball,&method_obj)||orig_btxu_calls!=original||berry_filter_calls!=1||roots)return 67;}
     berry_filter_hold=0;g_next_response=&g_resp_n;

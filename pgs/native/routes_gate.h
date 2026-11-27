@@ -6,28 +6,28 @@
 // the previous generation and clears its lease/pending command; stale handles cannot mutate it.
 // Host time is monotonic milliseconds (boottime). Nonfinite, negative or backwards time revokes
 // the lease and cancels pending work. A cancelled command still drains as an expired ack.
-enum PgrRoutesGateStatus {
-  PGR_RG_OK=0, PGR_RG_ACCEPTED=1, PGR_RG_NOT_ALLOWED=2, PGR_RG_NO_COMMAND=3,
-  PGR_RG_INVALID_COMMAND=4, PGR_RG_STALE_SEQ=5, PGR_RG_BAD_TIME=-1,
-  PGR_RG_BAD_HANDLE=-2, PGR_RG_BAD_ARG=-3
+enum PgsRoutesGateStatus {
+  PGS_RG_OK=0, PGS_RG_ACCEPTED=1, PGS_RG_NOT_ALLOWED=2, PGS_RG_NO_COMMAND=3,
+  PGS_RG_INVALID_COMMAND=4, PGS_RG_STALE_SEQ=5, PGS_RG_BAD_TIME=-1,
+  PGS_RG_BAD_HANDLE=-2, PGS_RG_BAD_ARG=-3
 };
-enum PgrRoutesAction { PGR_RG_DISCOVER=1, PGR_RG_START=2, PGR_RG_COMPLETE=3, PGR_RG_PAUSE=4 };
-struct PgrRoutesGateResult {
+enum PgsRoutesAction { PGS_RG_DISCOVER=1, PGS_RG_START=2, PGS_RG_COMPLETE=3, PGS_RG_PAUSE=4 };
+struct PgsRoutesGateResult {
   uint64_t seq;
   uint32_t action;
   uint32_t expired;
 };
-static_assert(sizeof(PgrRoutesGateResult)==16,"Routes result ABI");
-struct PgrRoutesGateApi {
+static_assert(sizeof(PgsRoutesGateResult)==16,"Routes result ABI");
+struct PgsRoutesGateApi {
   uint32_t version, size;
   uint64_t (*open)(double lease_ms);
   // parsed: 1 valid command, 0 no-command (cancels), -1 malformed (does not cancel).
   int (*set)(uint64_t handle,int allowed,int parsed,uint64_t seq,uint32_t action,double now);
   // take: 1 output present, 0 empty, negative error. Invalid time still drains expired output.
-  int (*take)(uint64_t handle,double now,PgrRoutesGateResult *out);
+  int (*take)(uint64_t handle,double now,PgsRoutesGateResult *out);
   int (*active)(uint64_t handle,double now);
   int (*clear)(uint64_t handle);
   uint64_t (*last_seq)(uint64_t handle);
 };
-static_assert(sizeof(PgrRoutesGateApi)==56,"Routes table ABI");
+static_assert(sizeof(PgsRoutesGateApi)==56,"Routes table ABI");
 extern "C" const void *pgs_routes_gate_api(uint32_t version);

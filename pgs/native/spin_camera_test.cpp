@@ -90,24 +90,24 @@ bool g_throw_out=false;
 int32_t g_move_next_next_state = 1;
 bool g_move_next_ret = true;
 
-#define PGR_NOP8() asm volatile("nop; nop; nop; nop; nop; nop; nop; nop;")
+#define PGS_NOP8() asm volatile("nop; nop; nop; nop; nop; nop; nop; nop;")
 
 __attribute__((noinline)) void target_in_enter(void *self, void *method_info) {
-    PGR_NOP8();
+    PGS_NOP8();
     g_log_in_enter.last_self = self;
     g_log_in_enter.last_method = method_info;
     ++g_log_in_enter.count;
 }
 
 __attribute__((noinline)) void target_in_exit(void *self, void *method_info) {
-    PGR_NOP8();
+    PGS_NOP8();
     g_log_in_exit.last_self = self;
     g_log_in_exit.last_method = method_info;
     ++g_log_in_exit.count;
 }
 
 __attribute__((noinline)) void target_out_enter(void *self, void *method_info) {
-    PGR_NOP8();
+    PGS_NOP8();
     g_log_out_enter.last_self = self;
     g_log_out_enter.last_method = method_info;
     ++g_log_out_enter.count;
@@ -115,7 +115,7 @@ __attribute__((noinline)) void target_out_enter(void *self, void *method_info) {
 }
 
 __attribute__((noinline)) void target_out_exit(void *self, void *method_info) {
-    PGR_NOP8();
+    PGS_NOP8();
     g_log_out_exit.last_self = self;
     g_log_out_exit.last_method = method_info;
     ++g_log_out_exit.count;
@@ -123,7 +123,7 @@ __attribute__((noinline)) void target_out_exit(void *self, void *method_info) {
 }
 
 __attribute__((noinline)) bool target_move_next(void *self, void *method_info) {
-    PGR_NOP8();
+    PGS_NOP8();
     g_log_move_next.last_self = self;
     g_log_move_next.last_method = method_info;
     ++g_log_move_next.count;
@@ -190,18 +190,18 @@ int main(int argc, char **argv) {
     PgrSpinCameraConfig cfg = make_valid_config();
 
     // Validation before install
-    assert(api->install(nullptr) == PGR_SCAM_ERR_NULL_ARG);
+    assert(api->install(nullptr) == PGS_SCAM_ERR_NULL_ARG);
     PgrSpinCameraConfig bad_cfg = cfg;
     bad_cfg.in_exit_addr = bad_cfg.in_enter_addr;
-    assert(api->install(&bad_cfg) == PGR_SCAM_ERR_BAD_CONFIG);
-    assert(api->update(1, 1000, tid, 1) == PGR_SCAM_ERR_HOOK_FAILED);
+    assert(api->install(&bad_cfg) == PGS_SCAM_ERR_BAD_CONFIG);
+    assert(api->update(1, 1000, tid, 1) == PGS_SCAM_ERR_HOOK_FAILED);
 
     // Install & idempotent re-install
-    assert(api->install(&cfg) == PGR_SCAM_OK);
-    assert(api->install(&cfg) == PGR_SCAM_OK);
+    assert(api->install(&cfg) == PGS_SCAM_OK);
+    assert(api->install(&cfg) == PGS_SCAM_OK);
     bad_cfg = cfg;
     bad_cfg.state_field = &g_field_owner;
-    assert(api->install(&bad_cfg) == PGR_SCAM_ERR_ALREADY_BOUND);
+    assert(api->install(&bad_cfg) == PGS_SCAM_ERR_ALREADY_BOUND);
 
     FakeObject cam_in{&g_sentinel_spline_class, nullptr, 0, {}, 0.0f};
     FakeObject cam_out{&g_sentinel_spline_class, nullptr, 0, {}, 0.0f};
@@ -212,7 +212,7 @@ int main(int argc, char **argv) {
     int dummy_method = 42;
 
     // 1. Chaining while disabled (off)
-    assert(api->update(0, 0, tid, 1) == PGR_SCAM_OK);
+    assert(api->update(0, 0, tid, 1) == PGS_SCAM_OK);
     call_in_enter(&state_in, &dummy_method);
     assert(g_log_in_enter.count == 1 && g_log_in_enter.last_self == &state_in && g_log_in_enter.last_method == &dummy_method);
     assert(call_move_next(&iter, &dummy_method) == true);
@@ -220,10 +220,10 @@ int main(int argc, char **argv) {
     assert(g_live_handles.empty());
 
     // 2. Enable policy, Enter ('in') -> MoveNext clamp max(speed, 25)
-    assert(api->update(1, 2000, tid, 1) == PGR_SCAM_OK);
+    assert(api->update(1, 2000, tid, 1) == PGS_SCAM_OK);
     call_in_enter(&state_in, &dummy_method);
     PgrSpinCameraSample s{};
-    assert(api->sample(&s) == PGR_SCAM_OK);
+    assert(api->sample(&s) == PGS_SCAM_OK);
     assert(s.enter_count == 1 && s.active_roots_mask == 1U && g_live_handles.size() == 1);
 
     iter.state = 0;
@@ -232,20 +232,20 @@ int main(int argc, char **argv) {
     g_move_next_ret = true;
     assert(call_move_next(&iter, &dummy_method) == true);
     assert(iter.speed == 25.0f);
-    assert(api->sample(&s) == PGR_SCAM_OK);
+    assert(api->sample(&s) == PGS_SCAM_OK);
     assert(s.fast_count == 1 && s.fast_serial == 1 && s.last_phase == 1U);
     assert(s.last_original_speed == 4.0f && s.last_applied_speed == 25.0f);
     assert(g_live_handles.size() == 1); // iterator root freed by ScopedGcHandle
 
     // Speed >= 25 preserved on 'out' phase
     call_out_enter(&state_out, &dummy_method);
-    assert(api->sample(&s) == PGR_SCAM_OK && s.active_roots_mask == 3U);
+    assert(api->sample(&s) == PGS_SCAM_OK && s.active_roots_mask == 3U);
     iter.camera = &cam_out;
     iter.state = 0;
     iter.speed = 40.0f;
     assert(call_move_next(&iter, &dummy_method) == true);
     assert(iter.speed == 40.0f);
-    assert(api->sample(&s) == PGR_SCAM_OK);
+    assert(api->sample(&s) == PGS_SCAM_OK);
     assert(s.fast_count == 2 && s.last_phase == 2U && s.last_original_speed == 40.0f && s.last_applied_speed == 40.0f);
 
     // 3. Untouched cases: wrong camera, wrong state_before, wrong state_after, false return, wrong class, non-finite/<=0 speed
@@ -280,16 +280,16 @@ int main(int argc, char **argv) {
     iter.state = 0;
     iter.speed = std::numeric_limits<float>::infinity();
     assert(call_move_next(&iter, &dummy_method) == true && std::isinf(iter.speed));
-    assert(api->sample(&s) == PGR_SCAM_OK && s.fast_count == 2);
+    assert(api->sample(&s) == PGS_SCAM_OK && s.fast_count == 2);
 
     // 4. Exit root cleanup (non-matching ignored, matching frees root)
     FakeObject other_in{&g_sentinel_in_class, &cam_other, 0, {}, 0.0f};
     call_in_exit(&other_in, &dummy_method);
-    assert(api->sample(&s) == PGR_SCAM_OK && s.active_roots_mask == 3U && s.exit_count == 0);
+    assert(api->sample(&s) == PGS_SCAM_OK && s.active_roots_mask == 3U && s.exit_count == 0);
     call_in_exit(&state_in, &dummy_method);
-    assert(api->sample(&s) == PGR_SCAM_OK && s.active_roots_mask == 2U && s.exit_count == 1);
+    assert(api->sample(&s) == PGS_SCAM_OK && s.active_roots_mask == 2U && s.exit_count == 1);
     call_out_exit(&state_out, &dummy_method);
-    assert(api->sample(&s) == PGR_SCAM_OK && s.active_roots_mask == 0U && s.exit_count == 2);
+    assert(api->sample(&s) == PGS_SCAM_OK && s.active_roots_mask == 0U && s.exit_count == 2);
     assert(g_live_handles.empty());
 
     // 5. Prune on epoch change, off, and lease expiry; wrong-thread tick cannot poison pending prune
@@ -297,37 +297,37 @@ int main(int argc, char **argv) {
     assert(g_live_handles.size() == 1);
     // Update epoch from a non-owner thread so g_pending_prune=1 is queued without immediate owner prune
     std::thread([&]() {
-        assert(api->update(1, 2000, tid, 2) == PGR_SCAM_OK);
+        assert(api->update(1, 2000, tid, 2) == PGS_SCAM_OK);
         // Wrong-thread tick must be a no-op and must NOT clear g_pending_prune
-        assert(api->tick( tid ) == PGR_SCAM_OK);
-        assert(api->tick(this_tid()) == PGR_SCAM_OK);
+        assert(api->tick( tid ) == PGS_SCAM_OK);
+        assert(api->tick(this_tid()) == PGS_SCAM_OK);
     }).join();
     assert(g_live_handles.size() == 1);
-    assert(api->tick(tid) == PGR_SCAM_OK);
-    assert(api->sample(&s) == PGR_SCAM_OK && s.active_roots_mask == 0U && s.prune_count == 1);
+    assert(api->tick(tid) == PGS_SCAM_OK);
+    assert(api->sample(&s) == PGS_SCAM_OK && s.active_roots_mask == 0U && s.prune_count == 1);
     assert(g_live_handles.empty());
 
     // Lease expiry prune
     call_in_enter(&state_in, &dummy_method);
-    assert(api->update(1, 1, tid, 2) == PGR_SCAM_OK);
+    assert(api->update(1, 1, tid, 2) == PGS_SCAM_OK);
     ::usleep(5000);
-    assert(api->tick(tid) == PGR_SCAM_OK);
-    assert(api->sample(&s) == PGR_SCAM_OK && s.active_roots_mask == 0U && s.prune_count == 2);
+    assert(api->tick(tid) == PGS_SCAM_OK);
+    assert(api->sample(&s) == PGS_SCAM_OK && s.active_roots_mask == 0U && s.prune_count == 2);
 
     // 6. Policy thread-change rejected while cleanup still works
-    assert(api->update(1, 2000, tid, 3) == PGR_SCAM_OK);
+    assert(api->update(1, 2000, tid, 3) == PGS_SCAM_OK);
     call_in_enter(&state_in, &dummy_method);
     assert(g_live_handles.size() == 1);
-    assert(api->update(1, 2000, tid + 999, 3) == PGR_SCAM_ERR_BAD_CONFIG);
-    assert(api->tick(tid) == PGR_SCAM_OK);
-    assert(api->sample(&s) == PGR_SCAM_OK && s.active_roots_mask == 0U && s.prune_count == 3);
+    assert(api->update(1, 2000, tid + 999, 3) == PGS_SCAM_ERR_BAD_CONFIG);
+    assert(api->tick(tid) == PGS_SCAM_OK);
+    assert(api->sample(&s) == PGS_SCAM_OK && s.active_roots_mask == 0U && s.prune_count == 3);
 
     // 7. Partial root failure (gchandle_new failure on Enter and on Iterator) without leaks
-    assert(api->update(1, 2000, tid, 4) == PGR_SCAM_OK);
+    assert(api->update(1, 2000, tid, 4) == PGS_SCAM_OK);
     g_fail_gchandle_new_countdown = 0;
     call_in_enter(&state_in, &dummy_method);
-    assert(api->sample(&s) == PGR_SCAM_OK);
-    assert(s.last_error == PGR_SCAM_RTERR_GCHANDLE_ENTER && s.error_serial == 1 && g_live_handles.empty());
+    assert(api->sample(&s) == PGS_SCAM_OK);
+    assert(s.last_error == PGS_SCAM_RTERR_GCHANDLE_ENTER && s.error_serial == 1 && g_live_handles.empty());
 
     call_in_enter(&state_in, &dummy_method);
     assert(g_live_handles.size() == 1);
@@ -337,12 +337,12 @@ int main(int argc, char **argv) {
     g_fail_gchandle_new_countdown = 0; // fail iterator handle allocation
     assert(call_move_next(&iter, &dummy_method) == true);
     assert(iter.speed == 5.0f);
-    assert(api->sample(&s) == PGR_SCAM_OK);
-    assert(s.last_error == PGR_SCAM_RTERR_GCHANDLE_ITER && s.error_serial == 2);
+    assert(api->sample(&s) == PGS_SCAM_OK);
+    assert(s.last_error == PGS_SCAM_RTERR_GCHANDLE_ITER && s.error_serial == 2);
     assert(g_live_handles.size() == 1);
 
     // Final disable cleans remaining slot root
-    assert(api->update(0, 0, tid, 4) == PGR_SCAM_OK);
+    assert(api->update(0, 0, tid, 4) == PGS_SCAM_OK);
     assert(g_live_handles.empty());
 
     std::printf("spin_camera_test passed\n");

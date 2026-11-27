@@ -16,7 +16,7 @@
 #include <cmath>
 namespace {
 using namespace pgr_shared_meta;
-using namespace pgr_gym;
+using namespace pgs_gym;
 struct Failure {const char *where;};
 struct UnsentRequest {const char *where;};
 void require_unsent(bool ok,const char *where){if(!ok)throw UnsentRequest{where};}
@@ -291,7 +291,7 @@ bool issue_feed(const Permission &p){
  int chosen=berry(ns,rs,p.settings);if(!chosen){event("Berry reserves reached");return false;}
  uint64_t id=0;for(auto d:defenders())if(history.feed_allowed(d.id,clock_ms())){id=d.id;break;}if(!id)return false;
  Root fid(fn<void*(*)(const char*)>(boot.runtime.string_new)(pending.id.c_str()));
- void *feed=pgr_gym_feed::resolve(boot,bag.get());require(feed,"Gym item-bag feeding contract unavailable");
+ void *feed=pgs_gym_feed::resolve(boot,bag.get());require(feed,"Gym item-bag feeding contract unavailable");
  if(!snapshot_valid(p)||!gym_valid(pending.gym,p))return false;
  void *stock_args[]={&chosen};int current=boxed<int>(call(bag.get(),"GetItemCount",1,stock_args),"System.Int32");
  if(current<=(chosen==703?p.settings.nanab:p.settings.razz))return false;
@@ -301,7 +301,7 @@ bool issue_feed(const Permission &p){
  void *args[]={&chosen,&id,fid.get()};
  pending.promise=Root(invoke(feed,bag.get(),args));require(bool(pending.promise),"feeding outcome unknown");
  // The game may update its cache synchronously, before a badge/reward UI opens.
- try{int after=boxed<int>(call(bag.get(),"GetItemCount",1,stock_args),"System.Int32");pgr_gym_feed::observe_stock(pending.stock_seen,current,after);}catch(...){}
+ try{int after=boxed<int>(call(bag.get(),"GetItemCount",1,stock_args),"System.Int32");pgs_gym_feed::observe_stock(pending.stock_seen,current,after);}catch(...){}
  event("Feeding gym defender");return true;
 }
 void cooldown(const char *label){const auto *t=static_cast<const PgrRuntimeTransportApi*>(pgs_runtime_transport_api(1));PgrRuntimeTransportString s{label,uint32_t(strlen(label))};if(t&&t->emit(17,nullptr,0,&s,1)!=0)paused=true;}
@@ -337,7 +337,7 @@ bool find_open_gym(const Permission &p,uint64_t now,const std::string &skip,Root
  return false;
 }
 bool observe_feed_stock(int stock,uint64_t now){
- pgr_gym_feed::observe_stock(pending.stock_seen,pending.stock_before,stock);
+ pgs_gym_feed::observe_stock(pending.stock_seen,pending.stock_before,stock);
  if(pending.stock_seen){pending.await_stock=false;event("Berry inventory synchronized");return true;}
  if(now-pending.since>5000)event("Waiting for berry inventory update; will resume when synchronized");
  return false;
@@ -376,7 +376,7 @@ void poll(const Permission &p){
   act(p);return;}
  if(now-pending.since>15000){paused=true;event("Paused: gym request timed out; toggle off to resume");clear_pending();return;}
  auto vr=static_cast<const PgrVgpResultsApi*>(pgs_vgp_results_api(1));PgrVgpResultsResult out{};int rc=vr->poll(pending.promise.get(),1,owner,&out);if(!rc)return;
- if(rc!=PGR_VR_DONE){
+ if(rc!=PGS_VR_DONE){
   if(rc<0&&pending.promise){void *k=klass(pending.promise.get());auto nm=fn<const char*(*)(void*)>(exp("class_get_name"));auto ns=fn<const char*(*)(void*)>(exp("class_get_namespace"));
    __android_log_print(ANDROID_LOG_INFO,"PGSGym","Gym request unreadable: phase=%d rc=%d promise=%s.%s",pending.phase,rc,ns(k),nm(k));}
   if(pending.phase==3)history.refuse(pending.defender,now);event("Gym request rejected",rc);clear_pending();next_scan=now+10000;return;}
@@ -477,7 +477,7 @@ void discover(const Permission &p){
  else if(nearby_waiting){if(status!="Berry reserves reached")event("Waiting to recheck nearby gym");}else if(!nearest_reason.empty())event("Nearest gym: "+nearest_reason+" ("+std::to_string(int(nearest))+"m)");else event("Waiting for a friendly gym within 80m");
 }
 }
-void pgr_gym_tick(uint64_t tid,const PgrSharedMetadataOutput *metadata){
+void pgs_gym_tick(uint64_t tid,const PgrSharedMetadataOutput *metadata){
  if(busy||!tid||tid!=uint64_t(gettid())||(owner&&owner!=tid))return;
  struct Guard{Guard(){busy=true;}~Guard(){busy=false;}} guard;
  try{
@@ -492,10 +492,10 @@ void pgr_gym_tick(uint64_t tid,const PgrSharedMetadataOutput *metadata){
   discover(p);
  }catch(const UnsentRequest &e){recover_unsent(e.where);}catch(const Failure &e){paused=true;clear_pending();event(std::string("Paused: ")+e.where);}catch(...){paused=true;clear_pending();event("Paused: gym automation failure");}
 }
-void pgr_gym_stop(uint64_t tid){if(initialized&&tid==owner&&tid==uint64_t(gettid())){clear_pending();paused=true;}}
+void pgs_gym_stop(uint64_t tid){if(initialized&&tid==owner&&tid==uint64_t(gettid())){clear_pending();paused=true;}}
 
-void pgr_gym_remote_hold(bool hold){remote_hold=hold;}
-pgr_gym::History *pgr_gym_remote_history(const std::string &player){
+void pgs_gym_remote_hold(bool hold){remote_hold=hold;}
+pgs_gym::History *pgs_gym_remote_history(const std::string &player){
  if(player.empty()||pending.phase)return nullptr;
  if(account!=player){account=player;history=History{};inspected.clear();reserved.clear();}
  return &history;

@@ -102,7 +102,7 @@ void step(){
 }
 }  // namespace
 
-void pgr_session_stats_tick(uint64_t tid,const PgrSharedMetadataOutput *metadata){
+void pgs_session_stats_tick(uint64_t tid,const PgrSharedMetadataOutput *metadata){
  if(busy||!tid||tid!=uint64_t(gettid())||(owner&&owner!=tid)||!metadata)return;
  struct Guard{Guard(){busy=true;}~Guard(){busy=false;}}guard;
  owner=tid;md=metadata;

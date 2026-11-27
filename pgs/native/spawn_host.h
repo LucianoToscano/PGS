@@ -18,7 +18,7 @@ struct PgsSpawnHostApi {
  int (*stop)();
  int (*sample)(PgsSpawnHostSample*);
  int (*next_event)(PgsSpawnHostEvent*);
- PgrUnityWork on_unity_pulse;
+ PgsUnityWork on_unity_pulse;
 };
 static_assert(sizeof(PgsSpawnHostConfig)==40,"Spawn host config");
 static_assert(sizeof(PgsSpawnHostOptions)==24,"Spawn host options");

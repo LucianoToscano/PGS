@@ -76,14 +76,14 @@ int sample(PgrRuntimeTransportSample *out){*out={};out->snapshot_fresh=fresh;out
 int get_bool(uint32_t id,int *out){*out=id==3?active:id==16?ready:id==38?on_map:0;return 0;}
 int get_string(uint32_t id,char *out,uint32_t cap,uint32_t *length){assert(id==18);std::string s="H2|"+std::to_string(enabled)+"|"+std::to_string(when)+"|"+std::to_string(threshold)+"|"+std::to_string(revive)+"|"+std::to_string(full);assert(s.size()<cap);memcpy(out,s.data(),s.size());*length=s.size();return 0;}
 int emit(uint32_t,const int64_t*,uint32_t,const PgrRuntimeTransportString*,uint32_t){return 0;}
-int poll(void *p,uint32_t,uint64_t,PgrVgpResultsResult *out){assert(p==promise_obj);*out={};++polls;return answered?PGR_VR_DONE:PGR_VR_PENDING;}
+int poll(void *p,uint32_t,uint64_t,PgrVgpResultsResult *out){assert(p==promise_obj);*out={};++polls;return answered?PGS_VR_DONE:PGS_VR_PENDING;}
 bool allowed(){return permission;}
 uint64_t tid(){return uint64_t(gettid());}
-int tick(uint64_t token=1){return pgr_heal_gym_tick(tid(),&metadata,token,allowed);}
-void baseline(){pgr_heal_gym_baseline(tid(),&metadata);assert(sends==0);}
+int tick(uint64_t token=1){return pgs_heal_gym_tick(tid(),&metadata,token,allowed);}
+void baseline(){pgs_heal_gym_baseline(tid(),&metadata);assert(sends==0);}
 void answer(int hp){assert(st.promise);put(find(sent_id),24,hp);answered=true;now+=500;}
 void reset(){
- if(initialized)pgr_heal_stop(tid());st=State{};gym_reset();initialized=faulted=busy=false;owner=0;md=nullptr;assert(roots.empty());
+ if(initialized)pgs_heal_stop(tid());st=State{};gym_reset();initialized=faulted=busy=false;owner=0;md=nullptr;assert(roots.empty());
  objects.clear();pokemon.clear();now+=100000;enabled=fresh=active=ready=permission=true;on_map=false;when=0;threshold=50;revive=full=true;
  for(int &v:stock_count)v=10;sends=polls=scans=0;sent_item=0;sent_id=0;answered=false;lookup_callback={};
  map_obj=object("Map");container_obj=object("Container");bag_obj=object("Bag");items_obj=object("Items");list_obj=object("List");promise_obj=object("Promise");
@@ -94,7 +94,7 @@ void reset(){
  boot_api.snapshot=boot_snapshot;meta_api.resolve_class=resolve_class;transport_api.sample=sample;transport_api.get_bool=get_bool;transport_api.get_string=get_string;transport_api.emit=emit;results_api.poll=poll;
 }
 void tests(){
- reset();auto *a=mon(1,100);baseline();put(a,24,20);pgr_heal_tick(tid(),&metadata);assert(sends==0);assert(tick()==1&&sends==1);assert(tick()==1&&sends==1);
+ reset();auto *a=mon(1,100);baseline();put(a,24,20);pgs_heal_tick(tid(),&metadata);assert(sends==0);assert(tick()==1&&sends==1);assert(tick()==1&&sends==1);
  answer(100);assert(tick()==1);now+=4000;assert(tick()==0&&sends==1);int count=scans;assert(tick()==0&&scans==count);
  // A second round with less damage must compare against HEALED HP, not old damaged HP.
  put(a,24,40);assert(tick(2)==1&&sends==2);answer(100);tick(2);now+=4000;assert(tick(2)==0);
@@ -124,12 +124,12 @@ void tests(){
  // Item conservation vs Always heal fully retains the existing user choice.
  for(int f=0;f<2;f++){reset();a=mon(1,100);threshold=100;full=f;for(int &v:stock_count)v=0;stock_count[MAX_POTION]=1;baseline();put(a,24,90);tick();assert(sends==f);}
  // Ordinary on-map periodic healing remains operational.
- reset();mon(1,20);when=1;on_map=true;pgr_heal_tick(tid(),&metadata);assert(sends==0);now+=10001;pgr_heal_tick(tid(),&metadata);assert(sends==1);
+ reset();mon(1,20);when=1;on_map=true;pgs_heal_tick(tid(),&metadata);assert(sends==0);now+=10001;pgs_heal_tick(tid(),&metadata);assert(sends==1);
  // Owner and callback are mandatory. Stop releases all persistent roots and the token.
- reset();mon(1,100);baseline();assert(pgr_heal_gym_tick(tid(),&metadata,1,nullptr)==-1);int wrong=0;std::thread t([&](){wrong=tick();});t.join();assert(wrong==-1);pgr_heal_stop(tid());assert(roots.empty()&&!gym.armed);assert(tick()==0);
+ reset();mon(1,100);baseline();assert(pgs_heal_gym_tick(tid(),&metadata,1,nullptr)==-1);int wrong=0;std::thread t([&](){wrong=tick();});t.join();assert(wrong==-1);pgs_heal_stop(tid());assert(roots.empty()&&!gym.armed);assert(tick()==0);
  // Existing item planner still selects revival first and never spends missing stock.
- pgr_heal::Stock stock{};stock.count[pgr_heal::POTION]=2;auto p=pgr_heal::plan(20,100,stock,true,true);assert(p.count[pgr_heal::POTION]==2&&p.healed==40);
- stock.count[pgr_heal::MAX_REVIVE]=1;p=pgr_heal::plan(0,100,stock,true,true);assert(pgr_heal::first(p)==pgr_heal::MAX_REVIVE);
+ pgs_heal::Stock stock{};stock.count[pgs_heal::POTION]=2;auto p=pgs_heal::plan(20,100,stock,true,true);assert(p.count[pgs_heal::POTION]==2&&p.healed==40);
+ stock.count[pgs_heal::MAX_REVIVE]=1;p=pgs_heal::plan(0,100,stock,true,true);assert(pgs_heal::first(p)==pgs_heal::MAX_REVIVE);
  reset();puts("heal runtime: PASS (off-map permission, delayed HP, multiple rounds, pending items, preferences, cancellation, roots)");
 }
 }

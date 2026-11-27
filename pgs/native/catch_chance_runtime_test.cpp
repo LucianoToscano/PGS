@@ -86,19 +86,19 @@ extern "C" const void *pgs_runtime_bootstrap_api(uint32_t){return nullptr;}
 extern "C" const void *pgs_runtime_metadata_api(uint32_t){return nullptr;}
 
 int main(){
- assert(pgr_parse_catch_chance("C1|1|1|75").valid);
- assert(pgr_parse_catch_chance("C1|1|1|75|701").berry==701);
- assert(!pgr_parse_catch_chance("C1|1|1|75|0").safari);
- {const auto c5=pgr_parse_catch_chance("C5|0|0|75|0|0|0|0|0|1");assert(c5.valid&&c5.preview&&!c5.show&&!c5.autothrow);
-  assert(!pgr_parse_catch_chance("C4|0|0|75|0|0|0|0|0").preview);
-  for(const char *bad:{"C5|0|0|75|0|0|0|0|0","C5|0|0|75|0|0|0|0|0|2","C5|0|0|75|0|0|0|0|0|1x"})assert(!pgr_parse_catch_chance(bad).valid);}
- for(const char *bad:{"C2|1|1|75|0","C2|1|1|75|0|2","C2|1|1|75|0|1x","C2|1|1|0|0|1","C2|1|2|75|0|1","C1|1|1|75|","C9|1|1|75|0|1"})assert(!pgr_parse_catch_chance(bad).valid);
+ assert(pgs_parse_catch_chance("C1|1|1|75").valid);
+ assert(pgs_parse_catch_chance("C1|1|1|75|701").berry==701);
+ assert(!pgs_parse_catch_chance("C1|1|1|75|0").safari);
+ {const auto c5=pgs_parse_catch_chance("C5|0|0|75|0|0|0|0|0|1");assert(c5.valid&&c5.preview&&!c5.show&&!c5.autothrow);
+  assert(!pgs_parse_catch_chance("C4|0|0|75|0|0|0|0|0").preview);
+  for(const char *bad:{"C5|0|0|75|0|0|0|0|0","C5|0|0|75|0|0|0|0|0|2","C5|0|0|75|0|0|0|0|0|1x"})assert(!pgs_parse_catch_chance(bad).valid);}
+ for(const char *bad:{"C2|1|1|75|0","C2|1|1|75|0|2","C2|1|1|75|0|1x","C2|1|1|0|0|1","C2|1|2|75|0|1","C1|1|1|75|","C9|1|1|75|0|1"})assert(!pgs_parse_catch_chance(bad).valid);
  boot.runtime.gchandle_new=reinterpret_cast<void*>(root_new);boot.runtime.gchandle_get_target=reinterpret_cast<void*>(root_get);boot.runtime.gchandle_free=reinterpret_cast<void*>(root_free);
  boot.runtime.object_get_class=reinterpret_cast<void*>(object_class);boot.runtime.object_unbox=reinterpret_cast<void*>(object_unbox);
  boot.runtime.runtime_invoke=reinterpret_cast<void*>(managed_call);boot.runtime.field_get_value=reinterpret_cast<void*>(field_read);
  boot.meta.class_get_method_from_name=reinterpret_cast<void*>(get_method);boot.meta.class_get_field_from_name=reinterpret_cast<void*>(get_field);boot.meta.field_get_type=reinterpret_cast<void*>(field_type);
  transport_api.sample=sample;transport_api.get_string=get_string;transport_api.get_bool=get_bool;transport_api.get_int=get_int;transport_api.emit=emit;
- ready=true;owner=gettid();select_method=const_cast<char*>("SelectPokeball");item_bag=Root(&bag);pgr_catch_chance_enter(&interaction);
+ ready=true;owner=gettid();select_method=const_cast<char*>("SelectPokeball");item_bag=Root(&bag);pgs_catch_chance_enter(&interaction);
  reset();step();assert(current_ball==7&&selections==1&&logged("safari-selected"));
  step();assert(selections==1);current_ball=2;step();assert(current_ball==2&&selections==1&&logged("manual-selection-kept"));
  in_play=true;step();in_play=false;step();assert(current_ball==7&&selections==2);
@@ -113,15 +113,15 @@ int main(){
  settings="C2|1|1|75|0|1";step();assert(current_ball==7&&selections==2);
  reset();settings="C3|1|1|75|0|1|1|0";step();assert(current_ball==7&&selections==1);
  assert(config().grade==0&&!config().curve); // Auto Throw does not override configured throw bonuses.
- for(const char* bad:{"C3|1|1|75|0|1|2|0","C3|1|1|75|0|1|1|-1","C3|1|1|75|0|1|1|7200001","C3|1|1|75|0|1|1|0x"})assert(!pgr_parse_catch_chance(bad).valid);
+ for(const char* bad:{"C3|1|1|75|0|1|2|0","C3|1|1|75|0|1|1|-1","C3|1|1|75|0|1|1|7200001","C3|1|1|75|0|1|1|0x"})assert(!pgs_parse_catch_chance(bad).valid);
  reset();settings="C1|1|1|75|0";step();assert(current_ball==3);
  reset();fresh=false;step();assert(selections==0);
  reset();in_play=true;step();assert(selections==0);
- reset();assert(pgr_catch_chance_offers_ball(&response,7));
- rates[3]=0;assert(!pgr_catch_chance_offers_ball(&response,7));rates[3]=std::numeric_limits<float>::quiet_NaN();assert(!pgr_catch_chance_offers_ball(&response,7));
- rates[3]=1.01f;assert(!pgr_catch_chance_offers_ball(&response,7));rates.pop_back();assert(!pgr_catch_chance_offers_ball(&response,7));
- reset();assert(!pgr_catch_chance_offers_ball(&response,8));busy=true;assert(!pgr_catch_chance_offers_ball(&response,7));busy=false;
- assert(!pgr_is_inventory_safari_ball(7));pgr_safari_inventory_item.store(7);assert(pgr_is_inventory_safari_ball(7)&&!pgr_is_inventory_safari_ball(8)&&!pgr_is_inventory_safari_ball(4));
- pgr_catch_chance_stop();item_bag.reset();assert(roots.empty());
+ reset();assert(pgs_catch_chance_offers_ball(&response,7));
+ rates[3]=0;assert(!pgs_catch_chance_offers_ball(&response,7));rates[3]=std::numeric_limits<float>::quiet_NaN();assert(!pgs_catch_chance_offers_ball(&response,7));
+ rates[3]=1.01f;assert(!pgs_catch_chance_offers_ball(&response,7));rates.pop_back();assert(!pgs_catch_chance_offers_ball(&response,7));
+ reset();assert(!pgs_catch_chance_offers_ball(&response,8));busy=true;assert(!pgs_catch_chance_offers_ball(&response,7));busy=false;
+ assert(!pgs_is_inventory_safari_ball(7));pgs_safari_inventory_item.store(7);assert(pgs_is_inventory_safari_ball(7)&&!pgs_is_inventory_safari_ball(8)&&!pgs_is_inventory_safari_ball(4));
+ pgs_catch_chance_stop();item_bag.reset();assert(roots.empty());
  std::puts("PASS catch chance Safari runtime: selection, manual override, breakout, stock, eligibility, defaults, malformed config, offered probabilities, roots");
 }

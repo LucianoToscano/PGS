@@ -45,7 +45,7 @@ int main() {
     require(pgs_hook_diag(nullptr) == -1 && pgs_hook_diag(&diag) == 0 &&
         pgrazor_hook_diag(&diag) == 0 &&
         diag.version == 1 && diag.size == sizeof(diag) && diag.failures == 0 &&
-        diag.reason == PGR_HOOK_REASON_NONE && diag.island_source == PGR_HOOK_ISLAND_NONE,
+        diag.reason == PGS_HOOK_REASON_NONE && diag.island_source == PGS_HOOK_ISLAND_NONE,
         "clean diagnostic before any hook");
 #if defined(__aarch64__)
     using Method = uintptr_t (*)(uintptr_t);
@@ -107,12 +107,12 @@ int main() {
     require(std::memcmp(code, pristine, sizeof(pristine)) == 0, "restore original bytes");
     require(munmap(code, page) == 0, "unmap fixture");
     require(pgrazor_hook_diag(&diag) == 0 && diag.failures == 0 &&
-        diag.island_source == PGR_HOOK_ISLAND_MMAP && diag.island_pages == 1,
+        diag.island_source == PGS_HOOK_ISLAND_MMAP && diag.island_pages == 1,
         "successful hooks report an mmap island and no failure");
     void *unused = nullptr;
     require(pgrazor_hook(nullptr, reinterpret_cast<void *>(replacement), &unused) == -1 &&
         pgrazor_hook_diag(&diag) == 0 && diag.failures == 1 &&
-        diag.reason == PGR_HOOK_REASON_BAD_ARGS && diag.target == 0,
+        diag.reason == PGS_HOOK_REASON_BAD_ARGS && diag.target == 0,
         "first failure is latched");
     std::puts("hook-engine-near: PASS");
 #else

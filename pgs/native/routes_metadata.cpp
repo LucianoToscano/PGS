@@ -5,9 +5,9 @@
 #include <unistd.h>
 
 namespace {
-using namespace pgr_routes_schema;
+using namespace pgs_routes_schema;
 std::mutex resolving;
-bool attached(const PgrRoutesMetadataConfig &c){
+bool attached(const PgsRoutesMetadataConfig &c){
     return c.owner_tid&&c.owner_tid==static_cast<uint64_t>(gettid())&&
         reinterpret_cast<void *(*)()>(c.thread_current)()!=nullptr;
 }
@@ -21,21 +21,21 @@ int method(const PgrMetaApi *md,const void *owner,const char *name,const char *r
     q.param_types[0]=arg;q.param_match[0]=arg?PGR_MD_MATCH_EXACT:PGR_MD_MATCH_ANY;q.allow_inflated=inflated?1:0;
     PgrMetaMethodResult r{};int rc=md->validate_method(&q,&r);if(!rc)*out=r.method;return rc;
 }
-int resolve(const PgrRoutesMetadataConfig *input,PgrRoutesMetadataOutput *out){
+int resolve(const PgsRoutesMetadataConfig *input,PgsRoutesMetadataOutput *out){
     if(!out)return -1;
     std::memset(out,0,sizeof(*out));
     if(!input||input->version!=1||input->size!=sizeof(*input)||!input->thread_current)return -2;
     // No shared scratch escapes, and recursive metadata callbacks cannot deadlock.
     std::unique_lock<std::mutex> lock(resolving,std::try_to_lock);if(!lock.owns_lock())return -27;
-    PgrRoutesMetadataConfig c=*input;
+    PgsRoutesMetadataConfig c=*input;
     const uintptr_t module_base=reinterpret_cast<uintptr_t>(c.binding.module_base);
     const uintptr_t thread_address=reinterpret_cast<uintptr_t>(c.thread_current);
-    if(!module_base||!c.binding.module_size||c.binding.module_size>UINTPTR_MAX-module_base)return PGR_MD_ERR_CODE_RANGE;
+    if(!module_base||!c.binding.module_size||c.binding.module_size>UINTPTR_MAX-module_base)return PGS_MD_ERR_CODE_RANGE;
     // Production uses the default resolver and real module exports. Explicit
     // native segment callbacks are the existing feature47 fixture boundary and
     // may intentionally supply exports outside their synthetic module buffer.
     if(!c.binding.seg_query&&(thread_address<module_base||thread_address-module_base>c.binding.module_size||
-        4>c.binding.module_size-(thread_address-module_base)))return PGR_MD_ERR_CODE_RANGE;
+        4>c.binding.module_size-(thread_address-module_base)))return PGS_MD_ERR_CODE_RANGE;
     if(!attached(c))return -30;
     const auto *md=metadata();if(!md||md->version!=1||md->size!=sizeof(PgrMetaApi))return -31;
     if(!c.binding.seg_query){
@@ -45,11 +45,11 @@ int resolve(const PgrRoutesMetadataConfig *input,PgrRoutesMetadataOutput *out){
         int status=md->resolve_module("libil2cpp.so",&canonical,&extent);if(status)return status;
         const long page=sysconf(_SC_PAGESIZE);
         if(canonical!=c.binding.module_base||!extent||extent>c.binding.module_size||page<=0||
-           c.binding.module_size-extent>=static_cast<uint64_t>(page))return PGR_MD_ERR_CODE_RANGE;
+           c.binding.module_size-extent>=static_cast<uint64_t>(page))return PGS_MD_ERR_CODE_RANGE;
         c.binding.module_size=extent;
     }
     int rc=md->bind(&c.binding);if(rc)return rc;
-    PgrRoutesMetadataOutput result{};result.version=1;result.size=sizeof(result);
+    PgsRoutesMetadataOutput result{};result.version=1;result.size=sizeof(result);
     const void *field_classes[kFieldCount]{};
     for(uint32_t i=0;i<kClassCount;i++){
         if(!attached(c))return -30;
@@ -96,6 +96,6 @@ int resolve(const PgrRoutesMetadataConfig *input,PgrRoutesMetadataOutput *out){
     if(!attached(c))return -30;
     *out=result;return 0;
 }
-const PgrRoutesMetadataApi api={1,sizeof(PgrRoutesMetadataApi),sizeof(PgrRoutesMetadataConfig),sizeof(PgrRoutesMetadataOutput),resolve};
+const PgsRoutesMetadataApi api={1,sizeof(PgsRoutesMetadataApi),sizeof(PgsRoutesMetadataConfig),sizeof(PgsRoutesMetadataOutput),resolve};
 }
 extern "C" const void *pgs_routes_metadata_api(uint32_t version){return version==1?&api:nullptr;}

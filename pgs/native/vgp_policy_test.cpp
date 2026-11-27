@@ -28,7 +28,7 @@ constexpr int32_t kEscape = 12, kMissed = 14, kReplace = 16;  // -> retry_delay_
 
 PgrVgpPolicyConfig make_config() {
   PgrVgpPolicyConfig c{};
-  c.version = PGR_VP_CONFIG_VERSION;
+  c.version = PGS_VP_CONFIG_VERSION;
   c.size = sizeof(PgrVgpPolicyConfig);
   c.scan_interval_ms = 2500;
   c.catch_seen_ms = 30000;
@@ -51,7 +51,7 @@ const PgrVgpPolicyApi *g_api = nullptr;
 
 PgrVgpPolicySample take_sample() {
   PgrVgpPolicySample s{};
-  assert(g_api->sample(&s) == PGR_VP_OK);
+  assert(g_api->sample(&s) == PGS_VP_OK);
   assert(s.version == 1 && s.size == sizeof(PgrVgpPolicySample));
   return s;
 }
@@ -87,100 +87,100 @@ int main(int argc, char **argv) {
   PgrVgpPolicyConfig cfg = make_config();
 
   // 1. Validation + not-installed + idempotence + reconfig.
-  assert(api->install(nullptr) == PGR_VP_ERR_NULL_ARG);
+  assert(api->install(nullptr) == PGS_VP_ERR_NULL_ARG);
   PgrVgpPolicyConfig bad = cfg; bad.version = 2;
-  assert(api->install(&bad) == PGR_VP_ERR_BAD_VERSION);
+  assert(api->install(&bad) == PGS_VP_ERR_BAD_VERSION);
   bad = cfg; bad.size = sizeof(PgrVgpPolicyConfig) - 1;
-  assert(api->install(&bad) == PGR_VP_ERR_BAD_SIZE);
-  bad = cfg; bad.max_keys = PGR_VP_MAX_KEYS + 1;
-  assert(api->install(&bad) == PGR_VP_ERR_BAD_CONFIG);
+  assert(api->install(&bad) == PGS_VP_ERR_BAD_SIZE);
+  bad = cfg; bad.max_keys = PGS_VP_MAX_KEYS + 1;
+  assert(api->install(&bad) == PGS_VP_ERR_BAD_CONFIG);
   bad = cfg; bad.max_keys = 0;
-  assert(api->install(&bad) == PGR_VP_ERR_BAD_CONFIG);
-  assert(api->due(tid) == PGR_VP_ERR_NOT_INSTALLED);
-  assert(touch(tid, "p1", 1000) == PGR_VP_ERR_NOT_INSTALLED);
+  assert(api->install(&bad) == PGS_VP_ERR_BAD_CONFIG);
+  assert(api->due(tid) == PGS_VP_ERR_NOT_INSTALLED);
+  assert(touch(tid, "p1", 1000) == PGS_VP_ERR_NOT_INSTALLED);
 
-  assert(api->install(&cfg) == PGR_VP_OK);
-  assert(api->install(&cfg) == PGR_VP_OK);  // idempotent
+  assert(api->install(&cfg) == PGS_VP_OK);
+  assert(api->install(&cfg) == PGS_VP_OK);  // idempotent
   bad = cfg; bad.retry_delay_ms = 1;
-  assert(api->install(&bad) == PGR_VP_ERR_RECONFIG);
-  assert(api->update(1, tid) == PGR_VP_OK);
+  assert(api->install(&bad) == PGS_VP_ERR_RECONFIG);
+  assert(api->update(1, tid) == PGS_VP_OK);
 
   // 2. Off-owner refusal (owner already latched here).
   std::thread([&]() {
     const uint64_t other = this_tid();
-    assert(g_api->due(other) == PGR_VP_ERR_OFF_OWNER);
-    assert(g_api->order(other, nullptr) == PGR_VP_ERR_NULL_ARG);  // null out checked first
+    assert(g_api->due(other) == PGS_VP_ERR_OFF_OWNER);
+    assert(g_api->order(other, nullptr) == PGS_VP_ERR_NULL_ARG);  // null out checked first
     uint32_t o = 9;
-    assert(g_api->order(other, &o) == PGR_VP_ERR_OFF_OWNER);
-    assert(touch(other, "p9", 1000) == PGR_VP_ERR_OFF_OWNER);
+    assert(g_api->order(other, &o) == PGS_VP_ERR_OFF_OWNER);
+    assert(touch(other, "p9", 1000) == PGS_VP_ERR_OFF_OWNER);
   }).join();
-  assert(api->due(tid + 1) == PGR_VP_ERR_OFF_OWNER);  // mismatched proven tid
+  assert(api->due(tid + 1) == PGS_VP_ERR_OFF_OWNER);  // mismatched proven tid
 
   // 3. Scan cadence: arm sets now+delay; due is OK until it elapses, then YES.
-  assert(api->arm(tid, 10000) == PGR_VP_OK);
-  assert(api->due(tid) == PGR_VP_OK);          // not elapsed -> not due
-  assert(api->arm(tid, 1) == PGR_VP_OK);
+  assert(api->arm(tid, 10000) == PGS_VP_OK);
+  assert(api->due(tid) == PGS_VP_OK);          // not elapsed -> not due
+  assert(api->arm(tid, 1) == PGS_VP_OK);
   ::usleep(3000);
-  assert(api->due(tid) == PGR_VP_YES);         // cadence elapsed -> due
+  assert(api->due(tid) == PGS_VP_YES);         // cadence elapsed -> due
 
   // 4. Alternation: order flips catch-first / spin-first on successive calls.
   api->reset(tid);
   uint32_t o0 = 9, o1 = 9, o2 = 9;
-  assert(api->order(tid, &o0) == PGR_VP_OK && o0 == 0);  // first scan: catch-first
-  assert(api->order(tid, &o1) == PGR_VP_OK && o1 == 1);  // then spin-first
-  assert(api->order(tid, &o2) == PGR_VP_OK && o2 == 0);
+  assert(api->order(tid, &o0) == PGS_VP_OK && o0 == 0);  // first scan: catch-first
+  assert(api->order(tid, &o1) == PGS_VP_OK && o1 == 1);  // then spin-first
+  assert(api->order(tid, &o2) == PGS_VP_OK && o2 == 0);
 
   // 5. Quarantine: touch suppresses; seen reports YES; expiry clears it; sweep compacts + counts.
   api->reset(tid);
-  assert(seen(tid, "p100") == PGR_VP_OK);               // absent
-  assert(touch(tid, "p100", 10000) == PGR_VP_OK);
-  assert(seen(tid, "p100") == PGR_VP_YES);              // suppressed
-  assert(touch(tid, "s-fortA", 10000) == PGR_VP_OK);
-  assert(touch(tid, "p200", 1) == PGR_VP_OK);           // expires almost immediately
+  assert(seen(tid, "p100") == PGS_VP_OK);               // absent
+  assert(touch(tid, "p100", 10000) == PGS_VP_OK);
+  assert(seen(tid, "p100") == PGS_VP_YES);              // suppressed
+  assert(touch(tid, "s-fortA", 10000) == PGS_VP_OK);
+  assert(touch(tid, "p200", 1) == PGS_VP_OK);           // expires almost immediately
   ::usleep(3000);
-  assert(seen(tid, "p200") == PGR_VP_OK);               // expired -> not suppressed (pre-sweep)
+  assert(seen(tid, "p200") == PGS_VP_OK);               // expired -> not suppressed (pre-sweep)
   uint32_t size = 99;
-  assert(api->sweep(tid, &size) == PGR_VP_OK && size == 2);  // p200 swept, p100 + s-fortA remain
-  assert(seen(tid, "p100") == PGR_VP_YES && seen(tid, "s-fortA") == PGR_VP_YES);
+  assert(api->sweep(tid, &size) == PGS_VP_OK && size == 2);  // p200 swept, p100 + s-fortA remain
+  assert(seen(tid, "p100") == PGS_VP_YES && seen(tid, "s-fortA") == PGS_VP_YES);
 
   // 6. Capacity ceiling (max_keys == 4): a new key past the ceiling is FULL; a refresh still works.
   api->reset(tid);
-  for (int i = 0; i < 4; ++i) { char k[16]; std::snprintf(k, sizeof k, "p%d", i); assert(touch(tid, k, 60000) == PGR_VP_OK); }
-  assert(touch(tid, "p-overflow", 60000) == PGR_VP_FULL);   // at capacity, new key refused
-  assert(touch(tid, "p0", 90000) == PGR_VP_OK);             // refresh an existing key still allowed
+  for (int i = 0; i < 4; ++i) { char k[16]; std::snprintf(k, sizeof k, "p%d", i); assert(touch(tid, k, 60000) == PGS_VP_OK); }
+  assert(touch(tid, "p-overflow", 60000) == PGS_VP_FULL);   // at capacity, new key refused
+  assert(touch(tid, "p0", 90000) == PGS_VP_OK);             // refresh an existing key still allowed
   uint32_t full_size = 0;
-  assert(api->sweep(tid, &full_size) == PGR_VP_YES && full_size == 4);  // sweep reports FULL at ceiling
+  assert(api->sweep(tid, &full_size) == PGS_VP_YES && full_size == 4);  // sweep reports FULL at ceiling
 
   // 7. Catch-delay table maps terminal / retry / default exactly.
   uint64_t ms = 0;
-  assert(api->catch_delay(kSuccess, &ms) == PGR_VP_OK && ms == 3600000);
-  assert(api->catch_delay(kFlee, &ms) == PGR_VP_OK && ms == 3600000);
-  assert(api->catch_delay(kEscape, &ms) == PGR_VP_OK && ms == 5000);
-  assert(api->catch_delay(kMissed, &ms) == PGR_VP_OK && ms == 5000);
-  assert(api->catch_delay(kReplace, &ms) == PGR_VP_OK && ms == 5000);
-  assert(api->catch_delay(999, &ms) == PGR_VP_OK && ms == 30000);
-  assert(api->catch_delay(kSuccess, nullptr) == PGR_VP_ERR_NULL_ARG);
+  assert(api->catch_delay(kSuccess, &ms) == PGS_VP_OK && ms == 3600000);
+  assert(api->catch_delay(kFlee, &ms) == PGS_VP_OK && ms == 3600000);
+  assert(api->catch_delay(kEscape, &ms) == PGS_VP_OK && ms == 5000);
+  assert(api->catch_delay(kMissed, &ms) == PGS_VP_OK && ms == 5000);
+  assert(api->catch_delay(kReplace, &ms) == PGS_VP_OK && ms == 5000);
+  assert(api->catch_delay(999, &ms) == PGS_VP_OK && ms == 30000);
+  assert(api->catch_delay(kSuccess, nullptr) == PGS_VP_ERR_NULL_ARG);
 
   // 8. Uncertain latch: block() stops due(); clear_block() resumes and PRESERVES the quarantine;
   //    only reset() drops it.
   api->reset(tid);
-  assert(touch(tid, "p500", 60000) == PGR_VP_OK);
-  assert(api->arm(tid, 1) == PGR_VP_OK); ::usleep(3000);
-  assert(api->due(tid) == PGR_VP_YES);
-  assert(api->block(tid) == PGR_VP_OK);
-  assert(api->due(tid) == PGR_VP_OK);                   // blocked -> never due
-  assert(seen(tid, "p500") == PGR_VP_YES);              // quarantine intact while blocked
-  assert(api->clear_block(tid) == PGR_VP_OK);
-  assert(seen(tid, "p500") == PGR_VP_YES);              // mask toggle preserved the quarantine
-  assert(api->arm(tid, 1) == PGR_VP_OK); ::usleep(3000);
-  assert(api->due(tid) == PGR_VP_YES);                  // resumes after clear_block
-  assert(api->reset(tid) == PGR_VP_OK);
-  assert(seen(tid, "p500") == PGR_VP_OK);               // reset dropped it
+  assert(touch(tid, "p500", 60000) == PGS_VP_OK);
+  assert(api->arm(tid, 1) == PGS_VP_OK); ::usleep(3000);
+  assert(api->due(tid) == PGS_VP_YES);
+  assert(api->block(tid) == PGS_VP_OK);
+  assert(api->due(tid) == PGS_VP_OK);                   // blocked -> never due
+  assert(seen(tid, "p500") == PGS_VP_YES);              // quarantine intact while blocked
+  assert(api->clear_block(tid) == PGS_VP_OK);
+  assert(seen(tid, "p500") == PGS_VP_YES);              // mask toggle preserved the quarantine
+  assert(api->arm(tid, 1) == PGS_VP_OK); ::usleep(3000);
+  assert(api->due(tid) == PGS_VP_YES);                  // resumes after clear_block
+  assert(api->reset(tid) == PGS_VP_OK);
+  assert(seen(tid, "p500") == PGS_VP_OK);               // reset dropped it
 
   // 9. Bad-key rejection.
-  assert(g_api->seen(tid, nullptr, 3) == PGR_VP_ERR_BAD_KEY);
-  assert(g_api->touch(tid, "x", 0, 1000) == PGR_VP_ERR_BAD_KEY);
-  assert(g_api->touch(tid, "x", PGR_VP_MAX_KEY_LEN + 1, 1000) == PGR_VP_ERR_BAD_KEY);
+  assert(g_api->seen(tid, nullptr, 3) == PGS_VP_ERR_BAD_KEY);
+  assert(g_api->touch(tid, "x", 0, 1000) == PGS_VP_ERR_BAD_KEY);
+  assert(g_api->touch(tid, "x", PGS_VP_MAX_KEY_LEN + 1, 1000) == PGS_VP_ERR_BAD_KEY);
 
   // 10. Telemetry reflects the drive above (non-zero counters, sane flags).
   PgrVgpPolicySample sm = take_sample();

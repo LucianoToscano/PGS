@@ -25,7 +25,7 @@ int g_hook_install_rc = 0;
 int g_hook_install_calls = 0;
 }  // namespace
 
-#if PGR_ACCOUNTS_REAL_DOBBY
+#if PGS_ACCOUNTS_REAL_DOBBY
 // Real-Dobby mode keeps scenario counters and forced-install errors, then delegates
 // through the explicit C-to-C++ test bridge to the production hook engine.
 extern "C" int pgs_test_real_hook(void* target, void* replacement, void** original);
@@ -170,13 +170,13 @@ std::string u16_to_ascii(const std::u16string& s) {
   return out;
 }
 
-#if PGR_ACCOUNTS_REAL_DOBBY
+#if PGS_ACCOUNTS_REAL_DOBBY
 // Dobby rewrites this function's entry in place, so it must not be inlined and must
 // own enough relocatable prologue bytes for the inline patch + trampoline.
 __attribute__((noinline))
 #endif
 Il2CppObject* fake_orig_auth_logout(Il2CppObject* self, const MethodInfo* /*method*/) {
-#if PGR_ACCOUNTS_REAL_DOBBY
+#if PGS_ACCOUNTS_REAL_DOBBY
   // NOP padding reserves patchable prologue space on both arm64 and x86-64.
   asm volatile("nop\n\tnop\n\tnop\n\tnop\n\tnop\n\tnop\n\tnop\n\tnop" ::: "memory");
 #endif
@@ -191,7 +191,7 @@ Il2CppObject* fake_orig_auth_logout(Il2CppObject* self, const MethodInfo* /*meth
 // cannot inline or devirtualize past the patch site, exercising the installed
 // inline hook and its trampoline.
 Il2CppObject* invoke_installed_auth_logout(Il2CppObject* self, const MethodInfo* method) {
-#if PGR_ACCOUNTS_REAL_DOBBY
+#if PGS_ACCOUNTS_REAL_DOBBY
   AuthLogoutFn volatile fn = reinterpret_cast<AuthLogoutFn>(g_hook_target);
 #else
   AuthLogoutFn volatile fn = reinterpret_cast<AuthLogoutFn>(g_hook_replacement);

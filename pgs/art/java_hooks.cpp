@@ -9,7 +9,7 @@
 #include "art_symbols.h"
 namespace {
 bool initialized=false;
-PgrArtSymbols symbols;
+PgsArtSymbols symbols;
 std::mutex hooks;
 // Dobby decodes and backs up the target's first instructions before its own RWX
 // patch window. Android 10 maps ARM64 libart code execute-only, so that read

@@ -926,7 +926,7 @@ struct Target {Kind kind;void *owner;const char *name;unsigned params;uint64_t r
 
 bool hook(const PgrMetaApi *api,const Target &t,std::string &why){
  PgrMetaMethodQuery q{};q.version=1;q.size=sizeof(q);q.owner=t.owner;q.name=t.name;
- if(t.return_prefix){q.return_type=t.return_prefix;q.return_match=PGR_MD_MATCH_PREFIX;}
+ if(t.return_prefix){q.return_type=t.return_prefix;q.return_match=PGS_MD_MATCH_PREFIX;}
  else{q.return_type=t.returns_promise?"Niantic.Promises.IPromise":"System.Void";q.return_match=PGR_MD_MATCH_EXACT;}
  q.param_count=t.params;
  q.expected_code=static_cast<const char*>(boot.module_base)+t.rva;q.prologue=t.prologue;q.prologue_len=24;
@@ -1018,9 +1018,9 @@ void install(){
   PgrMetaMethodQuery q{};q.version=1;q.size=sizeof(q);q.owner=info_service;q.name="ShowPokemonInfo";
   q.return_type="System.Void";q.return_match=PGR_MD_MATCH_EXACT;q.param_count=10;q.expected_code=show_code;q.prologue=p_show_info;q.prologue_len=24;
   PgrMetaMethodResult r{};const int rc=api->validate_method(&q,&r);
-  const bool shared=rc==PGR_MD_ERR_PROLOGUE&&pgr_catch_presentation_attached(show_code);
+  const bool shared=rc==PGS_MD_ERR_PROLOGUE&&pgs_catch_presentation_attached(show_code);
   if(rc!=0&&!shared)missing+=std::string(missing.empty()?"":", ")+"pokemon-info (code "+std::to_string(rc)+")";
-  else if(const int br=pgr_catch_presentation_set_bypass(bypass_show_info,show_code))missing+=std::string(missing.empty()?"":", ")+"pokemon-info (bridge "+std::to_string(br)+")";
+  else if(const int br=pgs_catch_presentation_set_bypass(bypass_show_info,show_code))missing+=std::string(missing.empty()?"":", ")+"pokemon-info (bridge "+std::to_string(br)+")";
   else{
    const Target result{K_HATCH_RESULT,hatch_state,PGR_GAME_CUTSCENE_SKIP_CPP_HATCH_RESULT_NAME,1,PGR_GAME_CUTSCENE_SKIP_CPP_HATCH_RESULT_RVA,p_hatch_result,reinterpret_cast<void*>(hook_hatch_result),false};
    if(hook(api,result,missing))++count;
@@ -1242,7 +1242,7 @@ void mark_safety_seen(){
 
 }  // namespace
 
-void pgr_cutscene_skip_tick(uint64_t tid,const PgrSharedMetadataOutput *){
+void pgs_cutscene_skip_tick(uint64_t tid,const PgrSharedMetadataOutput *){
  if(busy||!tid||tid!=uint64_t(gettid()))return;
  const uint64_t prior=owner.load(std::memory_order_acquire);if(prior&&prior!=tid)return;
  struct Guard{Guard(){busy=true;}~Guard(){busy=false;}}guard;
@@ -1267,7 +1267,7 @@ void pgr_cutscene_skip_tick(uint64_t tid,const PgrSharedMetadataOutput *){
  }catch(const Failure &f){faulted.store(true,std::memory_order_release);status("error",std::string("Skip cutscenes unavailable: ")+f.where);}
  catch(...){faulted.store(true,std::memory_order_release);status("error","Skip cutscenes unavailable: native failure");}
 }
-void pgr_cutscene_skip_stop(uint64_t tid){
+void pgs_cutscene_skip_stop(uint64_t tid){
  enabled.store(false,std::memory_order_release);egg_inventory_enabled.store(false,std::memory_order_release);last_tick.store(0,std::memory_order_release);
  // No more ticks: a dialogue already bypassed must not be left waiting for one.
  if(!busy&&tid&&tid==uint64_t(gettid())&&tid==owner.load(std::memory_order_acquire)){

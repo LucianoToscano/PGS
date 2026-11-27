@@ -28,7 +28,7 @@
 // Heal amounts are the game's long-standing ones: 20 / 50 / 200 HP and full; Revive to half HP.
 // Heal fully (the setting): each HP left missing costs more than any item, so the Pokemon is always
 // healed (and revived) as far as the items on hand allow, still with the cheapest mix that gets there.
-namespace pgr_heal {
+namespace pgs_heal {
 namespace {
 constexpr long kValue[KIND_COUNT]={20,50,200,400,300,1000};
 constexpr long kPerItem=10,kPerMissingHp=10,kPerMissingHpFull=100000;
@@ -73,7 +73,7 @@ int first(const Plan &p){
  for(int k:order)if(p.count[k]>0)return k;
  return -1;
 }
-}  // namespace pgr_heal
+}  // namespace pgs_heal
 
 // ---------------------------------------------------------------------------------------------
 // Runtime. Every ~4 s on the map the Pokemon storage is read (IPokemonBag.get_AllPokemon):
@@ -86,7 +86,7 @@ int first(const Plan &p){
 // showing, so never during a battle or an encounter. Eggs and gym or station defenders are skipped.
 namespace {
 using namespace pgr_shared_meta;
-using namespace pgr_heal;
+using namespace pgs_heal;
 struct Failure {const char *where;};
 void require(bool ok,const char *where){if(!ok)throw Failure{where};}
 PgrBootBinding boot{};const PgrSharedMetadataOutput *md=nullptr;
@@ -241,7 +241,7 @@ void heal_next(const Config &c,uint64_t now,bool (*ready)()=nullptr){
   if(!p||klass(p.get())!=st.pokemon_class||!usable(p.get())){st.queued.erase(id);st.queue.erase(st.queue.begin());continue;}
   const int hp=at<int32_t>(p.get(),st.f.hp),max=at<int32_t>(p.get(),st.f.max);
   if(hp==0&&!c.revive){st.queued.erase(id);st.queue.erase(st.queue.begin());continue;}
-  const Plan plan=pgr_heal::plan(hp,max,stock(),c.revive,c.full);const int kind=first(plan);
+  const Plan plan=pgs_heal::plan(hp,max,stock(),c.revive,c.full);const int kind=first(plan);
   if(kind<0){
    // Full, or nothing on hand is worth using on it: look again only after a while.
    if(hp<max)st.skip_until[id]=now+kRetryMs;
@@ -276,11 +276,11 @@ void finish_use(bool ok,const std::string &why){
 void poll_use(uint64_t now){
  if(!st.use_done){
   auto vr=static_cast<const PgrVgpResultsApi*>(pgs_vgp_results_api(1));require(vr,"response polling unavailable");
-  PgrVgpResultsResult out{};const int rc=vr->poll(st.promise.get(),PGR_VR_PHASE_ENCOUNTER,owner,&out);
+  PgrVgpResultsResult out{};const int rc=vr->poll(st.promise.get(),PGS_VR_PHASE_ENCOUNTER,owner,&out);
   if(out.value_handle)fn<void(*)(uintptr_t)>(boot.runtime.gchandle_free)(uintptr_t(out.value_handle));
-  if(rc==PGR_VR_PENDING&&now-st.use_sent<=kResponseMs)return;
+  if(rc==PGS_VR_PENDING&&now-st.use_sent<=kResponseMs)return;
   // Answered (or no answer in time): storage decides. A higher HP means the item was used.
-  st.use_done=now;st.use_rejected=rc!=PGR_VR_DONE;
+  st.use_done=now;st.use_rejected=rc!=PGS_VR_DONE;
  }
  uint64_t key=st.use_id;void *a[]={&key};Root p(call(st.bag.get(),"GetPokemon",1,a));
  if(p&&at<int32_t>(p.get(),st.f.hp)>st.use_hp){
@@ -297,7 +297,7 @@ void ensure_init(const PgrSharedMetadataOutput *metadata,uint64_t tid,uint64_t n
 }
 
 // Off-map between-round gym session. Armed only by a verified manual Battle press (baseline) and
-// advanced only by pgr_heal_gym_tick for a confirmed victorious round. It reuses the after-battle
+// advanced only by pgs_heal_gym_tick for a confirmed victorious round. It reuses the after-battle
 // scan + item path above; it never drives the periodic sweep and never touches the map gate.
 struct Gym {
  bool armed=false;        // a baseline was captured: off-map healing permitted for this gym session
@@ -317,7 +317,7 @@ void gym_abort_round(){gym.token=0;gym.healing=false;gym.scans=0;}
 void gym_disarm(){gym=Gym{};}
 }  // namespace
 
-void pgr_heal_tick(uint64_t tid,const PgrSharedMetadataOutput *metadata){
+void pgs_heal_tick(uint64_t tid,const PgrSharedMetadataOutput *metadata){
  if(busy||faulted||!tid||tid!=uint64_t(gettid())||(owner&&owner!=tid))return;
  struct Guard{Guard(){busy=true;}~Guard(){busy=false;}}guard;
  bool on_map=false;const Config c=configured(on_map);const uint64_t now=clock_ms();
@@ -336,16 +336,16 @@ void pgr_heal_tick(uint64_t tid,const PgrSharedMetadataOutput *metadata){
   status("error",std::string("Smart healing paused: ")+f.where);
  }catch(...){faulted=true;st.promise.reset();status("error","Smart healing stopped after an unexpected error");}
 }
-void pgr_heal_stop(uint64_t tid){
+void pgs_heal_stop(uint64_t tid){
  if(!initialized||tid!=owner||tid!=uint64_t(gettid()))return;
  st.promise.reset();st.use_id=0;reset_queue();st.last_hp.clear();st.baseline=false;st.bag.reset();st.items.reset();gym_reset();
 }
 // Read-only: inspects only the raw promise handle and queue size; never dereferences a
 // GC handle or issues a managed call, so it is safe to poll from the owner thread.
-int pgr_heal_busy(){return (initialized&&(st.promise.h!=0||!st.queue.empty()))?1:0;}
+int pgs_heal_busy(){return (initialized&&(st.promise.h!=0||!st.queue.empty()))?1:0;}
 
 // Records the pre-first-round HP baseline and arms the off-map gym session. Read only.
-void pgr_heal_gym_baseline(uint64_t tid,const PgrSharedMetadataOutput *metadata){
+void pgs_heal_gym_baseline(uint64_t tid,const PgrSharedMetadataOutput *metadata){
  if(busy||faulted||!tid||tid!=uint64_t(gettid())||(owner&&owner!=tid))return;
  struct Guard{Guard(){busy=true;}~Guard(){busy=false;}}guard;
  bool on_map=false;const Config c=configured(on_map);const uint64_t now=clock_ms();
@@ -363,7 +363,7 @@ void pgr_heal_gym_baseline(uint64_t tid,const PgrSharedMetadataOutput *metadata)
 }
 
 // Advances the off-map gym heal for one confirmed victorious round. See heal.h for the contract.
-int pgr_heal_gym_tick(uint64_t tid,const PgrSharedMetadataOutput *metadata,uint64_t round_token,bool (*still_ready)()){
+int pgs_heal_gym_tick(uint64_t tid,const PgrSharedMetadataOutput *metadata,uint64_t round_token,bool (*still_ready)()){
  if(busy||faulted||!tid||tid!=uint64_t(gettid())||(owner&&owner!=tid)||!round_token||!still_ready)return -1;
  struct Guard{Guard(){busy=true;}~Guard(){busy=false;}}guard;
  bool on_map=false;const Config c=configured(on_map);const uint64_t now=clock_ms();

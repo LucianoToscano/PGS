@@ -10,9 +10,9 @@ int main(int argc,char **argv) {
  void *lib=dlopen(argv[1],RTLD_NOW|RTLD_LOCAL);if(!lib)return 2;
  auto get=reinterpret_cast<const void *(*)(uint32_t)>(dlsym(lib,"pgs_native_api"));
  auto core=get?static_cast<const pgs_native_api_v2 *>(get(2)):nullptr;
- auto api=core?static_cast<const PgrTransferApi *>(core->query_feature(4,1)):nullptr;
+ auto api=core?static_cast<const PgsTransferApi *>(core->query_feature(4,1)):nullptr;
  if(!api||api->size!=16)return 3;
- PgrTransferInput v{1,sizeof(v),0,0,0,25,63,255,0,0,0,0,nullptr};
+ PgsTransferInput v{1,sizeof(v),0,0,0,25,63,255,0,0,0,0,nullptr};
  if(api->decide(nullptr)!=16)return 4;
  for(int a=0;a<16;++a)for(int d=0;d<16;++d)for(int s=0;s<16;++s){
   v.attack=a;v.defense=d;v.stamina=s;
@@ -20,17 +20,17 @@ int main(int argc,char **argv) {
  }
  // An explicit keep-IV cutoff replaces 90%: keep when (a+d+s)/45 >= percent/100.
  for(int pct=0;pct<=100;++pct){
-  v.keep_iv=PGR_TRANSFER_KEEP_IV_SET|unsigned(pct);
+  v.keep_iv=PGS_TRANSFER_KEEP_IV_SET|unsigned(pct);
   for(int sum=0;sum<=45;++sum){v.attack=std::min(sum,15);v.defense=std::min(sum-v.attack,15);v.stamina=sum-v.attack-v.defense;
    if(api->decide(&v)!=(sum*100>=pct*45?9:0))return 14;}
  }
  // Malformed keep_iv values fail closed (kept), never transfer.
- for(uint32_t bad:{PGR_TRANSFER_KEEP_IV_SET|101u,0x200u|90u,90u,0x1ffu}){v.keep_iv=bad;v.attack=v.defense=v.stamina=0;if(api->decide(&v)!=17)return 15;}
+ for(uint32_t bad:{PGS_TRANSFER_KEEP_IV_SET|101u,0x200u|90u,90u,0x1ffu}){v.keep_iv=bad;v.attack=v.defense=v.stamina=0;if(api->decide(&v)!=17)return 15;}
  v.keep_iv=0;
  // Slot 25 parsing: canonical "K1|<0..100>" only; anything else means the 90% default (0).
- struct {const char *s;uint32_t want;} cases[]={{"K1|90",PGR_TRANSFER_KEEP_IV_SET|90},{"K1|0",PGR_TRANSFER_KEEP_IV_SET},{"K1|100",PGR_TRANSFER_KEEP_IV_SET|100},
+ struct {const char *s;uint32_t want;} cases[]={{"K1|90",PGS_TRANSFER_KEEP_IV_SET|90},{"K1|0",PGS_TRANSFER_KEEP_IV_SET},{"K1|100",PGS_TRANSFER_KEEP_IV_SET|100},
   {"K1|101",0},{"K1|",0},{"K1|09",0},{"K1|9a",0},{"K2|90",0},{"K1|1000",0},{"",0}};
- for(auto &c:cases)if(pgr_transfer_keep_iv_parse(c.s,uint32_t(std::strlen(c.s)))!=c.want)return 16;
+ for(auto &c:cases)if(pgs_transfer_keep_iv_parse(c.s,uint32_t(std::strlen(c.s)))!=c.want)return 16;
  v.attack=v.defense=v.stamina=0;
  for(unsigned flags=0;flags<16384;++flags)for(unsigned protect=0;protect<2048;protect+=(protect<512?1:3)){
   v.flags=flags;v.protect=protect;int reason=0;

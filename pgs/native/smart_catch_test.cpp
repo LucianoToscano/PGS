@@ -85,8 +85,8 @@ void barrier(void *,void **slot,void *value){*slot=value;}
 void *from_reflection(void *o){assert(o==&closed);return tag(CLOSED);}
 bool inflated(void *m){return m==tag(CLOSED);}
 void *array_new(void *,uintptr_t size){assert(size==2);return &array_obj;}
-PgrSmartBinding binding(){
- PgrSmartBinding b{};b.version=1;b.size=sizeof(b);
+PgsSmartBinding binding(){
+ PgsSmartBinding b{};b.version=1;b.size=sizeof(b);
  b.gc_new=(void*)gc_new;b.gc_get=(void*)gc_get;b.gc_free=(void*)gc_free;b.object_get_class=(void*)object_class;b.object_new=(void*)object_new;b.object_unbox=(void*)unbox;b.runtime_invoke=(void*)invoke;
  b.field_get_value=(void*)field_get;b.field_set_value=(void*)field_set;b.field_set_value_object=(void*)set_ref;b.array_new=(void*)array_new;
  b.class_get_method_from_name=(void*)method_name;b.method_is_generic=(void*)is_generic;b.method_get_param_count=(void*)param_count;b.method_get_object=(void*)method_object;b.class_get_type=(void*)class_type;b.type_get_object=(void*)type_object;b.gc_wbarrier_set_field=(void*)barrier;b.method_get_from_reflection=(void*)from_reflection;b.method_is_inflated=(void*)inflated;
@@ -95,30 +95,30 @@ PgrSmartBinding binding(){
  for(unsigned i=0;i<17;i++)*fields[i]=tag(MAP_RESPONSE+i);
  b.m_get_encounter_id=tag(ENCOUNTER);b.m_get_spawn_id=tag(SPAWN_ID);b.m_item_count=tag(COUNT);b.m_req_ctor=tag(CTOR);b.rpc_id=42;b.status_success=1;return b;
 }
-PgrSmartSettings parse(const std::string &s){PgrSmartSettings out{};assert(pgr_smart_parse_settings(s.data(),s.size(),&out)==0);return out;}
+PgsSmartSettings parse(const std::string &s){PgsSmartSettings out{};assert(pgs_smart_parse_settings(s.data(),s.size(),&out)==0);return out;}
 void pure_tests(){
- assert(pgr_smart_parse_settings(nullptr,0,nullptr)==PGR_SMART_ERR_NULL_ARG);
+ assert(pgs_smart_parse_settings(nullptr,0,nullptr)==PGS_SMART_ERR_NULL_ARG);
  auto s=parse("1;0;1;0;1;1500;30;3;1;");assert(!s.enabled&&s.ball==1);
  for(const std::string &bad:{"","2;1;1;0;1;1500;30;3;1;","1;1;4;0;1;1500;30;3;1;","1;1;1;707;1;1500;30;3;1;","1;1;1;0;2;1500;30;3;1;","1;1;1;0;1;10001;30;3;1;","1;1;1;0;1;1500;51;3;1;","1;1;1;0;1;1500;30;4;1;","1;1;1;0;1;1500;30;3;2;","1;1;1;0;1;1500;30;3;1;0","1;1;1;0;1;1500;30;3;1;2001","1;1;1;0;1;1500;30;3;1;1,","1;1;1;0;1;1500;30;3;1;1;;"})assert(!parse(bad).enabled);
  assert(!parse(std::string(4097,'x')).enabled);
  std::string ids;for(int i=1;i<=200;i++){if(i>1)ids+=',';ids+=std::to_string(i);}assert(parse("1;1;1;0;1;1500;30;3;1;"+ids).species_count==200);assert(!parse("1;1;1;0;1;1500;30;3;1;"+ids+",201").enabled);
  s=parse("1;1;2;701;1;1500;30;2;0;25,1,25");assert(s.species_count==2&&s.species[0]==1&&s.species[1]==25);
- PgrSmartDecision d{};
- pgr_smart_decide(&s,true,0,false,0,-1,25,&d);assert(d.ball==3&&d.berry==706); // premium beats candy
- pgr_smart_decide(&s,false,41,true,0,-1,25,&d);assert(d.ball==3&&d.berry==706);
- pgr_smart_decide(&s,false,40,true,1499,59,25,&d);assert(d.ball==2&&d.berry==705&&d.grade==2&&!d.curve);
- pgr_smart_decide(&s,false,45,false,1500,-1,99,&d);assert(d.ball==3&&d.berry==701); // invalid IV never implies premium
- pgr_smart_decide(&s,false,0,true,0,60,99,&d);assert(d.ball==3);
- s.high_cp=0;s.high_level=0;s.premium=0;pgr_smart_decide(&s,true,45,true,10000,100,25,&d);assert(d.ball==2&&d.berry==705);
- s.enabled=0;pgr_smart_decide(&s,true,45,true,10000,100,25,&d);assert(!d.enabled&&d.ball==0);
+ PgsSmartDecision d{};
+ pgs_smart_decide(&s,true,0,false,0,-1,25,&d);assert(d.ball==3&&d.berry==706); // premium beats candy
+ pgs_smart_decide(&s,false,41,true,0,-1,25,&d);assert(d.ball==3&&d.berry==706);
+ pgs_smart_decide(&s,false,40,true,1499,59,25,&d);assert(d.ball==2&&d.berry==705&&d.grade==2&&!d.curve);
+ pgs_smart_decide(&s,false,45,false,1500,-1,99,&d);assert(d.ball==3&&d.berry==701); // invalid IV never implies premium
+ pgs_smart_decide(&s,false,0,true,0,60,99,&d);assert(d.ball==3);
+ s.high_cp=0;s.high_level=0;s.premium=0;pgs_smart_decide(&s,true,45,true,10000,100,25,&d);assert(d.ball==2&&d.berry==705);
+ s.enabled=0;pgs_smart_decide(&s,true,45,true,10000,100,25,&d);assert(!d.enabled&&d.ball==0);
  // Version 2: auto ball and its target sit before the species list; version 1 means auto ball off.
  s=parse("2;1;2;701;1;1500;30;3;1;1;85;25");assert(s.enabled&&s.auto_ball==1&&s.auto_target==85&&s.species_count==1&&s.species[0]==25&&s.berry==701);
  s=parse("1;1;2;0;1;1500;30;3;1;");assert(s.enabled&&!s.auto_ball&&s.auto_target==75);
  for(const std::string &bad:{"2;1;1;0;1;1500;30;3;1;2;75;","2;1;1;0;1;1500;30;3;1;1;0;","2;1;1;0;1;1500;30;3;1;1;100;","1;1;1;0;1;1500;30;3;1;1;75;","2;1;1;0;1;1500;30;3;1;1;75;;","3;1;1;0;1;1500;30;3;1;1;75;"})assert(!parse(bad).enabled);
  // Version 3 appends the catch-only list; empty catches every species.
  s=parse("3;1;2;0;1;1500;30;3;1;0;75;25;415,415,1");assert(s.enabled&&s.species_count==1&&s.catch_count==2&&s.catch_species[0]==1&&s.catch_species[1]==415);
- assert(pgr_smart_catch_wanted(&s,415)&&pgr_smart_catch_wanted(&s,1)&&!pgr_smart_catch_wanted(&s,25));
- s=parse("3;1;2;0;1;1500;30;3;1;0;75;;");assert(s.enabled&&s.catch_count==0&&pgr_smart_catch_wanted(&s,25));
+ assert(pgs_smart_catch_wanted(&s,415)&&pgs_smart_catch_wanted(&s,1)&&!pgs_smart_catch_wanted(&s,25));
+ s=parse("3;1;2;0;1;1500;30;3;1;0;75;;");assert(s.enabled&&s.catch_count==0&&pgs_smart_catch_wanted(&s,25));
  assert(parse("3;1;2;0;1;1500;30;3;1;0;75;"+ids+";"+ids).catch_count==200);
  for(const std::string &bad:{"3;1;2;0;1;1500;30;3;1;0;75;;0","3;1;2;0;1;1500;30;3;1;0;75;;2001","3;1;2;0;1;1500;30;3;1;0;75;;1,","3;1;2;0;1;1500;30;3;1;0;75;;;","2;1;2;0;1;1500;30;3;1;0;75;;415"})assert(!parse(bad).enabled);
  assert(!parse("3;1;2;0;1;1500;30;3;1;0;75;;"+ids+",201").enabled);
@@ -127,9 +127,9 @@ void pure_tests(){
  s=parse("4;1;2;0;1;1500;30;3;1;0;75;25;415;2");assert(s.enabled&&s.variety==2&&s.catch_count==1&&s.species_count==1);
  assert(!s.mighty_safari);
  s=parse("5;1;2;0;1;1500;30;3;1;0;75;25;415;2;1");assert(s.enabled&&s.variety==2&&s.mighty_safari&&s.catch_count==1);
- assert(s.speed==0&&pgr_smart_throw_base_ms(s.speed)==1200&&pgr_smart_rescan_ms(s.speed)==2500);
+ assert(s.speed==0&&pgs_smart_throw_base_ms(s.speed)==1200&&pgs_smart_rescan_ms(s.speed)==2500);
  s=parse("6;1;2;0;1;1500;30;3;1;0;75;25;415;2;1;2");assert(s.enabled&&s.mighty_safari&&s.speed==2&&s.catch_count==1);
- assert(pgr_smart_throw_base_ms(2)==500&&pgr_smart_throw_jitter_ms(2)==201&&pgr_smart_rescan_ms(2)==1000&&pgr_smart_throw_base_ms(1)==800&&pgr_smart_throw_base_ms(9)==1200);
+ assert(pgs_smart_throw_base_ms(2)==500&&pgs_smart_throw_jitter_ms(2)==201&&pgs_smart_rescan_ms(2)==1000&&pgs_smart_throw_base_ms(1)==800&&pgs_smart_throw_base_ms(9)==1200);
  // Version 7: catch only shinies appended; version 6 means off.
  assert(!s.shiny_only);
  s=parse("7;1;2;0;1;1500;30;3;1;0;75;25;415;2;1;2;1");assert(s.enabled&&s.shiny_only&&s.speed==2&&s.mighty_safari&&s.catch_count==1);
@@ -139,29 +139,29 @@ void pure_tests(){
  for(const std::string &bad:{"5;1;2;0;1;1500;30;3;1;0;75;;;0", "5;1;2;0;1;1500;30;3;1;0;75;;;0;2", "5;1;2;0;1;1500;30;3;1;0;75;;;0;-1", "5;1;2;0;1;1500;30;3;1;0;75;;;0;1;", "4;1;2;0;1;1500;30;3;1;0;75;;;0;1"})assert(!parse(bad).enabled);
  for(const std::string &bad:{"4;1;2;0;1;1500;30;3;1;0;75;;;4","4;1;2;0;1;1500;30;3;1;0;75;;;-1","4;1;2;0;1;1500;30;3;1;0;75;;","3;1;2;0;1;1500;30;3;1;0;75;;;1","4;1;2;0;1;1500;30;3;1;0;75;;;1;"})assert(!parse(bad).enabled);
  for(int variety=1;variety<=3;++variety){
-  int seen[4]={};for(uint32_t r=0;r<1200;++r)++seen[pgr_smart_variety_grade(variety,r*2654435761u)];
+  int seen[4]={};for(uint32_t r=0;r<1200;++r)++seen[pgs_smart_variety_grade(variety,r*2654435761u)];
   for(int g=0;g<4;++g){const bool in=g>=3-variety;assert(in?seen[g]>=1200/(variety+1)/2:seen[g]==0);}
  }
  s=parse("2;1;2;0;1;1500;30;3;1;1;75;");assert(s.catch_count==0);
- pgr_smart_decide(&s,false,20,true,100,10,99,&d);assert(d.ball==1);       // auto ball starts from a Poke Ball
- pgr_smart_decide(&s,true,20,true,100,10,99,&d);assert(d.ball==3&&d.berry==706); // premium still Ultra
- pgr_smart_decide(&s,false,20,true,1500,10,99,&d);assert(d.ball==3);      // High CP rule still Ultra
+ pgs_smart_decide(&s,false,20,true,100,10,99,&d);assert(d.ball==1);       // auto ball starts from a Poke Ball
+ pgs_smart_decide(&s,true,20,true,100,10,99,&d);assert(d.ball==3&&d.berry==706); // premium still Ultra
+ pgs_smart_decide(&s,false,20,true,1500,10,99,&d);assert(d.ball==3);      // High CP rule still Ultra
  // Chance: 1-(1-p)^(berry*throw*curve); Excellent is 2-0.1, a curveball 1.7, Golden Razz 2.5.
  auto near=[](double a,double b){return a>b-1e-9&&a<b+1e-9;};
- assert(near(pgr_smart_chance(0.5,0,0,false),0.5));
- assert(near(pgr_smart_chance(0.5,706,3,true),1-std::pow(0.5,2.5*1.9*1.7)));
- assert(near(pgr_smart_chance(0.5,705,1,false),1-std::pow(0.5,1.2)));      // Pinap does not help the catch
- assert(pgr_smart_chance(0,701,3,true)==0&&pgr_smart_chance(1,0,0,false)==1);
+ assert(near(pgs_smart_chance(0.5,0,0,false),0.5));
+ assert(near(pgs_smart_chance(0.5,706,3,true),1-std::pow(0.5,2.5*1.9*1.7)));
+ assert(near(pgs_smart_chance(0.5,705,1,false),1-std::pow(0.5,1.2)));      // Pinap does not help the catch
+ assert(pgs_smart_chance(0,701,3,true)==0&&pgs_smart_chance(1,0,0,false)==1);
  const double base[4]={0,0.41,0.55,0.66};int stock_all[4]={0,10,10,10};
- assert(pgr_smart_auto_ball(base,stock_all,1,0,3,true,75)==1);  // Poke 81.8%
- assert(pgr_smart_auto_ball(base,stock_all,1,0,3,true,90)==2);  // Great 92.4%
- assert(pgr_smart_auto_ball(base,stock_all,1,0,3,true,95)==3);  // Ultra 96.9%
- assert(pgr_smart_auto_ball(base,stock_all,1,0,3,true,99)==3);  // none reaches: best chance
- assert(pgr_smart_auto_ball(base,stock_all,3,0,3,true,50)==3);  // a rule's Ultra is the floor
- int no_ultra[4]={0,10,10,0};assert(pgr_smart_auto_ball(base,no_ultra,1,0,3,true,99)==2);
- int none[4]={0,0,0,0};assert(pgr_smart_auto_ball(base,none,1,0,3,true,75)==0);
- const double blank[4]={0,0,0,0};assert(pgr_smart_auto_ball(blank,stock_all,1,0,3,true,75)==0);
- assert(pgr_smart_auto_ball(base,stock_all,1,0,0,false,75)==3); // straight Default throw: Ultra 66% is best
+ assert(pgs_smart_auto_ball(base,stock_all,1,0,3,true,75)==1);  // Poke 81.8%
+ assert(pgs_smart_auto_ball(base,stock_all,1,0,3,true,90)==2);  // Great 92.4%
+ assert(pgs_smart_auto_ball(base,stock_all,1,0,3,true,95)==3);  // Ultra 96.9%
+ assert(pgs_smart_auto_ball(base,stock_all,1,0,3,true,99)==3);  // none reaches: best chance
+ assert(pgs_smart_auto_ball(base,stock_all,3,0,3,true,50)==3);  // a rule's Ultra is the floor
+ int no_ultra[4]={0,10,10,0};assert(pgs_smart_auto_ball(base,no_ultra,1,0,3,true,99)==2);
+ int none[4]={0,0,0,0};assert(pgs_smart_auto_ball(base,none,1,0,3,true,75)==0);
+ const double blank[4]={0,0,0,0};assert(pgs_smart_auto_ball(blank,stock_all,1,0,3,true,75)==0);
+ assert(pgs_smart_auto_ball(base,stock_all,1,0,0,false,75)==3); // straight Default throw: Ultra 66% is best
 }
 double source_base[4]={0,0.41,0.55,0.66};bool source_ok=true;int source_calls=0;
 bool capture_source(void *target,uint64_t,double out[4]){assert(target==&wild);++source_calls;if(!source_ok)return false;for(int i=0;i<4;i++)out[i]=source_base[i];return true;}
@@ -169,79 +169,79 @@ bool capture_source(void *target,uint64_t,double out[4]){assert(target==&wild);+
 extern "C" const void *pgs_runtime_transport_api(uint32_t version){return version==1?&transport:nullptr;}
 int main(){
  pure_tests();transport.version=1;transport.size=sizeof(transport);transport.sample=sample;transport.get_bool=get_bool;transport.get_string=get_string;
- auto b=binding();assert(pgr_smart_bind(nullptr)==PGR_SMART_ERR_NULL_ARG);auto bad=b;bad.gc_new=nullptr;assert(pgr_smart_bind(&bad)==PGR_SMART_ERR_MISSING_PTR);assert(pgr_smart_bind(&b)==0);assert(pgr_smart_bind(&b)==0);bad=b;bad.rpc_id++;assert(pgr_smart_bind(&bad)==PGR_SMART_ERR_RECONFIG);
- auto tid=uint64_t(gettid());PgrSmartDecision d{};stock[1]=10;stock[4]=999;stock[705]=5;
+ auto b=binding();assert(pgs_smart_bind(nullptr)==PGS_SMART_ERR_NULL_ARG);auto bad=b;bad.gc_new=nullptr;assert(pgs_smart_bind(&bad)==PGS_SMART_ERR_MISSING_PTR);assert(pgs_smart_bind(&b)==0);assert(pgs_smart_bind(&b)==0);bad=b;bad.rpc_id++;assert(pgs_smart_bind(&bad)==PGS_SMART_ERR_RECONFIG);
+ auto tid=uint64_t(gettid());PgsSmartDecision d{};stock[1]=10;stock[4]=999;stock[705]=5;
  config="1;1;3;705;1;1500;30;3;1;25";
- assert(pgr_smart_plan(&wild,&bag,tid,&d)==0&&d.ball==1&&d.berry==705);assert(roots.empty());
+ assert(pgs_smart_plan(&wild,&bag,tid,&d)==0&&d.ball==1&&d.berry==705);assert(roots.empty());
  stock[705]=5;stock[706]=5;stock[3]=10;shiny=false;
  config="1;1;1;705;1;1500;30;3;1;25";
  // Wild spawn IVs come from EncounterOutProto.Pokemon.Pokemon: 41/45 (91%) upgrades to Ultra + Golden Razz, 40/45 does not.
  atk=15;def=14;sta=12;
- assert(pgr_smart_plan(&wild,&bag,tid,&d)==0&&d.ball==3&&d.berry==706);assert(roots.empty());
+ assert(pgs_smart_plan(&wild,&bag,tid,&d)==0&&d.ball==3&&d.berry==706);assert(roots.empty());
  atk=14;def=13;sta=13;
- assert(pgr_smart_plan(&wild,&bag,tid,&d)==0&&d.ball==1&&d.berry==705);assert(roots.empty());
+ assert(pgs_smart_plan(&wild,&bag,tid,&d)==0&&d.ball==1&&d.berry==705);assert(roots.empty());
  atk=0;def=0;sta=0;
  // Missing or wrong-class encounter response / WildPokemonProto fails closed with zero leaked roots.
- map_response_ptr=nullptr;assert(pgr_smart_plan(&wild,&bag,tid,&d)==PGR_SMART_ERR_IDENTITY);assert(roots.empty());
- map_response_ptr=&spawn;assert(pgr_smart_plan(&wild,&bag,tid,&d)==PGR_SMART_ERR_IDENTITY);assert(roots.empty());
- map_response_ptr=&encounter_out;response_wild_ptr=nullptr;assert(pgr_smart_plan(&wild,&bag,tid,&d)==PGR_SMART_ERR_IDENTITY);assert(roots.empty());
- response_wild_ptr=&spawn;assert(pgr_smart_plan(&wild,&bag,tid,&d)==PGR_SMART_ERR_IDENTITY);assert(roots.empty());
- response_wild_ptr=&wild_proto;wild_pokemon_ptr=&spawn;assert(pgr_smart_plan(&wild,&bag,tid,&d)==PGR_SMART_ERR_IDENTITY);assert(roots.empty());
- wild_pokemon_ptr=nullptr;assert(pgr_smart_plan(&wild,&bag,tid,&d)==PGR_SMART_ERR_GCHANDLE);assert(roots.empty());
+ map_response_ptr=nullptr;assert(pgs_smart_plan(&wild,&bag,tid,&d)==PGS_SMART_ERR_IDENTITY);assert(roots.empty());
+ map_response_ptr=&spawn;assert(pgs_smart_plan(&wild,&bag,tid,&d)==PGS_SMART_ERR_IDENTITY);assert(roots.empty());
+ map_response_ptr=&encounter_out;response_wild_ptr=nullptr;assert(pgs_smart_plan(&wild,&bag,tid,&d)==PGS_SMART_ERR_IDENTITY);assert(roots.empty());
+ response_wild_ptr=&spawn;assert(pgs_smart_plan(&wild,&bag,tid,&d)==PGS_SMART_ERR_IDENTITY);assert(roots.empty());
+ response_wild_ptr=&wild_proto;wild_pokemon_ptr=&spawn;assert(pgs_smart_plan(&wild,&bag,tid,&d)==PGS_SMART_ERR_IDENTITY);assert(roots.empty());
+ wild_pokemon_ptr=nullptr;assert(pgs_smart_plan(&wild,&bag,tid,&d)==PGS_SMART_ERR_GCHANDLE);assert(roots.empty());
  // Registered spawn kinds still use their direct encounter Pokemon, without a WildPokemonProto hop.
  wild_pokemon_ptr=&pokemon;atk=15;def=14;sta=12;
- PgrVgpIncense incense{};incense.klass=incense_map.cls;incense.class_response=incense_response.cls;
+ PgsVgpIncense incense{};incense.klass=incense_map.cls;incense.class_response=incense_response.cls;
  incense.f_response=tag(INCENSE_RESPONSE);incense.f_pokemon=tag(INCENSE_POKEMON);
  g_pgr_vgp_kinds[0].store(&incense);
- assert(pgr_smart_plan(&incense_map,&bag,tid,&d)==0&&d.ball==3&&d.berry==706);assert(roots.empty());
+ assert(pgs_smart_plan(&incense_map,&bag,tid,&d)==0&&d.ball==3&&d.berry==706);assert(roots.empty());
  g_pgr_vgp_kinds[0].store(nullptr);atk=def=sta=0;
  config="1;1;3;705;1;1500;30;3;1;25";
  wild_pokemon_ptr=&pokemon;stock[3]=0;stock[706]=0;
- stock[705]=0;assert(pgr_smart_plan(&wild,&bag,tid,&d)==0&&d.berry==0);assert(roots.empty());
- stock[1]=0;assert(pgr_smart_plan(&wild,&bag,tid,&d)==PGR_SMART_NO_BALLS);assert(roots.empty()); // Master stock cannot rescue
- stock[1]=10;assert(pgr_smart_plan(&wild,&bag,tid+1,&d)==0&&!d.enabled);assert(roots.empty());
- fresh=false;assert(pgr_smart_plan(&wild,&bag,tid,&d)==0&&!d.enabled);fresh=true;
+ stock[705]=0;assert(pgs_smart_plan(&wild,&bag,tid,&d)==0&&d.berry==0);assert(roots.empty());
+ stock[1]=0;assert(pgs_smart_plan(&wild,&bag,tid,&d)==PGS_SMART_NO_BALLS);assert(roots.empty()); // Master stock cannot rescue
+ stock[1]=10;assert(pgs_smart_plan(&wild,&bag,tid+1,&d)==0&&!d.enabled);assert(roots.empty());
+ fresh=false;assert(pgs_smart_plan(&wild,&bag,tid,&d)==0&&!d.enabled);fresh=true;
  uint64_t ph=99,rh=99;
- assert(pgr_smart_berry(&wild,&bag,705,tid,2500,&ph,&rh)==0&&ph==0&&rh==0&&sends==0);assert(roots.empty());
- stock[705]=5;assert(pgr_smart_berry(&wild,&bag,705,tid,2500,&ph,&rh)==1);assert(sends==1&&sent_encounter==encounter&&req_item==705&&roots.size()==2);gc_free(ph);gc_free(rh);assert(roots.empty());
- revoke_reflection=true;assert(pgr_smart_berry(&wild,&bag,705,tid,2500,&ph,&rh)==0&&ph==0&&rh==0&&sends==1);assert(roots.empty());revoke_reflection=false;allowed=true;
- visible=false;assert(pgr_smart_berry(&wild,&bag,705,tid,2500,&ph,&rh)==1&&sends==2);gc_free(ph);gc_free(rh);assert(roots.empty());visible=true;
- assert(pgr_smart_berry(&wild,&bag,4,tid,2500,&ph,&rh)==PGR_SMART_ERR_SHAPE&&sends==2);assert(roots.empty());
- throw_send=true;assert(pgr_smart_berry(&wild,&bag,705,tid,2500,&ph,&rh)==PGR_SMART_ERR_MANAGED&&sends==3&&ph==0&&rh==0);assert(roots.empty());
+ assert(pgs_smart_berry(&wild,&bag,705,tid,2500,&ph,&rh)==0&&ph==0&&rh==0&&sends==0);assert(roots.empty());
+ stock[705]=5;assert(pgs_smart_berry(&wild,&bag,705,tid,2500,&ph,&rh)==1);assert(sends==1&&sent_encounter==encounter&&req_item==705&&roots.size()==2);gc_free(ph);gc_free(rh);assert(roots.empty());
+ revoke_reflection=true;assert(pgs_smart_berry(&wild,&bag,705,tid,2500,&ph,&rh)==0&&ph==0&&rh==0&&sends==1);assert(roots.empty());revoke_reflection=false;allowed=true;
+ visible=false;assert(pgs_smart_berry(&wild,&bag,705,tid,2500,&ph,&rh)==1&&sends==2);gc_free(ph);gc_free(rh);assert(roots.empty());visible=true;
+ assert(pgs_smart_berry(&wild,&bag,4,tid,2500,&ph,&rh)==PGS_SMART_ERR_SHAPE&&sends==2);assert(roots.empty());
+ throw_send=true;assert(pgs_smart_berry(&wild,&bag,705,tid,2500,&ph,&rh)==PGS_SMART_ERR_MANAGED&&sends==3&&ph==0&&rh==0);assert(roots.empty());
  // Auto ball through plan(): the source's rates, the stock, the rules and the no-rates fallback.
- pgr_smart_set_capture_source(capture_source);stock[1]=10;stock[2]=10;stock[3]=10;stock[705]=0;
- config="1;1;3;0;1;1500;30;3;1;";assert(pgr_smart_plan(&wild,&bag,tid,&d)==0&&d.ball==3&&source_calls==0); // version 1: off
- config="2;1;3;0;1;1500;30;3;1;0;75;";assert(pgr_smart_plan(&wild,&bag,tid,&d)==0&&d.ball==3&&source_calls==0);
- config="2;1;3;0;1;1500;30;3;1;1;75;";assert(pgr_smart_plan(&wild,&bag,tid,&d)==0&&d.ball==1&&source_calls==1);
- config="2;1;3;0;1;1500;30;3;1;1;90;";assert(pgr_smart_plan(&wild,&bag,tid,&d)==0&&d.ball==2);
- stock[2]=0;assert(pgr_smart_plan(&wild,&bag,tid,&d)==0&&d.ball==3);stock[2]=10;
- stock[3]=0;config="2;1;3;0;1;1500;30;3;1;1;99;";assert(pgr_smart_plan(&wild,&bag,tid,&d)==0&&d.ball==2);stock[3]=10;
- source_ok=false;config="2;1;2;0;1;1500;30;3;1;1;75;";assert(pgr_smart_plan(&wild,&bag,tid,&d)==0&&d.ball==2); // no rates: standard ball
- source_ok=true;cp=2000;assert(pgr_smart_plan(&wild,&bag,tid,&d)==0&&d.ball==3);cp=100;          // High CP rule
- stock[1]=0;stock[2]=0;stock[3]=0;assert(pgr_smart_plan(&wild,&bag,tid,&d)==PGR_SMART_NO_BALLS);stock[1]=10;stock[2]=10;stock[3]=10;
- assert(roots.empty());pgr_smart_set_capture_source(nullptr);
+ pgs_smart_set_capture_source(capture_source);stock[1]=10;stock[2]=10;stock[3]=10;stock[705]=0;
+ config="1;1;3;0;1;1500;30;3;1;";assert(pgs_smart_plan(&wild,&bag,tid,&d)==0&&d.ball==3&&source_calls==0); // version 1: off
+ config="2;1;3;0;1;1500;30;3;1;0;75;";assert(pgs_smart_plan(&wild,&bag,tid,&d)==0&&d.ball==3&&source_calls==0);
+ config="2;1;3;0;1;1500;30;3;1;1;75;";assert(pgs_smart_plan(&wild,&bag,tid,&d)==0&&d.ball==1&&source_calls==1);
+ config="2;1;3;0;1;1500;30;3;1;1;90;";assert(pgs_smart_plan(&wild,&bag,tid,&d)==0&&d.ball==2);
+ stock[2]=0;assert(pgs_smart_plan(&wild,&bag,tid,&d)==0&&d.ball==3);stock[2]=10;
+ stock[3]=0;config="2;1;3;0;1;1500;30;3;1;1;99;";assert(pgs_smart_plan(&wild,&bag,tid,&d)==0&&d.ball==2);stock[3]=10;
+ source_ok=false;config="2;1;2;0;1;1500;30;3;1;1;75;";assert(pgs_smart_plan(&wild,&bag,tid,&d)==0&&d.ball==2); // no rates: standard ball
+ source_ok=true;cp=2000;assert(pgs_smart_plan(&wild,&bag,tid,&d)==0&&d.ball==3);cp=100;          // High CP rule
+ stock[1]=0;stock[2]=0;stock[3]=0;assert(pgs_smart_plan(&wild,&bag,tid,&d)==PGS_SMART_NO_BALLS);stock[1]=10;stock[2]=10;stock[3]=10;
+ assert(roots.empty());pgs_smart_set_capture_source(nullptr);
  // Catch-only list: an unlisted species is skipped before stock is read; a listed one is planned.
- config="3;1;3;0;1;1500;30;3;1;0;75;;415";assert(pgr_smart_plan(&wild,&bag,tid,&d)==PGR_SMART_SKIP_SPECIES&&!d.enabled);assert(roots.empty());
- stock[1]=0;stock[2]=0;stock[3]=0;assert(pgr_smart_plan(&wild,&bag,tid,&d)==PGR_SMART_SKIP_SPECIES);stock[1]=10;stock[2]=10;stock[3]=10;
- config="3;1;3;0;1;1500;30;3;1;0;75;;25,415";assert(pgr_smart_plan(&wild,&bag,tid,&d)==0&&d.enabled&&d.ball==3);assert(roots.empty());
- response.value=1;assert(pgr_smart_berry_success(&response,tid)==1);response.value=0;assert(pgr_smart_berry_success(&response,tid)==PGR_SMART_NOT_SUCCESS);assert(pgr_smart_berry_success(&spawn,tid)==PGR_SMART_ERR_IDENTITY);
+ config="3;1;3;0;1;1500;30;3;1;0;75;;415";assert(pgs_smart_plan(&wild,&bag,tid,&d)==PGS_SMART_SKIP_SPECIES&&!d.enabled);assert(roots.empty());
+ stock[1]=0;stock[2]=0;stock[3]=0;assert(pgs_smart_plan(&wild,&bag,tid,&d)==PGS_SMART_SKIP_SPECIES);stock[1]=10;stock[2]=10;stock[3]=10;
+ config="3;1;3;0;1;1500;30;3;1;0;75;;25,415";assert(pgs_smart_plan(&wild,&bag,tid,&d)==0&&d.enabled&&d.ball==3);assert(roots.empty());
+ response.value=1;assert(pgs_smart_berry_success(&response,tid)==1);response.value=0;assert(pgs_smart_berry_success(&response,tid)==PGS_SMART_NOT_SUCCESS);assert(pgs_smart_berry_success(&spawn,tid)==PGS_SMART_ERR_IDENTITY);
  // Event preference augments smart catching; it never overrides species filters,
  // accepts absent capability, or indexes the normal stock array with an event ID.
  transport.emit=emit;stock[7]=5;stock[706]=5;shiny=true;mighty=true;
  config="5;1;3;0;1;1500;30;3;1;1;75;;;0;1";
- assert(pgr_smart_plan(&wild,&bag,tid,&d)==0&&d.ball==3&&safari_reads==0);
+ assert(pgs_smart_plan(&wild,&bag,tid,&d)==0&&d.ball==3&&safari_reads==0);
  assert(safari_events.back().find("metadata-unavailable")!=std::string::npos);
- pgr_smart_set_safari_source(tag(STRONG),7,safari_source);
- assert(pgr_smart_plan(&wild,&bag,tid,&d)==0&&d.ball==7&&d.berry==706&&d.grade==3&&d.curve);
+ pgs_smart_set_safari_source(tag(STRONG),7,safari_source);
+ assert(pgs_smart_plan(&wild,&bag,tid,&d)==0&&d.ball==7&&d.berry==706&&d.grade==3&&d.curve);
  assert(safari_events.back().find("safari-selected")!=std::string::npos);
- stock[1]=stock[2]=stock[3]=0;assert(pgr_smart_plan(&wild,&bag,tid,&d)==0&&d.ball==7);
- stock[7]=0;assert(pgr_smart_plan(&wild,&bag,tid,&d)==PGR_SMART_NO_BALLS&&safari_events.back().find("no-safari-balls")!=std::string::npos);
- stock[3]=10;assert(pgr_smart_plan(&wild,&bag,tid,&d)==0&&d.ball==3);
- stock[7]=5;safari_offered=false;assert(pgr_smart_plan(&wild,&bag,tid,&d)==0&&d.ball==3&&safari_events.back().find("not-offered")!=std::string::npos);
- safari_offered=true;mighty=false;int prior=safari_reads;assert(pgr_smart_plan(&wild,&bag,tid,&d)==0&&d.ball==3&&safari_reads==prior);
- mighty=true;config="5;1;3;0;1;1500;30;3;1;1;75;;;0;0";assert(pgr_smart_plan(&wild,&bag,tid,&d)==0&&d.ball==3&&safari_reads==prior);
- config="5;0;3;0;1;1500;30;3;1;1;75;;;0;1";assert(pgr_smart_plan(&wild,&bag,tid,&d)==0&&!d.enabled&&safari_reads==prior);
- config="5;1;3;0;1;1500;30;3;1;1;75;;415;0;1";assert(pgr_smart_plan(&wild,&bag,tid,&d)==PGR_SMART_SKIP_SPECIES&&safari_reads==prior);
+ stock[1]=stock[2]=stock[3]=0;assert(pgs_smart_plan(&wild,&bag,tid,&d)==0&&d.ball==7);
+ stock[7]=0;assert(pgs_smart_plan(&wild,&bag,tid,&d)==PGS_SMART_NO_BALLS&&safari_events.back().find("no-safari-balls")!=std::string::npos);
+ stock[3]=10;assert(pgs_smart_plan(&wild,&bag,tid,&d)==0&&d.ball==3);
+ stock[7]=5;safari_offered=false;assert(pgs_smart_plan(&wild,&bag,tid,&d)==0&&d.ball==3&&safari_events.back().find("not-offered")!=std::string::npos);
+ safari_offered=true;mighty=false;int prior=safari_reads;assert(pgs_smart_plan(&wild,&bag,tid,&d)==0&&d.ball==3&&safari_reads==prior);
+ mighty=true;config="5;1;3;0;1;1500;30;3;1;1;75;;;0;0";assert(pgs_smart_plan(&wild,&bag,tid,&d)==0&&d.ball==3&&safari_reads==prior);
+ config="5;0;3;0;1;1500;30;3;1;1;75;;;0;1";assert(pgs_smart_plan(&wild,&bag,tid,&d)==0&&!d.enabled&&safari_reads==prior);
+ config="5;1;3;0;1;1500;30;3;1;1;75;;415;0;1";assert(pgs_smart_plan(&wild,&bag,tid,&d)==PGS_SMART_SKIP_SPECIES&&safari_reads==prior);
  assert(roots.empty());
  std::cout<<"smart_catch parser, policy, auto ball, stock, RPC identity, revocation and GC fixture passed\n";
 }

@@ -57,37 +57,37 @@ void *unbox(const Root &r) {
 }
 
 // Invoke a resolved method. Roots the (non-null) return value. err is set on a managed throw
-// (PGR_VC_ERR_MANAGED) or a null/unrootable return (PGR_VC_ERR_GCHANDLE). receiver, if given, must be
+// (PGS_VC_ERR_MANAGED) or a null/unrootable return (PGS_VC_ERR_GCHANDLE). receiver, if given, must be
 // live. No raw managed pointer survives across this call except through the returned Root.
 bool call(void *method, const Root *receiver, void **args, Root &out, int &err) {
   void *o = receiver ? receiver->get() : nullptr;
-  if (receiver && !o) { err = PGR_VC_ERR_GCHANDLE; return false; }
+  if (receiver && !o) { err = PGS_VC_ERR_GCHANDLE; return false; }
   void *exc = nullptr;
   void *value = reinterpret_cast<Invoke>(cfg.runtime_invoke)(method, o, args, &exc);
-  if (exc) { err = PGR_VC_ERR_MANAGED; return false; }
-  if (!out.set(value)) { err = PGR_VC_ERR_GCHANDLE; return false; }
+  if (exc) { err = PGS_VC_ERR_MANAGED; return false; }
+  if (!out.set(value)) { err = PGS_VC_ERR_GCHANDLE; return false; }
   return true;
 }
 
 // Invoke a virtual getter resolved per object. Same error contract as call().
 bool callVirtual(void *base, const Root &receiver, Root &out, int &err, bool allowNull = false) {
   void *o = receiver.get();
-  if (!o) { err = PGR_VC_ERR_GCHANDLE; return false; }
+  if (!o) { err = PGS_VC_ERR_GCHANDLE; return false; }
   void *method = reinterpret_cast<Virtual>(cfg.object_get_virtual_method)(o, base);
-  if (!method) { err = PGR_VC_ERR_METADATA; return false; }
+  if (!method) { err = PGS_VC_ERR_METADATA; return false; }
   void *exc = nullptr;
   void *value = reinterpret_cast<Invoke>(cfg.runtime_invoke)(method, o, nullptr, &exc);
-  if (exc) { err = PGR_VC_ERR_MANAGED; return false; }
+  if (exc) { err = PGS_VC_ERR_MANAGED; return false; }
   if (!value && allowNull) return true;
-  if (!out.set(value)) { err = PGR_VC_ERR_GCHANDLE; return false; }
+  if (!out.set(value)) { err = PGS_VC_ERR_GCHANDLE; return false; }
   return true;
 }
 
 // Read a boxed System.Boolean result; -1 on error (err set), else 0/1.
 int boolValue(const Root &r, int &err) {
-  if (!exact(r, cfg.class_bool)) { err = PGR_VC_ERR_METADATA; return -1; }
+  if (!exact(r, cfg.class_bool)) { err = PGS_VC_ERR_METADATA; return -1; }
   void *p = unbox(r);
-  if (!p) { err = PGR_VC_ERR_METADATA; return -1; }
+  if (!p) { err = PGS_VC_ERR_METADATA; return -1; }
   return *static_cast<uint8_t *>(p) != 0 ? 1 : 0;
 }
 
@@ -146,164 +146,164 @@ size_t utf16ToUtf8(const uint16_t *src, uint32_t units, char *dst, size_t cap) {
 }
 
 int install(const PgrVgpCandidateConfig *c) {
-  if (!c) return PGR_VC_ERR_NULL_ARG;
-  if (c->version != PGR_VC_CONFIG_VERSION) return PGR_VC_ERR_BAD_VERSION;
-  if (c->size != sizeof(*c)) return PGR_VC_ERR_BAD_SIZE;
+  if (!c) return PGS_VC_ERR_NULL_ARG;
+  if (c->version != PGS_VC_CONFIG_VERSION) return PGS_VC_ERR_BAD_VERSION;
+  if (c->size != sizeof(*c)) return PGS_VC_ERR_BAD_SIZE;
   void *pointers[24];
   std::memcpy(pointers, reinterpret_cast<const char *>(c) + 8, sizeof(pointers));
-  for (void *p : pointers) if (!p) return PGR_VC_ERR_MISSING_PTR;
+  for (void *p : pointers) if (!p) return PGS_VC_ERR_MISSING_PTR;
   std::lock_guard<std::mutex> guard(installMutex);
-  if (installed.load()) return std::memcmp(c, &cfg, sizeof(cfg)) == 0 ? 0 : PGR_VC_ERR_RECONFIG;
+  if (installed.load()) return std::memcmp(c, &cfg, sizeof(cfg)) == 0 ? 0 : PGS_VC_ERR_RECONFIG;
   cfg = *c;
   installed.store(true, std::memory_order_release);
   return 0;
 }
 
 int inspect(const PgrVgpCandidateRequest *req, PgrVgpCandidateResult *out) {
-  if (!out) return PGR_VC_ERR_NULL_ARG;
-  *out = {PGR_VC_RESULT_VERSION, uint32_t(sizeof(*out)), 0, PGR_VC_REASON_INVALID, 0, 0, 0, {}};
-  if (!req) return PGR_VC_ERR_NULL_ARG;
-  if (req->version != PGR_VC_REQUEST_VERSION) return PGR_VC_ERR_BAD_VERSION;
-  if (req->size != sizeof(*req)) return PGR_VC_ERR_BAD_SIZE;
-  if (!installed.load(std::memory_order_acquire)) return PGR_VC_ERR_NOT_INSTALLED;
-  if (req->action != PGR_VC_ACTION_CATCH && req->action != PGR_VC_ACTION_SPIN && req->action != PGR_VC_ACTION_SMART_CATCH) return PGR_VC_ERR_BAD_ACTION;
-  if (!req->target) return PGR_VC_ERR_NULL_ARG;
-  if (!req->owner_tid || req->owner_tid != static_cast<uint64_t>(gettid())) return PGR_VC_ERR_THREAD;
+  if (!out) return PGS_VC_ERR_NULL_ARG;
+  *out = {PGS_VC_RESULT_VERSION, uint32_t(sizeof(*out)), 0, PGS_VC_REASON_INVALID, 0, 0, 0, {}};
+  if (!req) return PGS_VC_ERR_NULL_ARG;
+  if (req->version != PGS_VC_REQUEST_VERSION) return PGS_VC_ERR_BAD_VERSION;
+  if (req->size != sizeof(*req)) return PGS_VC_ERR_BAD_SIZE;
+  if (!installed.load(std::memory_order_acquire)) return PGS_VC_ERR_NOT_INSTALLED;
+  if (req->action != PGS_VC_ACTION_CATCH && req->action != PGS_VC_ACTION_SPIN && req->action != PGS_VC_ACTION_SMART_CATCH) return PGS_VC_ERR_BAD_ACTION;
+  if (!req->target) return PGS_VC_ERR_NULL_ARG;
+  if (!req->owner_tid || req->owner_tid != static_cast<uint64_t>(gettid())) return PGS_VC_ERR_THREAD;
   if (!std::isfinite(req->lat) || !std::isfinite(req->lon) ||
       std::fabs(req->lat) > 90.0 || std::fabs(req->lon) > 180.0)
-    return PGR_VC_ERR_COORDS;
+    return PGS_VC_ERR_COORDS;
 
   const uint64_t start = now();
-  if (!start) return PGR_VC_ERR_CLOCK_FAILURE;
-  const uint64_t lease = req->lease_ms > PGR_VC_MAX_LEASE_MS ? PGR_VC_MAX_LEASE_MS : req->lease_ms;
-  if (!lease) { out->reason = PGR_VC_REASON_INVALID; return PGR_VC_NOT; }  // closed window: benign skip
+  if (!start) return PGS_VC_ERR_CLOCK_FAILURE;
+  const uint64_t lease = req->lease_ms > PGS_VC_MAX_LEASE_MS ? PGS_VC_MAX_LEASE_MS : req->lease_ms;
+  if (!lease) { out->reason = PGS_VC_REASON_INVALID; return PGS_VC_NOT; }  // closed window: benign skip
   const uint64_t deadline = start + lease;
 
   bool idle = false;
-  if (!busy.compare_exchange_strong(idle, true)) return PGR_VC_ERR_THREAD;  // reentrant inspect
+  if (!busy.compare_exchange_strong(idle, true)) return PGS_VC_ERR_THREAD;  // reentrant inspect
   struct BusyExit { ~BusyExit() { busy.store(false); } } exit;
 
   int err = 0;
-  const bool isCatch = req->action != PGR_VC_ACTION_SPIN;
+  const bool isCatch = req->action != PGS_VC_ACTION_SPIN;
 
   Root target, manual;
-  if (!target.set(req->target)) return PGR_VC_ERR_GCHANDLE;
-  if (isCatch && req->manual && !manual.set(req->manual)) return PGR_VC_ERR_GCHANDLE;
-  const PgrVgpIncense *incense = nullptr;
-  if (isCatch) incense = pgr_vgp_kind_where([&](void *k) { return exact(target, k); });
-  if (!incense && !exact(target, isCatch ? cfg.class_wild : cfg.class_stop)) { out->reason = PGR_VC_REASON_INVALID; return PGR_VC_NOT; }
+  if (!target.set(req->target)) return PGS_VC_ERR_GCHANDLE;
+  if (isCatch && req->manual && !manual.set(req->manual)) return PGS_VC_ERR_GCHANDLE;
+  const PgsVgpIncense *incense = nullptr;
+  if (isCatch) incense = pgs_vgp_kind_where([&](void *k) { return exact(target, k); });
+  if (!incense && !exact(target, isCatch ? cfg.class_wild : cfg.class_stop)) { out->reason = PGS_VC_REASON_INVALID; return PGS_VC_NOT; }
 
   // Liveness: static alive(obj) -> Boolean.
   {
     Root aliveBox;
     void *self = target.get();
-    if (!self) return PGR_VC_ERR_GCHANDLE;
+    if (!self) return PGS_VC_ERR_GCHANDLE;
     void *args[] = {self};
     if (!call(cfg.m_alive, nullptr, args, aliveBox, err)) return err;
     int live = boolValue(aliveBox, err);
     if (live < 0) return err;
-    if (!live) { out->reason = PGR_VC_REASON_INVALID; return PGR_VC_NOT; }
+    if (!live) { out->reason = PGS_VC_REASON_INVALID; return PGS_VC_NOT; }
   }
 
   if (isCatch) {
     // Manual-encounter exclusion by pointer identity (before any getter, matching vgp.js).
     if (req->manual) {
-      if (manual.get() == target.get()) { out->reason = PGR_VC_REASON_MANUAL; return PGR_VC_NOT; }
+      if (manual.get() == target.get()) { out->reason = PGS_VC_REASON_MANUAL; return PGS_VC_NOT; }
     }
     // VisibleOnMap (virtual). Incense spawns have no such flag; they show only to their owner.
     if (!incense) {
       int visible = virtualBool(cfg.m_visible, target, err);
       if (visible < 0) return err;
-      if (!visible) { out->reason = PGR_VC_REASON_HIDDEN; return PGR_VC_NOT; }
+      if (!visible) { out->reason = PGS_VC_REASON_HIDDEN; return PGS_VC_NOT; }
     }
     // Location (non-virtual) -> Niantic.LatLng (lat, lon); 40 m range.
     {
       Root loc;
       if (!call(cfg.m_location, &target, nullptr, loc, err)) return err;
-      if (!exact(loc, cfg.class_latlng)) return PGR_VC_ERR_METADATA;
+      if (!exact(loc, cfg.class_latlng)) return PGS_VC_ERR_METADATA;
       void *p = unbox(loc);
-      if (!p) return PGR_VC_ERR_METADATA;
+      if (!p) return PGS_VC_ERR_METADATA;
       double clat, clon;
       std::memcpy(&clat, static_cast<char *>(p), sizeof(double));
       std::memcpy(&clon, static_cast<char *>(p) + 8, sizeof(double));
-      if (!std::isfinite(clat) || !std::isfinite(clon) || std::fabs(clat)>90 || std::fabs(clon)>180) { out->reason=PGR_VC_REASON_OUT_OF_RANGE; return PGR_VC_NOT; }
+      if (!std::isfinite(clat) || !std::isfinite(clon) || std::fabs(clat)>90 || std::fabs(clon)>180) { out->reason=PGS_VC_REASON_OUT_OF_RANGE; return PGS_VC_NOT; }
       double dist = haversine(req->lat, req->lon, clat, clon);
-      if (!std::isfinite(dist) || (req->action==PGR_VC_ACTION_CATCH && dist > 40.0)) { out->reason = PGR_VC_REASON_OUT_OF_RANGE; return PGR_VC_NOT; }
+      if (!std::isfinite(dist) || (req->action==PGS_VC_ACTION_CATCH && dist > 40.0)) { out->reason = PGS_VC_REASON_OUT_OF_RANGE; return PGS_VC_NOT; }
     }
     // EncounterId (non-virtual) -> UInt64; key = 'p'<decimal>.
     uint64_t id;
     {
       Root idBox;
       if (!call(incense ? incense->m_id : cfg.m_id, &target, nullptr, idBox, err)) return err;
-      if (!exact(idBox, cfg.class_uint64)) return PGR_VC_ERR_METADATA;
+      if (!exact(idBox, cfg.class_uint64)) return PGS_VC_ERR_METADATA;
       void *p = unbox(idBox);
-      if (!p) return PGR_VC_ERR_METADATA;
+      if (!p) return PGS_VC_ERR_METADATA;
       std::memcpy(&id, p, sizeof(uint64_t));
     }
-    if (now() >= deadline) { out->reason = PGR_VC_REASON_INVALID; return PGR_VC_NOT; }  // expired mid-call
+    if (now() >= deadline) { out->reason = PGS_VC_REASON_INVALID; return PGS_VC_NOT; }  // expired mid-call
     out->key[0] = 'p';
     out->key_len = 1 + writeDecimal(id, out->key + 1);
     out->key[out->key_len] = '\0';
     out->eligible = 1;
-    out->reason = PGR_VC_REASON_NONE;
-    return PGR_VC_ELIGIBLE;  // fort_handle stays 0 for a catch
+    out->reason = PGS_VC_REASON_NONE;
+    return PGS_VC_ELIGIBLE;  // fort_handle stays 0 for a catch
   }
 
   // Spin: four virtual predicates, then the fort + its FortId string.
   int v;
   if ((v = virtualBool(cfg.m_active, target, err)) < 0) return err;
-  if (!v) { out->reason = PGR_VC_REASON_INELIGIBLE; return PGR_VC_NOT; }
+  if (!v) { out->reason = PGS_VC_REASON_INELIGIBLE; return PGS_VC_NOT; }
   if ((v = virtualBool(cfg.m_range, target, err)) < 0) return err;
-  if (!v) { out->reason = PGR_VC_REASON_INELIGIBLE; return PGR_VC_NOT; }
+  if (!v) { out->reason = PGS_VC_REASON_INELIGIBLE; return PGS_VC_NOT; }
   if ((v = virtualBool(cfg.m_closed, target, err)) < 0) return err;
-  if (v) { out->reason = PGR_VC_REASON_INELIGIBLE; return PGR_VC_NOT; }
+  if (v) { out->reason = PGS_VC_REASON_INELIGIBLE; return PGS_VC_NOT; }
   if ((v = virtualBool(cfg.m_cooling, target, err)) < 0) return err;
-  if (v) { out->reason = PGR_VC_REASON_INELIGIBLE; return PGR_VC_NOT; }
+  if (v) { out->reason = PGS_VC_REASON_INELIGIBLE; return PGS_VC_NOT; }
 
   Root fort;
   if (!callVirtual(cfg.m_fort, target, fort, err, true)) return err;
-  if (!exact(fort, cfg.class_fort)) { out->reason = PGR_VC_REASON_INELIGIBLE; return PGR_VC_NOT; }
+  if (!exact(fort, cfg.class_fort)) { out->reason = PGS_VC_REASON_INELIGIBLE; return PGS_VC_NOT; }
 
   // FortId System.String: read the reference field, root it BEFORE any further allocation, re-fetch
   // its (possibly relocated) address, then copy the chars with no intervening managed call.
   void *rawString = nullptr;
   {
     void *fortObj = fort.get();
-    if (!fortObj) return PGR_VC_ERR_GCHANDLE;
+    if (!fortObj) return PGS_VC_ERR_GCHANDLE;
     reinterpret_cast<FieldGet>(cfg.field_get_value)(fortObj, cfg.f_fort_id, &rawString);
   }
-  if (!rawString) { out->reason = PGR_VC_REASON_INELIGIBLE; return PGR_VC_NOT; }
+  if (!rawString) { out->reason = PGS_VC_REASON_INELIGIBLE; return PGS_VC_NOT; }
   Root fortId;
-  if (!fortId.set(rawString)) return PGR_VC_ERR_GCHANDLE;
+  if (!fortId.set(rawString)) return PGS_VC_ERR_GCHANDLE;
   void *str = fortId.get();
-  if (!str) return PGR_VC_ERR_GCHANDLE;
+  if (!str) return PGS_VC_ERR_GCHANDLE;
   int32_t length;
   std::memcpy(&length, static_cast<char *>(str) + 16, sizeof(int32_t));
-  if (length < 1 || length > PGR_VC_MAX_FORT_UNITS) { out->reason = PGR_VC_REASON_INELIGIBLE; return PGR_VC_NOT; }
+  if (length < 1 || length > PGS_VC_MAX_FORT_UNITS) { out->reason = PGS_VC_REASON_INELIGIBLE; return PGS_VC_NOT; }
   const uint16_t *chars = reinterpret_cast<const uint16_t *>(static_cast<char *>(str) + 20);
-  size_t utf8 = utf16ToUtf8(chars, uint32_t(length), out->key + 1, PGR_VC_KEY_CAPACITY - 2);
-  if (utf8 == SIZE_MAX) { out->reason = PGR_VC_REASON_INELIGIBLE; return PGR_VC_NOT; }
+  size_t utf8 = utf16ToUtf8(chars, uint32_t(length), out->key + 1, PGS_VC_KEY_CAPACITY - 2);
+  if (utf8 == SIZE_MAX) { out->reason = PGS_VC_REASON_INELIGIBLE; return PGS_VC_NOT; }
 
-  if (now() >= deadline) { out->reason = PGR_VC_REASON_INVALID; return PGR_VC_NOT; }  // expired mid-call
+  if (now() >= deadline) { out->reason = PGS_VC_REASON_INVALID; return PGS_VC_NOT; }  // expired mid-call
 
   // Transfer an OWN fort handle to the caller. This allocation may relocate rawString, but the string
   // bytes were already copied above, so nothing stale is read after it.
   uintptr_t owned = reinterpret_cast<New>(cfg.gchandle_new)(fort.get(), 0);
-  if (!owned) return PGR_VC_ERR_GCHANDLE;
+  if (!owned) return PGS_VC_ERR_GCHANDLE;
 
   out->key[0] = 's';
   out->key_len = uint32_t(1 + utf8);
   out->key[out->key_len] = '\0';
   out->fort_handle = owned;
   out->eligible = 1;
-  out->reason = PGR_VC_REASON_NONE;
-  return PGR_VC_ELIGIBLE;
+  out->reason = PGS_VC_REASON_NONE;
+  return PGS_VC_ELIGIBLE;
 }
 
-const PgrVgpCandidateApi api = {PGR_VC_API_VERSION, uint32_t(sizeof(PgrVgpCandidateApi)), install, inspect};
+const PgrVgpCandidateApi api = {PGS_VC_API_VERSION, uint32_t(sizeof(PgrVgpCandidateApi)), install, inspect};
 
 }  // namespace
 
 extern "C" const void *pgs_vgp_candidates_api(uint32_t version) {
-  return version == PGR_VC_API_VERSION ? &api : nullptr;
+  return version == PGS_VC_API_VERSION ? &api : nullptr;
 }

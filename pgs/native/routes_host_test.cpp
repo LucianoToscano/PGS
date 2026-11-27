@@ -33,7 +33,7 @@
 
 namespace {
 
-using namespace pgr_routes_schema;
+using namespace pgs_routes_schema;
 
 // --- RVA & prologue constants (must match routes.js / routes_host.cpp) -------------
 constexpr uint64_t kRvaDismissGui       = 0x9487290ULL;
@@ -629,7 +629,7 @@ void setup_fixture_world() {
   for (size_t i = 0; i < kFieldCount; ++i) {
     const auto &s = kFields[i];
     Type *t = s.type_name ? find_or_create_type(s.type_name)
-                          : (s.kind == PGR_MD_FIELD_ENUM_I32 ? g_enum_class->type : g_generic_ref_type);
+                          : (s.kind == PGS_MD_FIELD_ENUM_I32 ? g_enum_class->type : g_generic_ref_type);
     if (i == 4) t = g_list_class->type;
     if (i == 11) t = g_wp_list_class->type;
     g_fields.emplace_back(new Field{&g_classes[s.owner], &g_classes[s.owner], s.name, t, 0, s.offset});
@@ -766,8 +766,8 @@ std::vector<Popped> drain_all(const PgrRoutesHostApi *host) {
     PgrRoutesHostEvent ev{};
     int rc = host->next_event(&ev, buf, sizeof(buf));
     if (rc == 0) break;
-    assert(rc == PGR_RH_EVENT_POPPED);
-    assert(ev.version == PGR_RH_EVENT_VERSION && ev.size == sizeof(PgrRoutesHostEvent));
+    assert(rc == PGS_RH_EVENT_POPPED);
+    assert(ev.version == PGS_RH_EVENT_VERSION && ev.size == sizeof(PgrRoutesHostEvent));
     out.push_back(Popped{ev, std::string(buf, ev.json_len)});
   }
   return out;
@@ -802,8 +802,8 @@ int main(int argc, char **argv) {
   assert(tr && tr->version == 1 && tr->size == sizeof(PgrRuntimeTransportApi));
   // Java normally installs52 before compiled gameplay starts. No snapshot is
   // needed for testing its producer queue; drain on a separate host thread.
-  PgrRuntimeTransportConfig transport_config{1,sizeof(PgrRuntimeTransportConfig),500,
-      PGR_TRANSPORT_MAX_EVENTS,PGR_TRANSPORT_MAX_STRING,PGR_TRANSPORT_MAX_FRAME,0,0};
+  PgsRuntimeTransportConfig transport_config{1,sizeof(PgsRuntimeTransportConfig),500,
+      PGS_TRANSPORT_MAX_EVENTS,PGS_TRANSPORT_MAX_STRING,PGS_TRANSPORT_MAX_FRAME,0,0};
   assert(tr->install(&transport_config)==PGR_TRANSPORT_OK);
 
 
@@ -816,9 +816,9 @@ int main(int argc, char **argv) {
   const uint64_t unity_size = 65536ULL;
 
   PgrRoutesHostConfig cfg{};
-  cfg.version = PGR_RH_CONFIG_VERSION;
+  cfg.version = PGS_RH_CONFIG_VERSION;
   cfg.size = sizeof(cfg);
-  cfg.flags = PGR_RH_CFG_FIXTURE_HOOKS | PGR_RH_CFG_EMIT_TRANSPORT52;
+  cfg.flags = PGS_RH_CFG_FIXTURE_HOOKS | PGS_RH_CFG_EMIT_TRANSPORT52;
   cfg.module_base = g_module_base;
   cfg.module_size = g_module_size;
   cfg.meta_exports = &meta_exports;
@@ -851,24 +851,24 @@ int main(int argc, char **argv) {
   cfg.unity_module_size = unity_size;
 
   // --- Phase 1: pre-configure guards + configure validation + idempotency ------------
-  assert(host->tick(self_tid()) == PGR_RH_ERR_NOT_CONFIGURED);
+  assert(host->tick(self_tid()) == PGS_RH_ERR_NOT_CONFIGURED);
   {
     auto bad = cfg;
     bad.version = 2;
-    assert(host->configure(&bad) == PGR_RH_ERR_BAD_VERSION);
+    assert(host->configure(&bad) == PGS_RH_ERR_BAD_VERSION);
     bad = cfg;
     bad.size = sizeof(cfg) - 8;
-    assert(host->configure(&bad) == PGR_RH_ERR_BAD_SIZE);
+    assert(host->configure(&bad) == PGS_RH_ERR_BAD_SIZE);
     bad = cfg;
     bad.seg_query = nullptr; // FIXTURE_HOOKS without seg_query must fail closed
-    assert(host->configure(&bad) == PGR_RH_ERR_MISSING_PTR);
+    assert(host->configure(&bad) == PGS_RH_ERR_MISSING_PTR);
   }
-  assert(host->configure(&cfg) == PGR_RH_OK);
-  assert(host->configure(&cfg) == PGR_RH_OK); // idempotent
+  assert(host->configure(&cfg) == PGS_RH_OK);
+  assert(host->configure(&cfg) == PGS_RH_OK); // idempotent
   {
     auto diff = cfg;
     diff.module_size += 4096;
-    assert(host->configure(&diff) == PGR_RH_ERR_RECONFIG);
+    assert(host->configure(&diff) == PGS_RH_ERR_RECONFIG);
   }
 
   // --- Phase 2: command JSON parser + Feature 27 gate parity -------------------------
@@ -876,60 +876,60 @@ int main(int argc, char **argv) {
                        uint64_t exp_seq = 0, uint32_t exp_act = 0) {
     PgrRoutesHostOptionsOut out{};
     uint32_t len = json ? static_cast<uint32_t>(std::strlen(json)) : 0;
-    assert(host->set_options(allowed, json, len, &out) == PGR_RH_OK);
-    assert(out.version == PGR_RH_OPTIONS_OUT_VERSION && out.size == sizeof(out));
+    assert(host->set_options(allowed, json, len, &out) == PGS_RH_OK);
+    assert(out.version == PGS_RH_OPTIONS_OUT_VERSION && out.size == sizeof(out));
     assert(out.status_code == exp_status);
-    if (exp_status == PGR_RH_OPT_REJECTED) {
+    if (exp_status == PGS_RH_OPT_REJECTED) {
       if(std::strcmp(out.reason,exp_reason)!=0)std::fprintf(stderr,"command=%s reason=%s expected=%s\n",json?json:"<null>",out.reason,exp_reason);
       assert(std::strcmp(out.reason, exp_reason) == 0);
-    } else if (exp_status == PGR_RH_OPT_ACCEPTED) {
+    } else if (exp_status == PGS_RH_OPT_ACCEPTED) {
       assert(out.seq == exp_seq && out.action_code == exp_act);
     }
   };
 
-  check_opt(0, "{\"seq\":1,\"action\":\"discover\"}", PGR_RH_OPT_OFF, "not-allowed");
-  check_opt(1, "", PGR_RH_OPT_REJECTED, "no-command");
-  check_opt(1, "not json", PGR_RH_OPT_REJECTED, "bad-json");
-  check_opt(1, "{\"seq\":1,\"action\":\"discover\"} trailing", PGR_RH_OPT_REJECTED, "bad-json");
-  check_opt(1, "[1,2,3]", PGR_RH_OPT_REJECTED, "bad-seq"); // Arrays are objects in the legacy JSON contract.
-  check_opt(1, "{\"seq\":0,\"action\":\"discover\"}", PGR_RH_OPT_REJECTED, "bad-seq");
-  check_opt(1, "{\"seq\":1.5,\"action\":\"discover\"}", PGR_RH_OPT_REJECTED, "bad-seq");
-  check_opt(1, "{\"seq\":1,\"action\":\"noop\"}", PGR_RH_OPT_REJECTED, "bad-action");
-  check_opt(1, "{\"seq\":1,\"action\":\"start\"}", PGR_RH_OPT_REJECTED, "id-required");
-  check_opt(1, "{\"seq\":1,\"action\":\"complete\"}", PGR_RH_OPT_REJECTED, "id-required");
-  check_opt(1, "{\"seq\":1,\"action\":\"start\",\"id\":\"\"}", PGR_RH_OPT_REJECTED, "bad-id");
-  check_opt(1, "{\"seq\":1,\"action\":\"start\",\"id\":\"r1\",\"reversed\":\"yes\"}", PGR_RH_OPT_REJECTED, "bad-reversed");
+  check_opt(0, "{\"seq\":1,\"action\":\"discover\"}", PGS_RH_OPT_OFF, "not-allowed");
+  check_opt(1, "", PGS_RH_OPT_REJECTED, "no-command");
+  check_opt(1, "not json", PGS_RH_OPT_REJECTED, "bad-json");
+  check_opt(1, "{\"seq\":1,\"action\":\"discover\"} trailing", PGS_RH_OPT_REJECTED, "bad-json");
+  check_opt(1, "[1,2,3]", PGS_RH_OPT_REJECTED, "bad-seq"); // Arrays are objects in the legacy JSON contract.
+  check_opt(1, "{\"seq\":0,\"action\":\"discover\"}", PGS_RH_OPT_REJECTED, "bad-seq");
+  check_opt(1, "{\"seq\":1.5,\"action\":\"discover\"}", PGS_RH_OPT_REJECTED, "bad-seq");
+  check_opt(1, "{\"seq\":1,\"action\":\"noop\"}", PGS_RH_OPT_REJECTED, "bad-action");
+  check_opt(1, "{\"seq\":1,\"action\":\"start\"}", PGS_RH_OPT_REJECTED, "id-required");
+  check_opt(1, "{\"seq\":1,\"action\":\"complete\"}", PGS_RH_OPT_REJECTED, "id-required");
+  check_opt(1, "{\"seq\":1,\"action\":\"start\",\"id\":\"\"}", PGS_RH_OPT_REJECTED, "bad-id");
+  check_opt(1, "{\"seq\":1,\"action\":\"start\",\"id\":\"r1\",\"reversed\":\"yes\"}", PGS_RH_OPT_REJECTED, "bad-reversed");
 
-  check_opt(1, "{\"seq\":1,\"action\":\"discover\"}", PGR_RH_OPT_ACCEPTED, "", 1, 1);
-  check_opt(1, "{\"seq\":1,\"action\":\"discover\"}", PGR_RH_OPT_REJECTED, "stale-seq");
+  check_opt(1, "{\"seq\":1,\"action\":\"discover\"}", PGS_RH_OPT_ACCEPTED, "", 1, 1);
+  check_opt(1, "{\"seq\":1,\"action\":\"discover\"}", PGS_RH_OPT_REJECTED, "stale-seq");
   // Revoking lease dooms pending seq 1
-  check_opt(0, nullptr, PGR_RH_OPT_OFF, "not-allowed");
+  check_opt(0, nullptr, PGS_RH_OPT_OFF, "not-allowed");
 
   // --- Phase 3: cold-start metadata failure + 2000ms throttle + off-owner rejection --
   g_domain_ready = false;
-  assert(host->tick(self_tid() + 999) == PGR_RH_ERR_OFF_OWNER);
-  assert(host->tick(self_tid()) == PGR_RH_OK);
+  assert(host->tick(self_tid() + 999) == PGS_RH_ERR_OFF_OWNER);
+  assert(host->tick(self_tid()) == PGS_RH_OK);
   {
     auto evs = drain_all(host);
     assert(evs.size() == 1);
-    assert(evs[0].ev.kind == PGR_RH_EV_READY && evs[0].ev.scalar0 == 0);
+    assert(evs[0].ev.kind == PGS_RH_EV_READY && evs[0].ev.scalar0 == 0);
     assert(evs[0].json.find("\"available\":false") != std::string::npos);
   }
   // Immediate retry within 2000ms is throttled and deduplicated
-  assert(host->tick(self_tid()) == PGR_RH_OK);
+  assert(host->tick(self_tid()) == PGS_RH_OK);
   assert(drain_all(host).empty());
 
   // --- Phase 4: metadata 53 resolution + leaf 43/44/45/46/50 install -----------------
   // Wait for the 2000ms cold-start retry window to elapse, then enable domain.
   usleep(2050 * 1000);
   g_domain_ready = true;
-  assert(host->tick(self_tid()) == PGR_RH_OK);
+  assert(host->tick(self_tid()) == PGS_RH_OK);
   {
     auto evs = drain_all(host);
-    const Popped *loc_ev = find_ev(evs, PGR_RH_EV_LOCATION_GATE_READY);
-    const Popped *meta_ev = find_ev(evs, PGR_RH_EV_METADATA_READY);
-    const Popped *rdy_ev = find_ev(evs, PGR_RH_EV_READY);
-    const Popped *act_ev = find_ev(evs, PGR_RH_EV_ACTION);
+    const Popped *loc_ev = find_ev(evs, PGS_RH_EV_LOCATION_GATE_READY);
+    const Popped *meta_ev = find_ev(evs, PGS_RH_EV_METADATA_READY);
+    const Popped *rdy_ev = find_ev(evs, PGS_RH_EV_READY);
+    const Popped *act_ev = find_ev(evs, PGS_RH_EV_ACTION);
     assert(loc_ev && loc_ev->json == "{\"backend\":\"native\"}");
     assert(meta_ev && meta_ev->json.find("\"actionsBackend\":\"native\"") != std::string::npos);
     assert(rdy_ev && rdy_ev->json == "{\"available\":false,\"reason\":\"awaiting-service\"}");
@@ -937,7 +937,7 @@ int main(int argc, char **argv) {
     assert(act_ev && act_ev->ev.seq == 1 && act_ev->json.find("\"reason\":\"lease-expired\"") != std::string::npos);
 
     PgrRoutesHostSample s{};
-    assert(host->sample(&s) == PGR_RH_OK);
+    assert(host->sample(&s) == PGS_RH_OK);
     assert(s.configured == 1 && s.meta_ready == 1 && s.tracking_ready == 1 && s.services_ready == 0);
     assert(s.owner_tid == self_tid() && s.last_seq == 1);
   }
@@ -945,38 +945,38 @@ int main(int argc, char **argv) {
   // --- Phase 5: real Dobby service capture (Feature 45) + dica derivation ------------
   assert(call_req_nearby(&g_routes_svc, nullptr) == &g_promise_dummy);
   assert(g_hook_req_calls.load() == 1);
-  assert(host->tick(self_tid()) == PGR_RH_OK);
+  assert(host->tick(self_tid()) == PGS_RH_OK);
   {
     auto evs = drain_all(host);
     int captured_cnt = 0;
     bool saw_dica = false;
     for (const auto &e : evs) {
-      if (e.ev.kind == PGR_RH_EV_SERVICE_CAPTURED) {
+      if (e.ev.kind == PGS_RH_EV_SERVICE_CAPTURED) {
         ++captured_cnt;
         if (e.json.find("\"routes-dependency\"") != std::string::npos) saw_dica = true;
       }
     }
     if(captured_cnt!=2||!saw_dica)for(const auto &e:evs)std::fprintf(stderr,"capture event kind=%u json=%s\n",e.ev.kind,e.json.c_str());
     assert(captured_cnt == 2 && saw_dica);
-    const Popped *rdy_ev = find_ev(evs, PGR_RH_EV_READY);
+    const Popped *rdy_ev = find_ev(evs, PGS_RH_EV_READY);
     assert(rdy_ev && rdy_ev->ev.scalar0 == 1 && rdy_ev->json == "{\"available\":true,\"reason\":null}");
   }
 
   // --- Phase 6: current read + discovery + boundSnapshot + small-buffer -8 check -----
   g_has_started = true;
   g_in_range_end = true;
-  check_opt(1, "", PGR_RH_OPT_REJECTED, "no-command"); // grants fresh 2500ms lease
-  assert(host->tick(self_tid()) == PGR_RH_OK);
+  check_opt(1, "", PGS_RH_OPT_REJECTED, "no-command"); // grants fresh 2500ms lease
+  assert(host->tick(self_tid()) == PGS_RH_OK);
   {
-    // Small buffer check: must return PGR_RH_ERR_BUFFER_TOO_SMALL (-8) without popping
+    // Small buffer check: must return PGS_RH_ERR_BUFFER_TOO_SMALL (-8) without popping
     char tiny[4]{};
     PgrRoutesHostEvent peek{};
-    assert(host->next_event(&peek, tiny, sizeof(tiny)) == PGR_RH_ERR_BUFFER_TOO_SMALL);
+    assert(host->next_event(&peek, tiny, sizeof(tiny)) == PGS_RH_ERR_BUFFER_TOO_SMALL);
     assert(peek.json_len > sizeof(tiny));
 
     auto evs = drain_all(host);
-    const Popped *cur_ev = find_ev(evs, PGR_RH_EV_CURRENT);
-    const Popped *snap_ev = find_ev(evs, PGR_RH_EV_SNAPSHOT);
+    const Popped *cur_ev = find_ev(evs, PGS_RH_EV_CURRENT);
+    const Popped *snap_ev = find_ev(evs, PGS_RH_EV_SNAPSHOT);
     assert(cur_ev && cur_ev->json.find("\"id\":\"route-alpha\"") != std::string::npos);
     assert(cur_ev->json.find("\"started\":true") != std::string::npos);
     assert(snap_ev && snap_ev->json.find("\"id\":\"route-alpha\"") != std::string::npos);
@@ -985,37 +985,37 @@ int main(int argc, char **argv) {
     assert(snap_ev->json.find("route-one-pt") == std::string::npos);
 
     PgrRoutesHostSample s{};
-    assert(host->sample(&s) == PGR_RH_OK);
+    assert(host->sample(&s) == PGS_RH_OK);
     assert(s.services_ready == 1 && s.cached_route_count == 1);
   }
 
   // --- Phase 7: discover / start / pause / complete + bjan + modal dismissal ---------
   // 7a. discover (seq 2)
-  check_opt(1, "{\"seq\":2,\"action\":\"discover\"}", PGR_RH_OPT_ACCEPTED, "", 2, 1);
-  assert(host->tick(self_tid()) == PGR_RH_OK);
+  check_opt(1, "{\"seq\":2,\"action\":\"discover\"}", PGS_RH_OPT_ACCEPTED, "", 2, 1);
+  assert(host->tick(self_tid()) == PGS_RH_OK);
   {
     auto evs = drain_all(host);
-    const Popped *act_ev = find_ev(evs, PGR_RH_EV_ACTION);
+    const Popped *act_ev = find_ev(evs, PGS_RH_EV_ACTION);
     assert(act_ev && act_ev->ev.seq == 2 && act_ev->json == "{\"seq\":2,\"action\":\"discover\",\"status\":\"submitted\"}");
     assert(g_request_nearby_invokes == 1);
   }
 
   // 7b. start unknown route (seq 3) -> route-not-discovered
-  check_opt(1, "{\"seq\":3,\"action\":\"start\",\"id\":\"missing-route\"}", PGR_RH_OPT_ACCEPTED, "", 3, 2);
-  assert(host->tick(self_tid()) == PGR_RH_OK);
+  check_opt(1, "{\"seq\":3,\"action\":\"start\",\"id\":\"missing-route\"}", PGS_RH_OPT_ACCEPTED, "", 3, 2);
+  assert(host->tick(self_tid()) == PGS_RH_OK);
   {
     auto evs = drain_all(host);
-    const Popped *act_ev = find_ev(evs, PGR_RH_EV_ACTION);
+    const Popped *act_ev = find_ev(evs, PGS_RH_EV_ACTION);
     assert(act_ev && act_ev->ev.seq == 3 && act_ev->json.find("\"reason\":\"route-not-discovered\"") != std::string::npos);
   }
 
   // 7c. start discovered route-alpha reversed=true (seq 4) -> submitted
   g_is_consuming = false;
-  check_opt(1, "{\"seq\":4,\"action\":\"start\",\"id\":\"route-alpha\",\"reversed\":true}", PGR_RH_OPT_ACCEPTED, "", 4, 2);
-  assert(host->tick(self_tid()) == PGR_RH_OK);
+  check_opt(1, "{\"seq\":4,\"action\":\"start\",\"id\":\"route-alpha\",\"reversed\":true}", PGS_RH_OPT_ACCEPTED, "", 4, 2);
+  assert(host->tick(self_tid()) == PGS_RH_OK);
   {
     auto evs = drain_all(host);
-    const Popped *act_ev = find_ev(evs, PGR_RH_EV_ACTION);
+    const Popped *act_ev = find_ev(evs, PGS_RH_EV_ACTION);
     assert(act_ev && act_ev->ev.seq == 4 && act_ev->json == "{\"seq\":4,\"action\":\"start\",\"status\":\"submitted\"}");
     assert(g_ctor_invokes == 1 && g_start_route_invokes == 1);
     assert(get_obj_ptr(&g_alloc_start_data, 0x10) == &g_shared_1);
@@ -1025,11 +1025,11 @@ int main(int argc, char **argv) {
   // 7d. pause active route (seq 5) -> submitted
   g_is_consuming = true;
   g_is_paused = false;
-  check_opt(1, "{\"seq\":5,\"action\":\"pause\"}", PGR_RH_OPT_ACCEPTED, "", 5, 4);
-  assert(host->tick(self_tid()) == PGR_RH_OK);
+  check_opt(1, "{\"seq\":5,\"action\":\"pause\"}", PGS_RH_OPT_ACCEPTED, "", 5, 4);
+  assert(host->tick(self_tid()) == PGS_RH_OK);
   {
     auto evs = drain_all(host);
-    const Popped *act_ev = find_ev(evs, PGR_RH_EV_ACTION);
+    const Popped *act_ev = find_ev(evs, PGS_RH_EV_ACTION);
     assert(act_ev && act_ev->ev.seq == 5 && act_ev->json == "{\"seq\":5,\"action\":\"pause\",\"status\":\"submitted\"}");
     assert(g_pause_route_invokes == 1);
   }
@@ -1041,22 +1041,22 @@ int main(int argc, char **argv) {
   g_is_completing = false;
   g_trigger_bjan_on_complete = true;
   set_obj_i32(&g_reward_gui, 0x70, 2);
-  check_opt(1, "{\"seq\":6,\"action\":\"complete\",\"id\":\"route-alpha\"}", PGR_RH_OPT_ACCEPTED, "", 6, 3);
-  assert(host->tick(self_tid()) == PGR_RH_OK);
+  check_opt(1, "{\"seq\":6,\"action\":\"complete\",\"id\":\"route-alpha\"}", PGS_RH_OPT_ACCEPTED, "", 6, 3);
+  assert(host->tick(self_tid()) == PGS_RH_OK);
   {
     auto evs = drain_all(host);
-    const Popped *act_ev = find_ev(evs, PGR_RH_EV_ACTION);
+    const Popped *act_ev = find_ev(evs, PGS_RH_EV_ACTION);
     assert(act_ev && act_ev->ev.seq == 6 && act_ev->json == "{\"seq\":6,\"action\":\"complete\",\"status\":\"submitted\"}");
     assert(g_confirm_complete_invokes == 1 && g_hook_bjan_calls.load() == 1 && g_hook_reward_calls.load() == 1);
   }
   // Wait 120ms for modal settle guard (>=100ms), then tick to drain reward-confirmed + result-dismissed
   usleep(120 * 1000);
-  check_opt(1, "", PGR_RH_OPT_REJECTED, "no-command");
-  assert(host->tick(self_tid()) == PGR_RH_OK);
+  check_opt(1, "", PGS_RH_OPT_REJECTED, "no-command");
+  assert(host->tick(self_tid()) == PGS_RH_OK);
   {
     auto evs = drain_all(host);
-    const Popped *rew_ev = find_ev(evs, PGR_RH_EV_REWARD_CONFIRMED);
-    const Popped *dis_ev = find_ev(evs, PGR_RH_EV_RESULT_DISMISSED);
+    const Popped *rew_ev = find_ev(evs, PGS_RH_EV_REWARD_CONFIRMED);
+    const Popped *dis_ev = find_ev(evs, PGS_RH_EV_RESULT_DISMISSED);
     assert(rew_ev && rew_ev->ev.seq == 6 && rew_ev->json == "{\"id\":\"route-alpha\",\"seq\":6}");
     assert(dis_ev && dis_ev->json == "{\"screen\":\"Niantic.Holoholo.Routes.RouteCompletionGuiController\"}");
     assert(g_dismiss_gui_invokes == 1 && g_last_dismissed_gui == &g_reward_gui);
@@ -1067,11 +1067,11 @@ int main(int argc, char **argv) {
   assert(call_tracking(&g_tracking_svc, nullptr) == 5);
   assert(g_location_seen_in_tracking.load() == 1); // nested call inside CheckTrackingErrorStatus -> overridden to 1!
   call_waypoint(&g_tracking_svc, &g_wp_1a, nullptr);
-  assert(host->tick(self_tid()) == PGR_RH_OK);
+  assert(host->tick(self_tid()) == PGS_RH_OK);
   {
     auto evs = drain_all(host);
-    const Popped *trk_ev = find_ev(evs, PGR_RH_EV_TRACKING_STATUS);
-    const Popped *wp_ev = find_ev(evs, PGR_RH_EV_WAYPOINT);
+    const Popped *trk_ev = find_ev(evs, PGS_RH_EV_TRACKING_STATUS);
+    const Popped *wp_ev = find_ev(evs, PGS_RH_EV_WAYPOINT);
     assert(trk_ev && trk_ev->ev.scalar0 == 5 && trk_ev->json == "{\"code\":5}");
     assert(wp_ev && wp_ev->json.find("37.789") != std::string::npos);
   }
@@ -1080,7 +1080,7 @@ int main(int argc, char **argv) {
   {
     bool saw_op7 = false, saw_op8 = false, saw_op9 = false, saw_op19 = false;
     std::thread host_drain([&]{
-      std::vector<uint8_t> frame(PGR_TRANSPORT_MAX_FRAME);
+      std::vector<uint8_t> frame(PGS_TRANSPORT_MAX_FRAME);
       auto u32=[&](uint32_t offset)->uint32_t{
         assert(offset<=frame.size()-4);return uint32_t(frame[offset])|
           (uint32_t(frame[offset+1])<<8)|(uint32_t(frame[offset+2])<<16)|(uint32_t(frame[offset+3])<<24);
@@ -1088,14 +1088,14 @@ int main(int argc, char **argv) {
       for(;;){
         uint32_t length=0;
         assert(tr->exchange(nullptr,0,frame.data(),uint32_t(frame.size()),&length)==PGR_TRANSPORT_OK);
-        assert(length>=PGR_TRANSPORT_EVENT_HEADER&&length<=frame.size());
-        assert(u32(0)==PGR_TRANSPORT_EVENTS_MAGIC&&u32(4)==PGR_TRANSPORT_FRAME_VERSION&&u32(8)==length);
-        const uint32_t count=u32(12);assert(count<=PGR_TRANSPORT_DRAIN_CAP);
-        uint32_t offset=PGR_TRANSPORT_EVENT_HEADER;
+        assert(length>=PGS_TRANSPORT_EVENT_HEADER&&length<=frame.size());
+        assert(u32(0)==PGS_TRANSPORT_EVENTS_MAGIC&&u32(4)==PGS_TRANSPORT_FRAME_VERSION&&u32(8)==length);
+        const uint32_t count=u32(12);assert(count<=PGS_TRANSPORT_DRAIN_CAP);
+        uint32_t offset=PGS_TRANSPORT_EVENT_HEADER;
         for(uint32_t i=0;i<count;++i){
           assert(offset<=length&&length-offset>=12);
           const uint32_t opcode=u32(offset),scalars=u32(offset+4),strings=u32(offset+8);offset+=12;
-          assert(opcode<PGR_TRANSPORT_ACTIONS&&scalars<=PGR_TRANSPORT_MAX_SCALARS&&strings<=PGR_TRANSPORT_MAX_STR_ARGS);
+          assert(opcode<PGS_TRANSPORT_ACTIONS&&scalars<=PGS_TRANSPORT_MAX_SCALARS&&strings<=PGS_TRANSPORT_MAX_STR_ARGS);
           assert(offset<=length&&uint64_t(scalars)*8<=length-offset);
           std::vector<int64_t> scalar_values;
           for(uint32_t n=0;n<scalars;++n){
@@ -1120,16 +1120,16 @@ int main(int argc, char **argv) {
   }
   {
     PgrRoutesHostSample before{}, after{};
-    assert(host->sample(&before) == PGR_RH_OK);
+    assert(host->sample(&before) == PGS_RH_OK);
     PgrUnityPulse pulse{};
     pulse.generation = 1;
     pulse.sequence = 1;
     pulse.tid = static_cast<int32_t>(self_tid());
     host->on_unity_pulse(nullptr, &pulse);
-    assert(host->sample(&after) == PGR_RH_OK);
+    assert(host->sample(&after) == PGS_RH_OK);
     assert(after.ticks_run == before.ticks_run + 1);
   }
-  assert(host->stop(self_tid()) == PGR_RH_OK);
+  assert(host->stop(self_tid()) == PGS_RH_OK);
   assert(g_live_handles == 0 && "all GC handles must be freed on owner stop()");
 
   std::puts("PASS Routes host actual-library: ABI64, configure/reconfig, command parser + gate27 parity, cold-start throttle, metadata53 + leaves 43/44/45/46/50 real Dobby install, service capture + dikx, current + boundSnapshot, discover/start/pause/complete + bizm + modal dismiss, tracking + nested location override + waypoint, transport52 opcodes 7/8/9/19, pulse48, stop drain");

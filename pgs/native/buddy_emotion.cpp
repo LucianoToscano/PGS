@@ -14,7 +14,7 @@
 #include <algorithm>
 namespace {
 using namespace pgr_shared_meta;
-using namespace pgr_buddy_ep;
+using namespace pgs_buddy_ep;
 struct Failure {const char *where;};
 void require(bool ok,const char *where){if(!ok)throw Failure{where};}
 PgrBootBinding boot{};const PgrSharedMetadataOutput *md=nullptr;
@@ -183,7 +183,7 @@ void poll(const Permission &p){
  if(!p.allowed||p.config!=pending.config||account!=pending.account||history.buddy!=pending.buddy)pending.canceled=true;
  uint64_t now=clock_ms();if(now-pending.since>15000){bool canceled=pending.canceled;paused=!canceled;clear();feed_burst=0;publish(canceled?"Canceled request expired; refreshing buddy":"Paused: request timed out; toggle off to resume",true);return;}
  auto api=static_cast<const PgrVgpResultsApi*>(pgs_vgp_results_api(1));require(api,"promise reader");PgrVgpResultsResult out{};int rc=api->poll(pending.promise.get(),1,owner,&out);if(!rc)return;
- if(rc!=PGR_VR_DONE){bool canceled=pending.canceled;clear();feed_burst=0;paused=!canceled;publish(canceled?"Canceled request ended; refreshing buddy":"Paused: buddy request rejected; toggle off to resume",true);return;}
+ if(rc!=PGS_VR_DONE){bool canceled=pending.canceled;clear();feed_burst=0;paused=!canceled;publish(canceled?"Canceled request ended; refreshing buddy":"Paused: buddy request rejected; toggle off to resume",true);return;}
  Root response;response.h=out.value_handle;if(pending.canceled){clear();feed_burst=0;next_action=now+5000;return;}
  if(pending.phase==6){
   require(response&&klass(response.get())==cls("Holoholo.Rpc","CheckPhotobombOutProto"),"snapshot session response identity");
@@ -215,7 +215,7 @@ void validate(){
  publish("Buddy interfaces validated",true);
 }
 }
-void pgr_buddy_emotion_tick(uint64_t tid,const PgrSharedMetadataOutput *metadata){
+void pgs_buddy_emotion_tick(uint64_t tid,const PgrSharedMetadataOutput *metadata){
  if(busy||!tid||tid!=uint64_t(gettid())||(owner&&tid!=owner))return;struct Guard{Guard(){busy=true;}~Guard(){busy=false;}} guard;
  ResolutionScope resolution;
  try{
@@ -248,4 +248,4 @@ void pgr_buddy_emotion_tick(uint64_t tid,const PgrSharedMetadataOutput *metadata
   begin(int(action)+1,p);
  }catch(const Failure &e){paused=true;clear();feed_burst=0;publish(std::string("Paused: ")+e.where,true);}catch(...){paused=true;clear();feed_burst=0;publish("Paused: buddy engine failure",true);}
 }
-void pgr_buddy_emotion_stop(uint64_t tid){if(initialized&&tid==owner&&tid==uint64_t(gettid())){if(pending.phase)pending.canceled=true;paused=true;}}
+void pgs_buddy_emotion_stop(uint64_t tid){if(initialized&&tid==owner&&tid==uint64_t(gettid())){if(pending.phase)pending.canceled=true;paused=true;}}

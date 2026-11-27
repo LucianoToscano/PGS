@@ -311,7 +311,7 @@ void apply(const Config &c){
 
 }
 
-void pgr_battery_tick(uint64_t tid,const PgrSharedMetadataOutput *){
+void pgs_battery_tick(uint64_t tid,const PgrSharedMetadataOutput *){
  if(busy||faulted||!tid||tid!=uint64_t(gettid())||(owner&&owner!=tid))return;
  struct Guard{Guard(){busy=true;}~Guard(){busy=false;}}guard;
  const uint64_t now=clock_ms();if(now<next_apply)return;next_apply=now+kApplyEveryMs;
@@ -327,7 +327,7 @@ void pgr_battery_tick(uint64_t tid,const PgrSharedMetadataOutput *){
  }catch(const Failure &f){faulted=true;skip.store(false);event(std::string("Battery usage stopped: ")+f.where);}
  catch(...){faulted=true;skip.store(false);event("Battery usage stopped after an unexpected error");}
 }
-void pgr_battery_stop(uint64_t tid){
+void pgs_battery_stop(uint64_t tid){
  skip.store(false);
  if(!initialized||faulted||tid!=owner||tid!=uint64_t(gettid()))return;
  try{apply(Config{});}catch(...){}

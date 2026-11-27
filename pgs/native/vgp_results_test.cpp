@@ -150,21 +150,21 @@ int main(int argc, char **argv) {
 
   // --- phase/arg validation ----------------------------------------------------------------------
   reset();
-  assert(api->poll(nullptr, PGR_VR_PHASE_CATCH, tid, nullptr) == PGR_VR_ERR_NULL_ARG);
+  assert(api->poll(nullptr, PGS_VR_PHASE_CATCH, tid, nullptr) == PGS_VR_ERR_NULL_ARG);
   reset();
   Obj encPromise(&promiseDerived);
-  assert(api->poll(encPromise.ptr(), 0, tid, &out) == PGR_VR_ERR_BAD_PHASE && out.state == 0);
-  assert(api->poll(encPromise.ptr(), 9, tid, &out) == PGR_VR_ERR_BAD_PHASE);
+  assert(api->poll(encPromise.ptr(), 0, tid, &out) == PGS_VR_ERR_BAD_PHASE && out.state == 0);
+  assert(api->poll(encPromise.ptr(), 9, tid, &out) == PGS_VR_ERR_BAD_PHASE);
 
   // --- owner gate: wrong tid / null target -> PENDING, no roots ----------------------------------
   reset();
-  assert(api->poll(encPromise.ptr(), PGR_VR_PHASE_CATCH, tid + 1, &out) == PGR_VR_PENDING && rootCalls == 0);
-  assert(api->poll(nullptr, PGR_VR_PHASE_CATCH, tid, &out) == PGR_VR_PENDING && rootCalls == 0);
-  assert(api->poll(encPromise.ptr(), PGR_VR_PHASE_CATCH, 0, &out) == PGR_VR_PENDING);
+  assert(api->poll(encPromise.ptr(), PGS_VR_PHASE_CATCH, tid + 1, &out) == PGS_VR_PENDING && rootCalls == 0);
+  assert(api->poll(nullptr, PGS_VR_PHASE_CATCH, tid, &out) == PGS_VR_PENDING && rootCalls == 0);
+  assert(api->poll(encPromise.ptr(), PGS_VR_PHASE_CATCH, 0, &out) == PGS_VR_PENDING);
 
   // --- pending: nothing completed yet ------------------------------------------------------------
   reset();
-  assert(api->poll(encPromise.ptr(), PGR_VR_PHASE_ENCOUNTER, tid, &out) == PGR_VR_PENDING && out.state == 0);
+  assert(api->poll(encPromise.ptr(), PGS_VR_PHASE_ENCOUNTER, tid, &out) == PGS_VR_PENDING && out.state == 0);
   reset();  // zero roots after a pending poll
 
   // --- rejected: errorCalled, statusErrorCalled, and null resolved value -------------------------
@@ -173,7 +173,7 @@ int main(int argc, char **argv) {
     Obj p(&promiseDerived);
     p.setBool(fError, true);
     p.setBool(fComplete, true);  // error dominates completed
-    assert(api->poll(p.ptr(), PGR_VR_PHASE_CATCH, tid, &out) == PGR_VR_REJECTED && out.state == 2 &&
+    assert(api->poll(p.ptr(), PGS_VR_PHASE_CATCH, tid, &out) == PGS_VR_REJECTED && out.state == 2 &&
            out.value_handle == 0);
     reset();
   }
@@ -181,7 +181,7 @@ int main(int argc, char **argv) {
     reset();
     Obj p(&promiseDerived);
     p.setBool(fStatusBool, true);
-    assert(api->poll(p.ptr(), PGR_VR_PHASE_CATCH, tid, &out) == PGR_VR_REJECTED);
+    assert(api->poll(p.ptr(), PGS_VR_PHASE_CATCH, tid, &out) == PGS_VR_REJECTED);
     reset();
   }
   {
@@ -189,7 +189,7 @@ int main(int argc, char **argv) {
     Obj p(&promiseDerived);
     p.setBool(fComplete, true);
     p.setPtr(fValue, nullptr);  // completed but null value -> error
-    assert(api->poll(p.ptr(), PGR_VR_PHASE_CATCH, tid, &out) == PGR_VR_REJECTED && out.value_handle == 0);
+    assert(api->poll(p.ptr(), PGS_VR_PHASE_CATCH, tid, &out) == PGS_VR_REJECTED && out.value_handle == 0);
     reset();
   }
 
@@ -201,7 +201,7 @@ int main(int argc, char **argv) {
     Obj p(&promiseDerived);
     p.setBool(fComplete, true);
     p.setPtr(fValue, resp.ptr());
-    assert(api->poll(p.ptr(), PGR_VR_PHASE_CATCH, tid, &out) == PGR_VR_DONE);
+    assert(api->poll(p.ptr(), PGS_VR_PHASE_CATCH, tid, &out) == PGS_VR_DONE);
     assert(out.state == 1 && out.status_known == 1 && out.status == 100 && out.success == 1);
     assert(out.value_handle != 0);
     assert(gcGet(out.value_handle) == resp.ptr());  // the rooted value is the response
@@ -215,7 +215,7 @@ int main(int argc, char **argv) {
     Obj p(&promiseDerived);
     p.setBool(fComplete, true);
     p.setPtr(fValue, resp.ptr());
-    assert(api->poll(p.ptr(), PGR_VR_PHASE_CATCH, tid, &out) == PGR_VR_DONE);
+    assert(api->poll(p.ptr(), PGS_VR_PHASE_CATCH, tid, &out) == PGS_VR_DONE);
     assert(out.status_known == 1 && out.status == 42 && out.success == 0);  // preserve unsuccessful result
     gcFree(out.value_handle);
     reset();
@@ -226,7 +226,7 @@ int main(int argc, char **argv) {
     Obj p(&promiseDerived);
     p.setBool(fComplete, true);
     p.setPtr(fValue, other.ptr());
-    assert(api->poll(p.ptr(), PGR_VR_PHASE_CATCH, tid, &out) == PGR_VR_DONE);
+    assert(api->poll(p.ptr(), PGS_VR_PHASE_CATCH, tid, &out) == PGS_VR_DONE);
     assert(out.status_known == 0 && out.status == 0 && out.success == 0 && out.value_handle != 0);
     gcFree(out.value_handle);
     reset();
@@ -252,8 +252,8 @@ int main(int argc, char **argv) {
         p.setPtr(fValue,movedValue.ptr());oldValue.setI32(status,-123456);
         if(poisonClass)*reinterpret_cast<void**>(oldValue.ptr())=&unknownClass;
       };
-      const uint32_t phase=spinPhase?PGR_VR_PHASE_SPIN:PGR_VR_PHASE_CATCH;
-      assert(api->poll(p.ptr(),phase,tid,&out)==PGR_VR_DONE&&moved);
+      const uint32_t phase=spinPhase?PGS_VR_PHASE_SPIN:PGS_VR_PHASE_CATCH;
+      assert(api->poll(p.ptr(),phase,tid,&out)==PGS_VR_DONE&&moved);
       assert(out.success==1&&out.value_handle!=0&&gcGet(out.value_handle)==movedValue.ptr());
       if(!spinPhase)assert(out.status_known==1&&out.status==100);
       assert(roots.size()==1);gcFree(out.value_handle);reset();
@@ -268,7 +268,7 @@ int main(int argc, char **argv) {
     Obj p(&promiseDerived);
     p.setBool(fComplete, true);
     p.setPtr(fValue, spin.ptr());
-    assert(api->poll(p.ptr(), PGR_VR_PHASE_SPIN, tid, &out) == PGR_VR_DONE);
+    assert(api->poll(p.ptr(), PGS_VR_PHASE_SPIN, tid, &out) == PGS_VR_DONE);
     assert(out.success == 1 && out.status_known == 0);  // spin never reports a status
     gcFree(out.value_handle);
     reset();
@@ -280,7 +280,7 @@ int main(int argc, char **argv) {
     Obj p(&promiseDerived);
     p.setBool(fComplete, true);
     p.setPtr(fValue, spin.ptr());
-    assert(api->poll(p.ptr(), PGR_VR_PHASE_SPIN, tid, &out) == PGR_VR_DONE && out.success == 0);
+    assert(api->poll(p.ptr(), PGS_VR_PHASE_SPIN, tid, &out) == PGS_VR_DONE && out.success == 0);
     gcFree(out.value_handle);
     reset();
   }
@@ -290,7 +290,7 @@ int main(int argc, char **argv) {
     Obj p(&promiseDerived);
     p.setBool(fComplete, true);
     p.setPtr(fValue, other.ptr());
-    assert(api->poll(p.ptr(), PGR_VR_PHASE_SPIN, tid, &out) == PGR_VR_DONE && out.success == 0);
+    assert(api->poll(p.ptr(), PGS_VR_PHASE_SPIN, tid, &out) == PGS_VR_DONE && out.success == 0);
     gcFree(out.value_handle);
     reset();
   }
@@ -302,7 +302,7 @@ int main(int argc, char **argv) {
     Obj p(&promiseDerived);
     p.setBool(fComplete, true);
     p.setPtr(fValue, other.ptr());
-    assert(api->poll(p.ptr(), PGR_VR_PHASE_ENCOUNTER, tid, &out) == PGR_VR_DONE);
+    assert(api->poll(p.ptr(), PGS_VR_PHASE_ENCOUNTER, tid, &out) == PGS_VR_DONE);
     assert(out.state == 1 && out.success == 0 && out.status_known == 0 && out.value_handle != 0);
     gcFree(out.value_handle);
     reset();
@@ -313,7 +313,7 @@ int main(int argc, char **argv) {
     reset();
     int lonelyClass;  // no declared fields, no parent
     Obj p(&lonelyClass);
-    assert(api->poll(p.ptr(), PGR_VR_PHASE_CATCH, tid, &out) == PGR_VR_ERR_SHAPE && rootCalls == 1);
+    assert(api->poll(p.ptr(), PGS_VR_PHASE_CATCH, tid, &out) == PGS_VR_ERR_SHAPE && rootCalls == 1);
     reset();  // only the promise root was taken and freed
   }
   {
@@ -324,7 +324,7 @@ int main(int argc, char **argv) {
                            {"errorCalled", &fError},
                            {"completedValue", &fValue}};
     Obj p(&badClass);
-    assert(api->poll(p.ptr(), PGR_VR_PHASE_CATCH, tid, &out) == PGR_VR_ERR_SHAPE);
+    assert(api->poll(p.ptr(), PGS_VR_PHASE_CATCH, tid, &out) == PGS_VR_ERR_SHAPE);
     declared.erase(&badClass);
     reset();
   }
@@ -336,7 +336,7 @@ int main(int argc, char **argv) {
                                  {"errorCalled", &fError},
                                  {"completedValue", &valueAsValueType}};
     Obj p(&wrongTypeClass);
-    assert(api->poll(p.ptr(), PGR_VR_PHASE_CATCH, tid, &out) == PGR_VR_ERR_SHAPE);
+    assert(api->poll(p.ptr(), PGS_VR_PHASE_CATCH, tid, &out) == PGS_VR_ERR_SHAPE);
     declared.erase(&wrongTypeClass);
     reset();
   }
@@ -353,7 +353,7 @@ int main(int argc, char **argv) {
     Obj p(&noStatusClass);
     p.setBool(fComplete, true);
     p.setPtr(fValue, resp.ptr());
-    assert(api->poll(p.ptr(), PGR_VR_PHASE_CATCH, tid, &out) == PGR_VR_DONE && out.success == 1);
+    assert(api->poll(p.ptr(), PGS_VR_PHASE_CATCH, tid, &out) == PGS_VR_DONE && out.success == 1);
     gcFree(out.value_handle);
     declared.erase(&noStatusClass);
     reset();
@@ -368,8 +368,8 @@ int main(int argc, char **argv) {
     p.setBool(fComplete, true);
     p.setPtr(fValue, resp.ptr());
     failRoot = n;  // 1 = promise root, 2 = value root
-    int rc = api->poll(p.ptr(), PGR_VR_PHASE_CATCH, tid, &out);
-    assert(rc == PGR_VR_ERR_GCHANDLE && out.value_handle == 0);
+    int rc = api->poll(p.ptr(), PGS_VR_PHASE_CATCH, tid, &out);
+    assert(rc == PGS_VR_ERR_GCHANDLE && out.value_handle == 0);
     failRoot = 0;
     reset();  // zero roots even when a root allocation failed mid-poll
   }
@@ -383,7 +383,7 @@ int main(int argc, char **argv) {
     p.setPtr(fValue, resp.ptr());
     std::thread other([&] {
       PgrVgpResultsResult o{};
-      assert(api->poll(p.ptr(), PGR_VR_PHASE_CATCH, tid, &o) == PGR_VR_PENDING);
+      assert(api->poll(p.ptr(), PGS_VR_PHASE_CATCH, tid, &o) == PGS_VR_PENDING);
     });
     other.join();
     assert(rootCalls == 0 && roots.empty());

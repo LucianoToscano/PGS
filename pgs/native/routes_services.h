@@ -39,41 +39,41 @@ extern "C" {
 
 static_assert(sizeof(void *) == 8, "RoutesServices native ABI requires LP64");
 
-enum PgrRoutesServicesInfo {
-  PGR_RS_FEATURE_ID      = 45,
-  PGR_RS_API_VERSION     = 1,
-  PGR_RS_CONFIG_VERSION  = 1,
-  PGR_RS_REQUEST_VERSION = 1,
-  PGR_RS_OUTPUT_VERSION  = 1,
-  PGR_RS_MAX_LEASE_MS    = 2500, // capture heartbeat ceiling (CLOCK_BOOTTIME)
-  PGR_RS_PTR_COUNT       = 11    // config pointer slots 0..10, all mandatory (non-null)
+enum PgsRoutesServicesInfo {
+  PGS_RS_FEATURE_ID      = 45,
+  PGS_RS_API_VERSION     = 1,
+  PGS_RS_CONFIG_VERSION  = 1,
+  PGS_RS_REQUEST_VERSION = 1,
+  PGS_RS_OUTPUT_VERSION  = 1,
+  PGS_RS_MAX_LEASE_MS    = 2500, // capture heartbeat ceiling (CLOCK_BOOTTIME)
+  PGS_RS_PTR_COUNT       = 11    // config pointer slots 0..10, all mandatory (non-null)
 };
 
 // Entry-point return == out.status (poll): 1 OK / 0 SKIP (benign gate / not captured) / negative fault.
 // install() returns 0 on success; negatives are faults.
-enum PgrRoutesServicesStatus {
-  PGR_RS_OK                = 1,
-  PGR_RS_SKIP              = 0,
-  PGR_RS_OK_INSTALL        = 0,   // install() success (alias of 0)
-  PGR_RS_FAULT             = -1,
-  PGR_RS_ERR_NULL_ARG      = -2,
-  PGR_RS_ERR_BAD_VERSION   = -3,
-  PGR_RS_ERR_BAD_SIZE      = -4,
-  PGR_RS_ERR_MISSING_PTR   = -5,  // install(): a mandatory config pointer was null
-  PGR_RS_ERR_NOT_INSTALLED = -6,
-  PGR_RS_ERR_RECONFIG      = -9,  // install(): a different config at an already-installed table
-  PGR_RS_ERR_CLOCK         = -10,
-  PGR_RS_ERR_BUSY          = -11, // reentrant poll/drain refused (defensive)
-  PGR_RS_ERR_HOOK          = -12  // a Dobby hook failed to install (rolled back, fail-closed)
+enum PgsRoutesServicesStatus {
+  PGS_RS_OK                = 1,
+  PGS_RS_SKIP              = 0,
+  PGS_RS_OK_INSTALL        = 0,   // install() success (alias of 0)
+  PGS_RS_FAULT             = -1,
+  PGS_RS_ERR_NULL_ARG      = -2,
+  PGS_RS_ERR_BAD_VERSION   = -3,
+  PGS_RS_ERR_BAD_SIZE      = -4,
+  PGS_RS_ERR_MISSING_PTR   = -5,  // install(): a mandatory config pointer was null
+  PGS_RS_ERR_NOT_INSTALLED = -6,
+  PGS_RS_ERR_RECONFIG      = -9,  // install(): a different config at an already-installed table
+  PGS_RS_ERR_CLOCK         = -10,
+  PGS_RS_ERR_BUSY          = -11, // reentrant poll/drain refused (defensive)
+  PGS_RS_ERR_HOOK          = -12  // a Dobby hook failed to install (rolled back, fail-closed)
 };
 
 // poll() out.flags.
-enum PgrRoutesServicesFlags {
-  PGR_RS_FLAG_ROUTES_PRESENT        = 1,
-  PGR_RS_FLAG_CONSUMPTION_PRESENT   = 2,
-  PGR_RS_FLAG_ROUTES_REPLACED       = 4,  // active routes swapped this poll
-  PGR_RS_FLAG_CONSUMPTION_REPLACED  = 8,  // active consumption swapped this poll
-  PGR_RS_FLAG_CONSUMPTION_FROM_DICA = 16  // active consumption is dica-derived (authoritative)
+enum PgsRoutesServicesFlags {
+  PGS_RS_FLAG_ROUTES_PRESENT        = 1,
+  PGS_RS_FLAG_CONSUMPTION_PRESENT   = 2,
+  PGS_RS_FLAG_ROUTES_REPLACED       = 4,  // active routes swapped this poll
+  PGS_RS_FLAG_CONSUMPTION_REPLACED  = 8,  // active consumption swapped this poll
+  PGS_RS_FLAG_CONSUMPTION_FROM_DICA = 16  // active consumption is dica-derived (authoritative)
 };
 
 // Fixed LP64 config (96 bytes): 8-byte header + 11 pointers in the EXACT slot order below. Every pointer
@@ -81,7 +81,7 @@ enum PgrRoutesServicesFlags {
 // from routes.js metadata. All are MANDATORY (non-null). Reordering is forbidden. install() publishes the
 // config immutably: an identical config is idempotent (0); a different one is rejected (RECONFIG).
 struct PgrRoutesServicesConfig {
-  uint32_t version;  // == PGR_RS_CONFIG_VERSION
+  uint32_t version;  // == PGS_RS_CONFIG_VERSION
   uint32_t size;     // == sizeof(PgrRoutesServicesConfig)
 
   void *object_get_class;      // 0  void*     (void* obj)
@@ -105,7 +105,7 @@ static_assert(offsetof(PgrRoutesServicesConfig, addr_in_range_of_end) == 88, "sl
 
 // Fixed LP64 request (32 bytes) for poll / drain.
 struct PgrRoutesServicesRequest {
-  uint32_t version;     // off 0  == PGR_RS_REQUEST_VERSION
+  uint32_t version;     // off 0  == PGS_RS_REQUEST_VERSION
   uint32_t size;        // off 4  == sizeof(PgrRoutesServicesRequest)
   uint64_t tid;         // off 8  proven owner tid
   uint64_t residual_ms; // off 16 capture heartbeat window; clamped, 0 refuses (drain ignores the lease)
@@ -119,10 +119,10 @@ static_assert(offsetof(PgrRoutesServicesRequest, generation) == 24, "request gen
 
 // Fixed LP64 output (40 bytes) for poll. Fully zeroed on entry; header re-stamped.
 struct PgrRoutesServicesOutput {
-  uint32_t version;            // off 0  == PGR_RS_OUTPUT_VERSION
+  uint32_t version;            // off 0  == PGS_RS_OUTPUT_VERSION
   uint32_t size;               // off 4  == sizeof(PgrRoutesServicesOutput)
   int32_t  status;             // off 8  == the poll() return
-  uint32_t flags;              // off 12 PgrRoutesServicesFlags
+  uint32_t flags;              // off 12 PgsRoutesServicesFlags
   uint64_t generation;         // off 16 g_gen at publish
   uint64_t routes_handle;      // off 24 borrowed ACTIVE RoutesService gchandle id (0 if none)
   uint64_t consumption_handle; // off 32 borrowed ACTIVE ConsumptionService gchandle id (0 if none)
@@ -137,11 +137,11 @@ static_assert(offsetof(PgrRoutesServicesOutput, consumption_handle) == 32, "outp
 
 // Fixed LP64 table: 8-byte header + 5 function pointers = 48 bytes.
 struct PgrRoutesServicesApi {
-  uint32_t version;  // == PGR_RS_API_VERSION
+  uint32_t version;  // == PGS_RS_API_VERSION
   uint32_t size;     // == sizeof(PgrRoutesServicesApi)
   // Verify + publish the immutable config and install the two hooks ONCE for the process lifetime.
-  // Idempotent for an identical config; a different config returns PGR_RS_ERR_RECONFIG. A null pointer /
-  // bad header is rejected; a partial hook install is rolled back and latched (PGR_RS_ERR_HOOK).
+  // Idempotent for an identical config; a different config returns PGS_RS_ERR_RECONFIG. A null pointer /
+  // bad header is rejected; a partial hook install is rolled back and latched (PGS_RS_ERR_HOOK).
   int (*install)(const PgrRoutesServicesConfig *config);
   // Current revocation generation (initially 1). The host stamps it onto each request.
   uint64_t (*generation)(void);

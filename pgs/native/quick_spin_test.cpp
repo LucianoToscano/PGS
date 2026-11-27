@@ -111,32 +111,32 @@ void *fake_runtime_invoke(const void *method, void *obj, void **params, void **e
 }
 void *fake_object_unbox(void *obj) { return &static_cast<FakeBool *>(obj)->value; }
 
-#define PGR_NOP8() asm volatile("nop; nop; nop; nop; nop; nop; nop; nop;")
+#define PGS_NOP8() asm volatile("nop; nop; nop; nop; nop; nop; nop; nop;")
 
 struct CallLog { int count = 0; void *last_self = nullptr; };
 CallLog g_enter_log, g_exit_log, g_result_log, g_spin_log;
 bool g_throw_observed=false;void *g_last_result_arg=nullptr;
 
 __attribute__((noinline)) void target_enter(void *self, void *) {
-  PGR_NOP8();
+  PGS_NOP8();
   ++g_enter_log.count;
   g_enter_log.last_self = self;
   if(g_throw_observed)throw 711;
 }
 __attribute__((noinline)) void target_exit(void *self, void *) {
-  PGR_NOP8();
+  PGS_NOP8();
   ++g_exit_log.count;
   g_exit_log.last_self = self;
   if(g_throw_observed)throw 711;
 }
 __attribute__((noinline)) void target_result(void *self, void *proto, void *) {
-  PGR_NOP8();
+  PGS_NOP8();
   ++g_result_log.count;
   g_result_log.last_self = self;
   g_last_result_arg=proto;if(g_throw_observed)throw 711;
 }
 __attribute__((noinline)) void target_spin(void *self, float, void *) {
-  PGR_NOP8();
+  PGS_NOP8();
   ++g_spin_log.count;
   g_spin_log.last_self = self;
 }
@@ -187,7 +187,7 @@ PgrQuickSpinConfig make_config() {
 
 PgrQuickSpinSample take_sample(const PgrQuickSpinApi *api) {
   PgrQuickSpinSample s{};
-  assert(api->sample(&s) == PGR_QUICK_SPIN_OK);
+  assert(api->sample(&s) == PGS_QUICK_SPIN_OK);
   assert(s.version == 1 && s.size == sizeof(PgrQuickSpinSample));
   return s;
 }
@@ -214,35 +214,35 @@ int main(int argc, char **argv) {
   PgrQuickSpinConfig cfg = make_config();
 
   // Validation before install.
-  assert(api->install(nullptr) == PGR_QUICK_SPIN_ERR_INVALID_ARG);
+  assert(api->install(nullptr) == PGS_QUICK_SPIN_ERR_INVALID_ARG);
   PgrQuickSpinConfig bad = cfg;
   bad.version = 2;
-  assert(api->install(&bad) == PGR_QUICK_SPIN_ERR_BAD_VERSION);
+  assert(api->install(&bad) == PGS_QUICK_SPIN_ERR_BAD_VERSION);
   bad = cfg;
   bad.size = sizeof(PgrQuickSpinConfig) - 1;
-  assert(api->install(&bad) == PGR_QUICK_SPIN_ERR_BAD_SIZE);
+  assert(api->install(&bad) == PGS_QUICK_SPIN_ERR_BAD_SIZE);
   bad = cfg;
   bad.spinner_class = nullptr;
-  assert(api->install(&bad) == PGR_QUICK_SPIN_ERR_MISSING_PTR);
+  assert(api->install(&bad) == PGS_QUICK_SPIN_ERR_MISSING_PTR);
   bad = cfg;
   bad.exit_address = bad.enter_address;
-  assert(api->install(&bad) == PGR_QUICK_SPIN_ERR_DUPLICATE_TARGET);
+  assert(api->install(&bad) == PGS_QUICK_SPIN_ERR_DUPLICATE_TARGET);
 
   // Not installed yet: update/tick/clear report NOT_INSTALLED.
-  assert(api->update(1, 1000, tid, 1) == PGR_QUICK_SPIN_ERR_NOT_INSTALLED);
-  assert(api->tick(tid, 1, 0) == PGR_QUICK_SPIN_ERR_NOT_INSTALLED);
-  assert(api->clear() == PGR_QUICK_SPIN_ERR_NOT_INSTALLED);
+  assert(api->update(1, 1000, tid, 1) == PGS_QUICK_SPIN_ERR_NOT_INSTALLED);
+  assert(api->tick(tid, 1, 0) == PGS_QUICK_SPIN_ERR_NOT_INSTALLED);
+  assert(api->clear() == PGS_QUICK_SPIN_ERR_NOT_INSTALLED);
 
   // Install, idempotent re-install, and a refused address rebind.
-  assert(api->install(&cfg) == PGR_QUICK_SPIN_OK);
-  assert(api->install(&cfg) == PGR_QUICK_SPIN_OK);
+  assert(api->install(&cfg) == PGS_QUICK_SPIN_OK);
+  assert(api->install(&cfg) == PGS_QUICK_SPIN_OK);
   bad = cfg;
   bad.spin_address = bad.result_address;  // distinct from install but duplicate-checked first
-  assert(api->install(&bad) == PGR_QUICK_SPIN_ERR_DUPLICATE_TARGET);
+  assert(api->install(&bad) == PGS_QUICK_SPIN_ERR_DUPLICATE_TARGET);
   bad = cfg;
   bad.enter_address = reinterpret_cast<void *>(&target_spin);
   bad.spin_address = reinterpret_cast<void *>(&target_enter);
-  assert(api->install(&bad) == PGR_QUICK_SPIN_ERR_RECONFIG_ADDRESS_MISMATCH);
+  assert(api->install(&bad) == PGS_QUICK_SPIN_ERR_RECONFIG_ADDRESS_MISMATCH);
 
   int dummy_method = 0;
   FakeSpinner spinner{&g_cls_spinner};
@@ -253,7 +253,7 @@ int main(int argc, char **argv) {
 
   // 1. Disabled: enter chains original and creates no record; a valid result still
   //    bumps the cooldown counter on the verified Unity thread.
-  assert(api->update(0, 0, tid, 1) == PGR_QUICK_SPIN_OK);
+  assert(api->update(0, 0, tid, 1) == PGS_QUICK_SPIN_OK);
   call_enter(&state, &dummy_method);
   assert(g_enter_log.count == 1 && g_enter_log.last_self == &state);
   PgrQuickSpinSample s = take_sample(api);
@@ -266,13 +266,13 @@ int main(int argc, char **argv) {
 
   // 2. Happy path: enable -> enter roots the state -> tick issues Spin(360)+request ->
   //    result captured -> tick auto-closes on STATE_OPEN success.
-  assert(api->update(1, 2000, tid, 2) == PGR_QUICK_SPIN_OK);
+  assert(api->update(1, 2000, tid, 2) == PGS_QUICK_SPIN_OK);
   call_enter(&state, &dummy_method);
   s = take_sample(api);
   assert(s.active_generation != 0 && s.owned_root_count == 1);
 
   const int cooldown_before = take_sample(api).cooldown_serial;
-  assert(api->tick(tid, 1, 0) == PGR_QUICK_SPIN_OK);
+  assert(api->tick(tid, 1, 0) == PGS_QUICK_SPIN_OK);
   assert(g_spin_calls == 1 && g_request_calls == 1);
   s = take_sample(api);
   assert(s.request_serial == 1 && s.last_gui_state == 1);
@@ -285,7 +285,7 @@ int main(int argc, char **argv) {
 
   // Gui reaches STATE_OPEN; the next tick auto-closes and drops the record.
   gui.current_state = 2;
-  assert(api->tick(tid, 2, 0) == PGR_QUICK_SPIN_OK);
+  assert(api->tick(tid, 2, 0) == PGS_QUICK_SPIN_OK);
   assert(g_close_calls == 1);
   s = take_sample(api);
   assert(s.closed_serial == 1 && s.active_generation == 0 && s.owned_root_count == 0);
@@ -293,7 +293,7 @@ int main(int argc, char **argv) {
 
   // 3. Exit on the owning state drops a live record (no spin issued).
   g_spin_calls = g_request_calls = 0;
-  assert(api->update(1, 2000, tid, 3) == PGR_QUICK_SPIN_OK);
+  assert(api->update(1, 2000, tid, 3) == PGS_QUICK_SPIN_OK);
   call_enter(&state, &dummy_method);
   assert(take_sample(api).active_generation != 0 && g_live.size() == 1);
   call_exit(&state, &dummy_method);
@@ -303,33 +303,33 @@ int main(int argc, char **argv) {
 
   // 4. Off-thread update marks cancellation but must NOT free GC handles; the owner
   //    thread frees them on its next tick (owner-only cleanup, no leak, no double free).
-  assert(api->update(1, 2000, tid, 4) == PGR_QUICK_SPIN_OK);
+  assert(api->update(1, 2000, tid, 4) == PGS_QUICK_SPIN_OK);
   call_enter(&state, &dummy_method);
   assert(g_live.size() == 1);
   std::thread([&]() {
-    assert(api->update(0, 0, tid, 4) == PGR_QUICK_SPIN_OK);  // off-thread disable
+    assert(api->update(0, 0, tid, 4) == PGS_QUICK_SPIN_OK);  // off-thread disable
   }).join();
   assert(g_live.size() == 1);  // handle retired but not yet freed off-thread
-  assert(api->tick(tid, 3, 0) == PGR_QUICK_SPIN_OK);  // owner drains retired list
+  assert(api->tick(tid, 3, 0) == PGS_QUICK_SPIN_OK);  // owner drains retired list
   assert(g_live.empty());
   s = take_sample(api);
   assert(s.active_generation == 0 && s.owned_root_count == 0);
 
   // 5. clear() on the owner thread drops and frees an active record.
-  assert(api->update(1, 2000, tid, 5) == PGR_QUICK_SPIN_OK);
+  assert(api->update(1, 2000, tid, 5) == PGS_QUICK_SPIN_OK);
   call_enter(&state, &dummy_method);
   assert(g_live.size() == 1);
-  assert(api->clear() == PGR_QUICK_SPIN_OK);
+  assert(api->clear() == PGS_QUICK_SPIN_OK);
   assert(g_live.empty());
   assert(take_sample(api).active_generation == 0);
 
   g_test_api = api;
   g_test_state = &state; g_test_result = &result;
   g_result_callback = call_result; g_spin_callback = call_spin;
-  auto step = [&]() { assert(api->tick(tid,++g_test_tick,0) == PGR_QUICK_SPIN_OK); };
+  auto step = [&]() { assert(api->tick(tid,++g_test_tick,0) == PGS_QUICK_SPIN_OK); };
 
   // Synchronous result during request; reentrant tick from close must not close twice.
-  assert(api->update(1,2000,tid,6) == PGR_QUICK_SPIN_OK);
+  assert(api->update(1,2000,tid,6) == PGS_QUICK_SPIN_OK);
   g_sync_result = true; g_close_reenter = true;
   int before_close = g_close_calls;
   int before_request = g_request_calls;
@@ -338,11 +338,11 @@ int main(int argc, char **argv) {
   assert(g_live.empty()); g_sync_result = false;
 
   // A foreign thread supplying its own real tid cannot acquire the permanent owner.
-  assert(api->update(1,2000,tid,7) == PGR_QUICK_SPIN_OK);
+  assert(api->update(1,2000,tid,7) == PGS_QUICK_SPIN_OK);
   call_enter(&state,&dummy_method);
   assert(g_live.size() == 1);
   std::thread([&]() {
-    assert(api->update(1,2000,this_tid(),7) == PGR_QUICK_SPIN_ERR_INVALID_ARG);
+    assert(api->update(1,2000,this_tid(),7) == PGS_QUICK_SPIN_ERR_INVALID_ARG);
     api->tick(this_tid(),9999,0);
     call_enter(&state,&dummy_method);
     api->sample(&s); // pure sample must not free the retired handle
@@ -351,10 +351,10 @@ int main(int argc, char **argv) {
 
   // Metadata cannot change under live process-lifetime hooks, even with identical targets.
   bad = cfg; bad.can_method = &g_method_active;
-  assert(api->install(&bad) == PGR_QUICK_SPIN_ERR_RECONFIG_ADDRESS_MISMATCH);
+  assert(api->install(&bad) == PGS_QUICK_SPIN_ERR_RECONFIG_ADDRESS_MISMATCH);
 
   // An uncertain request is counted, then never repeated within this encounter.
-  assert(api->update(1,2000,tid,8) == PGR_QUICK_SPIN_OK);
+  assert(api->update(1,2000,tid,8) == PGS_QUICK_SPIN_OK);
   g_request_throws = true;
   before_request = g_request_calls;
   const auto serial = take_sample(api).request_serial;
@@ -364,20 +364,20 @@ int main(int argc, char **argv) {
   g_request_throws = false;
 
   // A manual spin marks the request as already sent, suppressing automatic submission.
-  assert(api->update(1,2000,tid,9) == PGR_QUICK_SPIN_OK);
+  assert(api->update(1,2000,tid,9) == PGS_QUICK_SPIN_OK);
   before_request = g_request_calls;
   call_enter(&state,&dummy_method); call_spin(&spinner,17.0f,&dummy_method); step();
   assert(g_request_calls == before_request);
   api->clear(); assert(g_live.empty());
 
   // Expiry during a managed getter must revoke the action, not renew the cached policy.
-  assert(api->update(1,5,tid,10) == PGR_QUICK_SPIN_OK);
+  assert(api->update(1,5,tid,10) == PGS_QUICK_SPIN_OK);
   g_slow_can = true; before_request = g_request_calls;
   call_enter(&state,&dummy_method); step();
   assert(g_request_calls == before_request && g_live.empty()); g_slow_can = false;
 
   // Partial temporary-root allocation failure cleans up the persistent state root.
-  assert(api->update(1,2000,tid,11) == PGR_QUICK_SPIN_OK);
+  assert(api->update(1,2000,tid,11) == PGS_QUICK_SPIN_OK);
   g_fail_root = &gui; call_enter(&state,&dummy_method); step();
   assert(g_request_calls == before_request && g_live.empty()); g_fail_root = nullptr;
 

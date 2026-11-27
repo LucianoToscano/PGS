@@ -1,6 +1,6 @@
 #pragma once
 #include <stdint.h>
 struct PgrSharedMetadataOutput;
-void pgr_evolution_tick(uint64_t,const PgrSharedMetadataOutput*);
-void pgr_evolution_stop(uint64_t);
-bool pgr_evolution_busy();
+void pgs_evolution_tick(uint64_t,const PgrSharedMetadataOutput*);
+void pgs_evolution_stop(uint64_t);
+bool pgs_evolution_busy();

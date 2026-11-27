@@ -34,71 +34,71 @@ extern "C" {
 
 static_assert(sizeof(void *) == 8, "RoutesObservers native ABI requires LP64");
 
-enum PgrRoutesObserversInfo {
-  PGR_RO_FEATURE_ID        = 46,
-  PGR_RO_API_VERSION       = 1,
-  PGR_RO_CONFIG_VERSION    = 1,
-  PGR_RO_REQUEST_VERSION   = 1,
-  PGR_RO_COMPLETING_VERSION= 1,
-  PGR_RO_OUTPUT_VERSION    = 1,
-  PGR_RO_MAX_LEASE_MS      = 2500,  // lease ceiling (CLOCK_BOOTTIME); mirrors quick-close foreground lease
-  PGR_RO_REWARD_CAPTURE_MS = 15000, // reward/rating Initialize capture window from rewardAt
-  PGR_RO_COMPLETING_MS     = 30000, // bjan correlation window from completing.at
-  PGR_RO_WAYPOINT_MS       = 10000, // waypoint event throttle
-  PGR_RO_UI_SETTLE_MS      = 100,   // pendingUi minimum age before a dismissal decision
-  PGR_RO_UI_MAX_MS         = 10000, // pendingUi maximum age before it is dropped
-  PGR_RO_COMPLETION_MS     = 3000,  // completion reported to the snapshot after rewardAt + this
-  PGR_RO_ID_MAX            = 128,   // UTF16 route-id length ceiling (routes.js id length 1..128)
-  PGR_RO_PENDING_UI_MAX    = 4,     // pendingUi queue ceiling (routes.js pendingUi.length>=4)
-  PGR_RO_MAX_EVENTS        = 8,     // events drained per poll()
-  PGR_RO_PTR_COUNT         = 22,    // config pointer slots 0..21, all mandatory (non-null)
+enum PgsRoutesObserversInfo {
+  PGS_RO_FEATURE_ID        = 46,
+  PGS_RO_API_VERSION       = 1,
+  PGS_RO_CONFIG_VERSION    = 1,
+  PGS_RO_REQUEST_VERSION   = 1,
+  PGS_RO_COMPLETING_VERSION= 1,
+  PGS_RO_OUTPUT_VERSION    = 1,
+  PGS_RO_MAX_LEASE_MS      = 2500,  // lease ceiling (CLOCK_BOOTTIME); mirrors quick-close foreground lease
+  PGS_RO_REWARD_CAPTURE_MS = 15000, // reward/rating Initialize capture window from rewardAt
+  PGS_RO_COMPLETING_MS     = 30000, // bjan correlation window from completing.at
+  PGS_RO_WAYPOINT_MS       = 10000, // waypoint event throttle
+  PGS_RO_UI_SETTLE_MS      = 100,   // pendingUi minimum age before a dismissal decision
+  PGS_RO_UI_MAX_MS         = 10000, // pendingUi maximum age before it is dropped
+  PGS_RO_COMPLETION_MS     = 3000,  // completion reported to the snapshot after rewardAt + this
+  PGS_RO_ID_MAX            = 128,   // UTF16 route-id length ceiling (routes.js id length 1..128)
+  PGS_RO_PENDING_UI_MAX    = 4,     // pendingUi queue ceiling (routes.js pendingUi.length>=4)
+  PGS_RO_MAX_EVENTS        = 8,     // events drained per poll()
+  PGS_RO_PTR_COUNT         = 22,    // config pointer slots 0..21, all mandatory (non-null)
   PGR_RO_PROGRESS_STATUS_OFFSET = PGR_GAME_ROUTES_OBSERVERS_H_PGR_RO_PROGRESS_STATUS_OFFSET, // ProgressRouteOutProto.Status (int32)
   PGR_RO_GUI_STATE_OFFSET       = PGR_GAME_ROUTES_OBSERVERS_H_PGR_RO_GUI_STATE_OFFSET, // GuiController.currentState (int32)
-  PGR_RO_GUI_STATE_DISMISSED    = 2,    // currentState value that permits Dismiss()
-  PGR_RO_COMPLETION_SUCCESS     = 1     // bjan progress Status success branch
+  PGS_RO_GUI_STATE_DISMISSED    = 2,    // currentState value that permits Dismiss()
+  PGS_RO_COMPLETION_SUCCESS     = 1     // bjan progress Status success branch
 };
 
 // Entry-point return == out.status (poll): 1 OK / 0 SKIP (benign gate) / negative fault. install()
 // returns 0 on success; negatives are faults. The lite entries return 1 (acted) / 0 (did not).
-enum PgrRoutesObserversStatus {
-  PGR_RO_OK                = 1,
-  PGR_RO_SKIP              = 0,
-  PGR_RO_OK_INSTALL        = 0,   // install() success (alias of 0)
-  PGR_RO_FAULT             = -1,
-  PGR_RO_ERR_NULL_ARG      = -2,
-  PGR_RO_ERR_BAD_VERSION   = -3,
-  PGR_RO_ERR_BAD_SIZE      = -4,
-  PGR_RO_ERR_MISSING_PTR   = -5,  // install(): a mandatory config pointer was null
-  PGR_RO_ERR_NOT_INSTALLED = -6,
-  PGR_RO_ERR_RECONFIG      = -9,  // install(): a different config at an already-installed table
-  PGR_RO_ERR_CLOCK         = -10,
-  PGR_RO_ERR_BUSY          = -11, // reentrant poll/drain refused (defensive)
-  PGR_RO_ERR_HOOK          = -12  // a Dobby hook failed to install (rolled back, fail-closed)
+enum PgsRoutesObserversStatus {
+  PGS_RO_OK                = 1,
+  PGS_RO_SKIP              = 0,
+  PGS_RO_OK_INSTALL        = 0,   // install() success (alias of 0)
+  PGS_RO_FAULT             = -1,
+  PGS_RO_ERR_NULL_ARG      = -2,
+  PGS_RO_ERR_BAD_VERSION   = -3,
+  PGS_RO_ERR_BAD_SIZE      = -4,
+  PGS_RO_ERR_MISSING_PTR   = -5,  // install(): a mandatory config pointer was null
+  PGS_RO_ERR_NOT_INSTALLED = -6,
+  PGS_RO_ERR_RECONFIG      = -9,  // install(): a different config at an already-installed table
+  PGS_RO_ERR_CLOCK         = -10,
+  PGS_RO_ERR_BUSY          = -11, // reentrant poll/drain refused (defensive)
+  PGS_RO_ERR_HOOK          = -12  // a Dobby hook failed to install (rolled back, fail-closed)
 };
 
 // poll() out.flags.
-enum PgrRoutesObserversFlags {
-  PGR_RO_FLAG_COMPLETION_READY = 1  // completion set && boottime-rewardAt>=COMPLETION_MS && pendingUi empty
+enum PgsRoutesObserversFlags {
+  PGS_RO_FLAG_COMPLETION_READY = 1  // completion set && boottime-rewardAt>=COMPLETION_MS && pendingUi empty
 };
 
 // Event type (PgrRoutesObserversEvent.type).
-enum PgrRoutesObserversEventType {
-  PGR_RO_EV_TRACKING_STATUS    = 1, // i0 = tracking ret code
-  PGR_RO_EV_WAYPOINT           = 2, // f0 = lat, f1 = lon
-  PGR_RO_EV_REWARD_CONFIRMED   = 3, // i0 = seq, id = route id
-  PGR_RO_EV_REWARD_REJECTED    = 4, // i0 = progress status, id = route id
-  PGR_RO_EV_RESULT_DISMISSED   = 5, // aux = screen (0 reward, 1 rating)
-  PGR_RO_EV_RESULT_DISMISS_ERR = 6  // aux = screen
+enum PgsRoutesObserversEventType {
+  PGS_RO_EV_TRACKING_STATUS    = 1, // i0 = tracking ret code
+  PGS_RO_EV_WAYPOINT           = 2, // f0 = lat, f1 = lon
+  PGS_RO_EV_REWARD_CONFIRMED   = 3, // i0 = seq, id = route id
+  PGS_RO_EV_REWARD_REJECTED    = 4, // i0 = progress status, id = route id
+  PGS_RO_EV_RESULT_DISMISSED   = 5, // aux = screen (0 reward, 1 rating)
+  PGS_RO_EV_RESULT_DISMISS_ERR = 6  // aux = screen
 };
 
-enum PgrRoutesObserversScreen { PGR_RO_SCREEN_REWARD = 0, PGR_RO_SCREEN_RATING = 1 };
+enum PgsRoutesObserversScreen { PGS_RO_SCREEN_REWARD = 0, PGS_RO_SCREEN_RATING = 1 };
 
 // Fixed LP64 config (184 bytes): 8-byte header + 22 pointers in the EXACT slot order below. Every
 // pointer is an already-validated il2cpp export / Il2CppClass* / MethodInfo* / FieldInfo* / live code
 // address packed by the host from routes.js metadata. All are MANDATORY (non-null). Reordering is
 // forbidden. install() publishes the config immutably: identical config idempotent (0); different rejected.
 struct PgrRoutesObserversConfig {
-  uint32_t version;  // == PGR_RO_CONFIG_VERSION
+  uint32_t version;  // == PGS_RO_CONFIG_VERSION
   uint32_t size;     // == sizeof(PgrRoutesObserversConfig)
 
   // il2cpp runtime exports (slots 0-8).
@@ -144,7 +144,7 @@ static_assert(offsetof(PgrRoutesObserversConfig, addr_completion_resp) == 176, "
 
 // Fixed LP64 request (32 bytes) for poll / clear_completing / drain.
 struct PgrRoutesObserversRequest {
-  uint32_t version;     // off 0  == PGR_RO_REQUEST_VERSION
+  uint32_t version;     // off 0  == PGS_RO_REQUEST_VERSION
   uint32_t size;        // off 4  == sizeof(PgrRoutesObserversRequest)
   uint64_t tid;         // off 8  proven owner tid
   uint64_t residual_ms; // off 16 lease window; clamped, 0 refuses (drain ignores the lease)
@@ -159,7 +159,7 @@ static_assert(offsetof(PgrRoutesObserversRequest, generation) == 24, "request ge
 // Fixed LP64 set_completing input (312 bytes). consumption_handle is a BORROWED feature-45 GC handle;
 // this module stores its id to re-resolve the bjan receiver later and NEVER frees it.
 struct PgrRoutesObserversCompleting {
-  uint32_t version;           // off 0  == PGR_RO_COMPLETING_VERSION
+  uint32_t version;           // off 0  == PGS_RO_COMPLETING_VERSION
   uint32_t size;              // off 4  == sizeof(PgrRoutesObserversCompleting)
   uint64_t tid;               // off 8  proven owner tid
   uint64_t residual_ms;       // off 16 lease window; clamped, 0 refuses
@@ -168,7 +168,7 @@ struct PgrRoutesObserversCompleting {
   uint64_t seq;               // off 40 the complete command sequence
   uint32_t id_length;         // off 48 UTF16 units in id (1..128)
   uint32_t reserved;          // off 52 0 in v1
-  uint16_t id[PGR_RO_ID_MAX]; // off 56 requested route id (UTF16, not NUL terminated)
+  uint16_t id[PGS_RO_ID_MAX]; // off 56 requested route id (UTF16, not NUL terminated)
 };
 
 static_assert(sizeof(PgrRoutesObserversCompleting) == 312, "PgrRoutesObserversCompleting must remain 312 bytes on LP64");
@@ -179,14 +179,14 @@ static_assert(offsetof(PgrRoutesObserversCompleting, id) == 56, "completing id")
 
 // One drained observer event (296 bytes).
 struct PgrRoutesObserversEvent {
-  uint32_t type;              // off 0  PgrRoutesObserversEventType
+  uint32_t type;              // off 0  PgsRoutesObserversEventType
   uint32_t aux;               // off 4  screen for dismiss events
   int64_t  i0;                // off 8  tracking code / reward seq / reject status
   double   f0;                // off 16 waypoint lat
   double   f1;                // off 24 waypoint lon
   uint32_t id_length;         // off 32 UTF16 units in id (reward events; else 0)
   uint32_t reserved;          // off 36 0 in v1
-  uint16_t id[PGR_RO_ID_MAX]; // off 40 route id (reward events)
+  uint16_t id[PGS_RO_ID_MAX]; // off 40 route id (reward events)
 };
 
 static_assert(sizeof(PgrRoutesObserversEvent) == 296, "PgrRoutesObserversEvent must remain 296 bytes on LP64");
@@ -196,18 +196,18 @@ static_assert(offsetof(PgrRoutesObserversEvent, id) == 40, "event id");
 
 // Fixed LP64 poll output (2672 bytes). Fully zeroed on entry; header re-stamped.
 struct PgrRoutesObserversOutput {
-  uint32_t version;              // off 0  == PGR_RO_OUTPUT_VERSION
+  uint32_t version;              // off 0  == PGS_RO_OUTPUT_VERSION
   uint32_t size;                 // off 4  == sizeof(PgrRoutesObserversOutput)
   int32_t  status;               // off 8  == the poll() return
-  uint32_t flags;                // off 12 PgrRoutesObserversFlags
+  uint32_t flags;                // off 12 PgsRoutesObserversFlags
   uint64_t generation;           // off 16 g_gen at publish
   uint64_t completion_seq;       // off 24 confirmed completion seq (valid with COMPLETION_READY)
   uint32_t completion_id_length; // off 32 UTF16 units in completion_id (1..128 with COMPLETION_READY)
-  uint32_t event_count;          // off 36 valid events in events[] (<= PGR_RO_MAX_EVENTS)
+  uint32_t event_count;          // off 36 valid events in events[] (<= PGS_RO_MAX_EVENTS)
   uint32_t dropped_events;       // off 40 events dropped since the previous poll (ring overflow)
   uint32_t reserved;             // off 44 0 in v1
-  uint16_t completion_id[PGR_RO_ID_MAX];       // off 48  confirmed completion route id
-  PgrRoutesObserversEvent events[PGR_RO_MAX_EVENTS]; // off 304
+  uint16_t completion_id[PGS_RO_ID_MAX];       // off 48  confirmed completion route id
+  PgrRoutesObserversEvent events[PGS_RO_MAX_EVENTS]; // off 304
 };
 
 static_assert(sizeof(PgrRoutesObserversOutput) == 2672, "PgrRoutesObserversOutput must remain 2672 bytes on LP64");
@@ -218,11 +218,11 @@ static_assert(offsetof(PgrRoutesObserversOutput, events) == 304, "output events"
 
 // Fixed LP64 table: 8-byte header + 11 function pointers = 96 bytes.
 struct PgrRoutesObserversApi {
-  uint32_t version;  // == PGR_RO_API_VERSION
+  uint32_t version;  // == PGS_RO_API_VERSION
   uint32_t size;     // == sizeof(PgrRoutesObserversApi)
   // Verify + publish the immutable config and install the three hooks ONCE for the process lifetime.
-  // Idempotent for an identical config; a different config returns PGR_RO_ERR_RECONFIG. A partial hook
-  // install is rolled back and latched (PGR_RO_ERR_HOOK).
+  // Idempotent for an identical config; a different config returns PGS_RO_ERR_RECONFIG. A partial hook
+  // install is rolled back and latched (PGS_RO_ERR_HOOK).
   int (*install)(const PgrRoutesObserversConfig *config);
   // Current revocation generation (initially 1). The host stamps it onto each owner request.
   uint64_t (*generation)(void);

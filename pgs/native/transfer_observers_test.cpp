@@ -49,9 +49,9 @@ int main(int argc,char **argv){
  auto getter=reinterpret_cast<const void *(*)(uint32_t)>(dlsym(lib,"pgs_native_api"));assert(getter);
  auto core=static_cast<const pgs_native_api_v2 *>(getter(2));assert(core&&core->query_feature);
  assert(!core->query_feature(57,2));
- auto api=static_cast<const PgrTransferObserversApi *>(core->query_feature(57,1));
+ auto api=static_cast<const PgsTransferObserversApi *>(core->query_feature(57,1));
  assert(api&&api->version==1&&api->size==24&&api->installed()==0);
- PgrTransferObserversConfig cfg{1,sizeof(cfg),reinterpret_cast<void *>(fixture_result),
+ PgsTransferObserversConfig cfg{1,sizeof(cfg),reinterpret_cast<void *>(fixture_result),
   reinterpret_cast<void *>(fixture_error),reinterpret_cast<void *>(current),
   reinterpret_cast<void *>(make),reinterpret_cast<void *>(get),reinterpret_cast<void *>(release)};
  assert(api->install(nullptr)<0);

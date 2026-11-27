@@ -36,7 +36,7 @@ void natural_result(void *self,void *target,void *out,const void*){
 void *fake_invoke(const void *method,void *self,void **args,void **exc){
  *exc=nullptr;
  if(method==visible_method){assert(self==ptr(controller));++visibility_calls;
-   if(visibility_mutation==1)pgr_event_collector_location(NAN,0,now_ms());
+   if(visibility_mutation==1)pgs_event_collector_location(NAN,0,now_ms());
    if(visibility_mutation==2)enable_until_ms.store(0);
    if(visibility_mutation==3)put(session,0x98,uint8_t(0));
    if(visibility_mutation==4)put(controller,0x100,int64_t(-1));
@@ -65,9 +65,9 @@ void reset(){
  put(item_array,0,static_cast<const void*>(&cria));put(item_array,0x18,uintptr_t(2));put(item_array,0x20,ptr(candy_item));put(item_array,0x28,ptr(rare_item));
  put(candy_item,0,static_cast<const void*>(&citem));put(candy_item,0x10,int32_t(5));put(candy_item,0x18,ptr(candy_box));put(candy_item,0x20,int32_t(4));put(candy_box,0,static_cast<const void*>(&cspecies));put(candy_box,0x10,int32_t(25));
  put(rare_item,0,static_cast<const void*>(&citem));put(rare_item,0x10,int32_t(3));put(rare_item,0x18,ptr(rare_box));put(rare_item,0x20,int32_t(1));put(rare_box,0,static_cast<const void*>(&cenum));put(rare_box,0x10,int32_t(1301));
- session_root=pin(ptr(session));pgr_event_collector_location(37,-122,now_ms());
+ session_root=pin(ptr(session));pgs_event_collector_location(37,-122,now_ms());
  taps=updates=results=encounters=visibility_calls=0;nested=throw_result=immediate=manual_during_result=async_result=callback_queued=false;queued_self=queued_target=queued_enc=nullptr;visibility_mutation=0;
- assert(pgr_event_collector_tick(true,uint64_t(gettid()))==0);
+ assert(pgs_event_collector_tick(true,uint64_t(gettid()))==0);
 }
 void start(){pump(true,now_ms());assert(active_id==100&&controller_root&&service_root&&counters.inflight==1&&taps==1);}
 }
@@ -77,18 +77,18 @@ int main(){
  session_class=&cs;controller_class=&cc;response_class=&cr;encounter_class=&ce;list_class=&cl;list_array_class=&ca;string_class=&ck;service_class=&ci;
  loot_class=&cloot;loot_item_class=&citem;species_class=&cspecies;item_class=&cenum;int32_class=&ci;reward_layout={&crp,&crpa};items_layout={&cri,&cria};
  tap_method=&ci;visible_method=&cv;original_update.store(natural_update);original_tap.store(natural_tap);original_result.store(natural_result);original_encounter.store(natural_encounter);
- reset();assert(pgr_event_collector_tick(true,uint64_t(gettid())+1)==-6);assert(taps==0);
+ reset();assert(pgs_event_collector_tick(true,uint64_t(gettid())+1)==-6);assert(taps==0);
  // Default OFF and stale/incompatible input never dispatch.
  pump(false,now_ms());assert(taps==0);
- location.at=now_ms()-6000;pump(true,now_ms());assert(taps==0);pgr_event_collector_location(37,-122,now_ms());
+ location.at=now_ms()-6000;pump(true,now_ms());assert(taps==0);pgs_event_collector_location(37,-122,now_ms());
  string(key,"ROUTE_PIN");pump(true,now_ms());assert(taps==0);string(key,"TAPPABLE_TYPE_BOX");
  put(controller,0xe8,double(NAN));pump(true,now_ms());assert(taps==0);put(controller,0xe8,double(37));
  put(visible,0x10,uint8_t(0));pump(true,now_ms());assert(taps==0);put(visible,0x10,uint8_t(1));
  put(list,0x18,int32_t(129));pump(true,now_ms());assert(taps==0);put(list,0x18,int32_t(1));
  put(array,0x18,uintptr_t(0));pump(true,now_ms());assert(taps==0);put(array,0x18,uintptr_t(1));
  // Invalid new location clears an earlier valid anchor, instead of retaining it.
- pgr_event_collector_location(NAN,0,now_ms());pump(true,now_ms());assert(taps==0);pgr_event_collector_location(37,-122,now_ms());
- enable_until_ms.store(now_ms()-1);pump(true,now_ms());assert(taps==0);assert(pgr_event_collector_tick(true,uint64_t(gettid()))==0);
+ pgs_event_collector_location(NAN,0,now_ms());pump(true,now_ms());assert(taps==0);pgs_event_collector_location(37,-122,now_ms());
+ enable_until_ms.store(now_ms()-1);pump(true,now_ms());assert(taps==0);assert(pgs_event_collector_tick(true,uint64_t(gettid()))==0);
  // Reentrant managed visibility can invalidate each action gate before dispatch.
  for(int mutation=1;mutation<=5;++mutation){reset();visibility_mutation=mutation;pump(true,now_ms());assert(taps==0&&!active_id);}
  // Visibility/session ownership, not a local timestamp cutoff, gates live boxes.
@@ -108,7 +108,7 @@ int main(){
  reset();put(controller,0xe8,double(38));put(visible,0x10,uint8_t(0));pump(true,now_ms());assert(taps==0&&!active_id);
  reset();
  // Tick does not invoke gameplay from ExecuteTasks; natural Update owns dispatch.
- assert(pgr_event_collector_tick(true,uint64_t(gettid()))==0&&taps==0);
+ assert(pgs_event_collector_tick(true,uint64_t(gettid()))==0&&taps==0);
  update_hook(ptr(session),nullptr);assert(updates==1&&taps==1&&active_id==100);
  // Unrelated/manual response with same ID but a different controller is untouched.
  result_hook(ptr(service),ptr(manual_controller),ptr(response),nullptr);assert(encounters==1&&active_id==100&&counters.skipped_encounters==0);
@@ -120,7 +120,7 @@ int main(){
  reset();start();nested=true;result_hook(ptr(service),ptr(controller),ptr(response),nullptr);
  assert(results==2&&encounters==1&&counters.skipped_encounters==1&&!encounter_scope.controller&&result_depth==0);
  // OFF cancels future work; already dispatched late response still skips its screen.
- reset();start();assert(pgr_event_collector_tick(false,uint64_t(gettid()))==0);pump(false,dispatched_ms+31000);assert(counters.timed_out&&taps==1);
+ reset();start();assert(pgs_event_collector_tick(false,uint64_t(gettid()))==0);pump(false,dispatched_ms+31000);assert(counters.timed_out&&taps==1);
  result_hook(ptr(service),ptr(controller),ptr(response),nullptr);assert(encounters==0&&counters.skipped_encounters==1&&!active_id);
  // Reentrant manual intent during owned bfvy also revokes its active scope.
  reset();start();manual_during_result=true;result_hook(ptr(service),ptr(controller),ptr(response),nullptr);assert(encounters==1&&counters.skipped_encounters==0&&!active_id);
@@ -139,13 +139,13 @@ int main(){
  // cay.bfvr callback invokes bfwa later. Attribution survives that boundary.
  reset();start();async_result=true;result_hook(ptr(service),ptr(controller),ptr(response),nullptr);
  assert(callback_queued&&!active_id&&encounters==0&&counters.completed==1&&live_roots==4);
- assert(pgr_event_collector_state().pending_encounters==1);
- assert(pgr_event_collector_tick(true,uint64_t(gettid()))==0);pump(true,now_ms()+4000,true);assert(taps==1&&counters.pump_reason==17);
+ assert(pgs_event_collector_state().pending_encounters==1);
+ assert(pgs_event_collector_tick(true,uint64_t(gettid()))==0);pump(true,now_ms()+4000,true);assert(taps==1&&counters.pump_reason==17);
  // OFF and even stale ownership never release a delayed owned screen to UI.
- assert(pgr_event_collector_tick(false,uint64_t(gettid()))==0);
+ assert(pgs_event_collector_tick(false,uint64_t(gettid()))==0);
  inspect_owned_age(owned_encounters[0].created+31000);assert(counters.timed_out&&owned_encounters[0].stale);
  encounter_hook(queued_self,queued_target,queued_enc,nullptr);callback_queued=false;
- assert(encounters==0&&counters.skipped_encounters==1&&pgr_event_collector_state().pending_encounters==0&&live_roots==1);
+ assert(encounters==0&&counters.skipped_encounters==1&&pgs_event_collector_state().pending_encounters==0&&live_roots==1);
  // A lost animation no longer stalls unrelated boxes. Exact late ownership
  // survives both the timeout and rotation/expiry of the ordinary dedupe cache.
  reset();put(manual_controller,0xd0,uint64_t(99));
@@ -156,8 +156,8 @@ int main(){
  assert(seen_before(99,now_ms()+7200000));
  immediate=true;pump(true,now_ms(),true);
  assert(taps==1&&counters.completed==1&&counters.skipped_encounters==1&&!active_id);
- assert(pgr_event_collector_state().pending_encounters==1&&live_roots==4);
- assert(pgr_event_collector_tick(false,uint64_t(gettid()))==0);
+ assert(pgs_event_collector_state().pending_encounters==1&&live_roots==4);
+ assert(pgs_event_collector_tick(false,uint64_t(gettid()))==0);
  encounter_hook(ptr(service),ptr(manual_controller),ptr(encounter),nullptr);
  assert(encounters==0&&counters.skipped_encounters==2&&live_roots==1);
  // Bounded quarantine never evicts a delayed screen. Capacity pauses dispatch,
@@ -172,15 +172,15 @@ int main(){
  assert(encounters==0&&counters.skipped_encounters==1);
  immediate=true;pump(true,now_ms(),true);
  assert(taps==1&&counters.completed==1&&counters.skipped_encounters==2);
- assert(pgr_event_collector_state().pending_encounters==kOwnedEncounterLimit-1);
+ assert(pgs_event_collector_state().pending_encounters==kOwnedEncounterLimit-1);
  assert(live_roots==1+3*(kOwnedEncounterLimit-1));
  // Unrelated delayed presentation cannot consume the exact pending record.
  reset();start();async_result=true;result_hook(ptr(service),ptr(controller),ptr(response),nullptr);
- encounter_hook(ptr(service),ptr(manual_controller),ptr(encounter),nullptr);assert(encounters==1&&pgr_event_collector_state().pending_encounters==1);
+ encounter_hook(ptr(service),ptr(manual_controller),ptr(encounter),nullptr);assert(encounters==1&&pgs_event_collector_state().pending_encounters==1);
  encounter_hook(queued_self,queued_target,queued_enc,nullptr);assert(encounters==1&&counters.skipped_encounters==1);
  // Explicit manual tap before queued callback revokes its collector intent.
  reset();start();async_result=true;result_hook(ptr(service),ptr(controller),ptr(response),nullptr);
- tap_hook(ptr(service),ptr(controller),0,nullptr);assert(pgr_event_collector_state().pending_encounters==0);
+ tap_hook(ptr(service),ptr(controller),0,nullptr);assert(pgs_event_collector_state().pending_encounters==0);
  encounter_hook(queued_self,queued_target,queued_enc,nullptr);assert(encounters==1&&counters.skipped_encounters==0&&live_roots==1);
  // Failed service rooting aborts before original gameplay/network dispatch.
  reset();fail_root_object=ptr(service);pump(true,now_ms());assert(taps==0&&!active_id&&stopped.load()&&counters.error==-48);
@@ -189,12 +189,12 @@ int main(){
  assert(results==0&&encounters==0&&!active_id&&stopped.load()&&counters.error==-49);
  // Synchronous completion while invoking TapTappable does not resurrect ownership.
  reset();immediate=true;pump(true,now_ms());assert(taps==1&&!active_id&&counters.completed==1&&live_roots==1);
- reset();start();pgr_event_collector_stop();pump(true,now_ms()+40000);assert(taps==1&&counters.timed_out);
- result_hook(ptr(service),ptr(controller),ptr(response),nullptr);assert(encounters==0);assert(pgr_event_collector_tick(false,uint64_t(gettid()))==0&&live_roots==0);
- reset();assert(pgr_event_collector_tick(false,uint64_t(gettid()))==0);
- auto before_diag=pgr_event_collector_state();update_hook(ptr(session),nullptr);auto diag=pgr_event_collector_state();
+ reset();start();pgs_event_collector_stop();pump(true,now_ms()+40000);assert(taps==1&&counters.timed_out);
+ result_hook(ptr(service),ptr(controller),ptr(response),nullptr);assert(encounters==0);assert(pgs_event_collector_tick(false,uint64_t(gettid()))==0&&live_roots==0);
+ reset();assert(pgs_event_collector_tick(false,uint64_t(gettid()))==0);
+ auto before_diag=pgs_event_collector_state();update_hook(ptr(session),nullptr);auto diag=pgs_event_collector_state();
  assert(diag.update_calls==before_diag.update_calls+1&&diag.owner_updates==before_diag.owner_updates+1&&diag.last_update_tid==uint64_t(gettid())&&diag.session_active==1&&diag.pump_reason==1);
- assert(pgr_event_collector_tick(true,uint64_t(gettid()))==0);put(controller,0xe8,double(38));pump(true,now_ms(),true);diag=pgr_event_collector_state();
+ assert(pgs_event_collector_tick(true,uint64_t(gettid()))==0);put(controller,0xe8,double(38));pump(true,now_ms(),true);diag=pgs_event_collector_state();
  assert(diag.scan_calls==1&&diag.list_count==1&&diag.candidate_count==1&&diag.matched_box_count==1&&diag.visible_count==1&&diag.nearest_meters>40&&diag.pump_reason==12);
  result_hook(ptr(service),ptr(controller),ptr(response),nullptr);release(session_root);assert(live_roots==0);
  std::puts("event_collector: lifecycle, attribution, manual forwarding, nested/exception scope, late OFF, bounds and dedupe passed");

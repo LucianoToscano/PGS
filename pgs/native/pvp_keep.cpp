@@ -80,11 +80,11 @@ int fail(const char *what) {
 }
 
 int bind(uint64_t owner) {
-  const auto *boot = static_cast<const PgrBootApi *>(pgs_runtime_bootstrap_api(PGR_BOOT_API_VERSION));
-  const auto *md = static_cast<const PgrMetaApi *>(pgs_runtime_metadata_api(PGR_MD_API_VERSION));
+  const auto *boot = static_cast<const PgrBootApi *>(pgs_runtime_bootstrap_api(PGS_BOOT_API_VERSION));
+  const auto *md = static_cast<const PgrMetaApi *>(pgs_runtime_metadata_api(PGS_MD_API_VERSION));
   if (!boot || !md || boot->size != sizeof(PgrBootApi) || md->size != sizeof(PgrMetaApi)) return 0;
   PgrBootBinding snap{};
-  snap.version = PGR_BOOT_BINDING_VERSION;
+  snap.version = PGS_BOOT_BINDING_VERSION;
   snap.size = sizeof(snap);
   if (boot->snapshot(&snap) != PGR_BOOT_OK || !snap.handle) return 0;
   const auto &rt = snap.runtime;
@@ -94,15 +94,15 @@ int bind(uint64_t owner) {
       resolve(md, "Holoholo.Rpc", "PokemonDisplayProto", &g_class_display))
     return fail("classes");
   if (validate(md, g_class_pokemon, PGR_GAME_PVP_KEEP_CPP_POKEMONID__NAME, PGR_GAME_PVP_KEEP_CPP_POKEMONID__OFFSET,
-               PGR_MD_FIELD_VALUE, 4, "System.Int32", &g_species) ||
+               PGS_MD_FIELD_VALUE, 4, "System.Int32", &g_species) ||
       validate(md, g_class_pokemon, PGR_GAME_PVP_KEEP_CPP_POKEMONDISPLAY__NAME, PGR_GAME_PVP_KEEP_CPP_POKEMONDISPLAY__OFFSET,
-               PGR_MD_FIELD_REF, 0, "Holoholo.Rpc.PokemonDisplayProto", &g_display) ||
+               PGS_MD_FIELD_REF, 0, "Holoholo.Rpc.PokemonDisplayProto", &g_display) ||
       validate(md, g_class_pokemon, PGR_GAME_PVP_KEEP_CPP_CPMULTIPLIER__NAME, PGR_GAME_PVP_KEEP_CPP_CPMULTIPLIER__OFFSET,
-               PGR_MD_FIELD_VALUE, 4, "System.Single", &g_cpm) ||
+               PGS_MD_FIELD_VALUE, 4, "System.Single", &g_cpm) ||
       validate(md, g_class_pokemon, PGR_GAME_PVP_KEEP_CPP_ADDITIONALCPMULTIPLIER__NAME,
-               PGR_GAME_PVP_KEEP_CPP_ADDITIONALCPMULTIPLIER__OFFSET, PGR_MD_FIELD_VALUE, 4, "System.Single", &g_cpm_extra) ||
-      validate(md, g_class_display, "Form", PGR_GAME_PVP_KEEP_CPP_FORM_OFFSET, PGR_MD_FIELD_ENUM_I32, 4, nullptr, &g_form, &form_enum) ||
-      validate(md, g_class_display, "Alignment", PGR_GAME_PVP_KEEP_CPP_ALIGNMENT_OFFSET, PGR_MD_FIELD_ENUM_I32, 4, nullptr,
+               PGR_GAME_PVP_KEEP_CPP_ADDITIONALCPMULTIPLIER__OFFSET, PGS_MD_FIELD_VALUE, 4, "System.Single", &g_cpm_extra) ||
+      validate(md, g_class_display, "Form", PGR_GAME_PVP_KEEP_CPP_FORM_OFFSET, PGS_MD_FIELD_ENUM_I32, 4, nullptr, &g_form, &form_enum) ||
+      validate(md, g_class_display, "Alignment", PGR_GAME_PVP_KEEP_CPP_ALIGNMENT_OFFSET, PGS_MD_FIELD_ENUM_I32, 4, nullptr,
                &g_alignment, &alignment_enum) ||
       !form_enum || !alignment_enum)
     return fail("fields");
@@ -134,29 +134,29 @@ int bind(uint64_t owner) {
   if (!shadow || forms.size() < 100) return fail("enum literals");
   g_entries.clear();
   unsigned matched = 0;
-  for (int i = 0; i < pgr_pvp::species_count(); ++i) {
-    const int dex = pgr_pvp::species_dex(i);
-    const std::string key = pgr_pvp::species_key(i);
+  for (int i = 0; i < pgs_pvp::species_count(); ++i) {
+    const int dex = pgs_pvp::species_dex(i);
+    const std::string key = pgs_pvp::species_key(i);
     auto hit = forms.find(key);
     if (hit == forms.end()) hit = forms.find(key + "normal");
     if (hit != forms.end() && g_entries.emplace(slot(dex, hit->second), i).second) ++matched;
-    if (pgr_pvp::species_base(i)) g_entries.emplace(slot(dex, 0), i);
+    if (pgs_pvp::species_base(i)) g_entries.emplace(slot(dex, 0), i);
   }
   g_object_class = reinterpret_cast<void *(*)(void *)>(rt.object_get_class);
   g_get = reinterpret_cast<void (*)(void *, void *, void *)>(rt.field_get_value);
   g_owner = owner;
   g_state = 1;
   __android_log_print(ANDROID_LOG_INFO, "PGSPvp", "PvP keep ready (%u of %d forms matched)", matched,
-                      pgr_pvp::species_count());
+                      pgs_pvp::species_count());
   return 1;
 }
 
-bool settings(pgr_pvp::Settings *out) {
-  *out = pgr_pvp::Settings{};
+bool settings(pgs_pvp::Settings *out) {
+  *out = pgs_pvp::Settings{};
   const auto *tr = static_cast<const PgrRuntimeTransportApi *>(pgs_runtime_transport_api(1));
   char text[41]{};
   uint32_t length = 0;
-  return tr && tr->get_string(16, text, sizeof(text), &length) == 0 && pgr_pvp::parse(text, length, out);
+  return tr && tr->get_string(16, text, sizeof(text), &length) == 0 && pgs_pvp::parse(text, length, out);
 }
 
 void write(char *text, uint32_t capacity, const char *value) {
@@ -203,10 +203,10 @@ struct Cached { int rank[3], species[3]; };
 std::unordered_map<uint64_t, Cached> g_best;
 }  // namespace
 
-extern "C" int pgr_pvp_keep(void *pokemon, int attack, int defense, int stamina, int species, uint64_t owner,
+extern "C" int pgs_pvp_keep(void *pokemon, int attack, int defense, int stamina, int species, uint64_t owner,
                             char *text, uint32_t capacity) {
   write(text, capacity, "");
-  pgr_pvp::Settings config{};
+  pgs_pvp::Settings config{};
   if (!settings(&config) || (!config.rank[0] && !config.rank[1] && !config.rank[2])) return 0;
   std::unique_lock<std::mutex> lock(g_mutex, std::try_to_lock);
   Facts facts{};
@@ -216,18 +216,18 @@ extern "C" int pgr_pvp_keep(void *pokemon, int attack, int defense, int stamina,
     return 2;
   }
   if (found == LOOKUP_UNKNOWN_FORM) return 0;
-  pgr_pvp::Keep why{};
-  if (!pgr_pvp::keep(facts.entry, facts.shadow, attack, defense, stamina, facts.multiplier, config, &why)) return 0;
+  pgs_pvp::Keep why{};
+  if (!pgs_pvp::keep(facts.entry, facts.shadow, attack, defense, stamina, facts.multiplier, config, &why)) return 0;
   static const char *const tags[] = {"GL", "UL", "ML"};
   if (text && capacity)
-    std::snprintf(text, capacity, "PvP %s #%d %s", tags[why.league], why.rank, pgr_pvp::species_name(why.species));
+    std::snprintf(text, capacity, "PvP %s #%d %s", tags[why.league], why.rank, pgs_pvp::species_name(why.species));
   return 1;
 }
 
-extern "C" bool pgr_pvp_best(void *pokemon, int screen, int attack, int defense, int stamina, uint64_t owner,
-                             PgrPvpBest *out) {
+extern "C" bool pgs_pvp_best(void *pokemon, int screen, int attack, int defense, int stamina, uint64_t owner,
+                             PgsPvpBest *out) {
   if (!out) return false;
-  *out = PgrPvpBest{};
+  *out = PgsPvpBest{};
   if (!pvp_format(screen)) return false;
   std::unique_lock<std::mutex> lock(g_mutex, std::try_to_lock);
   Facts facts{};
@@ -242,10 +242,10 @@ extern "C" bool pgr_pvp_best(void *pokemon, int screen, int attack, int defense,
     // Every league and any rank, so the display can show where the IVs stand.
     // Great and Ultra League: IV rank. Master League: every IV combination is at level 50, so a hundo
     // is always #1 there; the species' own PvPoke Master League rank says more.
-    pgr_pvp::Keep leagues[pgr_pvp::kLeagues];
-    pgr_pvp::best(facts.entry, facts.shadow, attack, defense, stamina, facts.multiplier, 150, leagues, 3);
-    leagues[2] = pgr_pvp::species_rank(facts.entry, facts.shadow, 2);
-    if (leagues[2].league >= 0 && leagues[2].rank > 150) leagues[2] = pgr_pvp::Keep{};
+    pgs_pvp::Keep leagues[pgs_pvp::kLeagues];
+    pgs_pvp::best(facts.entry, facts.shadow, attack, defense, stamina, facts.multiplier, 150, leagues, 3);
+    leagues[2] = pgs_pvp::species_rank(facts.entry, facts.shadow, 2);
+    if (leagues[2].league >= 0 && leagues[2].rank > 150) leagues[2] = pgs_pvp::Keep{};
     Cached c{};
     for (int i = 0; i < 3; ++i) {
       c.rank[i] = leagues[i].league >= 0 ? leagues[i].rank : 0;
@@ -260,7 +260,7 @@ extern "C" bool pgr_pvp_best(void *pokemon, int screen, int attack, int defense,
     if (!out->rank[i]) continue;
     any = true;
     if (hit->second.species[i] != facts.entry)
-      std::snprintf(out->species[i], sizeof(out->species[i]), "%s", pgr_pvp::species_name(hit->second.species[i]));
+      std::snprintf(out->species[i], sizeof(out->species[i]), "%s", pgs_pvp::species_name(hit->second.species[i]));
   }
   return any;
 }

@@ -47,7 +47,7 @@ static_assert(offsetof(PgrOutgoingGiftsConfig, send_success) == 484, "layout");
 
 namespace {
 
-constexpr uint64_t kMaxLeaseMs = PGR_OG_MAX_LEASE_MS;
+constexpr uint64_t kMaxLeaseMs = PGS_OG_MAX_LEASE_MS;
 
 // --- il2cpp runtime ABI typedefs ---------------------------------------------------
 using GcNew = uintptr_t (*)(void *obj, int pinned);
@@ -67,7 +67,7 @@ std::mutex g_state_mutex;
 PgrOutgoingGiftsConfig g_cfg{};
 std::atomic<bool> g_installed{false};
 bool g_install_attempted = false;
-int g_install_error = PGR_OG_ERR_NOT_INSTALLED;
+int g_install_error = PGS_OG_ERR_NOT_INSTALLED;
 
 // Permanent Unity owner, latched once from a genuine on-thread queue()/observe()/tick().
 std::atomic<uint64_t> g_owner_tid{0};
@@ -92,7 +92,7 @@ bool g_overflow = false;
 uint64_t g_request_serial = 0, g_result_serial = 0, g_error_serial = 0, g_status_serial = 0,
          g_last_tid = 0;
 
-PgrOutgoingGiftsEvent g_fifo[PGR_OG_EVENT_CAP];
+PgrOutgoingGiftsEvent g_fifo[PGS_OG_EVENT_CAP];
 uint32_t g_fifo_head = 0, g_fifo_count = 0;
 
 // --- owner-thread reentrancy guards ------------------------------------------------
@@ -118,7 +118,7 @@ struct Txn {
   uintptr_t rpc_root = 0;          // the rpc service (for the ownedCallback identity match)
   uintptr_t sticker_svc_root = 0;  // the sticker service (for ReturnReservedStickers)
   uintptr_t sticker_id_root = 0;   // the reserved sticker's StickerId string
-  uint16_t id_chars[PGR_OG_ID_MAX];  // bounded recipient id content (captured at queue)
+  uint16_t id_chars[PGS_OG_ID_MAX];  // bounded recipient id content (captured at queue)
   int id_len = 0;
 };
 Txn g_txn{};
@@ -290,13 +290,13 @@ bool gift_button(void *gui, void *field) {
   return result;
 }
 
-// Read up to PGR_OG_ID_MAX UTF-16 units of an exact System.String; false if absent/out of window.
+// Read up to PGS_OG_ID_MAX UTF-16 units of an exact System.String; false if absent/out of window.
 bool read_id(void *str,uint16_t *out,int *out_len){
   uintptr_t root=hold(str);if(!root)return false;
   bool ok=false;void *current=gc_get()(root);
   if(is_exact(current,g_cfg.class_string)){
     int n=reinterpret_cast<StringLen>(g_cfg.string_length)(gc_get()(root));
-    if(n>=1&&n<=PGR_OG_ID_MAX){
+    if(n>=1&&n<=PGS_OG_ID_MAX){
       auto src=reinterpret_cast<StringChars>(g_cfg.string_chars)(gc_get()(root));
       if(src){std::memcpy(out,src,size_t(n)*sizeof(uint16_t));*out_len=n;ok=true;}
     }
@@ -306,7 +306,7 @@ bool read_id(void *str,uint16_t *out,int *out_len){
 
 // Compare a managed string's content against the captured recipient id (bounded exact match).
 bool id_matches(void *str) {
-  uint16_t buf[PGR_OG_ID_MAX];
+  uint16_t buf[PGS_OG_ID_MAX];
   int len = 0;
   if (!read_id(str, buf, &len)) return false;
   return len == g_txn.id_len &&
@@ -336,23 +336,23 @@ bool gate_live(uint64_t pinned_gen, uint64_t tid, uint32_t need_bits) {
 void push_event(uint32_t kind, int32_t id, int32_t aux, uint64_t tid) {
   std::lock_guard<std::mutex> lock(g_state_mutex);
   g_last_tid = tid;
-  if (kind == PGR_OG_EVENT_REQUEST) ++g_request_serial;
-  else if (kind == PGR_OG_EVENT_RESULT) ++g_result_serial;
-  else if (kind == PGR_OG_EVENT_ERROR) ++g_error_serial;
-  else if (kind == PGR_OG_EVENT_STATUS) ++g_status_serial;
-  if (g_fifo_count >= PGR_OG_EVENT_CAP) {
+  if (kind == PGS_OG_EVENT_REQUEST) ++g_request_serial;
+  else if (kind == PGS_OG_EVENT_RESULT) ++g_result_serial;
+  else if (kind == PGS_OG_EVENT_ERROR) ++g_error_serial;
+  else if (kind == PGS_OG_EVENT_STATUS) ++g_status_serial;
+  if (g_fifo_count >= PGS_OG_EVENT_CAP) {
     g_overflow = true;
     g_fault = true;  // fail closed: no further issue while faulted
-    uint32_t last = (g_fifo_head + g_fifo_count - 1) % PGR_OG_EVENT_CAP;
-    g_fifo[last] = PgrOutgoingGiftsEvent{PGR_OG_EVENT_ERROR, PGR_OG_ERR_OVERFLOW, 0, 0};
+    uint32_t last = (g_fifo_head + g_fifo_count - 1) % PGS_OG_EVENT_CAP;
+    g_fifo[last] = PgrOutgoingGiftsEvent{PGS_OG_EVENT_ERROR, PGS_OG_ERR_OVERFLOW, 0, 0};
     return;
   }
-  uint32_t idx = (g_fifo_head + g_fifo_count) % PGR_OG_EVENT_CAP;
+  uint32_t idx = (g_fifo_head + g_fifo_count) % PGS_OG_EVENT_CAP;
   g_fifo[idx] = PgrOutgoingGiftsEvent{kind, id, aux, 0};
   ++g_fifo_count;
 }
-void emit_status(int32_t msg, int32_t aux, uint64_t tid) { push_event(PGR_OG_EVENT_STATUS, msg, aux, tid); }
-void emit_error(int32_t reason, uint64_t tid) { push_event(PGR_OG_EVENT_ERROR, reason, 0, tid); }
+void emit_status(int32_t msg, int32_t aux, uint64_t tid) { push_event(PGS_OG_EVENT_STATUS, msg, aux, tid); }
+void emit_error(int32_t reason, uint64_t tid) { push_event(PGS_OG_EVENT_ERROR, reason, 0, tid); }
 
 // --- owner latching ----------------------------------------------------------------
 bool owner_ready(uint64_t tid) {
@@ -387,11 +387,11 @@ void clear_txn(uint64_t tid) {
     void *stock = gc_get()(svc);
     void *stickerId = gc_get()(sid);
     if (stock != nullptr && stickerId != nullptr) {
-      int32_t one = PGR_OG_RESERVE_COUNT;
+      int32_t one = PGS_OG_RESERVE_COUNT;
       void *params[2] = {stickerId, &one};
       void *exc = nullptr;
       invoke_fn()(g_cfg.m_return_sticker, stock, params, &exc);
-      if (exc != nullptr) emit_error(PGR_OG_ERR_STICKER_RELEASE, tid);
+      if (exc != nullptr) emit_error(PGS_OG_ERR_STICKER_RELEASE, tid);
     }
   }
   drop(&svc);
@@ -415,22 +415,22 @@ void leave_frame(uint64_t tid) {
 }
 
 // --- queue (sendReplacement + bundledQueue) ----------------------------------------
-// Returns PGR_OG_QUEUE_HANDLED / PGR_OG_QUEUE_ORIGINAL. Must run inside an active frame.
+// Returns PGS_OG_QUEUE_HANDLED / PGS_OG_QUEUE_ORIGINAL. Must run inside an active frame.
 int do_queue(void *panel, void *profile, uint64_t tid) {
   const uint64_t epoch=g_txn_epoch,gen=pin_gen();
-  if (!is_exact(panel, g_cfg.class_panel) || profile == nullptr) return PGR_OG_QUEUE_ORIGINAL;
+  if (!is_exact(panel, g_cfg.class_panel) || profile == nullptr) return PGS_OG_QUEUE_ORIGINAL;
 
   uintptr_t panel_root = hold(panel);
   uintptr_t profile_root = hold(profile);
   if (panel_root == 0 || profile_root == 0) {
     drop(&panel_root);
     drop(&profile_root);
-    return PGR_OG_QUEUE_ORIGINAL;
+    return PGS_OG_QUEUE_ORIGINAL;
   }
   // Past the panel-class / profile-presence gate the host original is ALWAYS suppressed (JS line
   // 283 `return;`): a dead profile, identity mismatch, disabled button or unready button is HANDLED
   // but queues nothing. Only the two top checks above fall through to the original.
-  int result = PGR_OG_QUEUE_HANDLED;
+  int result = PGS_OG_QUEUE_HANDLED;
 
   // Profile-panel identity + disabled + choose button (JS line 283).
   void *pf = gc_get()(profile_root);
@@ -453,7 +453,7 @@ int do_queue(void *panel, void *profile, uint64_t tid) {
       void *lpanel = gc_get()(panel_root);
       void *data = field_ptr(lpanel, g_cfg.f_data);
       void *frnd = field_ptr(data, g_cfg.f_panel_friend);
-      uint16_t id_buf[PGR_OG_ID_MAX];
+      uint16_t id_buf[PGS_OG_ID_MAX];
       int id_len = 0;
       bool id_ok = false;
       if (is_exact(frnd, g_cfg.class_friend)) {
@@ -470,7 +470,7 @@ int do_queue(void *panel, void *profile, uint64_t tid) {
             }
           }
           // Keep the friend rooted in the transaction on success; else drop it.
-          if (id_ok && epoch==g_txn_epoch && gate_live(gen,tid,PGR_OG_MASK_SEND)) {
+          if (id_ok && epoch==g_txn_epoch && gate_live(gen,tid,PGS_OG_MASK_SEND)) {
             g_txn = Txn{};
             g_txn.active = true;
             g_txn.panel_root = panel_root;
@@ -481,14 +481,14 @@ int do_queue(void *panel, void *profile, uint64_t tid) {
             g_txn.deadline_ms = 0;
             ++g_txn_epoch;
             publish_txn();
-            emit_status(PGR_OG_MSG_PREPARING, 0, tid);
-            return PGR_OG_QUEUE_HANDLED;  // roots now owned by the transaction
+            emit_status(PGS_OG_MSG_PREPARING, 0, tid);
+            return PGS_OG_QUEUE_HANDLED;  // roots now owned by the transaction
           }
           drop(&froot);
         }
       }
       // gift-recipient-missing (JS bundledQueue throw -> sendReplacement catch -> gift-error).
-      emit_error(PGR_OG_ERR_RECIPIENT, tid);
+      emit_error(PGS_OG_ERR_RECIPIENT, tid);
     }
     // else: disabled / button not ready -> suppress original, queue nothing (result already HANDLED).
   }
@@ -537,7 +537,7 @@ void tick_issue(uint64_t tid, uint64_t pinned, uint64_t pass_epoch) {
   panel = gc_get()(g_txn.panel_root);
   if (!gift_button(panel, g_cfg.f_choose_button) || pending_flag ||
       field_i32(gc_get()(g_txn.panel_root), g_cfg.f_check_result) != g_cfg.check_success) {
-    emit_status(PGR_OG_MSG_NOT_AVAILABLE, 0, tid);
+    emit_status(PGS_OG_MSG_NOT_AVAILABLE, 0, tid);
     clear_txn(tid);
     return;
   }
@@ -549,13 +549,13 @@ void tick_issue(uint64_t tid, uint64_t pinned, uint64_t pass_epoch) {
   void *rpc = field_ptr(gc_get()(g_txn.panel_root), g_cfg.f_panel_rpc);
   if (!service_root || !is_exact(gc_get()(service_root), g_cfg.class_service) || !is_exact(rpc, g_cfg.class_rpc)) {
     drop(&service_root);
-    emit_error(PGR_OG_ERR_SERVICE_TYPE, tid);
+    emit_error(PGS_OG_ERR_SERVICE_TYPE, tid);
     clear_txn(tid);
     return;
   }
   g_txn.rpc_root = hold(rpc);
   if (service_root == 0 || g_txn.rpc_root == 0) {
-    emit_error(PGR_OG_ERR_GCHANDLE, tid);
+    emit_error(PGS_OG_ERR_GCHANDLE, tid);
     drop(&service_root);
     clear_txn(tid);
     return;
@@ -565,10 +565,10 @@ void tick_issue(uint64_t tid, uint64_t pinned, uint64_t pass_epoch) {
   bool threw = false;
   void *svc = gc_get()(service_root);
   void *iterable = svc != nullptr ? invoke_fn()(g_cfg.m_sendable, svc, nullptr, &exc) : nullptr;
-  if (exc != nullptr || iterable == nullptr) { emit_error(PGR_OG_ERR_INVENTORY, tid); drop(&service_root); clear_txn(tid); return; }
+  if (exc != nullptr || iterable == nullptr) { emit_error(PGS_OG_ERR_INVENTORY, tid); drop(&service_root); clear_txn(tid); return; }
   uintptr_t iter_root = hold(iterable);
   uintptr_t enum_root = 0, gift_root = 0;
-  uint32_t enum_err = PGR_OG_ERR_NONE;
+  uint32_t enum_err = PGS_OG_ERR_NONE;
   if (iter_root != 0) {
     void *enumerator = invoke_virtual(g_cfg.m_get_enumerator, iter_root, nullptr, &threw);
     if (!threw && enumerator != nullptr) {
@@ -583,39 +583,39 @@ void tick_issue(uint64_t tid, uint64_t pinned, uint64_t pass_epoch) {
             if (mb != nullptr && obj_class()(mb) == g_cfg.class_bool) {
               uint8_t *d = static_cast<uint8_t *>(unbox()(gc_get()(mroot)));
               if (d && *d <= 1) has = *d == 1;
-              else enum_err = PGR_OG_ERR_INVENTORY;
-            } else enum_err = PGR_OG_ERR_INVENTORY;
+              else enum_err = PGS_OG_ERR_INVENTORY;
+            } else enum_err = PGS_OG_ERR_INVENTORY;
             drop(&mroot);
-          } else enum_err = PGR_OG_ERR_GCHANDLE;
+          } else enum_err = PGS_OG_ERR_GCHANDLE;
         } else {
-          enum_err = PGR_OG_ERR_INVENTORY;
+          enum_err = PGS_OG_ERR_INVENTORY;
         }
         if (has) {
           void *gift = invoke_virtual(g_cfg.m_current_gift, enum_root, nullptr, &threw);
-          if (!threw && gift != nullptr){gift_root=hold(gift);if(!gift_root)enum_err=PGR_OG_ERR_GCHANDLE;}else enum_err=PGR_OG_ERR_INVENTORY;
+          if (!threw && gift != nullptr){gift_root=hold(gift);if(!gift_root)enum_err=PGS_OG_ERR_GCHANDLE;}else enum_err=PGS_OG_ERR_INVENTORY;
         }
         // Guaranteed Dispose of the enumerator (always, even on the throw paths above).
         bool dthrew = false;
-        invoke_virtual(g_cfg.m_dispose_gift, enum_root, nullptr, &dthrew);if(dthrew)enum_err=PGR_OG_ERR_INVENTORY;
+        invoke_virtual(g_cfg.m_dispose_gift, enum_root, nullptr, &dthrew);if(dthrew)enum_err=PGS_OG_ERR_INVENTORY;
       } else {
-        enum_err = PGR_OG_ERR_GCHANDLE;
+        enum_err = PGS_OG_ERR_GCHANDLE;
       }
     } else {
-      enum_err = PGR_OG_ERR_INVENTORY;
+      enum_err = PGS_OG_ERR_INVENTORY;
     }
   } else {
-    enum_err = PGR_OG_ERR_GCHANDLE;
+    enum_err = PGS_OG_ERR_GCHANDLE;
   }
   drop(&iter_root);
   drop(&enum_root);
   drop(&service_root);
 
-  if (enum_err != PGR_OG_ERR_NONE) { emit_error(enum_err, tid); drop(&gift_root); clear_txn(tid); return; }
-  if (gift_root == 0) { emit_status(PGR_OG_MSG_NO_GIFTS, 0, tid); clear_txn(tid); return; }
+  if (enum_err != PGS_OG_ERR_NONE) { emit_error(enum_err, tid); drop(&gift_root); clear_txn(tid); return; }
+  if (gift_root == 0) { emit_status(PGS_OG_MSG_NO_GIFTS, 0, tid); clear_txn(tid); return; }
   void *gift = gc_get()(gift_root);
-  if (!is_exact(gift, g_cfg.class_gift_box)) { emit_error(PGR_OG_ERR_INVENTORY, tid); drop(&gift_root); clear_txn(tid); return; }
+  if (!is_exact(gift, g_cfg.class_gift_box)) { emit_error(PGS_OG_ERR_INVENTORY, tid); drop(&gift_root); clear_txn(tid); return; }
   uint64_t gift_id = field_u64(gc_get()(gift_root), g_cfg.f_gift_id);
-  if (gift_id == 0) { emit_error(PGR_OG_ERR_GIFT_ID_ZERO, tid); drop(&gift_root); clear_txn(tid); return; }
+  if (gift_id == 0) { emit_error(PGS_OG_ERR_GIFT_ID_ZERO, tid); drop(&gift_root); clear_txn(tid); return; }
 
   // Recipient player / playerId / niaId (JS 133-135).
   void *frnd = gc_get()(g_txn.friend_root);
@@ -625,7 +625,7 @@ void tick_issue(uint64_t tid, uint64_t pinned, uint64_t pass_epoch) {
   uintptr_t playerId_root = hold(playerId);
   void *niaUtil = field_ptr(gc_get()(g_txn.panel_root), g_cfg.f_nia_util);
   if (player_root == 0 || playerId_root == 0 || niaUtil == nullptr) {
-    emit_error(PGR_OG_ERR_NIA, tid);
+    emit_error(PGS_OG_ERR_NIA, tid);
     drop(&player_root); drop(&playerId_root); drop(&gift_root);
     clear_txn(tid);
     return;
@@ -638,12 +638,12 @@ void tick_issue(uint64_t tid, uint64_t pinned, uint64_t pass_epoch) {
   uintptr_t niaId_root = (!threw && niaId != nullptr) ? hold(niaId) : 0;
   bool nia_ok = niaId_root != 0;
   {
-    uint16_t tmp[PGR_OG_ID_MAX]; int tl = 0;
+    uint16_t tmp[PGS_OG_ID_MAX]; int tl = 0;
     nia_ok = nia_ok && read_id(gc_get()(niaId_root), tmp, &tl);
   }
   drop(&nia_root);
   if (!nia_ok) {
-    emit_error(PGR_OG_ERR_NIA, tid);
+    emit_error(PGS_OG_ERR_NIA, tid);
     drop(&player_root); drop(&playerId_root); drop(&niaId_root); drop(&gift_root);
     clear_txn(tid);
     return;
@@ -652,19 +652,19 @@ void tick_issue(uint64_t tid, uint64_t pinned, uint64_t pass_epoch) {
   // Optional sticker (JS 137-145). Reserve exactly one with quantity > 0. The sticker bit is read
   // through the locked gate (never an unsynchronized g_mask read); it is re-checked before reserve.
   uintptr_t sticker_root = 0;
-  bool want_sticker = gate_live(pinned, tid, PGR_OG_MASK_SEND | PGR_OG_MASK_STICKER);
+  bool want_sticker = gate_live(pinned, tid, PGS_OG_MASK_SEND | PGS_OG_MASK_STICKER);
   if (want_sticker) {
     void *rpc_obj = gc_get()(g_txn.rpc_root);
     void *stock = field_ptr(rpc_obj, g_cfg.f_rpc_stickers);
     if (!is_exact(stock, g_cfg.class_sticker_svc)) {
-      emit_error(PGR_OG_ERR_STICKER_SVC, tid);
+      emit_error(PGS_OG_ERR_STICKER_SVC, tid);
       drop(&player_root); drop(&playerId_root); drop(&niaId_root); drop(&gift_root);
       clear_txn(tid);
       return;
     }
     g_txn.sticker_svc_root = hold(stock);
     if (!g_txn.sticker_svc_root) {
-      emit_error(PGR_OG_ERR_GCHANDLE, tid);
+      emit_error(PGS_OG_ERR_GCHANDLE, tid);
       drop(&player_root); drop(&playerId_root); drop(&niaId_root); drop(&gift_root);
       clear_txn(tid);
       return;
@@ -674,7 +674,7 @@ void tick_issue(uint64_t tid, uint64_t pinned, uint64_t pass_epoch) {
     void *stk = gc_get()(g_txn.sticker_svc_root);
     void *inventory = stk != nullptr ? invoke_fn()(g_cfg.m_inventory, stk, inv_params, &exc) : nullptr;
     if (exc != nullptr || !is_exact(inventory, g_cfg.class_sticker_list)) {
-      emit_error(PGR_OG_ERR_STICKER_SVC, tid);
+      emit_error(PGS_OG_ERR_STICKER_SVC, tid);
       drop(&player_root); drop(&playerId_root); drop(&niaId_root); drop(&gift_root);
       clear_txn(tid);
       return;
@@ -682,8 +682,8 @@ void tick_issue(uint64_t tid, uint64_t pinned, uint64_t pass_epoch) {
     uintptr_t inv_root = hold(inventory);
     bool ok = false;
     int32_t count = invoke_int(g_cfg.m_sticker_count, gc_get()(inv_root), nullptr, &ok, -1);
-    if (!ok || count < 0 || count > PGR_OG_STICKER_SCAN_MAX) {
-      emit_error(PGR_OG_ERR_STICKER_SVC, tid);
+    if (!ok || count < 0 || count > PGS_OG_STICKER_SCAN_MAX) {
+      emit_error(PGS_OG_ERR_STICKER_SVC, tid);
       drop(&inv_root); drop(&player_root); drop(&playerId_root); drop(&niaId_root); drop(&gift_root);
       clear_txn(tid);
       return;
@@ -705,9 +705,9 @@ void tick_issue(uint64_t tid, uint64_t pinned, uint64_t pass_epoch) {
       void *cobj = gc_get()(cand_root);
       void *sid = field_ptr(cobj, g_cfg.f_sticker_id);
       uintptr_t sid_root = hold(sid);
-      uint16_t tmp[PGR_OG_ID_MAX]; int tl = 0;
+      uint16_t tmp[PGS_OG_ID_MAX]; int tl = 0;
       if (sid_root == 0 || !read_id(gc_get()(sid_root), tmp, &tl)) {
-        emit_error(PGR_OG_ERR_STICKER_ID, tid);
+        emit_error(PGS_OG_ERR_STICKER_ID, tid);
         drop(&sid_root); drop(&cand_root);
         drop(&inv_root); drop(&player_root); drop(&playerId_root); drop(&niaId_root); drop(&gift_root);
         clear_txn(tid);
@@ -716,7 +716,7 @@ void tick_issue(uint64_t tid, uint64_t pinned, uint64_t pass_epoch) {
       void *res_sid=gc_get()(sid_root);
       void *res_stk=gc_get()(g_txn.sticker_svc_root);
       // No managed lookup after this gate and before ReserveStickers.
-      if (!res_sid || !res_stk || !gate_live(pinned, tid, PGR_OG_MASK_SEND | PGR_OG_MASK_STICKER) || g_txn_epoch != pass_epoch ||
+      if (!res_sid || !res_stk || !gate_live(pinned, tid, PGS_OG_MASK_SEND | PGS_OG_MASK_STICKER) || g_txn_epoch != pass_epoch ||
           g_pending_stop) {
         drop(&sid_root); drop(&cand_root); drop(&inv_root);
         drop(&player_root); drop(&playerId_root); drop(&niaId_root); drop(&gift_root);
@@ -725,11 +725,11 @@ void tick_issue(uint64_t tid, uint64_t pinned, uint64_t pass_epoch) {
       }
       g_txn.sticker_id_root = sid_root;
       g_txn.reserved = true;  // latch BEFORE the invoke so cleanup returns exactly once
-      int32_t one = PGR_OG_RESERVE_COUNT;
+      int32_t one = PGS_OG_RESERVE_COUNT;
 
       void *res_params[2] = {res_sid, &one};
       invoke_fn()(g_cfg.m_reserve, res_stk, res_params, &exc);
-      if(exc){emit_error(PGR_OG_ERR_INVOKE,tid);drop(&cand_root);drop(&inv_root);drop(&player_root);drop(&playerId_root);drop(&niaId_root);drop(&gift_root);clear_txn(tid);return;}
+      if(exc){emit_error(PGS_OG_ERR_INVOKE,tid);drop(&cand_root);drop(&inv_root);drop(&player_root);drop(&playerId_root);drop(&niaId_root);drop(&gift_root);clear_txn(tid);return;}
       sticker_root = cand_root;  // keep the sticker rooted for SendGift
       break;
     }
@@ -745,29 +745,29 @@ void tick_issue(uint64_t tid, uint64_t pinned, uint64_t pass_epoch) {
   uint64_t issue_now=0;
   if(!rpc_obj||!send_playerId||!send_niaId||(sticker_root&&!send_sticker)||
      !g_txn.active||g_txn_epoch!=pass_epoch||g_pending_stop.load()||g_cancel_pending||
-     !read_boottime_ms(&issue_now)||!gate_live(pinned,tid,PGR_OG_MASK_SEND)){
+     !read_boottime_ms(&issue_now)||!gate_live(pinned,tid,PGS_OG_MASK_SEND)){
     drop(&sticker_root);drop(&player_root);drop(&playerId_root);drop(&niaId_root);drop(&gift_root);clear_txn(tid);return;
   }
-  g_txn.issued=true;g_txn.deadline_ms=issue_now+PGR_OG_TXN_TIMEOUT_MS;
+  g_txn.issued=true;g_txn.deadline_ms=issue_now+PGS_OG_TXN_TIMEOUT_MS;
   g_txn.request_sticker_root=sticker_root;sticker_root=0;
   g_txn.request_player_id_root=playerId_root;playerId_root=0;
   g_txn.request_nia_id_root=niaId_root;niaId_root=0;
   publish_txn();
   uint8_t fls=0;void *send_params[5]={&gid,send_playerId,send_niaId,send_sticker,&fls};
   void *promise=invoke_fn()(g_cfg.m_rpc_send,rpc_obj,send_params,&exc);
-  emit_status(PGR_OG_MSG_SENDING,0,tid);
-  push_event(PGR_OG_EVENT_REQUEST,0,send_sticker?1:0,tid);
+  emit_status(PGS_OG_MSG_SENDING,0,tid);
+  push_event(PGS_OG_EVENT_REQUEST,0,send_sticker?1:0,tid);
   if (exc != nullptr) {
     // The send threw. A callback may already have fired synchronously (finished/result latched);
     // keep the issued transaction quarantined (no retry), matching JS r.timedOut path.
-    emit_error(PGR_OG_ERR_INVOKE, tid);
+    emit_error(PGS_OG_ERR_INVOKE, tid);
     g_txn.timed_out = true;
     publish_txn();
-    emit_status(PGR_OG_MSG_UNCERTAIN, 0, tid);
+    emit_status(PGS_OG_MSG_UNCERTAIN, 0, tid);
   } else if (promise != nullptr) {
     // Keep the pending promise alive until matching completion or shutdown.
     g_txn.promise_root=hold(promise);
-    if(!g_txn.promise_root)emit_error(PGR_OG_ERR_GCHANDLE,tid);
+    if(!g_txn.promise_root)emit_error(PGS_OG_ERR_GCHANDLE,tid);
   }
   (void)gift_id;
   drop(&sticker_root);
@@ -828,28 +828,28 @@ void observe_profile_close(void *profile){
 
 // --- public API --------------------------------------------------------------------
 bool validate_config(const PgrOutgoingGiftsConfig *c, int *rc) {
-  if (c == nullptr) { *rc = PGR_OG_ERR_INVALID_ARG; return false; }
-  if (c->version != PGR_OG_CONFIG_VERSION) { *rc = PGR_OG_ERR_BAD_VERSION; return false; }
-  if (c->size != sizeof(PgrOutgoingGiftsConfig)) { *rc = PGR_OG_ERR_BAD_SIZE; return false; }
+  if (c == nullptr) { *rc = PGS_OG_ERR_INVALID_ARG; return false; }
+  if (c->version != PGS_OG_CONFIG_VERSION) { *rc = PGS_OG_ERR_BAD_VERSION; return false; }
+  if (c->size != sizeof(PgrOutgoingGiftsConfig)) { *rc = PGS_OG_ERR_BAD_SIZE; return false; }
   void *const *ptrs = reinterpret_cast<void *const *>(&c->gchandle_new);
   for (int i = 0; i < 59; ++i) {
-    if (ptrs[i] == nullptr) { *rc = PGR_OG_ERR_MISSING_PTR; return false; }
+    if (ptrs[i] == nullptr) { *rc = PGS_OG_ERR_MISSING_PTR; return false; }
   }
-  *rc = PGR_OG_OK;
+  *rc = PGS_OG_OK;
   return true;
 }
 
 int api_install(const PgrOutgoingGiftsConfig *config) {
-  int rc = PGR_OG_OK;
+  int rc = PGS_OG_OK;
   if (!validate_config(config, &rc)) return rc;
   uint64_t probe = 0;
-  if (!read_boottime_ms(&probe)) return PGR_OG_ERR_CLOCK_FAILURE;
+  if (!read_boottime_ms(&probe)) return PGS_OG_ERR_CLOCK_FAILURE;
 
   std::lock_guard<std::mutex> install_lock(g_install_mutex);
   if (g_installed.load(std::memory_order_acquire)) {
     std::lock_guard<std::mutex> state_lock(g_state_mutex);
-    if (std::memcmp(&g_cfg, config, sizeof(*config)) != 0) return PGR_OG_ERR_RECONFIG;
-    return PGR_OG_OK;
+    if (std::memcmp(&g_cfg, config, sizeof(*config)) != 0) return PGS_OG_ERR_RECONFIG;
+    return PGS_OG_OK;
   }
   if (g_install_attempted) return g_install_error;
   g_install_attempted = true;
@@ -865,38 +865,38 @@ int api_install(const PgrOutgoingGiftsConfig *config) {
   g_txn = Txn{};
   publish_txn();
   g_installed.store(true, std::memory_order_release);
-  return g_install_error = PGR_OG_OK;
+  return g_install_error = PGS_OG_OK;
 }
 
 int api_update(uint32_t mask,uint64_t remaining,uint64_t tid){
-  if(!g_installed.load())return PGR_OG_ERR_NOT_INSTALLED;
+  if(!g_installed.load())return PGS_OG_ERR_NOT_INSTALLED;
   uint64_t now=0;bool clock_ok=read_boottime_ms(&now);
   std::lock_guard<std::mutex> lock(g_state_mutex);
   uint64_t owner=g_owner_tid.load();
   if(!clock_ok||!tid||current_tid()!=tid||(owner&&owner!=tid)||g_pending_stop.load()||g_cleaning.load()){
-    g_mask=0;g_lease_until_ms=0;++g_gen;return clock_ok?PGR_OG_OK:PGR_OG_ERR_CLOCK_FAILURE;
+    g_mask=0;g_lease_until_ms=0;++g_gen;return clock_ok?PGS_OG_OK:PGS_OG_ERR_CLOCK_FAILURE;
   }
-  mask&=PGR_OG_MASK_SEND|PGR_OG_MASK_STICKER;
+  mask&=PGS_OG_MASK_SEND|PGS_OG_MASK_STICKER;
   remaining=remaining>kMaxLeaseMs?kMaxLeaseMs:remaining;
   if(mask!=g_mask||!remaining||!g_lease_until_ms||now>=g_lease_until_ms)++g_gen;
-  g_mask=mask;g_lease_until_ms=remaining?now+remaining:0;return PGR_OG_OK;
+  g_mask=mask;g_lease_until_ms=remaining?now+remaining:0;return PGS_OG_OK;
 }
 
 int api_queue(void *panel, void *profile, uint64_t proven_tid) {
-  if (!g_installed.load(std::memory_order_acquire)) return PGR_OG_QUEUE_ORIGINAL;
+  if (!g_installed.load(std::memory_order_acquire)) return PGS_OG_QUEUE_ORIGINAL;
   const uint64_t tid = current_tid();
-  if (proven_tid == 0 || tid != proven_tid || panel == nullptr) return PGR_OG_QUEUE_ORIGINAL;
-  if (!owner_ready(tid)) return PGR_OG_QUEUE_ORIGINAL;
-  if (g_pending_stop.load()||g_cleaning.load()) return PGR_OG_QUEUE_HANDLED;
-  if (g_active_depth.load(std::memory_order_relaxed) != 0) return PGR_OG_QUEUE_HANDLED;
+  if (proven_tid == 0 || tid != proven_tid || panel == nullptr) return PGS_OG_QUEUE_ORIGINAL;
+  if (!owner_ready(tid)) return PGS_OG_QUEUE_ORIGINAL;
+  if (g_pending_stop.load()||g_cleaning.load()) return PGS_OG_QUEUE_HANDLED;
+  if (g_active_depth.load(std::memory_order_relaxed) != 0) return PGS_OG_QUEUE_HANDLED;
 
   // Already pending (JS line 277): handled, status, no original.
   if (g_txn.active) {
-    emit_status(PGR_OG_MSG_ALREADY, 0, tid);
-    return PGR_OG_QUEUE_HANDLED;
+    emit_status(PGS_OG_MSG_ALREADY, 0, tid);
+    return PGS_OG_QUEUE_HANDLED;
   }
   // mask/lease gate (JS line 279): not eligible -> original.
-  if (!gate_live(pin_gen(), tid, PGR_OG_MASK_SEND)) return PGR_OG_QUEUE_ORIGINAL;
+  if (!gate_live(pin_gen(), tid, PGS_OG_MASK_SEND)) return PGS_OG_QUEUE_ORIGINAL;
 
   g_active_depth.fetch_add(1, std::memory_order_relaxed);
   int result = do_queue(panel, profile, tid);
@@ -905,48 +905,48 @@ int api_queue(void *panel, void *profile, uint64_t proven_tid) {
 }
 
 int api_observe(uint32_t kind, void *obj, void *arg, uint64_t proven_tid) {
-  if (!g_installed.load(std::memory_order_acquire)) return PGR_OG_ERR_NOT_INSTALLED;
+  if (!g_installed.load(std::memory_order_acquire)) return PGS_OG_ERR_NOT_INSTALLED;
   const uint64_t tid = current_tid();
-  if (proven_tid == 0 || tid != proven_tid || obj == nullptr) return PGR_OG_OK;
-  if (!owner_ready(tid)) return PGR_OG_OK;
+  if (proven_tid == 0 || tid != proven_tid || obj == nullptr) return PGS_OG_OK;
+  if (!owner_ready(tid)) return PGS_OG_OK;
 
   g_active_depth.fetch_add(1, std::memory_order_relaxed);
   switch (kind) {
-    case PGR_OG_OBSERVE_PROFILE_CLOSE:
+    case PGS_OG_OBSERVE_PROFILE_CLOSE:
       observe_profile_close(obj);
       break;
-    case PGR_OG_OBSERVE_RPC_RESULT:
+    case PGS_OG_OBSERVE_RPC_RESULT:
       observe_result(obj, arg, tid);
       break;
-    case PGR_OG_OBSERVE_RPC_FINALLY:
+    case PGS_OG_OBSERVE_RPC_FINALLY:
       observe_finally(obj);
       break;
     default:
       break;
   }
   leave_frame(tid);
-  return PGR_OG_OK;
+  return PGS_OG_OK;
 }
 
 int api_tick(uint64_t proven_tid, int stopping) {
-  if (!g_installed.load(std::memory_order_acquire)) return PGR_OG_ERR_NOT_INSTALLED;
+  if (!g_installed.load(std::memory_order_acquire)) return PGS_OG_ERR_NOT_INSTALLED;
   if(stopping){
     std::lock_guard<std::mutex> lock(g_state_mutex);
     g_pending_stop.store(true);g_mask=0;g_lease_until_ms=0;++g_gen;
   }
   const uint64_t tid = current_tid();
-  if(!proven_tid||tid!=proven_tid||!owner_ready(tid))return PGR_OG_OK;
+  if(!proven_tid||tid!=proven_tid||!owner_ready(tid))return PGS_OG_OK;
   if (g_active_depth.load(std::memory_order_relaxed) != 0) {
     if (stopping != 0) g_pending_stop = true;  // revoke now; defer teardown to the outermost frame
-    return PGR_OG_OK;
+    return PGS_OG_OK;
   }
 
   g_active_depth.fetch_add(1, std::memory_order_relaxed);
   const bool stop = stopping != 0 || g_pending_stop.load();
   if (stop) g_pending_stop = true;
 
-  if (!g_txn.active) { leave_frame(tid); return PGR_OG_OK; }
-  if (stop) { leave_frame(tid); return PGR_OG_OK; }  // deferred teardown clears the txn
+  if (!g_txn.active) { leave_frame(tid); return PGS_OG_OK; }
+  if (stop) { leave_frame(tid); return PGS_OG_OK; }  // deferred teardown clears the txn
 
   uint64_t now = 0;
   const bool clock_ok = read_boottime_ms(&now);
@@ -955,32 +955,32 @@ int api_tick(uint64_t proven_tid, int stopping) {
     // Completion / quarantine. Issued survives off/lease expiry; result bookkeeping still runs.
     if (g_txn.finished) {
       const bool success = g_txn.has_result && g_txn.result == g_cfg.send_success;
-      if (success) emit_status(PGR_OG_MSG_SENT, 0, tid);
-      else if (!g_txn.has_result) emit_status(PGR_OG_MSG_FAILED_NULL, 0, tid);
-      else emit_status(PGR_OG_MSG_FAILED_RESULT, g_txn.result, tid);
-      push_event(PGR_OG_EVENT_RESULT, g_txn.has_result ? g_txn.result : 0, (success?1:0)|(g_txn.has_result?2:0), tid);
+      if (success) emit_status(PGS_OG_MSG_SENT, 0, tid);
+      else if (!g_txn.has_result) emit_status(PGS_OG_MSG_FAILED_NULL, 0, tid);
+      else emit_status(PGS_OG_MSG_FAILED_RESULT, g_txn.result, tid);
+      push_event(PGS_OG_EVENT_RESULT, g_txn.has_result ? g_txn.result : 0, (success?1:0)|(g_txn.has_result?2:0), tid);
       clear_txn(tid);
     } else if (clock_ok && now > g_txn.deadline_ms && !g_txn.timed_out) {
       g_txn.timed_out = true;  // telemetry/quarantine only; retain until finally or stop
       publish_txn();
-      emit_status(PGR_OG_MSG_PENDING, 0, tid);
+      emit_status(PGS_OG_MSG_PENDING, 0, tid);
     }
     leave_frame(tid);
-    return PGR_OG_OK;
+    return PGS_OG_OK;
   }
 
   // Unissued: off / lease expiry cancels (JS line 113).
   const uint64_t pinned = pin_gen();
-  if (!clock_ok || !gate_live(pinned, tid, PGR_OG_MASK_SEND)) { clear_txn(tid); leave_frame(tid); return PGR_OG_OK; }
+  if (!clock_ok || !gate_live(pinned, tid, PGS_OG_MASK_SEND)) { clear_txn(tid); leave_frame(tid); return PGS_OG_OK; }
 
   const uint64_t pass_epoch = g_txn_epoch;
   tick_issue(tid, pinned, pass_epoch);
   leave_frame(tid);
-  return PGR_OG_OK;
+  return PGS_OG_OK;
 }
 
 int api_sample(PgrOutgoingGiftsSample *out) {
-  if (out == nullptr) return PGR_OG_ERR_INVALID_ARG;
+  if (out == nullptr) return PGS_OG_ERR_INVALID_ARG;
   const uint32_t roots = root_total();
   const uint32_t active = g_m_active.load(std::memory_order_relaxed);
   const uint32_t issued = g_m_issued.load(std::memory_order_relaxed);
@@ -988,7 +988,7 @@ int api_sample(PgrOutgoingGiftsSample *out) {
   const int32_t result = g_m_result.load(std::memory_order_relaxed);
   const uint32_t timed_out = g_m_timed_out.load(std::memory_order_relaxed);
   std::lock_guard<std::mutex> lock(g_state_mutex);
-  out->version = PGR_OG_SAMPLE_VERSION;
+  out->version = PGS_OG_SAMPLE_VERSION;
   out->size = sizeof(PgrOutgoingGiftsSample);
   out->request_serial = g_request_serial;
   out->result_serial = g_result_serial;
@@ -1005,21 +1005,21 @@ int api_sample(PgrOutgoingGiftsSample *out) {
   out->overflow = g_overflow ? 1u : 0u;
   out->pending_events = g_fifo_count;
   out->reserved = 0;
-  return PGR_OG_OK;
+  return PGS_OG_OK;
 }
 
 int api_next_event(PgrOutgoingGiftsEvent *out) {
-  if (out == nullptr) return PGR_OG_ERR_INVALID_ARG;
+  if (out == nullptr) return PGS_OG_ERR_INVALID_ARG;
   std::lock_guard<std::mutex> lock(g_state_mutex);
   if (g_fifo_count == 0) return 0;
   *out = g_fifo[g_fifo_head];
-  g_fifo_head = (g_fifo_head + 1) % PGR_OG_EVENT_CAP;
+  g_fifo_head = (g_fifo_head + 1) % PGS_OG_EVENT_CAP;
   --g_fifo_count;
   return 1;
 }
 
 const PgrOutgoingGiftsApi kApiTable = {
-    PGR_OG_API_VERSION, static_cast<uint32_t>(sizeof(PgrOutgoingGiftsApi)),
+    PGS_OG_API_VERSION, static_cast<uint32_t>(sizeof(PgrOutgoingGiftsApi)),
     &api_install,       &api_update,
     &api_queue,         &api_observe,
     &api_tick,          &api_sample,
@@ -1029,6 +1029,6 @@ const PgrOutgoingGiftsApi kApiTable = {
 }  // namespace
 
 extern "C" const void *pgs_outgoing_gifts_api(uint32_t version) {
-  if (version != PGR_OG_API_VERSION) return nullptr;
+  if (version != PGS_OG_API_VERSION) return nullptr;
   return &kApiTable;
 }

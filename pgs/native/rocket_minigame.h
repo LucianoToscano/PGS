@@ -69,11 +69,11 @@ static_assert(sizeof(PgrRocketMiniConfig) == 184,
 
 // Status codes (0 == success). Shared spirit with the other feature headers.
 enum {
-    PGR_RMINI_OK = 0,
-    PGR_RMINI_ERR_NULL_ARG = 1,       // config pointer / a required member pointer was null
-    PGR_RMINI_ERR_BAD_CONFIG = 2,     // header, size or a pointer member invalid
-    PGR_RMINI_ERR_ALREADY_BOUND = 3,  // install() called again with a different config
-    PGR_RMINI_ERR_HOOK_FAILED = 4     // a target could not be hooked (install latched failed)
+    PGS_RMINI_OK = 0,
+    PGS_RMINI_ERR_NULL_ARG = 1,       // config pointer / a required member pointer was null
+    PGS_RMINI_ERR_BAD_CONFIG = 2,     // header, size or a pointer member invalid
+    PGS_RMINI_ERR_ALREADY_BOUND = 3,  // install() called again with a different config
+    PGS_RMINI_ERR_HOOK_FAILED = 4     // a target could not be hooked (install latched failed)
 };
 
 // Version-1 table: 8-byte header + install/update/tick/restore (40 bytes total).

@@ -8,7 +8,7 @@ enum PgsSpinHostCapabilities {PGS_SPH_CAMERA=1,PGS_SPH_QUICK=2};
 struct PgsSpinHostConfig {
  uint32_t version,size,flags,exclusive_owner;
  const PgrSharedMetadataOutput *metadata;
- const PgrSharedMetaExtraExports *extra;
+ const PgsSharedMetaExtraExports *extra;
  void *object_get_class,*field_get_value,*runtime_invoke,*object_unbox;
  void *(*thread_current)();
  uint64_t owner_tid;
@@ -28,7 +28,7 @@ struct PgsSpinHostApi {
  int (*stop)();
  int (*sample)(PgsSpinHostSample*);
  int (*next_event)(PgsSpinHostEvent*);
- PgrUnityWork on_unity_pulse;
+ PgsUnityWork on_unity_pulse;
 };
 static_assert(sizeof(PgsSpinHostConfig)==80,"Spin host config");
 static_assert(sizeof(PgsSpinHostOptions)==24,"Spin host options");

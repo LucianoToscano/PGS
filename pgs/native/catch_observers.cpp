@@ -44,7 +44,7 @@ static_assert(offsetof(PgrObsSample, events)               == 104, "layout: even
 
 namespace {
 
-constexpr uint64_t kMaxLeaseMs      = PGR_OBS_MAX_LEASE_MS; // 2500
+constexpr uint64_t kMaxLeaseMs      = PGS_OBS_MAX_LEASE_MS; // 2500
 constexpr uint64_t kOutcomeMs       = 8000u;               // LIMITS.outcomeMs
 constexpr int      kOutcomeSeen     = 4;                    // LIMITS.outcomeSeen
 constexpr uint64_t kOutcomesPerSec  = 4u;                   // LIMITS.outcomesPerSecond
@@ -54,7 +54,7 @@ constexpr uint64_t kHitsPerSec      = 1000u;               // LIMITS.hitsPerSeco
 typedef void *(*BtxuFn)(void *self, void *method);
 typedef void  (*CompletionFn)(void *self, void *response, void *method);
 // auto_raid.cpp (weak: fixture builds without it keep every catch).
-extern "C" void pgr_queue_caught_transfer(void *response) __attribute__((weak));
+extern "C" void pgs_queue_caught_transfer(void *response) __attribute__((weak));
 
 // --- lifetime / publication --------------------------------------------------------
 std::mutex        g_install_mutex;
@@ -65,12 +65,12 @@ bool              g_install_failed = false;
 std::atomic<BtxuFn>       g_orig_btxu{nullptr};
 std::atomic<CompletionFn> g_orig_caught{nullptr};
 std::atomic<CompletionFn> g_orig_escaped{nullptr};
-std::atomic<PgrObsBerryFilter> g_berry_filter{nullptr};
+std::atomic<PgsObsBerryFilter> g_berry_filter{nullptr};
 uint64_t g_berry_owner=0; // immutable before callback release-publication
 std::atomic<const PgrSpeedApi2 *> g_max_speed{nullptr};
 void *g_max_field=nullptr; // immutable before g_max_speed release-publication
 uint64_t g_max_owner=0;
-std::atomic<PgrObsMaxContext> g_max_context{nullptr};
+std::atomic<PgsObsMaxContext> g_max_context{nullptr};
 
 // --- policy window (armed by update) -----------------------------------------------
 std::atomic<int>      g_enabled{0};
@@ -86,7 +86,7 @@ std::atomic<void *>   g_last_caller{nullptr};
 // --- telemetry (pull-only) ---------------------------------------------------------
 std::atomic<uint64_t> g_confirmed{0}, g_suppressed{0}, g_dropped{0};
 std::atomic<uint64_t> g_applied{0}, g_completed{0}, g_faults{0}, g_last_tid{0};
-std::atomic<uint32_t> g_action{PGR_OBS_A_NONE}, g_reason{PGR_OBS_R_NONE};
+std::atomic<uint32_t> g_action{PGS_OBS_A_NONE}, g_reason{PGS_OBS_R_NONE};
 std::atomic<int32_t>  g_status{0};
 
 // Bounded event ring: emit() appends here (one writer at a time — every emit() runs on the
@@ -98,7 +98,7 @@ struct EventSlot {
     std::atomic<uint32_t> action, reason;
     std::atomic<int32_t>  status;
 };
-EventSlot             g_events[PGR_OBS_EVENT_RING];
+EventSlot             g_events[PGS_OBS_EVENT_RING];
 std::atomic<uint64_t> g_event_head{0}; // total events ever appended (monotonic cursor horizon)
 
 // --- proven-thread-only outcome state ----------------------------------------------
@@ -142,7 +142,7 @@ void emit(uint32_t action, uint32_t reason, int32_t status) {
     // head increment is sufficient; the per-slot seq is stored LAST (release) so a concurrent
     // reader either sees the fully-written slot for this seq or an older one it will reject.
     uint64_t seq = g_event_head.load(std::memory_order_relaxed) + 1;
-    EventSlot &slot = g_events[seq % PGR_OBS_EVENT_RING];
+    EventSlot &slot = g_events[seq % PGS_OBS_EVENT_RING];
     slot.seq.store(0, std::memory_order_release);          // mark slot in-progress / invalid
     slot.tid.store(tid, std::memory_order_relaxed);
     slot.action.store(action, std::memory_order_relaxed);
@@ -257,27 +257,27 @@ void outcome(void *response, int32_t status) {
     for (int i = 0; i < g_seen_count; ++i) if (gc_target(g_seen[i].handle) == response) return;
 
     uint64_t now = boottime_ms();
-    if (now == 0) { latch_fault(); emit(PGR_OBS_A_OUTCOME_UNAVAILABLE, PGR_OBS_R_NONE, status); return; }
+    if (now == 0) { latch_fault(); emit(PGS_OBS_A_OUTCOME_UNAVAILABLE, PGS_OBS_R_NONE, status); return; }
     if (now - g_oc_window >= 1000) { g_oc_window = now; g_oc_hits = 0; }
     if (++g_oc_hits > kOutcomesPerSec) { g_dropped.fetch_add(1, std::memory_order_relaxed); return; }
 
     if (g_seen_count >= kOutcomeSeen) seen_free_index(0); // free the oldest
     void *h = gc_new(response);
     if (h == nullptr) { g_dropped.fetch_add(1, std::memory_order_relaxed);
-                        emit(PGR_OBS_A_OUTCOME_UNAVAILABLE, PGR_OBS_R_NONE, status); return; }
+                        emit(PGS_OBS_A_OUTCOME_UNAVAILABLE, PGS_OBS_R_NONE, status); return; }
     g_seen[g_seen_count].handle = h;
     g_seen[g_seen_count].expires = now + kOutcomeMs;
     ++g_seen_count;
 
-    if (status == g_config.status_success)      { g_confirmed.fetch_add(1, std::memory_order_relaxed);  emit(PGR_OBS_A_OUTCOME_CONFIRMED, PGR_OBS_R_CAUGHT, status); }
-    else if (status == g_config.status_escape)  { g_confirmed.fetch_add(1, std::memory_order_relaxed);  emit(PGR_OBS_A_OUTCOME_CONFIRMED, PGR_OBS_R_BROKE_FREE, status); }
-    else if (status == g_config.status_flee)    { g_confirmed.fetch_add(1, std::memory_order_relaxed);  emit(PGR_OBS_A_OUTCOME_CONFIRMED, PGR_OBS_R_FLED, status); }
+    if (status == g_config.status_success)      { g_confirmed.fetch_add(1, std::memory_order_relaxed);  emit(PGS_OBS_A_OUTCOME_CONFIRMED, PGS_OBS_R_CAUGHT, status); }
+    else if (status == g_config.status_escape)  { g_confirmed.fetch_add(1, std::memory_order_relaxed);  emit(PGS_OBS_A_OUTCOME_CONFIRMED, PGS_OBS_R_BROKE_FREE, status); }
+    else if (status == g_config.status_flee)    { g_confirmed.fetch_add(1, std::memory_order_relaxed);  emit(PGS_OBS_A_OUTCOME_CONFIRMED, PGS_OBS_R_FLED, status); }
     else {
-        uint32_t reason = PGR_OBS_R_UNKNOWN;
-        if (status == g_config.status_missed) reason = PGR_OBS_R_AMBIGUOUS;
-        else if (status == g_config.status_error || status == g_config.status_item_replacement) reason = PGR_OBS_R_NOT_CONFIRMED;
+        uint32_t reason = PGS_OBS_R_UNKNOWN;
+        if (status == g_config.status_missed) reason = PGS_OBS_R_AMBIGUOUS;
+        else if (status == g_config.status_error || status == g_config.status_item_replacement) reason = PGS_OBS_R_NOT_CONFIRMED;
         g_suppressed.fetch_add(1, std::memory_order_relaxed);
-        emit(PGR_OBS_A_OUTCOME_SUPPRESSED, reason, status);
+        emit(PGS_OBS_A_OUTCOME_SUPPRESSED, reason, status);
     }
 }
 
@@ -286,8 +286,8 @@ void *btxu_replacement(void *self, void *method) {
     void *caller = __builtin_return_address(0);
     g_last_caller.store(caller, std::memory_order_relaxed);
     BtxuFn orig = original_for(g_orig_btxu);
-    pgr_interaction_owner::Phase observer(19);
-    PgrObsBerryFilter filter=g_berry_filter.load(std::memory_order_acquire);
+    pgs_interaction_owner::Phase observer(19);
+    PgsObsBerryFilter filter=g_berry_filter.load(std::memory_order_acquire);
     if(filter&&(static_cast<uint64_t>(gettid())!=g_berry_owner||!attached()))filter=nullptr;
     // Preserve the single deferred receiver bound after a result-root failure.
     // Until the owner drains it, no new optional observer can acquire another.
@@ -324,7 +324,7 @@ void *btxu_replacement(void *self, void *method) {
     void *self_h = nullptr;
     void *resp_h = nullptr;
     CatchFrame cleanup{self_h,resp_h,held_busy};
-    pgr_interaction_owner::AbortBeforeRoots unwind{observer};
+    pgs_interaction_owner::AbortBeforeRoots unwind{observer};
     if (armed || observer.wanted() || filter) {
         self_h = gc_new(self);
         if (self && self_h == nullptr) { latch_fault(); armed = false; }
@@ -362,10 +362,10 @@ void *btxu_replacement(void *self, void *method) {
         outcome(resp, status);
         // A Max Battle catch's summary is left to the game, so Quick catch never transfers it: hand it to
         // the transfer rules (Keep Dynamax / Keep Gigantamax decide there), thrown by hand or not.
-        if (status == g_config.status_success && pgr_queue_caught_transfer) {
+        if (status == g_config.status_success && pgs_queue_caught_transfer) {
             bool max_ball = read_u8(gc_target(self_h), g_config.field_bread) == 1;
             if (!max_ball) if (auto context = g_max_context.load(std::memory_order_acquire)) max_ball = context(gc_target(self_h)) == 1;
-            if (max_ball) pgr_queue_caught_transfer(gc_target(resp_h));
+            if (max_ball) pgs_queue_caught_transfer(gc_target(resp_h));
         }
         // Observe-only (Catch preview without Quick catch): report the outcome, leave the animation.
         if (g_enabled.load(std::memory_order_relaxed) != 1) break;
@@ -375,7 +375,7 @@ void *btxu_replacement(void *self, void *method) {
 
         // Concurrent owned speed attempt -> skip (no re-apply).
         PgrSpeedSample ss{};
-        if (speed()->sample(&ss) == 0 && ss.owned) { emit(PGR_OBS_A_SKIP, PGR_OBS_R_CONCURRENT, status); break; }
+        if (speed()->sample(&ss) == 0 && ss.owned) { emit(PGS_OBS_A_SKIP, PGS_OBS_R_CONCURRENT, status); break; }
 
         void *ball = gc_target(self_h);
         uint8_t bread = read_u8(ball, g_config.field_bread);
@@ -383,7 +383,7 @@ void *btxu_replacement(void *self, void *method) {
         if(auto context=g_max_context.load(std::memory_order_acquire)){
             const int kind=context(gc_target(self_h));
             if(kind==1)bread=1;
-            else if(kind<0)emit(PGR_OBS_A_SKIP,24,status); // observable, ordinary fallback remains
+            else if(kind<0)emit(PGS_OBS_A_SKIP,24,status); // observable, ordinary fallback remains
         }
         // Ordinary flee behavior remains unchanged. Max flee uses the same scoped
         // animator ownership as catch/escape, with per-tick end/reset/destroy cleanup.
@@ -392,12 +392,12 @@ void *btxu_replacement(void *self, void *method) {
         float max_baseline=0;
         if (bread) {
             if (!max_speed || g_max_owner!=static_cast<uint64_t>(gettid())) {
-                emit(PGR_OBS_A_SKIP,PGR_OBS_R_SPECIAL,status); break;
+                emit(PGS_OBS_A_SKIP,PGS_OBS_R_SPECIAL,status); break;
             }
             reinterpret_cast<void(*)(void*,void*,void*)>(g_config.field_get_value)(
                 gc_target(self_h),g_max_field,&max_baseline);
             if (!std::isfinite(max_baseline) || max_baseline<=0 || max_baseline>2) {
-                emit(PGR_OBS_A_SKIP,PGR_OBS_R_MAX_SPEED,status); break;
+                emit(PGS_OBS_A_SKIP,PGS_OBS_R_MAX_SPEED,status); break;
             }
         }
 
@@ -407,7 +407,7 @@ void *btxu_replacement(void *self, void *method) {
         // Consult the revocation generation + re-check the gate immediately before the delegated
         // mutation: a stop() since arm time (or a lost thread/lease) must suppress the apply.
         if (g_gen.load(std::memory_order_acquire) != gen0 || !gate_open()) {
-            emit(PGR_OBS_A_SKIP, PGR_OBS_R_REVOKED, status); break;
+            emit(PGS_OBS_A_SKIP, PGS_OBS_R_REVOKED, status); break;
         }
 
         // Micro-refresh feature8's lease (== JS s.nativeSpeed.update()), then delegate the apply.
@@ -421,7 +421,7 @@ void *btxu_replacement(void *self, void *method) {
         if (bread) max_speed->apply_max(animator,gc_target(resp_h),max_baseline);
         else speed()->apply(animator, gc_target(resp_h));
         g_applied.fetch_add(1, std::memory_order_relaxed);
-        emit(PGR_OBS_A_APPLIED, bread?PGR_OBS_R_MAX:PGR_OBS_R_NONE, status);
+        emit(PGS_OBS_A_APPLIED, bread?PGS_OBS_R_MAX:PGS_OBS_R_NONE, status);
     } while (false);
 
     // Free every OTHER managed handle FIRST: a safepoint inside those frees could relocate the
@@ -449,9 +449,9 @@ void completion_body(void *self, void *response, void *method, CompletionFn orig
 
     void *self_h = nullptr, *resp_h = nullptr;
     bool held_busy=false;
-    pgr_interaction_owner::Phase observer(reason==5?10:11);
+    pgs_interaction_owner::Phase observer(reason==5?10:11);
     CatchFrame cleanup{self_h,resp_h,held_busy};
-    pgr_interaction_owner::AbortBeforeRoots unwind{observer};
+    pgs_interaction_owner::AbortBeforeRoots unwind{observer};
     if (response != nullptr && on_cleanup_thread() && attached() &&
         !g_busy.exchange(1, std::memory_order_acquire)) {
         held_busy=true;
@@ -467,8 +467,8 @@ void completion_body(void *self, void *response, void *method, CompletionFn orig
                 actual_reason=13;
             speed()->complete(gc_target(resp_h), actual_reason); // feature8 re-resolves + compares
             g_completed.fetch_add(1, std::memory_order_relaxed);
-            emit(PGR_OBS_A_COMPLETED, actual_reason==13?PGR_OBS_R_FLED:
-                 reason == 6 ? PGR_OBS_R_BROKE_FREE : PGR_OBS_R_CAUGHT, 0);
+            emit(PGS_OBS_A_COMPLETED, actual_reason==13?PGS_OBS_R_FLED:
+                 reason == 6 ? PGS_OBS_R_BROKE_FREE : PGS_OBS_R_CAUGHT, 0);
         } else if((self&&!self_h)||(response&&!resp_h)) {
             latch_fault(); // root failure: fail closed, still forward the game's own body below
         }
@@ -518,13 +518,13 @@ bool config_ok(const PgrObsConfig *c) {
 
 // --- C API table functions ---------------------------------------------------------
 int api_install(const PgrObsConfig *config) {
-    if (config == nullptr) return PGR_OBS_ERR_NULL;
+    if (config == nullptr) return PGS_OBS_ERR_NULL;
     std::lock_guard<std::mutex> lock(g_install_mutex);
-    if (g_install_failed) return PGR_OBS_ERR_HOOK;
+    if (g_install_failed) return PGS_OBS_ERR_HOOK;
     if (config->version != 1 || config->size != sizeof(PgrObsConfig) || !config_ok(config))
-        return PGR_OBS_ERR_BAD_CONFIG;
+        return PGS_OBS_ERR_BAD_CONFIG;
     if (g_installed.load(std::memory_order_acquire)) {
-        return std::memcmp(&g_config, config, sizeof(g_config)) == 0 ? PGR_OBS_OK : PGR_OBS_ERR_HOOK;
+        return std::memcmp(&g_config, config, sizeof(g_config)) == 0 ? PGS_OBS_OK : PGS_OBS_ERR_HOOK;
     }
     g_config = *config; // publish before any callback can read it (still under lock)
 
@@ -538,9 +538,9 @@ int api_install(const PgrObsConfig *config) {
     // game's own method runs; targets that hooked cleanly (valid trampoline) are never unhooked
     // (no unsafe unhook of a live sibling) -- they stay installed and simply pass through because
     // the policy can never arm once this install is marked failed.
-    if (rc_b == 0 && b == nullptr) { pgs_unhook(g_config.code_btxu);    rc_b = PGR_OBS_ERR_HOOK; }
-    if (rc_c == 0 && c == nullptr) { pgs_unhook(g_config.code_caught);  rc_c = PGR_OBS_ERR_HOOK; }
-    if (rc_e == 0 && e == nullptr) { pgs_unhook(g_config.code_escaped); rc_e = PGR_OBS_ERR_HOOK; }
+    if (rc_b == 0 && b == nullptr) { pgs_unhook(g_config.code_btxu);    rc_b = PGS_OBS_ERR_HOOK; }
+    if (rc_c == 0 && c == nullptr) { pgs_unhook(g_config.code_caught);  rc_c = PGS_OBS_ERR_HOOK; }
+    if (rc_e == 0 && e == nullptr) { pgs_unhook(g_config.code_escaped); rc_e = PGS_OBS_ERR_HOOK; }
 
     if (rc_b != 0 || rc_c != 0 || rc_e != 0) {
         // Permanent inert partial patch: publish EVERY original we obtained so each still-live
@@ -550,60 +550,60 @@ int api_install(const PgrObsConfig *config) {
         g_orig_caught.store(c, std::memory_order_release);
         g_orig_escaped.store(e, std::memory_order_release);
         g_install_failed = true;
-        return PGR_OBS_ERR_HOOK;
+        return PGS_OBS_ERR_HOOK;
     }
     g_orig_btxu.store(b, std::memory_order_release);
     g_orig_caught.store(c, std::memory_order_release);
     g_orig_escaped.store(e, std::memory_order_release);
     g_installed.store(true, std::memory_order_release);
-    return PGR_OBS_OK;
+    return PGS_OBS_OK;
 }
 
 int api_update(int enabled, uint64_t lease_ms, uint64_t unity_tid, void *expected_caller) {
-    if (!g_installed.load(std::memory_order_acquire)) return PGR_OBS_ERR_NOT_INSTALLED;
-    if (lease_ms > kMaxLeaseMs) { gate_close(); return PGR_OBS_ERR_LEASE; }
-    if (!enabled) { gate_close(); g_stopping.store(1, std::memory_order_relaxed); return PGR_OBS_OK; }
-    if (enabled != 1 && enabled != 2) { gate_close(); return PGR_OBS_ERR_BAD_ARG; }
-    if (unity_tid == 0 || lease_ms == 0) { gate_close(); return PGR_OBS_ERR_BAD_ARG; }
+    if (!g_installed.load(std::memory_order_acquire)) return PGS_OBS_ERR_NOT_INSTALLED;
+    if (lease_ms > kMaxLeaseMs) { gate_close(); return PGS_OBS_ERR_LEASE; }
+    if (!enabled) { gate_close(); g_stopping.store(1, std::memory_order_relaxed); return PGS_OBS_OK; }
+    if (enabled != 1 && enabled != 2) { gate_close(); return PGS_OBS_ERR_BAD_ARG; }
+    if (unity_tid == 0 || lease_ms == 0) { gate_close(); return PGS_OBS_ERR_BAD_ARG; }
     uint64_t now = boottime_ms();
-    if (now == 0) { gate_close(); return PGR_OBS_ERR_LEASE; }
+    if (now == 0) { gate_close(); return PGS_OBS_ERR_LEASE; }
     g_caller.store(expected_caller, std::memory_order_relaxed);
     g_tid.store(unity_tid, std::memory_order_relaxed);
     g_cleanup_tid.store(unity_tid, std::memory_order_relaxed);
     g_lease_deadline.store(now + lease_ms, std::memory_order_relaxed);
     g_stopping.store(0, std::memory_order_relaxed);
     g_enabled.store(enabled, std::memory_order_relaxed);
-    return PGR_OBS_OK;
+    return PGS_OBS_OK;
 }
 
 int api_tick(uint64_t proven_tid) {
-    if (!g_installed.load(std::memory_order_acquire)) return PGR_OBS_ERR_NOT_INSTALLED;
-    if (proven_tid == 0 || static_cast<uint64_t>(gettid()) != proven_tid) return PGR_OBS_OK;
-    if (proven_tid != g_cleanup_tid.load(std::memory_order_relaxed)) return PGR_OBS_OK;
+    if (!g_installed.load(std::memory_order_acquire)) return PGS_OBS_ERR_NOT_INSTALLED;
+    if (proven_tid == 0 || static_cast<uint64_t>(gettid()) != proven_tid) return PGS_OBS_OK;
+    if (proven_tid != g_cleanup_tid.load(std::memory_order_relaxed)) return PGS_OBS_OK;
     // Prune frees GC handles (a managed call); only run it on an il2cpp-attached thread. If the
     // thread is detached the bounded (<=4) seen ring is simply held until a later attached tick.
-    if (!attached()) return PGR_OBS_OK;
-    if (g_busy.exchange(1, std::memory_order_acquire)) return PGR_OBS_OK;
+    if (!attached()) return PGS_OBS_OK;
+    if (g_busy.exchange(1, std::memory_order_acquire)) return PGS_OBS_OK;
     if(void *h=g_deferred_self.exchange(nullptr,std::memory_order_acq_rel))gc_free(h);
     prune_seen();
     g_busy.store(0, std::memory_order_release);
-    return PGR_OBS_OK;
+    return PGS_OBS_OK;
 }
 
 int api_stop(uint64_t /*proven_tid*/) {
-    if (!g_installed.load(std::memory_order_acquire)) return PGR_OBS_ERR_NOT_INSTALLED;
+    if (!g_installed.load(std::memory_order_acquire)) return PGS_OBS_ERR_NOT_INSTALLED;
     // Immediate revoke from any thread. Frees nothing: the proven tick drains the seen ring.
     g_stopping.store(1, std::memory_order_relaxed);
     g_enabled.store(0, std::memory_order_relaxed);
     g_lease_deadline.store(0, std::memory_order_relaxed);
     g_gen.fetch_add(1, std::memory_order_relaxed);
-    return PGR_OBS_OK;
+    return PGS_OBS_OK;
 }
 
 int api_sample(PgrObsSample *out) {
-    if (out == nullptr) return PGR_OBS_ERR_NULL;
+    if (out == nullptr) return PGS_OBS_ERR_NULL;
     std::lock_guard<std::mutex> event_lock(g_event_mutex);
-    out->version    = PGR_OBS_SAMPLE_VERSION;
+    out->version    = PGS_OBS_SAMPLE_VERSION;
     out->size       = sizeof(PgrObsSample);
     out->confirmed  = g_confirmed.load(std::memory_order_relaxed);
     out->suppressed = g_suppressed.load(std::memory_order_relaxed);
@@ -623,7 +623,7 @@ int api_sample(PgrObsSample *out) {
     // reader then inspects for seq s <= head has already been published; each slot carries its
     // own seq so the JS adapter rejects a torn/overwritten slot (seq != expected) and detects a
     // gap (a seq skipped because the ring wrapped between polls -> 'outcome-dropped').
-    for (uint32_t i = 0; i < PGR_OBS_EVENT_RING; ++i) {
+    for (uint32_t i = 0; i < PGS_OBS_EVENT_RING; ++i) {
         PgrObsEvent &dst = out->events[i];
         const EventSlot &src = g_events[i];
         uint64_t s1 = src.seq.load(std::memory_order_acquire);
@@ -637,7 +637,7 @@ int api_sample(PgrObsSample *out) {
     }
     out->event_head = g_event_head.load(std::memory_order_acquire);
     out->serial     = static_cast<uint32_t>(out->event_head);
-    return PGR_OBS_OK;
+    return PGS_OBS_OK;
 }
 
 const PgrObsApi g_api = {
@@ -649,44 +649,44 @@ const PgrObsApi g_api = {
     &api_sample,
 };
 
-int register_berry_filter(PgrObsBerryFilter filter,uint64_t tid){
-    if(!g_installed.load(std::memory_order_acquire))return PGR_OBS_ERR_NOT_INSTALLED;
-    if(!filter||!tid||tid!=static_cast<uint64_t>(gettid())||!attached())return PGR_OBS_ERR_BAD_ARG;
+int register_berry_filter(PgsObsBerryFilter filter,uint64_t tid){
+    if(!g_installed.load(std::memory_order_acquire))return PGS_OBS_ERR_NOT_INSTALLED;
+    if(!filter||!tid||tid!=static_cast<uint64_t>(gettid())||!attached())return PGS_OBS_ERR_BAD_ARG;
     std::lock_guard<std::mutex> lock(g_install_mutex);
     auto existing=g_berry_filter.load(std::memory_order_acquire);
-    if(existing)return existing==filter&&g_berry_owner==tid?PGR_OBS_OK:PGR_OBS_ERR_BAD_CONFIG;
+    if(existing)return existing==filter&&g_berry_owner==tid?PGS_OBS_OK:PGS_OBS_ERR_BAD_CONFIG;
     uint64_t owner=g_cleanup_tid.load(std::memory_order_relaxed);
-    if(owner&&owner!=tid)return PGR_OBS_ERR_BAD_ARG;
+    if(owner&&owner!=tid)return PGS_OBS_ERR_BAD_ARG;
     g_cleanup_tid.store(tid,std::memory_order_relaxed);g_berry_owner=tid;
-    g_berry_filter.store(filter,std::memory_order_release);return PGR_OBS_OK;
+    g_berry_filter.store(filter,std::memory_order_release);return PGS_OBS_OK;
 }
 int berry_filter_ready(){return g_berry_filter.load(std::memory_order_acquire)?1:0;}
-const PgrObsApi2 g_api2={2,sizeof(PgrObsApi2),register_berry_filter,berry_filter_ready};
+const PgsObsApi2 g_api2={2,sizeof(PgsObsApi2),register_berry_filter,berry_filter_ready};
 
 int register_max(void *field,const PgrSpeedApi2 *api,uint64_t tid){
-    if(!g_installed.load(std::memory_order_acquire))return PGR_OBS_ERR_NOT_INSTALLED;
+    if(!g_installed.load(std::memory_order_acquire))return PGS_OBS_ERR_NOT_INSTALLED;
     if(!field||!api||api->version!=2||api->size!=sizeof(*api)||!api->apply_max)
-        return PGR_OBS_ERR_BAD_CONFIG;
-    if(!tid||tid!=static_cast<uint64_t>(gettid())||!attached())return PGR_OBS_ERR_BAD_ARG;
+        return PGS_OBS_ERR_BAD_CONFIG;
+    if(!tid||tid!=static_cast<uint64_t>(gettid())||!attached())return PGS_OBS_ERR_BAD_ARG;
     std::lock_guard<std::mutex> lock(g_install_mutex);
     if(auto existing=g_max_speed.load(std::memory_order_acquire))
-        return existing==api&&g_max_field==field&&g_max_owner==tid?PGR_OBS_OK:PGR_OBS_ERR_BAD_CONFIG;
+        return existing==api&&g_max_field==field&&g_max_owner==tid?PGS_OBS_OK:PGS_OBS_ERR_BAD_CONFIG;
     uint64_t owner=g_cleanup_tid.load(std::memory_order_relaxed);
-    if(owner&&owner!=tid)return PGR_OBS_ERR_BAD_ARG;
+    if(owner&&owner!=tid)return PGS_OBS_ERR_BAD_ARG;
     g_max_field=field;g_max_owner=tid;g_cleanup_tid.store(tid,std::memory_order_relaxed);
-    g_max_speed.store(api,std::memory_order_release);return PGR_OBS_OK;
+    g_max_speed.store(api,std::memory_order_release);return PGS_OBS_OK;
 }
-const PgrObsApi3 g_api3={3,sizeof(PgrObsApi3),register_max};
-int register_context(PgrObsMaxContext reader,uint64_t tid){
-    if(!g_installed.load(std::memory_order_acquire))return PGR_OBS_ERR_NOT_INSTALLED;
+const PgsObsApi3 g_api3={3,sizeof(PgsObsApi3),register_max};
+int register_context(PgsObsMaxContext reader,uint64_t tid){
+    if(!g_installed.load(std::memory_order_acquire))return PGS_OBS_ERR_NOT_INSTALLED;
     if(!reader||!tid||tid!=static_cast<uint64_t>(gettid())||!attached()||tid!=g_max_owner)
-        return PGR_OBS_ERR_BAD_ARG;
+        return PGS_OBS_ERR_BAD_ARG;
     std::lock_guard<std::mutex> lock(g_install_mutex);
     auto previous=g_max_context.load(std::memory_order_acquire);
-    if(previous&&previous!=reader)return PGR_OBS_ERR_BAD_CONFIG;
-    g_max_context.store(reader,std::memory_order_release);return PGR_OBS_OK;
+    if(previous&&previous!=reader)return PGS_OBS_ERR_BAD_CONFIG;
+    g_max_context.store(reader,std::memory_order_release);return PGS_OBS_OK;
 }
-const PgrObsApi4 g_api4={4,sizeof(PgrObsApi4),register_context};
+const PgsObsApi4 g_api4={4,sizeof(PgsObsApi4),register_context};
 
 } // namespace
 

@@ -18,7 +18,7 @@
 // WildMapPokemon.SendEncounterRequest for the check and the encounter response the game keeps on the map
 // Pokemon for the answer. Only while the game is active and the map is showing.
 namespace {
-using namespace pgr_shiny_scan;
+using namespace pgs_shiny_scan;
 using namespace pgr_shared_meta;
 struct Failure {const char *where;};
 void require(bool ok,const char *where){if(!ok)throw Failure{where};}
@@ -172,8 +172,8 @@ void mark(uint64_t now){
   if(!st.gone_told){st.gone_told=true;event("\"phase\":\"gone\",\"id\":\""+std::to_string(st.shiny_id)+"\"");}
   return;
  }
- const auto *api=static_cast<const PgrVgpMarkerApi*>(pgs_vgp_marker_api(1));
- PgrVgpMarkerResult r{};r.version=1;r.size=sizeof(r);
+ const auto *api=static_cast<const PgsVgpMarkerApi*>(pgs_vgp_marker_api(1));
+ PgsVgpMarkerResult r{};r.version=1;r.size=sizeof(r);
  const bool visible=api&&api->project&&api->project(wild,2500,owner,&r)==1&&r.visible&&std::isfinite(r.x)&&std::isfinite(r.y);
  if(!visible){if(st.marked)show_mark(false,0,0);return;}
  // Without a head point the symbol goes a little above the Pokemon's feet.
@@ -301,11 +301,11 @@ void catch_step(const Config &c,uint64_t now){
  }
  if(st.step==C_BERRY_WAIT||st.step==C_THROW_WAIT){
   auto vr=static_cast<const PgrVgpResultsApi*>(pgs_vgp_results_api(1));require(vr,"response polling unavailable");
-  PgrVgpResultsResult out{};const int rc=vr->poll(st.promise.get(),PGR_VR_PHASE_ENCOUNTER,owner,&out);Root value;value.h=out.value_handle;
-  if(rc==PGR_VR_PENDING&&now-st.catch_since<=(st.step==C_BERRY_WAIT?kBerryMs:kThrowMs))return;
+  PgrVgpResultsResult out{};const int rc=vr->poll(st.promise.get(),PGS_VR_PHASE_ENCOUNTER,owner,&out);Root value;value.h=out.value_handle;
+  if(rc==PGS_VR_PENDING&&now-st.catch_since<=(st.step==C_BERRY_WAIT?kBerryMs:kThrowMs))return;
   st.promise.reset();
   if(st.step==C_BERRY_WAIT){throw_ball(now);return;}  // the throw goes ahead either way
-  if(rc!=PGR_VR_DONE||!value){catch_event("failed",rc==PGR_VR_PENDING?"No answer to the throw":"Throw failed");st.step=C_NONE;st.throws=0;return;}
+  if(rc!=PGS_VR_DONE||!value){catch_event("failed",rc==PGS_VR_PENDING?"No answer to the throw":"Throw failed");st.step=C_NONE;st.throws=0;return;}
   read_catch(value,now);return;
  }
  if(st.step==C_BERRY&&now>=st.catch_next&&c.active){
@@ -378,7 +378,7 @@ void scan(const Config &c,uint64_t now){
 void drop_pending(){for(const auto &p:st.pending)failed(p.id,true,"Stopped before it answered");st.pending.clear();}
 }  // namespace
 
-void pgr_shiny_scan_tick(uint64_t tid,const PgrSharedMetadataOutput *metadata){
+void pgs_shiny_scan_tick(uint64_t tid,const PgrSharedMetadataOutput *metadata){
  if(busy||faulted||!tid||tid!=uint64_t(gettid())||(owner&&owner!=tid))return;
  struct Guard{Guard(){busy=true;}~Guard(){busy=false;}}guard;
  const Config c=configured();const uint64_t now=clock_ms();
@@ -410,7 +410,7 @@ void pgr_shiny_scan_tick(uint64_t tid,const PgrSharedMetadataOutput *metadata){
   event("\"phase\":\"error\",\"message\":"+quote(std::string("Shiny Scanner stopped: ")+f.where));
  }catch(...){faulted=true;st.pending.clear();event("\"phase\":\"error\",\"message\":\"Shiny Scanner stopped after an unexpected error\"");}
 }
-void pgr_shiny_scan_stop(uint64_t tid){
+void pgs_shiny_scan_stop(uint64_t tid){
  if(!initialized||tid!=owner||tid!=uint64_t(gettid()))return;
  st.pending.clear();st.marked=false;release();st.items.reset();st.berry_reflection.reset();st.catch_reflection.reset();st.berry_method=st.catch_method=nullptr;st.seen.clear();st.counted.clear();st.pace=Pace{};st.status.clear();st.next_scan=0;
 }

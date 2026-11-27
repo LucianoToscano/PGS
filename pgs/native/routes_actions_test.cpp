@@ -36,7 +36,7 @@ int f_playRoute, f_playPaused, f_playCompletedWalk, f_playAcquiredReward, f_play
     f_sharedId, f_sharedReversible, f_dataPublishedRoute, f_dataReversed;
 
 // ----- fake managed objects --------------------------------------------------------
-struct FakeString { void *klass; uint16_t chars[PGR_RA_ID_MAX]; int32_t len; };
+struct FakeString { void *klass; uint16_t chars[PGS_RA_ID_MAX]; int32_t len; };
 struct FakeShared { void *klass; void *id; uint8_t reversible; };
 struct FakePlay {
   void *klass; void *route;
@@ -57,7 +57,7 @@ FakeBox g_false_box{&cls_bool, 0};
 
 FakeString make_string(const char *ascii) {
   FakeString s{&cls_string, {}, 0};
-  for (int i = 0; ascii[i] && i < PGR_RA_ID_MAX; ++i) { s.chars[i] = static_cast<uint16_t>(ascii[i]); ++s.len; }
+  for (int i = 0; ascii[i] && i < PGS_RA_ID_MAX; ++i) { s.chars[i] = static_cast<uint16_t>(ascii[i]); ++s.len; }
   return s;
 }
 
@@ -202,7 +202,7 @@ PgrRoutesActionsRequest make_req(uint32_t action, uint64_t tid, uint64_t residua
   r.tid = tid; r.residual_ms = residual; r.generation = g_api->generation();
   r.service_handle = svc_handle; r.route_handle = route_handle; r.seq = seq;
   r.action = action; r.reversed = reversed ? 1 : 0;
-  if (id) { for (int i = 0; id[i] && i < PGR_RA_ID_MAX; ++i) { r.id[i] = static_cast<uint16_t>(id[i]); ++r.id_length; } }
+  if (id) { for (int i = 0; id[i] && i < PGS_RA_ID_MAX; ++i) { r.id[i] = static_cast<uint16_t>(id[i]); ++r.id_length; } }
   return r;
 }
 uint64_t next_seq() { return ++g_seq; }
@@ -243,15 +243,15 @@ int main(int argc, char **argv) {
 
   // 1. Validation + not-installed + idempotence + reconfig. generation starts at 1.
   assert(api->generation() == 1);
-  assert(api->install(nullptr) == PGR_RA_ERR_NULL_ARG);
-  { PgrRoutesActionsConfig bad = cfg; bad.version = 2; assert(api->install(&bad) == PGR_RA_ERR_BAD_VERSION); }
-  { PgrRoutesActionsConfig bad = cfg; bad.size = sizeof(cfg) - 1; assert(api->install(&bad) == PGR_RA_ERR_BAD_SIZE); }
-  { PgrRoutesActionsConfig bad = cfg; bad.m_start = nullptr; assert(api->install(&bad) == PGR_RA_ERR_MISSING_PTR); }
-  { PgrRoutesActionsRequest r = make_req(PGR_RA_ACT_CURRENT, tid, 2000, 1, 0, 0, nullptr, false);
-    assert(api->execute(&r, &out) == PGR_RA_ERR_NOT_INSTALLED); }
-  assert(api->install(&cfg) == PGR_RA_OK);
-  assert(api->install(&cfg) == PGR_RA_OK);  // idempotent
-  { PgrRoutesActionsConfig bad = cfg; bad.class_play = &cls_shared; assert(api->install(&bad) == PGR_RA_ERR_RECONFIG); }
+  assert(api->install(nullptr) == PGS_RA_ERR_NULL_ARG);
+  { PgrRoutesActionsConfig bad = cfg; bad.version = 2; assert(api->install(&bad) == PGS_RA_ERR_BAD_VERSION); }
+  { PgrRoutesActionsConfig bad = cfg; bad.size = sizeof(cfg) - 1; assert(api->install(&bad) == PGS_RA_ERR_BAD_SIZE); }
+  { PgrRoutesActionsConfig bad = cfg; bad.m_start = nullptr; assert(api->install(&bad) == PGS_RA_ERR_MISSING_PTR); }
+  { PgrRoutesActionsRequest r = make_req(PGS_RA_ACT_CURRENT, tid, 2000, 1, 0, 0, nullptr, false);
+    assert(api->execute(&r, &out) == PGS_RA_ERR_NOT_INSTALLED); }
+  assert(api->install(&cfg) == PGS_RA_OK);
+  assert(api->install(&cfg) == PGS_RA_OK);  // idempotent
+  { PgrRoutesActionsConfig bad = cfg; bad.class_play = &cls_shared; assert(api->install(&bad) == PGS_RA_ERR_RECONFIG); }
 
   // Fake heap: a consumption service (eligible play) + a routes service + a route definition.
   FakeString route_id = make_string("route-abc");
@@ -265,29 +265,29 @@ int main(int argc, char **argv) {
   const uintptr_t hShared = insert_host_handle(&shared);
 
   // 2. ABI header rejections (null request / bad version / bad size).
-  { PgrRoutesActionsRequest r = make_req(PGR_RA_ACT_CURRENT, tid, 2000, hCons, 0, 0, nullptr, false);
-    r.version = 2; assert(api->execute(&r, &out) == PGR_RA_ERR_BAD_VERSION);
-    r = make_req(PGR_RA_ACT_CURRENT, tid, 2000, hCons, 0, 0, nullptr, false); r.size = 1;
-    assert(api->execute(&r, &out) == PGR_RA_ERR_BAD_SIZE);
-    assert(api->execute(nullptr, &out) == PGR_RA_ERR_NULL_ARG); }
+  { PgrRoutesActionsRequest r = make_req(PGS_RA_ACT_CURRENT, tid, 2000, hCons, 0, 0, nullptr, false);
+    r.version = 2; assert(api->execute(&r, &out) == PGS_RA_ERR_BAD_VERSION);
+    r = make_req(PGS_RA_ACT_CURRENT, tid, 2000, hCons, 0, 0, nullptr, false); r.size = 1;
+    assert(api->execute(&r, &out) == PGS_RA_ERR_BAD_SIZE);
+    assert(api->execute(nullptr, &out) == PGS_RA_ERR_NULL_ARG); }
 
   // 3. CURRENT: populated snapshot with every flag mapped, id decoded. Latches the owner.
   { reset_invoke_state();
     cons.hasStarted = 1; cons.inRangeOfEnd = 1; cons.inRangeToResume = 1; cons.isCompleting = 1;
     play.paused = 1; play.completedWalk = 1; play.acquiredReward = 1; play.travelInReverse = 1;
-    PgrRoutesActionsRequest r = make_req(PGR_RA_ACT_CURRENT, tid, 2000, hCons, 0, 0, nullptr, false);
-    assert(api->execute(&r, &out) == PGR_RA_SUCCESS && out.reason == PGR_RA_REASON_NONE);
-    const uint32_t expect = PGR_RA_FLAG_PRESENT | PGR_RA_FLAG_STARTED | PGR_RA_FLAG_PAUSED |
-      PGR_RA_FLAG_COMPLETED_WALK | PGR_RA_FLAG_ACQUIRED_REWARD | PGR_RA_FLAG_IN_RANGE_END |
-      PGR_RA_FLAG_IN_RANGE_RESUME | PGR_RA_FLAG_IS_COMPLETING | PGR_RA_FLAG_REVERSED;
+    PgrRoutesActionsRequest r = make_req(PGS_RA_ACT_CURRENT, tid, 2000, hCons, 0, 0, nullptr, false);
+    assert(api->execute(&r, &out) == PGS_RA_SUCCESS && out.reason == PGS_RA_REASON_NONE);
+    const uint32_t expect = PGS_RA_FLAG_PRESENT | PGS_RA_FLAG_STARTED | PGS_RA_FLAG_PAUSED |
+      PGS_RA_FLAG_COMPLETED_WALK | PGS_RA_FLAG_ACQUIRED_REWARD | PGS_RA_FLAG_IN_RANGE_END |
+      PGS_RA_FLAG_IN_RANGE_RESUME | PGS_RA_FLAG_IS_COMPLETING | PGS_RA_FLAG_REVERSED;
     assert(out.flags == expect);
     assert(out.id_length == route_id.len && std::memcmp(out.id, route_id.chars, out.id_length * 2) == 0);
     assert_no_leak(); }
 
   // 3b. CURRENT empty when no play (legacy preservation): flags 0, id_length 0, success.
   { reset_invoke_state(); cons.currentPlay = nullptr;
-    PgrRoutesActionsRequest r = make_req(PGR_RA_ACT_CURRENT, tid, 2000, hCons, 0, 0, nullptr, false);
-    assert(api->execute(&r, &out) == PGR_RA_SUCCESS && out.flags == 0 && out.id_length == 0);
+    PgrRoutesActionsRequest r = make_req(PGS_RA_ACT_CURRENT, tid, 2000, hCons, 0, 0, nullptr, false);
+    assert(api->execute(&r, &out) == PGS_RA_SUCCESS && out.flags == 0 && out.id_length == 0);
     cons.currentPlay = &play; assert_no_leak(); }
 
   // 3c. CURRENT getter exception -> that bool is false (safeBool); the snapshot still publishes.
@@ -295,9 +295,9 @@ int main(int argc, char **argv) {
     cons.hasStarted = 1; play.paused = 0; play.completedWalk = 0; play.acquiredReward = 0; play.travelInReverse = 0;
     cons.inRangeOfEnd = 0; cons.inRangeToResume = 0; cons.isCompleting = 0;
     g_throw_token = &m_hasStarted;  // one throw -> STARTED clears, not a fault
-    PgrRoutesActionsRequest r = make_req(PGR_RA_ACT_CURRENT, tid, 2000, hCons, 0, 0, nullptr, false);
-    assert(api->execute(&r, &out) == PGR_RA_SUCCESS);
-    assert((out.flags & PGR_RA_FLAG_PRESENT) && !(out.flags & PGR_RA_FLAG_STARTED));
+    PgrRoutesActionsRequest r = make_req(PGS_RA_ACT_CURRENT, tid, 2000, hCons, 0, 0, nullptr, false);
+    assert(api->execute(&r, &out) == PGS_RA_SUCCESS);
+    assert((out.flags & PGS_RA_FLAG_PRESENT) && !(out.flags & PGS_RA_FLAG_STARTED));
     assert_no_leak(); }
 
   // 3d. Relocating collector: the play object moves during a getter invoke; re-resolution still reads
@@ -312,25 +312,25 @@ int main(int argc, char **argv) {
       cons.currentPlay = moved; play.route = nullptr; play.completedWalk = 0;  // stale read would miss the route + walk
       moved->completedWalk = 1;
     };
-    PgrRoutesActionsRequest r = make_req(PGR_RA_ACT_CURRENT, tid, 2000, hCons, 0, 0, nullptr, false);
-    assert(api->execute(&r, &out) == PGR_RA_SUCCESS);
-    assert((out.flags & PGR_RA_FLAG_PRESENT) && (out.flags & PGR_RA_FLAG_COMPLETED_WALK) && out.id_length == route_id.len);
+    PgrRoutesActionsRequest r = make_req(PGS_RA_ACT_CURRENT, tid, 2000, hCons, 0, 0, nullptr, false);
+    assert(api->execute(&r, &out) == PGS_RA_SUCCESS);
+    assert((out.flags & PGS_RA_FLAG_PRESENT) && (out.flags & PGS_RA_FLAG_COMPLETED_WALK) && out.id_length == route_id.len);
     cons.currentPlay = &play; play.route = &shared; play.completedWalk = 1; delete moved; assert_no_leak(); }
 
   // 4. DISCOVER: requestNearby on the routes service, submitted. Wrong service class -> awaiting-service.
   { reset_invoke_state();
-    PgrRoutesActionsRequest r = make_req(PGR_RA_ACT_DISCOVER, tid, 2000, hRoutes, 0, next_seq(), nullptr, false);
-    assert(api->execute(&r, &out) == PGR_RA_SUCCESS && g_discover_calls == 1);
+    PgrRoutesActionsRequest r = make_req(PGS_RA_ACT_DISCOVER, tid, 2000, hRoutes, 0, next_seq(), nullptr, false);
+    assert(api->execute(&r, &out) == PGS_RA_SUCCESS && g_discover_calls == 1);
     // consumption handle supplied for DISCOVER -> wrong class -> awaiting-service.
-    r = make_req(PGR_RA_ACT_DISCOVER, tid, 2000, hCons, 0, next_seq(), nullptr, false);
-    assert(api->execute(&r, &out) == PGR_RA_REFUSE && out.reason == PGR_RA_REASON_AWAITING_SVC);
+    r = make_req(PGS_RA_ACT_DISCOVER, tid, 2000, hCons, 0, next_seq(), nullptr, false);
+    assert(api->execute(&r, &out) == PGS_RA_REFUSE && out.reason == PGS_RA_REASON_AWAITING_SVC);
     assert_no_leak(); }
 
   // 5. START: full path builds start data and invokes StartRoute with the data reference directly.
   { reset_invoke_state();
     cons.isConsuming = 0;  // not already active
-    PgrRoutesActionsRequest r = make_req(PGR_RA_ACT_START, tid, 2000, hCons, hShared, next_seq(), "route-abc", true);
-    assert(api->execute(&r, &out) == PGR_RA_SUCCESS);
+    PgrRoutesActionsRequest r = make_req(PGS_RA_ACT_START, tid, 2000, hCons, hShared, next_seq(), "route-abc", true);
+    assert(api->execute(&r, &out) == PGS_RA_SUCCESS);
     assert(g_ctor_calls == 1 && g_start_calls == 1 && g_last_data && g_last_data->ctor == 1);
     assert(g_last_data->published == &shared && g_last_data->reversed == 1);
     assert(g_start_arg == g_last_data);  // argument[0] is the data object itself, not a pointer-to-pointer
@@ -339,24 +339,24 @@ int main(int argc, char **argv) {
   // 5a. START refusals, each with its reason; none reaches StartRoute.
   { reset_invoke_state();
     cons.isConsuming = 0;
-    auto start = [&](const char *id, bool rev) { return make_req(PGR_RA_ACT_START, tid, 2000, hCons, hShared, next_seq(), id, rev); };
+    auto start = [&](const char *id, bool rev) { return make_req(PGS_RA_ACT_START, tid, 2000, hCons, hShared, next_seq(), id, rev); };
     cons.flagInitialized = 0;
-    { auto r = start("route-abc", false); assert(api->execute(&r, &out) == PGR_RA_REFUSE && out.reason == PGR_RA_REASON_NOT_INIT); }
+    { auto r = start("route-abc", false); assert(api->execute(&r, &out) == PGS_RA_REFUSE && out.reason == PGS_RA_REASON_NOT_INIT); }
     cons.flagInitialized = 1; cons.enabledForPlayer = 0;
-    { auto r = start("route-abc", false); assert(api->execute(&r, &out) == PGR_RA_REFUSE && out.reason == PGR_RA_REASON_NOT_PERMITTED); }
+    { auto r = start("route-abc", false); assert(api->execute(&r, &out) == PGS_RA_REFUSE && out.reason == PGS_RA_REASON_NOT_PERMITTED); }
     cons.enabledForPlayer = 1; cons.isConsuming = 1;
-    { auto r = start("route-abc", false); assert(api->execute(&r, &out) == PGR_RA_REFUSE && out.reason == PGR_RA_REASON_ALREADY_ACTIVE); }
+    { auto r = start("route-abc", false); assert(api->execute(&r, &out) == PGS_RA_REFUSE && out.reason == PGS_RA_REASON_ALREADY_ACTIVE); }
     cons.isConsuming = 0;
-    { auto r = make_req(PGR_RA_ACT_START, tid, 2000, hCons, 0, next_seq(), "route-abc", false);
-      assert(api->execute(&r, &out) == PGR_RA_REFUSE && out.reason == PGR_RA_REASON_NOT_DISCOVERED); }
-    { auto r = start("route-xyz", false); assert(api->execute(&r, &out) == PGR_RA_REFUSE && out.reason == PGR_RA_REASON_ID_MISMATCH); }
+    { auto r = make_req(PGS_RA_ACT_START, tid, 2000, hCons, 0, next_seq(), "route-abc", false);
+      assert(api->execute(&r, &out) == PGS_RA_REFUSE && out.reason == PGS_RA_REASON_NOT_DISCOVERED); }
+    { auto r = start("route-xyz", false); assert(api->execute(&r, &out) == PGS_RA_REFUSE && out.reason == PGS_RA_REASON_ID_MISMATCH); }
     shared.reversible = 0;
-    { auto r = start("route-abc", true); assert(api->execute(&r, &out) == PGR_RA_REFUSE && out.reason == PGR_RA_REASON_NOT_REVERSIBLE); }
+    { auto r = start("route-abc", true); assert(api->execute(&r, &out) == PGS_RA_REFUSE && out.reason == PGS_RA_REASON_NOT_REVERSIBLE); }
     shared.reversible = 1;
     assert(g_start_calls == 0 && g_ctor_calls == 0);
     // alloc-failed: object_new returns null -> FAULT, reason alloc-failed, before StartRoute.
     g_objnew_null = true;
-    { auto r = start("route-abc", false); assert(api->execute(&r, &out) == PGR_RA_FAULT && out.reason == PGR_RA_REASON_ALLOC_FAILED); }
+    { auto r = start("route-abc", false); assert(api->execute(&r, &out) == PGS_RA_FAULT && out.reason == PGS_RA_REASON_ALLOC_FAILED); }
     assert(g_start_calls == 0); assert_no_leak(); }
 
   // 5b. START with a stale route handle (resolves null) -> route-stale.
@@ -364,110 +364,110 @@ int main(int argc, char **argv) {
     FakeShared tmp{&cls_shared, &route_id, 1};
     uintptr_t hTmp = insert_host_handle(&tmp);
     g_handles[hTmp] = nullptr;  // simulate a collected target
-    auto r = make_req(PGR_RA_ACT_START, tid, 2000, hCons, hTmp, next_seq(), "route-abc", false);
-    assert(api->execute(&r, &out) == PGR_RA_REFUSE && out.reason == PGR_RA_REASON_ROUTE_STALE);
+    auto r = make_req(PGS_RA_ACT_START, tid, 2000, hCons, hTmp, next_seq(), "route-abc", false);
+    assert(api->execute(&r, &out) == PGS_RA_REFUSE && out.reason == PGS_RA_REASON_ROUTE_STALE);
     g_handles.erase(hTmp); g_host_handles.erase(hTmp); }
 
   // 6. COMPLETE: eligibility matrix + confirmComplete once. cons.currentPlay/play drive the state.
   { reset_invoke_state();
     cons.currentPlay = &play;
     play.paused = 0; play.completedWalk = 1; play.acquiredReward = 0; cons.isCompleting = 0; cons.hasStarted = 1; cons.inRangeOfEnd = 1;
-    auto complete = [&](const char *id) { return make_req(PGR_RA_ACT_COMPLETE, tid, 2000, hCons, 0, next_seq(), id, false); };
-    { auto r = complete("route-abc"); assert(api->execute(&r, &out) == PGR_RA_SUCCESS && g_complete_calls == 1); }
+    auto complete = [&](const char *id) { return make_req(PGS_RA_ACT_COMPLETE, tid, 2000, hCons, 0, next_seq(), id, false); };
+    { auto r = complete("route-abc"); assert(api->execute(&r, &out) == PGS_RA_SUCCESS && g_complete_calls == 1); }
     // id mismatch.
-    { auto r = complete("route-xyz"); assert(api->execute(&r, &out) == PGR_RA_REFUSE && out.reason == PGR_RA_REASON_ID_MISMATCH); }
+    { auto r = complete("route-xyz"); assert(api->execute(&r, &out) == PGS_RA_REFUSE && out.reason == PGS_RA_REASON_ID_MISMATCH); }
     // no current.
     cons.currentPlay = nullptr;
-    { auto r = complete("route-abc"); assert(api->execute(&r, &out) == PGR_RA_REFUSE && out.reason == PGR_RA_REASON_NO_CURRENT); }
+    { auto r = complete("route-abc"); assert(api->execute(&r, &out) == PGS_RA_REFUSE && out.reason == PGS_RA_REASON_NO_CURRENT); }
     cons.currentPlay = &play;
     // already completing / rewarded / not eligible.
-    cons.isCompleting = 1; { auto r = complete("route-abc"); assert(api->execute(&r, &out) == PGR_RA_REFUSE && out.reason == PGR_RA_REASON_COMPLETING); }
-    cons.isCompleting = 0; play.acquiredReward = 1; { auto r = complete("route-abc"); assert(api->execute(&r, &out) == PGR_RA_REFUSE && out.reason == PGR_RA_REASON_REWARDED); }
-    play.acquiredReward = 0; play.completedWalk = 0; { auto r = complete("route-abc"); assert(api->execute(&r, &out) == PGR_RA_REFUSE && out.reason == PGR_RA_REASON_NOT_ELIGIBLE); }
-    play.completedWalk = 1; cons.inRangeOfEnd = 0; { auto r = complete("route-abc"); assert(api->execute(&r, &out) == PGR_RA_REFUSE && out.reason == PGR_RA_REASON_NOT_ELIGIBLE); }
+    cons.isCompleting = 1; { auto r = complete("route-abc"); assert(api->execute(&r, &out) == PGS_RA_REFUSE && out.reason == PGS_RA_REASON_COMPLETING); }
+    cons.isCompleting = 0; play.acquiredReward = 1; { auto r = complete("route-abc"); assert(api->execute(&r, &out) == PGS_RA_REFUSE && out.reason == PGS_RA_REASON_REWARDED); }
+    play.acquiredReward = 0; play.completedWalk = 0; { auto r = complete("route-abc"); assert(api->execute(&r, &out) == PGS_RA_REFUSE && out.reason == PGS_RA_REASON_NOT_ELIGIBLE); }
+    play.completedWalk = 1; cons.inRangeOfEnd = 0; { auto r = complete("route-abc"); assert(api->execute(&r, &out) == PGS_RA_REFUSE && out.reason == PGS_RA_REASON_NOT_ELIGIBLE); }
     cons.inRangeOfEnd = 1;
     assert(g_complete_calls == 1); assert_no_leak(); }
 
   // 7. PAUSE: isConsuming && !isPaused -> PauseRoute(true); plus refusals.
   { reset_invoke_state();
     cons.isConsuming = 1; cons.isPaused = 0;
-    { auto r = make_req(PGR_RA_ACT_PAUSE, tid, 2000, hCons, 0, next_seq(), nullptr, false);
-      assert(api->execute(&r, &out) == PGR_RA_SUCCESS && g_pause_calls == 1 && g_pause_arg == 1); }
+    { auto r = make_req(PGS_RA_ACT_PAUSE, tid, 2000, hCons, 0, next_seq(), nullptr, false);
+      assert(api->execute(&r, &out) == PGS_RA_SUCCESS && g_pause_calls == 1 && g_pause_arg == 1); }
     cons.isConsuming = 0;
-    { auto r = make_req(PGR_RA_ACT_PAUSE, tid, 2000, hCons, 0, next_seq(), nullptr, false);
-      assert(api->execute(&r, &out) == PGR_RA_REFUSE && out.reason == PGR_RA_REASON_NO_CURRENT); }
+    { auto r = make_req(PGS_RA_ACT_PAUSE, tid, 2000, hCons, 0, next_seq(), nullptr, false);
+      assert(api->execute(&r, &out) == PGS_RA_REFUSE && out.reason == PGS_RA_REASON_NO_CURRENT); }
     cons.isConsuming = 1; cons.isPaused = 1;
-    { auto r = make_req(PGR_RA_ACT_PAUSE, tid, 2000, hCons, 0, next_seq(), nullptr, false);
-      assert(api->execute(&r, &out) == PGR_RA_REFUSE && out.reason == PGR_RA_REASON_ALREADY_PAUSED); }
+    { auto r = make_req(PGS_RA_ACT_PAUSE, tid, 2000, hCons, 0, next_seq(), nullptr, false);
+      assert(api->execute(&r, &out) == PGS_RA_REFUSE && out.reason == PGS_RA_REASON_ALREADY_PAUSED); }
     cons.isPaused = 0; assert(g_pause_calls == 1); assert_no_leak(); }
 
   // 8. Lease / gate: residual 0, expired residual, detached thread, awaiting-service, generation revoke.
   { reset_invoke_state(); cons.isConsuming = 1;
-    { auto r = make_req(PGR_RA_ACT_PAUSE, tid, 0, hCons, 0, next_seq(), nullptr, false);
-      assert(api->execute(&r, &out) == PGR_RA_REFUSE && out.reason == PGR_RA_REASON_LEASE_EXPIRED && g_pause_calls == 0); }
+    { auto r = make_req(PGS_RA_ACT_PAUSE, tid, 0, hCons, 0, next_seq(), nullptr, false);
+      assert(api->execute(&r, &out) == PGS_RA_REFUSE && out.reason == PGS_RA_REASON_LEASE_EXPIRED && g_pause_calls == 0); }
     // Expiry DURING the read: a getter invoke sleeps past the residual budget, so the next
     // preflight aborts the CURRENT read -> refuse lease-expired (deadline is sampled at entry from
     // residual_ms, so the sleep must happen inside the call, not before it).
     { reset_invoke_state();
       g_oneshot_method = &m_hasStarted; g_invoke_oneshot = [&]() { ::usleep(20000); };
-      auto r = make_req(PGR_RA_ACT_CURRENT, tid, 5, hCons, 0, 0, nullptr, false);
-      assert(api->execute(&r, &out) == PGR_RA_REFUSE && out.reason == PGR_RA_REASON_LEASE_EXPIRED); }
+      auto r = make_req(PGS_RA_ACT_CURRENT, tid, 5, hCons, 0, 0, nullptr, false);
+      assert(api->execute(&r, &out) == PGS_RA_REFUSE && out.reason == PGS_RA_REASON_LEASE_EXPIRED); }
     // detached thread.
     g_thread = nullptr;
-    { auto r = make_req(PGR_RA_ACT_CURRENT, tid, 2000, hCons, 0, 0, nullptr, false);
-      assert(api->execute(&r, &out) == PGR_RA_REFUSE && out.reason == PGR_RA_REASON_LEASE_EXPIRED); }
+    { auto r = make_req(PGS_RA_ACT_CURRENT, tid, 2000, hCons, 0, 0, nullptr, false);
+      assert(api->execute(&r, &out) == PGS_RA_REFUSE && out.reason == PGS_RA_REASON_LEASE_EXPIRED); }
     g_thread = reinterpret_cast<void *>(0x7700);
     // awaiting-service (null service target).
     { uintptr_t hNull = insert_host_handle(nullptr);
-      auto r = make_req(PGR_RA_ACT_CURRENT, tid, 2000, hNull, 0, 0, nullptr, false);
-      assert(api->execute(&r, &out) == PGR_RA_REFUSE && out.reason == PGR_RA_REASON_AWAITING_SVC);
+      auto r = make_req(PGS_RA_ACT_CURRENT, tid, 2000, hNull, 0, 0, nullptr, false);
+      assert(api->execute(&r, &out) == PGS_RA_REFUSE && out.reason == PGS_RA_REASON_AWAITING_SVC);
       g_handles.erase(hNull); g_host_handles.erase(hNull); }
     // revoke: a request stamped with the prior generation now refuses lease-expired.
-    PgrRoutesActionsRequest stale = make_req(PGR_RA_ACT_CURRENT, tid, 2000, hCons, 0, 0, nullptr, false);
+    PgrRoutesActionsRequest stale = make_req(PGS_RA_ACT_CURRENT, tid, 2000, hCons, 0, 0, nullptr, false);
     const uint64_t g1 = api->generation(); assert(api->revoke() == g1 + 1 && api->generation() == g1 + 1);
-    assert(api->execute(&stale, &out) == PGR_RA_REFUSE && out.reason == PGR_RA_REASON_LEASE_EXPIRED);
+    assert(api->execute(&stale, &out) == PGS_RA_REFUSE && out.reason == PGS_RA_REASON_LEASE_EXPIRED);
     // a freshly-stamped request works again.
-    { auto r = make_req(PGR_RA_ACT_CURRENT, tid, 2000, hCons, 0, 0, nullptr, false);
-      assert(api->execute(&r, &out) == PGR_RA_SUCCESS); }
+    { auto r = make_req(PGS_RA_ACT_CURRENT, tid, 2000, hCons, 0, 0, nullptr, false);
+      assert(api->execute(&r, &out) == PGS_RA_SUCCESS); }
     assert_no_leak(); }
 
   // 9. Stale-seq: a repeated / backward mutating seq is refused; CURRENT (seq 0) is exempt. The
   //    high-water is consumed even when the subsequent action refuses.
   { reset_invoke_state(); cons.isConsuming = 1; cons.isPaused = 0;
     const uint64_t s = next_seq();
-    { auto r = make_req(PGR_RA_ACT_PAUSE, tid, 2000, hCons, 0, s, nullptr, false);
-      assert(api->execute(&r, &out) == PGR_RA_SUCCESS); }
-    { auto r = make_req(PGR_RA_ACT_PAUSE, tid, 2000, hCons, 0, s, nullptr, false);  // replay
-      assert(api->execute(&r, &out) == PGR_RA_REFUSE && out.reason == PGR_RA_REASON_STALE_SEQ); }
-    { auto r = make_req(PGR_RA_ACT_PAUSE, tid, 2000, hCons, 0, s - 1, nullptr, false);  // backward
-      assert(api->execute(&r, &out) == PGR_RA_REFUSE && out.reason == PGR_RA_REASON_STALE_SEQ); }
+    { auto r = make_req(PGS_RA_ACT_PAUSE, tid, 2000, hCons, 0, s, nullptr, false);
+      assert(api->execute(&r, &out) == PGS_RA_SUCCESS); }
+    { auto r = make_req(PGS_RA_ACT_PAUSE, tid, 2000, hCons, 0, s, nullptr, false);  // replay
+      assert(api->execute(&r, &out) == PGS_RA_REFUSE && out.reason == PGS_RA_REASON_STALE_SEQ); }
+    { auto r = make_req(PGS_RA_ACT_PAUSE, tid, 2000, hCons, 0, s - 1, nullptr, false);  // backward
+      assert(api->execute(&r, &out) == PGS_RA_REFUSE && out.reason == PGS_RA_REASON_STALE_SEQ); }
     // a refused mutation (awaiting-service) still consumes its seq: a replay is stale.
     cons.isPaused = 0; const uint64_t s2 = next_seq();
     { uintptr_t hNull = insert_host_handle(nullptr);
-      auto r = make_req(PGR_RA_ACT_PAUSE, tid, 2000, hNull, 0, s2, nullptr, false);
-      assert(api->execute(&r, &out) == PGR_RA_REFUSE && out.reason == PGR_RA_REASON_AWAITING_SVC);
+      auto r = make_req(PGS_RA_ACT_PAUSE, tid, 2000, hNull, 0, s2, nullptr, false);
+      assert(api->execute(&r, &out) == PGS_RA_REFUSE && out.reason == PGS_RA_REASON_AWAITING_SVC);
       g_handles.erase(hNull); g_host_handles.erase(hNull); }
-    { auto r = make_req(PGR_RA_ACT_PAUSE, tid, 2000, hCons, 0, s2, nullptr, false);  // seq already consumed
-      assert(api->execute(&r, &out) == PGR_RA_REFUSE && out.reason == PGR_RA_REASON_STALE_SEQ); }
+    { auto r = make_req(PGS_RA_ACT_PAUSE, tid, 2000, hCons, 0, s2, nullptr, false);  // seq already consumed
+      assert(api->execute(&r, &out) == PGS_RA_REFUSE && out.reason == PGS_RA_REASON_STALE_SEQ); }
     // CURRENT ignores the high-water entirely.
-    { auto r = make_req(PGR_RA_ACT_CURRENT, tid, 2000, hCons, 0, 0, nullptr, false);
-      assert(api->execute(&r, &out) == PGR_RA_SUCCESS); }
+    { auto r = make_req(PGS_RA_ACT_CURRENT, tid, 2000, hCons, 0, 0, nullptr, false);
+      assert(api->execute(&r, &out) == PGS_RA_SUCCESS); }
     assert_no_leak(); }
 
   // 10. Off-owner thread: refused (owner already latched to main), no mutation, no seq consumed.
   reset_invoke_state();
   std::thread([&]() {
     PgrRoutesActionsOutput o{};
-    auto r = make_req(PGR_RA_ACT_PAUSE, this_tid(), 2000, hCons, 0, next_seq(), nullptr, false);
-    assert(g_api->execute(&r, &o) == PGR_RA_REFUSE && o.reason == PGR_RA_REASON_LEASE_EXPIRED);
+    auto r = make_req(PGS_RA_ACT_PAUSE, this_tid(), 2000, hCons, 0, next_seq(), nullptr, false);
+    assert(g_api->execute(&r, &o) == PGS_RA_REFUSE && o.reason == PGS_RA_REASON_LEASE_EXPIRED);
     assert(g_pause_calls == 0);
   }).join();
 
   // 11. Managed throw on the mutating invoke -> FAULT native-error; roots freed; no retry implied.
   { reset_invoke_state(); cons.isConsuming = 1; cons.isPaused = 0;
     g_throw_token = &m_pause;
-    auto r = make_req(PGR_RA_ACT_PAUSE, tid, 2000, hCons, 0, next_seq(), nullptr, false);
-    assert(api->execute(&r, &out) == PGR_RA_FAULT && out.reason == PGR_RA_REASON_NATIVE_ERROR);
+    auto r = make_req(PGS_RA_ACT_PAUSE, tid, 2000, hCons, 0, next_seq(), nullptr, false);
+    assert(api->execute(&r, &out) == PGS_RA_FAULT && out.reason == PGS_RA_REASON_NATIVE_ERROR);
     assert(g_pause_calls == 0 && g_throw_token == nullptr); assert_no_leak(); }
 
   // 12. Reentrancy (busy): a nested CURRENT fired from inside StartRoute is refused; the outer START
@@ -476,12 +476,12 @@ int main(int argc, char **argv) {
     int nested_rc = 99; PgrRoutesActionsOutput nested{};
     g_oneshot_method = &m_start;
     g_invoke_oneshot = [&]() {
-      auto nr = make_req(PGR_RA_ACT_CURRENT, tid, 2000, hCons, 0, 0, nullptr, false);
+      auto nr = make_req(PGS_RA_ACT_CURRENT, tid, 2000, hCons, 0, 0, nullptr, false);
       nested_rc = g_api->execute(&nr, &nested);
     };
-    auto r = make_req(PGR_RA_ACT_START, tid, 2000, hCons, hShared, next_seq(), "route-abc", false);
-    assert(api->execute(&r, &out) == PGR_RA_SUCCESS && g_start_calls == 1);
-    assert(nested_rc == PGR_RA_FAULT && nested.reason == PGR_RA_REASON_NATIVE_ERROR);  // busy refused
+    auto r = make_req(PGS_RA_ACT_START, tid, 2000, hCons, hShared, next_seq(), "route-abc", false);
+    assert(api->execute(&r, &out) == PGS_RA_SUCCESS && g_start_calls == 1);
+    assert(nested_rc == PGS_RA_FAULT && nested.reason == PGS_RA_REASON_NATIVE_ERROR);  // busy refused
     assert_no_leak(); }
 
   // 13. Revoke mid-construction: a revoke fired from inside the ctor aborts START BEFORE StartRoute
@@ -489,8 +489,8 @@ int main(int argc, char **argv) {
   { reset_invoke_state(); cons.isConsuming = 0;
     g_oneshot_method = &m_ctor;
     g_invoke_oneshot = [&]() { g_api->revoke(); };
-    auto r = make_req(PGR_RA_ACT_START, tid, 2000, hCons, hShared, next_seq(), "route-abc", false);
-    assert(api->execute(&r, &out) == PGR_RA_REFUSE && out.reason == PGR_RA_REASON_LEASE_EXPIRED);
+    auto r = make_req(PGS_RA_ACT_START, tid, 2000, hCons, hShared, next_seq(), "route-abc", false);
+    assert(api->execute(&r, &out) == PGS_RA_REFUSE && out.reason == PGS_RA_REASON_LEASE_EXPIRED);
     assert(g_ctor_calls == 1 && g_start_calls == 0);  // aborted without invoking StartRoute
     assert_no_leak(); }
 
@@ -498,15 +498,15 @@ int main(int argc, char **argv) {
   { reset_invoke_state(); cons.isConsuming = 1; cons.isPaused = 0;
     g_oneshot_method = &m_pause;
     g_invoke_oneshot = [&]() { g_api->revoke(); };  // fires at the top of the pause invoke
-    auto r = make_req(PGR_RA_ACT_PAUSE, tid, 2000, hCons, 0, next_seq(), nullptr, false);
-    assert(api->execute(&r, &out) == PGR_RA_SUCCESS && g_pause_calls == 1);
+    auto r = make_req(PGS_RA_ACT_PAUSE, tid, 2000, hCons, 0, next_seq(), nullptr, false);
+    assert(api->execute(&r, &out) == PGS_RA_SUCCESS && g_pause_calls == 1);
     assert_no_leak(); }
 
   // 15. Root-allocation failure before the action fails closed (no invoke).
   { reset_invoke_state(); cons.isConsuming = 1; cons.isPaused = 0;
     g_gcnew_calls = 0; g_gcnew_fail_index = 1;  // first module root (the service) fails
-    auto r = make_req(PGR_RA_ACT_PAUSE, tid, 2000, hCons, 0, next_seq(), nullptr, false);
-    assert(api->execute(&r, &out) == PGR_RA_FAULT && out.reason == PGR_RA_REASON_NATIVE_ERROR);
+    auto r = make_req(PGS_RA_ACT_PAUSE, tid, 2000, hCons, 0, next_seq(), nullptr, false);
+    assert(api->execute(&r, &out) == PGS_RA_FAULT && out.reason == PGS_RA_REASON_NATIVE_ERROR);
     assert(g_pause_calls == 0); assert_no_leak(); }
 
   puts("PASS routes actions: ABI(352/328/280/40)+asserts, install/idempotent/reconfig, CURRENT "

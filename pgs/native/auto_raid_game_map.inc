@@ -5,9 +5,9 @@ int32_t raid_free_item=0,raid_paid_item=0,raid_remote_item=0;
 int32_t raid_location_both=0,raid_location_local=0,raid_location_remote=0;
 
 int policy_raid_item(int32_t raw){
-    if(raw==raid_free_item)return pgr_auto_raid::ITEM_FREE_RAID_TICKET;
-    if(raw==raid_paid_item)return pgr_auto_raid::ITEM_PAID_RAID_TICKET;
-    if(raw==raid_remote_item)return pgr_auto_raid::ITEM_REMOTE_RAID_TICKET;
+    if(raw==raid_free_item)return pgs_auto_raid::ITEM_FREE_RAID_TICKET;
+    if(raw==raid_paid_item)return pgs_auto_raid::ITEM_PAID_RAID_TICKET;
+    if(raw==raid_remote_item)return pgs_auto_raid::ITEM_REMOTE_RAID_TICKET;
     return 0;
 }
 
@@ -62,7 +62,7 @@ int normalize_runtime_raid_level(int32_t raw_level) {
         const uint32_t n = std::min<uint32_t>(md->raid_tier_count, static_cast<uint32_t>(kRaidTierMax));
         for (uint32_t i = 0; i < n; ++i) {
             if (md->raid_tiers[i].value == raw_level) {
-                return pgr_auto_raid::normalize_raid_level(md->raid_tiers[i].name);
+                return pgs_auto_raid::normalize_raid_level(md->raid_tiers[i].name);
             }
         }
     }
@@ -77,11 +77,11 @@ int normalize_runtime_raid_level(int32_t raw_level) {
             fn<void (*)(void*, void*)>(boot.runtime.field_static_get_value)(f, &val);
             if (val == raw_level) {
                 const char* fname = get_name(f);
-                if (fname) return pgr_auto_raid::normalize_raid_level(fname);
+                if (fname) return pgs_auto_raid::normalize_raid_level(fname);
             }
         }
     }
-    return pgr_auto_raid::RAID_LEVEL_UNSET;
+    return pgs_auto_raid::RAID_LEVEL_UNSET;
 }
 
 // Read RepeatedField<T> elements via its verified internal fields ("array" and "count", as in map_poi.cpp).
@@ -313,7 +313,7 @@ bool real_map_ready(){
     return !summary || !unbox_val<bool>(call_obj(summary.get(),"get_IsOpen",0));
 }
 
-void real_scan_gyms(std::vector<pgr_auto_raid::RaidCandidate>& out_candidates,
+void real_scan_gyms(std::vector<pgs_auto_raid::RaidCandidate>& out_candidates,
                     std::vector<Root>& out_gym_roots) {
     out_candidates.clear();
     out_gym_roots.clear();
@@ -386,7 +386,7 @@ void real_scan_gyms(std::vector<pgr_auto_raid::RaidCandidate>& out_candidates,
         if (!enabled) continue;
 
         Root fort_id_str(read_field_val<void*>(fort.get(), f_fort_id));
-        pgr_auto_raid::RaidCandidate c{};
+        pgs_auto_raid::RaidCandidate c{};
         c.fort_id = read_managed_string(fort_id_str.get());
         if (c.fort_id.empty()) continue;
 
@@ -525,8 +525,8 @@ bool real_advance_to_raid_approach(void* target_gym,
     return false;
 }
 
-pgr_auto_raid::EntryCostOption parse_managed_entry_cost(void* cost_svc, void* cost_proto) {
-    pgr_auto_raid::EntryCostOption opt{};
+pgs_auto_raid::EntryCostOption parse_managed_entry_cost(void* cost_svc, void* cost_proto) {
+    pgs_auto_raid::EntryCostOption opt{};
     if (!cost_proto) return opt;
 
     void* cost_k = obj_klass(cost_proto);
@@ -536,9 +536,9 @@ pgr_auto_raid::EntryCostOption parse_managed_entry_cost(void* cost_svc, void* co
         "Niantic.Protobuf.Collections.RepeatedField<Holoholo.Rpc.ItemRequirementProto>", 0x18);
 
     const int32_t raw_location=read_field_val<int32_t>(cost_proto,f_raid_type);
-    opt.raid_type=raw_location==raid_location_local?pgr_auto_raid::RAID_LOCATION_LOCAL:
-        raw_location==raid_location_remote?pgr_auto_raid::RAID_LOCATION_REMOTE:
-        raw_location==raid_location_both?pgr_auto_raid::RAID_LOCATION_UNSET:-1;
+    opt.raid_type=raw_location==raid_location_local?pgs_auto_raid::RAID_LOCATION_LOCAL:
+        raw_location==raid_location_remote?pgs_auto_raid::RAID_LOCATION_REMOTE:
+        raw_location==raid_location_both?pgs_auto_raid::RAID_LOCATION_UNSET:-1;
     Root reqs_rf(read_field_val<void*>(cost_proto, f_reqs));
     std::vector<Root> req_items;
     read_repeated_field_items(reqs_rf.get(), 8, req_items);
@@ -547,7 +547,7 @@ pgr_auto_raid::EntryCostOption parse_managed_entry_cost(void* cost_svc, void* co
         void* req_k = obj_klass(req.get());
         void* f_item  = require_map_field(req_k, "Item", "Holoholo.Rpc.Item", 0x10);
         void* f_count = require_map_field(req_k, "Count", "System.Int32", 0x14);
-        pgr_auto_raid::CostItemRequirement item_req{};
+        pgs_auto_raid::CostItemRequirement item_req{};
         item_req.item_id = policy_raid_item(read_field_val<int32_t>(req.get(), f_item));
         item_req.count   = read_field_val<int32_t>(req.get(), f_count);
         opt.items.push_back(item_req);
@@ -590,7 +590,7 @@ bool real_inspect_approach_costs(void* approach_ui,
                                  bool raid_is_free,
                                  bool& out_ticket_used,
                                  bool& out_remote_used,
-                                 std::vector<pgr_auto_raid::EntryCostOption>& out_options) {
+                                 std::vector<pgs_auto_raid::EntryCostOption>& out_options) {
     out_options.clear();
     require(unity_obj_alive(approach_ui), "RaidApproachUIController destroyed");
     if (real_close_received_pass_notice()) return false;  // look again once it has closed
@@ -669,15 +669,15 @@ bool real_inspect_approach_costs(void* approach_ui,
     read_repeated_field_items(costs_rf.get(), 16, cost_protos);
     for (const Root& cp : cost_protos) {
         if (!cp) continue;
-        pgr_auto_raid::EntryCostOption opt = parse_managed_entry_cost(cost_svc.get(), cp.get());
+        pgs_auto_raid::EntryCostOption opt = parse_managed_entry_cost(cost_svc.get(), cp.get());
         // Skip remote-only options from local entry consideration unless they are the only ones present,
         // and if a free raid pass is in bag while free_pass=false, OnJoinButtonPressed cannot select Premium.
-        if (opt.raid_type == pgr_auto_raid::RAID_LOCATION_REMOTE) {
+        if (opt.raid_type == pgs_auto_raid::RAID_LOCATION_REMOTE) {
             continue;
         }
         if (free_ticket_count > 0 && !session.command.free_pass) {
-            const auto kind = pgr_auto_raid::classify_entry_cost(opt, raid_is_free, false);
-            if (kind == pgr_auto_raid::PassCostKind::PremiumLocal) {
+            const auto kind = pgs_auto_raid::classify_entry_cost(opt, raid_is_free, false);
+            if (kind == pgs_auto_raid::PassCostKind::PremiumLocal) {
                 opt.satisfied_in_bag = false;
             }
         }
@@ -733,7 +733,7 @@ void real_exit_raid_or_gym(void* approach_ui, void* raid_state, void* gym_root_s
 
 bool real_inspect_ticket_modal(void* approach_ui,
                                Root& out_modal,
-                               pgr_auto_raid::EntryCostOption& out_selected_cost,
+                               pgs_auto_raid::EntryCostOption& out_selected_cost,
                                bool& out_coin_flag) {
     out_modal.reset();
     if (real_close_received_pass_notice()) return false;
@@ -893,21 +893,21 @@ bool real_poll_resolve_state(Root& out_resolve_ui, int& out_battle_status, bool&
     const int error_val     = read_enum_literal(status_k, "Error");
 
     if (raw_status == victory_val) {
-        out_battle_status = pgr_auto_raid::BATTLE_STATUS_VICTORY;
+        out_battle_status = pgs_auto_raid::BATTLE_STATUS_VICTORY;
     } else if (raw_status == timed_out_val) {
-        out_battle_status = pgr_auto_raid::BATTLE_STATUS_TIMED_OUT;
+        out_battle_status = pgs_auto_raid::BATTLE_STATUS_TIMED_OUT;
         if (gui_state == 2) {
             try { call_obj(gui, "Close", 0); } catch (...) {}
         }
         return true;
     } else if (raw_status == defeat_val || raw_status == quit_val || raw_status == error_val) {
-        out_battle_status = pgr_auto_raid::BATTLE_STATUS_DEFEAT;
+        out_battle_status = pgs_auto_raid::BATTLE_STATUS_DEFEAT;
         if (gui_state == 2) {
             try { call_obj(gui, "Close", 0); } catch (...) {}
         }
         return true;
     } else {
-        out_battle_status = pgr_auto_raid::BATTLE_STATUS_ACTIVE;
+        out_battle_status = pgs_auto_raid::BATTLE_STATUS_ACTIVE;
         return true;
     }
 

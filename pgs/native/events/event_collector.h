@@ -1,6 +1,6 @@
 ﻿#pragma once
 #include <stdint.h>
-struct PgrEventCollectorState {
+struct PgsEventCollectorState {
   int ready,error,enabled,inflight,timed_out,pending_encounters,stale_encounters;
   uint64_t update_calls,owner_updates,last_update_tid,scan_calls;
   int session_active,pump_reason,list_count,candidate_count,matched_box_count,in_range_count,visible_count,expired_count,zero_expiry_count;
@@ -8,13 +8,13 @@ struct PgrEventCollectorState {
   uint64_t attempted,completed,failed,skipped_encounters,candy,xl_candy,rare_candy,xl_rare_candy;
 };
 // Owner pulse only. Initialization/capture remains active when enabled=false.
-int pgr_event_collector_tick(bool enabled,uint64_t proven_tid);
+int pgs_event_collector_tick(bool enabled,uint64_t proven_tid);
 // Fresh BOOTTIME location; must be called from owner pulse before tick.
-void pgr_event_collector_location(double lat,double lng,uint64_t boottime_ms);
+void pgs_event_collector_location(double lat,double lng,uint64_t boottime_ms);
 // Thread-safe stop request. Drain on owner pulse; dispatched ownership survives OFF
 // until response, to prevent an already-requested encounter screen from appearing.
-void pgr_event_collector_stop();
-PgrEventCollectorState pgr_event_collector_state();
+void pgs_event_collector_stop();
+PgsEventCollectorState pgs_event_collector_state();
 
 // pump_reason: 1 disabled,2 stopped,3 enable lease expired,4 cooldown,5 no session,
 // 6 stale/missing location,7 inactive session,8 invalid list,9 array root failed,

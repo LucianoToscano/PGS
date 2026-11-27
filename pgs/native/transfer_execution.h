@@ -1,7 +1,7 @@
 #pragma once
 #include <stdint.h>
 
-#include "transfer_policy.h"  // PgrTransferInput + pgs_transfer_policy_api(1)->decide (feature 4)
+#include "transfer_policy.h"  // PgsTransferInput + pgs_transfer_policy_api(1)->decide (feature 4)
 
 // Feature 23 (API 1). Native request LIFECYCLE for Pokemon auto-transfer: a focused C++ port of the
 // issue/callback-bookkeeping machinery in diagnostics/quick-close.js transferCatch (~1676-1752) and
@@ -22,7 +22,7 @@
 //
 // The caller supplies an already-classified request: the proven caught id, the current bag and pokemon
 // (both re-validated in JS immediately before the call), the caller's current epoch, the classified
-// PgrTransferInput by value, and the proven owner tid. submit() re-roots, re-resolves across every
+// PgsTransferInput by value, and the proven owner tid. submit() re-roots, re-resolves across every
 // managed call, re-looks-up bag.GetPokemon(id), proves it is the SAME rooted pokemon with the SAME id,
 // re-runs the feature-4 policy, applies a fresh epoch+lease+owner gate IMMEDIATELY before the release,
 // latches seen+issued BEFORE the invoke (so an uncertain release is never retried), and always writes
@@ -35,51 +35,51 @@ extern "C" {
 
 static_assert(sizeof(void *) == 8, "TransferExecution native ABI requires LP64");
 
-enum PgrTransferExecInfo {
-  PGR_TX_FEATURE_ID     = 23,
-  PGR_TX_API_VERSION    = 1,
-  PGR_TX_CONFIG_VERSION = 1,
-  PGR_TX_REQUEST_VERSION = 1,
-  PGR_TX_SAMPLE_VERSION = 1,
-  PGR_TX_EVENT_VERSION  = 1,
-  PGR_TX_MAX_LEASE_MS   = 2500,   // residual foreground lease ceiling (JS allowedUntil gate)
-  PGR_TX_TIMEOUT_MS     = 10000,  // issued-request uncertain deadline (JS r.transferDeadline = now+10000)
-  PGR_TX_SEEN_MAX       = 4096,   // process-wide captured-id quarantine (JS transferSeen.size >= 4096)
-  PGR_TX_PENDING_MAX    = 64,     // bounded concurrent issued transactions; overflow fails closed
-  PGR_TX_EVENT_CAP      = 64,     // bounded FIFO depth; overflow fails closed
-  PGR_TX_TICKET_SLOTS   = 64      // bounded observe_begin/observe_end tickets (nested callbacks)
+enum PgsTransferExecInfo {
+  PGS_TX_FEATURE_ID     = 23,
+  PGS_TX_API_VERSION    = 1,
+  PGS_TX_CONFIG_VERSION = 1,
+  PGS_TX_REQUEST_VERSION = 1,
+  PGS_TX_SAMPLE_VERSION = 1,
+  PGS_TX_EVENT_VERSION  = 1,
+  PGS_TX_MAX_LEASE_MS   = 2500,   // residual foreground lease ceiling (JS allowedUntil gate)
+  PGS_TX_TIMEOUT_MS     = 10000,  // issued-request uncertain deadline (JS r.transferDeadline = now+10000)
+  PGS_TX_SEEN_MAX       = 4096,   // process-wide captured-id quarantine (JS transferSeen.size >= 4096)
+  PGS_TX_PENDING_MAX    = 64,     // bounded concurrent issued transactions; overflow fails closed
+  PGS_TX_EVENT_CAP      = 64,     // bounded FIFO depth; overflow fails closed
+  PGS_TX_TICKET_SLOTS   = 64      // bounded observe_begin/observe_end tickets (nested callbacks)
 };
 
 // submit() returns 1 ISSUED / 0 REFUSED / negative error. Every other table function returns
-// PGR_TX_OK (0) on success or a negative error. observe_begin() returns a nonzero ticket or 0.
-enum PgrTransferExecStatus {
-  PGR_TX_ISSUED            = 1,   // submit(): release was issued, *out_token set
-  PGR_TX_OK                = 0,   // generic success / submit(): REFUSED (policy/gate/duplicate/thread)
-  PGR_TX_ERR_NULL_ARG      = -1,
-  PGR_TX_ERR_BAD_VERSION   = -2,
-  PGR_TX_ERR_BAD_SIZE      = -3,
-  PGR_TX_ERR_MISSING_PTR   = -4,
-  PGR_TX_ERR_NOT_INSTALLED = -6,
-  PGR_TX_ERR_RECONFIG      = -9,
-  PGR_TX_ERR_CLOCK_FAILURE = -10,
-  PGR_TX_ERR_IDENTITY      = -11,  // captured id 0 / class mismatch / id mismatch / GetPokemon mismatch
-  PGR_TX_ERR_GCHANDLE      = -12,  // a GC root could not be allocated (fail closed: NO release)
-  PGR_TX_ERR_OVERFLOW      = -13,  // pending/FIFO table full (fail closed)
-  PGR_TX_ERR_NO_POLICY     = -14   // feature-4 transfer_policy api(1) was not resolvable at install
+// PGS_TX_OK (0) on success or a negative error. observe_begin() returns a nonzero ticket or 0.
+enum PgsTransferExecStatus {
+  PGS_TX_ISSUED            = 1,   // submit(): release was issued, *out_token set
+  PGS_TX_OK                = 0,   // generic success / submit(): REFUSED (policy/gate/duplicate/thread)
+  PGS_TX_ERR_NULL_ARG      = -1,
+  PGS_TX_ERR_BAD_VERSION   = -2,
+  PGS_TX_ERR_BAD_SIZE      = -3,
+  PGS_TX_ERR_MISSING_PTR   = -4,
+  PGS_TX_ERR_NOT_INSTALLED = -6,
+  PGS_TX_ERR_RECONFIG      = -9,
+  PGS_TX_ERR_CLOCK_FAILURE = -10,
+  PGS_TX_ERR_IDENTITY      = -11,  // captured id 0 / class mismatch / id mismatch / GetPokemon mismatch
+  PGS_TX_ERR_GCHANDLE      = -12,  // a GC root could not be allocated (fail closed: NO release)
+  PGS_TX_ERR_OVERFLOW      = -13,  // pending/FIFO table full (fail closed)
+  PGS_TX_ERR_NO_POLICY     = -14   // feature-4 transfer_policy api(1) was not resolvable at install
 };
 
 // next_event() record kinds. id/token/aux are codes/ints only -- never a pokemon/bag id string.
-enum PgrTransferExecEventKind {
-  PGR_TX_EVENT_REQUEST  = 1,  // optional: a release was issued                     -> transfer-requested
-  PGR_TX_EVENT_COMPLETE = 2,  // callback completed; aux bit0 = success(1)/error(0) -> transfer-confirmed/-error
-  PGR_TX_EVENT_TIMEOUT  = 3   // 10 s elapsed with no callback (uncertain, once)    -> transfer-unconfirmed
+enum PgsTransferExecEventKind {
+  PGS_TX_EVENT_REQUEST  = 1,  // optional: a release was issued                     -> transfer-requested
+  PGS_TX_EVENT_COMPLETE = 2,  // callback completed; aux bit0 = success(1)/error(0) -> transfer-confirmed/-error
+  PGS_TX_EVENT_TIMEOUT  = 3   // 10 s elapsed with no callback (uncertain, once)    -> transfer-unconfirmed
 };
 
 // Fixed LP64 config (144 bytes): 8-byte header + 16 validated il2cpp pointers + 2 int32. Every pointer
 // is an already-validated export / MethodInfo* / Il2CppClass* / FieldInfo* packed by the host straight
 // off p.transfer; the native layer re-checks the header and rejects any null. No hook address.
 struct PgrTransferExecConfig {
-  uint32_t version;  // == PGR_TX_CONFIG_VERSION
+  uint32_t version;  // == PGS_TX_CONFIG_VERSION
   uint32_t size;     // == sizeof(PgrTransferExecConfig)
 
   // il2cpp runtime exports.
@@ -118,14 +118,14 @@ static_assert(sizeof(PgrTransferExecConfig) == 144,
 // its encounter/source in JS immediately before this call; native then protects the window with the
 // epoch/lease generation. bag/pokemon are raw managed pointers rooted by native on entry.
 struct PgrTransferExecRequest {
-  uint32_t version;         // == PGR_TX_REQUEST_VERSION
+  uint32_t version;         // == PGS_TX_REQUEST_VERSION
   uint32_t size;            // == sizeof(PgrTransferExecRequest)
   uint64_t captured_id;     // proven caught id (must be nonzero and match the pokemon/current id)
   uint64_t epoch;           // caller's current epoch; must equal the armed epoch at the final gate
   uint64_t tid;             // proven owner tid (must equal the current OS tid)
   void *bag;                // current bag (GetPokemon target + ReleasePokemon receiver)
   void *pokemon;            // current pokemon (release target; must equal bag.GetPokemon(id))
-  PgrTransferInput input;   // the feature-4 classification, re-decided by submit()
+  PgsTransferInput input;   // the feature-4 classification, re-decided by submit()
 };
 
 static_assert(sizeof(PgrTransferExecRequest) == 104,
@@ -133,7 +133,7 @@ static_assert(sizeof(PgrTransferExecRequest) == 104,
 
 // Fixed LP64 telemetry gauge (88 bytes). Pull-only; the native layer never calls JS.
 struct PgrTransferExecSample {
-  uint32_t version;         // == PGR_TX_SAMPLE_VERSION
+  uint32_t version;         // == PGS_TX_SAMPLE_VERSION
   uint32_t size;            // == sizeof(PgrTransferExecSample)
   uint64_t request_serial;  // bumps on each issued release
   uint64_t complete_serial; // bumps on each completed callback (success or error)
@@ -157,7 +157,7 @@ static_assert(sizeof(PgrTransferExecSample) == 88,
 // Fixed LP64 drain record (24 bytes). token is the monotonic safe-JS request token; id/aux are
 // codes/ints only, never an id string.
 struct PgrTransferExecEvent {
-  uint32_t kind;      // PgrTransferExecEventKind
+  uint32_t kind;      // PgsTransferExecEventKind
   int32_t  id;        // reserved reason code (0 in v1)
   uint64_t token;     // the request token this record belongs to
   int32_t  aux;       // COMPLETE: bit0 = success; else 0
@@ -169,14 +169,14 @@ static_assert(sizeof(PgrTransferExecEvent) == 24,
 
 // Fixed LP64 table: 8-byte header + 8 function pointers = 72 bytes.
 struct PgrTransferExecApi {
-  uint32_t version;  // == PGR_TX_API_VERSION
+  uint32_t version;  // == PGS_TX_API_VERSION
   uint32_t size;     // == sizeof(PgrTransferExecApi)
   int (*install)(const PgrTransferExecConfig *config);
   // Refresh the policy gate: enabled, a residual lease clamped to 2500 ms, and the caller's current
   // epoch (bumped by the caller whenever keep settings change). Carries proven_tid; once the owner is
   // latched a foreign thread can only revoke (enabled is forced to 0). Any thread.
   int (*update)(int enabled, uint64_t remaining_lease_ms, uint64_t epoch, uint64_t proven_tid);
-  // One owner-thread release lifecycle. Returns PGR_TX_ISSUED (1, *out_token set), PGR_TX_OK (0,
+  // One owner-thread release lifecycle. Returns PGS_TX_ISSUED (1, *out_token set), PGS_TX_OK (0,
   // refused: policy/duplicate/gate/thread), or a negative error. *out_token is written once issued,
   // including when ReleasePokemon throws or returns a null promise (uncertain, retained, no retry).
   int (*submit)(const PgrTransferExecRequest *request, uint64_t *out_token);

@@ -3,7 +3,7 @@
 #include <cstring>
 #include <iostream>
 
-using namespace pgr_buddy_ep;
+using namespace pgs_buddy_ep;
 
 int main() {
     Settings s;

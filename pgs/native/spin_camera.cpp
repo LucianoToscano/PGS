@@ -59,7 +59,7 @@ int g_callback_depth = 0;
 std::atomic<uint32_t> g_fast_serial{0};
 std::atomic<uint32_t> g_error_serial{0};
 std::atomic<uint32_t> g_last_phase{kPhaseNone};
-std::atomic<uint32_t> g_last_error{PGR_SCAM_RTERR_NONE};
+std::atomic<uint32_t> g_last_error{PGS_SCAM_RTERR_NONE};
 std::atomic<uint32_t> g_active_roots_mask{0};
 std::atomic<uint32_t> g_fault{0};
 std::atomic<float> g_last_original_speed{0.0f};
@@ -176,7 +176,7 @@ void handle_enter_state(int slot_idx, void *expected_class, void *self) noexcept
     CallbackDepthGuard depth;
     uint64_t now_ns = 0;
     if (!read_boottime_ns(&now_ns)) {
-        record_runtime_error(PGR_SCAM_RTERR_CLOCK);
+        record_runtime_error(PGS_SCAM_RTERR_CLOCK);
         return;
     }
     const bool permitted = is_spin_permitted(now_ns);
@@ -192,7 +192,7 @@ void handle_enter_state(int slot_idx, void *expected_class, void *self) noexcept
     // Root self before replacing the slot.
     void *new_handle = g_cfg.gchandle_new(self, 0);
     if (new_handle == nullptr) {
-        record_runtime_error(PGR_SCAM_RTERR_GCHANDLE_ENTER);
+        record_runtime_error(PGS_SCAM_RTERR_GCHANDLE_ENTER);
         return;
     }
     if (g_slots[slot_idx].handle != nullptr) {
@@ -234,9 +234,9 @@ void hook_in_exit(void *self, void *method_info) {
 
 void hook_out_enter(void *self, void *method_info) {
     StateLifecycleFn orig = original(g_orig_out_enter);
-    pgr_interaction_owner::Phase observer(8);
-    pgr_interaction_owner::Pins pins(observer.wanted(),reinterpret_cast<void*>(g_cfg.gchandle_new),reinterpret_cast<void*>(g_cfg.gchandle_get_target),reinterpret_cast<void*>(g_cfg.gchandle_free),self);
-    pgr_interaction_owner::AbortBeforeRoots unwind{observer};
+    pgs_interaction_owner::Phase observer(8);
+    pgs_interaction_owner::Pins pins(observer.wanted(),reinterpret_cast<void*>(g_cfg.gchandle_new),reinterpret_cast<void*>(g_cfg.gchandle_get_target),reinterpret_cast<void*>(g_cfg.gchandle_free),self);
+    pgs_interaction_owner::AbortBeforeRoots unwind{observer};
     if(pins.valid)handle_enter_state(1, g_cfg.out_class, pins.at(0));
     if (orig != nullptr) {
         if(pins.valid)observer.enter(pins.at(0));
@@ -247,9 +247,9 @@ void hook_out_enter(void *self, void *method_info) {
 
 void hook_out_exit(void *self, void *method_info) {
     StateLifecycleFn orig = original(g_orig_out_exit);
-    pgr_interaction_owner::Phase observer(9);
-    pgr_interaction_owner::Pins pins(observer.wanted(),reinterpret_cast<void*>(g_cfg.gchandle_new),reinterpret_cast<void*>(g_cfg.gchandle_get_target),reinterpret_cast<void*>(g_cfg.gchandle_free),self);
-    pgr_interaction_owner::AbortBeforeRoots unwind{observer};
+    pgs_interaction_owner::Phase observer(9);
+    pgs_interaction_owner::Pins pins(observer.wanted(),reinterpret_cast<void*>(g_cfg.gchandle_new),reinterpret_cast<void*>(g_cfg.gchandle_get_target),reinterpret_cast<void*>(g_cfg.gchandle_free),self);
+    pgs_interaction_owner::AbortBeforeRoots unwind{observer};
     if(pins.valid)handle_exit_state(1, pins.at(0));
     if (orig != nullptr) {
         if(pins.valid)observer.enter(pins.at(0));
@@ -273,7 +273,7 @@ bool hook_move_next(void *self, void *method_info) {
         CallbackDepthGuard depth;
         uint64_t now_ns = 0;
         if (!read_boottime_ns(&now_ns)) {
-            record_runtime_error(PGR_SCAM_RTERR_CLOCK);
+            record_runtime_error(PGS_SCAM_RTERR_CLOCK);
         } else {
             const bool permitted = is_spin_permitted(now_ns);
             if (!permitted) {
@@ -302,7 +302,7 @@ bool hook_move_next(void *self, void *method_info) {
                             if (slot_cam == camera) {
                                 void *h = g_cfg.gchandle_new(self, 0);
                                 if (h == nullptr) {
-                                    record_runtime_error(PGR_SCAM_RTERR_GCHANDLE_ITER);
+                                    record_runtime_error(PGS_SCAM_RTERR_GCHANDLE_ITER);
                                 } else {
                                     iter_root.handle = h;
                                     matched_epoch = g_epoch.load(std::memory_order_acquire);
@@ -324,7 +324,7 @@ bool hook_move_next(void *self, void *method_info) {
         CallbackDepthGuard depth;
         uint64_t now_ns = 0;
         if (!read_boottime_ns(&now_ns)) {
-            record_runtime_error(PGR_SCAM_RTERR_CLOCK);
+            record_runtime_error(PGS_SCAM_RTERR_CLOCK);
         } else if (ret && is_spin_permitted(now_ns) &&
                    matched_epoch == g_epoch.load(std::memory_order_acquire)) {
             void *o = g_cfg.gchandle_get_target(iter_root.handle);
@@ -403,19 +403,19 @@ bool install_one_hook(void *target, void *replacement, std::atomic<Fn> *orig_slo
 }
 
 int api_install(const PgrSpinCameraConfig *config) {
-    if (config == nullptr) return PGR_SCAM_ERR_NULL_ARG;
-    if (!validate_config(config)) return PGR_SCAM_ERR_BAD_CONFIG;
+    if (config == nullptr) return PGS_SCAM_ERR_NULL_ARG;
+    if (!validate_config(config)) return PGS_SCAM_ERR_BAD_CONFIG;
 
     std::lock_guard<std::mutex> lock(g_install_mutex);
     const int state = g_install_state.load(std::memory_order_acquire);
     if (state == -1) {
-        return PGR_SCAM_ERR_HOOK_FAILED;
+        return PGS_SCAM_ERR_HOOK_FAILED;
     }
     if (state == 1) {
         if (std::memcmp(&g_cfg, config, sizeof(PgrSpinCameraConfig)) == 0) {
-            return PGR_SCAM_OK;
+            return PGS_SCAM_OK;
         }
-        return PGR_SCAM_ERR_ALREADY_BOUND;
+        return PGS_SCAM_ERR_ALREADY_BOUND;
     }
 
     g_cfg = *config;
@@ -431,22 +431,22 @@ int api_install(const PgrSpinCameraConfig *config) {
         g_lease_deadline_ns.store(0, std::memory_order_release);
         g_fault.store(1, std::memory_order_release);
         g_install_state.store(-1, std::memory_order_release);
-        return PGR_SCAM_ERR_HOOK_FAILED;
+        return PGS_SCAM_ERR_HOOK_FAILED;
     }
 
     g_install_state.store(1, std::memory_order_release);
-    return PGR_SCAM_OK;
+    return PGS_SCAM_OK;
 }
 
 int api_update(int allowed, uint64_t remaining_lease_ms, uint64_t proven_tid, uint64_t epoch) {
     if (g_install_state.load(std::memory_order_acquire) != 1) {
-        return PGR_SCAM_ERR_HOOK_FAILED;
+        return PGS_SCAM_ERR_HOOK_FAILED;
     }
 
     const uint64_t owner = g_owner_tid.load(std::memory_order_acquire);
     if (allowed && (remaining_lease_ms > kMaxLeaseMs || (owner && owner != proven_tid))) {
         g_allowed.store(0); g_lease_deadline_ns.store(0); g_pending_prune.store(1);
-        return PGR_SCAM_ERR_BAD_CONFIG;
+        return PGS_SCAM_ERR_BAD_CONFIG;
     }
     const uint64_t prev_epoch = g_epoch.exchange(epoch, std::memory_order_acq_rel);
     if (proven_tid != 0) {
@@ -463,8 +463,8 @@ int api_update(int allowed, uint64_t remaining_lease_ms, uint64_t proven_tid, ui
             g_allowed.store(0, std::memory_order_release);
             g_lease_deadline_ns.store(0, std::memory_order_release);
             g_pending_prune.store(1, std::memory_order_release);
-            record_runtime_error(PGR_SCAM_RTERR_CLOCK);
-            return PGR_SCAM_ERR_CLOCK_FAILED;
+            record_runtime_error(PGS_SCAM_RTERR_CLOCK);
+            return PGS_SCAM_ERR_CLOCK_FAILED;
         }
         const uint64_t clamped_ms = remaining_lease_ms > kMaxLeaseMs ? kMaxLeaseMs : remaining_lease_ms;
         g_lease_deadline_ns.store(now_ns + clamped_ms * kNsPerMs, std::memory_order_release);
@@ -483,21 +483,21 @@ int api_update(int allowed, uint64_t remaining_lease_ms, uint64_t proven_tid, ui
         }
     }
 
-    return PGR_SCAM_OK;
+    return PGS_SCAM_OK;
 }
 
 int api_tick(uint64_t proven_tid) {
-    if (g_install_state.load(std::memory_order_acquire) != 1) return PGR_SCAM_ERR_HOOK_FAILED;
-    if (!proven_tid || proven_tid != current_tid() || proven_tid != g_owner_tid.load()) return PGR_SCAM_OK;
+    if (g_install_state.load(std::memory_order_acquire) != 1) return PGS_SCAM_ERR_HOOK_FAILED;
+    if (!proven_tid || proven_tid != current_tid() || proven_tid != g_owner_tid.load()) return PGS_SCAM_OK;
     if (g_callback_depth == 0) {
         uint64_t now_ns = 0;
         if (read_boottime_ns(&now_ns)) prune_slots_on_owner(now_ns, is_spin_permitted(now_ns));
     }
-    return PGR_SCAM_OK;
+    return PGS_SCAM_OK;
 }
 
 int api_sample(PgrSpinCameraSample *out) {
-    if (out == nullptr) return PGR_SCAM_ERR_NULL_ARG;
+    if (out == nullptr) return PGS_SCAM_ERR_NULL_ARG;
     out->version = 1;
     out->size = sizeof(PgrSpinCameraSample);
     out->fast_serial = g_fast_serial.load(std::memory_order_acquire);
@@ -512,7 +512,7 @@ int api_sample(PgrSpinCameraSample *out) {
     out->enter_count = g_enter_count.load(std::memory_order_relaxed);
     out->exit_count = g_exit_count.load(std::memory_order_relaxed);
     out->prune_count = g_prune_count.load(std::memory_order_relaxed);
-    return PGR_SCAM_OK;
+    return PGS_SCAM_OK;
 }
 
 const PgrSpinCameraApi kApiTable = {

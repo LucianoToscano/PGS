@@ -54,54 +54,54 @@ extern "C" {
 
 static_assert(sizeof(void *) == 8, "CatchObservers native ABI requires LP64");
 
-enum PgrObsInfo {
-    PGR_OBS_FEATURE_ID  = 49,
-    PGR_OBS_API_VERSION = 1,
-    PGR_OBS_CONFIG_VERSION = 1,
-    PGR_OBS_SAMPLE_VERSION = 1,
-    PGR_OBS_MAX_LEASE_MS = 2500,  // LIMITS.leaseMs
-    PGR_OBS_EVENT_RING   = 16     // bounded native event ring (append table drained by cursor)
+enum PgsObsInfo {
+    PGS_OBS_FEATURE_ID  = 49,
+    PGS_OBS_API_VERSION = 1,
+    PGS_OBS_CONFIG_VERSION = 1,
+    PGS_OBS_SAMPLE_VERSION = 1,
+    PGS_OBS_MAX_LEASE_MS = 2500,  // LIMITS.leaseMs
+    PGS_OBS_EVENT_RING   = 16     // bounded native event ring (append table drained by cursor)
 };
 
 // Status codes (0 == success); aligned with the sibling native modules.
-enum PgrObsStatus {
-    PGR_OBS_OK = 0,
-    PGR_OBS_ERR_NULL = 1,
-    PGR_OBS_ERR_BAD_CONFIG = 2,
-    PGR_OBS_ERR_HOOK = 3,
-    PGR_OBS_ERR_LEASE = 4,
-    PGR_OBS_ERR_NOT_INSTALLED = 6,
-    PGR_OBS_ERR_BAD_ARG = 9
+enum PgsObsStatus {
+    PGS_OBS_OK = 0,
+    PGS_OBS_ERR_NULL = 1,
+    PGS_OBS_ERR_BAD_CONFIG = 2,
+    PGS_OBS_ERR_HOOK = 3,
+    PGS_OBS_ERR_LEASE = 4,
+    PGS_OBS_ERR_NOT_INSTALLED = 6,
+    PGS_OBS_ERR_BAD_ARG = 9
 };
 
 // Event (action) codes surfaced through sample().action.
-enum PgrObsAction {
-    PGR_OBS_A_NONE = 0,
-    PGR_OBS_A_OUTCOME_CONFIRMED = 1,
-    PGR_OBS_A_OUTCOME_SUPPRESSED = 2,
-    PGR_OBS_A_OUTCOME_UNAVAILABLE = 3,
-    PGR_OBS_A_SKIP = 4,
-    PGR_OBS_A_APPLIED = 5,
-    PGR_OBS_A_COMPLETED = 6
+enum PgsObsAction {
+    PGS_OBS_A_NONE = 0,
+    PGS_OBS_A_OUTCOME_CONFIRMED = 1,
+    PGS_OBS_A_OUTCOME_SUPPRESSED = 2,
+    PGS_OBS_A_OUTCOME_UNAVAILABLE = 3,
+    PGS_OBS_A_SKIP = 4,
+    PGS_OBS_A_APPLIED = 5,
+    PGS_OBS_A_COMPLETED = 6
 };
 
 // Reason codes surfaced through sample().reason.
-enum PgrObsReason {
-    PGR_OBS_R_NONE = 0,
+enum PgsObsReason {
+    PGS_OBS_R_NONE = 0,
     // suppressed reasons
-    PGR_OBS_R_AMBIGUOUS = 1,      // CatchMissed
-    PGR_OBS_R_NOT_CONFIRMED = 2,  // known literal, not confirmed (error / item-replacement)
-    PGR_OBS_R_UNKNOWN = 3,        // status value matched no known literal
+    PGS_OBS_R_AMBIGUOUS = 1,      // CatchMissed
+    PGS_OBS_R_NOT_CONFIRMED = 2,  // known literal, not confirmed (error / item-replacement)
+    PGS_OBS_R_UNKNOWN = 3,        // status value matched no known literal
     // confirmed outcomes
-    PGR_OBS_R_CAUGHT = 10,        // CatchSuccess
-    PGR_OBS_R_BROKE_FREE = 11,    // CatchEscape
-    PGR_OBS_R_FLED = 12,          // CatchFlee
+    PGS_OBS_R_CAUGHT = 10,        // CatchSuccess
+    PGS_OBS_R_BROKE_FREE = 11,    // CatchEscape
+    PGS_OBS_R_FLED = 12,          // CatchFlee
     // skip reasons
-    PGR_OBS_R_CONCURRENT = 20,
-    PGR_OBS_R_SPECIAL = 21,
-    PGR_OBS_R_REVOKED = 22,       // stop() bumped the revocation generation mid-flight
-    PGR_OBS_R_MAX_SPEED = 23,     // invalid per-ball Max speed; no mutation
-    PGR_OBS_R_MAX = 30            // Max-ball speed request (actual writes reported by feature8)
+    PGS_OBS_R_CONCURRENT = 20,
+    PGS_OBS_R_SPECIAL = 21,
+    PGS_OBS_R_REVOKED = 22,       // stop() bumped the revocation generation mid-flight
+    PGS_OBS_R_MAX_SPEED = 23,     // invalid per-ball Max speed; no mutation
+    PGS_OBS_R_MAX = 30            // Max-ball speed request (actual writes reported by feature8)
 };
 
 // Fixed LP64 config (168 bytes): 8-byte header + 15 validated pointers + 6 int32 literals
@@ -110,7 +110,7 @@ enum PgrObsReason {
 // attachment itself (defence in depth, mirroring the sibling native modules) rather than
 // trusting gettid() alone. See the contract for the exact pointer order.
 struct PgrObsConfig {
-    uint32_t version;              // 0   == PGR_OBS_CONFIG_VERSION
+    uint32_t version;              // 0   == PGS_OBS_CONFIG_VERSION
     uint32_t size;                 // 4   == sizeof(PgrObsConfig)
 
     void *object_get_class;        // 8   void* (void* obj)
@@ -153,8 +153,8 @@ static_assert(sizeof(PgrObsConfig) == 168, "PgrObsConfig must remain 168 bytes o
 struct PgrObsEvent {
     uint64_t seq;        // 0   1-based global append sequence (0 == never written)
     uint64_t tid;        // 8   owner tid when the event was emitted
-    uint32_t action;     // 16  event code (PgrObsAction)
-    uint32_t reason;     // 20  reason code (PgrObsReason)
+    uint32_t action;     // 16  event code (PgsObsAction)
+    uint32_t reason;     // 20  reason code (PgsObsReason)
     int32_t  status;     // 24  raw status value for outcome events
     uint32_t pad;        // 28  reserved / alignment
 };
@@ -166,7 +166,7 @@ static_assert(sizeof(PgrObsEvent) == 32, "PgrObsEvent must remain 32 bytes on LP
 // `event_head`. The adapter turns ring entries into the existing outcome-* / skip event names
 // and surfaces an 'outcome-dropped' note on a detected gap; no native->JS callback is made.
 struct PgrObsSample {
-    uint32_t version;    // 0   == PGR_OBS_SAMPLE_VERSION
+    uint32_t version;    // 0   == PGS_OBS_SAMPLE_VERSION
     uint32_t size;       // 4   == sizeof(PgrObsSample)
     uint64_t confirmed;  // 8   confirmed outcomes reported
     uint64_t suppressed; // 16  suppressed outcomes reported
@@ -176,21 +176,21 @@ struct PgrObsSample {
     uint64_t faults;     // 48  latched faults observed
     uint64_t last_tid;   // 56  owner tid of the last event
     uint32_t serial;     // 64  low 32 bits of event_head (one bump per emitted event)
-    uint32_t action;     // 68  last event code (PgrObsAction)
-    uint32_t reason;     // 72  last reason code (PgrObsReason)
+    uint32_t action;     // 68  last event code (PgsObsAction)
+    uint32_t reason;     // 72  last reason code (PgsObsReason)
     int32_t  status;     // 76  raw status value for the last outcome event
     uint32_t seen_count; // 80  retained roots: <=4 outcome handles + <=1 deferred receiver
     uint32_t fault;      // 84  latched fault flag
     uint64_t last_caller;// 88  last observed btxu return address (debug; validates the caller gate)
     uint64_t event_head; // 96  total events ever appended to the ring (cursor horizon)
-    PgrObsEvent events[PGR_OBS_EVENT_RING]; // 104  the ring (indexed by seq % PGR_OBS_EVENT_RING)
+    PgrObsEvent events[PGS_OBS_EVENT_RING]; // 104  the ring (indexed by seq % PGS_OBS_EVENT_RING)
 };
 
 static_assert(sizeof(PgrObsSample) == 616, "PgrObsSample must remain 616 bytes on LP64");
 
 // Fixed LP64 table: 8-byte header + 5 function pointers = 48 bytes.
 struct PgrObsApi {
-    uint32_t version;    // == PGR_OBS_API_VERSION
+    uint32_t version;    // == PGS_OBS_API_VERSION
     uint32_t size;       // == sizeof(PgrObsApi)
     int (*install)(const PgrObsConfig *config);
     // Arm feature49's own observer/outcome gate. lease clamped/refused above 2500 ms. enabled==0
@@ -212,30 +212,30 @@ static_assert(sizeof(PgrObsApi) == 48, "PgrObsApi must remain a 48-byte version-
 // Called only on the registered attached owner with a live rooted receiver.
 // 1 holds the pending response (return null without original); 0 passes through.
 // Callback must not throw, unload, install hooks or call the original itself.
-typedef int (*PgrObsBerryFilter)(void *rooted_ball,uint64_t owner_tid);
-struct PgrObsApi2 {
+typedef int (*PgsObsBerryFilter)(void *rooted_ball,uint64_t owner_tid);
+struct PgsObsApi2 {
     uint32_t version,size;
     // Exact callback+owner repeats are idempotent; rebinding is BAD_CONFIG.
     // Registration requires API1 installation and actual attached owner thread.
-    int (*register_filter)(PgrObsBerryFilter,uint64_t owner_tid);
+    int (*register_filter)(PgsObsBerryFilter,uint64_t owner_tid);
     int (*filter_ready)();
 };
-static_assert(sizeof(PgrObsApi2)==24,"Catch observer berry bridge API2");
+static_assert(sizeof(PgsObsApi2)==24,"Catch observer berry bridge API2");
 
 // Optional compiled Max-ball binding. The host validates the instance Single field
 // on Pokeball before registering it on the attached Unity owner. No V1 ABI changes.
-struct PgrObsApi3 {
+struct PgsObsApi3 {
     uint32_t version,size;
     int (*register_max)(void *field_max_speed,const PgrSpeedApi2 *speed,uint64_t owner_tid);
 };
-static_assert(sizeof(PgrObsApi3)==16,"Catch observer Max binding API3");
+static_assert(sizeof(PgsObsApi3)==16,"Catch observer Max binding API3");
 
 // HoldingBreadBall is cleared during throw/shrink. The optional compiled reader
 // queries this ball's encounter state instead: 1 Max, 0 ordinary, -1 unavailable.
-typedef int (*PgrObsMaxContext)(void *rooted_ball);
-struct PgrObsApi4 {
+typedef int (*PgsObsMaxContext)(void *rooted_ball);
+struct PgsObsApi4 {
     uint32_t version,size;
-    int (*register_context)(PgrObsMaxContext reader,uint64_t owner_tid);
+    int (*register_context)(PgsObsMaxContext reader,uint64_t owner_tid);
 };
 
 // Hidden getter. NOT exported by the version script; the coordinator registers it in

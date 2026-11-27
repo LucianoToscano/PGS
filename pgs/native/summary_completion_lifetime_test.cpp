@@ -93,20 +93,20 @@ void reset(bool withState=true){
  moveAlive=moveDismiss=moveBox=moveOnInputRoot=throwDismiss=false;live=true;onAlive=nullptr;
  Scene &s=scenes[0];s={{&guiClass,2,&s.action},{&stateClass,&s.gui,&s.response},{&responseClass,3,{}},{&actionClass}};
  memset(s.response.id,255,8);boxes[0]={&boolClass,1};
- request={};request.version=PGR_SC_REQUEST_VERSION;request.size=sizeof(request);
+ request={};request.version=PGS_SC_REQUEST_VERSION;request.size=sizeof(request);
  memset(request.expected_key,255,8);request.epoch=7;request.tid=owner;
  request.gui=borrow(&s.gui);request.state=withState?borrow(&s.state):nullptr;
  request.proto=borrow(&s.response);request.response=borrow(&s.response);request.dismissed=borrow(&s.action);
- assert(api->update(1,2500,7,owner)==PGR_SC_OK);
- token=0;assert(api->acquire(7,owner,&token)==PGR_SC_OK&&token);
+ assert(api->update(1,2500,7,owner)==PGS_SC_OK);
+ token=0;assert(api->acquire(7,owner,&token)==PGS_SC_OK&&token);
 }
 void balanced(){assert(handles.size()==hostHandles.size());for(uintptr_t h:hostHandles)assert(handles.count(h));}
-PgrSummaryCompletionOutput complete(int expected=PGR_SC_DONE){
+PgrSummaryCompletionOutput complete(int expected=PGS_SC_DONE){
  PgrSummaryCompletionOutput out{};const int rc=api->complete(&request,token,&out);
  assert(rc==expected);assert(out.version==1&&out.size==24);balanced();return out;
 }
 PgrSummaryCompletionConfig config(){
- PgrSummaryCompletionConfig c{};c.version=PGR_SC_CONFIG_VERSION;c.size=sizeof(c);
+ PgrSummaryCompletionConfig c{};c.version=PGS_SC_CONFIG_VERSION;c.size=sizeof(c);
  c.object_get_class=reinterpret_cast<void*>(klass);c.field_get_value=reinterpret_cast<void*>(fieldGet);
  c.runtime_invoke=reinterpret_cast<void*>(invoke);c.object_unbox=reinterpret_cast<void*>(unbox);
  c.class_gui=&guiClass;c.class_state=&stateClass;c.class_response=&responseClass;c.class_bool=&boolClass;
@@ -124,54 +124,54 @@ int main(int argc,char **argv){
  api=static_cast<const PgrSummaryCompletionApi*>(core->query_feature(36,1));assert(api&&api->size==64);
  assert(sizeof(PgrSummaryCompletionConfig)==168&&sizeof(PgrSummaryCompletionRequest)==72);
  assert(offsetof(PgrSummaryCompletionConfig,gc_new)==136&&offsetof(PgrSummaryCompletionConfig,success_literal)==160);
- owner=gettid();auto cfg=config();assert(api->install(&cfg)==PGR_SC_OK);
+ owner=gettid();auto cfg=config();assert(api->install(&cfg)==PGS_SC_OK);
 
- reset();assert(api->validate(&request)==PGR_SC_DONE);balanced();newCalls=0;
- auto out=complete();assert(dismissCalls==1&&(out.flags&PGR_SC_FLAG_INVOKED)&&out.after==3);
+ reset();assert(api->validate(&request)==PGS_SC_DONE);balanced();newCalls=0;
+ auto out=complete();assert(dismissCalls==1&&(out.flags&PGS_SC_FLAG_INVOKED)&&out.after==3);
  const int completeAllocations=newCalls;assert(completeAllocations>=7);
 
  // Independent moving scenes: alive relocates every input, Dismiss relocates them again.
  for(bool withState:{false,true}){
   reset(withState);moveAlive=true;moveDismiss=true;moveBox=true;
   out=complete();assert(currentScene==2&&currentBox>=2&&dismissCalls==1);
-  assert((out.flags&PGR_SC_FLAG_AFTER_KNOWN)&&out.after==3&&!(out.flags&PGR_SC_FLAG_GONE));
+  assert((out.flags&PGS_SC_FLAG_AFTER_KNOWN)&&out.after==3&&!(out.flags&PGS_SC_FLAG_GONE));
   reset(withState);moveOnInputRoot=true;moveAlive=true;moveBox=true;
-  assert(api->validate(&request)==PGR_SC_DONE&&currentScene==2);balanced();
+  assert(api->validate(&request)==PGS_SC_DONE&&currentScene==2);balanced();
  }
 
- reset();newCalls=0;assert(api->validate(&request)==PGR_SC_DONE);const int validateAllocations=newCalls;balanced();
+ reset();newCalls=0;assert(api->validate(&request)==PGS_SC_DONE);const int validateAllocations=newCalls;balanced();
  assert(validateAllocations>=6);
  for(int n=1;n<=validateAllocations;++n){
-  reset();failNew=n;assert(api->validate(&request)!=PGR_SC_DONE);assert(allocationFailed&&dismissCalls==0);balanced();
+  reset();failNew=n;assert(api->validate(&request)!=PGS_SC_DONE);assert(allocationFailed&&dismissCalls==0);balanced();
  }
  for(int n=1;n<=completeAllocations;++n){
   reset();failNew=n;PgrSummaryCompletionOutput failed{};api->complete(&request,token,&failed);
   assert(allocationFailed&&dismissCalls<=1);balanced();
-  assert(!(failed.flags&PGR_SC_FLAG_GONE)); // inability to root an alive box is not proof of destruction
+  assert(!(failed.flags&PGS_SC_FLAG_GONE)); // inability to root an alive box is not proof of destruction
  }
 
  // A nested validation/completion from alive must be refused while the outer native call owns roots.
  for(bool outerComplete:{false,true}){
   reset();onAlive=[&](){
    const size_t before=handles.size();PgrSummaryCompletionOutput nested{};
-   assert(api->validate(&request)!=PGR_SC_DONE);
-   assert(api->complete(&request,token,&nested)!=PGR_SC_DONE&&!(nested.flags&PGR_SC_FLAG_INVOKED));
+   assert(api->validate(&request)!=PGS_SC_DONE);
+   assert(api->complete(&request,token,&nested)!=PGS_SC_DONE&&!(nested.flags&PGS_SC_FLAG_INVOKED));
    assert(handles.size()==before);
   };
   if(outerComplete){out=complete();assert(dismissCalls==1);}
-  else{assert(api->validate(&request)==PGR_SC_DONE);balanced();out=complete();assert(dismissCalls==1);}
+  else{assert(api->validate(&request)==PGS_SC_DONE);balanced();out=complete();assert(dismissCalls==1);}
  }
 
- reset();throwDismiss=true;moveDismiss=true;out=complete(PGR_SC_ERR_MANAGED);
- assert((out.flags&PGR_SC_FLAG_INVOKED)&&out.after==3&&dismissCalls==1);
- reset();onAlive=[](){live=false;};out=complete(PGR_SC_OK);assert(dismissCalls==0&&!(out.flags&PGR_SC_FLAG_INVOKED));
+ reset();throwDismiss=true;moveDismiss=true;out=complete(PGS_SC_ERR_MANAGED);
+ assert((out.flags&PGS_SC_FLAG_INVOKED)&&out.after==3&&dismissCalls==1);
+ reset();onAlive=[](){live=false;};out=complete(PGS_SC_OK);assert(dismissCalls==0&&!(out.flags&PGS_SC_FLAG_INVOKED));
  // Unity-destroyed GUI after Dismiss still has a rooted managed wrapper; post-alive returns false.
- reset();onAlive=[](){onAlive=[](){live=false;};};out=complete();assert(dismissCalls==1&&(out.flags&PGR_SC_FLAG_GONE));
+ reset();onAlive=[](){onAlive=[](){live=false;};};out=complete();assert(dismissCalls==1&&(out.flags&PGS_SC_FLAG_GONE));
   // The post-invoke liveness call itself may invalidate the wrapper. A true Boolean from that call
   // cannot authorize reading currentState from a newly invalid class or manufacture advancement.
   reset();onAlive=[](){onAlive=[](){scenes[currentScene].gui.klass=&otherClass;};};
-  out=complete();assert(dismissCalls==1&&(out.flags&PGR_SC_FLAG_INVOKED));
-  assert(!(out.flags&PGR_SC_FLAG_AFTER_KNOWN)&&!(out.flags&PGR_SC_FLAG_GONE));
+  out=complete();assert(dismissCalls==1&&(out.flags&PGS_SC_FLAG_INVOKED));
+  assert(!(out.flags&PGS_SC_FLAG_AFTER_KNOWN)&&!(out.flags&PGS_SC_FLAG_GONE));
  balanced();handles.clear();hostHandles.clear();
  puts("PASS summary lifetime: borrowed handles, distinct-address relocation, boxed roots, failures, reentry, no-state, exception/gone");
  dlclose(lib);

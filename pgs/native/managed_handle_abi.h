@@ -4,7 +4,7 @@
 #include <cstring>
 // Supported Unity6000.3.22f1 ARM64 pointer-width GC handle ABI. Read-only proof;
 // no GC operation occurs before all code ranges and instruction words match.
-inline int pgr_pointer_handles(const PgrMetaApi *md,const void *create,const void *get,const void *free){
+inline int pgs_pointer_handles(const PgrMetaApi *md,const void *create,const void *get,const void *free){
  auto words=[&](uintptr_t address,const uint32_t *expected,uint32_t count){
   PgrMetaCodeQuery q{};q.version=1;q.size=sizeof(q);q.address=reinterpret_cast<void *>(address);
   q.length=count*4;q.prologue=expected;q.prologue_len=count*4;return md->validate_code(&q)==0;

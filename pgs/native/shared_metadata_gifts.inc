@@ -13,16 +13,16 @@ int do_gifts(Ctx &c) {
   auto return_class=[&](const void *method)->const void * {return method?type_class(method_return(method)):nullptr;};
   auto gift_class=[&](const char *id)->const void * {
     const char *name=nullptr;
-    for(const auto &t:pgr_shared_gift::kTypes)if(!std::strcmp(t.id,id)){name=t.canonical;break;}
+    for(const auto &t:pgs_shared_gift::kTypes)if(!std::strcmp(t.id,id)){name=t.canonical;break;}
     if(!name)return nullptr;
     for(size_t i=0;i<kOptClassCount;++i)if(!std::strcmp(kOptClasses[i].canonical,name))return c.out->opt_classes[i];
     return nullptr;
   };
   auto pinned=[&](const void *owner,const char *key,const char *name,const char *ret,TypePred pred,
                   std::initializer_list<MParam> params,int method_slot,int code_slot)->int {
-    const pgr_shared_gift::Code *code=nullptr;
-    for(const auto &entry:pgr_shared_gift::kCodes)if(!std::strcmp(entry.key,key)){code=&entry;break;}
-    if(!code)return set_err(c,PGR_SHARED_ERR_INTERNAL,"gift-code-missing",key);
+    const pgs_shared_gift::Code *code=nullptr;
+    for(const auto &entry:pgs_shared_gift::kCodes)if(!std::strcmp(entry.key,key)){code=&entry;break;}
+    if(!code)return set_err(c,PGS_SHARED_ERR_INTERNAL,"gift-code-missing",key);
     return check_method_ex(c,owner,name,ret,pred,uint32_t(params.size()),params.begin(),false,false,
                            code->rva,code->bytes,code->length,&H[method_slot],&H[code_slot]);
   };
@@ -111,7 +111,7 @@ int do_gifts(Ctx &c) {
   const void *enum_class=nullptr;
   if((rc=enum_i32_field(c,c.out->opt_classes[OC_OPEN_GIFT_OUT],PGR_GAME_SHARED_METADATA_GIFTS_INC_H_GF_F_OPEN_RESULT_NAME,PGR_GAME_SHARED_METADATA_GIFTS_INC_H_GF_F_OPEN_RESULT_OFFSET,&H[H_GF_F_OPEN_RESULT],&enum_class)))return rc;
   if((rc=enum_literal(c,enum_class,"Success",true,"gift-success-literal",&c.out->opt_ints[I_GIFT_OPEN_SUCCESS])))return rc;
-  const auto &seq=pgr_shared_gift::kSequence;
+  const auto &seq=pgs_shared_gift::kSequence;
   if((rc=check_method(c,sequence,"MoveNext",BOOL,0,nullptr,nullptr,false,false,seq.rva,seq.bytes,seq.length,&H[H_GF_M_SEQ],&H[H_GF_M_SEQ_CODE])))return rc;
   if((rc=ref_field(c,list_data,PGR_GAME_SHARED_METADATA_GIFTS_INC_H_GF_LIST_CLASS_NAME,PGR_GAME_SHARED_METADATA_GIFTS_INC_H_GF_LIST_CLASS_OFFSET,&H[H_GF_F_LIST_ITEMS],&H[H_GF_LIST_CLASS])))return rc;
   if((rc=plain(H[H_GF_LIST_CLASS],"get_Count",INT,nullptr,{},true,H_GF_M_LIST_COUNT)))return rc;
@@ -153,10 +153,10 @@ int do_gifts(Ctx &c) {
   void *iter=nullptr;
   for(unsigned i=0;i<64;++i){
     const void *m=next_method(nia_class,&iter);if(!m)break;
-    std::string name;if(!read_utf8(method_name(m),&name))return set_err(c,PGR_MD_ERR_NAME_TOO_LONG,"name-limit");
+    std::string name;if(!read_utf8(method_name(m),&name))return set_err(c,PGS_MD_ERR_NAME_TOO_LONG,"name-limit");
     if(name!="GetPlayerIdOrNiaAccountId"||param_count(m)!=1)continue;
     std::string parameter,result;
-    if(!get_type_name(c,method_param(m,0),&parameter)||!get_type_name(c,method_return(m),&result))return set_err(c,PGR_MD_ERR_NULL_TYPE_NAME,"null-type-name");
+    if(!get_type_name(c,method_param(m,0),&parameter)||!get_type_name(c,method_return(m),&result))return set_err(c,PGS_MD_ERR_NULL_TYPE_NAME,"null-type-name");
     if(parameter=="Niantic.Platform.Internal.Protos.PlayerSummaryProto"&&result=="System.String"){H[H_GF_M_NIA_ID]=m;break;}
   }
   if(!H[H_GF_M_NIA_ID])return set_err(c,PGR_MD_ERR_NOT_FOUND,"gift-nia-method");

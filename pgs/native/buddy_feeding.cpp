@@ -64,12 +64,12 @@ std::mutex                g_install_mutex;
 pgs_buddy_config_v1   g_cfg{};
 std::atomic<bool>         g_installed{false};
 bool                      g_install_attempted = false;   // install mutex; failure latches
-int                       g_install_error = PGR_BUDDY_ERR_NOT_INSTALLED;
+int                       g_install_error = PGS_BUDDY_ERR_NOT_INSTALLED;
 std::atomic<FeedFn>       g_orig_feed{nullptr};
 std::atomic<ResultFn>     g_orig_result{nullptr};
 
 // --- telemetry (pull-only; any thread; never frees) -------------------------------
-std::atomic<uint32_t> g_status{PGR_BUDDY_STATUS_NONE};
+std::atomic<uint32_t> g_status{PGS_BUDDY_STATUS_NONE};
 std::atomic<uint32_t> g_status_serial{0};
 std::atomic<int32_t>  g_detail{0};
 std::atomic<uint64_t> g_feed_serial{0};
@@ -328,19 +328,19 @@ void orchestrate(int32_t berry, uint64_t now, uint64_t deadline) {
             refresh_root_count();
             r.next_ms = now + kPollMs;
             g_result_serial.fetch_add(1, std::memory_order_release); // adapter zeroes getItemState().next
-            if (!ok) { r.blocked = true; set_status_detail(PGR_BUDDY_STATUS_FEED_FAILED, result); }
+            if (!ok) { r.blocked = true; set_status_detail(PGS_BUDDY_STATUS_FEED_FAILED, result); }
             else {
                 ++r.feeds;
                 r.have_progress = true;
                 r.progress_before = feed_fullness;
                 r.progress_deadline = now + kProgressMs;
-                set_status(PGR_BUDDY_STATUS_BERRY_FED);
+                set_status(PGS_BUDDY_STATUS_BERRY_FED);
             }
             return;
         }
         if (now > r.pending.deadline_ms && !r.blocked) {
             r.blocked = true;
-            set_status(PGR_BUDDY_STATUS_TIMEOUT);
+            set_status(PGS_BUDDY_STATUS_TIMEOUT);
         }
         if (now <= r.pending.deadline_ms) return;
     }
@@ -355,8 +355,8 @@ void orchestrate(int32_t berry, uint64_t now, uint64_t deadline) {
     }
 
     // 3. Off / map-lease / poll gates (mirror s.buddyBerry / s.buddyLease / r.next).
-    if (berry == 0) { set_status(PGR_BUDDY_STATUS_OFF); return; }
-    if (now == 0 || now >= deadline) { set_status(PGR_BUDDY_STATUS_WAIT_MAP); return; }
+    if (berry == 0) { set_status(PGS_BUDDY_STATUS_OFF); return; }
+    if (now == 0 || now >= deadline) { set_status(PGS_BUDDY_STATUS_WAIT_MAP); return; }
     if (now < r.next_ms) return;
     r.next_ms = now + kPollMs;
 
@@ -415,7 +415,7 @@ void orchestrate(int32_t berry, uint64_t now, uint64_t deadline) {
         bool has = false;
         invoke_bool(g_cfg.m_has, pokemon_h.target(), nullptr, &has, &err);
         if (err) goto fail;
-        if (!has) { set_status(PGR_BUDDY_STATUS_CHOOSE); return; }
+        if (!has) { set_status(PGS_BUDDY_STATUS_CHOOSE); return; }
 
         void *proto = invoke(g_cfg.m_pokemon, pokemon_h.target(), nullptr, &err);
         if (err) goto fail;
@@ -436,11 +436,11 @@ void orchestrate(int32_t berry, uint64_t now, uint64_t deadline) {
         // blocked here would permanently suppress this already-known hungry
         // buddy even when a later poll obtains valid stats.
         if (stats == nullptr) {
-            set_status(PGR_BUDDY_STATUS_WAIT_HUNGER); return;
+            set_status(PGS_BUDDY_STATUS_WAIT_HUNGER); return;
         }
         stats_h.set(stats, &err); if (err) goto fail;
         if (!exact(stats_h.target(), g_cfg.class_observed)) {
-            set_status(PGR_BUDDY_STATUS_WAIT_HUNGER); return;
+            set_status(PGS_BUDDY_STATUS_WAIT_HUNGER); return;
         }
 
         float remaining = 0.0f, fullness = 0.0f;
@@ -464,7 +464,7 @@ void orchestrate(int32_t berry, uint64_t now, uint64_t deadline) {
         }
         if (remaining > 0.0f) {                           // fed -> re-arm for the next cycle
             g_st.feeds = 0; g_st.have_progress = false; g_st.blocked = false;
-            set_status_detail(PGR_BUDDY_STATUS_FED,
+            set_status_detail(PGS_BUDDY_STATUS_FED,
                               static_cast<int32_t>(std::fmin(2147483647.0, std::ceil(static_cast<double>(remaining) / 60.0))));
             return;
         }
@@ -472,15 +472,15 @@ void orchestrate(int32_t berry, uint64_t now, uint64_t deadline) {
         if (g_st.have_progress) {
             if (fullness > g_st.progress_before + 0.001) g_st.have_progress = false;
             else if (now < g_st.progress_deadline) return;
-            else { g_st.blocked = true; set_status(PGR_BUDDY_STATUS_HUNGER_STALE); return; }
+            else { g_st.blocked = true; set_status(PGS_BUDDY_STATUS_HUNGER_STALE); return; }
         }
 
         bool cooldown = false;
         sp[0] = stats_h.target();
         invoke_bool(g_cfg.m_cooldown, nullptr, sp, &cooldown, &err); if (err) goto fail;
-        if (cooldown || fullness >= 0.999f) { set_status(PGR_BUDDY_STATUS_COOLDOWN); return; }
+        if (cooldown || fullness >= 0.999f) { set_status(PGS_BUDDY_STATUS_COOLDOWN); return; }
 
-        if (g_st.feeds >= kMaxFeeds) { g_st.blocked = true; set_status(PGR_BUDDY_STATUS_PAUSED_SIX); return; }
+        if (g_st.feeds >= kMaxFeeds) { g_st.blocked = true; set_status(PGS_BUDDY_STATUS_PAUSED_SIX); return; }
 
         rpc = rpc_h.target(); if(!rpc) {err=true; goto fail;}
         bag_h.set(read_ref(rpc, g_cfg.f_bag), &err); if(err) goto fail;
@@ -491,7 +491,7 @@ void orchestrate(int32_t berry, uint64_t now, uint64_t deadline) {
         void *qp[1] = { &berry_arg };
         int32_t count = 0;
         invoke_int(g_cfg.m_quantity, bag_h.target(), qp, &count, &err); if (err) goto fail;
-        if (count < 1) { set_status(PGR_BUDDY_STATUS_OUT_OF_STOCK); return; }
+        if (count < 1) { set_status(PGS_BUDDY_STATUS_OUT_OF_STOCK); return; }
 
         // Establish the pending request (durable rpc root) BEFORE the Feed so a synchronous
         // result callback is captured, and so a managed throw leaves us uncertain (no retry).
@@ -524,7 +524,7 @@ void orchestrate(int32_t berry, uint64_t now, uint64_t deadline) {
             return;
         }
 
-        set_status(PGR_BUDDY_STATUS_FEEDING);
+        set_status(PGS_BUDDY_STATUS_FEEDING);
         g_feed_serial.fetch_add(1, std::memory_order_release); // count issuance before the call
 
         int32_t one = 1;
@@ -534,10 +534,10 @@ void orchestrate(int32_t berry, uint64_t now, uint64_t deadline) {
 
             g_st.invoking = false;
         }
-        if (err) { r.blocked = true; set_status(PGR_BUDDY_STATUS_ERROR); note_fault(); return; } // pending kept
+        if (err) { r.blocked = true; set_status(PGS_BUDDY_STATUS_ERROR); note_fault(); return; } // pending kept
         if (promise != nullptr) {
             void *ph = gc_new(promise);
-            if(!ph) {r.blocked=true; set_status(PGR_BUDDY_STATUS_ERROR); note_fault();}
+            if(!ph) {r.blocked=true; set_status(PGS_BUDDY_STATUS_ERROR); note_fault();}
 
             if (g_st.pending.active && g_st.pending.generation == gen) g_st.pending.promise_handle = ph;
             else gc_free(ph);                              // a manual feed superseded us meanwhile
@@ -551,7 +551,7 @@ fail:
     // Managed exception / fail-closed error. Block and surface the paused status. Durable
     // pending roots (if a request is in flight) are kept; transient roots free via RAII.
     g_st.blocked = true;
-    set_status(PGR_BUDDY_STATUS_ERROR);
+    set_status(PGS_BUDDY_STATUS_ERROR);
     note_fault();
 }
 
@@ -628,20 +628,20 @@ bool config_ok(const pgs_buddy_config_v1 *c) {
 }
 
 int api_install(const pgs_buddy_config_v1 *config) {
-    if (config == nullptr) return PGR_BUDDY_ERR_NULL_ARG;
+    if (config == nullptr) return PGS_BUDDY_ERR_NULL_ARG;
     std::lock_guard<std::mutex> lock(g_install_mutex);
     if (config->version != PGS_BUDDY_API_VERSION ||
         config->size != sizeof(pgs_buddy_config_v1) || !config_ok(config))
-        return PGR_BUDDY_ERR_BAD_CONFIG;
-    if (config->feed_address == config->result_address) return PGR_BUDDY_ERR_DUP_HOOK;
+        return PGS_BUDDY_ERR_BAD_CONFIG;
+    if (config->feed_address == config->result_address) return PGS_BUDDY_ERR_DUP_HOOK;
 
     if (g_installed.load(std::memory_order_acquire))
         return (std::memcmp(&g_cfg, config, sizeof(g_cfg)) == 0)
-                   ? PGR_BUDDY_OK : PGR_BUDDY_ERR_ALREADY_BOUND;
+                   ? PGS_BUDDY_OK : PGS_BUDDY_ERR_ALREADY_BOUND;
     if (g_install_attempted) return g_install_error;     // a prior failure latches
     g_install_attempted = true;
 
-    if (boottime_ms() == 0) return g_install_error = PGR_BUDDY_ERR_NO_CLOCK;
+    if (boottime_ms() == 0) return g_install_error = PGS_BUDDY_ERR_NO_CLOCK;
     g_cfg = *config;
 
     // Install the two hooks, publishing each original before the next. On a partial failure
@@ -649,61 +649,61 @@ int api_install(const pgs_buddy_config_v1 *config) {
     void *orig_feed = nullptr;
     if (pgs_hook(g_cfg.feed_address, reinterpret_cast<void *>(&hook_feed), &orig_feed) != 0 ||
         orig_feed == nullptr)
-        return g_install_error = PGR_BUDDY_ERR_HOOK_FEED;
+        return g_install_error = PGS_BUDDY_ERR_HOOK_FEED;
     g_orig_feed.store(reinterpret_cast<FeedFn>(orig_feed), std::memory_order_release);
 
     void *orig_result = nullptr;
     if (pgs_hook(g_cfg.result_address, reinterpret_cast<void *>(&hook_result), &orig_result) != 0 ||
         orig_result == nullptr)
-        return g_install_error = PGR_BUDDY_ERR_HOOK_RESULT;
+        return g_install_error = PGS_BUDDY_ERR_HOOK_RESULT;
     g_orig_result.store(reinterpret_cast<ResultFn>(orig_result), std::memory_order_release);
 
     g_installed.store(true, std::memory_order_release);
-    return g_install_error = PGR_BUDDY_OK;
+    return g_install_error = PGS_BUDDY_OK;
 }
 
 int api_tick(int32_t berry, uint64_t remaining_lease_ms, uint64_t proven_tid) {
-    if (!g_installed.load(std::memory_order_acquire)) return PGR_BUDDY_ERR_NOT_INSTALLED;
-    if (!on_unity_thread(proven_tid)) return PGR_BUDDY_OK;
+    if (!g_installed.load(std::memory_order_acquire)) return PGS_BUDDY_ERR_NOT_INSTALLED;
+    if (!on_unity_thread(proven_tid)) return PGS_BUDDY_OK;
 
     // Latch the permanent Unity identity once; a foreign tid never rebinds it.
     uint64_t expected_unity = 0;
     g_unity_tid.compare_exchange_strong(expected_unity, proven_tid, std::memory_order_acq_rel);
-    if (g_unity_tid.load(std::memory_order_acquire) != proven_tid) return PGR_BUDDY_OK;
+    if (g_unity_tid.load(std::memory_order_acquire) != proven_tid) return PGS_BUDDY_OK;
 
-    if(g_depth != 0) { if(berry==0 || remaining_lease_ms==0) g_revoke=true; return PGR_BUDDY_OK; }
+    if(g_depth != 0) { if(berry==0 || remaining_lease_ms==0) g_revoke=true; return PGS_BUDDY_OK; }
     OwnerScope frame; g_revoke=false;
 
     // Non-blocking owner guard: a nested tick loses and no-ops (the Feed/result callbacks
     // that fire inside our own invoke are hooks, not ticks, so they are never suppressed).
     uint64_t expected = 0;
     if (!g_owner_tid.compare_exchange_strong(expected, proven_tid, std::memory_order_acq_rel))
-        return PGR_BUDDY_OK;
+        return PGS_BUDDY_OK;
 
     uint64_t lease = remaining_lease_ms > kMaxLeaseMs ? kMaxLeaseMs : remaining_lease_ms;
     uint64_t now = boottime_ms();
     orchestrate(berry, now, now + lease);
 
     g_owner_tid.store(0, std::memory_order_release);
-    return PGR_BUDDY_OK;
+    return PGS_BUDDY_OK;
 }
 
 int api_clear(uint64_t proven_tid) {
-    if (!g_installed.load(std::memory_order_acquire)) return PGR_BUDDY_ERR_NOT_INSTALLED;
+    if (!g_installed.load(std::memory_order_acquire)) return PGS_BUDDY_ERR_NOT_INSTALLED;
     if (!on_unity_thread(proven_tid) ||
         g_unity_tid.load(std::memory_order_acquire) != proven_tid)
-        return PGR_BUDDY_OK;                              // never free off the Unity thread
+        return PGS_BUDDY_OK;                              // never free off the Unity thread
 
     g_revoke=true;
-    if(g_depth != 0) { g_deferred_clear=true; return PGR_BUDDY_OK; }
+    if(g_depth != 0) { g_deferred_clear=true; return PGS_BUDDY_OK; }
     OwnerScope frame;
     release_roots();
 
-    return PGR_BUDDY_OK;
+    return PGS_BUDDY_OK;
 }
 
 int api_sample(pgs_buddy_sample_v1 *out) {
-    if (out == nullptr) return PGR_BUDDY_ERR_NULL_ARG;
+    if (out == nullptr) return PGS_BUDDY_ERR_NULL_ARG;
     out->version = PGS_BUDDY_API_VERSION;
     out->size = sizeof(pgs_buddy_sample_v1);
     out->status = g_status.load(std::memory_order_acquire);
@@ -715,7 +715,7 @@ int api_sample(pgs_buddy_sample_v1 *out) {
     out->service_serial = g_service_serial.load(std::memory_order_acquire);
     out->fault_serial = g_fault_serial.load(std::memory_order_acquire);
     out->owned_roots = g_root_count.load(std::memory_order_acquire) + g_active_frames.load(std::memory_order_acquire);
-    return PGR_BUDDY_OK;
+    return PGS_BUDDY_OK;
 }
 
 const pgs_buddy_api_v1 g_api = {

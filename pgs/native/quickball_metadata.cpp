@@ -6,7 +6,7 @@
 #include <unistd.h>
 
 namespace {
-using namespace pgr_quickball_schema;
+using namespace pgs_quickball_schema;
 
 std::mutex g_resolving;
 
@@ -14,7 +14,7 @@ const PgrMetaApi *metadata() {
   return static_cast<const PgrMetaApi *>(pgs_runtime_metadata_api(1));
 }
 
-bool attached(const PgrQuickballMetaConfig &c) {
+bool attached(const PgsQuickballMetaConfig &c) {
   return c.owner_tid && c.owner_tid == static_cast<uint64_t>(gettid()) &&
          reinterpret_cast<void *(*)()>(c.thread_current)() != nullptr;
 }
@@ -22,13 +22,13 @@ bool attached(const PgrQuickballMetaConfig &c) {
 bool read_name(const char *p, std::string *out) {
   if (!p) return false;
   size_t n = 0;
-  while (n < PGR_MD_NAME_MAX && p[n] != '\0') ++n;
-  if (n == PGR_MD_NAME_MAX) return false;
+  while (n < PGS_MD_NAME_MAX && p[n] != '\0') ++n;
+  if (n == PGS_MD_NAME_MAX) return false;
   out->assign(p, n);
   return true;
 }
 
-bool type_name(const PgrQuickballMetaConfig &c, const void *type, std::string *out) {
+bool type_name(const PgsQuickballMetaConfig &c, const void *type, std::string *out) {
   if (!type) return false;
   auto get = reinterpret_cast<char *(*)(const void *)>(c.binding.exports->type_get_name);
   auto freep = reinterpret_cast<void (*)(void *)>(c.binding.exports->mem_free);
@@ -58,7 +58,7 @@ int decode_hex(const char *hex, unsigned char *out, int cap) {
 }
 
 // Validate one schema method (signature + optional pinned code address + prologue) via feature47.
-int validate_method(const PgrMetaApi *md, const PgrQuickballMetaConfig &c, const MethodSpec &s,
+int validate_method(const PgrMetaApi *md, const PgsQuickballMetaConfig &c, const MethodSpec &s,
                     const void *owner, const void **out, const void **code_out) {
   PgrMetaMethodQuery q{};
   q.version = 1;
@@ -73,12 +73,12 @@ int validate_method(const PgrMetaApi *md, const PgrQuickballMetaConfig &c, const
     q.param_types[1] = s.param1;
     // GetGroundPosition param1 is checked for exact Vector3(&) + type_is_byref by check_map_ground_byref.
     q.param_match[1] = (s.owner == C_MAPVIEW && std::strcmp(s.name, "GetGroundPosition") == 0)
-                           ? PGR_MD_MATCH_PREFIX
+                           ? PGS_MD_MATCH_PREFIX
                            : PGR_MD_MATCH_EXACT;
   }
   q.is_static = s.is_static;
   q.allow_inflated = 0;  // generic always rejected; quick-ball never resolves inflated here
-  unsigned char prologue[PGR_MD_PROLOGUE_MAX];
+  unsigned char prologue[PGS_MD_PROLOGUE_MAX];
   if (s.prologue) {
     int len = decode_hex(s.prologue, prologue, sizeof(prologue));
     if (len <= 0) return -32;
@@ -95,10 +95,10 @@ int validate_method(const PgrMetaApi *md, const PgrQuickballMetaConfig &c, const
   if (s.owner == C_MAPPOKEMON && std::strcmp(s.name, "TryCapture") == 0) {
     auto get_ret = reinterpret_cast<void *(*)(const void *)>(c.binding.exports->method_get_return_type);
     std::string rn;
-    if (!type_name(c, get_ret(r.method), &rn)) return PGR_MD_ERR_NULL_TYPE_NAME;
+    if (!type_name(c, get_ret(r.method), &rn)) return PGS_MD_ERR_NULL_TYPE_NAME;
     if (rn != "Niantic.Promises.IPromise<Holoholo.Rpc.CatchPokemonOutProto>" &&
         rn != "Niantic.Promises.IPromise`1<Holoholo.Rpc.CatchPokemonOutProto>")
-      return PGR_MD_ERR_TYPE;
+      return PGS_MD_ERR_TYPE;
   }
   *out = r.method;
   if (code_out) *code_out = r.code;
@@ -125,26 +125,26 @@ int validate_field(const PgrMetaApi *md, const FieldSpec &s, const void *owner, 
   return rc;
 }
 
-void set_reason(PgrQuickballMetaGroup &g, const char *fmt, const char *arg) {
+void set_reason(PgsQuickballMetaGroup &g, const char *fmt, const char *arg) {
   g.available = 0;
   std::snprintf(g.reason, sizeof(g.reason), fmt, arg ? arg : "");
 }
 
 // Bare-class value-type ABI check: class_is_valuetype(klass) && class_value_size(klass, &align) == size && align == expected.
-int check_value_size(const PgrQuickballMetaConfig &c, const void *klass, uint32_t size, uint32_t expected_align) {
+int check_value_size(const PgsQuickballMetaConfig &c, const void *klass, uint32_t size, uint32_t expected_align) {
   auto is_vt = reinterpret_cast<bool (*)(const void *)>(c.binding.exports->class_is_valuetype);
   auto val_sz = reinterpret_cast<int (*)(const void *, int *)>(c.binding.exports->class_value_size);
-  if (!klass || !is_vt(klass)) return PGR_MD_ERR_KIND;
+  if (!klass || !is_vt(klass)) return PGS_MD_ERR_KIND;
   int align = 0;
   int sz = val_sz(klass, &align);
-  if (sz != static_cast<int>(size) || align != static_cast<int>(expected_align)) return PGR_MD_ERR_SIZE;
+  if (sz != static_cast<int>(size) || align != static_cast<int>(expected_align)) return PGS_MD_ERR_SIZE;
   return 0;
 }
 
 // Static enum literal validation + value read (prepare lines 165..167, 172..174, 276):
 // field_from_name(owner, name) non-null, parent == owner, (flags & 0x8050) == 0x8050, typeName == expected_type,
 // then field_static_get_value(f, out_val).
-bool read_enum_literal(const PgrQuickballMetaConfig &c, const void *owner, const char *expected_type,
+bool read_enum_literal(const PgsQuickballMetaConfig &c, const void *owner, const char *expected_type,
                        const char *lit_name, int32_t *out_val) {
   auto field_by_name = reinterpret_cast<void *(*)(const void *, const char *)>(c.binding.exports->class_get_field_from_name);
   auto field_parent = reinterpret_cast<void *(*)(const void *)>(c.binding.exports->field_get_parent);
@@ -215,7 +215,7 @@ const void *branch_target(const PgrMetaApi *md, const void *addr) {
 
 // pointerHandleAbi (prepare lines 109..140): read-only code fingerprint of il2cpp_gchandle_new /
 // _get_target / _free. No GC handle is created.
-bool pointer_handle_abi(const PgrMetaApi *md, const PgrQuickballExtra *ex) {
+bool pointer_handle_abi(const PgrMetaApi *md, const PgsQuickballExtra *ex) {
   if (!code_words(md, ex->gchandle_new, kGcCreateWords, kGcCreateWordCount)) return false;
   const void *create_body = branch_target(md, add_off(ex->gchandle_new, kGcCreateBranchOff));
   const void *get_body = branch_target(md, ex->gchandle_get_target);
@@ -229,8 +229,8 @@ bool pointer_handle_abi(const PgrMetaApi *md, const PgrQuickballExtra *ex) {
 }
 
 // GetBool(Int32) / GetInteger(Int32) overload disambiguation (prepare lines 196..203).
-bool resolve_overload(const PgrQuickballMetaConfig &c, const void *owner, const char *want_name,
-                      const char *want_ret, PgrQuickballMetaGroup &grp, const void **out_method) {
+bool resolve_overload(const PgsQuickballMetaConfig &c, const void *owner, const char *want_name,
+                      const char *want_ret, PgsQuickballMetaGroup &grp, const void **out_method) {
   auto get_methods = reinterpret_cast<void *(*)(const void *, void **)>(c.binding.exports->class_get_methods);
   auto get_pcount = reinterpret_cast<uint32_t (*)(const void *)>(c.binding.exports->method_get_param_count);
   auto get_mname = reinterpret_cast<const char *(*)(const void *)>(c.binding.exports->method_get_name);
@@ -271,8 +271,8 @@ bool resolve_overload(const PgrQuickballMetaConfig &c, const void *owner, const 
 }
 
 // SchedulerStateMachine current-state field scan (prepare lines 235..238).
-bool scan_scheduler_current(const PgrQuickballMetaConfig &c, const void *machine,
-                            PgrQuickballMetaGroup &grp, const void **out_field) {
+bool scan_scheduler_current(const PgsQuickballMetaConfig &c, const void *machine,
+                            PgsQuickballMetaGroup &grp, const void **out_field) {
   auto get_fields = reinterpret_cast<void *(*)(const void *, void **)>(c.extra->class_get_fields);
   auto get_offset = reinterpret_cast<size_t (*)(const void *)>(c.binding.exports->field_get_offset);
   auto get_flags = reinterpret_cast<int (*)(const void *)>(c.binding.exports->field_get_flags);
@@ -295,13 +295,13 @@ bool scan_scheduler_current(const PgrQuickballMetaConfig &c, const void *machine
 }
 
 // MapViewHandler.GetGroundPosition out-param byref check (prepare lines 263..266).
-bool check_map_ground_byref(const PgrQuickballMetaConfig &c, const void *map_class,
-                            PgrQuickballMetaGroup &grp) {
+bool check_map_ground_byref(const PgsQuickballMetaConfig &c, const void *map_class,
+                            PgsQuickballMetaGroup &grp) {
   auto get_method = reinterpret_cast<void *(*)(const void *, const char *, int)>(c.binding.exports->class_get_method_from_name);
   auto get_pcount = reinterpret_cast<uint32_t (*)(const void *)>(c.binding.exports->method_get_param_count);
   auto get_param = reinterpret_cast<void *(*)(const void *, uint32_t)>(c.binding.exports->method_get_param);
   void *gm = get_method(map_class, "GetGroundPosition", 2);
-  if (!gm || !(c.extra->present & PGR_QB_EXP_TYPE_IS_BYREF) || !c.extra->type_is_byref) {
+  if (!gm || !(c.extra->present & PGS_QB_EXP_TYPE_IS_BYREF) || !c.extra->type_is_byref) {
     set_reason(grp, "map-ground-signature", nullptr);
     return false;
   }
@@ -357,33 +357,33 @@ GroupClassList group_needed_classes(uint32_t g) {
   }
 }
 
-int resolve(const PgrQuickballMetaConfig *input, PgrQuickballMetaOutput *out) {
+int resolve(const PgsQuickballMetaConfig *input, PgsQuickballMetaOutput *out) {
   if (!out) return -1;
   std::memset(out, 0, sizeof(*out));
-  if (!input || input->version != PGR_QB_CFG_VERSION || input->size != sizeof(*input) || !input->thread_current)
+  if (!input || input->version != PGS_QB_CFG_VERSION || input->size != sizeof(*input) || !input->thread_current)
     return -2;
-  if (!input->extra || input->extra->version != PGR_QB_CFG_VERSION ||
-      input->extra->size != sizeof(PgrQuickballExtra) || input->extra->reserved != 0 ||
+  if (!input->extra || input->extra->version != PGS_QB_CFG_VERSION ||
+      input->extra->size != sizeof(PgsQuickballExtra) || input->extra->reserved != 0 ||
       !input->extra->field_static_get_value || !input->extra->gchandle_new ||
       !input->extra->gchandle_get_target || !input->extra->gchandle_free)
-    return PGR_QB_ERR_EXTRA_MISSING;
+    return PGS_QB_ERR_EXTRA_MISSING;
   std::unique_lock<std::mutex> lock(g_resolving, std::try_to_lock);
   if (!lock.owns_lock()) return -27;
 
-  PgrQuickballMetaConfig c = *input;
-  PgrQuickballExtra extra_copy = *input->extra;
+  PgsQuickballMetaConfig c = *input;
+  PgsQuickballExtra extra_copy = *input->extra;
   c.extra = &extra_copy;
 
   const uintptr_t module_base = reinterpret_cast<uintptr_t>(c.binding.module_base);
   const uintptr_t thread_address = reinterpret_cast<uintptr_t>(c.thread_current);
   if (!module_base || !c.binding.module_size || c.binding.module_size > UINTPTR_MAX - module_base)
-    return PGR_MD_ERR_CODE_RANGE;
+    return PGS_MD_ERR_CODE_RANGE;
   // Production path (default resolver): the attached-thread accessor must sit inside the module.
   // An explicit fixture seg_query is the feature47 fixture boundary and may supply outside exports.
   if (!c.binding.seg_query &&
       (thread_address < module_base || thread_address - module_base > c.binding.module_size ||
         4 > c.binding.module_size - (thread_address - module_base)))
-    return PGR_MD_ERR_CODE_RANGE;
+    return PGS_MD_ERR_CODE_RANGE;
   if (!attached(c)) return -30;
   const auto *md = metadata();
   if (!md || md->version != 1 || md->size != sizeof(PgrMetaApi)) return -31;
@@ -398,7 +398,7 @@ int resolve(const PgrQuickballMetaConfig *input, PgrQuickballMetaOutput *out) {
     const long page = sysconf(_SC_PAGESIZE);
     if (canonical != c.binding.module_base || !extent || extent > c.binding.module_size || page <= 0 ||
         c.binding.module_size - extent >= static_cast<uint64_t>(page))
-      return PGR_MD_ERR_CODE_RANGE;
+      return PGS_MD_ERR_CODE_RANGE;
     c.binding.module_size = extent;
     if (!c.binding.debug_prologue && c.binding.debug_prologue_len == 0) {
       c.binding.debug_prologue = kDebugPrologue;
@@ -408,8 +408,8 @@ int resolve(const PgrQuickballMetaConfig *input, PgrQuickballMetaOutput *out) {
   int rc = md->bind(&c.binding);
   if (rc) return rc;
 
-  PgrQuickballMetaOutput result{};
-  result.version = PGR_QB_OUT_VERSION;
+  PgsQuickballMetaOutput result{};
+  result.version = PGS_QB_OUT_VERSION;
   result.size = sizeof(result);
   for (uint32_t g = 0; g < kGroupCount; g++) result.groups[g].available = 1;
 
@@ -433,11 +433,11 @@ int resolve(const PgrQuickballMetaConfig *input, PgrQuickballMetaOutput *out) {
       if (rc != PGR_MD_ERR_NOT_FOUND) return rc;
       mandatory_missing = rc;
     } else {
-      if (rc == PGR_MD_ERR_LIMIT) return rc;
+      if (rc == PGS_MD_ERR_LIMIT) return rc;
       if (rc != PGR_MD_ERR_NOT_FOUND) result.class_conflict[i] = 1;  // ambiguous/type-mismatched optional class
     }
   }
-  if (mandatory_missing) return PGR_QB_NOT_READY;
+  if (mandatory_missing) return PGS_QB_NOT_READY;
 
   const auto class_ok = [&](uint32_t idx) {
     return idx < kClassCount && result.classes[idx] && !result.class_conflict[idx];
@@ -445,7 +445,7 @@ int resolve(const PgrQuickballMetaConfig *input, PgrQuickballMetaOutput *out) {
 
   // --- process groups in dependency order (deps precede dependents in the enum) ---
   for (uint32_t g = 0; g < kGroupCount; g++) {
-    PgrQuickballMetaGroup &grp = result.groups[g];
+    PgsQuickballMetaGroup &grp = result.groups[g];
     if (g == GROUP_CORE) {
       // 1) Mandatory fields (animator, bread, Status).
       for (uint32_t i = 0; i < kFieldCount; i++) {
@@ -455,14 +455,14 @@ int resolve(const PgrQuickballMetaConfig *input, PgrQuickballMetaOutput *out) {
         rc = validate_field(md, kFields[i], result.classes[kFields[i].owner], &result.fields[i], &type_class);
         if (rc) return rc;
         if (kFields[i].owner == C_RESPONSE && !std::strcmp(kFields[i].name, "Status")) {
-          if (!type_class) return PGR_MD_ERR_KIND;
+          if (!type_class) return PGS_MD_ERR_KIND;
           result.enum_class = type_class;
         }
       }
       // 2) Mandatory CatchSuccess static enum literal (prepare lines 165..167).
       if (!attached(c)) return -30;
       if (!read_enum_literal(c, result.enum_class, kStatusEnumName, "CatchSuccess", &result.success))
-        return PGR_QB_ERR_SUCCESS_LIT;
+        return PGS_QB_ERR_SUCCESS_LIT;
       // 3) Mandatory boxed value-type ABI checks: Single=4/4, Boolean=1/1 (prepare line 177).
       for (uint32_t i = 0; i < kValueSizeCount; i++) {
         if (kValueSizes[i].group != GROUP_CORE) continue;
@@ -472,7 +472,7 @@ int resolve(const PgrQuickballMetaConfig *input, PgrQuickballMetaOutput *out) {
       }
       // 4) Mandatory pointerHandleAbi fingerprint (prepare line 178).
       if (!attached(c)) return -30;
-      if (!pointer_handle_abi(md, c.extra)) return PGR_QB_ERR_GC_POINTER;
+      if (!pointer_handle_abi(md, c.extra)) return PGS_QB_ERR_GC_POINTER;
       // 5) Mandatory methods (prepare line 188).
       for (uint32_t i = 0; i < kMethodCount; i++) {
         if (kMethods[i].group != GROUP_CORE) continue;
@@ -482,7 +482,7 @@ int resolve(const PgrQuickballMetaConfig *input, PgrQuickballMetaOutput *out) {
         if (rc) return rc;
       }
       // 6) Mandatory standalone ordinary-ball caller code check (prepare line 189).
-      unsigned char prologue[PGR_MD_PROLOGUE_MAX];
+      unsigned char prologue[PGS_MD_PROLOGUE_MAX];
       int len = decode_hex(kCallerCheckPrologue, prologue, sizeof(prologue));
       if (len <= 0) return -32;
       const uintptr_t b = reinterpret_cast<uintptr_t>(c.binding.module_base);
@@ -500,7 +500,7 @@ int resolve(const PgrQuickballMetaConfig *input, PgrQuickballMetaOutput *out) {
 
     if (g == GROUP_OUTCOMES) {
       // Outcome reporting needs all 6 Status literals with distinct values and CatchSuccess == result.success.
-      for (uint32_t j = 0; j < PGR_QB_OUTCOME_MAX; j++) {
+      for (uint32_t j = 0; j < PGS_QB_OUTCOME_MAX; j++) {
         if (!attached(c)) return -30;
         int32_t v = 0;
         if (!read_enum_literal(c, result.enum_class, kStatusEnumName, kOutcomeLiterals[j], &v)) {
@@ -538,19 +538,19 @@ int resolve(const PgrQuickballMetaConfig *input, PgrQuickballMetaOutput *out) {
     }
 
     // Export gates checked before need() in prepare().
-    if (g == GROUP_ALWAYSHIT && (!(c.extra->present & PGR_QB_EXP_CLASS_GET_FIELDS) || !c.extra->class_get_fields)) {
+    if (g == GROUP_ALWAYSHIT && (!(c.extra->present & PGS_QB_EXP_CLASS_GET_FIELDS) || !c.extra->class_get_fields)) {
       set_reason(grp, "always-hit-api", nullptr);
       continue;
     }
     if (g == GROUP_ARTHROWS &&
-        (c.extra->present & (PGR_QB_EXP_OBJECT_NEW | PGR_QB_EXP_FIELD_SET_VALUE)) !=
-            (PGR_QB_EXP_OBJECT_NEW | PGR_QB_EXP_FIELD_SET_VALUE)) {
+        (c.extra->present & (PGS_QB_EXP_OBJECT_NEW | PGS_QB_EXP_FIELD_SET_VALUE)) !=
+            (PGS_QB_EXP_OBJECT_NEW | PGS_QB_EXP_FIELD_SET_VALUE)) {
       set_reason(grp, "ar-throw-api-unavailable", nullptr);
       continue;
     }
     if (g == GROUP_IVTEXT &&
-        (c.extra->present & (PGR_QB_EXP_STRING_LENGTH | PGR_QB_EXP_STRING_CHARS)) !=
-            (PGR_QB_EXP_STRING_LENGTH | PGR_QB_EXP_STRING_CHARS)) {
+        (c.extra->present & (PGS_QB_EXP_STRING_LENGTH | PGS_QB_EXP_STRING_CHARS)) !=
+            (PGS_QB_EXP_STRING_LENGTH | PGS_QB_EXP_STRING_CHARS)) {
       set_reason(grp, "iv-text-api", nullptr);
       continue;
     }
@@ -582,14 +582,14 @@ int resolve(const PgrQuickballMetaConfig *input, PgrQuickballMetaOutput *out) {
 
     // Post-class export gates.
     if (g == GROUP_TRACE_NAME &&
-        (c.extra->present & (PGR_QB_EXP_STRING_LENGTH | PGR_QB_EXP_STRING_CHARS)) !=
-            (PGR_QB_EXP_STRING_LENGTH | PGR_QB_EXP_STRING_CHARS)) {
+        (c.extra->present & (PGS_QB_EXP_STRING_LENGTH | PGS_QB_EXP_STRING_CHARS)) !=
+            (PGS_QB_EXP_STRING_LENGTH | PGS_QB_EXP_STRING_CHARS)) {
       set_reason(grp, "trace-export:string", nullptr);
       continue;
     }
     if (g == GROUP_IV &&
-        (c.extra->present & (PGR_QB_EXP_OBJECT_GET_VIRTUAL | PGR_QB_EXP_STRING_NEW)) !=
-            (PGR_QB_EXP_OBJECT_GET_VIRTUAL | PGR_QB_EXP_STRING_NEW)) {
+        (c.extra->present & (PGS_QB_EXP_OBJECT_GET_VIRTUAL | PGS_QB_EXP_STRING_NEW)) !=
+            (PGS_QB_EXP_OBJECT_GET_VIRTUAL | PGS_QB_EXP_STRING_NEW)) {
       set_reason(grp, "iv-export-unavailable", nullptr);
       continue;
     }
@@ -610,7 +610,7 @@ int resolve(const PgrQuickballMetaConfig *input, PgrQuickballMetaOutput *out) {
     }
     if (failed) continue;
 
-    if (g == GROUP_IVOUTLINE && !(c.extra->present & PGR_QB_EXP_TYPE_GET_OBJECT)) {
+    if (g == GROUP_IVOUTLINE && !(c.extra->present & PGS_QB_EXP_TYPE_GET_OBJECT)) {
       set_reason(grp, "iv-outline-type-api", nullptr);
       continue;
     }
@@ -687,10 +687,10 @@ int resolve(const PgrQuickballMetaConfig *input, PgrQuickballMetaOutput *out) {
   return 0;
 }
 
-const PgrQuickballMetaApi g_api = {PGR_QB_API_VERSION, sizeof(PgrQuickballMetaApi), sizeof(PgrQuickballMetaConfig),
-                                   sizeof(PgrQuickballMetaOutput), resolve};
+const PgsQuickballMetaApi g_api = {PGS_QB_API_VERSION, sizeof(PgsQuickballMetaApi), sizeof(PgsQuickballMetaConfig),
+                                   sizeof(PgsQuickballMetaOutput), resolve};
 }  // namespace
 
 extern "C" const void *pgs_quickball_metadata_api(uint32_t version) {
-  return version == PGR_QB_API_VERSION ? &g_api : nullptr;
+  return version == PGS_QB_API_VERSION ? &g_api : nullptr;
 }

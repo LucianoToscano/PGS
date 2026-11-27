@@ -31,13 +31,13 @@ extern "C" const void *pgs_runtime_metadata_api(uint32_t v){return v==1?&test_me
 int main(){
  test_transport.sample=transport_sample;test_transport.get_string=transport_string;test_transport.emit=transport_emit;
  test_bootstrap.snapshot=bootstrap_snapshot;test_metadata.resolve_class=metadata_class;
- assert(pgr_incense_guard_tick(123,nullptr)); // unresolved detector blocks immediately
+ assert(pgs_incense_guard_tick(123,nullptr)); // unresolved detector blocks immediately
  assert(blocked&&active&&token=="123");
  assert(test_events.back().find("\"token\":\"123\"")!=std::string::npos);
  assert(test_events.back().find("\"phase\":\"error\"")!=std::string::npos);
- test_fresh=false;assert(pgr_incense_guard_tick(123,nullptr)); // stale config cannot clear block
- test_fresh=true;test_config="1|124|0|0|0|0|0|1";assert(pgr_incense_guard_tick(123,nullptr));assert(token=="124");
- test_config="1|124|0|0|0|0|0|0";assert(!pgr_incense_guard_tick(123,nullptr));assert(!active&&!blocked);
+ test_fresh=false;assert(pgs_incense_guard_tick(123,nullptr)); // stale config cannot clear block
+ test_fresh=true;test_config="1|124|0|0|0|0|0|1";assert(pgs_incense_guard_tick(123,nullptr));assert(token=="124");
+ test_config="1|124|0|0|0|0|0|0";assert(!pgs_incense_guard_tick(123,nullptr));assert(!active&&!blocked);
  // Simulate one detected, rooted candidate. A managed failure after ownership is
  // consumed emits an open error, releases its root and never retries the action.
  boot.runtime.gchandle_new=reinterpret_cast<void*>(root_new);
@@ -46,12 +46,12 @@ int main(){
  boot.runtime.runtime_invoke=reinterpret_cast<void*>(throwing_invoke);
  PgrSharedMetadataOutput metadata{};metadata.methods[5]=&test_alive_method;md=&metadata;
  owner=123;active=true;blocked=true;token="125";pending.reset(new Root(&test_object));
- pgr_incense_guard_open(999);assert(pending&&test_invocations==0); // wrong owner cannot consume
- pgr_incense_guard_open(123);assert(!pending&&test_invocations==1&&test_roots.empty()&&blocked);
+ pgs_incense_guard_open(999);assert(pending&&test_invocations==0); // wrong owner cannot consume
+ pgs_incense_guard_open(123);assert(!pending&&test_invocations==1&&test_roots.empty()&&blocked);
  assert(test_events.back().find("\"kind\":\"incense-open\"")!=std::string::npos);
  assert(test_events.back().find("\"token\":\"125\"")!=std::string::npos);
  assert(test_events.back().find("\"phase\":\"error\"")!=std::string::npos);
- pgr_incense_guard_open(123);assert(test_invocations==1); // unknown failure is not replayed
- pgr_incense_guard_stop(123);assert(test_roots.empty());
+ pgs_incense_guard_open(123);assert(test_invocations==1); // unknown failure is not replayed
+ pgs_incense_guard_stop(123);assert(test_roots.empty());
  std::puts("PASS incense_guard runtime: sticky block, token, stale config, owner, no replay");
 }

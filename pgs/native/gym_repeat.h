@@ -23,26 +23,26 @@ extern "C" {
 // its tick()/stop(). The host never re-hooks the methods this leaf owns, and this leaf
 // never hooks il2cpp_runtime_invoke or the scope/leave methods the host already owns.
 enum {
-    PGR_GYM_REPEAT_API_VERSION = 1
+    PGS_GYM_REPEAT_API_VERSION = 1
 };
 
-enum PgrGymRepeatStatus {
-    PGR_GR_OK                = 0,
-    PGR_GR_NOT_READY         = 1,
-    PGR_GR_ERR_INVALID_ARG   = -1,
-    PGR_GR_ERR_VERSION       = -2,
-    PGR_GR_ERR_SIZE          = -3,
-    PGR_GR_ERR_NULL_EXPORT   = -4,
-    PGR_GR_ERR_METADATA      = -5,
-    PGR_GR_ERR_BOOTSTRAP     = -6,
-    PGR_GR_ERR_BINDING       = -7,
-    PGR_GR_ERR_HOOK_INSTALL  = -8,
-    PGR_GR_ERR_THREAD        = -9
+enum PgsGymRepeatStatus {
+    PGS_GR_OK                = 0,
+    PGS_GR_NOT_READY         = 1,
+    PGS_GR_ERR_INVALID_ARG   = -1,
+    PGS_GR_ERR_VERSION       = -2,
+    PGS_GR_ERR_SIZE          = -3,
+    PGS_GR_ERR_NULL_EXPORT   = -4,
+    PGS_GR_ERR_METADATA      = -5,
+    PGS_GR_ERR_BOOTSTRAP     = -6,
+    PGS_GR_ERR_BINDING       = -7,
+    PGS_GR_ERR_HOOK_INSTALL  = -8,
+    PGS_GR_ERR_THREAD        = -9
 };
 
-struct PgrGymRepeatConfig {
-    uint32_t version;                        // 0: PGR_GYM_REPEAT_API_VERSION
-    uint32_t size;                           // 4: sizeof(PgrGymRepeatConfig)
+struct PgsGymRepeatConfig {
+    uint32_t version;                        // 0: PGS_GYM_REPEAT_API_VERSION
+    uint32_t size;                           // 4: sizeof(PgsGymRepeatConfig)
     uint64_t owner_tid;                      // 8: proven Unity owner thread id
     // Canonical Feature 56 output (opt map-gym find/fort/raid handles + core alive
     // method). Runtime exports, metadata class/method resolution, module base and the
@@ -51,13 +51,13 @@ struct PgrGymRepeatConfig {
     const PgrSharedMetadataOutput *metadata; // 16
 };
 
-struct PgrGymRepeatSample {
+struct PgsGymRepeatSample {
     uint32_t version;         // 0: 1
-    uint32_t size;            // 4: sizeof(PgrGymRepeatSample)
+    uint32_t size;            // 4: sizeof(PgsGymRepeatSample)
     uint32_t ready;           // 8: 1 once the required hooks are installed
     uint32_t installed_hooks; // 12: total Dobby hooks installed by this leaf
-    int32_t  state;           // 16: pgr_gym_repeat::State
-    int32_t  last_end;        // 20: pgr_gym_repeat::EndReason of the last session
+    int32_t  state;           // 16: pgs_gym_repeat::State
+    int32_t  last_end;        // 20: pgs_gym_repeat::EndReason of the last session
     uint32_t rounds;          // 24: victorious rounds in the current/last session
     uint32_t roots;           // 28: live GC handles held by this leaf
     uint64_t owner_tid;       // 32: proven Unity owner thread id
@@ -65,14 +65,14 @@ struct PgrGymRepeatSample {
     uint64_t actions;         // 48: total game-owned actions performed
 };
 
-struct PgrGymRepeatApi {
+struct PgsGymRepeatApi {
     uint32_t version; // 0: 1
-    uint32_t size;    // 4: sizeof(PgrGymRepeatApi)
+    uint32_t size;    // 4: sizeof(PgsGymRepeatApi)
 
     // Resolve + validate the gym lifecycle bindings and install the owned hooks.
-    // Returns PGR_GR_OK on success; a binding/hook failure leaves combat untouched
+    // Returns PGS_GR_OK on success; a binding/hook failure leaves combat untouched
     // (no partial hooks race): the leaf stays inert and reports the error.
-    int  (*configure)(const PgrGymRepeatConfig *cfg);
+    int  (*configure)(const PgsGymRepeatConfig *cfg);
 
     // Forwarded from the host's existing GymBattleState scope hooks. entered != 0 for
     // EnterState, 0 for ExitState. Owner thread only.
@@ -88,7 +88,7 @@ struct PgrGymRepeatApi {
     // End any session and release roots. Owner thread when possible.
     void (*stop)(uint64_t proven_tid);
 
-    int  (*sample)(PgrGymRepeatSample *out);
+    int  (*sample)(PgsGymRepeatSample *out);
 };
 
 const void *pgs_gym_repeat_api(uint32_t version);

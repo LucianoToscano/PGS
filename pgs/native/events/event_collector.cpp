@@ -138,10 +138,10 @@ int check_field(const void *klass,const char *name,uint64_t offset,uint32_t kind
 }
 int repeated_layout(const void *owner_class,const char *name,uint64_t offset,RepeatedLayout &layout) {
   PgrMetaFieldResult r{},array{};
-  int rc=check_field(owner_class,name,offset,PGR_MD_FIELD_REF,0,nullptr,&r);if(rc)return rc;
+  int rc=check_field(owner_class,name,offset,PGS_MD_FIELD_REF,0,nullptr,&r);if(rc)return rc;
   layout.klass=r.type_class;if(!layout.klass)return -20;
-  if((rc=check_field(layout.klass,PGR_GAME_EVENTS_EVENT_COLLECTOR_CPP_ARRAY_NAME,PGR_GAME_EVENTS_EVENT_COLLECTOR_CPP_ARRAY_OFFSET,PGR_MD_FIELD_REF,0,nullptr,&array))||
-     (rc=check_field(layout.klass,PGR_GAME_EVENTS_EVENT_COLLECTOR_CPP_COUNT_NAME,PGR_GAME_EVENTS_EVENT_COLLECTOR_CPP_COUNT_OFFSET,PGR_MD_FIELD_VALUE,4,"System.Int32")))return rc;
+  if((rc=check_field(layout.klass,PGR_GAME_EVENTS_EVENT_COLLECTOR_CPP_ARRAY_NAME,PGR_GAME_EVENTS_EVENT_COLLECTOR_CPP_ARRAY_OFFSET,PGS_MD_FIELD_REF,0,nullptr,&array))||
+     (rc=check_field(layout.klass,PGR_GAME_EVENTS_EVENT_COLLECTOR_CPP_COUNT_NAME,PGR_GAME_EVENTS_EVENT_COLLECTOR_CPP_COUNT_OFFSET,PGS_MD_FIELD_VALUE,4,"System.Int32")))return rc;
   layout.array_class=array.type_class;return layout.array_class?0:-21;
 }
 bool constant(const void *klass,const char *name,int32_t expected) {
@@ -176,7 +176,7 @@ struct OwnedEncounter {uintptr_t service=0,controller=0,encounter=0;uint64_t id=
 // their exact ownership quarantined separately, with a hard bound on GC roots.
 constexpr unsigned kOwnedEncounterLimit=128;
 OwnedEncounter owned_encounters[kOwnedEncounterLimit]{};
-PgrEventCollectorState counters{};
+PgsEventCollectorState counters{};
 std::mutex state_mutex,location_mutex;
 struct Location {double lat=0,lng=0;uint64_t at=0;} location;
 struct Seen {uint64_t id=0,until=0;};Seen seen[128]{};unsigned seen_cursor=0;
@@ -334,24 +334,24 @@ int install(uint64_t tid){
   Cls classes[]={{"Niantic.Holoholo.Services.DynamicTappables","DynamicTappablesSession",&session_class},{"Niantic.Holoholo.Services.DynamicTappables","DynamicTappableBehaviorService",&service},{"","DynamicTappableController",&controller_class},{"Holoholo.Rpc","ProcessTappableOutProto",&response_class},{"Holoholo.Rpc","TappableEncounterProto",&encounter_class},{"System","String",&string_class},{"System","Int32",&int32_class},{"Holoholo.Rpc","LootProto",&loot_class},{"Holoholo.Rpc","LootItemProto",&loot_item_class},{"Holoholo.Rpc","HoloPokemonId",&species_class},{"Holoholo.Rpc","Item",&item_class}};
   for(auto &c:classes)if((rc=resolve(c.ns,c.name,c.out)))return rc;
   struct F{const void *k;const char *n;uint64_t off;uint32_t kind,size;const char *type;};
-  F fields[]={{session_class,PGR_GAME_EVENTS_EVENT_COLLECTOR_CPP_ISSESSIONACTIVE_K__BACKINGFIELD_NAME,PGR_GAME_EVENTS_EVENT_COLLECTOR_CPP_ISSESSIONACTIVE_K__BACKINGFIELD_OFFSET,PGR_MD_FIELD_VALUE,1,"System.Boolean"},
-   {controller_class,PGR_GAME_EVENTS_EVENT_COLLECTOR_CPP_ENCOUNTERID_K__BACKINGFIELD_NAME,PGR_GAME_EVENTS_EVENT_COLLECTOR_CPP_ENCOUNTERID_K__BACKINGFIELD_OFFSET,PGR_MD_FIELD_VALUE,8,"System.UInt64"},
-   {controller_class,PGR_GAME_EVENTS_EVENT_COLLECTOR_CPP_TYPEKEY_K__BACKINGFIELD_NAME,PGR_GAME_EVENTS_EVENT_COLLECTOR_CPP_TYPEKEY_K__BACKINGFIELD_OFFSET,PGR_MD_FIELD_REF,0,"System.String"},
-   {controller_class,PGR_GAME_EVENTS_EVENT_COLLECTOR_CPP_LOCATION_K__BACKINGFIELD_NAME,PGR_GAME_EVENTS_EVENT_COLLECTOR_CPP_LOCATION_K__BACKINGFIELD_OFFSET,PGR_MD_FIELD_VALUE,16,"Niantic.LatLng"},
-   {controller_class,PGR_GAME_EVENTS_EVENT_COLLECTOR_CPP_DESPAWNTIMEMS_K__BACKINGFIELD_NAME,PGR_GAME_EVENTS_EVENT_COLLECTOR_CPP_DESPAWNTIMEMS_K__BACKINGFIELD_OFFSET,PGR_MD_FIELD_VALUE,8,"System.Int64"},
-   {response_class,PGR_GAME_EVENTS_EVENT_COLLECTOR_CPP_STATUS_NAME,PGR_GAME_EVENTS_EVENT_COLLECTOR_CPP_STATUS_OFFSET,PGR_MD_FIELD_ENUM_I32,4,nullptr},{response_class,PGR_GAME_EVENTS_EVENT_COLLECTOR_CPP_ENCOUNTER_NAME,PGR_GAME_EVENTS_EVENT_COLLECTOR_CPP_ENCOUNTER_OFFSET,PGR_MD_FIELD_REF,0,"Holoholo.Rpc.TappableEncounterProto"},
-   {loot_item_class,PGR_GAME_EVENTS_EVENT_COLLECTOR_CPP_COUNT_NAME_2,PGR_GAME_EVENTS_EVENT_COLLECTOR_CPP_COUNT_OFFSET_2,PGR_MD_FIELD_VALUE,4,"System.Int32"},{loot_item_class,PGR_GAME_EVENTS_EVENT_COLLECTOR_CPP_CSYX_NAME,PGR_GAME_EVENTS_EVENT_COLLECTOR_CPP_CSYX_OFFSET,PGR_MD_FIELD_REF,0,"System.Object"},{loot_item_class,PGR_GAME_EVENTS_EVENT_COLLECTOR_CPP_CSYY_NAME,PGR_GAME_EVENTS_EVENT_COLLECTOR_CPP_CSYY_OFFSET,PGR_MD_FIELD_ENUM_I32,4,nullptr},
-   {int32_class,PGR_GAME_EVENTS_EVENT_COLLECTOR_CPP_M_VALUE_NAME,PGR_GAME_EVENTS_EVENT_COLLECTOR_CPP_M_VALUE_OFFSET,PGR_MD_FIELD_VALUE,4,"System.Int32"},{species_class,PGR_GAME_EVENTS_EVENT_COLLECTOR_CPP_VALUE___NAME,PGR_GAME_EVENTS_EVENT_COLLECTOR_CPP_VALUE___OFFSET,PGR_MD_FIELD_VALUE,4,"System.Int32"},{item_class,PGR_GAME_EVENTS_EVENT_COLLECTOR_CPP_VALUE___NAME,PGR_GAME_EVENTS_EVENT_COLLECTOR_CPP_VALUE___OFFSET,PGR_MD_FIELD_VALUE,4,"System.Int32"}};
+  F fields[]={{session_class,PGR_GAME_EVENTS_EVENT_COLLECTOR_CPP_ISSESSIONACTIVE_K__BACKINGFIELD_NAME,PGR_GAME_EVENTS_EVENT_COLLECTOR_CPP_ISSESSIONACTIVE_K__BACKINGFIELD_OFFSET,PGS_MD_FIELD_VALUE,1,"System.Boolean"},
+   {controller_class,PGR_GAME_EVENTS_EVENT_COLLECTOR_CPP_ENCOUNTERID_K__BACKINGFIELD_NAME,PGR_GAME_EVENTS_EVENT_COLLECTOR_CPP_ENCOUNTERID_K__BACKINGFIELD_OFFSET,PGS_MD_FIELD_VALUE,8,"System.UInt64"},
+   {controller_class,PGR_GAME_EVENTS_EVENT_COLLECTOR_CPP_TYPEKEY_K__BACKINGFIELD_NAME,PGR_GAME_EVENTS_EVENT_COLLECTOR_CPP_TYPEKEY_K__BACKINGFIELD_OFFSET,PGS_MD_FIELD_REF,0,"System.String"},
+   {controller_class,PGR_GAME_EVENTS_EVENT_COLLECTOR_CPP_LOCATION_K__BACKINGFIELD_NAME,PGR_GAME_EVENTS_EVENT_COLLECTOR_CPP_LOCATION_K__BACKINGFIELD_OFFSET,PGS_MD_FIELD_VALUE,16,"Niantic.LatLng"},
+   {controller_class,PGR_GAME_EVENTS_EVENT_COLLECTOR_CPP_DESPAWNTIMEMS_K__BACKINGFIELD_NAME,PGR_GAME_EVENTS_EVENT_COLLECTOR_CPP_DESPAWNTIMEMS_K__BACKINGFIELD_OFFSET,PGS_MD_FIELD_VALUE,8,"System.Int64"},
+   {response_class,PGR_GAME_EVENTS_EVENT_COLLECTOR_CPP_STATUS_NAME,PGR_GAME_EVENTS_EVENT_COLLECTOR_CPP_STATUS_OFFSET,PGS_MD_FIELD_ENUM_I32,4,nullptr},{response_class,PGR_GAME_EVENTS_EVENT_COLLECTOR_CPP_ENCOUNTER_NAME,PGR_GAME_EVENTS_EVENT_COLLECTOR_CPP_ENCOUNTER_OFFSET,PGS_MD_FIELD_REF,0,"Holoholo.Rpc.TappableEncounterProto"},
+   {loot_item_class,PGR_GAME_EVENTS_EVENT_COLLECTOR_CPP_COUNT_NAME_2,PGR_GAME_EVENTS_EVENT_COLLECTOR_CPP_COUNT_OFFSET_2,PGS_MD_FIELD_VALUE,4,"System.Int32"},{loot_item_class,PGR_GAME_EVENTS_EVENT_COLLECTOR_CPP_CSYX_NAME,PGR_GAME_EVENTS_EVENT_COLLECTOR_CPP_CSYX_OFFSET,PGS_MD_FIELD_REF,0,"System.Object"},{loot_item_class,PGR_GAME_EVENTS_EVENT_COLLECTOR_CPP_CSYY_NAME,PGR_GAME_EVENTS_EVENT_COLLECTOR_CPP_CSYY_OFFSET,PGS_MD_FIELD_ENUM_I32,4,nullptr},
+   {int32_class,PGR_GAME_EVENTS_EVENT_COLLECTOR_CPP_M_VALUE_NAME,PGR_GAME_EVENTS_EVENT_COLLECTOR_CPP_M_VALUE_OFFSET,PGS_MD_FIELD_VALUE,4,"System.Int32"},{species_class,PGR_GAME_EVENTS_EVENT_COLLECTOR_CPP_VALUE___NAME,PGR_GAME_EVENTS_EVENT_COLLECTOR_CPP_VALUE___OFFSET,PGS_MD_FIELD_VALUE,4,"System.Int32"},{item_class,PGR_GAME_EVENTS_EVENT_COLLECTOR_CPP_VALUE___NAME,PGR_GAME_EVENTS_EVENT_COLLECTOR_CPP_VALUE___OFFSET,PGS_MD_FIELD_VALUE,4,"System.Int32"}};
   for(auto &f:fields)if((rc=check_field(f.k,f.n,f.off,f.kind,f.size,f.type)))return rc;
   PgrMetaFieldResult list{},array{};
-  if((rc=check_field(session_class,PGR_GAME_EVENTS_EVENT_COLLECTOR_CPP_VISIBLETAPPABLES_NAME,PGR_GAME_EVENTS_EVENT_COLLECTOR_CPP_VISIBLETAPPABLES_OFFSET,PGR_MD_FIELD_REF,0,nullptr,&list)))return rc;
+  if((rc=check_field(session_class,PGR_GAME_EVENTS_EVENT_COLLECTOR_CPP_VISIBLETAPPABLES_NAME,PGR_GAME_EVENTS_EVENT_COLLECTOR_CPP_VISIBLETAPPABLES_OFFSET,PGS_MD_FIELD_REF,0,nullptr,&list)))return rc;
   list_class=list.type_class;
-  if((rc=check_field(list_class,PGR_GAME_EVENTS_EVENT_COLLECTOR_CPP_ITEMS_NAME,PGR_GAME_EVENTS_EVENT_COLLECTOR_CPP_ITEMS_OFFSET,PGR_MD_FIELD_REF,0,nullptr,&array))||
-     (rc=check_field(list_class,PGR_GAME_EVENTS_EVENT_COLLECTOR_CPP_SIZE_NAME,PGR_GAME_EVENTS_EVENT_COLLECTOR_CPP_SIZE_OFFSET,PGR_MD_FIELD_VALUE,4,"System.Int32")))return rc;
+  if((rc=check_field(list_class,PGR_GAME_EVENTS_EVENT_COLLECTOR_CPP_ITEMS_NAME,PGR_GAME_EVENTS_EVENT_COLLECTOR_CPP_ITEMS_OFFSET,PGS_MD_FIELD_REF,0,nullptr,&array))||
+     (rc=check_field(list_class,PGR_GAME_EVENTS_EVENT_COLLECTOR_CPP_SIZE_NAME,PGR_GAME_EVENTS_EVENT_COLLECTOR_CPP_SIZE_OFFSET,PGS_MD_FIELD_VALUE,4,"System.Int32")))return rc;
   list_array_class=array.type_class;
   if(!list_class||!list_array_class)return -41;
   if((rc=repeated_layout(response_class,"Reward",PGR_GAME_EVENTS_EVENT_COLLECTOR_CPP_REWARD_OFFSET,reward_layout))||(rc=repeated_layout(loot_class,"LootItem",PGR_GAME_EVENTS_EVENT_COLLECTOR_CPP_LOOTITEM_OFFSET,items_layout)))return rc;
-  PgrMetaFieldResult cases{};if((rc=check_field(loot_item_class,PGR_GAME_EVENTS_EVENT_COLLECTOR_CPP_CSYY_NAME,PGR_GAME_EVENTS_EVENT_COLLECTOR_CPP_CSYY_OFFSET,PGR_MD_FIELD_ENUM_I32,4,nullptr,&cases)))return rc;
+  PgrMetaFieldResult cases{};if((rc=check_field(loot_item_class,PGR_GAME_EVENTS_EVENT_COLLECTOR_CPP_CSYY_NAME,PGR_GAME_EVENTS_EVENT_COLLECTOR_CPP_CSYY_OFFSET,PGS_MD_FIELD_ENUM_I32,4,nullptr,&cases)))return rc;
   if(!constant(cases.type_class,"Item",1)||!constant(cases.type_class,"PokemonCandy",4)||!constant(cases.type_class,"XlCandy",11)||!constant(item_class,"RareCandy",1301)||!constant(item_class,"XlRareCandy",1302))return -42;
   const unsigned char new_pre[16]=PGR_GAME_EVENTS_EVENT_COLLECTOR_CPP_NEW_PRE_FINGERPRINT;
   const unsigned char get_pre[16]=PGR_GAME_EVENTS_EVENT_COLLECTOR_CPP_GET_PRE_FINGERPRINT;
@@ -486,12 +486,12 @@ void pump(bool enabled,uint64_t n,bool diagnose){
   }
 }
 } // namespace
-void pgr_event_collector_location(double lat,double lng,uint64_t at){
+void pgs_event_collector_location(double lat,double lng,uint64_t at){
   std::lock_guard<std::mutex> l(location_mutex);
   if(!std::isfinite(lat)||!std::isfinite(lng)||std::fabs(lat)>90||std::fabs(lng)>180||!at){location={};return;}
   location={lat,lng,at};
 }
-int pgr_event_collector_tick(bool enabled,uint64_t tid){
+int pgs_event_collector_tick(bool enabled,uint64_t tid){
   if(!tid||tid!=uint64_t(gettid()))return -6;
   if(!ready.load()){
     std::lock_guard<std::mutex> l(install_mutex);
@@ -509,8 +509,8 @@ int pgr_event_collector_tick(bool enabled,uint64_t tid){
   if(stopped.load()&&!active_id)release(session_root);
   return 0;
 }
-void pgr_event_collector_stop(){enable_until_ms.store(0);stopped.store(true,std::memory_order_release);}
-PgrEventCollectorState pgr_event_collector_state(){std::lock_guard<std::mutex> l(state_mutex);auto out=counters;out.update_calls=update_calls.load();out.owner_updates=owner_updates.load();out.last_update_tid=last_update_tid.load();out.pending_encounters=0;out.stale_encounters=0;
+void pgs_event_collector_stop(){enable_until_ms.store(0);stopped.store(true,std::memory_order_release);}
+PgsEventCollectorState pgs_event_collector_state(){std::lock_guard<std::mutex> l(state_mutex);auto out=counters;out.update_calls=update_calls.load();out.owner_updates=owner_updates.load();out.last_update_tid=last_update_tid.load();out.pending_encounters=0;out.stale_encounters=0;
   // Called on the proven owner pulse by runtime status reporting.
   if(owner_thread())for(const auto &r:owned_encounters)if(r.id){++out.pending_encounters;if(r.stale)++out.stale_encounters;}
   return out;}

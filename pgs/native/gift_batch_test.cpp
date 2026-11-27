@@ -14,7 +14,7 @@ unsigned allocated=0,freed=0,polls=0,invocations=0,bootstraps=0;
 int promise_object,response_object,player_object,string_object;
 int response_class,enum_class,string_class,player_class,enum_type;
 int result_field,success_field,bag_field,limit_field,other_field,player_method;
-int result_code=1,poll_code=PGR_VR_DONE;
+int result_code=1,poll_code=PGS_VR_DONE;
 bool fresh=true,ready=true,changing=false;
 unsigned samples=0;
 std::string config="G1|42|1|0",account="account-a";
@@ -60,13 +60,13 @@ int sample(PgrRuntimeTransportSample *out){*out={};out->snapshot_fresh=fresh;out
 int get_string(uint32_t slot,char *out,uint32_t cap,uint32_t *len){assert(slot==12&&config.size()<cap);*len=config.size();memcpy(out,config.data(),*len);return 0;}
 int get_bool(uint32_t slot,int *out){assert(slot==12);*out=ready;return 0;}
 int emit(uint32_t op,const int64_t*,uint32_t n,const PgrRuntimeTransportString *s,uint32_t count){assert(op==19&&!n&&count==2);assert(std::string(s[0].ptr,s[0].len)=="gift-batch");events.emplace_back(s[1].ptr,s[1].len);return 0;}
-int poll_result(void *p,uint32_t phase,uint64_t tid,PgrVgpResultsResult *out){assert(p==&promise_object&&phase==1&&tid==owner);++polls;*out={};if(poll_code==PGR_VR_DONE)out->value_handle=root_new(&response_object,0);return poll_code;}
+int poll_result(void *p,uint32_t phase,uint64_t tid,PgrVgpResultsResult *out){assert(p==&promise_object&&phase==1&&tid==owner);++polls;*out={};if(poll_code==PGS_VR_DONE)out->value_handle=root_new(&response_object,0);return poll_code;}
 int bootstrap(PgrBootBinding*){++bootstraps;return -1;}
 PgrRuntimeTransportApi transport{};PgrVgpResultsApi results{};PgrMetaApi metadata{};PgrBootApi bootstrap_api{};
 void clean(){session=Session{};assert(roots.empty()&&allocated==freed);}
 void fixture(Stage stage=SEND){
  clean();events.clear();polls=invocations=0;fresh=ready=true;changing=false;samples=0;
- config="G1|42|1|0";account="account-a";result_code=1;poll_code=PGR_VR_DONE;
+ config="G1|42|1|0";account="account-a";result_code=1;poll_code=PGS_VR_DONE;
  owner=gettid();finished_token=0;session.active=true;session.command={42,true,false};session.account=account;
  session.stage=stage;session.started=session.since=clock_ms();session.promise=Root(&promise_object);session.player=Root(&player_object);
 }
@@ -91,18 +91,18 @@ int main(){
  Command c;assert(parse("G1|42|1|0",9,c)&&c.token==42&&c.enabled&&!c.full_bag);
  for(const char *s:{"G1|0|1|0","G1|42|2|0","G1|42|1|2","G1|42|1|0|1","G1|-1|1|0","G1|9223372036854775808|1|0","G1|42|1","G2|42|1|0"})assert(!parse(s,strlen(s),c));
  assert(permission().valid&&permission().allowed);fresh=false;assert(!permission().valid);fresh=true;changing=true;assert(!permission().valid);changing=false;ready=false;assert(permission().valid&&!permission().allowed);ready=true;
- fixture();poll_code=PGR_VR_PENDING;session.canceled=true;poll();assert(session.promise&&session.sent==0&&polls==1&&events.empty());
+ fixture();poll_code=PGS_VR_PENDING;session.canceled=true;poll();assert(session.promise&&session.sent==0&&polls==1&&events.empty());
  session.since=clock_ms()-20001;poll();assert(!session.active&&finished_token==42&&polls==2);assert(events.back().find("not retried")!=std::string::npos);
- pgr_gift_batch_tick(owner,nullptr);assert(polls==2&&bootstraps==0);clean();
+ pgs_gift_batch_tick(owner,nullptr);assert(polls==2&&bootstraps==0);clean();
  fixture();poll();assert(session.sent==1&&session.opened==0&&session.friend_cursor==1&&session.gift_cursor==1&&!session.promise);clean();
  fixture();result_code=4;poll();assert(session.sent==0&&session.skipped==1&&session.gift_cursor==1&&session.friend_cursor==1);clean();
  fixture(SEND_CHECK);poll();assert(session.send_authorized&&session.stage==SEND&&session.sent==0&&session.friend_cursor==0);clean();
  fixture(OPEN);poll();assert(session.opened==1&&session.sent==0&&session.open_cursor==1);clean();
  for(int code:{2,3}){fixture(OPEN);result_code=code;poll();assert(!session.active&&finished_token==42);assert(events.back().find("\"opened\":0,\"skipped\":1")!=std::string::npos);clean();}
  fixture();session.canceled=true;poll();assert(!session.active&&events.back().find("\"sent\":1")!=std::string::npos);clean();
- fixture();poll_code=PGR_VR_REJECTED;pgr_gift_batch_tick(owner,nullptr);assert(!session.active&&polls==1&&events.back().find("without retry")!=std::string::npos);clean();
- fixture();account="account-b";pgr_gift_batch_tick(owner,nullptr);assert(!session.active&&polls==0&&events.back().find("Account changed")!=std::string::npos);clean();
- fixture();session.promise.reset();session.canceled=true;pgr_gift_batch_tick(owner,nullptr);assert(!session.active&&polls==0);clean();
+ fixture();poll_code=PGS_VR_REJECTED;pgs_gift_batch_tick(owner,nullptr);assert(!session.active&&polls==1&&events.back().find("without retry")!=std::string::npos);clean();
+ fixture();account="account-b";pgs_gift_batch_tick(owner,nullptr);assert(!session.active&&polls==0&&events.back().find("Account changed")!=std::string::npos);clean();
+ fixture();session.promise.reset();session.canceled=true;pgs_gift_batch_tick(owner,nullptr);assert(!session.active&&polls==0);clean();
  // Exercise the actual submission guard: cancellation and command replacement must
  // fail before any managed request (or even account lookup) is invoked.
  fixture();session.promise.reset();session.canceled=true;
@@ -111,6 +111,6 @@ int main(){
  fixture();session.promise.reset();config="G1|99|1|0";blocked=false;
  try{submit(OPEN,&response_object,"OpenGift",3);}catch(const Failure&){blocked=true;}
  assert(blocked&&invocations==0&&!session.promise);clean();
- config="G1|43|0|0";events.clear();pgr_gift_batch_tick(owner,nullptr);assert(finished_token==43&&events.size()==1&&bootstraps==0);pgr_gift_batch_tick(owner,nullptr);assert(events.size()==1);clean();
+ config="G1|43|0|0";events.clear();pgs_gift_batch_tick(owner,nullptr);assert(finished_token==43&&events.size()==1&&bootstraps==0);pgs_gift_batch_tick(owner,nullptr);assert(events.size()==1);clean();
  std::puts("PASS: gift batch parsing, permission, cancellation, account change, outcome counters, limits and no replay");
 }

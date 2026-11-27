@@ -1,7 +1,7 @@
 #include "incense_guard_policy.h"
 #include <cassert>
 #include <cstring>
-int main(){using namespace pgr_incense_guard;Settings s;
+int main(){using namespace pgs_incense_guard;Settings s;
  const char *good="1|1234|2|0|0|1|5|1";assert(parse(good,strlen(good),s)&&s.active);
  const char *off="1|1234|2|0|0|1|5|0";assert(parse(off,strlen(off),s)&&!s.active);
  const char *bad="1|1234|2|0|0|1|5|2";assert(!parse(bad,strlen(bad),s));

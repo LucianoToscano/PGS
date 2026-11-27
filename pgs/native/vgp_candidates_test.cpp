@@ -122,7 +122,7 @@ void *fake_invoke(void *method, void *obj, void **args, void **exc) {
 
 PgrVgpCandidateConfig make_config() {
   PgrVgpCandidateConfig c{};
-  c.version = PGR_VC_CONFIG_VERSION;
+  c.version = PGS_VC_CONFIG_VERSION;
   c.size = sizeof(c);
   c.gchandle_new = reinterpret_cast<void *>(&fake_gc_new);
   c.gchandle_get_target = reinterpret_cast<void *>(&fake_gc_get);
@@ -156,7 +156,7 @@ uint64_t this_tid() { return static_cast<uint64_t>(static_cast<pid_t>(::gettid()
 PgrVgpCandidateRequest make_request(uint32_t action, void *target, void *manual,
                                     double lat, double lon, uint64_t tid, uint64_t lease) {
   PgrVgpCandidateRequest r{};
-  r.version = PGR_VC_REQUEST_VERSION;
+  r.version = PGS_VC_REQUEST_VERSION;
   r.size = sizeof(r);
   r.action = action;
   r.owner_tid = tid;
@@ -222,40 +222,40 @@ int main(int argc, char **argv) {
   PgrVgpCandidateResult out{};
 
   // 1. install validation + not-installed + idempotence + reconfig.
-  assert(api->install(nullptr) == PGR_VC_ERR_NULL_ARG);
-  { PgrVgpCandidateConfig b = cfg; b.version = 2; assert(api->install(&b) == PGR_VC_ERR_BAD_VERSION); }
-  { PgrVgpCandidateConfig b = cfg; b.size = sizeof(cfg) - 1; assert(api->install(&b) == PGR_VC_ERR_BAD_SIZE); }
-  { PgrVgpCandidateConfig b = cfg; b.m_fort = nullptr; assert(api->install(&b) == PGR_VC_ERR_MISSING_PTR); }
-  { PgrVgpCandidateRequest r = make_request(PGR_VC_ACTION_CATCH, &g_wild, nullptr, 0, 0, tid, 2000);
-    assert(api->inspect(&r, &out) == PGR_VC_ERR_NOT_INSTALLED); }
+  assert(api->install(nullptr) == PGS_VC_ERR_NULL_ARG);
+  { PgrVgpCandidateConfig b = cfg; b.version = 2; assert(api->install(&b) == PGS_VC_ERR_BAD_VERSION); }
+  { PgrVgpCandidateConfig b = cfg; b.size = sizeof(cfg) - 1; assert(api->install(&b) == PGS_VC_ERR_BAD_SIZE); }
+  { PgrVgpCandidateConfig b = cfg; b.m_fort = nullptr; assert(api->install(&b) == PGS_VC_ERR_MISSING_PTR); }
+  { PgrVgpCandidateRequest r = make_request(PGS_VC_ACTION_CATCH, &g_wild, nullptr, 0, 0, tid, 2000);
+    assert(api->inspect(&r, &out) == PGS_VC_ERR_NOT_INSTALLED); }
   assert(api->install(&cfg) == 0);
   assert(api->install(&cfg) == 0);  // idempotent
-  { PgrVgpCandidateConfig b = cfg; b.class_wild = &cls_stop; assert(api->install(&b) == PGR_VC_ERR_RECONFIG); }
+  { PgrVgpCandidateConfig b = cfg; b.class_wild = &cls_stop; assert(api->install(&b) == PGS_VC_ERR_RECONFIG); }
 
   // 2. Early-rejection guards invoke NOTHING managed.
   reset();
   { PgrVgpCandidateRequest r = make_request(5, &g_wild, nullptr, 0, 0, tid, 2000);
-    assert(api->inspect(&r, &out) == PGR_VC_ERR_BAD_ACTION && g_invokes == 0); }
-  { PgrVgpCandidateRequest r = make_request(PGR_VC_ACTION_CATCH, nullptr, nullptr, 0, 0, tid, 2000);
-    assert(api->inspect(&r, &out) == PGR_VC_ERR_NULL_ARG && g_invokes == 0); }
-  { PgrVgpCandidateRequest r = make_request(PGR_VC_ACTION_CATCH, &g_wild, nullptr, 0, 0, tid + 123, 2000);
-    assert(api->inspect(&r, &out) == PGR_VC_ERR_THREAD && g_invokes == 0); }
-  { PgrVgpCandidateRequest r = make_request(PGR_VC_ACTION_CATCH, &g_wild, nullptr, 0, 0, 0, 2000);
-    assert(api->inspect(&r, &out) == PGR_VC_ERR_THREAD && g_invokes == 0); }
-  { PgrVgpCandidateRequest r = make_request(PGR_VC_ACTION_CATCH, &g_wild, nullptr, 200.0, 0, tid, 2000);
-    assert(api->inspect(&r, &out) == PGR_VC_ERR_COORDS && g_invokes == 0); }
-  { PgrVgpCandidateRequest r = make_request(PGR_VC_ACTION_CATCH, &g_wild, nullptr, std::nan(""), 0, tid, 2000);
-    assert(api->inspect(&r, &out) == PGR_VC_ERR_COORDS && g_invokes == 0); }
-  { PgrVgpCandidateRequest r = make_request(PGR_VC_ACTION_CATCH, &g_wild, nullptr, 0, 0, tid, 0);  // closed lease
-    assert(api->inspect(&r, &out) == PGR_VC_NOT && out.reason == PGR_VC_REASON_INVALID && g_invokes == 0); }
+    assert(api->inspect(&r, &out) == PGS_VC_ERR_BAD_ACTION && g_invokes == 0); }
+  { PgrVgpCandidateRequest r = make_request(PGS_VC_ACTION_CATCH, nullptr, nullptr, 0, 0, tid, 2000);
+    assert(api->inspect(&r, &out) == PGS_VC_ERR_NULL_ARG && g_invokes == 0); }
+  { PgrVgpCandidateRequest r = make_request(PGS_VC_ACTION_CATCH, &g_wild, nullptr, 0, 0, tid + 123, 2000);
+    assert(api->inspect(&r, &out) == PGS_VC_ERR_THREAD && g_invokes == 0); }
+  { PgrVgpCandidateRequest r = make_request(PGS_VC_ACTION_CATCH, &g_wild, nullptr, 0, 0, 0, 2000);
+    assert(api->inspect(&r, &out) == PGS_VC_ERR_THREAD && g_invokes == 0); }
+  { PgrVgpCandidateRequest r = make_request(PGS_VC_ACTION_CATCH, &g_wild, nullptr, 200.0, 0, tid, 2000);
+    assert(api->inspect(&r, &out) == PGS_VC_ERR_COORDS && g_invokes == 0); }
+  { PgrVgpCandidateRequest r = make_request(PGS_VC_ACTION_CATCH, &g_wild, nullptr, std::nan(""), 0, tid, 2000);
+    assert(api->inspect(&r, &out) == PGS_VC_ERR_COORDS && g_invokes == 0); }
+  { PgrVgpCandidateRequest r = make_request(PGS_VC_ACTION_CATCH, &g_wild, nullptr, 0, 0, tid, 0);  // closed lease
+    assert(api->inspect(&r, &out) == PGS_VC_NOT && out.reason == PGS_VC_REASON_INVALID && g_invokes == 0); }
   assert(g_handles.empty());
 
   // 3. Catch eligible: UInt64 key, no fort handle, roots clean.
   reset();
   g_wild.id = 123456789ULL;
-  { PgrVgpCandidateRequest r = make_request(PGR_VC_ACTION_CATCH, &g_wild, nullptr, 0, 0, tid, 2000);
-    assert(api->inspect(&r, &out) == PGR_VC_ELIGIBLE);
-    assert(out.eligible == 1 && out.reason == PGR_VC_REASON_NONE && out.fort_handle == 0);
+  { PgrVgpCandidateRequest r = make_request(PGS_VC_ACTION_CATCH, &g_wild, nullptr, 0, 0, tid, 2000);
+    assert(api->inspect(&r, &out) == PGS_VC_ELIGIBLE);
+    assert(out.eligible == 1 && out.reason == PGS_VC_REASON_NONE && out.fort_handle == 0);
     assert(out.version == 1 && out.size == sizeof(out));
     assert(key_of(out) == "p123456789" && out.key[out.key_len] == '\0'); }
   assert(g_handles.empty());
@@ -263,30 +263,30 @@ int main(int argc, char **argv) {
   // exact id: UINT64_MAX is preserved digit-for-digit.
   reset();
   g_wild.id = UINT64_MAX;
-  { PgrVgpCandidateRequest r = make_request(PGR_VC_ACTION_CATCH, &g_wild, nullptr, 0, 0, tid, 2000);
-    assert(api->inspect(&r, &out) == PGR_VC_ELIGIBLE && key_of(out) == "p18446744073709551615"); }
+  { PgrVgpCandidateRequest r = make_request(PGS_VC_ACTION_CATCH, &g_wild, nullptr, 0, 0, tid, 2000);
+    assert(api->inspect(&r, &out) == PGS_VC_ELIGIBLE && key_of(out) == "p18446744073709551615"); }
   assert(g_handles.empty());
 
   // 4. Catch rejections: wrong class, not alive, manual, hidden -- each short-circuits further getters.
   reset();
-  { PgrVgpCandidateRequest r = make_request(PGR_VC_ACTION_CATCH, &g_stop, nullptr, 0, 0, tid, 2000);  // stop as wild
-    assert(api->inspect(&r, &out) == PGR_VC_NOT && out.reason == PGR_VC_REASON_INVALID && g_invokes == 0); }
+  { PgrVgpCandidateRequest r = make_request(PGS_VC_ACTION_CATCH, &g_stop, nullptr, 0, 0, tid, 2000);  // stop as wild
+    assert(api->inspect(&r, &out) == PGS_VC_NOT && out.reason == PGS_VC_REASON_INVALID && g_invokes == 0); }
   reset();
   g_wild.alive = false;
-  { PgrVgpCandidateRequest r = make_request(PGR_VC_ACTION_CATCH, &g_wild, nullptr, 0, 0, tid, 2000);
-    assert(api->inspect(&r, &out) == PGR_VC_NOT && out.reason == PGR_VC_REASON_INVALID && g_invokes == 1); }
+  { PgrVgpCandidateRequest r = make_request(PGS_VC_ACTION_CATCH, &g_wild, nullptr, 0, 0, tid, 2000);
+    assert(api->inspect(&r, &out) == PGS_VC_NOT && out.reason == PGS_VC_REASON_INVALID && g_invokes == 1); }
   reset();
-  { PgrVgpCandidateRequest r = make_request(PGR_VC_ACTION_CATCH, &g_wild, &g_wild, 0, 0, tid, 2000);  // manual==target
-    assert(api->inspect(&r, &out) == PGR_VC_NOT && out.reason == PGR_VC_REASON_MANUAL);
+  { PgrVgpCandidateRequest r = make_request(PGS_VC_ACTION_CATCH, &g_wild, &g_wild, 0, 0, tid, 2000);  // manual==target
+    assert(api->inspect(&r, &out) == PGS_VC_NOT && out.reason == PGS_VC_REASON_MANUAL);
     assert(g_invokes == 1 && out.fort_handle == 0); }
   reset();
   g_wild.visible = false;
-  { PgrVgpCandidateRequest r = make_request(PGR_VC_ACTION_CATCH, &g_wild, nullptr, 0, 0, tid, 2000);
-    assert(api->inspect(&r, &out) == PGR_VC_NOT && out.reason == PGR_VC_REASON_HIDDEN); }
+  { PgrVgpCandidateRequest r = make_request(PGS_VC_ACTION_CATCH, &g_wild, nullptr, 0, 0, tid, 2000);
+    assert(api->inspect(&r, &out) == PGS_VC_NOT && out.reason == PGS_VC_REASON_HIDDEN); }
   // a non-identical manual target does NOT exclude.
   reset();
-  { PgrVgpCandidateRequest r = make_request(PGR_VC_ACTION_CATCH, &g_wild, &g_stop, 0, 0, tid, 2000);
-    assert(api->inspect(&r, &out) == PGR_VC_ELIGIBLE); }
+  { PgrVgpCandidateRequest r = make_request(PGS_VC_ACTION_CATCH, &g_wild, &g_stop, 0, 0, tid, 2000);
+    assert(api->inspect(&r, &out) == PGS_VC_ELIGIBLE); }
   assert(g_handles.empty());
 
   // Both incoming references must be rooted BEFORE alive can collect. Alias exclusion must compare
@@ -309,32 +309,32 @@ int main(int argc, char **argv) {
       // Old storage remains readable as poisoned memory so stale-pointer regressions fail reliably.
       g_wild.klass=&cls_other;g_wild.visible=false;g_stop.klass=&cls_other;
     };
-    PgrVgpCandidateRequest r=make_request(PGR_VC_ACTION_CATCH,&g_wild,aliases?static_cast<void*>(&g_wild):static_cast<void*>(&g_stop),0,0,tid,2000);
+    PgrVgpCandidateRequest r=make_request(PGS_VC_ACTION_CATCH,&g_wild,aliases?static_cast<void*>(&g_wild):static_cast<void*>(&g_stop),0,0,tid,2000);
     const int rc=api->inspect(&r,&out);
-    if(aliases)assert(rc==PGR_VC_NOT&&out.reason==PGR_VC_REASON_MANUAL&&g_invokes==1);
-    else assert(rc==PGR_VC_ELIGIBLE&&key_of(out)=="p7");
+    if(aliases)assert(rc==PGS_VC_NOT&&out.reason==PGS_VC_REASON_MANUAL&&g_invokes==1);
+    else assert(rc==PGS_VC_ELIGIBLE&&key_of(out)=="p7");
     assert(out.fort_handle==0&&g_handles.empty());
   }
 
   // 5. 40 m boundary: in-range (~0 m, ~33 m) eligible, out-of-range (~50 m) rejected.
   reset();
-  { PgrVgpCandidateRequest r = make_request(PGR_VC_ACTION_CATCH, &g_wild, nullptr, 0, 0, tid, 2000);
-    g_wild.lat = 0; g_wild.lon = 0; assert(api->inspect(&r, &out) == PGR_VC_ELIGIBLE); }
-  { PgrVgpCandidateRequest r = make_request(PGR_VC_ACTION_CATCH, &g_wild, nullptr, 0, 0, tid, 2000);
-    g_wild.lat = 0.00030; assert(api->inspect(&r, &out) == PGR_VC_ELIGIBLE); }  // ~33 m
-  { PgrVgpCandidateRequest r = make_request(PGR_VC_ACTION_CATCH, &g_wild, nullptr, 0, 0, tid, 2000);
+  { PgrVgpCandidateRequest r = make_request(PGS_VC_ACTION_CATCH, &g_wild, nullptr, 0, 0, tid, 2000);
+    g_wild.lat = 0; g_wild.lon = 0; assert(api->inspect(&r, &out) == PGS_VC_ELIGIBLE); }
+  { PgrVgpCandidateRequest r = make_request(PGS_VC_ACTION_CATCH, &g_wild, nullptr, 0, 0, tid, 2000);
+    g_wild.lat = 0.00030; assert(api->inspect(&r, &out) == PGS_VC_ELIGIBLE); }  // ~33 m
+  { PgrVgpCandidateRequest r = make_request(PGS_VC_ACTION_CATCH, &g_wild, nullptr, 0, 0, tid, 2000);
     g_wild.lat = 0.00045;  // ~50 m
-    assert(api->inspect(&r, &out) == PGR_VC_NOT && out.reason == PGR_VC_REASON_OUT_OF_RANGE); }
+    assert(api->inspect(&r, &out) == PGS_VC_NOT && out.reason == PGS_VC_REASON_OUT_OF_RANGE); }
   assert(g_handles.empty());
 
   // Validate the candidate's own location before haversine: 360 degrees otherwise wraps to zero
   // Smart mode may attempt loaded visible spawns beyond the legacy 40 m cutoff.
   for(double latitude:{0.00045,0.00072,0.0018}){
     reset();g_wild.lat=latitude;
-    auto r=make_request(PGR_VC_ACTION_SMART_CATCH,&g_wild,nullptr,0,0,tid,2000);
-    assert(api->inspect(&r,&out)==PGR_VC_ELIGIBLE&&g_handles.empty());
-    g_wild.visible=false;assert(api->inspect(&r,&out)==PGR_VC_NOT&&out.reason==PGR_VC_REASON_HIDDEN);
-    g_wild.visible=true;r.manual=&g_wild;assert(api->inspect(&r,&out)==PGR_VC_NOT&&out.reason==PGR_VC_REASON_MANUAL);
+    auto r=make_request(PGS_VC_ACTION_SMART_CATCH,&g_wild,nullptr,0,0,tid,2000);
+    assert(api->inspect(&r,&out)==PGS_VC_ELIGIBLE&&g_handles.empty());
+    g_wild.visible=false;assert(api->inspect(&r,&out)==PGS_VC_NOT&&out.reason==PGS_VC_REASON_HIDDEN);
+    g_wild.visible=true;r.manual=&g_wild;assert(api->inspect(&r,&out)==PGS_VC_NOT&&out.reason==PGS_VC_REASON_MANUAL);
     assert(g_handles.empty());
   }
 
@@ -344,18 +344,18 @@ int main(int argc, char **argv) {
     {90.0001,0},{-90.0001,0},{0,180.0001},{0,-180.0001},{360,0},{0,360}};
   for(const auto &location:malformed) {
     reset();g_wild.lat=location[0];g_wild.lon=location[1];
-    PgrVgpCandidateRequest r=make_request(PGR_VC_ACTION_CATCH,&g_wild,nullptr,0,0,tid,2000);
-    assert(api->inspect(&r,&out)==PGR_VC_NOT&&out.reason==PGR_VC_REASON_OUT_OF_RANGE);
+    PgrVgpCandidateRequest r=make_request(PGS_VC_ACTION_CATCH,&g_wild,nullptr,0,0,tid,2000);
+    assert(api->inspect(&r,&out)==PGS_VC_NOT&&out.reason==PGS_VC_REASON_OUT_OF_RANGE);
     assert(out.eligible==0&&out.fort_handle==0&&g_handles.empty());
-    r.action=PGR_VC_ACTION_SMART_CATCH;
-    assert(api->inspect(&r,&out)==PGR_VC_NOT&&out.reason==PGR_VC_REASON_OUT_OF_RANGE&&g_handles.empty());
+    r.action=PGS_VC_ACTION_SMART_CATCH;
+    assert(api->inspect(&r,&out)==PGS_VC_NOT&&out.reason==PGS_VC_REASON_OUT_OF_RANGE&&g_handles.empty());
   }
 
   // 6. Spin eligible: fort handle transferred (owned), ASCII key, roots clean once the caller frees it.
   reset();
-  { PgrVgpCandidateRequest r = make_request(PGR_VC_ACTION_SPIN, &g_stop, nullptr, 0, 0, tid, 2000);
-    assert(api->inspect(&r, &out) == PGR_VC_ELIGIBLE);
-    assert(out.eligible == 1 && out.reason == PGR_VC_REASON_NONE && out.fort_handle != 0);
+  { PgrVgpCandidateRequest r = make_request(PGS_VC_ACTION_SPIN, &g_stop, nullptr, 0, 0, tid, 2000);
+    assert(api->inspect(&r, &out) == PGS_VC_ELIGIBLE);
+    assert(out.eligible == 1 && out.reason == PGS_VC_REASON_NONE && out.fort_handle != 0);
     assert(key_of(out) == "sAB12" && out.key[out.key_len] == '\0');
     assert(fake_gc_get(out.fort_handle) == &g_fort);  // handle targets the FortData
     assert(g_handles.size() == 1);                    // exactly the transferred handle
@@ -369,36 +369,36 @@ int main(int argc, char **argv) {
     else if (which == 1) g_stop.range = false;
     else if (which == 2) g_stop.closed = true;
     else g_stop.cooling = true;
-    PgrVgpCandidateRequest r = make_request(PGR_VC_ACTION_SPIN, &g_stop, nullptr, 0, 0, tid, 2000);
-    assert(api->inspect(&r, &out) == PGR_VC_NOT && out.reason == PGR_VC_REASON_INELIGIBLE && out.fort_handle == 0);
+    PgrVgpCandidateRequest r = make_request(PGS_VC_ACTION_SPIN, &g_stop, nullptr, 0, 0, tid, 2000);
+    assert(api->inspect(&r, &out) == PGS_VC_NOT && out.reason == PGS_VC_REASON_INELIGIBLE && out.fort_handle == 0);
   }
   assert(g_handles.empty());
 
   // 8. Spin fort faults: wrong fort class, null FortId, malformed length (0, -1, 257) -> INELIGIBLE.
   reset();
   g_stop.fort=nullptr;
-  { PgrVgpCandidateRequest r=make_request(PGR_VC_ACTION_SPIN,&g_stop,nullptr,0,0,tid,2000);
-    assert(api->inspect(&r,&out)==PGR_VC_NOT&&out.reason==PGR_VC_REASON_INELIGIBLE);
+  { PgrVgpCandidateRequest r=make_request(PGS_VC_ACTION_SPIN,&g_stop,nullptr,0,0,tid,2000);
+    assert(api->inspect(&r,&out)==PGS_VC_NOT&&out.reason==PGS_VC_REASON_INELIGIBLE);
     assert(out.eligible==0&&out.fort_handle==0&&g_handles.empty()); }
   reset();
   g_fort.klass = &cls_other;
-  { PgrVgpCandidateRequest r = make_request(PGR_VC_ACTION_SPIN, &g_stop, nullptr, 0, 0, tid, 2000);
-    assert(api->inspect(&r, &out) == PGR_VC_NOT && out.reason == PGR_VC_REASON_INELIGIBLE); }
+  { PgrVgpCandidateRequest r = make_request(PGS_VC_ACTION_SPIN, &g_stop, nullptr, 0, 0, tid, 2000);
+    assert(api->inspect(&r, &out) == PGS_VC_NOT && out.reason == PGS_VC_REASON_INELIGIBLE); }
   reset();
   g_fort.id = nullptr;
-  { PgrVgpCandidateRequest r = make_request(PGR_VC_ACTION_SPIN, &g_stop, nullptr, 0, 0, tid, 2000);
-    assert(api->inspect(&r, &out) == PGR_VC_NOT && out.reason == PGR_VC_REASON_INELIGIBLE); }
+  { PgrVgpCandidateRequest r = make_request(PGS_VC_ACTION_SPIN, &g_stop, nullptr, 0, 0, tid, 2000);
+    assert(api->inspect(&r, &out) == PGS_VC_NOT && out.reason == PGS_VC_REASON_INELIGIBLE); }
   for (int32_t bad : {0, -1, 257, -2147483647 - 1}) {
     reset();
     g_string.length = bad;
-    PgrVgpCandidateRequest r = make_request(PGR_VC_ACTION_SPIN, &g_stop, nullptr, 0, 0, tid, 2000);
-    assert(api->inspect(&r, &out) == PGR_VC_NOT && out.reason == PGR_VC_REASON_INELIGIBLE);  // never truncated
+    PgrVgpCandidateRequest r = make_request(PGS_VC_ACTION_SPIN, &g_stop, nullptr, 0, 0, tid, 2000);
+    assert(api->inspect(&r, &out) == PGS_VC_NOT && out.reason == PGS_VC_REASON_INELIGIBLE);  // never truncated
   }
   // exact max length (256 units) is accepted, not rejected.
   reset();
   { uint16_t big[256]; for (auto &u : big) u = 'x'; set_string(big, 256);
-    PgrVgpCandidateRequest r = make_request(PGR_VC_ACTION_SPIN, &g_stop, nullptr, 0, 0, tid, 2000);
-    assert(api->inspect(&r, &out) == PGR_VC_ELIGIBLE && out.key_len == 257 && out.key[0] == 's');
+    PgrVgpCandidateRequest r = make_request(PGS_VC_ACTION_SPIN, &g_stop, nullptr, 0, 0, tid, 2000);
+    assert(api->inspect(&r, &out) == PGS_VC_ELIGIBLE && out.key_len == 257 && out.key[0] == 's');
     fake_gc_free(out.fort_handle); }
   assert(g_handles.empty());
 
@@ -406,8 +406,8 @@ int main(int argc, char **argv) {
   reset();
   { const uint16_t uni[] = {'A', 0x00E9, 0xD83D, 0xDE00};  // 'A', e-acute, emoji U+1F600
     set_string(uni, 4);
-    PgrVgpCandidateRequest r = make_request(PGR_VC_ACTION_SPIN, &g_stop, nullptr, 0, 0, tid, 2000);
-    assert(api->inspect(&r, &out) == PGR_VC_ELIGIBLE);
+    PgrVgpCandidateRequest r = make_request(PGS_VC_ACTION_SPIN, &g_stop, nullptr, 0, 0, tid, 2000);
+    assert(api->inspect(&r, &out) == PGS_VC_ELIGIBLE);
     const unsigned char expect[] = {'s', 'A', 0xC3, 0xA9, 0xF0, 0x9F, 0x98, 0x80};
     assert(out.key_len == sizeof(expect));
     assert(std::memcmp(out.key, expect, sizeof(expect)) == 0);
@@ -416,8 +416,8 @@ int main(int argc, char **argv) {
   reset();
   { const uint16_t lone[] = {0xD83D, 'Z'};
     set_string(lone, 2);
-    PgrVgpCandidateRequest r = make_request(PGR_VC_ACTION_SPIN, &g_stop, nullptr, 0, 0, tid, 2000);
-    assert(api->inspect(&r, &out) == PGR_VC_ELIGIBLE);
+    PgrVgpCandidateRequest r = make_request(PGS_VC_ACTION_SPIN, &g_stop, nullptr, 0, 0, tid, 2000);
+    assert(api->inspect(&r, &out) == PGS_VC_ELIGIBLE);
     const unsigned char expect[] = {'s', 0xEF, 0xBF, 0xBD, 'Z'};
     assert(out.key_len == sizeof(expect) && std::memcmp(out.key, expect, sizeof(expect)) == 0);
     fake_gc_free(out.fort_handle); }
@@ -426,16 +426,16 @@ int main(int argc, char **argv) {
   // 10. Value-class / metadata anomalies -> negative ERR_METADATA, roots freed.
   reset();
   g_location_box = &g_u64;  // get_Location returns a non-LatLng box
-  { PgrVgpCandidateRequest r = make_request(PGR_VC_ACTION_CATCH, &g_wild, nullptr, 0, 0, tid, 2000);
-    assert(api->inspect(&r, &out) == PGR_VC_ERR_METADATA); }
+  { PgrVgpCandidateRequest r = make_request(PGS_VC_ACTION_CATCH, &g_wild, nullptr, 0, 0, tid, 2000);
+    assert(api->inspect(&r, &out) == PGS_VC_ERR_METADATA); }
   reset();
   g_id_box = &g_latlng;  // get_EncounterId returns a non-UInt64 box
-  { PgrVgpCandidateRequest r = make_request(PGR_VC_ACTION_CATCH, &g_wild, nullptr, 0, 0, tid, 2000);
-    assert(api->inspect(&r, &out) == PGR_VC_ERR_METADATA); }
+  { PgrVgpCandidateRequest r = make_request(PGS_VC_ACTION_CATCH, &g_wild, nullptr, 0, 0, tid, 2000);
+    assert(api->inspect(&r, &out) == PGS_VC_ERR_METADATA); }
   reset();
   g_visible_box = &g_latlng;  // get_VisibleOnMap returns a non-Boolean box
-  { PgrVgpCandidateRequest r = make_request(PGR_VC_ACTION_CATCH, &g_wild, nullptr, 0, 0, tid, 2000);
-    assert(api->inspect(&r, &out) == PGR_VC_ERR_METADATA); }
+  { PgrVgpCandidateRequest r = make_request(PGS_VC_ACTION_CATCH, &g_wild, nullptr, 0, 0, tid, 2000);
+    assert(api->inspect(&r, &out) == PGS_VC_ERR_METADATA); }
   assert(g_handles.empty());
 
   // 11. Managed exception from any getter -> ERR_MANAGED, roots freed.
@@ -443,16 +443,16 @@ int main(int argc, char **argv) {
                          static_cast<void *>(&m_location), static_cast<void *>(&m_id)}) {
     reset();
     g_throw_method = throwing;
-    PgrVgpCandidateRequest r = make_request(PGR_VC_ACTION_CATCH, &g_wild, nullptr, 0, 0, tid, 2000);
-    assert(api->inspect(&r, &out) == PGR_VC_ERR_MANAGED);
+    PgrVgpCandidateRequest r = make_request(PGS_VC_ACTION_CATCH, &g_wild, nullptr, 0, 0, tid, 2000);
+    assert(api->inspect(&r, &out) == PGS_VC_ERR_MANAGED);
   }
   for (void *throwing : {static_cast<void *>(&m_active), static_cast<void *>(&m_range),
                          static_cast<void *>(&m_closed), static_cast<void *>(&m_cooling),
                          static_cast<void *>(&m_fort)}) {
     reset();
     g_throw_method = throwing;
-    PgrVgpCandidateRequest r = make_request(PGR_VC_ACTION_SPIN, &g_stop, nullptr, 0, 0, tid, 2000);
-    assert(api->inspect(&r, &out) == PGR_VC_ERR_MANAGED);
+    PgrVgpCandidateRequest r = make_request(PGS_VC_ACTION_SPIN, &g_stop, nullptr, 0, 0, tid, 2000);
+    assert(api->inspect(&r, &out) == PGS_VC_ERR_MANAGED);
   }
   assert(g_handles.empty());
 
@@ -461,7 +461,7 @@ int main(int argc, char **argv) {
     reset();
     g_gcnew_fail = n;
     g_wild.id = 42;
-    PgrVgpCandidateRequest r = make_request(PGR_VC_ACTION_CATCH, &g_wild, &g_stop, 0, 0, tid, 2000);
+    PgrVgpCandidateRequest r = make_request(PGS_VC_ACTION_CATCH, &g_wild, &g_stop, 0, 0, tid, 2000);
     int rc = api->inspect(&r, &out);
     if (n <= g_gcnew_calls) assert(rc < 0 && out.eligible == 0);
     assert(g_handles.empty());
@@ -469,7 +469,7 @@ int main(int argc, char **argv) {
   for (int n = 1; n <= 3; ++n) {
     reset();
     g_gcnew_fail = n;
-    PgrVgpCandidateRequest r = make_request(PGR_VC_ACTION_SPIN, &g_stop, nullptr, 0, 0, tid, 2000);
+    PgrVgpCandidateRequest r = make_request(PGS_VC_ACTION_SPIN, &g_stop, nullptr, 0, 0, tid, 2000);
     int rc = api->inspect(&r, &out);
     if (n <= g_gcnew_calls) assert(rc < 0 && out.eligible == 0 && out.fort_handle == 0);
     assert(g_handles.empty());
@@ -480,20 +480,20 @@ int main(int argc, char **argv) {
   int nested = 99;
   g_oneshot_visible = [&]() {
     PgrVgpCandidateResult inner{};
-    PgrVgpCandidateRequest ir = make_request(PGR_VC_ACTION_CATCH, &g_wild, nullptr, 0, 0, this_tid(), 2000);
+    PgrVgpCandidateRequest ir = make_request(PGS_VC_ACTION_CATCH, &g_wild, nullptr, 0, 0, this_tid(), 2000);
     nested = g_api->inspect(&ir, &inner);
   };
-  { PgrVgpCandidateRequest r = make_request(PGR_VC_ACTION_CATCH, &g_wild, nullptr, 0, 0, tid, 2000);
-    assert(api->inspect(&r, &out) == PGR_VC_ELIGIBLE);
-    assert(nested == PGR_VC_ERR_THREAD); }  // busy guard
+  { PgrVgpCandidateRequest r = make_request(PGS_VC_ACTION_CATCH, &g_wild, nullptr, 0, 0, tid, 2000);
+    assert(api->inspect(&r, &out) == PGS_VC_ELIGIBLE);
+    assert(nested == PGS_VC_ERR_THREAD); }  // busy guard
   assert(g_handles.empty());
 
   // 14. Lease expiry discovered mid-call: a slow getter pushes past the deadline -> benign NOT/INVALID.
   reset();
   g_oneshot_visible = [&]() { ::usleep(4000); };  // fired inside get_VisibleOnMap, after the 1 ms lease
-  { PgrVgpCandidateRequest r = make_request(PGR_VC_ACTION_CATCH, &g_wild, nullptr, 0, 0, tid, 1);
+  { PgrVgpCandidateRequest r = make_request(PGS_VC_ACTION_CATCH, &g_wild, nullptr, 0, 0, tid, 1);
     int rc = api->inspect(&r, &out);
-    assert(rc == PGR_VC_NOT && out.reason == PGR_VC_REASON_INVALID && out.eligible == 0); }
+    assert(rc == PGS_VC_NOT && out.reason == PGS_VC_REASON_INVALID && out.eligible == 0); }
   assert(g_handles.empty());
 
   puts("PASS VGP candidate inspection: ABI, install/validation/idempotence/reconfig, catch eligible "

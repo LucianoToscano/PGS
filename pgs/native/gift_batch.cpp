@@ -79,7 +79,7 @@ constexpr uint64_t kGiftPauseMs=300;
 void *virtual_call(Root &o,void *m,void **args=nullptr){void *v=fn<void*(*)(void*,void*)>(exp("object_get_virtual_method"))(o.get(),m);require(v,"virtual method");return invoke(v,o.get(),args);}
 struct Command {uint64_t token=0;bool enabled=false,full_bag=false;};
 bool parse(const char *s,size_t n,Command &out){
- uint64_t v[3]{};if(n<8||memcmp(s,"G1|",3)||!pgr_remote_gym::detail::fields(s+3,n-3,v,3,INT64_MAX)||!v[0]||v[1]>1||v[2]>1)return false;
+ uint64_t v[3]{};if(n<8||memcmp(s,"G1|",3)||!pgs_remote_gym::detail::fields(s+3,n-3,v,3,INT64_MAX)||!v[0]||v[1]>1||v[2]>1)return false;
  out={v[0],v[1]!=0,v[2]!=0};return true;
 }
 struct Permission {Command command;bool valid=false,allowed=false;};
@@ -186,7 +186,7 @@ void poll(){
  auto api=static_cast<const PgrVgpResultsApi*>(pgs_vgp_results_api(1));require(api,"Promise observer unavailable");
  PgrVgpResultsResult out{};int rc=api->poll(session.promise.get(),1,owner,&out);Root result;result.h=out.value_handle;
  if(!rc){if(clock_ms()-session.since>=20000)finish("error","Request outcome unknown; not retried");return;}
- session.promise.reset();require(rc==PGR_VR_DONE&&result,"Request failed; batch stopped without retry");
+ session.promise.reset();require(rc==PGS_VR_DONE&&result,"Request failed; batch stopped without retry");
  if(session.stage==LIST){
   if(session.canceled){finish("stopped","Batch stopped");return;}
   session.enumerator=enumerate(result);require(bool(session.enumerator),"Friend enumeration unavailable");session.stage=DISCOVER;return;
@@ -252,7 +252,7 @@ void advance(){
  }
 }
 }
-void pgr_gift_batch_tick(uint64_t tid,const PgrSharedMetadataOutput *metadata){
+void pgs_gift_batch_tick(uint64_t tid,const PgrSharedMetadataOutput *metadata){
  if(busy||!tid||tid!=uint64_t(gettid())||(owner&&owner!=tid))return;
  struct Guard{Guard(){busy=true;}~Guard(){busy=false;}}guard;
  try{
@@ -279,7 +279,7 @@ void pgr_gift_batch_tick(uint64_t tid,const PgrSharedMetadataOutput *metadata){
   advance();
  }catch(const Failure &e){finish("error",e.where);}catch(...){finish("error","Gift batch stopped: native failure");}
 }
-void pgr_gift_batch_stop(){
+void pgs_gift_batch_stop(){
  if(owner&&owner!=uint64_t(gettid()))return;
  session.canceled=true;if(!busy&&session.active)finish("stopped","Gift batch stopped");
 }

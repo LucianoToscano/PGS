@@ -27,7 +27,7 @@
 #error "Always Hit native instrument supports arm64 and x86_64 register contexts only."
 #endif
 
-static_assert(sizeof(PgrAlwaysHitValue)  == 12,  "PokeballThrow by-value must be 12 bytes");
+static_assert(sizeof(PgsAlwaysHitValue)  == 12,  "PokeballThrow by-value must be 12 bytes");
 static_assert(sizeof(PgrAlwaysHitConfig) == 192, "PgrAlwaysHitConfig must be 192 bytes");
 static_assert(sizeof(PgrAlwaysHitSample) == 24,  "PgrAlwaysHitSample must be 24 bytes");
 static_assert(sizeof(PgrAlwaysHitApi)    == 40,  "PgrAlwaysHitApi must be 40 bytes");
@@ -70,7 +70,7 @@ constexpr uint64_t kMaxLeaseMs = 2500u;
 // makeThrow returns the 12-byte PokeballThrow by value (see the header's ABI note on the
 // System.Boolean parameter the original task brief omitted).
 typedef void (*CollisionFn)(void *self, void *arg, void *method);
-typedef PgrAlwaysHitValue (*MakeThrowFn)(void *self, uint8_t missed_arg, void *method);
+typedef PgsAlwaysHitValue (*MakeThrowFn)(void *self, uint8_t missed_arg, void *method);
 
 // --- lifetime / publication -------------------------------------------------------
 std::mutex        g_install_mutex;        // serialises install() + original publication
@@ -177,7 +177,7 @@ void note_bread(void *ball, const char *what, int32_t value = 0) {
 bool valid_ball(void *ball) {
     if (!exact(ball, g_config.ball_class)) return false;
     int32_t item = read_int(ball, g_config.field_item);
-    if (item == 1 || item == 2 || item == 3 || item == 5 || pgr_is_inventory_safari_ball(item)) return true;
+    if (item == 1 || item == 2 || item == 3 || item == 5 || pgs_is_inventory_safari_ball(item)) return true;
     note_bread(ball, "skipped: ball item", item);
     return false;
 }
@@ -278,11 +278,11 @@ void trigger_replacement(void *self, void *arg, void *method) {
 // byte (1 -> 0) only when permitted. Permission is the enabled()+valid() pair evaluated
 // BEFORE the call, matching the JS onEnter force snapshot. Radius/item/pad are untouched.
 // ---------------------------------------------------------------------------
-PgrAlwaysHitValue make_throw_replacement(void *self, uint8_t missed_arg, void *method) {
+PgsAlwaysHitValue make_throw_replacement(void *self, uint8_t missed_arg, void *method) {
     maybe_clear_handled();
     MakeThrowFn orig = original_for(g_orig_make_throw);
     const bool permit = gate_open() && valid_ball(self);
-    PgrAlwaysHitValue out = orig(self, missed_arg, method);
+    PgsAlwaysHitValue out = orig(self, missed_arg, method);
     if (permit && out.missed == 1) {
         out.missed = 0;
         g_normalized.fetch_add(1, std::memory_order_relaxed);

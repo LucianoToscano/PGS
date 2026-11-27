@@ -26,7 +26,7 @@ constexpr uint64_t kWindowNs   = kMaxLeaseMs * 1000000ull;
 
 // The game-side value arrives by value; this is its true ABI so the compiler marshals
 // the two integer register halves (ARM64) exactly as the original function expects.
-typedef void (*ThrowFn)(void *self, PgrThrowValue value, void *method_info);
+typedef void (*ThrowFn)(void *self, PgsThrowValue value, void *method_info);
 
 // Rating bands, indexed by grade. [0] unused (grade 0 never samples a radius).
 constexpr float kBandLow[4]  = {0.0f, 0.75f, 0.35f, 0.10f}; // Nice / Great / Excellent
@@ -34,7 +34,7 @@ constexpr float kBandHigh[4] = {0.0f, 0.95f, 0.65f, 0.25f};
 
 // --- lifetime / publication -------------------------------------------------------
 std::mutex g_install_mutex;               // serialises install() and original publication
-PgrThrowConfig g_config{};                // validated copy, published under install mutex
+PgsThrowConfig g_config{};                // validated copy, published under install mutex
 std::atomic<bool> g_installed{false};     // true only after a fully successful install
 bool g_install_failed = false;            // sticky; protected by install mutex
 std::atomic<ThrowFn> g_orig_hit{nullptr};
@@ -106,7 +106,7 @@ inline uint8_t read_bread(void *o) {
     return v;
 }
 
-inline uint64_t x1_word(const PgrThrowValue &v) {
+inline uint64_t x1_word(const PgsThrowValue &v) {
     uint32_t bits; std::memcpy(&bits, &v.radius, sizeof(bits));
     return static_cast<uint64_t>(static_cast<uint32_t>(v.item)) | (static_cast<uint64_t>(bits) << 32);
 }
@@ -116,12 +116,12 @@ inline uint64_t x1_word(const PgrThrowValue &v) {
 // `now` already read. Holds g_policy_mutex; NEVER calls the original (the caller does,
 // after releasing the lock), so a reentrant submit->hit call cannot deadlock.
 // ---------------------------------------------------------------------------
-PgrThrowValue transform(const PgrThrowValue &v, uint32_t setting, uint32_t curve, int route, uint64_t now) {
+PgsThrowValue transform(const PgsThrowValue &v, uint32_t setting, uint32_t curve, int route, uint64_t now) {
     std::lock_guard<std::mutex> lock(g_policy_mutex);
     const Sample prev = g_sample;
     g_sample.valid = false;
     // Value-level gates, mirroring throwWords(): eligible items, clean flags, sane radius.
-    if (!(v.item == 1 || v.item == 2 || v.item == 3 || v.item == 5 || pgr_is_inventory_safari_ball(v.item))) return v;
+    if (!(v.item == 1 || v.item == 2 || v.item == 3 || v.item == 5 || pgs_is_inventory_safari_ball(v.item))) return v;
     if (v.bullseye > 1 || v.spinning > 1 || v.missed != 0) return v;
     if (!(std::isfinite(v.radius) && v.radius >= 0.0f && v.radius <= 1.0f)) return v;
 
@@ -134,7 +134,7 @@ PgrThrowValue transform(const PgrThrowValue &v, uint32_t setting, uint32_t curve
     // The paired hit keeps the grade its submit picked.
     const uint32_t grade = paired ? prev.grade : pick_grade(setting);
 
-    PgrThrowValue out = v;                 // preserve item, missed and pad verbatim
+    PgsThrowValue out = v;                 // preserve item, missed and pad verbatim
     float chosen = v.radius;
     if (grade) {
         chosen = paired ? prev.radius : rng_band(grade);
@@ -160,8 +160,8 @@ PgrThrowValue transform(const PgrThrowValue &v, uint32_t setting, uint32_t curve
 // ---------------------------------------------------------------------------
 // Shared replacement body for both hooks.
 // ---------------------------------------------------------------------------
-PgrThrowValue apply(void *self, PgrThrowValue value, int route, void *klass_gate) {
-    PgrThrowValue out = value;
+PgsThrowValue apply(void *self, PgsThrowValue value, int route, void *klass_gate) {
+    PgsThrowValue out = value;
     if (self && g_installed.load(std::memory_order_acquire)) {
         const uint32_t grade = g_grade.load(std::memory_order_acquire);
         const uint32_t curve = g_curve.load(std::memory_order_acquire);
@@ -178,7 +178,7 @@ PgrThrowValue apply(void *self, PgrThrowValue value, int route, void *klass_gate
     }
     return out;
 }
-void run(void *self, PgrThrowValue value, void *info, std::atomic<ThrowFn> &slot, int route, void *klass_gate) {
+void run(void *self, PgsThrowValue value, void *info, std::atomic<ThrowFn> &slot, int route, void *klass_gate) {
     // Publication race: the trampoline is published under g_install_mutex after the hook
     // goes live. Fast path reads it atomically; on a null read we take the install lock
     // (which install() holds across the store) and re-read. We never skip the original
@@ -190,18 +190,18 @@ void run(void *self, PgrThrowValue value, void *info, std::atomic<ThrowFn> &slot
     }
     if (!orig) std::abort();  // a live hook must have a published original
 
-    const PgrThrowValue out = apply(self, value, route, klass_gate);
+    const PgsThrowValue out = apply(self, value, route, klass_gate);
     orig(self, out, info);  // always call the game, outside every policy lock
 }
 
-void hit_replacement(void *self, PgrThrowValue value, void *info) {
+void hit_replacement(void *self, PgsThrowValue value, void *info) {
     run(self, value, info, g_orig_hit, ROUTE_HIT, g_config.owner_class);
 }
 
 // ---------------------------------------------------------------------------
 // Config validation: every pointer present, headers exact, addresses unique pre-patch.
 // ---------------------------------------------------------------------------
-bool config_ok(const PgrThrowConfig *c) {
+bool config_ok(const PgsThrowConfig *c) {
     const void *const ptrs[] = {
         c->submit_code, c->hit_code, c->ball_class, c->owner_class,
         c->object_get_class, c->class_is_assignable, c->field_get_value, c->bread_field};
@@ -217,13 +217,13 @@ bool config_ok(const PgrThrowConfig *c) {
 // ---------------------------------------------------------------------------
 // C API table functions.
 // ---------------------------------------------------------------------------
-int api_install(const PgrThrowConfig *config) {
+int api_install(const PgsThrowConfig *config) {
     if (!config) return ERR_NULL;
 
     std::lock_guard<std::mutex> lock(g_install_mutex);
     if (g_install_failed) return ERR_HOOK;
 
-    if (config->version != 1 || config->size != sizeof(PgrThrowConfig) || !config_ok(config))
+    if (config->version != 1 || config->size != sizeof(PgsThrowConfig) || !config_ok(config))
         return ERR_BAD_CONFIG;
 
     if (g_installed.load(std::memory_order_acquire)) {
@@ -293,7 +293,7 @@ int api_update(int grade, int curve, int allowed, uint64_t lease_ms, uint64_t un
     return OK;
 }
 
-int api_sample(PgrThrowSample *out) {
+int api_sample(PgsThrowSample *out) {
     if (!out) return ERR_NULL;
     std::lock_guard<std::mutex> lock(g_policy_mutex);
     out->count = g_tel.count;
@@ -304,29 +304,29 @@ int api_sample(PgrThrowSample *out) {
     return OK;
 }
 
-int rewrite_submit(void *self, PgrThrowValue *value) {
+int rewrite_submit(void *self, PgsThrowValue *value) {
     if(!value)return ERR_NULL;
     if(!g_installed.load(std::memory_order_acquire))return ERR_NOT_INSTALLED;
     *value=apply(self,*value,ROUTE_SUBMIT,g_config.ball_class);return OK;
 }
-const PgrThrowApi g_api = {1, sizeof(PgrThrowApi), &api_install, &api_update, &api_sample, &rewrite_submit};
+const PgsThrowApi g_api = {1, sizeof(PgsThrowApi), &api_install, &api_update, &api_sample, &rewrite_submit};
 
-static_assert(sizeof(PgrThrowValue) == 12, "throw value ABI");
-static_assert(sizeof(PgrThrowConfig) == 72, "throw config ABI");
-static_assert(sizeof(PgrThrowSample) == 24, "throw sample ABI");
-static_assert(sizeof(PgrThrowApi) == 40, "throw API ABI");
+static_assert(sizeof(PgsThrowValue) == 12, "throw value ABI");
+static_assert(sizeof(PgsThrowConfig) == 72, "throw config ABI");
+static_assert(sizeof(PgsThrowSample) == 24, "throw sample ABI");
+static_assert(sizeof(PgsThrowApi) == 40, "throw API ABI");
 
 }  // namespace
 
 const void *pgs_throws_api(uint32_t version) {
-    static const PgrMapThrowApi map_api{2,sizeof(PgrMapThrowApi),pgr_map_throw_value};
+    static const PgsMapThrowApi map_api{2,sizeof(PgsMapThrowApi),pgs_map_throw_value};
     return version==1?static_cast<const void*>(&g_api):version==2?static_cast<const void*>(&map_api):nullptr;
 }
 
-bool pgr_map_throw_value(PgrThrowValue* value) {
+bool pgs_map_throw_value(PgsThrowValue* value) {
     if(!value||!g_installed.load()||!g_allowed.load()||uint64_t(gettid())!=g_unity_tid.load())return false;
     const uint64_t now=now_ns();if(!now||now>=g_deadline_ns.load())return false;
-    PgrThrowValue plain{};plain.item=1;plain.radius=1.0f;
+    PgsThrowValue plain{};plain.item=1;plain.radius=1.0f;
     *value=transform(plain,g_grade.load(),g_curve.load(),ROUTE_SUBMIT,now);
     value->missed=0;return true;
 }

@@ -120,7 +120,7 @@ void *fake_invoke(const void *method, void *obj, void **args, void **exc) {
 
 PgrCameraSamplerConfig make_config() {
   PgrCameraSamplerConfig c{};
-  c.version = PGR_CS_CONFIG_VERSION;
+  c.version = PGS_CS_CONFIG_VERSION;
   c.size = sizeof(c);
   c.runtime_invoke = reinterpret_cast<void *>(&fake_invoke);
   c.object_get_class = reinterpret_cast<void *>(&fake_obj_class);
@@ -147,7 +147,7 @@ PgrCameraSamplerConfig make_config() {
   c.f_x = &f_x;
   c.f_y = &f_y;
   c.f_z = &f_z;
-  c.expected_layer = PGR_CS_WORLD_MAP_LAYER;
+  c.expected_layer = PGS_CS_WORLD_MAP_LAYER;
   c.reserved0 = 0;
   return c;
 }
@@ -189,7 +189,7 @@ const PgrCameraSamplerApi *g_api = nullptr;
 
 PgrCameraSamplerRequest make_request(uint64_t tid, uint64_t remaining, void *rig, void *camera) {
   PgrCameraSamplerRequest r{};
-  r.version = PGR_CS_REQUEST_VERSION;
+  r.version = PGS_CS_REQUEST_VERSION;
   r.size = sizeof(r);
   r.tid = tid;
   r.remaining_ms = remaining;
@@ -225,45 +225,45 @@ int main(int argc, char **argv) {
          offsetof(PgrCameraSamplerOutput, camera_id) == 16 && offsetof(PgrCameraSamplerOutput, mask) == 20 &&
          offsetof(PgrCameraSamplerOutput, layer) == 24 && offsetof(PgrCameraSamplerOutput, x) == 32 &&
          offsetof(PgrCameraSamplerOutput, time_ms) == 64);
-  assert(PGR_CS_CONFIG_VERSION == 1 && PGR_CS_WORLD_MAP_LAYER == 13 && PGR_CS_MAX_LEASE_MS == 2500);
+  assert(PGS_CS_CONFIG_VERSION == 1 && PGS_CS_WORLD_MAP_LAYER == 13 && PGS_CS_MAX_LEASE_MS == 2500);
 
   const uint64_t tid = this_tid();
   PgrCameraSamplerConfig cfg = make_config();
   PgrCameraSamplerOutput out{};
 
   // 1. install validation + not-installed + idempotence + reconfig.
-  assert(api->install(nullptr) == PGR_CS_ERR_NULL_ARG);
-  { PgrCameraSamplerConfig b = cfg; b.version = 2; assert(api->install(&b) == PGR_CS_ERR_BAD_VERSION); }
-  { PgrCameraSamplerConfig b = cfg; b.size = sizeof(cfg) - 1; assert(api->install(&b) == PGR_CS_ERR_BAD_SIZE); }
-  { PgrCameraSamplerConfig b = cfg; b.runtime_invoke = nullptr; assert(api->install(&b) == PGR_CS_ERR_MISSING_PTR); }
-  { PgrCameraSamplerConfig b = cfg; b.f_z = nullptr; assert(api->install(&b) == PGR_CS_ERR_MISSING_PTR); }
-  { PgrCameraSamplerConfig b = cfg; b.class_rig = nullptr; assert(api->install(&b) == PGR_CS_ERR_MISSING_PTR); }
-  { PgrCameraSamplerConfig b = cfg; b.expected_layer = 12; assert(api->install(&b) == PGR_CS_ERR_BAD_CONFIG); }
-  { PgrCameraSamplerConfig b = cfg; b.reserved0 = 1; assert(api->install(&b) == PGR_CS_ERR_BAD_CONFIG); }
+  assert(api->install(nullptr) == PGS_CS_ERR_NULL_ARG);
+  { PgrCameraSamplerConfig b = cfg; b.version = 2; assert(api->install(&b) == PGS_CS_ERR_BAD_VERSION); }
+  { PgrCameraSamplerConfig b = cfg; b.size = sizeof(cfg) - 1; assert(api->install(&b) == PGS_CS_ERR_BAD_SIZE); }
+  { PgrCameraSamplerConfig b = cfg; b.runtime_invoke = nullptr; assert(api->install(&b) == PGS_CS_ERR_MISSING_PTR); }
+  { PgrCameraSamplerConfig b = cfg; b.f_z = nullptr; assert(api->install(&b) == PGS_CS_ERR_MISSING_PTR); }
+  { PgrCameraSamplerConfig b = cfg; b.class_rig = nullptr; assert(api->install(&b) == PGS_CS_ERR_MISSING_PTR); }
+  { PgrCameraSamplerConfig b = cfg; b.expected_layer = 12; assert(api->install(&b) == PGS_CS_ERR_BAD_CONFIG); }
+  { PgrCameraSamplerConfig b = cfg; b.reserved0 = 1; assert(api->install(&b) == PGS_CS_ERR_BAD_CONFIG); }
   {
     PgrCameraSamplerRequest r = make_request(tid, 2000, &g_rig, &g_camera);
-    assert(api->sample(&r, &out) == PGR_CS_ERR_NOT_INSTALLED);
-    assert(out.version == 1 && out.size == sizeof(out) && out.status == PGR_CS_ERR_NOT_INSTALLED && out.x == 0);
+    assert(api->sample(&r, &out) == PGS_CS_ERR_NOT_INSTALLED);
+    assert(out.version == 1 && out.size == sizeof(out) && out.status == PGS_CS_ERR_NOT_INSTALLED && out.x == 0);
   }
   assert(api->install(&cfg) == 0);
   assert(api->install(&cfg) == 0);  // idempotent
-  { PgrCameraSamplerConfig b = cfg; b.class_rig = &cls_other; assert(api->install(&b) == PGR_CS_ERR_RECONFIG); }
-  assert(api->sample(nullptr, &out) == PGR_CS_ERR_NULL_ARG);
-  assert(api->sample(reinterpret_cast<const PgrCameraSamplerRequest *>(&cfg), nullptr) == PGR_CS_ERR_NULL_ARG);
+  { PgrCameraSamplerConfig b = cfg; b.class_rig = &cls_other; assert(api->install(&b) == PGS_CS_ERR_RECONFIG); }
+  assert(api->sample(nullptr, &out) == PGS_CS_ERR_NULL_ARG);
+  assert(api->sample(reinterpret_cast<const PgrCameraSamplerRequest *>(&cfg), nullptr) == PGS_CS_ERR_NULL_ARG);
 
   // 2. owner / lease gate: no managed work; output carries only status/reason (+ time_ms once the clock runs).
   reset();
   {
     PgrCameraSamplerRequest foreign = make_request(tid + 7, 2000, &g_rig, &g_camera);
-    assert(api->sample(&foreign, &out) == PGR_CS_UNAVAILABLE && out.reason == 4 && g_invokes == 0);
+    assert(api->sample(&foreign, &out) == PGS_CS_UNAVAILABLE && out.reason == 4 && g_invokes == 0);
     PgrCameraSamplerRequest zero = make_request(0, 2000, &g_rig, &g_camera);
-    assert(api->sample(&zero, &out) == PGR_CS_UNAVAILABLE && out.reason == 4 && g_invokes == 0);
+    assert(api->sample(&zero, &out) == PGS_CS_UNAVAILABLE && out.reason == 4 && g_invokes == 0);
     g_thread = nullptr;  // attached-thread gate
     PgrCameraSamplerRequest detached = make_request(tid, 2000, &g_rig, &g_camera);
-    assert(api->sample(&detached, &out) == PGR_CS_UNAVAILABLE && out.reason == 4 && g_invokes == 0);
+    assert(api->sample(&detached, &out) == PGS_CS_UNAVAILABLE && out.reason == 4 && g_invokes == 0);
     g_thread = reinterpret_cast<void *>(0x7700);
     PgrCameraSamplerRequest off = make_request(tid, 0, &g_rig, &g_camera);  // latches owner, lease closed
-    assert(api->sample(&off, &out) == PGR_CS_UNAVAILABLE && out.reason == 2 && g_invokes == 0);
+    assert(api->sample(&off, &out) == PGS_CS_UNAVAILABLE && out.reason == 2 && g_invokes == 0);
     assert(g_handles.empty());
   }
 
@@ -271,20 +271,20 @@ int main(int argc, char **argv) {
   reset();
   {
     PgrCameraSamplerRequest r = make_request(tid, 2000, &g_badRig, &g_camera);
-    assert(api->sample(&r, &out) == PGR_CS_UNAVAILABLE && out.reason == 5 && g_invokes == 0 && g_gcnew_calls == 0);
+    assert(api->sample(&r, &out) == PGS_CS_UNAVAILABLE && out.reason == 5 && g_invokes == 0 && g_gcnew_calls == 0);
   }
   // null returned camera -> benign 0, no invoke.
   reset();
   {
     PgrCameraSamplerRequest r = make_request(tid, 2000, &g_rig, nullptr);
-    assert(api->sample(&r, &out) == PGR_CS_UNAVAILABLE && out.reason == 6 && g_invokes == 0);
+    assert(api->sample(&r, &out) == PGS_CS_UNAVAILABLE && out.reason == 6 && g_invokes == 0);
   }
   // camera mismatch: get_main returns a different camera -> benign 0 (before the layer lookup, so no cache).
   reset();
   {
     g_ret_main = &g_otherCamera;
     PgrCameraSamplerRequest r = make_request(tid, 2000, &g_rig, &g_camera);
-    assert(api->sample(&r, &out) == PGR_CS_UNAVAILABLE && out.reason == 7 && g_nmlayer_calls == 0 && g_handles.empty());
+    assert(api->sample(&r, &out) == PGS_CS_UNAVAILABLE && out.reason == 7 && g_nmlayer_calls == 0 && g_handles.empty());
   }
 
   // 4. LAYER MISMATCH (must precede any successful sample so nothing caches). NameToLayer != 13 -> fault.
@@ -292,8 +292,8 @@ int main(int argc, char **argv) {
   {
     g_layerBox.value = 14;
     PgrCameraSamplerRequest r = make_request(tid, 2000, &g_rig, &g_camera);
-    assert(api->sample(&r, &out) == PGR_CS_ERR_LAYER && out.reason == 14 && g_handles.empty());
-    assert(out.status == PGR_CS_ERR_LAYER && out.x == 0 && out.time_ms == 0);  // no garbage on fault
+    assert(api->sample(&r, &out) == PGS_CS_ERR_LAYER && out.reason == 14 && g_handles.empty());
+    assert(out.status == PGS_CS_ERR_LAYER && out.x == 0 && out.time_ms == 0);  // no garbage on fault
   }
 
   // 5. first successful sample: full reading, every field, caches the WorldMap layer.
@@ -301,7 +301,7 @@ int main(int argc, char **argv) {
   {
     const int nml = g_nmlayer_calls;
     PgrCameraSamplerRequest r = make_request(tid, 2000, &g_rig, &g_camera);
-    assert(api->sample(&r, &out) == PGR_CS_SAMPLE && out.status == 1 && out.reason == 1);
+    assert(api->sample(&r, &out) == PGS_CS_SAMPLE && out.status == 1 && out.reason == 1);
     assert(out.camera_id == 777 && out.mask == (1u << 13) && out.layer == 13);
     assert(std::fabs(out.x - 1.0) < 1e-9 && out.y == 0.0 && out.z == 0.0);
     assert(std::fabs(out.yaw - 90.0) < 1e-6 && out.time_ms > 0.0);
@@ -313,7 +313,7 @@ int main(int argc, char **argv) {
   {
     const int nml = g_nmlayer_calls;
     PgrCameraSamplerRequest r = make_request(tid, 2000, &g_rig, &g_camera);
-    assert(api->sample(&r, &out) == PGR_CS_SAMPLE && g_nmlayer_calls == nml && g_handles.empty());
+    assert(api->sample(&r, &out) == PGS_CS_SAMPLE && g_nmlayer_calls == nml && g_handles.empty());
   }
 
   // 7. map-hidden: WorldMap bit clear in the culling mask -> 0, output carries mask + layer.
@@ -321,7 +321,7 @@ int main(int argc, char **argv) {
   {
     g_maskBox.value = 0x4;  // bit 13 clear
     PgrCameraSamplerRequest r = make_request(tid, 2000, &g_rig, &g_camera);
-    assert(api->sample(&r, &out) == PGR_CS_UNAVAILABLE && out.reason == 9);
+    assert(api->sample(&r, &out) == PGS_CS_UNAVAILABLE && out.reason == 9);
     assert(out.mask == 0x4u && out.layer == 13 && out.x == 0.0 && g_handles.empty());
   }
   // null transform -> 0 reason null-transform.
@@ -329,7 +329,7 @@ int main(int argc, char **argv) {
   {
     g_ret_transform = nullptr;
     PgrCameraSamplerRequest r = make_request(tid, 2000, &g_rig, &g_camera);
-    assert(api->sample(&r, &out) == PGR_CS_UNAVAILABLE && out.reason == 8 && g_handles.empty());
+    assert(api->sample(&r, &out) == PGS_CS_UNAVAILABLE && out.reason == 8 && g_handles.empty());
   }
 
   // 8. Non-finite vectors fault; vertical headings are transiently unavailable.
@@ -337,15 +337,15 @@ int main(int argc, char **argv) {
   {
     g_vector = {&cls_vector, INFINITY, 0.0f, 0.0f};
     PgrCameraSamplerRequest r = make_request(tid, 2000, &g_rig, &g_camera);
-    assert(api->sample(&r, &out) == PGR_CS_ERR_VECTOR && out.reason == 15 && out.x == 0.0 && g_handles.empty());
+    assert(api->sample(&r, &out) == PGS_CS_ERR_VECTOR && out.reason == 15 && out.x == 0.0 && g_handles.empty());
   }
   reset();
   {
     g_vector = {&cls_vector, 0.0f, 1.0f, 0.0f};  // purely vertical: hypot(x,z)==0
     PgrCameraSamplerRequest r = make_request(tid, 2000, &g_rig, &g_camera);
-    assert(api->sample(&r, &out) == PGR_CS_UNAVAILABLE && out.reason == 16 && out.x == 0.0 && g_handles.empty());
+    assert(api->sample(&r, &out) == PGS_CS_UNAVAILABLE && out.reason == 16 && out.x == 0.0 && g_handles.empty());
     g_vector = {&cls_vector, 1.0f, 0.0f, 0.0f};
-    assert(api->sample(&r, &out) == PGR_CS_SAMPLE && std::fabs(out.yaw-90.0)<1e-6 && g_handles.empty());
+    assert(api->sample(&r, &out) == PGS_CS_SAMPLE && std::fabs(out.yaw-90.0)<1e-6 && g_handles.empty());
   }
 
   // 9. yaw quadrants: atan2(x,z) in degrees, normalised to [0,360).
@@ -354,7 +354,7 @@ int main(int argc, char **argv) {
     reset();
     g_vector = {&cls_vector, q.x, 0.0f, q.z};
     PgrCameraSamplerRequest r = make_request(tid, 2000, &g_rig, &g_camera);
-    assert(api->sample(&r, &out) == PGR_CS_SAMPLE && std::fabs(out.yaw - q.yaw) < 1e-6);
+    assert(api->sample(&r, &out) == PGS_CS_SAMPLE && std::fabs(out.yaw - q.yaw) < 1e-6);
   }
 
   // 10. managed throw at any getter -> ERR_MANAGED, all roots freed, no garbage.
@@ -362,7 +362,7 @@ int main(int argc, char **argv) {
     reset();
     g_throw_method = thrower;
     PgrCameraSamplerRequest r = make_request(tid, 2000, &g_rig, &g_camera);
-    assert(api->sample(&r, &out) == PGR_CS_ERR_MANAGED && out.reason == 12 && out.x == 0.0 && g_handles.empty());
+    assert(api->sample(&r, &out) == PGS_CS_ERR_MANAGED && out.reason == 12 && out.x == 0.0 && g_handles.empty());
   }
 
   // 11. gchandle_new failure at each root allocation -> negative, no partial handle; a failure beyond the
@@ -372,8 +372,8 @@ int main(int argc, char **argv) {
     g_gcnew_fail = n;
     PgrCameraSamplerRequest r = make_request(tid, 2000, &g_rig, &g_camera);
     int rc = api->sample(&r, &out);
-    if (n <= g_gcnew_calls) { assert(rc == PGR_CS_ERR_GCHANDLE); assert(out.x == 0.0); }
-    else { assert(rc == PGR_CS_SAMPLE); }
+    if (n <= g_gcnew_calls) { assert(rc == PGS_CS_ERR_GCHANDLE); assert(out.x == 0.0); }
+    else { assert(rc == PGS_CS_SAMPLE); }
     assert(g_handles.empty());
   }
 
@@ -386,7 +386,7 @@ int main(int argc, char **argv) {
       g_vector.y = -99.0f; g_vector.z = -99.0f;  // poison the stale slot
     };
     PgrCameraSamplerRequest r = make_request(tid, 2000, &g_rig, &g_camera);
-    assert(api->sample(&r, &out) == PGR_CS_SAMPLE);
+    assert(api->sample(&r, &out) == PGS_CS_SAMPLE);
     assert(std::fabs(out.y - 5.0) < 1e-9 && std::fabs(out.z - 7.0) < 1e-9);  // from the relocated vector
     assert(g_handles.empty());
   }
@@ -398,7 +398,7 @@ int main(int argc, char **argv) {
     g_oneshot_on = &m_culling;
     g_oneshot = []() { relocate(&g_camera, &moved_cam); };  // fires inside get_cullingMask
     PgrCameraSamplerRequest r = make_request(tid, 2000, &g_rig, &g_camera);
-    assert(api->sample(&r, &out) == PGR_CS_SAMPLE && out.camera_id == 777 && g_handles.empty());
+    assert(api->sample(&r, &out) == PGS_CS_SAMPLE && out.camera_id == 777 && g_handles.empty());
   }
 
   // 14. lease expiry discovered at the fresh pre-publication gate -> benign 0 reason lease.
@@ -407,7 +407,7 @@ int main(int argc, char **argv) {
     g_oneshot_on = &m_culling;
     g_oneshot = []() { ::usleep(4000); };  // blow past the 1 ms lease before publication
     PgrCameraSamplerRequest r = make_request(tid, 1, &g_rig, &g_camera);
-    assert(api->sample(&r, &out) == PGR_CS_UNAVAILABLE && out.reason == 3 && out.x == 0.0 && g_handles.empty());
+    assert(api->sample(&r, &out) == PGS_CS_UNAVAILABLE && out.reason == 3 && out.x == 0.0 && g_handles.empty());
   }
 
   // 15. reentrancy: a nested sample fired inside get_main is refused busy; the outer still succeeds.
@@ -421,7 +421,7 @@ int main(int argc, char **argv) {
       nested = g_api->sample(&ri, &inner);
     };
     PgrCameraSamplerRequest r = make_request(tid, 2000, &g_rig, &g_camera);
-    assert(api->sample(&r, &out) == PGR_CS_SAMPLE && nested == PGR_CS_ERR_BUSY && g_handles.empty());
+    assert(api->sample(&r, &out) == PGS_CS_SAMPLE && nested == PGS_CS_ERR_BUSY && g_handles.empty());
   }
 
   // 16. owner latch: a foreign OS thread (its own nonzero tid) is refused once main has latched.
@@ -436,7 +436,7 @@ int main(int argc, char **argv) {
       worker_reason = wout.reason;
     });
     worker.join();
-    assert(worker_rc == PGR_CS_UNAVAILABLE && worker_reason == 4 && g_handles.empty());
+    assert(worker_rc == PGS_CS_UNAVAILABLE && worker_reason == 4 && g_handles.empty());
   }
 
   puts("PASS camera sampler: ABI (config 216 / request 40 / output 72 / table 24) + offsets, install/"

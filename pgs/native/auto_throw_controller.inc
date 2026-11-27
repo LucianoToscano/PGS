@@ -44,7 +44,7 @@ void throw_block(const std::string& reason) {
     throw_event("stopped",reason);
 }
 
-struct ManualThrowPermission {PgrCatchChanceOptions config;bool foreground=false,coherent=false;};
+struct ManualThrowPermission {PgsCatchChanceOptions config;bool foreground=false,coherent=false;};
 ManualThrowPermission throw_permission() {
     ManualThrowPermission p;auto tr=transport();
     if(!tr||!tr->sample||!tr->get_string||!tr->get_bool)return p;
@@ -53,7 +53,7 @@ ManualThrowPermission throw_permission() {
     if(tr->get_string(15,raw,sizeof(raw),&n)||n>=sizeof(raw)||tr->get_bool(3,&foreground))return p;
     raw[n]=0;
     if(tr->sample(&z)||!z.snapshot_fresh||z.fault||a.snapshot_seq!=z.snapshot_seq)return p;
-    p.config=pgr_parse_catch_chance(raw);p.coherent=p.config.valid;p.foreground=foreground==1;
+    p.config=pgs_parse_catch_chance(raw);p.coherent=p.config.valid;p.foreground=foreground==1;
     return p;
 }
 
@@ -85,18 +85,18 @@ void finish_manual_throw(bool caught) {
 
 void poll_manual_throw(uint64_t tid,int64_t now) {
     const uint64_t generation=manual_throw_generation;
-    Root response;int result=0;int rc=PGR_VR_PENDING;
+    Root response;int result=0;int rc=PGS_VR_PENDING;
     if(manual_throw.berry_item){
         const auto* api=static_cast<const PgrVgpResultsApi*>(pgs_vgp_results_api(1));
         require(api&&api->poll,"Berry promise observer unavailable");
-        PgrVgpResultsResult out{};rc=api->poll(manual_throw.promise.get(),PGR_VR_PHASE_ENCOUNTER,tid,&out);response.h=out.value_handle;
+        PgrVgpResultsResult out{};rc=api->poll(manual_throw.promise.get(),PGS_VR_PHASE_ENCOUNTER,tid,&out);response.h=out.value_handle;
     }else rc=poll_auto_throw(manual_throw.promise,tid,response,result);
     if(generation!=manual_throw_generation)return;
-    if(rc==PGR_VR_PENDING){
+    if(rc==PGS_VR_PENDING){
         if(now-manual_throw.promise_ms>=kPromiseTimeoutMs)throw_block("Request timed out; outcome unknown, no retry in this encounter");
         return;
     }
-    require(rc==PGR_VR_DONE && response,"Request rejected; no automatic retry");
+    require(rc==PGS_VR_DONE && response,"Request rejected; no automatic retry");
     manual_throw.promise.reset();manual_throw.uncertain=false;
     if(manual_throw.berry_item){
         require(obj_class_name(response.get())=="UseItemEncounterOutProto","Unexpected berry response");
@@ -117,7 +117,7 @@ void poll_manual_throw(uint64_t tid,int64_t now) {
     // Completing the encounter directly skips the catch summary, which is where Quick catch hands a
     // catch to the transfer rules, so every Auto Throw catch is handed off here (Auto transfer, Keep All
     // and the protections still decide). An Auto Rocket session set to keep every catch keeps them.
-    const bool rocket_keeps=pgr_auto_rocket_keeps_catches&&pgr_auto_rocket_keeps_catches();
+    const bool rocket_keeps=pgs_auto_rocket_keeps_catches&&pgs_auto_rocket_keeps_catches();
     if(result==1&&!rocket_transfer_response&&!rocket_keeps)queue_caught_transfer(response.get(),now);
     if(result==1||result==3){finish_manual_throw(result==1);return;}
     require(result==2||result==4,"Unknown catch result; no automatic retry");
@@ -127,7 +127,7 @@ void poll_manual_throw(uint64_t tid,int64_t now) {
     if(result==2){int none=0;void* args[]={&none};call_obj(manual_throw.interaction.get(),"set_ActiveBerry",1,args);}
     manual_throw.next_ms=now+kThrowCadenceMs;
     // Direct capture doesn't animate a ball in flight. Re-arm Auto Ball explicitly.
-    pgr_catch_chance_enter(manual_throw.interaction.get());
+    pgs_catch_chance_enter(manual_throw.interaction.get());
 }
 
 void pump_rocket_transfer(uint64_t tid) {
@@ -193,9 +193,9 @@ void step_manual_throw(uint64_t tid,bool raid_owns_game) {
             throw_event("berry","Applying selected berry",berry);return;
         }
     }
-    PgrThrowValue value{};
-    const auto* throws=static_cast<const PgrThrowApi*>(pgs_throws_api(1));
-    require(pgr_manual_throw_value(throws,ball.get(),item,value),"Throw settings unavailable; no throw sent");
+    PgsThrowValue value{};
+    const auto* throws=static_cast<const PgsThrowApi*>(pgs_throws_api(1));
+    require(pgs_manual_throw_value(throws,ball.get(),item,value),"Throw settings unavailable; no throw sent");
     manual_throw.uncertain=true;manual_throw.promise_ms=now;++manual_throw.attempts;
     const uint64_t generation=manual_throw_generation;
     Root promise=submit_auto_throw(manual_throw.state,manual_throw.pokemon,value);

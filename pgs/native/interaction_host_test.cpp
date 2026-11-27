@@ -10,7 +10,7 @@
 #include <thread>
 #include <unistd.h>
 
-#define PGR_INTERACTION_HOST_STANDALONE_TEST 1
+#define PGS_INTERACTION_HOST_STANDALONE_TEST 1
 #include "interaction_host.cpp"
 
 namespace {
@@ -104,7 +104,7 @@ static FakeType *alloc_fake_type(const char *name, FakeClass *klass = nullptr) {
 
 static FakeClass g_enum_catch_status;
 static FakeClass g_enum_fort_result;
-static FakeClass g_classes[PGR_IH_CLASS_COUNT];
+static FakeClass g_classes[PGS_IH_CLASS_COUNT];
 static FakeMethod g_btxu_method;
 static bool g_btxu_present = true;
 static FakeAssembly g_assemblies[300];
@@ -452,7 +452,7 @@ static void init_sparse_module_once() {
     }
     long page = sysconf(_SC_PAGESIZE);
     assert(page > 0);
-    uint64_t needed = PGR_IH_BTXU_RVA + 0x10000ULL;
+    uint64_t needed = PGS_IH_BTXU_RVA + 0x10000ULL;
     g_module_size = ((needed + page - 1) / page) * page;
     void *mapped = mmap(
         nullptr, g_module_size, PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
@@ -516,14 +516,14 @@ static void reset_fake_universe(PgrInteractionHostConfig *out_cfg) {
     g_module_base[19] = 0u;
 
     memcpy(g_module_base + kDebugRva, kDebugWords, sizeof(kDebugWords));
-    memcpy(g_module_base + PGR_IH_BTXU_RVA, kBtxuWords, sizeof(kBtxuWords));
+    memcpy(g_module_base + PGS_IH_BTXU_RVA, kBtxuWords, sizeof(kBtxuWords));
 
     g_type_pool_used = 0;
     FakeType *t_void = alloc_fake_type("System.Void", nullptr);
     FakeType *t_int32 = alloc_fake_type("System.Int32", nullptr);
 
     memset(g_classes, 0, sizeof(g_classes));
-    for (uint32_t c = 0; c < PGR_IH_CLASS_COUNT; ++c) {
+    for (uint32_t c = 0; c < PGS_IH_CLASS_COUNT; ++c) {
         g_classes[c].ns = kClasses[c].ns;
         g_classes[c].name = kClasses[c].name;
         g_classes[c].image_name = "Assembly-CSharp.dll";
@@ -581,7 +581,7 @@ static void reset_fake_universe(PgrInteractionHostConfig *out_cfg) {
     g_classes[6].fields[0] = {
         &g_classes[6], "Result", g_enum_fort_result.self_type, 0x0001, 20, 0};
 
-    for (uint32_t t = 0; t < PGR_IH_TOTAL_TARGETS - 1; ++t) {
+    for (uint32_t t = 0; t < PGS_IH_TOTAL_TARGETS - 1; ++t) {
         const TargetDesc &td = kTargets[t];
         FakeClass &fc = g_classes[td.class_index];
         FakeMethod &fm = fc.methods[fc.method_count++];
@@ -604,13 +604,13 @@ static void reset_fake_universe(PgrInteractionHostConfig *out_cfg) {
     g_btxu_method.return_type = g_classes[5].self_type;
     g_btxu_method.param_count = 0;
     g_btxu_method.flags = 0x0006;
-    g_btxu_method.code_addr = g_module_base + PGR_IH_BTXU_RVA;
+    g_btxu_method.code_addr = g_module_base + PGS_IH_BTXU_RVA;
     g_btxu_present = true;
 
     memset(g_assemblies, 0, sizeof(g_assemblies));
     g_assemblies[0].image_name = "Assembly-CSharp.dll";
-    g_assemblies[0].class_count = PGR_IH_CLASS_COUNT;
-    for (uint32_t c = 0; c < PGR_IH_CLASS_COUNT; ++c) {
+    g_assemblies[0].class_count = PGS_IH_CLASS_COUNT;
+    for (uint32_t c = 0; c < PGS_IH_CLASS_COUNT; ++c) {
         g_assemblies[0].classes[c] = &g_classes[c];
     }
     for (uint32_t a = 0; a < 300; ++a) {
@@ -662,7 +662,7 @@ static void reset_fake_universe(PgrInteractionHostConfig *out_cfg) {
 
     out_cfg->debug_code_address = g_module_base + kDebugRva;
     out_cfg->now_ms_fn = reinterpret_cast<void *>(&fake_now_ms);
-    out_cfg->flags = PGR_IH_CFG_NO_AUTO_SHARED_DETECT;
+    out_cfg->flags = PGS_IH_CFG_NO_AUTO_SHARED_DETECT;
 }
 
 /* Helper to push a Transport 52 settings snapshot frame */
@@ -675,20 +675,20 @@ static void push_transport_snapshot(const PgrRuntimeTransportApi *rt,
         return;
     }
     uint8_t frame[256] = {};
-    uint32_t total_size = PGR_TRANSPORT_SNAPSHOT_FIXED + PGR_TRANSPORT_STRINGS * 4;
-    uint32_t magic = PGR_TRANSPORT_SNAPSHOT_MAGIC;
-    uint32_t ver = PGR_TRANSPORT_FRAME_VERSION;
+    uint32_t total_size = PGS_TRANSPORT_SNAPSHOT_FIXED + PGS_TRANSPORT_STRINGS * 4;
+    uint32_t magic = PGS_TRANSPORT_SNAPSHOT_MAGIC;
+    uint32_t ver = PGS_TRANSPORT_FRAME_VERSION;
     uint32_t flags = 0;
     uint64_t wall_ms = static_cast<uint64_t>(g_fake_now_ms);
-    memcpy(frame + PGR_TRANSPORT_OFF_MAGIC, &magic, 4);
-    memcpy(frame + PGR_TRANSPORT_OFF_VERSION, &ver, 4);
-    memcpy(frame + PGR_TRANSPORT_OFF_FRAME_SIZE, &total_size, 4);
-    memcpy(frame + PGR_TRANSPORT_OFF_FLAGS, &flags, 4);
-    memcpy(frame + PGR_TRANSPORT_OFF_SEQ, &seq, 8);
-    memcpy(frame + PGR_TRANSPORT_OFF_WALL_MS, &wall_ms, 8);
-    frame[PGR_TRANSPORT_OFF_BOOLS + PGR_IH_RT_BOOL_DIAGNOSTICS_READY] = diag_ready ? 1 : 0;
-    memcpy(frame + PGR_TRANSPORT_OFF_PULSES + 8 * PGR_IH_RT_PULSE_STOP_REQUEST, &stop_pulse, 8);
-    memcpy(frame + PGR_TRANSPORT_OFF_PULSES + 8 * PGR_IH_RT_PULSE_TRACE_REQUEST, &trace_pulse, 8);
+    memcpy(frame + PGS_TRANSPORT_OFF_MAGIC, &magic, 4);
+    memcpy(frame + PGS_TRANSPORT_OFF_VERSION, &ver, 4);
+    memcpy(frame + PGS_TRANSPORT_OFF_FRAME_SIZE, &total_size, 4);
+    memcpy(frame + PGS_TRANSPORT_OFF_FLAGS, &flags, 4);
+    memcpy(frame + PGS_TRANSPORT_OFF_SEQ, &seq, 8);
+    memcpy(frame + PGS_TRANSPORT_OFF_WALL_MS, &wall_ms, 8);
+    frame[PGS_TRANSPORT_OFF_BOOLS + PGS_IH_RT_BOOL_DIAGNOSTICS_READY] = diag_ready ? 1 : 0;
+    memcpy(frame + PGS_TRANSPORT_OFF_PULSES + 8 * PGS_IH_RT_PULSE_STOP_REQUEST, &stop_pulse, 8);
+    memcpy(frame + PGS_TRANSPORT_OFF_PULSES + 8 * PGS_IH_RT_PULSE_TRACE_REQUEST, &trace_pulse, 8);
 
     uint8_t out_buf[65536];
     uint32_t out_len = 0;
@@ -720,41 +720,41 @@ static void test_passive_startup_and_scheduled_metadata_only(const PgrInteractio
 
     /* Detached caller thread must be attached and detached cleanly by ScopedIl2CppThread */
     g_current_thread = nullptr;
-    assert(api->configure(&cfg) == PGR_IH_OK);
+    assert(api->configure(&cfg) == PGS_IH_OK);
 
     PgrInteractionHostSample s {};
-    assert(api->sample(&s) == PGR_IH_OK);
+    assert(api->sample(&s) == PGS_IH_OK);
     assert(s.configured == 1 && s.running == 0 && s.scheduled == 0);
     assert(g_total_hook_calls == 0);
 
     /* Schedule 25s metadata-only check */
-    assert(api->schedule(PGR_IH_SCHEDULE_DELAY_MS) == PGR_IH_OK);
-    assert(api->sample(&s) == PGR_IH_OK);
-    assert(s.status == PGR_IH_STATUS_SCHEDULED && s.scheduled == 1 && s.running == 0);
+    assert(api->schedule(PGS_IH_SCHEDULE_DELAY_MS) == PGS_IH_OK);
+    assert(api->sample(&s) == PGS_IH_OK);
+    assert(s.status == PGS_IH_STATUS_SCHEDULED && s.scheduled == 1 && s.running == 0);
     assert(g_total_hook_calls == 0);
 
     PgrInteractionHostEvent ev {};
     assert(api->take_event(&ev) == 1);
-    assert(ev.type == PGR_IH_EVT_SCHEDULED);
+    assert(ev.type == PGS_IH_EVT_SCHEDULED);
     assert(strcmp(ev.channel, "interaction-probe-scheduled") == 0);
 
     /* Before 25000ms, tick() does nothing */
     g_fake_now_ms += 24999;
-    assert(api->tick(100) == PGR_IH_OK);
-    assert(api->sample(&s) == PGR_IH_OK);
-    assert(s.status == PGR_IH_STATUS_SCHEDULED && s.scheduled == 1);
+    assert(api->tick(100) == PGS_IH_OK);
+    assert(api->sample(&s) == PGS_IH_OK);
+    assert(s.status == PGS_IH_STATUS_SCHEDULED && s.scheduled == 1);
     assert(g_total_hook_calls == 0);
 
     /* At 25000ms, tick() runs metadata-only check and finishes with zero hooks */
     g_fake_now_ms += 1;
-    assert(api->tick(100) == PGR_IH_OK);
-    assert(api->sample(&s) == PGR_IH_OK);
-    assert(s.status == PGR_IH_STATUS_COMPLETE);
+    assert(api->tick(100) == PGS_IH_OK);
+    assert(api->sample(&s) == PGS_IH_OK);
+    assert(s.status == PGS_IH_STATUS_COMPLETE);
     assert(strcmp(s.reason, "metadata-only") == 0);
     assert(strcmp(s.last_diagnostic, "Ready to record catch and spin callbacks") == 0);
-    assert(s.classes_resolved == PGR_IH_CLASS_COUNT);
-    assert(s.resolved_required_mask == PGR_IH_REQUIRED_MASK);
-    assert(s.resolved_optional_mask == PGR_IH_OPTIONAL_MASK);
+    assert(s.classes_resolved == PGS_IH_CLASS_COUNT);
+    assert(s.resolved_required_mask == PGS_IH_REQUIRED_MASK);
+    assert(s.resolved_optional_mask == PGS_IH_OPTIONAL_MASK);
     assert(s.hooked_direct_mask == 0 && g_total_hook_calls == 0);
     assert(g_thread_attach_calls == 1 && g_thread_detach_calls == 1);
 }
@@ -764,48 +764,48 @@ static void test_elf_and_debug_prologue_and_btxu_validation(const PgrInteraction
     api->reset_for_tests();
     PgrInteractionHostConfig cfg {};
     reset_fake_universe(&cfg);
-    assert(api->configure(&cfg) == PGR_IH_OK);
+    assert(api->configure(&cfg) == PGS_IH_OK);
     g_module_base[18] = 62u; /* EM_X86_64 instead of EM_AARCH64 (183) */
 
     PgrInteractionHostOptions opts {};
-    assert(api->start(&opts) == PGR_IH_OK);
+    assert(api->start(&opts) == PGS_IH_OK);
     PgrInteractionHostSample s {};
-    assert(api->sample(&s) == PGR_IH_OK);
-    assert(s.status == PGR_IH_STATUS_SKIPPED);
+    assert(api->sample(&s) == PGS_IH_OK);
+    assert(s.status == PGS_IH_STATUS_SKIPPED);
     assert(strcmp(s.reason, "library-architecture-mismatch") == 0);
     assert(s.attempt_count == 1);
 
     /* 2. debug_get_method_info 80-byte prologue mismatch -> retries 20 times then fails */
     api->reset_for_tests();
     reset_fake_universe(&cfg);
-    assert(api->configure(&cfg) == PGR_IH_OK);
+    assert(api->configure(&cfg) == PGS_IH_OK);
     g_module_base[kDebugRva] ^= 0xffu;
 
-    assert(api->start(&opts) == PGR_IH_OK);
-    assert(api->sample(&s) == PGR_IH_OK);
-    assert(s.status == PGR_IH_STATUS_PREPARING && s.attempt_count == 1);
+    assert(api->start(&opts) == PGS_IH_OK);
+    assert(api->sample(&s) == PGS_IH_OK);
+    assert(s.status == PGS_IH_STATUS_PREPARING && s.attempt_count == 1);
     assert(strcmp(s.reason, "debug-get-method-info-prologue-mismatch") == 0);
 
-    for (uint32_t a = 2; a <= PGR_IH_LIMIT_ATTEMPTS; ++a) {
-        g_fake_now_ms += PGR_IH_LIMIT_RETRY_MS;
-        assert(api->tick(100) == PGR_IH_OK);
+    for (uint32_t a = 2; a <= PGS_IH_LIMIT_ATTEMPTS; ++a) {
+        g_fake_now_ms += PGS_IH_LIMIT_RETRY_MS;
+        assert(api->tick(100) == PGS_IH_OK);
     }
-    assert(api->sample(&s) == PGR_IH_OK);
-    assert(s.status == PGR_IH_STATUS_FAILED);
-    assert(s.attempt_count == PGR_IH_LIMIT_ATTEMPTS);
+    assert(api->sample(&s) == PGS_IH_OK);
+    assert(s.status == PGS_IH_STATUS_FAILED);
+    assert(s.attempt_count == PGS_IH_LIMIT_ATTEMPTS);
     assert(strcmp(s.reason, "debug-get-method-info-prologue-mismatch") == 0);
 
     /* 3. Pokeball::btxu 32-byte prologue mismatch degrades ONLY optional target 19 */
     api->reset_for_tests();
     reset_fake_universe(&cfg);
-    assert(api->configure(&cfg) == PGR_IH_OK);
-    g_module_base[PGR_IH_BTXU_RVA] ^= 0xffu;
+    assert(api->configure(&cfg) == PGS_IH_OK);
+    g_module_base[PGS_IH_BTXU_RVA] ^= 0xffu;
 
-    assert(api->start(&opts) == PGR_IH_OK);
-    assert(api->sample(&s) == PGR_IH_OK);
-    assert(s.status == PGR_IH_STATUS_COMPLETE);
-    assert(s.resolved_required_mask == PGR_IH_REQUIRED_MASK);
-    assert((s.resolved_optional_mask & (1u << PGR_IH_TGT_POKEBALL_BTXU)) == 0);
+    assert(api->start(&opts) == PGS_IH_OK);
+    assert(api->sample(&s) == PGS_IH_OK);
+    assert(s.status == PGS_IH_STATUS_COMPLETE);
+    assert(s.resolved_required_mask == PGS_IH_REQUIRED_MASK);
+    assert((s.resolved_optional_mask & (1u << PGS_IH_TGT_POKEBALL_BTXU)) == 0);
 }
 
 static void test_metadata_limits_and_ambiguity(const PgrInteractionHostApi *api) {
@@ -817,9 +817,9 @@ static void test_metadata_limits_and_ambiguity(const PgrInteractionHostApi *api)
     api->reset_for_tests();
     reset_fake_universe(&cfg);
     g_assembly_count = 260;
-    assert(api->configure(&cfg) == PGR_IH_OK);
-    assert(api->start(&opts) == PGR_IH_OK);
-    assert(api->sample(&s) == PGR_IH_OK);
+    assert(api->configure(&cfg) == PGS_IH_OK);
+    assert(api->start(&opts) == PGS_IH_OK);
+    assert(api->sample(&s) == PGS_IH_OK);
     assert(s.truncated == 1 && strcmp(s.reason, "metadata-truncated") == 0);
 
     /* 2. Lookup limit (2048): 200 empty assemblies * 11 classes = 2200 lookups > 2048 */
@@ -827,10 +827,10 @@ static void test_metadata_limits_and_ambiguity(const PgrInteractionHostApi *api)
     reset_fake_universe(&cfg);
     g_assembly_count = 200;
     g_assemblies[0].class_count = 0; /* Put classes nowhere so every assembly uses 11 lookups */
-    assert(api->configure(&cfg) == PGR_IH_OK);
-    assert(api->start(&opts) == PGR_IH_OK);
-    assert(api->sample(&s) == PGR_IH_OK);
-    assert(s.truncated == 1 && s.lookups_used == PGR_IH_LIMIT_LOOKUPS);
+    assert(api->configure(&cfg) == PGS_IH_OK);
+    assert(api->start(&opts) == PGS_IH_OK);
+    assert(api->sample(&s) == PGS_IH_OK);
+    assert(s.truncated == 1 && s.lookups_used == PGS_IH_LIMIT_LOOKUPS);
 
     /* 3. Fields per class limit (96) */
     api->reset_for_tests();
@@ -840,10 +840,10 @@ static void test_metadata_limits_and_ambiguity(const PgrInteractionHostApi *api)
         g_classes[0].fields[i] = {
             &g_classes[0], "f", alloc_fake_type("System.Int32"), 0x0001, 16 + i * 4, 0};
     }
-    assert(api->configure(&cfg) == PGR_IH_OK);
-    assert(api->start(&opts) == PGR_IH_OK);
-    assert(api->sample(&s) == PGR_IH_OK);
-    assert(s.truncated == 1 && s.fields_emitted >= PGR_IH_LIMIT_FIELDS_PER_CLASS);
+    assert(api->configure(&cfg) == PGS_IH_OK);
+    assert(api->start(&opts) == PGS_IH_OK);
+    assert(api->sample(&s) == PGS_IH_OK);
+    assert(s.truncated == 1 && s.fields_emitted >= PGS_IH_LIMIT_FIELDS_PER_CLASS);
 
     /* 4. Methods per class limit (80) */
     api->reset_for_tests();
@@ -858,10 +858,10 @@ static void test_metadata_limits_and_ambiguity(const PgrInteractionHostApi *api)
         fm.code_addr = g_module_base + 0x8000u + i * 4;
     }
     g_classes[0].method_count = 85;
-    assert(api->configure(&cfg) == PGR_IH_OK);
-    assert(api->start(&opts) == PGR_IH_OK);
-    assert(api->sample(&s) == PGR_IH_OK);
-    assert(s.truncated == 1 && s.methods_emitted >= PGR_IH_LIMIT_METHODS_PER_CLASS);
+    assert(api->configure(&cfg) == PGS_IH_OK);
+    assert(api->start(&opts) == PGS_IH_OK);
+    assert(api->sample(&s) == PGS_IH_OK);
+    assert(s.truncated == 1 && s.methods_emitted >= PGS_IH_LIMIT_METHODS_PER_CLASS);
 
     /* 5. Parameter limit (8) */
     api->reset_for_tests();
@@ -878,18 +878,18 @@ static void test_metadata_limits_and_ambiguity(const PgrInteractionHostApi *api)
         }
         fm.code_addr = g_module_base + 0x9000u;
     }
-    assert(api->configure(&cfg) == PGR_IH_OK);
-    assert(api->start(&opts) == PGR_IH_OK);
-    assert(api->sample(&s) == PGR_IH_OK);
+    assert(api->configure(&cfg) == PGS_IH_OK);
+    assert(api->start(&opts) == PGS_IH_OK);
+    assert(api->sample(&s) == PGS_IH_OK);
     assert(s.truncated == 1);
 
     /* 6. Scan time limit (4000ms) */
     api->reset_for_tests();
     reset_fake_universe(&cfg);
     g_scan_advance_per_method_ms = 500;
-    assert(api->configure(&cfg) == PGR_IH_OK);
-    assert(api->start(&opts) == PGR_IH_OK);
-    assert(api->sample(&s) == PGR_IH_OK);
+    assert(api->configure(&cfg) == PGS_IH_OK);
+    assert(api->start(&opts) == PGS_IH_OK);
+    assert(api->sample(&s) == PGS_IH_OK);
     assert(s.truncated == 1);
 
     /* 7. Ambiguous required method overload fails inspect */
@@ -899,10 +899,10 @@ static void test_metadata_limits_and_ambiguity(const PgrInteractionHostApi *api)
         FakeMethod &dup = g_classes[0].methods[g_classes[0].method_count++];
         dup = g_classes[0].methods[0]; /* Duplicate EncounterCaptureState::EnterState() */
     }
-    assert(api->configure(&cfg) == PGR_IH_OK);
-    assert(api->start(&opts) == PGR_IH_OK);
-    assert(api->sample(&s) == PGR_IH_OK);
-    assert((s.ambiguous_target_mask & (1u << PGR_IH_TGT_CAPTURE_ENTER)) != 0);
+    assert(api->configure(&cfg) == PGS_IH_OK);
+    assert(api->start(&opts) == PGS_IH_OK);
+    assert(api->sample(&s) == PGS_IH_OK);
+    assert((s.ambiguous_target_mask & (1u << PGS_IH_TGT_CAPTURE_ENTER)) != 0);
     assert(strcmp(s.reason, "ambiguous-targets") == 0);
 }
 
@@ -910,20 +910,20 @@ static void test_runtime_observation_and_result_readers(const PgrInteractionHost
     api->reset_for_tests();
     PgrInteractionHostConfig cfg {};
     reset_fake_universe(&cfg);
-    assert(api->configure(&cfg) == PGR_IH_OK);
+    assert(api->configure(&cfg) == PGS_IH_OK);
 
     PgrInteractionHostOptions opts {};
     opts.observe_runtime = 1;
     opts.read_results = 1;
-    assert(api->start(&opts) == PGR_IH_OK);
+    assert(api->start(&opts) == PGS_IH_OK);
 
     PgrInteractionHostSample s {};
-    assert(api->sample(&s) == PGR_IH_OK);
-    assert(s.status == PGR_IH_STATUS_OBSERVING && s.running == 1);
+    assert(api->sample(&s) == PGS_IH_OK);
+    assert(s.status == PGS_IH_STATUS_OBSERVING && s.running == 1);
     assert(s.argument_readers_available == 1 && s.return_reader_available == 1);
-    assert(s.hooked_direct_mask == PGR_IH_ALL_TARGETS_MASK);
-    assert(s.installed_target_mask == PGR_IH_ALL_TARGETS_MASK);
-    assert(g_hook_count == PGR_IH_TOTAL_TARGETS);
+    assert(s.hooked_direct_mask == PGS_IH_ALL_TARGETS_MASK);
+    assert(s.installed_target_mask == PGS_IH_ALL_TARGETS_MASK);
+    assert(g_hook_count == PGS_IH_TOTAL_TARGETS);
 
     /* Construct fake managed instances with valid klass pointers at offset 0 */
     alignas(8) uint8_t capture_state[32] = {};
@@ -948,55 +948,55 @@ static void test_runtime_observation_and_result_readers(const PgrInteractionHost
 
     /* 1. Trigger SummaryDismissed (target 2) -> decodes CatchSuccess */
     auto fn_summary_dismissed =
-        reinterpret_cast<HookVoid1Fn>(find_installed_replacement(PGR_IH_TGT_CAPTURE_SUMMARY_DISMISSED));
+        reinterpret_cast<HookVoid1Fn>(find_installed_replacement(PGS_IH_TGT_CAPTURE_SUMMARY_DISMISSED));
     assert(fn_summary_dismissed != nullptr);
     g_fake_now_ms += 10;
     fn_summary_dismissed(capture_state, catch_proto, nullptr);
 
     assert(api->take_event(&ev) == 1);
-    assert(ev.type == PGR_IH_EVT_INTERACTION_EVENT && ev.phase == PGR_IH_PHASE_ENTER);
-    assert(ev.target_id == PGR_IH_TGT_CAPTURE_SUMMARY_DISMISSED);
-    assert(ev.result_status == PGR_IH_RES_DECODED && ev.result_code == 1);
+    assert(ev.type == PGS_IH_EVT_INTERACTION_EVENT && ev.phase == PGS_IH_PHASE_ENTER);
+    assert(ev.target_id == PGS_IH_TGT_CAPTURE_SUMMARY_DISMISSED);
+    assert(ev.result_status == PGS_IH_RES_DECODED && ev.result_code == 1);
     assert(strcmp(ev.result_name, "CatchSuccess") == 0);
     assert(api->take_event(&ev) == 1);
-    assert(ev.type == PGR_IH_EVT_INTERACTION_EVENT && ev.phase == PGR_IH_PHASE_LEAVE);
+    assert(ev.type == PGS_IH_EVT_INTERACTION_EVENT && ev.phase == PGS_IH_PHASE_LEAVE);
 
     /* 2. Trigger btdd (target 10) -> decodes CatchEscape (2), and btdf (target 11) -> timing-only */
     *reinterpret_cast<int32_t *>(catch_proto + 16) = 2; /* CatchEscape */
-    auto fn_btdd = reinterpret_cast<HookVoid1Fn>(find_installed_replacement(PGR_IH_TGT_CAPTURE_BTDD));
-    auto fn_btdf = reinterpret_cast<HookVoid1Fn>(find_installed_replacement(PGR_IH_TGT_CAPTURE_BTDF));
+    auto fn_btdd = reinterpret_cast<HookVoid1Fn>(find_installed_replacement(PGS_IH_TGT_CAPTURE_BTDD));
+    auto fn_btdf = reinterpret_cast<HookVoid1Fn>(find_installed_replacement(PGS_IH_TGT_CAPTURE_BTDF));
     fn_btdd(capture_state, catch_proto, nullptr);
     fn_btdf(capture_state, catch_proto, nullptr);
 
     assert(api->take_event(&ev) == 1);
-    assert(ev.target_id == PGR_IH_TGT_CAPTURE_BTDD && ev.phase == PGR_IH_PHASE_ENTER);
-    assert(ev.result_status == PGR_IH_RES_DECODED && ev.result_code == 2);
+    assert(ev.target_id == PGS_IH_TGT_CAPTURE_BTDD && ev.phase == PGS_IH_PHASE_ENTER);
+    assert(ev.result_status == PGS_IH_RES_DECODED && ev.result_code == 2);
     assert(strcmp(ev.result_name, "CatchEscape") == 0);
     assert(api->take_event(&ev) == 1);
-    assert(ev.target_id == PGR_IH_TGT_CAPTURE_BTDD && ev.phase == PGR_IH_PHASE_LEAVE);
+    assert(ev.target_id == PGS_IH_TGT_CAPTURE_BTDD && ev.phase == PGS_IH_PHASE_LEAVE);
 
     assert(api->take_event(&ev) == 1);
-    assert(ev.target_id == PGR_IH_TGT_CAPTURE_BTDF && ev.phase == PGR_IH_PHASE_ENTER);
-    assert(ev.result_status == PGR_IH_RES_NONE); /* btdf is timing-only! */
+    assert(ev.target_id == PGS_IH_TGT_CAPTURE_BTDF && ev.phase == PGS_IH_PHASE_ENTER);
+    assert(ev.result_status == PGS_IH_RES_NONE); /* btdf is timing-only! */
     assert(api->take_event(&ev) == 1);
-    assert(ev.target_id == PGR_IH_TGT_CAPTURE_BTDF && ev.phase == PGR_IH_PHASE_LEAVE);
+    assert(ev.target_id == PGS_IH_TGT_CAPTURE_BTDF && ev.phase == PGS_IH_PHASE_LEAVE);
 
     /* 3. Trigger bgff (target 13) -> decodes FortSearchOutProto.Result == Success (1) */
-    auto fn_bgff = reinterpret_cast<HookVoid1Fn>(find_installed_replacement(PGR_IH_TGT_SPINNER_BGFF));
+    auto fn_bgff = reinterpret_cast<HookVoid1Fn>(find_installed_replacement(PGS_IH_TGT_SPINNER_BGFF));
     fn_bgff(spinner_state, fort_proto, nullptr);
     assert(api->take_event(&ev) == 1);
-    assert(ev.target_id == PGR_IH_TGT_SPINNER_BGFF && ev.phase == PGR_IH_PHASE_ENTER);
-    assert(ev.result_status == PGR_IH_RES_DECODED && ev.result_code == 1);
+    assert(ev.target_id == PGS_IH_TGT_SPINNER_BGFF && ev.phase == PGS_IH_PHASE_ENTER);
+    assert(ev.result_status == PGS_IH_RES_DECODED && ev.result_code == 1);
     assert(strcmp(ev.result_name, "Success") == 0);
     assert(api->take_event(&ev) == 1);
-    assert(ev.target_id == PGR_IH_TGT_SPINNER_BGFF && ev.phase == PGR_IH_PHASE_LEAVE);
+    assert(ev.target_id == PGS_IH_TGT_SPINNER_BGFF && ev.phase == PGS_IH_PHASE_LEAVE);
 
     /* 4. Trigger Pokeball::btxu (target 19) with NULL return -> increments btxu_pending_polls, emits 0 events */
-    auto fn_btxu = reinterpret_cast<HookRet0Fn>(find_installed_replacement(PGR_IH_TGT_POKEBALL_BTXU));
+    auto fn_btxu = reinterpret_cast<HookRet0Fn>(find_installed_replacement(PGS_IH_TGT_POKEBALL_BTXU));
     g_btxu_orig_return_value = nullptr;
     assert(fn_btxu(pokeball_obj, nullptr) == nullptr);
     assert(api->take_event(&ev) == 0);
-    assert(api->sample(&s) == PGR_IH_OK);
+    assert(api->sample(&s) == PGS_IH_OK);
     assert(s.btxu_pending_polls == 1 && s.event_count == 8);
 
     /* 5. Trigger Pokeball::btxu with non-null catch_proto -> pins self & retval, emits enter + leave with returnResult */
@@ -1008,10 +1008,10 @@ static void test_runtime_observation_and_result_readers(const PgrInteractionHost
     assert(g_gc_free_calls == g_gc_new_calls);
 
     assert(api->take_event(&ev) == 1);
-    assert(ev.target_id == PGR_IH_TGT_POKEBALL_BTXU && ev.phase == PGR_IH_PHASE_ENTER);
+    assert(ev.target_id == PGS_IH_TGT_POKEBALL_BTXU && ev.phase == PGS_IH_PHASE_ENTER);
     assert(api->take_event(&ev) == 1);
-    assert(ev.target_id == PGR_IH_TGT_POKEBALL_BTXU && ev.phase == PGR_IH_PHASE_LEAVE);
-    assert(ev.is_return_result == 1 && ev.result_status == PGR_IH_RES_DECODED);
+    assert(ev.target_id == PGS_IH_TGT_POKEBALL_BTXU && ev.phase == PGS_IH_PHASE_LEAVE);
+    assert(ev.is_return_result == 1 && ev.result_status == PGS_IH_RES_DECODED);
     assert(ev.result_code == 1 && strcmp(ev.result_name, "CatchSuccess") == 0);
 
     /* 6. Independent degradation: bad return object on btxu disables ONLY return_reader_available,
@@ -1021,7 +1021,7 @@ static void test_runtime_observation_and_result_readers(const PgrInteractionHost
     g_btxu_orig_return_value = wrong_obj;
     assert(fn_btxu(pokeball_obj, nullptr) == wrong_obj);
 
-    assert(api->sample(&s) == PGR_IH_OK);
+    assert(api->sample(&s) == PGS_IH_OK);
     assert(s.return_reader_available == 0);
     assert(s.argument_readers_available == 1); /* Argument readers unaffected! */
 
@@ -1032,10 +1032,10 @@ static void test_runtime_observation_and_result_readers(const PgrInteractionHost
     /* Verify SummaryDismissed still decodes CatchSuccess after btxu return reader faulted */
     fn_summary_dismissed(capture_state, catch_proto, nullptr);
     assert(api->take_event(&ev) == 1);
-    assert(ev.target_id == PGR_IH_TGT_CAPTURE_SUMMARY_DISMISSED && ev.phase == PGR_IH_PHASE_ENTER);
-    assert(ev.result_status == PGR_IH_RES_DECODED && ev.result_code == 1);
+    assert(ev.target_id == PGS_IH_TGT_CAPTURE_SUMMARY_DISMISSED && ev.phase == PGS_IH_PHASE_ENTER);
+    assert(ev.result_status == PGS_IH_RES_DECODED && ev.result_code == 1);
 
-    assert(api->stop("test-done") == PGR_IH_OK);
+    assert(api->stop("test-done") == PGS_IH_OK);
     assert(g_hook_count == 0);
 }
 
@@ -1050,41 +1050,41 @@ static void test_shared_hook_sites_coexistence(const PgrInteractionHostApi *api)
           -> NEVER calls pgrazor_hook on 10, 11, 19, fails closed with observer-setup-failed */
     api->reset_for_tests();
     reset_fake_universe(&cfg);
-    assert(api->configure(&cfg) == PGR_IH_OK);
-    assert(api->shared_sites(PGR_IH_SHARED_MASK_49, 0) == PGR_IH_OK);
-    assert(api->start(&opts) == PGR_IH_ERR_HOOK);
-    assert(api->sample(&s) == PGR_IH_OK);
-    assert(s.status == PGR_IH_STATUS_FAILED);
+    assert(api->configure(&cfg) == PGS_IH_OK);
+    assert(api->shared_sites(PGS_IH_SHARED_MASK_49, 0) == PGS_IH_OK);
+    assert(api->start(&opts) == PGS_IH_ERR_HOOK);
+    assert(api->sample(&s) == PGS_IH_OK);
+    assert(s.status == PGS_IH_STATUS_FAILED);
     assert(strcmp(s.reason, "observer-setup-failed") == 0);
-    assert((s.blocked_shared_mask & (1u << PGR_IH_TGT_CAPTURE_BTDD)) != 0);
+    assert((s.blocked_shared_mask & (1u << PGS_IH_TGT_CAPTURE_BTDD)) != 0);
     assert(g_hook_count == 0);
 
     /* 2. Unattested optional shared sites (Feature 61 owns optional targets 15 & 18; integrated_mask == 0)
           -> Degrades targets 15 & 18 without calling pgrazor_hook on them, succeeds on remaining 18 targets! */
     api->reset_for_tests();
     reset_fake_universe(&cfg);
-    assert(api->configure(&cfg) == PGR_IH_OK);
-    assert(api->shared_sites(PGR_IH_SHARED_MASK_61, 0) == PGR_IH_OK);
-    assert(api->start(&opts) == PGR_IH_OK);
-    assert(api->sample(&s) == PGR_IH_OK);
-    assert(s.status == PGR_IH_STATUS_OBSERVING);
-    assert(s.blocked_shared_mask == PGR_IH_SHARED_MASK_61);
-    assert((s.hooked_direct_mask & PGR_IH_SHARED_MASK_61) == 0);
-    assert(g_hook_count == PGR_IH_TOTAL_TARGETS - 2);
-    assert(api->stop("done") == PGR_IH_OK);
+    assert(api->configure(&cfg) == PGS_IH_OK);
+    assert(api->shared_sites(PGS_IH_SHARED_MASK_61, 0) == PGS_IH_OK);
+    assert(api->start(&opts) == PGS_IH_OK);
+    assert(api->sample(&s) == PGS_IH_OK);
+    assert(s.status == PGS_IH_STATUS_OBSERVING);
+    assert(s.blocked_shared_mask == PGS_IH_SHARED_MASK_61);
+    assert((s.hooked_direct_mask & PGS_IH_SHARED_MASK_61) == 0);
+    assert(g_hook_count == PGS_IH_TOTAL_TARGETS - 2);
+    assert(api->stop("done") == PGS_IH_OK);
 
     /* 3. All shared sites owned by 49, 61, 67 attested as integrated:
-          -> Zero direct Dobby hooks on PGR_IH_SHARED_MASK_ALL (10 targets), 10 direct hooks on unowned targets,
+          -> Zero direct Dobby hooks on PGS_IH_SHARED_MASK_ALL (10 targets), 10 direct hooks on unowned targets,
              and observe_enter / observe_leave record full paired events + decoded results! */
     api->reset_for_tests();
     reset_fake_universe(&cfg);
-    assert(api->configure(&cfg) == PGR_IH_OK);
-    assert(api->shared_sites(PGR_IH_SHARED_MASK_ALL, PGR_IH_SHARED_MASK_ALL) == PGR_IH_OK);
-    assert(api->start(&opts) == PGR_IH_OK);
-    assert(api->sample(&s) == PGR_IH_OK);
-    assert(s.status == PGR_IH_STATUS_OBSERVING);
-    assert((s.hooked_direct_mask & PGR_IH_SHARED_MASK_ALL) == 0);
-    assert(s.installed_target_mask == PGR_IH_ALL_TARGETS_MASK);
+    assert(api->configure(&cfg) == PGS_IH_OK);
+    assert(api->shared_sites(PGS_IH_SHARED_MASK_ALL, PGS_IH_SHARED_MASK_ALL) == PGS_IH_OK);
+    assert(api->start(&opts) == PGS_IH_OK);
+    assert(api->sample(&s) == PGS_IH_OK);
+    assert(s.status == PGS_IH_STATUS_OBSERVING);
+    assert((s.hooked_direct_mask & PGS_IH_SHARED_MASK_ALL) == 0);
+    assert(s.installed_target_mask == PGS_IH_ALL_TARGETS_MASK);
     assert(g_hook_count == 10); /* Only the 10 unowned targets hooked via Dobby */
 
     PgrInteractionHostEvent ev {};
@@ -1100,30 +1100,30 @@ static void test_shared_hook_sites_coexistence(const PgrInteractionHostApi *api)
     *reinterpret_cast<void **>(catch_proto) = &g_classes[5];
     *reinterpret_cast<int32_t *>(catch_proto + 16) = 1; /* CatchSuccess */
 
-    uint64_t tok10 = api->observe_enter(PGR_IH_TGT_CAPTURE_BTDD, capture_state, catch_proto);
+    uint64_t tok10 = api->observe_enter(PGS_IH_TGT_CAPTURE_BTDD, capture_state, catch_proto);
     assert(tok10 != 0);
     g_fake_now_ms += 5;
     api->observe_leave(tok10, nullptr);
 
-    uint64_t tok19 = api->observe_enter(PGR_IH_TGT_POKEBALL_BTXU, pokeball_obj, nullptr);
+    uint64_t tok19 = api->observe_enter(PGS_IH_TGT_POKEBALL_BTXU, pokeball_obj, nullptr);
     assert(tok19 != 0);
     g_fake_now_ms += 7;
     api->observe_leave(tok19, catch_proto);
 
     assert(api->take_event(&ev) == 1);
-    assert(ev.target_id == PGR_IH_TGT_CAPTURE_BTDD && ev.phase == PGR_IH_PHASE_ENTER);
-    assert(ev.result_status == PGR_IH_RES_DECODED && ev.result_code == 1);
+    assert(ev.target_id == PGS_IH_TGT_CAPTURE_BTDD && ev.phase == PGS_IH_PHASE_ENTER);
+    assert(ev.result_status == PGS_IH_RES_DECODED && ev.result_code == 1);
     assert(api->take_event(&ev) == 1);
-    assert(ev.target_id == PGR_IH_TGT_CAPTURE_BTDD && ev.phase == PGR_IH_PHASE_LEAVE);
+    assert(ev.target_id == PGS_IH_TGT_CAPTURE_BTDD && ev.phase == PGS_IH_PHASE_LEAVE);
     assert(ev.duration_ms == 5);
 
     assert(api->take_event(&ev) == 1);
-    assert(ev.target_id == PGR_IH_TGT_POKEBALL_BTXU && ev.phase == PGR_IH_PHASE_ENTER);
+    assert(ev.target_id == PGS_IH_TGT_POKEBALL_BTXU && ev.phase == PGS_IH_PHASE_ENTER);
     assert(api->take_event(&ev) == 1);
-    assert(ev.target_id == PGR_IH_TGT_POKEBALL_BTXU && ev.phase == PGR_IH_PHASE_LEAVE);
+    assert(ev.target_id == PGS_IH_TGT_POKEBALL_BTXU && ev.phase == PGS_IH_PHASE_LEAVE);
     assert(ev.duration_ms == 7 && ev.is_return_result == 1 && ev.result_code == 1);
 
-    assert(api->stop("done") == PGR_IH_OK);
+    assert(api->stop("done") == PGS_IH_OK);
     assert(g_hook_count == 0);
 }
 
@@ -1137,111 +1137,111 @@ static void test_stop_bounds_and_deferred_inflight_cleanup(const PgrInteractionH
     /* 1. Event limit (512 events = 256 paired enter+leave calls) */
     api->reset_for_tests();
     reset_fake_universe(&cfg);
-    assert(api->configure(&cfg) == PGR_IH_OK);
-    assert(api->start(&opts) == PGR_IH_OK);
+    assert(api->configure(&cfg) == PGS_IH_OK);
+    assert(api->start(&opts) == PGS_IH_OK);
     for (int i = 0; i < 256; ++i) {
-        uint64_t tok = api->observe_enter(PGR_IH_TGT_CAPTURE_ENTER, nullptr, nullptr);
+        uint64_t tok = api->observe_enter(PGS_IH_TGT_CAPTURE_ENTER, nullptr, nullptr);
         if (tok != 0) {
             api->observe_leave(tok, nullptr);
         }
     }
-    assert(api->sample(&s) == PGR_IH_OK);
-    assert(s.status == PGR_IH_STATUS_COMPLETE && strcmp(s.reason, "event-limit") == 0);
-    assert(s.event_count == PGR_IH_LIMIT_EVENTS);
+    assert(api->sample(&s) == PGS_IH_OK);
+    assert(s.status == PGS_IH_STATUS_COMPLETE && strcmp(s.reason, "event-limit") == 0);
+    assert(s.event_count == PGS_IH_LIMIT_EVENTS);
     assert(g_hook_count == 0);
 
     /* 2. Hit limit (4096 hits via btxu null-return polls, which do not emit events) */
     api->reset_for_tests();
     reset_fake_universe(&cfg);
-    assert(api->configure(&cfg) == PGR_IH_OK);
-    assert(api->start(&opts) == PGR_IH_OK);
-    for (int i = 0; i <= PGR_IH_LIMIT_HITS; ++i) {
-        uint64_t tok = api->observe_enter(PGR_IH_TGT_POKEBALL_BTXU, nullptr, nullptr);
+    assert(api->configure(&cfg) == PGS_IH_OK);
+    assert(api->start(&opts) == PGS_IH_OK);
+    for (int i = 0; i <= PGS_IH_LIMIT_HITS; ++i) {
+        uint64_t tok = api->observe_enter(PGS_IH_TGT_POKEBALL_BTXU, nullptr, nullptr);
         if (tok != 0) {
             api->observe_leave(tok, nullptr);
         }
     }
-    assert(api->sample(&s) == PGR_IH_OK);
-    assert(s.status == PGR_IH_STATUS_COMPLETE && strcmp(s.reason, "hit-limit") == 0);
-    assert(s.hit_count == PGR_IH_LIMIT_HITS + 1);
-    assert(s.btxu_pending_polls == PGR_IH_LIMIT_HITS);
+    assert(api->sample(&s) == PGS_IH_OK);
+    assert(s.status == PGS_IH_STATUS_COMPLETE && strcmp(s.reason, "hit-limit") == 0);
+    assert(s.hit_count == PGS_IH_LIMIT_HITS + 1);
+    assert(s.btxu_pending_polls == PGS_IH_LIMIT_HITS);
     assert(g_hook_count == 0);
 
     /* 3. Thread limit (4 distinct threads allowed; 5th distinct thread triggers thread-limit) */
     api->reset_for_tests();
     reset_fake_universe(&cfg);
-    assert(api->configure(&cfg) == PGR_IH_OK);
-    assert(api->start(&opts) == PGR_IH_OK);
-    for (int i = 0; i < PGR_IH_LIMIT_THREADS; ++i) {
+    assert(api->configure(&cfg) == PGS_IH_OK);
+    assert(api->start(&opts) == PGS_IH_OK);
+    for (int i = 0; i < PGS_IH_LIMIT_THREADS; ++i) {
         std::thread worker([api]() {
-            uint64_t tok = api->observe_enter(PGR_IH_TGT_CAPTURE_ENTER, nullptr, nullptr);
+            uint64_t tok = api->observe_enter(PGS_IH_TGT_CAPTURE_ENTER, nullptr, nullptr);
             assert(tok != 0);
             api->observe_leave(tok, nullptr);
         });
         worker.join();
     }
-    assert(api->sample(&s) == PGR_IH_OK);
-    assert(s.status == PGR_IH_STATUS_OBSERVING && s.thread_count == PGR_IH_LIMIT_THREADS);
+    assert(api->sample(&s) == PGS_IH_OK);
+    assert(s.status == PGS_IH_STATUS_OBSERVING && s.thread_count == PGS_IH_LIMIT_THREADS);
 
     std::thread fifth_thread([api]() {
-        uint64_t tok = api->observe_enter(PGR_IH_TGT_CAPTURE_ENTER, nullptr, nullptr);
+        uint64_t tok = api->observe_enter(PGS_IH_TGT_CAPTURE_ENTER, nullptr, nullptr);
         assert(tok == 0);
     });
     fifth_thread.join();
-    assert(api->sample(&s) == PGR_IH_OK);
-    assert(s.status == PGR_IH_STATUS_COMPLETE && strcmp(s.reason, "thread-limit") == 0);
+    assert(api->sample(&s) == PGS_IH_OK);
+    assert(s.status == PGS_IH_STATUS_COMPLETE && strcmp(s.reason, "thread-limit") == 0);
     assert(s.dropped_threads == 1);
 
     /* 4. Window complete (60000ms): no-natural-calls when 0 events, observation-complete when >0 events */
     api->reset_for_tests();
     reset_fake_universe(&cfg);
-    assert(api->configure(&cfg) == PGR_IH_OK);
-    assert(api->start(&opts) == PGR_IH_OK);
-    g_fake_now_ms += PGR_IH_LIMIT_OBSERVE_MS;
-    assert(api->tick(100) == PGR_IH_OK);
-    assert(api->sample(&s) == PGR_IH_OK);
-    assert(s.status == PGR_IH_STATUS_COMPLETE && strcmp(s.reason, "no-natural-calls") == 0);
+    assert(api->configure(&cfg) == PGS_IH_OK);
+    assert(api->start(&opts) == PGS_IH_OK);
+    g_fake_now_ms += PGS_IH_LIMIT_OBSERVE_MS;
+    assert(api->tick(100) == PGS_IH_OK);
+    assert(api->sample(&s) == PGS_IH_OK);
+    assert(s.status == PGS_IH_STATUS_COMPLETE && strcmp(s.reason, "no-natural-calls") == 0);
 
     api->reset_for_tests();
     reset_fake_universe(&cfg);
-    assert(api->configure(&cfg) == PGR_IH_OK);
-    assert(api->start(&opts) == PGR_IH_OK);
+    assert(api->configure(&cfg) == PGS_IH_OK);
+    assert(api->start(&opts) == PGS_IH_OK);
     {
-        uint64_t tok = api->observe_enter(PGR_IH_TGT_CAPTURE_ENTER, nullptr, nullptr);
+        uint64_t tok = api->observe_enter(PGS_IH_TGT_CAPTURE_ENTER, nullptr, nullptr);
         assert(tok != 0);
         api->observe_leave(tok, nullptr);
     }
-    g_fake_now_ms += PGR_IH_LIMIT_OBSERVE_MS;
-    assert(api->tick(100) == PGR_IH_OK);
-    assert(api->sample(&s) == PGR_IH_OK);
-    assert(s.status == PGR_IH_STATUS_COMPLETE && strcmp(s.reason, "observation-complete") == 0);
+    g_fake_now_ms += PGS_IH_LIMIT_OBSERVE_MS;
+    assert(api->tick(100) == PGS_IH_OK);
+    assert(api->sample(&s) == PGS_IH_OK);
+    assert(s.status == PGS_IH_STATUS_COMPLETE && strcmp(s.reason, "observation-complete") == 0);
 
     /* 5. Deferred in-flight cleanup when stop() is called mid-callback */
     api->reset_for_tests();
     reset_fake_universe(&cfg);
-    assert(api->configure(&cfg) == PGR_IH_OK);
-    assert(api->start(&opts) == PGR_IH_OK);
+    assert(api->configure(&cfg) == PGS_IH_OK);
+    assert(api->start(&opts) == PGS_IH_OK);
 
-    uint64_t outer_tok = api->observe_enter(PGR_IH_TGT_CAPTURE_ENTER, nullptr, nullptr);
-    uint64_t inner_tok = api->observe_enter(PGR_IH_TGT_POKESTOP_NOTIFY_SPIN, nullptr, nullptr);
+    uint64_t outer_tok = api->observe_enter(PGS_IH_TGT_CAPTURE_ENTER, nullptr, nullptr);
+    uint64_t inner_tok = api->observe_enter(PGS_IH_TGT_POKESTOP_NOTIFY_SPIN, nullptr, nullptr);
     assert(outer_tok != 0 && inner_tok != 0);
-    assert(api->sample(&s) == PGR_IH_OK);
+    assert(api->sample(&s) == PGS_IH_OK);
     assert(s.in_flight == 2);
 
     /* Call stop() while 2 callbacks are in flight -> hooks stay installed until both leave */
-    assert(api->stop("user-stop") == PGR_IH_OK);
-    assert(api->sample(&s) == PGR_IH_OK);
-    assert(s.status == PGR_IH_STATUS_STOPPED);
+    assert(api->stop("user-stop") == PGS_IH_OK);
+    assert(api->sample(&s) == PGS_IH_OK);
+    assert(s.status == PGS_IH_STATUS_STOPPED);
     assert(s.in_flight == 2 && s.deferred_cleanup_pending == 1);
-    assert(g_hook_count == PGR_IH_TOTAL_TARGETS);
+    assert(g_hook_count == PGS_IH_TOTAL_TARGETS);
 
     api->observe_leave(inner_tok, nullptr);
-    assert(api->sample(&s) == PGR_IH_OK);
+    assert(api->sample(&s) == PGS_IH_OK);
     assert(s.in_flight == 1 && s.deferred_cleanup_pending == 1);
-    assert(g_hook_count == PGR_IH_TOTAL_TARGETS);
+    assert(g_hook_count == PGS_IH_TOTAL_TARGETS);
 
     api->observe_leave(outer_tok, nullptr);
-    assert(api->sample(&s) == PGR_IH_OK);
+    assert(api->sample(&s) == PGS_IH_OK);
     assert(s.in_flight == 0 && s.deferred_cleanup_pending == 0);
     assert(s.hooked_direct_mask == 0 && g_hook_count == 0);
 }
@@ -1249,51 +1249,51 @@ static void test_stop_bounds_and_deferred_inflight_cleanup(const PgrInteractionH
 static void test_transport52_and_scheduler48_integration(const PgrInteractionHostApi *api) {
     const PgrRuntimeTransportApi *rt = resolve_transport_api();
     assert(rt != nullptr);
-    PgrRuntimeTransportConfig rt_cfg {};
-    rt_cfg.version = PGR_TRANSPORT_CONFIG_VERSION;
+    PgsRuntimeTransportConfig rt_cfg {};
+    rt_cfg.version = PGS_TRANSPORT_CONFIG_VERSION;
     rt_cfg.size = sizeof(rt_cfg);
     rt_cfg.lease_ms = 2500;
     rt_cfg.max_events = 2048;
     rt_cfg.max_string_bytes = 65536;
     rt_cfg.queue_byte_budget = 524288;
     int irc = rt->install(&rt_cfg);
-    assert(irc == PGR_TRANSPORT_OK || irc == PGR_TRANSPORT_ERR_RECONFIG);
+    assert(irc == PGR_TRANSPORT_OK || irc == PGS_TRANSPORT_ERR_RECONFIG);
     drain_transport_events(rt);
 
     api->reset_for_tests();
     PgrInteractionHostConfig cfg {};
     reset_fake_universe(&cfg);
-    assert(api->configure(&cfg) == PGR_IH_OK);
+    assert(api->configure(&cfg) == PGS_IH_OK);
 
     /* 1. Reader 15 == false when scheduled check comes due -> finishes as skipped ("not-ready") */
     push_transport_snapshot(rt, 1, false, 0, 0);
-    assert(api->schedule(1000) == PGR_IH_OK);
+    assert(api->schedule(1000) == PGS_IH_OK);
     g_fake_now_ms += 1000;
-    assert(api->tick(100) == PGR_IH_OK);
+    assert(api->tick(100) == PGS_IH_OK);
     PgrInteractionHostSample s {};
-    assert(api->sample(&s) == PGR_IH_OK);
-    assert(s.status == PGR_IH_STATUS_SKIPPED && strcmp(s.reason, "not-ready") == 0);
+    assert(api->sample(&s) == PGS_IH_OK);
+    assert(s.status == PGS_IH_STATUS_SKIPPED && strcmp(s.reason, "not-ready") == 0);
     drain_transport_events(rt);
 
     /* 2. Reader 15 == true + Pulse 2 (trace request) via on_unity_pulse -> starts runtime observation */
     push_transport_snapshot(rt, 2, true, 0, 1);
     PgrUnityPulse pulse {0, 1, 100, 0};
     /* Note: if scheduler48 is not yet activated, valid(0) == 0 suppresses pulse; tick(100) runs directly */
-    assert(api->tick(100) == PGR_IH_OK);
-    assert(api->sample(&s) == PGR_IH_OK);
-    assert(s.status == PGR_IH_STATUS_OBSERVING && s.running == 1);
+    assert(api->tick(100) == PGS_IH_OK);
+    assert(api->sample(&s) == PGS_IH_OK);
+    assert(s.status == PGS_IH_STATUS_OBSERVING && s.running == 1);
     assert(s.observe_runtime == 1 && s.read_results == 1);
 
     /* 3. Pulse 1 (stop request) -> stops active observation and unhooks all direct targets */
     push_transport_snapshot(rt, 3, true, 1, 1);
-    assert(api->tick(100) == PGR_IH_OK);
-    assert(api->sample(&s) == PGR_IH_OK);
-    assert(s.status == PGR_IH_STATUS_STOPPED && s.running == 0);
+    assert(api->tick(100) == PGS_IH_OK);
+    assert(api->sample(&s) == PGS_IH_OK);
+    assert(s.status == PGS_IH_STATUS_STOPPED && s.running == 0);
     assert(g_hook_count == 0);
 
     /* Verify Transport 52 received emitted events */
     PgrRuntimeTransportSample rt_s {};
-    rt_s.version = PGR_TRANSPORT_SAMPLE_VERSION;
+    rt_s.version = PGS_TRANSPORT_SAMPLE_VERSION;
     rt_s.size = sizeof(rt_s);
     assert(rt->sample(&rt_s) == PGR_TRANSPORT_OK);
     assert(rt_s.events_emitted > 0);
@@ -1331,14 +1331,14 @@ int main(int argc,char **argv){
     auto get=(const void*(*)(uint32_t))dlsym(lib,"pgs_native_api");assert(get);
     auto core=(const pgs_native_api_v2*)get(2);assert(core);
     auto exported=(const PgrInteractionHostApi*)core->query_feature(69,1);
-    auto exported2=(const PgrInteractionHostApi2*)core->query_feature(69,2);
+    auto exported2=(const PgsInteractionHostApi2*)core->query_feature(69,2);
     assert(exported&&exported->feature_id==69&&exported2&&exported2->size==40&&!exported2->wants_target(0));
     actual_transport=(const PgrRuntimeTransportApi*)core->query_feature(52,1);assert(actual_transport);
-    PgrRuntimeTransportConfig tc{1,sizeof(tc),2500,2048,65536,1048576,0,0};assert(actual_transport->install(&tc)==0);
+    PgsRuntimeTransportConfig tc{1,sizeof(tc),2500,2048,65536,1048576,0,0};assert(actual_transport->install(&tc)==0);
     PgrInteractionHostConfig cfg{};reset_fake_universe(&cfg);g_state.cfg=cfg;g_state.meta_exports=g_fx_meta_exports;g_state.configured=true;
-    g_state.cfg.flags=PGR_IH_CFG_NO_AUTO_SHARED_DETECT;g_owner_tid=gettid();
+    g_state.cfg.flags=PGS_IH_CFG_NO_AUTO_SHARED_DETECT;g_owner_tid=gettid();
     auto api=(const PgrInteractionHostApi*)pgs_interaction_host_api(1);
-    auto observer=(const PgrInteractionHostApi2*)pgs_interaction_host_api(2);
+    auto observer=(const PgsInteractionHostApi2*)pgs_interaction_host_api(2);
     alignas(8) uint64_t self[4]{},arg[4]{},result[4]{},moved[4]{};
     call0(self,nullptr);assert(original_calls[0]==1&&roots()==0);
     prepared_run();assert(g_hook_count==20&&g_total_hook_calls==20);
@@ -1353,17 +1353,17 @@ int main(int argc,char **argv){
     assert(call19(self,nullptr)==moved&&roots()==0); // self free precedes final result refresh
     gc_fail_object=result;unsigned frees=g_gc_free_calls;
     assert(call19(self,nullptr)==result&&roots()==1&&g_gc_free_calls==frees&&g_state.in_flight==0);
-    assert(api->start(nullptr)==PGR_IH_ERR_BUSY); // deferred root cannot be discarded by restart
+    assert(api->start(nullptr)==PGS_IH_ERR_BUSY); // deferred root cannot be discarded by restart
     assert(call19(self,nullptr)==result&&roots()==1); // bounded inert passthrough
-    gc_fail_object=nullptr;assert(api->tick(gettid()+1)==PGR_IH_ERR_INVALID&&roots()==1);
+    gc_fail_object=nullptr;assert(api->tick(gettid()+1)==PGS_IH_ERR_INVALID&&roots()==1);
     assert(api->tick(gettid())==0&&roots()==0);
     g_current_thread=nullptr;unsigned before=g_gc_new_calls;call0(self,nullptr);assert(g_gc_new_calls==before);
-    assert(api->tick(gettid())==PGR_IH_ERR_INVALID);g_current_thread=(void*)0x1234;assert(g_thread_attach_calls==0);
+    assert(api->tick(gettid())==PGS_IH_ERR_INVALID);g_current_thread=(void*)0x1234;assert(g_thread_attach_calls==0);
     uint64_t token=observer->observe_enter(0,self,nullptr);assert(token);assert(api->stop("fixture")==0);
-    assert(api->start(nullptr)==PGR_IH_ERR_BUSY);observer->observe_abort(token);assert(g_state.in_flight==0&&g_state.reserved_events==0);
+    assert(api->start(nullptr)==PGS_IH_ERR_BUSY);observer->observe_abort(token);assert(g_state.in_flight==0&&g_state.reserved_events==0);
     assert(g_total_unhook_calls==0);before=g_gc_new_calls;call0(self,nullptr);assert(g_gc_new_calls==before);
     prepared_run();assert(g_total_hook_calls==20); // immutable original reused, never re-hooked
-    g_fake_now_ms+=60001;PgrUnityPulse forged{1,1,(int32_t)gettid(),0};api->on_unity_pulse(nullptr,&forged);assert(g_state.status==PGR_IH_STATUS_OBSERVING);
+    g_fake_now_ms+=60001;PgrUnityPulse forged{1,1,(int32_t)gettid(),0};api->on_unity_pulse(nullptr,&forged);assert(g_state.status==PGS_IH_STATUS_OBSERVING);
     PgrRuntimeTransportSample tr{};assert(actual_transport->sample(&tr)==0&&tr.events_emitted>10&&tr.events_dropped==0&&!tr.fault);
     PgrInteractionHostEvent ev{};assert(api->take_event(&ev)==0); // transport mode has no backup ring
     api->stop("done");assert(roots()==0&&g_total_unhook_calls==0);

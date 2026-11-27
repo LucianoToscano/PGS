@@ -238,7 +238,7 @@ void *encounter_response(void *wild){
 }
 int poll(Root &value){
  auto vr=static_cast<const PgrVgpResultsApi*>(pgs_vgp_results_api(1));require(vr,"response polling unavailable");
- PgrVgpResultsResult out{};const int rc=vr->poll(st.promise.get(),PGR_VR_PHASE_ENCOUNTER,owner,&out);value.h=out.value_handle;return rc;
+ PgrVgpResultsResult out{};const int rc=vr->poll(st.promise.get(),PGS_VR_PHASE_ENCOUNTER,owner,&out);value.h=out.value_handle;return rc;
 }
 int count(int item){void *a[]={&item};const int n=unbox<int32_t>(call(st.items.get(),"GetItemCount",1,a));return n>0?n:0;}
 int item_id(const char *name){return literal(cls("Holoholo.Rpc","Item"),name);}
@@ -357,15 +357,15 @@ void step(const Config &c,uint64_t now){
  if(st.step==ENCOUNTER||st.step==BERRY_WAIT||st.step==THROW_WAIT){
   Root value;const int rc=poll(value);
   const uint64_t limit=st.step==BERRY_WAIT?kBerryMs:kResponseMs;
-  if(rc==PGR_VR_PENDING&&now-st.since<=limit)return;
+  if(rc==PGS_VR_PENDING&&now-st.since<=limit)return;
   if(st.step==ENCOUNTER){
    st.promise.reset();
-   if(rc!=PGR_VR_DONE){finish("failed",rc==PGR_VR_PENDING?"No encounter answer":"Encounter failed");return;}
+   if(rc!=PGS_VR_DONE){finish("failed",rc==PGS_VR_PENDING?"No encounter answer":"Encounter failed");return;}
    read_encounter();return;
   }
   if(st.step==BERRY_WAIT){st.promise.reset();throw_ball(now);return;}  // the throw goes ahead either way
   st.promise.reset();
-  if(rc!=PGR_VR_DONE||!value){finish("failed",rc==PGR_VR_PENDING?"No answer to the throw":"Throw failed");return;}
+  if(rc!=PGS_VR_DONE||!value){finish("failed",rc==PGS_VR_PENDING?"No answer to the throw":"Throw failed");return;}
   read_catch(value,now);return;
  }
  if(st.step==HOLD){if(!c.go)return;st.step=BERRY;st.next=now;}
@@ -425,7 +425,7 @@ void install_block(){
 }
 }  // namespace
 
-void pgr_shundo_tick(uint64_t tid,const PgrSharedMetadataOutput *metadata){
+void pgs_shundo_tick(uint64_t tid,const PgrSharedMetadataOutput *metadata){
  if(busy||faulted||!tid||tid!=uint64_t(gettid())||(owner&&owner!=tid))return;
  struct Guard{Guard(){busy=true;}~Guard(){busy=false;}}guard;
  const Config c=configured();const uint64_t now=clock_ms();
@@ -451,7 +451,7 @@ void pgr_shundo_tick(uint64_t tid,const PgrSharedMetadataOutput *metadata){
   finish("error",std::string("Shundo Sniper: ")+f.where);
  }catch(...){faulted=true;st.promise.reset();st.target.reset();event("error",",\"message\":\"Shundo Sniper stopped after an unexpected error\"");}
 }
-void pgr_shundo_stop(uint64_t tid){
+void pgs_shundo_stop(uint64_t tid){
  blocking.store(false,std::memory_order_release);
  if(!initialized||tid!=owner||tid!=uint64_t(gettid()))return;
  reset();st.items.reset();st.rpc.reset();st.map_content.reset();st.berry_reflection.reset();st.catch_reflection.reset();st.berry_method=st.catch_method=nullptr;st.request=0;

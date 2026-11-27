@@ -11,7 +11,7 @@ uintptr_t test_next_handle = 1;
 unsigned test_allocations = 0, test_frees = 0, test_polls = 0;
 unsigned test_events = 0, test_unexpected_runtime = 0;
 std::string test_event_kind;
-int test_result = PGR_VR_DONE;
+int test_result = PGS_VR_DONE;
 int test_objects[8]{};
 bool test_active = true, test_map = true, test_fresh = true;
 bool test_coordinates = true, test_changing_sequence = false;
@@ -82,7 +82,7 @@ int test_poll(void *promise, uint32_t phase, uint64_t tid,
  assert(promise == &test_objects[1] && phase == 1 && tid == 123);
  ++test_polls;
  *out = {};
- if (test_result == PGR_VR_DONE) {
+ if (test_result == PGS_VR_DONE) {
   out->version = 1;
   out->size = sizeof(*out);
   out->state = 1;
@@ -103,7 +103,7 @@ Permission test_setup(int phase) {
  owner = 123;
  test_allocations = test_frees = test_polls = test_events = 0;
  test_unexpected_runtime = 0;
- test_result = PGR_VR_DONE;
+ test_result = PGS_VR_DONE;
  boot = {};
  boot.runtime.gchandle_new = reinterpret_cast<void*>(test_root_new);
  boot.runtime.gchandle_get_target = reinterpret_cast<void*>(test_root_get);
@@ -268,7 +268,7 @@ int main() {
  }
  {
   auto p = test_setup(3);
-  test_result = PGR_VR_REJECTED;
+  test_result = PGS_VR_REJECTED;
   poll(p);
   test_cleared(1, 1);
   assert(!history.feed_allowed(42, clock_ms()));

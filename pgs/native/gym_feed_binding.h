@@ -4,7 +4,7 @@
 
 // Use the game's item-bag operation, including its inventory cache update and
 // response handling. Never predict/decrement inventory ourselves or replay it.
-namespace pgr_gym_feed {
+namespace pgs_gym_feed {
 // Once observed, later gains from spins/rewards cannot erase this operation's
 // cache acknowledgement. Success is still decided separately by the promise.
 inline void observe_stock(bool &seen,int before,int current){

@@ -38,13 +38,13 @@ void *context_method(void *k,const char *n,int argc){
 uint32_t context_argc(void*){return 0;}
 uint32_t context_method_flags(void*,uint32_t*){return 6;}
 void *context_return(void *m){assert(m==&value_method||m==&full_method);return m==&value_method?&interface_type:&bool_type;}
-PgrQuickballMetaOutput metadata{};
+PgsQuickballMetaOutput metadata{};
 struct Object {void *klass;alignas(8) unsigned char data[64];};
 Object ball{},animator{},response{},float_box{},bool_box{},wild{},ar_values{},latlng_box{},map_object{},ground_object{};
 Object lazy{&lazy_class,{}},state{&state_class,{}};
 struct Root {void *object;bool live;};Root root_pool[512]{};unsigned root_next=0,root_count=0;
-void *learned_caller=nullptr,*last_ar=nullptr;PgrThrowValue last_hit{};int btxu_calls=0,caught_calls=0,hit_calls=0,ar_calls=0;
-bool attached_flag=true,stop_inside=false;const PgrQuickballHostApi *host=nullptr;
+void *learned_caller=nullptr,*last_ar=nullptr;PgsThrowValue last_hit{};int btxu_calls=0,caught_calls=0,hit_calls=0,ar_calls=0;
+bool attached_flag=true,stop_inside=false;const PgsQuickballHostApi *host=nullptr;
 void *thread_current(){return attached_flag?&class_tokens[0]:nullptr;}
 void *object_class(void *o){return o?static_cast<Object*>(o)->klass:nullptr;}
 bool assignable(void *a,void *b){return a==b||(a==&class_tokens[C_MAPPK]&&b==&class_tokens[C_WILDMAP]);}
@@ -84,22 +84,22 @@ decltype(&btxu) volatile call_btxu=&btxu;
 __attribute__((noinline)) void *wrapped_btxu(){void *r=call_btxu(&ball,nullptr);asm volatile("":"+r"(r)::"memory");return r;}
 __attribute__((noinline)) void caught(void*,void*,void*){QPAD;++caught_calls;}
 __attribute__((noinline)) void escaped(void*,void*,void*){QPAD;caught_calls+=2;}
-__attribute__((noinline)) void hit_stub(void*,PgrThrowValue value,void*){QPAD;++hit_calls;last_hit=value;}
-__attribute__((noinline)) void submit_stub(void*,PgrThrowValue,void*){QPAD;}
+__attribute__((noinline)) void hit_stub(void*,PgsThrowValue value,void*){QPAD;++hit_calls;last_hit=value;}
+__attribute__((noinline)) void submit_stub(void*,PgsThrowValue,void*){QPAD;}
 __attribute__((noinline)) void collision(void*,void*,void*){QPAD;}
 __attribute__((noinline)) void trigger(void*,void*,void*){QPAD;asm volatile("nop");}
 __attribute__((noinline)) void launch(void*){QPAD;}
 __attribute__((noinline)) void release(void*){QPAD;asm volatile("nop");}
-__attribute__((noinline)) PgrAlwaysHitValue make_throw(void*,uint8_t,void*){QPAD;return {1,0.5f,0,0,0,0};}
-__attribute__((noinline)) void *capture(void*,PgrThrowValue,void *values,void*){QPAD;++ar_calls;last_ar=values;return &class_tokens[0];}
+__attribute__((noinline)) PgsAlwaysHitValue make_throw(void*,uint8_t,void*){QPAD;return {1,0.5f,0,0,0,0};}
+__attribute__((noinline)) void *capture(void*,PgsThrowValue,void *values,void*){QPAD;++ar_calls;last_ar=values;return &class_tokens[0];}
 struct V2 {float x,y;};
 __attribute__((noinline)) uint8_t position(void*,V2,float *out,void*){QPAD;out[0]=1;out[1]=2;out[2]=3;return 1;}
 decltype(&position) volatile call_position=&position;
 __attribute__((noinline)) void tap(void*,void*,void*,void*){QPAD;float out[3];assert(call_position(&map_object,{4,5},out,nullptr)==1);}
 __attribute__((noinline)) void owned_update(void*,void*,void*){QPAD;}
 __attribute__((noinline)) void setup(void*,void*,int32_t,void*){QPAD;}
-int resolve(const PgrQuickballMetaConfig *c,PgrQuickballMetaOutput *out){assert(c&&c->owner_tid==uint64_t(gettid()));*out=metadata;return 0;}
-const PgrQuickballMetaApi metadata_api{2,sizeof(PgrQuickballMetaApi),sizeof(PgrQuickballMetaConfig),sizeof(PgrQuickballMetaOutput),resolve};
+int resolve(const PgsQuickballMetaConfig *c,PgsQuickballMetaOutput *out){assert(c&&c->owner_tid==uint64_t(gettid()));*out=metadata;return 0;}
+const PgsQuickballMetaApi metadata_api{2,sizeof(PgsQuickballMetaApi),sizeof(PgsQuickballMetaConfig),sizeof(PgsQuickballMetaOutput),resolve};
 void initialize(){
  metadata.version=2;metadata.size=sizeof(metadata);
  for(unsigned i=0;i<kClassCount;++i)metadata.classes[i]=&class_tokens[i];
@@ -144,7 +144,7 @@ int main(int argc,char **argv){
  assert(argc==2);void *lib=dlopen(argv[1],RTLD_NOW|RTLD_LOCAL);if(!lib)std::puts(dlerror());assert(lib);
  auto get=reinterpret_cast<const void*(*)(uint32_t)>(dlsym(lib,"pgs_native_api"));assert(get);
  core=static_cast<const pgs_native_api_v2*>(get(2));assert(core&&core->query_feature(62,1)&&!core->query_feature(62,2));
- host=static_cast<const PgrQuickballHostApi*>(pgs_quickball_host_api(1));assert(host&&host->size==96);
+ host=static_cast<const PgsQuickballHostApi*>(pgs_quickball_host_api(1));assert(host&&host->size==96);
  initialize();wrapped_btxu();assert(learned_caller);
  PgrMetaExports meta_exports{};meta_exports.class_get_type=reinterpret_cast<void*>(type_object);
  meta_exports.class_get_field_from_name=reinterpret_cast<void*>(max_field_by_name);
@@ -158,28 +158,28 @@ int main(int argc,char **argv){
  meta_exports.method_get_param_count=reinterpret_cast<void*>(context_argc);
  meta_exports.method_get_flags=reinterpret_cast<void*>(context_method_flags);
  meta_exports.method_get_return_type=reinterpret_cast<void*>(context_return);
- PgrQuickballExtra extra_exports{};PgrQuickballMetaConfig metadata_config{};metadata_config.version=2;metadata_config.size=sizeof(metadata_config);
+ PgsQuickballExtra extra_exports{};PgsQuickballMetaConfig metadata_config{};metadata_config.version=2;metadata_config.size=sizeof(metadata_config);
  extra_exports.class_get_fields=reinterpret_cast<void*>(context_fields);
  metadata_config.binding.exports=&meta_exports;metadata_config.binding.module_base=reinterpret_cast<void*>(reinterpret_cast<uintptr_t>(learned_caller)-kCallerRva);
  metadata_config.thread_current=reinterpret_cast<void*>(thread_current);metadata_config.extra=&extra_exports;
- PgrQuickballHostRuntime runtime{reinterpret_cast<void*>(invoke),reinterpret_cast<void*>(new_root),reinterpret_cast<void*>(target_root),reinterpret_cast<void*>(free_root),
+ PgsQuickballHostRuntime runtime{reinterpret_cast<void*>(invoke),reinterpret_cast<void*>(new_root),reinterpret_cast<void*>(target_root),reinterpret_cast<void*>(free_root),
   reinterpret_cast<void*>(object_class),reinterpret_cast<void*>(unbox),reinterpret_cast<void*>(field_get),reinterpret_cast<void*>(assignable),
   reinterpret_cast<void*>(allocate_object),reinterpret_cast<void*>(field_set),reinterpret_cast<void*>(string_new),reinterpret_cast<void*>(string_length),reinterpret_cast<void*>(string_chars),reinterpret_cast<void*>(type_object)};
- PgrQuickballHostConfig config{1,sizeof(config),0,0,&metadata_config,&runtime};
- auto bad=config;bad.flags=4;assert(host->configure(&bad)==PGR_QBH_BAD_CONFIG);
- assert(host->configure(&config)==0);assert(host->configure(&config)==PGR_QBH_RECONFIG);
- assert(host->tick(uint64_t(gettid())+1)==PGR_QBH_OFF_OWNER);
- PgrQuickballHostOptions settings{1,sizeof(settings),1,1,1,1,0,3,1,0,1,2,0,0,2000,0,17};
+ PgsQuickballHostConfig config{1,sizeof(config),0,0,&metadata_config,&runtime};
+ auto bad=config;bad.flags=4;assert(host->configure(&bad)==PGS_QBH_BAD_CONFIG);
+ assert(host->configure(&config)==0);assert(host->configure(&config)==PGS_QBH_RECONFIG);
+ assert(host->tick(uint64_t(gettid())+1)==PGS_QBH_OFF_OWNER);
+ PgsQuickballHostOptions settings{1,sizeof(settings),1,1,1,1,0,3,1,0,1,2,0,0,2000,0,17};
  assert(host->set_options(&settings)==0);assert(host->tick(gettid())==0);
- PgrQuickballHostSample gauge{};host->sample(&gauge);assert(gauge.metadata_ready&&gauge.capabilities==127&&!gauge.ready);
- assert(host->shared_sites(4)==PGR_QBH_BAD_CONFIG);assert(host->shared_sites(3)==0);
+ PgsQuickballHostSample gauge{};host->sample(&gauge);assert(gauge.metadata_ready&&gauge.capabilities==127&&!gauge.ready);
+ assert(host->shared_sites(4)==PGS_QBH_BAD_CONFIG);assert(host->shared_sites(3)==0);
  assert(host->tick(gettid())==0);assert(host->tick(gettid())==0);host->sample(&gauge);assert(gauge.ready);
  // Real49 + real8: exact caller, roots, outcome and speed20; completion restores1.
  assert(wrapped_btxu()==&response);assert(current_speed()==20&&root_count>0);
  assert(host->tick(gettid())==0);decltype(&caught) volatile call_caught=&caught;call_caught(nullptr,&response,nullptr);
  assert(current_speed()==1&&caught_calls==1);assert(host->tick(gettid())==0);
  // Shared submit transform uses real1. The paired hit forwards that exact value.
- PgrThrowValue value{1,0.5f,0,0,0,0xa5};assert(host->rewrite_submit(&ball,&value)==0);
+ PgsThrowValue value{1,0.5f,0,0,0,0xa5};assert(host->rewrite_submit(&ball,&value)==0);
  assert(value.spinning==1&&value.radius>=0&&value.radius<0.3f&&value.pad==0xa5);
  Object encounter{&class_tokens[C_ENCOUNTER],{}};decltype(&hit_stub) volatile call_hit=&hit_stub;call_hit(&encounter,value,nullptr);
  assert(hit_calls==1&&!std::memcmp(&value,&last_hit,sizeof(value)));
@@ -188,7 +188,7 @@ int main(int argc,char **argv){
  assert(ar_calls==1&&last_ar==&ar_values&&ar_values.data[8]==0);
  // Real13 nested OnTap/GetGroundPosition -> runtime_invoke location -> host event.
  decltype(&tap) volatile call_tap=&tap;call_tap(&ground_object,nullptr,nullptr,nullptr);assert(host->tick(gettid())==0);
- bool saw_outcome=false,saw_map=false,saw_speed=false;PgrQuickballHostEvent event_out{};
+ bool saw_outcome=false,saw_map=false,saw_speed=false;PgsQuickballHostEvent event_out{};
  while(host->next_event(&event_out)==0){
   if(!std::strcmp(event_out.kind,"outcome-confirmed")){saw_outcome=true;assert(std::strstr(event_out.json,"caught"));}
   if(!std::strcmp(event_out.kind,"map-tap")){saw_map=true;assert(std::strstr(event_out.json,"12.250000")&&std::strstr(event_out.json,"\"epoch\":17"));}
@@ -221,19 +221,19 @@ int main(int argc,char **argv){
  assert(read_max_context(&ball)==-1&&root_count==before_context_failure);context_throws=false;
  assert(read_max_context(&ball)==0&&root_count==before_context_failure);
  // Invalid settings revoke and cannot revive an earlier deadline on the next tick.
- bad=config;auto invalid=settings;invalid.grade=7;assert(host->set_options(&invalid)==PGR_QBH_BAD_CONFIG);assert(host->tick(gettid())==0);
- PgrThrowValue unchanged{1,0.5f,0,0,0,0};value=unchanged;host->rewrite_submit(&ball,&value);assert(!std::memcmp(&value,&unchanged,sizeof(value)));
+ bad=config;auto invalid=settings;invalid.grade=7;assert(host->set_options(&invalid)==PGS_QBH_BAD_CONFIG);assert(host->tick(gettid())==0);
+ PgsThrowValue unchanged{1,0.5f,0,0,0,0};value=unchanged;host->rewrite_submit(&ball,&value);assert(!std::memcmp(&value,&unchanged,sizeof(value)));
  assert(root_count==0);
  // Deadline belongs to settings, never to repeated ticks.
  settings.lease_ms=1;assert(host->set_options(&settings)==0);sleep_ms(12);assert(host->tick(gettid())==0);
  value=unchanged;host->rewrite_submit(&ball,&value);assert(!std::memcmp(&value,&unchanged,sizeof(value)));
  // Immediate OFF shared-site attestation prevents both native callbacks.
- assert(host->shared_sites(0)==0);value=unchanged;assert(host->rewrite_submit(&ball,&value)==PGR_QBH_NOT_READY);
+ assert(host->shared_sites(0)==0);value=unchanged;assert(host->rewrite_submit(&ball,&value)==PGS_QBH_NOT_READY);
  void *forwarded[2]{};assert(host->begin_catch(nullptr,nullptr,gettid(),forwarded)==0);assert(host->shared_sites(3)==0);
  settings.lease_ms=2000;settings.iv_allowed=1;settings.iv_catch=1;assert(host->set_options(&settings)==0);assert(host->tick(gettid())==0);
  // Shared IV frame roots survive cancellation until the original's final caller pairs end.
  Object plate{&class_tokens[C_NAMEPLATE],{}},map_pokemon{&class_tokens[C_WILDMAP],{}};
- PgrQuickballHostEvent cooldown_event{};
+ PgsQuickballHostEvent cooldown_event{};
  while(host->next_event(&cooldown_event)==0){}
  const unsigned before_frame=root_count;
  uint64_t frame=host->begin_catch(&plate,&map_pokemon,gettid(),forwarded);
@@ -246,14 +246,14 @@ int main(int argc,char **argv){
  }
  assert(wild_published); // Classification must precede any throw, even without another tick.
  assert(wrapped_btxu()==&response&&current_speed()==20);
- std::thread foreign([&]{assert(host->stop()==0);assert(host->tick(uint64_t(gettid()))==PGR_QBH_OFF_OWNER);});foreign.join();
+ std::thread foreign([&]{assert(host->stop()==0);assert(host->tick(uint64_t(gettid()))==PGS_QBH_OFF_OWNER);});foreign.join();
  assert(current_speed()==20);host->sample(&gauge);assert(gauge.stopping&&gauge.owned>0);
  assert(host->shared_sites(0)==0);
  assert(host->tick(gettid())==0);assert(current_speed()==1&&root_count==2);
  assert(host->end_catch(frame,gettid())==0);assert(root_count==0);
  assert(host->end_catch(frame,gettid())!=0); // duplicate cannot steal another frame
  assert(host->tick(gettid())==0);host->sample(&gauge);assert(!gauge.owned&&!gauge.ready);
- assert(host->set_options(&settings)==PGR_QBH_STOPPED);
+ assert(host->set_options(&settings)==PGS_QBH_STOPPED);
  std::puts("PASS quickball62 unchanged-host fixture: real Dobby+1/5/7/8/13/15/49 install; caller/catch speed/outcome/completion, shared submit+paired hit, AR roots, map coordinates, invalid/expired leases, site revocation, foreign-stop owner cleanup. Metadata55 output substituted; not live metadata proof.");
  return 0;
 }

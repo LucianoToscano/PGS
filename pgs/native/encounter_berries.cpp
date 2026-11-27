@@ -34,33 +34,33 @@
 #include <mutex>
 #include <unistd.h>
 
-static_assert(sizeof(pgr_berry_config_v1) == 256, "config must be 256 bytes");
-static_assert(sizeof(pgr_berry_sample_v1) == 64, "sample must be 64 bytes");
-static_assert(sizeof(pgr_berry_resume_v1) == 40, "resume POD must be 40 bytes");
-static_assert(sizeof(pgr_berry_event_v1) == 16, "event must be 16 bytes");
-static_assert(sizeof(pgr_berry_api_v1) == 112, "table must be 112 bytes");
-static_assert(offsetof(pgr_berry_config_v1, gchandle_new) == 8, "layout");
-static_assert(offsetof(pgr_berry_config_v1, m_ball_type) == 88, "layout");
-static_assert(offsetof(pgr_berry_config_v1, class_pokeball) == 144, "layout");
-static_assert(offsetof(pgr_berry_config_v1, f_scope_bag) == 192, "layout");
-static_assert(offsetof(pgr_berry_config_v1, ball_type_master) == 232, "layout");
-static_assert(offsetof(pgr_berry_config_v1, reserved1) == 244, "layout");
-static_assert(offsetof(pgr_berry_sample_v1, owned_roots) == 56, "sample owned_roots @56");
-static_assert(offsetof(pgr_berry_resume_v1, cause) == 32, "resume cause @32");
+static_assert(sizeof(pgs_berry_config_v1) == 256, "config must be 256 bytes");
+static_assert(sizeof(pgs_berry_sample_v1) == 64, "sample must be 64 bytes");
+static_assert(sizeof(pgs_berry_resume_v1) == 40, "resume POD must be 40 bytes");
+static_assert(sizeof(pgs_berry_event_v1) == 16, "event must be 16 bytes");
+static_assert(sizeof(pgs_berry_api_v1) == 112, "table must be 112 bytes");
+static_assert(offsetof(pgs_berry_config_v1, gchandle_new) == 8, "layout");
+static_assert(offsetof(pgs_berry_config_v1, m_ball_type) == 88, "layout");
+static_assert(offsetof(pgs_berry_config_v1, class_pokeball) == 144, "layout");
+static_assert(offsetof(pgs_berry_config_v1, f_scope_bag) == 192, "layout");
+static_assert(offsetof(pgs_berry_config_v1, ball_type_master) == 232, "layout");
+static_assert(offsetof(pgs_berry_config_v1, reserved1) == 244, "layout");
+static_assert(offsetof(pgs_berry_sample_v1, owned_roots) == 56, "sample owned_roots @56");
+static_assert(offsetof(pgs_berry_resume_v1, cause) == 32, "resume cause @32");
 
 namespace {
 
-constexpr uint64_t kMaxLeaseMs = PGR_BERRY_MAX_LEASE_MS;
-constexpr uint64_t kDeadlineMs = PGR_BERRY_DEADLINE_MS;
-constexpr uint64_t kPulseMs    = PGR_BERRY_PULSE_MS;
-constexpr int      kMaxPri     = PGR_BERRY_MAX_PRIORITY;
+constexpr uint64_t kMaxLeaseMs = PGS_BERRY_MAX_LEASE_MS;
+constexpr uint64_t kDeadlineMs = PGS_BERRY_DEADLINE_MS;
+constexpr uint64_t kPulseMs    = PGS_BERRY_PULSE_MS;
+constexpr int      kMaxPri     = PGS_BERRY_MAX_PRIORITY;
 
 // --- lifetime / publication --------------------------------------------------------
 std::mutex           g_install_mutex;
-pgr_berry_config_v1  g_cfg{};
+pgs_berry_config_v1  g_cfg{};
 std::atomic<bool>    g_installed{false};
 bool                 g_install_attempted = false;
-int                  g_install_error = PGR_BERRY_ERR_NOT_INSTALLED;
+int                  g_install_error = PGS_BERRY_ERR_NOT_INSTALLED;
 
 // --- thread identity ----------------------------------------------------------------
 std::atomic<uint64_t> g_unity_tid{0};  // permanent Unity identity, latched once from tick
@@ -98,7 +98,7 @@ std::atomic<bool> g_stop_requested{false};
 
 // --- bounded telemetry FIFO (owner thread writes; owner thread drains) --------------
 std::mutex          g_fifo_mutex;
-pgr_berry_event_v1  g_fifo[PGR_BERRY_EVENT_CAP]{};
+pgs_berry_event_v1  g_fifo[PGS_BERRY_EVENT_CAP]{};
 uint32_t            g_fifo_head = 0, g_fifo_tail = 0, g_fifo_size = 0;
 
 // --- owner-thread-only state --------------------------------------------------------
@@ -134,7 +134,7 @@ struct Queue {  // a resume tick requested; JS has NOT claimed it yet (unclaimed
   void    *callback_handle = nullptr;
   uint64_t first = 0, second = 0;
   void    *method = nullptr;
-  uint32_t cause = PGR_BERRY_RESUME_MISC;
+  uint32_t cause = PGS_BERRY_RESUME_MISC;
   uint64_t epoch = 0;          // the attempt epoch; re-checked at begin_resume
   uint64_t generation = 0;
 } g_queue;
@@ -144,7 +144,7 @@ struct Claimed {  // begin_resume handed this to JS; survives enter/exit until f
   uint64_t ticket = 0;
   void    *ball_handle = nullptr;
   void    *callback_handle = nullptr;
-  uint32_t cause = PGR_BERRY_RESUME_MISC;
+  uint32_t cause = PGS_BERRY_RESUME_MISC;
 } g_claimed;
 
 inline bool any_busy() {
@@ -262,13 +262,13 @@ void refresh_root_count() {
 // --- bounded FIFO (owner thread) ----------------------------------------------------
 void push_event(uint32_t code, int32_t id, int32_t aux) {
   std::lock_guard<std::mutex> lock(g_fifo_mutex);
-  if (g_fifo_size >= PGR_BERRY_EVENT_CAP) {
+  if (g_fifo_size >= PGS_BERRY_EVENT_CAP) {
     g_dropped_events.fetch_add(1, std::memory_order_relaxed);
     g_feed_locked.store(true, std::memory_order_release);  // fail-closed: no new holds/feeds
     return;
   }
-  g_fifo[g_fifo_tail] = pgr_berry_event_v1{code, id, aux, 0};
-  g_fifo_tail = (g_fifo_tail + 1) % PGR_BERRY_EVENT_CAP;
+  g_fifo[g_fifo_tail] = pgs_berry_event_v1{code, id, aux, 0};
+  g_fifo_tail = (g_fifo_tail + 1) % PGS_BERRY_EVENT_CAP;
   ++g_fifo_size;
 }
 
@@ -280,13 +280,13 @@ void emit_overlay() {
   g_overlay_busy.store(busy, std::memory_order_release);
   // aux bit0 active, bit1 busy, bit2 ui_open -- JS gates the overlay on the open feed UI, exactly
   // like the legacy overlay's EncounterUI.currentState check (not scope existence alone).
-  push_event(PGR_BERRY_EVT_ENCOUNTER, 0,
+  push_event(PGS_BERRY_EVT_ENCOUNTER, 0,
              static_cast<int32_t>(active | (busy << 1) | (ui_open << 2)));
 }
 
 void note_error(int32_t id, int32_t reason) {
   g_fault_serial.fetch_add(1, std::memory_order_release);
-  push_event(PGR_BERRY_EVT_ERROR, id, reason);
+  push_event(PGS_BERRY_EVT_ERROR, id, reason);
 }
 
 // --- slot lifetime (owner thread) ---------------------------------------------------
@@ -404,7 +404,7 @@ void preflight(Root &scope_r, bool *resume_now) {
   // Stage "ball type": MasterBall (== ball_type_master) bypasses.
   int32_t ball_type = 0;
   invoke_int(g_cfg.m_ball_type, ball_r.target(), nullptr, &ball_type, &err);
-  if (err) { note_error(0, PGR_BERRY_REASON_BALLTYPE_FAULT); *resume_now = true; return; }
+  if (err) { note_error(0, PGS_BERRY_REASON_BALLTYPE_FAULT); *resume_now = true; return; }
   if (!gen_ok()) return;
   if (ball_type == g_cfg.ball_type_master) { *resume_now = true; return; }
 
@@ -413,13 +413,13 @@ void preflight(Root &scope_r, bool *resume_now) {
   void *bag = read_ref(scope_r.target(), g_cfg.f_scope_bag);
   if (!exact(bag, g_cfg.class_bag)) { *resume_now = true; return; }
   Root bag_r; bag_r.acquire(bag, &err);
-  if (err) { note_error(0, PGR_BERRY_REASON_GCHANDLE); *resume_now = true; return; }
+  if (err) { note_error(0, PGS_BERRY_REASON_GCHANDLE); *resume_now = true; return; }
   int32_t selected = 0;
   for (uint32_t i = 0; i < g_attempt.priority_count; ++i) {
     int32_t id = g_attempt.priorities[i], count = 0;
     void *qp[1] = {&id};
     invoke_int(g_cfg.m_quantity, bag_r.target(), qp, &count, &err);
-    if (err) { note_error(0, PGR_BERRY_REASON_INVENTORY); *resume_now = true; return; }
+    if (err) { note_error(0, PGS_BERRY_REASON_INVENTORY); *resume_now = true; return; }
     if (!gen_ok()) return;
     if (count > 0) { selected = id; break; }
   }
@@ -428,7 +428,7 @@ void preflight(Root &scope_r, bool *resume_now) {
   // Stage "create callback": allocate + root, write + read back scope and berry id.
   void *cb = reinterpret_cast<void *(*)(void *)>(g_cfg.object_new)(g_cfg.class_callback);
   Root cb_r; cb_r.acquire(cb, &err);
-  if (err) { note_error(selected, PGR_BERRY_REASON_GCHANDLE); *resume_now = true; return; }
+  if (err) { note_error(selected, PGS_BERRY_REASON_GCHANDLE); *resume_now = true; return; }
   void *scope = scope_r.target();
   cb = cb_r.target();
   reinterpret_cast<void (*)(void *, void *, void *)>(g_cfg.field_set_value_object)(
@@ -441,7 +441,7 @@ void preflight(Root &scope_r, bool *resume_now) {
   if (read_ref(cb, g_cfg.f_callback_scope) != scope_r.target() ||
       read_s32(cb_r.target(), g_cfg.f_callback_berry) != selected) {
     g_failed.store(1, std::memory_order_release);
-    note_error(selected, PGR_BERRY_REASON_CALLBACK_READBACK);
+    note_error(selected, PGS_BERRY_REASON_CALLBACK_READBACK);
     *resume_now = true;
     return;
   }
@@ -474,11 +474,11 @@ void preflight(Root &scope_r, bool *resume_now) {
   int32_t one = 1;
   void *dp[1] = {&one};
   invoke(g_cfg.m_direct, cb, dp, &err);
-  push_event(PGR_BERRY_EVT_FEED_REQUESTED, selected, 0);
+  push_event(PGS_BERRY_EVT_FEED_REQUESTED, selected, 0);
   if (g_attempt.generation != local_gen || g_epoch != local_epoch) return;
   if (err) {
     g_failed.store(1, std::memory_order_release);
-    note_error(selected, PGR_BERRY_REASON_REQUEST_FAULT);
+    note_error(selected, PGS_BERRY_REASON_REQUEST_FAULT);
     *resume_now = true;
     return;
   }
@@ -507,7 +507,7 @@ void disarm_locked() {
 }
 
 // --- table functions ----------------------------------------------------------------
-bool config_ok(const pgr_berry_config_v1 *c) {
+bool config_ok(const pgs_berry_config_v1 *c) {
   const void *const ptrs[] = {
       c->gchandle_new, c->gchandle_get_target, c->gchandle_free, c->object_get_class,
       c->object_unbox, c->object_new, c->runtime_invoke, c->field_get_value, c->field_set_value,
@@ -520,29 +520,29 @@ bool config_ok(const pgr_berry_config_v1 *c) {
   return true;
 }
 
-int api_install(const pgr_berry_config_v1 *config) {
-  if (config == nullptr) return PGR_BERRY_ERR_NULL_ARG;
+int api_install(const pgs_berry_config_v1 *config) {
+  if (config == nullptr) return PGS_BERRY_ERR_NULL_ARG;
   std::lock_guard<std::mutex> lock(g_install_mutex);
-  if (config->version != PGR_BERRY_API_VERSION ||
-      config->size != sizeof(pgr_berry_config_v1) || !config_ok(config))
-    return PGR_BERRY_ERR_BAD_CONFIG;
+  if (config->version != PGS_BERRY_API_VERSION ||
+      config->size != sizeof(pgs_berry_config_v1) || !config_ok(config))
+    return PGS_BERRY_ERR_BAD_CONFIG;
 
   if (g_installed.load(std::memory_order_acquire))
-    return (std::memcmp(&g_cfg, config, sizeof(g_cfg)) == 0) ? PGR_BERRY_OK
-                                                             : PGR_BERRY_ERR_ALREADY_BOUND;
+    return (std::memcmp(&g_cfg, config, sizeof(g_cfg)) == 0) ? PGS_BERRY_OK
+                                                             : PGS_BERRY_ERR_ALREADY_BOUND;
   if (g_install_attempted) return g_install_error;
   g_install_attempted = true;
-  if (boottime_ms() == 0) return g_install_error = PGR_BERRY_ERR_NO_CLOCK;
+  if (boottime_ms() == 0) return g_install_error = PGS_BERRY_ERR_NO_CLOCK;
 
   g_cfg = *config;
   g_installed.store(true, std::memory_order_release);
-  push_event(PGR_BERRY_EVT_READY, 0, 1);
-  return g_install_error = PGR_BERRY_OK;
+  push_event(PGS_BERRY_EVT_READY, 0, 1);
+  return g_install_error = PGS_BERRY_OK;
 }
 
 int api_update(const int32_t *ids, uint32_t count, uint64_t remaining_lease_ms,
                uint64_t proven_tid) {
-  if (!g_installed.load(std::memory_order_acquire)) return PGR_BERRY_ERR_NOT_INSTALLED;
+  if (!g_installed.load(std::memory_order_acquire)) return PGS_BERRY_ERR_NOT_INSTALLED;
   // Policy update is allowed off-thread (it only ever DISARMS on a foreign thread); it does not
   // require the latched Unity owner the way the managed state-machine entry points do.
   const uint64_t owner = g_unity_tid.load(std::memory_order_acquire);
@@ -555,7 +555,7 @@ int api_update(const int32_t *ids, uint32_t count, uint64_t remaining_lease_ms,
     g_ids[0] = g_ids[1] = g_ids[2] = 0;
     g_lease_until_ms = 0;  // disarmed
     ++g_policy_generation;
-    return wrong_thread ? PGR_BERRY_ERR_NULL_ARG : PGR_BERRY_OK;
+    return wrong_thread ? PGS_BERRY_ERR_NULL_ARG : PGS_BERRY_OK;
   }
   const uint64_t now = boottime_ms();
   if (!g_id_count || !now || now >= g_lease_until_ms || remaining_lease_ms == 0)
@@ -565,7 +565,7 @@ int api_update(const int32_t *ids, uint32_t count, uint64_t remaining_lease_ms,
   g_id_count = count;
   const uint64_t clamped = remaining_lease_ms > kMaxLeaseMs ? kMaxLeaseMs : remaining_lease_ms;
   g_lease_until_ms = (clamped > 0 && now != 0) ? now + clamped : 0;
-  return PGR_BERRY_OK;
+  return PGS_BERRY_OK;
 }
 
 // Arming snapshot read used by submit().
@@ -579,12 +579,12 @@ bool armed_snapshot(int32_t out_ids[kMaxPri], uint32_t *out_count, uint64_t now,
 }
 
 int api_submit(void *ball, uint64_t first, uint64_t second, void *method, uint64_t proven_tid) {
-  if (!g_installed.load(std::memory_order_acquire) || !on_unity(proven_tid)) return PGR_BERRY_PASS;
+  if (!g_installed.load(std::memory_order_acquire) || !on_unity(proven_tid)) return PGS_BERRY_PASS;
   FrameGuard guard;
   const bool is_drop = ((static_cast<uint32_t>(second) >> 16) & 0xffu) != 0;
 
   // cooldown-action telemetry: once per fresh throw observation (nothing busy, armed site).
-  if (!any_busy()) push_event(PGR_BERRY_EVT_ACTION, 0, is_drop ? 1 : 0);
+  if (!any_busy()) push_event(PGS_BERRY_EVT_ACTION, 0, is_drop ? 1 : 0);
 
   const uint64_t now = boottime_ms();
   int32_t ids[kMaxPri] = {0, 0, 0};
@@ -592,34 +592,34 @@ int api_submit(void *ball, uint64_t first, uint64_t second, void *method, uint64
   uint64_t policy_generation = 0;
   const bool armed = armed_snapshot(ids, &count, now, &policy_generation);
   if (!g_scope_handle || g_failed.load(std::memory_order_acquire) || !armed)
-    return PGR_BERRY_PASS;
+    return PGS_BERRY_PASS;
 
   // An already-held throw (HELD or FEEDING): the same ball is dropped (HOLD, do not resubmit);
   // any other ball passes through so the player can still throw a different ball.
   if (g_attempt.state != ATT_IDLE) {
     void *held = gc_target(g_attempt.ball_handle);
-    return (held != nullptr && held == ball) ? PGR_BERRY_HOLD : PGR_BERRY_PASS;
+    return (held != nullptr && held == ball) ? PGS_BERRY_HOLD : PGS_BERRY_PASS;
   }
   // A queued/claimed resume is DETACHED: the resumed ball's original-submit must pass straight
   // through (never re-swallowed as a duplicate), and no fresh frame is queued mid-resume.
-  if (g_queue.pending || g_claimed.active) return PGR_BERRY_PASS;
+  if (g_queue.pending || g_claimed.active) return PGS_BERRY_PASS;
 
   // Fail-closed: while telemetry integrity is lost, do not start a NEW hold.
-  if (g_feed_locked.load(std::memory_order_acquire)) return PGR_BERRY_PASS;
+  if (g_feed_locked.load(std::memory_order_acquire)) return PGS_BERRY_PASS;
 
   // Eligibility: exact Pokeball, not a ball drop, not the special first==4 (MasterBall) word.
   if (!exact(ball, g_cfg.class_pokeball) || is_drop || static_cast<uint32_t>(first) == 4u)
-    return PGR_BERRY_PASS;
+    return PGS_BERRY_PASS;
 
   // Generation exhaustion pre-gate: never hold a ball whose resume token we could not mint.
-  if (g_next_generation >= UINT64_MAX - 1) return PGR_BERRY_PASS;
+  if (g_next_generation >= UINT64_MAX - 1) return PGS_BERRY_PASS;
 
   const uint64_t epoch = g_epoch, generation = g_next_generation;
   void *ball_handle = gc_new(ball);
-  if (ball_handle == nullptr) { note_error(0, PGR_BERRY_REASON_GCHANDLE); return PGR_BERRY_PASS; }
+  if (ball_handle == nullptr) { note_error(0, PGS_BERRY_REASON_GCHANDLE); return PGS_BERRY_PASS; }
   if (g_epoch != epoch || g_next_generation != generation || any_busy() ||
       !g_scope_handle || !feed_authorized(policy_generation)) {
-    gc_free(ball_handle); return PGR_BERRY_PASS;
+    gc_free(ball_handle); return PGS_BERRY_PASS;
   }
   g_attempt = Attempt{};
   g_attempt.policy_generation = policy_generation;
@@ -636,51 +636,51 @@ int api_submit(void *ball, uint64_t first, uint64_t second, void *method, uint64
   g_attempt.generation = ++g_next_generation;
   refresh_root_count();
   g_impact_serial.fetch_add(1, std::memory_order_release);
-  push_event(PGR_BERRY_EVT_IMPACT_QUEUED, ids[0], 0);
+  push_event(PGS_BERRY_EVT_IMPACT_QUEUED, ids[0], 0);
   emit_overlay();
-  return PGR_BERRY_HOLD;
+  return PGS_BERRY_HOLD;
 }
 
 int api_peek_held(void *ball, uint64_t proven_tid) {
-  if (!g_installed.load(std::memory_order_acquire) || !on_unity(proven_tid)) return PGR_BERRY_PASS;
+  if (!g_installed.load(std::memory_order_acquire) || !on_unity(proven_tid)) return PGS_BERRY_PASS;
   FrameGuard guard;
   if (g_attempt.state != ATT_IDLE) {  // a detached (queued/claimed) resume no longer suppresses
     void *held = gc_target(g_attempt.ball_handle);
-    if (held != nullptr && held == ball) return PGR_BERRY_HOLD;  // suppress a stale promise
+    if (held != nullptr && held == ball) return PGS_BERRY_HOLD;  // suppress a stale promise
   }
-  return PGR_BERRY_PASS;
+  return PGS_BERRY_PASS;
 }
 
 int api_observe_enter(void *scope, uint64_t proven_tid) {
   if (!g_installed.load(std::memory_order_acquire) || !on_unity(proven_tid) ||
-      g_stop_requested.load(std::memory_order_acquire)) return PGR_BERRY_OK;
+      g_stop_requested.load(std::memory_order_acquire)) return PGS_BERRY_OK;
   FrameGuard guard;
   const uint64_t before = g_epoch;
   bool err = false;
   Root incoming;
   if (exact(scope, g_cfg.class_scope)) incoming.acquire(scope, &err);
-  if (g_epoch != before || g_stop_requested.load(std::memory_order_acquire)) return PGR_BERRY_OK;
+  if (g_epoch != before || g_stop_requested.load(std::memory_order_acquire)) return PGS_BERRY_OK;
   const uint64_t epoch = ++g_epoch;
   cancel_and_drop_scope();
-  if (g_epoch != epoch || g_stop_requested.load(std::memory_order_acquire)) return PGR_BERRY_OK;
+  if (g_epoch != epoch || g_stop_requested.load(std::memory_order_acquire)) return PGS_BERRY_OK;
   g_scope_handle = err ? nullptr : incoming.release();
   g_failed.store(0, std::memory_order_release);
-  refresh_root_count(); emit_overlay(); return PGR_BERRY_OK;
+  refresh_root_count(); emit_overlay(); return PGS_BERRY_OK;
 }
 
 int api_observe_exit(void *scope, uint64_t proven_tid) {
-  if (!g_installed.load(std::memory_order_acquire) || !on_unity(proven_tid)) return PGR_BERRY_OK;
+  if (!g_installed.load(std::memory_order_acquire) || !on_unity(proven_tid)) return PGS_BERRY_OK;
   FrameGuard guard;
   const uint64_t epoch = g_epoch;
   void *cur = g_scope_handle ? gc_target(g_scope_handle) : nullptr;
-  if (g_epoch != epoch || cur == nullptr || cur != scope) return PGR_BERRY_OK;  // only the live scope exits
+  if (g_epoch != epoch || cur == nullptr || cur != scope) return PGS_BERRY_OK;  // only the live scope exits
   ++g_epoch;
   // Exit (or a replaced encounter) cancels an UNCLAIMED attempt/queue WITHOUT a submit; a claimed
   // resume frame is left to finish_resume (deferred cleanup).
   cancel_and_drop_scope();
-  push_event(PGR_BERRY_EVT_COOLDOWN_ENC, 0, 0);
+  push_event(PGS_BERRY_EVT_COOLDOWN_ENC, 0, 0);
   emit_overlay();
-  return PGR_BERRY_OK;
+  return PGS_BERRY_OK;
 }
 
 uint64_t api_result_begin(void *callback, uint64_t proven_tid) {
@@ -699,17 +699,17 @@ uint64_t api_result_begin(void *callback, uint64_t proven_tid) {
 }
 
 int api_result_end(uint64_t token, uint64_t proven_tid) {
-  if (!g_installed.load(std::memory_order_acquire)) return PGR_BERRY_ERR_NOT_INSTALLED;
-  if (!on_unity(proven_tid) || token == 0) return PGR_BERRY_ERR_BAD_TOKEN;
+  if (!g_installed.load(std::memory_order_acquire)) return PGS_BERRY_ERR_NOT_INSTALLED;
+  if (!on_unity(proven_tid) || token == 0) return PGS_BERRY_ERR_BAD_TOKEN;
   // Latch done only for the exact feeding attempt whose generation minted this token, consuming
   // the claim once. A replayed, stale (superseded generation), or cross-encounter token fails.
   if (g_attempt.state == ATT_FEEDING && g_attempt.result_active &&
       token == g_attempt.generation && g_attempt.epoch == g_epoch) {
     g_attempt.result_active = false;  // consume once
     g_attempt.done = true;
-    return PGR_BERRY_OK;
+    return PGS_BERRY_OK;
   }
-  return PGR_BERRY_ERR_BAD_TOKEN;
+  return PGS_BERRY_ERR_BAD_TOKEN;
 }
 
 // The normal scope-driven pass (not a stop).
@@ -749,13 +749,13 @@ void run_tick_body(uint64_t now) {
   if (g_attempt.state == ATT_IDLE) return;
 
   // Completed feed: queue the resume (JS will zero getItemState().next on DONE).
-  if (g_attempt.done) { move_attempt_to_queue(PGR_BERRY_RESUME_DONE); return; }
+  if (g_attempt.done) { move_attempt_to_queue(PGS_BERRY_RESUME_DONE); return; }
 
   // 8 s timeout: latch failed (no retry this encounter) and resume once.
   if (now > g_attempt.deadline_ms) {
     g_failed.store(1, std::memory_order_release);
-    note_error(g_attempt.selected, PGR_BERRY_REASON_TIMEOUT);
-    move_attempt_to_queue(PGR_BERRY_RESUME_TIMEOUT);
+    note_error(g_attempt.selected, PGS_BERRY_REASON_TIMEOUT);
+    move_attempt_to_queue(PGS_BERRY_RESUME_TIMEOUT);
     return;
   }
 
@@ -767,7 +767,7 @@ void run_tick_body(uint64_t now) {
     uint64_t lease;
     { std::lock_guard<std::mutex> lk(g_arm_mutex); lease = g_lease_until_ms; }
     if (lease == 0 || now == 0 || now >= lease) {
-      move_attempt_to_queue(PGR_BERRY_RESUME_LEASE);
+      move_attempt_to_queue(PGS_BERRY_RESUME_LEASE);
       return;
     }
   }
@@ -777,7 +777,7 @@ void run_tick_body(uint64_t now) {
   bool resume_now = false;
   const uint64_t generation = g_attempt.generation;
   preflight(scope_r, &resume_now);
-  if (resume_now && g_epoch == epoch && g_attempt.generation == generation) move_attempt_to_queue(PGR_BERRY_RESUME_MISC);
+  if (resume_now && g_epoch == epoch && g_attempt.generation == generation) move_attempt_to_queue(PGS_BERRY_RESUME_MISC);
 }
 
 // Outermost-frame stop drain. Disarm already happened the instant stop was requested; here we
@@ -785,7 +785,7 @@ void run_tick_body(uint64_t now) {
 // pending. Never a terminal latch -- a later non-stopping tick resumes normal operation.
 void run_stop() {
   if (g_attempt.state != ATT_IDLE) {
-    move_attempt_to_queue(PGR_BERRY_RESUME_STOP);
+    move_attempt_to_queue(PGS_BERRY_RESUME_STOP);
   } else if (!g_queue.pending && !g_claimed.active) {
     void *scope = g_scope_handle;
     g_scope_handle = nullptr;
@@ -798,28 +798,28 @@ void run_stop() {
 }
 
 int api_tick(uint64_t proven_tid, int stopping) {
-  if (!g_installed.load(std::memory_order_acquire)) return PGR_BERRY_ERR_NOT_INSTALLED;
+  if (!g_installed.load(std::memory_order_acquire)) return PGS_BERRY_ERR_NOT_INSTALLED;
   // Basic self-consistency before latching the owner (reject a 0 or spoofed-vs-live tid).
-  if (proven_tid == 0 || current_tid() != proven_tid) return PGR_BERRY_OK;
+  if (proven_tid == 0 || current_tid() != proven_tid) return PGS_BERRY_OK;
   uint64_t expected = 0;
   g_unity_tid.compare_exchange_strong(expected, proven_tid, std::memory_order_acq_rel);
-  if (g_unity_tid.load(std::memory_order_acquire) != proven_tid) return PGR_BERRY_OK;
+  if (g_unity_tid.load(std::memory_order_acquire) != proven_tid) return PGS_BERRY_OK;
 
   // Record the stop request and disarm IMMEDIATELY (even on a nested tick) so no new hold can be
   // started between now and the outermost drain. A nested tick returns here; its request is drained
   // by the frame already running.
   if (stopping) { g_stop_requested.store(true, std::memory_order_release); disarm_locked(); }
-  if (g_in_tick || g_active_frames.load(std::memory_order_relaxed)) return PGR_BERRY_OK;  // defer nested work
+  if (g_in_tick || g_active_frames.load(std::memory_order_relaxed)) return PGS_BERRY_OK;  // defer nested work
 
   g_in_tick = true;
   FrameGuard guard;
   const uint64_t now = boottime_ms();
   if (!g_stop_requested.load(std::memory_order_acquire)) run_tick_body(now);
   g_in_tick = false;
-  return PGR_BERRY_OK;
+  return PGS_BERRY_OK;
 }
 
-uint64_t api_begin_resume(uint64_t proven_tid, pgr_berry_resume_v1 *out) {
+uint64_t api_begin_resume(uint64_t proven_tid, pgs_berry_resume_v1 *out) {
   if (!out || !g_installed.load(std::memory_order_acquire) || !on_unity(proven_tid)) return 0;
   FrameGuard guard;
   if (!g_queue.pending || g_claimed.active) return 0;
@@ -855,21 +855,21 @@ uint64_t api_begin_resume(uint64_t proven_tid, pgr_berry_resume_v1 *out) {
 }
 
 int api_finish_resume(uint64_t ticket, uint64_t proven_tid) {
-  if (!g_installed.load(std::memory_order_acquire)) return PGR_BERRY_ERR_NOT_INSTALLED;
+  if (!g_installed.load(std::memory_order_acquire)) return PGS_BERRY_ERR_NOT_INSTALLED;
   if (!on_unity(proven_tid) || ticket == 0 || !g_claimed.active || ticket != g_claimed.ticket)
-    return PGR_BERRY_ERR_BAD_TOKEN;  // never replay or free a newer/foreign record
+    return PGS_BERRY_ERR_BAD_TOKEN;  // never replay or free a newer/foreign record
   FrameGuard guard;
   free_claimed();  // detach-then-free the claimed ball + callback roots
   refresh_root_count();
   g_resume_serial.fetch_add(1, std::memory_order_release);
   emit_overlay();
-  return PGR_BERRY_OK;
+  return PGS_BERRY_OK;
 }
 
-int api_sample(pgr_berry_sample_v1 *out) {
-  if (out == nullptr) return PGR_BERRY_ERR_NULL_ARG;
-  out->version = PGR_BERRY_API_VERSION;
-  out->size = sizeof(pgr_berry_sample_v1);
+int api_sample(pgs_berry_sample_v1 *out) {
+  if (out == nullptr) return PGS_BERRY_ERR_NULL_ARG;
+  out->version = PGS_BERRY_API_VERSION;
+  out->size = sizeof(pgs_berry_sample_v1);
   out->overlay_active = g_overlay_active.load(std::memory_order_acquire);
   out->overlay_busy = g_overlay_busy.load(std::memory_order_acquire);
   out->ui_open = g_ui_open.load(std::memory_order_acquire);
@@ -884,10 +884,10 @@ int api_sample(pgr_berry_sample_v1 *out) {
   out->owned_roots = g_durable_roots.load(std::memory_order_acquire) +
                      g_active_frames.load(std::memory_order_acquire);
   out->reserved = 0;
-  return PGR_BERRY_OK;
+  return PGS_BERRY_OK;
 }
 
-int api_next_event(pgr_berry_event_v1 *out) {
+int api_next_event(pgs_berry_event_v1 *out) {
   if (out == nullptr) return 0;
   std::lock_guard<std::mutex> lock(g_fifo_mutex);
   if (g_fifo_size == 0) {
@@ -895,15 +895,15 @@ int api_next_event(pgr_berry_event_v1 *out) {
     return 0;
   }
   *out = g_fifo[g_fifo_head];
-  g_fifo_head = (g_fifo_head + 1) % PGR_BERRY_EVENT_CAP;
+  g_fifo_head = (g_fifo_head + 1) % PGS_BERRY_EVENT_CAP;
   --g_fifo_size;
   if (g_fifo_size == 0) g_feed_locked.store(false, std::memory_order_release);
   return 1;
 }
 
-const pgr_berry_api_v1 g_api = {
-    PGR_BERRY_API_VERSION,
-    static_cast<uint32_t>(sizeof(pgr_berry_api_v1)),
+const pgs_berry_api_v1 g_api = {
+    PGS_BERRY_API_VERSION,
+    static_cast<uint32_t>(sizeof(pgs_berry_api_v1)),
     &api_install,
     &api_update,
     &api_submit,
@@ -922,6 +922,6 @@ const pgr_berry_api_v1 g_api = {
 }  // namespace
 
 const void *pgs_encounter_berries_api(uint32_t version) {
-  if (version != PGR_BERRY_API_VERSION) return nullptr;
+  if (version != PGS_BERRY_API_VERSION) return nullptr;
   return &g_api;
 }

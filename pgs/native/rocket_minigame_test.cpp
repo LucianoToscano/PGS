@@ -148,7 +148,7 @@ int main(int argc, char **argv) {
     cfg.runtime_invoke = &fake_invoke; cfg.field_get_value = &fake_field_get;
 
     // Install is process-lifetime and idempotent for an identical config.
-    if (api->install(&cfg) != PGR_RMINI_OK || api->install(&cfg) != PGR_RMINI_OK) return 5;
+    if (api->install(&cfg) != PGS_RMINI_OK || api->install(&cfg) != PGS_RMINI_OK) return 5;
 
     void *method = &transform_m; // any non-null MethodInfo* stand-in for the hook arg
     GameObject goA{VEC, 1, 0};  Transform trA{VEC, 1, {2.f, -3.f, 0.5f}};

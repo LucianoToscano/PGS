@@ -29,81 +29,81 @@ extern "C" {
 // fanning out to both Rocket Combat and Battles. Never hooks `il2cpp_runtime_invoke`
 // or `il2cpp_runtime_invoke_convert_args`.
 enum {
-    PGR_COMBAT_HOST_FEATURE_ID  = 66,
-    PGR_COMBAT_HOST_API_VERSION = 1,
+    PGS_COMBAT_HOST_FEATURE_ID  = 66,
+    PGS_COMBAT_HOST_API_VERSION = 1,
 
-    PGR_CBH_MAX_LEASE_MS        = 2500,
-    PGR_CBH_BATTLE_MASK_ALL     = 1023,
-    PGR_CBH_ROCKET_MASK_ALL     = 7,
-    PGR_CBH_STATE_OPEN          = 2
+    PGS_CBH_MAX_LEASE_MS        = 2500,
+    PGS_CBH_BATTLE_MASK_ALL     = 1023,
+    PGS_CBH_ROCKET_MASK_ALL     = 7,
+    PGS_CBH_STATE_OPEN          = 2
 };
 
-enum PgrCombatHostStatus {
-    PGR_CBH_OK                   = 0,
-    PGR_CBH_NOT_READY            = 1,
-    PGR_CBH_ERR_INVALID_ARG      = -1,
-    PGR_CBH_ERR_VERSION          = -2,
-    PGR_CBH_ERR_SIZE             = -3,
-    PGR_CBH_ERR_NULL_EXPORT      = -4,
-    PGR_CBH_ERR_METADATA         = -5,
-    PGR_CBH_ERR_LEAF_UNAVAILABLE = -6,
-    PGR_CBH_ERR_LEAF_INIT        = -7,
-    PGR_CBH_ERR_HOOK_INSTALL     = -8,
-    PGR_CBH_ERR_THREAD           = -9,
-    PGR_CBH_ERR_STOPPED          = -10,
-    PGR_CBH_ERR_REENTRANT        = -11,
-    PGR_CBH_ERR_NOT_CONFIGURED   = -12,
-    PGR_CBH_ERR_BUFFER_TOO_SMALL = -13
+enum PgsCombatHostStatus {
+    PGS_CBH_OK                   = 0,
+    PGS_CBH_NOT_READY            = 1,
+    PGS_CBH_ERR_INVALID_ARG      = -1,
+    PGS_CBH_ERR_VERSION          = -2,
+    PGS_CBH_ERR_SIZE             = -3,
+    PGS_CBH_ERR_NULL_EXPORT      = -4,
+    PGS_CBH_ERR_METADATA         = -5,
+    PGS_CBH_ERR_LEAF_UNAVAILABLE = -6,
+    PGS_CBH_ERR_LEAF_INIT        = -7,
+    PGS_CBH_ERR_HOOK_INSTALL     = -8,
+    PGS_CBH_ERR_THREAD           = -9,
+    PGS_CBH_ERR_STOPPED          = -10,
+    PGS_CBH_ERR_REENTRANT        = -11,
+    PGS_CBH_ERR_NOT_CONFIGURED   = -12,
+    PGS_CBH_ERR_BUFFER_TOO_SMALL = -13
 };
 
-enum PgrCombatHostCaps : uint32_t {
-    PGR_CBH_CAP_NONE                 = 0u,
-    PGR_CBH_CAP_ROCKET_MINIGAME      = 1u << 0,
-    PGR_CBH_CAP_ROCKET_ACTIONS       = 1u << 1,
-    PGR_CBH_CAP_ROCKET_COMBAT        = 1u << 2,
-    PGR_CBH_CAP_BATTLES              = 1u << 3,
-    PGR_CBH_CAP_SHARED_VNEXT_OBSERVE = 1u << 4
+enum PgsCombatHostCaps : uint32_t {
+    PGS_CBH_CAP_NONE                 = 0u,
+    PGS_CBH_CAP_ROCKET_MINIGAME      = 1u << 0,
+    PGS_CBH_CAP_ROCKET_ACTIONS       = 1u << 1,
+    PGS_CBH_CAP_ROCKET_COMBAT        = 1u << 2,
+    PGS_CBH_CAP_BATTLES              = 1u << 3,
+    PGS_CBH_CAP_SHARED_VNEXT_OBSERVE = 1u << 4
 };
 
-enum PgrCombatHostConfigFlags : uint32_t {
-    PGR_CBH_CFG_HAS_METADATA_CONFIG = 1u << 0,
-    PGR_CBH_CFG_USE_TRANSPORT       = 1u << 1,
-    PGR_CBH_CFG_REQUIRE_BATTLES     = 1u << 2,
-    PGR_CBH_CFG_REQUIRE_ROCKET      = 1u << 3
+enum PgsCombatHostConfigFlags : uint32_t {
+    PGS_CBH_CFG_HAS_METADATA_CONFIG = 1u << 0,
+    PGS_CBH_CFG_USE_TRANSPORT       = 1u << 1,
+    PGS_CBH_CFG_REQUIRE_BATTLES     = 1u << 2,
+    PGS_CBH_CFG_REQUIRE_ROCKET      = 1u << 3
 };
 
-enum PgrCombatHostOptionFlags : uint32_t {
-    PGR_CBH_OPT_ACTIVE          = 1u << 0,
-    PGR_CBH_OPT_BATTLES_ALLOWED = 1u << 1,
-    PGR_CBH_OPT_ROCKET_ALLOWED  = 1u << 2,
-    PGR_CBH_OPT_STOPPING        = 1u << 3
+enum PgsCombatHostOptionFlags : uint32_t {
+    PGS_CBH_OPT_ACTIVE          = 1u << 0,
+    PGS_CBH_OPT_BATTLES_ALLOWED = 1u << 1,
+    PGS_CBH_OPT_ROCKET_ALLOWED  = 1u << 2,
+    PGS_CBH_OPT_STOPPING        = 1u << 3
 };
 
-enum PgrCombatHostEventKind : uint32_t {
-    PGR_CBH_EV_NONE                  = 0,
-    PGR_CBH_EV_HOST_READY            = 1,  // native-combat-host-ready
-    PGR_CBH_EV_BATTLES_READY         = 2,  // native-battles-ready
-    PGR_CBH_EV_BATTLE_SCOPE          = 3,  // battle-scope
-    PGR_CBH_EV_BATTLE_INPUT          = 4,  // battle-input
-    PGR_CBH_EV_BATTLE_ENDED          = 5,  // battle-ended
-    PGR_CBH_EV_BATTLE_DODGE_CUE      = 6,  // battle-dodge-cue
-    PGR_CBH_EV_BATTLE_ACTION         = 7,  // battle-action
-    PGR_CBH_EV_BATTLE_MANUAL_SWITCH  = 8,  // battle-manual-switch
-    PGR_CBH_EV_BATTLE_ERROR          = 9,  // battle-error
-    PGR_CBH_EV_COOLDOWN_ACTION       = 10, // cooldown-action {"action":"Gym battle"}
-    PGR_CBH_EV_ROCKET_COMBAT_READY   = 11, // native-rocket-combat-ready
-    PGR_CBH_EV_ROCKET_MINIGAME_READY = 12, // rocket-minigame-native
-    PGR_CBH_EV_ROCKET_SCOPE          = 13, // rocket-scope
-    PGR_CBH_EV_ROCKET_UI             = 14, // rocket-ui
-    PGR_CBH_EV_ROCKET_ACTION         = 15, // rocket-action
-    PGR_CBH_EV_ROCKET_ATTACK_GATE    = 16, // rocket-attack-gate
-    PGR_CBH_EV_ROCKET_ERROR          = 17  // rocket-error
+enum PgsCombatHostEventKind : uint32_t {
+    PGS_CBH_EV_NONE                  = 0,
+    PGS_CBH_EV_HOST_READY            = 1,  // native-combat-host-ready
+    PGS_CBH_EV_BATTLES_READY         = 2,  // native-battles-ready
+    PGS_CBH_EV_BATTLE_SCOPE          = 3,  // battle-scope
+    PGS_CBH_EV_BATTLE_INPUT          = 4,  // battle-input
+    PGS_CBH_EV_BATTLE_ENDED          = 5,  // battle-ended
+    PGS_CBH_EV_BATTLE_DODGE_CUE      = 6,  // battle-dodge-cue
+    PGS_CBH_EV_BATTLE_ACTION         = 7,  // battle-action
+    PGS_CBH_EV_BATTLE_MANUAL_SWITCH  = 8,  // battle-manual-switch
+    PGS_CBH_EV_BATTLE_ERROR          = 9,  // battle-error
+    PGS_CBH_EV_COOLDOWN_ACTION       = 10, // cooldown-action {"action":"Gym battle"}
+    PGS_CBH_EV_ROCKET_COMBAT_READY   = 11, // native-rocket-combat-ready
+    PGS_CBH_EV_ROCKET_MINIGAME_READY = 12, // rocket-minigame-native
+    PGS_CBH_EV_ROCKET_SCOPE          = 13, // rocket-scope
+    PGS_CBH_EV_ROCKET_UI             = 14, // rocket-ui
+    PGS_CBH_EV_ROCKET_ACTION         = 15, // rocket-action
+    PGS_CBH_EV_ROCKET_ATTACK_GATE    = 16, // rocket-attack-gate
+    PGS_CBH_EV_ROCKET_ERROR          = 17  // rocket-error
 };
 
 struct PgrCombatHostConfig {
     uint32_t version;                          // 0: 1
     uint32_t size;                             // 4: sizeof(PgrCombatHostConfig) == 200 on LP64
-    uint32_t flags;                            // 8: PgrCombatHostConfigFlags
+    uint32_t flags;                            // 8: PgsCombatHostConfigFlags
     uint32_t reserved0;                        // 12: 0
 
     // Optional pre-prepared Feature 56 output. If NULL, resolved from
@@ -123,14 +123,14 @@ struct PgrCombatHostConfig {
     uint64_t owner_tid;                        // 88: proven Unity thread ID
     uint64_t reserved1;                        // 96: 0
 
-    // Optional embedded Feature 56 config when `PGR_CBH_CFG_HAS_METADATA_CONFIG` is set.
-    PgrSharedMetadataConfig metadata_config;   // 104: 96 bytes (104..199)
+    // Optional embedded Feature 56 config when `PGS_CBH_CFG_HAS_METADATA_CONFIG` is set.
+    PgsSharedMetadataConfig metadata_config;   // 104: 96 bytes (104..199)
 };
 
 struct PgrCombatHostOptions {
     uint32_t version;          // 0: 1
     uint32_t size;             // 4: sizeof(PgrCombatHostOptions) == 48
-    uint32_t flags;            // 8: PgrCombatHostOptionFlags
+    uint32_t flags;            // 8: PgsCombatHostOptionFlags
     uint32_t battle_mask;      // 12: 0..1023
     uint32_t rocket_mask;      // 16: 0..7
     uint32_t reserved0;        // 20: 0
@@ -143,10 +143,10 @@ struct PgrCombatHostSample {
     uint32_t version;              // 0: 1
     uint32_t size;                 // 4: sizeof(PgrCombatHostSample) == 120
     uint32_t ready;                // 8: 0 or 1
-    uint32_t capabilities;         // 12: PgrCombatHostCaps bitmask
+    uint32_t capabilities;         // 12: PgsCombatHostCaps bitmask
     uint32_t stopping;             // 16: 0 or 1
     uint32_t failed;               // 20: 0 or 1
-    int32_t  last_error;           // 24: PgrCombatHostStatus
+    int32_t  last_error;           // 24: PgsCombatHostStatus
     uint32_t roots;                // 28: battle_roots + rocket_roots
     uint32_t battle_roots;         // 32: active battle GCHandles (0..64)
     uint32_t rocket_roots;         // 36: active rocket GCHandles (0..32)
@@ -170,7 +170,7 @@ struct PgrCombatHostSample {
 struct PgrCombatHostEvent {
     uint32_t version;   // 0: 1
     uint32_t size;      // 4: sizeof(PgrCombatHostEvent) == 64
-    uint32_t kind;      // 8: PgrCombatHostEventKind
+    uint32_t kind;      // 8: PgsCombatHostEventKind
     uint32_t json_len;  // 12: UTF-8 byte length (excluding NUL)
     int64_t  code0;     // 16: mode / aux0
     int64_t  code1;     // 24: aux1

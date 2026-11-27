@@ -790,7 +790,7 @@ int main(int argc, char **argv) {
 
   // Negative check C: missing OPT_ITEMS_LOOKUP preserves "no available lookup" behavior
   // (Accounts fails closed, AdventureSync remains valid).
-  g_shared_md.optional[OPT_ITEMS_LOOKUP] = PGR_SHARED_OPT_UNAVAILABLE;
+  g_shared_md.optional[OPT_ITEMS_LOOKUP] = PGS_SHARED_OPT_UNAVAILABLE;
   PgrAccountHostMetadataOutput no_lookup_md{};
   assert(host->resolve_metadata(&cfg, &no_lookup_md) == PGR_ACH_ERR_METADATA);
   assert(no_lookup_md.accounts_valid == 0 && no_lookup_md.advsync_valid == 1);

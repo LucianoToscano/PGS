@@ -4,7 +4,7 @@
 #include <cstdio>
 #include <initializer_list>
 
-using namespace pgr_route_gift;
+using namespace pgs_route_gift;
 namespace {
 constexpr int GIFT = 2, TRADE = 3, YESNO = 5, END = 1;
 Action tick(State &st, int64_t now, bool dialog, bool accept, bool send, bool open) {

@@ -16,7 +16,7 @@
 static_assert(sizeof(PgrArThrowConfig) == 112, "PgrArThrowConfig must be 112 bytes");
 static_assert(sizeof(PgrArThrowSample) == 16,  "PgrArThrowSample must be 16 bytes");
 static_assert(sizeof(PgrArThrowApi)    == 32,  "PgrArThrowApi must be 32 bytes");
-static_assert(sizeof(PgrThrowValue)    == 12,  "PokeballThrow by-value must be 12 bytes");
+static_assert(sizeof(PgsThrowValue)    == 12,  "PokeballThrow by-value must be 12 bytes");
 static_assert(offsetof(PgrArThrowConfig, capture_code)        == 8,   "layout: capture_code");
 static_assert(offsetof(PgrArThrowConfig, wild_class)          == 16,  "layout: wild_class");
 static_assert(offsetof(PgrArThrowConfig, values_class)        == 24,  "layout: values_class");
@@ -35,7 +35,7 @@ namespace {
 
 // Validated game ABI: TryCapture returns a managed IPromise pointer and takes the
 // instance, the 12-byte PokeballThrow by-value, the AR values proto and the MethodInfo*.
-typedef void *(*ArCaptureFn)(void *self, PgrThrowValue thr, void *values, void *method);
+typedef void *(*ArCaptureFn)(void *self, PgsThrowValue thr, void *values, void *method);
 
 typedef void *(*Il2cppObjectGetClass)(void *obj);
 typedef int    (*Il2cppClassIsAssignable)(void *klass, void *oklass);
@@ -63,7 +63,7 @@ std::atomic<uint64_t> g_tid{0};             // proven Unity thread id
 // low-awareness thresholds once those are read.
 std::atomic<float>    g_proximity{0.25f};
 std::atomic<float>    g_awareness{0.05f};
-// GC handle of the last AR+ throw's catch promise, taken by pgr_ar_throw_take_promise.
+// GC handle of the last AR+ throw's catch promise, taken by pgs_ar_throw_take_promise.
 // Kept only once a consumer has asked for one (the first take), so nothing is left rooted otherwise.
 std::atomic<void *>   g_last_promise{nullptr};
 std::atomic<bool>     g_keep_promise{false};
@@ -99,7 +99,7 @@ void gate_close() {
     g_tid.store(0, std::memory_order_relaxed);
 }
 
-void *ar_capture_replacement(void *self, PgrThrowValue thr, void *values, void *method) {
+void *ar_capture_replacement(void *self, PgsThrowValue thr, void *values, void *method) {
     ArCaptureFn orig = g_original_ready.load(std::memory_order_acquire) ? g_original : nullptr;
     if (!orig) {
         std::lock_guard<std::mutex> lock(g_mutex);
@@ -168,7 +168,7 @@ void *ar_capture_replacement(void *self, PgrThrowValue thr, void *values, void *
 
     // Close and calm. Zero would be the protobuf default, which is never sent, so the server
     // would see no AR+ values at all; these are inside the game's own close-proximity and
-    // low-awareness thresholds (see pgr_ar_throw_set_values).
+    // low-awareness thresholds (see pgs_ar_throw_set_values).
     float   proximity = g_proximity.load(std::memory_order_relaxed);
     float   awareness = g_awareness.load(std::memory_order_relaxed);
     uint8_t clear = 0;
@@ -268,12 +268,12 @@ const void *pgs_ar_throw_api(uint32_t version) {
     return &g_api;
 }
 
-void *pgr_ar_throw_take_promise() {
+void *pgs_ar_throw_take_promise() {
     g_keep_promise.store(true, std::memory_order_relaxed);
     return g_last_promise.exchange(nullptr, std::memory_order_acq_rel);
 }
 
-void pgr_ar_throw_set_values(float proximity, float awareness) {
+void pgs_ar_throw_set_values(float proximity, float awareness) {
     if (!(proximity > 0.0f && proximity < 100.0f) || !(awareness > 0.0f && awareness < 100.0f)) return;
     g_proximity.store(proximity, std::memory_order_relaxed);
     g_awareness.store(awareness, std::memory_order_relaxed);

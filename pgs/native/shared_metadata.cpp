@@ -20,7 +20,7 @@ std::mutex resolving;
 
 const PgrMetaApi *metadata() { return static_cast<const PgrMetaApi *>(pgs_runtime_metadata_api(1)); }
 
-bool attached(const PgrSharedMetadataConfig &c) {
+bool attached(const PgsSharedMetadataConfig &c) {
   return c.owner_tid && c.owner_tid == static_cast<uint64_t>(gettid()) &&
          reinterpret_cast<void *(*)()>(c.thread_current)() != nullptr;
 }
@@ -28,7 +28,7 @@ bool attached(const PgrSharedMetadataConfig &c) {
 struct Ctx {
   const PgrMetaApi *md;
   const PgrMetaExports *core;
-  const PgrSharedMetaExtraExports *ex;
+  const PgsSharedMetaExtraExports *ex;
   uintptr_t module_base;
   PgrSharedMetadataOutput *out;
   const void *seen_code[256];
@@ -47,8 +47,8 @@ int set_err(Ctx &c, int rc, const char *prefix, const char *detail = nullptr) {
 bool read_utf8(const char *p, std::string *out) {
   if (!p) return false;
   size_t n = 0;
-  while (n < PGR_MD_NAME_MAX && p[n] != '\0') ++n;
-  if (n == PGR_MD_NAME_MAX) return false;
+  while (n < PGS_MD_NAME_MAX && p[n] != '\0') ++n;
+  if (n == PGS_MD_NAME_MAX) return false;
   out->assign(p, n);
   return true;
 }
@@ -227,11 +227,11 @@ int ref_field(Ctx &c, const void *owner, const char *name, uint64_t off, const v
   if (!owner) return set_err(c, PGR_MD_ERR_NOT_FOUND, "field-mismatch", name);
   PgrMetaFieldQuery q{}; q.version = 1; q.size = sizeof(q);
   q.owner = owner; q.name = name; q.offset = off;
-  q.forbidden_mask = 0x50; q.required_mask = 0; q.kind = PGR_MD_FIELD_REF;
+  q.forbidden_mask = 0x50; q.required_mask = 0; q.kind = PGS_MD_FIELD_REF;
   PgrMetaFieldResult r{};
   int rc = c.md->validate_field(&q, &r);
-  if (rc) return set_err(c, rc, rc == PGR_MD_ERR_KIND ? "field-not-reference" : "field-mismatch", name);
-  record_field_meta(c, owner, name, off, PGR_MD_FIELD_REF, 0);
+  if (rc) return set_err(c, rc, rc == PGS_MD_ERR_KIND ? "field-not-reference" : "field-mismatch", name);
+  record_field_meta(c, owner, name, off, PGS_MD_FIELD_REF, 0);
   if (field_out) *field_out = r.field;
   if (tc_out) *tc_out = r.type_class;
   return 0;
@@ -242,11 +242,11 @@ int enum_i32_field(Ctx &c, const void *owner, const char *name, uint64_t off, co
   if (!owner) return set_err(c, PGR_MD_ERR_NOT_FOUND, "field-mismatch", name);
   PgrMetaFieldQuery q{}; q.version = 1; q.size = sizeof(q);
   q.owner = owner; q.name = name; q.offset = off;
-  q.forbidden_mask = 0x50; q.required_mask = 0; q.kind = PGR_MD_FIELD_ENUM_I32;
+  q.forbidden_mask = 0x50; q.required_mask = 0; q.kind = PGS_MD_FIELD_ENUM_I32;
   PgrMetaFieldResult r{};
   int rc = c.md->validate_field(&q, &r);
-  if (rc) return set_err(c, rc, (rc == PGR_MD_ERR_KIND || rc == PGR_MD_ERR_SIZE) ? "enum-abi" : "field-mismatch", name);
-  record_field_meta(c, owner, name, off, PGR_MD_FIELD_ENUM_I32, 0);
+  if (rc) return set_err(c, rc, (rc == PGS_MD_ERR_KIND || rc == PGS_MD_ERR_SIZE) ? "enum-abi" : "field-mismatch", name);
+  record_field_meta(c, owner, name, off, PGS_MD_FIELD_ENUM_I32, 0);
   if (field_out) *field_out = r.field;
   if (tc_out) *tc_out = r.type_class;
   return 0;
@@ -261,7 +261,7 @@ int typed_field(Ctx &c, const void *owner, const char *name, uint64_t off, const
   q.type_name = type_name; q.type_match = PGR_MD_MATCH_EXACT;
   PgrMetaFieldResult r{};
   int rc = c.md->validate_field(&q, &r);
-  if (rc) return set_err(c, rc, rc == PGR_MD_ERR_TYPE ? err_prefix : "field-mismatch", name);
+  if (rc) return set_err(c, rc, rc == PGS_MD_ERR_TYPE ? err_prefix : "field-mismatch", name);
   if (field_out) *field_out = r.field;
   if (tc_out) *tc_out = r.type_class;
   return 0;
@@ -272,7 +272,7 @@ int scalar_field(Ctx &c, const void *owner, const char *name, uint64_t off, cons
   if (!owner) return set_err(c, PGR_MD_ERR_NOT_FOUND, err_prefix, name);
   PgrMetaFieldQuery q{}; q.version = 1; q.size = sizeof(q);
   q.owner = owner; q.name = name; q.offset = off;
-  q.forbidden_mask = 0x50; q.required_mask = 0; q.kind = PGR_MD_FIELD_VALUE; q.value_size = sz;
+  q.forbidden_mask = 0x50; q.required_mask = 0; q.kind = PGS_MD_FIELD_VALUE; q.value_size = sz;
   q.type_name = type_name; q.type_match = PGR_MD_MATCH_EXACT;
   PgrMetaFieldResult r{};
   int rc = c.md->validate_field(&q, &r);
@@ -296,14 +296,14 @@ int check_method_ex(Ctx &c, const void *owner, const char *name, const char *ret
   q.return_type = ret_exact;
   q.return_match = ret_exact ? PGR_MD_MATCH_EXACT : PGR_MD_MATCH_ANY;
   q.param_count = pc;
-  for (uint32_t i = 0; i < pc && i < PGR_MD_PARAM_MAX; ++i) {
+  for (uint32_t i = 0; i < pc && i < PGS_MD_PARAM_MAX; ++i) {
     q.param_types[i] = params[i].exact;
     q.param_match[i] = params[i].exact ? PGR_MD_MATCH_EXACT : PGR_MD_MATCH_ANY;
   }
   q.is_static = is_static ? 1u : 0u;
   q.allow_inflated = allow_inflated ? 1u : 0u;
   if (pro && plen) {
-    if (c.module_base > UINTPTR_MAX - rva) return set_err(c, PGR_MD_ERR_CODE_RANGE, "method-address", name);
+    if (c.module_base > UINTPTR_MAX - rva) return set_err(c, PGS_MD_ERR_CODE_RANGE, "method-address", name);
     q.expected_code = reinterpret_cast<const void *>(c.module_base + rva);
     q.prologue = pro; q.prologue_len = plen;
   }
@@ -314,18 +314,18 @@ int check_method_ex(Ctx &c, const void *owner, const char *name, const char *ret
   if (ret_pred) {
     auto fn_ret = reinterpret_cast<void *(*)(const void *)>(c.core->method_get_return_type);
     std::string rn;
-    if (!get_type_name(c, fn_ret(r.method), &rn)) return set_err(c, PGR_MD_ERR_NULL_TYPE_NAME, "null-type-name");
-    if (!ret_pred(rn)) return set_err(c, PGR_MD_ERR_TYPE, "method-mismatch", name);
+    if (!get_type_name(c, fn_ret(r.method), &rn)) return set_err(c, PGS_MD_ERR_NULL_TYPE_NAME, "null-type-name");
+    if (!ret_pred(rn)) return set_err(c, PGS_MD_ERR_TYPE, "method-mismatch", name);
   }
   auto fn_param = reinterpret_cast<void *(*)(const void *, uint32_t)>(c.core->method_get_param);
   for (uint32_t i = 0; i < pc; ++i) {
     if (!params[i].pred) continue;
     std::string pn;
-    if (!get_type_name(c, fn_param(r.method, i), &pn)) return set_err(c, PGR_MD_ERR_NULL_TYPE_NAME, "null-type-name");
-    if (!params[i].pred(pn)) return set_err(c, PGR_MD_ERR_TYPE, "parameter-mismatch", name);
+    if (!get_type_name(c, fn_param(r.method, i), &pn)) return set_err(c, PGS_MD_ERR_NULL_TYPE_NAME, "null-type-name");
+    if (!params[i].pred(pn)) return set_err(c, PGS_MD_ERR_TYPE, "parameter-mismatch", name);
   }
   if (pro && plen && r.code && !register_code_addr(c, r.code))
-    return set_err(c, PGR_MD_ERR_CODE_RANGE, "method-address", name);
+    return set_err(c, PGS_MD_ERR_CODE_RANGE, "method-address", name);
 
   if (m_out) *m_out = r.method;
   if (code_out) *code_out = r.code;
@@ -350,8 +350,8 @@ int enum_literal(Ctx &c, const void *enum_class, const char *name, bool check_pa
   auto static_get = reinterpret_cast<void (*)(const void *, void *)>(c.ex->field_static_get_value);
   void *f = field_from_name(enum_class, name);
   if (!f) return set_err(c, PGR_MD_ERR_NOT_FOUND, err_prefix, name);
-  if (check_parent && field_parent(f) != enum_class) return set_err(c, PGR_MD_ERR_OWNER_MISMATCH, err_prefix, name);
-  if ((static_cast<uint32_t>(field_flags(f)) & 0x8050u) != 0x8050u) return set_err(c, PGR_MD_ERR_FLAGS, err_prefix, name);
+  if (check_parent && field_parent(f) != enum_class) return set_err(c, PGS_MD_ERR_OWNER_MISMATCH, err_prefix, name);
+  if ((static_cast<uint32_t>(field_flags(f)) & 0x8050u) != 0x8050u) return set_err(c, PGS_MD_ERR_FLAGS, err_prefix, name);
   int32_t v = 0; static_get(f, &v); *out = v; return 0;
 }
 
@@ -365,7 +365,7 @@ int nested_suffix(Ctx &c, const void *owner, const char *suffix, uint32_t limit,
     void *k = nested(owner, &iter);
     if (!k) break;
     std::string nm;
-    if (!get_class_name(c, k, &nm)) return set_err(c, PGR_MD_ERR_NULL_TYPE_NAME, "null-type-name");
+    if (!get_class_name(c, k, &nm)) return set_err(c, PGS_MD_ERR_NULL_TYPE_NAME, "null-type-name");
     if (sep_suffix(nm.c_str(), suffix) && (!check_declaring || declaring(k) == owner)) {
       *out = k; return 0;
     }
@@ -471,17 +471,17 @@ int do_catch_scene(Ctx &c) {
     void *q = enum_methods(c.out->classes[4], &iter);
     if (!q) break;
     std::string nm;
-    if (!read_utf8(m_name(q), &nm)) return set_err(c, PGR_MD_ERR_NAME_TOO_LONG, "name-limit");
+    if (!read_utf8(m_name(q), &nm)) return set_err(c, PGS_MD_ERR_NAME_TOO_LONG, "name-limit");
     if (nm == "FindObjectsOfType" && !m_generic(q) && m_pcount(q) == 1) {
       std::string p0, rn;
       if (!get_type_name(c, m_param(q, 0), &p0) || !get_type_name(c, m_ret(q), &rn))
-        return set_err(c, PGR_MD_ERR_NULL_TYPE_NAME, "null-type-name");
+        return set_err(c, PGS_MD_ERR_NULL_TYPE_NAME, "null-type-name");
       if (p0 == "System.Type" && rn == "UnityEngine.Object[]") { find = q; break; }
     }
   }
   if (!find) return set_err(c, PGR_MD_ERR_NOT_FOUND, "catch-find-objects");
   if (!c.ex->type_get_object || !c.ex->array_length)
-    return set_err(c, PGR_MD_ERR_MISSING_EXPORT, "catch-scene-exports");
+    return set_err(c, PGS_MD_ERR_MISSING_EXPORT, "catch-scene-exports");
   H[H_CS_FIND] = find;
   H[H_CS_TYPE_OBJ] = c.ex->type_get_object;
   H[H_CS_ARRAY_LEN] = c.ex->array_length;
@@ -706,7 +706,7 @@ int select_method_by_sig(Ctx &c, const void *owner, const char *name, const char
     void *m = enum_methods(owner, &iter);
     if (!m) break;
     std::string nm;
-    if (!read_utf8(m_name(m), &nm)) return set_err(c, PGR_MD_ERR_NAME_TOO_LONG, "name-limit");
+    if (!read_utf8(m_name(m), &nm)) return set_err(c, PGS_MD_ERR_NAME_TOO_LONG, "name-limit");
     if (nm != name || m_generic(m) || m_pcount(m) != pc) continue;
     uint32_t impl = 0, fl = m_flags(m, &impl);
     if (((fl & 16u) != 0) != is_static) continue;
@@ -744,10 +744,10 @@ int do_items_lookup(Ctx &c) {
   auto field_flags = reinterpret_cast<int (*)(const void *)>(c.core->field_get_flags);
   void *inst = field_from_name(singleton, "<>9");
   if (!inst || field_parent(inst) != singleton || !(field_flags(inst) & 16))
-    return set_err(c, PGR_MD_ERR_FLAGS, "item-filter-instance");
+    return set_err(c, PGS_MD_ERR_FLAGS, "item-filter-instance");
 
   if (!c.ex->method_get_object || !c.ex->runtime_class_init || !c.ex->type_get_object)
-    return set_err(c, PGR_MD_ERR_MISSING_EXPORT, "item-lookup-exports");
+    return set_err(c, PGS_MD_ERR_MISSING_EXPORT, "item-lookup-exports");
 
   auto m_param = reinterpret_cast<void *(*)(const void *, uint32_t)>(c.core->method_get_param);
   H[H_IL_MAP] = map; H[H_IL_CONTRACT] = contract; H[H_IL_GUI] = gui; H[H_IL_GUI_CONTRACT] = gui_contract;
@@ -792,7 +792,7 @@ int do_items(Ctx &c) {
   std::string dn;
   if (!dk || !get_class_name(c, dk, &dn)) return set_err(c, PGR_MD_ERR_NOT_FOUND, "item-data-class");
   if (dn != "Niantic.Holoholo.Inventory.ItemInventoryItemData")
-    return set_err(c, PGR_MD_ERR_TYPE, "item-data-class");
+    return set_err(c, PGS_MD_ERR_TYPE, "item-data-class");
   H[H_IT_DK] = dk;
 
   const void *cb = nullptr;
@@ -818,7 +818,7 @@ int do_items(Ctx &c) {
   if ((rc = enum_literal(c, status_enum, "Success", false, "item-success", &c.out->opt_ints[I_ITEMS_SUCCESS]))) return rc;
 
   if (!c.ex->class_get_fields || !c.ex->field_get_name)
-    return set_err(c, PGR_MD_ERR_MISSING_EXPORT, "item-enum-exports");
+    return set_err(c, PGS_MD_ERR_MISSING_EXPORT, "item-enum-exports");
   auto get_fields = reinterpret_cast<void *(*)(const void *, void **)>(c.ex->class_get_fields);
   auto get_fname = reinterpret_cast<const char *(*)(const void *)>(c.ex->field_get_name);
   auto field_flags = reinterpret_cast<int (*)(const void *)>(c.core->field_get_flags);
@@ -831,7 +831,7 @@ int do_items(Ctx &c) {
     if ((static_cast<uint32_t>(field_flags(f)) & 0x8050u) != 0x8050u) continue;
     int32_t v = 0; static_get(f, &v);
     std::string raw_nm;
-    if (!read_utf8(get_fname(f), &raw_nm)) return set_err(c, PGR_MD_ERR_NAME_TOO_LONG, "name-limit");
+    if (!read_utf8(get_fname(f), &raw_nm)) return set_err(c, PGS_MD_ERR_NAME_TOO_LONG, "name-limit");
     char formatted[60];
     format_item_enum_name(raw_nm, formatted, sizeof(formatted));
     upsert_item_name(c.out, v, formatted);
@@ -844,7 +844,7 @@ int do_items(Ctx &c) {
   char saved_reason[kReasonMax];
   std::memcpy(saved_reason, c.reason, sizeof(saved_reason));
   int lrc = do_items_lookup(c);
-  c.out->optional[OPT_ITEMS_LOOKUP] = lrc ? PGR_SHARED_OPT_UNAVAILABLE : PGR_SHARED_OPT_AVAILABLE;
+  c.out->optional[OPT_ITEMS_LOOKUP] = lrc ? PGS_SHARED_OPT_UNAVAILABLE : PGR_SHARED_OPT_AVAILABLE;
   c.out->optional_error[OPT_ITEMS_LOOKUP] = lrc;
   if (lrc) std::snprintf(c.out->optional_reason[OPT_ITEMS_LOOKUP], kReasonMax, "%s", c.reason);
   std::memcpy(c.reason, saved_reason, sizeof(saved_reason));
@@ -896,7 +896,7 @@ int do_rocket(Ctx &c) {
   const void *vec3 = c.out->opt_classes[OC_VECTOR3];
   int align = 0;
   auto val_size = reinterpret_cast<int (*)(const void *, int *)>(c.core->class_value_size);
-  if (!vec3 || val_size(vec3, &align) != 12) return set_err(c, PGR_MD_ERR_SIZE, "minigame-vector-abi");
+  if (!vec3 || val_size(vec3, &align) != 12) return set_err(c, PGS_MD_ERR_SIZE, "minigame-vector-abi");
 
   const void *rmini = c.out->opt_classes[OC_RMINI], *rminibase = c.out->opt_classes[OC_RMINIBASE],
              *comp = c.out->opt_classes[OC_COMPONENT], *trans = c.out->opt_classes[OC_TRANSFORM],
@@ -1039,7 +1039,7 @@ int do_battles(Ctx &c) {
   void *dir_cls = c_from_t(m_param(H[H_BT_M_DODGE], 0));
   std::string dir_base;
   if (!dir_cls || !is_enum(dir_cls) || !get_type_name(c, enum_base(dir_cls), &dir_base) || dir_base != "System.Int32")
-    return set_err(c, PGR_MD_ERR_KIND, "dodge-direction-type");
+    return set_err(c, PGS_MD_ERR_KIND, "dodge-direction-type");
   if ((rc = enum_literal(c, dir_cls, "Left", false, "dodge-left-literal", &c.out->opt_ints[I_BAT_DODGE_LEFT]))) return rc;
 
   const void *gym_iter = nullptr;
@@ -1135,7 +1135,7 @@ int do_berries(Ctx &c) {
   auto val_sz = reinterpret_cast<int (*)(const void *, int *)>(c.core->class_value_size);
   int align = 0;
   if (!throw_cls || !is_val(throw_cls) || val_sz(throw_cls, &align) != 12 || align != 4)
-    return set_err(c, PGR_MD_ERR_SIZE, "berry-impact-throw-abi");
+    return set_err(c, PGS_MD_ERR_SIZE, "berry-impact-throw-abi");
   if ((rc = typed_field(c, throw_cls, "BallType", 16, "Holoholo.Rpc.Item", "berry-impact-throw-field", nullptr))) return rc;
   if ((rc = typed_field(c, throw_cls, "ReticleSize", 20, "System.Single", "berry-impact-throw-field", nullptr))) return rc;
   if ((rc = typed_field(c, throw_cls, "HitBullseye", 24, "System.Boolean", "berry-impact-throw-field", nullptr))) return rc;
@@ -1234,7 +1234,7 @@ int do_buddy(Ctx &c) {
 
   std::string bid_tn;
   if (!get_type_name(c, buddy_id_type, &bid_tn) || bid_tn != "System.UInt64")
-    return set_err(c, PGR_MD_ERR_TYPE, "buddy-id-type");
+    return set_err(c, PGS_MD_ERR_TYPE, "buddy-id-type");
   return 0;
 }
 
@@ -1245,9 +1245,9 @@ int do_buddy(Ctx &c) {
 // ---------------------------------------------------------------------------------------------------
 // Mandatory pointerHandleAbi (gchandle_new / gchandle_get_target / gchandle_free code fingerprint).
 // ---------------------------------------------------------------------------------------------------
-int pointer_handle_abi(const PgrMetaApi *md, const PgrSharedMetaExtraExports *ex) {
-  return pgr_pointer_handles(md,ex->gchandle_new,ex->gchandle_get_target,ex->gchandle_free)==0
-      ? PGR_MD_OK : PGR_SHARED_ERR_GC_ABI;
+int pointer_handle_abi(const PgrMetaApi *md, const PgsSharedMetaExtraExports *ex) {
+  return pgs_pointer_handles(md,ex->gchandle_new,ex->gchandle_get_target,ex->gchandle_free)==0
+      ? PGR_MD_OK : PGS_SHARED_ERR_GC_ABI;
 }
 bool valid_binding_range(const PgrMetaBindConfig &binding) {
   const uintptr_t base=reinterpret_cast<uintptr_t>(binding.module_base);
@@ -1261,24 +1261,24 @@ int resolve_class(const PgrMetaApi *md,const ClassSpec &s,const void **klass) {
 }
 
 int map_required_err(int rc) {
-  return (rc == PGR_MD_ERR_NOT_FOUND) ? PGR_SHARED_ERR_MEMBER_NOT_FOUND : rc;
+  return (rc == PGR_MD_ERR_NOT_FOUND) ? PGS_SHARED_ERR_MEMBER_NOT_FOUND : rc;
 }
 
 // ---------------------------------------------------------------------------------------------------
 // Top-level API 2 resolve() entry point.
 // ---------------------------------------------------------------------------------------------------
-int resolve(const PgrSharedMetadataConfig *input, PgrSharedMetadataOutput *out) {
+int resolve(const PgsSharedMetadataConfig *input, PgrSharedMetadataOutput *out) {
   if (input == nullptr) {
     if (out != nullptr) std::memset(out, 0, sizeof(*out));
-    return PGR_SHARED_ERR_CONFIG;
+    return PGS_SHARED_ERR_CONFIG;
   }
-  if (out == nullptr) return PGR_SHARED_ERR_NULL_ARG;
+  if (out == nullptr) return PGS_SHARED_ERR_NULL_ARG;
   std::memset(out, 0, sizeof(*out));
 
   std::unique_lock<std::mutex> lock(resolving, std::try_to_lock);
   if (!lock.owns_lock()) return PGR_MD_ERR_BUSY;
 
-  int final_rc = PGR_SHARED_ERR_CONFIG;
+  int final_rc = PGS_SHARED_ERR_CONFIG;
   struct ClearOnFailure {
     PgrSharedMetadataOutput *target;
     int *rc;
@@ -1288,37 +1288,37 @@ int resolve(const PgrSharedMetadataConfig *input, PgrSharedMetadataOutput *out) 
   } guard{out, &final_rc};
 
   if (input->version != kApiVersion ||
-      input->size != sizeof(PgrSharedMetadataConfig) ||
+      input->size != sizeof(PgsSharedMetadataConfig) ||
       input->thread_current == nullptr ||
       input->extra == nullptr ||
       input->extra->field_static_get_value == nullptr ||
       input->extra->gchandle_new == nullptr ||
       input->extra->gchandle_get_target == nullptr ||
       input->extra->gchandle_free == nullptr) {
-    return (final_rc = PGR_SHARED_ERR_CONFIG);
+    return (final_rc = PGS_SHARED_ERR_CONFIG);
   }
   const PgrMetaApi *md = metadata();
-  if (md == nullptr || md->version != PGR_MD_API_VERSION || md->size != sizeof(PgrMetaApi)) {
-    return (final_rc = PGR_SHARED_ERR_CONFIG);
+  if (md == nullptr || md->version != PGS_MD_API_VERSION || md->size != sizeof(PgrMetaApi)) {
+    return (final_rc = PGS_SHARED_ERR_CONFIG);
   }
   const PgrMetaExports *core = input->binding.exports;
-  if (core == nullptr) return (final_rc = PGR_MD_ERR_NULL_ARG);
-  if (!valid_binding_range(input->binding)) return (final_rc = PGR_MD_ERR_CODE_RANGE);
+  if (core == nullptr) return (final_rc = PGS_MD_ERR_NULL_ARG);
+  if (!valid_binding_range(input->binding)) return (final_rc = PGS_MD_ERR_CODE_RANGE);
   PgrMetaBindConfig bind = input->binding;
   if (!bind.seg_query) {
     const uintptr_t base=reinterpret_cast<uintptr_t>(bind.module_base);
     const uintptr_t thread=reinterpret_cast<uintptr_t>(input->thread_current);
     if(thread<base||thread-base>bind.module_size||4>bind.module_size-(thread-base))
-      return (final_rc=PGR_MD_ERR_CODE_RANGE);
+      return (final_rc=PGS_MD_ERR_CODE_RANGE);
     const void *canonical=nullptr;uint64_t extent=0;
     const int module_status=md->resolve_module("libil2cpp.so",&canonical,&extent);
     if(module_status)return (final_rc=module_status);
     const long page=sysconf(_SC_PAGESIZE);
     if(canonical!=bind.module_base||!extent||extent>bind.module_size||page<=0||
-       bind.module_size-extent>=static_cast<uint64_t>(page))return (final_rc=PGR_MD_ERR_CODE_RANGE);
+       bind.module_size-extent>=static_cast<uint64_t>(page))return (final_rc=PGS_MD_ERR_CODE_RANGE);
     bind.module_size=extent;
   }
-  if (!attached(*input)) return (final_rc = PGR_SHARED_ERR_ATTACH);
+  if (!attached(*input)) return (final_rc = PGS_SHARED_ERR_ATTACH);
   if (bind.debug_prologue == nullptr) {
     bind.debug_prologue = kDebugPrologue;
     bind.debug_prologue_len = static_cast<uint32_t>(sizeof(kDebugPrologue));
@@ -1331,14 +1331,14 @@ int resolve(const PgrSharedMetadataConfig *input, PgrSharedMetadataOutput *out) 
 
   // Only absent required classes are retryable; invalid members remain fatal.
   for (size_t i = 0; i < kClassCount; i++) {
-    if (!attached(*input)) return (final_rc = PGR_SHARED_ERR_ATTACH);
+    if (!attached(*input)) return (final_rc = PGS_SHARED_ERR_ATTACH);
     rc = resolve_class(md,kClasses[i],&out->classes[i]);
-    if (rc != PGR_MD_OK) return (final_rc = rc==PGR_MD_ERR_NOT_FOUND?PGR_SHARED_NOT_READY:rc);
+    if (rc != PGR_MD_OK) return (final_rc = rc==PGR_MD_ERR_NOT_FOUND?PGS_SHARED_NOT_READY:rc);
   }
 
-  // 2. Resolve 6 required fields (missing member maps -9 to PGR_SHARED_ERR_MEMBER_NOT_FOUND = -33).
+  // 2. Resolve 6 required fields (missing member maps -9 to PGS_SHARED_ERR_MEMBER_NOT_FOUND = -33).
   for (size_t i = 0; i < kFieldCount; i++) {
-    if (!attached(*input)) return (final_rc = PGR_SHARED_ERR_ATTACH);
+    if (!attached(*input)) return (final_rc = PGS_SHARED_ERR_ATTACH);
     const FieldSpec &s = kFields[i];
     PgrMetaFieldQuery spec{};spec.version=PGR_MD_QUERY_VERSION;spec.size=sizeof(spec);
     spec.owner=out->classes[s.owner];spec.name=s.name;spec.offset=s.offset;
@@ -1354,7 +1354,7 @@ int resolve(const PgrSharedMetadataConfig *input, PgrSharedMetadataOutput *out) 
 
   // 3. Resolve 7 required methods.
   for (size_t i = 0; i < kMethodCount; i++) {
-    if (!attached(*input)) return (final_rc = PGR_SHARED_ERR_ATTACH);
+    if (!attached(*input)) return (final_rc = PGS_SHARED_ERR_ATTACH);
     const MethodSpec &s = kMethods[i];
     PgrMetaMethodQuery spec{};spec.version=PGR_MD_QUERY_VERSION;spec.size=sizeof(spec);
     spec.owner=out->classes[s.owner];spec.name=s.name;spec.param_count=s.param_count;
@@ -1363,7 +1363,7 @@ int resolve(const PgrSharedMetadataConfig *input, PgrSharedMetadataOutput *out) 
     spec.param_match[0]=spec.param_match[1]=PGR_MD_MATCH_EXACT;
     if(s.code_rva){
       const uintptr_t base=reinterpret_cast<uintptr_t>(bind.module_base);
-      if(s.code_rva>UINTPTR_MAX-base)return (final_rc=PGR_MD_ERR_CODE_RANGE);
+      if(s.code_rva>UINTPTR_MAX-base)return (final_rc=PGS_MD_ERR_CODE_RANGE);
       spec.expected_code=reinterpret_cast<const void *>(base+s.code_rva);
       spec.prologue=s.prologue;spec.prologue_len=s.prologue_len;
     }
@@ -1373,7 +1373,7 @@ int resolve(const PgrSharedMetadataConfig *input, PgrSharedMetadataOutput *out) 
     out->method_code[i] = resolved.code;
   }
 
-  if (!attached(*input)) return (final_rc = PGR_SHARED_ERR_ATTACH);
+  if (!attached(*input)) return (final_rc = PGS_SHARED_ERR_ATTACH);
 
   // 4. Mandatory CatchSuccess static enum literal read.
   Ctx c{};
@@ -1384,10 +1384,10 @@ int resolve(const PgrSharedMetadataConfig *input, PgrSharedMetadataOutput *out) 
   c.module_base=reinterpret_cast<uintptr_t>(bind.module_base);
   for(const auto &field:kFields)
     record_field_meta(c,out->classes[field.owner],field.name,field.offset,field.kind,
-                      field.kind==PGR_MD_FIELD_VALUE?field.value_size:0);
+                      field.kind==PGS_MD_FIELD_VALUE?field.value_size:0);
   for(size_t i=0;i<kMethodCount;++i)
     if(kMethods[i].prologue_len&&!register_code_addr(c,out->method_code[i]))
-      return (final_rc=PGR_MD_ERR_CODE_RANGE);
+      return (final_rc=PGS_MD_ERR_CODE_RANGE);
   const void *status_enum = out->field_type_classes[kStatusFieldIndex];
   rc = enum_literal(c, status_enum, "CatchSuccess", true, "catch-success", &out->success);
   if (rc != PGR_MD_OK) return (final_rc = map_required_err(rc));
@@ -1396,14 +1396,14 @@ int resolve(const PgrSharedMetadataConfig *input, PgrSharedMetadataOutput *out) 
   const void *literal=reinterpret_cast<const void *(*)(const void*,const char*)>(core->class_get_field_from_name)(status_enum,"CatchSuccess");
   std::string literal_type;
   if(!literal||!get_type_name(c,reinterpret_cast<const void *(*)(const void*)>(core->field_get_type)(literal),&literal_type)||
-     literal_type!="Holoholo.Rpc.CatchPokemonOutProto.Types.Status")return (final_rc=PGR_MD_ERR_TYPE);
+     literal_type!="Holoholo.Rpc.CatchPokemonOutProto.Types.Status")return (final_rc=PGS_MD_ERR_TYPE);
   auto is_val = reinterpret_cast<bool (*)(const void *)>(core->class_is_valuetype);
   auto val_sz = reinterpret_cast<int (*)(const void *, int *)>(core->class_value_size);
   int bool_align = 0;
   const void *bool_cls = out->classes[6];
   if (!bool_cls || !is_val(bool_cls) || val_sz(bool_cls, &bool_align) != 1 ||
       bool_align != 1) {
-    return (final_rc = PGR_MD_ERR_SIZE);
+    return (final_rc = PGS_MD_ERR_SIZE);
   }
 
   // 6. Mandatory pointerHandleAbi (gchandle_new / gchandle_get_target / gchandle_free code fingerprint).
@@ -1422,7 +1422,7 @@ int resolve(const PgrSharedMetadataConfig *input, PgrSharedMetadataOutput *out) 
   auto run_opt = [&](OptionalId idx, int (*fn)(Ctx &)) {
     c.reason[0] = '\0';
     int orc = fn(c);
-    out->optional[idx] = (orc == PGR_MD_OK) ? PGR_SHARED_OPT_AVAILABLE : PGR_SHARED_OPT_UNAVAILABLE;
+    out->optional[idx] = (orc == PGR_MD_OK) ? PGR_SHARED_OPT_AVAILABLE : PGS_SHARED_OPT_UNAVAILABLE;
     out->optional_error[idx] = orc;
     if (orc != PGR_MD_OK) {
       std::snprintf(out->optional_reason[idx], kReasonMax, "%s",
@@ -1431,15 +1431,15 @@ int resolve(const PgrSharedMetadataConfig *input, PgrSharedMetadataOutput *out) 
   };
 
   // Pre-initialize nested optionals in case their parent optional fails before reaching them.
-  out->optional[OPT_ITEMS_LOOKUP] = PGR_SHARED_OPT_UNAVAILABLE;
+  out->optional[OPT_ITEMS_LOOKUP] = PGS_SHARED_OPT_UNAVAILABLE;
   out->optional_error[OPT_ITEMS_LOOKUP] = PGR_MD_ERR_NOT_FOUND;
   std::snprintf(out->optional_reason[OPT_ITEMS_LOOKUP], kReasonMax, "items-unavailable");
 
-  out->optional[OPT_VGP_MARKER] = PGR_SHARED_OPT_UNAVAILABLE;
+  out->optional[OPT_VGP_MARKER] = PGS_SHARED_OPT_UNAVAILABLE;
   out->optional_error[OPT_VGP_MARKER] = PGR_MD_ERR_NOT_FOUND;
   std::snprintf(out->optional_reason[OPT_VGP_MARKER], kReasonMax, "vgp-unavailable");
 
-  out->optional[OPT_MAP_POI_EXTRA] = PGR_SHARED_OPT_UNAVAILABLE;
+  out->optional[OPT_MAP_POI_EXTRA] = PGS_SHARED_OPT_UNAVAILABLE;
   out->optional_error[OPT_MAP_POI_EXTRA] = PGR_MD_ERR_NOT_FOUND;
   std::snprintf(out->optional_reason[OPT_MAP_POI_EXTRA], kReasonMax, "map-poi-unavailable");
 
@@ -1472,10 +1472,10 @@ int resolve(const PgrSharedMetadataConfig *input, PgrSharedMetadataOutput *out) 
   return (final_rc = PGR_MD_OK);
 }
 
-const PgrSharedMetadataApi kApi = {
+const PgsSharedMetadataApi kApi = {
   kApiVersion,
-  static_cast<uint32_t>(sizeof(PgrSharedMetadataApi)),
-  static_cast<uint32_t>(sizeof(PgrSharedMetadataConfig)),
+  static_cast<uint32_t>(sizeof(PgsSharedMetadataApi)),
+  static_cast<uint32_t>(sizeof(PgsSharedMetadataConfig)),
   static_cast<uint32_t>(sizeof(PgrSharedMetadataOutput)),
   resolve,
 };

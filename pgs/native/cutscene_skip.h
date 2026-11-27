@@ -12,5 +12,5 @@ struct PgrSharedMetadataOutput;
 // new species / Pokedex) and a Team GO Rocket member's spoken lines are never created: the hooked
 // entry points return what the game would get after the cutscene ends, without building its GUI.
 // The Rocket screen with the BATTLE button still appears; battles start only when it is pressed.
-void pgr_cutscene_skip_tick(uint64_t tid,const PgrSharedMetadataOutput *metadata);
-void pgr_cutscene_skip_stop(uint64_t tid);
+void pgs_cutscene_skip_tick(uint64_t tid,const PgrSharedMetadataOutput *metadata);
+void pgs_cutscene_skip_stop(uint64_t tid);

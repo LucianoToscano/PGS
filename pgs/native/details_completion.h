@@ -49,30 +49,30 @@ extern "C" {
 
 static_assert(sizeof(void *) == 8, "DetailsCompletion native ABI requires LP64");
 
-enum PgrDetailsCompletionInfo {
-  PGR_DC_FEATURE_ID      = 37,
-  PGR_DC_API_VERSION     = 1,
-  PGR_DC_CONFIG_VERSION  = 1,
-  PGR_DC_REQUEST_VERSION = 1,
-  PGR_DC_OUTPUT_VERSION  = 1,
-  PGR_DC_SAMPLE_VERSION  = 1,
-  PGR_DC_MAX_LEASE_MS    = 2500   // residual foreground lease ceiling (JS allowedUntil gate)
+enum PgsDetailsCompletionInfo {
+  PGS_DC_FEATURE_ID      = 37,
+  PGS_DC_API_VERSION     = 1,
+  PGS_DC_CONFIG_VERSION  = 1,
+  PGS_DC_REQUEST_VERSION = 1,
+  PGS_DC_OUTPUT_VERSION  = 1,
+  PGS_DC_SAMPLE_VERSION  = 1,
+  PGS_DC_MAX_LEASE_MS    = 2500   // residual foreground lease ceiling (JS allowedUntil gate)
 };
 
 // validate() returns 1 VALID / 0 INVALID / negative error. complete() returns 1 DONE (invoked, no
-// throw) / 0 REFUSED (gate/token/validation, NOT invoked) / negative error. acquire() returns PGR_DC_OK
-// with *out_token nonzero when armed, else 0. Every other function returns PGR_DC_OK or negative.
-enum PgrDetailsCompletionStatus {
-  PGR_DC_DONE              = 1,   // complete(): click invoked, no throw / validate(): valid
-  PGR_DC_OK                = 0,   // generic success / complete(): refused / validate(): invalid
-  PGR_DC_ERR_NULL_ARG      = -1,
-  PGR_DC_ERR_BAD_VERSION   = -2,
-  PGR_DC_ERR_BAD_SIZE      = -3,
-  PGR_DC_ERR_MISSING_PTR   = -4,
-  PGR_DC_ERR_NOT_INSTALLED = -6,
-  PGR_DC_ERR_RECONFIG      = -9,
-  PGR_DC_ERR_CLOCK_FAILURE = -10,
-  PGR_DC_ERR_MANAGED       = -11  // click threw; invoked stays true and the host never retries it
+// throw) / 0 REFUSED (gate/token/validation, NOT invoked) / negative error. acquire() returns PGS_DC_OK
+// with *out_token nonzero when armed, else 0. Every other function returns PGS_DC_OK or negative.
+enum PgsDetailsCompletionStatus {
+  PGS_DC_DONE              = 1,   // complete(): click invoked, no throw / validate(): valid
+  PGS_DC_OK                = 0,   // generic success / complete(): refused / validate(): invalid
+  PGS_DC_ERR_NULL_ARG      = -1,
+  PGS_DC_ERR_BAD_VERSION   = -2,
+  PGS_DC_ERR_BAD_SIZE      = -3,
+  PGS_DC_ERR_MISSING_PTR   = -4,
+  PGS_DC_ERR_NOT_INSTALLED = -6,
+  PGS_DC_ERR_RECONFIG      = -9,
+  PGS_DC_ERR_CLOCK_FAILURE = -10,
+  PGS_DC_ERR_MANAGED       = -11  // click threw; invoked stays true and the host never retries it
 };
 
 // Fixed LP64 config (272 bytes): 8-byte header + 32 validated il2cpp pointers + 2 int32. Every pointer
@@ -80,7 +80,7 @@ enum PgrDetailsCompletionStatus {
 // p.module / classes / fields / methods; native re-checks the header and rejects any null. No hook
 // address -- feature 37 installs no hook. Pointer order is the shared contract's canonical layout.
 struct PgrDetailsCompletionConfig {
-  uint32_t version;  // == PGR_DC_CONFIG_VERSION
+  uint32_t version;  // == PGS_DC_CONFIG_VERSION
   uint32_t size;     // == sizeof(PgrDetailsCompletionConfig)
 
   // il2cpp runtime exports (slots 0-6).
@@ -136,7 +136,7 @@ static_assert(sizeof(PgrDetailsCompletionConfig) == 272,
 // feature 36's optional state). expected_key is the 8-byte caught id written verbatim, compared
 // byte-for-byte and never numerically converted.
 struct PgrDetailsCompletionRequest {
-  uint32_t version;         // == PGR_DC_REQUEST_VERSION
+  uint32_t version;         // == PGS_DC_REQUEST_VERSION
   uint32_t size;            // == sizeof(PgrDetailsCompletionRequest)
   uint8_t  expected_key[8]; // proven caught id (nonzero); 8 raw bytes, never numerically converted
   uint64_t epoch;           // caller's current epoch; must equal the armed epoch at the gate
@@ -153,22 +153,22 @@ static_assert(sizeof(PgrDetailsCompletionRequest) == 80,
               "PgrDetailsCompletionRequest must remain 80 bytes on LP64");
 
 // complete() output flags (in PgrDetailsCompletionOutput.flags).
-enum PgrDetailsCompletionFlags {
-  PGR_DC_FLAG_INVOKED      = 1u << 0, // click was invoked (committed past the final gate)
-  PGR_DC_FLAG_GONE         = 1u << 1, // the GUI is definitively gone (post-invoke alive probe == false)
-  PGR_DC_FLAG_AFTER_KNOWN  = 1u << 2, // 'after' holds a read currentState
-  PGR_DC_FLAG_BEFORE_KNOWN = 1u << 3  // 'before' holds the validated pre-invoke currentState
+enum PgsDetailsCompletionFlags {
+  PGS_DC_FLAG_INVOKED      = 1u << 0, // click was invoked (committed past the final gate)
+  PGS_DC_FLAG_GONE         = 1u << 1, // the GUI is definitively gone (post-invoke alive probe == false)
+  PGS_DC_FLAG_AFTER_KNOWN  = 1u << 2, // 'after' holds a read currentState
+  PGS_DC_FLAG_BEFORE_KNOWN = 1u << 3  // 'before' holds the validated pre-invoke currentState
 };
 
 // Fixed LP64 output (24 bytes). complete() always fills this (even on refusal / error) so the host
 // learns invoked/before/after/gone and can never double-invoke. 'status' mirrors the return value.
 struct PgrDetailsCompletionOutput {
-  uint32_t version; // == PGR_DC_OUTPUT_VERSION
+  uint32_t version; // == PGS_DC_OUTPUT_VERSION
   uint32_t size;    // == sizeof(PgrDetailsCompletionOutput)
-  uint32_t flags;   // PgrDetailsCompletionFlags bits
+  uint32_t flags;   // PgsDetailsCompletionFlags bits
   int32_t  status;  // mirrors the complete() return code
-  int32_t  before;  // pre-invoke currentState (valid iff PGR_DC_FLAG_BEFORE_KNOWN)
-  int32_t  after;   // post-invoke currentState (valid iff PGR_DC_FLAG_AFTER_KNOWN)
+  int32_t  before;  // pre-invoke currentState (valid iff PGS_DC_FLAG_BEFORE_KNOWN)
+  int32_t  after;   // post-invoke currentState (valid iff PGS_DC_FLAG_AFTER_KNOWN)
 };
 
 static_assert(sizeof(PgrDetailsCompletionOutput) == 24,
@@ -176,7 +176,7 @@ static_assert(sizeof(PgrDetailsCompletionOutput) == 24,
 
 // Fixed LP64 telemetry gauge (72 bytes). Pull-only; the native layer never calls JS.
 struct PgrDetailsCompletionSample {
-  uint32_t version;          // == PGR_DC_SAMPLE_VERSION
+  uint32_t version;          // == PGS_DC_SAMPLE_VERSION
   uint32_t size;             // == sizeof(PgrDetailsCompletionSample)
   uint64_t validate_ok;      // bumps on each VALID validate()
   uint64_t validate_fail;    // bumps on each INVALID validate()
@@ -194,7 +194,7 @@ static_assert(sizeof(PgrDetailsCompletionSample) == 72,
 
 // Fixed LP64 table: 8-byte header + 7 function pointers = 64 bytes. Same shape as feature 36.
 struct PgrDetailsCompletionApi {
-  uint32_t version;  // == PGR_DC_API_VERSION
+  uint32_t version;  // == PGS_DC_API_VERSION
   uint32_t size;     // == sizeof(PgrDetailsCompletionApi)
   int (*install)(const PgrDetailsCompletionConfig *config);
   // Refresh the gate: enabled, a residual lease clamped to 2500 ms, the caller's current epoch and
@@ -210,7 +210,7 @@ struct PgrDetailsCompletionApi {
   // One owner-thread completion. Re-checks the gate + that token is the latest issued and unconsumed,
   // CONSUMES it and marks busy BEFORE anything, re-validates the identity (plus STATE_OPEN), re-checks
   // the generation, then runtime_invokes the details click exactly once and reads the postcondition.
-  // Always fills *out. Returns PGR_DC_DONE / PGR_DC_OK (refused) / PGR_DC_ERR_MANAGED (click threw).
+  // Always fills *out. Returns PGS_DC_DONE / PGS_DC_OK (refused) / PGS_DC_ERR_MANAGED (click threw).
   // Never invokes twice on retry or reentrancy. Owner thread only.
   int (*complete)(const PgrDetailsCompletionRequest *request, uint64_t token,
                   PgrDetailsCompletionOutput *out);

@@ -23,21 +23,21 @@ void put32(std::vector<uint8_t>&b,unsigned off,uint32_t n){std::memcpy(b.data()+
 void put64(std::vector<uint8_t>&b,unsigned off,uint64_t n){std::memcpy(b.data()+off,&n,8);}
 uint32_t u32(const std::vector<uint8_t>&b,unsigned off){uint32_t n;std::memcpy(&n,b.data()+off,4);return n;}
 std::vector<unsigned> drain(const PgrRuntimeTransportApi *tr,const std::vector<uint8_t> *snapshot=nullptr){
- std::vector<uint8_t> out(65536);uint32_t length=0;assert(tr->exchange(snapshot?snapshot->data():nullptr,snapshot?snapshot->size():0,out.data(),out.size(),&length)==0);assert(length>=32&&u32(out,0)==PGR_TRANSPORT_EVENTS_MAGIC);
+ std::vector<uint8_t> out(65536);uint32_t length=0;assert(tr->exchange(snapshot?snapshot->data():nullptr,snapshot?snapshot->size():0,out.data(),out.size(),&length)==0);assert(length>=32&&u32(out,0)==PGS_TRANSPORT_EVENTS_MAGIC);
  unsigned at=32;std::vector<unsigned> ops;for(unsigned i=0;i<u32(out,12);++i){ops.push_back(u32(out,at));auto n=u32(out,at+4),s=u32(out,at+8);at+=12+n*8;for(unsigned j=0;j<s;++j)at+=4+u32(out,at);}assert(at==length);return ops;
 }
 void scenario(const char *library,unsigned mode){
  auto lib=dlopen(library,RTLD_NOW|RTLD_LOCAL);assert(lib);auto get=reinterpret_cast<const void*(*)(uint32_t)>(dlsym(lib,"pgs_native_api"));assert(get);
  auto core=static_cast<const pgs_native_api_v2*>(get(2));assert(core&&core->query_feature);auto api=static_cast<const PgsSpawnHostApi*>(core->query_feature(71,1));assert(api&&api->version==1&&api->size==64&&!core->query_feature(71,2));
  auto tr=static_cast<const PgrRuntimeTransportApi*>(core->query_feature(52,1));assert(tr);
- PgrSharedMetadataOutput md{};md.version=2;md.size=sizeof(md);md.optional[pgr_shared_meta::OPT_SPAWN]=mode==2?PGR_SHARED_OPT_UNAVAILABLE:PGR_SHARED_OPT_AVAILABLE;md.opt_handles[pgr_shared_meta::H_SP_CODE]=reinterpret_cast<void*>(target);md.opt_handles[pgr_shared_meta::H_SP_METHOD]=&method_token;
+ PgrSharedMetadataOutput md{};md.version=2;md.size=sizeof(md);md.optional[pgr_shared_meta::OPT_SPAWN]=mode==2?PGS_SHARED_OPT_UNAVAILABLE:PGR_SHARED_OPT_AVAILABLE;md.opt_handles[pgr_shared_meta::H_SP_CODE]=reinterpret_cast<void*>(target);md.opt_handles[pgr_shared_meta::H_SP_METHOD]=&method_token;
  PgsSpawnHostConfig c{1,sizeof(c),mode==1?1u:0u,1,&md,reinterpret_cast<void*>(thread_current),uint64_t(gettid())};
- if(mode==1){PgrRuntimeTransportConfig tc{1,sizeof(tc),500,128,4096,65536,0,0};assert(tr->install(&tc)==0);}
+ if(mode==1){PgsRuntimeTransportConfig tc{1,sizeof(tc),500,128,4096,65536,0,0};assert(tr->install(&tc)==0);}
  auto bad=c;bad.exclusive_owner=0;assert(api->configure(&bad)==PGS_SPAH_BAD_CONFIG);assert(api->configure(&c)==0&&api->configure(&c)==0);
  bad=c;bad.flags^=1;assert(api->configure(&bad)==PGS_SPAH_REBIND);
  double radius=40;assert(call(&radius,&method_token)==40);
  if(mode==2){assert(api->tick(gettid())==PGS_SPAH_UNAVAILABLE);assert(call(&radius,&method_token)==40);return;}
- std::vector<uint8_t> frame(PGR_TRANSPORT_SNAPSHOT_FIXED+PGR_TRANSPORT_STRINGS*4,0);put32(frame,0,PGR_TRANSPORT_SNAPSHOT_MAGIC);put32(frame,4,PGR_TRANSPORT_FRAME_VERSION);put32(frame,8,frame.size());put64(frame,16,1);
+ std::vector<uint8_t> frame(PGS_TRANSPORT_SNAPSHOT_FIXED+PGS_TRANSPORT_STRINGS*4,0);put32(frame,0,PGS_TRANSPORT_SNAPSHOT_MAGIC);put32(frame,4,PGS_TRANSPORT_FRAME_VERSION);put32(frame,8,frame.size());put64(frame,16,1);
  frame[32+27]=frame[32+28]=frame[32+3]=1;
  if(mode==1)drain(tr,&frame);
  PgsSpawnHostOptions p{1,sizeof(p),1,1,2500,0};if(!mode)assert(api->update(&p)==0);

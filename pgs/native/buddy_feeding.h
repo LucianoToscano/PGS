@@ -61,34 +61,34 @@ static_assert(sizeof(void *) == 8, "Buddy feeding native ABI requires LP64");
 // Status codes surfaced through the sample. The adapter maps each to the exact JS string.
 // FED_REMAINING carries whole minutes in `detail`; FEED_FAILED carries the result value.
 enum {
-    PGR_BUDDY_STATUS_NONE         = 0,  /* initial; no event emitted */
-    PGR_BUDDY_STATUS_OFF          = 1,  /* "Off" */
-    PGR_BUDDY_STATUS_WAIT_MAP     = 2,  /* "Waiting for the map" */
-    PGR_BUDDY_STATUS_CHOOSE       = 3,  /* "Choose a buddy first" */
-    PGR_BUDDY_STATUS_WAIT_HUNGER  = 4,  /* "Waiting for buddy hunger data" */
-    PGR_BUDDY_STATUS_FED          = 5,  /* "Buddy fed - <detail> min remaining" */
-    PGR_BUDDY_STATUS_COOLDOWN     = 6,  /* "Waiting for buddy feeding cooldown" */
-    PGR_BUDDY_STATUS_PAUSED_SIX   = 7,  /* "Feeding paused after six berries; check your buddy" */
-    PGR_BUDDY_STATUS_OUT_OF_STOCK = 8,  /* "Selected berry is out of stock" */
-    PGR_BUDDY_STATUS_FEEDING      = 9,  /* "Feeding buddy" */
-    PGR_BUDDY_STATUS_BERRY_FED    = 10, /* "Berry fed; checking buddy hunger" */
-    PGR_BUDDY_STATUS_FEED_FAILED  = 11, /* "Buddy feed failed (result <detail>); toggle Off to retry" */
-    PGR_BUDDY_STATUS_TIMEOUT      = 12, /* "Buddy feed timed out; no automatic retry" */
-    PGR_BUDDY_STATUS_HUNGER_STALE = 13, /* "Hunger did not update; toggle Off to retry" */
-    PGR_BUDDY_STATUS_ERROR        = 14  /* "Buddy feeding paused: <reason>" */
+    PGS_BUDDY_STATUS_NONE         = 0,  /* initial; no event emitted */
+    PGS_BUDDY_STATUS_OFF          = 1,  /* "Off" */
+    PGS_BUDDY_STATUS_WAIT_MAP     = 2,  /* "Waiting for the map" */
+    PGS_BUDDY_STATUS_CHOOSE       = 3,  /* "Choose a buddy first" */
+    PGS_BUDDY_STATUS_WAIT_HUNGER  = 4,  /* "Waiting for buddy hunger data" */
+    PGS_BUDDY_STATUS_FED          = 5,  /* "Buddy fed - <detail> min remaining" */
+    PGS_BUDDY_STATUS_COOLDOWN     = 6,  /* "Waiting for buddy feeding cooldown" */
+    PGS_BUDDY_STATUS_PAUSED_SIX   = 7,  /* "Feeding paused after six berries; check your buddy" */
+    PGS_BUDDY_STATUS_OUT_OF_STOCK = 8,  /* "Selected berry is out of stock" */
+    PGS_BUDDY_STATUS_FEEDING      = 9,  /* "Feeding buddy" */
+    PGS_BUDDY_STATUS_BERRY_FED    = 10, /* "Berry fed; checking buddy hunger" */
+    PGS_BUDDY_STATUS_FEED_FAILED  = 11, /* "Buddy feed failed (result <detail>); toggle Off to retry" */
+    PGS_BUDDY_STATUS_TIMEOUT      = 12, /* "Buddy feed timed out; no automatic retry" */
+    PGS_BUDDY_STATUS_HUNGER_STALE = 13, /* "Hunger did not update; toggle Off to retry" */
+    PGS_BUDDY_STATUS_ERROR        = 14  /* "Buddy feeding paused: <reason>" */
 };
 
 // Status codes returned by every table function. 0 == success.
 enum {
-    PGR_BUDDY_OK            = 0,
-    PGR_BUDDY_ERR_NULL_ARG  = 1,  /* required pointer argument was null */
-    PGR_BUDDY_ERR_BAD_CONFIG= 2,  /* header/size/pointer/literal invalid */
-    PGR_BUDDY_ERR_ALREADY_BOUND = 3, /* install() repeated with a different config */
-    PGR_BUDDY_ERR_DUP_HOOK  = 4,  /* feed and result share a hook address */
-    PGR_BUDDY_ERR_HOOK_FEED = 5,  /* Dobby could not hook/publish Feed */
-    PGR_BUDDY_ERR_HOOK_RESULT = 6, /* Dobby could not hook/publish the result callback */
-    PGR_BUDDY_ERR_NOT_INSTALLED = 7, /* operation needs a successful install() */
-    PGR_BUDDY_ERR_NO_CLOCK  = 8   /* CLOCK_BOOTTIME was unavailable at install */
+    PGS_BUDDY_OK            = 0,
+    PGS_BUDDY_ERR_NULL_ARG  = 1,  /* required pointer argument was null */
+    PGS_BUDDY_ERR_BAD_CONFIG= 2,  /* header/size/pointer/literal invalid */
+    PGS_BUDDY_ERR_ALREADY_BOUND = 3, /* install() repeated with a different config */
+    PGS_BUDDY_ERR_DUP_HOOK  = 4,  /* feed and result share a hook address */
+    PGS_BUDDY_ERR_HOOK_FEED = 5,  /* Dobby could not hook/publish Feed */
+    PGS_BUDDY_ERR_HOOK_RESULT = 6, /* Dobby could not hook/publish the result callback */
+    PGS_BUDDY_ERR_NOT_INSTALLED = 7, /* operation needs a successful install() */
+    PGS_BUDDY_ERR_NO_CLOCK  = 8   /* CLOCK_BOOTTIME was unavailable at install */
 };
 
 // Install-time configuration, packed by the JS adapter after its metadata validation.
@@ -166,7 +166,7 @@ typedef pgs_buddy_config_v1 pgrazor_buddy_config_v1;
 typedef struct pgs_buddy_sample_v1 {
     uint32_t version;              /* == PGS_BUDDY_API_VERSION */
     uint32_t size;                 /* == sizeof(pgs_buddy_sample_v1) */
-    uint32_t status;               /* one of PGR_BUDDY_STATUS_* */
+    uint32_t status;               /* one of PGS_BUDDY_STATUS_* */
     uint32_t status_serial;        /* bumped on each status change */
     int32_t  detail;               /* minutes (FED) or result value (FEED_FAILED) */
     uint32_t reserved;             /* 0 */

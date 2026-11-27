@@ -159,7 +159,7 @@ void *fake_invoke(void *method, void *obj, void **args, void **exc) {
 
 PgrVgpDiscoveryConfig make_config() {
   PgrVgpDiscoveryConfig c{};
-  c.version = PGR_VD_CONFIG_VERSION;
+  c.version = PGS_VD_CONFIG_VERSION;
   c.size = sizeof(c);
   c.gchandle_new = reinterpret_cast<void *>(&fake_gc_new);
   c.gchandle_get_target = reinterpret_cast<void *>(&fake_gc_get);
@@ -253,7 +253,7 @@ int main(int argc, char **argv) {
   std::printf("ABI sizes: config=%zu snapshot=%zu enumeration=%zu table=%zu\n",
               sizeof(PgrVgpDiscoveryConfig), sizeof(PgrVgpDiscoverySnapshot),
               sizeof(PgrVgpDiscoveryEnumeration), sizeof(PgrVgpDiscoveryApi));
-  assert(sizeof(PgrVgpDiscoveryConfig) == 272 && PGR_VD_CONFIG_VERSION==2 && sizeof(PgrVgpDiscoverySnapshot) == 48 &&
+  assert(sizeof(PgrVgpDiscoveryConfig) == 272 && PGS_VD_CONFIG_VERSION==2 && sizeof(PgrVgpDiscoverySnapshot) == 48 &&
          sizeof(PgrVgpDiscoveryEnumeration) == 24 && sizeof(PgrVgpDiscoveryApi) == 40);
   assert(offsetof(PgrVgpDiscoveryConfig,class_is_assignable_from)==264);
   assert(offsetof(PgrVgpDiscoverySnapshot, pokemon_bag_handle) == 32 &&
@@ -267,30 +267,30 @@ int main(int argc, char **argv) {
   uintptr_t handle = 0;
 
   // 1. install validation + not-installed + idempotence + reconfig.
-  assert(api->install(nullptr) == PGR_VD_ERR_NULL_ARG);
-  { PgrVgpDiscoveryConfig b = cfg; b.version = 1; assert(api->install(&b) == PGR_VD_ERR_BAD_VERSION); }
-  { PgrVgpDiscoveryConfig b = cfg; b.size = sizeof(cfg) - 1; assert(api->install(&b) == PGR_VD_ERR_BAD_SIZE); }
-  { PgrVgpDiscoveryConfig b = cfg; b.f_item_bag = nullptr; assert(api->install(&b) == PGR_VD_ERR_MISSING_PTR); }
-  { PgrVgpDiscoveryConfig b = cfg; b.gchandle_new = nullptr; assert(api->install(&b) == PGR_VD_ERR_MISSING_PTR); }
-  { PgrVgpDiscoveryConfig b=cfg;b.class_is_assignable_from=nullptr;assert(api->install(&b)==PGR_VD_ERR_MISSING_PTR); }
-  assert(api->snapshot(&g_service, tid, 2000, &snap) == PGR_VD_ERR_NOT_INSTALLED);
+  assert(api->install(nullptr) == PGS_VD_ERR_NULL_ARG);
+  { PgrVgpDiscoveryConfig b = cfg; b.version = 1; assert(api->install(&b) == PGS_VD_ERR_BAD_VERSION); }
+  { PgrVgpDiscoveryConfig b = cfg; b.size = sizeof(cfg) - 1; assert(api->install(&b) == PGS_VD_ERR_BAD_SIZE); }
+  { PgrVgpDiscoveryConfig b = cfg; b.f_item_bag = nullptr; assert(api->install(&b) == PGS_VD_ERR_MISSING_PTR); }
+  { PgrVgpDiscoveryConfig b = cfg; b.gchandle_new = nullptr; assert(api->install(&b) == PGS_VD_ERR_MISSING_PTR); }
+  { PgrVgpDiscoveryConfig b=cfg;b.class_is_assignable_from=nullptr;assert(api->install(&b)==PGS_VD_ERR_MISSING_PTR); }
+  assert(api->snapshot(&g_service, tid, 2000, &snap) == PGS_VD_ERR_NOT_INSTALLED);
   assert(snap.version == 1 && snap.size == sizeof(snap) && snap.pokemon_bag_handle == 0);
   assert(api->install(&cfg) == 0);
   assert(api->install(&cfg) == 0);  // idempotent
-  { PgrVgpDiscoveryConfig b = cfg; b.class_wild = &cls_stop; assert(api->install(&b) == PGR_VD_ERR_RECONFIG); }
+  { PgrVgpDiscoveryConfig b = cfg; b.class_wild = &cls_stop; assert(api->install(&b) == PGS_VD_ERR_RECONFIG); }
 
   // 2. Owner / lease gate: no managed work, output initialised, no handles.
   reset();
-  assert(api->snapshot(&g_service, tid + 7, 2000, &snap) == PGR_VD_SKIP && g_invokes == 0);
-  assert(api->snapshot(&g_service, 0, 2000, &snap) == PGR_VD_SKIP && g_invokes == 0);
-  assert(api->snapshot(&g_service, tid, 0, &snap) == PGR_VD_SKIP && g_invokes == 0);  // closed lease
-  assert(api->snapshot(nullptr, tid, 2000, &snap) == PGR_VD_ERR_NULL_ARG && g_invokes == 0);
-  assert(api->snapshot(&g_service, tid, 2000, nullptr) == PGR_VD_ERR_NULL_ARG);
+  assert(api->snapshot(&g_service, tid + 7, 2000, &snap) == PGS_VD_SKIP && g_invokes == 0);
+  assert(api->snapshot(&g_service, 0, 2000, &snap) == PGS_VD_SKIP && g_invokes == 0);
+  assert(api->snapshot(&g_service, tid, 0, &snap) == PGS_VD_SKIP && g_invokes == 0);  // closed lease
+  assert(api->snapshot(nullptr, tid, 2000, &snap) == PGS_VD_ERR_NULL_ARG && g_invokes == 0);
+  assert(api->snapshot(&g_service, tid, 2000, nullptr) == PGS_VD_ERR_NULL_ARG);
   assert(g_handles.empty());
 
   // 3. Snapshot success: five counts + two owned handles; roots zero once the caller frees them.
   reset();
-  assert(api->snapshot(&g_service, tid, 2000, &snap) == PGR_VD_OK);
+  assert(api->snapshot(&g_service, tid, 2000, &snap) == PGS_VD_OK);
   assert(snap.balls == 5 && snap.stored == 10 && snap.capacity == 100 &&
          snap.total_items == 20 && snap.max_items == 50);
   assert(snap.version == 1 && snap.size == sizeof(snap) && snap.reserved == 0);
@@ -306,7 +306,7 @@ int main(int argc, char **argv) {
   // Read-only scene receivers may be derived implementations; this fixture proves assignability
   // semantics without claiming which concrete runtime classes a Unity session actually returns.
   reset();g_map.klass=&cls_derivedMap;g_container.klass=&cls_derivedContainer;
-  assert(api->snapshot(&g_service,tid,2000,&snap)==PGR_VD_OK);
+  assert(api->snapshot(&g_service,tid,2000,&snap)==PGS_VD_OK);
   fake_gc_free(snap.pokemon_bag_handle);fake_gc_free(snap.item_bag_handle);assert(g_handles.empty());
 
   // 4. map/container/service not-ready -> benign SKIP, no handles, output initialised.
@@ -317,14 +317,14 @@ int main(int argc, char **argv) {
     else if (which == 2) g_ret_player = nullptr;
     else if (which == 3) g_ret_pokemonBag = nullptr;
     else g_service.itemBag = nullptr;
-    assert(api->snapshot(&g_service, tid, 2000, &snap) == PGR_VD_SKIP);
+    assert(api->snapshot(&g_service, tid, 2000, &snap) == PGS_VD_SKIP);
     assert(snap.pokemon_bag_handle == 0 && snap.item_bag_handle == 0 && snap.balls == 0);
     assert(g_handles.empty());
   }
 
   // 5. Service identity + resolved-class validation: a wrong class is an invalid-class error (negative).
   reset();
-  assert(api->snapshot(&g_badService, tid, 2000, &snap) == PGR_VD_ERR_METADATA && g_invokes == 0);
+  assert(api->snapshot(&g_badService, tid, 2000, &snap) == PGS_VD_ERR_METADATA && g_invokes == 0);
   assert(g_handles.empty());
   for(int which=0;which<4;++which){
     reset();
@@ -332,7 +332,7 @@ int main(int argc, char **argv) {
     else if(which==1)g_player.klass=&cls_derivedExact;
     else if(which==2)g_pokemonBag.klass=&cls_derivedExact;
     else g_itemBag.klass=&cls_derivedExact;
-    assert(api->snapshot(&g_service,tid,2000,&snap)==PGR_VD_ERR_METADATA);
+    assert(api->snapshot(&g_service,tid,2000,&snap)==PGS_VD_ERR_METADATA);
     const uint32_t expectedStage[]={1,4,5,6};
     assert(snap.reserved==expectedStage[which]&&snap.pokemon_bag_handle==0&&snap.item_bag_handle==0&&g_handles.empty());
   }
@@ -341,7 +341,7 @@ int main(int argc, char **argv) {
     g_map.klass=&cls_other;
     bool containerReached=false;
     g_oneshot_on=&m_container;g_oneshot=[&](){containerReached=true;};
-    assert(api->snapshot(&g_service,tid,2000,&snap)==PGR_VD_ERR_METADATA);
+    assert(api->snapshot(&g_service,tid,2000,&snap)==PGS_VD_ERR_METADATA);
     assert(!containerReached&&g_invokes==1);  // FindObjectOfType only; never dispatch on wrong map
     assert(snap.reserved==2);
     assert(snap.pokemon_bag_handle==0&&snap.item_bag_handle==0&&g_handles.empty());
@@ -352,7 +352,7 @@ int main(int argc, char **argv) {
     else if (which == 1) g_player.klass = &cls_other;
     else if (which == 2) g_pokemonBag.klass = &cls_other;
     else g_itemBag.klass = &cls_other;
-    assert(api->snapshot(&g_service, tid, 2000, &snap) == PGR_VD_ERR_METADATA);
+    assert(api->snapshot(&g_service, tid, 2000, &snap) == PGS_VD_ERR_METADATA);
     assert(snap.pokemon_bag_handle == 0 && snap.item_bag_handle == 0);
     assert(g_handles.empty());
   }
@@ -360,7 +360,7 @@ int main(int argc, char **argv) {
   // 6. Counts: zero is valid; a negative count fails closed; a non-Int32 box is a metadata error.
   reset();
   g_balls = 0; g_stored = 0; g_capacity = 0; g_totalItems = 0; g_maxItems = 0;
-  assert(api->snapshot(&g_service, tid, 2000, &snap) == PGR_VD_OK);
+  assert(api->snapshot(&g_service, tid, 2000, &snap) == PGS_VD_OK);
   assert(snap.balls == 0 && snap.stored == 0 && snap.capacity == 0 && snap.max_items == 0);
   fake_gc_free(snap.pokemon_bag_handle); fake_gc_free(snap.item_bag_handle);
   for (int field = 0; field < 5; ++field) {
@@ -368,16 +368,16 @@ int main(int argc, char **argv) {
     int32_t *target = field == 0 ? &g_balls : field == 1 ? &g_stored : field == 2 ? &g_capacity
                     : field == 3 ? &g_totalItems : &g_maxItems;
     *target = -1;
-    assert(api->snapshot(&g_service, tid, 2000, &snap) == PGR_VD_ERR_NEG_COUNT);
+    assert(api->snapshot(&g_service, tid, 2000, &snap) == PGS_VD_ERR_NEG_COUNT);
     assert(snap.pokemon_bag_handle == 0 && snap.item_bag_handle == 0);
     assert(g_handles.empty());
   }
   reset();
   g_count_box = &g_wrongBox;  // every count method returns a non-Int32 box
-  assert(api->snapshot(&g_service, tid, 2000, &snap) == PGR_VD_ERR_METADATA);
+  assert(api->snapshot(&g_service, tid, 2000, &snap) == PGS_VD_ERR_METADATA);
   assert(g_handles.empty());
   reset();g_wrongBox.klass=&cls_derivedInt32;g_count_box=&g_wrongBox;
-  assert(api->snapshot(&g_service,tid,2000,&snap)==PGR_VD_ERR_METADATA);
+  assert(api->snapshot(&g_service,tid,2000,&snap)==PGS_VD_ERR_METADATA);
   assert(snap.reserved==7&&snap.pokemon_bag_handle==0&&snap.item_bag_handle==0&&g_handles.empty());
 
   // 7. Managed throw from any step -> ERR_MANAGED, roots freed, no partial handles.
@@ -387,7 +387,7 @@ int main(int argc, char **argv) {
                   static_cast<void *>(&m_totalItems), static_cast<void *>(&m_maxItems)}) {
     reset();
     g_throw_method = m;
-    assert(api->snapshot(&g_service, tid, 2000, &snap) == PGR_VD_ERR_MANAGED);
+    assert(api->snapshot(&g_service, tid, 2000, &snap) == PGS_VD_ERR_MANAGED);
     assert(snap.pokemon_bag_handle == 0 && snap.item_bag_handle == 0 && g_handles.empty());
   }
 
@@ -412,7 +412,7 @@ int main(int argc, char **argv) {
     g_service.klass = &cls_other;          // poison the old storage so a stale read fails loudly
     g_service.itemBag = nullptr;
   };
-  assert(api->snapshot(&g_service, tid, 2000, &snap) == PGR_VD_OK);
+  assert(api->snapshot(&g_service, tid, 2000, &snap) == PGS_VD_OK);
   assert(fake_gc_get(snap.item_bag_handle) == &g_itemBag);  // read came from the relocated service
   fake_gc_free(snap.pokemon_bag_handle); fake_gc_free(snap.item_bag_handle);
   assert(g_handles.empty());
@@ -424,7 +424,7 @@ int main(int argc, char **argv) {
   g_oneshot = [&]() {
     for (const auto &e : g_handles) if (fake_obj_class(e.second) == &cls_type) typeRooted = true;
   };
-  assert(api->snapshot(&g_service, tid, 2000, &snap) == PGR_VD_OK && typeRooted);
+  assert(api->snapshot(&g_service, tid, 2000, &snap) == PGS_VD_OK && typeRooted);
   fake_gc_free(snap.pokemon_bag_handle); fake_gc_free(snap.item_bag_handle);
   assert(g_handles.empty());
 
@@ -432,7 +432,7 @@ int main(int argc, char **argv) {
   reset();
   g_oneshot_on = &m_find;
   g_oneshot = []() { ::usleep(4000); };  // blow past the 1 ms lease before the counts finish
-  assert(api->snapshot(&g_service, tid, 1, &snap) == PGR_VD_SKIP);
+  assert(api->snapshot(&g_service, tid, 1, &snap) == PGS_VD_SKIP);
   assert(snap.pokemon_bag_handle == 0 && snap.item_bag_handle == 0 && g_handles.empty());
 
   // 12. Reentrancy: a nested discovery call fired inside a getter is refused busy; outer still succeeds.
@@ -441,27 +441,27 @@ int main(int argc, char **argv) {
   g_oneshot_on = &m_find;
   g_oneshot = [&]() {
     PgrVgpDiscoveryEnumeration inner{};
-    nested = g_api->enumerate(PGR_VD_KIND_CATCH, this_tid(), 2000, &inner);
+    nested = g_api->enumerate(PGS_VD_KIND_CATCH, this_tid(), 2000, &inner);
   };
-  assert(api->snapshot(&g_service, tid, 2000, &snap) == PGR_VD_OK && nested == PGR_VD_ERR_BUSY);
+  assert(api->snapshot(&g_service, tid, 2000, &snap) == PGS_VD_OK && nested == PGS_VD_ERR_BUSY);
   fake_gc_free(snap.pokemon_bag_handle); fake_gc_free(snap.item_bag_handle);
   assert(g_handles.empty());
 
   // 13. enumerate: bad kind, catch/spin success (owned array handle + count), owner/lease gate.
   reset();
-  assert(api->enumerate(0, tid, 2000, &en) == PGR_VD_ERR_BAD_KIND);
-  assert(api->enumerate(4, tid, 2000, &en) == PGR_VD_ERR_BAD_KIND && en.array_handle == 0);
-  assert(api->enumerate(PGR_VD_KIND_CATCH, tid + 1, 2000, &en) == PGR_VD_SKIP);
-  assert(api->enumerate(PGR_VD_KIND_CATCH, tid, 0, &en) == PGR_VD_SKIP);
+  assert(api->enumerate(0, tid, 2000, &en) == PGS_VD_ERR_BAD_KIND);
+  assert(api->enumerate(4, tid, 2000, &en) == PGS_VD_ERR_BAD_KIND && en.array_handle == 0);
+  assert(api->enumerate(PGS_VD_KIND_CATCH, tid + 1, 2000, &en) == PGS_VD_SKIP);
+  assert(api->enumerate(PGS_VD_KIND_CATCH, tid, 0, &en) == PGS_VD_SKIP);
   assert(g_handles.empty());
   reset();
-  assert(api->enumerate(PGR_VD_KIND_CATCH, tid, 2000, &en) == PGR_VD_OK);
+  assert(api->enumerate(PGS_VD_KIND_CATCH, tid, 2000, &en) == PGS_VD_OK);
   assert(en.count == 3 && en.array_handle != 0 && en.version == 1 && en.size == sizeof(en));
   assert(fake_gc_get(en.array_handle) == &g_wildArray && g_handles.size() == 1);
   void *catchArray = &g_wildArray;
   fake_gc_free(en.array_handle);
   reset();
-  assert(api->enumerate(PGR_VD_KIND_SPIN, tid, 2000, &en) == PGR_VD_OK && en.count == 1);
+  assert(api->enumerate(PGS_VD_KIND_SPIN, tid, 2000, &en) == PGS_VD_OK && en.count == 1);
   assert(fake_gc_get(en.array_handle) == &g_stopArray);
   fake_gc_free(en.array_handle);
   assert(g_handles.empty());
@@ -469,58 +469,58 @@ int main(int argc, char **argv) {
   // count 0 is a valid enumeration; an oversize array (> MAX) is a hard count error.
   reset();
   g_wildArray.length = 0;
-  assert(api->enumerate(PGR_VD_KIND_CATCH, tid, 2000, &en) == PGR_VD_OK && en.count == 0 &&
+  assert(api->enumerate(PGS_VD_KIND_CATCH, tid, 2000, &en) == PGS_VD_OK && en.count == 0 &&
          en.array_handle != 0);
   fake_gc_free(en.array_handle);
   reset();
-  g_wildArray.length = PGR_VD_MAX_ARRAY + 1;
-  assert(api->enumerate(PGR_VD_KIND_CATCH, tid, 2000, &en) == PGR_VD_ERR_BAD_COUNT &&
+  g_wildArray.length = PGS_VD_MAX_ARRAY + 1;
+  assert(api->enumerate(PGS_VD_KIND_CATCH, tid, 2000, &en) == PGS_VD_ERR_BAD_COUNT &&
          en.array_handle == 0);
   assert(g_handles.empty());
   // wrong array class -> metadata error.
   reset();
   g_wildArray.klass = &cls_other;
-  assert(api->enumerate(PGR_VD_KIND_CATCH, tid, 2000, &en) == PGR_VD_ERR_METADATA && en.array_handle == 0);
+  assert(api->enumerate(PGS_VD_KIND_CATCH, tid, 2000, &en) == PGS_VD_ERR_METADATA && en.array_handle == 0);
   assert(g_handles.empty());
 
   // Covariant arrays are compatible with Object[]; exact array-class equality would reject these.
   for(bool spin:{false,true}){
     reset();FakeArray &array=spin?g_stopArray:g_wildArray;
     array.klass=spin?static_cast<void*>(&cls_stopArray):static_cast<void*>(&cls_wildArray);
-    assert(api->enumerate(spin?PGR_VD_KIND_SPIN:PGR_VD_KIND_CATCH,tid,2000,&en)==PGR_VD_OK);
+    assert(api->enumerate(spin?PGS_VD_KIND_SPIN:PGS_VD_KIND_CATCH,tid,2000,&en)==PGS_VD_OK);
     assert(fake_gc_get(en.array_handle)==&array);fake_gc_free(en.array_handle);
-    assert(api->at(&array,0,tid,2000,&handle)==PGR_VD_OK);
+    assert(api->at(&array,0,tid,2000,&handle)==PGS_VD_OK);
     assert(fake_gc_get(handle)==array.data[0]);fake_gc_free(handle);assert(g_handles.empty());
   }
 
   // 14. at: valid element, null element (skip), out-of-bounds, oversize, wrong class, null args.
   reset();
-  assert(api->at(catchArray, 0, tid, 2000, &handle) == PGR_VD_OK && handle != 0);
+  assert(api->at(catchArray, 0, tid, 2000, &handle) == PGS_VD_OK && handle != 0);
   assert(fake_gc_get(handle) == &g_wild0 && g_handles.size() == 1);
   fake_gc_free(handle);
-  assert(api->at(catchArray, 2, tid, 2000, &handle) == PGR_VD_OK && fake_gc_get(handle) == &g_wild2);
+  assert(api->at(catchArray, 2, tid, 2000, &handle) == PGS_VD_OK && fake_gc_get(handle) == &g_wild2);
   fake_gc_free(handle);
   assert(g_handles.empty());
   reset();
   g_wildArray.data[1] = nullptr;  // null element at a valid index
-  assert(api->at(&g_wildArray, 1, tid, 2000, &handle) == PGR_VD_SKIP && handle == 0 && g_handles.empty());
+  assert(api->at(&g_wildArray, 1, tid, 2000, &handle) == PGS_VD_SKIP && handle == 0 && g_handles.empty());
   reset();
-  assert(api->at(&g_wildArray, 3, tid, 2000, &handle) == PGR_VD_ERR_BAD_INDEX && handle == 0);  // == count
-  assert(api->at(&g_wildArray, 99, tid, 2000, &handle) == PGR_VD_ERR_BAD_INDEX && handle == 0);
+  assert(api->at(&g_wildArray, 3, tid, 2000, &handle) == PGS_VD_ERR_BAD_INDEX && handle == 0);  // == count
+  assert(api->at(&g_wildArray, 99, tid, 2000, &handle) == PGS_VD_ERR_BAD_INDEX && handle == 0);
   assert(g_handles.empty());
   reset();
-  g_wildArray.length = PGR_VD_MAX_ARRAY + 1;
-  assert(api->at(&g_wildArray, 0, tid, 2000, &handle) == PGR_VD_ERR_BAD_COUNT && handle == 0);
+  g_wildArray.length = PGS_VD_MAX_ARRAY + 1;
+  assert(api->at(&g_wildArray, 0, tid, 2000, &handle) == PGS_VD_ERR_BAD_COUNT && handle == 0);
   assert(g_handles.empty());
   reset();
   g_wildArray.klass = &cls_other;
-  assert(api->at(&g_wildArray, 0, tid, 2000, &handle) == PGR_VD_ERR_METADATA && handle == 0);
+  assert(api->at(&g_wildArray, 0, tid, 2000, &handle) == PGS_VD_ERR_METADATA && handle == 0);
   assert(g_handles.empty());
   reset();
-  assert(api->at(nullptr, 0, tid, 2000, &handle) == PGR_VD_ERR_NULL_ARG && handle == 0);
-  assert(api->at(&g_wildArray, 0, tid, 2000, nullptr) == PGR_VD_ERR_NULL_ARG);
-  assert(api->at(&g_wildArray, 0, tid + 1, 2000, &handle) == PGR_VD_SKIP && handle == 0);  // owner gate
-  assert(api->at(&g_wildArray, 0, tid, 0, &handle) == PGR_VD_SKIP && handle == 0);         // closed lease
+  assert(api->at(nullptr, 0, tid, 2000, &handle) == PGS_VD_ERR_NULL_ARG && handle == 0);
+  assert(api->at(&g_wildArray, 0, tid, 2000, nullptr) == PGS_VD_ERR_NULL_ARG);
+  assert(api->at(&g_wildArray, 0, tid + 1, 2000, &handle) == PGS_VD_SKIP && handle == 0);  // owner gate
+  assert(api->at(&g_wildArray, 0, tid, 0, &handle) == PGS_VD_SKIP && handle == 0);         // closed lease
   assert(g_handles.empty());
 
   // 15. at: relocation inside array_length -> element read uses the re-resolved array base.
@@ -531,7 +531,7 @@ int main(int argc, char **argv) {
     g_wildArray.klass = &cls_other;
     g_wildArray.data[0] = reinterpret_cast<void *>(0xdeadbeef);  // poison the stale element slot
   };
-  assert(api->at(&g_wildArray, 0, tid, 2000, &handle) == PGR_VD_OK);
+  assert(api->at(&g_wildArray, 0, tid, 2000, &handle) == PGS_VD_OK);
   assert(fake_gc_get(handle) == &g_wild0);  // read from the relocated array, not the poisoned original
   fake_gc_free(handle);
   assert(g_handles.empty());
@@ -547,7 +547,7 @@ int main(int argc, char **argv) {
     ::usleep(4000);
   };
   handle=uintptr_t(0xfeed);
-  assert(api->at(&g_wildArray,0,tid,1,&handle)==PGR_VD_SKIP);
+  assert(api->at(&g_wildArray,0,tid,1,&handle)==PGS_VD_SKIP);
   assert(rootedElement&&handle==0&&g_handles.empty());
 
   puts("PASS VGP discovery: ABI (config v2 272 / snapshot 48 / enumeration 24 / table 40) + offsets, "

@@ -31,7 +31,7 @@ static_assert(offsetof(PgrCameraSamplerOutput, time_ms) == 64, "output time_ms")
 
 namespace {
 
-constexpr uint64_t kMaxLeaseMs = PGR_CS_MAX_LEASE_MS;
+constexpr uint64_t kMaxLeaseMs = PGS_CS_MAX_LEASE_MS;
 constexpr int kConfigPtrCount = 25;  // validated pointers after the 8-byte header
 constexpr double kPi = 3.14159265358979323846;
 
@@ -97,8 +97,8 @@ struct BusyExit { ~BusyExit() { std::lock_guard<std::mutex> lock(g_state_mutex);
 
 // Scalar sampling result, filled entirely from roots before any publication.
 struct Result {
-  int status = PGR_CS_UNAVAILABLE;
-  uint32_t reason = PGR_CS_REASON_NONE;
+  int status = PGS_CS_UNAVAILABLE;
+  uint32_t reason = PGS_CS_REASON_NONE;
   int32_t camera_id = 0;
   uint32_t mask = 0;
   int32_t layer = 0;
@@ -108,9 +108,9 @@ struct Result {
 // Check the window between managed operations and again after all root cleanup.
 bool within_window(uint64_t deadline, Result &r) {
   uint64_t now=0;
-  if (!read_boottime_ms(&now)) { r.status=PGR_CS_ERR_CLOCK; r.reason=PGR_CS_REASON_CLOCK; return false; }
-  if (now>=deadline) { r.status=PGR_CS_UNAVAILABLE; r.reason=PGR_CS_REASON_LEASE; return false; }
-  if (!reinterpret_cast<ThreadCur>(g_cfg.thread_current)()) { r.status=PGR_CS_UNAVAILABLE; r.reason=PGR_CS_REASON_THREAD; return false; }
+  if (!read_boottime_ms(&now)) { r.status=PGS_CS_ERR_CLOCK; r.reason=PGS_CS_REASON_CLOCK; return false; }
+  if (now>=deadline) { r.status=PGS_CS_UNAVAILABLE; r.reason=PGS_CS_REASON_LEASE; return false; }
+  if (!reinterpret_cast<ThreadCur>(g_cfg.thread_current)()) { r.status=PGS_CS_UNAVAILABLE; r.reason=PGS_CS_REASON_THREAD; return false; }
   return true;
 }
 
@@ -134,9 +134,9 @@ CallResult call(void *method, const Root *receiver, void **args, Root &out, bool
 // Map a non-OK CallResult to its fault status and set the reason. Returns 0 for CALL_OK.
 int call_fault(CallResult cr, Result &r) {
   switch (cr) {
-    case CALL_THROW:    r.reason = PGR_CS_REASON_MANAGED;  return PGR_CS_ERR_MANAGED;
-    case CALL_GCHANDLE: r.reason = PGR_CS_REASON_GCHANDLE; return PGR_CS_ERR_GCHANDLE;
-    case CALL_DEAD:     r.reason = PGR_CS_REASON_GCHANDLE; return PGR_CS_ERR_GCHANDLE;
+    case CALL_THROW:    r.reason = PGS_CS_REASON_MANAGED;  return PGS_CS_ERR_MANAGED;
+    case CALL_GCHANDLE: r.reason = PGS_CS_REASON_GCHANDLE; return PGS_CS_ERR_GCHANDLE;
+    case CALL_DEAD:     r.reason = PGS_CS_REASON_GCHANDLE; return PGS_CS_ERR_GCHANDLE;
     default:            return 0;
   }
 }
@@ -170,18 +170,18 @@ int ensure_world_map_layer(int32_t *out_layer, uint64_t deadline, Result &r) {
   if (!within_window(deadline,r)) return r.status;
   void *str_raw = reinterpret_cast<StringNew>(g_cfg.string_new)(kWorldMap);
   Root str;
-  if (!str.set(str_raw)) { r.reason = PGR_CS_REASON_GCHANDLE; return PGR_CS_ERR_GCHANDLE; }
-  if (!is_exact(str.get(), g_cfg.class_string)) { r.reason = PGR_CS_REASON_METADATA; return PGR_CS_ERR_METADATA; }
+  if (!str.set(str_raw)) { r.reason = PGS_CS_REASON_GCHANDLE; return PGS_CS_ERR_GCHANDLE; }
+  if (!is_exact(str.get(), g_cfg.class_string)) { r.reason = PGS_CS_REASON_METADATA; return PGS_CS_ERR_METADATA; }
 
   // NameToLayer(string) -> boxed System.Int32. The string object is the reference argument, passed directly.
   if (!within_window(deadline,r)) return r.status;
   Root box;
   void *args[] = {str.get()};
   if (int fault = call_fault(call(g_cfg.m_nametolayer, nullptr, args, box, /*allowNull=*/false), r)) return fault;
-  if (!is_exact(box.get(), g_cfg.class_int)) { r.reason = PGR_CS_REASON_METADATA; return PGR_CS_ERR_METADATA; }
+  if (!is_exact(box.get(), g_cfg.class_int)) { r.reason = PGS_CS_REASON_METADATA; return PGS_CS_ERR_METADATA; }
   int32_t layer = 0;
-  if (!unbox_i32(box, &layer)) { r.reason = PGR_CS_REASON_GCHANDLE; return PGR_CS_ERR_GCHANDLE; }
-  if (layer != g_cfg.expected_layer) { r.reason = PGR_CS_REASON_LAYER; return PGR_CS_ERR_LAYER; }
+  if (!unbox_i32(box, &layer)) { r.reason = PGS_CS_REASON_GCHANDLE; return PGS_CS_ERR_GCHANDLE; }
+  if (layer != g_cfg.expected_layer) { r.reason = PGS_CS_REASON_LAYER; return PGS_CS_ERR_LAYER; }
 
   g_world_map_layer.store(layer, std::memory_order_release);
   *out_layer = layer;
@@ -194,21 +194,21 @@ int ensure_world_map_layer(int32_t *out_layer, uint64_t deadline, Result &r) {
 int run_sample(const PgrCameraSamplerRequest *request, uint64_t deadline, Result &r) {
   // (1) RAW rig: class proof ONLY, taken before any gchandle_new/runtime_invoke. A non-MainCameraRig rig is
   // the off-map case -> benign 0. The rig pointer is never retained or re-read.
-  if (!is_exact(request->rig, g_cfg.class_rig)) { r.reason = PGR_CS_REASON_NON_MAP_RIG; return PGR_CS_UNAVAILABLE; }
+  if (!is_exact(request->rig, g_cfg.class_rig)) { r.reason = PGS_CS_REASON_NON_MAP_RIG; return PGS_CS_UNAVAILABLE; }
 
   // (2) RAW returned camera: null is benign; otherwise root it FIRST, before any other allocation.
-  if (!request->camera) { r.reason = PGR_CS_REASON_NULL_CAMERA; return PGR_CS_UNAVAILABLE; }
+  if (!request->camera) { r.reason = PGS_CS_REASON_NULL_CAMERA; return PGS_CS_UNAVAILABLE; }
   Root natural;
-  if (!natural.set(request->camera)) { r.reason = PGR_CS_REASON_GCHANDLE; return PGR_CS_ERR_GCHANDLE; }
-  if (!is_exact(natural.get(), g_cfg.class_camera)) { r.reason = PGR_CS_REASON_METADATA; return PGR_CS_ERR_METADATA; }
+  if (!natural.set(request->camera)) { r.reason = PGS_CS_REASON_GCHANDLE; return PGS_CS_ERR_GCHANDLE; }
+  if (!is_exact(natural.get(), g_cfg.class_camera)) { r.reason = PGS_CS_REASON_METADATA; return PGS_CS_ERR_METADATA; }
 
   // (3) Camera.get_main() must match the returned camera BEFORE any queries.
   if (!within_window(deadline,r)) return r.status;
   Root main;
   if (int fault = call_fault(call(g_cfg.m_main, nullptr, nullptr, main, /*allowNull=*/true), r)) return fault;
-  if (!main.get()) { r.reason = PGR_CS_REASON_NULL_CAMERA; return PGR_CS_UNAVAILABLE; }
-  if (!is_exact(main.get(), g_cfg.class_camera)) { r.reason = PGR_CS_REASON_METADATA; return PGR_CS_ERR_METADATA; }
-  if (natural.get() != main.get()) { r.reason = PGR_CS_REASON_CAMERA_MISMATCH; return PGR_CS_UNAVAILABLE; }
+  if (!main.get()) { r.reason = PGS_CS_REASON_NULL_CAMERA; return PGS_CS_UNAVAILABLE; }
+  if (!is_exact(main.get(), g_cfg.class_camera)) { r.reason = PGS_CS_REASON_METADATA; return PGS_CS_ERR_METADATA; }
+  if (natural.get() != main.get()) { r.reason = PGS_CS_REASON_CAMERA_MISMATCH; return PGS_CS_UNAVAILABLE; }
 
   // (4) WorldMap layer (verified == 13 / cached) and the culling-mask gate.
   int32_t layer = 0;
@@ -220,38 +220,38 @@ int run_sample(const PgrCameraSamplerRequest *request, uint64_t deadline, Result
   if (!within_window(deadline,r)) return r.status;
   Root mask_box;
   if (int fault = call_fault(call(g_cfg.m_culling, &main, nullptr, mask_box, /*allowNull=*/false), r)) return fault;
-  if (!is_exact(mask_box.get(), g_cfg.class_int)) { r.reason = PGR_CS_REASON_METADATA; return PGR_CS_ERR_METADATA; }
+  if (!is_exact(mask_box.get(), g_cfg.class_int)) { r.reason = PGS_CS_REASON_METADATA; return PGS_CS_ERR_METADATA; }
   int32_t mask = 0;
-  if (!unbox_i32(mask_box, &mask)) { r.reason = PGR_CS_REASON_GCHANDLE; return PGR_CS_ERR_GCHANDLE; }
+  if (!unbox_i32(mask_box, &mask)) { r.reason = PGS_CS_REASON_GCHANDLE; return PGS_CS_ERR_GCHANDLE; }
   r.mask = static_cast<uint32_t>(mask);
   if ((r.mask & (1u << static_cast<uint32_t>(layer))) == 0) {
-    r.reason = PGR_CS_REASON_MAP_HIDDEN;  // output carries mask + layer
-    return PGR_CS_UNAVAILABLE;
+    r.reason = PGS_CS_REASON_MAP_HIDDEN;  // output carries mask + layer
+    return PGS_CS_UNAVAILABLE;
   }
 
   // (5) Transform (assignable) and its forward vector (exact Vector3).
   if (!within_window(deadline,r)) return r.status;
   Root transform;
   if (int fault = call_fault(call(g_cfg.m_transform, &main, nullptr, transform, /*allowNull=*/true), r)) return fault;
-  if (!transform.get()) { r.reason = PGR_CS_REASON_NULL_TRANSFORM; return PGR_CS_UNAVAILABLE; }
+  if (!transform.get()) { r.reason = PGS_CS_REASON_NULL_TRANSFORM; return PGS_CS_UNAVAILABLE; }
   if (!is_assignable(g_cfg.class_transform, transform.get())) {
-    r.reason = PGR_CS_REASON_METADATA; return PGR_CS_ERR_METADATA;
+    r.reason = PGS_CS_REASON_METADATA; return PGS_CS_ERR_METADATA;
   }
   if (!within_window(deadline,r)) return r.status;
   Root vector;
   if (int fault = call_fault(call(g_cfg.m_forward, &transform, nullptr, vector, /*allowNull=*/false), r)) return fault;
-  if (!is_exact(vector.get(), g_cfg.class_vector)) { r.reason = PGR_CS_REASON_METADATA; return PGR_CS_ERR_METADATA; }
+  if (!is_exact(vector.get(), g_cfg.class_vector)) { r.reason = PGS_CS_REASON_METADATA; return PGS_CS_ERR_METADATA; }
 
   double x = 0, y = 0, z = 0;
   if (!read_axis(vector, g_cfg.f_x, &x) || !read_axis(vector, g_cfg.f_y, &y) || !read_axis(vector, g_cfg.f_z, &z)) {
-    r.reason = PGR_CS_REASON_GCHANDLE; return PGR_CS_ERR_GCHANDLE;
+    r.reason = PGS_CS_REASON_GCHANDLE; return PGS_CS_ERR_GCHANDLE;
   }
   if (!std::isfinite(x) || !std::isfinite(y) || !std::isfinite(z)) {
-    r.reason = PGR_CS_REASON_NONFINITE; return PGR_CS_ERR_VECTOR;
+    r.reason = PGS_CS_REASON_NONFINITE; return PGS_CS_ERR_VECTOR;
   }
   // A top-down camera has no horizontal heading. It can occur during normal
   // transitions; withhold this sample without disabling subsequent sampling.
-  if (std::sqrt(x * x + z * z) < 1e-6) { r.reason = PGR_CS_REASON_VERTICAL; return PGR_CS_UNAVAILABLE; }
+  if (std::sqrt(x * x + z * z) < 1e-6) { r.reason = PGS_CS_REASON_VERTICAL; return PGS_CS_UNAVAILABLE; }
   r.x = x; r.y = y; r.z = z;
   r.yaw = std::fmod(std::atan2(x, z) * 180.0 / kPi + 360.0, 360.0);
 
@@ -259,23 +259,23 @@ int run_sample(const PgrCameraSamplerRequest *request, uint64_t deadline, Result
   if (!within_window(deadline,r)) return r.status;
   Root id_box;
   if (int fault = call_fault(call(g_cfg.m_instanceid, &main, nullptr, id_box, /*allowNull=*/false), r)) return fault;
-  if (!is_exact(id_box.get(), g_cfg.class_int)) { r.reason = PGR_CS_REASON_METADATA; return PGR_CS_ERR_METADATA; }
+  if (!is_exact(id_box.get(), g_cfg.class_int)) { r.reason = PGS_CS_REASON_METADATA; return PGS_CS_ERR_METADATA; }
   int32_t id = 0;
-  if (!unbox_i32(id_box, &id)) { r.reason = PGR_CS_REASON_GCHANDLE; return PGR_CS_ERR_GCHANDLE; }
+  if (!unbox_i32(id_box, &id)) { r.reason = PGS_CS_REASON_GCHANDLE; return PGS_CS_ERR_GCHANDLE; }
   r.camera_id = id;
 
   // (7) Fresh pre-publication lease gate (CLOCK_BOOTTIME), after every managed read.
   uint64_t now = 0;
-  if (!read_boottime_ms(&now)) { r.reason = PGR_CS_REASON_CLOCK; return PGR_CS_ERR_CLOCK; }
-  if (now >= deadline) { r.reason = PGR_CS_REASON_LEASE; return PGR_CS_UNAVAILABLE; }
+  if (!read_boottime_ms(&now)) { r.reason = PGS_CS_REASON_CLOCK; return PGS_CS_ERR_CLOCK; }
+  if (now >= deadline) { r.reason = PGS_CS_REASON_LEASE; return PGS_CS_UNAVAILABLE; }
 
-  r.reason = PGR_CS_REASON_OK;
-  return PGR_CS_SAMPLE;
+  r.reason = PGS_CS_REASON_OK;
+  return PGS_CS_SAMPLE;
 }
 
 void init_output(PgrCameraSamplerOutput *out) {
   std::memset(out, 0, sizeof(*out));
-  out->version = PGR_CS_OUTPUT_VERSION;
+  out->version = PGS_CS_OUTPUT_VERSION;
   out->size = sizeof(PgrCameraSamplerOutput);
 }
 
@@ -285,12 +285,12 @@ void publish(PgrCameraSamplerOutput *out, const Result &r) {
   out->status = r.status;
   out->reason = r.reason;
   if (r.status >= 0) out->time_ms = r.time_ms;
-  if (r.status == PGR_CS_SAMPLE) {
+  if (r.status == PGS_CS_SAMPLE) {
     out->camera_id = r.camera_id;
     out->mask = r.mask;
     out->layer = r.layer;
     out->x = r.x; out->y = r.y; out->z = r.z; out->yaw = r.yaw;
-  } else if (r.status == PGR_CS_UNAVAILABLE && r.reason == PGR_CS_REASON_MAP_HIDDEN) {
+  } else if (r.status == PGS_CS_UNAVAILABLE && r.reason == PGS_CS_REASON_MAP_HIDDEN) {
     out->mask = r.mask;
     out->layer = r.layer;
   }
@@ -308,25 +308,25 @@ bool owner_ready(uint64_t tid) {
 }
 
 bool check_request(const PgrCameraSamplerRequest *request, int *rc) {
-  if (!g_installed.load(std::memory_order_acquire)) { *rc = PGR_CS_ERR_NOT_INSTALLED; return false; }
-  if (request == nullptr) { *rc = PGR_CS_ERR_NULL_ARG; return false; }
-  if (request->version != PGR_CS_REQUEST_VERSION) { *rc = PGR_CS_ERR_BAD_VERSION; return false; }
-  if (request->size != sizeof(PgrCameraSamplerRequest)) { *rc = PGR_CS_ERR_BAD_SIZE; return false; }
+  if (!g_installed.load(std::memory_order_acquire)) { *rc = PGS_CS_ERR_NOT_INSTALLED; return false; }
+  if (request == nullptr) { *rc = PGS_CS_ERR_NULL_ARG; return false; }
+  if (request->version != PGS_CS_REQUEST_VERSION) { *rc = PGS_CS_ERR_BAD_VERSION; return false; }
+  if (request->size != sizeof(PgrCameraSamplerRequest)) { *rc = PGS_CS_ERR_BAD_SIZE; return false; }
   *rc = 0;
   return true;
 }
 
 // --- config validation / install ---------------------------------------------------
 bool validate_config(const PgrCameraSamplerConfig *c, int *rc) {
-  if (c == nullptr) { *rc = PGR_CS_ERR_NULL_ARG; return false; }
-  if (c->version != PGR_CS_CONFIG_VERSION) { *rc = PGR_CS_ERR_BAD_VERSION; return false; }
-  if (c->size != sizeof(PgrCameraSamplerConfig)) { *rc = PGR_CS_ERR_BAD_SIZE; return false; }
+  if (c == nullptr) { *rc = PGS_CS_ERR_NULL_ARG; return false; }
+  if (c->version != PGS_CS_CONFIG_VERSION) { *rc = PGS_CS_ERR_BAD_VERSION; return false; }
+  if (c->size != sizeof(PgrCameraSamplerConfig)) { *rc = PGS_CS_ERR_BAD_SIZE; return false; }
   void *ptrs[kConfigPtrCount];
   std::memcpy(ptrs, reinterpret_cast<const unsigned char *>(c) + offsetof(PgrCameraSamplerConfig, runtime_invoke),
               sizeof(ptrs));
   for (int i = 0; i < kConfigPtrCount; ++i)
-    if (ptrs[i] == nullptr) { *rc = PGR_CS_ERR_MISSING_PTR; return false; }
-  if (c->expected_layer != PGR_CS_WORLD_MAP_LAYER || c->reserved0 != 0) { *rc = PGR_CS_ERR_BAD_CONFIG; return false; }
+    if (ptrs[i] == nullptr) { *rc = PGS_CS_ERR_MISSING_PTR; return false; }
+  if (c->expected_layer != PGS_CS_WORLD_MAP_LAYER || c->reserved0 != 0) { *rc = PGS_CS_ERR_BAD_CONFIG; return false; }
   *rc = 0;
   return true;
 }
@@ -335,12 +335,12 @@ int api_install(const PgrCameraSamplerConfig *config) {
   int rc = 0;
   if (!validate_config(config, &rc)) return rc;
   uint64_t probe = 0;
-  if (!read_boottime_ms(&probe)) return PGR_CS_ERR_CLOCK;
+  if (!read_boottime_ms(&probe)) return PGS_CS_ERR_CLOCK;
 
   std::lock_guard<std::mutex> install_lock(g_install_mutex);
   if (g_installed.load(std::memory_order_acquire)) {
     std::lock_guard<std::mutex> state_lock(g_state_mutex);
-    return std::memcmp(&g_cfg, config, sizeof(*config)) == 0 ? 0 : PGR_CS_ERR_RECONFIG;
+    return std::memcmp(&g_cfg, config, sizeof(*config)) == 0 ? 0 : PGS_CS_ERR_RECONFIG;
   }
   {
     std::lock_guard<std::mutex> state_lock(g_state_mutex);
@@ -352,25 +352,25 @@ int api_install(const PgrCameraSamplerConfig *config) {
 }
 
 int api_sample(const PgrCameraSamplerRequest *request, PgrCameraSamplerOutput *out) {
-  if (out == nullptr) return PGR_CS_ERR_NULL_ARG;  // cannot report
+  if (out == nullptr) return PGS_CS_ERR_NULL_ARG;  // cannot report
   init_output(out);
   int rc = 0;
   if (!check_request(request, &rc)) { out->status=rc; return rc; }
 
   Result r;
   // Owner latch + attached-thread gate (benign 0 / reason thread on failure).
-  if (request->tid==0 || current_tid()!=request->tid || !reinterpret_cast<ThreadCur>(g_cfg.thread_current)() || !owner_ready(request->tid)) { r.reason = PGR_CS_REASON_THREAD; publish(out, r); return PGR_CS_UNAVAILABLE; }
+  if (request->tid==0 || current_tid()!=request->tid || !reinterpret_cast<ThreadCur>(g_cfg.thread_current)() || !owner_ready(request->tid)) { r.reason = PGS_CS_REASON_THREAD; publish(out, r); return PGS_CS_UNAVAILABLE; }
   if (reinterpret_cast<ThreadCur>(g_cfg.thread_current)() == nullptr) {
-    r.reason = PGR_CS_REASON_THREAD; publish(out, r); return PGR_CS_UNAVAILABLE;
+    r.reason = PGS_CS_REASON_THREAD; publish(out, r); return PGS_CS_UNAVAILABLE;
   }
   const uint64_t remaining = request->remaining_ms > kMaxLeaseMs ? kMaxLeaseMs : request->remaining_ms;
-  if (remaining == 0) { r.reason = PGR_CS_REASON_OFF; publish(out, r); return PGR_CS_UNAVAILABLE; }
+  if (remaining == 0) { r.reason = PGS_CS_REASON_OFF; publish(out, r); return PGS_CS_UNAVAILABLE; }
   uint64_t now = 0;
-  if (!read_boottime_ms(&now)) { r.status = PGR_CS_ERR_CLOCK; r.reason = PGR_CS_REASON_CLOCK; publish(out, r); return PGR_CS_ERR_CLOCK; }
+  if (!read_boottime_ms(&now)) { r.status = PGS_CS_ERR_CLOCK; r.reason = PGS_CS_REASON_CLOCK; publish(out, r); return PGS_CS_ERR_CLOCK; }
   r.time_ms = static_cast<double>(now);
   const uint64_t deadline = now + remaining;
 
-  { std::lock_guard<std::mutex> lock(g_state_mutex); if (g_busy) { r.status = PGR_CS_ERR_BUSY; r.reason = PGR_CS_REASON_BUSY; publish(out, r); return PGR_CS_ERR_BUSY; } g_busy = true; }
+  { std::lock_guard<std::mutex> lock(g_state_mutex); if (g_busy) { r.status = PGS_CS_ERR_BUSY; r.reason = PGS_CS_REASON_BUSY; publish(out, r); return PGS_CS_ERR_BUSY; } g_busy = true; }
   BusyExit busy_exit;
 
   // All managed work (and its roots) lives in run_sample; roots are freed when it returns, before publish.
@@ -381,13 +381,13 @@ int api_sample(const PgrCameraSamplerRequest *request, PgrCameraSamplerOutput *o
 }
 
 const PgrCameraSamplerApi kApiTable = {
-    PGR_CS_API_VERSION, static_cast<uint32_t>(sizeof(PgrCameraSamplerApi)),
+    PGS_CS_API_VERSION, static_cast<uint32_t>(sizeof(PgrCameraSamplerApi)),
     &api_install, &api_sample,
 };
 
 }  // namespace
 
 extern "C" const void *pgs_camera_sampler_api(uint32_t version) {
-  if (version != PGR_CS_API_VERSION) return nullptr;
+  if (version != PGS_CS_API_VERSION) return nullptr;
   return &kApiTable;
 }

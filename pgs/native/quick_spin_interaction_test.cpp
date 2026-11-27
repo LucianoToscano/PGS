@@ -14,7 +14,7 @@ uint64_t enter(uint32_t id,void *self,void *arg){
 }
 void leave(uint64_t token,void *result){assert(token&&!result&&!g_live.empty());++leaves;}
 void abort_call(uint64_t token){assert(token&&!g_live.empty());++aborts;}
-const pgr_interaction_owner::Api observer{2,40,wants,enter,leave,abort_call};
+const pgs_interaction_owner::Api observer{2,40,wants,enter,leave,abort_call};
 }
 extern "C" const void *pgs_interaction_host_api(uint32_t v){return v==2?&observer:nullptr;}
 int main(){

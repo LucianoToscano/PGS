@@ -215,27 +215,27 @@ uint64_t build(bool arm = true) {
   put_id(g_req.expected_key, id); g_req.epoch = 7; g_req.tid = g_owner;
   g_req.gui = borrow(&s.gui); g_req.view = borrow(&s.view); g_req.response = borrow(&s.response);
   g_req.data = borrow(&s.data); g_req.pokemon = borrow(&s.pokemon); g_req.dismissed = borrow(&s.action);
-  if (arm) assert(g_api->update(1, 2500, 7, g_owner) == PGR_DC_OK);
+  if (arm) assert(g_api->update(1, 2500, 7, g_owner) == PGS_DC_OK);
   return id;
 }
 
 uint64_t acquire(uint64_t epoch = 7) {
-  uint64_t t = 0; assert(g_api->acquire(epoch, g_owner, &t) == PGR_DC_OK); return t;
+  uint64_t t = 0; assert(g_api->acquire(epoch, g_owner, &t) == PGS_DC_OK); return t;
 }
 int validate() { return g_api->validate(&g_req); }
 int complete(uint64_t tok, PgrDetailsCompletionOutput &out) {
   std::memset(&out, 0, sizeof(out)); int rc = g_api->complete(&g_req, tok, &out); balanced(); return rc;
 }
 PgrDetailsCompletionSample sample() {
-  PgrDetailsCompletionSample s{}; assert(g_api->sample(&s) == PGR_DC_OK);
+  PgrDetailsCompletionSample s{}; assert(g_api->sample(&s) == PGS_DC_OK);
   assert(s.version == 1 && s.size == sizeof(s)); return s;
 }
 // Each mismatch must make validate INVALID and complete REFUSED without ever clicking.
 void expect_rejected() {
-  assert(validate() == PGR_DC_OK);
+  assert(validate() == PGS_DC_OK);
   uint64_t t = acquire(); assert(t != 0);
   PgrDetailsCompletionOutput out{};
-  assert(complete(t, out) == PGR_DC_OK && !(out.flags & PGR_DC_FLAG_INVOKED));
+  assert(complete(t, out) == PGS_DC_OK && !(out.flags & PGS_DC_FLAG_INVOKED));
   assert(g_click_calls == 0);
 }
 
@@ -271,27 +271,27 @@ int main(int argc, char **argv) {
   PgrDetailsCompletionOutput out{};
 
   // 1. Config validation, not-installed, idempotence, reconfig, missing output buffer.
-  assert(api->install(nullptr) == PGR_DC_ERR_NULL_ARG);
+  assert(api->install(nullptr) == PGS_DC_ERR_NULL_ARG);
   PgrDetailsCompletionConfig bad = cfg; bad.version = 2;
-  assert(api->install(&bad) == PGR_DC_ERR_BAD_VERSION);
-  bad = cfg; bad.size = sizeof(cfg) - 1; assert(api->install(&bad) == PGR_DC_ERR_BAD_SIZE);
-  bad = cfg; bad.m_click = nullptr; assert(api->install(&bad) == PGR_DC_ERR_MISSING_PTR);
-  bad = cfg; bad.f_list = nullptr; assert(api->install(&bad) == PGR_DC_ERR_MISSING_PTR);
+  assert(api->install(&bad) == PGS_DC_ERR_BAD_VERSION);
+  bad = cfg; bad.size = sizeof(cfg) - 1; assert(api->install(&bad) == PGS_DC_ERR_BAD_SIZE);
+  bad = cfg; bad.m_click = nullptr; assert(api->install(&bad) == PGS_DC_ERR_MISSING_PTR);
+  bad = cfg; bad.f_list = nullptr; assert(api->install(&bad) == PGS_DC_ERR_MISSING_PTR);
   { build(/*arm=*/false);
-    assert(api->validate(&g_req) == PGR_DC_ERR_NOT_INSTALLED);
-    assert(api->complete(&g_req, 1, &out) == PGR_DC_ERR_NOT_INSTALLED && out.status == PGR_DC_ERR_NOT_INSTALLED); }
-  assert(api->install(&cfg) == PGR_DC_OK);
-  assert(api->install(&cfg) == PGR_DC_OK);  // idempotent
-  bad = cfg; bad.state_open = 9; assert(api->install(&bad) == PGR_DC_ERR_RECONFIG);
-  assert(api->complete(nullptr, 1, nullptr) == PGR_DC_ERR_NULL_ARG);
+    assert(api->validate(&g_req) == PGS_DC_ERR_NOT_INSTALLED);
+    assert(api->complete(&g_req, 1, &out) == PGS_DC_ERR_NOT_INSTALLED && out.status == PGS_DC_ERR_NOT_INSTALLED); }
+  assert(api->install(&cfg) == PGS_DC_OK);
+  assert(api->install(&cfg) == PGS_DC_OK);  // idempotent
+  bad = cfg; bad.state_open = 9; assert(api->install(&bad) == PGS_DC_ERR_RECONFIG);
+  assert(api->complete(nullptr, 1, nullptr) == PGS_DC_ERR_NULL_ARG);
 
   // 2. Valid details: validate VALID, acquire, complete DONE, click once, flags, before/after.
-  { build(); assert(validate() == PGR_DC_DONE);
+  { build(); assert(validate() == PGS_DC_DONE);
     uint64_t t = acquire(); assert(t != 0);
-    assert(complete(t, out) == PGR_DC_DONE && g_click_calls == 1);
-    assert(out.version == 1 && out.size == 24 && out.status == PGR_DC_DONE);
-    assert((out.flags & PGR_DC_FLAG_INVOKED) && (out.flags & PGR_DC_FLAG_BEFORE_KNOWN));
-    assert((out.flags & PGR_DC_FLAG_AFTER_KNOWN) && !(out.flags & PGR_DC_FLAG_GONE));
+    assert(complete(t, out) == PGS_DC_DONE && g_click_calls == 1);
+    assert(out.version == 1 && out.size == 24 && out.status == PGS_DC_DONE);
+    assert((out.flags & PGS_DC_FLAG_INVOKED) && (out.flags & PGS_DC_FLAG_BEFORE_KNOWN));
+    assert((out.flags & PGS_DC_FLAG_AFTER_KNOWN) && !(out.flags & PGS_DC_FLAG_GONE));
     assert(out.before == kStateOpen && out.after == kDoneState);
     PgrDetailsCompletionSample sm = sample();
     assert(sm.validate_ok >= 1 && sm.complete_ok == 1 && sm.last_token == t && sm.busy == 0); }
@@ -299,7 +299,7 @@ int main(int argc, char **argv) {
   // 2b. transfer-only independence: there is NO dismissEnabled gate, so an auto-transfer-only session
   //     (the host never sets dismissEnabled) completes the details identically. Nothing extra to arm.
   { build(); uint64_t t = acquire(); assert(t != 0);
-    assert(complete(t, out) == PGR_DC_DONE && g_click_calls == 1); }
+    assert(complete(t, out) == PGS_DC_DONE && g_click_calls == 1); }
 
   // 3. Every identity mismatch -> INVALID + REFUSED, no click. Covers the ordinary-inventory rejection
   //    (post != 1) and the list count/item/invalid-callback/id/class mutations.
@@ -336,113 +336,113 @@ int main(int argc, char **argv) {
   // 4. Validation during an OPENING canvas: validate is tolerant (no STATE_OPEN gate), but complete
   //    requires STATE_OPEN and refuses without clicking.
   { build(); scenes[0].gui.state = 1;  // still opening
-    assert(validate() == PGR_DC_DONE);
+    assert(validate() == PGS_DC_DONE);
     uint64_t t = acquire(); assert(t != 0);
-    assert(complete(t, out) == PGR_DC_OK && g_click_calls == 0 && !(out.flags & PGR_DC_FLAG_INVOKED)); }
+    assert(complete(t, out) == PGS_DC_OK && g_click_calls == 0 && !(out.flags & PGS_DC_FLAG_INVOKED)); }
 
   // 5. Gate: off / wrong epoch / expired lease -> no token and complete refused.
-  { build(); assert(api->update(0, 0, 7, tid) == PGR_DC_OK);
+  { build(); assert(api->update(0, 0, 7, tid) == PGS_DC_OK);
     assert(acquire() == 0);
-    assert(complete(999, out) == PGR_DC_OK && !(out.flags & PGR_DC_FLAG_INVOKED));
-    assert(api->update(1, 2000, 8, tid) == PGR_DC_OK);
+    assert(complete(999, out) == PGS_DC_OK && !(out.flags & PGS_DC_FLAG_INVOKED));
+    assert(api->update(1, 2000, 8, tid) == PGS_DC_OK);
     assert(acquire(7) == 0);  // epoch mismatch
     uint64_t t = acquire(8); assert(t != 0);
     g_req.epoch = 7;  // request epoch 7 != armed 8
-    assert(complete(t, out) == PGR_DC_OK && g_click_calls == 0);
+    assert(complete(t, out) == PGS_DC_OK && g_click_calls == 0);
     g_req.epoch = 8; }
-  { build(); assert(api->update(1, 1, 7, tid) == PGR_DC_OK); ::usleep(3000);
+  { build(); assert(api->update(1, 1, 7, tid) == PGS_DC_OK); ::usleep(3000);
     assert(acquire() == 0); }
 
   // 6. Repeated / older token: a token completes at most once.
   { build(); uint64_t t1 = acquire(); uint64_t t2 = acquire(); assert(t2 == t1 + 1);
-    assert(complete(t2, out) == PGR_DC_DONE && g_click_calls == 1);
+    assert(complete(t2, out) == PGS_DC_DONE && g_click_calls == 1);
     scenes[0].gui.state = kStateOpen;  // reset for refused retries
-    assert(complete(t2, out) == PGR_DC_OK && g_click_calls == 1);  // reused
-    assert(complete(t1, out) == PGR_DC_OK && g_click_calls == 1);  // older
+    assert(complete(t2, out) == PGS_DC_OK && g_click_calls == 1);  // reused
+    assert(complete(t1, out) == PGS_DC_OK && g_click_calls == 1);  // older
     uint64_t t3 = acquire(); assert(t3 == t2 + 1);
-    assert(complete(t3, out) == PGR_DC_DONE && g_click_calls == 2); }
+    assert(complete(t3, out) == PGS_DC_DONE && g_click_calls == 2); }
 
   // 7. Click exception -> ERR_MANAGED, invoked once, postcondition still read.
   { build(); uint64_t t = acquire(); g_throw_click = true;
-    assert(complete(t, out) == PGR_DC_ERR_MANAGED && g_click_calls == 1);
-    assert((out.flags & PGR_DC_FLAG_INVOKED) && out.status == PGR_DC_ERR_MANAGED);
-    assert((out.flags & PGR_DC_FLAG_AFTER_KNOWN) && out.after == kDoneState);
+    assert(complete(t, out) == PGS_DC_ERR_MANAGED && g_click_calls == 1);
+    assert((out.flags & PGS_DC_FLAG_INVOKED) && out.status == PGS_DC_ERR_MANAGED);
+    assert((out.flags & PGS_DC_FLAG_AFTER_KNOWN) && out.after == kDoneState);
     assert(sample().complete_fault >= 1 && sample().busy == 0); }
 
   // 8. Postcondition "gone": the click leaves the gui not-alive.
   { build(); uint64_t t = acquire();
     g_on_click = [](){ g_live = false; };
-    assert(complete(t, out) == PGR_DC_DONE);
-    assert((out.flags & PGR_DC_FLAG_INVOKED) && (out.flags & PGR_DC_FLAG_GONE));
-    assert(!(out.flags & PGR_DC_FLAG_AFTER_KNOWN) && out.before == kStateOpen); }
+    assert(complete(t, out) == PGS_DC_DONE);
+    assert((out.flags & PGS_DC_FLAG_INVOKED) && (out.flags & PGS_DC_FLAG_GONE));
+    assert(!(out.flags & PGS_DC_FLAG_AFTER_KNOWN) && out.before == kStateOpen); }
 
   // 8b. Postcondition UNKNOWN (never GONE): a post-invoke class mismatch, or a throwing post alive
   //     probe, leaves after unknown and gone CLEAR -- an inability to read is not proof of destruction.
   { build(); uint64_t t = acquire();
     g_on_click = [](){ scenes[currentScene].gui.klass = &otherClass; };  // class invalid after the click
-    assert(complete(t, out) == PGR_DC_DONE && g_click_calls == 1);
-    assert((out.flags & PGR_DC_FLAG_INVOKED) && !(out.flags & PGR_DC_FLAG_AFTER_KNOWN) &&
-           !(out.flags & PGR_DC_FLAG_GONE)); }
+    assert(complete(t, out) == PGS_DC_DONE && g_click_calls == 1);
+    assert((out.flags & PGS_DC_FLAG_INVOKED) && !(out.flags & PGS_DC_FLAG_AFTER_KNOWN) &&
+           !(out.flags & PGS_DC_FLAG_GONE)); }
   { build(); uint64_t t = acquire();
     g_on_click = [](){ g_alive_fault = 1; };  // the post-invoke alive probe throws
-    assert(complete(t, out) == PGR_DC_DONE && g_click_calls == 1);
-    assert((out.flags & PGR_DC_FLAG_INVOKED) && !(out.flags & PGR_DC_FLAG_AFTER_KNOWN) &&
-           !(out.flags & PGR_DC_FLAG_GONE)); }
+    assert(complete(t, out) == PGS_DC_DONE && g_click_calls == 1);
+    assert((out.flags & PGS_DC_FLAG_INVOKED) && !(out.flags & PGS_DC_FLAG_AFTER_KNOWN) &&
+           !(out.flags & PGS_DC_FLAG_GONE)); }
 
   // 9. Reentrancy inside the click: nested acquire gets no token (busy), nested complete is refused,
   //    and a nested stop() cannot cause a second click. The outer click happens exactly once.
   { build(); uint64_t t = acquire();
     bool reentrant_token = true; int reentrant_complete = -1;
     g_on_click = [&]() {
-      uint64_t nested = 7; assert(g_api->acquire(7, g_owner, &nested) == PGR_DC_OK);
+      uint64_t nested = 7; assert(g_api->acquire(7, g_owner, &nested) == PGS_DC_OK);
       reentrant_token = (nested != 0);
       PgrDetailsCompletionOutput nout{};
       reentrant_complete = g_api->complete(&g_req, t, &nout);
       g_api->stop(g_owner); };
-    assert(complete(t, out) == PGR_DC_DONE && g_click_calls == 1);
-    assert(!reentrant_token && reentrant_complete == PGR_DC_OK);
+    assert(complete(t, out) == PGS_DC_DONE && g_click_calls == 1);
+    assert(!reentrant_token && reentrant_complete == PGS_DC_OK);
     assert(acquire() == 0); }  // gate revoked by the in-click stop()
 
   // 10. Wrong thread cannot validate, acquire, or complete.
   std::thread([&]() {
     build(/*arm=*/false);
-    assert(g_api->validate(&g_req) == PGR_DC_OK);  // off-owner validate -> 0
-    uint64_t t = 5; assert(g_api->acquire(7, this_tid(), &t) == PGR_DC_OK && t == 0);
+    assert(g_api->validate(&g_req) == PGS_DC_OK);  // off-owner validate -> 0
+    uint64_t t = 5; assert(g_api->acquire(7, this_tid(), &t) == PGS_DC_OK && t == 0);
     PgrDetailsCompletionOutput o{};
-    assert(g_api->complete(&g_req, 1, &o) == PGR_DC_OK && !(o.flags & PGR_DC_FLAG_INVOKED));
+    assert(g_api->complete(&g_req, 1, &o) == PGS_DC_OK && !(o.flags & PGS_DC_FLAG_INVOKED));
   }).join();
   { build(); g_req.tid = tid + 1;  // mismatched proven_tid
-    uint64_t t = 5; assert(api->acquire(7, tid + 1, &t) == PGR_DC_OK && t == 0);
-    assert(complete(1, out) == PGR_DC_OK && !(out.flags & PGR_DC_FLAG_INVOKED)); }
+    uint64_t t = 5; assert(api->acquire(7, tid + 1, &t) == PGS_DC_OK && t == 0);
+    assert(complete(1, out) == PGS_DC_OK && !(out.flags & PGS_DC_FLAG_INVOKED)); }
 
   // 11. stop(): immediate revoke; a token acquired before stop no longer completes.
-  { build(); uint64_t t = acquire(); assert(api->stop(tid) == PGR_DC_OK);
-    assert(complete(t, out) == PGR_DC_OK && g_click_calls == 0);
-    assert(api->update(1, 2000, 7, tid) == PGR_DC_OK);
-    uint64_t t2 = acquire(); assert(complete(t2, out) == PGR_DC_DONE && g_click_calls == 1);
-    api->stop(tid); assert(validate() == PGR_DC_DONE); }  // validation stays available after stop
+  { build(); uint64_t t = acquire(); assert(api->stop(tid) == PGS_DC_OK);
+    assert(complete(t, out) == PGS_DC_OK && g_click_calls == 0);
+    assert(api->update(1, 2000, 7, tid) == PGS_DC_OK);
+    uint64_t t2 = acquire(); assert(complete(t2, out) == PGS_DC_DONE && g_click_calls == 1);
+    api->stop(tid); assert(validate() == PGS_DC_DONE); }  // validation stays available after stop
 
   // 12. Moving GC: alive / count / item / click each relocate the whole scene mid-call; the native
   //     roots must refresh so identity holds, the click fires once, and roots stay balanced.
   { build(); g_move_alive = g_move_count = g_move_item = true;
-    assert(validate() == PGR_DC_DONE && currentScene == 3); balanced(); }
+    assert(validate() == PGS_DC_DONE && currentScene == 3); balanced(); }
   { build(); g_move_alive = g_move_count = g_move_item = g_move_click = true;
     uint64_t t = acquire();
-    assert(complete(t, out) == PGR_DC_DONE && g_click_calls == 1 && currentScene == 4);
-    assert((out.flags & PGR_DC_FLAG_AFTER_KNOWN) && out.after == kDoneState); }
+    assert(complete(t, out) == PGS_DC_DONE && g_click_calls == 1 && currentScene == 4);
+    assert((out.flags & PGS_DC_FLAG_AFTER_KNOWN) && out.after == kDoneState); }
 
   // 13. Allocation (root) failures: every gc_new along validate() / complete() can fail, and each must
   //     fail closed with balanced roots and no click -- proving nothing is left unrooted.
-  { build(); g_new_calls = 0; assert(validate() == PGR_DC_DONE); const int va = g_new_calls; balanced();
+  { build(); g_new_calls = 0; assert(validate() == PGS_DC_DONE); const int va = g_new_calls; balanced();
     assert(va >= 7);  // 6 input duplicates + the list + boxes/item
     for (int n = 1; n <= va; ++n) { build(); g_fail_new = n;
-      assert(validate() != PGR_DC_DONE && g_alloc_failed && g_click_calls == 0); balanced(); } }
+      assert(validate() != PGS_DC_DONE && g_alloc_failed && g_click_calls == 0); balanced(); } }
   { build(); uint64_t t = acquire(); g_new_calls = 0;
-    assert(complete(t, out) == PGR_DC_DONE); const int ca = g_new_calls; balanced(); assert(ca >= 7);
+    assert(complete(t, out) == PGS_DC_DONE); const int ca = g_new_calls; balanced(); assert(ca >= 7);
     for (int n = 1; n <= ca; ++n) { build(); uint64_t tn = acquire(); g_fail_new = n;
       PgrDetailsCompletionOutput failed{}; g_api->complete(&g_req, tn, &failed); balanced();
       assert(g_alloc_failed && g_click_calls <= 1);
-      assert(!(failed.flags & PGR_DC_FLAG_GONE)); } }  // a failed root is not proof of destruction
+      assert(!(failed.flags & PGS_DC_FLAG_GONE)); } }  // a failed root is not proof of destruction
 
   { build(); api->stop(tid); }  // leave the gate revoked
   balanced(); g_handles.clear(); g_host.clear();

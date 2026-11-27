@@ -2,7 +2,7 @@
 #include <cstdint>
 
 // Feature 3. Pointer-sized GC handles match the validated Unity runtime ABI.
-struct PgrCatchConfig {
+struct PgsCatchConfig {
     uint32_t version, size;
     void *address;
     void *(*root)(void *, int);
@@ -11,17 +11,17 @@ struct PgrCatchConfig {
     void *(*object_class)(void *);
     void *view_class, *action_class, *pokemon_class;
 };
-struct PgrCatchCapture {
+struct PgsCatchCapture {
     void *service, *pokemon, *callback;
     uint32_t confirm, persist;
     int32_t open_hyper_training;
     uint32_t hide_ar, post, suppress;
 };
-struct PgrCatchApi {
+struct PgsCatchApi {
     uint32_t version, size;
-    int (*install)(const PgrCatchConfig *);
+    int (*install)(const PgsCatchConfig *);
     int (*begin)(void *response, int32_t thread);
-    int (*end)(PgrCatchCapture *);
+    int (*end)(PgsCatchCapture *);
     int (*dispose)();
 };
 const void *pgs_catch_presentation_api(uint32_t version);
@@ -30,10 +30,10 @@ const void *pgs_catch_presentation_api(uint32_t version);
 // A bypass, when set, is asked about every call this bridge does not capture; returning true means
 // the call was handled and the game's ShowPokemonInfo is not run. Same-library callers only.
 // dismissed is the 6th argument (System.Action); params the 8th (Action<DismissParameters>).
-using PgrCatchBypass = bool (*)(void *instance, void *pokemon, void *dismissed, void *params);
+using PgsCatchBypass = bool (*)(void *instance, void *pokemon, void *dismissed, void *params);
 // Sets (or clears, with null) the bypass. address is the validated ShowPokemonInfo code; if the
 // bridge has not hooked it yet, a pass-through hook is attached there now and install() later
 // adopts it for that same address. Returns 0 when the hook is in place, negative otherwise.
-int pgr_catch_presentation_set_bypass(PgrCatchBypass bypass, void *address);
+int pgs_catch_presentation_set_bypass(PgsCatchBypass bypass, void *address);
 // True when the bridge's hook is attached at address (its prologue then no longer matches).
-bool pgr_catch_presentation_attached(const void *address);
+bool pgs_catch_presentation_attached(const void *address);

@@ -42,35 +42,35 @@ extern "C" {
 
 static_assert(sizeof(void *) == 8, "RuntimeBootstrap native ABI requires LP64");
 
-enum PgrBootInfo {
-  PGR_BOOT_FEATURE_ID      = 54,
-  PGR_BOOT_API_VERSION     = 1,
-  PGR_BOOT_CONFIG_VERSION  = 1,
-  PGR_BOOT_BINDING_VERSION = 1
+enum PgsBootInfo {
+  PGS_BOOT_FEATURE_ID      = 54,
+  PGS_BOOT_API_VERSION     = 1,
+  PGS_BOOT_CONFIG_VERSION  = 1,
+  PGS_BOOT_BINDING_VERSION = 1
 };
 
 // probe()/snapshot() status. 0 == OK. PGR_BOOT_NOT_READY is a POSITIVE, RETRIABLE status (library or
 // managed domain not yet available). Environment failures permanently poison this owner. Caller argument/config faults and BUSY
 // leave the existing state untouched. On any non-OK status the binding output is cleared except its
 // {version,size,status,detail} header. For bind/resolve failures detail carries the underlying feature 47
-// PgrMetaStatus; for PGR_BOOT_NOT_READY detail carries a PgrBootLoaderDetail localizing a rooted-namespace
+// PgsMetaStatus; for PGR_BOOT_NOT_READY detail carries a PgsBootLoaderDetail localizing a rooted-namespace
 // loader fallback failure (0 == ordinary not-loaded-yet wait); otherwise detail is 0.
-enum PgrBootStatus {
+enum PgsBootStatus {
   PGR_BOOT_OK                 = 0,
   PGR_BOOT_NOT_READY          = 1,   // dlopen(NOLOAD)==null or domain==null; retry later, nothing latched
-  PGR_BOOT_ERR_NULL_ARG       = -1,  // required pointer argument was null
-  PGR_BOOT_ERR_BAD_VERSION    = -2,  // config version != PGR_BOOT_CONFIG_VERSION
-  PGR_BOOT_ERR_BAD_SIZE       = -3,  // config/binding size mismatch
-  PGR_BOOT_ERR_BAD_CONFIG     = -4,  // reserved!=0, prologue without rva, rva without prologue, etc.
+  PGS_BOOT_ERR_NULL_ARG       = -1,  // required pointer argument was null
+  PGS_BOOT_ERR_BAD_VERSION    = -2,  // config version != PGS_BOOT_CONFIG_VERSION
+  PGS_BOOT_ERR_BAD_SIZE       = -3,  // config/binding size mismatch
+  PGS_BOOT_ERR_BAD_CONFIG     = -4,  // reserved!=0, prologue without rva, rva without prologue, etc.
   PGR_BOOT_ERR_BUSY           = -5,  // concurrent/reentrant probe; shared state untouched
-  PGR_BOOT_ERR_MISSING_EXPORT = -6,  // a required il2cpp export dlsym'd to null (unsupported build)
-  PGR_BOOT_ERR_MODULE_RANGE   = -7,  // module base/size null, zero, or overflowing
-  PGR_BOOT_ERR_NO_METADATA    = -8,  // feature 47 getter absent or wrong ABI version
-  PGR_BOOT_ERR_BIND           = -9,  // feature 47 bind failed/mismatch (detail = PgrMetaStatus)
-  PGR_BOOT_ERR_RESOLVE        = -10, // ExecuteTasks class/method validation failed (detail = PgrMetaStatus)
-  PGR_BOOT_ERR_THREAD         = -11, // il2cpp_thread_attach returned null after domain was up
-  PGR_BOOT_ERR_EXPORT_CODE    = -13, // production export outside validated executable module
-  PGR_BOOT_ERR_POISONED       = -12  // reserved. Once poisoned, probe()/snapshot() REPLAY the original
+  PGS_BOOT_ERR_MISSING_EXPORT = -6,  // a required il2cpp export dlsym'd to null (unsupported build)
+  PGS_BOOT_ERR_MODULE_RANGE   = -7,  // module base/size null, zero, or overflowing
+  PGS_BOOT_ERR_NO_METADATA    = -8,  // feature 47 getter absent or wrong ABI version
+  PGS_BOOT_ERR_BIND           = -9,  // feature 47 bind failed/mismatch (detail = PgsMetaStatus)
+  PGS_BOOT_ERR_RESOLVE        = -10, // ExecuteTasks class/method validation failed (detail = PgsMetaStatus)
+  PGS_BOOT_ERR_THREAD         = -11, // il2cpp_thread_attach returned null after domain was up
+  PGS_BOOT_ERR_EXPORT_CODE    = -13, // production export outside validated executable module
+  PGS_BOOT_ERR_POISONED       = -12  // reserved. Once poisoned, probe()/snapshot() REPLAY the original
                                      // precise fail-closed status+detail (deterministic); this code is
                                      // reserved for a future caller that prefers a single latched code.
 };
@@ -80,42 +80,42 @@ enum PgrBootStatus {
 // wait (library not mapped yet, managed domain not up, or caller not yet attached) and carries no
 // loader fault. The non-zero codes localize a rooted-payload loader failure so a device report that
 // stays "pending" is actionable instead of opaque. These are deliberately POSITIVE and never collide
-// with the NEGATIVE PgrMetaStatus values that populate detail on BIND/RESOLVE failures. Keep these in
+// with the NEGATIVE PgsMetaStatus values that populate detail on BIND/RESOLVE failures. Keep these in
 // sync with NativeRuntimeBootstrap.java's loader reason decoder.
-enum PgrBootLoaderDetail {
-  PGR_BOOT_LD_IMAGE_PENDING   = 0,    // soname not yet mapped (or domain/thread pending); retriable wait
-  PGR_BOOT_LD_IMAGE_AMBIGUOUS = 1101, // more than one loaded image matched the soname; no unique caller
-  PGR_BOOT_LD_NO_EXEC_SEGMENT = 1102, // the matched image exposes no usable executable PT_LOAD segment
-  PGR_BOOT_LD_SYMBOL_ABSENT   = 1103, // __loader_dlopen unresolvable via RTLD_DEFAULT, libdl, or ld-android
-  PGR_BOOT_LD_NOLOAD_NULL     = 1104  // __loader_dlopen resolved but the RTLD_NOLOAD re-open returned null
+enum PgsBootLoaderDetail {
+  PGS_BOOT_LD_IMAGE_PENDING   = 0,    // soname not yet mapped (or domain/thread pending); retriable wait
+  PGS_BOOT_LD_IMAGE_AMBIGUOUS = 1101, // more than one loaded image matched the soname; no unique caller
+  PGS_BOOT_LD_NO_EXEC_SEGMENT = 1102, // the matched image exposes no usable executable PT_LOAD segment
+  PGS_BOOT_LD_SYMBOL_ABSENT   = 1103, // __loader_dlopen unresolvable via RTLD_DEFAULT, libdl, or ld-android
+  PGS_BOOT_LD_NOLOAD_NULL     = 1104  // __loader_dlopen resolved but the RTLD_NOLOAD re-open returned null
 };
 
 // GUEST dl* test seam. In production every callback is null and the module uses the real guest ::dlopen
 // / ::dlsym and feature 47's default dl_iterate_phdr/maps module resolver. The compiled fixture harness
 // injects these as native C++ function pointers ONLY; they never cross JSON.
-typedef void *(*pgr_boot_dlopen_fn)(void *ctx, const char *soname, int flags);
-typedef void *(*pgr_boot_dlsym_fn)(void *ctx, void *handle, const char *name);
+typedef void *(*pgs_boot_dlopen_fn)(void *ctx, const char *soname, int flags);
+typedef void *(*pgs_boot_dlsym_fn)(void *ctx, void *handle, const char *name);
 // module resolver: return 0 and fill base/size when the module range was found, negative on fault.
 // null -> delegate to feature 47 resolve_module(soname,...) (same range Routes 53 binds against).
-typedef int (*pgr_boot_module_fn)(void *ctx, const char *soname, const void **base, uint64_t *size);
+typedef int (*pgs_boot_module_fn)(void *ctx, const char *soname, const void **base, uint64_t *size);
 // feature 47 getter seam: null -> pgs_runtime_metadata_api. The fixture passes the REAL getter so the
 // real feature 47 validators run over a fake il2cpp universe.
-typedef const void *(*pgr_boot_metadata_fn)(void *ctx, uint32_t version);
+typedef const void *(*pgs_boot_metadata_fn)(void *ctx, uint32_t version);
 
 // probe() configuration. First valid probe fixes process identity, including NOT_READY.
 // Strings are bounded to255 bytes and compared by copied contents; prologue compared by bytes.
 // Changed identity is BAD_CONFIG without invalidating the existing binding. Every call validates
 // version/size/null config, including READY. snapshot has no configuration argument.
 struct PgrBootConfig {
-  uint32_t version;              // == PGR_BOOT_CONFIG_VERSION
+  uint32_t version;              // == PGS_BOOT_CONFIG_VERSION
   uint32_t size;                 // == sizeof(PgrBootConfig)
   const char *soname;            // null -> "libil2cpp.so"
   // Test seams (all null in production):
-  pgr_boot_dlopen_fn dlopen_fn;  // null -> ::dlopen(soname, RTLD_NOLOAD|RTLD_NOW)
-  pgr_boot_dlsym_fn dlsym_fn;    // null -> ::dlsym
-  pgr_boot_module_fn module_fn;  // null -> feature 47 resolve_module
+  pgs_boot_dlopen_fn dlopen_fn;  // null -> ::dlopen(soname, RTLD_NOLOAD|RTLD_NOW)
+  pgs_boot_dlsym_fn dlsym_fn;    // null -> ::dlsym
+  pgs_boot_module_fn module_fn;  // null -> feature 47 resolve_module
   void *seam_ctx;                // ctx passed to dlopen_fn/dlsym_fn/module_fn
-  pgr_boot_metadata_fn metadata_fn; // null -> pgs_runtime_metadata_api
+  pgs_boot_metadata_fn metadata_fn; // null -> pgs_runtime_metadata_api
   pgr_meta_seg_fn seg_query;     // feature 47 bind segment resolver; MUST be null in production
   void *seg_ctx;                 // ctx for seg_query; MUST be null in production
   // ExecuteTasks descriptor (DATA, never a guessed pointer). Null string -> compiled default.
@@ -125,7 +125,7 @@ struct PgrBootConfig {
   const char *exec_method;       // null -> default ("ExecuteTasks")
   const void *exec_prologue;     // required iff exec_code_rva != 0; else null
   uint64_t exec_code_rva;        // 0 -> skip compiled-address identity (fixture default); else base+rva
-  uint32_t exec_prologue_len;    // 0 iff exec_code_rva==0; else 1..PGR_MD_PROLOGUE_MAX
+  uint32_t exec_prologue_len;    // 0 iff exec_code_rva==0; else 1..PGS_MD_PROLOGUE_MAX
   uint32_t reserved;             // bit0: require an already-attached caller; no thread_attach
 };
 static_assert(sizeof(PgrBootConfig) == 128, "PgrBootConfig must remain 128 bytes on LP64");
@@ -162,10 +162,10 @@ static_assert(sizeof(PgrBootRuntimeExports) == 160, "PgrBootRuntimeExports must 
 // escapes. {version,size,status,detail,flags} are ALWAYS written; everything else is zero unless status
 // == PGR_BOOT_OK.
 struct PgrBootBinding {
-  uint32_t version;                // == PGR_BOOT_BINDING_VERSION
+  uint32_t version;                // == PGS_BOOT_BINDING_VERSION
   uint32_t size;                   // == sizeof(PgrBootBinding)
   int32_t status;                  // mirrors the probe()/snapshot() return
-  int32_t detail;                  // underlying PgrMetaStatus for BIND/RESOLVE failures, else 0
+  int32_t detail;                  // underlying PgsMetaStatus for BIND/RESOLVE failures, else 0
   uint32_t flags;                  // bit0: probe attached+detached a native worker thread this call
   uint32_t reserved;               // 0
   void *handle;                    // opaque dlopen handle (kept for process lifetime; never dlclosed)
@@ -180,13 +180,13 @@ struct PgrBootBinding {
 static_assert(sizeof(PgrBootBinding) == 480, "PgrBootBinding must remain 480 bytes on LP64");
 
 // Fixed LP64 table: 8-byte header + 2 function pointers = 24 bytes.
-//  probe:    perform (or re-attempt) discovery/validation; returns PgrBootStatus. Serialized by a
+//  probe:    perform (or re-attempt) discovery/validation; returns PgsBootStatus. Serialized by a
 //            NON-BLOCKING atomic entry flag (never a mutex held across a managed/il2cpp call), so a
 //            reentrant managed callback or a concurrent thread gets PGR_BOOT_ERR_BUSY, not a deadlock.
 //  snapshot: pull-only. Returns the cached binding when READY, else NOT_READY / the poisoned status.
 //            Makes NO dl*/il2cpp calls and never changes state.
 struct PgrBootApi {
-  uint32_t version;  // == PGR_BOOT_API_VERSION
+  uint32_t version;  // == PGS_BOOT_API_VERSION
   uint32_t size;     // == sizeof(PgrBootApi)
   int (*probe)(const PgrBootConfig *config, PgrBootBinding *out);
   int (*snapshot)(PgrBootBinding *out);

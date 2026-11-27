@@ -39,7 +39,7 @@ static_assert(offsetof(PgrDetailsCompletionRequest, dismissed) == 72, "layout");
 
 namespace {
 
-constexpr uint64_t kMaxLeaseMs = PGR_DC_MAX_LEASE_MS;
+constexpr uint64_t kMaxLeaseMs = PGS_DC_MAX_LEASE_MS;
 constexpr int kConfigPtrCount = 32;  // validated pointers between the header and the two int32s
 
 // --- il2cpp runtime ABI typedefs ---------------------------------------------------
@@ -57,7 +57,7 @@ std::mutex g_state_mutex;
 PgrDetailsCompletionConfig g_cfg{};
 std::atomic<bool> g_installed{false};
 bool g_install_attempted = false;
-int g_install_error = PGR_DC_ERR_NOT_INSTALLED;
+int g_install_error = PGS_DC_ERR_NOT_INSTALLED;
 
 // Permanent Unity owner, latched once from a genuine on-thread call.
 std::atomic<uint64_t> g_owner_tid{0};
@@ -278,46 +278,46 @@ void read_postcondition(const Root &gui, uint32_t *flags, int32_t *after) {
   if (a == ALIVE_TRUE) {
     if (!is_exact(gui.get(), g_cfg.class_gui)) return;  // the alive probe may itself have invalidated it
     *after = field_i32(gui.get(), g_cfg.f_current_state);
-    *flags |= PGR_DC_FLAG_AFTER_KNOWN;
+    *flags |= PGS_DC_FLAG_AFTER_KNOWN;
   } else if (a == ALIVE_FALSE) {
-    *flags |= PGR_DC_FLAG_GONE;                      // the only definite proof of destruction
+    *flags |= PGS_DC_FLAG_GONE;                      // the only definite proof of destruction
   }
   // ALIVE_ERR: unknown -- after stays unknown, gone stays clear.
 }
 
 void init_output(PgrDetailsCompletionOutput *out) {
-  out->version = PGR_DC_OUTPUT_VERSION;
+  out->version = PGS_DC_OUTPUT_VERSION;
   out->size = sizeof(PgrDetailsCompletionOutput);
   out->flags = 0;
-  out->status = PGR_DC_OK;
+  out->status = PGS_DC_OK;
   out->before = 0;
   out->after = 0;
 }
 
 // --- public API --------------------------------------------------------------------
 bool validate_config(const PgrDetailsCompletionConfig *c, int *rc) {
-  if (c == nullptr) { *rc = PGR_DC_ERR_NULL_ARG; return false; }
-  if (c->version != PGR_DC_CONFIG_VERSION) { *rc = PGR_DC_ERR_BAD_VERSION; return false; }
-  if (c->size != sizeof(PgrDetailsCompletionConfig)) { *rc = PGR_DC_ERR_BAD_SIZE; return false; }
+  if (c == nullptr) { *rc = PGS_DC_ERR_NULL_ARG; return false; }
+  if (c->version != PGS_DC_CONFIG_VERSION) { *rc = PGS_DC_ERR_BAD_VERSION; return false; }
+  if (c->size != sizeof(PgrDetailsCompletionConfig)) { *rc = PGS_DC_ERR_BAD_SIZE; return false; }
   void *const *ptrs = reinterpret_cast<void *const *>(&c->object_get_class);
   for (int i = 0; i < kConfigPtrCount; ++i) {
-    if (ptrs[i] == nullptr) { *rc = PGR_DC_ERR_MISSING_PTR; return false; }
+    if (ptrs[i] == nullptr) { *rc = PGS_DC_ERR_MISSING_PTR; return false; }
   }
-  *rc = PGR_DC_OK;
+  *rc = PGS_DC_OK;
   return true;
 }
 
 int api_install(const PgrDetailsCompletionConfig *config) {
-  int rc = PGR_DC_OK;
+  int rc = PGS_DC_OK;
   if (!validate_config(config, &rc)) return rc;
   uint64_t probe = 0;
-  if (!read_boottime_ms(&probe)) return PGR_DC_ERR_CLOCK_FAILURE;
+  if (!read_boottime_ms(&probe)) return PGS_DC_ERR_CLOCK_FAILURE;
 
   std::lock_guard<std::mutex> install_lock(g_install_mutex);
   if (g_installed.load(std::memory_order_acquire)) {
     std::lock_guard<std::mutex> state_lock(g_state_mutex);
-    if (std::memcmp(&g_cfg, config, sizeof(*config)) != 0) return PGR_DC_ERR_RECONFIG;
-    return PGR_DC_OK;
+    if (std::memcmp(&g_cfg, config, sizeof(*config)) != 0) return PGS_DC_ERR_RECONFIG;
+    return PGS_DC_OK;
   }
   if (g_install_attempted) return g_install_error;
   g_install_attempted = true;
@@ -332,11 +332,11 @@ int api_install(const PgrDetailsCompletionConfig *config) {
     g_busy = false;
   }
   g_installed.store(true, std::memory_order_release);
-  return g_install_error = PGR_DC_OK;
+  return g_install_error = PGS_DC_OK;
 }
 
 int api_update(int enabled, uint64_t remaining, uint64_t epoch, uint64_t proven_tid) {
-  if (!g_installed.load(std::memory_order_acquire)) return PGR_DC_ERR_NOT_INSTALLED;
+  if (!g_installed.load(std::memory_order_acquire)) return PGS_DC_ERR_NOT_INSTALLED;
   uint64_t now = 0;
   const bool clock_ok = read_boottime_ms(&now);
   std::lock_guard<std::mutex> lock(g_state_mutex);
@@ -348,24 +348,24 @@ int api_update(int enabled, uint64_t remaining, uint64_t epoch, uint64_t proven_
     g_enabled = 0;
     g_lease_until_ms = 0;
     if (on_owner) g_epoch = epoch;  // the owner may record a new epoch even while disabling
-    return clock_ok ? PGR_DC_OK : PGR_DC_ERR_CLOCK_FAILURE;
+    return clock_ok ? PGS_DC_OK : PGS_DC_ERR_CLOCK_FAILURE;
   }
   remaining = remaining > kMaxLeaseMs ? kMaxLeaseMs : remaining;
   if (!g_enabled || g_epoch != epoch || !remaining || !g_lease_until_ms || now >= g_lease_until_ms) ++g_gen;
   g_enabled = 1;
   g_lease_until_ms = remaining ? now + remaining : 0;
   g_epoch = epoch;
-  return PGR_DC_OK;
+  return PGS_DC_OK;
 }
 
 int api_validate(const PgrDetailsCompletionRequest *request) {
-  if (!g_installed.load(std::memory_order_acquire)) return PGR_DC_ERR_NOT_INSTALLED;
-  if (request == nullptr) return PGR_DC_ERR_NULL_ARG;
-  if (request->version != PGR_DC_REQUEST_VERSION) return PGR_DC_ERR_BAD_VERSION;
-  if (request->size != sizeof(PgrDetailsCompletionRequest)) return PGR_DC_ERR_BAD_SIZE;
+  if (!g_installed.load(std::memory_order_acquire)) return PGS_DC_ERR_NOT_INSTALLED;
+  if (request == nullptr) return PGS_DC_ERR_NULL_ARG;
+  if (request->version != PGS_DC_REQUEST_VERSION) return PGS_DC_ERR_BAD_VERSION;
+  if (request->size != sizeof(PgrDetailsCompletionRequest)) return PGS_DC_ERR_BAD_SIZE;
   const uint64_t tid = current_tid();
-  if (request->tid == 0 || tid != request->tid || !owner_ready(tid)) return PGR_DC_OK;  // off-owner: 0
-  {std::lock_guard<std::mutex> lock(g_state_mutex);if(g_busy)return PGR_DC_OK;g_busy=true;}
+  if (request->tid == 0 || tid != request->tid || !owner_ready(tid)) return PGS_DC_OK;  // off-owner: 0
+  {std::lock_guard<std::mutex> lock(g_state_mutex);if(g_busy)return PGS_DC_OK;g_busy=true;}
   BusyExit busyExit;
   Inputs in;
   // validate() tolerates an opening canvas: require_open is false here (no STATE_OPEN gate).
@@ -373,40 +373,40 @@ int api_validate(const PgrDetailsCompletionRequest *request) {
   if (ok) g_validate_ok.fetch_add(1, std::memory_order_relaxed);
   else g_validate_fail.fetch_add(1, std::memory_order_relaxed);
   g_last_tid.store(tid, std::memory_order_relaxed);
-  return ok ? PGR_DC_DONE : PGR_DC_OK;
+  return ok ? PGS_DC_DONE : PGS_DC_OK;
 }
 
 int api_acquire(uint64_t epoch, uint64_t proven_tid, uint64_t *out_token) {
   if (out_token != nullptr) *out_token = 0;
-  if (!g_installed.load(std::memory_order_acquire)) return PGR_DC_ERR_NOT_INSTALLED;
-  if (out_token == nullptr) return PGR_DC_ERR_NULL_ARG;
+  if (!g_installed.load(std::memory_order_acquire)) return PGS_DC_ERR_NOT_INSTALLED;
+  if (out_token == nullptr) return PGS_DC_ERR_NULL_ARG;
   const uint64_t tid = current_tid();
-  if (proven_tid == 0 || tid != proven_tid || !owner_ready(tid)) return PGR_DC_OK;
+  if (proven_tid == 0 || tid != proven_tid || !owner_ready(tid)) return PGS_DC_OK;
   uint64_t now = 0;
-  if (!read_boottime_ms(&now)) return PGR_DC_ERR_CLOCK_FAILURE;
+  if (!read_boottime_ms(&now)) return PGS_DC_ERR_CLOCK_FAILURE;
   std::lock_guard<std::mutex> lock(g_state_mutex);
-  if (g_busy || !gate_live_locked(epoch, tid, now)) return PGR_DC_OK;  // refused: out_token stays 0
-  if (g_token_serial >= ((uint64_t{1} << 53) - 1)) return PGR_DC_OK;   // fail closed near the ceiling
+  if (g_busy || !gate_live_locked(epoch, tid, now)) return PGS_DC_OK;  // refused: out_token stays 0
+  if (g_token_serial >= ((uint64_t{1} << 53) - 1)) return PGS_DC_OK;   // fail closed near the ceiling
   g_issued_gen = g_gen;
   *out_token = ++g_token_serial;
-  return PGR_DC_OK;
+  return PGS_DC_OK;
 }
 
 int api_complete(const PgrDetailsCompletionRequest *request, uint64_t token,
                  PgrDetailsCompletionOutput *out) {
-  if (out == nullptr) return PGR_DC_ERR_NULL_ARG;  // cannot report; caller must pass a buffer
+  if (out == nullptr) return PGS_DC_ERR_NULL_ARG;  // cannot report; caller must pass a buffer
   init_output(out);
-  if (!g_installed.load(std::memory_order_acquire)) return out->status = PGR_DC_ERR_NOT_INSTALLED;
-  if (request == nullptr) return out->status = PGR_DC_ERR_NULL_ARG;
-  if (request->version != PGR_DC_REQUEST_VERSION) return out->status = PGR_DC_ERR_BAD_VERSION;
-  if (request->size != sizeof(PgrDetailsCompletionRequest)) return out->status = PGR_DC_ERR_BAD_SIZE;
+  if (!g_installed.load(std::memory_order_acquire)) return out->status = PGS_DC_ERR_NOT_INSTALLED;
+  if (request == nullptr) return out->status = PGS_DC_ERR_NULL_ARG;
+  if (request->version != PGS_DC_REQUEST_VERSION) return out->status = PGS_DC_ERR_BAD_VERSION;
+  if (request->size != sizeof(PgrDetailsCompletionRequest)) return out->status = PGS_DC_ERR_BAD_SIZE;
   const uint64_t tid = current_tid();
   if (request->tid == 0 || tid != request->tid || !owner_ready(tid)) {
     g_complete_refused.fetch_add(1, std::memory_order_relaxed);
-    return out->status = PGR_DC_OK;
+    return out->status = PGS_DC_OK;
   }
   uint64_t now = 0;
-  if (!read_boottime_ms(&now)) return out->status = PGR_DC_ERR_CLOCK_FAILURE;
+  if (!read_boottime_ms(&now)) return out->status = PGS_DC_ERR_CLOCK_FAILURE;
 
   uint64_t generation;
   {
@@ -415,7 +415,7 @@ int api_complete(const PgrDetailsCompletionRequest *request, uint64_t token,
     if (g_busy || !gate_live_locked(request->epoch, tid, now) ||
         token == 0 || token != g_token_serial || token <= g_consumed || g_issued_gen != g_gen) {
       g_complete_refused.fetch_add(1, std::memory_order_relaxed);
-      return out->status = PGR_DC_OK;
+      return out->status = PGS_DC_OK;
     }
     // Consume the token and claim the window BEFORE any managed work.
     g_consumed = token;
@@ -437,33 +437,33 @@ int api_complete(const PgrDetailsCompletionRequest *request, uint64_t token,
   }
   if (refused) {
     g_complete_refused.fetch_add(1, std::memory_order_relaxed);
-    return out->status = PGR_DC_OK;
+    return out->status = PGS_DC_OK;
   }
 
   // Commit: record the validated pre-invoke state and that we are about to invoke, then run the
   // details click exactly once. No mutex is held across the managed call.
   out->before = before;
-  out->flags |= PGR_DC_FLAG_BEFORE_KNOWN | PGR_DC_FLAG_INVOKED;
+  out->flags |= PGS_DC_FLAG_BEFORE_KNOWN | PGS_DC_FLAG_INVOKED;
   void *exc = nullptr;
   managed_invoke(g_cfg.m_click, in.gui.get(), nullptr, &exc);
 
   // Read the postcondition regardless of whether click threw (mirrors the JS try/catch).
   int32_t after = 0;
   read_postcondition(in.gui, &out->flags, &after);
-  if (out->flags & PGR_DC_FLAG_AFTER_KNOWN) out->after = after;
+  if (out->flags & PGS_DC_FLAG_AFTER_KNOWN) out->after = after;
 
   g_last_token.store(token, std::memory_order_relaxed);
   g_last_tid.store(tid, std::memory_order_relaxed);
   if (exc != nullptr) {
     g_complete_fault.fetch_add(1, std::memory_order_relaxed);
-    return out->status = PGR_DC_ERR_MANAGED;  // invoked == true; never retry the click
+    return out->status = PGS_DC_ERR_MANAGED;  // invoked == true; never retry the click
   }
   g_complete_ok.fetch_add(1, std::memory_order_relaxed);
-  return out->status = PGR_DC_DONE;
+  return out->status = PGS_DC_DONE;
 }
 
 int api_stop(uint64_t /*proven_tid*/) {
-  if (!g_installed.load(std::memory_order_acquire)) return PGR_DC_ERR_NOT_INSTALLED;
+  if (!g_installed.load(std::memory_order_acquire)) return PGS_DC_ERR_NOT_INSTALLED;
   // Immediate revoke from any thread. Does NOT touch g_busy: an in-flight invoke finishes on its own;
   // the generation bump guarantees no NEW acquire/complete and aborts a complete that has not yet
   // reached its pre-invoke generation re-check.
@@ -471,14 +471,14 @@ int api_stop(uint64_t /*proven_tid*/) {
   g_enabled = 0;
   g_lease_until_ms = 0;
   ++g_gen;
-  return PGR_DC_OK;
+  return PGS_DC_OK;
 }
 
 int api_sample(PgrDetailsCompletionSample *out) {
-  if (out == nullptr) return PGR_DC_ERR_NULL_ARG;
+  if (out == nullptr) return PGS_DC_ERR_NULL_ARG;
   bool busy;
   { std::lock_guard<std::mutex> lock(g_state_mutex); busy = g_busy; }
-  out->version = PGR_DC_SAMPLE_VERSION;
+  out->version = PGS_DC_SAMPLE_VERSION;
   out->size = sizeof(PgrDetailsCompletionSample);
   out->validate_ok = g_validate_ok.load(std::memory_order_relaxed);
   out->validate_fail = g_validate_fail.load(std::memory_order_relaxed);
@@ -489,11 +489,11 @@ int api_sample(PgrDetailsCompletionSample *out) {
   out->last_tid = g_last_tid.load(std::memory_order_relaxed);
   out->busy = busy ? 1u : 0u;
   out->fault = 0u;
-  return PGR_DC_OK;
+  return PGS_DC_OK;
 }
 
 const PgrDetailsCompletionApi kApiTable = {
-    PGR_DC_API_VERSION, static_cast<uint32_t>(sizeof(PgrDetailsCompletionApi)),
+    PGS_DC_API_VERSION, static_cast<uint32_t>(sizeof(PgrDetailsCompletionApi)),
     &api_install,  &api_update, &api_validate, &api_acquire,
     &api_complete, &api_stop,   &api_sample,
 };
@@ -501,6 +501,6 @@ const PgrDetailsCompletionApi kApiTable = {
 }  // namespace
 
 extern "C" const void *pgs_details_completion_api(uint32_t version) {
-  if (version != PGR_DC_API_VERSION) return nullptr;
+  if (version != PGS_DC_API_VERSION) return nullptr;
   return &kApiTable;
 }

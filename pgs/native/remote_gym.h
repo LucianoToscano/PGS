@@ -12,5 +12,5 @@
 
 struct PgrSharedMetadataOutput;
 
-void pgr_remote_gym_tick(uint64_t tid, const PgrSharedMetadataOutput *metadata);
-void pgr_remote_gym_stop(uint64_t tid);
+void pgs_remote_gym_tick(uint64_t tid, const PgrSharedMetadataOutput *metadata);
+void pgs_remote_gym_stop(uint64_t tid);

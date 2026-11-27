@@ -107,14 +107,14 @@ int probe(void *state){
 }
 }
 
-bool pgr_max_orbs_prepare(void *dodge_method){
+bool pgs_max_orbs_prepare(void *dodge_method){
  if(ready)return true;
  timespec t{};if(clock_gettime(CLOCK_BOOTTIME,&t)!=0)return false;
  const uint64_t now=uint64_t(t.tv_sec)*1000+t.tv_nsec/1000000;if(now<next_prepare)return false;next_prepare=now+5000;
  try{prepare(dodge_method);reported=false;report("{\"phase\":\"ready\",\"message\":\"Automatic Max orb movement ready\"}");return true;}
  catch(...){unavailable();return false;}
 }
-int pgr_max_orb_direction(void *state,void *dodge_method){
- if(!pgr_max_orbs_prepare(dodge_method))return 0;
+int pgs_max_orb_direction(void *state,void *dodge_method){
+ if(!pgs_max_orbs_prepare(dodge_method))return 0;
  try{return probe(state);}catch(...){unavailable();return 0;}
 }

@@ -7,7 +7,7 @@
 #include <unordered_map>
 #include <vector>
 
-namespace pgr_shiny_scan {
+namespace pgs_shiny_scan {
 
 constexpr double kRangeM = 80.0;             // only wild Pokemon this close are asked about
 constexpr uint64_t kSeenMs = 30 * 60 * 1000; // a checked Pokemon is not asked about again for this long
@@ -125,4 +125,4 @@ struct Pace {
     }
 };
 
-}  // namespace pgr_shiny_scan
+}  // namespace pgs_shiny_scan

@@ -89,7 +89,7 @@ void step(){
  const float close_mult=number(settings.get(),"ArCloseProximityMultiplier");
  const float low_mult=number(settings.get(),"ArLowAwarenessMaxMultiplier");
  const float penalty=number(settings.get(),"ArAwarenessPenaltyThreshold");
- if(close>0&&low>0)pgr_ar_throw_set_values(close*0.5f,low*0.5f);
+ if(close>0&&low>0)pgs_ar_throw_set_values(close*0.5f,low*0.5f);
  event("{\"phase\":\"ready\",\"closeProximityThreshold\":"+std::to_string(close)+",\"lowAwarenessThreshold\":"+std::to_string(low)+
   ",\"closeProximityMultiplier\":"+std::to_string(close_mult)+",\"lowAwarenessMaxMultiplier\":"+std::to_string(low_mult)+
   ",\"awarenessPenaltyThreshold\":"+std::to_string(penalty)+",\"applied\":"+(close>0&&low>0?"true":"false")+"}");
@@ -118,20 +118,20 @@ void report_catch(void *response){
  event("{\"phase\":\"catch\",\"status\":\""+status+"\",\"arPlusBonus\":"+(bonus?"true":"false")+",\"activities\":\""+activities+"\"}");
 }
 void poll_catch(uint64_t tid){
- if(!promise){promise=reinterpret_cast<uintptr_t>(pgr_ar_throw_take_promise());promise_since=clock_ms();if(!promise)return;}
+ if(!promise){promise=reinterpret_cast<uintptr_t>(pgs_ar_throw_take_promise());promise_since=clock_ms();if(!promise)return;}
  auto api=static_cast<const PgrVgpResultsApi*>(pgs_vgp_results_api(1));
  void *target=fn<void*(*)(uintptr_t)>(boot.runtime.gchandle_get_target)(promise);
- PgrVgpResultsResult out{};const int rc=api&&target?api->poll(target,PGR_VR_PHASE_ENCOUNTER,tid,&out):PGR_VR_DONE;
+ PgrVgpResultsResult out{};const int rc=api&&target?api->poll(target,PGS_VR_PHASE_ENCOUNTER,tid,&out):PGS_VR_DONE;
  if(rc==0&&clock_ms()-promise_since<20000)return;
  fn<void(*)(uintptr_t)>(boot.runtime.gchandle_free)(promise);promise=0;
  Root result;result.h=out.value_handle;
- if(rc==PGR_VR_DONE&&result)report_catch(result.get());
+ if(rc==PGS_VR_DONE&&result)report_catch(result.get());
  else event("{\"phase\":\"catch\",\"status\":\"unknown\",\"poll\":"+std::to_string(rc)+",\"state\":"+std::to_string(out.state)+
   ",\"promise\":"+(target?"true":"false")+",\"api\":"+(api?"true":"false")+"}");
 }
 }  // namespace
 
-void pgr_ar_values_tick(uint64_t tid,const PgrSharedMetadataOutput *metadata){
+void pgs_ar_values_tick(uint64_t tid,const PgrSharedMetadataOutput *metadata){
  if(busy||!tid||tid!=uint64_t(gettid())||(owner&&owner!=tid))return;
  struct Guard{Guard(){busy=true;}~Guard(){busy=false;}}guard;owner=tid;md=metadata;
  if(ready){

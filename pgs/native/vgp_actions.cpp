@@ -30,7 +30,7 @@
 //   * On success the returned promise is rooted into a fresh GC handle and its ownership is TRANSFERRED to
 //     the caller via *out_handle (that root is NOT freed here); every other root is freed before return.
 //   * If the invoke succeeds but the promise cannot be rooted, the action has already issued: that is
-//     reported as PGR_VA_ERR_UNCERTAIN so the host never retries.
+//     reported as PGS_VA_ERR_UNCERTAIN so the host never retries.
 
 static_assert(sizeof(PgrVgpActionsConfig) == 208, "config must be 208 bytes");
 static_assert(sizeof(PgrVgpActionsTarget) == 32, "target request must be 32 bytes");
@@ -47,7 +47,7 @@ static_assert(offsetof(PgrVgpActionsSpin, closed_method) == 72, "layout");
 
 namespace {
 
-constexpr uint64_t kMaxLeaseMs = PGR_VA_MAX_LEASE_MS;
+constexpr uint64_t kMaxLeaseMs = PGS_VA_MAX_LEASE_MS;
 
 // --- il2cpp runtime ABI typedefs ---------------------------------------------------
 using GcNew = uintptr_t (*)(void *obj, int pinned);
@@ -65,7 +65,7 @@ std::mutex g_state_mutex;
 PgrVgpActionsConfig g_cfg{};
 std::atomic<bool> g_installed{false};
 bool g_install_attempted = false;
-int g_install_error = PGR_VA_ERR_NOT_INSTALLED;
+int g_install_error = PGS_VA_ERR_NOT_INSTALLED;
 
 // Permanent Unity owner, latched once from a genuine on-thread call.
 std::atomic<uint64_t> g_owner_tid{0};
@@ -167,7 +167,7 @@ enum ActionKind { ACT_ENCOUNTER, ACT_CAPTURE, ACT_SPIN };
 // Runs on the owner thread with g_busy latched. Performs identity validation, (for spin) request
 // construction, the pre-invoke generation re-check and the single game-action invoke, roots the returned
 // promise and transfers it via *out_handle. Frees every temporary root before returning. *out_handle is
-// written only on PGR_VA_ISSUED.
+// written only on PGS_VA_ISSUED.
 int do_action(ActionKind kind, const PgrVgpActionsTarget *t, const PgrVgpActionsSpin *sp,
               uint64_t epoch, uint64_t tid, uint64_t generation, uintptr_t *out_handle,
               const uint8_t *selected_throw) {
@@ -175,45 +175,45 @@ int do_action(ActionKind kind, const PgrVgpActionsTarget *t, const PgrVgpActions
   uintptr_t target_root = hold(target_obj);
   uintptr_t fort_root = 0, rpc_root = 0, request_root = 0, id_root = 0;
   void *receiver = nullptr, *request_obj = nullptr;
-  const PgrVgpIncense *incense = nullptr;
-  int rc = PGR_VA_OK;
+  const PgsVgpIncense *incense = nullptr;
+  int rc = PGS_VA_OK;
 
-  if (target_root == 0) { rc = PGR_VA_ERR_GCHANDLE; goto done; }
+  if (target_root == 0) { rc = PGS_VA_ERR_GCHANDLE; goto done; }
   // Incense, lure and other bound spawn kinds share TryCapture with wild ones but send their own
   // encounter request.
-  if (kind != ACT_SPIN) incense = pgr_vgp_kind_where([&](void *k) { return is_exact(gc_get()(target_root), k); });
-  if (!incense && !is_exact(gc_get()(target_root), kind == ACT_SPIN ? g_cfg.class_stop : g_cfg.class_wild)) { rc = PGR_VA_ERR_IDENTITY; goto done; }
+  if (kind != ACT_SPIN) incense = pgs_vgp_kind_where([&](void *k) { return is_exact(gc_get()(target_root), k); });
+  if (!incense && !is_exact(gc_get()(target_root), kind == ACT_SPIN ? g_cfg.class_stop : g_cfg.class_wild)) { rc = PGS_VA_ERR_IDENTITY; goto done; }
 
   if (kind == ACT_SPIN) {
-    if (sp->closed_method == nullptr) { rc = PGR_VA_ERR_IDENTITY; goto done; }
-    if (!coords_ok(sp->lat, sp->lon)) { rc = PGR_VA_ERR_IDENTITY; goto done; }
+    if (sp->closed_method == nullptr) { rc = PGS_VA_ERR_IDENTITY; goto done; }
+    if (!coords_ok(sp->lat, sp->lon)) { rc = PGS_VA_ERR_IDENTITY; goto done; }
     fort_root = hold(sp->fort);
     rpc_root = hold(sp->rpc);
-    if (fort_root == 0 || rpc_root == 0) { rc = PGR_VA_ERR_GCHANDLE; goto done; }
+    if (fort_root == 0 || rpc_root == 0) { rc = PGS_VA_ERR_GCHANDLE; goto done; }
     if (!is_exact(gc_get()(fort_root), g_cfg.class_fort) ||
-        !is_exact(gc_get()(rpc_root), g_cfg.class_rpc)) { rc = PGR_VA_ERR_IDENTITY; goto done; }
+        !is_exact(gc_get()(rpc_root), g_cfg.class_rpc)) { rc = PGS_VA_ERR_IDENTITY; goto done; }
     // Fort coordinates (copied into the request) must be finite too.
     if (!coords_ok(field_f64(gc_get()(fort_root), g_cfg.f_fort_lat),
-                   field_f64(gc_get()(fort_root), g_cfg.f_fort_lon))) { rc = PGR_VA_ERR_IDENTITY; goto done; }
+                   field_f64(gc_get()(fort_root), g_cfg.f_fort_lon))) { rc = PGS_VA_ERR_IDENTITY; goto done; }
 
     // Build the FortSearch request: object_new + ctor + Id + player/fort coordinates. Root the request
     // immediately so it survives every subsequent allocation / managed call.
     {
       void *request = obj_new()(g_cfg.class_request);
       request_root = hold(request);
-      if (request_root == 0) { rc = PGR_VA_ERR_GCHANDLE; goto done; }
-      if (!is_exact(gc_get()(request_root), g_cfg.class_request)) { rc = PGR_VA_ERR_IDENTITY; goto done; }
+      if (request_root == 0) { rc = PGS_VA_ERR_GCHANDLE; goto done; }
+      if (!is_exact(gc_get()(request_root), g_cfg.class_request)) { rc = PGS_VA_ERR_IDENTITY; goto done; }
       void *exc = nullptr;
       managed_invoke(g_cfg.m_ctor, gc_get()(request_root), nullptr, &exc);
-      if (exc != nullptr) { rc = PGR_VA_ERR_MANAGED; goto done; }
+      if (exc != nullptr) { rc = PGS_VA_ERR_MANAGED; goto done; }
       // request.Id = fort.FortId (reference field, write barrier).
       void *fort_id = field_ptr(gc_get()(fort_root), g_cfg.f_fort_id);
-      if (!fort_id) { rc = PGR_VA_ERR_IDENTITY; goto done; }
+      if (!fort_id) { rc = PGS_VA_ERR_IDENTITY; goto done; }
       id_root = hold(fort_id);
-      if (!id_root) { rc = PGR_VA_ERR_GCHANDLE; goto done; }
+      if (!id_root) { rc = PGS_VA_ERR_GCHANDLE; goto done; }
       void *id_value = gc_get()(id_root);
       void *request_value = gc_get()(request_root);
-      if (!id_value || !request_value) { rc = PGR_VA_ERR_IDENTITY; goto done; }
+      if (!id_value || !request_value) { rc = PGS_VA_ERR_IDENTITY; goto done; }
       field_set_obj()(request_value, g_cfg.f_req_id, id_value);
       // player coordinates (from the caller) and fort coordinates (copied from the fort).
       double lat = sp->lat, lon = sp->lon;
@@ -221,7 +221,7 @@ int do_action(ActionKind kind, const PgrVgpActionsTarget *t, const PgrVgpActions
       field_set()(gc_get()(request_root), g_cfg.f_req_lon, &lon);
       double flat = field_f64(gc_get()(fort_root), g_cfg.f_fort_lat);
       double flon = field_f64(gc_get()(fort_root), g_cfg.f_fort_lon);
-      if (!coords_ok(flat, flon)) { rc = PGR_VA_ERR_IDENTITY; goto done; }
+      if (!coords_ok(flat, flon)) { rc = PGS_VA_ERR_IDENTITY; goto done; }
       field_set()(gc_get()(request_root), g_cfg.f_req_target_lat, &flat);
       field_set()(gc_get()(request_root), g_cfg.f_req_target_lon, &flon);
     }
@@ -229,19 +229,19 @@ int do_action(ActionKind kind, const PgrVgpActionsTarget *t, const PgrVgpActions
 
   // Resolve the final managed arguments before the revocation check; GC helpers may re-enter.
   receiver = gc_get()(kind == ACT_SPIN ? rpc_root : target_root);
-  if (!is_exact(receiver, kind == ACT_SPIN ? g_cfg.class_rpc : incense ? incense->klass : g_cfg.class_wild)) { rc = PGR_VA_ERR_IDENTITY; goto done; }
+  if (!is_exact(receiver, kind == ACT_SPIN ? g_cfg.class_rpc : incense ? incense->klass : g_cfg.class_wild)) { rc = PGS_VA_ERR_IDENTITY; goto done; }
   if (kind == ACT_SPIN) {
     request_obj = gc_get()(request_root);
-    if (!is_exact(request_obj, g_cfg.class_request)) { rc = PGR_VA_ERR_IDENTITY; goto done; }
+    if (!is_exact(request_obj, g_cfg.class_request)) { rc = PGS_VA_ERR_IDENTITY; goto done; }
   }
   // Re-check the gate + generation against a fresh clock IMMEDIATELY before the one game action. A stop /
   // disable / re-arm (or an epoch move) that raced the construction aborts here WITHOUT invoking.
   {
     uint64_t now = 0;
-    if (!read_boottime_ms(&now)) { rc = PGR_VA_ERR_CLOCK_FAILURE; goto done; }
-    const uint32_t need_mask = (kind == ACT_SPIN) ? PGR_VA_MASK_SPIN : PGR_VA_MASK_CATCH;
+    if (!read_boottime_ms(&now)) { rc = PGS_VA_ERR_CLOCK_FAILURE; goto done; }
+    const uint32_t need_mask = (kind == ACT_SPIN) ? PGS_VA_MASK_SPIN : PGS_VA_MASK_CATCH;
     std::lock_guard<std::mutex> lock(g_state_mutex);
-    if (!gate_live_locked(epoch, tid, need_mask, now, generation, true)) { rc = PGR_VA_OK; goto done; }
+    if (!gate_live_locked(epoch, tid, need_mask, now, generation, true)) { rc = PGS_VA_OK; goto done; }
     g_last_token = ++g_token_serial; g_last_tid = tid;
   }
 
@@ -256,7 +256,7 @@ int do_action(ActionKind kind, const PgrVgpActionsTarget *t, const PgrVgpActions
       // Fixed 12-byte PokeballThrow: red ball id 1, grade 1.0f, remaining 0. AR metadata = null.
       alignas(8) uint8_t ball[12];
       std::memset(ball, 0, sizeof(ball));
-      int32_t ball_id = PGR_VA_BALL_RED;
+      int32_t ball_id = PGS_VA_BALL_RED;
       float grade = 1.0f;
       std::memcpy(ball + 0, &ball_id, 4);
       std::memcpy(ball + 4, &grade, 4);
@@ -269,17 +269,17 @@ int do_action(ActionKind kind, const PgrVgpActionsTarget *t, const PgrVgpActions
       promise = managed_invoke(sp->closed_method, receiver, params, &exc);
     }
 
-    if (exc != nullptr) { rc = PGR_VA_ERR_MANAGED; goto done; }
+    if (exc != nullptr) { rc = PGS_VA_ERR_MANAGED; goto done; }
     // The action has been issued. From here a failure is UNCERTAIN (never retried by the host).
-    if (promise == nullptr) { rc = PGR_VA_ERR_UNCERTAIN; goto done; }
+    if (promise == nullptr) { rc = PGS_VA_ERR_UNCERTAIN; goto done; }
     uintptr_t promise_root = hold(promise);
-    if (promise_root == 0) { rc = PGR_VA_ERR_UNCERTAIN; goto done; }
+    if (promise_root == 0) { rc = PGS_VA_ERR_UNCERTAIN; goto done; }
 
     // Transfer ownership of the promise handle to the caller exactly once. The caller frees it later via
     // il2cpp_gchandle_free (bypassing drop()), so relinquish our root accounting here without freeing.
     *out_handle = promise_root;
     g_roots.fetch_sub(1, std::memory_order_relaxed);
-    rc = PGR_VA_ISSUED;
+    rc = PGS_VA_ISSUED;
   }
 
 done:
@@ -296,36 +296,36 @@ done:
 int run_action(ActionKind kind, const PgrVgpActionsTarget *t, const PgrVgpActionsSpin *sp,
                uintptr_t *out_handle, const uint8_t *selected_throw=nullptr) {
   if (out_handle != nullptr) *out_handle = 0;
-  if (!g_installed.load(std::memory_order_acquire)) return PGR_VA_ERR_NOT_INSTALLED;
-  if (out_handle == nullptr) return PGR_VA_ERR_NULL_ARG;
+  if (!g_installed.load(std::memory_order_acquire)) return PGS_VA_ERR_NOT_INSTALLED;
+  if (out_handle == nullptr) return PGS_VA_ERR_NULL_ARG;
 
   uint64_t epoch, req_tid;
   if (kind == ACT_SPIN) {
-    if (sp == nullptr) return PGR_VA_ERR_NULL_ARG;
-    if (sp->version != PGR_VA_SPIN_VERSION) return PGR_VA_ERR_BAD_VERSION;
-    if (sp->size != sizeof(PgrVgpActionsSpin)) return PGR_VA_ERR_BAD_SIZE;
+    if (sp == nullptr) return PGS_VA_ERR_NULL_ARG;
+    if (sp->version != PGS_VA_SPIN_VERSION) return PGS_VA_ERR_BAD_VERSION;
+    if (sp->size != sizeof(PgrVgpActionsSpin)) return PGS_VA_ERR_BAD_SIZE;
     epoch = sp->epoch; req_tid = sp->tid;
   } else {
-    if (t == nullptr) return PGR_VA_ERR_NULL_ARG;
-    if (t->version != PGR_VA_TARGET_VERSION) return PGR_VA_ERR_BAD_VERSION;
-    if (t->size != sizeof(PgrVgpActionsTarget)) return PGR_VA_ERR_BAD_SIZE;
+    if (t == nullptr) return PGS_VA_ERR_NULL_ARG;
+    if (t->version != PGS_VA_TARGET_VERSION) return PGS_VA_ERR_BAD_VERSION;
+    if (t->size != sizeof(PgrVgpActionsTarget)) return PGS_VA_ERR_BAD_SIZE;
     epoch = t->epoch; req_tid = t->tid;
   }
 
   const uint64_t tid = current_tid();
-  if (req_tid == 0 || tid != req_tid || !owner_ready(tid)) return PGR_VA_OK;  // off-owner: refused
+  if (req_tid == 0 || tid != req_tid || !owner_ready(tid)) return PGS_VA_OK;  // off-owner: refused
   uint64_t now = 0;
-  if (!read_boottime_ms(&now)) return PGR_VA_ERR_CLOCK_FAILURE;
+  if (!read_boottime_ms(&now)) return PGS_VA_ERR_CLOCK_FAILURE;
 
-  const uint32_t need_mask = (kind == ACT_SPIN) ? PGR_VA_MASK_SPIN : PGR_VA_MASK_CATCH;
+  const uint32_t need_mask = (kind == ACT_SPIN) ? PGS_VA_MASK_SPIN : PGS_VA_MASK_CATCH;
   uint64_t generation;
   {
     std::lock_guard<std::mutex> lock(g_state_mutex);
     if (g_busy || !gate_live_locked(epoch, tid, need_mask, now, 0, false)) {
       ++g_refused_serial;
-      return PGR_VA_OK;  // refused: *out_handle stays 0
+      return PGS_VA_OK;  // refused: *out_handle stays 0
     }
-    if (g_token_serial >= ((uint64_t{1} << 53) - 1)) { ++g_refused_serial; return PGR_VA_OK; }
+    if (g_token_serial >= ((uint64_t{1} << 53) - 1)) { ++g_refused_serial; return PGS_VA_OK; }
     g_busy = true;
     generation = g_gen;
   }
@@ -335,11 +335,11 @@ int run_action(ActionKind kind, const PgrVgpActionsTarget *t, const PgrVgpAction
   {
     std::lock_guard<std::mutex> lock(g_state_mutex);
     g_busy = false;
-    if (rc == PGR_VA_ISSUED) {
+    if (rc == PGS_VA_ISSUED) {
       if (kind == ACT_ENCOUNTER) ++g_encounter_serial;
       else if (kind == ACT_CAPTURE) ++g_capture_serial;
       else ++g_spin_serial;
-    } else if (rc == PGR_VA_OK) {
+    } else if (rc == PGS_VA_OK) {
       ++g_refused_serial;
     } else {
       ++g_fault_serial;  // identity / gchandle / managed / uncertain / clock
@@ -350,28 +350,28 @@ int run_action(ActionKind kind, const PgrVgpActionsTarget *t, const PgrVgpAction
 
 // --- public API --------------------------------------------------------------------
 bool validate_config(const PgrVgpActionsConfig *c, int *rc) {
-  if (c == nullptr) { *rc = PGR_VA_ERR_NULL_ARG; return false; }
-  if (c->version != PGR_VA_CONFIG_VERSION) { *rc = PGR_VA_ERR_BAD_VERSION; return false; }
-  if (c->size != sizeof(PgrVgpActionsConfig)) { *rc = PGR_VA_ERR_BAD_SIZE; return false; }
+  if (c == nullptr) { *rc = PGS_VA_ERR_NULL_ARG; return false; }
+  if (c->version != PGS_VA_CONFIG_VERSION) { *rc = PGS_VA_ERR_BAD_VERSION; return false; }
+  if (c->size != sizeof(PgrVgpActionsConfig)) { *rc = PGS_VA_ERR_BAD_SIZE; return false; }
   void *const *ptrs = reinterpret_cast<void *const *>(&c->gchandle_new);
   for (int i = 0; i < 25; ++i) {
-    if (ptrs[i] == nullptr) { *rc = PGR_VA_ERR_MISSING_PTR; return false; }
+    if (ptrs[i] == nullptr) { *rc = PGS_VA_ERR_MISSING_PTR; return false; }
   }
-  *rc = PGR_VA_OK;
+  *rc = PGS_VA_OK;
   return true;
 }
 
 int api_install(const PgrVgpActionsConfig *config) {
-  int rc = PGR_VA_OK;
+  int rc = PGS_VA_OK;
   if (!validate_config(config, &rc)) return rc;
   uint64_t probe = 0;
-  if (!read_boottime_ms(&probe)) return PGR_VA_ERR_CLOCK_FAILURE;
+  if (!read_boottime_ms(&probe)) return PGS_VA_ERR_CLOCK_FAILURE;
 
   std::lock_guard<std::mutex> install_lock(g_install_mutex);
   if (g_installed.load(std::memory_order_acquire)) {
     std::lock_guard<std::mutex> state_lock(g_state_mutex);
-    if (std::memcmp(&g_cfg, config, sizeof(*config)) != 0) return PGR_VA_ERR_RECONFIG;
-    return PGR_VA_OK;
+    if (std::memcmp(&g_cfg, config, sizeof(*config)) != 0) return PGS_VA_ERR_RECONFIG;
+    return PGS_VA_OK;
   }
   if (g_install_attempted) return g_install_error;
   g_install_attempted = true;
@@ -385,11 +385,11 @@ int api_install(const PgrVgpActionsConfig *config) {
     g_busy = false;
   }
   g_installed.store(true, std::memory_order_release);
-  return g_install_error = PGR_VA_OK;
+  return g_install_error = PGS_VA_OK;
 }
 
 int api_update(uint32_t mask, uint64_t remaining, uint64_t epoch, uint64_t proven_tid) {
-  if (!g_installed.load(std::memory_order_acquire)) return PGR_VA_ERR_NOT_INSTALLED;
+  if (!g_installed.load(std::memory_order_acquire)) return PGS_VA_ERR_NOT_INSTALLED;
   uint64_t now = 0;
   const bool clock_ok = read_boottime_ms(&now);
   std::lock_guard<std::mutex> lock(g_state_mutex);
@@ -401,14 +401,14 @@ int api_update(uint32_t mask, uint64_t remaining, uint64_t epoch, uint64_t prove
     g_mask = 0;
     g_lease_until_ms = 0;
     if (on_owner) g_epoch = epoch;  // the owner may record a new epoch even while disabling
-    return clock_ok ? PGR_VA_OK : PGR_VA_ERR_CLOCK_FAILURE;
+    return clock_ok ? PGS_VA_OK : PGS_VA_ERR_CLOCK_FAILURE;
   }
   remaining = remaining > kMaxLeaseMs ? kMaxLeaseMs : remaining;
   if (g_mask != mask || g_epoch != epoch || !remaining || !g_lease_until_ms || now >= g_lease_until_ms) ++g_gen;
   g_mask = mask;
   g_lease_until_ms = remaining ? now + remaining : 0;
   g_epoch = epoch;
-  return PGR_VA_OK;
+  return PGS_VA_OK;
 }
 
 int api_encounter(const PgrVgpActionsTarget *request, uintptr_t *out_handle) {
@@ -422,7 +422,7 @@ int api_spin(const PgrVgpActionsSpin *request, uintptr_t *out_handle) {
 }
 
 int api_stop(uint64_t /*proven_tid*/) {
-  if (!g_installed.load(std::memory_order_acquire)) return PGR_VA_ERR_NOT_INSTALLED;
+  if (!g_installed.load(std::memory_order_acquire)) return PGS_VA_ERR_NOT_INSTALLED;
   // Immediate revoke from any thread. Does NOT touch g_busy: an in-flight action finishes on its own;
   // the generation bump guarantees no action that has not reached its pre-invoke re-check will invoke,
   // and no new action can arm until a later update(). stop() never re-arms.
@@ -430,14 +430,14 @@ int api_stop(uint64_t /*proven_tid*/) {
   g_mask = 0;
   g_lease_until_ms = 0;
   ++g_gen;
-  return PGR_VA_OK;
+  return PGS_VA_OK;
 }
 
 int api_sample(PgrVgpActionsSample *out) {
-  if (out == nullptr) return PGR_VA_ERR_NULL_ARG;
+  if (out == nullptr) return PGS_VA_ERR_NULL_ARG;
   const uint32_t roots = g_roots.load(std::memory_order_relaxed);
   std::lock_guard<std::mutex> lock(g_state_mutex);
-  out->version = PGR_VA_SAMPLE_VERSION;
+  out->version = PGS_VA_SAMPLE_VERSION;
   out->size = sizeof(PgrVgpActionsSample);
   out->encounter_serial = g_encounter_serial;
   out->capture_serial = g_capture_serial;
@@ -448,11 +448,11 @@ int api_sample(PgrVgpActionsSample *out) {
   out->last_tid = g_last_tid;
   out->roots = roots;
   out->busy = g_busy ? 1u : 0u;
-  return PGR_VA_OK;
+  return PGS_VA_OK;
 }
 
 const PgrVgpActionsApi kApiTable = {
-    PGR_VA_API_VERSION, static_cast<uint32_t>(sizeof(PgrVgpActionsApi)),
+    PGS_VA_API_VERSION, static_cast<uint32_t>(sizeof(PgrVgpActionsApi)),
     &api_install,   &api_update, &api_encounter, &api_capture,
     &api_spin,      &api_stop,   &api_sample,
 };
@@ -460,15 +460,15 @@ const PgrVgpActionsApi kApiTable = {
 }  // namespace
 
 extern "C" const void *pgs_vgp_actions_api(uint32_t version) {
-  static const PgrVgpSmartActionsApi smart{2,sizeof(PgrVgpSmartActionsApi),pgr_vgp_capture_selected};
+  static const PgsVgpSmartActionsApi smart{2,sizeof(PgsVgpSmartActionsApi),pgs_vgp_capture_selected};
   if(version==2)return &smart;
-  if (version != PGR_VA_API_VERSION) return nullptr;
+  if (version != PGS_VA_API_VERSION) return nullptr;
   return &kApiTable;
 }
 
-extern "C" int pgr_vgp_capture_selected(const PgrVgpActionsTarget *request,int item,int grade,int curve,uintptr_t *out_handle){
+extern "C" int pgs_vgp_capture_selected(const PgrVgpActionsTarget *request,int item,int grade,int curve,uintptr_t *out_handle){
   if(out_handle)*out_handle=0;
-  if(((item<1||item>3)&&!pgr_is_inventory_safari_ball(item))||grade<0||grade>3||(curve!=0&&curve!=1))return PGR_VA_ERR_BAD_VERSION;
+  if(((item<1||item>3)&&!pgs_is_inventory_safari_ball(item))||grade<0||grade>3||(curve!=0&&curve!=1))return PGS_VA_ERR_BAD_VERSION;
   alignas(8) uint8_t ball[12]{};
   // Same reticle ranges as the manual throw feature. Ratings are requested, not guaranteed outcomes.
   const float radius=grade==3?0.1f:grade==2?0.4f:grade==1?0.8f:1.0f;

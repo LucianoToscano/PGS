@@ -14,7 +14,7 @@
 //
 // Relationship to feature 37 (details_completion): feature 37 is unchanged and remains the validator.
 // Feature 38 reuses feature 37's EXACT 272-byte PgrDetailsCompletionConfig (aliased below as
-// PgrDetailsRecoveryConfig: identical runtime exports, 32 validated pointers, success/STATE_OPEN
+// PgsDetailsRecoveryConfig: identical runtime exports, 32 validated pointers, success/STATE_OPEN
 // literals). install() verifies and publishes the immutable config and ALSO installs feature 37 with
 // the same config (idempotent) so the prerequisite validator is guaranteed present; recover()'s final
 // snapshot is proven by calling feature 37's validate() on the rooted handles. The correct op_Implicit
@@ -37,42 +37,42 @@ static_assert(sizeof(void *) == 8, "DetailsRecovery native ABI requires LP64");
 
 // Feature 38 shares feature 37's 272-byte config verbatim; the host packs it once and both modules
 // re-check the header and reject any null pointer.
-using PgrDetailsRecoveryConfig = PgrDetailsCompletionConfig;
-static_assert(sizeof(PgrDetailsRecoveryConfig) == 272, "recovery config must stay 272 bytes on LP64");
+using PgsDetailsRecoveryConfig = PgrDetailsCompletionConfig;
+static_assert(sizeof(PgsDetailsRecoveryConfig) == 272, "recovery config must stay 272 bytes on LP64");
 
-enum PgrDetailsRecoveryInfo {
-  PGR_DR_FEATURE_ID      = 38,
-  PGR_DR_API_VERSION     = 1,
-  PGR_DR_REQUEST_VERSION = 1,
-  PGR_DR_OUTPUT_VERSION  = 1,
-  PGR_DR_MAX_LEASE_MS    = 2500  // request remaining_ms ceiling (mirrors feature 37's lease cap)
+enum PgsDetailsRecoveryInfo {
+  PGS_DR_FEATURE_ID      = 38,
+  PGS_DR_API_VERSION     = 1,
+  PGS_DR_REQUEST_VERSION = 1,
+  PGS_DR_OUTPUT_VERSION  = 1,
+  PGS_DR_MAX_LEASE_MS    = 2500  // request remaining_ms ceiling (mirrors feature 37's lease cap)
 };
 
 // recover() returns 1 RECOVERED / 0 REFUSED (gate/identity/validate) / negative error. release() and
-// install() return PGR_DR_OK or negative.
-enum PgrDetailsRecoveryStatus {
-  PGR_DR_RECOVERED        = 1,
-  PGR_DR_OK               = 0,   // generic success / recover(): refused
-  PGR_DR_ERR_NULL_ARG     = -1,
-  PGR_DR_ERR_BAD_VERSION  = -2,
-  PGR_DR_ERR_BAD_SIZE     = -3,
-  PGR_DR_ERR_MISSING_PTR  = -4,
-  PGR_DR_ERR_NOT_INSTALLED= -6,
-  PGR_DR_ERR_PREREQUISITE = -7,  // feature 37 validator table/install unavailable
-  PGR_DR_ERR_RECONFIG     = -9,
-  PGR_DR_ERR_CLOCK_FAILURE= -10
+// install() return PGS_DR_OK or negative.
+enum PgsDetailsRecoveryStatus {
+  PGS_DR_RECOVERED        = 1,
+  PGS_DR_OK               = 0,   // generic success / recover(): refused
+  PGS_DR_ERR_NULL_ARG     = -1,
+  PGS_DR_ERR_BAD_VERSION  = -2,
+  PGS_DR_ERR_BAD_SIZE     = -3,
+  PGS_DR_ERR_MISSING_PTR  = -4,
+  PGS_DR_ERR_NOT_INSTALLED= -6,
+  PGS_DR_ERR_PREREQUISITE = -7,  // feature 37 validator table/install unavailable
+  PGS_DR_ERR_RECONFIG     = -9,
+  PGS_DR_ERR_CLOCK_FAILURE= -10
 };
 
 // Fixed LP64 request (56 bytes). gui and response are opaque borrowed GC HANDLE IDs (not managed object
 // addresses); the caller retains them for the call. expected_key is the 8-byte caught id written
 // verbatim and compared byte-for-byte, never numerically. A zero key or a zero remaining refuses.
 struct PgrDetailsRecoveryRequest {
-  uint32_t version;         // == PGR_DR_REQUEST_VERSION
+  uint32_t version;         // == PGS_DR_REQUEST_VERSION
   uint32_t size;            // == sizeof(PgrDetailsRecoveryRequest)
   uint8_t  expected_key[8]; // proven caught id (nonzero); 8 raw bytes, never numerically converted
   uint64_t epoch;           // caller's current epoch (carried into the feature 37 validate request)
   uint64_t tid;             // proven owner tid (must equal the current OS tid)
-  uint64_t remaining_ms;    // residual lease; clamped to PGR_DR_MAX_LEASE_MS, 0 refuses
+  uint64_t remaining_ms;    // residual lease; clamped to PGS_DR_MAX_LEASE_MS, 0 refuses
   void *gui;                // borrowed handle -> DetailsGuiController (the only scene anchor)
   void *response;           // borrowed handle -> the expected authoritative CatchPokemonOutProto
 };
@@ -85,7 +85,7 @@ static_assert(sizeof(PgrDetailsRecoveryRequest) == 56,
 // into a host-owned handle). On refusal / error the six handles stay zero (the header and status are
 // always set). The handles are the derived details objects, never the borrowed inputs.
 struct PgrDetailsRecoveryOutput {
-  uint32_t version;  // == PGR_DR_OUTPUT_VERSION
+  uint32_t version;  // == PGS_DR_OUTPUT_VERSION
   uint32_t size;     // == sizeof(PgrDetailsRecoveryOutput)
   int32_t  status;   // mirrors the recover() return code
   uint32_t reserved; // 0 in v1
@@ -102,10 +102,10 @@ static_assert(sizeof(PgrDetailsRecoveryOutput) == 64,
 
 // Fixed LP64 table: 8-byte header + 3 function pointers = 32 bytes.
 struct PgrDetailsRecoveryApi {
-  uint32_t version;  // == PGR_DR_API_VERSION
+  uint32_t version;  // == PGS_DR_API_VERSION
   uint32_t size;     // == sizeof(PgrDetailsRecoveryApi)
   // Verify + publish the immutable config, then install feature 37 with the same config (idempotent).
-  int (*install)(const PgrDetailsRecoveryConfig *config);
+  int (*install)(const PgsDetailsRecoveryConfig *config);
   // Owner-thread recovery. Re-derives + roots the whole details record from request->gui and
   // request->response, proves the identity, then calls feature 37 validate() on the rooted handles.
   // On success publishes the six native-owned handles into *out (ownership transfers to the caller).

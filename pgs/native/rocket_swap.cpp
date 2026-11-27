@@ -56,12 +56,12 @@ bool configured(){
  int active=0,allowed=0;int32_t options=0;
  if(tr->get_bool(3,&active)||tr->get_bool(26,&allowed)||tr->get_int(6,&options))return false;
  if(tr->sample(&z)||!z.snapshot_fresh||z.snapshot_seq!=a.snapshot_seq)return false;
- return active==1&&allowed==1&&(options>0||pgr_smart_battle_enabled());
+ return active==1&&allowed==1&&(options>0||pgs_smart_battle_enabled());
 }
 bool rocket_battle(){
- auto api=static_cast<const pgr_rocket_combat_api_v1*>(pgs_rocket_combat_api(1));
+ auto api=static_cast<const pgs_rocket_combat_api_v1*>(pgs_rocket_combat_api(1));
  if(!api||!api->sample)return false;
- pgr_rocket_combat_sample_v1 s{};s.version=PGR_RC_API_VERSION;s.size=sizeof(s);
+ pgs_rocket_combat_sample_v1 s{};s.version=PGS_RC_API_VERSION;s.size=sizeof(s);
  return api->sample(&s)==0&&s.scope_active==1;
 }
 bool gate(){
@@ -99,7 +99,7 @@ void step(){
   usable[n]=button;slots[n]=i;++n;
  }
  if(n){
-  int pick=pgr_smart_battle_pick_prompt(usable,n);if(pick<0||pick>=n)pick=0;  // Smart battling off or unsure: first available.
+  int pick=pgs_smart_battle_pick_prompt(usable,n);if(pick<0||pick>=n)pick=0;  // Smart battling off or unsure: first available.
   invoke(swap_method,usable[pick]);++presses;
   event("{\"phase\":\"swapped\",\"slot\":"+std::to_string(slots[pick])+",\"presses\":"+std::to_string(presses)+"}");
   next_try=now+kRetryMs;return;
@@ -147,7 +147,7 @@ void install(){
 }
 }  // namespace
 
-void pgr_rocket_swap_tick(uint64_t tid){
+void pgs_rocket_swap_tick(uint64_t tid){
  if(busy||!tid||tid!=uint64_t(gettid()))return;
  const uint64_t prior=owner.load(std::memory_order_acquire);if(prior&&prior!=tid)return;
  struct Guard{Guard(){busy=true;}~Guard(){busy=false;}}guard;
@@ -169,4 +169,4 @@ void pgr_rocket_swap_tick(uint64_t tid){
  }catch(const Failure &f){faulted.store(true,std::memory_order_release);status("error",std::string("Rocket auto swap unavailable: ")+f.where);}
  catch(...){faulted.store(true,std::memory_order_release);status("error","Rocket auto swap unavailable: native failure");}
 }
-void pgr_rocket_swap_stop(){enabled.store(false,std::memory_order_release);}
+void pgs_rocket_swap_stop(){enabled.store(false,std::memory_order_release);}

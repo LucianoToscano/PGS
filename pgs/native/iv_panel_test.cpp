@@ -94,7 +94,7 @@ static void *fixture_symbol(void *,const char *name) {
 extern "C" const void *pgs_runtime_metadata_api(uint32_t) { return &metadata; }
 extern "C" const void *pgs_runtime_bootstrap_api(uint32_t) { return nullptr; }
 extern "C" const void *pgs_runtime_transport_api(uint32_t) { return nullptr; }
-void pgr_iv_display_set_panel_hooks(const PgrIvPanelHooks *) {}
+void pgs_iv_display_set_panel_hooks(const PgsIvPanelHooks *) {}
 
 int main() {
  metadata.resolve_class=resolve;

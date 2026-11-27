@@ -95,7 +95,7 @@ int padding_callback(dl_phdr_info *info, size_t, void *opaque) {
         if (begin <= search.source && search.source - begin < ph.p_memsz) owns_source = true;
     }
     if (!owns_source) return 0;
-    attempt.padding |= PGR_HOOK_PAD_OWNER;
+    attempt.padding |= PGS_HOOK_PAD_OWNER;
     for (size_t i = 0; i < info->dlpi_phnum; ++i) {
         const auto &ph = info->dlpi_phdr[i];
         if (ph.p_type != PT_LOAD || !(ph.p_flags & PF_X) || (ph.p_flags & PF_W) ||
@@ -126,7 +126,7 @@ int padding_callback(dl_phdr_info *info, size_t, void *opaque) {
         for (size_t a = 0; a < alignment_count; ++a) {
             const uintptr_t alignment = alignments[a];
             const bool page_aligned = alignment == search.page_size;
-            if (a) attempt.padding |= PGR_HOOK_PAD_PAGE_RETRY;
+            if (a) attempt.padding |= PGS_HOOK_PAD_PAGE_RETRY;
             if (end > UINTPTR_MAX - alignment + 1) continue;
             const PgrPaddingRanges padding = pgr_padding_ranges(begin, end, alignment);
             const uintptr_t ranges[][2] = {
@@ -135,7 +135,7 @@ int padding_callback(dl_phdr_info *info, size_t, void *opaque) {
             for (const auto &range : ranges) {
                 const uintptr_t lo = range[0], hi = range[1];
                 if (hi <= lo || hi - lo < 16 || !branch_reaches(search.source, lo)) continue;
-                attempt.padding |= PGR_HOOK_PAD_CANDIDATE;
+                attempt.padding |= PGS_HOOK_PAD_CANDIDATE;
                 bool overlap = false;
                 for (size_t j = 0; j < info->dlpi_phnum; ++j) {
                     const auto &other = info->dlpi_phdr[j];
@@ -146,14 +146,14 @@ int padding_callback(dl_phdr_info *info, size_t, void *opaque) {
                 }
                 for (const auto &used : island_pages)
                     if (lo < used.base + used.size && used.base < hi) overlap = true;
-                if (overlap) { attempt.padding |= PGR_HOOK_PAD_OVERLAP; continue; }
+                if (overlap) { attempt.padding |= PGS_HOOK_PAD_OVERLAP; continue; }
                 if (!private_readable_range(lo, hi)) {
-                    attempt.padding |= PGR_HOOK_PAD_NOT_READABLE;
+                    attempt.padding |= PGS_HOOK_PAD_NOT_READABLE;
                     continue;
                 }
                 island_pages.push_back({lo, 0, hi - lo, 0});
-                hook_diag.island_source = page_aligned ? PGR_HOOK_ISLAND_PAGE_PADDING
-                                                       : PGR_HOOK_ISLAND_ELF_PADDING;
+                hook_diag.island_source = page_aligned ? PGS_HOOK_ISLAND_PAGE_PADDING
+                                                       : PGS_HOOK_ISLAND_ELF_PADDING;
                 search.found = true;
                 return 1;
             }
@@ -189,7 +189,7 @@ void *near_island(void *address, void *replacement) {
         FILE *maps = std::fopen("/proc/self/maps", "r");
         if (!maps) {
             attempt.error = errno;
-            attempt.padding |= PGR_HOOK_PAD_MAPS_FAILED;
+            attempt.padding |= PGS_HOOK_PAD_MAPS_FAILED;
             return nullptr;
         }
         char line[1024];
@@ -225,12 +225,12 @@ void *near_island(void *address, void *replacement) {
             // Start with host-page alignment; the callback also considers the
             // owning executable segment's bounded ELF alignment.
             PaddingSearch search{source, page_size < 4096 ? page_size : 4096, false};
-            attempt.padding |= PGR_HOOK_PAD_SEARCHED;
+            attempt.padding |= PGS_HOOK_PAD_SEARCHED;
             dl_iterate_phdr(padding_callback, &search);
             if (!search.found) return nullptr;
         } else {
             island_pages.push_back({reinterpret_cast<uintptr_t>(allocated), 0, page_size, 0});
-            hook_diag.island_source = PGR_HOOK_ISLAND_MMAP;
+            hook_diag.island_source = PGS_HOOK_ISLAND_MMAP;
         }
         hook_diag.island_pages = static_cast<uint32_t>(island_pages.size());
         chosen = &island_pages.back();
@@ -256,7 +256,7 @@ void *near_island(void *address, void *replacement) {
         if (DobbyCodePatch(reinterpret_cast<void *>(entry),
             reinterpret_cast<uint8_t *>(code), sizeof(code)) != 0) {
             attempt.error = errno;
-            attempt.padding |= PGR_HOOK_PAD_WRITE_FAILED;
+            attempt.padding |= PGS_HOOK_PAD_WRITE_FAILED;
             return nullptr;
         }
         ++dispatch_count;
@@ -271,7 +271,7 @@ void *near_island(void *address, void *replacement) {
     if (DobbyCodePatch(reinterpret_cast<void *>(entry),
         reinterpret_cast<uint8_t *>(code), sizeof(code)) != 0) {
         attempt.error = errno;
-        attempt.padding |= PGR_HOOK_PAD_WRITE_FAILED;
+        attempt.padding |= PGS_HOOK_PAD_WRITE_FAILED;
         return nullptr;
     }
     chosen->used += slot_size;
@@ -287,7 +287,7 @@ int pgs_hook(void *address, void *replacement, void **original) {
     // branch so adjacent small game methods retain their entry instructions.
     // Scheduler export veneers are also resolved before reaching this engine.
     if (!address || !replacement || !original || (reinterpret_cast<uintptr_t>(address) & 3)) {
-        record_failure(address, PGR_HOOK_REASON_BAD_ARGS, 0, 0, 0, 0);
+        record_failure(address, PGS_HOOK_REASON_BAD_ARGS, 0, 0, 0, 0);
         return -1;
     }
     enable_near_once();
@@ -295,7 +295,7 @@ int pgs_hook(void *address, void *replacement, void **original) {
     // silently falling back to a 12/16-byte patch over adjacent tiny methods.
     void *island = near_island(address, replacement);
     if (!island) {
-        record_failure(address, PGR_HOOK_REASON_NEAR_ISLAND, 0, attempt.error,
+        record_failure(address, PGS_HOOK_REASON_NEAR_ISLAND, 0, attempt.error,
             attempt.gaps, attempt.padding);
         __android_log_print(ANDROID_LOG_WARN, "PGS",
             "hook-install-failed target=%p reason=near-island gaps=%u padding=%u errno=%d",
@@ -306,7 +306,7 @@ int pgs_hook(void *address, void *replacement, void **original) {
     const int rc = DobbyHook(address, island, original);
     if (rc != 0 || !*original) {
         const int error = errno;
-        record_failure(address, PGR_HOOK_REASON_DOBBY, rc, error, attempt.gaps, attempt.padding);
+        record_failure(address, PGS_HOOK_REASON_DOBBY, rc, error, attempt.gaps, attempt.padding);
         __android_log_print(ANDROID_LOG_WARN, "PGS",
             "hook-install-failed target=%p reason=dobby rc=%d errno=%d", address, rc, error);
     }
@@ -314,7 +314,7 @@ int pgs_hook(void *address, void *replacement, void **original) {
 #else
     errno = 0;
     const int rc = DobbyHook(address, replacement, original);
-    if (rc != 0) record_failure(address, PGR_HOOK_REASON_DOBBY, rc, errno, 0, 0);
+    if (rc != 0) record_failure(address, PGS_HOOK_REASON_DOBBY, rc, errno, 0, 0);
     return rc;
 #endif
 }

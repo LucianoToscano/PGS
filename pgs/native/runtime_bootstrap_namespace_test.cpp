@@ -5,7 +5,7 @@
 // It drives loaded_namespace_handle() directly and models bionic's dl* surface so the
 // loader-resolution routes are deterministic on-host: __loader_dlopen is reached first via
 // dlsym(RTLD_DEFAULT) and, when that fails (the real rooted-namespace case), via an explicit
-// handle on libdl.so / ld-android.so. It asserts the precise PgrBootLoaderDetail reported for
+// handle on libdl.so / ld-android.so. It asserts the precise PgsBootLoaderDetail reported for
 // each failure, that every RTLD_NOLOAD host open is balanced by a dlclose, that the game image
 // is opened RTLD_NOLOAD with its own executable-segment address as the caller, and that no route
 // ever fabricates a handle.
@@ -111,19 +111,19 @@ static void *call(const char *name) {
 int main() {
   // ---- image discovery failures (loader never consulted) -------------------------------------
   reset(); count = 0;
-  assert(!call("libil2cpp.so") && diag == PGR_BOOT_LD_IMAGE_PENDING && game_opens == 0); // not mapped yet
+  assert(!call("libil2cpp.so") && diag == PGS_BOOT_LD_IMAGE_PENDING && game_opens == 0); // not mapped yet
   reset();
-  assert(!call("il2cpp.so") && diag == PGR_BOOT_LD_IMAGE_PENDING && game_opens == 0); // name mismatch
+  assert(!call("il2cpp.so") && diag == PGS_BOOT_LD_IMAGE_PENDING && game_opens == 0); // name mismatch
   reset(); count = 2;
-  assert(!call("libil2cpp.so") && diag == PGR_BOOT_LD_IMAGE_AMBIGUOUS && game_opens == 0); // duplicate image
+  assert(!call("libil2cpp.so") && diag == PGS_BOOT_LD_IMAGE_AMBIGUOUS && game_opens == 0); // duplicate image
   reset(); segment.p_flags = PF_R;
-  assert(!call("libil2cpp.so") && diag == PGR_BOOT_LD_NO_EXEC_SEGMENT && game_opens == 0); // no executable seg
+  assert(!call("libil2cpp.so") && diag == PGS_BOOT_LD_NO_EXEC_SEGMENT && game_opens == 0); // no executable seg
   reset(); segment.p_vaddr = UINTPTR_MAX;
-  assert(!call("libil2cpp.so") && diag == PGR_BOOT_LD_NO_EXEC_SEGMENT && game_opens == 0); // caller overflow
+  assert(!call("libil2cpp.so") && diag == PGS_BOOT_LD_NO_EXEC_SEGMENT && game_opens == 0); // caller overflow
 
   // ---- __loader_dlopen resolution routes (image is unique + executable) ----------------------
   reset(); default_has_loader = true; // device where RTLD_DEFAULT still exposes the loader
-  assert(call("libil2cpp.so") == GAME_HANDLE && diag == PGR_BOOT_LD_IMAGE_PENDING && game_opens == 1);
+  assert(call("libil2cpp.so") == GAME_HANDLE && diag == PGS_BOOT_LD_IMAGE_PENDING && game_opens == 1);
 
   reset(); // RTLD_DEFAULT missing -> resolved through the already-loaded libdl handle (the real fix)
   assert(call("libil2cpp.so") == GAME_HANDLE && game_opens == 1);
@@ -136,13 +136,13 @@ int main() {
 
   // ---- unavailable fallback: no route yields the symbol --------------------------------------
   reset(); libdl_has_loader = ldandroid_has_loader = false; // both hosts mapped, neither exports it
-  assert(!call("libil2cpp.so") && diag == PGR_BOOT_LD_SYMBOL_ABSENT && game_opens == 0);
+  assert(!call("libil2cpp.so") && diag == PGS_BOOT_LD_SYMBOL_ABSENT && game_opens == 0);
   reset(); libdl_present = ldandroid_present = false; // neither host even mapped
-  assert(!call("libil2cpp.so") && diag == PGR_BOOT_LD_SYMBOL_ABSENT && game_opens == 0);
+  assert(!call("libil2cpp.so") && diag == PGS_BOOT_LD_SYMBOL_ABSENT && game_opens == 0);
 
   // ---- loader resolved but the namespace NOLOAD open returns null ----------------------------
   reset(); default_has_loader = true; game_open_succeeds = false;
-  assert(!call("libil2cpp.so") && diag == PGR_BOOT_LD_NOLOAD_NULL && game_opens == 1);
+  assert(!call("libil2cpp.so") && diag == PGS_BOOT_LD_NOLOAD_NULL && game_opens == 1);
 
   // ---- match by full path, resolved via the libdl fallback -----------------------------------
   reset();

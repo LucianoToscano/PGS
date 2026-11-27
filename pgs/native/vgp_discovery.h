@@ -14,7 +14,7 @@
 //                      stored, capacity, totalItems, maxItems) plus TWO owned GC handles -- the pokemon
 //                      bag and the item bag -- adopted by the caller exactly once.
 //   enumerate(kind) -> FindObjectsOfType(wild|stop), validates Object[] assignability, reads the
-//                      element count (<= PGR_VD_MAX_ARRAY) and returns ONE owned GC handle for the array.
+//                      element count (<= PGS_VD_MAX_ARRAY) and returns ONE owned GC handle for the array.
 //   at(array,index) -> revalidates the array class/count/index, reads the raw LP64 element pointer at
 //                      data offset 32, and returns ONE owned GC handle for a non-null element.
 //
@@ -29,13 +29,13 @@
 // freed before return; no raw managed pointer is reused across a managed call (relocating collector) --
 // receivers are re-resolved from their roots. All three entry points run managed work only on the proven
 // Unity owner thread (owner_tid must equal the current OS tid) and only inside a short residual lease
-// (clamped to PGR_VD_MAX_LEASE_MS); a fresh monotonic clock is re-sampled AFTER the lookups and a positive
+// (clamped to PGS_VD_MAX_LEASE_MS); a fresh monotonic clock is re-sampled AFTER the lookups and a positive
 // result is returned only if the lease is still open at that point. The output struct is fully
 // initialised before any early return, and no partially-returned handle is ever left in it.
 //
 // Outcomes (return value, identical sign convention for all three entry points):
-//   PGR_VD_OK (1)   -> success; *out populated and any owned handle(s) set exactly once.
-//   PGR_VD_SKIP (0) -> benign host skip: closed/expired lease, owner mismatch (incl. owner 0),
+//   PGS_VD_OK (1)   -> success; *out populated and any owned handle(s) set exactly once.
+//   PGS_VD_SKIP (0) -> benign host skip: closed/expired lease, owner mismatch (incl. owner 0),
 //                      map/container/contract/service not ready (a null managed result), FindObjectsOfType
 //                      null, or a null element at the requested index. No handle retained.
 //   negative        -> conservative failure the host surfaces as a VGP pause (no legacy fallback): bad
@@ -48,39 +48,39 @@ extern "C" {
 
 static_assert(sizeof(void *) == 8, "VgpDiscovery native ABI requires LP64");
 
-enum PgrVgpDiscoveryInfo {
-  PGR_VD_FEATURE_ID      = 31,
-  PGR_VD_API_VERSION     = 1,
-  PGR_VD_CONFIG_VERSION  = 2,
-  PGR_VD_SNAPSHOT_VERSION = 1,
-  PGR_VD_ENUM_VERSION    = 1,
-  PGR_VD_MAX_LEASE_MS    = 2500,  // residual foreground lease ceiling (JS vgpLease gate)
-  PGR_VD_KIND_CATCH      = 1,     // enumerate wild map pokemon (VGP.wild)
-  PGR_VD_KIND_CATCH_LOADED = 3,   // smart catch: include loaded inactive map objects
-  PGR_VD_KIND_SPIN       = 2,     // enumerate stop map objects (VGP.stop)
-  PGR_VD_MAX_ARRAY       = 2048,  // strict element-count ceiling (JS 'vgp-map-count' guard)
-  PGR_VD_ARRAY_DATA_OFF  = 32     // raw LP64 managed array data start (existing ABI: element[i] @ 32+i*8)
+enum PgsVgpDiscoveryInfo {
+  PGS_VD_FEATURE_ID      = 31,
+  PGS_VD_API_VERSION     = 1,
+  PGS_VD_CONFIG_VERSION  = 2,
+  PGS_VD_SNAPSHOT_VERSION = 1,
+  PGS_VD_ENUM_VERSION    = 1,
+  PGS_VD_MAX_LEASE_MS    = 2500,  // residual foreground lease ceiling (JS vgpLease gate)
+  PGS_VD_KIND_CATCH      = 1,     // enumerate wild map pokemon (VGP.wild)
+  PGS_VD_KIND_CATCH_LOADED = 3,   // smart catch: include loaded inactive map objects
+  PGS_VD_KIND_SPIN       = 2,     // enumerate stop map objects (VGP.stop)
+  PGS_VD_MAX_ARRAY       = 2048,  // strict element-count ceiling (JS 'vgp-map-count' guard)
+  PGS_VD_ARRAY_DATA_OFF  = 32     // raw LP64 managed array data start (existing ABI: element[i] @ 32+i*8)
 };
 
 // Entry-point return codes (positive success, 0 benign skip, negative conservative failure).
-enum PgrVgpDiscoveryStatus {
-  PGR_VD_OK                = 1,
-  PGR_VD_SKIP              = 0,
-  PGR_VD_ERR_NULL_ARG      = -1,
-  PGR_VD_ERR_BAD_VERSION   = -2,
-  PGR_VD_ERR_BAD_SIZE      = -3,
-  PGR_VD_ERR_MISSING_PTR   = -4,   // install(): a required config pointer was null
-  PGR_VD_ERR_NOT_INSTALLED = -6,
-  PGR_VD_ERR_RECONFIG      = -9,   // install(): a different config at an already-installed table
-  PGR_VD_ERR_CLOCK_FAILURE = -10,
-  PGR_VD_ERR_BUSY          = -11,  // a reentrant call while another was in progress (defensive)
-  PGR_VD_ERR_GCHANDLE      = -12,  // a temporary root or a returned handle could not be allocated
-  PGR_VD_ERR_MANAGED       = -13,  // a managed call threw
-  PGR_VD_ERR_METADATA      = -14,  // a resolved object had the wrong class, or a count box was not Int32
-  PGR_VD_ERR_BAD_KIND      = -15,  // enumerate(): kind not catch/spin
-  PGR_VD_ERR_BAD_COUNT     = -16,  // array length exceeded PGR_VD_MAX_ARRAY
-  PGR_VD_ERR_BAD_INDEX     = -17,  // at(): index >= element count
-  PGR_VD_ERR_NEG_COUNT     = -18   // snapshot(): an Int32 count came back negative (fail closed)
+enum PgsVgpDiscoveryStatus {
+  PGS_VD_OK                = 1,
+  PGS_VD_SKIP              = 0,
+  PGS_VD_ERR_NULL_ARG      = -1,
+  PGS_VD_ERR_BAD_VERSION   = -2,
+  PGS_VD_ERR_BAD_SIZE      = -3,
+  PGS_VD_ERR_MISSING_PTR   = -4,   // install(): a required config pointer was null
+  PGS_VD_ERR_NOT_INSTALLED = -6,
+  PGS_VD_ERR_RECONFIG      = -9,   // install(): a different config at an already-installed table
+  PGS_VD_ERR_CLOCK_FAILURE = -10,
+  PGS_VD_ERR_BUSY          = -11,  // a reentrant call while another was in progress (defensive)
+  PGS_VD_ERR_GCHANDLE      = -12,  // a temporary root or a returned handle could not be allocated
+  PGS_VD_ERR_MANAGED       = -13,  // a managed call threw
+  PGS_VD_ERR_METADATA      = -14,  // a resolved object had the wrong class, or a count box was not Int32
+  PGS_VD_ERR_BAD_KIND      = -15,  // enumerate(): kind not catch/spin
+  PGS_VD_ERR_BAD_COUNT     = -16,  // array length exceeded PGS_VD_MAX_ARRAY
+  PGS_VD_ERR_BAD_INDEX     = -17,  // at(): index >= element count
+  PGS_VD_ERR_NEG_COUNT     = -18   // snapshot(): an Int32 count came back negative (fail closed)
 };
 
 // Fixed LP64 config (272 bytes): 8-byte header + 32 validated il2cpp pointers in the EXACT order below.
@@ -89,7 +89,7 @@ enum PgrVgpDiscoveryStatus {
 // hook address. Each count method and the two Resolve-returned objects are invoked NON-virtually, exactly
 // as the legacy JS path. The field offsets of this struct are the published contract: never reorder.
 struct PgrVgpDiscoveryConfig {
-  uint32_t version;  // == PGR_VD_CONFIG_VERSION
+  uint32_t version;  // == PGS_VD_CONFIG_VERSION
   uint32_t size;     // == sizeof(PgrVgpDiscoveryConfig)
 
   // [0..9] il2cpp runtime exports.
@@ -138,9 +138,9 @@ static_assert(sizeof(PgrVgpDiscoveryConfig) == 272,
               "PgrVgpDiscoveryConfig must remain 272 bytes on LP64");
 
 // Fixed LP64 snapshot output (48 bytes). Always fully initialised before any early return. The two
-// handles are OWNED (adopted by the caller exactly once) and set ONLY on PGR_VD_OK; they are 0 otherwise.
+// handles are OWNED (adopted by the caller exactly once) and set ONLY on PGS_VD_OK; they are 0 otherwise.
 struct PgrVgpDiscoverySnapshot {
-  uint32_t version;          // off 0  == PGR_VD_SNAPSHOT_VERSION
+  uint32_t version;          // off 0  == PGS_VD_SNAPSHOT_VERSION
   uint32_t size;             // off 4  == sizeof(PgrVgpDiscoverySnapshot)
   int32_t  balls;            // off 8  GetItemCount(item id 1)
   int32_t  stored;           // off 12 pokemon bag get_Count()
@@ -156,11 +156,11 @@ static_assert(sizeof(PgrVgpDiscoverySnapshot) == 48,
               "PgrVgpDiscoverySnapshot must remain 48 bytes on LP64");
 
 // Fixed LP64 enumeration output (24 bytes). Always fully initialised. arrayHandle is an OWNED GC handle
-// set ONLY on PGR_VD_OK (0 otherwise). count == 0 is a valid success.
+// set ONLY on PGS_VD_OK (0 otherwise). count == 0 is a valid success.
 struct PgrVgpDiscoveryEnumeration {
-  uint32_t version;      // off 0  == PGR_VD_ENUM_VERSION
+  uint32_t version;      // off 0  == PGS_VD_ENUM_VERSION
   uint32_t size;         // off 4  == sizeof(PgrVgpDiscoveryEnumeration)
-  uint32_t count;        // off 8  element count (<= PGR_VD_MAX_ARRAY)
+  uint32_t count;        // off 8  element count (<= PGS_VD_MAX_ARRAY)
   uint32_t reserved;     // off 12 0
   uint64_t array_handle; // off 16 OWNED GC handle for the Object[] (adopt exactly once)
 };
@@ -170,10 +170,10 @@ static_assert(sizeof(PgrVgpDiscoveryEnumeration) == 24,
 
 // Fixed LP64 table: 8-byte header + 4 function pointers = 40 bytes.
 struct PgrVgpDiscoveryApi {
-  uint32_t version;  // == PGR_VD_API_VERSION
+  uint32_t version;  // == PGS_VD_API_VERSION
   uint32_t size;     // == sizeof(PgrVgpDiscoveryApi)
   // install(config): bind the validated runtime once for the process lifetime. Idempotent for an
-  // identical config; a different config returns PGR_VD_ERR_RECONFIG. Any null required pointer or a bad
+  // identical config; a different config returns PGS_VD_ERR_RECONFIG. Any null required pointer or a bad
   // header is rejected (fail closed). No hook is installed.
   int (*install)(const PgrVgpDiscoveryConfig *config);
   // snapshot(svc, owner, lease_ms, out): resolve the inventory and counts off the service object `svc`

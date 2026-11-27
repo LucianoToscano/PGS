@@ -150,8 +150,8 @@ void *fake_runtime_invoke(const void *method, void *obj, void **params, void **e
   return nullptr;
 }
 
-PgrDetailsRecoveryConfig make_config() {
-  PgrDetailsRecoveryConfig c{};
+PgsDetailsRecoveryConfig make_config() {
+  PgsDetailsRecoveryConfig c{};
   c.version = 1; c.size = sizeof(c);
   c.object_get_class = reinterpret_cast<void *>(&fake_obj_class);
   c.field_get_value = reinterpret_cast<void *>(&fake_field_get);
@@ -210,7 +210,7 @@ int recover(PgrDetailsRecoveryOutput &out) {
 
 // A recovered output: six distinct, nonzero native-owned handles resolving to the scene objects.
 void expect_recovered(PgrDetailsRecoveryOutput &out) {
-  assert(recover(out) == PGR_DR_RECOVERED);
+  assert(recover(out) == PGS_DR_RECOVERED);
   void **slots = &out.gui;
   for (int i = 0; i < 6; ++i) assert(slots[i] != nullptr);
   assert(fake_gc_get(reinterpret_cast<uintptr_t>(out.gui)) == &cur().gui);
@@ -224,7 +224,7 @@ void expect_recovered(PgrDetailsRecoveryOutput &out) {
 // Any mismatch must refuse (0) with zeroed handles and no leaked native roots.
 void expect_refused() {
   PgrDetailsRecoveryOutput out{};
-  assert(recover(out) == PGR_DR_OK);
+  assert(recover(out) == PGS_DR_OK);
   void **slots = &out.gui;
   for (int i = 0; i < 6; ++i) assert(slots[i] == nullptr);
   balanced();
@@ -246,9 +246,9 @@ int main(int argc, char **argv) {
   g_api = api;
 
   std::printf("ABI sizes: config=%zu request=%zu output=%zu table=%zu\n",
-              sizeof(PgrDetailsRecoveryConfig), sizeof(PgrDetailsRecoveryRequest),
+              sizeof(PgsDetailsRecoveryConfig), sizeof(PgrDetailsRecoveryRequest),
               sizeof(PgrDetailsRecoveryOutput), sizeof(PgrDetailsRecoveryApi));
-  assert(sizeof(PgrDetailsRecoveryConfig) == 272 && sizeof(PgrDetailsRecoveryRequest) == 56 &&
+  assert(sizeof(PgsDetailsRecoveryConfig) == 272 && sizeof(PgrDetailsRecoveryRequest) == 56 &&
          sizeof(PgrDetailsRecoveryOutput) == 64 && sizeof(PgrDetailsRecoveryApi) == 32);
   assert(offsetof(PgrDetailsRecoveryRequest, remaining_ms) == 32 &&
          offsetof(PgrDetailsRecoveryRequest, response) == 48);
@@ -257,24 +257,24 @@ int main(int argc, char **argv) {
 
   const uint64_t tid = this_tid();
   g_owner = tid;
-  PgrDetailsRecoveryConfig cfg = make_config();
+  PgsDetailsRecoveryConfig cfg = make_config();
   PgrDetailsRecoveryOutput out{};
 
   // 1. Config validation, not-installed, idempotence, reconfig.
-  assert(api->install(nullptr) == PGR_DR_ERR_NULL_ARG);
-  PgrDetailsRecoveryConfig bad = cfg; bad.version = 2;
-  assert(api->install(&bad) == PGR_DR_ERR_BAD_VERSION);
-  bad = cfg; bad.size = sizeof(cfg) - 1; assert(api->install(&bad) == PGR_DR_ERR_BAD_SIZE);
-  bad = cfg; bad.m_item = nullptr; assert(api->install(&bad) == PGR_DR_ERR_MISSING_PTR);
-  bad = cfg; bad.f_list = nullptr; assert(api->install(&bad) == PGR_DR_ERR_MISSING_PTR);
+  assert(api->install(nullptr) == PGS_DR_ERR_NULL_ARG);
+  PgsDetailsRecoveryConfig bad = cfg; bad.version = 2;
+  assert(api->install(&bad) == PGS_DR_ERR_BAD_VERSION);
+  bad = cfg; bad.size = sizeof(cfg) - 1; assert(api->install(&bad) == PGS_DR_ERR_BAD_SIZE);
+  bad = cfg; bad.m_item = nullptr; assert(api->install(&bad) == PGS_DR_ERR_MISSING_PTR);
+  bad = cfg; bad.f_list = nullptr; assert(api->install(&bad) == PGS_DR_ERR_MISSING_PTR);
   { build();
-    assert(api->recover(&g_req, &out) == PGR_DR_ERR_NOT_INSTALLED && out.status == PGR_DR_ERR_NOT_INSTALLED);
-    assert(api->release(&out) == PGR_DR_ERR_NOT_INSTALLED); }
-  assert(api->install(&cfg) == PGR_DR_OK);
-  assert(api->install(&cfg) == PGR_DR_OK);  // idempotent (installs feature 37 once)
-  bad = cfg; bad.state_open = 9; assert(api->install(&bad) == PGR_DR_ERR_RECONFIG);
-  assert(api->recover(nullptr, nullptr) == PGR_DR_ERR_NULL_ARG);
-  assert(api->release(nullptr) == PGR_DR_ERR_NULL_ARG);
+    assert(api->recover(&g_req, &out) == PGS_DR_ERR_NOT_INSTALLED && out.status == PGS_DR_ERR_NOT_INSTALLED);
+    assert(api->release(&out) == PGS_DR_ERR_NOT_INSTALLED); }
+  assert(api->install(&cfg) == PGS_DR_OK);
+  assert(api->install(&cfg) == PGS_DR_OK);  // idempotent (installs feature 37 once)
+  bad = cfg; bad.state_open = 9; assert(api->install(&bad) == PGS_DR_ERR_RECONFIG);
+  assert(api->recover(nullptr, nullptr) == PGS_DR_ERR_NULL_ARG);
+  assert(api->release(nullptr) == PGS_DR_ERR_NULL_ARG);
 
   // 2. Valid recovery (incl. while still OPENING): six native handles, host adoption, release frees and
   //    zeros, release is idempotent, roots return balanced.
@@ -285,9 +285,9 @@ int main(int argc, char **argv) {
     void *adopted[6];
     void **slots = &out.gui;
     for (int i = 0; i < 6; ++i) adopted[i] = borrow(fake_gc_get(reinterpret_cast<uintptr_t>(slots[i])));
-    assert(api->release(&out) == PGR_DR_OK);
+    assert(api->release(&out) == PGS_DR_OK);
     for (int i = 0; i < 6; ++i) assert(slots[i] == nullptr);        // zeroed
-    assert(api->release(&out) == PGR_DR_OK);                        // idempotent no-op
+    assert(api->release(&out) == PGS_DR_OK);                        // idempotent no-op
     for (int i = 0; i < 6; ++i) { g_handles.erase(reinterpret_cast<uintptr_t>(adopted[i])); g_host.erase(reinterpret_cast<uintptr_t>(adopted[i])); }
     g_handles.erase(reinterpret_cast<uintptr_t>(g_req.gui)); g_handles.erase(reinterpret_cast<uintptr_t>(g_req.response));
     g_host.erase(reinterpret_cast<uintptr_t>(g_req.gui)); g_host.erase(reinterpret_cast<uintptr_t>(g_req.response));
@@ -320,33 +320,33 @@ int main(int argc, char **argv) {
 
   // 4. Gate: zero remaining, over-limit remaining clamps (still recovers), tid mismatch, foreign thread.
   { build(); g_req.remaining_ms = 0; expect_refused(); }
-  { build(); g_req.remaining_ms = 1000000; expect_recovered(out); assert(api->release(&out) == PGR_DR_OK);
+  { build(); g_req.remaining_ms = 1000000; expect_recovered(out); assert(api->release(&out) == PGS_DR_OK);
     g_handles.erase(reinterpret_cast<uintptr_t>(g_req.gui)); g_handles.erase(reinterpret_cast<uintptr_t>(g_req.response));
     g_host.erase(reinterpret_cast<uintptr_t>(g_req.gui)); g_host.erase(reinterpret_cast<uintptr_t>(g_req.response)); balanced(); }
   { build(); g_req.tid = tid + 1; expect_refused(); }
   { build(); g_req.tid = 0; expect_refused(); }
   std::thread([&]() {
     build(); PgrDetailsRecoveryOutput o{};
-    assert(g_api->recover(&g_req, &o) == PGR_DR_OK && o.gui == nullptr);  // off-owner refuse
+    assert(g_api->recover(&g_req, &o) == PGS_DR_OK && o.gui == nullptr);  // off-owner refuse
   }).join();
 
   // 5. Moving GC: alive / count / item each relocate the whole scene mid-call; native roots refresh so
   //    identity still holds, the recovered handles point at the relocated scene, roots stay balanced.
   { build(); g_move_count = g_move_item = g_move_alive = true;
     expect_recovered(out); assert(currentScene == 3);
-    assert(api->release(&out) == PGR_DR_OK);
+    assert(api->release(&out) == PGS_DR_OK);
     g_handles.erase(reinterpret_cast<uintptr_t>(g_req.gui)); g_handles.erase(reinterpret_cast<uintptr_t>(g_req.response));
     g_host.erase(reinterpret_cast<uintptr_t>(g_req.gui)); g_host.erase(reinterpret_cast<uintptr_t>(g_req.response)); balanced(); }
 
   // 6. Root-allocation failures along recover(): each gc_new may fail; every failure must refuse with
   //    balanced roots and zeroed handles (nothing left unrooted / no partial publish).
   { build(); g_new_calls = 0; expect_recovered(out); const int ra = g_new_calls;
-    assert(api->release(&out) == PGR_DR_OK);
+    assert(api->release(&out) == PGS_DR_OK);
     g_handles.erase(reinterpret_cast<uintptr_t>(g_req.gui)); g_handles.erase(reinterpret_cast<uintptr_t>(g_req.response));
     g_host.erase(reinterpret_cast<uintptr_t>(g_req.gui)); g_host.erase(reinterpret_cast<uintptr_t>(g_req.response)); balanced();
     assert(ra >= 6);
     for (int n = 1; n <= ra; ++n) { build(); g_fail_new = n;
-      PgrDetailsRecoveryOutput o{}; assert(g_api->recover(&g_req, &o) == PGR_DR_OK);
+      PgrDetailsRecoveryOutput o{}; assert(g_api->recover(&g_req, &o) == PGS_DR_OK);
       assert(g_alloc_failed && o.gui == nullptr); balanced(); } }
 
   g_handles.clear(); g_host.clear();

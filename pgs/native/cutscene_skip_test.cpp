@@ -158,8 +158,8 @@ const void *pgs_runtime_transport_api(uint32_t){return &transport_mock;}
 const void *pgs_runtime_bootstrap_api(uint32_t){return nullptr;}
 const void *pgs_runtime_metadata_api(uint32_t){return nullptr;}
 int pgs_hook(void*,void*,void**){return -1;}
-bool pgr_catch_presentation_attached(const void*){return false;}
-int pgr_catch_presentation_set_bypass(PgrCatchBypass,void*){return -1;}
+bool pgs_catch_presentation_attached(const void*){return false;}
+int pgs_catch_presentation_set_bypass(PgsCatchBypass,void*){return -1;}
 
 int main(){
  // Live regression: normal skip actions reached the final summary but never pressed its button.
@@ -209,7 +209,7 @@ int main(){
  assert(anim.speed==1&&canvas.raycasts&&gui.taps==0);fail_reveal=false;advance_raid(true);cleared();
  assert(canvas.alpha==1&&base.alpha==1&&!contains("\"skipped\""));
  // Foreground stop restores both input and per-screen animation, then releases every root.
- setup();prepared();gui.state=3;advance_raid(true);pgr_cutscene_skip_stop(gettid());cleared();
+ setup();prepared();gui.state=3;advance_raid(true);pgs_cutscene_skip_stop(gettid());cleared();
  assert(canvas.alpha==1&&base.alpha==1&&canvas.raycasts&&base.raycasts&&anim.speed==1);
  // Actual Unity destruction is a separate positive liveness check, not an exception.
  setup();prepared();due();gui.alive=false;canvas.alive=base.alive=anim.alive=false;
@@ -351,7 +351,7 @@ int main(){
                      Case{"K2|1|0",true,true},Case{"K2|1|1",true,true}}){
   wire_inventory(false);
   policy_text=c.config;transport_mock.sample=policy_sample;transport_mock.get_string=policy_string;
-  tried=true;faulted.store(false);pgr_cutscene_skip_tick(gettid(),nullptr);
+  tried=true;faulted.store(false);pgs_cutscene_skip_tick(gettid(),nullptr);
   // Manual access stays interactive even when either or both settings are on.
   hook_gui_open(&inv,nullptr);settle_inventory();assert(!pending_inventory&&inv.taps==0);
   boot.runtime.object_new=reinterpret_cast<void*>(fixture_new);
@@ -366,14 +366,14 @@ int main(){
   intro_calls=hatch_calls=evolve_calls=0;result_bypassed=false;
   Obj intro,reveal,dismiss;
   hook_egg_intro(&intro,nullptr,nullptr);assert(intro_calls==1&&bool(pending_egg)==c.eggs);
-  pgr_cutscene_skip_tick(gettid(),nullptr);assert(!pending_egg&&intro.taps==int(c.eggs));
+  pgs_cutscene_skip_tick(gettid(),nullptr);assert(!pending_egg&&intro.taps==int(c.eggs));
   void *hatch=hook_hatch(nullptr,nullptr,1.f,&reveal,nullptr);
   assert(hatch==(c.eggs?&completed:&original_result));
   assert(hatch_calls==int(!c.eggs)&&reveal.taps==int(c.eggs));
   // Non-hatch Pokemon details are never captured.
   assert(!bypass_show_info(nullptr,nullptr,nullptr,&dismiss));
   hook_hatch_result(nullptr,&dismiss,nullptr);assert(result_bypassed==c.eggs&&hatch_result_depth==0);
-  pgr_cutscene_skip_tick(gettid(),nullptr);assert(!pending_dismiss&&dismiss.taps==int(c.eggs));
+  pgs_cutscene_skip_tick(gettid(),nullptr);assert(!pending_dismiss&&dismiss.taps==int(c.eggs));
   void *evolved=hook_evolve(nullptr,nullptr,nullptr,nullptr);
   assert(evolved==(c.other_cutscenes?&completed:&original_result));
   assert(evolve_calls==int(!c.other_cutscenes));
@@ -390,7 +390,7 @@ int main(){
  // The existing matrix above deliberately covers the fallback with its binding unavailable.
  for(const Case &c: {Case{"K2|0|0",false,false},Case{"K2|0|1",true,false},
                      Case{"K2|1|0",true,true},Case{"K2|1|1",true,true}}){
-  wire_inventory(false);policy_text=c.config;pgr_cutscene_skip_tick(gettid(),nullptr);
+  wire_inventory(false);policy_text=c.config;pgs_cutscene_skip_tick(gettid(),nullptr);
   Obj complete;hatch_state.completion=&complete;hatch_complete_field=&egg_ids[E_COMPLETE];
   hook_hatch_dismiss(&hatch_state,&inv,nullptr);
   assert(complete.taps==int(c.eggs)&&hatch_dismiss_calls==int(!c.eggs));
@@ -464,7 +464,7 @@ int main(){
  wire_inventory();settle_inventory();inventory_clicked_at=clock_ms()-3001;inventory_since=clock_ms()-3500;
  advance_inventory();cleared();assert(inv.taps==1&&contains("close-not-confirmed"));
  wire_inventory();fail_method=&egg_ids[E_CLOSE];failures=1;settle_inventory();cleared();assert(inv.taps==0&&inv.raycasts&&inv.alpha==1);
- wire_inventory();pgr_cutscene_skip_stop(gettid());cleared();assert(inv.taps==0);
+ wire_inventory();pgs_cutscene_skip_stop(gettid());cleared();assert(inv.taps==0);
  inventory_class=nullptr;egg_inventory_enabled.store(false);
  std::puts("PASS post-hatch Eggs: manual access preserved, exact new-controller provenance, no-open/error/off/stale/thread branches, delayed open, expiry, user control, normal close and root cleanup");
  std::puts("PASS raid lifecycle: normal actions, dialogue/settle gates, real dismissal/destruction, failures, recovery, foreground stop, loss, timeout, shared canvases, repeated raids");

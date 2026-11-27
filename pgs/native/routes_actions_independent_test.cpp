@@ -38,7 +38,7 @@ void move(){
 PgrRoutesActionsRequest request(uint32_t action,uint64_t seq=0){
  PgrRoutesActionsRequest r{};r.version=1;r.size=sizeof(r);r.tid=static_cast<uint64_t>(gettid());r.residual_ms=2500;r.generation=api->generation();
  r.service_handle=hostService;r.action=action;r.seq=seq;
- if(action==PGR_RA_ACT_COMPLETE||action==PGR_RA_ACT_START){r.id_length=7;const char *s="route-a";for(int i=0;i<7;i++)r.id[i]=s[i];}
+ if(action==PGS_RA_ACT_COMPLETE||action==PGS_RA_ACT_START){r.id_length=7;const char *s="route-a";for(int i=0;i<7;i++)r.id[i]=s[i];}
  return r;
 }
 uintptr_t gcNew(void *p,int pinned){assert(!pinned);index(p);auto h=++serial;roots[h]=p;move();return h;}
@@ -48,7 +48,7 @@ void gcFree(uintptr_t h){
  assert(roots.erase(h)==1);
  if(revokeCurrentCleanup&&which==SERVICE&&h!=hostService){revokeCurrentCleanup=false;api->revoke();}
  if(submissions&&!inConfirm&&!cleanupChecked){
-  cleanupChecked=true;const int before=managed;auto r=request(PGR_RA_ACT_CURRENT);PgrRoutesActionsOutput out{};
+  cleanupChecked=true;const int before=managed;auto r=request(PGS_RA_ACT_CURRENT);PgrRoutesActionsOutput out{};
   cleanupResult=api->execute(&r,&out);assert(cleanupResult<=0&&managed==before);
  }
  move();
@@ -74,7 +74,7 @@ void *invoke(const void *method,void *receiver,void **args,void **exception){
  if(method==&completeMethod){
   assert(self==SERVICE&&!args);++submissions;move();inConfirm=true;
   if(std::strcmp(mode,"callback-current-id")==0)obj(ID)->text[6]='b';
-  auto nested=request(PGR_RA_ACT_CURRENT);
+  auto nested=request(PGS_RA_ACT_CURRENT);
   if(std::strcmp(mode,"wrong-service")==0)nested.service_handle=hostOther;
   const int before=currentCalls;inLeaf=true;leafResult=api->execute(&nested,&leafOutput);inLeaf=false;
   if(std::strcmp(mode,"wrong-service")==0)assert(currentCalls==before);
@@ -84,7 +84,7 @@ void *invoke(const void *method,void *receiver,void **args,void **exception){
   assert(!args);++currentCalls;
   if(inConfirm&&inLeaf&&std::strcmp(mode,"revoke-leaf")==0)api->revoke();
   if(inConfirm&&inLeaf&&std::strcmp(mode,"one-leaf-depth")==0&&!nestedAgain){
-   nestedAgain=true;const int before=managed;auto r=request(PGR_RA_ACT_CURRENT);PgrRoutesActionsOutput out{};
+   nestedAgain=true;const int before=managed;auto r=request(PGS_RA_ACT_CURRENT);PgrRoutesActionsOutput out{};
    recursiveResult=api->execute(&r,&out);assert(recursiveResult<=0&&managed==before);
   }
   move();return obj(PLAY);
@@ -109,24 +109,24 @@ int scenario(const char *name){
  c.string_length=reinterpret_cast<void*>(&stringLength);c.string_chars=reinterpret_cast<void*>(&stringChars);assert(api->install(&c)==0);
  hostService=gcNew(obj(SERVICE),0);hostOther=gcNew(obj(OTHER_SERVICE),0);
  if(std::strcmp(mode,"current-cleanup-revoke")==0){
-  revokeCurrentCleanup=true;auto current=request(PGR_RA_ACT_CURRENT);PgrRoutesActionsOutput result{};
-  assert(api->execute(&current,&result)==PGR_RA_REFUSE&&result.status==PGR_RA_REFUSE&&result.flags==0&&result.id_length==0);
+  revokeCurrentCleanup=true;auto current=request(PGS_RA_ACT_CURRENT);PgrRoutesActionsOutput result{};
+  assert(api->execute(&current,&result)==PGS_RA_REFUSE&&result.status==PGS_RA_REFUSE&&result.flags==0&&result.id_length==0);
   assert(!revokeCurrentCleanup&&roots.size()==2&&submissions==0);gcFree(hostService);gcFree(hostOther);assert(roots.empty());
   std::puts("PASS independent Routes current-cleanup-revoke");return 0;
  }
  if(std::strcmp(mode,"invalid-paused")==0||std::strcmp(mode,"invalid-reward")==0){
-  auto invalid=request(PGR_RA_ACT_COMPLETE,1);PgrRoutesActionsOutput result{};
+  auto invalid=request(PGS_RA_ACT_COMPLETE,1);PgrRoutesActionsOutput result{};
   assert(api->execute(&invalid,&result)<0&&result.status<0&&result.flags==0&&submissions==0&&roots.size()==2);
   gcFree(hostService);gcFree(hostOther);assert(roots.empty());std::printf("PASS independent Routes %s\n",mode);return 0;
  }
- auto r=request(PGR_RA_ACT_COMPLETE,1);PgrRoutesActionsOutput out{};
- assert(api->execute(&r,&out)==PGR_RA_SUCCESS&&out.status==PGR_RA_SUCCESS&&submissions==1);
+ auto r=request(PGS_RA_ACT_COMPLETE,1);PgrRoutesActionsOutput out{};
+ assert(api->execute(&r,&out)==PGS_RA_SUCCESS&&out.status==PGS_RA_SUCCESS&&submissions==1);
  if(std::strcmp(mode,"revoke-leaf")==0||std::strcmp(mode,"wrong-service")==0)assert(leafResult<=0&&leafOutput.flags==0);
- else {assert(leafResult==PGR_RA_SUCCESS&&leafOutput.id_length==7&&(leafOutput.flags&PGR_RA_FLAG_PRESENT));
+ else {assert(leafResult==PGS_RA_SUCCESS&&leafOutput.id_length==7&&(leafOutput.flags&PGS_RA_FLAG_PRESENT));
   assert(leafOutput.id[6]==(std::strcmp(mode,"callback-current-id")==0?'b':'a'));}
  if(std::strcmp(mode,"one-leaf-depth")==0)assert(nestedAgain&&recursiveResult<=0);
  assert(cleanupChecked&&cleanupResult<=0&&roots.size()==2&&moves>15);
- r.generation=api->generation();out={};assert(api->execute(&r,&out)==PGR_RA_REFUSE&&out.reason==PGR_RA_REASON_STALE_SEQ&&submissions==1);
+ r.generation=api->generation();out={};assert(api->execute(&r,&out)==PGS_RA_REFUSE&&out.reason==PGS_RA_REASON_STALE_SEQ&&submissions==1);
  gcFree(hostService);gcFree(hostOther);assert(roots.empty());std::printf("PASS independent Routes %s\n",name);return 0;
 }
 }

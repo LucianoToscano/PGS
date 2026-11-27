@@ -8,21 +8,21 @@
 
 namespace {
 int find(const char *key) {
-  for (int i = 0; i < pgr_pvp::species_count(); ++i)
-    if (!std::strcmp(pgr_pvp::species_key(i), key)) return i;
+  for (int i = 0; i < pgs_pvp::species_count(); ++i)
+    if (!std::strcmp(pgs_pvp::species_key(i), key)) return i;
   std::printf("missing species %s\n", key);
   assert(false);
   return -1;
 }
 void expect(const char *key, int league, int a, int d, int s, int rank, int level, int cp) {
   int l = 0, c = 0;
-  const int r = pgr_pvp::rank(find(key), league, a, d, s, &l, &c);
+  const int r = pgs_pvp::rank(find(key), league, a, d, s, &l, &c);
   if (r != rank || l != level || c != cp)
     std::printf("%s league %d %d/%d/%d: rank %d level %d cp %d, expected %d %d %d\n", key, league, a, d, s, r, l, c, rank, level, cp);
   assert(r == rank && l == level && c == cp);
 }
-pgr_pvp::Settings settings(int great, int ultra, int master, int meta) {
-  pgr_pvp::Settings s{};
+pgs_pvp::Settings settings(int great, int ultra, int master, int meta) {
+  pgs_pvp::Settings s{};
   s.rank[0] = great;
   s.rank[1] = ultra;
   s.rank[2] = master;
@@ -43,39 +43,39 @@ int main() {
   expect("dragonite", 2, 15, 15, 15, 1, 98, 4287);
   expect("dragonite", 2, 15, 14, 15, 3, 98, 4277);
   expect("dragonite", 2, 13, 15, 15, 5, 98, 4256);
-  assert(pgr_pvp::rank(find("azumarill"), 3, 0, 15, 15) == 0 && pgr_pvp::rank(find("azumarill"), 0, 16, 0, 0) == 0);
+  assert(pgs_pvp::rank(find("azumarill"), 3, 0, 15, 15) == 0 && pgs_pvp::rank(find("azumarill"), 0, 16, 0, 0) == 0);
 
-  pgr_pvp::Settings parsed{};
-  assert(pgr_pvp::parse("P2|50|10|0|150", 14, &parsed) && parsed.rank[0] == 50 && parsed.rank[1] == 10 &&
+  pgs_pvp::Settings parsed{};
+  assert(pgs_pvp::parse("P2|50|10|0|150", 14, &parsed) && parsed.rank[0] == 50 && parsed.rank[1] == 10 &&
          parsed.rank[2] == 0 && parsed.meta_limit == 150);
-  assert(!pgr_pvp::parse("P2|50|10|0|0", 12, &parsed) && parsed.rank[0] == 0);
-  assert(!pgr_pvp::parse("P2|50|10|0|150x", 15, &parsed) && !pgr_pvp::parse("P1|6|50|150", 11, &parsed));
-  assert(!pgr_pvp::parse("P2|5000|10|0|150", 16, &parsed));
+  assert(!pgs_pvp::parse("P2|50|10|0|0", 12, &parsed) && parsed.rank[0] == 0);
+  assert(!pgs_pvp::parse("P2|50|10|0|150x", 15, &parsed) && !pgs_pvp::parse("P1|6|50|150", 11, &parsed));
+  assert(!pgs_pvp::parse("P2|5000|10|0|150", 16, &parsed));
 
   // Marill keeps for its evolution Azumarill (Great League rank 1); a hundo does not.
-  pgr_pvp::Keep why{};
+  pgs_pvp::Keep why{};
   const int marill = find("marill");
-  assert(pgr_pvp::keep(marill, false, 0, 15, 15, 0, settings(50, 10, 0, 150), &why) && why.league == 0 && why.rank == 1 &&
+  assert(pgs_pvp::keep(marill, false, 0, 15, 15, 0, settings(50, 10, 0, 150), &why) && why.league == 0 && why.rank == 1 &&
          why.species == find("azumarill"));
-  assert(!pgr_pvp::keep(marill, false, 15, 15, 15, 0, settings(50, 10, 0, 150), &why) && why.league == -1);
+  assert(!pgs_pvp::keep(marill, false, 15, 15, 15, 0, settings(50, 10, 0, 150), &why) && why.league == -1);
   // Each league uses its own limit: rank 14 passes a top-25 Ultra League limit but not a top-10 one.
-  assert(pgr_pvp::keep(find("registeel"), false, 0, 15, 15, 0, settings(0, 25, 0, 150), &why) && why.league == 1 && why.rank == 14);
-  assert(!pgr_pvp::keep(find("registeel"), false, 0, 15, 15, 0, settings(0, 10, 0, 150), &why));
+  assert(pgs_pvp::keep(find("registeel"), false, 0, 15, 15, 0, settings(0, 25, 0, 150), &why) && why.league == 1 && why.rank == 14);
+  assert(!pgs_pvp::keep(find("registeel"), false, 0, 15, 15, 0, settings(0, 10, 0, 150), &why));
   // Master League only when it is on and the species is in its meta list.
-  assert(!pgr_pvp::keep(find("dragonite"), false, 15, 14, 15, 0, settings(0, 0, 0, 150), &why));
-  assert(pgr_pvp::keep(find("dragonite"), false, 15, 14, 15, 0, settings(0, 0, 10, 150), &why) && why.league == 2 && why.rank == 3);
+  assert(!pgs_pvp::keep(find("dragonite"), false, 15, 14, 15, 0, settings(0, 0, 0, 150), &why));
+  assert(pgs_pvp::keep(find("dragonite"), false, 15, 14, 15, 0, settings(0, 0, 10, 150), &why) && why.league == 2 && why.rank == 3);
   // Already over the Great League cap at its current level: no Great League keep.
-  assert(!pgr_pvp::keep(find("azumarill"), false, 0, 15, 15, pgr_pvp_data::cpm[98], settings(50, 0, 0, 150), &why));
+  assert(!pgs_pvp::keep(find("azumarill"), false, 0, 15, 15, pgs_pvp_data::cpm[98], settings(50, 0, 0, 150), &why));
   // A species outside the meta list never keeps.
-  assert(pgr_pvp_data::species[find("azumarill")].meta[0] > 1);  // Melmetal leads the Great League list
-  assert(!pgr_pvp::keep(marill, false, 0, 15, 15, 0, settings(50, 0, 0, 1), &why));
+  assert(pgs_pvp_data::species[find("azumarill")].meta[0] > 1);  // Melmetal leads the Great League list
+  assert(!pgs_pvp::keep(marill, false, 0, 15, 15, 0, settings(50, 0, 0, 1), &why));
   // Master League species rank: the family's best PvPoke position (shadow uses the shadow list).
-  const pgr_pvp::Keep ml = pgr_pvp::species_rank(find("dratini"), false, 2);
-  assert(ml.league == 2 && ml.species == find("dragonite") && ml.rank == pgr_pvp_data::species[find("dragonite")].meta[2]);
-  assert(pgr_pvp::species_rank(find("magikarp"), true, 2).rank == pgr_pvp_data::species[find("gyarados")].shadow[2]);
+  const pgs_pvp::Keep ml = pgs_pvp::species_rank(find("dratini"), false, 2);
+  assert(ml.league == 2 && ml.species == find("dragonite") && ml.rank == pgs_pvp_data::species[find("dragonite")].meta[2]);
+  assert(pgs_pvp::species_rank(find("magikarp"), true, 2).rank == pgs_pvp_data::species[find("gyarados")].shadow[2]);
   // best() fills every league independently.
-  pgr_pvp::Keep all[pgr_pvp::kLeagues];
-  pgr_pvp::best(find("registeel"), false, 0, 14, 15, 0, 2000, all);
+  pgs_pvp::Keep all[pgs_pvp::kLeagues];
+  pgs_pvp::best(find("registeel"), false, 0, 14, 15, 0, 2000, all);
   assert(all[0].league == 0 && all[1].league == 1 && all[1].rank == 1 && all[2].league == 2);
 
   // Cost of one display lookup for a three-stage family checked in all three leagues.
@@ -84,7 +84,7 @@ int main() {
   clock_gettime(CLOCK_MONOTONIC, &t0);
   int seen = 0;
   for (int i = 0; i < 50; ++i) {
-    pgr_pvp::best(bulbasaur, false, i % 16, 15, 15, 0, 2000, all);
+    pgs_pvp::best(bulbasaur, false, i % 16, 15, 15, 0, 2000, all);
     seen += all[0].league >= 0;
   }
   clock_gettime(CLOCK_MONOTONIC, &t1);

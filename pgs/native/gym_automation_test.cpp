@@ -3,7 +3,7 @@
 #include <cstring>
 #include <cstdio>
 #include <limits>
-using namespace pgr_gym;
+using namespace pgs_gym;
 int main(){
  Settings s;const char *p="1;1;1;1;50;10";assert(parse(p,strlen(p),s)&&s.deploy&&s.feed&&s.fallback);
  for(auto bad:{"","1;1;1;1;50;10;","2;1;1;1;50;10","1;2;1;1;50;10","1;1;1;1;-1;10","1;1;1;1;1001;10"})assert(!parse(bad,strlen(bad),s)&&!s.deploy);

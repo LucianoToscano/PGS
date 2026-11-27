@@ -265,7 +265,7 @@ bool add_pvp_pieces(Label &l,int league){
   void *name[]={managed_string(kRankNames[league])};call(call(rank,"get_gameObject"),"set_name",1,name);call(rank,"set_raycastTarget",1,hit_args);l.rank[league]=rank;
  }
  if(!l.icon[league]){
-  void *crest=pgr_pvp_crest?pgr_pvp_crest(league):nullptr;if(!crest)return false;
+  void *crest=pgs_pvp_crest?pgs_pvp_crest(league):nullptr;if(!crest)return false;
   void *types=fn<void*(*)(void*,uintptr_t)>(boot.runtime.array_new)(class_of("System","Type"),2);require(types,"PvP icon types");
   void *components[]={class_type("UnityEngine","RectTransform"),class_type("UnityEngine.UI","Image")};
   for(int i=0;i<2;i++){void **slot=reinterpret_cast<void**>(static_cast<char*>(types)+32+i*8);fn<void(*)(void*,void**,void*)>(exp("gc_wbarrier_set_field"))(types,slot,components[i]);}
@@ -347,8 +347,8 @@ void render(void *cell,void *pokemon){
  const float multiplier=field<float>(pokemon,PGR_GAME_QUICKBALL_METADATA_H_CPMULTIPLIER__NAME,"System.Single")+
                         field<float>(pokemon,PGR_GAME_QUICKBALL_METADATA_H_ADDITIONALCPMULTIPLIER__NAME,"System.Single");
  void *args[]={managed_string(label(atk,def,sta,m,level_half(multiplier)))};call(l.text,"set_text",1,args);
- PgrPvpBest best{};
- const bool pvp=m==4&&pgr_pvp_best&&pgr_pvp_best(pokemon,PGR_PVP_STORAGE,atk,def,sta,owner,&best);
+ PgsPvpBest best{};
+ const bool pvp=m==4&&pgs_pvp_best&&pgs_pvp_best(pokemon,PGS_PVP_STORAGE,atk,def,sta,owner,&best);
  // Second row: each league's crest and rank (no species names; the cells are narrow).
  bool shown[3]={false,false,false};
  for(int i=0;i<3;i++){
@@ -400,7 +400,7 @@ void install(){
 }
 }  // namespace
 
-void pgr_storage_iv_tick(uint64_t tid,const PgrSharedMetadataOutput *metadata){
+void pgs_storage_iv_tick(uint64_t tid,const PgrSharedMetadataOutput *metadata){
  if(busy||!tid||tid!=uint64_t(gettid())||(owner&&owner!=tid))return;
  struct Guard{Guard(){busy=true;}~Guard(){busy=false;}}guard;owner=tid;md=metadata;
  const int m=configured_mode();mode.store(m,std::memory_order_release);
@@ -412,4 +412,4 @@ void pgr_storage_iv_tick(uint64_t tid,const PgrSharedMetadataOutput *metadata){
  }catch(const Failure &f){faulted.store(true,std::memory_order_release);status("error",std::string("Storage IVs unavailable: ")+f.where);}
  catch(...){faulted.store(true,std::memory_order_release);status("error","Storage IVs unavailable: native failure");}
 }
-void pgr_storage_iv_stop(){mode.store(0,std::memory_order_release);}
+void pgs_storage_iv_stop(){mode.store(0,std::memory_order_release);}

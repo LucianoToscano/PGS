@@ -57,10 +57,10 @@ LoaderDlopen resolve_loader_dlopen() {
 // mandatory: this must never initialize a second IL2CPP runtime. The normal
 // lookup and test seams retain precedence. Private loader API availability is
 // checked at runtime; unsupported loaders simply remain not ready. *diag reports a
-// PgrBootLoaderDetail so a stuck "pending" report localizes the exact failure; it is
+// PgsBootLoaderDetail so a stuck "pending" report localizes the exact failure; it is
 // 0 (IMAGE_PENDING) whenever the handle is returned or the image is merely not mapped yet.
 void *loaded_namespace_handle(const char *soname, int *diag) {
-  if (diag) *diag = PGR_BOOT_LD_IMAGE_PENDING;
+  if (diag) *diag = PGS_BOOT_LD_IMAGE_PENDING;
 #if defined(__ANDROID__)
   struct Search {
     const char *name;
@@ -87,12 +87,12 @@ void *loaded_namespace_handle(const char *soname, int *diag) {
     return 0;
   }, &search);
   if (search.matches == 0) return nullptr;                 // not mapped yet: ordinary retriable wait
-  if (search.matches > 1) { if (diag) *diag = PGR_BOOT_LD_IMAGE_AMBIGUOUS; return nullptr; }
-  if (!search.caller)     { if (diag) *diag = PGR_BOOT_LD_NO_EXEC_SEGMENT; return nullptr; }
+  if (search.matches > 1) { if (diag) *diag = PGS_BOOT_LD_IMAGE_AMBIGUOUS; return nullptr; }
+  if (!search.caller)     { if (diag) *diag = PGS_BOOT_LD_NO_EXEC_SEGMENT; return nullptr; }
   LoaderDlopen open = resolve_loader_dlopen();
-  if (!open)              { if (diag) *diag = PGR_BOOT_LD_SYMBOL_ABSENT; return nullptr; }
+  if (!open)              { if (diag) *diag = PGS_BOOT_LD_SYMBOL_ABSENT; return nullptr; }
   void *handle = open(search.path, RTLD_NOLOAD | RTLD_NOW, search.caller);
-  if (!handle)            { if (diag) *diag = PGR_BOOT_LD_NOLOAD_NULL; return nullptr; }
+  if (!handle)            { if (diag) *diag = PGS_BOOT_LD_NOLOAD_NULL; return nullptr; }
   return handle;
 #else
   (void)soname;
@@ -181,7 +181,7 @@ static_assert(sizeof(kRuntimeSyms) / sizeof(kRuntimeSyms[0]) ==
 struct Identity {
   PgrBootConfig cfg{};
   char names[5][256]{};
-  unsigned char prologue[PGR_MD_PROLOGUE_MAX]{};
+  unsigned char prologue[PGS_MD_PROLOGUE_MAX]{};
 };
 struct State {
   bool identified = false;
@@ -211,7 +211,7 @@ struct Guard {
 
 void fill_header(PgrBootBinding *out, int status, int detail) {
   std::memset(out, 0, sizeof(*out));
-  out->version = PGR_BOOT_BINDING_VERSION;
+  out->version = PGS_BOOT_BINDING_VERSION;
   out->size = sizeof(PgrBootBinding);
   out->status = status;
   out->detail = detail;
@@ -247,7 +247,7 @@ bool resolve_symbols(const PgrBootConfig *cfg, void *handle, PgrMetaExports *met
 // Resolve+validate ExecuteTasks THROUGH feature 47. Binds 47 with the DEFAULT segment resolver and NO
 // debug prologue in production (cfg->seg_query/seg_ctx null) so the config is identical to Routes 53's;
 // 47's bind is idempotent for an identical config, so both owners coexist. Returns 0 on success, or a
-// PgrBootStatus (ERR_BIND / ERR_RESOLVE) with *detail set to the underlying PgrMetaStatus.
+// PgsBootStatus (ERR_BIND / ERR_RESOLVE) with *detail set to the underlying PgsMetaStatus.
 int resolve_execute_tasks(const PgrBootConfig *cfg, const PgrMetaApi *md, const PgrMetaExports *meta,
                           const void *base, uint64_t size, const void **out_method,
                           const void **out_code, int *detail) {
@@ -268,7 +268,7 @@ int resolve_execute_tasks(const PgrBootConfig *cfg, const PgrMetaApi *md, const 
   int rc = md->bind(&bc);
   if (rc != 0) {
     *detail = rc;
-    return PGR_BOOT_ERR_BIND;
+    return PGS_BOOT_ERR_BIND;
   }
 
   PgrMetaClassQuery cq{};
@@ -282,7 +282,7 @@ int resolve_execute_tasks(const PgrBootConfig *cfg, const PgrMetaApi *md, const 
   rc = md->resolve_class(&cq, &cr);
   if (rc != 0) {
     *detail = rc;
-    return PGR_BOOT_ERR_RESOLVE;
+    return PGS_BOOT_ERR_RESOLVE;
   }
 
   PgrMetaMethodQuery mq{};
@@ -298,8 +298,8 @@ int resolve_execute_tasks(const PgrBootConfig *cfg, const PgrMetaApi *md, const 
   if (cfg->exec_code_rva != 0) {
     const uintptr_t b = reinterpret_cast<uintptr_t>(base);
     if (cfg->exec_code_rva > UINTPTR_MAX - b) { // base+rva overflow -> treat as a resolution fault
-      *detail = PGR_MD_ERR_CODE_RANGE;
-      return PGR_BOOT_ERR_RESOLVE;
+      *detail = PGS_MD_ERR_CODE_RANGE;
+      return PGS_BOOT_ERR_RESOLVE;
     }
     mq.expected_code = reinterpret_cast<const void *>(b + cfg->exec_code_rva);
     mq.prologue = cfg->exec_prologue;
@@ -309,7 +309,7 @@ int resolve_execute_tasks(const PgrBootConfig *cfg, const PgrMetaApi *md, const 
   rc = md->validate_method(&mq, &mr);
   if (rc != 0) {
     *detail = rc;
-    return PGR_BOOT_ERR_RESOLVE;
+    return PGS_BOOT_ERR_RESOLVE;
   }
   *out_method = mr.method;
   *out_code = mr.code;
@@ -343,7 +343,7 @@ bool same_identity(const Identity &a,const Identity &b) {
 }
 
 int api_probe(const PgrBootConfig *cfg, PgrBootBinding *out) {
-  if (out == nullptr) return PGR_BOOT_ERR_NULL_ARG;
+  if (out == nullptr) return PGS_BOOT_ERR_NULL_ARG;
   Guard guard;
   if (!guard.ok) { // concurrent/reentrant probe; shared state untouched
     fill_header(out, PGR_BOOT_ERR_BUSY, 0);
@@ -351,30 +351,30 @@ int api_probe(const PgrBootConfig *cfg, PgrBootBinding *out) {
   }
 
   // Config validation. These are caller programming errors, not the environment; they do NOT poison.
-  if (cfg == nullptr) { fill_header(out, PGR_BOOT_ERR_NULL_ARG, 0); return PGR_BOOT_ERR_NULL_ARG; }
-  if (cfg->version != PGR_BOOT_CONFIG_VERSION) {
-    fill_header(out, PGR_BOOT_ERR_BAD_VERSION, 0);
-    return PGR_BOOT_ERR_BAD_VERSION;
+  if (cfg == nullptr) { fill_header(out, PGS_BOOT_ERR_NULL_ARG, 0); return PGS_BOOT_ERR_NULL_ARG; }
+  if (cfg->version != PGS_BOOT_CONFIG_VERSION) {
+    fill_header(out, PGS_BOOT_ERR_BAD_VERSION, 0);
+    return PGS_BOOT_ERR_BAD_VERSION;
   }
   if (cfg->size != sizeof(PgrBootConfig)) {
-    fill_header(out, PGR_BOOT_ERR_BAD_SIZE, 0);
-    return PGR_BOOT_ERR_BAD_SIZE;
+    fill_header(out, PGS_BOOT_ERR_BAD_SIZE, 0);
+    return PGS_BOOT_ERR_BAD_SIZE;
   }
-  if (cfg->reserved & ~1u) { fill_header(out, PGR_BOOT_ERR_BAD_CONFIG, 0); return PGR_BOOT_ERR_BAD_CONFIG; }
+  if (cfg->reserved & ~1u) { fill_header(out, PGS_BOOT_ERR_BAD_CONFIG, 0); return PGS_BOOT_ERR_BAD_CONFIG; }
   if (cfg->exec_code_rva != 0) {
     if (cfg->exec_prologue == nullptr || cfg->exec_prologue_len == 0 ||
-        cfg->exec_prologue_len > PGR_MD_PROLOGUE_MAX) {
-      fill_header(out, PGR_BOOT_ERR_BAD_CONFIG, 0);
-      return PGR_BOOT_ERR_BAD_CONFIG;
+        cfg->exec_prologue_len > PGS_MD_PROLOGUE_MAX) {
+      fill_header(out, PGS_BOOT_ERR_BAD_CONFIG, 0);
+      return PGS_BOOT_ERR_BAD_CONFIG;
     }
   } else if (cfg->exec_prologue != nullptr || cfg->exec_prologue_len != 0) {
-    fill_header(out, PGR_BOOT_ERR_BAD_CONFIG, 0);
-    return PGR_BOOT_ERR_BAD_CONFIG;
+    fill_header(out, PGS_BOOT_ERR_BAD_CONFIG, 0);
+    return PGS_BOOT_ERR_BAD_CONFIG;
   }
 
   Identity candidate{};
   if (!identity(cfg, &candidate) || (g.identified && !same_identity(candidate,g.identity))) {
-    fill_header(out,PGR_BOOT_ERR_BAD_CONFIG,0); return PGR_BOOT_ERR_BAD_CONFIG;
+    fill_header(out,PGS_BOOT_ERR_BAD_CONFIG,0); return PGS_BOOT_ERR_BAD_CONFIG;
   }
   if (g.phase == 1) { *out = g.cached; return PGR_BOOT_OK; }
   if (g.phase == 2) { fill_header(out,g.poison_status,g.poison_detail); return g.poison_status; }
@@ -386,7 +386,7 @@ int api_probe(const PgrBootConfig *cfg, PgrBootBinding *out) {
   //    reused across NOT_READY retries so polling never grows the refcount. Null -> not loaded yet.
   void *handle = g.handle;
   if (handle == nullptr) {
-    int loader_detail = PGR_BOOT_LD_IMAGE_PENDING;
+    int loader_detail = PGS_BOOT_LD_IMAGE_PENDING;
     handle = cfg->dlopen_fn ? cfg->dlopen_fn(cfg->seam_ctx, soname, RTLD_NOLOAD | RTLD_NOW)
                             : ::dlopen(soname, RTLD_NOLOAD | RTLD_NOW);
     if (!handle && !cfg->dlopen_fn) handle = loaded_namespace_handle(soname, &loader_detail);
@@ -400,15 +400,15 @@ int api_probe(const PgrBootConfig *cfg, PgrBootBinding *out) {
   // 2. dlsym the strict supported export set. A missing export is an unsupported build -> fail closed.
   PgrMetaExports meta{};
   PgrBootRuntimeExports rt{};
-  if (!resolve_symbols(cfg, handle, &meta, &rt)) return poison(out, PGR_BOOT_ERR_MISSING_EXPORT, 0);
+  if (!resolve_symbols(cfg, handle, &meta, &rt)) return poison(out, PGS_BOOT_ERR_MISSING_EXPORT, 0);
 
   // 3. feature 47 metadata API.
-  const void *raw = cfg->metadata_fn ? cfg->metadata_fn(cfg->seam_ctx, PGR_MD_API_VERSION)
-                                     : pgs_runtime_metadata_api(PGR_MD_API_VERSION);
+  const void *raw = cfg->metadata_fn ? cfg->metadata_fn(cfg->seam_ctx, PGS_MD_API_VERSION)
+                                     : pgs_runtime_metadata_api(PGS_MD_API_VERSION);
   const PgrMetaApi *md = static_cast<const PgrMetaApi *>(raw);
-  if (md == nullptr || md->version != PGR_MD_API_VERSION || md->size != sizeof(PgrMetaApi) ||
+  if (md == nullptr || md->version != PGS_MD_API_VERSION || md->size != sizeof(PgrMetaApi) ||
       !md->bind || !md->resolve_module || !md->resolve_class || !md->validate_method || !md->validate_code)
-    return poison(out, PGR_BOOT_ERR_NO_METADATA, 0);
+    return poison(out, PGS_BOOT_ERR_NO_METADATA, 0);
 
   // 4. Real loaded-module range. Null module_fn delegates to 47 (same range Routes 53 binds against).
   const void *base = nullptr;
@@ -418,7 +418,7 @@ int api_probe(const PgrBootConfig *cfg, PgrBootBinding *out) {
   if(mrc==PGR_MD_ERR_BUSY){fill_header(out,PGR_BOOT_ERR_BUSY,mrc);return PGR_BOOT_ERR_BUSY;}
   if (mrc != 0 || base == nullptr || size == 0 ||
       size > UINTPTR_MAX - reinterpret_cast<uintptr_t>(base))
-    return poison(out, PGR_BOOT_ERR_MODULE_RANGE, mrc);
+    return poison(out, PGS_BOOT_ERR_MODULE_RANGE, mrc);
 
   // Validate real dlsym addresses BEFORE calling domain/thread functions. Native
   // fixture callbacks intentionally live outside their synthetic module image.
@@ -427,20 +427,20 @@ int api_probe(const PgrBootConfig *cfg, PgrBootBinding *out) {
     binding.exports=&meta;binding.module_base=base;binding.module_size=size;
     const int bound=md->bind(&binding);
     if(bound==PGR_MD_ERR_BUSY){fill_header(out,PGR_BOOT_ERR_BUSY,bound);return PGR_BOOT_ERR_BUSY;}
-    if(bound)return poison(out,PGR_BOOT_ERR_BIND,bound);
+    if(bound)return poison(out,PGS_BOOT_ERR_BIND,bound);
     for(const auto &entry:kMetaSyms){
       const void *address=nullptr;std::memcpy(&address,reinterpret_cast<const char *>(&meta)+entry.off,sizeof(address));
       PgrMetaCodeQuery query{};query.version=1;query.size=sizeof(query);query.address=address;query.length=4;
       const int checked=md->validate_code(&query);
       if(checked==PGR_MD_ERR_BUSY){fill_header(out,PGR_BOOT_ERR_BUSY,checked);return PGR_BOOT_ERR_BUSY;}
-      if(checked)return poison(out,PGR_BOOT_ERR_EXPORT_CODE,checked);
+      if(checked)return poison(out,PGS_BOOT_ERR_EXPORT_CODE,checked);
     }
     for(const auto &entry:kRuntimeSyms){
       const void *address=nullptr;std::memcpy(&address,reinterpret_cast<const char *>(&rt)+entry.off,sizeof(address));
       PgrMetaCodeQuery query{};query.version=1;query.size=sizeof(query);query.address=address;query.length=4;
       const int checked=md->validate_code(&query);
       if(checked==PGR_MD_ERR_BUSY){fill_header(out,PGR_BOOT_ERR_BUSY,checked);return PGR_BOOT_ERR_BUSY;}
-      if(checked)return poison(out,PGR_BOOT_ERR_EXPORT_CODE,checked);
+      if(checked)return poison(out,PGS_BOOT_ERR_EXPORT_CODE,checked);
     }
   }
 
@@ -458,7 +458,7 @@ int api_probe(const PgrBootConfig *cfg, PgrBootBinding *out) {
   bool attached = false;
   if (self == nullptr) {
     self = reinterpret_cast<void *(*)(void *)>(rt.thread_attach)(domain);
-    if (self == nullptr) return poison(out, PGR_BOOT_ERR_THREAD, 0);
+    if (self == nullptr) return poison(out, PGS_BOOT_ERR_THREAD, 0);
     attached = true;
   }
 
@@ -475,7 +475,7 @@ int api_probe(const PgrBootConfig *cfg, PgrBootBinding *out) {
   // 7. Publish the copied, bounded binding table and latch READY.
   PgrBootBinding &b = g.cached;
   std::memset(&b, 0, sizeof(b));
-  b.version = PGR_BOOT_BINDING_VERSION;
+  b.version = PGS_BOOT_BINDING_VERSION;
   b.size = sizeof(PgrBootBinding);
   b.status = PGR_BOOT_OK;
   b.detail = 0;
@@ -495,7 +495,7 @@ int api_probe(const PgrBootConfig *cfg, PgrBootBinding *out) {
 }
 
 int api_snapshot(PgrBootBinding *out) {
-  if (out == nullptr) return PGR_BOOT_ERR_NULL_ARG;
+  if (out == nullptr) return PGS_BOOT_ERR_NULL_ARG;
   Guard guard;
   if (!guard.ok) {
     fill_header(out, PGR_BOOT_ERR_BUSY, 0);
@@ -510,10 +510,10 @@ int api_snapshot(PgrBootBinding *out) {
   return PGR_BOOT_NOT_READY;
 }
 
-const PgrBootApi g_api = {PGR_BOOT_API_VERSION, sizeof(PgrBootApi), api_probe, api_snapshot};
+const PgrBootApi g_api = {PGS_BOOT_API_VERSION, sizeof(PgrBootApi), api_probe, api_snapshot};
 
 } // namespace
 
 const void *pgs_runtime_bootstrap_api(uint32_t version) {
-  return version == PGR_BOOT_API_VERSION ? &g_api : nullptr;
+  return version == PGS_BOOT_API_VERSION ? &g_api : nullptr;
 }

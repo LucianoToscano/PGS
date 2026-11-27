@@ -106,20 +106,20 @@ int main(int argc,char **argv){
  api=static_cast<const PgrDetailsCompletionApi*>(core->query_feature(37,1));assert(api&&api->size==64);
  assert(sizeof(PgrDetailsCompletionConfig)==272&&sizeof(req)==80);owner=gettid();auto cfg=config();assert(api->install(&cfg)==0);
  reset();assert(api->validate(&req)==1&&targetReads>=2);balanced();
- allocations=0;auto out=complete();assert(clicks==1&&(out.flags&PGR_DC_FLAG_AFTER_KNOWN)&&out.after==3);
+ allocations=0;auto out=complete();assert(clicks==1&&(out.flags&PGS_DC_FLAG_AFTER_KNOWN)&&out.after==3);
  const int completeRoots=allocations;
  reset();scenes[0].action.a=&scenes[0].gui;assert(api->validate(&req)==0&&clicks==0);balanced();
  // Alive, count, item and click each relocate ALL objects; native/host roots follow them while old
  // addresses are poisoned. Scalars and boxed values additionally move during their own root creation.
  reset();moveInputs=true;moveBoxes=true;moveMethods=15;
- out=complete();assert(sceneIndex==5&&clicks==1&&out.after==3&&!(out.flags&PGR_DC_FLAG_GONE));
+ out=complete();assert(sceneIndex==5&&clicks==1&&out.after==3&&!(out.flags&PGS_DC_FLAG_GONE));
  reset();scenes[0].gui.value=1;assert(api->validate(&req)==1);out=complete(0);assert(clicks==0);
  for(int n=1;n<=completeRoots;n++){reset();failAllocation=n;PgrDetailsCompletionOutput o{};
-  api->complete(&req,token,&o);assert(failedAllocation&&clicks<=1);balanced();assert(!(o.flags&PGR_DC_FLAG_GONE));}
+  api->complete(&req,token,&o);assert(failedAllocation&&clicks<=1);balanced();assert(!(o.flags&PGS_DC_FLAG_GONE));}
  for(bool duringAlive:{false,true}){reset();badPostClass=!duringAlive;badPostAliveClass=duringAlive;
-  out=complete();assert(clicks==1&&(out.flags&PGR_DC_FLAG_INVOKED));
-  assert(!(out.flags&PGR_DC_FLAG_AFTER_KNOWN)&&!(out.flags&PGR_DC_FLAG_GONE));}
- reset();throwClick=true;out=complete(PGR_DC_ERR_MANAGED);assert(clicks==1&&(out.flags&PGR_DC_FLAG_INVOKED));
+  out=complete();assert(clicks==1&&(out.flags&PGS_DC_FLAG_INVOKED));
+  assert(!(out.flags&PGS_DC_FLAG_AFTER_KNOWN)&&!(out.flags&PGS_DC_FLAG_GONE));}
+ reset();throwClick=true;out=complete(PGS_DC_ERR_MANAGED);assert(clicks==1&&(out.flags&PGS_DC_FLAG_INVOKED));
  // A list getter invalidating its class must not lead to another virtual call or unsafe field read.
  reset();badListDuringCount=true;out=complete(0);assert(clicks==0);
  // Likewise a destroyed GUI after item() cannot pass the final pre-click liveness proof.

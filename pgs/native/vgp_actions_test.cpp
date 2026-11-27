@@ -175,7 +175,7 @@ uint64_t g_owner = 0;
 
 PgrVgpActionsSample take_sample() {
   PgrVgpActionsSample s{};
-  assert(g_api->sample(&s) == PGR_VA_OK);
+  assert(g_api->sample(&s) == PGS_VA_OK);
   assert(s.version == 1 && s.size == sizeof(PgrVgpActionsSample));
   return s;
 }
@@ -234,27 +234,27 @@ int main(int argc, char **argv) {
   uintptr_t h = 0;
 
   // 1. Validation + not-installed + idempotence + reconfig.
-  assert(api->install(nullptr) == PGR_VA_ERR_NULL_ARG);
+  assert(api->install(nullptr) == PGS_VA_ERR_NULL_ARG);
   PgrVgpActionsConfig bad = cfg; bad.version = 2;
-  assert(api->install(&bad) == PGR_VA_ERR_BAD_VERSION);
+  assert(api->install(&bad) == PGS_VA_ERR_BAD_VERSION);
   bad = cfg; bad.size = sizeof(cfg) - 1;
-  assert(api->install(&bad) == PGR_VA_ERR_BAD_SIZE);
+  assert(api->install(&bad) == PGS_VA_ERR_BAD_SIZE);
   bad = cfg; bad.m_capture = nullptr;
-  assert(api->install(&bad) == PGR_VA_ERR_MISSING_PTR);
+  assert(api->install(&bad) == PGS_VA_ERR_MISSING_PTR);
   { PgrVgpActionsTarget r = make_target(&wild, 1, tid);
-    assert(api->encounter(&r, &h) == PGR_VA_ERR_NOT_INSTALLED); }
+    assert(api->encounter(&r, &h) == PGS_VA_ERR_NOT_INSTALLED); }
 
-  assert(api->install(&cfg) == PGR_VA_OK);
-  assert(api->install(&cfg) == PGR_VA_OK);  // idempotent
+  assert(api->install(&cfg) == PGS_VA_OK);
+  assert(api->install(&cfg) == PGS_VA_OK);  // idempotent
   bad = cfg; bad.class_wild = &cls_fort;
-  assert(api->install(&bad) == PGR_VA_ERR_RECONFIG);
+  assert(api->install(&bad) == PGS_VA_ERR_RECONFIG);
 
   // 2a. encounter: ISSUED, handle adopts the game promise, invoked once, roots clean afterwards.
   { reset_action_counters();
-    assert(api->update(PGR_VA_MASK_CATCH, 2000, 1, tid) == PGR_VA_OK);
+    assert(api->update(PGS_VA_MASK_CATCH, 2000, 1, tid) == PGS_VA_OK);
     PgrVgpActionsTarget r = make_target(&wild, 1, tid);
     h = 0;
-    assert(api->encounter(&r, &h) == PGR_VA_ISSUED);
+    assert(api->encounter(&r, &h) == PGS_VA_ISSUED);
     assert(h != 0 && fake_gc_get(h) == &g_promise && g_encounter_calls == 1);
     PgrVgpActionsSample sm = take_sample();
     assert(sm.encounter_serial == 1 && sm.roots == 0 && sm.busy == 0 && sm.last_token != 0);
@@ -264,11 +264,11 @@ int main(int argc, char **argv) {
 
   // 2b. capture: exact 12-byte PokeballThrow (id 1, 1.0f, 0) + null AR metadata; ISSUED, roots clean.
   { reset_action_counters();
-    assert(api->update(PGR_VA_MASK_CATCH, 2000, 1, tid) == PGR_VA_OK);
+    assert(api->update(PGS_VA_MASK_CATCH, 2000, 1, tid) == PGS_VA_OK);
     PgrVgpActionsTarget r = make_target(&wild, 1, tid);
     h = 0;
     std::memset(g_ball, 0xee, sizeof(g_ball)); g_capture_ar = reinterpret_cast<void *>(0x1);
-    assert(api->capture(&r, &h) == PGR_VA_ISSUED);
+    assert(api->capture(&r, &h) == PGS_VA_ISSUED);
     assert(g_capture_calls == 1 && h != 0 && fake_gc_get(h) == &g_promise);
     int32_t ball_id; float grade; int32_t remaining;
     std::memcpy(&ball_id, g_ball + 0, 4); std::memcpy(&grade, g_ball + 4, 4); std::memcpy(&remaining, g_ball + 8, 4);
@@ -279,25 +279,25 @@ int main(int argc, char **argv) {
 
   // 2c. spin: builds the FortSearch request (ctor + Id + coords) and invokes SendRpc with rpcId/0/10000/0.
   { reset_action_counters();
-    const auto *smart=static_cast<const PgrVgpSmartActionsApi*>(core->query_feature(26,2));
+    const auto *smart=static_cast<const PgsVgpSmartActionsApi*>(core->query_feature(26,2));
     assert(smart&&smart->version==2&&smart->size==sizeof(*smart));
-    assert(api->update(PGR_VA_MASK_CATCH,2000,1,tid)==PGR_VA_OK);
+    assert(api->update(PGS_VA_MASK_CATCH,2000,1,tid)==PGS_VA_OK);
     PgrVgpActionsTarget r=make_target(&wild,1,tid);
-    assert(smart->capture_selected(&r,3,3,1,&h)==PGR_VA_ISSUED);
+    assert(smart->capture_selected(&r,3,3,1,&h)==PGS_VA_ISSUED);
     int item=0;float radius=0;std::memcpy(&item,g_ball,4);std::memcpy(&radius,g_ball+4,4);
     assert(item==3&&radius==0.1f&&g_ball[8]==1&&g_ball[9]==1&&g_ball[10]==0&&g_ball[11]==0);
     fake_gc_free(h);h=0;
     assert(smart->capture_selected(&r,4,3,1,&h)<0&&h==0); // Never a Master Ball.
     assert(smart->capture_selected(&r,2,4,1,&h)<0&&h==0);
-    assert(api->stop(tid)==PGR_VA_OK);
-    assert(smart->capture_selected(&r,2,3,1,&h)==PGR_VA_OK&&h==0);
+    assert(api->stop(tid)==PGS_VA_OK);
+    assert(smart->capture_selected(&r,2,3,1,&h)==PGS_VA_OK&&h==0);
     assert(g_capture_calls==1&&take_sample().roots==0);
   }
   { reset_action_counters();
-    assert(api->update(PGR_VA_MASK_SPIN, 2000, 1, tid) == PGR_VA_OK);
+    assert(api->update(PGS_VA_MASK_SPIN, 2000, 1, tid) == PGS_VA_OK);
     PgrVgpActionsSpin r = make_spin(&stop, &fort, &rpc, 1, tid, 12.25, -45.75);
     h = 0;
-    assert(api->spin(&r, &h) == PGR_VA_ISSUED);
+    assert(api->spin(&r, &h) == PGS_VA_ISSUED);
     assert(g_ctor_calls == 1 && g_sendrpc_calls == 1 && h != 0 && fake_gc_get(h) == &g_promise);
     assert(g_spin_rpcid == 42 && g_spin_p2 == 0 && g_spin_p3 == 10000 && g_spin_p4 == 0);
     assert(g_last_request != nullptr && g_last_request->ctor == false);  // native does not set a .ctor flag
@@ -313,119 +313,119 @@ int main(int argc, char **argv) {
   { reset_action_counters();
     PgrVgpActionsTarget r = make_target(&wild, 1, tid);
     // mask off.
-    assert(api->update(0, 0, 1, tid) == PGR_VA_OK);
-    h = 7; assert(api->encounter(&r, &h) == PGR_VA_OK && h == 0);
+    assert(api->update(0, 0, 1, tid) == PGS_VA_OK);
+    h = 7; assert(api->encounter(&r, &h) == PGS_VA_OK && h == 0);
     // wrong mask bit: spin needs bit2, only bit1 armed.
-    assert(api->update(PGR_VA_MASK_CATCH, 2000, 1, tid) == PGR_VA_OK);
+    assert(api->update(PGS_VA_MASK_CATCH, 2000, 1, tid) == PGS_VA_OK);
     PgrVgpActionsSpin sr = make_spin(&stop, &fort, &rpc, 1, tid, 1.0, 2.0);
-    h = 7; assert(api->spin(&sr, &h) == PGR_VA_OK && h == 0);
+    h = 7; assert(api->spin(&sr, &h) == PGS_VA_OK && h == 0);
     // encounter needs bit1, only bit2 armed.
-    assert(api->update(PGR_VA_MASK_SPIN, 2000, 1, tid) == PGR_VA_OK);
-    h = 7; assert(api->encounter(&r, &h) == PGR_VA_OK && h == 0);
+    assert(api->update(PGS_VA_MASK_SPIN, 2000, 1, tid) == PGS_VA_OK);
+    h = 7; assert(api->encounter(&r, &h) == PGS_VA_OK && h == 0);
     // wrong epoch.
-    assert(api->update(PGR_VA_MASK_CATCH, 2000, 2, tid) == PGR_VA_OK);
+    assert(api->update(PGS_VA_MASK_CATCH, 2000, 2, tid) == PGS_VA_OK);
     PgrVgpActionsTarget wrong_epoch = make_target(&wild, 1, tid);
-    h = 7; assert(api->encounter(&wrong_epoch, &h) == PGR_VA_OK && h == 0);
+    h = 7; assert(api->encounter(&wrong_epoch, &h) == PGS_VA_OK && h == 0);
     // expired lease.
-    assert(api->update(PGR_VA_MASK_CATCH, 1, 3, tid) == PGR_VA_OK);
+    assert(api->update(PGS_VA_MASK_CATCH, 1, 3, tid) == PGS_VA_OK);
     ::usleep(3000);
     PgrVgpActionsTarget r3 = make_target(&wild, 3, tid);
-    h = 7; assert(api->encounter(&r3, &h) == PGR_VA_OK && h == 0);
+    h = 7; assert(api->encounter(&r3, &h) == PGS_VA_OK && h == 0);
     assert(g_encounter_calls == 0 && g_sendrpc_calls == 0);
   }
   // wrong thread (owner already latched here).
   std::thread([&]() {
     PgrVgpActionsTarget r = make_target(&wild, 1, this_tid());
     uintptr_t hh = 7;
-    assert(g_api->encounter(&r, &hh) == PGR_VA_OK && hh == 0);
+    assert(g_api->encounter(&r, &hh) == PGS_VA_OK && hh == 0);
   }).join();
 
   // 4. Identity: wrong target class / bad coords / non-finite fort coords / null closed method.
   { reset_action_counters();
-    assert(api->update(PGR_VA_MASK_CATCH, 2000, 1, tid) == PGR_VA_OK);
+    assert(api->update(PGS_VA_MASK_CATCH, 2000, 1, tid) == PGS_VA_OK);
     FakeFort not_wild{&cls_fort, 0, 0, &g_fort_id_str};
     PgrVgpActionsTarget wrong = make_target(&not_wild, 1, tid);
-    h = 7; assert(api->encounter(&wrong, &h) == PGR_VA_ERR_IDENTITY && h == 0 && g_encounter_calls == 0);
+    h = 7; assert(api->encounter(&wrong, &h) == PGS_VA_ERR_IDENTITY && h == 0 && g_encounter_calls == 0);
 
-    assert(api->update(PGR_VA_MASK_SPIN, 2000, 1, tid) == PGR_VA_OK);
+    assert(api->update(PGS_VA_MASK_SPIN, 2000, 1, tid) == PGS_VA_OK);
     PgrVgpActionsSpin bad_coords = make_spin(&stop, &fort, &rpc, 1, tid, 200.0, 0.0);  // lat out of range
-    h = 7; assert(api->spin(&bad_coords, &h) == PGR_VA_ERR_IDENTITY && h == 0 && g_sendrpc_calls == 0);
+    h = 7; assert(api->spin(&bad_coords, &h) == PGS_VA_ERR_IDENTITY && h == 0 && g_sendrpc_calls == 0);
 
     PgrVgpActionsSpin nan_coords = make_spin(&stop, &fort, &rpc, 1, tid, std::nan(""), 0.0);
-    h = 7; assert(api->spin(&nan_coords, &h) == PGR_VA_ERR_IDENTITY && h == 0);
+    h = 7; assert(api->spin(&nan_coords, &h) == PGS_VA_ERR_IDENTITY && h == 0);
 
     FakeFort nan_fort{&cls_fort, std::nan(""), 0, &g_fort_id_str};
     PgrVgpActionsSpin nf = make_spin(&stop, &nan_fort, &rpc, 1, tid, 1.0, 2.0);
-    h = 7; assert(api->spin(&nf, &h) == PGR_VA_ERR_IDENTITY && h == 0 && g_ctor_calls == 0);
+    h = 7; assert(api->spin(&nf, &h) == PGS_VA_ERR_IDENTITY && h == 0 && g_ctor_calls == 0);
 
     PgrVgpActionsSpin no_method = make_spin(&stop, &fort, &rpc, 1, tid, 1.0, 2.0);
     no_method.closed_method = nullptr;
-    h = 7; assert(api->spin(&no_method, &h) == PGR_VA_ERR_IDENTITY && h == 0);
+    h = 7; assert(api->spin(&no_method, &h) == PGS_VA_ERR_IDENTITY && h == 0);
     assert(take_sample().roots == 0);  // every identity failure freed its roots
   }
 
   // 5. throw / null promise / root failure: reported, action-at-most-once, roots freed, handle 0.
   { reset_action_counters();
-    assert(api->update(PGR_VA_MASK_CATCH, 2000, 1, tid) == PGR_VA_OK);
+    assert(api->update(PGS_VA_MASK_CATCH, 2000, 1, tid) == PGS_VA_OK);
     PgrVgpActionsTarget r = make_target(&wild, 1, tid);
     g_throw_on_action = true; h = 7;
-    assert(api->encounter(&r, &h) == PGR_VA_ERR_MANAGED && h == 0 && g_encounter_calls == 1);
+    assert(api->encounter(&r, &h) == PGS_VA_ERR_MANAGED && h == 0 && g_encounter_calls == 1);
     assert(take_sample().roots == 0 && g_handles.empty());
 
-    reset_action_counters(); assert(api->update(PGR_VA_MASK_CATCH, 2000, 1, tid) == PGR_VA_OK);
+    reset_action_counters(); assert(api->update(PGS_VA_MASK_CATCH, 2000, 1, tid) == PGS_VA_OK);
     g_null_promise = true; h = 7;
-    assert(api->encounter(&r, &h) == PGR_VA_ERR_UNCERTAIN && h == 0 && g_encounter_calls == 1);
+    assert(api->encounter(&r, &h) == PGS_VA_ERR_UNCERTAIN && h == 0 && g_encounter_calls == 1);
     assert(take_sample().roots == 0 && g_handles.empty());
 
     // Root failure for the promise (2nd gchandle_new): action issued, promise unrootable -> UNCERTAIN.
-    reset_action_counters(); assert(api->update(PGR_VA_MASK_CATCH, 2000, 1, tid) == PGR_VA_OK);
+    reset_action_counters(); assert(api->update(PGS_VA_MASK_CATCH, 2000, 1, tid) == PGS_VA_OK);
     g_gcnew_calls = 0; g_gcnew_fail_index = 2; h = 7;
-    assert(api->encounter(&r, &h) == PGR_VA_ERR_UNCERTAIN && h == 0 && g_encounter_calls == 1);
+    assert(api->encounter(&r, &h) == PGS_VA_ERR_UNCERTAIN && h == 0 && g_encounter_calls == 1);
     assert(take_sample().roots == 0 && g_handles.empty());
 
     // Root failure for the target (1st gchandle_new): fail closed BEFORE the action.
-    reset_action_counters(); assert(api->update(PGR_VA_MASK_CATCH, 2000, 1, tid) == PGR_VA_OK);
+    reset_action_counters(); assert(api->update(PGS_VA_MASK_CATCH, 2000, 1, tid) == PGS_VA_OK);
     g_gcnew_calls = 0; g_gcnew_fail_index = 1; h = 7;
-    assert(api->encounter(&r, &h) == PGR_VA_ERR_GCHANDLE && h == 0 && g_encounter_calls == 0);
+    assert(api->encounter(&r, &h) == PGS_VA_ERR_GCHANDLE && h == 0 && g_encounter_calls == 0);
     assert(take_sample().roots == 0 && g_handles.empty());
     // Request allocation failure (object_new null): fail closed before SendRpc.
-    reset_action_counters(); assert(api->update(PGR_VA_MASK_SPIN, 2000, 1, tid) == PGR_VA_OK);
+    reset_action_counters(); assert(api->update(PGS_VA_MASK_SPIN, 2000, 1, tid) == PGS_VA_OK);
     g_objnew_null = true; h = 7;
     PgrVgpActionsSpin sr = make_spin(&stop, &fort, &rpc, 1, tid, 1.0, 2.0);
-    assert(api->spin(&sr, &h) == PGR_VA_ERR_GCHANDLE && h == 0 && g_sendrpc_calls == 0);
+    assert(api->spin(&sr, &h) == PGS_VA_ERR_GCHANDLE && h == 0 && g_sendrpc_calls == 0);
     assert(take_sample().roots == 0 && g_handles.empty());
   }
 
   // 6. Reentrant stop mid-construction: a stop fired from inside object_new (just before the ctor and the
   //    pre-send gate re-check) aborts the spin WITHOUT issuing SendRpc; every temporary root is freed.
   { reset_action_counters();
-    assert(api->update(PGR_VA_MASK_SPIN, 2000, 1, tid) == PGR_VA_OK);
+    assert(api->update(PGS_VA_MASK_SPIN, 2000, 1, tid) == PGS_VA_OK);
     g_objnew_oneshot = [&]() { g_api->stop(g_owner); };
     PgrVgpActionsSpin sr = make_spin(&stop, &fort, &rpc, 1, tid, 1.0, 2.0);
     h = 7;
-    assert(api->spin(&sr, &h) == PGR_VA_OK && h == 0 && g_sendrpc_calls == 0);  // revoked mid-construction
+    assert(api->spin(&sr, &h) == PGS_VA_OK && h == 0 && g_sendrpc_calls == 0);  // revoked mid-construction
     assert(take_sample().roots == 0 && g_handles.empty());
 
     // Reentrant stop during the target ROOT (fired from inside the first gchandle_new): the pre-invoke
     // gate re-check aborts the encounter WITHOUT invoking; the rooted target is freed.
-    reset_action_counters(); assert(api->update(PGR_VA_MASK_CATCH, 2000, 1, tid) == PGR_VA_OK);
+    reset_action_counters(); assert(api->update(PGS_VA_MASK_CATCH, 2000, 1, tid) == PGS_VA_OK);
     PgrVgpActionsTarget rr = make_target(&wild, 1, tid);
     g_gcnew_fire_index = 1; g_gcnew_oneshot = [&]() { g_api->stop(g_owner); };
     h = 7;
-    assert(api->encounter(&rr, &h) == PGR_VA_OK && h == 0 && g_encounter_calls == 0);  // revoked mid-root
+    assert(api->encounter(&rr, &h) == PGS_VA_OK && h == 0 && g_encounter_calls == 0);  // revoked mid-root
     assert(take_sample().roots == 0 && g_handles.empty());
 
     // A re-arm after the abort restores operation (stop never silently re-armed on its own).
-    reset_action_counters(); assert(api->update(PGR_VA_MASK_CATCH, 2000, 1, tid) == PGR_VA_OK);
+    reset_action_counters(); assert(api->update(PGS_VA_MASK_CATCH, 2000, 1, tid) == PGS_VA_OK);
     PgrVgpActionsTarget r = make_target(&wild, 1, tid);
-    h = 0; assert(api->encounter(&r, &h) == PGR_VA_ISSUED && g_encounter_calls == 1);
+    h = 0; assert(api->encounter(&r, &h) == PGS_VA_ISSUED && g_encounter_calls == 1);
     fake_gc_free(h);
   }
 
   // 7. Reentrancy during the game action: a nested action is refused (busy); the outer invokes once; and a
   //    stop fired during the invoke cannot un-issue nor cause a second invoke.
   { reset_action_counters();
-    assert(api->update(PGR_VA_MASK_CATCH, 2000, 1, tid) == PGR_VA_OK);
+    assert(api->update(PGS_VA_MASK_CATCH, 2000, 1, tid) == PGS_VA_OK);
     PgrVgpActionsTarget r = make_target(&wild, 1, tid);
     int nested_rc = -99; uintptr_t nested_h = 7;
     g_action_oneshot = [&]() {
@@ -434,47 +434,47 @@ int main(int argc, char **argv) {
       g_api->stop(g_owner);                          // revoke from inside the invoke
     };
     h = 0;
-    assert(api->encounter(&r, &h) == PGR_VA_ISSUED);  // already issued; the in-invoke stop cannot un-issue
+    assert(api->encounter(&r, &h) == PGS_VA_ISSUED);  // already issued; the in-invoke stop cannot un-issue
     assert(g_encounter_calls == 1);                    // single invoke despite reentrancy
-    assert(nested_rc == PGR_VA_OK && nested_h == 0);   // nested refused (busy), no 2nd invoke
+    assert(nested_rc == PGS_VA_OK && nested_h == 0);   // nested refused (busy), no 2nd invoke
     assert(h != 0 && fake_gc_get(h) == &g_promise);
     fake_gc_free(h);
     // After the in-invoke stop, the gate is revoked until re-armed.
     PgrVgpActionsTarget r2 = make_target(&wild, 1, tid);
-    uintptr_t hh = 7; assert(api->encounter(&r2, &hh) == PGR_VA_OK && hh == 0);
+    uintptr_t hh = 7; assert(api->encounter(&r2, &hh) == PGS_VA_OK && hh == 0);
     assert(take_sample().roots == 0 && g_handles.empty());
   }
 
   // 8. stop() immediate revoke; re-arm restores; stop never silently re-arms.
   { reset_action_counters();
-    assert(api->update(PGR_VA_MASK_CATCH, 2000, 1, tid) == PGR_VA_OK);
-    assert(api->stop(tid) == PGR_VA_OK);
+    assert(api->update(PGS_VA_MASK_CATCH, 2000, 1, tid) == PGS_VA_OK);
+    assert(api->stop(tid) == PGS_VA_OK);
     PgrVgpActionsTarget r = make_target(&wild, 1, tid);
-    h = 7; assert(api->encounter(&r, &h) == PGR_VA_OK && h == 0 && g_encounter_calls == 0);
-    assert(api->update(PGR_VA_MASK_CATCH, 2000, 1, tid) == PGR_VA_OK);
-    h = 0; assert(api->encounter(&r, &h) == PGR_VA_ISSUED && g_encounter_calls == 1);
+    h = 7; assert(api->encounter(&r, &h) == PGS_VA_OK && h == 0 && g_encounter_calls == 0);
+    assert(api->update(PGS_VA_MASK_CATCH, 2000, 1, tid) == PGS_VA_OK);
+    h = 0; assert(api->encounter(&r, &h) == PGS_VA_ISSUED && g_encounter_calls == 1);
     fake_gc_free(h);
     assert(take_sample().roots == 0 && g_handles.empty());
   }
 
   // Coordinator: the last argument lookup may revoke and rearm; no dispatch after that.
   for(bool rearm : {false,true}) {
-    reset_action_counters(); api->update(PGR_VA_MASK_CATCH,2000,1,tid);
+    reset_action_counters(); api->update(PGS_VA_MASK_CATCH,2000,1,tid);
     auto r=make_target(&wild,1,tid); g_get_calls=0;g_get_fire=2;
-    g_get_oneshot=[&](){api->stop(tid);if(rearm)api->update(PGR_VA_MASK_CATCH,2000,1,tid);};
+    g_get_oneshot=[&](){api->stop(tid);if(rearm)api->update(PGS_VA_MASK_CATCH,2000,1,tid);};
     h=0;assert(api->encounter(&r,&h)==0&&h==0&&g_encounter_calls==0);
     assert(g_handles.empty()&&take_sample().roots==0);
   }
   // Coordinator: actual stop class differs from wild; invalid fort data never issues RPC.
   {
-    reset_action_counters();api->update(PGR_VA_MASK_SPIN,2000,1,tid);
+    reset_action_counters();api->update(PGS_VA_MASK_SPIN,2000,1,tid);
     auto r=make_spin(&wild,&fort,&rpc,1,tid,1,2);
-    assert(api->spin(&r,&h)==PGR_VA_ERR_IDENTITY&&g_sendrpc_calls==0);
+    assert(api->spin(&r,&h)==PGS_VA_ERR_IDENTITY&&g_sendrpc_calls==0);
     r.target=&stop;void *saved=fort.id;fort.id=nullptr;
-    assert(api->spin(&r,&h)==PGR_VA_ERR_IDENTITY&&g_sendrpc_calls==0);fort.id=saved;
+    assert(api->spin(&r,&h)==PGS_VA_ERR_IDENTITY&&g_sendrpc_calls==0);fort.id=saved;
     double savedLat=fort.lat;
     g_objnew_oneshot=[&](){fort.lat=std::nan("");};
-    assert(api->spin(&r,&h)==PGR_VA_ERR_IDENTITY&&g_sendrpc_calls==0);fort.lat=savedLat;
+    assert(api->spin(&r,&h)==PGS_VA_ERR_IDENTITY&&g_sendrpc_calls==0);fort.lat=savedLat;
     assert(g_handles.empty()&&take_sample().roots==0);
   }
   puts("PASS coordinator VGP actions: distinct stop class, final-lookup revocation/rearm, null fort ID, mutated coordinates, zero roots");

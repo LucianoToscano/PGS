@@ -33,7 +33,7 @@ struct FClass { FType *type; bool valuetype; bool isenum; FType *enumbase; int v
 struct FField { std::string name; FClass *parent; FType *type; int flags; size_t offset; };
 struct FMethod {
   std::string name; FClass *klass; uint32_t flags; uint32_t iflags; uint32_t np;
-  FType *ret; FType *params[PGR_MD_PARAM_MAX]; bool generic; bool inflated; void *code;
+  FType *ret; FType *params[PGS_MD_PARAM_MAX]; bool generic; bool inflated; void *code;
 };
 
 struct ClassReg { void *image; std::string ns, name; FClass *klass; };
@@ -264,15 +264,15 @@ int main(int argc, char **argv) {
 
   // 1. bind header/export/idempotency/mismatch.
   { PgrMetaClassQuery q = cq("Niantic.Holoholo.NUI", "GuiController", nullptr); PgrMetaClassResult r{};
-    assert(api->resolve_class(&q, &r) == PGR_MD_ERR_NOT_BOUND); }
-  assert(api->bind(nullptr) == PGR_MD_ERR_NULL_ARG);
-  { PgrMetaBindConfig b = cfg; b.version = 2; assert(api->bind(&b) == PGR_MD_ERR_BAD_VERSION); }
-  { PgrMetaBindConfig b = cfg; b.size = sizeof(b) - 1; assert(api->bind(&b) == PGR_MD_ERR_BAD_SIZE); }
+    assert(api->resolve_class(&q, &r) == PGS_MD_ERR_NOT_BOUND); }
+  assert(api->bind(nullptr) == PGS_MD_ERR_NULL_ARG);
+  { PgrMetaBindConfig b = cfg; b.version = 2; assert(api->bind(&b) == PGS_MD_ERR_BAD_VERSION); }
+  { PgrMetaBindConfig b = cfg; b.size = sizeof(b) - 1; assert(api->bind(&b) == PGS_MD_ERR_BAD_SIZE); }
   { PgrMetaExports e2 = exports; e2.type_get_name = nullptr; PgrMetaBindConfig b = cfg; b.exports = &e2;
-    assert(api->bind(&b) == PGR_MD_ERR_MISSING_EXPORT); }
-  { PgrMetaBindConfig b = cfg; b.module_base = nullptr; assert(api->bind(&b) == PGR_MD_ERR_MISSING_EXPORT); }
+    assert(api->bind(&b) == PGS_MD_ERR_MISSING_EXPORT); }
+  { PgrMetaBindConfig b = cfg; b.module_base = nullptr; assert(api->bind(&b) == PGS_MD_ERR_MISSING_EXPORT); }
   {PgrMetaBindConfig b=cfg;b.module_base=reinterpret_cast<void *>(UINTPTR_MAX-3);b.module_size=8;
-   assert(api->bind(&b)==PGR_MD_ERR_CODE_RANGE);}
+   assert(api->bind(&b)==PGS_MD_ERR_CODE_RANGE);}
   // Separate process proves bootstrap-first then schema-specific validation.
   // Exercise the production maps resolver across adjacent, differently protected VMAs.
   {pid_t child=fork();assert(child>=0);if(child==0){
@@ -287,11 +287,11 @@ int main(int argc, char **argv) {
     assert(api->validate_code(&q)==PGR_MD_OK);
     // Anonymous non-executable memory has no ELF executable-segment proof.
     assert(mprotect(pages+page,page,PROT_READ)==0);
-    assert(api->validate_code(&q)==PGR_MD_ERR_SEGMENT);
+    assert(api->validate_code(&q)==PGS_MD_ERR_SEGMENT);
     assert(mprotect(pages+page,page,PROT_NONE)==0);
-    assert(api->validate_code(&q)==PGR_MD_ERR_SEGMENT);
+    assert(api->validate_code(&q)==PGS_MD_ERR_SEGMENT);
     assert(munmap(pages+page,page)==0);
-    assert(api->validate_code(&q)==PGR_MD_ERR_SEGMENT);
+    assert(api->validate_code(&q)==PGS_MD_ERR_SEGMENT);
     q.address=pages;q.length=8;assert(api->validate_code(&q)==PGR_MD_OK);
     assert(munmap(pages,page)==0);_exit(0);
    }int status=0;assert(waitpid(child,&status,0)==child&&WIFEXITED(status)&&WEXITSTATUS(status)==0);}
@@ -303,14 +303,14 @@ int main(int argc, char **argv) {
     assert(api->bind(&b)==PGR_MD_OK);
     unsigned char copy[sizeof(PRO)];std::memcpy(copy,PRO,sizeof(copy));b.debug_prologue=copy;
     assert(api->bind(&b)==PGR_MD_OK);copy[0]^=1;
-    assert(api->bind(&b)==PGR_MD_ERR_PROLOGUE);
+    assert(api->bind(&b)==PGS_MD_ERR_PROLOGUE);
     copy[0]^=1;assert(api->bind(&b)==PGR_MD_OK);
-    static_cast<unsigned char *>(CODE)[0]^=1;assert(api->bind(&b)==PGR_MD_ERR_PROLOGUE);static_cast<unsigned char *>(CODE)[0]^=1;
+    static_cast<unsigned char *>(CODE)[0]^=1;assert(api->bind(&b)==PGS_MD_ERR_PROLOGUE);static_cast<unsigned char *>(CODE)[0]^=1;
     b.debug_prologue_len=0;assert(api->bind(&b)==PGR_MD_OK);_exit(0);
    }int status=0;assert(waitpid(child,&status,0)==child&&WIFEXITED(status)&&WEXITSTATUS(status)==0);}
   assert(api->bind(&cfg) == PGR_MD_OK);
   assert(api->bind(&cfg) == PGR_MD_OK);  // idempotent
-  { PgrMetaBindConfig b = cfg; b.module_size = 1; assert(api->bind(&b) == PGR_MD_ERR_BOUND_MISMATCH); }
+  { PgrMetaBindConfig b = cfg; b.module_size = 1; assert(api->bind(&b) == PGS_MD_ERR_BOUND_MISMATCH); }
 
   // 2. resolve_class success / canonical / not-found / duplicate / limits.
   { PgrMetaClassQuery q = cq("Niantic.Holoholo.NUI", "GuiController", nullptr); PgrMetaClassResult r{};
@@ -321,44 +321,44 @@ int main(int argc, char **argv) {
   { PgrMetaClassQuery q = cq("Niantic.Holoholo.NUI", "Missing", nullptr); PgrMetaClassResult r{};
     assert(api->resolve_class(&q, &r) == PGR_MD_ERR_NOT_FOUND); }
   { PgrMetaClassQuery q = cq("Bad.Ns", "Weird", nullptr); PgrMetaClassResult r{};  // full name mismatches
-    assert(api->resolve_class(&q, &r) == PGR_MD_ERR_NAME_MISMATCH); }
+    assert(api->resolve_class(&q, &r) == PGS_MD_ERR_NAME_MISMATCH); }
   { PgrMetaClassQuery q = cq("DupNs", "Dup", nullptr); PgrMetaClassResult r{};  // two images, two handles
-    assert(api->resolve_class(&q, &r) == PGR_MD_ERR_DUPLICATE); }
+    assert(api->resolve_class(&q, &r) == PGS_MD_ERR_DUPLICATE); }
   { std::string big(300, 'x'); PgrMetaClassQuery q = cq("Ns", big.c_str(), nullptr); PgrMetaClassResult r{};
-    assert(api->resolve_class(&q, &r) == PGR_MD_ERR_NAME_TOO_LONG); }
-  { g_asm_count = PGR_MD_ASM_MAX + 1; for (size_t i = 2; i < g_asm_count; ++i) g_asms[i] = IMGA;
+    assert(api->resolve_class(&q, &r) == PGS_MD_ERR_NAME_TOO_LONG); }
+  { g_asm_count = PGS_MD_ASM_MAX + 1; for (size_t i = 2; i < g_asm_count; ++i) g_asms[i] = IMGA;
     PgrMetaClassQuery q = cq("Niantic.Holoholo.NUI", "GuiController", nullptr); PgrMetaClassResult r{};
-    assert(api->resolve_class(&q, &r) == PGR_MD_ERR_LIMIT); g_asm_count = 2; }
+    assert(api->resolve_class(&q, &r) == PGS_MD_ERR_LIMIT); g_asm_count = 2; }
 
   // 3. validate_field: enum-int32 / value / ref / literal + every classified failure.
   { PgrMetaFieldResult r{};
-    auto q = fq(&c_gui, "currentState", 0x70, 0x50, 0, PGR_MD_FIELD_ENUM_I32, 0, nullptr, 0);
+    auto q = fq(&c_gui, "currentState", 0x70, 0x50, 0, PGS_MD_FIELD_ENUM_I32, 0, nullptr, 0);
     assert(api->validate_field(&q, &r) == PGR_MD_OK && r.field == &f_state && r.value_size == 4);
-    q = fq(&c_gui, "caughtId", 0x20, 0x50, 0, PGR_MD_FIELD_VALUE, 8, "System.UInt64", PGR_MD_MATCH_EXACT);
+    q = fq(&c_gui, "caughtId", 0x20, 0x50, 0, PGS_MD_FIELD_VALUE, 8, "System.UInt64", PGR_MD_MATCH_EXACT);
     assert(api->validate_field(&q, &r) == PGR_MD_OK && r.value_size == 8);
-    q = fq(&c_gui, "someRef", 0xA0, 0x50, 0, PGR_MD_FIELD_REF, 0, nullptr, 0);
+    q = fq(&c_gui, "someRef", 0xA0, 0x50, 0, PGS_MD_FIELD_REF, 0, nullptr, 0);
     assert(api->validate_field(&q, &r) == PGR_MD_OK);
     q = fq(&c_gui, "litField", 0x40, 0, 0x8050, PGR_MD_FIELD_ANY, 0, nullptr, 0);  // static literal
     assert(api->validate_field(&q, &r) == PGR_MD_OK);
     // failures:
     q = fq(&c_gui, "nope", 0x70, 0x50, 0, PGR_MD_FIELD_ANY, 0, nullptr, 0);
     assert(api->validate_field(&q, &r) == PGR_MD_ERR_NOT_FOUND);
-    q = fq(&c_gui, "currentState", 0x71, 0x50, 0, PGR_MD_FIELD_ENUM_I32, 0, nullptr, 0);
-    assert(api->validate_field(&q, &r) == PGR_MD_ERR_OFFSET);
+    q = fq(&c_gui, "currentState", 0x71, 0x50, 0, PGS_MD_FIELD_ENUM_I32, 0, nullptr, 0);
+    assert(api->validate_field(&q, &r) == PGS_MD_ERR_OFFSET);
     q = fq(&c_gui, "litField", 0x40, 0x50, 0, PGR_MD_FIELD_ANY, 0, nullptr, 0);  // 0x8050&0x50 forbidden
-    assert(api->validate_field(&q, &r) == PGR_MD_ERR_FLAGS);
-    q = fq(&c_gui, "currentState", 0x70, 0x50, 0x8000, PGR_MD_FIELD_ENUM_I32, 0, nullptr, 0);  // req unmet
-    assert(api->validate_field(&q, &r) == PGR_MD_ERR_FLAGS);
-    q = fq(&c_gui, "someRef", 0xA0, 0x50, 0, PGR_MD_FIELD_VALUE, 0, nullptr, 0);  // ref is not value
-    assert(api->validate_field(&q, &r) == PGR_MD_ERR_KIND);
-    q = fq(&c_gui, "caughtId", 0x20, 0x50, 0, PGR_MD_FIELD_REF, 0, nullptr, 0);  // value is not ref
-    assert(api->validate_field(&q, &r) == PGR_MD_ERR_KIND);
-    q = fq(&c_gui, "boolField", 0x30, 0x50, 0, PGR_MD_FIELD_VALUE, 0, nullptr, 0);  // size 1 not 4/8
-    assert(api->validate_field(&q, &r) == PGR_MD_ERR_SIZE);
-    q = fq(&c_gui, "caughtId", 0x20, 0x50, 0, PGR_MD_FIELD_VALUE, 4, nullptr, 0);  // require 4, is 8
-    assert(api->validate_field(&q, &r) == PGR_MD_ERR_SIZE);
-    q = fq(&c_gui, "caughtId", 0x20, 0x50, 0, PGR_MD_FIELD_VALUE, 8, "System.Int64", PGR_MD_MATCH_EXACT);
-    assert(api->validate_field(&q, &r) == PGR_MD_ERR_TYPE); }
+    assert(api->validate_field(&q, &r) == PGS_MD_ERR_FLAGS);
+    q = fq(&c_gui, "currentState", 0x70, 0x50, 0x8000, PGS_MD_FIELD_ENUM_I32, 0, nullptr, 0);  // req unmet
+    assert(api->validate_field(&q, &r) == PGS_MD_ERR_FLAGS);
+    q = fq(&c_gui, "someRef", 0xA0, 0x50, 0, PGS_MD_FIELD_VALUE, 0, nullptr, 0);  // ref is not value
+    assert(api->validate_field(&q, &r) == PGS_MD_ERR_KIND);
+    q = fq(&c_gui, "caughtId", 0x20, 0x50, 0, PGS_MD_FIELD_REF, 0, nullptr, 0);  // value is not ref
+    assert(api->validate_field(&q, &r) == PGS_MD_ERR_KIND);
+    q = fq(&c_gui, "boolField", 0x30, 0x50, 0, PGS_MD_FIELD_VALUE, 0, nullptr, 0);  // size 1 not 4/8
+    assert(api->validate_field(&q, &r) == PGS_MD_ERR_SIZE);
+    q = fq(&c_gui, "caughtId", 0x20, 0x50, 0, PGS_MD_FIELD_VALUE, 4, nullptr, 0);  // require 4, is 8
+    assert(api->validate_field(&q, &r) == PGS_MD_ERR_SIZE);
+    q = fq(&c_gui, "caughtId", 0x20, 0x50, 0, PGS_MD_FIELD_VALUE, 8, "System.Int64", PGR_MD_MATCH_EXACT);
+    assert(api->validate_field(&q, &r) == PGS_MD_ERR_TYPE); }
 
   // 4. validate_method: instance+code, static, and every classified failure.
   { PgrMetaMethodResult r{};
@@ -371,7 +371,7 @@ int main(int argc, char **argv) {
     s.return_type = "System.Boolean"; s.return_match = PGR_MD_MATCH_EXACT; s.param_count = 1; s.is_static = 1;
     s.param_types[0] = "UnityEngine.Object"; s.param_match[0] = PGR_MD_MATCH_EXACT;
     assert(api->validate_method(&s, &r) == PGR_MD_OK);
-    s.param_types[0] = "Object"; s.param_match[0] = PGR_MD_MATCH_SUFFIX;  // suffix predicate also OK
+    s.param_types[0] = "Object"; s.param_match[0] = PGS_MD_MATCH_SUFFIX;  // suffix predicate also OK
     assert(api->validate_method(&s, &r) == PGR_MD_OK);
 
     // failures reuse Dismiss with one field perturbed each:
@@ -379,18 +379,18 @@ int main(int argc, char **argv) {
       b.name = "Dismiss"; b.return_type = "System.Void"; b.return_match = PGR_MD_MATCH_EXACT;
       b.param_count = 0; b.is_static = 0; return b; };
     { auto b = base(); b.name = "Ghost"; assert(api->validate_method(&b, &r) == PGR_MD_ERR_NOT_FOUND); }
-    { auto b = base(); b.is_static = 1; assert(api->validate_method(&b, &r) == PGR_MD_ERR_STATIC); }
-    { auto b = base(); b.return_type = "System.Int32"; assert(api->validate_method(&b, &r) == PGR_MD_ERR_TYPE); }
-    { auto b = base(); b.name = "Generic"; assert(api->validate_method(&b, &r) == PGR_MD_ERR_GENERIC); }
-    { auto b = base(); b.name = "Inflated"; assert(api->validate_method(&b, &r) == PGR_MD_ERR_INFLATED);
+    { auto b = base(); b.is_static = 1; assert(api->validate_method(&b, &r) == PGS_MD_ERR_STATIC); }
+    { auto b = base(); b.return_type = "System.Int32"; assert(api->validate_method(&b, &r) == PGS_MD_ERR_TYPE); }
+    { auto b = base(); b.name = "Generic"; assert(api->validate_method(&b, &r) == PGS_MD_ERR_GENERIC); }
+    { auto b = base(); b.name = "Inflated"; assert(api->validate_method(&b, &r) == PGS_MD_ERR_INFLATED);
       b.allow_inflated = 1; assert(api->validate_method(&b, &r) == PGR_MD_OK); }
     { auto b = base(); b.param_count = 1; assert(api->validate_method(&b, &r) == PGR_MD_ERR_NOT_FOUND); }
-    { auto b = base(); b.param_count = PGR_MD_PARAM_MAX + 1; assert(api->validate_method(&b, &r) == PGR_MD_ERR_LIMIT); }
+    { auto b = base(); b.param_count = PGS_MD_PARAM_MAX + 1; assert(api->validate_method(&b, &r) == PGS_MD_ERR_LIMIT); }
     { auto b = base(); b.expected_code = g_mod_buf + 68; b.prologue = PRO; b.prologue_len = sizeof(PRO);
-      assert(api->validate_method(&b, &r) == PGR_MD_ERR_CODE_RANGE); }  // debug addr != expected
+      assert(api->validate_method(&b, &r) == PGS_MD_ERR_CODE_RANGE); }  // debug addr != expected
     { auto b = base(); const unsigned char WRONG[8] = {0, 1, 2, 3, 4, 5, 6, 7};
       b.expected_code = CODE; b.prologue = WRONG; b.prologue_len = sizeof(WRONG);
-      assert(api->validate_method(&b, &r) == PGR_MD_ERR_PROLOGUE); } }
+      assert(api->validate_method(&b, &r) == PGS_MD_ERR_PROLOGUE); } }
 
   // 5. validate_code: success, host-exec off + elf-exec on (Houdini guest), and each failure.
   { PgrMetaCodeQuery q{}; q.version = 1; q.size = sizeof(q); q.address = CODE; q.length = sizeof(PRO);
@@ -399,44 +399,44 @@ int main(int argc, char **argv) {
     g_host_exec = false; g_elf_exec = true;  // translated ARM64 guest code mapped read-only
     assert(api->validate_code(&q) == PGR_MD_OK);
     g_host_exec = false; g_elf_exec = false;  // neither -> rejected
-    assert(api->validate_code(&q) == PGR_MD_ERR_SEGMENT);
+    assert(api->validate_code(&q) == PGS_MD_ERR_SEGMENT);
     g_readable = false; g_elf_exec = true;     // not readable -> rejected
-    assert(api->validate_code(&q) == PGR_MD_ERR_SEGMENT);
+    assert(api->validate_code(&q) == PGS_MD_ERR_SEGMENT);
     g_readable = true; g_host_exec = true; g_elf_exec = false;  // restore
     PgrMetaCodeQuery bad = q; bad.address = g_mod_buf + 65;  // misaligned
-    assert(api->validate_code(&bad) == PGR_MD_ERR_CODE_RANGE);
+    assert(api->validate_code(&bad) == PGS_MD_ERR_CODE_RANGE);
     bad = q; bad.address = g_mod_buf + sizeof(g_mod_buf) - 4;  // aligned but runs past module
-    assert(api->validate_code(&bad) == PGR_MD_ERR_CODE_RANGE);
-    bad = q; bad.length = PGR_MD_CODE_MAX + 1; assert(api->validate_code(&bad) == PGR_MD_ERR_CODE_RANGE);
+    assert(api->validate_code(&bad) == PGS_MD_ERR_CODE_RANGE);
+    bad = q; bad.length = PGS_MD_CODE_MAX + 1; assert(api->validate_code(&bad) == PGS_MD_ERR_CODE_RANGE);
     unsigned char WRONG[8] = {9, 9, 9, 9, 9, 9, 9, 9};
-    bad = q; bad.prologue = WRONG; assert(api->validate_code(&bad) == PGR_MD_ERR_PROLOGUE); }
+    bad = q; bad.prologue = WRONG; assert(api->validate_code(&bad) == PGS_MD_ERR_PROLOGUE); }
 
   // Corrective regressions: segment lower bounds/overflow/boolean validation.
   {PgrMetaCodeQuery q{};q.version=1;q.size=sizeof(q);q.address=CODE;q.length=sizeof(PRO);
-   for(int mode=1;mode<=7;mode++){g_segment_mode=mode;assert(api->validate_code(&q)==PGR_MD_ERR_SEGMENT);}
+   for(int mode=1;mode<=7;mode++){g_segment_mode=mode;assert(api->validate_code(&q)==PGS_MD_ERR_SEGMENT);}
    g_segment_mode=0;g_host_exec=false;g_elf_exec=true;g_writable=true;
-   assert(api->validate_code(&q)==PGR_MD_ERR_SEGMENT);
+   assert(api->validate_code(&q)==PGS_MD_ERR_SEGMENT);
    g_writable=false;assert(api->validate_code(&q)==PGR_MD_OK);
    g_host_exec=true;g_elf_exec=false;
    q.address=reinterpret_cast<void *>(UINTPTR_MAX-3);q.length=8;
-   assert(api->validate_code(&q)==PGR_MD_ERR_CODE_RANGE);
+   assert(api->validate_code(&q)==PGS_MD_ERR_CODE_RANGE);
   }
   // Failure never leaves stale successful metadata outputs, including bad headers.
   {PgrMetaClassQuery q=cq("Niantic.Holoholo.NUI","GuiController",nullptr);PgrMetaClassResult r{};
    assert(api->resolve_class(&q,&r)==0&&r.klass);q.version=2;
-   assert(api->resolve_class(&q,&r)==PGR_MD_ERR_BAD_VERSION&&!r.klass&&!r.type&&r.version==0);
-   PgrMetaFieldResult f{};std::memset(&f,0xa5,sizeof(f));assert(api->validate_field(nullptr,&f)==PGR_MD_ERR_NULL_ARG&&!f.field&&!f.type);
-   PgrMetaMethodResult m{};std::memset(&m,0xa5,sizeof(m));assert(api->validate_method(nullptr,&m)==PGR_MD_ERR_NULL_ARG&&!m.method&&!m.code);
+   assert(api->resolve_class(&q,&r)==PGS_MD_ERR_BAD_VERSION&&!r.klass&&!r.type&&r.version==0);
+   PgrMetaFieldResult f{};std::memset(&f,0xa5,sizeof(f));assert(api->validate_field(nullptr,&f)==PGS_MD_ERR_NULL_ARG&&!f.field&&!f.type);
+   PgrMetaMethodResult m{};std::memset(&m,0xa5,sizeof(m));assert(api->validate_method(nullptr,&m)==PGS_MD_ERR_NULL_ARG&&!m.method&&!m.code);
   }
   // Guard page immediately follows the NAME_MAX-byte nonterminated input.
-  {long page=sysconf(_SC_PAGESIZE);assert(page>=PGR_MD_NAME_MAX);
+  {long page=sysconf(_SC_PAGESIZE);assert(page>=PGS_MD_NAME_MAX);
    void *mapping=mmap(nullptr,page*2,PROT_READ|PROT_WRITE,MAP_PRIVATE|MAP_ANONYMOUS,-1,0);assert(mapping!=MAP_FAILED);
    assert(mprotect(static_cast<char *>(mapping)+page,page,PROT_NONE)==0);
-   char *name=static_cast<char *>(mapping)+page-PGR_MD_NAME_MAX;std::memset(name,'x',PGR_MD_NAME_MAX);
+   char *name=static_cast<char *>(mapping)+page-PGS_MD_NAME_MAX;std::memset(name,'x',PGS_MD_NAME_MAX);
    PgrMetaClassQuery q=cq("Ns",name,nullptr);PgrMetaClassResult r{};
-   assert(api->resolve_class(&q,&r)==PGR_MD_ERR_NAME_TOO_LONG);
-   auto f=fq(&c_gui,"caughtId",0x20,0x50,0,PGR_MD_FIELD_VALUE,8,name,PGR_MD_MATCH_EXACT);PgrMetaFieldResult fr{};
-   assert(api->validate_field(&f,&fr)==PGR_MD_ERR_TYPE&&!fr.field);
+   assert(api->resolve_class(&q,&r)==PGS_MD_ERR_NAME_TOO_LONG);
+   auto f=fq(&c_gui,"caughtId",0x20,0x50,0,PGS_MD_FIELD_VALUE,8,name,PGR_MD_MATCH_EXACT);PgrMetaFieldResult fr{};
+   assert(api->validate_field(&f,&fr)==PGS_MD_ERR_TYPE&&!fr.field);
    assert(munmap(mapping,page*2)==0);
   }
   // Reentrant and competing-thread callbacks return BUSY without shared counter writes.
@@ -456,7 +456,7 @@ int main(int argc, char **argv) {
    assert(api->resolve_module(".so",&address,&size)==PGR_MD_ERR_NOT_FOUND&&!address&&!size);
    // Optional second same-basename real library copy supplied by coordinator.
    if(argc>2){void *duplicate=dlopen(argv[2],RTLD_NOW|RTLD_LOCAL);assert(duplicate);
-    assert(api->resolve_module(base.c_str(),&address,&size)==PGR_MD_ERR_DUPLICATE&&!address&&!size);
+    assert(api->resolve_module(base.c_str(),&address,&size)==PGS_MD_ERR_DUPLICATE&&!address&&!size);
     dlclose(duplicate);}
   }
 

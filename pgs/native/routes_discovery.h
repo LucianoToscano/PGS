@@ -37,7 +37,7 @@
 // runtime_invoke / gchandle_* (relocating collector); no raw managed pointer is reused across an
 // allocation. Classes are validated exact; boxed Int32 counts against class_int32; bool bytes 0/1. The
 // owner is latched once from a genuine on-thread call. The residual lease is clamped to
-// PGR_RD_MAX_LEASE_MS (CLOCK_BOOTTIME), re-checked before every managed step and once more AFTER every
+// PGS_RD_MAX_LEASE_MS (CLOCK_BOOTTIME), re-checked before every managed step and once more AFTER every
 // temporary root is released and before the cache is swapped / the output published. An atomic busy guard
 // spans ALL temporary-root cleanup; reentry refuses. Managed exceptions surface through runtime_invoke's
 // exc out-param: a throw on the LIST level is a fault, a throw while reading one route's waypoints only
@@ -50,47 +50,47 @@ extern "C" {
 
 static_assert(sizeof(void *) == 8, "RoutesDiscovery native ABI requires LP64");
 
-enum PgrRoutesDiscoveryInfo {
-  PGR_RD_FEATURE_ID      = 44,
-  PGR_RD_API_VERSION     = 1,
-  PGR_RD_CONFIG_VERSION  = 1,
-  PGR_RD_REQUEST_VERSION = 1,
-  PGR_RD_LOOKUP_VERSION  = 1,
-  PGR_RD_OUTPUT_VERSION  = 1,
-  PGR_RD_POINTS_VERSION  = 1,
-  PGR_RD_MAX_LEASE_MS    = 2500,  // residual foreground lease ceiling (JS quick-close lease window)
+enum PgsRoutesDiscoveryInfo {
+  PGS_RD_FEATURE_ID      = 44,
+  PGS_RD_API_VERSION     = 1,
+  PGS_RD_CONFIG_VERSION  = 1,
+  PGS_RD_REQUEST_VERSION = 1,
+  PGS_RD_LOOKUP_VERSION  = 1,
+  PGS_RD_OUTPUT_VERSION  = 1,
+  PGS_RD_POINTS_VERSION  = 1,
+  PGS_RD_MAX_LEASE_MS    = 2500,  // residual foreground lease ceiling (JS quick-close lease window)
   PGR_RD_MAX_ROUTES      = 100,   // snapshot / cache route ceiling (JS LIMITS.routesMax)
-  PGR_RD_MAX_POINTS      = 5000,  // waypoints per route (JS LIMITS.pointsMax)
-  PGR_RD_ID_MAX          = 128,   // UTF16 route-id length ceiling (JS id length 1..128)
-  PGR_RD_NAME_MAX        = 256,   // UTF16 route-name length ceiling (JS boundSnapshot name slice)
-  PGR_RD_PTR_COUNT       = 38     // config pointer slots 0..35, all mandatory (non-null)
+  PGS_RD_MAX_POINTS      = 5000,  // waypoints per route (JS LIMITS.pointsMax)
+  PGS_RD_ID_MAX          = 128,   // UTF16 route-id length ceiling (JS id length 1..128)
+  PGS_RD_NAME_MAX        = 256,   // UTF16 route-name length ceiling (JS boundSnapshot name slice)
+  PGS_RD_PTR_COUNT       = 38     // config pointer slots 0..35, all mandatory (non-null)
 };
 
 // Entry-point return == out.status: 1 OK / 0 SKIP (benign gate/game-state) / negative fault.
-enum PgrRoutesDiscoveryStatus {
-  PGR_RD_OK                = 1,
-  PGR_RD_SKIP              = 0,
-  PGR_RD_ERR_NULL_ARG      = -1,
-  PGR_RD_ERR_BAD_VERSION   = -2,
-  PGR_RD_ERR_BAD_SIZE      = -3,
-  PGR_RD_ERR_MISSING_PTR   = -4,  // install(): a mandatory config pointer was null
-  PGR_RD_ERR_NOT_INSTALLED = -6,
-  PGR_RD_ERR_RECONFIG      = -9,  // install(): a different config at an already-installed table
-  PGR_RD_ERR_CLOCK         = -10,
-  PGR_RD_ERR_BUSY          = -11, // reentrant call refused (defensive)
-  PGR_RD_ERR_GCHANDLE      = -12, // a temporary/cache root could not be allocated / expected value null
-  PGR_RD_ERR_MANAGED       = -13, // a LIST-level managed call threw
-  PGR_RD_ERR_METADATA      = -14, // a resolved object had the wrong class / a count box was not Int32
-  PGR_RD_ERR_BAD_COUNT     = -16, // the nearby-routes List length exceeded PGR_RD_MAX_ROUTES
-  PGR_RD_ERR_ALLOCATION    = -17, // heap staging / point-array allocation failed
-  PGR_RD_ERR_BAD_INDEX     = -18  // points(): index >= the published route count
+enum PgsRoutesDiscoveryStatus {
+  PGS_RD_OK                = 1,
+  PGS_RD_SKIP              = 0,
+  PGS_RD_ERR_NULL_ARG      = -1,
+  PGS_RD_ERR_BAD_VERSION   = -2,
+  PGS_RD_ERR_BAD_SIZE      = -3,
+  PGS_RD_ERR_MISSING_PTR   = -4,  // install(): a mandatory config pointer was null
+  PGS_RD_ERR_NOT_INSTALLED = -6,
+  PGS_RD_ERR_RECONFIG      = -9,  // install(): a different config at an already-installed table
+  PGS_RD_ERR_CLOCK         = -10,
+  PGS_RD_ERR_BUSY          = -11, // reentrant call refused (defensive)
+  PGS_RD_ERR_GCHANDLE      = -12, // a temporary/cache root could not be allocated / expected value null
+  PGS_RD_ERR_MANAGED       = -13, // a LIST-level managed call threw
+  PGS_RD_ERR_METADATA      = -14, // a resolved object had the wrong class / a count box was not Int32
+  PGS_RD_ERR_BAD_COUNT     = -16, // the nearby-routes List length exceeded PGR_RD_MAX_ROUTES
+  PGS_RD_ERR_ALLOCATION    = -17, // heap staging / point-array allocation failed
+  PGS_RD_ERR_BAD_INDEX     = -18  // points(): index >= the published route count
 };
 
 // Route header flags.
-enum PgrRoutesDiscoveryFlags {
-  PGR_RD_FLAG_REVERSIBLE = 1,
-  PGR_RD_FLAG_HAS_START  = 2,
-  PGR_RD_FLAG_HAS_END    = 4
+enum PgsRoutesDiscoveryFlags {
+  PGS_RD_FLAG_REVERSIBLE = 1,
+  PGS_RD_FLAG_HAS_START  = 2,
+  PGS_RD_FLAG_HAS_END    = 4
 };
 
 // Fixed LP64 config (312 bytes): 8-byte header + 38 pointers in the EXACT slot order below. Every pointer
@@ -98,7 +98,7 @@ enum PgrRoutesDiscoveryFlags {
 // routes.js metadata. All are MANDATORY (non-null). Reordering is forbidden. install() publishes the
 // config immutably: an identical config is idempotent (0); a different one is rejected (RECONFIG).
 struct PgrRoutesDiscoveryConfig {
-  uint32_t version;  // == PGR_RD_CONFIG_VERSION
+  uint32_t version;  // == PGS_RD_CONFIG_VERSION
   uint32_t size;     // == sizeof(PgrRoutesDiscoveryConfig)
 
   // il2cpp runtime exports (slots 0-9).
@@ -159,7 +159,7 @@ static_assert(offsetof(PgrRoutesDiscoveryConfig, f_stats_cooldown) == 288, "slot
 
 // Fixed LP64 request (48 bytes) for discover / points / drain.
 struct PgrRoutesDiscoveryRequest {
-  uint32_t version;        // off 0  == PGR_RD_REQUEST_VERSION
+  uint32_t version;        // off 0  == PGS_RD_REQUEST_VERSION
   uint32_t size;           // off 4  == sizeof(PgrRoutesDiscoveryRequest)
   uint64_t tid;            // off 8  proven owner tid
   uint64_t residual_ms;    // off 16 residual lease; clamped, 0 refuses (drain ignores the lease)
@@ -178,7 +178,7 @@ static_assert(offsetof(PgrRoutesDiscoveryRequest, index) == 40, "request index")
 
 // Fixed LP64 lookup (304 bytes). service_handle MUST resolve to the cache-bound RoutesService object.
 struct PgrRoutesDiscoveryLookup {
-  uint32_t version;        // off 0  == PGR_RD_LOOKUP_VERSION
+  uint32_t version;        // off 0  == PGS_RD_LOOKUP_VERSION
   uint32_t size;           // off 4  == sizeof(PgrRoutesDiscoveryLookup)
   uint64_t tid;            // off 8  proven owner tid
   uint64_t residual_ms;    // off 16 residual lease; clamped, 0 refuses
@@ -186,7 +186,7 @@ struct PgrRoutesDiscoveryLookup {
   uint64_t service_handle; // off 32 borrowed RoutesService GC handle (must match the cache binding)
   uint32_t id_length;      // off 40 UTF16 units in id (1..128)
   uint32_t reserved;       // off 44 0 in v1
-  uint16_t id[PGR_RD_ID_MAX]; // off 48 requested route id (UTF16, not NUL terminated)
+  uint16_t id[PGS_RD_ID_MAX]; // off 48 requested route id (UTF16, not NUL terminated)
 };
 
 static_assert(sizeof(PgrRoutesDiscoveryLookup) == 304, "PgrRoutesDiscoveryLookup must remain 304 bytes on LP64");
@@ -197,7 +197,7 @@ static_assert(offsetof(PgrRoutesDiscoveryLookup, id) == 48, "lookup id");
 // Fixed LP64 route header (832 bytes), discover() output element. Scalar only -- NO managed pointer and NO
 // inline points (fetched separately via points()). start/end doubles are valid only when flagged.
 struct PgrRoutesDiscoveryRoute {
-  uint32_t flags;        // off 0  PgrRoutesDiscoveryFlags
+  uint32_t flags;        // off 0  PgsRoutesDiscoveryFlags
   uint32_t id_length;    // off 4  UTF16 units in id (1..128)
   uint32_t name_length;  // off 8  UTF16 units in name (0..256)
   uint32_t point_count;  // off 12 decoded waypoint count (2..5000)
@@ -207,8 +207,8 @@ struct PgrRoutesDiscoveryRoute {
   double start_lon;      // off 40 (HAS_START)
   double end_lat;        // off 48 (HAS_END)
   double end_lon;        // off 56 (HAS_END)
-  uint16_t id[PGR_RD_ID_MAX];     // off 64  copied UTF16 route id
-  uint16_t name[PGR_RD_NAME_MAX]; // off 320 copied UTF16 route name
+  uint16_t id[PGS_RD_ID_MAX];     // off 64  copied UTF16 route id
+  uint16_t name[PGS_RD_NAME_MAX]; // off 320 copied UTF16 route name
 };
 
 static_assert(sizeof(PgrRoutesDiscoveryRoute) == 832, "PgrRoutesDiscoveryRoute must remain 832 bytes on LP64");
@@ -220,7 +220,7 @@ static_assert(offsetof(PgrRoutesDiscoveryRoute, name) == 320, "route name");
 // Fixed LP64 discover output (83216 bytes). Fully zeroed on entry; header re-stamped. On a positive return
 // the first `count` route headers are valid; on 0/negative count stays 0.
 struct PgrRoutesDiscoveryOutput {
-  uint32_t version;  // off 0  == PGR_RD_OUTPUT_VERSION
+  uint32_t version;  // off 0  == PGS_RD_OUTPUT_VERSION
   uint32_t size;     // off 4  == sizeof(PgrRoutesDiscoveryOutput)
   int32_t  status;   // off 8  == the discover() return
   uint32_t count;    // off 12 number of valid route headers (<= PGR_RD_MAX_ROUTES)
@@ -242,11 +242,11 @@ static_assert(sizeof(PgrRoutesDiscoveryPoint) == 16, "PgrRoutesDiscoveryPoint mu
 
 // Fixed LP64 points output (80016 bytes), reused per route. Fully zeroed on entry; header re-stamped.
 struct PgrRoutesDiscoveryPoints {
-  uint32_t version;  // off 0  == PGR_RD_POINTS_VERSION
+  uint32_t version;  // off 0  == PGS_RD_POINTS_VERSION
   uint32_t size;     // off 4  == sizeof(PgrRoutesDiscoveryPoints)
   int32_t  status;   // off 8  == the points() return
-  uint32_t count;    // off 12 number of valid points (<= PGR_RD_MAX_POINTS)
-  PgrRoutesDiscoveryPoint points[PGR_RD_MAX_POINTS]; // off 16
+  uint32_t count;    // off 12 number of valid points (<= PGS_RD_MAX_POINTS)
+  PgrRoutesDiscoveryPoint points[PGS_RD_MAX_POINTS]; // off 16
 };
 
 static_assert(sizeof(PgrRoutesDiscoveryPoints) == 80016, "PgrRoutesDiscoveryPoints must remain 80016 bytes on LP64");
@@ -254,10 +254,10 @@ static_assert(offsetof(PgrRoutesDiscoveryPoints, points) == 16, "points points")
 
 // Fixed LP64 table: 8-byte header + 7 function pointers = 64 bytes.
 struct PgrRoutesDiscoveryApi {
-  uint32_t version;  // == PGR_RD_API_VERSION
+  uint32_t version;  // == PGS_RD_API_VERSION
   uint32_t size;     // == sizeof(PgrRoutesDiscoveryApi)
   // Verify + publish the immutable config once for the process lifetime. Idempotent for an identical
-  // config; a different config returns PGR_RD_ERR_RECONFIG. A null pointer or bad header is rejected.
+  // config; a different config returns PGS_RD_ERR_RECONFIG. A null pointer or bad header is rejected.
   int (*install)(const PgrRoutesDiscoveryConfig *config);
   // Current revocation generation (initially 1). The host stamps it onto each request.
   uint64_t (*generation)(void);

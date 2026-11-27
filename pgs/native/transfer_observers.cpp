@@ -16,7 +16,7 @@ struct Pins {
  ~Pins(){if(value)free(value);if(self)free(self);}
 };
 std::mutex lock;
-PgrTransferObserversConfig cfg{};
+PgsTransferObserversConfig cfg{};
 std::atomic<Callback> originals[2];
 std::atomic<bool> ready{false};
 bool failed=false;
@@ -52,7 +52,7 @@ void dispatch(unsigned which,void *self,void *value,const void *method){
 }
 void result(void *self,void *value,const void *method){dispatch(0,self,value,method);}
 void error(void *self,void *value,const void *method){dispatch(1,self,value,method);}
-int install(const PgrTransferObserversConfig *c){
+int install(const PgsTransferObserversConfig *c){
  if(!c||c->version!=1||c->size!=sizeof(*c))return -1;
  if(!c->result_address||!c->error_address||c->result_address==c->error_address||
     !c->thread_current||!c->gchandle_new||!c->gchandle_get_target||!c->gchandle_free)return -2;
@@ -73,6 +73,6 @@ int install(const PgrTransferObserversConfig *c){
  ready.store(true,std::memory_order_release);return 0;
 }
 int installed(){return ready.load(std::memory_order_acquire)?1:0;}
-const PgrTransferObserversApi api{1,sizeof(PgrTransferObserversApi),install,installed};
+const PgsTransferObserversApi api{1,sizeof(PgsTransferObserversApi),install,installed};
 }
 extern "C" const void *pgs_transfer_observers_api(uint32_t version){return version==1?&api:nullptr;}

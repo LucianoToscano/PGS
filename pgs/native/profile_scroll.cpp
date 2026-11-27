@@ -43,12 +43,12 @@ bool method(const PgrMetaApi *api,const void *owner,const char *name,const char 
  if(!owner)return false;
  PgrMetaMethodQuery q{};q.version=1;q.size=sizeof(q);q.owner=owner;q.name=name;
  q.return_type="System.Void";q.return_match=PGR_MD_MATCH_EXACT;
- q.param_count=p1?2:1;q.param_types[0]=p0;q.param_match[0]=p1?PGR_MD_MATCH_EXACT:PGR_MD_MATCH_SUFFIX;
+ q.param_count=p1?2:1;q.param_types[0]=p0;q.param_match[0]=p1?PGR_MD_MATCH_EXACT:PGS_MD_MATCH_SUFFIX;
  if(p1){q.param_types[1]=p1;q.param_match[1]=PGR_MD_MATCH_EXACT;}
  return api->validate_method(&q,&out)==0;
 }
 }
-void pgr_profile_scroll_install(){
+void pgs_profile_scroll_install(){
  if(installed)return;
  const auto *bootstrap=static_cast<const PgrBootApi*>(pgs_runtime_bootstrap_api(1));
  PgrBootBinding b{};b.version=1;b.size=sizeof(b);
@@ -60,7 +60,7 @@ void pgr_profile_scroll_install(){
  const void *base=resolve(api,"Niantic.Holoholo.UI","GUISubPageBase");
  const void *scroll=resolve(api,"Niantic.Holoholo.Widget","ScrollRectBase");
  PgrMetaMethodResult update{},position{};
- PgrMetaFieldQuery fq{1,sizeof(fq),base,PGR_GAME_PROFILE_SCROLL_CPP_SCROLLRECT_NAME,PGR_GAME_PROFILE_SCROLL_CPP_SCROLLRECT_OFFSET,0x50,0,PGR_MD_FIELD_REF,0,"Niantic.Holoholo.Widget.ScrollRectEx",PGR_MD_MATCH_EXACT,0};
+ PgrMetaFieldQuery fq{1,sizeof(fq),base,PGR_GAME_PROFILE_SCROLL_CPP_SCROLLRECT_NAME,PGR_GAME_PROFILE_SCROLL_CPP_SCROLLRECT_OFFSET,0x50,0,PGS_MD_FIELD_REF,0,"Niantic.Holoholo.Widget.ScrollRectEx",PGR_MD_MATCH_EXACT,0};
  PgrMetaFieldResult field{};
  bool ok=page&&base&&scroll&&api->validate_field(&fq,&field)==0&&
   method(api,page,PGR_GAME_PROFILE_SCROLL_CPP_PLAYER_INFO_UPDATE_NAME,"PlayerInfo",nullptr,update)&&method(api,scroll,PGR_GAME_PROFILE_SCROLL_CPP_SCROLL_POSITION_NAME,"System.Single","System.Int32",position);
@@ -71,7 +71,7 @@ void pgr_profile_scroll_install(){
   ok=klass&&reinterpret_cast<int(*)(void*,int*)>(b.meta.class_value_size)(klass,&align)==32&&align==8;
   const char *names[]={"<PlayerProto>k__BackingField","<PlayerStats>k__BackingField",PGR_GAME_PROFILE_SCROLL_CPP_PLAYER_INFO_DAYS_NAME,"<PlayerDay>k__BackingField"};
   for(unsigned i=0;ok&&i<4;i++){
-   PgrMetaFieldQuery q{1,sizeof(q),klass,names[i],PGR_GAME_PROFILE_SCROLL_CPP_PLAYER_INFO_FIRST_FIELD_OFFSET+i*8,0x50,0,i==3?PGR_MD_FIELD_VALUE:PGR_MD_FIELD_REF,i==3?8u:0u,i==3?"System.Int64":nullptr,i==3?PGR_MD_MATCH_EXACT:PGR_MD_MATCH_ANY,0};
+   PgrMetaFieldQuery q{1,sizeof(q),klass,names[i],PGR_GAME_PROFILE_SCROLL_CPP_PLAYER_INFO_FIRST_FIELD_OFFSET+i*8,0x50,0,i==3?PGS_MD_FIELD_VALUE:PGS_MD_FIELD_REF,i==3?8u:0u,i==3?"System.Int64":nullptr,i==3?PGR_MD_MATCH_EXACT:PGR_MD_MATCH_ANY,0};
    PgrMetaFieldResult out{};ok=api->validate_field(&q,&out)==0;
   }
  }

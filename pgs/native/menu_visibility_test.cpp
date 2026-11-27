@@ -41,6 +41,6 @@ int main(){
  fail_root=true;initialize_menu(&state,&closes);assert(!map_controls_on_top()&&roots==0);
  fail_root=false;initialize_menu(&state,&closes);assert(map_controls_on_top()&&roots==1);
  dismiss_menu(&state,nullptr);assert(roots==0);
- pgr_menu_visibility_tick(1000);assert(!attempted&&!ready);
+ pgs_menu_visibility_tick(1000);assert(!attempted&&!ready);
  puts("menu_visibility_test: PASS (forwarding, rejected transitions, popups, hidden/dismissed map, failed reads/roots, root lifetime, bootstrap retry)");
 }

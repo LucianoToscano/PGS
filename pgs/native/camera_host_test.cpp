@@ -36,8 +36,8 @@ int fixture_unhook(void *target){return DobbyDestroy(target);}
 #define pgs_runtime_transport_api fixture_transport_api
 #define pgs_runtime_bootstrap_api fixture_boot_api
 #define pgs_unity_scheduler_api fixture_scheduler_api
-#define pgrazor_hook fixture_hook
-#define pgrazor_unhook fixture_unhook
+#define pgs_hook fixture_hook
+#define pgs_unhook fixture_unhook
 #define pgs_camera_host_api fixture_host_api
 #include "camera_host.cpp"
 #include <sys/mman.h>

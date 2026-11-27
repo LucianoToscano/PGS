@@ -307,7 +307,7 @@ const pgs_native_api_v1 g_api = {
 const void *query_feature(uint32_t id, uint32_t version) {
     switch (id) {
         case 1: return pgs_throws_api(version);
-        case 2: return pgrazor_adventure_sync_api(version);
+        case 2: return pgs_adventure_sync_api(version);
         case 3: return pgs_catch_presentation_api(version);
         case 4: return pgs_transfer_policy_api(version);
         case 5: return pgs_ar_throw_api(version);
@@ -321,7 +321,7 @@ const void *query_feature(uint32_t id, uint32_t version) {
         case 13: return pgs_map_tap_api(version);
         case 14: return pgs_items_api(version);
         case 15: return pgs_iv_display_api(version);
-        case 16: return pgrazor_accounts_api(version);
+        case 16: return pgs_accounts_api(version);
         case 17: return pgs_incoming_gifts_api(version);
         case 18: return pgs_encounter_berries_api(version);
         case 19: return pgs_battles_api(version);
@@ -352,27 +352,27 @@ const void *query_feature(uint32_t id, uint32_t version) {
         case 44: return pgs_routes_discovery_api(version);
         case 45: return pgs_routes_services_api(version);
         case 46: return pgs_routes_observers_api(version);
-        case 47: return pgrazor_runtime_metadata_api(version);
-        case 48: return pgrazor_unity_scheduler_api(version);
+        case 47: return pgs_runtime_metadata_api(version);
+        case 48: return pgs_unity_scheduler_api(version);
         case 49: return pgs_catch_observers_api(version);
         case 50: return pgs_routes_tracking_api(version);
         case 51: return pgs_shared_catch_api(version);
-        case 52: return pgrazor_runtime_transport_api(version);
+        case 52: return pgs_runtime_transport_api(version);
         case 53: return pgs_routes_metadata_api(version);
-        case 54: return pgrazor_runtime_bootstrap_api(version);
+        case 54: return pgs_runtime_bootstrap_api(version);
         case 55: return pgs_quickball_metadata_api(version);
         case 56: return pgs_shared_metadata_api(version);
         case 57: return pgs_transfer_observers_api(version);
         case 58: return pgs_catch_wait_api(version);
         case 59: return pgs_camera_metadata_api(version);
         case 60: return pgs_routes_host_api(version);
-        case 61: return pgrazor_shared_host_api(version);
+        case 61: return pgs_shared_host_api(version);
         case 62: return pgs_quickball_host_api(version);
         case 65: return pgs_inventory_host_api(version);
         case 64: return pgs_camera_host_api(version);
         case 66: return pgs_combat_host_api(version);
         case 67: return pgs_spin_host_api(version);
-        case 68: return pgrazor_account_host_api(version);
+        case 68: return pgs_account_host_api(version);
         case 70: return pgs_runtime_host_api(version);
         case 63: return pgs_encounter_host_api(version);
         case 69: return pgs_interaction_host_api(version);

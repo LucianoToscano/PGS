@@ -38,7 +38,7 @@ void *invoke_body(void *entry){
  if(!address||(address&3u))return nullptr;
  uint32_t word=0;std::memcpy(&word,entry,sizeof(word)); // verify_metadata proved export executable
  if((word&0xfc000000u)!=0x14000000u)return entry;
- const auto *metadata=static_cast<const PgrMetaApi*>(pgrazor_runtime_metadata_api(1));
+ const auto *metadata=static_cast<const PgrMetaApi*>(pgs_runtime_metadata_api(1));
  if(!metadata||metadata->version!=1||metadata->size!=sizeof(*metadata)||!metadata->validate_code)return nullptr;
  uintptr_t seen[8]{};
  for(unsigned hop=0;hop<8;++hop){

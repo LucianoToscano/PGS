@@ -151,7 +151,7 @@ def java_tools():
 class GameLocationDeliveryJavaTests(unittest.TestCase):
     def test_delivery_policy(self):
         compiler, runtime = java_tools()
-        with tempfile.TemporaryDirectory(prefix='pgrazor-location-test-') as directory:
+        with tempfile.TemporaryDirectory(prefix='pgs-location-test-') as directory:
             work = Path(directory)
             sources = []
             for relative, text in STUBS.items():

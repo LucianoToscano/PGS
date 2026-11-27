@@ -27,14 +27,14 @@ std::string hook_note;
 constexpr uint64_t kApplyEveryMs=2000;
 constexpr float kRenderScale=0.5f,kLodBias=0.5f;
 constexpr int kFrameRate=20;
-// While PGRazor's black screen covers the game nothing it draws is seen, so it draws at a quarter of the
+// While PGS's black screen covers the game nothing it draws is seen, so it draws at a quarter of the
 // resolution. The frame rate is left to the user's settings: the black screen is for an unattended Shundo
 // Sniper, and a lower one was not shown to leave its map searches unaffected.
 constexpr float kDarkRenderScale=0.25f;
 uint64_t clock_ms(){timespec t{};clock_gettime(CLOCK_BOOTTIME,&t);return uint64_t(t.tv_sec)*1000+t.tv_nsec/1000000;}
 template<class F>F fn(const void *p){require(p,"missing runtime export");return reinterpret_cast<F>(const_cast<void*>(p));}
 void *klass(void *o){require(o,"null object");return fn<void*(*)(void*)>(boot.runtime.object_get_class)(o);}
-const PgrMetaApi *metadata(){const auto *api=static_cast<const PgrMetaApi*>(pgrazor_runtime_metadata_api(1));require(api&&api->resolve_class&&api->validate_method,"metadata API");return api;}
+const PgrMetaApi *metadata(){const auto *api=static_cast<const PgrMetaApi*>(pgs_runtime_metadata_api(1));require(api&&api->resolve_class&&api->validate_method,"metadata API");return api;}
 void *cls(const char *ns,const char *name){
  PgrMetaClassQuery q{};q.version=1;q.size=sizeof(q);q.name_space=ns;q.name=name;q.canonical_match=PGR_MD_MATCH_EXACT;
  PgrMetaClassResult out{};require(metadata()->resolve_class(&q,&out)==0,name);return const_cast<void*>(out.klass);
@@ -45,7 +45,7 @@ void *method(void *k,const char *name,int count){
 }
 void *invoke(void *m,void *o,void **args=nullptr){void *ex=nullptr;void *v=fn<void*(*)(void*,void*,void**,void**)>(boot.runtime.runtime_invoke)(m,o,args,&ex);require(!ex,"managed call failed");return v;}
 template<class T>T unbox(void *o){require(o,"null result");T v{};auto p=fn<void*(*)(void*)>(boot.runtime.object_unbox)(o);require(p,"boxed value");std::memcpy(&v,p,sizeof(v));return v;}
-const PgrRuntimeTransportApi *transport(){return static_cast<const PgrRuntimeTransportApi*>(pgrazor_runtime_transport_api(1));}
+const PgrRuntimeTransportApi *transport(){return static_cast<const PgrRuntimeTransportApi*>(pgs_runtime_transport_api(1));}
 void event(const std::string &message){
  auto tr=transport();if(!tr)return;
  PgrRuntimeTransportString s[]={{"battery",7},{message.c_str(),uint32_t(message.size())}};tr->emit(19,nullptr,0,s,2);
@@ -150,7 +150,7 @@ struct Root {
 // The active URP asset, or null when the game is not using one right now.
 void *pipeline(){void *p=invoke(graphics_pipeline,nullptr);return p&&klass(p)==urp_class?p:nullptr;}
 
-// One managed value PGRazor may lower: the game's value is kept in `original` while ours is applied.
+// One managed value PGS may lower: the game's value is kept in `original` while ours is applied.
 template<class T>struct Knob {
  bool applied=false;T original{},ours{};
  // Lowers it if needed, keeping the game's value. If the game has changed it since, that becomes the
@@ -319,7 +319,7 @@ void pgr_battery_tick(uint64_t tid,const PgrSharedMetadataOutput *){
  if(!(c.res||c.fps||c.quality||c.dark)&&!held()&&hidden.empty()&&!encounter)return;
  try{
   if(!initialized){
-   auto api=static_cast<const PgrBootApi*>(pgrazor_runtime_bootstrap_api(1));boot.version=1;boot.size=sizeof(boot);
+   auto api=static_cast<const PgrBootApi*>(pgs_runtime_bootstrap_api(1));boot.version=1;boot.size=sizeof(boot);
    require(api&&api->snapshot(&boot)==0,"runtime unavailable");bind();bind_plants();owner=tid;initialized=true;
   }
   require(fn<void*(*)()>(boot.runtime.thread_current)()!=nullptr,"owner thread not attached");

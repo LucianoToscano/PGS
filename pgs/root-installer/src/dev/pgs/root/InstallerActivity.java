@@ -146,7 +146,7 @@ public final class InstallerActivity extends Activity {
                 }
                 setBusy(false);
             });
-        }, "pgrazor-root-detect").start();
+        }, "pgs-root-detect").start();
     }
 
     private void confirmInstall() {
@@ -193,7 +193,7 @@ public final class InstallerActivity extends Activity {
                 setBusy(false);
                 refresh();
             });
-        }, "pgrazor-root-install").start();
+        }, "pgs-root-install").start();
     }
 
     private void confirmToggle() {
@@ -222,7 +222,7 @@ public final class InstallerActivity extends Activity {
                 setBusy(false);
                 refresh();
             });
-        }, "pgrazor-root-toggle").start();
+        }, "pgs-root-toggle").start();
     }
 
     private void confirmReboot() {
@@ -240,7 +240,7 @@ public final class InstallerActivity extends Activity {
                         if (!result.ok() && !result.output.isEmpty()) log(result.output);
                         setBusy(false);
                     });
-                }, "pgrazor-root-reboot").start();
+                }, "pgs-root-reboot").start();
             })
             .setNegativeButton("Later", null)
             .show();

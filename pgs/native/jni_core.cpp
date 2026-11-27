@@ -22,7 +22,7 @@ jint JNICALL jni_policy_selfcheck(JNIEnv *, jclass) {
 }
 
 jlong JNICALL jni_bootstrap_probe(JNIEnv *,jclass){
-    const auto *api=static_cast<const PgrBootApi *>(pgrazor_runtime_bootstrap_api(1));
+    const auto *api=static_cast<const PgrBootApi *>(pgs_runtime_bootstrap_api(1));
     PgrBootConfig config{};config.version=1;config.size=sizeof(config);config.reserved=1;
     PgrBootBinding result{};const int status=api->probe(&config,&result);
     const uint64_t packed=(static_cast<uint64_t>(static_cast<uint32_t>(status))<<32)|static_cast<uint32_t>(result.detail);

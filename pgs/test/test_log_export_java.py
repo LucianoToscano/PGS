@@ -16,7 +16,7 @@ class LogExportJavaTests(unittest.TestCase):
         json_sources = sorted((sdk / 'sources').glob('android-*/org/json'), reverse=True)
         self.assertTrue(json_sources, 'Android SDK JSON sources required')
         compiler, runtime = java_tools()
-        with tempfile.TemporaryDirectory(prefix='pgrazor-log-export-') as directory:
+        with tempfile.TemporaryDirectory(prefix='pgs-log-export-') as directory:
             work = Path(directory)
             version = work / 'BuildVersion.java'
             version.write_text('package dev.pgs; final class BuildVersion { static final String NAME="test"; }')

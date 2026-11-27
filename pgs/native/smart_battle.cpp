@@ -60,7 +60,7 @@ struct Root {
 };
 void *klass(void *o){require(o,"null object");return fn<void*(*)(void*)>(boot.runtime.object_get_class)(o);}
 void *cls(const char *ns,const char *name){
- const auto *api=static_cast<const PgrMetaApi*>(pgrazor_runtime_metadata_api(1));require(api,"metadata API");
+ const auto *api=static_cast<const PgrMetaApi*>(pgs_runtime_metadata_api(1));require(api,"metadata API");
  PgrMetaClassQuery q{};q.version=1;q.size=sizeof(q);q.name_space=ns;q.name=name;q.canonical_match=PGR_MD_MATCH_EXACT;
  PgrMetaClassResult out{};require(api->resolve_class(&q,&out)==0,name);return const_cast<void*>(out.klass);
 }
@@ -102,7 +102,7 @@ Root resolve(void *contract){
  Root target=type_object(contract);void *resolve_args[]={target.get()};return Root(invoke(h(H_IL_RESOLVE_M),container.get(),resolve_args));
 }
 
-const PgrRuntimeTransportApi *transport(){return static_cast<const PgrRuntimeTransportApi*>(pgrazor_runtime_transport_api(1));}
+const PgrRuntimeTransportApi *transport(){return static_cast<const PgrRuntimeTransportApi*>(pgs_runtime_transport_api(1));}
 void event(const std::string &json){auto tr=transport();if(!tr)return;PgrRuntimeTransportString s[]={{"smart-battle",12},{json.c_str(),uint32_t(json.size())}};tr->emit(19,nullptr,0,s,2);}
 void status(const char *phase,const std::string &message){event(std::string("{\"phase\":\"")+phase+"\",\"message\":\""+message+"\"}");}
 
@@ -550,7 +550,7 @@ void battle_step(){
 
 // ---- Install ---------------------------------------------------------------------------------
 template<class F>void install_hook(void *k,const char *name,int params,const char *ret,uint64_t rva,const uint8_t *prologue,F hook,std::atomic<F> &slot,void **method_out=nullptr){
- const auto *api=static_cast<const PgrMetaApi*>(pgrazor_runtime_metadata_api(1));require(api&&api->validate_method,"metadata API");
+ const auto *api=static_cast<const PgrMetaApi*>(pgs_runtime_metadata_api(1));require(api&&api->validate_method,"metadata API");
  PgrMetaMethodQuery q{};q.version=1;q.size=sizeof(q);q.owner=k;q.name=name;q.return_type=ret;q.return_match=PGR_MD_MATCH_EXACT;q.param_count=params;
  q.expected_code=static_cast<const char*>(boot.module_base)+rva;q.prologue=prologue;q.prologue_len=24;
  PgrMetaMethodResult r{};require(api->validate_method(&q,&r)==0&&r.code,name);
@@ -603,7 +603,7 @@ void pgr_smart_battle_tick(uint64_t tid,const PgrSharedMetadataOutput *metadata)
  const bool on=configured();enabled.store(on,std::memory_order_release);
  if(!on){press=Press{};gym_watch=Watch{};rocket_watch=Watch{};return;}
  try{
-  if(!initialized){auto api=static_cast<const PgrBootApi*>(pgrazor_runtime_bootstrap_api(1));boot.version=1;boot.size=sizeof(boot);require(api&&api->snapshot(&boot)==0,"Runtime unavailable");initialized=true;}
+  if(!initialized){auto api=static_cast<const PgrBootApi*>(pgs_runtime_bootstrap_api(1));boot.version=1;boot.size=sizeof(boot);require(api&&api->snapshot(&boot)==0,"Runtime unavailable");initialized=true;}
   if(!hooks_tried){hooks_tried=true;install();}
   if(!hooks_ready.load(std::memory_order_acquire))return;
   if(!tables_ready()){const uint64_t now=clock_ms();if(now>=next_table_try){next_table_try=now+kTableRetryMs;load_tables();}return;}

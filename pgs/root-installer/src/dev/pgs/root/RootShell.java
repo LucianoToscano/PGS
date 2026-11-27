@@ -73,7 +73,7 @@ final class RootShell {
      */
     static Result await(Process process, long timeoutMs) {
         OutputCollector collector = new OutputCollector(process.getInputStream());
-        Thread reader = new Thread(collector, "pgrazor-root-shell-reader");
+        Thread reader = new Thread(collector, "pgs-root-shell-reader");
         reader.setDaemon(true);
         reader.start();
 
@@ -92,7 +92,7 @@ final class RootShell {
             // hold the output pipe open; we never assert its descendants stopped.
             // Some Process implementations close streams during destroy and can themselves block
             // behind an inherited pipe. Termination must not defeat the caller's deadline either.
-            Thread killer = new Thread(() -> process.destroyForcibly(), "pgrazor-root-shell-killer");
+            Thread killer = new Thread(() -> process.destroyForcibly(), "pgs-root-shell-killer");
             killer.setDaemon(true);
             killer.start();
         }

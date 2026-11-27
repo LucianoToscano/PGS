@@ -162,7 +162,7 @@ def main(argv=None):
         profile = json.loads((schema / json.loads((schema / 'current.json').read_text())['profile']).read_text())
         target = {'package': 'com.nianticlabs.pokemongo', 'versionCode': profile['version_code'],
                   'versionName': profile['game_version']}
-        with tempfile.TemporaryDirectory(prefix='pgrazor-installer-check-') as folder:
+        with tempfile.TemporaryDirectory(prefix='pgs-installer-check-') as folder:
             compile_sources(target, build.release_version(ROOT), folder, 'PGS-Root-module.zip')
         return
     if not args.report:

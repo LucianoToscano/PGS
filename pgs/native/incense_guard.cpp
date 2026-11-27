@@ -34,7 +34,7 @@ int pending_species=0,pending_form=0;
 void *klass(void *o){require(o,"missing managed object");return fn<void*(*)(void*)>(boot.runtime.object_get_class)(o);}
 std::string type_name(void *t){char *p=fn<char*(*)(void*)>(boot.meta.type_get_name)(t);require(p,"missing managed type name");std::string s=p;fn<void(*)(void*)>(boot.meta.mem_free)(p);return s;}
 void *cls(const char *ns,const char *name){
- const auto *api=static_cast<const PgrMetaApi*>(pgrazor_runtime_metadata_api(1));require(api,"metadata API unavailable");
+ const auto *api=static_cast<const PgrMetaApi*>(pgs_runtime_metadata_api(1));require(api,"metadata API unavailable");
  PgrMetaClassQuery q{};q.version=1;q.size=sizeof(q);q.name_space=ns;q.name=name;q.canonical_match=PGR_MD_MATCH_EXACT;
  PgrMetaClassResult out{};require(api->resolve_class(&q,&out)==0,name);return const_cast<void*>(out.klass);
 }
@@ -52,7 +52,7 @@ template<class T>T field(void *o,void *k,const char *name,const char *type){T v{
 void *invoke(void *m,void *o,void **args=nullptr){require(m,"missing shared method");void *ex=nullptr;void *v=fn<void*(*)(void*,void*,void**,void**)>(boot.runtime.runtime_invoke)(m,o,args,&ex);require(!ex,"managed observer call threw");return v;}
 void *call(void *o,const char *name,const char *ret){return invoke(method(klass(o),name,ret),o);}
 template<class T>T value(void *v,const char *type){Root box(v);require(box.get(),"missing boxed observer value");require(type_name(fn<void*(*)(void*)>(boot.meta.class_get_type)(klass(box.get())))==type,"observer boxed type mismatch");void *p=fn<void*(*)(void*)>(boot.runtime.object_unbox)(box.get());require(p,"observer unbox failed");T x{};memcpy(&x,p,sizeof(x));return x;}
-bool emit(const std::string &kind,const std::string &json){auto tr=static_cast<const PgrRuntimeTransportApi*>(pgrazor_runtime_transport_api(1));if(!tr)return false;PgrRuntimeTransportString s[]={{kind.c_str(),uint32_t(kind.size())},{json.c_str(),uint32_t(json.size())}};return tr->emit(19,nullptr,0,s,2)==0;}
+bool emit(const std::string &kind,const std::string &json){auto tr=static_cast<const PgrRuntimeTransportApi*>(pgs_runtime_transport_api(1));if(!tr)return false;PgrRuntimeTransportString s[]={{kind.c_str(),uint32_t(kind.size())},{json.c_str(),uint32_t(json.size())}};return tr->emit(19,nullptr,0,s,2)==0;}
 void status(const char *message,bool error=true){std::string key=std::string(error?"error:":"ready:")+message;if(last_status==key)return;if(emit("incense-session",std::string("{\"kind\":\"incense-session\",\"token\":\"")+token+"\",\"phase\":\""+(error?"error":"ready")+"\",\"message\":\""+message+"\"}"))last_status=key;}
 int literal(void *k,const char *name){void *f=fn<void*(*)(void*,const char*)>(boot.meta.class_get_field_from_name)(k,name);require(f,name);require((fn<int(*)(void*)>(boot.meta.field_get_flags)(f)&0x8050)==0x8050,"Galarian form is not enum literal");int v=0;fn<void(*)(void*,void*)>(boot.runtime.field_static_get_value)(f,&v);return v;}
 void scan(){
@@ -93,7 +93,7 @@ void scan(){
 }
 bool pgr_incense_guard_tick(uint64_t tid,const PgrSharedMetadataOutput *metadata){
  if(owner&&owner!=tid)return true;
- auto tr=static_cast<const PgrRuntimeTransportApi*>(pgrazor_runtime_transport_api(1));
+ auto tr=static_cast<const PgrRuntimeTransportApi*>(pgs_runtime_transport_api(1));
  char text[257]{};uint32_t length=0;pgr_incense_guard::Settings settings;
  PgrRuntimeTransportSample before{},after{};
  bool valid=tr&&tr->sample(&before)==0&&before.snapshot_fresh&&!before.fault&&tr->get_string(12,text,sizeof(text),&length)==0&&pgr_incense_guard::parse(text,length,settings)&&tr->sample(&after)==0&&after.snapshot_fresh&&!after.fault&&before.snapshot_seq==after.snapshot_seq;
@@ -103,7 +103,7 @@ bool pgr_incense_guard_tick(uint64_t tid,const PgrSharedMetadataOutput *metadata
  active=true;owner=tid;
  try{
   require(tid!=0,"incense observer owner unavailable");
-  auto api=static_cast<const PgrBootApi*>(pgrazor_runtime_bootstrap_api(1));boot.version=1;boot.size=sizeof(boot);require(api&&api->snapshot(&boot)==0,"incense observer runtime bootstrap unavailable");
+  auto api=static_cast<const PgrBootApi*>(pgs_runtime_bootstrap_api(1));boot.version=1;boot.size=sizeof(boot);require(api&&api->snapshot(&boot)==0,"incense observer runtime bootstrap unavailable");
   md=metadata;require(md,"incense observer shared metadata unavailable");
   scan();if(!blocked)status("Manual incense session observer active",false);
  }catch(const Failure &f){blocked=true;status(f.message);}catch(...){blocked=true;status("Incense observer failed; automatic catches paused");}

@@ -18,7 +18,7 @@ spec.loader.exec_module(prepare_native)
 
 class NativePrerequisiteTests(unittest.TestCase):
     def setUp(self):
-        self.temp = tempfile.TemporaryDirectory(prefix='pgrazor-native-prerequisites-')
+        self.temp = tempfile.TemporaryDirectory(prefix='pgs-native-prerequisites-')
         self.addCleanup(self.temp.cleanup)
         self.base = Path(self.temp.name).resolve()
         self.root = self.base / 'checkout/pgrazor'

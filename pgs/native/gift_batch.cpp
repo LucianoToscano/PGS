@@ -43,7 +43,7 @@ struct Root {
 void *klass(void *o){require(o,"null object");return fn<void*(*)(void*)>(boot.runtime.object_get_class)(o);}
 void *cls(const char *ns,const char *name){
  static std::map<std::string,void*> cache;std::string key=std::string(ns)+"."+name;auto it=cache.find(key);if(it!=cache.end())return it->second;
- const auto *api=static_cast<const PgrMetaApi*>(pgrazor_runtime_metadata_api(1));require(api,"metadata API");
+ const auto *api=static_cast<const PgrMetaApi*>(pgs_runtime_metadata_api(1));require(api,"metadata API");
  PgrMetaClassQuery q{};q.version=1;q.size=sizeof(q);q.name_space=ns;q.name=name;q.canonical_match=PGR_MD_MATCH_EXACT;
  PgrMetaClassResult out{};require(api->resolve_class(&q,&out)==0,name);return cache[key]=const_cast<void*>(out.klass);
 }
@@ -84,7 +84,7 @@ bool parse(const char *s,size_t n,Command &out){
 }
 struct Permission {Command command;bool valid=false,allowed=false;};
 Permission permission(){
- Permission p;auto tr=static_cast<const PgrRuntimeTransportApi*>(pgrazor_runtime_transport_api(1));if(!tr)return p;
+ Permission p;auto tr=static_cast<const PgrRuntimeTransportApi*>(pgs_runtime_transport_api(1));if(!tr)return p;
  PgrRuntimeTransportSample a{},z{};if(tr->sample(&a)||!a.snapshot_fresh||a.fault)return p;
  char s[96]{};uint32_t n=0;int ready=0;
  if(tr->get_string(12,s,sizeof(s),&n)||n>=sizeof(s)||!parse(s,n,p.command))return p;
@@ -106,7 +106,7 @@ struct Session {
 Session session;bool busy=false;
 std::string quote(const std::string &s){std::string out="\"";for(unsigned char c:s){if(c=='"'||c=='\\')out+='\\';if(c>=32)out+=char(c);}return out+'"';}
 void event(const char *phase,const std::string &message){
- auto tr=static_cast<const PgrRuntimeTransportApi*>(pgrazor_runtime_transport_api(1));if(!tr)return;
+ auto tr=static_cast<const PgrRuntimeTransportApi*>(pgs_runtime_transport_api(1));if(!tr)return;
  std::string json="{\"kind\":\"gift-batch\",\"token\":"+quote(std::to_string(session.command.token))+",\"phase\":"+quote(phase)+",\"message\":"+quote(message)+",\"sent\":"+std::to_string(session.sent)+",\"opened\":"+std::to_string(session.opened)+",\"skipped\":"+std::to_string(session.skipped)+"}";
  PgrRuntimeTransportString strings[]={{"gift-batch",10},{json.c_str(),uint32_t(json.size())}};
  if(tr->emit(19,nullptr,0,strings,2))session.canceled=true;
@@ -263,7 +263,7 @@ void pgr_gift_batch_tick(uint64_t tid,const PgrSharedMetadataOutput *metadata){
    if(!p.command.enabled||!p.allowed){finish("stopped","Batch stopped before starting");return;}
    if(manual_request_pending())return;
    owner=tid;md=metadata;require(md,"Shared metadata unavailable");
-   auto api=static_cast<const PgrBootApi*>(pgrazor_runtime_bootstrap_api(1));boot.version=1;boot.size=sizeof(boot);require(api&&api->snapshot(&boot)==0,"Runtime unavailable");
+   auto api=static_cast<const PgrBootApi*>(pgs_runtime_bootstrap_api(1));boot.version=1;boot.size=sizeof(boot);require(api&&api->snapshot(&boot)==0,"Runtime unavailable");
    session.active=true;session.started=clock_ms();
    session.player=resolve("Niantic.Holoholo","IPlayerService");require(bool(session.player),"Player service unavailable");
    session.account=string(call(session.player.get(),"get_PlayerId"));require(!session.account.empty(),"Account identity unavailable");

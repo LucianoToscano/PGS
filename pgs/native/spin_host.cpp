@@ -30,7 +30,7 @@ uint32_t fast_serial=0,camera_error_serial=0,request_serial=0,closed_serial=0,er
 PgrSpinHostEvent events[32]{};unsigned head=0,count=0;
 const PgrSpinCameraApi *camera(){return static_cast<const PgrSpinCameraApi*>(pgs_spin_camera_api(1));}
 const PgrQuickSpinApi *quick(){return static_cast<const PgrQuickSpinApi*>(pgs_quick_spin_api(1));}
-const PgrRuntimeTransportApi *transport(){return static_cast<const PgrRuntimeTransportApi*>(pgrazor_runtime_transport_api(1));}
+const PgrRuntimeTransportApi *transport(){return static_cast<const PgrRuntimeTransportApi*>(pgs_runtime_transport_api(1));}
 uint64_t now(){timespec t{};return clock_gettime(CLOCK_BOOTTIME,&t)||t.tv_sec<0?0:uint64_t(t.tv_sec)*1000+uint64_t(t.tv_nsec)/1000000;}
 bool owner(uint64_t tid){return tid&&tid==uint64_t(gettid())&&tid==config.owner_tid&&config.thread_current&&config.thread_current();}
 void revoke(){if(caps.load()&PGR_SPH_CAMERA)camera()->update(0,0,config.owner_tid,0);if(caps.load()&PGR_SPH_QUICK){quick()->update(0,0,config.owner_tid,0);quick()->clear();}}
@@ -142,8 +142,8 @@ int tick(uint64_t tid,uint64_t sequence,uint64_t opener){
 }
 int sample(PgrSpinHostSample *s){if(!s)return PGR_SPH_BAD_CONFIG;*s={1,sizeof(*s),uint32_t(configured.load()),caps.load(),uint32_t(stopping.load()),owned.load(),camera_error.load(),quick_error.load(),configured?config.owner_tid:0,ticks.load()};return 0;}
 int next_event(PgrSpinHostEvent *e){if(!e)return PGR_SPH_BAD_CONFIG;std::lock_guard<std::mutex> lock(event_mutex);if(!count){*e={};return PGR_SPH_EMPTY;}*e=events[head];head=(head+1)%32;--count;return 0;}
-void pulse(void*,const PgrUnityPulse *p){if(!p||p->reserved||p->tid<=0)return;auto scheduler=static_cast<const PgrUnitySchedulerApi*>(pgrazor_unity_scheduler_api(2));if(!scheduler||scheduler->valid(p->generation)!=1)return;
- uint64_t opener=1;auto shared=static_cast<const PgrSharedHostApi*>(pgrazor_shared_host_api(1));PgrSharedHostSample s{};if(shared&&!shared->sample(&s))opener=s.hook_frames;tick(p->tid,p->sequence,opener);
+void pulse(void*,const PgrUnityPulse *p){if(!p||p->reserved||p->tid<=0)return;auto scheduler=static_cast<const PgrUnitySchedulerApi*>(pgs_unity_scheduler_api(2));if(!scheduler||scheduler->valid(p->generation)!=1)return;
+ uint64_t opener=1;auto shared=static_cast<const PgrSharedHostApi*>(pgs_shared_host_api(1));PgrSharedHostSample s{};if(shared&&!shared->sample(&s))opener=s.hook_frames;tick(p->tid,p->sequence,opener);
 }
 const PgrSpinHostApi api{1,sizeof(PgrSpinHostApi),configure,update,tick,stop,sample,next_event,pulse};
 }

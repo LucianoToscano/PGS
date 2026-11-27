@@ -43,7 +43,7 @@ const PgrAlwaysHitApi *hit(){return static_cast<const PgrAlwaysHitApi*>(pgs_alwa
 const PgrArThrowApi *ar(){return static_cast<const PgrArThrowApi*>(pgs_ar_throw_api(1));}
 const PgrMapTapApi *map(){return static_cast<const PgrMapTapApi*>(pgs_map_tap_api(1));}
 const PgrIvDisplayApi *iv(){return static_cast<const PgrIvDisplayApi*>(pgs_iv_display_api(1));}
-const PgrRuntimeTransportApi *transport(){return static_cast<const PgrRuntimeTransportApi*>(pgrazor_runtime_transport_api(1));}
+const PgrRuntimeTransportApi *transport(){return static_cast<const PgrRuntimeTransportApi*>(pgs_runtime_transport_api(1));}
 bool now(uint64_t *v){timespec t{};if(clock_gettime(CLOCK_BOOTTIME,&t)||t.tv_sec<0)return false;*v=uint64_t(t.tv_sec)*1000+uint64_t(t.tv_nsec)/1000000;return true;}
 void *mut(const void *p){return const_cast<void*>(p);}
 void *klass(unsigned i){return mut(md.classes[i]);}
@@ -94,7 +94,7 @@ void event(const char *kind,const std::string &body="",uint64_t sampled_at=UINT6
 }
 void *symbol(void *handle,const char *suffix){std::string n="il2cpp_";n+=suffix;return dlsym(handle,n.c_str());}
 int bootstrap_binding(){
- PgrBootBinding b{};const auto *api=static_cast<const PgrBootApi*>(pgrazor_runtime_bootstrap_api(1));
+ PgrBootBinding b{};const auto *api=static_cast<const PgrBootApi*>(pgs_runtime_bootstrap_api(1));
  if(!api||api->snapshot(&b)!=0)return PGR_QBH_NOT_READY;
  me=b.meta;rt={b.runtime.runtime_invoke,b.runtime.gchandle_new,b.runtime.gchandle_get_target,b.runtime.gchandle_free,
   b.runtime.object_get_class,b.runtime.object_unbox,b.runtime.field_get_value,symbol(b.handle,"class_is_assignable_from"),

@@ -24,7 +24,7 @@ void *convert(const void*,void*,void**,int32_t,void**){return nullptr;}
 #include "unity_scheduler.cpp"
 int main(int argc,char **argv){
     assert(argc==2&&argv[1][0]>='0'&&argv[1][0]<='4'&&argv[1][1]=='\0');fixture::mode=std::atoi(argv[1]);
-    const auto *api=static_cast<const PgrUnitySchedulerApi4*>(pgrazor_unity_scheduler_api(4));assert(api);
+    const auto *api=static_cast<const PgrUnitySchedulerApi4*>(pgs_unity_scheduler_api(4));assert(api);
     PgrUnitySchedulerConfig c{};c.version=2;c.size=sizeof(c);c.runtime_invoke=reinterpret_cast<void*>(&fixture::invoke);
     c.runtime_invoke_convert_args=reinterpret_cast<void*>(&fixture::convert);c.execute_tasks=&fixture::method;
     c.thread_current=fixture::attached;c.verify_metadata=fixture::verify;c.expected_owner_tid=gettid();c.exclusive_owner=1;

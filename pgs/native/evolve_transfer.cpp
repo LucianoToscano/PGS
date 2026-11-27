@@ -44,7 +44,7 @@ struct Root {
 void *klass(void *o){require(o,"null object");return fn<void*(*)(void*)>(boot.runtime.object_get_class)(o);}
 void *cls(const char *ns,const char *name){
  static std::map<std::string,void*> cache;std::string key=std::string(ns)+"."+name;auto it=cache.find(key);if(it!=cache.end())return it->second;
- const auto *api=static_cast<const PgrMetaApi*>(pgrazor_runtime_metadata_api(1));require(api,"metadata API");
+ const auto *api=static_cast<const PgrMetaApi*>(pgs_runtime_metadata_api(1));require(api,"metadata API");
  PgrMetaClassQuery q{};q.version=1;q.size=sizeof(q);q.name_space=ns;q.name=name;q.canonical_match=PGR_MD_MATCH_EXACT;
  PgrMetaClassResult out{};require(api->resolve_class(&q,&out)==0,name);return cache[key]=const_cast<void*>(out.klass);
 }
@@ -95,7 +95,7 @@ struct Permission {
  uint32_t protect=2047,keep_iv=0;std::set<int> keep;std::string pvp;
 };
 Permission permission(){
- Permission p;auto tr=static_cast<const PgrRuntimeTransportApi*>(pgrazor_runtime_transport_api(1));if(!tr)return p;
+ Permission p;auto tr=static_cast<const PgrRuntimeTransportApi*>(pgs_runtime_transport_api(1));if(!tr)return p;
  PgrRuntimeTransportSample a{},z{};char text[10001]{};uint32_t n=0;int allowed=0,keep_all=0;int32_t protect=2047;
  if(tr->sample(&a)||!a.snapshot_fresh||a.fault||tr->get_string(22,text,sizeof(text),&n)||!pgr_evolve_transfer::parse(text,n,p.config))return p;
  if(tr->get_bool(5,&allowed)||tr->get_bool(35,&keep_all)||tr->get_int(8,&protect)||protect<0||protect>2047)return p;
@@ -119,14 +119,14 @@ struct Job : Pending {
 Job job;std::deque<Pending> queue;std::set<std::pair<std::string,uint64_t>> seen;
 void status(const std::string &message){
  __android_log_print(ANDROID_LOG_INFO,"PGRazorEvolveTransfer","%s",message.c_str());
- auto tr=static_cast<const PgrRuntimeTransportApi*>(pgrazor_runtime_transport_api(1));
+ auto tr=static_cast<const PgrRuntimeTransportApi*>(pgs_runtime_transport_api(1));
  PgrRuntimeTransportString s{message.c_str(),uint32_t(message.size())};if(tr)tr->emit(56,nullptr,0,&s,1);
 }
 void finish(const char *message){status(message);job=Job{};}
 void initialize(const PgrSharedMetadataOutput *metadata=nullptr){
- if(initialized)return;auto api=static_cast<const PgrBootApi*>(pgrazor_runtime_bootstrap_api(1));
+ if(initialized)return;auto api=static_cast<const PgrBootApi*>(pgs_runtime_bootstrap_api(1));
  require(api&&api->snapshot(&boot)==0,"Evolution runtime unavailable");
- if(!metadata){auto host=static_cast<const PgrSharedHostApi*>(pgrazor_shared_host_api(1));metadata=host&&host->metadata?host->metadata():nullptr;}
+ if(!metadata){auto host=static_cast<const PgrSharedHostApi*>(pgs_shared_host_api(1));metadata=host&&host->metadata?host->metadata():nullptr;}
  require(metadata,"Transfer metadata unavailable");md=metadata;owner=gettid();initialized=true;
 }
 Root pokemon(uint64_t id){void *a[]={&id};return Root(call(job.bag.get(),"GetPokemon",1,a));}
@@ -185,7 +185,7 @@ bool evolution_candidate(Root &p,Candidate &c,std::string *reason=nullptr){
 void release(Root &current,const Permission &settings){
  PgrTransferInput input{};std::vector<int32_t> keep;
  if(!classify(current,settings,input,keep)||!identity()||!same_rules(settings,permission())){finish("Kept: transfer protections or session changed");return;}
- auto broker=static_cast<const PgrSharedHostTransferApi*>(pgrazor_shared_host_api(2));require(broker&&broker->ready&&broker->ready(),"Transfer service unavailable");
+ auto broker=static_cast<const PgrSharedHostTransferApi*>(pgs_shared_host_api(2));require(broker&&broker->ready&&broker->ready(),"Transfer service unavailable");
  PgrTransferExecRequest request{1,sizeof(request),job.id,0,owner,job.bag.get(),current.get(),input};
  job.since=clock_ms();job.release_done=false;
  // Pass the durable token slot directly: a synchronous release observer may

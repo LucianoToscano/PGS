@@ -19,7 +19,7 @@ ROOT = Path(__file__).resolve().parents[1]
 class AccountProfileStoreJavaTests(unittest.TestCase):
     def test_store(self):
         compiler, runtime = java_tools()
-        with tempfile.TemporaryDirectory(prefix='pgrazor-account-store-') as directory:
+        with tempfile.TemporaryDirectory(prefix='pgs-account-store-') as directory:
             work = Path(directory)
             classes = work / 'classes'
             data = work / 'data'

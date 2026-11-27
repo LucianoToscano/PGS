@@ -6,6 +6,7 @@ import re
 import shutil
 import subprocess
 import sys
+import tempfile
 import unittest
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -76,6 +77,43 @@ class PgsNativeAliasesTests(unittest.TestCase):
                     capture_output=True, timeout=60
                 )
                 self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+
+
+    @unittest.skipUnless(sys.platform.startswith("linux") and COMPILER,
+                         "Native getter forwarding requires a Linux C++17 compiler")
+    def test_private_getters_forward_the_same_version_and_pointer(self):
+        # Synthetic implementations verify source alias behavior without a game,
+        # external native library, hooks, or a device.
+        names = ("runtime_metadata", "runtime_bootstrap", "runtime_transport",
+                 "unity_scheduler", "shared_host", "accounts",
+                 "adventure_sync", "account_host")
+        code = ['#include <type_traits>']
+        code.extend('#include "' + name + '.h"' for name in names)
+        assertions = []
+        for name in names:
+            old, new = "pgrazor_" + name + "_api", "pgs_" + name + "_api"
+            typ = "pgs_accounts_api_v1_t" if name == "accounts" else "unsigned"
+            ret = "const pgs_accounts_api_v1_t*" if name == "accounts" else "const void*"
+            code.append('extern "C" ' + ret + ' ' + old +
+                        '(uint32_t version) { static ' + typ +
+                        ' value{}; return version == 1 ? &value : nullptr; }')
+            code.append('static_assert(std::is_same_v<decltype(&' + old +
+                        '), decltype(&' + new + ')>);')
+            assertions.append('if (!' + new + '(1) || ' + new + '(1) != ' +
+                              old + '(1) || ' + new + '(0) || ' +
+                              new + '(2)) return 1;')
+        code.extend(['int main() {', *assertions, 'return 0; }'])
+        with tempfile.TemporaryDirectory(prefix="pgs-getter-aliases-") as work:
+            executable = Path(work) / "forwarding"
+            result = subprocess.run(
+                [COMPILER, "-std=c++17", "-x", "c++", "-I", str(NATIVE),
+                 "-", "-o", str(executable)],
+                input="\n".join(code) + "\n", text=True,
+                capture_output=True, timeout=60)
+            self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+            run = subprocess.run([str(executable)], capture_output=True,
+                                 text=True, timeout=10)
+            self.assertEqual(run.returncode, 0, run.stdout + run.stderr)
 
 
 if __name__ == "__main__":

@@ -118,7 +118,7 @@ class GameGoogleSignInReentryTest(unittest.TestCase):
         json_dirs = sorted((sdk / 'sources').glob('android-*/org/json'), reverse=True)
         if not json_dirs:
             raise unittest.SkipTest('Android SDK JSON sources unavailable')
-        cls.directory = tempfile.TemporaryDirectory(prefix='pgrazor-google-reentry-')
+        cls.directory = tempfile.TemporaryDirectory(prefix='pgs-google-reentry-')
         cls.root = pathlib.Path(cls.directory.name)
         for relative, content in STUBS.items():
             target = cls.root / relative

@@ -3,7 +3,7 @@ package dev.pgs.root;
 import java.util.Map;
 
 /**
- * Pure interpretation of the PGRazor module's installed state and on/off switch, derived from the
+ * Pure interpretation of the PGS module's installed state and on/off switch, derived from the
  * parsed root probe. Holds no Android dependency, so {@link #parse} and the derived flags/label run
  * on a plain JVM and can be exercised without a device.
  *
@@ -85,7 +85,7 @@ final class RootModuleState {
         } else if (disabled) {
             state = "disabled";
         } else if (toggleSupported) {
-            state = injectionOff ? "PGRazor off (module stays installed)" : "PGRazor on";
+            state = injectionOff ? "PGS off (module stays installed)" : "PGS on";
         } else {
             state = "update and reboot once to use the on/off switch";
         }

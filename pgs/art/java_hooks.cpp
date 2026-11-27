@@ -90,7 +90,7 @@ extern "C" __attribute__((visibility("hidden"))) bool pgs_art_publication_begin(
  // Same order and enum values as pinned LSPlant DoHook: debugger GC exclusion,
  // then suspend all mutators. JNI_OnLoad executes with the calling thread native.
  gc_ctor(publication_scope.gc, self, 10 /* kGcCauseDebugger */, 9 /* kCollectorTypeDebugger */);
- suspend_ctor(publication_scope.suspend, "PGRazor native hook publication", false);
+ suspend_ctor(publication_scope.suspend, "PGS native hook publication", false);
  publication_scope.active = true;
  return true;
 }

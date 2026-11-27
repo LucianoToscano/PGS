@@ -1,4 +1,4 @@
-// PGRazor native migration: inventory item catalog + auto-recycle (feature id 14).
+// PGS native migration: inventory item catalog + auto-recycle (feature id 14).
 //
 // Full native port of runtime/features/items.js. See items.h for the ABI and the division of
 // labour with runtime/native-items.js. Built -fno-exceptions / -fno-rtti like every sibling:

@@ -248,7 +248,7 @@ bool observation_allowed(uint64_t *out_tid) {
     // automated actions still run from the scheduled tick. Requiring an active
     // ExecuteTasks frame here silently loses normal battle entry/UI callbacks.
     {
-        const auto *sched3 = api_table<PgrUnitySchedulerApi3>(pgrazor_unity_scheduler_api(3));
+        const auto *sched3 = api_table<PgrUnitySchedulerApi3>(pgs_unity_scheduler_api(3));
         if (sched3 && sched3->version == 3 && sched3->size >= sizeof(PgrUnitySchedulerApi3) &&
             sched3->snapshot && sched3->valid) {
             PgrUnitySchedulerSnapshot snap{};
@@ -272,7 +272,7 @@ bool observation_allowed(uint64_t *out_tid) {
 
 // --- Transport 52 & Event Queue Helpers -------------------------------------------
 const PgrRuntimeTransportApi *transport_api() {
-    const auto *tr = api_table<PgrRuntimeTransportApi>(pgrazor_runtime_transport_api(1));
+    const auto *tr = api_table<PgrRuntimeTransportApi>(pgs_runtime_transport_api(1));
     if (!tr || tr->version != 1 || tr->size < sizeof(PgrRuntimeTransportApi)) return nullptr;
     return tr;
 }
@@ -790,9 +790,9 @@ bool install_hook_group(const HookEntry *entries, size_t count) {
 
 bool install_gym_next(){
  if(g_gym_next_ready)return true;
- const auto *api=api_table<PgrMetaApi>(pgrazor_runtime_metadata_api(1));
+ const auto *api=api_table<PgrMetaApi>(pgs_runtime_metadata_api(1));
  if(!api||!api->resolve_class||!api->validate_method)return false;
- const auto *boot=api_table<PgrBootApi>(pgrazor_runtime_bootstrap_api(1));PgrBootBinding binding{};
+ const auto *boot=api_table<PgrBootApi>(pgs_runtime_bootstrap_api(1));PgrBootBinding binding{};
  if(!boot||!boot->snapshot||boot->snapshot(&binding)!=0||!binding.module_base)return false;
  auto klass=[&](const char *ns,const char *name)->void*{
   PgrMetaClassQuery q{};q.version=1;q.size=sizeof(q);q.name_space=ns;q.name=name;q.canonical_match=PGR_MD_MATCH_EXACT;
@@ -1182,7 +1182,7 @@ bool exports_complete(const PgrCombatHostConfig &c) {
 }
 
 void fill_exports_from_bootstrap(PgrCombatHostConfig &c) {
-    const auto *boot = api_table<PgrBootApi>(pgrazor_runtime_bootstrap_api(1));
+    const auto *boot = api_table<PgrBootApi>(pgs_runtime_bootstrap_api(1));
     if (!boot || boot->version != 1 || boot->size < sizeof(PgrBootApi) || !boot->snapshot) return;
     PgrBootBinding b{};
     if (boot->snapshot(&b) != PGR_BOOT_OK) return;
@@ -1213,7 +1213,7 @@ int finish_setup_locked(uint64_t tid) {
     // 2. Resolve owner_tid if not yet set.
     uint64_t owner = g_cfg.owner_tid;
     if (owner == 0) {
-        const auto *sh = api_table<PgrSharedHostApi>(pgrazor_shared_host_api(1));
+        const auto *sh = api_table<PgrSharedHostApi>(pgs_shared_host_api(1));
         if (sh && sh->version == 1 && sh->size >= sizeof(PgrSharedHostApi) && sh->sample) {
             PgrSharedHostSample sh_s{};
             if (sh->sample(&sh_s) == 0 && sh_s.owner_tid != 0) {
@@ -1237,7 +1237,7 @@ int finish_setup_locked(uint64_t tid) {
     // 3. Resolve Feature 56 metadata (`cfg->metadata`, `shared_host(61)->metadata()`, or `metadata_config`).
     const PgrSharedMetadataOutput *md_ptr = g_cfg.metadata;
     if (!md_ptr) {
-        const auto *sh = api_table<PgrSharedHostApi>(pgrazor_shared_host_api(1));
+        const auto *sh = api_table<PgrSharedHostApi>(pgs_shared_host_api(1));
         if (sh && sh->version == 1 && sh->size >= sizeof(PgrSharedHostApi) && sh->metadata) {
             md_ptr = sh->metadata();
         }
@@ -1731,7 +1731,7 @@ void api_on_unity_pulse(void * /*ctx*/, const PgrUnityPulse *pulse) {
     if (!pulse || pulse->tid <= 0) {
         return;
     }
-    const auto *sched = api_table<PgrUnitySchedulerApi>(pgrazor_unity_scheduler_api(2));
+    const auto *sched = api_table<PgrUnitySchedulerApi>(pgs_unity_scheduler_api(2));
     if (sched && sched->version >= 2 && sched->size >= sizeof(PgrUnitySchedulerApi) &&
         sched->snapshot && sched->valid) {
         PgrUnitySchedulerSnapshot snap{};

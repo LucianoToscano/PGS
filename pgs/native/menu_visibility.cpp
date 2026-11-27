@@ -74,9 +74,9 @@ bool resolve_method(const PgrMetaApi *api,const void *owner,const char *name,con
  return api->validate_method(&q,&out)==0;
 }
 void install(){
- const auto *boot=static_cast<const PgrBootApi*>(pgrazor_runtime_bootstrap_api(1));
+ const auto *boot=static_cast<const PgrBootApi*>(pgs_runtime_bootstrap_api(1));
  PgrBootBinding b{};b.version=1;b.size=sizeof(b);
- const auto *api=static_cast<const PgrMetaApi*>(pgrazor_runtime_metadata_api(1));
+ const auto *api=static_cast<const PgrMetaApi*>(pgs_runtime_metadata_api(1));
  if(!boot||!api||boot->snapshot(&b)!=0)return;
  attempted=true;
  PgrMetaClassQuery cq{1,sizeof(cq),"Niantic.Holoholo.Map.UI","MainMenuGuiController",nullptr,PGR_MD_MATCH_EXACT,0};
@@ -121,7 +121,7 @@ void install(){
 void pgr_menu_visibility_tick(uint64_t now_ms){
  if(!attempted)install();
  if(now_ms-last_emit<200)return;
- const auto *tr=static_cast<const PgrRuntimeTransportApi*>(pgrazor_runtime_transport_api(1));
+ const auto *tr=static_cast<const PgrRuntimeTransportApi*>(pgs_runtime_transport_api(1));
  if(!tr)return;
  char detail[64];snprintf(detail,sizeof(detail),"%llu|%d",static_cast<unsigned long long>(now_ms),ready&&!menu_open.load(std::memory_order_acquire)&&map_controls_on_top()?1:0);
  PgrRuntimeTransportString strings[]={{"joystick-menu",13},{detail,uint32_t(strlen(detail))}};

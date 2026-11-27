@@ -1,4 +1,4 @@
-// PGRazor native migration: raid / gym / Dynamax attack & dodge controller (feature id 19).
+// PGS native migration: raid / gym / Dynamax attack & dodge controller (feature id 19).
 // See battles.h for the ABI, the "installs no hooks" rationale (the RVCHARGE ObserveBattleState
 // entry is shared with the still-Gum Rocket controller) and the observe()/gym_begin()/gym_end()
 // forwarding contract. Built -fno-exceptions / -fno-rtti like every sibling: a managed throw

@@ -303,6 +303,10 @@ static_assert(sizeof(PgrMetaApi) == 64, "PgrMetaApi must remain a 64-byte versio
 // Hidden getter. NOT exported by the version script; the coordinator registers it in query_feature
 // under feature id 47 and answers only on an exact version match.
 const void *pgrazor_runtime_metadata_api(uint32_t version);
+// Canonical source spelling; retain the hidden legacy linkage for older objects and fixtures.
+static inline const void *pgs_runtime_metadata_api(uint32_t version) {
+    return pgrazor_runtime_metadata_api(version);
+}
 
 #ifdef __cplusplus
 }

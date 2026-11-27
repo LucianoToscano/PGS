@@ -66,7 +66,7 @@ class ToggleCapabilityTests(unittest.TestCase):
         if not bash: self.skipTest('POSIX shell unavailable')
         script = rooted.CUSTOMIZE_SH.replace('/data/adb/modules/pgrazor/', './live/')
         prefix = 'MODPATH=./staged; ui_print(){ :; }; abort(){ echo "$1"; exit 1; }; '
-        with tempfile.TemporaryDirectory(prefix='pgrazor-toggle-install-') as tmp:
+        with tempfile.TemporaryDirectory(prefix='pgs-toggle-install-') as tmp:
             work = Path(tmp)
             live = work / 'live/pgrazor/injection-off'
             staged = work / 'staged/pgrazor/injection-off'

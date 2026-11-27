@@ -18,7 +18,7 @@ class GameRoutesJavaTests(unittest.TestCase):
         if not candidates:
             self.skipTest('Android SDK JSON sources unavailable')
         compiler, runtime = java_tools()
-        with tempfile.TemporaryDirectory(prefix='pgrazor-game-routes-') as directory:
+        with tempfile.TemporaryDirectory(prefix='pgs-game-routes-') as directory:
             work = Path(directory)
             sources = []
             for original in candidates[0].glob('*.java'):

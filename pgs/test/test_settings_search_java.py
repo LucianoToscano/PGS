@@ -39,7 +39,7 @@ class SettingsSearchTests(unittest.TestCase):
         java = str(home / ('java' + suffix)) if (home / ('java' + suffix)).is_file() else shutil.which('java')
         if not javac or not java:
             self.skipTest('JDK required')
-        with tempfile.TemporaryDirectory(prefix='pgrazor-settings-search-') as work:
+        with tempfile.TemporaryDirectory(prefix='pgs-settings-search-') as work:
             fixture = Path(work) / 'I18n.java'
             fixture.write_text(I18N_FIXTURE, encoding='utf-8')
             subprocess.run(

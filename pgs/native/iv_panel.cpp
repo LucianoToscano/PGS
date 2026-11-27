@@ -38,7 +38,7 @@ template<class T>T unbox(void *o){require(o,"boxed value");T v{};auto p=fn<void*
 void *managed_string(const std::string &s){void *v=fn<void*(*)(const char*)>(boot.runtime.string_new)(s.c_str());require(v,"string");return v;}
 std::string class_name(void *o){return fn<const char*(*)(void*)>(exp("class_get_name"))(klass(o));}
 void *class_of(const char *ns,const char *name){
- const auto *api=static_cast<const PgrMetaApi*>(pgrazor_runtime_metadata_api(1));require(api,"metadata API");
+ const auto *api=static_cast<const PgrMetaApi*>(pgs_runtime_metadata_api(1));require(api,"metadata API");
  PgrMetaClassQuery q{};q.version=1;q.size=sizeof(q);q.name_space=ns;q.name=name;q.canonical_match=PGR_MD_MATCH_EXACT;
  PgrMetaClassResult r{};require(api->resolve_class(&q,&r)==0,name);return const_cast<void*>(r.klass);
 }
@@ -61,7 +61,7 @@ void set_vector(void *o,const char *setter,float x,float y){float v[2]={x,y};voi
 void set_bool(void *o,const char *setter,bool value){void *a[]={&value};call(o,setter,1,a);}
 void set_color(void *graphic,float r,float g,float b,float a){float c[4]={r,g,b,a};void *args[]={c};call(graphic,"set_color",1,args);}
 
-const PgrRuntimeTransportApi *transport(){return static_cast<const PgrRuntimeTransportApi*>(pgrazor_runtime_transport_api(1));}
+const PgrRuntimeTransportApi *transport(){return static_cast<const PgrRuntimeTransportApi*>(pgs_runtime_transport_api(1));}
 void status(const char *phase,const std::string &message){
  auto tr=transport();if(!tr)return;
  const std::string json=std::string("{\"phase\":\"")+phase+"\",\"message\":\""+message+"\"}";
@@ -70,7 +70,7 @@ void status(const char *phase,const std::string &message){
 
 void init(){
  if(ready)return;
- auto api=static_cast<const PgrBootApi*>(pgrazor_runtime_bootstrap_api(1));boot.version=1;boot.size=sizeof(boot);
+ auto api=static_cast<const PgrBootApi*>(pgs_runtime_bootstrap_api(1));boot.version=1;boot.size=sizeof(boot);
  require(api&&api->snapshot(&boot)==0&&boot.handle,"Runtime unavailable");
  instantiate=overload("UnityEngine","Object","Instantiate","UnityEngine.Object","UnityEngine.Transform");
  get_component=overload("UnityEngine","Component","GetComponent","System.Type");

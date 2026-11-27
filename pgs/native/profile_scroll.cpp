@@ -50,10 +50,10 @@ bool method(const PgrMetaApi *api,const void *owner,const char *name,const char 
 }
 void pgr_profile_scroll_install(){
  if(installed)return;
- const auto *bootstrap=static_cast<const PgrBootApi*>(pgrazor_runtime_bootstrap_api(1));
+ const auto *bootstrap=static_cast<const PgrBootApi*>(pgs_runtime_bootstrap_api(1));
  PgrBootBinding b{};b.version=1;b.size=sizeof(b);
  if(!bootstrap||bootstrap->snapshot(&b)!=0)return;
- const auto *api=static_cast<const PgrMetaApi*>(pgrazor_runtime_metadata_api(1));
+ const auto *api=static_cast<const PgrMetaApi*>(pgs_runtime_metadata_api(1));
  if(!api)return;
  installed=true; // Optional: unsupported metadata must not disable gameplay.
  const void *page=resolve(api,"Niantic.Holoholo.UI","PlayerProfilePage");

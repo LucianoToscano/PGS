@@ -31,7 +31,7 @@ pgs_items_sample_v1 old_items{};pgs_buddy_sample_v1 old_buddy{};pgs_incubation_s
 const pgs_items_api_v1 *items(){return static_cast<const pgs_items_api_v1*>(pgs_items_api(1));}
 const pgs_buddy_api_v1 *buddy(){return static_cast<const pgs_buddy_api_v1*>(pgs_buddy_feeding_api(1));}
 const pgs_incubation_api_v1 *inc(){return static_cast<const pgs_incubation_api_v1*>(pgs_incubation_api(1));}
-const PgrRuntimeTransportApi *transport(){return static_cast<const PgrRuntimeTransportApi*>(pgrazor_runtime_transport_api(1));}
+const PgrRuntimeTransportApi *transport(){return static_cast<const PgrRuntimeTransportApi*>(pgs_runtime_transport_api(1));}
 void *h(unsigned n){return const_cast<void*>(md.opt_handles[n]);}void *c(unsigned n){return const_cast<void*>(md.opt_classes[n]);}
 void *core_m(unsigned n){return const_cast<void*>(md.methods[n]);}void *core_c(unsigned n){return const_cast<void*>(md.classes[n]);}
 bool available(unsigned n){return md.optional[n]==PGR_SHARED_OPT_AVAILABLE;}
@@ -53,7 +53,7 @@ void feature_ready(uint32_t bit,const char *kind,uint32_t op,int rc){if(!rc)caps
 }
 bool attached(uint64_t tid){return tid&&tid==uint64_t(gettid())&&rt.boot.thread_current&&reinterpret_cast<void*(*)()>(rt.boot.thread_current)();}
 int bind_default(){
- const auto *sh=static_cast<const PgrSharedHostApi*>(pgrazor_shared_host_api(1));const auto *metadata=sh?sh->metadata():nullptr;if(!metadata)return 1;
+ const auto *sh=static_cast<const PgrSharedHostApi*>(pgs_shared_host_api(1));const auto *metadata=sh?sh->metadata():nullptr;if(!metadata)return 1;
  PgrBootBinding b{};const auto *boot=static_cast<const PgrBootApi*>(pgrazor_runtime_bootstrap_api(1));if(!boot||boot->snapshot(&b))return 1;
  md=*metadata;rt.boot=b.runtime;auto exp=[&](const char *name){return dlsym(b.handle,(std::string("il2cpp_")+name).c_str());};
  rt.string_length=exp("string_length");rt.object_get_virtual_method=exp("object_get_virtual_method");rt.class_get_type=b.meta.class_get_type;
@@ -186,7 +186,7 @@ bool observation_allowed(){uint64_t tid=gettid();if(stopping.load()||tid!=owner.
  // scheduler has already proven this attached Unity owner; require its live
  // generation, not an ExecuteTasks frame currently on the stack. Leaf leases
  // still gate actions and the scheduled tick performs opening/sending.
- auto api=static_cast<const PgrUnitySchedulerApi3*>(pgrazor_unity_scheduler_api(3));
+ auto api=static_cast<const PgrUnitySchedulerApi3*>(pgs_unity_scheduler_api(3));
  if(!api||!api->snapshot||!api->valid)return false;
  PgrUnitySchedulerSnapshot s{};
  return api->snapshot(&s)==0&&s.installed&&!s.poisoned&&s.owner_tid==int64_t(tid)&&s.generation&&api->valid(s.generation)==1;}
@@ -321,7 +321,7 @@ int stop(){stopping.store(true);{std::lock_guard<std::mutex> lock(policy_lock);d
 int sample(PgrInventoryHostSample *s){if(!s)return -2;refresh_roots();*s={1,sizeof(*s),uint32_t(configured.load()),uint32_t(installed.load()&&!stopping.load()&&caps.load()==63&&faults.load()==0),caps.load(),uint32_t(stopping.load()),roots.load(),faults.load(),owner.load(),ticks.load()};return 0;}
 int next_event(PgrInventoryHostEvent *out){if(!out)return -2;std::lock_guard<std::mutex> lock(event_lock);if(!event_count)return 1;*out={};out->version=1;out->size=sizeof(*out);out->sequence=++event_seq;auto &s=event_queue[event_head];memcpy(out->json,s.c_str(),s.size()+1);s.clear();event_head=(event_head+1)%64;--event_count;return 0;}
 void request_item_poll(){force_poll.store(true);}void *acquire_item_service(){return (caps.load()&PGR_IH_ITEMS)&&!stopping.load()&&owner.load()==uint64_t(gettid())?items()->service_acquire():nullptr;}
-void on_pulse(void*,const PgrUnityPulse *pulse){auto api=static_cast<const PgrUnitySchedulerApi*>(pgrazor_unity_scheduler_api(2));if(pulse&&api&&api->valid(pulse->generation)==1)tick(pulse->tid);}
+void on_pulse(void*,const PgrUnityPulse *pulse){auto api=static_cast<const PgrUnitySchedulerApi*>(pgs_unity_scheduler_api(2));if(pulse&&api&&api->valid(pulse->generation)==1)tick(pulse->tid);}
 bool cleanup_available(){
  if(!configured.load()||!installed.load()||stopping.load()||!(caps.load()&PGR_IH_ITEMS)||(faults.load()&PGR_IH_ITEMS))return false;
  std::lock_guard<std::mutex> lock(policy_lock);

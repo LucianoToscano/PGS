@@ -14,7 +14,7 @@ PgrBootBinding boot{};
 bool ready=false,reported=false;
 uint64_t next_prepare=0;
 void report(const char *json){
- auto tr=static_cast<const PgrRuntimeTransportApi*>(pgrazor_runtime_transport_api(1));
+ auto tr=static_cast<const PgrRuntimeTransportApi*>(pgs_runtime_transport_api(1));
  if(tr&&tr->emit){PgrRuntimeTransportString args[]={{"max-orbs",8},{json,uint32_t(std::strlen(json))}};tr->emit(19,nullptr,0,args,2);}
 }
 void unavailable(){if(!reported){reported=true;report("{\"phase\":\"unavailable\",\"message\":\"Max orb position unavailable\"}");}}
@@ -29,7 +29,7 @@ struct Root {
 };
 void *klass(void *o){require(o);return fn<void*(*)(void*)>(boot.runtime.object_get_class)(o);}
 void *cls(const char *ns,const char *name){
- auto api=static_cast<const PgrMetaApi*>(pgrazor_runtime_metadata_api(1));require(api);
+ auto api=static_cast<const PgrMetaApi*>(pgs_runtime_metadata_api(1));require(api);
  PgrMetaClassQuery q{};q.version=1;q.size=sizeof(q);q.name_space=ns;q.name=name;q.canonical_match=PGR_MD_MATCH_EXACT;
  PgrMetaClassResult r{};require(api->resolve_class(&q,&r)==0&&r.klass);return const_cast<void*>(r.klass);
 }
@@ -50,7 +50,7 @@ struct Binding {
 } b;
 void prepare(void *dodge){
  if(ready)return;
- auto api=static_cast<const PgrBootApi*>(pgrazor_runtime_bootstrap_api(1));boot.version=1;boot.size=sizeof(boot);require(api&&api->snapshot(&boot)==0);
+ auto api=static_cast<const PgrBootApi*>(pgs_runtime_bootstrap_api(1));boot.version=1;boot.size=sizeof(boot);require(api&&api->snapshot(&boot)==0);
  Binding next;
  next.state_class=cls("Niantic.Holoholo.VNext","BattleState");
  next.field_class=cls("Niantic.Holoholo.VNext","BattleFieldActorState");

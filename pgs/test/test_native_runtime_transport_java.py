@@ -118,7 +118,7 @@ public final class Control {
 class NativeRuntimeTransportJavaTests(unittest.TestCase):
     def test_transport(self):
         compiler, runtime = java_tools()
-        with tempfile.TemporaryDirectory(prefix='pgrazor-native-transport-') as directory:
+        with tempfile.TemporaryDirectory(prefix='pgs-native-transport-') as directory:
             work = Path(directory)
             (work / 'Control.java').write_text(control_shell(), encoding='utf-8')
             sources = [

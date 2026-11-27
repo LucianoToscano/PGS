@@ -154,7 +154,7 @@ uint64_t g_badge_scan=0;
 
 void *klass(void *o) { require(o, "null object"); return fn<void *(*)(void *)>(boot.runtime.object_get_class)(o); }
 void *cls(const char *ns, const char *name) {
-    const auto *api = static_cast<const PgrMetaApi *>(pgrazor_runtime_metadata_api(1));
+    const auto *api = static_cast<const PgrMetaApi *>(pgs_runtime_metadata_api(1));
     require(api && api->resolve_class, "metadata API");
     PgrMetaClassQuery q{}; q.version = 1; q.size = sizeof(q); q.name_space = ns; q.name = name; q.canonical_match = PGR_MD_MATCH_EXACT;
     PgrMetaClassResult out{}; require(api->resolve_class(&q, &out) == 0, name);
@@ -285,7 +285,7 @@ uint64_t player_id_hash() {
 }
 
 // --- Status surface (Android log tag + existing battle-status transport action) ---
-const PgrRuntimeTransportApi *transport() { return static_cast<const PgrRuntimeTransportApi *>(pgrazor_runtime_transport_api(1)); }
+const PgrRuntimeTransportApi *transport() { return static_cast<const PgrRuntimeTransportApi *>(pgs_runtime_transport_api(1)); }
 void status(const char *msg) {
     if (g_last_status == msg) return;
     g_last_status = msg;
@@ -454,7 +454,7 @@ struct Bind { Slot slot; void *repl; };
 
 void *validate_hook(void *k, const char *name, const char *ret, int pcount,
                     const char *p0, const char *p1, uint64_t rva, const uint8_t *bytes, size_t len, void **code_out) {
-    const auto *api = static_cast<const PgrMetaApi *>(pgrazor_runtime_metadata_api(1));
+    const auto *api = static_cast<const PgrMetaApi *>(pgs_runtime_metadata_api(1));
     require(api && api->validate_method, "metadata validate");
     PgrMetaMethodQuery q{}; q.version = 1; q.size = sizeof(q); q.owner = k; q.name = name;
     q.return_type = ret; q.return_match = PGR_MD_MATCH_EXACT;
@@ -469,7 +469,7 @@ void *validate_hook(void *k, const char *name, const char *ret, int pcount,
 }
 
 bool install() {
-    const auto *boot_api = static_cast<const PgrBootApi *>(pgrazor_runtime_bootstrap_api(1));
+    const auto *boot_api = static_cast<const PgrBootApi *>(pgs_runtime_bootstrap_api(1));
     require(boot_api && boot_api->snapshot && boot_api->snapshot(&boot) == 0 && boot.module_base, "runtime bootstrap");
 
     g_approach_class = cls("Niantic.Holoholo.Gym.Approach", "GymApproachGuiController");

@@ -11,7 +11,7 @@ ROOT = Path(__file__).resolve().parents[1]
 class AccountCommandTests(unittest.TestCase):
     def test_process_lifetime_commands(self):
         compiler, runtime = java_tools()
-        with tempfile.TemporaryDirectory(prefix='pgrazor-account-command-') as directory:
+        with tempfile.TemporaryDirectory(prefix='pgs-account-command-') as directory:
             sources = [ROOT / 'src/dev/pgs/AccountCommandState.java',
                        ROOT / 'test/AccountCommandStateTest.java']
             result = subprocess.run([str(compiler), '-encoding', 'UTF-8', '-d', directory,

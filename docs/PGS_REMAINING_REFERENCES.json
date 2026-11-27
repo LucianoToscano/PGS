@@ -5,15 +5,14 @@
   "changed_files": null,
   "added_files": null,
   "previous_occurrences": null,
-  "remaining_files": 93,
-  "remaining_occurrences": 609,
+  "remaining_files": 74,
+  "remaining_occurrences": 499,
   "remaining_by_category": {
     "documentation": 207,
     "legal": 3,
-    "native": 8,
-    "other": 66,
+    "other": 16,
     "release_history": 103,
-    "tests": 217,
+    "tests": 165,
     "workflows": 5
   },
   "files": [
@@ -25,7 +24,7 @@
     {
       "path": ".gitignore",
       "category": "other",
-      "occurrences": 2
+      "occurrences": 1
     },
     {
       "path": "LICENSE",
@@ -218,76 +217,6 @@
       "occurrences": 2
     },
     {
-      "path": "pgs/art/CMakeLists.txt",
-      "category": "native",
-      "occurrences": 2
-    },
-    {
-      "path": "pgs/art_build.py",
-      "category": "other",
-      "occurrences": 3
-    },
-    {
-      "path": "pgs/build.py",
-      "category": "other",
-      "occurrences": 5
-    },
-    {
-      "path": "pgs/cleanup.ps1",
-      "category": "other",
-      "occurrences": 1
-    },
-    {
-      "path": "pgs/native/pgs.map",
-      "category": "native",
-      "occurrences": 1
-    },
-    {
-      "path": "pgs/native/pgs_native.cpp",
-      "category": "native",
-      "occurrences": 1
-    },
-    {
-      "path": "pgs/native/pgs_native_api.h",
-      "category": "native",
-      "occurrences": 2
-    },
-    {
-      "path": "pgs/native_build.py",
-      "category": "other",
-      "occurrences": 4
-    },
-    {
-      "path": "pgs/nonroot.py",
-      "category": "other",
-      "occurrences": 6
-    },
-    {
-      "path": "pgs/pgs.cmd",
-      "category": "other",
-      "occurrences": 1
-    },
-    {
-      "path": "pgs/pgs_candidate.py",
-      "category": "other",
-      "occurrences": 6
-    },
-    {
-      "path": "pgs/pgs_rebrand.py",
-      "category": "other",
-      "occurrences": 7
-    },
-    {
-      "path": "pgs/root-installer/AndroidManifest.xml",
-      "category": "other",
-      "occurrences": 1
-    },
-    {
-      "path": "pgs/rooted.py",
-      "category": "other",
-      "occurrences": 7
-    },
-    {
       "path": "pgs/test/AccountProfileDataTest.java",
       "category": "tests",
       "occurrences": 8
@@ -350,7 +279,7 @@
     {
       "path": "pgs/test/test_compiled_gameplay.py",
       "category": "tests",
-      "occurrences": 9
+      "occurrences": 7
     },
     {
       "path": "pgs/test/test_discord_release.py",
@@ -370,12 +299,12 @@
     {
       "path": "pgs/test/test_native_build.py",
       "category": "tests",
-      "occurrences": 9
+      "occurrences": 6
     },
     {
       "path": "pgs/test/test_native_prerequisites.py",
       "category": "tests",
-      "occurrences": 3
+      "occurrences": 1
     },
     {
       "path": "pgs/test/test_packaging.py",
@@ -385,12 +314,7 @@
     {
       "path": "pgs/test/test_pgs_build_options.py",
       "category": "tests",
-      "occurrences": 14
-    },
-    {
-      "path": "pgs/test/test_pgs_candidate.py",
-      "category": "tests",
-      "occurrences": 4
+      "occurrences": 1
     },
     {
       "path": "pgs/test/test_pgs_license.py",
@@ -405,7 +329,7 @@
     {
       "path": "pgs/test/test_pgs_native_identity.py",
       "category": "tests",
-      "occurrences": 34
+      "occurrences": 27
     },
     {
       "path": "pgs/test/test_pgs_project_layout.py",
@@ -430,12 +354,12 @@
     {
       "path": "pgs/test/test_pgs_runtime_identity.py",
       "category": "tests",
-      "occurrences": 15
+      "occurrences": 7
     },
     {
       "path": "pgs/test/test_release_bundle.py",
       "category": "tests",
-      "occurrences": 6
+      "occurrences": 1
     },
     {
       "path": "pgs/test/test_rooted_cleanup.py",
@@ -448,24 +372,9 @@
       "occurrences": 10
     },
     {
-      "path": "pgs/test/test_rooted_packaging.py",
-      "category": "tests",
-      "occurrences": 8
-    },
-    {
       "path": "pgs/test/test_source_bundle.py",
       "category": "tests",
       "occurrences": 2
-    },
-    {
-      "path": "pgs/zygisk/loader.cpp",
-      "category": "native",
-      "occurrences": 2
-    },
-    {
-      "path": "tools/dex_bridge/BridgeRewriter.java",
-      "category": "other",
-      "occurrences": 1
     },
     {
       "path": "tools/pgs_branding_audit.py",
@@ -476,11 +385,6 @@
       "path": "tools/pgs_reference_inventory.py",
       "category": "other",
       "occurrences": 1
-    },
-    {
-      "path": "tools/verify_release.py",
-      "category": "other",
-      "occurrences": 7
     }
   ],
   "tracked_name_matches": [],

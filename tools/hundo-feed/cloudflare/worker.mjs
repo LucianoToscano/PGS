@@ -79,7 +79,10 @@ async function collect(source, now) {
   if (iflow) url.search=new URLSearchParams(source.category==="raids"
     ? {lat:"40.758",lon:"-73.9855",radius_km:"2",layers:"raids",limit:"200"} : {page:"1"});
   if (city) url.search=new URLSearchParams({mons:Array.from({length:1025},(_,i)=>i+1).join(","),minIV:"100",since:"0",time:String(now)});
-  const response = await fetch(url,{redirect:"error",signal:AbortSignal.timeout(12000),
+  const controller=new AbortController();
+  const timer=setTimeout(()=>controller.abort(),12000);
+  try {
+  const response = await fetch(url,{redirect:"error",signal:controller.signal,
     headers:{Accept:"application/json","User-Agent":"PGS-Hundo-Feed/1"}});
   if (!response.ok) {
     const error = Error("upstream_http");
@@ -100,6 +103,7 @@ async function collect(source, now) {
   const body=JSON.parse(data+decoder.decode());
   if (iflow) return iflowRows(body,source.category,now);
   return city ? cityRows(body,now) : rows(body,now);
+  } finally {clearTimeout(timer);}
 }
 
 async function refresh(env) {
@@ -117,7 +121,9 @@ async function refresh(env) {
     catch(error) {
       console.warn("PGS upstream unavailable",source.name);
       const failures=Math.min((old?.failures||0)+1,8);
-      return {...old,...base,status:"offline",httpStatus:error.httpStatus || null,failures,
+      return {...old,...base,status:"offline",httpStatus:error.httpStatus || null,
+        reason:["invalid_feed","source_url","city_schema","iflow_schema","upstream_http","size"].includes(error.message)
+          ? error.message : (error.name==="SyntaxError"?"invalid_json":error.name==="AbortError"?"timeout":"runtime_"+String(error.name).slice(0,24)),failures,
         next:Math.max(base.next,now+interval*1000*2**failures,Number.isFinite(error.retryAt)?error.retryAt:0)};
     }
   }));

@@ -5,8 +5,8 @@
 
 #include <jni.h>
 
-#include "pgrazor_native_api.h"
-#include "pgrazor_internal.h"
+#include "pgs_native_api.h"
+#include "pgs_internal.h"
 #include "runtime_transport_jni.h"
 #include "runtime_bootstrap.h"
 #include "runtime_host.h"
@@ -14,11 +14,11 @@
 namespace {
 
 jint JNICALL jni_api_version(JNIEnv *, jclass) {
-    return static_cast<jint>(PGRAZOR_NATIVE_API_VERSION);
+    return static_cast<jint>(PGS_NATIVE_API_VERSION);
 }
 
 jint JNICALL jni_policy_selfcheck(JNIEnv *, jclass) {
-    return static_cast<jint>(pgrazor_policy_selfcheck());
+    return static_cast<jint>(pgs_policy_selfcheck());
 }
 
 jlong JNICALL jni_bootstrap_probe(JNIEnv *,jclass){

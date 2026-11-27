@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.22)
-project(pgrazor_core LANGUAGES C CXX)
+project(pgs_core LANGUAGES C CXX)
 
 # -----------------------------------------------------------------------------
 # Dobby (static, verified by native_build.py at
@@ -62,8 +62,8 @@ list(FILTER dobby_static_sources EXCLUDE REGEX "code-patch-tool-posix\\.cc$")
 set_property(TARGET dobby_static PROPERTY SOURCES "${dobby_static_sources}")
 target_sources(dobby_static PRIVATE "${CMAKE_CURRENT_BINARY_DIR}/dobby-code-patch-posix.cc")
 
-add_library(pgrazor_core SHARED
-  pgrazor_native.cpp
+add_library(pgs_core SHARED
+  pgs_native.cpp
   hook_engine.cpp
   throws.cpp
   adventure_sync.cpp
@@ -172,38 +172,39 @@ add_library(pgrazor_core SHARED
   gym_repeat.cpp
   jni_core.cpp)
 
-target_sources(pgrazor_core PRIVATE events/event_collector.cpp)
+target_sources(pgs_core PRIVATE events/event_collector.cpp)
 set_source_files_properties(events/event_collector.cpp evolve_transfer.cpp PROPERTIES COMPILE_OPTIONS "-fexceptions")
 set_source_files_properties(auto_raid.cpp gift_batch.cpp research.cpp session_stats.cpp route_gift.cpp storage_iv.cpp iv_panel.cpp ar_values.cpp catch_chance.cpp cutscene_skip.cpp rocket_swap.cpp smart_battle.cpp max_orbs.cpp heal.cpp auto_boost.cpp auto_rocket.cpp shundo.cpp shiny_scan.cpp battery.cpp remote_gym.cpp incense_guard.cpp batch_evolution.cpp gym_runtime.cpp gym_repeat.cpp buddy_emotion.cpp PROPERTIES COMPILE_OPTIONS "-fexceptions")
 
-target_include_directories(pgrazor_core PRIVATE
+target_include_directories(pgs_core PRIVATE
   ${CMAKE_CURRENT_SOURCE_DIR}
   ${DOBBY_SOURCE_DIR}/include)
 
-target_link_libraries(pgrazor_core PRIVATE dobby_static)
+target_link_libraries(pgs_core PRIVATE dobby_static)
 
 # These observers hold pinned arguments across the game's original callback.
 # Unwind their native roots if the original propagates an IL2CPP exception.
 set_source_files_properties(transfer_observers.cpp unity_scheduler.cpp catch_wait.cpp shared_host.cpp catch_canvas.cpp inventory_host.cpp encounter_host.cpp combat_host.cpp camera_host.cpp interaction_host.cpp catch_observers.cpp spin_camera.cpp quick_spin.cpp PROPERTIES COMPILE_OPTIONS "-fexceptions")
-target_compile_options(pgrazor_core PRIVATE
+target_compile_options(pgs_core PRIVATE
   -fvisibility=hidden
   -fvisibility-inlines-hidden
   -fno-rtti
   -fno-exceptions
   -Wall -Wextra)
 
-set(PGRAZOR_VERSION_SCRIPT "${CMAKE_CURRENT_SOURCE_DIR}/pgrazor.map")
-target_link_options(pgrazor_core PRIVATE
-  "-Wl,--version-script=${PGRAZOR_VERSION_SCRIPT}" # export only JNI_OnLoad + pgrazor_native_api
+set(PGS_VERSION_SCRIPT "${CMAKE_CURRENT_SOURCE_DIR}/pgs.map")
+target_link_options(pgs_core PRIVATE
+  "-Wl,--version-script=${PGS_VERSION_SCRIPT}" # export only JNI_OnLoad + pgrazor_native_api
   "-Wl,--exclude-libs,ALL"                         # keep Dobby's static symbols unexported
   "-Wl,-z,defs"                                    # no undefined symbols at link time
   "-Wl,--gc-sections")
-set_target_properties(pgrazor_core PROPERTIES LINK_DEPENDS "${PGRAZOR_VERSION_SCRIPT}")
+set_target_properties(pgs_core PROPERTIES LINK_DEPENDS "${PGS_VERSION_SCRIPT}")
 
 # Android system log lib (optional; present under the NDK toolchain).
 find_library(ANDROID_LOG_LIB log)
 if(ANDROID_LOG_LIB)
-  target_link_libraries(pgrazor_core PRIVATE ${ANDROID_LOG_LIB})
+  target_link_libraries(pgs_core PRIVATE ${ANDROID_LOG_LIB})
 endif()
 
-set_target_properties(pgrazor_core PROPERTIES OUTPUT_NAME "pgrazor-core")
+# Keep the installed SONAME libpgrazor-core.so until the JNI/bootstrap migration is proven.
+set_target_properties(pgs_core PROPERTIES OUTPUT_NAME "pgrazor-core")

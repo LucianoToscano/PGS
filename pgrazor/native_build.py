@@ -1,6 +1,6 @@
 """Deterministic native build helper for the pilot libpgrazor-core.so.
 
-This module is the pilot entry point for compiling the C++ `pgrazor_core`
+This module is the pilot entry point for compiling the C++ `pgs_core`
 target into a stripped
 ``libpgrazor-core.so`` per ABI. It is opt-in: the coordinator only calls it
 with ``PGRAZOR_NATIVE_PILOT=1`` set. It performs no network access unless a
@@ -37,7 +37,7 @@ DOBBY_SHA256 = 'a08cd9449ed39246e9a2b493a55fcc4f843a8ebe79ecef7747a02180b58b21db
 # Release target settings. CMake defines hidden visibility and PIC on the target.
 API_LEVEL = 28
 ANDROID_STL = 'c++_static'
-TARGET = 'pgrazor_core'
+TARGET = 'pgs_core'
 OUTPUT_SONAME = 'libpgrazor-core.so'
 DEFAULT_ABIS = ('arm64-v8a', 'x86_64')
 
@@ -48,14 +48,22 @@ ELF_MACHINE = {'arm64-v8a': 183, 'x86_64': 62}
 EXPECTED_EXPORTS = frozenset({'JNI_OnLoad', 'pgrazor_native_api'})
 
 # Download opt-in. Mirror of runtime_assets' explicit-network contract.
-_DOWNLOAD_ENV = 'PGRAZOR_NATIVE_DOWNLOAD'
-_PILOT_ENV = 'PGRAZOR_NATIVE_PILOT'
+_DOWNLOAD_ENV = 'PGS_NATIVE_DOWNLOAD'
+_LEGACY_DOWNLOAD_ENV = 'PGRAZOR_NATIVE_DOWNLOAD'
+_PILOT_ENV = 'PGS_NATIVE_PILOT'
+_LEGACY_PILOT_ENV = 'PGRAZOR_NATIVE_PILOT'
 _MAX_EXTRACT_BYTES = 500_000_000
 
 
 # --------------------------------------------------------------------------- #
 # Hashing helpers
 # --------------------------------------------------------------------------- #
+def _enabled(primary, legacy, env=None):
+    """Enable a PGS build option while accepting the previously configured alias."""
+    values = os.environ if env is None else env
+    return values.get(primary) == '1' or values.get(legacy) == '1'
+
+
 def sha256(path):
     with open(path, 'rb') as stream:
         return hashlib.file_digest(stream, 'sha256').hexdigest()
@@ -216,7 +224,7 @@ def ensure_dobby(root, download=False):
     """Return the extracted pinned Dobby source directory.
 
     Uses a SHA-verified archive cached under build/native/vendor. Downloads
-    only when ``download`` is true (``--download`` / PGRAZOR_NATIVE_DOWNLOAD=1).
+    only when ``download`` is true (``--download`` / PGS_NATIVE_DOWNLOAD=1).
     """
     vendor = _vendor_dir(root)
     vendor.mkdir(parents=True, exist_ok=True)
@@ -228,7 +236,7 @@ def ensure_dobby(root, download=False):
         if not download:
             raise RuntimeError(
                 'Pinned Dobby archive is missing: ' + str(archive) + '. Re-run '
-                'with --download (or PGRAZOR_NATIVE_DOWNLOAD=1) once, or supply '
+                'with --download (or PGS_NATIVE_DOWNLOAD=1) once, or supply '
                 'the verified cache. No download attempted.')
         _download_pinned(DOBBY_URL, archive)
 
@@ -262,7 +270,7 @@ def _download_pinned(url, destination):
     parts = urllib.parse.urlsplit(url)
     if parts.scheme != 'https':
         raise RuntimeError('Pinned downloads require HTTPS: ' + url)
-    request = urllib.request.Request(url, headers={'User-Agent': 'PGRazorNativeBuild/0.1'})
+    request = urllib.request.Request(url, headers={'User-Agent': 'PGSNativeBuild/0.1'})
     partial = destination.with_suffix(destination.suffix + '.partial')
     print('Downloading pinned Dobby archive:', url, flush=True)
     with urllib.request.urlopen(request, timeout=60) as source, partial.open('wb') as writer:
@@ -494,25 +502,25 @@ def _locate_built_library(build_dir):
     if not matches:
         raise RuntimeError(
             'CMake build produced no ' + OUTPUT_SONAME + ' under ' + str(build_dir) +
-            '. The pgrazor_core target must emit OUTPUT_NAME pgrazor-core.')
+            '. The pgs_core target must emit OUTPUT_NAME pgrazor-core.')
     return matches[0]
 
 
 def build_all(root, abis=DEFAULT_ABIS, download=False):
     """Build every requested ABI; return {abi: Path to stripped .so}.
 
-    Opt-in: requires PGRAZOR_NATIVE_PILOT=1. Shared NDK/CMake/Ninja/Dobby
+    Opt-in: requires PGS_NATIVE_PILOT=1 (old environment variable is accepted). Shared NDK/CMake/Ninja/Dobby
     resolution is done once and reused across ABIs.
     """
-    if os.environ.get(_PILOT_ENV) != '1':
+    if not _enabled(_PILOT_ENV, _LEGACY_PILOT_ENV):
         raise RuntimeError(
-            'Native pilot build is opt-in. Set ' + _PILOT_ENV + '=1 to enable it.')
+            'Native pilot build is opt-in. Set ' + _PILOT_ENV + '=1 (legacy ' + _LEGACY_PILOT_ENV + '=1 also accepted).')
     root = Path(root).resolve()
     schema_generator=root.parent/'tools/game_update.py'
     if not schema_generator.is_file():
         raise RuntimeError('Missing game binding profile generator')
     subprocess.run([sys.executable,'-B',str(schema_generator),'generate','--check'],check=True,timeout=30)
-    download = download or os.environ.get(_DOWNLOAD_ENV) == '1'
+    download = download or _enabled(_DOWNLOAD_ENV, _LEGACY_DOWNLOAD_ENV)
     abis = list(dict.fromkeys(abis))
     if not abis:
         raise RuntimeError('No ABIs requested')
@@ -534,7 +542,7 @@ def build_all(root, abis=DEFAULT_ABIS, download=False):
 def main(argv=None):
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--root', type=Path, default=Path(__file__).resolve().parent,
-                        help='pgrazor project root (default: this file\'s directory)')
+                        help='PGS project source root (default: this file\'s directory)')
     parser.add_argument('--abi', action='append', dest='abis', choices=sorted(ELF_MACHINE),
                         help='ABI to build; repeat for several (default: all release ABIs)')
     parser.add_argument('--download', action='store_true',

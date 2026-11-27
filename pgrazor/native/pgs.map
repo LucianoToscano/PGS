@@ -1,0 +1,8 @@
+/* PGS linker export policy: retain legacy factory until JNI/ABI migration. */
+{
+  global:
+    JNI_OnLoad;
+    pgrazor_native_api;
+  local:
+    *;
+};

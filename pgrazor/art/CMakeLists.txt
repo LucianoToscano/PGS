@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.22)
-project(pgrazor_art LANGUAGES C CXX)
+project(pgs_art LANGUAGES C CXX)
 set(CMAKE_POLICY_VERSION_MINIMUM 3.5 CACHE STRING "Pinned vendor compatibility" FORCE)
 set(CMAKE_C_STANDARD 11)
 set(CMAKE_CXX_STANDARD 23)
@@ -106,24 +106,29 @@ list(FILTER dobby_art_sources EXCLUDE REGEX "InterceptRouting\\.cpp$")
 set_property(TARGET dobby_static PROPERTY SOURCES "${dobby_art_sources}")
 target_sources(dobby_static PRIVATE "${CMAKE_CURRENT_BINARY_DIR}/dobby-art-routing.cc")
 set(XZ_LIB "${XZ_SOURCE_DIR}/linux/lib/xz")
-add_library(pgrazor_xz STATIC
+add_library(pgs_xz STATIC
   "${XZ_LIB}/xz_crc32.c" "${XZ_LIB}/xz_crc64.c" "${XZ_LIB}/xz_sha256.c"
   "${XZ_LIB}/xz_dec_stream.c" "${XZ_LIB}/xz_dec_lzma2.c" "${XZ_LIB}/xz_dec_bcj.c")
-target_include_directories(pgrazor_xz PUBLIC "${XZ_SOURCE_DIR}/userspace" "${XZ_SOURCE_DIR}/linux/include/linux")
-target_compile_definitions(pgrazor_xz PUBLIC XZ_USE_CRC64 XZ_USE_SHA256 XZ_DEC_X86 XZ_DEC_ARM XZ_DEC_ARMTHUMB XZ_DEC_ARM64)
-add_library(pgrazor_art SHARED art_symbols.cpp java_hooks.cpp)
-set_target_properties(pgrazor_art PROPERTIES OUTPUT_NAME "pgrazor-art")
-target_compile_options(pgrazor_art PRIVATE -Wall -Wextra -fexceptions -frtti)
-target_link_libraries(pgrazor_art PRIVATE lsplant_static dobby_static pgrazor_xz log dl z)
-target_link_options(pgrazor_art PRIVATE
-  "-Wl,--version-script=${CMAKE_CURRENT_SOURCE_DIR}/pgrazor-art.map"
-  "-Wl,--exclude-libs,ALL" "-Wl,-z,defs" "-Wl,-Map,${CMAKE_BINARY_DIR}/pgrazor-art.link.map")
-set_property(TARGET pgrazor_art APPEND PROPERTY LINK_DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/pgrazor-art.map")
-option(PGRAZOR_ART_CHAIN_TEST "Build standalone ARM64 hook chaining regression" OFF)
-if(PGRAZOR_ART_CHAIN_TEST)
+target_include_directories(pgs_xz PUBLIC "${XZ_SOURCE_DIR}/userspace" "${XZ_SOURCE_DIR}/linux/include/linux")
+target_compile_definitions(pgs_xz PUBLIC XZ_USE_CRC64 XZ_USE_SHA256 XZ_DEC_X86 XZ_DEC_ARM XZ_DEC_ARMTHUMB XZ_DEC_ARM64)
+add_library(pgs_art SHARED art_symbols.cpp java_hooks.cpp)
+# Preserve libpgrazor-art.so while Android loaders still use this filename.
+set_target_properties(pgs_art PROPERTIES OUTPUT_NAME "pgrazor-art")
+target_compile_options(pgs_art PRIVATE -Wall -Wextra -fexceptions -frtti)
+target_link_libraries(pgs_art PRIVATE lsplant_static dobby_static pgs_xz log dl z)
+target_link_options(pgs_art PRIVATE
+  "-Wl,--version-script=${CMAKE_CURRENT_SOURCE_DIR}/pgs-art.map"
+  "-Wl,--exclude-libs,ALL" "-Wl,-z,defs" "-Wl,-Map,${CMAKE_BINARY_DIR}/pgs-art.link.map")
+set_property(TARGET pgs_art APPEND PROPERTY LINK_DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/pgs-art.map")
+# New PGS switch; preserve old CMake command-line flag for build compatibility.
+if(DEFINED PGRAZOR_ART_CHAIN_TEST AND NOT DEFINED PGS_ART_CHAIN_TEST)
+  set(PGS_ART_CHAIN_TEST "${PGRAZOR_ART_CHAIN_TEST}" CACHE BOOL "ART chain compatibility" FORCE)
+endif()
+option(PGS_ART_CHAIN_TEST "Build standalone ARM64 hook chaining regression" OFF)
+if(PGS_ART_CHAIN_TEST)
   if(NOT ANDROID_ABI STREQUAL "arm64-v8a")
     message(FATAL_ERROR "ART chaining regression requires arm64-v8a")
   endif()
-  add_executable(pgrazor_art_chain_test tests/hook_chain_test.cpp)
-  target_link_libraries(pgrazor_art_chain_test PRIVATE dobby_static log dl)
+  add_executable(pgs_art_chain_test tests/hook_chain_test.cpp)
+  target_link_libraries(pgs_art_chain_test PRIVATE dobby_static log dl)
 endif()

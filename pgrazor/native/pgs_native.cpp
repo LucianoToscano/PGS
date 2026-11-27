@@ -7,8 +7,8 @@
 // of 80 only while an enabled+allowed policy window with a valid monotonic deadline is
 // live. JS still performs its metadata validation before calling install(address).
 
-#include "pgrazor_native_api.h"
-#include "pgrazor_internal.h"
+#include "pgs_native_api.h"
+#include "pgs_internal.h"
 
 #include <atomic>
 #include <cmath>
@@ -228,7 +228,7 @@ int api_update(int enabled, int allowed, uint64_t lease_ms) {
     return PGRAZOR_OK;
 }
 
-int api_sample(pgrazor_spawn_snapshot *out) {
+int api_sample(pgs_spawn_snapshot *out) {
     if (out == nullptr) return PGRAZOR_ERR_NULL_ARG;
     out->original = g_last_original.load(std::memory_order_relaxed);
     out->effective = g_last_effective.load(std::memory_order_relaxed);
@@ -295,9 +295,9 @@ int api_selftest() {
 }
 
 // Ordered, read-only table advertised by pgrazor_native_api(). Never reordered.
-const pgrazor_native_api_v1 g_api = {
-    PGRAZOR_NATIVE_API_VERSION,
-    static_cast<uint32_t>(sizeof(pgrazor_native_api_v1)),
+const pgs_native_api_v1 g_api = {
+    PGS_NATIVE_API_VERSION,
+    static_cast<uint32_t>(sizeof(pgs_native_api_v1)),
     &api_install,
     &api_update,
     &api_sample,
@@ -381,23 +381,23 @@ const void *query_feature(uint32_t id, uint32_t version) {
     }
 }
 
-const pgrazor_native_api_v2 g_api_v2 = {
-    2, static_cast<uint32_t>(sizeof(pgrazor_native_api_v2)),
+const pgs_native_api_v2 g_api_v2 = {
+    2, static_cast<uint32_t>(sizeof(pgs_native_api_v2)),
     &api_install, &api_update, &api_sample, &api_selftest, &query_feature,
 };
-static_assert(sizeof(pgrazor_native_api_v1) == 40, "v1 ABI");
-static_assert(sizeof(pgrazor_native_api_v2) == 48, "v2 ABI");
+static_assert(sizeof(pgs_native_api_v1) == 40, "v1 ABI");
+static_assert(sizeof(pgs_native_api_v2) == 48, "v2 ABI");
 
 } // namespace
 
 // ---------------------------------------------------------------------------
-// Exported symbol (see pgrazor.map).
+// Exported symbol (see pgs.map).
 // ---------------------------------------------------------------------------
 
 extern "C" __attribute__((visibility("default")))
 const void *pgrazor_native_api(uint32_t version) {
     if (version == 2) return &g_api_v2;
-    if (version != PGRAZOR_NATIVE_API_VERSION) return nullptr; // exact match only in the pilot
+    if (version != PGS_NATIVE_API_VERSION) return nullptr; // exact match only in the pilot
     return &g_api;
 }
 
@@ -405,7 +405,7 @@ const void *pgrazor_native_api(uint32_t version) {
 // Deterministic policy self-check for the JNI host surface (no Dobby, no device).
 // ---------------------------------------------------------------------------
 
-int pgrazor_policy_selfcheck(void) {
+int pgs_policy_selfcheck(void) {
     if (apply_floor(50.0) != PGRAZOR_SPAWN_FLOOR) return 1;    // below floor is raised
     if (apply_floor(90.0) != 90.0) return 2;                  // above floor is preserved
     if (apply_floor(PGRAZOR_SPAWN_FLOOR) != PGRAZOR_SPAWN_FLOOR) return 3; // boundary

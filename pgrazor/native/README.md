@@ -1,4 +1,4 @@
-# PGRazor native pilot
+# PGS native pilot
 
 See [migration gates and build instructions](../../docs/NATIVE_MIGRATION.md).
 
@@ -8,7 +8,7 @@ SHA-256 and verifies extracted sources on every build. Newer upstream revisions
 were evaluated but failed the Android build; this pin is a tested starting point,
 not a statement that it is the newest or universally compatible version.
 
-Only `JNI_OnLoad` and `pgrazor_native_api` are exported. Java uses RegisterNatives
+Only `JNI_OnLoad`, the primary `pgs_native_api` and the preserved `pgrazor_native_api` alias are exported. Both factory names return the exact same ABI tables, so installed clients still work. Java uses RegisterNatives
 for `NativeCore.apiVersion()` and `policySelfcheck()`. Gameplay resolves the C
 function table documented in `pgs_native_api.h` (legacy header stays as a forwarding shim): version and size followed by
 install, update, sample, and selftest pointers (40 bytes on both supported ABIs).

@@ -1,7 +1,7 @@
 // JNI glue for dev.pgrazor.NativeCore.
 //
 // RegisterNatives binds validation, owner-thread bootstrap and read-only health methods.
-// The version script publishes only JNI_OnLoad and pgrazor_native_api.
+// The version script publishes JNI_OnLoad, pgs_native_api and its legacy alias.
 
 #include <jni.h>
 

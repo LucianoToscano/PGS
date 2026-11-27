@@ -1,14 +1,15 @@
 /*
  * Stable C ABI for the PGS native migration pilot.
  *
- * The gameplay runtime resolves the single exported symbol `pgrazor_native_api`,
+ * New native clients resolve `pgs_native_api`; existing gameplay clients keep
+ * resolving `pgrazor_native_api` (both names return the exact same ABI table).
  * calls it with the ABI version it was built against, and (on an exact match)
  * receives a pointer to a read-only, ordered function table prefixed by a
  * {version, size} header. Fields are never reordered or removed; a new ABI
  * version only appends fields and bumps PGRAZOR_NATIVE_API_VERSION.
  *
  * This PGS source header retains the legacy exported symbol and struct layout
- * as an explicit compatibility contract; nothing else is exported.
+ * as an explicit compatibility contract; the PGS factory is additive.
  */
 #ifndef PGS_NATIVE_API_H
 #define PGS_NATIVE_API_H
@@ -19,27 +20,41 @@
 extern "C" {
 #endif
 
-/* Current table version. pgrazor_native_api() only answers an exact match in the pilot. */
-#define PGRAZOR_NATIVE_API_VERSION 1u
+/* Current version shared by both PGS and compatibility factories. */
+#define PGS_NATIVE_API_VERSION 1u
+#define PGRAZOR_NATIVE_API_VERSION PGS_NATIVE_API_VERSION
 
 /* Fixed radius floor (metres) applied while the spawn policy is active. */
-#define PGRAZOR_SPAWN_FLOOR 80.0
+#define PGS_SPAWN_FLOOR 80.0
+#define PGRAZOR_SPAWN_FLOOR PGS_SPAWN_FLOOR
 
 /* Maximum accepted lease for a single policy window, in milliseconds. */
-#define PGRAZOR_MAX_LEASE_MS 2500u
+#define PGS_MAX_LEASE_MS 2500u
+#define PGRAZOR_MAX_LEASE_MS PGS_MAX_LEASE_MS
 
 /* Status codes returned by every table function. 0 == success. */
 enum {
-    PGRAZOR_OK = 0,
-    PGRAZOR_ERR_NULL_ARG = 1,        /* required pointer argument was null */
-    PGRAZOR_ERR_ALREADY_BOUND = 2,   /* install() requested at a different address (rebind refused) */
-    PGRAZOR_ERR_HOOK_FAILED = 3,     /* Dobby could not install the hook / publish the original */
-    PGRAZOR_ERR_BAD_LEASE = 4,       /* lease was 0 or exceeded PGRAZOR_MAX_LEASE_MS */
-    PGRAZOR_ERR_NO_CLOCK = 5,        /* CLOCK_BOOTTIME was unavailable */
-    PGRAZOR_ERR_NOT_INSTALLED = 6,   /* reserved: operation needs an installed hook */
-    PGRAZOR_ERR_SELFTEST = 7,        /* a self-check assertion failed */
-    PGRAZOR_ERR_UNSUPPORTED_VERSION = 8 /* reserved for negotiation callers */
+    PGS_OK = 0,
+    PGS_ERR_NULL_ARG = 1,        /* required pointer argument was null */
+    PGS_ERR_ALREADY_BOUND = 2,   /* install() requested at a different address (rebind refused) */
+    PGS_ERR_HOOK_FAILED = 3,     /* Dobby could not install the hook / publish the original */
+    PGS_ERR_BAD_LEASE = 4,       /* lease was 0 or exceeded PGRAZOR_MAX_LEASE_MS */
+    PGS_ERR_NO_CLOCK = 5,        /* CLOCK_BOOTTIME was unavailable */
+    PGS_ERR_NOT_INSTALLED = 6,   /* reserved: operation needs an installed hook */
+    PGS_ERR_SELFTEST = 7,        /* a self-check assertion failed */
+    PGS_ERR_UNSUPPORTED_VERSION = 8 /* reserved for negotiation callers */
 };
+
+/* Source aliases required by already-compiled C/C++ modules. */
+#define PGRAZOR_OK PGS_OK
+#define PGRAZOR_ERR_NULL_ARG PGS_ERR_NULL_ARG
+#define PGRAZOR_ERR_ALREADY_BOUND PGS_ERR_ALREADY_BOUND
+#define PGRAZOR_ERR_HOOK_FAILED PGS_ERR_HOOK_FAILED
+#define PGRAZOR_ERR_BAD_LEASE PGS_ERR_BAD_LEASE
+#define PGRAZOR_ERR_NO_CLOCK PGS_ERR_NO_CLOCK
+#define PGRAZOR_ERR_NOT_INSTALLED PGS_ERR_NOT_INSTALLED
+#define PGRAZOR_ERR_SELFTEST PGS_ERR_SELFTEST
+#define PGRAZOR_ERR_UNSUPPORTED_VERSION PGS_ERR_UNSUPPORTED_VERSION
 
 /* Telemetry snapshot of the spawn getter. Pull-only: the native layer never calls back into JS. */
 typedef struct pgrazor_spawn_snapshot {
@@ -104,11 +119,19 @@ typedef struct pgrazor_native_api_v2 {
  * PGRAZOR_NATIVE_API_VERSION, otherwise NULL. The returned table lives for the
  * process lifetime and must not be freed or modified by the caller.
  */
+/* Primary PGS C factory, sharing immutable function tables with the old name. */
+const void *pgs_native_api(uint32_t version);
+
+/* Required compatibility export for existing Android clients. */
 const void *pgrazor_native_api(uint32_t version);
 
-/* Source-level PGS aliases use the exact same ABI layout and exported factory. */
-#define PGS_NATIVE_API_VERSION PGRAZOR_NATIVE_API_VERSION
+/* PGS source types retain the exact legacy ABI layout. */
 typedef pgrazor_spawn_snapshot pgs_spawn_snapshot;
+typedef pgrazor_install_fn pgs_install_fn;
+typedef pgrazor_update_fn pgs_update_fn;
+typedef pgrazor_sample_fn pgs_sample_fn;
+typedef pgrazor_selftest_fn pgs_selftest_fn;
+typedef pgrazor_query_feature_fn pgs_query_feature_fn;
 typedef pgrazor_native_api_v1 pgs_native_api_v1;
 typedef pgrazor_native_api_v2 pgs_native_api_v2;
 

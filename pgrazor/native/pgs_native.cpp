@@ -99,7 +99,7 @@ namespace {
 
 // Raise a radius to the fixed floor. Caller guarantees `radius` is finite and > 0.
 inline double apply_floor(double radius) {
-    return radius > PGRAZOR_SPAWN_FLOOR ? radius : PGRAZOR_SPAWN_FLOOR;
+    return radius > PGS_SPAWN_FLOOR ? radius : PGS_SPAWN_FLOOR;
 }
 
 // The floor applies only when the window is enabled, externally allowed, and unexpired.
@@ -174,17 +174,17 @@ double spawn_replacement(void *self, void *info) {
 // ---------------------------------------------------------------------------
 
 int api_install(void *address) {
-    if (address == nullptr) return PGRAZOR_ERR_NULL_ARG;
+    if (address == nullptr) return PGS_ERR_NULL_ARG;
 
     std::lock_guard<std::mutex> lock(g_install_mutex);
 
-    if(g_install_failed)return PGRAZOR_ERR_HOOK_FAILED;
+    if(g_install_failed)return PGS_ERR_HOOK_FAILED;
 
     void *bound = g_bound_address.load(std::memory_order_acquire);
     if (bound != nullptr) {
         // Hook lives for the whole process; a repeat install of the same target is a
         // no-op success, but rebinding to a different address is refused.
-        return (bound == address) ? PGRAZOR_OK : PGRAZOR_ERR_ALREADY_BOUND;
+        return (bound == address) ? PGS_OK : PGS_ERR_ALREADY_BOUND;
     }
 
     spawn_getter_fn original = nullptr;
@@ -196,14 +196,14 @@ int api_install(void *address) {
         // with no trampoline is different: undo that binding before returning.
         if(rc == 0) pgrazor_unhook(address);
         g_install_failed=true;
-        return PGRAZOR_ERR_HOOK_FAILED;
+        return PGS_ERR_HOOK_FAILED;
     }
 
     // Publish while holding the install mutex. An early callback waits for this
     // publication; later callbacks read the trampoline without locking.
     g_original.store(original, std::memory_order_release);
     g_bound_address.store(address, std::memory_order_release);
-    return PGRAZOR_OK;
+    return PGS_OK;
 }
 
 int api_update(int enabled, int allowed, uint64_t lease_ms) {
@@ -211,29 +211,29 @@ int api_update(int enabled, int allowed, uint64_t lease_ms) {
         // Disable clears the window; the hook stays installed and passes through.
         g_enabled.store(false, std::memory_order_release);
         g_deadline_ns.store(0, std::memory_order_release);
-        return PGRAZOR_OK;
+        return PGS_OK;
     }
 
     g_enabled.store(false, std::memory_order_release);
     g_deadline_ns.store(0, std::memory_order_release);
-    if (allowed == 0) return PGRAZOR_OK;
-    if (lease_ms == 0 || lease_ms > PGRAZOR_MAX_LEASE_MS) return PGRAZOR_ERR_BAD_LEASE;
+    if (allowed == 0) return PGS_OK;
+    if (lease_ms == 0 || lease_ms > PGS_MAX_LEASE_MS) return PGS_ERR_BAD_LEASE;
 
     uint64_t now = boottime_ns();
-    if (now == 0) return PGRAZOR_ERR_NO_CLOCK;
+    if (now == 0) return PGS_ERR_NO_CLOCK;
 
     g_allowed.store(allowed != 0, std::memory_order_release);
     g_deadline_ns.store(now + lease_ms * 1000000ull, std::memory_order_release);
     g_enabled.store(true, std::memory_order_release);
-    return PGRAZOR_OK;
+    return PGS_OK;
 }
 
 int api_sample(pgs_spawn_snapshot *out) {
-    if (out == nullptr) return PGRAZOR_ERR_NULL_ARG;
+    if (out == nullptr) return PGS_ERR_NULL_ARG;
     out->original = g_last_original.load(std::memory_order_relaxed);
     out->effective = g_last_effective.load(std::memory_order_relaxed);
     out->count = g_floor_count.load(std::memory_order_relaxed);
-    return PGRAZOR_OK;
+    return PGS_OK;
 }
 
 // ---------------------------------------------------------------------------
@@ -263,30 +263,30 @@ int api_selftest() {
     std::lock_guard<std::mutex> lock(mutex);
     static int cached = -1;
     if(cached != -1) return cached;
-    cached = PGRAZOR_ERR_SELFTEST;
+    cached = PGS_ERR_SELFTEST;
     int (*volatile call)(int) = &selftest_target;
     g_selftest_calls.store(0, std::memory_order_relaxed);
     g_selftest_original = nullptr;
 
-    if (call(1) != 2) return PGRAZOR_ERR_SELFTEST; // baseline
+    if (call(1) != 2) return PGS_ERR_SELFTEST; // baseline
     __android_log_write(ANDROID_LOG_INFO,"PGSNative","selftest baseline; hook begin");
 
     int rc = pgrazor_hook(reinterpret_cast<void *>(&selftest_target),
                        reinterpret_cast<void *>(&selftest_replacement),
                        reinterpret_cast<void **>(&g_selftest_original));
-    if (rc != 0 || g_selftest_original == nullptr) return PGRAZOR_ERR_SELFTEST;
+    if (rc != 0 || g_selftest_original == nullptr) return PGS_ERR_SELFTEST;
     __android_log_write(ANDROID_LOG_INFO,"PGSNative","selftest hook complete; invoke begin");
 
-    int status = PGRAZOR_OK;
+    int status = PGS_OK;
     // Chaining: replacement calls original (1+1) then adds 100 => 102, exactly once.
-    if (call(1) != 102) status = PGRAZOR_ERR_SELFTEST;
-    if (g_selftest_calls.load(std::memory_order_relaxed) != 1) status = PGRAZOR_ERR_SELFTEST;
+    if (call(1) != 102) status = PGS_ERR_SELFTEST;
+    if (g_selftest_calls.load(std::memory_order_relaxed) != 1) status = PGS_ERR_SELFTEST;
     __android_log_write(ANDROID_LOG_INFO,"PGSNative","selftest invoke complete; restore begin");
 
-    if (pgrazor_unhook(reinterpret_cast<void *>(&selftest_target)) != 0) status = PGRAZOR_ERR_SELFTEST;
+    if (pgrazor_unhook(reinterpret_cast<void *>(&selftest_target)) != 0) status = PGS_ERR_SELFTEST;
 
     // Detach must restore original behaviour with no dangling hook.
-    if (call(1) != 2) status = PGRAZOR_ERR_SELFTEST;
+    if (call(1) != 2) status = PGS_ERR_SELFTEST;
     __android_log_write(ANDROID_LOG_INFO,"PGSNative","selftest restore complete");
 
     // Retain the trampoline pointer even if detach failed; no dangling callback.
@@ -294,7 +294,7 @@ int api_selftest() {
     return status;
 }
 
-// Ordered, read-only table advertised by pgrazor_native_api(). Never reordered.
+// Ordered, read-only table shared by PGS and compatibility factories. Never reordered.
 const pgs_native_api_v1 g_api = {
     PGS_NATIVE_API_VERSION,
     static_cast<uint32_t>(sizeof(pgs_native_api_v1)),
@@ -395,10 +395,16 @@ static_assert(sizeof(pgs_native_api_v2) == 48, "v2 ABI");
 // ---------------------------------------------------------------------------
 
 extern "C" __attribute__((visibility("default")))
-const void *pgrazor_native_api(uint32_t version) {
+const void *pgs_native_api(uint32_t version) {
     if (version == 2) return &g_api_v2;
-    if (version != PGS_NATIVE_API_VERSION) return nullptr; // exact match only in the pilot
+    if (version != PGS_NATIVE_API_VERSION) return nullptr; // exact match only
     return &g_api;
+}
+
+// Preserve ABI: installed clients still dlsym this legacy symbol.
+extern "C" __attribute__((visibility("default")))
+const void *pgrazor_native_api(uint32_t version) {
+    return pgs_native_api(version);
 }
 
 // ---------------------------------------------------------------------------
@@ -406,9 +412,9 @@ const void *pgrazor_native_api(uint32_t version) {
 // ---------------------------------------------------------------------------
 
 int pgs_policy_selfcheck(void) {
-    if (apply_floor(50.0) != PGRAZOR_SPAWN_FLOOR) return 1;    // below floor is raised
+    if (apply_floor(50.0) != PGS_SPAWN_FLOOR) return 1;    // below floor is raised
     if (apply_floor(90.0) != 90.0) return 2;                  // above floor is preserved
-    if (apply_floor(PGRAZOR_SPAWN_FLOOR) != PGRAZOR_SPAWN_FLOOR) return 3; // boundary
+    if (apply_floor(PGS_SPAWN_FLOOR) != PGS_SPAWN_FLOOR) return 3; // boundary
 
     if (!policy_decision(true, true, true)) return 4;         // all gates open -> apply
     if (policy_decision(false, true, true)) return 5;         // disabled -> off

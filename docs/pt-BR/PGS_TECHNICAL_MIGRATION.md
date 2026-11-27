@@ -26,3 +26,11 @@ A etapa será verificada com testes de código e compilação. Não considerar q
 Migrar gradualmente classes Java/JNI, binários, arquivos de execução e preferências salvas, com aliases, testes e preservação de dados. A autenticação Google precisa de credenciais OAuth próprias autorizadas, sem inventar IDs. Somente após compilação completa e teste de atualização sobre o APK instalado será possível lançar uma versão.
 
 Acompanhe o restante na [issue #38](https://github.com/LucianoToscano/PGS/issues/38). O histórico e os créditos de licença permanecem preservados.
+
+## Etapa 2 — fábrica nativa PGS sem perder compatibilidade
+
+- A nova função C exportada `pgs_native_api(uint32_t)` é o nome principal. A função antiga `pgrazor_native_api(uint32_t)` continua presente e encaminha à nova. As duas devolvem **as mesmas tabelas imutáveis v1/v2** para as versões válidas e `null` para versões incompatíveis.
+- O script `pgs.map`, a verificação de símbolos ELF e o teste nativo exigem exatamente **três símbolos** exportados: `JNI_OnLoad`, `pgs_native_api` e `pgrazor_native_api`. Os demais ficam ocultos.
+- Constantes, códigos de erro e tipos de funções podem ser escritos como `PGS_*` / `pgs_*`. Os nomes antigos funcionam como aliases e o tamanho e a ordem dos campos das tabelas v1/v2 não mudam.
+- O Android ainda carrega `libpgrazor-core.so` e `libpgrazor-art.so`, e os módulos Java/JNI podem continuar usando o nome antigo. Não são alterados o pacote Java `dev.pgrazor`, backups, dados, pacote Android `com.nianticlabs.pokemongo`, chave PGS ou `versionCode`.
+- Esta etapa depende de testes de código e símbolos nativos. **Não** é uma compilação de APK completo nem comprova atualização física. O restante permanece na [issue #38](https://github.com/LucianoToscano/PGS/issues/38).

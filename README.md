@@ -46,6 +46,8 @@ The GitHub Actions artifact uses `PGS v0.0.2.apk`. GitHub normalizes spaces in r
 
 Do not mistake source archives or preview-only packages for the full game APK.
 
+The next full source build is **PGS v0.0.3**, which has not yet produced a verified APK. Maintainers can use the [authorized candidate validation workflow](https://github.com/LucianoToscano/PGS/actions/workflows/pgs-v0.0.3-candidate.yml) for receipt-only validation. The v0.0.2 link above is an existing historical build run, not an instruction to rebuild it. Actions artifacts can expire.
+
 ## Features
 
 - Location controls, joystick, coordinates, maps, GPX routes, and cooldown estimates.
@@ -69,7 +71,7 @@ Experimental features depend on the game's version and environment. They do not 
 
 More technical references: [Architecture](docs/ARCHITECTURE.md), [community improvements](docs/PGS_COMMUNITY_REVIEW.md), [official artwork](docs/PGS_OFFICIAL_LOGOS.md), and [repository/Pages setup](docs/PGS_REPOSITORY_SETTINGS.md). These additional technical references are not all translated yet; their language is indicated by the document itself.
 
-Existing code, native libraries, Java/JNI symbols, saved-setting keys, and provenance records remain intact for update compatibility. Historical records should not be confused with current PGS releases.
+The current source uses PGS names for its own Java/JNI classes, native libraries, private C/C++ interfaces and generated assets. Installed storage keys, selected public compatibility contracts and provenance are retained where changing them could break older installations. Historical records are not current PGS releases.
 
 ## Community
 

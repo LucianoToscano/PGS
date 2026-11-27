@@ -46,6 +46,8 @@ O GitHub Actions mantém o nome `PGS v0.0.2.apk`; nos anexos do GitHub Release, 
 
 Não confunda o APK completo com arquivos de código-fonte ou aplicativos de prévia.
 
+A próxima compilação completa das fontes é **PGS v0.0.3**, ainda sem APK verificado. Mantenedores podem usar o [workflow autorizado de validação da candidata](https://github.com/LucianoToscano/PGS/actions/workflows/pgs-v0.0.3-candidate.yml), que envia somente recibos. O link v0.0.2 acima é de uma compilação histórica existente, não uma instrução para recompilá-la. Artefatos do Actions podem expirar.
+
 ## Recursos
 
 - Controle de localização, joystick, coordenadas, mapas, rotas GPX e cooldown.

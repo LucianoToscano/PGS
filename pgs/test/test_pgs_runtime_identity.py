@@ -50,6 +50,14 @@ class PgsRuntimeIdentityTests(unittest.TestCase):
         self.assertEqual(rooted.MODULE_ID, "pgrazor")
         self.assertEqual(rooted.INJECTION_OFF_FLAG, "pgrazor/injection-off")
 
+    def test_new_root_cache_is_pgs_without_retiring_installed_off_switch(self):
+        runtime = (PROJECT / "src/dev/pgs/RootedRuntime.java").read_text(encoding="utf-8")
+        self.assertIn('new File(new File(dataDir, "code_cache"), "pgs-root")', runtime)
+        self.assertNotIn('new File(new File(dataDir, "code_cache"), "pgrazor-root")', runtime)
+        # The fixed installed module identity and user-selected Off flag are separate contracts.
+        self.assertEqual(rooted.MODULE_ID, "pgrazor")
+        self.assertEqual(rooted.INJECTION_OFF_FLAG, "pgrazor/injection-off")
+
     def test_reject_both_legacy_and_new_patched_input(self):
         for asset in ("assets/pgrazor/mode.json", "assets/pgs/mode.json"):
             with self.subTest(asset=asset), tempfile.TemporaryDirectory() as folder:
@@ -78,7 +86,7 @@ class PgsRuntimeIdentityTests(unittest.TestCase):
         self.assertEqual(pgs_rebrand.MARKER, b"Ldev/pgrazor/Control;")
         self.assertEqual(pgs_rebrand.MODE, "assets/pgrazor/mode.json")
         self.assertEqual(pgs_rebrand.TARGET_VERSION_CODE, 2026111605)
-        for name in ("pgs-v0.0.1-release.yml", "pgs-v0.0.2-release.yml"):
+        for name in ("pgs-v0.0.1-release.yml", "pgs-v0.0.2-release.yml", "pgs-same-package-update.yml"):
             flow = (ROOT / ".github/workflows" / name).read_text(encoding="utf-8")
             self.assertIn("Refuse historical controls-only rebuild on migrated sources", flow)
 

@@ -74,7 +74,7 @@ test('production page loads its assets and stays within the viewport', async ({ 
   page.on('pageerror', error => errors.push(error.message));
   await page.goto('./');
   await expect(page.locator('h1')).toBeVisible();
-  await expect(page.locator('a[href="https://github.com/LucianoToscano/PGS/actions/workflows/pgs-v0.0.2-release.yml"]').first()).toBeVisible();
+  await expect(page.locator('a[href="https://github.com/LucianoToscano/PGS/actions/runs/45980315394"]').first()).toBeVisible();
   for (const image of await page.locator('img').all()) {
     await image.scrollIntoViewIfNeeded();
     await expect.poll(() => image.evaluate(img => img.complete && img.naturalWidth > 0)).toBeTruthy();
@@ -168,7 +168,7 @@ test('cooldown trigger and safe groups expand', async ({ page }) => {
 test('verified PGS candidate notes accompany the latest download', async ({ page }) => {
   await page.goto('./');
   const releaseNotes = page.locator(
-    '.cta__release a[href="https://github.com/LucianoToscano/PGS/actions/workflows/pgs-v0.0.2-release.yml"]'
+    '.cta__release a[href="https://github.com/LucianoToscano/PGS/actions/runs/45980315394"]'
   );
   await expect(releaseNotes).toHaveCount(1);
   await expect(releaseNotes).toBeVisible();

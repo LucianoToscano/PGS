@@ -9,10 +9,11 @@ import GuideIndex from './components/GuideIndex.jsx';
 import GuideDetail from './components/GuideDetail.jsx';
 import { featureGuides } from './components/guideData.js';
 import { useTheme } from './hooks/useTheme.js';
+import { ui } from './uiText.js';
+import { locale } from './locale.js';
 
-const HOME_TITLE = 'PGS — smoother Pokémon GO sessions';
-const HOME_DESCRIPTION =
-  'PGS is a compact, open-source Android interface for Pokémon GO: location controls, catching helpers, and optional automation. One APK for ARM64 Android phones and the MuMu emulator, no root required.';
+const HOME_TITLE = ui.site.homeTitle;
+const HOME_DESCRIPTION = ui.site.homeDescription;
 
 // Query-string routing for a static GitHub Pages build (base /PGS/):
 //   ?guide=all  → the feature-guide index
@@ -40,20 +41,19 @@ export default function App() {
   // Keep the document title and meta description in step with the view so a
   // shared or bookmarked guide link describes the guide, not just the homepage.
   useEffect(() => {
+    document.documentElement.lang = locale;
     const meta = document.querySelector('meta[name="description"]');
     let title = HOME_TITLE;
     let description = HOME_DESCRIPTION;
     if (route.view === 'index') {
-      title = 'Feature guides — PGS';
-      description =
-        'Step-by-step how-to guides for PGS’s catching, location, automation, and personalisation features.';
+      title = ui.site.indexTitle;
+      description = ui.site.indexDescription;
     } else if (route.view === 'detail' && guide) {
-      title = `${guide.title} — PGS feature guide`;
+      title = `${guide.title} ${ui.site.detailSuffix}`;
       description = guide.summary || description;
     } else if (route.view === 'detail') {
-      title = 'Guide not found — PGS';
-      description =
-        'That PGS feature guide could not be found. Browse the full list of feature guides.';
+      title = ui.site.missingTitle;
+      description = ui.site.missingDescription;
     }
     document.title = title;
     if (meta && description) meta.content = description;
@@ -73,7 +73,7 @@ export default function App() {
 
   return (
     <>
-      <a className="skip-link" href="#main">Skip to content</a>
+      <a className="skip-link" href="#main">{ui.site.skip}</a>
       <Header theme={theme} onToggleTheme={toggle} onGuide={onGuide} />
       <main id="main" tabIndex={-1}>
         {route.view === 'home' && (

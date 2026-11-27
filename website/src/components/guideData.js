@@ -1,9 +1,10 @@
 import { asset } from '../assets.js';
-export { featureGuides } from '../featureGuides.js';
+export { featureGuides } from '../featureGuides.i18n.js';
+import { localHref } from '../locale.js';
 
 // Query routes work on the static GitHub Pages deployment, including reloads.
-export const homeHref = asset('');
-export const indexHref = `${homeHref}?guide=all`;
+export const homeHref = localHref(asset(''));
+export const indexHref = localHref(`${asset('')}?guide=all`);
 export function guideHref(id) {
-  return `${homeHref}?guide=${encodeURIComponent(id)}`;
+  return localHref(`${asset('')}?guide=${encodeURIComponent(id)}`);
 }

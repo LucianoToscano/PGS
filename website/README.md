@@ -1,4 +1,6 @@
-# PGS website
+# PGS website — English / Português (Brasil)
+
+The website defaults to English and offers a Brazilian Portuguese selector. This is separate from the 12 in-app language choices.
 
 The public app showcase lives at [lucianotoscano.github.io/PGS](https://lucianotoscano.github.io/PGS/). It is a static React site built with Vite. The Android app and APK release workflows are independent of this site.
 
@@ -48,7 +50,7 @@ Release-specific availability and validation details belong in the release notes
 - `public/pgs-full.png`: original 4096 × 4096 complete official PGS logo; used by the repository README and social preview.
 - `public/pgs-wordmark.png`: original 4096 × 1704 horizontal PGS logo; used by the website hero.
 - Each PNG is byte-for-byte identical to the Drive original. The PGS branding source copies are stored in `pgrazor/branding/`. The in-game menu icon is intentionally preserved independently for Android compatibility.
-- A captura antiga do menu foi retirada: mostrava o cabeçalho de outro projeto e não corresponde à interface PGS atual. Não divulgar capturas antigas como prova da versão atual.
+- The outdated menu screenshot was removed because it showed another project's branding and did not represent the current PGS interface. Never present historical captures as verified current releases.
 - `public/images/encounter.png`: real encounter capture showing the IV/level, transfer and berry overlays.
 - `public/images/world-map.png`: November 2026 MuMu capture of the app's world map (v0.3.5 interface). OpenStreetMap attribution is visible in the capture.
 
@@ -63,3 +65,16 @@ The Cooldown section uses original text and two compact tables with all 30 estim
 Feature pages use `src/guideScreenshots.js` and the shared `Gallery` component. The 13 WebP images under `public/images/guides/` are archived research captures, not evidence of the current PGS release, cropped to the relevant panel: hotspots, hotspot actions, teleport cooldown and event boxes from the experimental.3 APK on 2026-10-31 (those screens did not change in the redesign), and the rest from the v0.3.5 interface on 2026-11-18, including settings search and Mateo gift exchange. No controls or results were synthesized. Captions identify example settings rather than defaults or proof of successful gameplay; the map example selects Pier 39 without moving the character. OpenStreetMap attribution remains visible.
 
 Keep captures free of account names, saved places, private coordinates and unrelated overlays. Original captures and crop receipts remain in local diagnostic artifacts; publish only the reviewed panel images. The image catalog records dimensions for stable layout. Guide galleries support keyboard opening, Escape, a close button and focus restoration.
+
+## Website localization (EN / PT-BR)
+
+The site defaults to **English**. The language selector in the header supports **EN** and **PT-BR** on desktop and mobile. Brazilian Portuguese adds a stable `?lang=pt-BR` parameter to links, including deep links such as `?guide=world-map&lang=pt-BR`. The choice is also saved in `pgs-website-language`. Switching language preserves the current guide and does not affect the theme or in-game language.
+
+- `src/locale.js` owns the language selection, URL handling and persistence.
+- `src/uiText.js` translates site chrome and accessibility labels.
+- `src/content.en.js` is the canonical English homepage/settings text.
+- `src/content.pt-BR.js` is its Brazilian Portuguese counterpart; `src/content.js` selects one.
+- `src/featureGuides.js` is the canonical English guide catalog. The four `src/featureGuides.pt-BR.*.js` translation catalogs preserve all 37 guide IDs and step/note counts; `src/featureGuides.i18n.js` selects one.
+- `src/guideScreenshots.i18n.js` translates guide screenshot titles and captions without changing source images or dimensions.
+
+Update English and Brazilian Portuguese catalogs **in the same pull request** for any user-visible change. Do not translate the URL guide slugs, technical identifiers, checksum values, APK names or saved Android preferences. `npm test` checks both languages, direct links and content parity.

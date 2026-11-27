@@ -1,5 +1,6 @@
 import { useId, useRef, useState } from 'react';
 import { settingGroups } from '../content.js';
+import { ui } from '../uiText.js';
 
 // An ARIA tablist for browsing real setting names. Manual activation with
 // roving tabindex and arrow / Home / End support per the WAI-ARIA tabs pattern.
@@ -36,7 +37,7 @@ export default function SettingsGuide() {
 
   return (
     <div className="guide">
-      <div className="guide__tabs" role="tablist" aria-label="Settings categories">
+      <div className="guide__tabs" role="tablist" aria-label={ui.features.tabList}>
         {settingGroups.map((group, index) => {
           const selected = index === active;
           return (

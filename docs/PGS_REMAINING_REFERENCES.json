@@ -1,7 +1,7 @@
 {
   "scope": "Git-indexed regular UTF-8 text, excluding NUL-containing files and the snapshot itself",
-  "tracked_files": 2111,
-  "text_files": 1036,
+  "tracked_files": 2112,
+  "text_files": 1037,
   "changed_files": 37,
   "added_files": 1,
   "previous_occurrences": 1041,
@@ -1438,5 +1438,16 @@
     "publish_ready": false,
     "retention_option": "manual opt-in, unpublished draft, no overwrite, no public APK artifacts",
     "retention_tested_live": false
+  },
+  "dependency_availability_followup": {
+    "base_commit": "004a0fa584da8fac35661aa28ff3c2622746864a",
+    "failed_run": 46057849390,
+    "failed_job": 140704589923,
+    "cause": "HTTP 429 downloading pinned Maven Central DEX build dependency",
+    "max_attempts": 4,
+    "max_retry_after_seconds": 60,
+    "dependency_pins_unchanged": true,
+    "game_input_or_signing_changed": false,
+    "live_retry_validated": false
   }
 }

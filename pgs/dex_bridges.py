@@ -1,9 +1,14 @@
 """Build-time Java bridge migration using pinned dexlib2 (never shipped in the APK)."""
 from pathlib import Path
+from datetime import datetime, timezone
+from email.utils import parsedate_to_datetime
 import hashlib
 import json
 import os
 import subprocess
+import tempfile
+import time
+import urllib.error
 import urllib.request
 import zipfile
 
@@ -17,18 +22,89 @@ def sha256(path):
         return hashlib.file_digest(stream, 'sha256').hexdigest()
 
 
+MAX_DOWNLOAD_BYTES = 32 * 1024 * 1024
+MAX_ATTEMPTS = 4
+MAX_RETRY_AFTER = 60
+TRANSIENT_HTTP = {408, 429, 500, 502, 503, 504}
+
+
+def retry_delay(header, attempt):
+    """Respect a server's requested delay within a bounded CI retry budget."""
+    fallback = 5 * (2 ** attempt)
+    if header:
+        try:
+            seconds = int(header)
+        except ValueError:
+            try:
+                date = parsedate_to_datetime(header)
+                if date.tzinfo is None:
+                    date = date.replace(tzinfo=timezone.utc)
+                seconds = (date - datetime.now(timezone.utc)).total_seconds()
+            except (ValueError, TypeError, OverflowError):
+                seconds = 0
+        fallback = max(fallback, seconds)
+    if fallback > MAX_RETRY_AFTER:
+        raise RuntimeError("DEX dependency server requested a longer wait; retry the workflow later")
+    return fallback
+
+
+def download_dependency(item):
+    """Retry transient availability failures only; never accept unpinned bytes."""
+    for attempt in range(MAX_ATTEMPTS):
+        try:
+            with urllib.request.urlopen(item["url"], timeout=60) as response:
+                data = response.read(MAX_DOWNLOAD_BYTES + 1)
+        except urllib.error.HTTPError as error:
+            code = error.code
+            header = error.headers.get("Retry-After") if error.headers else None
+            error.close()
+            if code not in TRANSIENT_HTTP or attempt == MAX_ATTEMPTS - 1:
+                raise RuntimeError(f"DEX dependency download failed (HTTP {code})") from None
+            delay = retry_delay(header, attempt)
+        except (TimeoutError, urllib.error.URLError) as error:
+            if (isinstance(error, urllib.error.URLError)
+                    and not isinstance(error.reason, TimeoutError)):
+                raise RuntimeError("DEX dependency network or TLS failure") from None
+            if attempt == MAX_ATTEMPTS - 1:
+                raise RuntimeError("DEX dependency download timed out") from None
+            delay = retry_delay(None, attempt)
+        else:
+            if len(data) > MAX_DOWNLOAD_BYTES:
+                raise RuntimeError("DEX dependency exceeds the download size limit")
+            if hashlib.sha256(data).hexdigest() != item["sha256"]:
+                raise RuntimeError("Downloaded DEX dependency checksum mismatch")
+            return data
+        print(f"Transient DEX dependency failure; retry {attempt + 2}/{MAX_ATTEMPTS} after {delay:.0f}s",
+              flush=True)
+        time.sleep(delay)
+
+
+def cache_dependency(path, data):
+    CACHE.mkdir(parents=True, exist_ok=True)
+    temporary = None
+    try:
+        with tempfile.NamedTemporaryFile(dir=CACHE, prefix=path.name + ".", suffix=".partial",
+                                         delete=False) as out:
+            temporary = Path(out.name)
+            out.write(data)
+        if path.is_symlink():
+            raise RuntimeError("Unsafe DEX dependency cache entry")
+        temporary.replace(path)
+    finally:
+        if temporary is not None:
+            temporary.unlink(missing_ok=True)
+
+
 def dependencies(download=False):
     jars = []
     for item in json.loads((TOOLS / 'dependencies.json').read_text(encoding='utf-8')):
         path = CACHE / item['url'].rsplit('/', 1)[1]
+        if path.is_symlink():
+            raise RuntimeError('Unsafe DEX dependency cache entry: ' + path.name)
         if not path.is_file():
             if not download:
                 raise RuntimeError('Missing pinned DEX build dependency: ' + path.name)
-            data = urllib.request.urlopen(item['url'], timeout=60).read()
-            if hashlib.sha256(data).hexdigest() != item['sha256']:
-                raise RuntimeError('Downloaded DEX dependency checksum mismatch')
-            CACHE.mkdir(parents=True, exist_ok=True)
-            path.write_bytes(data)
+            cache_dependency(path, download_dependency(item))
         if path.is_symlink() or sha256(path) != item['sha256']:
             raise RuntimeError('DEX build dependency checksum mismatch: ' + path.name)
         jars.append(path)

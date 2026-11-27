@@ -109,6 +109,10 @@ public class RetiredAuthTest {
         self.assertNotIn(".apk", upload)
         self.assertNotIn(".jks", upload)
         self.assertIn("if: always()", flow)
+        self.assertNotIn("PGS_INPUT_TOKEN", early)
+        retrieval = flow.split("name: Validate configured private input and load existing key", 1)[1].split("      - name:", 1)[0]
+        self.assertIn("PGS_INPUT_TOKEN: ${{ secrets.PGS_INPUT_TOKEN }}", retrieval)
+        self.assertEqual(flow.count("secrets.PGS_INPUT_TOKEN"), 1)
 
 
 if __name__ == "__main__":

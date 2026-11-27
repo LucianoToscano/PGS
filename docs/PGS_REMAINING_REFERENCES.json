@@ -1,7 +1,7 @@
 {
   "scope": "Git-indexed regular UTF-8 text, excluding NUL-containing files and the snapshot itself",
-  "tracked_files": 2107,
-  "text_files": 1032,
+  "tracked_files": 2108,
+  "text_files": 1033,
   "changed_files": 37,
   "added_files": 1,
   "previous_occurrences": 1041,
@@ -1411,5 +1411,15 @@
     "remaining_occurrences": 779,
     "remaining_files": 136,
     "limitations": "CI must reconcile counts. External input authorization and secret configuration require the maintainer; no APK produced. Individual retention review and binary resource inspection remain incomplete."
+  },
+  "private_input_access_followup": {
+    "base_commit": "73c27e725d6d89691ecb637e4a21921d80f379fc",
+    "source": "upstream documented GitHub asset API pattern",
+    "access": "optional private-repository scoped read token, retrieval step only",
+    "workflow_contents_permission": "read",
+    "private_repo_created": false,
+    "secret_configured": false,
+    "signed_apk_generated": false,
+    "notes": "An authorized maintainer must create the private repository, store the verified input and configure its access. No storage permission was changed."
   }
 }

@@ -1,6 +1,7 @@
 """Fetch the private, pinned game input and decode the CI signing key without logging secrets."""
 import base64
 import os
+import re
 from pathlib import Path
 import urllib.parse
 import urllib.request
@@ -20,14 +21,30 @@ def required_setting(name):
         raise SystemExit('Required PGS input/signing setting is missing: ' + name)
     return value
 
+def input_headers(url):
+    """Send a repository-scoped credential only to an exact GitHub asset API URL."""
+    parsed = urllib.parse.urlsplit(url)
+    if parsed.scheme != 'https':
+        raise SystemExit('Input URL must use HTTPS')
+    scoped_token = os.environ.get('PGS_INPUT_TOKEN')
+    if parsed.hostname == 'api.github.com':
+        if (parsed.netloc.lower() != 'api.github.com' or parsed.query or parsed.fragment
+                or not re.fullmatch(r'/repos/[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+/releases/assets/[0-9]+', parsed.path)):
+            raise SystemExit('Use an exact GitHub release-asset API URL')
+        token = scoped_token or os.environ.get('GITHUB_TOKEN')
+        if not token:
+            raise SystemExit('GitHub asset access requires an authorized repository token')
+        return {'Accept': 'application/octet-stream', 'Authorization': 'Bearer ' + token}
+    if scoped_token:
+        raise SystemExit('PGS_INPUT_TOKEN is only for GitHub release assets')
+    return {}
+
+
 def main():
     url=required_setting('INPUT_URL')
-    if urllib.parse.urlsplit(url).scheme!='https': raise SystemExit('Input URL must use HTTPS')
+    headers=input_headers(url)
     folder=ROOT/'input';folder.mkdir(exist_ok=True)
     output=folder/'game.apkm'
-    headers={}
-    if urllib.parse.urlsplit(url).hostname=='api.github.com':
-        headers={'Accept':'application/octet-stream','Authorization':'Bearer '+os.environ['GITHUB_TOKEN']}
     opener=urllib.request.build_opener(HttpsRedirect())
     try:
         with opener.open(urllib.request.Request(url,headers=headers),timeout=90) as source,output.open('wb') as dest:

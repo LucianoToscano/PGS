@@ -6,6 +6,25 @@ Publishes the existing PGRazor `v:1` JSON format. Switching providers or map cov
 
 Install `hundo_feed.py` at `/opt/hundo-feed/hundo_feed.py`. Configure `/etc/hundo-feed.env` using the example, preserving `HUNDO_OUT`. Use `HUNDO_PROVIDER=pogocoordinates` and set `POGO_TOKEN` to the bearer value without the prefix. Keep the env mode 600. Restart with `sudo systemctl restart hundo-feed`; inspect `sudo journalctl -u hundo-feed -n 30 --no-pager`. The script itself does not load the env file; systemd does.
 
+## Independent PGS feed deployment
+
+Run the existing unprivileged collector as a continuously running service on a PGS-controlled host, publishing a static HTTPS file such as `/feed/hundos.json`. The public file must contain only the compact v:1 data, never provider credentials or logs. Configure the output using `HUNDO_OUT=/var/www/pgs/feed/hundos.json` and a web-server document root owned by the operator. Keep credentials in the service environment file, not GitHub or the APK. Use only providers whose terms or explicit permission allow this collection and public redistribution.
+
+An optional `published` source accepts a compatible external feed (including both encounter-ID rows and spots) when the operator explicitly opts in. For example, after obtaining permission and verifying availability:
+
+```sh
+HUNDO_SOURCES=published,pogocoordinates,citymaps
+PGS_UPSTREAM_FEED_URL=https://feed.faustusfoundry.com/pgs/hundos.json
+PGS_UPSTREAM_FEED_INTERVAL=60
+HUNDO_OUT=/var/www/pgs/feed/hundos.json
+```
+
+The proposed FaustusFoundry URL is **not verified**; the operator must confirm it exists and is authorized for redistribution. There is no automatic fallback to the old external address or implicit activation. To start with authorized sources alone, omit `published`; omit account-backed sources unless the required account and permissions are available. Never point the published-source URL at the PGS output itself.
+
+The optional source validates schema version, freshness (ten minutes maximum), coordinates, IDs, expiry and row types, discards approximate markers, caps responses at 8 MiB and respects source-specific back-off. Only validated compact rows are merged; the collector never forwards upstream metadata or credentials. If the source fails, previous valid rows remain usable until they expire and other sources continue on their own schedules. Availability and identical coverage are not guaranteed.
+
+Before changing the APK endpoint: run the fixture suite, configure the host, perform an authorized live one-poll check against a separate output, inspect timestamps and source counts, verify HTTPS and continued refresh over several cycles, and confirm the APK reads the new endpoint on a device. Do not publish a placeholder or switch the existing endpoint until these gates pass. GitHub Pages is suitable for static documentation, not a guaranteed continuous short-interval collector.
+
 ## Merged sources
 
 `HUNDO_SOURCES` (for example `pogocoordinates,citymaps`) runs several sources in one process. Each has its own interval and back-off, so a long provider cooldown (PoGoCoordinates once returned 45,360 s) never stalls the others. After every round the collector publishes the merged list: `hundos` holds one row per encounter ID (earlier sources win a duplicate), and `spots` holds spawns from sources without encounter IDs. A spot is dropped when a listed hundo, or an earlier spot, is the same spawn: same species, within 50 m, despawning within three minutes. `sources` reports each source's active and unique counts and status. PoGoCoordinates spends no reveal on an encounter another source already lists with exact coordinates.

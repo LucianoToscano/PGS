@@ -18,7 +18,7 @@ constexpr uint32_t kApiVersion=2;
 
 std::mutex resolving;
 
-const PgrMetaApi *metadata() { return static_cast<const PgrMetaApi *>(pgrazor_runtime_metadata_api(1)); }
+const PgrMetaApi *metadata() { return static_cast<const PgrMetaApi *>(pgs_runtime_metadata_api(1)); }
 
 bool attached(const PgrSharedMetadataConfig &c) {
   return c.owner_tid && c.owner_tid == static_cast<uint64_t>(gettid()) &&

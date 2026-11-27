@@ -50,9 +50,9 @@ void reset(){
 }
 void check(int expected){assert(pgr_max_orb_direction(&state,nullptr)==expected);assert(roots.empty()&&allocated==freed);}
 }
-const void *pgrazor_runtime_transport_api(uint32_t){return nullptr;}
-const void *pgrazor_runtime_bootstrap_api(uint32_t){return nullptr;}
-const void *pgrazor_runtime_metadata_api(uint32_t){return nullptr;}
+const void *pgs_runtime_transport_api(uint32_t){return nullptr;}
+const void *pgs_runtime_bootstrap_api(uint32_t){return nullptr;}
+const void *pgs_runtime_metadata_api(uint32_t){return nullptr;}
 int main(){
  boot.runtime.gchandle_new=(void*)root_new;boot.runtime.gchandle_get_target=(void*)root_get;boot.runtime.gchandle_free=(void*)root_free;
  boot.runtime.object_get_class=(void*)object_class;boot.runtime.object_unbox=(void*)object_unbox;

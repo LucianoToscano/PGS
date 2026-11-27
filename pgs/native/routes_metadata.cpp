@@ -11,7 +11,7 @@ bool attached(const PgrRoutesMetadataConfig &c){
     return c.owner_tid&&c.owner_tid==static_cast<uint64_t>(gettid())&&
         reinterpret_cast<void *(*)()>(c.thread_current)()!=nullptr;
 }
-const PgrMetaApi *metadata(){return static_cast<const PgrMetaApi *>(pgrazor_runtime_metadata_api(1));}
+const PgrMetaApi *metadata(){return static_cast<const PgrMetaApi *>(pgs_runtime_metadata_api(1));}
 int class_index(const char *key){for(uint32_t i=0;i<kClassCount;i++)if(!std::strcmp(kClasses[i].key,key))return static_cast<int>(i);return -1;}
 int field_index(uint32_t owner,const char *name){for(uint32_t i=0;i<kFieldCount;i++)if(kFields[i].owner==owner&&!std::strcmp(kFields[i].name,name))return static_cast<int>(i);return -1;}
 int method_index(const char *key){for(uint32_t i=0;i<kMethodCount;i++)if(!std::strcmp(kMethods[i].key,key))return static_cast<int>(i);return -1;}

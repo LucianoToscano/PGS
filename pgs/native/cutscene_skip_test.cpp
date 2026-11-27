@@ -154,9 +154,9 @@ void prepared(){advance_raid(true);assert(pending_raid&&gui.canvas->alpha==0&&gu
 void due(){raid_next=clock_ms()-1;advance_raid(true);}
 void finish(){gui.state=0;advance_raid(true);cleared();}
 }
-const void *pgrazor_runtime_transport_api(uint32_t){return &transport_mock;}
-const void *pgrazor_runtime_bootstrap_api(uint32_t){return nullptr;}
-const void *pgrazor_runtime_metadata_api(uint32_t){return nullptr;}
+const void *pgs_runtime_transport_api(uint32_t){return &transport_mock;}
+const void *pgs_runtime_bootstrap_api(uint32_t){return nullptr;}
+const void *pgs_runtime_metadata_api(uint32_t){return nullptr;}
 int pgs_hook(void*,void*,void**){return -1;}
 bool pgr_catch_presentation_attached(const void*){return false;}
 int pgr_catch_presentation_set_bypass(PgrCatchBypass,void*){return -1;}

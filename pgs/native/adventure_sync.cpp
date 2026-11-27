@@ -92,7 +92,7 @@ uint64_t boottime_ns() {
 }
 
 inline void logw(const char *msg) {
-    __android_log_write(ANDROID_LOG_WARN, "PGRazorAdvSync", msg);
+    __android_log_write(ANDROID_LOG_WARN, "PGSAdvSync", msg);
 }
 
 // ---------------------------------------------------------------------------
@@ -154,7 +154,7 @@ inline void invoke_managed(void *method, void *obj) {
     reinterpret_cast<void *(*)(void *, void *, void **, void **)>(g_config.runtime_invoke)(
         method, obj, nullptr, &exc);
     if (exc != nullptr) logw("managed exception from auto-dismiss (handled)");
-    else __android_log_write(ANDROID_LOG_INFO, "PGRazorAdvSync",
+    else __android_log_write(ANDROID_LOG_INFO, "PGSAdvSync",
         method == g_config.method_on_decline ? "Adventure Sync prompt declined" : "Adventure Sync result acknowledged");
 }
 
@@ -437,7 +437,7 @@ int api_retire(uint64_t unity_tid) {
 }
 
 int api_selftest() {
-    return pgrazor_adventure_sync_selfcheck();
+    return pgs_adventure_sync_selfcheck();
 }
 
 // Ordered, read-only table (never reordered; see adventure_sync.h).
@@ -456,7 +456,7 @@ const pgs_advsync_api_v1 g_api = {
 // Hidden getter. NOT exported by the version script; the coordinator registers it in
 // the core getter registry, which answers only on an exact version match.
 // ---------------------------------------------------------------------------
-const void *pgrazor_adventure_sync_api(uint32_t version) {
+const void *pgs_adventure_sync_api(uint32_t version) {
     if (version != PGS_ADVSYNC_API_VERSION) return nullptr;
     return &g_api;
 }
@@ -464,7 +464,7 @@ const void *pgrazor_adventure_sync_api(uint32_t version) {
 // ---------------------------------------------------------------------------
 // Host-independent policy self-check (no Dobby, no device, no image mutation).
 // ---------------------------------------------------------------------------
-int pgrazor_adventure_sync_selfcheck(void) {
+int pgs_adventure_sync_selfcheck(void) {
     if (dialog_is_confirm(DLG_INITIAL)) return 1;      // initial must decline
     if (dialog_is_confirm(DLG_INSTRUCTION)) return 2;  // instruction must decline
     if (!dialog_is_confirm(DLG_RESULT)) return 3;      // result must confirm

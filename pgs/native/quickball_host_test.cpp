@@ -134,9 +134,9 @@ QFORWARD(pgs_always_hit_api,7)
 QFORWARD(pgs_ar_throw_api,5)
 QFORWARD(pgs_map_tap_api,13)
 QFORWARD(pgs_iv_display_api,15)
-QFORWARD(pgrazor_runtime_transport_api,52)
-QFORWARD(pgrazor_runtime_bootstrap_api,54)
-QFORWARD(pgrazor_unity_scheduler_api,48)
+QFORWARD(pgs_runtime_transport_api,52)
+QFORWARD(pgs_runtime_bootstrap_api,54)
+QFORWARD(pgs_unity_scheduler_api,48)
 #undef QFORWARD
 
 int main(int argc,char **argv){

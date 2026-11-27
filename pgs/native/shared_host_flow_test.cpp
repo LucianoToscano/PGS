@@ -73,14 +73,14 @@ extern "C" void pgr_transfer_facts_set_max(void*,int32_t,int32_t,int32_t,int32_t
 #define pgs_transfer_execution_api fixture_transfer_api
 #define pgs_transfer_facts_api fixture_facts_api
 #define pgs_transfer_observers_api fixture_observers_api
-#define pgrazor_unity_scheduler_api fixture_scheduler_api
+#define pgs_unity_scheduler_api fixture_scheduler_api
 #define pgs_shared_metadata_api fixture_metadata_api
-#define pgrazor_runtime_transport_api fixture_transport_api
+#define pgs_runtime_transport_api fixture_transport_api
 #define pgs_transfer_policy_api fixture_transfer_policy_api
-#define pgrazor_runtime_bootstrap_api fixture_boot_api
-#define pgrazor_runtime_metadata_api fixture_meta_api
+#define pgs_runtime_bootstrap_api fixture_boot_api
+#define pgs_runtime_metadata_api fixture_meta_api
 #define pgs_interaction_host_api fixture_interaction_api
-#define pgrazor_shared_host_api fixture_host_api
+#define pgs_shared_host_api fixture_host_api
 #define pgs_hook fixture_hook
 #include "shared_host.cpp"
 

@@ -75,6 +75,6 @@ jint JNI_OnLoad(JavaVM *vm, void *) {
     }
 
     env->DeleteLocalRef(clazz);
-    if(pgrazor_register_runtime_transport(env)!=0)return JNI_ERR;
+    if(pgs_register_runtime_transport(env)!=0)return JNI_ERR;
     return JNI_VERSION_1_6;
 }

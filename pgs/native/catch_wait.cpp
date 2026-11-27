@@ -94,9 +94,9 @@ bool named_type(const PgrMetaExports &e,const void *type,const char *expected){
  reinterpret_cast<void(*)(void *)>(e.mem_free)(name);return same;
 }
 int prepare(const PgrCatchWaitConfig *test,PgrBootBinding &b,void **target){
- const auto *md=static_cast<const PgrMetaApi *>(pgrazor_runtime_metadata_api(1));if(!md)return -2;
+ const auto *md=static_cast<const PgrMetaApi *>(pgs_runtime_metadata_api(1));if(!md)return -2;
  if(test){if(test->version!=1||test->size!=sizeof(*test)||!test->binding||!test->segment||!test->class_get_name||!test->fixture_move_next)return -2;b=*test->binding;}
- else {const auto *boot=static_cast<const PgrBootApi *>(pgrazor_runtime_bootstrap_api(1));const int rc=boot->snapshot(&b);if(rc)return rc;}
+ else {const auto *boot=static_cast<const PgrBootApi *>(pgs_runtime_bootstrap_api(1));const int rc=boot->snapshot(&b);if(rc)return rc;}
  if(b.version!=1||b.size!=sizeof(b)||b.status||!b.module_base||!b.module_size||!b.runtime.thread_current)return -2;
  if(!b.runtime.gchandle_new||!b.runtime.gchandle_get_target||!b.runtime.gchandle_free||
     !b.runtime.field_get_value||!b.runtime.field_set_value||!b.runtime.object_get_class||!b.runtime.field_static_get_value)return -2;

@@ -12,7 +12,7 @@ int pgs_hook(void *address,void *replacement,void **original) {
  else return -1;
  return 0;
 }
-extern "C" const void *pgrazor_runtime_bootstrap_api(uint32_t) { return nullptr; }
+extern "C" const void *pgs_runtime_bootstrap_api(uint32_t) { return nullptr; }
 
 namespace {
 int shown_level=0,shows=0,hides=0,destroyed_panel_reads=0;

@@ -46,7 +46,7 @@ extern "C" {
 static_assert(sizeof(void *) == 8, "items native ABI requires LP64");
 
 // Feature id in the native pilot registry (coordinator wires the getter under this id).
-#define PGRAZOR_ITEMS_FEATURE_ID 14u
+#define PGS_ITEMS_FEATURE_ID 14u
 
 // Table + config + rules + sample ABI version. The getter answers an exact match only.
 #define PGS_ITEMS_API_VERSION 1u
@@ -103,11 +103,11 @@ enum {
 };
 
 // One published catalog row (POD; read back through catalog()).
-typedef struct pgrazor_item_row {
+typedef struct pgs_item_row {
     int32_t id;     /* Holoholo.Rpc.Item enum value (>0) */
     int32_t count;  /* current quantity (0..PGS_ITEMS_MAX_QTY) */
-} pgrazor_item_row;
-typedef pgrazor_item_row pgs_item_row;
+} pgs_item_row;
+typedef pgs_item_row pgrazor_item_row;
 
 // Event kinds carried by the bounded request/confirm/error queue (drain()). Each event owns its
 // own id/amount so asynchronous records can never be misattributed by a shared "last_*" field.
@@ -119,26 +119,26 @@ enum {
 
 // One queued telemetry event (POD; FIFO; drained and consumed by drain()). The adapter maps each
 // to the exact JS item-* event in order. A reused id never shares another event's amount.
-typedef struct pgrazor_item_event {
+typedef struct pgs_item_event {
     uint32_t kind;    /* PGR_ITEMS_EV_* */
     int32_t  id;      /* item id for this event */
     int32_t  amount;  /* recycled amount for this event */
     int32_t  aux;     /* REQUEST: kept cap; ERROR: reason code; CONFIRM: 0 */
-} pgrazor_item_event;
-typedef pgrazor_item_event pgs_item_event;
+} pgs_item_event;
+typedef pgs_item_event pgrazor_item_event;
 
 // One user cap rule (POD; packed into the rules snapshot by the adapter).
-typedef struct pgrazor_item_cap {
+typedef struct pgs_item_cap {
     int32_t id;     /* item id */
     int32_t cap;    /* keep-at-most quantity; auto-recycle the surplus */
-} pgrazor_item_cap;
-typedef pgrazor_item_cap pgs_item_cap;
+} pgs_item_cap;
+typedef pgs_item_cap pgrazor_item_cap;
 
 // Per-tick rules snapshot (immutable config stays separate). The adapter rebuilds this from
 // s.itemRules / s.itemEnabled / s.itemEpoch and bumps generation whenever the serialized
 // config (itemConfig+':'+itemEnabled) changes, so the native layer can clear the blocked set
 // exactly when the JS factory did. Snapshotted atomically at the start of each pass.
-typedef struct pgrazor_items_rules_v1 {
+typedef struct pgs_items_rules_v1 {
     uint32_t version;              /* == PGS_ITEMS_API_VERSION */
     uint32_t size;                 /* == sizeof(pgs_items_rules_v1) */
     uint32_t enabled;              /* s.itemEnabled (0/1) */
@@ -146,8 +146,8 @@ typedef struct pgrazor_items_rules_v1 {
     uint64_t generation;           /* config generation; a change clears blocked */
     uint64_t epoch;                /* s.itemEpoch (recorded in pending; vestigial, kept for parity) */
     pgs_item_cap entries[PGS_ITEMS_MAX_RULES];
-} pgrazor_items_rules_v1;
-typedef pgrazor_items_rules_v1 pgs_items_rules_v1;
+} pgs_items_rules_v1;
+typedef pgs_items_rules_v1 pgrazor_items_rules_v1;
 
 // Install-time configuration, packed by the JS adapter after its metadata validation. Fixed
 // LP64 layout (8-byte fields; see the static_asserts in items.cpp). has_lookup gates the
@@ -155,7 +155,7 @@ typedef pgrazor_items_rules_v1 pgs_items_rules_v1;
 // null for config idempotency); when 1 they are all re-validated non-null. Every pointer is an
 // already-validated il2cpp export, MethodInfo*, hook address, class pointer, FieldInfo* or
 // Il2CppType*; the native layer re-checks the header and rejects any null before use.
-typedef struct pgrazor_items_config_v1 {
+typedef struct pgs_items_config_v1 {
     uint32_t version;              /* == PGS_ITEMS_API_VERSION */
     uint32_t size;                 /* == sizeof(pgs_items_config_v1) */
     uint32_t has_lookup;           /* 1 == the lookup group is provided and validated */
@@ -237,8 +237,8 @@ typedef struct pgrazor_items_config_v1 {
     /* ---- literals ------------------------------------------------------------ */
     int32_t success;               /* IResponse.Result == Success literal */
     int32_t reserved1;             /* 0; keeps the config 8-byte aligned (size 432) */
-} pgrazor_items_config_v1;
-typedef pgrazor_items_config_v1 pgs_items_config_v1;
+} pgs_items_config_v1;
+typedef pgs_items_config_v1 pgrazor_items_config_v1;
 
 // Pull-only telemetry snapshot (56 bytes). The two *_serial fields are edge-triggered (the
 // adapter re-emits bag-ready / catalog on a transition). Per-event request/confirm/error data is
@@ -248,7 +248,7 @@ typedef pgrazor_items_config_v1 pgs_items_config_v1;
 // candidate). catalog is read separately through catalog(); catalog_count is the current row
 // count. owned_roots is durable roots (service + two filters + any pending bag) plus active owner
 // frames (conservative finish guard).
-typedef struct pgrazor_items_sample_v1 {
+typedef struct pgs_items_sample_v1 {
     uint32_t version;              /* == PGS_ITEMS_API_VERSION */
     uint32_t size;                 /* == sizeof(pgs_items_sample_v1) */
     uint64_t bag_ready_serial;     /* item-bag-ready (edge-triggered) */
@@ -259,8 +259,8 @@ typedef struct pgrazor_items_sample_v1 {
     uint32_t owned_roots;          /* durable roots + active owner frames */
     uint32_t catalog_count;        /* current number of catalog rows */
     uint32_t reserved;             /* 0 */
-} pgrazor_items_sample_v1;
-typedef pgrazor_items_sample_v1 pgs_items_sample_v1;
+} pgs_items_sample_v1;
+typedef pgs_items_sample_v1 pgrazor_items_sample_v1;
 
 /*
  * install(config): validate and publish the immutable config once for the process lifetime,
@@ -269,8 +269,8 @@ typedef pgrazor_items_sample_v1 pgs_items_sample_v1;
  * hook addresses collide; HOOK on a Dobby failure (the failed attempt latches and never unhooks
  * a published trampoline). NO_CLOCK if CLOCK_BOOTTIME is unavailable. No managed call here.
  */
-typedef int (*pgrazor_items_install_fn)(const pgs_items_config_v1 *config);
-typedef pgrazor_items_install_fn pgs_items_install_fn;
+typedef int (*pgs_items_install_fn)(const pgs_items_config_v1 *config);
+typedef pgs_items_install_fn pgrazor_items_install_fn;
 
 /*
  * tick(rules, force_poll, remaining_lease_ms, proven_tid): one orchestration pass. Runs ONLY
@@ -285,9 +285,9 @@ typedef pgrazor_items_install_fn pgs_items_install_fn;
  * re-checked immediately before the single RecycleItem (0/expired -> no managed recycle).
  * Returns OK, NOT_INSTALLED or BAD_RULES.
  */
-typedef int (*pgrazor_items_tick_fn)(const pgs_items_rules_v1 *rules, uint32_t force_poll,
+typedef int (*pgs_items_tick_fn)(const pgs_items_rules_v1 *rules, uint32_t force_poll,
                                      uint64_t remaining_lease_ms, uint64_t proven_tid);
-typedef pgrazor_items_tick_fn pgs_items_tick_fn;
+typedef pgs_items_tick_fn pgrazor_items_tick_fn;
 
 /*
  * clear(proven_tid): Unity-thread-only teardown for stop/detach. RELEASES every durable GC root
@@ -297,19 +297,19 @@ typedef pgrazor_items_tick_fn pgs_items_tick_fn;
  * Called off the proven thread it is a no-op; a reentrant clear from inside the owner's own pass
  * defers the free to the pass epilogue. Returns OK or NOT_INSTALLED.
  */
-typedef int (*pgrazor_items_clear_fn)(uint64_t proven_tid);
-typedef pgrazor_items_clear_fn pgs_items_clear_fn;
+typedef int (*pgs_items_clear_fn)(uint64_t proven_tid);
+typedef pgs_items_clear_fn pgrazor_items_clear_fn;
 
 /* sample(out): copy the latest telemetry snapshot. Safe from any thread; never frees. */
-typedef int (*pgrazor_items_sample_fn)(pgs_items_sample_v1 *out);
-typedef pgrazor_items_sample_fn pgs_items_sample_fn;
+typedef int (*pgs_items_sample_fn)(pgs_items_sample_v1 *out);
+typedef pgs_items_sample_fn pgrazor_items_sample_fn;
 
 /*
  * catalog(out, max, written): copy up to `max` catalog rows into `out`, writing the count into
  * *written. Safe from any thread; never frees. Returns OK, NOT_INSTALLED or NULL_ARG.
  */
-typedef int (*pgrazor_items_catalog_fn)(pgs_item_row *out, uint32_t max, uint32_t *written);
-typedef pgrazor_items_catalog_fn pgs_items_catalog_fn;
+typedef int (*pgs_items_catalog_fn)(pgs_item_row *out, uint32_t max, uint32_t *written);
+typedef pgs_items_catalog_fn pgrazor_items_catalog_fn;
 
 /*
  * drain(out, max, written): copy up to `max` queued request/confirm/error events into `out` in
@@ -318,8 +318,8 @@ typedef pgrazor_items_catalog_fn pgs_items_catalog_fn;
  * thread (a tiny mutex guards the ring-buffer copy only; never a managed call, never frees).
  * Returns OK, NOT_INSTALLED or NULL_ARG.
  */
-typedef int (*pgrazor_items_drain_fn)(pgs_item_event *out, uint32_t max, uint32_t *written);
-typedef pgrazor_items_drain_fn pgs_items_drain_fn;
+typedef int (*pgs_items_drain_fn)(pgs_item_event *out, uint32_t max, uint32_t *written);
+typedef pgs_items_drain_fn pgrazor_items_drain_fn;
 
 /*
  * service_handle(): the current durable service GC handle (an il2cpp gchandle, pointer-sized) or
@@ -327,8 +327,8 @@ typedef pgrazor_items_drain_fn pgs_items_drain_fn;
  * Use it only for a readiness / identity check, never to drive managed calls across a possible
  * clear(). Safe from any thread; never creates or frees a handle.
  */
-typedef void *(*pgrazor_items_service_handle_fn)(void);
-typedef pgrazor_items_service_handle_fn pgs_items_service_handle_fn;
+typedef void *(*pgs_items_service_handle_fn)(void);
+typedef pgs_items_service_handle_fn pgrazor_items_service_handle_fn;
 
 /*
  * service_acquire(): return a NEW, INDEPENDENTLY OWNED il2cpp gchandle rooting the current service
@@ -338,11 +338,11 @@ typedef pgrazor_items_service_handle_fn pgs_items_service_handle_fn;
  * time-based grace. Creates a GC handle, so it runs ONLY on the proven Unity thread (returns null
  * from any other thread or before the Unity identity latches).
  */
-typedef void *(*pgrazor_items_service_acquire_fn)(void);
-typedef pgrazor_items_service_acquire_fn pgs_items_service_acquire_fn;
+typedef void *(*pgs_items_service_acquire_fn)(void);
+typedef pgs_items_service_acquire_fn pgrazor_items_service_acquire_fn;
 
 // Ordered, read-only table advertised by the getter (72 bytes: header + 8 pointers).
-typedef struct pgrazor_items_api_v1 {
+typedef struct pgs_items_api_v1 {
     uint32_t version;              /* == PGS_ITEMS_API_VERSION */
     uint32_t size;                 /* == sizeof(pgs_items_api_v1) */
     pgs_items_install_fn         install;
@@ -353,8 +353,8 @@ typedef struct pgrazor_items_api_v1 {
     pgs_items_service_handle_fn  service_handle;
     pgs_items_drain_fn           drain;
     pgs_items_service_acquire_fn service_acquire;
-} pgrazor_items_api_v1;
-typedef pgrazor_items_api_v1 pgs_items_api_v1;
+} pgs_items_api_v1;
+typedef pgs_items_api_v1 pgrazor_items_api_v1;
 
 /*
  * Hidden getter (NOT exported by the version script). The coordinator registers it in the core
@@ -365,7 +365,7 @@ const void *pgs_items_api(uint32_t version);
 
 // Internal host seam: advances only after a successful full pass with no recyclable
 // candidate and no pending RPC. Unlike catalog_serial, empty unchanged polls count.
-uint64_t pgrazor_items_cleanup_serial();
+uint64_t pgs_items_cleanup_serial();
 // Internal host force_poll bit 8 invalidates a retained large inventory snapshot.
 
 #ifdef __cplusplus

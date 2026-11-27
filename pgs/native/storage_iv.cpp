@@ -18,7 +18,7 @@
 #include <vector>
 // Pokemon storage list IVs. PokemonInventoryCellView.Initialize fills one storage cell each time it
 // shows a Pokemon (cells are reused while scrolling). After the game's own Initialize, a copy of the
-// cell's CP label, on a soft off-white panel named PGRazorIv, is placed just under it and shows the
+// cell's CP label, on a soft off-white panel named PGSIv, is placed just under it and shows the
 // Pokemon's level and IVs, and the CP header is drawn in front of the Pokemon image. Turning the setting off
 // hides the panel; the game's own label text is never changed. The hook is installed the first time
 // the setting is on and stays for the process, like every other code hook.
@@ -190,12 +190,12 @@ void *class_type(const char *ns,const char *name){
  return fn<void*(*)(void*)>(exp("type_get_object"))(fn<void*(*)(void*)>(boot.meta.class_get_type)(class_of(ns,name)));
 }
 void set_vector(void *o,const char *setter,float x,float y){float v[2]={x,y};void *a[]={v};call(o,setter,1,a);}
-// A cell's IV label: the PGRazorIv panel (a soft off-white backing, in the CP header's layout) and
+// A cell's IV label: the PGSIv panel (a soft off-white backing, in the CP header's layout) and
 // the copy of the CP label inside it that shows the text. In mode 4 the panel also holds a second
 // row: the league crest (an Image) and the rank (another text copy).
 struct Label {void *panel=nullptr,*text=nullptr,*rank[3]={},*icon[3]={};};
-const char *const kRankNames[]={"PGRazorPvpRank0","PGRazorPvpRank1","PGRazorPvpRank2"};
-const char *const kIconNames[]={"PGRazorPvpIcon0","PGRazorPvpIcon1","PGRazorPvpIcon2"};
+const char *const kRankNames[]={"PGSPvpRank0","PGSPvpRank1","PGSPvpRank2"};
+const char *const kIconNames[]={"PGSPvpIcon0","PGSPvpIcon1","PGSPvpIcon2"};
 const char *const kLeagueColor[]={"#2a63c4","#a87405","#6a3fb5"};
 // A new UI GameObject with a RectTransform, an Image and a LayoutElement, under parent.
 void *new_panel(void *parent){
@@ -203,15 +203,15 @@ void *new_panel(void *parent){
  void *components[]={class_type("UnityEngine","RectTransform"),class_type("UnityEngine.UI","Image"),layout_element_type()};
  for(int i=0;i<3;i++){void **slot=reinterpret_cast<void**>(static_cast<char*>(types)+32+i*8);fn<void(*)(void*,void**,void*)>(exp("gc_wbarrier_set_field"))(types,slot,components[i]);}
  void *panel=fn<void*(*)(void*)>(boot.runtime.object_new)(class_of("UnityEngine","GameObject"));require(panel,"IV panel");
- void *ctor_args[]={managed_string("PGRazorIv"),types};invoke(new_game_object,panel,ctor_args);
+ void *ctor_args[]={managed_string("PGSIv"),types};invoke(new_game_object,panel,ctor_args);
  bool keep_world=false;void *parent_args[]={parent,&keep_world};invoke(set_parent,call(panel,"get_transform"),parent_args);
  return panel;
 }
-// The PGRazorIv label of a cell: found under the CP label's parent, or built from the CP label.
+// The PGSIv label of a cell: found under the CP label's parent, or built from the CP label.
 Label iv_label(void *cp_text,bool create){
  void *cp_transform=call(cp_text,"get_transform");void *parent=call(cp_transform,"get_parent");require(parent,"CP label parent");
  Label out;
- void *find_args[]={managed_string("PGRazorIv")};
+ void *find_args[]={managed_string("PGSIv")};
  if(void *found=invoke(find_child,parent,find_args)){
   require(unbox<int>(call(found,"get_childCount"))>=1,"IV label text");int first=0;void *index[]={&first};
   void *component_args[]={type_object(cp_text)};out.text=invoke(get_component,call(found,"GetChild",1,index),component_args);require(out.text,"IV label component");

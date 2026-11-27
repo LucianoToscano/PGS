@@ -7,8 +7,8 @@
 // Feature 59 / API 1: complete compiled port of diagnostics/camera-probe.js
 // discover(module, api, domain, sampleCamera, continuous) and its validation helpers
 // (text, typeName, pointerHandleAbi, executable, DEBUG_INFO_WORDS, TARGETS, LIMITS).
-// Built on feature 47's reusable metadata primitives (pgrazor_runtime_metadata_api(1))
-// and cross-checked against feature 54's bootstrap snapshot (pgrazor_runtime_bootstrap_api(1))
+// Built on feature 47's reusable metadata primitives (pgs_runtime_metadata_api(1))
+// and cross-checked against feature 54's bootstrap snapshot (pgs_runtime_bootstrap_api(1))
 // where active, using the canonical raw PT_LOAD module range consistent with quickball (55)
 // and routes (53). No hooks, no Gum/Dobby, no GC handle creation, no runtime_invoke, no JS
 // evaluator: pure metadata discovery + read-only code fingerprints.

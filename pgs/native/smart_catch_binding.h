@@ -10,10 +10,10 @@
 //
 // SOURCING (no guessed addresses):
 //   * il2cpp runtime + reflection exports come from the feature 54 bootstrap snapshot
-//     (pgrazor_runtime_bootstrap_api). The handful of reflection exports the bootstrap table does not
+//     (pgs_runtime_bootstrap_api). The handful of reflection exports the bootstrap table does not
 //     carry are dlsym'd from the SAME dlopen handle the snapshot returns (never a fabricated pointer).
 //   * every game Il2CppClass* / FieldInfo* / MethodInfo* is resolved+validated through
-//     pgrazor_runtime_metadata_api feature 47 (resolve_class / validate_field / validate_method), which
+//     pgs_runtime_metadata_api feature 47 (resolve_class / validate_field / validate_method), which
 //     the coordinator binds via the bootstrap probe(). This leaf only snapshots; it never binds feature 47.
 //   * rpc_id and status_success are read with il2cpp_field_static_get_value on the validated enum literals
 //     (Holoholo.Rpc.Method.UseItemEncounter and the UseItemEncounterOutProto.Status "Success" literal).
@@ -29,8 +29,8 @@ extern "C" {
 static_assert(sizeof(void *) == 8, "SmartCatch binding ABI requires LP64");
 
 enum PgrSmartBindInfo {
-  PGR_SMARTBIND_BOOTSTRAP_API = 54,  // pgrazor_runtime_bootstrap_api version queried
-  PGR_SMARTBIND_METADATA_API  = 47,  // pgrazor_runtime_metadata_api version queried
+  PGR_SMARTBIND_BOOTSTRAP_API = 54,  // pgs_runtime_bootstrap_api version queried
+  PGR_SMARTBIND_METADATA_API  = 47,  // pgs_runtime_metadata_api version queried
   PGR_SMARTBIND_FRESH_MIN_MS  = 5000 // spawn-freshness floor: known despawn < 5s is filtered
 };
 

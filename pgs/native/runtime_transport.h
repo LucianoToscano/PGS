@@ -29,7 +29,7 @@
 // carries NO pointer across the boundary -- only compiled primitive fields and length-prefixed UTF-8. The
 // ARM gameplay hooks, Control's own feature/lease/domain authorization, and the guest Frida runtime are NOT
 // retired by this module; this is the HOST transport only. The three exported symbols stay JNI_OnLoad and
-// pgrazor_native_api; this table is handed out through query_feature(52, 1), never exported by name.
+// pgs_native_api; this table is handed out through query_feature(52, 1), never exported by name.
 
 #ifdef __cplusplus
 extern "C" {
@@ -218,10 +218,10 @@ static_assert(sizeof(PgrRuntimeTransportApi) == 96, "RuntimeTransport table must
 
 // Hidden getter. NOT exported by the version script; the coordinator registers it in query_feature under
 // feature id 52 and answers only on an exact version match.
-const void *pgrazor_runtime_transport_api(uint32_t version);
-// Canonical source spelling; retain the hidden legacy linkage for older objects and fixtures.
-static inline const void *pgs_runtime_transport_api(uint32_t version) {
-    return pgrazor_runtime_transport_api(version);
+const void *pgs_runtime_transport_api(uint32_t version);
+// Compatibility for older source consumers; the PGS name is the primary hidden getter.
+static inline const void *pgrazor_runtime_transport_api(uint32_t version) {
+    return pgs_runtime_transport_api(version);
 }
 
 #ifdef __cplusplus

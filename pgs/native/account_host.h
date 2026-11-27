@@ -1,5 +1,5 @@
-#ifndef PGRAZOR_NATIVE_ACCOUNT_HOST_H_
-#define PGRAZOR_NATIVE_ACCOUNT_HOST_H_
+#ifndef PGS_NATIVE_ACCOUNT_HOST_H_
+#define PGS_NATIVE_ACCOUNT_HOST_H_
 
 #include <stddef.h>
 #include <stdint.h>
@@ -273,4 +273,4 @@ static inline const void *pgs_account_host_api(uint32_t version) {
 }
 #endif
 
-#endif  // PGRAZOR_NATIVE_ACCOUNT_HOST_H_
+#endif  // PGS_NATIVE_ACCOUNT_HOST_H_

@@ -48,12 +48,12 @@ extern "C" int fixture_hook_dispatch(void *, void *, void **);
 int pgs_hook(void *address, void *replacement, void **original) {
     return fixture_hook_dispatch(address, replacement, original);
 }
-extern "C" const void *pgrazor_runtime_bootstrap_api(uint32_t) { return nullptr; }
+extern "C" const void *pgs_runtime_bootstrap_api(uint32_t) { return nullptr; }
 const void *fixture_query(uint32_t feature, uint32_t version) {
     return feature == 15 ? pgs_iv_display_api(version) : nullptr;
 }
 extern "C" const void *pgrazor_native_api(uint32_t version) {
-    static const pgrazor_native_api_v2 api{2, sizeof(pgrazor_native_api_v2),
+    static const pgs_native_api_v2 api{2, sizeof(pgs_native_api_v2),
         nullptr, nullptr, nullptr, nullptr, fixture_query};
     return version == 2 ? &api : nullptr;
 }

@@ -104,11 +104,11 @@ int g_unused=0;
 const void *host_stub(uint32_t){ return &g_unused; }
 } // namespace diagfix
 
-#define pgrazor_unity_scheduler_api   diagfix::scheduler_api
-#define pgrazor_runtime_transport_api diagfix::transport_api
-#define pgrazor_runtime_bootstrap_api diagfix::boot_api
-#define pgrazor_runtime_metadata_api  diagfix::metadata_api
-#define pgrazor_shared_host_api       diagfix::host_stub
+#define pgs_unity_scheduler_api   diagfix::scheduler_api
+#define pgs_runtime_transport_api diagfix::transport_api
+#define pgs_runtime_bootstrap_api diagfix::boot_api
+#define pgs_runtime_metadata_api  diagfix::metadata_api
+#define pgs_shared_host_api       diagfix::host_stub
 #define pgs_quickball_host_api    diagfix::host_stub
 #define pgs_routes_host_api       diagfix::host_stub
 #define pgs_inventory_host_api    diagfix::host_stub

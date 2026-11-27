@@ -167,7 +167,7 @@ void note_bread(void *ball, const char *what, int32_t value = 0) {
     if (ball == last || read_bool(ball, g_config.field_bread) != 1) return;
     last = ball;
 #if defined(__ANDROID__)
-    __android_log_print(ANDROID_LOG_INFO, "PGRazor", "always-hit max-battle ball: %s %d", what, static_cast<int>(value));
+    __android_log_print(ANDROID_LOG_INFO, "PGS", "always-hit max-battle ball: %s %d", what, static_cast<int>(value));
 #else
     (void)what; (void)value;
 #endif

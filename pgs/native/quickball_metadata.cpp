@@ -11,7 +11,7 @@ using namespace pgr_quickball_schema;
 std::mutex g_resolving;
 
 const PgrMetaApi *metadata() {
-  return static_cast<const PgrMetaApi *>(pgrazor_runtime_metadata_api(1));
+  return static_cast<const PgrMetaApi *>(pgs_runtime_metadata_api(1));
 }
 
 bool attached(const PgrQuickballMetaConfig &c) {

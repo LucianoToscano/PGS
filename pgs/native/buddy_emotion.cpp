@@ -98,7 +98,7 @@ void publish(const std::string &message,bool force=false){
  uint64_t now=clock_ms();if(!force&&message==status&&now-last_publish<5000)return;status=message;last_publish=now;
  auto wall=clock_ms(CLOCK_REALTIME);uint64_t maintenance=history.interaction&&wall>=history.interaction?((wall-history.interaction>=1200000)?0:(1200000-(wall-history.interaction))/1000):0;
  std::string json="{\"message\":\""+message+"\",\"ep\":"+std::to_string(ep)+",\"excited\":"+(excited?"true":"false")+",\"maintenanceSeconds\":"+std::to_string(maintenance)+",\"history\":\""+encode(history)+"\",\"account\":\""+account+"\"}";
- __android_log_print(ANDROID_LOG_INFO,"PGRazorBuddyEP","%s EP=%d excited=%d",message.c_str(),ep,int(excited));
+ __android_log_print(ANDROID_LOG_INFO,"PGSBuddyEP","%s EP=%d excited=%d",message.c_str(),ep,int(excited));
  auto tr=static_cast<const PgrRuntimeTransportApi*>(pgs_runtime_transport_api(1));PgrRuntimeTransportString values[]={{"buddy-emotion",13},{json.c_str(),uint32_t(json.size())}};
  if(tr&&tr->emit(19,nullptr,0,values,2))paused=true;
 }
@@ -175,7 +175,7 @@ void begin(int phase,const Permission &p){
   if(action==Snapshot){pending.phase=6;pending.promise=start_photo_session(p);}
   else if(action==Pet)pending.promise=Root(call(rpc.get(),"Pet"));
   else if(action==Gift)pending.promise=Root(call(rpc.get(),"OpenGift"));
-  else {int one=1;void *args[]={&berry,&one};__android_log_print(ANDROID_LOG_INFO,"PGRazorBuddyEP","Feeding selected berry %d",berry);pending.promise=Root(call(rpc.get(),"Feed",2,args));}
+  else {int one=1;void *args[]={&berry,&one};__android_log_print(ANDROID_LOG_INFO,"PGSBuddyEP","Feeding selected berry %d",berry);pending.promise=Root(call(rpc.get(),"Feed",2,args));}
  }
  require(bool(pending.promise),"buddy request outcome unknown");
 }

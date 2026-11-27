@@ -74,10 +74,10 @@ void fixture(Stage stage=SEND){
 extern "C" int il2cpp_string_length(void *o){assert(o==&string_object);return account.size();}
 extern "C" void *il2cpp_class_get_fields(void *k,void **iter){return enum_fields(k,iter);}
 extern "C" const char *il2cpp_field_get_name(void *f){return field_name(f);}
-extern "C" const void *pgrazor_runtime_transport_api(uint32_t v){assert(v==1);return &transport;}
+extern "C" const void *pgs_runtime_transport_api(uint32_t v){assert(v==1);return &transport;}
 extern "C" const void *pgs_vgp_results_api(uint32_t v){assert(v==1);return &results;}
-extern "C" const void *pgrazor_runtime_metadata_api(uint32_t v){assert(v==1);return &metadata;}
-extern "C" const void *pgrazor_runtime_bootstrap_api(uint32_t v){assert(v==1);return &bootstrap_api;}
+extern "C" const void *pgs_runtime_metadata_api(uint32_t v){assert(v==1);return &metadata;}
+extern "C" const void *pgs_runtime_bootstrap_api(uint32_t v){assert(v==1);return &bootstrap_api;}
 extern "C" const void *pgs_incoming_gifts_api(uint32_t){return nullptr;}
 extern "C" const void *pgs_outgoing_gifts_api(uint32_t){return nullptr;}
 int main(){

@@ -70,7 +70,7 @@ extern "C" int pgr_smart_berry(void *target,void *bag,int32_t berry,uint64_t own
  ++berry_calls;*promise=gcNew(promiseObj.p(),0);*reflection=gcNew(reflObj.p(),0);return 1;
 }
 extern "C" int pgr_smart_berry_success(void *response,uint64_t owner){assert(response==respObj.p()&&owner==tid);++berry_confirmations;return 1;}
-extern "C" const void *pgrazor_runtime_transport_api(uint32_t version){return version==1?&smart_transport:nullptr;}
+extern "C" const void *pgs_runtime_transport_api(uint32_t version){return version==1?&smart_transport:nullptr;}
 extern "C" const void *pgs_vgp_actions_api(uint32_t version){return version==2?&selected_api:nullptr;}
 extern "C" void pgr_vgp_smart_escape_status(int32_t);
 int main(){

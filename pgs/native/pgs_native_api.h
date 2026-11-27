@@ -45,7 +45,7 @@ enum {
     PGS_ERR_UNSUPPORTED_VERSION = 8 /* reserved for negotiation callers */
 };
 
-/* Source aliases required by already-compiled C/C++ modules. */
+/* Compatibility aliases for legacy C/C++ source consumers. */
 #define PGRAZOR_OK PGS_OK
 #define PGRAZOR_ERR_NULL_ARG PGS_ERR_NULL_ARG
 #define PGRAZOR_ERR_ALREADY_BOUND PGS_ERR_ALREADY_BOUND
@@ -57,11 +57,11 @@ enum {
 #define PGRAZOR_ERR_UNSUPPORTED_VERSION PGS_ERR_UNSUPPORTED_VERSION
 
 /* Telemetry snapshot of the spawn getter. Pull-only: the native layer never calls back into JS. */
-typedef struct pgrazor_spawn_snapshot {
+typedef struct pgs_spawn_snapshot {
     double   original;  /* last radius the original getter returned */
     double   effective; /* last radius this layer returned to the caller */
     uint64_t count;     /* number of times the policy raised the radius to the floor */
-} pgrazor_spawn_snapshot;
+} pgs_spawn_snapshot;
 
 /*
  * install(address): install the spawn-getter hook at `address` once for the process
@@ -70,8 +70,8 @@ typedef struct pgrazor_spawn_snapshot {
  * PGS_OK (idempotent); a different address returns PGS_ERR_ALREADY_BOUND.
  * The hook is never removed; see update(..., enabled=0) to disable its effect.
  */
-typedef int (*pgrazor_install_fn)(void *address);
-typedef pgrazor_install_fn pgs_install_fn;
+typedef int (*pgs_install_fn)(void *address);
+typedef pgs_install_fn pgrazor_install_fn;
 
 /*
  * update(enabled, allowed, lease_ms): arm or clear the policy window.
@@ -81,35 +81,35 @@ typedef pgrazor_install_fn pgs_install_fn;
  *   allowed                 -> existing foreground/readiness permission lease.
  * The floor only applies while enabled && allowed && now < deadline.
  */
-typedef int (*pgrazor_update_fn)(int enabled, int allowed, uint64_t lease_ms);
-typedef pgrazor_update_fn pgs_update_fn;
+typedef int (*pgs_update_fn)(int enabled, int allowed, uint64_t lease_ms);
+typedef pgs_update_fn pgrazor_update_fn;
 
 /* sample(out): copy the latest telemetry snapshot. Does not clear counters. */
-typedef int (*pgrazor_sample_fn)(pgrazor_spawn_snapshot *out);
-typedef pgrazor_sample_fn pgs_sample_fn;
+typedef int (*pgs_sample_fn)(pgs_spawn_snapshot *out);
+typedef pgs_sample_fn pgrazor_sample_fn;
 
 /*
  * selftest(): run the self-contained Dobby hook self-check against an own function
  * (original chaining + clean detach, leaving no dangling hook). Explicit call only;
  * NEVER run automatically in production. Returns PGS_OK or PGS_ERR_SELFTEST.
  */
-typedef int (*pgrazor_selftest_fn)(void);
-typedef pgrazor_selftest_fn pgs_selftest_fn;
+typedef int (*pgs_selftest_fn)(void);
+typedef pgs_selftest_fn pgrazor_selftest_fn;
 
 /* Ordered, read-only function table. Header first; function pointers in fixed order. */
-typedef struct pgrazor_native_api_v1 {
+typedef struct pgs_native_api_v1 {
     uint32_t version;              /* == PGS_NATIVE_API_VERSION */
     uint32_t size;                 /* == sizeof(pgs_native_api_v1) */
     pgs_install_fn  install;
     pgs_update_fn   update;
     pgs_sample_fn   sample;
     pgs_selftest_fn selftest;
-} pgrazor_native_api_v1;
+} pgs_native_api_v1;
 
 /* v1 remains available unchanged. v2 appends independent feature discovery. */
-typedef const void *(*pgrazor_query_feature_fn)(uint32_t id, uint32_t version);
-typedef pgrazor_query_feature_fn pgs_query_feature_fn;
-typedef struct pgrazor_native_api_v2 {
+typedef const void *(*pgs_query_feature_fn)(uint32_t id, uint32_t version);
+typedef pgs_query_feature_fn pgrazor_query_feature_fn;
+typedef struct pgs_native_api_v2 {
     uint32_t version;
     uint32_t size;
     pgs_install_fn install;
@@ -117,7 +117,7 @@ typedef struct pgrazor_native_api_v2 {
     pgs_sample_fn sample;
     pgs_selftest_fn selftest;
     pgs_query_feature_fn query_feature;
-} pgrazor_native_api_v2;
+} pgs_native_api_v2;
 
 /*
  * Returns a pointer to a static const pgs_native_api_v1 when `version` matches
@@ -131,9 +131,9 @@ const void *pgs_native_api(uint32_t version);
 const void *pgrazor_native_api(uint32_t version);
 
 /* PGS source types retain the exact legacy ABI layout. */
-typedef pgrazor_spawn_snapshot pgs_spawn_snapshot;
-typedef pgrazor_native_api_v1 pgs_native_api_v1;
-typedef pgrazor_native_api_v2 pgs_native_api_v2;
+typedef pgs_spawn_snapshot pgrazor_spawn_snapshot;
+typedef pgs_native_api_v1 pgrazor_native_api_v1;
+typedef pgs_native_api_v2 pgrazor_native_api_v2;
 
 #ifdef __cplusplus
 } /* extern "C" */

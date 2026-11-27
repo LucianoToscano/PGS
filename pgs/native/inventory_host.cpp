@@ -54,7 +54,7 @@ void feature_ready(uint32_t bit,const char *kind,uint32_t op,int rc){if(!rc)caps
 bool attached(uint64_t tid){return tid&&tid==uint64_t(gettid())&&rt.boot.thread_current&&reinterpret_cast<void*(*)()>(rt.boot.thread_current)();}
 int bind_default(){
  const auto *sh=static_cast<const PgrSharedHostApi*>(pgs_shared_host_api(1));const auto *metadata=sh?sh->metadata():nullptr;if(!metadata)return 1;
- PgrBootBinding b{};const auto *boot=static_cast<const PgrBootApi*>(pgrazor_runtime_bootstrap_api(1));if(!boot||boot->snapshot(&b))return 1;
+ PgrBootBinding b{};const auto *boot=static_cast<const PgrBootApi*>(pgs_runtime_bootstrap_api(1));if(!boot||boot->snapshot(&b))return 1;
  md=*metadata;rt.boot=b.runtime;auto exp=[&](const char *name){return dlsym(b.handle,(std::string("il2cpp_")+name).c_str());};
  rt.string_length=exp("string_length");rt.object_get_virtual_method=exp("object_get_virtual_method");rt.class_get_type=b.meta.class_get_type;
  rt.type_get_object=exp("type_get_object");rt.runtime_class_init=exp("runtime_class_init");rt.method_get_object=exp("method_get_object");binding=true;return 0;
@@ -329,12 +329,12 @@ bool cleanup_available(){
 }
 uint64_t request_cleanup(){
  if(owner.load()!=uint64_t(gettid())||!cleanup_available())return 0;
- uint64_t ticket=pgrazor_items_cleanup_serial()+1;
+ uint64_t ticket=pgs_items_cleanup_serial()+1;
  cleanup_poll.store(true);
  return ticket;
 }
 int cleanup_pending(uint64_t ticket){
- return ticket&&cleanup_available()&&pgrazor_items_cleanup_serial()<ticket?1:0;
+ return ticket&&cleanup_available()&&pgs_items_cleanup_serial()<ticket?1:0;
 }
 const PgrInventoryCleanupApi cleanup_api{2,sizeof(PgrInventoryCleanupApi),request_cleanup,cleanup_pending};
 const PgrInventoryHostApi api{1,sizeof(PgrInventoryHostApi),configure,update,tick,stop,sample,next_event,request_item_poll,acquire_item_service,on_pulse,visibility_site,visibility};

@@ -5,7 +5,7 @@
 
 // Feature 55 / API 2: compiled port of diagnostics/quick-ball.js prepare(module, api, domain)
 // structural metadata discovery+validation (source lines 109..327). It is built on feature47's
-// reusable primitives (pgrazor_runtime_metadata_api(1): the 31 fixed il2cpp metadata exports) PLUS a
+// reusable primitives (pgs_runtime_metadata_api(1): the 31 fixed il2cpp metadata exports) PLUS a
 // small, explicitly typed set of EXTRA il2cpp primitives this module owns and calls itself
 // (field_static_get_value, type_is_byref, class_get_fields, and the GC-handle export addresses the
 // pointer-ABI fingerprint inspects). With those extras every metadata DECISION prepare() made is now

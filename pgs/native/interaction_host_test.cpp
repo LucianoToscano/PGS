@@ -417,7 +417,7 @@ static void *dummy_orig_btxu(void *self, const void *method) {
     return g_btxu_orig_return_value;
 }
 
-extern "C" int pgrazor_hook(void *target, void *replacement, void **original) {
+int pgs_hook(void *target, void *replacement, void **original) {
     ++g_total_hook_calls;
     for (uint32_t i = 0; i < g_hook_count; ++i) {
         if (g_hooks[i].target == target) {
@@ -432,7 +432,7 @@ extern "C" int pgrazor_hook(void *target, void *replacement, void **original) {
     return DobbyHook(target,replacement,original);
 }
 
-extern "C" int pgrazor_unhook(void *target) {++g_total_unhook_calls;return DobbyDestroy(target);}
+int pgs_unhook(void *target) {++g_total_unhook_calls;return DobbyDestroy(target);}
 
 static void *find_installed_replacement(uint32_t target_id) {
     uintptr_t code = g_state.targets[target_id].code;
@@ -1047,7 +1047,7 @@ static void test_shared_hook_sites_coexistence(const PgsInteractionHostApi *api)
     PgsInteractionHostSample s {};
 
     /* 1. Unattested required shared site (Feature 49 owns 10, 11, 19; integrated_mask == 0)
-          -> NEVER calls pgrazor_hook on 10, 11, 19, fails closed with observer-setup-failed */
+          -> NEVER calls pgs_hook on 10, 11, 19, fails closed with observer-setup-failed */
     api->reset_for_tests();
     reset_fake_universe(&cfg);
     assert(api->configure(&cfg) == PGS_IH_OK);
@@ -1060,7 +1060,7 @@ static void test_shared_hook_sites_coexistence(const PgsInteractionHostApi *api)
     assert(g_hook_count == 0);
 
     /* 2. Unattested optional shared sites (Feature 61 owns optional targets 15 & 18; integrated_mask == 0)
-          -> Degrades targets 15 & 18 without calling pgrazor_hook on them, succeeds on remaining 18 targets! */
+          -> Degrades targets 15 & 18 without calling pgs_hook on them, succeeds on remaining 18 targets! */
     api->reset_for_tests();
     reset_fake_universe(&cfg);
     assert(api->configure(&cfg) == PGS_IH_OK);

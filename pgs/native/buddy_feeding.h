@@ -42,21 +42,14 @@ static_assert(sizeof(void *) == 8, "Buddy feeding native ABI requires LP64");
 
 // Table + config + sample ABI version. The getter answers an exact match only.
 #define PGS_BUDDY_API_VERSION 1u
-#define PGRAZOR_BUDDY_API_VERSION PGS_BUDDY_API_VERSION
 
 // Timers, milliseconds (CLOCK_BOOTTIME). Mirror the JS now+5000 / now+30000 / now+15000.
 #define PGS_BUDDY_POLL_MS        5000u
-#define PGRAZOR_BUDDY_POLL_MS PGS_BUDDY_POLL_MS
 #define PGS_BUDDY_FEED_MS        30000u  // feed-result confirmation deadline
-#define PGRAZOR_BUDDY_FEED_MS PGS_BUDDY_FEED_MS
 #define PGS_BUDDY_PROGRESS_MS    15000u  // hunger-update observation deadline
-#define PGRAZOR_BUDDY_PROGRESS_MS PGS_BUDDY_PROGRESS_MS
 #define PGS_BUDDY_MANUAL_MS      30000u  // back-off after a manual feed
-#define PGRAZOR_BUDDY_MANUAL_MS PGS_BUDDY_MANUAL_MS
 #define PGS_BUDDY_MAX_LEASE_MS   2500u   // per-tick authorization lease cap (residual)
-#define PGRAZOR_BUDDY_MAX_LEASE_MS PGS_BUDDY_MAX_LEASE_MS
 #define PGS_BUDDY_MAX_FEEDS      6       // berries per hunger cycle before pausing
-#define PGRAZOR_BUDDY_MAX_FEEDS PGS_BUDDY_MAX_FEEDS
 
 // Status codes surfaced through the sample. The adapter maps each to the exact JS string.
 // FED_REMAINING carries whole minutes in `detail`; FEED_FAILED carries the result value.
@@ -154,7 +147,6 @@ typedef struct pgs_buddy_config_v1 {
     int32_t success;               /* BuddyFeedingOutProto.Result == Success literal */
     int32_t reserved;              /* 0; keeps the config 8-byte aligned (size 352) */
 } pgs_buddy_config_v1;
-typedef pgs_buddy_config_v1 pgrazor_buddy_config_v1;
 
 // Pull-only telemetry snapshot (56 bytes). status_serial increments on each distinct
 // status transition; feed_request_serial once per issued Feed (counted at issuance, even
@@ -176,7 +168,6 @@ typedef struct pgs_buddy_sample_v1 {
     uint32_t fault_serial;         /* bumped on each fail-closed error */
     uint32_t owned_roots;          /* durable roots plus active owner frames (conservative finish guard) */
 } pgs_buddy_sample_v1;
-typedef pgs_buddy_sample_v1 pgrazor_buddy_sample_v1;
 
 /*
  * install(config): validate and publish the config once for the process lifetime, then
@@ -186,7 +177,6 @@ typedef pgs_buddy_sample_v1 pgrazor_buddy_sample_v1;
  * attempt latches for the process lifetime and never unhooks a published trampoline).
  */
 typedef int (*pgs_buddy_install_fn)(const pgs_buddy_config_v1 *config);
-typedef pgs_buddy_install_fn pgrazor_buddy_install_fn;
 
 /*
  * tick(berry, remaining_lease_ms, proven_tid): one orchestration pass. Runs the full feed
@@ -200,7 +190,6 @@ typedef pgs_buddy_install_fn pgrazor_buddy_install_fn;
  */
 typedef int (*pgs_buddy_tick_fn)(int32_t berry, uint64_t remaining_lease_ms,
                                      uint64_t proven_tid);
-typedef pgs_buddy_tick_fn pgrazor_buddy_tick_fn;
 
 /*
  * clear(proven_tid): Unity-thread-only teardown for stop/detach. RELEASES the durable GC
@@ -211,11 +200,9 @@ typedef pgs_buddy_tick_fn pgrazor_buddy_tick_fn;
  * NOT_INSTALLED.
  */
 typedef int (*pgs_buddy_clear_fn)(uint64_t proven_tid);
-typedef pgs_buddy_clear_fn pgrazor_buddy_clear_fn;
 
 /* sample(out): copy the latest telemetry snapshot. Safe from any thread; never frees. */
 typedef int (*pgs_buddy_sample_fn)(pgs_buddy_sample_v1 *out);
-typedef pgs_buddy_sample_fn pgrazor_buddy_sample_fn;
 
 // Ordered, read-only table advertised by the getter (40 bytes: header + 4 pointers).
 typedef struct pgs_buddy_api_v1 {
@@ -226,7 +213,6 @@ typedef struct pgs_buddy_api_v1 {
     pgs_buddy_clear_fn   clear;
     pgs_buddy_sample_fn  sample;
 } pgs_buddy_api_v1;
-typedef pgs_buddy_api_v1 pgrazor_buddy_api_v1;
 
 /*
  * Hidden getter (NOT exported by the version script). The coordinator registers it in the

@@ -263,11 +263,7 @@ static_assert(sizeof(PgsAccountHostEvent) == 2048, "PgsAccountHostEvent size mus
 static_assert(sizeof(PgsAccountHostApi) == 80, "PgsAccountHostApi size must be 80 bytes");
 #endif
 
-const void *pgrazor_account_host_api(uint32_t version);
-// Canonical source spelling; retain the hidden legacy linkage for older objects and fixtures.
-static inline const void *pgs_account_host_api(uint32_t version) {
-    return pgrazor_account_host_api(version);
-}
+const void *pgs_account_host_api(uint32_t version);
 
 #ifdef __cplusplus
 }

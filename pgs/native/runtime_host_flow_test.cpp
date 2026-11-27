@@ -68,7 +68,7 @@ TABLE(flow_encounter_api,flow_encounter) TABLE(flow_interaction_api,flow_interac
 #define pgs_spawn_host_api flow_spawn_api
 #define pgs_camera_host_api flow_camera_api
 #define pgs_combat_host_api flow_combat_api
-#define pgrazor_account_host_api flow_account_api
+#define pgs_account_host_api flow_account_api
 #define pgs_encounter_host_api flow_encounter_api
 #define pgs_interaction_host_api flow_interaction_api
 #define pgs_runtime_host_api flow_manager_api

@@ -28,7 +28,7 @@
 
 // Weak: isolated fixtures include this file without linking the hook engine,
 // and then simply report no hook detail.
-int pgrazor_hook_diag(PgsHookDiag *) __attribute__((weak));
+int pgs_hook_diag(PgsHookDiag *) __attribute__((weak));
 namespace {
 template<class T> const T *as(const void *p){return static_cast<const T*>(p);}
 const auto scheduler=as<PgsUnitySchedulerApi>(pgs_unity_scheduler_api(2));
@@ -251,7 +251,7 @@ void pulse(void*,const PgsUnityPulse *p){
 // not fit. The caller closes the JSON object at the returned offset.
 int append_hook_diag(char *out,size_t cap,bool failure){
  PgsHookDiag h{};
- if(!pgrazor_hook_diag||pgrazor_hook_diag(&h)!=0||h.version!=1||h.size!=sizeof(h))return 0;
+ if(!pgs_hook_diag||pgs_hook_diag(&h)!=0||h.version!=1||h.size!=sizeof(h))return 0;
  int m=0;
  if(failure){
   if(!h.failures)return 0;
@@ -271,7 +271,7 @@ int append_hook_diag(char *out,size_t cap,bool failure){
 void report_hook_failures(){
  static uint32_t reported=0;
  PgsHookDiag h{};
- if(!pgrazor_hook_diag||pgrazor_hook_diag(&h)!=0||h.version!=1||h.size!=sizeof(h)||h.failures<=reported)return;
+ if(!pgs_hook_diag||pgs_hook_diag(&h)!=0||h.version!=1||h.size!=sizeof(h)||h.failures<=reported)return;
  char json[420];size_t t=size_t(std::snprintf(json,sizeof(json),"{\"kind\":\"hook-failure\""));
  t+=size_t(append_hook_diag(json+t,sizeof(json)-t-1,true));
  if(t+2>sizeof(json))return;

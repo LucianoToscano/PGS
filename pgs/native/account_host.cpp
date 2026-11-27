@@ -66,42 +66,42 @@ constexpr size_t kAccountsReasonCount = sizeof(kAccountsReasonStrings) / sizeof(
 
 // --- Feature getters ---------------------------------------------------------------
 const pgs_accounts_api_v1_t *accounts_api() {
-  const auto *p = static_cast<const pgs_accounts_api_v1_t *>(pgrazor_accounts_api(1));
+  const auto *p = static_cast<const pgs_accounts_api_v1_t *>(pgs_accounts_api(1));
   return (p && p->version == 1 && p->size == sizeof(pgs_accounts_api_v1_t)) ? p : nullptr;
 }
 
 const pgs_advsync_api_v1 *advsync_api() {
-  const auto *p = static_cast<const pgs_advsync_api_v1 *>(pgrazor_adventure_sync_api(1));
+  const auto *p = static_cast<const pgs_advsync_api_v1 *>(pgs_adventure_sync_api(1));
   return (p && p->version == 1 && p->size == sizeof(pgs_advsync_api_v1)) ? p : nullptr;
 }
 
 const PgsMetaApi *meta_api() {
-  const auto *p = static_cast<const PgsMetaApi *>(pgrazor_runtime_metadata_api(1));
+  const auto *p = static_cast<const PgsMetaApi *>(pgs_runtime_metadata_api(1));
   return (p && p->version == 1 && p->size == sizeof(PgsMetaApi)) ? p : nullptr;
 }
 
 const PgsBootApi *boot_api() {
-  const auto *p = static_cast<const PgsBootApi *>(pgrazor_runtime_bootstrap_api(1));
+  const auto *p = static_cast<const PgsBootApi *>(pgs_runtime_bootstrap_api(1));
   return (p && p->version == 1 && p->size == sizeof(PgsBootApi)) ? p : nullptr;
 }
 
 const PgsRuntimeTransportApi *transport_api() {
-  const auto *p = static_cast<const PgsRuntimeTransportApi *>(pgrazor_runtime_transport_api(1));
+  const auto *p = static_cast<const PgsRuntimeTransportApi *>(pgs_runtime_transport_api(1));
   return (p && p->version == 1 && p->size == sizeof(PgsRuntimeTransportApi)) ? p : nullptr;
 }
 
 const PgsSharedHostApi *shared_host_api() {
-  const auto *p = static_cast<const PgsSharedHostApi *>(pgrazor_shared_host_api(1));
+  const auto *p = static_cast<const PgsSharedHostApi *>(pgs_shared_host_api(1));
   return (p && p->version == 1 && p->size == sizeof(PgsSharedHostApi)) ? p : nullptr;
 }
 
 const PgsUnitySchedulerApi *scheduler_api2() {
-  const auto *p = static_cast<const PgsUnitySchedulerApi *>(pgrazor_unity_scheduler_api(2));
+  const auto *p = static_cast<const PgsUnitySchedulerApi *>(pgs_unity_scheduler_api(2));
   return (p && p->version == 2 && p->size == sizeof(PgsUnitySchedulerApi)) ? p : nullptr;
 }
 
 const PgsUnitySchedulerApi3 *scheduler_api3() {
-  const auto *p = static_cast<const PgsUnitySchedulerApi3 *>(pgrazor_unity_scheduler_api(3));
+  const auto *p = static_cast<const PgsUnitySchedulerApi3 *>(pgs_unity_scheduler_api(3));
   return (p && p->version == 3 && p->size == sizeof(PgsUnitySchedulerApi3)) ? p : nullptr;
 }
 
@@ -1499,6 +1499,6 @@ const PgsAccountHostApi kApi = {
 
 }  // namespace
 
-extern "C" const void *pgrazor_account_host_api(uint32_t version) {
+extern "C" const void *pgs_account_host_api(uint32_t version) {
   return version == PGS_ACCOUNT_HOST_API_VERSION ? &kApi : nullptr;
 }

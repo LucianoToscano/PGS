@@ -9,11 +9,6 @@ int pgs_hook(void *address, void *replacement, void **original);
 int pgs_unhook(void *address);
 int pgs_instrument(void *address, dobby_instrument_callback_t callback);
 
-// Old call sites continue to link through forwarding wrappers.
-int pgrazor_hook(void *address, void *replacement, void **original);
-int pgrazor_unhook(void *address);
-int pgrazor_instrument(void *address, dobby_instrument_callback_t callback);
-
 // Alignment padding around one executable LOAD segment [begin, end): the bytes
 // between the aligned-down start and the segment, and between the segment and
 // the aligned-up end. Pure arithmetic; the caller still has to prove each range

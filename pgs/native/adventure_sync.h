@@ -36,23 +36,18 @@ extern "C" {
 
 /* Table + config ABI version. The getter answers an exact match only. */
 #define PGS_ADVSYNC_API_VERSION 1u
-#define PGRAZOR_ADVSYNC_API_VERSION PGS_ADVSYNC_API_VERSION
 
 /* Maximum accepted dismissal lease, in milliseconds (matches the JS 2500 ms window). */
 #define PGS_ADVSYNC_MAX_LEASE_MS 2500u
-#define PGRAZOR_ADVSYNC_MAX_LEASE_MS PGS_ADVSYNC_MAX_LEASE_MS
 
 /* Delay before an eligible captured dialog may be auto-dismissed (ms). */
 #define PGS_ADVSYNC_DELAY_MS 100u
-#define PGRAZOR_ADVSYNC_DELAY_MS PGS_ADVSYNC_DELAY_MS
 
 /* A captured dialog that is never dismissed is dropped after this age (ms). */
 #define PGS_ADVSYNC_EXPIRY_MS 10000u
-#define PGRAZOR_ADVSYNC_EXPIRY_MS PGS_ADVSYNC_EXPIRY_MS
 
 /* Bound on simultaneously tracked dialogs (matches the JS pending cap). */
 #define PGS_ADVSYNC_QUEUE_MAX 4u
-#define PGRAZOR_ADVSYNC_QUEUE_MAX PGS_ADVSYNC_QUEUE_MAX
 
 /* Status codes. 0 == success. Shared spirit with pgs_native_api.h. */
 enum {
@@ -65,15 +60,6 @@ enum {
     PGS_ADVSYNC_ERR_NO_CLOCK = 6,       /* CLOCK_BOOTTIME was unavailable */
     PGS_ADVSYNC_ERR_NOT_INSTALLED = 7,  /* operation needs a successful install() */
     PGS_ADVSYNC_ERR_SELFTEST = 8,        /* a self-check assertion failed */
-    // Legacy aliases retain the same enum type and numeric values.
-    PGRAZOR_ADVSYNC_OK = PGS_ADVSYNC_OK,
-    PGRAZOR_ADVSYNC_ERR_NULL_ARG = PGS_ADVSYNC_ERR_NULL_ARG,
-    PGRAZOR_ADVSYNC_ERR_BAD_CONFIG = PGS_ADVSYNC_ERR_BAD_CONFIG,
-    PGRAZOR_ADVSYNC_ERR_ALREADY_BOUND = PGS_ADVSYNC_ERR_ALREADY_BOUND,
-    PGRAZOR_ADVSYNC_ERR_HOOK_FAILED = PGS_ADVSYNC_ERR_HOOK_FAILED,
-    PGRAZOR_ADVSYNC_ERR_BAD_LEASE = PGS_ADVSYNC_ERR_BAD_LEASE,
-    PGRAZOR_ADVSYNC_ERR_NO_CLOCK = PGS_ADVSYNC_ERR_NO_CLOCK,
-    PGRAZOR_ADVSYNC_ERR_NOT_INSTALLED = PGS_ADVSYNC_ERR_NOT_INSTALLED,
 };
 
 /*
@@ -113,7 +99,6 @@ typedef struct pgs_advsync_config_v1 {
     uint64_t off_on_confirm;       /* byte offset of _onConfirm delegate field (0xa8) */
     uint64_t off_on_decline;       /* byte offset of _onDecline delegate field (0xb0) */
 } pgs_advsync_config_v1;
-typedef pgs_advsync_config_v1 pgrazor_advsync_config_v1;
 
 /*
  * install(config): validate the config and install the module's hooks once for the
@@ -127,7 +112,6 @@ typedef pgs_advsync_config_v1 pgrazor_advsync_config_v1;
  * engine on these targets.
  */
 typedef int (*pgs_advsync_install_fn)(const pgs_advsync_config_v1 *config);
-typedef pgs_advsync_install_fn pgrazor_advsync_install_fn;
 
 /*
  * update(allowed, lease_ms, unity_tid): arm or clear the dismissal window and record
@@ -144,7 +128,6 @@ typedef pgs_advsync_install_fn pgrazor_advsync_install_fn;
  * This call only mutates atomics; it is safe to call from any thread.
  */
 typedef int (*pgs_advsync_update_fn)(int allowed, uint64_t lease_ms, uint64_t unity_tid);
-typedef pgs_advsync_update_fn pgrazor_advsync_update_fn;
 
 /*
  * retire(unity_tid): Unity-thread-only maintenance, called from the host heartbeat
@@ -154,7 +137,6 @@ typedef pgs_advsync_update_fn pgrazor_advsync_update_fn;
  * no-op. Returns OK or NOT_INSTALLED.
  */
 typedef int (*pgs_advsync_retire_fn)(uint64_t unity_tid);
-typedef pgs_advsync_retire_fn pgrazor_advsync_retire_fn;
 
 /*
  * selftest(): explicit-only self-check of the pure pending policy (lease bounds, the
@@ -162,7 +144,6 @@ typedef pgs_advsync_retire_fn pgrazor_advsync_retire_fn;
  * process mutation. NEVER run automatically in production.
  */
 typedef int (*pgs_advsync_selftest_fn)(void);
-typedef pgs_advsync_selftest_fn pgrazor_advsync_selftest_fn;
 
 /* Ordered, read-only table advertised by the getter. Header first, then pointers. */
 typedef struct pgs_advsync_api_v1 {
@@ -173,7 +154,6 @@ typedef struct pgs_advsync_api_v1 {
     pgs_advsync_retire_fn   retire;
     pgs_advsync_selftest_fn selftest;
 } pgs_advsync_api_v1;
-typedef pgs_advsync_api_v1 pgrazor_advsync_api_v1;
 
 /*
  * Hidden getter (NOT exported by the version script). The coordinator registers it in
@@ -182,10 +162,6 @@ typedef pgs_advsync_api_v1 pgrazor_advsync_api_v1;
  * table lives for the process lifetime and must not be freed or modified.
  */
 const void *pgs_adventure_sync_api(uint32_t version);
-// Compatibility for older source consumers; the PGS name is the primary hidden getter.
-static inline const void *pgrazor_adventure_sync_api(uint32_t version) {
-    return pgs_adventure_sync_api(version);
-}
 
 /*
  * Host-independent policy self-check (no Dobby, no device). Returns 0 on success or

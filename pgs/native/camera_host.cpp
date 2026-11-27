@@ -303,7 +303,7 @@ int call_hook(void *target, void *replacement, void **original) {
   }
   if (g_state.core_handle != nullptr) {
     auto fn = reinterpret_cast<StandaloneHookFn>(
-        dlsym(g_state.core_handle, "pgrazor_hook"));
+        dlsym(g_state.core_handle, "pgs_hook"));
     if (fn != nullptr) return fn(target, replacement, original);
   }
   return -1;

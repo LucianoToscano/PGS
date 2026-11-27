@@ -37,7 +37,7 @@ class PgsNativeRenameTests(unittest.TestCase):
         shim = (NATIVE / "pgs_native_api_compat.h").read_text(encoding="utf-8")
         self.assertFalse((NATIVE / "pgrazor_native_api.h").exists())
         internal = (NATIVE / "pgs_internal.h").read_text(encoding="utf-8")
-        self.assertIn("typedef pgs_native_api_v2 pgrazor_native_api_v2;", header)
+        self.assertNotIn("typedef pgs_native_api_v2 pgrazor_native_api_v2;", header)
         self.assertIn('#include "pgs_native_api.h"', shim)
         self.assertIn("int pgs_policy_selfcheck(void);", internal)
         self.assertFalse((NATIVE / "pgrazor_internal.h").exists())
@@ -52,8 +52,8 @@ class PgsNativeRenameTests(unittest.TestCase):
         self.assertIn("return pgs_native_api(version);", core)
         self.assertIn("const void *pgs_native_api(uint32_t version);", header)
         self.assertIn("const void *pgrazor_native_api(uint32_t version);", header)
-        self.assertIn("#define PGRAZOR_NATIVE_API_VERSION PGS_NATIVE_API_VERSION", header)
-        self.assertIn("#define PGRAZOR_ERR_BAD_LEASE PGS_ERR_BAD_LEASE", header)
+        self.assertIn("#define PGS_NATIVE_API_VERSION 1u", header)
+        self.assertIn("PGS_ERR_BAD_LEASE = 4", header)
 
     def test_art_target_and_output_use_pgs(self):
         cmake = (ART / "CMakeLists.txt").read_text(encoding="utf-8")
@@ -96,7 +96,7 @@ class PgsNativeRenameTests(unittest.TestCase):
                          "All native sources must include pgs_native_api.h; compatibility symbols remain available")
 
 
-    def test_hook_engine_pgs_names_and_old_cpp_linkage(self):
+    def test_hook_engine_pgs_names_and_retired_cpp_linkage(self):
         header = (NATIVE / "hook_engine.h").read_text(encoding="utf-8")
         diag = (NATIVE / "hook_engine_diag.h").read_text(encoding="utf-8")
         impl = (NATIVE / "hook_engine.cpp").read_text(encoding="utf-8")
@@ -110,8 +110,9 @@ class PgsNativeRenameTests(unittest.TestCase):
             ("pgrazor_instrument(", "pgs_instrument("),
             ("pgrazor_hook_diag(", "pgs_hook_diag("),
         ):
-            self.assertIn("int " + legacy, impl)
-            self.assertIn("return " + modern, impl)
+            self.assertNotIn("int " + legacy, impl)
+            self.assertNotIn("int " + legacy, header)
+            self.assertNotIn("int " + legacy, diag)
         self.assertIn("struct PgsHookDiag {", diag)
         self.assertIn("struct PgsPaddingRanges {", header)
         self.assertNotIn('"PGRazor"', impl)

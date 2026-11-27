@@ -335,19 +335,3 @@ int pgs_instrument(void *address, dobby_instrument_callback_t callback) {
 #endif
     return DobbyInstrument(address, callback);
 }
-
-
-// Existing modules and test fixtures may still link these old C++ names.
-// They forward to the same serialized PGS hook engine and do not add ELF exports.
-int pgrazor_hook(void *address, void *replacement, void **original) {
-    return pgs_hook(address, replacement, original);
-}
-int pgrazor_unhook(void *address) {
-    return pgs_unhook(address);
-}
-int pgrazor_instrument(void *address, dobby_instrument_callback_t callback) {
-    return pgs_instrument(address, callback);
-}
-int pgrazor_hook_diag(PgsHookDiag *out) {
-    return pgs_hook_diag(out);
-}

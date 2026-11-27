@@ -5,17 +5,17 @@
   "changed_files": 37,
   "added_files": 1,
   "previous_occurrences": 1041,
-  "remaining_files": 167,
-  "remaining_occurrences": 990,
+  "remaining_files": 147,
+  "remaining_occurrences": 829,
   "remaining_by_category": {
-    "documentation": 266,
+    "documentation": 278,
     "java": 69,
     "javascript": 1,
     "legal": 3,
-    "native": 171,
-    "other": 96,
+    "native": 14,
+    "other": 95,
     "release_history": 103,
-    "tests": 237,
+    "tests": 222,
     "vendor": 6,
     "workflows": 38
   },
@@ -108,7 +108,7 @@
     {
       "path": "docs/PGS_NATIVE_ALIAS_INVENTORY.json",
       "category": "documentation",
-      "occurrences": 113
+      "occurrences": 125
     },
     {
       "path": "docs/en/PGS_TECHNICAL_MIGRATION.md",
@@ -326,74 +326,14 @@
       "occurrences": 2
     },
     {
-      "path": "pgs/native/account_host.h",
-      "category": "native",
-      "occurrences": 2
-    },
-    {
-      "path": "pgs/native/accounts.h",
-      "category": "native",
-      "occurrences": 5
-    },
-    {
-      "path": "pgs/native/adventure_sync.h",
-      "category": "native",
-      "occurrences": 20
-    },
-    {
       "path": "pgs/native/adventure_sync_test.cpp",
       "category": "tests",
       "occurrences": 1
     },
     {
-      "path": "pgs/native/buddy_feeding.h",
-      "category": "native",
-      "occurrences": 14
-    },
-    {
       "path": "pgs/native/camera_host.cpp",
       "category": "native",
-      "occurrences": 2
-    },
-    {
-      "path": "pgs/native/hook_engine.cpp",
-      "category": "native",
-      "occurrences": 4
-    },
-    {
-      "path": "pgs/native/hook_engine.h",
-      "category": "native",
-      "occurrences": 3
-    },
-    {
-      "path": "pgs/native/hook_engine_diag.h",
-      "category": "native",
       "occurrences": 1
-    },
-    {
-      "path": "pgs/native/hook_engine_near_test.cpp",
-      "category": "tests",
-      "occurrences": 6
-    },
-    {
-      "path": "pgs/native/incubation.h",
-      "category": "native",
-      "occurrences": 40
-    },
-    {
-      "path": "pgs/native/interaction_host.cpp",
-      "category": "native",
-      "occurrences": 9
-    },
-    {
-      "path": "pgs/native/interaction_host_test.cpp",
-      "category": "tests",
-      "occurrences": 4
-    },
-    {
-      "path": "pgs/native/items.h",
-      "category": "native",
-      "occurrences": 28
     },
     {
       "path": "pgs/native/iv_display_test.cpp",
@@ -413,40 +353,10 @@
     {
       "path": "pgs/native/pgs_native_api.h",
       "category": "native",
-      "occurrences": 22
+      "occurrences": 2
     },
     {
       "path": "pgs/native/pvp_icons.h",
-      "category": "native",
-      "occurrences": 1
-    },
-    {
-      "path": "pgs/native/runtime_bootstrap.h",
-      "category": "native",
-      "occurrences": 1
-    },
-    {
-      "path": "pgs/native/runtime_host.cpp",
-      "category": "native",
-      "occurrences": 5
-    },
-    {
-      "path": "pgs/native/runtime_host_diag_test.cpp",
-      "category": "tests",
-      "occurrences": 1
-    },
-    {
-      "path": "pgs/native/runtime_host_flow_test.cpp",
-      "category": "tests",
-      "occurrences": 1
-    },
-    {
-      "path": "pgs/native/runtime_metadata.h",
-      "category": "native",
-      "occurrences": 1
-    },
-    {
-      "path": "pgs/native/runtime_transport.h",
       "category": "native",
       "occurrences": 1
     },
@@ -456,17 +366,7 @@
       "occurrences": 1
     },
     {
-      "path": "pgs/native/shared_host.h",
-      "category": "native",
-      "occurrences": 1
-    },
-    {
       "path": "pgs/native/test_runner.cpp",
-      "category": "native",
-      "occurrences": 1
-    },
-    {
-      "path": "pgs/native/unity_scheduler.h",
       "category": "native",
       "occurrences": 1
     },
@@ -493,7 +393,7 @@
     {
       "path": "pgs/pgs_rebrand.py",
       "category": "other",
-      "occurrences": 8
+      "occurrences": 7
     },
     {
       "path": "pgs/root-installer/AndroidManifest.xml",
@@ -723,12 +623,12 @@
     {
       "path": "pgs/test/test_pgs_native_aliases_native.py",
       "category": "tests",
-      "occurrences": 4
+      "occurrences": 2
     },
     {
       "path": "pgs/test/test_pgs_native_identity.py",
       "category": "tests",
-      "occurrences": 36
+      "occurrences": 34
     },
     {
       "path": "pgs/test/test_pgs_project_layout.py",
@@ -753,7 +653,7 @@
     {
       "path": "pgs/test/test_pgs_runtime_identity.py",
       "category": "tests",
-      "occurrences": 8
+      "occurrences": 9
     },
     {
       "path": "pgs/test/test_release_bundle.py",
@@ -1261,5 +1161,17 @@
     "full_name_and_abbreviation_counts_recomputed": true,
     "scope": "All selected first-party native, runtime, generator, game schema, Java and fixture prefixes. Historical, audit, legacy ABI and data-contract references remain intentionally identifiable.",
     "validation": "Generated output equality and exact indexed inventory verified. Full source CI and APK/device gates separate."
+  },
+  "native_alias_retirement": {
+    "base_commit": "06fd50469bb98cf64b0459bddd80294cae86dc50",
+    "retired_source_aliases": 125,
+    "private_getters_retired": 8,
+    "private_hook_wrappers_retired": 4,
+    "canonical_abi_facts_captured_before_removal": true,
+    "remaining_private_native_names": [],
+    "public_compatibility_export_retained": "pgrazor_native_api",
+    "previous_full_name_occurrences": 990,
+    "remaining_full_name_occurrences": 829,
+    "limitations": "Source-only aliases removed; installed data and external/legacy contracts remain. Full CI and APK/device validation separate."
   }
 }

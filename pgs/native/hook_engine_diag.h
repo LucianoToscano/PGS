@@ -39,6 +39,3 @@ struct PgsHookDiag {
 };
 static_assert(sizeof(PgsHookDiag) == 48, "Hook diag ABI1");
 int pgs_hook_diag(PgsHookDiag *out);
-
-// Compatibility name: returns the same diagnostic, installs nothing.
-int pgrazor_hook_diag(PgsHookDiag *out);

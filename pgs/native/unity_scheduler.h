@@ -119,7 +119,3 @@ static_assert(sizeof(PgsUnitySchedulerConfig)==448,"Config ABI");
 static_assert(sizeof(PgsUnitySchedulerSnapshot)==32,"Snapshot ABI");
 static_assert(sizeof(PgsUnitySchedulerApi)==48,"API ABI");
 extern "C" const void *pgs_unity_scheduler_api(uint32_t version);
-// Compatibility for older source consumers; the PGS name is the primary hidden getter.
-static inline const void *pgrazor_unity_scheduler_api(uint32_t version) {
-    return pgs_unity_scheduler_api(version);
-}

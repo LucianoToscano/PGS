@@ -117,7 +117,7 @@ const void *host_stub(uint32_t){ return &g_unused; }
 #define pgs_spawn_host_api        diagfix::host_stub
 #define pgs_camera_host_api       diagfix::host_stub
 #define pgs_combat_host_api       diagfix::host_stub
-#define pgrazor_account_host_api      diagfix::host_stub
+#define pgs_account_host_api      diagfix::host_stub
 #define pgs_interaction_host_api  diagfix::host_stub
 #define pgs_encounter_host_api    diagfix::host_stub
 #include "runtime_host.cpp"

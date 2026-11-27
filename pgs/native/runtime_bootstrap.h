@@ -196,10 +196,6 @@ static_assert(sizeof(PgsBootApi) == 24, "PgsBootApi must remain a 24-byte versio
 // Hidden getter. NOT exported by the version script; the coordinator registers it in query_feature under
 // feature id 54 and answers only on an exact version match.
 const void *pgs_runtime_bootstrap_api(uint32_t version);
-// Compatibility for older source consumers; the PGS name is the primary hidden getter.
-static inline const void *pgrazor_runtime_bootstrap_api(uint32_t version) {
-    return pgs_runtime_bootstrap_api(version);
-}
 
 #ifdef __cplusplus
 }

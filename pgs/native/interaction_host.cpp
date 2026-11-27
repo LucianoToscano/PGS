@@ -24,6 +24,11 @@
 #include "spin_host.h"
 #include "transfer_observers.h"
 
+#if defined(PGS_INTERACTION_HOST_STANDALONE_TEST) && (defined(__GNUC__) || defined(__clang__))
+int pgs_hook(void *target, void *replacement, void **original) __attribute__((weak));
+int pgs_unhook(void *target) __attribute__((weak));
+#endif
+
 namespace {
 
 #if defined(__GNUC__) || defined(__clang__)
@@ -40,8 +45,6 @@ extern "C" const void *pgs_shared_host_api(uint32_t version) PGS_WEAK;
 extern "C" const void *pgs_spin_host_api(uint32_t version) PGS_WEAK;
 extern "C" const void *pgs_catch_observers_api(uint32_t version) PGS_WEAK;
 extern "C" const void *pgs_transfer_observers_api(uint32_t version) PGS_WEAK;
-extern "C" int pgrazor_hook(void *target, void *replacement, void **original) PGS_WEAK;
-extern "C" int pgrazor_unhook(void *target) PGS_WEAK;
 
 static const PgsMetaApi *resolve_metadata_api() {
     if (pgs_runtime_metadata_api != nullptr) {
@@ -153,12 +156,12 @@ static const PgsObsApi *resolve_catch_observers_api() {
 }
 
 static int call_pgs_hook(void *target, void *replacement, void **original) {
-    if (pgrazor_hook != nullptr) {
-        return pgrazor_hook(target, replacement, original);
+    if (pgs_hook != nullptr) {
+        return pgs_hook(target, replacement, original);
     }
 #if !defined(_WIN32) && defined(PGS_INTERACTION_HOST_STANDALONE_TEST)
     using Fn = int (*)(void *, void *, void **);
-    auto fn = reinterpret_cast<Fn>(dlsym(RTLD_DEFAULT, "pgrazor_hook"));
+    auto fn = reinterpret_cast<Fn>(dlsym(RTLD_DEFAULT, "pgs_hook"));
     if (fn != nullptr) {
         return fn(target, replacement, original);
     }
@@ -167,12 +170,12 @@ static int call_pgs_hook(void *target, void *replacement, void **original) {
 }
 
 static int call_pgs_unhook(void *target) {
-    if (pgrazor_unhook != nullptr) {
-        return pgrazor_unhook(target);
+    if (pgs_unhook != nullptr) {
+        return pgs_unhook(target);
     }
 #if !defined(_WIN32) && defined(PGS_INTERACTION_HOST_STANDALONE_TEST)
     using Fn = int (*)(void *);
-    auto fn = reinterpret_cast<Fn>(dlsym(RTLD_DEFAULT, "pgrazor_unhook"));
+    auto fn = reinterpret_cast<Fn>(dlsym(RTLD_DEFAULT, "pgs_unhook"));
     if (fn != nullptr) {
         return fn(target);
     }
@@ -1737,7 +1740,7 @@ static int start_observation_locked() {
             break;
         }
 
-        /* Never call pgrazor_hook on any target owned by Features 49, 57, 61, 67 */
+        /* Never call pgs_hook on any target owned by Features 49, 57, 61, 67 */
         if ((g_state.effective_owned_mask & bit) != 0) {
             if ((g_state.shared_integrated_mask & bit) != 0) {
                 g_state.installed_target_mask |= bit;

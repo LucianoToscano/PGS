@@ -60,7 +60,3 @@ struct PgsSharedHostTransferApi {
 };
 static_assert(sizeof(PgsSharedHostTransferApi)==32,"LP64 transfer broker API2");
 extern "C" const void *pgs_shared_host_api(uint32_t version);
-// Compatibility for older source consumers; the PGS name is the primary hidden getter.
-static inline const void *pgrazor_shared_host_api(uint32_t version) {
-    return pgs_shared_host_api(version);
-}

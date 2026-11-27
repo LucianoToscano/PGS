@@ -2,7 +2,7 @@
   "repository": "https://github.com/PokeAPI/sprites",
   "commit": "97a7832d307311c0e1c6ea9035308bf80cc94f81",
   "path_template": "sprites/pokemon/{dex}.png",
-  "note": "Unmodified base-species sprites; forms and shiny variants are not represented. Pokemon artwork is not covered by PGRazor MIT license.",
+  "note": "Unmodified base-species sprites; forms and shiny variants are not represented. Pokemon artwork is not covered by project MIT license.",
   "sprites": [
     {
       "dex": 1,

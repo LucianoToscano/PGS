@@ -1,7 +1,7 @@
 {
   "repository": "https://github.com/PokeMiners/pogo_assets",
   "commit": "c2a686eb08ace6e890d8fe3d2134c76988db87b5",
-  "license_note": "Pokemon GO artwork; not covered by PGRazor MIT license. See NOTICE.txt.",
+  "license_note": "Pokemon GO artwork; not covered by project MIT license. See NOTICE.txt.",
   "icons": [
     {
       "source": "Images/Pokestops and Gyms/pokestop_near.png",

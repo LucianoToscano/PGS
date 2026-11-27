@@ -49,7 +49,10 @@ jobs:
         run: python -c "import sys; sys.path.insert(0, 'pgs'); import dex_bridges; dex_bridges.dependencies(download=True)"
       - name: Verify standalone PGS release test discovery (no signing)
         run: python -B -m unittest discover -s pgs/test -p 'test_pgs_*.py' -v
-      - run: python -B tools/check.py
+      - name: General source checks with candidate version override
+        env:
+          PGS_VERSION: v0.0.3
+        run: python -B tools/check.py
       - name: Compile Android controls (not a playable game build)
         run: python -B pgs/build.py
       - name: Compile Root installer (no game input or signing secrets)

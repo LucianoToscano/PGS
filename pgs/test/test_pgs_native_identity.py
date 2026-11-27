@@ -32,9 +32,10 @@ class PgsNativeRenameTests(unittest.TestCase):
         self.assertIn("pgrazor_native_api;", exports)
         self.assertIn("pgs_native_api;", exports)
 
-    def test_pgs_header_is_primary_and_old_includes_remain_valid(self):
+    def test_pgs_header_is_primary_and_legacy_abi_remains_valid(self):
         header = (NATIVE / "pgs_native_api.h").read_text(encoding="utf-8")
-        shim = (NATIVE / "pgrazor_native_api.h").read_text(encoding="utf-8")
+        shim = (NATIVE / "pgs_native_api_compat.h").read_text(encoding="utf-8")
+        self.assertFalse((NATIVE / "pgrazor_native_api.h").exists())
         internal = (NATIVE / "pgs_internal.h").read_text(encoding="utf-8")
         self.assertIn("typedef pgrazor_native_api_v2 pgs_native_api_v2;", header)
         self.assertIn('#include "pgs_native_api.h"', shim)
@@ -63,7 +64,12 @@ class PgsNativeRenameTests(unittest.TestCase):
         self.assertTrue((ART / "pgs-art.map").is_file())
         self.assertFalse((ART / "pgrazor-art.map").exists())
         # These are JNI/LSPlant integration hooks, not cosmetic CMake target names.
-        self.assertIn("pgrazor_art_publication_begin", cmake)
+        hooks = (ART / "java_hooks.cpp").read_text(encoding="utf-8")
+        for suffix in ("begin", "end"):
+            self.assertIn("pgs_art_publication_" + suffix, cmake)
+            self.assertIn("pgs_art_publication_" + suffix, hooks)
+            self.assertNotIn("pgrazor_art_publication_" + suffix, cmake)
+            self.assertNotIn("pgrazor_art_publication_" + suffix, hooks)
         self.assertIn("PGS_ART_CHAIN_TEST", cmake)
         self.assertIn("PGRAZOR_ART_CHAIN_TEST", cmake)
         self.assertEqual(art_build.SONAME, "libpgs-art.so")
@@ -87,7 +93,7 @@ class PgsNativeRenameTests(unittest.TestCase):
                 if old in source.read_bytes():
                     offenders.append(str(source.relative_to(ROOT)))
         self.assertEqual(offenders, [],
-                         "All native sources must include pgs_native_api.h; old shim is for compatibility only")
+                         "All native sources must include pgs_native_api.h; compatibility symbols remain available")
 
 
     def test_hook_engine_pgs_names_and_old_cpp_linkage(self):

@@ -1,6 +1,6 @@
 // Independent adversarial harness for feature 44 (native Routes DISCOVERY reader + rooted route cache).
 // Written by a Claude leaf test worker WITHOUT reference to routes_discovery.cpp's internals beyond the
-// public ABI in routes_discovery.h / pgrazor_native_api.h and the published contract. It drives the real
+// public ABI in routes_discovery.h / pgs_native_api.h and the published contract. It drives the real
 // table through the v2 query_feature(44,1) getter, exactly like routes_actions_independent_test.cpp, and
 // builds its OWN minimal fake IL2CPP whose heap RELOCATES on every gchandle_* / runtime_invoke. A stale
 // managed pointer (one reused across an allocation) is caught by the poisoned old generation; a leaked GC

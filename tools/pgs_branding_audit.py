@@ -1,7 +1,7 @@
 """Guard PGS public identity while preserving Android/ABI/backup compatibility.
 
-Run in CI before packaging. Internal dev.pgs, assets/pgrazor, PGRAZOR_*
-and the original attribution remain intact until migrated with proofs.
+Run in CI before packaging. Preserve the original attribution, legacy storage
+identities and explicitly retained ABI/environment aliases.
 """
 from pathlib import Path
 import json
@@ -78,8 +78,7 @@ def check():
     # public name in README. Internal ABI and saved-state identifiers are
     # checked by their own compatibility fixtures rather than renamed here.
     required_license = (
-        "## License" + chr(10) + chr(10)
-        + "Original PGRazor source is available under the MIT License. "
+        "Original PGRazor source is available under the MIT License. "
         + "Third-party components retain their own licenses. "
         + "Pokémon GO and its assets are not covered by this license. "
         + "PGRazor is an independent project and is not affiliated with the game publisher."
@@ -89,7 +88,16 @@ def check():
         if not readme.endswith(required_license):
             problems.append(readme_file + ": mandatory exact final License notice absent")
         elif "pgrazor" in readme[:-len(required_license)].lower():
-            problems.append(readme_file + ": legacy brand occurs before License")
+            problems.append(readme_file + ": legacy brand occurs outside the retained attribution")
+        license_section = readme.rsplit("\n## License\n", 1)
+        if len(license_section) != 2 or not all(link in license_section[1] for link in ("(LICENSE)", "(NOTICE)", "(THIRD_PARTY_LICENSES.md)")):
+            problems.append(readme_file + ": project license and attribution links missing")
+    license_text = (ROOT / "LICENSE").read_text(encoding="utf-8")
+    if not all(line in license_text.splitlines() for line in ("Copyright (c) 2026 PGS contributors", "Copyright (c) 2026 PGRazor contributors")):
+        problems.append("LICENSE: project or upstream copyright missing")
+    for name in ("NOTICE", "THIRD_PARTY_LICENSES.md"):
+        if not (ROOT / name).is_file():
+            problems.append(name + ": required attribution document missing")
     # The public GitHub home is bilingual and uses the exact requested stacked title.
     stacked_title = '<h1 align="center">PGS</h1>' + chr(10) + '<h3 align="center">Pokémon GO Spoofers</h3>'
     for readme_file in ("README.md", "README.pt-BR.md"):

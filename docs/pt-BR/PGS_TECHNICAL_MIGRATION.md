@@ -47,3 +47,9 @@ Esta etapa não altera os símbolos exportados, os nomes de bibliotecas `.so`, o
 - Os tipos `PgsHookDiag` e `PgsPaddingRanges` conservam o layout e os cálculos originais. O núcleo chama os nomes PGS e o teste de ilhas ARM valida ambas as interfaces.
 - Os logs de erro do Android passam a usar a etiqueta `PGS`. Esta etapa não exporta novos símbolos ELF, não muda arquivos `.so`, package, certificado, assinatura, nem cria hooks adicionais ou APK completo.
 - A migração de Java/JNI, bibliotecas, caminhos e preferências exige verificação de instalação física e continua na [issue #38](https://github.com/LucianoToscano/PGS/issues/38).
+
+## Etapa 5 — opções não confidenciais de compilação com nomes PGS
+
+O compilador Java em `pgrazor/build.py` agora usa prioritariamente `PGS_VERSION`, `PGS_BUILD_TOOLS` e `PGS_ANDROID_PLATFORM`. Os aliases `PGRAZOR_*` continuam aceitos para manter os workflows existentes e as compilações antigas. Se ambas as opções estiverem definidas, a versão PGS não vazia prevalece; valores vazios utilizam o alias.
+
+As variáveis de chave e senhas `PGRAZOR_KEYSTORE`, o arquivo da chave, os caminhos de preview/DEX, o pacote Android, o certificado definitivo e o registro de `versionCode` **não mudam** nesta etapa. A alteração não gera outra chave. Um teste isolado verifica padrões, aliases, precedência e versão sem executar assinatura ou Android SDK. Testes de fonte aprovados não comprovam APK completo nem instalação no celular.

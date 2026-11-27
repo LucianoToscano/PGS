@@ -192,8 +192,10 @@ export async function gocoordsRows(body,now) {
 async function fetchJson(url,init,now,remaining) {
   const controller=new AbortController();
   const timer=setTimeout(()=>controller.abort(),remaining);
+  let observedStatus=null;
   try {
     const response=await fetch(url,{redirect:"manual",signal:controller.signal,...init});
+    observedStatus=response.status;
     const contentType=(response.headers.get("content-type")||"").split(";")[0].trim().toLowerCase()||null;
     if (!response.ok) {
       const error = Error("upstream_http");
@@ -221,6 +223,7 @@ async function fetchJson(url,init,now,remaining) {
     catch (error) { throw Object.assign(error,{contentType,message:"invalid_json"}); }
   } catch (error) {
     if (error.httpStatus==null && error.contentType===undefined && error.name==="AbortError") error.reason="timeout";
+    error.observedStatus=observedStatus;
     if (error.contentType===undefined) error.contentType=null;
     throw error;
   } finally { clearTimeout(timer); }
@@ -358,7 +361,7 @@ async function refresh(env) {
     const old=previous.entries?.find(x=>x.name===source.name && x.url===source.url);
     const recover=old?.adapter_v!==ADAPTER_VERSION && old?.status==="offline" &&
       ["empty_response","invalid_json","connection_error","timeout"].includes(old.reason) &&
-      !old.httpStatus && !old.retryAt;
+      (!old.httpStatus || old.httpStatus===200) && !old.retryAt;
     if (old?.next>now && !recover) return old;
     const metrics={attemptedPages:0,collectedPages:0};
     let partial;
@@ -371,13 +374,13 @@ async function refresh(env) {
         partial={...result,...cached};
         throw partialError;
       }
-      return {...base,...metrics,...result,updated:now,status:"online",failures:0,reason:null,httpStatus:null};
+      return {...base,...metrics,...result,updated:now,status:"online",failures:0,reason:null,httpStatus:200};
     }
     catch(error) {
       console.warn("PGS upstream unavailable",source.name);
       const failures=Math.min((old?.failures||0)+1,maxFailures);
       const reason=classifyError(error);
-      return {...(old||{}),...base,...partial,...metrics,updated:partial?now:old?.updated,retryAt:error.retryAt??null,status:"offline",httpStatus:error.httpStatus || null,contentType:error.contentType ?? old?.contentType ?? null,
+      return {...(old||{}),...base,...partial,...metrics,updated:partial?now:old?.updated,retryAt:error.retryAt??null,status:"offline",httpStatus:error.httpStatus ?? error.observedStatus ?? null,contentType:error.contentType ?? old?.contentType ?? null,
         reason,failures,
         next:Math.max(base.next,now+Math.min(backoffCapMs,interval*1000*2**failures),
           error.httpStatus===429?now+RATE_LIMIT_FLOOR_MS:0,Number.isFinite(error.retryAt)?error.retryAt:0)};
@@ -491,13 +494,17 @@ async function readFeed(request,env) {
       const counts=feed(state,Date.now()).sources;
       const connections=configs.map(source=>{
         const e=state.entries.find(item=>sourceKey(item)===sourceKey(source)) || {...source,status:"pending"};
-        const stateName=e.status==="pending"?"pending":stateOf(e);
+        const active=counts[providerName(e)]?.active??0;
+        const stateName=e.status==="pending"?"pending":e.status==="online"?
+          (active?"online_with_results":"online_without_hundos"):stateOf(e);
+        const detail=stateName==="invalid_response"?e.reason:stateName;
+        const labels={empty_response:"Resposta vazia",invalid_json:"JSON inválido",source_url:"Configuração inválida",invalid_config:"Configuração inválida"};
         summary[stateName]=(summary[stateName]||0)+1;
         return {provider:providerName(e),category:"hundos",
           active:counts[providerName(e)]?.active??0,unique:counts[providerName(e)]?.unique??0,
-          detail_status:stateName==="invalid_response"?e.reason:stateName,last_attempt:e.lastAttempt??null,
+          detail_status:detail,last_attempt:e.lastAttempt??null,
           next_attempt:e.next??null,attempted_pages:e.attemptedPages??null,collected_pages:e.collectedPages??null,
-          status:e.status,state:stateName,state_label:STATE_LABELS[stateName]||"Desconhecido",
+          status:e.status,state:stateName,state_label:labels[detail]||STATE_LABELS[stateName]||"Desconhecido",
           last_success:e.updated || null,next_retry:Number.isSafeInteger(e.next)?e.next:null,
           http_status:e.httpStatus || null,reason:e.reason || null,content_type:e.contentType ?? null,
           received:Number.isSafeInteger(e.received)?e.received:null,

@@ -404,3 +404,39 @@ test("legacy restrictions survive migrations and repeated cron calls",async t=>{
     assert.equal(JSON.parse(db.get("pgs-feed-v1")).entries[0].next,next);
   }
 });
+
+test("partial iFlowGo pages keep valid spots and stop at the first rate limit",async t=>{
+  const calls=[];
+  t.mock.method(globalThis,"fetch",async url=>{
+    const n=new URL(url).searchParams.get("page");
+    calls.push(n);
+    return n==="1"?Response.json({total_pages:5,items:[perfect]}):
+      new Response(null,{status:429,headers:{"Retry-After":"86400"}});
+  });
+  const {db,env}=makeEnv([iflowSource]);
+  const before=Date.now();
+  await worker.scheduled({},env);
+  await worker.scheduled({},env);
+  assert.deepEqual(calls,["1","2"]);
+  const [entry]=JSON.parse(db.get("pgs-feed-v1")).entries;
+  assert.equal(entry.spots.length,1);
+  assert.equal(entry.httpStatus,429);
+  assert.equal(entry.attemptedPages,2);
+  assert.equal(entry.collectedPages,1);
+  assert.ok(entry.next>=before+86400000);
+});
+
+test("Poke100IV verifies all IV components and publishes internal IDs only as spots",async t=>{
+  const row={id:1,pokemon_id:25,iv:100,atk:15,def:15,sta:15,latitude:"40.7",longitude:"-74.0",
+    expires_at:new Date(Date.now()+600000).toISOString()};
+  t.mock.method(globalThis,"fetch",async url=>{
+    assert.equal(new URL(url).searchParams.get("ivFilters"),"15-15-15");
+    return Response.json({success:true,data:[row,{...row,sta:14},{...row,coordinate_precision:"approximate"}]});
+  });
+  const {db,env}=makeEnv([{name:"poke100iv",kind:"poke100iv",url:"https://poke100iv.com/api/pokemon",interval_s:600}]);
+  await worker.scheduled({},env);
+  const [entry]=JSON.parse(db.get("pgs-feed-v1")).entries;
+  assert.equal(entry.discarded,2);
+  assert.equal(entry.hundos.length,0);
+  assert.equal(entry.spots.length,1);
+});

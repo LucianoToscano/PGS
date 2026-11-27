@@ -32,14 +32,33 @@ export function rows(body, now) {
   return {hundos:clean(body.hundos,false), spots:clean(body.spots ?? [],true)};
 }
 
+const cityHosts=new Set(["nycpokemap.com","sgpokemap.com","londonpogomap.com","sydneypogomap.com","vanpokemap.com"]);
+async function cityRows(body,now) {
+  if (!Array.isArray(body?.pokemons)) throw Error("city_schema");
+  const spots=[];
+  for (const p of body.pokemons) {
+    if (!p || ![p.attack,p.defence,p.stamina].every(v=>v===15) ||
+        [p.lat,p.lng,p.despawn,p.pokemon_id].some(v=>v==null || String(v).trim()==="")) continue;
+    const lat=Number(p.lat), lon=Number(p.lng), dex=Number(p.pokemon_id), end=Number(p.despawn)*1000;
+    const seed=[dex,lat.toFixed(5),lon.toFixed(5),Math.floor(end/60000)].join(":");
+    const hash=new Uint8Array(await crypto.subtle.digest("SHA-1",new TextEncoder().encode(seed)));
+    const key="s"+Array.from(hash.slice(0,8),v=>v.toString(16).padStart(2,"0")).join("");
+    spots.push([key,dex,Number(p.form||0),lat,lon,end,Number(p.cp||0),Number(p.level||0)]);
+  }
+  return rows({v:1,fetched_ms:now,hundos:[],spots},now);
+}
+
 async function collect(source, now) {
   const url = new URL(source.url);
+  const city=source.kind==="city" && cityHosts.has(url.hostname) && url.pathname==="/query2.php";
   if (url.protocol !== "https:" || url.username || url.password || url.search || url.hash ||
-      !url.pathname.endsWith("/hundos.json")) throw Error("source_url");
+      (!city && !url.pathname.endsWith("/hundos.json"))) throw Error("source_url");
+  if (city) url.search=new URLSearchParams({mons:Array.from({length:1025},(_,i)=>i+1).join(","),minIV:"100",since:"0",time:String(now)});
   const response = await fetch(url,{redirect:"error",signal:AbortSignal.timeout(12000),
     headers:{Accept:"application/json","User-Agent":"PGS-Hundo-Feed/1"}});
   if (!response.ok) {
     const error = Error("upstream_http");
+    error.httpStatus=response.status;
     const retry = response.headers.get("Retry-After");
     if (retry) error.retryAt = /^\d+$/.test(retry) ? now + Number(retry)*1000 : Date.parse(retry);
     throw error;
@@ -53,7 +72,8 @@ async function collect(source, now) {
     if (bytes>262144) { await reader.cancel(); throw Error("size"); }
     data+=decoder.decode(value,{stream:true});
   }
-  return rows(JSON.parse(data+decoder.decode()),now);
+  const body=JSON.parse(data+decoder.decode());
+  return city ? cityRows(body,now) : rows(body,now);
 }
 
 async function refresh(env) {
@@ -71,7 +91,7 @@ async function refresh(env) {
     catch(error) {
       console.warn("PGS upstream unavailable",source.name);
       const failures=Math.min((old?.failures||0)+1,8);
-      return {...old,...base,status:"offline",failures,
+      return {...old,...base,status:"offline",httpStatus:error.httpStatus || null,failures,
         next:Math.max(base.next,now+interval*1000*2**failures,Number.isFinite(error.retryAt)?error.retryAt:0)};
     }
   }));
@@ -86,7 +106,7 @@ export function feed(state,now) {
     group.push(row); nearby.set(row[1],group);
   }
   for (const s of state.entries) {
-    const count=sources[s.name]={active:0,unique:0,status:s.status};
+    const count=sources[s.name]={active:0,unique:0,status:s.status,http_status:s.httpStatus || null};
     for (const row of s.hundos || []) {
       if (row[5]<now+60000) continue;
       count.active++;

@@ -349,25 +349,25 @@ int api_install(const PgrAlwaysHitConfig *config) {
 
     CollisionFn col = nullptr, trg = nullptr;
     MakeThrowFn mk = nullptr;
-    int rc_col = pgrazor_hook(g_config.code_collision,
+    int rc_col = pgs_hook(g_config.code_collision,
                               reinterpret_cast<void *>(&collision_replacement),
                               reinterpret_cast<void **>(&col));
-    int rc_trg = pgrazor_hook(g_config.code_trigger,
+    int rc_trg = pgs_hook(g_config.code_trigger,
                               reinterpret_cast<void *>(&trigger_replacement),
                               reinterpret_cast<void **>(&trg));
-    int rc_mk  = pgrazor_hook(g_config.code_make_throw,
+    int rc_mk  = pgs_hook(g_config.code_make_throw,
                               reinterpret_cast<void *>(&make_throw_replacement),
                               reinterpret_cast<void **>(&mk));
     // Entry instruments: signature-agnostic, read the `this` ball only.
-    int rc_il = pgrazor_instrument(g_config.code_launch, &instrument_launch);
-    int rc_ir = pgrazor_instrument(g_config.code_release, &instrument_release);
+    int rc_il = pgs_instrument(g_config.code_launch, &instrument_launch);
+    int rc_ir = pgs_instrument(g_config.code_release, &instrument_release);
 
     // A reported hook success with a null trampoline would make our replacement swallow
     // the game's own method. Undo exactly that target and treat the install as failed, so
     // the original runs unmodified.
-    if (rc_col == 0 && col == nullptr) { pgrazor_unhook(g_config.code_collision);  rc_col = ERR_HOOK; }
-    if (rc_trg == 0 && trg == nullptr) { pgrazor_unhook(g_config.code_trigger);    rc_trg = ERR_HOOK; }
-    if (rc_mk  == 0 && mk  == nullptr) { pgrazor_unhook(g_config.code_make_throw); rc_mk  = ERR_HOOK; }
+    if (rc_col == 0 && col == nullptr) { pgs_unhook(g_config.code_collision);  rc_col = ERR_HOOK; }
+    if (rc_trg == 0 && trg == nullptr) { pgs_unhook(g_config.code_trigger);    rc_trg = ERR_HOOK; }
+    if (rc_mk  == 0 && mk  == nullptr) { pgs_unhook(g_config.code_make_throw); rc_mk  = ERR_HOOK; }
 
     if (rc_col != 0 || rc_trg != 0 || rc_mk != 0 || rc_il != 0 || rc_ir != 0) {
         // A failed partial patch is permanent and inert: targets that patched cleanly keep

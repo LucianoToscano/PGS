@@ -208,11 +208,11 @@ int ar_install(const PgrArThrowConfig *config) {
     }
 
     void *original = nullptr;
-    if (pgrazor_hook(config->capture_code, (void *)&ar_capture_replacement, &original) != 0) {
+    if (pgs_hook(config->capture_code, (void *)&ar_capture_replacement, &original) != 0) {
         return 5;
     }
     if (!original) {
-        pgrazor_unhook(config->capture_code);
+        pgs_unhook(config->capture_code);
         return 6;
     }
     g_config   = *config;

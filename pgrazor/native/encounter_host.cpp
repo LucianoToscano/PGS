@@ -2105,7 +2105,7 @@ static int install_one_hook(void *target, void *replacement, void **orig_out) {
   for (uint32_t i = 0; i < g_hooked_count; ++i) {
     if (g_hooked_addrs[i] == target) return *orig_out ? PGR_EH_OK : PGR_EH_ERR_HOOK;
   }
-  const int rc = pgrazor_hook(target, replacement, orig_out);
+  const int rc = pgs_hook(target, replacement, orig_out);
   if (*orig_out) g_hooked_addrs[g_hooked_count++] = target;
   if (rc != 0 || !*orig_out) { rollback_hooks(); return PGR_EH_ERR_HOOK; }
   return PGR_EH_OK;

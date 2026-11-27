@@ -393,7 +393,7 @@ void install(){
  new_game_object=overload("UnityEngine","GameObject",".ctor","System.String","System.Type[]");
  set_parent=overload("UnityEngine","Transform","SetParent","UnityEngine.Transform","System.Boolean");
  find_child=overload("UnityEngine","Transform","Find","System.String");
- void *orig=nullptr;const int rc=pgrazor_hook(const_cast<void*>(r.code),reinterpret_cast<void*>(hook_initialize),&orig);
+ void *orig=nullptr;const int rc=pgs_hook(const_cast<void*>(r.code),reinterpret_cast<void*>(hook_initialize),&orig);
  if(orig)original.store(reinterpret_cast<Init>(orig),std::memory_order_release);
  require(rc==0&&orig,"Initialize hook");
  installed.store(true,std::memory_order_release);status("ready","Storage IVs ready ("+types+")");

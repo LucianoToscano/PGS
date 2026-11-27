@@ -1,5 +1,6 @@
 """PGS native build identity, names and ABI compatibility regression."""
 from pathlib import Path
+import re
 import unittest
 import native_build
 import art_build
@@ -133,6 +134,63 @@ class PgsNativeRenameTests(unittest.TestCase):
                 fixture = path.read_text(encoding="utf-8")
                 self.assertNotIn("pgrazor_hook(", fixture)
                 self.assertIn("int pgs_hook(", fixture)
+
+    def test_phase9_bulk_direct_hook_consumers_use_pgs_symbols(self):
+        names = (
+            "auto_raid.cpp",
+            "menu_visibility.cpp",
+            "profile_scroll.cpp",
+            "routes_tracking.cpp",
+            "catch_presentation.cpp",
+            "transfer_observers.cpp",
+            "adventure_sync.cpp",
+            "always_hit.cpp",
+            "unity_scheduler.cpp",
+            "route_gift.cpp",
+            "map_tap.cpp",
+            "throws.cpp",
+            "ar_throw.cpp",
+            "quick_spin.cpp",
+            "rocket_swap.cpp",
+            "catch_wait.cpp",
+            "battery.cpp",
+            "shundo.cpp",
+            "routes_services.cpp",
+            "catch_canvas.cpp",
+            "routes_observers.cpp",
+            "accounts.cpp",
+            "spin_camera.cpp",
+            "storage_iv.cpp",
+            "catch_observers.cpp",
+            "gym_repeat.cpp",
+            "rocket_minigame.cpp",
+            "smart_battle.cpp",
+            "shared_host.cpp",
+            "combat_host.cpp",
+            "cutscene_skip.cpp",
+            "events/event_collector.cpp",
+            "map_auto_throw_game.inc",
+            "encounter_host.cpp",
+            "safari_throws_test.cpp",
+            "profile_scroll_test.cpp",
+            "safari_always_hit_test.cpp",
+            "menu_visibility_test.cpp",
+            "tests/accounts_test.cpp",
+            "cutscene_skip_test.cpp",
+            "gym_repeat_runtime_test.cpp",
+            "auto_raid_runtime_test.cpp",
+            "events/event_collector_test.cpp",
+            "tests/accounts_dobby_bridge.cpp",
+            "unity_scheduler_diag_test.cpp",
+            "shared_host_flow_test.cpp",
+        )
+        legacy = re.compile(r'\bpgrazor_(?:hook|unhook|instrument|hook_diag)\b')
+        primary = re.compile(r'\bpgs_(?:hook|unhook|instrument|hook_diag)\b')
+        for name in names:
+            with self.subTest(path=name):
+                content = (NATIVE / name).read_text(encoding='utf-8')
+                self.assertIsNone(legacy.search(content))
+                self.assertIsNotNone(primary.search(content))
 
     def test_pgs_cmd_is_primary_and_legacy_launcher_forwards(self):
         primary = (ROOT / "pgs.cmd").read_text(encoding="utf-8")

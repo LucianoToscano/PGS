@@ -306,7 +306,7 @@ void won_approach(){
 const void *pgrazor_runtime_bootstrap_api(uint32_t) { return &boot_api; }
 const void *pgrazor_runtime_metadata_api(uint32_t) { return &meta_api; }
 const void *pgrazor_runtime_transport_api(uint32_t) { return &transport_api; }
-int pgrazor_hook(void *address, void *replacement, void **original) {
+int pgs_hook(void *address, void *replacement, void **original) {
     hooks[address] = replacement;
     *original = address == &code_re ? reinterpret_cast<void*>(noop4) : reinterpret_cast<void*>(noop2);
     return fail_hook_at && int(hooks.size())==fail_hook_at ? -1 : 0;

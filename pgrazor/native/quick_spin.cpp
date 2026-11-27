@@ -775,7 +775,7 @@ int api_install(const PgrQuickSpinConfig *config) {
   // On partial failure retain published trampolines: another thread may already
   // be using one. The failed attempt is latched until process restart.
   void *orig_enter = nullptr;
-  if (pgrazor_hook(resolved.enter_address, reinterpret_cast<void *>(&hook_enter),
+  if (pgs_hook(resolved.enter_address, reinterpret_cast<void *>(&hook_enter),
                    &orig_enter) != 0 ||
       orig_enter == nullptr) {
     return g_install_error = PGR_QUICK_SPIN_ERR_HOOK_ENTER;
@@ -783,7 +783,7 @@ int api_install(const PgrQuickSpinConfig *config) {
   g_orig_enter.store(reinterpret_cast<EnterHookFn>(orig_enter), std::memory_order_release);
 
   void *orig_exit = nullptr;
-  if (pgrazor_hook(resolved.exit_address, reinterpret_cast<void *>(&hook_exit),
+  if (pgs_hook(resolved.exit_address, reinterpret_cast<void *>(&hook_exit),
                    &orig_exit) != 0 ||
       orig_exit == nullptr) {
     return g_install_error = PGR_QUICK_SPIN_ERR_HOOK_EXIT;
@@ -791,7 +791,7 @@ int api_install(const PgrQuickSpinConfig *config) {
   g_orig_exit.store(reinterpret_cast<ExitHookFn>(orig_exit), std::memory_order_release);
 
   void *orig_result = nullptr;
-  if (pgrazor_hook(resolved.result_address, reinterpret_cast<void *>(&hook_result),
+  if (pgs_hook(resolved.result_address, reinterpret_cast<void *>(&hook_result),
                    &orig_result) != 0 ||
       orig_result == nullptr) {
     return g_install_error = PGR_QUICK_SPIN_ERR_HOOK_RESULT;
@@ -799,7 +799,7 @@ int api_install(const PgrQuickSpinConfig *config) {
   g_orig_result.store(reinterpret_cast<ResultHookFn>(orig_result), std::memory_order_release);
 
   void *orig_spin = nullptr;
-  if (pgrazor_hook(resolved.spin_address, reinterpret_cast<void *>(&hook_spin),
+  if (pgs_hook(resolved.spin_address, reinterpret_cast<void *>(&hook_spin),
                    &orig_spin) != 0 ||
       orig_spin == nullptr) {
     return g_install_error = PGR_QUICK_SPIN_ERR_HOOK_SPIN;

@@ -234,6 +234,6 @@ void map_install_hook(){
     void* code=nullptr;std::memcpy(&code,method,sizeof(code));
     auto api=static_cast<const PgrMetaApi*>(pgrazor_runtime_metadata_api(1));
     PgrMetaCodeQuery query{1,sizeof(query),code,16,nullptr,0,0};require(api&&api->validate_code(&query)==0,"Map tap code validation failed");
-    require(pgrazor_hook(code,reinterpret_cast<void*>(map_tap_hook),reinterpret_cast<void**>(&map_original))==0&&map_original,"Map tap hook unavailable");
+    require(pgs_hook(code,reinterpret_cast<void*>(map_tap_hook),reinterpret_cast<void**>(&map_original))==0&&map_original,"Map tap hook unavailable");
     map_hook_ready=true;map_event("ready","Map tap catch hook installed");
 }

@@ -108,7 +108,7 @@ void install_hooks(){
    PgrMetaMethodResult r{};const int rc=metadata()->validate_method(&q,&r);
    if(rc!=0||!r.code){missing+=std::string(missing.empty()?"":", ")+kStepNames[t.step]+" (code "+std::to_string(rc)+")";continue;}
    void *o=nullptr;
-   if(pgrazor_hook(const_cast<void*>(r.code),t.replacement,&o)!=0||!o){missing+=std::string(missing.empty()?"":", ")+kStepNames[t.step]+" (hook)";continue;}
+   if(pgs_hook(const_cast<void*>(r.code),t.replacement,&o)!=0||!o){missing+=std::string(missing.empty()?"":", ")+kStepNames[t.step]+" (hook)";continue;}
    original[t.step].store(o,std::memory_order_release);hooked[t.step].store(true,std::memory_order_release);
   }catch(const Failure &f){missing+=std::string(missing.empty()?"":", ")+kStepNames[t.step]+" ("+f.where+")";}
  }

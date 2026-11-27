@@ -23,8 +23,8 @@ jobs:
       run:
         shell: pwsh
     env:
-      PGRAZOR_BUILD_TOOLS: 36.0.0
-      PGRAZOR_ANDROID_PLATFORM: android-36
+      PGS_BUILD_TOOLS: 36.0.0
+      PGS_ANDROID_PLATFORM: android-36
       PGRAZOR_KEY_ALIAS: ${{ secrets.PGRAZOR_KEY_ALIAS }}
       PGRAZOR_STORE_PASSWORD: ${{ secrets.PGRAZOR_STORE_PASSWORD }}
       PGRAZOR_KEY_PASSWORD: ${{ secrets.PGRAZOR_KEY_PASSWORD }}
@@ -98,13 +98,13 @@ jobs:
         run: python -B tools/private_input.py
       - name: Build playable package
         env:
-          PGRAZOR_VERSION: ${{ inputs.tag }}
+          PGS_VERSION: ${{ inputs.tag }}
           GITHUB_TOKEN: ${{ github.token }}
         run: python -B pgrazor/nonroot.py --apk pgrazor/input/game.apkm --google-browser-login
       - name: Produce single installable APK
         shell: pwsh
         env:
-          PGRAZOR_VERSION: ${{ inputs.tag }}
+          PGS_VERSION: ${{ inputs.tag }}
         run: |
           $candidate = Get-ChildItem -LiteralPath pgrazor/build/nonroot -Directory | Sort-Object Name -Descending | Select-Object -First 1
           if (!$candidate) { throw 'Non-root package run is missing' }
@@ -113,7 +113,7 @@ jobs:
       - name: Build rooted installer and manual module
         # Keep this after release_apk.py: rooted.py appends both Root checksums.
         env:
-          PGRAZOR_VERSION: ${{ inputs.tag }}
+          PGS_VERSION: ${{ inputs.tag }}
         run: python -B pgrazor/rooted.py pgrazor/input/game.apkm --skip-build --download --output dist/release
       - name: Verify all three release downloads
         env:

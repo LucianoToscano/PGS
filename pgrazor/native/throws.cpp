@@ -237,14 +237,14 @@ int api_install(const PgrThrowConfig *config) {
     // Submit is shared with the existing Gum berry replacement. Until that entire
     // site migrates, its listener calls rewrite_submit without patching it twice.
     ThrowFn h = nullptr;
-    const int rh = pgrazor_hook(g_config.hit_code, reinterpret_cast<void *>(&hit_replacement),
+    const int rh = pgs_hook(g_config.hit_code, reinterpret_cast<void *>(&hit_replacement),
                                 reinterpret_cast<void **>(&h));
 
     if (rh || !h) {
         // Partial failure is permanent and inert. Publish whatever originals exist so the
         // affected trampolines merely chain through (policy can never arm: g_installed
         // stays false and update() refuses). No second engine is stacked, no JS fallback.
-        if(!rh && !h) pgrazor_unhook(g_config.hit_code);
+        if(!rh && !h) pgs_unhook(g_config.hit_code);
         g_orig_hit.store(h, std::memory_order_release);
         g_install_failed = true;
         return ERR_HOOK;

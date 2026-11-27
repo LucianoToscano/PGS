@@ -85,8 +85,8 @@ void pgr_profile_scroll_install(){
   read_field=reinterpret_cast<decltype(read_field)>(b.runtime.field_get_value);scroll_field=field.field;
   // Install the inert position wrapper first; a failed second install leaves
   // its scope null and forwards all calls unchanged. Never tear down trampolines.
-  ok=pgrazor_hook(position_code,reinterpret_cast<void*>(set_position),reinterpret_cast<void**>(&original_position))==0&&original_position;
-  if(ok)ok=pgrazor_hook(update_code,reinterpret_cast<void*>(refresh),reinterpret_cast<void**>(&original_refresh))==0&&original_refresh;
+  ok=pgs_hook(position_code,reinterpret_cast<void*>(set_position),reinterpret_cast<void**>(&original_position))==0&&original_position;
+  if(ok)ok=pgs_hook(update_code,reinterpret_cast<void*>(refresh),reinterpret_cast<void**>(&original_refresh))==0&&original_refresh;
  }
  __android_log_print(ok?ANDROID_LOG_INFO:ANDROID_LOG_WARN,"PGRazor","profile-scroll: %s",ok?"installed":"unsupported; original behavior retained");
 }

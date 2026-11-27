@@ -2,9 +2,9 @@
 #include <cstdio>
 #include "always_hit.cpp"
 // No hooks are installed: exercise the real eligibility/throw replacement.
-int pgrazor_hook(void*,void*,void**){return -1;}
-int pgrazor_unhook(void*){return -1;}
-int pgrazor_instrument(void*,dobby_instrument_callback_t){return -1;}
+int pgs_hook(void*,void*,void**){return -1;}
+int pgs_unhook(void*){return -1;}
+int pgs_instrument(void*,dobby_instrument_callback_t){return -1;}
 namespace {
 int test_class,item_field,bread_field;
 struct Ball {int item;};

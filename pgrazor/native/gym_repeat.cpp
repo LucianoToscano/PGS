@@ -527,7 +527,7 @@ bool install() {
     for (int i = 0; i < HK_COUNT; ++i) {
         if (g_orig[binds[i].slot].load(std::memory_order_acquire)) continue;
         void *orig = nullptr;
-        const int rc = pgrazor_hook(codes[i], binds[i].repl, &orig);
+        const int rc = pgs_hook(codes[i], binds[i].repl, &orig);
         if (orig) { g_orig[binds[i].slot].store(orig, std::memory_order_release); ++g_installed_hooks; }
         if (rc != 0 || !orig) return false; // partial install: handlers stay inert via g_ready
     }

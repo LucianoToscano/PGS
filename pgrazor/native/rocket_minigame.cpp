@@ -293,8 +293,8 @@ bool config_pointers_ok(const PgrRocketMiniConfig *c) {
 // the game's original runs unmodified, and report failure.
 int hook_site(void *addr, void *repl, void **orig) {
     *orig = nullptr;
-    int rc = pgrazor_hook(addr, repl, orig);
-    if (rc == 0 && *orig == nullptr) { pgrazor_unhook(addr); return PGR_RMINI_ERR_HOOK_FAILED; }
+    int rc = pgs_hook(addr, repl, orig);
+    if (rc == 0 && *orig == nullptr) { pgs_unhook(addr); return PGR_RMINI_ERR_HOOK_FAILED; }
     return rc == 0 ? PGR_RMINI_OK : PGR_RMINI_ERR_HOOK_FAILED;
 }
 

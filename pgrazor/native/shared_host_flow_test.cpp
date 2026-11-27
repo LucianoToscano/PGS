@@ -81,7 +81,7 @@ extern "C" void pgr_transfer_facts_set_max(void*,int32_t,int32_t,int32_t,int32_t
 #define pgrazor_runtime_metadata_api fixture_meta_api
 #define pgrazor_interaction_host_api fixture_interaction_api
 #define pgrazor_shared_host_api fixture_host_api
-#define pgrazor_hook fixture_hook
+#define pgs_hook fixture_hook
 #include "shared_host.cpp"
 
 namespace test {

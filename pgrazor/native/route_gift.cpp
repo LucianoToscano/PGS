@@ -100,8 +100,8 @@ void install(){
  static_assert(sizeof(b_enter)==24&&sizeof(b_exit)==24,"24-byte prologues");
  void *enter=validate_hook(state,"EnterState",2,PGR_GAME_ROUTE_GIFT_CPP_NPC_ENTER_RVA,b_enter);
  void *exit=validate_hook(state,"ExitState",0,PGR_GAME_ROUTE_GIFT_CPP_NPC_EXIT_RVA,b_exit);
- void *o=nullptr;require(pgrazor_hook(enter,reinterpret_cast<void*>(hook_enter),&o)==0&&o,"EnterState hook");orig_enter.store(o,std::memory_order_release);
- o=nullptr;require(pgrazor_hook(exit,reinterpret_cast<void*>(hook_exit),&o)==0&&o,"ExitState hook");orig_exit.store(o,std::memory_order_release);
+ void *o=nullptr;require(pgs_hook(enter,reinterpret_cast<void*>(hook_enter),&o)==0&&o,"EnterState hook");orig_enter.store(o,std::memory_order_release);
+ o=nullptr;require(pgs_hook(exit,reinterpret_cast<void*>(hook_exit),&o)==0&&o,"ExitState hook");orig_exit.store(o,std::memory_order_release);
  installed=true;
 }
 

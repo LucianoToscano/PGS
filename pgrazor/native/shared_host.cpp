@@ -342,7 +342,7 @@ int install_hooks(){
  const void *addresses[]={md.method_code[2],md.method_code[3],md.method_code[4],md.method_code[1],md.method_code[0],h(H_DET_PRESENT_CODE),h(H_DET_INIT_CODE),h(H_DET_OPEN_CODE),h(H_DET_EXIT_CODE),h(H_DET_CLICK_CODE)};
  void *replacements[]={reinterpret_cast<void*>(hook_initialize),reinterpret_cast<void*>(hook_scores),reinterpret_cast<void*>(hook_open),reinterpret_cast<void*>(hook_dismiss),reinterpret_cast<void*>(hook_exit),reinterpret_cast<void*>(hook_present),reinterpret_cast<void*>(hook_details_init),reinterpret_cast<void*>(hook_details_open),reinterpret_cast<void*>(hook_details_exit),reinterpret_cast<void*>(hook_details_click)};
  const unsigned count=(capabilities&PGR_SHH_DETAILS)?10:5;
- for(unsigned i=0;i<count;++i){void *trampoline=nullptr;const int rc=pgrazor_hook(const_cast<void*>(addresses[i]),replacements[i],&trampoline);if(trampoline)originals[i]=trampoline;if(rc||!trampoline)return -20;}
+ for(unsigned i=0;i<count;++i){void *trampoline=nullptr;const int rc=pgs_hook(const_cast<void*>(addresses[i]),replacements[i],&trampoline);if(trampoline)originals[i]=trampoline;if(rc||!trampoline)return -20;}
  return 0;
 }
 struct Root {void *value=nullptr;explicit Root(void *object):value(hold(object)){}~Root(){free_root(value);}void *get()const{return target(value);}};

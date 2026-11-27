@@ -375,10 +375,10 @@ int install(uint64_t tid){
      (rc=validate_method(controller_class,"get_VisibleOnMap","System.Boolean",{},PGR_GAME_EVENTS_EVENT_COLLECTOR_CPP_DYNAMICTAPPABLECONTROLLER_GET_VISIBLEONMAP_RVA,visible_pre,visible)))return rc;
   tap_method=session_tap.method;visible_method=visible.method;owner.store(tid);
   // All contracts validated before any mutation. Partial install never enables dispatch.
-  void *out=nullptr;rc=pgrazor_hook(const_cast<void*>(enc.code),reinterpret_cast<void*>(&encounter_hook),&out);if(out)original_encounter.store(reinterpret_cast<Result>(out));if(rc||!out)return -44;
-  out=nullptr;rc=pgrazor_hook(const_cast<void*>(result.code),reinterpret_cast<void*>(&result_hook),&out);if(out)original_result.store(reinterpret_cast<Result>(out));if(rc||!out)return -45;
-  out=nullptr;rc=pgrazor_hook(const_cast<void*>(tap.code),reinterpret_cast<void*>(&tap_hook),&out);if(out)original_tap.store(reinterpret_cast<Tap>(out));if(rc||!out)return -46;
-  out=nullptr;rc=pgrazor_hook(const_cast<void*>(update.code),reinterpret_cast<void*>(&update_hook),&out);if(out)original_update.store(reinterpret_cast<Update>(out));if(rc||!out)return -47;
+  void *out=nullptr;rc=pgs_hook(const_cast<void*>(enc.code),reinterpret_cast<void*>(&encounter_hook),&out);if(out)original_encounter.store(reinterpret_cast<Result>(out));if(rc||!out)return -44;
+  out=nullptr;rc=pgs_hook(const_cast<void*>(result.code),reinterpret_cast<void*>(&result_hook),&out);if(out)original_result.store(reinterpret_cast<Result>(out));if(rc||!out)return -45;
+  out=nullptr;rc=pgs_hook(const_cast<void*>(tap.code),reinterpret_cast<void*>(&tap_hook),&out);if(out)original_tap.store(reinterpret_cast<Tap>(out));if(rc||!out)return -46;
+  out=nullptr;rc=pgs_hook(const_cast<void*>(update.code),reinterpret_cast<void*>(&update_hook),&out);if(out)original_update.store(reinterpret_cast<Update>(out));if(rc||!out)return -47;
   ready.store(true);return 0;
 }
 void pump(bool enabled,uint64_t n,bool diagnose){

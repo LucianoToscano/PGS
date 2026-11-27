@@ -390,12 +390,12 @@ bool validate_config(const PgrSpinCameraConfig *cfg) noexcept {
 template <typename Fn>
 bool install_one_hook(void *target, void *replacement, std::atomic<Fn> *orig_slot) noexcept {
     void *orig = nullptr;
-    const int rc = pgrazor_hook(target, replacement, &orig);
+    const int rc = pgs_hook(target, replacement, &orig);
     if (rc != 0) {
         return false;
     }
     if (orig == nullptr) {
-        pgrazor_unhook(target);
+        pgs_unhook(target);
         return false;
     }
     orig_slot->store(reinterpret_cast<Fn>(orig), std::memory_order_release);

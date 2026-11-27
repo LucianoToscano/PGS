@@ -109,10 +109,10 @@ void install(){
   gc_target=reinterpret_cast<decltype(gc_target)>(b.runtime.gchandle_get_target);
   gc_free=reinterpret_cast<decltype(gc_free)>(b.runtime.gchandle_free);
   ok=invoke&&unbox&&gc_new&&gc_target&&gc_free;
-  if(ok)ok=pgrazor_hook(dismiss_code,reinterpret_cast<void*>(dismiss_menu),reinterpret_cast<void**>(&original_dismiss))==0&&original_dismiss;
-  if(ok)ok=pgrazor_hook(cl_code,reinterpret_cast<void*>(close_menu),reinterpret_cast<void**>(&original_close))==0&&original_close;
-  if(ok)ok=pgrazor_hook(init_code,reinterpret_cast<void*>(initialize_menu),reinterpret_cast<void**>(&original_initialize))==0&&original_initialize;
-  if(ok)ok=pgrazor_hook(op_code,reinterpret_cast<void*>(open_menu),reinterpret_cast<void**>(&original_open))==0&&original_open;
+  if(ok)ok=pgs_hook(dismiss_code,reinterpret_cast<void*>(dismiss_menu),reinterpret_cast<void**>(&original_dismiss))==0&&original_dismiss;
+  if(ok)ok=pgs_hook(cl_code,reinterpret_cast<void*>(close_menu),reinterpret_cast<void**>(&original_close))==0&&original_close;
+  if(ok)ok=pgs_hook(init_code,reinterpret_cast<void*>(initialize_menu),reinterpret_cast<void**>(&original_initialize))==0&&original_initialize;
+  if(ok)ok=pgs_hook(op_code,reinterpret_cast<void*>(open_menu),reinterpret_cast<void**>(&original_open))==0&&original_open;
  }
  ready=ok;
  __android_log_print(ok?ANDROID_LOG_INFO:ANDROID_LOG_WARN,"PGRazor","menu-visibility: %s",ok?"installed":"unsupported; joystick hidden");

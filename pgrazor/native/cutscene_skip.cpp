@@ -932,7 +932,7 @@ bool hook(const PgrMetaApi *api,const Target &t,std::string &why){
  q.expected_code=static_cast<const char*>(boot.module_base)+t.rva;q.prologue=t.prologue;q.prologue_len=24;
  PgrMetaMethodResult r{};const int rc=api->validate_method(&q,&r);
  if(rc!=0||!r.code){why+=std::string(why.empty()?"":", ")+kNames[t.kind]+" (code "+std::to_string(rc)+")";return false;}
- void *o=nullptr;const int hr=pgrazor_hook(const_cast<void*>(r.code),t.replacement,&o);
+ void *o=nullptr;const int hr=pgs_hook(const_cast<void*>(r.code),t.replacement,&o);
  if(hr!=0||!o){why+=std::string(why.empty()?"":", ")+kNames[t.kind]+" (hook)";return false;}
  original[t.kind].store(o,std::memory_order_release);return true;
 }
@@ -1203,7 +1203,7 @@ void install(){
   PgrMetaMethodResult r{};const int rc=api->validate_method(&q,&r);
   void *o=nullptr;
   if(rc!=0||!r.code)status("warning","Screen trace unavailable (code "+std::to_string(rc)+")");
-  else if(pgrazor_hook(const_cast<void*>(r.code),reinterpret_cast<void*>(hook_gui_open),&o)!=0||!o)status("warning","Screen trace unavailable (hook)");
+  else if(pgs_hook(const_cast<void*>(r.code),reinterpret_cast<void*>(hook_gui_open),&o)!=0||!o)status("warning","Screen trace unavailable (hook)");
   else gui_open_original.store(o,std::memory_order_release);
  }catch(...){status("warning","Screen trace unavailable");}
 

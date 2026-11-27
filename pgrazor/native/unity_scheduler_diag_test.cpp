@@ -20,7 +20,7 @@ int verify(const PgrUnitySchedulerConfig*){return 1;}
 void *invoke(const void*,void*,void**,void**){return nullptr;}
 void *convert(const void*,void*,void**,int32_t,void**){return nullptr;}
 }
-#define pgrazor_hook fixture::hook
+#define pgs_hook fixture::hook
 #include "unity_scheduler.cpp"
 int main(int argc,char **argv){
     assert(argc==2&&argv[1][0]>='0'&&argv[1][0]<='4'&&argv[1][1]=='\0');fixture::mode=std::atoi(argv[1]);

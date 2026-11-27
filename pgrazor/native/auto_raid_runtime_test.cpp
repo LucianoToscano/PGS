@@ -976,4 +976,4 @@ extern "C" int pgr_research_transfer_caught(uint64_t,uint64_t,uint64_t,uint64_t,
 bool pgr_map_throw_value(PgrThrowValue*){return false;}
 bool pgr_catch_chance_base(void*,double*){return false;}
 bool pgr_catch_chance_offers_ball(void*,int){return false;}
-int pgrazor_hook(void*,void*,void**){return -1;}
+int pgs_hook(void*,void*,void**){return -1;}

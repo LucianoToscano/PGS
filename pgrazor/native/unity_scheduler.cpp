@@ -169,7 +169,7 @@ int install(const PgrUnitySchedulerConfig *value){
 #endif
  config=*value;
  void *first=nullptr;
- int rc=pgrazor_hook(invoke_target,reinterpret_cast<void *>(&invoke),&first);
+ int rc=pgs_hook(invoke_target,reinterpret_cast<void *>(&invoke),&first);
  original_invoke.store(reinterpret_cast<PgrUnityInvoke>(first),std::memory_order_release);
  if(rc||!first){
  // Retain every published trampoline: an in-flight replacement may still need it.
@@ -178,7 +178,7 @@ int install(const PgrUnitySchedulerConfig *value){
  return PGR_US_HOOK_FAILED;
  }
  void *second=nullptr;
- rc=pgrazor_hook(convert_target,reinterpret_cast<void *>(&convert),&second);
+ rc=pgs_hook(convert_target,reinterpret_cast<void *>(&convert),&second);
  original_convert.store(reinterpret_cast<PgrUnityConvert>(second),std::memory_order_release);
  if(rc||!second){
  // Remain passive and retain both originals until process exit. Never destroy

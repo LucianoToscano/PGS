@@ -49,6 +49,19 @@ class PgsBuildOptionTests(unittest.TestCase):
                 with self.assertRaisesRegex(ValueError, "Invalid PGS version"):
                     build.release_version(root)
 
+    def test_workflows_use_pgs_nonsecret_build_options(self):
+        workflows = Path(__file__).resolve().parents[2] / '.github' / 'workflows'
+        for name in ('ci.yml', 'release.yml', 'pgs-v0.0.1-release.yml',
+                     'pgs-v0.0.2-release.yml', 'pgs-same-package-update.yml'):
+            with self.subTest(workflow=name):
+                source = (workflows / name).read_text(encoding='utf-8')
+                for option in ('BUILD_TOOLS', 'ANDROID_PLATFORM', 'VERSION'):
+                    self.assertNotIn('PGRAZOR_' + option + ':', source)
+                self.assertIn('PGS_BUILD_TOOLS:', source)
+                self.assertIn('PGS_ANDROID_PLATFORM:', source)
+                if name in ('release.yml', 'pgs-v0.0.1-release.yml', 'pgs-v0.0.2-release.yml'):
+                    self.assertIn('PGS_VERSION:', source)
+
 
 if __name__ == "__main__":
     unittest.main()

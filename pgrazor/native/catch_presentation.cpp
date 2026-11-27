@@ -84,10 +84,10 @@ int install(const PgrCatchConfig *value) {
     }
     config = *value;
     Show trampoline = nullptr;
-    const int rc = pgrazor_hook(value->address, reinterpret_cast<void *>(&replacement),
+    const int rc = pgs_hook(value->address, reinterpret_cast<void *>(&replacement),
                              reinterpret_cast<void **>(&trampoline));
     if(rc || !trampoline) {
-        if(!rc) pgrazor_unhook(value->address);
+        if(!rc) pgs_unhook(value->address);
         failed = true; return -4;
     }
     original.store(trampoline, std::memory_order_release);
@@ -125,8 +125,8 @@ int attach_passthrough(void *address) {
     if(attached) return config.address == address ? 0 : -3;
     if(failed || !address) return -2;
     Show trampoline = nullptr;
-    const int rc = pgrazor_hook(address, reinterpret_cast<void *>(&replacement), reinterpret_cast<void **>(&trampoline));
-    if(rc || !trampoline) { if(!rc) pgrazor_unhook(address); return -4; }
+    const int rc = pgs_hook(address, reinterpret_cast<void *>(&replacement), reinterpret_cast<void **>(&trampoline));
+    if(rc || !trampoline) { if(!rc) pgs_unhook(address); return -4; }
     config = {}; config.address = address;
     original.store(trampoline, std::memory_order_release);
     attached = true; passthrough = true; return 0;

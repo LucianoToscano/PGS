@@ -52,7 +52,7 @@ public final class AccountRestartActivity extends Activity {
 
     /**
      * Routes an account-switch restart. The patched APK starts this activity in its private
-     * {@code :pgrazor_restart} process; PGRazor Root has no second process or manifest entry, so it
+     * {@code :pgrazor_restart} process; PGS Root has no second process or manifest entry, so it
      * hands off to {@link RootedRestart}, which cold-restarts the game so the pending switch is
      * applied before Unity starts. Returns {@code false} when no restart could be initiated, so the
      * caller can fall back to asking the user to reopen the game.

@@ -78,7 +78,7 @@ final class AccountProfiles {
         commands.clear();message="Reopening date-of-birth screen";diag("account-command","sign-in reset; reopening");
         io.execute(()->{try{flush();main.post(AccountProfiles::restart);}catch(IOException error){main.post(()->fail("Close and reopen the game to finish resetting sign-in."));}});
     });}
-    /** The PGRazor settings file: the main account's while global settings are on. */
+    /** The PGS settings file: the main account's while global settings are on. */
     static final String SETTINGS_FILE="pgrazor-settings-v1.properties";
     static File file(Context context,String name){
         if(store==null)return new File(context.getFilesDir(),name);

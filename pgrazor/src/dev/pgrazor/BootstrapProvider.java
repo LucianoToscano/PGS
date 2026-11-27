@@ -24,14 +24,14 @@ public final class BootstrapProvider extends ContentProvider {
     }
     public boolean onCreate() { return start(getContext()); }
     /**
-     * Shared startup for both builds: the patched APK calls it from this provider; PGRazor Root
+     * Shared startup for both builds: the patched APK calls it from this provider; PGS Root
      * calls it from its Application.onCreate hook (RootedRuntime) at the same point in startup.
      */
     static boolean start(Context context) {
         if(context==null) return false;
         Context appContext=context.getApplicationContext();
         if(!(appContext instanceof Application)) {
-            android.util.Log.e("PGRazor","bootstrap-error: Application context unavailable"); return false;
+            android.util.Log.e("PGS","bootstrap-error: Application context unavailable"); return false;
         }
         Application app=(Application)appContext;
         if(!Application.getProcessName().equals(context.getApplicationInfo().processName)) return true;
@@ -94,7 +94,7 @@ public final class BootstrapProvider extends ContentProvider {
             boolean interactionProbe=mode.optBoolean("interactionProbe",false);
             boolean quickClose=mode.optBoolean("quickClose",false);
             if(quickClose&&!mode.optBoolean("quickSummary",false)) throw new IOException("Summary auto-dismiss requires the summary lifecycle");
-            // Compiled-only production gameplay: no Gadget, no PGRazor scripts, no java-bridge.
+            // Compiled-only production gameplay: no Gadget, no PGS scripts, no java-bridge.
             // Quick Catch (close), the ball animation and camera steering ship as the standard
             // native feature set; interaction diagnostics stay opt-in. Research survey, scene and
             // passive-camera modes are explicitly rejected here and keep their existing Gadget path.
@@ -289,7 +289,7 @@ public final class BootstrapProvider extends ContentProvider {
         }
     }
     /**
-     * Final compiled-only gameplay startup: no Frida Gadget, no PGRazor script runtime and no
+     * Final compiled-only gameplay startup: no Frida Gadget, no PGS script runtime and no
      * java-bridge are packaged or loaded. It loads the compiled ART getters and the host (and, under
      * MuMu translation, the guest ARM) native core exactly like the working compiled host, keeps the
      * feature-52 binary transport owning the Java lifecycle, configures the UI settings the compiled
@@ -337,7 +337,7 @@ public final class BootstrapProvider extends ContentProvider {
     }
     /**
      * A new folder for this run's native libraries, after removing the folders earlier runs left behind
-     * (5 MB each). Only this process's startup reaches here. PGRazor Root's fixed pgrazor-root folder does
+     * (5 MB each). Only this process's startup reaches here. PGS Root's fixed pgrazor-root folder does
      * not match the name and is kept.
      */
     private static File runtimeDirectory(Context context) throws IOException {
@@ -356,7 +356,7 @@ public final class BootstrapProvider extends ContentProvider {
         }
         file.delete();
     }
-    /** Loads the ART hook library once; PGRazor Root has already loaded it before startup. */
+    /** Loads the ART hook library once; PGS Root has already loaded it before startup. */
     private static void loadArt(Context context,String abi,File directory) throws IOException {
         if(NativeJavaHooks.loaded) return;
         File art=copyAsset(context,"pgrazor/"+abi+"/libpgrazor-art.so",directory,"libpgrazor-art.so");

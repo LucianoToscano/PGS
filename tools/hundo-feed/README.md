@@ -14,12 +14,12 @@ An optional `published` source accepts a compatible external feed (including bot
 
 ```sh
 HUNDO_SOURCES=published,pogocoordinates,citymaps
-PGS_UPSTREAM_FEED_URL=https://feed.faustusfoundry.com/pgs/hundos.json
+PGS_UPSTREAM_FEED_URL=https://feed.faustusfoundry.com/pgrazor/hundos.json
 PGS_UPSTREAM_FEED_INTERVAL=60
 HUNDO_OUT=/var/www/pgs/feed/hundos.json
 ```
 
-The proposed FaustusFoundry URL is **not verified**; the operator must confirm it exists and is authorized for redistribution. There is no automatic fallback to the old external address or implicit activation. To start with authorized sources alone, omit `published`; omit account-backed sources unless the required account and permissions are available. Never point the published-source URL at the PGS output itself.
+The configured FaustusFoundry URL was validated on 2026-11-27. There is no automatic fallback to the old external address or implicit activation. To start with authorized sources alone, omit `published`; omit account-backed sources unless the required account and permissions are available. Never point the published-source URL at the PGS output itself.
 
 The optional source validates schema version, freshness (ten minutes maximum), coordinates, IDs, expiry and row types, discards approximate markers, caps responses at 8 MiB and respects source-specific back-off. Only validated compact rows are merged; the collector never forwards upstream metadata or credentials. If the source fails, previous valid rows remain usable until they expire and other sources continue on their own schedules. Availability and identical coverage are not guaranteed.
 

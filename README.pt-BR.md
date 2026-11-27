@@ -2,7 +2,8 @@
   <img src="website/public/pgs-full.png" width="360" alt="PGS — Pokémon GO Spoofers">
 </p>
 
-<h1 align="center">PGS — Pokémon GO Spoofers</h1>
+<h1 align="center">PGS</h1>
+<h3 align="center">Pokémon GO Spoofers</h3>
 
 <p align="center">
   <strong>🌐 Idiomas:</strong>
@@ -64,6 +65,7 @@ Funcionalidades experimentais dependem da versão do jogo e do ambiente e não g
 | Idiomas do jogo | [Languages](docs/en/PGS_LANGUAGES.md) | [Idiomas](docs/pt-BR/PGS_LANGUAGES.md) |
 | Contribuição | [Contributing](CONTRIBUTING.md) | [Como contribuir](CONTRIBUTING.pt-BR.md) |
 | Histórico de versões | [Changelog](CHANGELOG.md) | [Registro de alterações](CHANGELOG.pt-BR.md) |
+| GitHub e workflow Website | [Repository settings](docs/en/PGS_REPOSITORY_SETTINGS.md) | [Configurações do repositório](docs/pt-BR/PGS_REPOSITORY_SETTINGS.md) |
 
 Outros materiais técnicos: [Arquitetura](docs/ARCHITECTURE.md), [revisão de melhorias da comunidade](docs/PGS_COMMUNITY_REVIEW.md), [artes oficiais](docs/PGS_OFFICIAL_LOGOS.md) e [configurações do repositório / Pages](docs/PGS_REPOSITORY_SETTINGS.md). Esses documentos adicionais ainda não estão todos traduzidos.
 
@@ -77,7 +79,7 @@ Os arquivos de código, bibliotecas nativas, símbolos Java/JNI, preferências d
 
 **Site:** https://lucianotoscano.github.io/PGS/
 
-O site depende de habilitação do GitHub Pages nas configurações do repositório. A logo dentro do jogo e o joystick não foram modificados por esta revisão de apresentação.
+O workflow Website já concluiu a compilação e publicação pelo GitHub Pages; isso não altera o aplicativo Android instalado. A logo dentro do jogo e o joystick não foram modificados por esta revisão de apresentação.
 
 ## License
 

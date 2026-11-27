@@ -78,17 +78,17 @@ export const guidesD = {
       'Sessões de conta são criptografadas no dispositivo e nunca fazem parte de exportações de configurações nem de backups Android.',
     ],
   },
-  'pgrazor-root': {
+  'pgs-root': {
     title: 'PGS Root (não lançado)',
-    summary: 'A versão PGS v0.0.1 é somente sem root. O instalador Root de outro projeto não é uma atualização do PGS.',
+    summary: 'A versão PGS v0.0.2 é somente sem root. O instalador Root de outro projeto não é uma atualização do PGS.',
     where: 'O PGS oferece atualmente um APK ARM64 completo e assinado, sem root, pelo workflow GitHub Actions do PGS.',
     steps: [
-      'Use o APK completo e assinado PGS v0.0.1 para instalação sem root.',
+      'Use o APK completo e assinado PGS v0.0.2 para instalação sem root.',
       'Não instale um pacote Root externo por cima do PGS: assinatura e numeração não são de um release PGS.',
       'Uma versão Root futura do PGS precisará de análise própria de compatibilidade, compilação e teste real em dispositivo.',
     ],
     notes: [
-      'PGS Root não foi aprovado para a versão v0.0.1.',
+      'PGS Root não foi aprovado para a versão v0.0.2.',
       'A documentação Root original permanece como referência separada, com sua atribuição.',
       'O APK PGS sem root mantém sua assinatura permanente e identificador Android.',
     ],

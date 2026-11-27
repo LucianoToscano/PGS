@@ -27,7 +27,8 @@ function readRoute() {
   if (typeof window === 'undefined') return { view: 'home' };
   const guide = new URLSearchParams(window.location.search).get('guide');
   if (guide === 'all') return { view: 'index' };
-  if (guide) return { view: 'detail', id: guide };
+  // Keep previously shared bookmarks working while using a PGS-only public slug.
+  if (guide) return { view: 'detail', id: guide === 'pgrazor-root' ? 'pgs-root' : guide };
   return { view: 'home' };
 }
 

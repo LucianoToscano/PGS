@@ -21,11 +21,13 @@ class PgsNativeRenameTests(unittest.TestCase):
         self.assertEqual(native_build.TARGET, "pgs_core")
         self.assertEqual(native_build.OUTPUT_SONAME, "libpgrazor-core.so")
         self.assertEqual(native_build.EXPECTED_EXPORTS,
-                         frozenset({"JNI_OnLoad", "pgrazor_native_api"}))
+                         frozenset({"JNI_OnLoad", "pgs_native_api", "pgrazor_native_api"}))
         self.assertTrue((NATIVE / "pgs_native.cpp").is_file())
         self.assertFalse((NATIVE / "pgrazor_native.cpp").exists())
         self.assertFalse((NATIVE / "pgrazor.map").exists())
-        self.assertIn("pgrazor_native_api;", (NATIVE / "pgs.map").read_text(encoding="utf-8"))
+        exports = (NATIVE / "pgs.map").read_text(encoding="utf-8")
+        self.assertIn("pgrazor_native_api;", exports)
+        self.assertIn("pgs_native_api;", exports)
 
     def test_pgs_header_is_primary_and_old_includes_remain_valid(self):
         header = (NATIVE / "pgs_native_api.h").read_text(encoding="utf-8")
@@ -41,7 +43,13 @@ class PgsNativeRenameTests(unittest.TestCase):
             self.assertIn('#include "pgs_native_api.h"', content)
             self.assertIn('#include "pgs_internal.h"', content)
             self.assertIn("pgs_policy_selfcheck", content)
+        self.assertIn("pgs_native_api(uint32_t version)", core)
         self.assertIn("pgrazor_native_api(uint32_t version)", core)
+        self.assertIn("return pgs_native_api(version);", core)
+        self.assertIn("const void *pgs_native_api(uint32_t version);", header)
+        self.assertIn("const void *pgrazor_native_api(uint32_t version);", header)
+        self.assertIn("#define PGRAZOR_NATIVE_API_VERSION PGS_NATIVE_API_VERSION", header)
+        self.assertIn("#define PGRAZOR_ERR_BAD_LEASE PGS_ERR_BAD_LEASE", header)
 
     def test_art_target_is_pgs_but_abi_output_unchanged(self):
         cmake = (ART / "CMakeLists.txt").read_text(encoding="utf-8")

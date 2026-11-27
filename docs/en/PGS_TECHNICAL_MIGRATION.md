@@ -39,3 +39,11 @@ Track the remainder in [issue #38](https://github.com/LucianoToscano/PGS/issues/
 The active first-party C++ modules and native test fixtures now include `pgs_native_api.h` instead of `pgrazor_native_api.h`. The compatibility forwarding header remains so older external includes still compile; public factory name, table layout and SONAME remain unchanged. An automated test scans native sources to reject reintroduction of old include paths.
 
 This phase changes header references only, not runtime logic or the Android app identity. A complete, newly signed APK and an in-place update test are **not** implied by successful host regression tests.
+
+## Phase 3 — primary PGS factory with preserved native ABI
+
+- The new exported C factory `pgs_native_api(uint32_t)` is the primary name. The unchanged `pgrazor_native_api(uint32_t)` symbol forwards to it. Both names return **identical immutable v1/v2 tables** for supported versions, and null for unsupported versions.
+- `pgs.map`, the ELF dynamic-export guard and the isolated native harness enforce exactly **three** exports: `JNI_OnLoad`, `pgs_native_api` and `pgrazor_native_api`. Other symbols remain hidden.
+- Public header constants, result codes and function typedefs now support `PGS_*` / `pgs_*` spellings as primary source names, with the old spellings preserved as compatibility aliases. The size and field ordering of the v1/v2 ABI tables are unchanged.
+- Android still loads `libpgrazor-core.so` and `libpgrazor-art.so`, and existing Java/JNI code may still resolve the legacy factory. No rename is applied to DEX package `dev.pgrazor`, data/backup paths, Android package `com.nianticlabs.pokemongo`, the established PGS signing certificate or the version code.
+- This phase is validated by source checks and native symbol tests. It is **not** a complete signed APK build or a confirmed real-device upgrade. Remaining migration work stays in [issue #38](https://github.com/LucianoToscano/PGS/issues/38).

@@ -32,3 +32,11 @@ Acompanhe o restante na [issue #38](https://github.com/LucianoToscano/PGS/issues
 Os módulos C++ do projeto e os testes nativos passam a incluir `pgs_native_api.h`, no lugar de `pgrazor_native_api.h`. O cabeçalho de compatibilidade antigo continua disponível para builds anteriores. Uma nova verificação automática impede que includes antigos retornem ao código.
 
 Esta etapa não altera os símbolos exportados, os nomes de bibliotecas `.so`, o identificador Android, o certificado ou as preferências salvas. Aprovação dos testes de código **não** significa APK completo recompilado ou atualização física aprovada.
+
+## Etapa 3 — fábrica nativa PGS sem perder compatibilidade
+
+- A nova função C exportada `pgs_native_api(uint32_t)` é o nome principal. A função antiga `pgrazor_native_api(uint32_t)` continua presente e encaminha à nova. As duas devolvem **as mesmas tabelas imutáveis v1/v2** para as versões válidas e `null` para versões incompatíveis.
+- O script `pgs.map`, a verificação de símbolos ELF e o teste nativo exigem exatamente **três símbolos** exportados: `JNI_OnLoad`, `pgs_native_api` e `pgrazor_native_api`. Os demais ficam ocultos.
+- Constantes, códigos de erro e tipos de funções podem ser escritos como `PGS_*` / `pgs_*`. Os nomes antigos funcionam como aliases e o tamanho e a ordem dos campos das tabelas v1/v2 não mudam.
+- O Android ainda carrega `libpgrazor-core.so` e `libpgrazor-art.so`, e os módulos Java/JNI podem continuar usando o nome antigo. Não são alterados o pacote Java `dev.pgrazor`, backups, dados, pacote Android `com.nianticlabs.pokemongo`, chave PGS ou `versionCode`.
+- Esta etapa depende de testes de código e símbolos nativos. **Não** é uma compilação de APK completo nem comprova atualização física. O restante permanece na [issue #38](https://github.com/LucianoToscano/PGS/issues/38).

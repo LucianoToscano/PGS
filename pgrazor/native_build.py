@@ -45,7 +45,7 @@ DEFAULT_ABIS = ('arm64-v8a', 'x86_64')
 ELF_MACHINE = {'arm64-v8a': 183, 'x86_64': 62}
 
 # The library must export exactly these dynamic symbols and nothing else.
-EXPECTED_EXPORTS = frozenset({'JNI_OnLoad', 'pgrazor_native_api'})
+EXPECTED_EXPORTS = frozenset({'JNI_OnLoad', 'pgs_native_api', 'pgrazor_native_api'})
 
 # Download opt-in. Mirror of runtime_assets' explicit-network contract.
 _DOWNLOAD_ENV = 'PGS_NATIVE_DOWNLOAD'

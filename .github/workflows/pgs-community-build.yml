@@ -52,9 +52,9 @@ jobs:
           PGRAZOR_KEY_PASSWORD: ${{ secrets.PGS_KEY_PASSWORD || secrets.PGRAZOR_KEY_PASSWORD }}
           PGS_SEALED_INPUT: |
             format=PGS_BUILD_INPUT_V1
-            rsa_key=B8p1ZJwGNcViaFm46YKjxpkX5kaTbwpAdtRN07yY1jkHKrcEV6cCQJOxt7cnVjGnpL8J5tIrQHKTJ8yox31pNQTLo9oPIngx9mdOJ8ErRdD9FVPSNfJxtds/tLwojrKrclX2Kmltss8bLW14J/4HgmtxeipxtqRGzY4KxjRykXc/H4/YR5k6cpLXpRsY3glfuWHepmZXPrclwrRKyorudbj7Y2w/lRZU7ICCrml6DXnybzFVSY1mHjBDEIJ/b0RppsbfN/qP9OeTS+pXpEDszgNHQdX8TRdEdaa857F12niKc2pGBdiodPOZ9wGjAlwFPGlNeyLm/EZoehq6fGe5Sg==
-            nonce=ellm9yfan1EdTYtq
-            ciphertext=o5OXX52yW2YjM14hSKPRutA46tQ4rYGChU8WDw8k3dE2XvaNFy/NtWAQ4mBy3MFY7gNEo4fcKw2VuXmFbTSXJvlfj3WLlaOgNvLiwfvAm9gYQKMayLmFQwzD2TwPyuuCK/xb37TRM7s8kvbJTyIVJLlYmsxyZwAjKJOa0wGJJuAZQdkh+VsZFNI57M/3fBYnfklzmyfGWhbOH9KTPY1KiXyxllYgjECLlq6GUC4aEa2H55YQlmZU9iaBe2YaSR2NcfeFiZhtqvH8Z7Gt7J9MrjR7A+/ilM250guzSxIhVBLNXApLbykvAhLquZOyNkHHLlNQxBGPX/V3ZVtAKh1Q45yuBa+cSbHMJ71RAVd6FXCqHdWsLTA2j359IDZQNYix/6xY7T10f5XvvQe/B//kHJrOD5o5hr+mkGxtPHsEMeaiYH7DGAXBr0ihVJfPElHs1/+77EzHpjL7XDmD0bIbD+UtQYR0L3yjuNpwJbTT561zmH/gGgya2X2gZ0eyJmB2QNQeQTD/BKoorkNlwrbnhTrmEIjVNdMg0SnkNDDkEpOxPA==
+            rsa_key=d6MVbWQCwmPVVIbNKEjcidO7x18kaUO031izSoZpFz5HCBMzuGWHyHfxm76OWHzu06tJHkpx7Y7dvkjspurYYM7pXEFjwFayFQ1IGLiRnYpfigqyc2w+3jqxjgajNyZ6KQhWGv7hyVIViFNfzGCEyGQgS1zQLU5VdM4VgO1hlOL5oJEDpPKnZrsr6hvTduQ0nr7JCSPAw/xJ4tkGDd7bSbI7h7zB1coUal54kIcwXdhZmuMlm657hyWgWKTJODjDNKo7hUFQgH7Jp/p6VWPfPJrTJXAWpV+75eM3/rOLr6G7I/LlwvwiQgJSR0yKtW31U+O/jW12D3VlZ/1P/bs7Ig==
+            nonce=Rn9X9ePNB10R/+jm
+            ciphertext=8nEhTRtYWU5vwrUEPEuuJp5mA2mEC2ciGpoGvKprZg1q8m12EtDu/ONPRVysLi+HWYjTfsqi0DFISqNX6BGAsWIlALTEZUD3W0OHep0BbmMz8jchggmL6HmYWnvsKsGqO4/e8O/A4pmz88N57aegTYDzok1IJdg9AULYnNl8l3Twhxo/uGTIw4KQTi5U5XliUAuN3EaS+v7v03vxqr/RsxHQx33hz8Gf/nUq/N/OTJ9N5xLAMVH+Ez15u3ERTkLspfqIYZFgDf+67QlNvzkQ8MtN4PDoYMF+FQqFDI14q59+v+Z/5WJkVAy4t418Dbb+MQn+hWVU131Yu30R8IkUslKvCVRFMID3bpaZ3ZJMIJiJKLOslSFTD6zmOd2p43cWvoNM8p8Q9eg6igThzw31AvEYPPxYoX7Eph4w43nA2D7byRJeepVcSf7FXtw/znpH4n1d74/AKQEYdD63pAQ8DrthLDFhy01c4MGR5VpXyWqdt0BOZo4APW1yCXnJ6/wiuXxEmCN8airEU5dqf2GmUsEe4ZiYqlwlBUxZDwqWTUK+VA==
         run: |
           set -euo pipefail
           umask 077
@@ -264,7 +264,124 @@ jobs:
           set -euo pipefail
           python -B tools/prepare_native.py --download
           python -B pgrazor/art_build.py --check
-          python -B -c "import sys; sys.path.insert(0, 'pgrazor'); import dex_bridges; dex_bridges.dependencies(download=True)"
+          python -B - <<'PGS_DEX_CACHE'
+          """Runner-only cache preflight for the four SHA-256-pinned Maven dependencies."""
+          import email.utils
+          import hashlib
+          import json
+          import os
+          from pathlib import Path
+          import re
+          import sys
+          import tempfile
+          import time
+          import urllib.error
+          import urllib.parse
+          import urllib.request
+          
+          HOSTS = ('repo.maven.apache.org', 'repo1.maven.org')
+          ATTEMPTS = 2
+          MAX_WAIT = 30
+          MAX_BYTES = 16 * 1024 * 1024
+          
+          
+          def checked_url(url):
+              parsed = urllib.parse.urlsplit(url)
+              if (parsed.scheme != 'https' or parsed.netloc not in HOSTS
+                      or not parsed.path.startswith('/maven2/') or parsed.query or parsed.fragment):
+                  raise ValueError('DEX dependencies require an official HTTPS Maven URL')
+              return parsed
+          
+          
+          class HttpsMavenRedirect(urllib.request.HTTPRedirectHandler):
+              def redirect_request(self, req, fp, code, msg, headers, newurl):
+                  checked_url(newurl)
+                  return super().redirect_request(req, fp, code, msg, headers, newurl)
+          
+          
+          def retry_after(value):
+              if not value:
+                  return 0.0
+              try:
+                  if value.strip().isdigit():
+                      return float(value.strip())
+                  return max(0.0, email.utils.parsedate_to_datetime(value).timestamp() - time.time())
+              except (ValueError, TypeError, OverflowError):
+                  return 0.0
+          
+          
+          def fetch(item, opener):
+              parsed = checked_url(item['url'])
+              name = Path(parsed.path).name
+              for host in HOSTS:
+                  url = urllib.parse.urlunsplit(parsed._replace(netloc=host))
+                  for attempt in range(ATTEMPTS):
+                      wait = 2 ** (attempt + 1)
+                      try:
+                          request = urllib.request.Request(url, headers={'User-Agent': 'PGS-pinned-dependencies/1'})
+                          with opener.open(request, timeout=45) as response:
+                              checked_url(response.geturl())
+                              data = response.read(MAX_BYTES + 1)
+                          if len(data) > MAX_BYTES or hashlib.sha256(data).hexdigest() != item['sha256']:
+                              raise ValueError('Pinned DEX checksum/size mismatch: ' + name)
+                          return data
+                      except urllib.error.HTTPError as error:
+                          if error.code not in (408, 429, 500, 502, 503, 504):
+                              break
+                          wait = max(wait, retry_after(error.headers.get('Retry-After')))
+                      except (urllib.error.URLError, TimeoutError, OSError):
+                          pass
+                      if attempt + 1 == ATTEMPTS or wait > MAX_WAIT:
+                          # A long server delay ends this host; never retry it before Retry-After.
+                          break
+                      print('Retrying pinned DEX dependency:', name, 'host:', host, 'wait seconds:', round(wait, 2))
+                      time.sleep(wait)
+              raise RuntimeError('Official Maven hosts could not supply pinned DEX dependency: ' + name)
+          
+          
+          def main():
+              sys.path.insert(0, 'pgrazor')
+              import dex_bridges
+              items = json.loads((dex_bridges.TOOLS / 'dependencies.json').read_text(encoding='utf-8'))
+              if len(items) != 4:
+                  raise ValueError('Expected the four reviewed DEX dependencies')
+              cache = dex_bridges.CACHE
+              cache.mkdir(parents=True, exist_ok=True)
+              if cache.is_symlink():
+                  raise ValueError('DEX cache must not be a symlink')
+              opener = urllib.request.build_opener(HttpsMavenRedirect())
+              names = set()
+              for item in items:
+                  name = Path(checked_url(item['url']).path).name
+                  if not name.endswith('.jar') or name in names or not re.fullmatch('[0-9a-f]{64}', item['sha256']):
+                      raise ValueError('Invalid pinned DEX dependency manifest')
+                  names.add(name)
+                  target = cache / name
+                  if target.is_symlink():
+                      raise ValueError('DEX dependency must not be a symlink')
+                  if target.exists():
+                      if not target.is_file() or dex_bridges.sha256(target) != item['sha256']:
+                          raise ValueError('Existing DEX dependency checksum mismatch: ' + name)
+                  else:
+                      data = fetch(item, opener)  # SHA-256 checked before any cache write.
+                      temporary = None
+                      try:
+                          with tempfile.NamedTemporaryFile(dir=cache, prefix='.' + name + '.', delete=False) as stream:
+                              temporary = Path(stream.name)
+                              stream.write(data)
+                              stream.flush()
+                              os.fsync(stream.fileno())
+                          temporary.replace(target)
+                      finally:
+                          if temporary is not None:
+                              temporary.unlink(missing_ok=True)
+                  print('Pinned DEX cache verified:', name)
+              dex_bridges.dependencies(download=False)
+          
+          
+          if __name__ == '__main__':
+              main()
+          PGS_DEX_CACHE
       - name: Compile Android controls
         env:
           PGRAZOR_KEY_ALIAS: ${{ secrets.PGS_KEY_ALIAS || secrets.PGRAZOR_KEY_ALIAS }}

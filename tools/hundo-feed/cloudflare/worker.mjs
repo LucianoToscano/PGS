@@ -61,6 +61,9 @@ function iflowRows(body,category,now) {
     if (raid) {record.boss=p.raid_pokemon_id; record.level=p.raid_level;}
     else {
       record.dex=p.pokemon_id;
+      for (const [field,max] of Object.entries({attack_iv:15,defense_iv:15,stamina_iv:15,percent_iv:100,cp:10000,level:55,gender:3,form:65535})) {
+        if (Number.isFinite(p[field]) && p[field]>=0 && p[field]<=max) record[field]=p[field];
+      }
       if ([p.attack_iv,p.defense_iv,p.stamina_iv].every(v=>v===15) && BigInt(p.id)<(1n<<64n))
         spots.push(["s"+BigInt(p.id).toString(16).padStart(16,"0"),p.pokemon_id,0,p.lat,p.lon,end,p.cp,p.level]);
     }
@@ -201,13 +204,29 @@ export default {
   async fetch(request,env) {
     const path=new URL(request.url).pathname;
     const simulation=path==="/simulation/hundos.json";
+    const catalog=path==="/sources.json";
     const health=path==="/status.json";
     const category=({"/pokemon.json":"pokemon","/raids.json":"raids"})[path];
-    if (!health && !category && !simulation && path!=="/hundos.json") return new Response(null,{status:404});
+    if (!catalog && !health && !category && !simulation && path!=="/hundos.json") return new Response(null,{status:404});
     if (!["GET","HEAD"].includes(request.method)) return new Response(null,{status:405,headers:{Allow:"GET, HEAD"}});
     const active=new Set(JSON.parse(env.SOURCES || "[]").map(s=>s.name+" "+s.url));
     const state=await env.FEED.get(simulation?"pgs-simulation-v1":stateKey,"json") || (!simulation && await env.FEED.get("pgs-feed-backup-v1","json"));
     if (!simulation && state?.entries) state.entries=state.entries.filter(s=>active.has(s.name+" "+s.url));
+    if (catalog) {
+      const byProvider=new Map();
+      for (const s of state?.entries || []) {
+        const provider=s.name.startsWith("iflowgo-")?"iflowgo":s.name;
+        const item=byProvider.get(provider) || {provider,status:"IMPLEMENTADA",categories:[]};
+        const data=[...(s.records || []),...(s.hundos || []),...(s.spots || [])];
+        if (s.status==="online" && data.some(r=>(r.expires_ms ?? r[5])>Date.now())) item.status="OPERACIONAL CONFIRMADA";
+        else if ([401,403].includes(s.httpStatus) && item.status!=="OPERACIONAL CONFIRMADA") item.status="ACESSO RECUSADO";
+        item.categories.push(s.category || "hundos"); byProvider.set(provider,item);
+      }
+      for (const provider of ["pogocoordinates","livepokemap"]) byProvider.set(provider,{provider,status:"REQUER AUTENTICAÇÃO"});
+      for (const provider of ["pgsharp-free-100iv","pgsharp-standard","rocketmap-instance"]) byProvider.set(provider,{provider,status:"AGUARDANDO CONTRATO"});
+      const data={time:state?.time || null,providers:[...byProvider.values()]};
+      return new Response(request.method==="HEAD"?null:JSON.stringify(data),{headers:{"Content-Type":"application/json","Cache-Control":"public, max-age=15"}});
+    }
     if (health) {
       const status={time:state?.time || null,history:state?.history || [],connections:(state?.entries || []).map(e=>({
         provider:e.name.startsWith("iflowgo-")?"iflowgo":e.name,category:e.category || "hundos",

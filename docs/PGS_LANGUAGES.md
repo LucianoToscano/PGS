@@ -49,7 +49,7 @@ python -B tools/i18n_catalog.py
 python -B tools/check.py
 ```
 
-O gerador cria `I18nCatalog.java` e uma classe por idioma em `pgs/src/dev/pgrazor`. Esses arquivos são versionados para que a compilação Android funcione offline, sem depender dos recursos do APK hospedeiro. A verificação de CI rejeita classes geradas desatualizadas, chaves ausentes/extras, duplicações e alterações incompatíveis nos marcadores de formato.
+O gerador cria `I18nCatalog.java` e uma classe por idioma em `pgs/src/dev/pgs`. Esses arquivos são versionados para que a compilação Android funcione offline, sem depender dos recursos do APK hospedeiro. A verificação de CI rejeita classes geradas desatualizadas, chaves ausentes/extras, duplicações e alterações incompatíveis nos marcadores de formato.
 
 Use `I18n.t` para textos fixos e `I18n.format` para mensagens com dados. Prefira argumentos indexados (`%1$s`, `%2$d`) quando a tradução puder precisar de outra ordem. Preserve os marcadores, os tipos dos argumentos, a precisão e `%%`. Os dados passados como argumentos permanecem opacos. `I18n.options` é exclusivo de listas fixas da interface; não deve ser aplicado a nomes ou dados do usuário.
 

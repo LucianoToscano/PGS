@@ -1,5 +1,5 @@
-import dev.pgrazor.LocationState;
-import dev.pgrazor.MotionEngine;
+import dev.pgs.LocationState;
+import dev.pgs.MotionEngine;
 
 public final class LocationStateTest {
     static void check(boolean condition, String message) { if (!condition) throw new AssertionError(message); }

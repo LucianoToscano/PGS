@@ -13,9 +13,9 @@ class SettingsWriterTests(unittest.TestCase):
         compiler, runtime = java_tools()
         with tempfile.TemporaryDirectory(prefix='pgrazor-settings-test-') as directory:
             result = subprocess.run([str(compiler), '-encoding', 'UTF-8', '-d', directory,
-                                     str(ROOT/'src/dev/pgrazor/SettingsWriter.java'),
+                                     str(ROOT/'src/dev/pgs/SettingsWriter.java'),
                                      str(ROOT/'test/SettingsWriterTest.java')], capture_output=True, text=True, timeout=30)
             self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
-            result = subprocess.run([str(runtime), '-cp', directory, 'dev.pgrazor.SettingsWriterTest'],
+            result = subprocess.run([str(runtime), '-cp', directory, 'dev.pgs.SettingsWriterTest'],
                                     capture_output=True, text=True, timeout=15)
             self.assertEqual(result.returncode, 0, result.stdout + result.stderr)

@@ -1,4 +1,4 @@
-package dev.pgrazor;
+package dev.pgs;
 
 import java.io.IOException;
 import java.lang.reflect.Field;

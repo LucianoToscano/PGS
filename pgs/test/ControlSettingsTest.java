@@ -1,4 +1,4 @@
-package dev.pgrazor;
+package dev.pgs;
 
 /** Two separate JVM processes verify saved choices survive a cold start. */
 public final class ControlSettingsTest {

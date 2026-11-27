@@ -1,4 +1,4 @@
-package dev.pgrazor.events;
+package dev.pgs.events;
 
 import android.content.Context;
 

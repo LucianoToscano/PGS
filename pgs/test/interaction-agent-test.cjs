@@ -9,7 +9,7 @@ function fixture(loadFails=false) {
         active:()=>false,disconnect(){},embedded(){}};
     for(const n of ['getLatitude','getLongitude','getSpeed','getBearing'])methods[n]={implementation:null,call(){return 1;}};
     const location=Object.fromEntries(Object.keys(methods).map(n=>[n,{overload:()=>methods[n]}]));
-    const java={perform:f=>f(),performNow:f=>f(),scheduleOnMainThread:f=>f(),use:n=>n==='dev.pgrazor.Control'?control:location};
+    const java={perform:f=>f(),performNow:f=>f(),scheduleOnMainThread:f=>f(),use:n=>n==='dev.pgs.Control'?control:location};
     const camera={start(o){cameraOptions=o;return new Promise(r=>{finishCamera=r;});},stop(){return new Promise(r=>{finishCamera=r;});}};
     const interaction={start(o){starts.push(o);if(!o.observeRuntime)return Promise.resolve({status:'complete'});o.onEvent({kind:'observation-ready'});return new Promise(r=>{finishTrace=r;});},stop(){stopCount++;if(holdStop)return new Promise(r=>{releaseStop=()=>{finishTrace({status:'cancelled'});r();};});if(finishTrace)finishTrace({status:'cancelled'});return Promise.resolve();}};
     const context={rpc:{exports:{}},console:{log(){}},File:{readAllText:()=>''},Script:{evaluate(name){if(name.includes('interaction')){if(loadFails)throw Error('probe unavailable');return interaction;}return name.includes('camera-probe')?camera:java;}},

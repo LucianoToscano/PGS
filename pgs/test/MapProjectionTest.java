@@ -1,4 +1,4 @@
-import dev.pgrazor.MapProjection;
+import dev.pgs.MapProjection;
 
 public final class MapProjectionTest {
     static void near(double expected, double actual, String name) {

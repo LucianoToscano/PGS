@@ -14,7 +14,7 @@ ROOT = Path(__file__).resolve().parents[1]
 
 STUBS = {
     # Fake Control: the helper only reads desiredEnabled() and records via event().
-    'dev/pgrazor/Control.java': '''package dev.pgrazor;
+    'dev/pgs/Control.java': '''package dev.pgs;
 public class Control {
  public static boolean desired=true;
  public static final java.util.List<String> events=new java.util.ArrayList<>();
@@ -76,7 +76,7 @@ class GameLocationPermissionsJavaTests(unittest.TestCase):
                 source.parent.mkdir(parents=True, exist_ok=True)
                 source.write_text(text, encoding='utf-8')
                 sources.append(source)
-            sources.append(ROOT / 'src/dev/pgrazor/GameLocationPermissions.java')
+            sources.append(ROOT / 'src/dev/pgs/GameLocationPermissions.java')
             sources.append(ROOT / 'test/GameLocationPermissionsTest.java')
             classes = work / 'classes'
             compiled = subprocess.run([str(compiler), '-encoding', 'UTF-8', '-d', str(classes),

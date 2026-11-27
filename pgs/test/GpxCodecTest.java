@@ -1,5 +1,5 @@
-import dev.pgrazor.GpxCodec;
-import dev.pgrazor.GpxRoute;
+import dev.pgs.GpxCodec;
+import dev.pgs.GpxRoute;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;

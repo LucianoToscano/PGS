@@ -27,6 +27,13 @@ jobs:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
         with:
           persist-credentials: false
+      - name: Refuse historical controls-only rebuild on migrated sources
+        shell: bash
+        run: |
+          if test -d pgs/src/dev/pgs; then
+            echo "::error::This historical APK retains legacy native libraries and DEX bridges. Use its original source revision; a PGS namespace migration requires a new full build."
+            exit 1
+          fi
       - name: Prevent obsolete v0.0.1 rebuilds from newer PGS sources
         shell: bash
         run: |

@@ -1,4 +1,4 @@
-import dev.pgrazor.CameraSteering;
+import dev.pgs.CameraSteering;
 
 public final class CameraSteeringTest {
     static void check(boolean condition, String message) { if (!condition) throw new AssertionError(message); }

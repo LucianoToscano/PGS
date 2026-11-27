@@ -21,7 +21,7 @@ class RootedInstallerShellTests(unittest.TestCase):
     def test_bounded_shell(self):
         compiler, runtime = java_tools()
         sources = [
-            ROOT / 'root-installer/src/dev/pgrazor/root/RootShell.java',
+            ROOT / 'root-installer/src/dev/pgs/root/RootShell.java',
             ROOT / 'root-installer/test/RootShellTest.java',
         ]
         with tempfile.TemporaryDirectory(prefix='pgrazor-rootshell-') as work:
@@ -30,7 +30,7 @@ class RootedInstallerShellTests(unittest.TestCase):
                 capture_output=True, text=True, timeout=30)
             self.assertEqual(compiled.returncode, 0, compiled.stdout + compiled.stderr)
             tested = subprocess.run(
-                [str(runtime), '-cp', work, 'dev.pgrazor.root.RootShellTest'],
+                [str(runtime), '-cp', work, 'dev.pgs.root.RootShellTest'],
                 capture_output=True, text=True, timeout=30)
             self.assertEqual(tested.returncode, 0, tested.stdout + tested.stderr)
             self.assertIn('PASS root shell', tested.stdout)
@@ -43,13 +43,13 @@ class RootedInstallerShellTests(unittest.TestCase):
             if candidate.exists(): bash = str(candidate)
         with tempfile.TemporaryDirectory(prefix='pgrazor-root-toggle-') as work:
             base = ROOT / 'root-installer'
-            sources = [base / 'src/dev/pgrazor/root/RootModuleState.java',
-                       base / 'src/dev/pgrazor/root/RootToggleCommand.java', base / 'test/RootToggleTest.java']
+            sources = [base / 'src/dev/pgs/root/RootModuleState.java',
+                       base / 'src/dev/pgs/root/RootToggleCommand.java', base / 'test/RootToggleTest.java']
             compiled = subprocess.run([str(compiler), '-encoding', 'UTF-8', '-d', work, *map(str,sources)],
                                       capture_output=True, text=True, timeout=30)
             self.assertEqual(compiled.returncode,0,compiled.stderr)
             def java(*args):
-                return subprocess.run([str(runtime),'-cp',work,'dev.pgrazor.root.RootToggleTest',*args],
+                return subprocess.run([str(runtime),'-cp',work,'dev.pgs.root.RootToggleTest',*args],
                                       capture_output=True,text=True,timeout=10)
             checked = java()
             self.assertEqual(checked.returncode,0,checked.stderr)

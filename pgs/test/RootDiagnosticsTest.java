@@ -1,4 +1,4 @@
-package dev.pgrazor;
+package dev.pgs;
 public final class RootDiagnosticsTest {
     static void check(boolean value){if(!value)throw new AssertionError();}
     public static void main(String[] args){

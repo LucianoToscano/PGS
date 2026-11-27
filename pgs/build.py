@@ -34,13 +34,13 @@ def release_version(root):
     return 'v' + version.removeprefix('v')
 
 def map_icon_assets():
-    """Bundled POI marker PNGs plus the Pokemon name table for assets/pgrazor/map-icons.
+    """Bundled POI marker PNGs plus the Pokemon name table for assets/pgs/map-icons.
 
     Only direct *.png children of assets/map-icons are taken (no recursion/traversal), and the
     archive name is always the bare file name so a crafted source path cannot escape the folder.
     pokemon-names.json (the raid-boss name lookup read by the Java map) is included under the same
     bare-name, no-symlink, stays-inside-the-folder checks. Both preview and nonroot packaging reuse
-    this helper, so the name table reaches the APK at assets/pgrazor/map-icons/pokemon-names.json.
+    this helper, so the name table reaches the APK at assets/pgs/map-icons/pokemon-names.json.
     """
     source = ROOT / 'assets/map-icons'
     icons = {}
@@ -103,37 +103,37 @@ def main():
     for folder in ['classes','dex','tests','input']:
         (BUILD / folder).mkdir(parents=True,exist_ok=True)
     (ROOT / 'input').mkdir(exist_ok=True)
-    run('javac','-encoding','UTF-8','-d',BUILD/'tests',ROOT/'src/dev/pgrazor/MotionEngine.java',ROOT/'test/MotionTest.java',ROOT/'src/dev/pgrazor/RuntimeAbi.java',ROOT/'test/RuntimeAbiTest.java',ROOT/'src/dev/pgrazor/MapProjection.java',ROOT/'test/MapProjectionTest.java')
+    run('javac','-encoding','UTF-8','-d',BUILD/'tests',ROOT/'src/dev/pgs/MotionEngine.java',ROOT/'test/MotionTest.java',ROOT/'src/dev/pgs/RuntimeAbi.java',ROOT/'test/RuntimeAbiTest.java',ROOT/'src/dev/pgs/MapProjection.java',ROOT/'test/MapProjectionTest.java')
     run('java','-cp',BUILD/'tests','MotionTest')
-    run('javac','-encoding','UTF-8','-d',BUILD/'tests',ROOT/'src/dev/pgrazor/MotionEngine.java',ROOT/'test/IdleWalkTest.java')
+    run('javac','-encoding','UTF-8','-d',BUILD/'tests',ROOT/'src/dev/pgs/MotionEngine.java',ROOT/'test/IdleWalkTest.java')
     run('java','-cp',BUILD/'tests','IdleWalkTest')
-    run('javac','-encoding','UTF-8','-d',BUILD/'tests',ROOT/'src/dev/pgrazor/MotionEngine.java',ROOT/'src/dev/pgrazor/AutoWalkPlanner.java',ROOT/'test/AutoWalkTest.java')
+    run('javac','-encoding','UTF-8','-d',BUILD/'tests',ROOT/'src/dev/pgs/MotionEngine.java',ROOT/'src/dev/pgs/AutoWalkPlanner.java',ROOT/'test/AutoWalkTest.java')
     run('java','-cp',BUILD/'tests','AutoWalkTest')
     run('java','-cp',BUILD/'tests','RuntimeAbiTest')
     run('java','-cp',BUILD/'tests','MapProjectionTest')
-    run('javac','-encoding','UTF-8','-d',BUILD/'tests',ROOT/'src/dev/pgrazor/MotionEngine.java',ROOT/'src/dev/pgrazor/LocationState.java',ROOT/'test/LocationStateTest.java')
+    run('javac','-encoding','UTF-8','-d',BUILD/'tests',ROOT/'src/dev/pgs/MotionEngine.java',ROOT/'src/dev/pgs/LocationState.java',ROOT/'test/LocationStateTest.java')
     run('java','-cp',BUILD/'tests','LocationStateTest')
-    run('javac','-encoding','UTF-8','-d',BUILD/'tests',ROOT/'src/dev/pgrazor/CameraSteering.java',ROOT/'test/CameraSteeringTest.java')
+    run('javac','-encoding','UTF-8','-d',BUILD/'tests',ROOT/'src/dev/pgs/CameraSteering.java',ROOT/'test/CameraSteeringTest.java')
     run('java','-cp',BUILD/'tests','CameraSteeringTest')
-    run('javac','-encoding','UTF-8','-d',BUILD/'tests',ROOT/'src/dev/pgrazor/CameraSteering.java',ROOT/'src/dev/pgrazor/CameraHeadingState.java',ROOT/'test/CameraHeadingStateTest.java')
+    run('javac','-encoding','UTF-8','-d',BUILD/'tests',ROOT/'src/dev/pgs/CameraSteering.java',ROOT/'src/dev/pgs/CameraHeadingState.java',ROOT/'test/CameraHeadingStateTest.java')
     run('java','-cp',BUILD/'tests','CameraHeadingStateTest')
-    run('javac','-encoding','UTF-8','-d',BUILD/'tests',ROOT/'src/dev/pgrazor/ShundoPacing.java',ROOT/'test/ShundoPacingTest.java')
-    run('java','-cp',BUILD/'tests','dev.pgrazor.ShundoPacingTest')
-    run('javac','-encoding','UTF-8','-d',BUILD/'tests',ROOT/'src/dev/pgrazor/FeedSpots.java',ROOT/'test/FeedSpotsTest.java')
-    run('java','-cp',BUILD/'tests','dev.pgrazor.FeedSpotsTest')
-    run('javac','-encoding','UTF-8','-d',BUILD/'tests',ROOT/'src/dev/pgrazor/UpdateRules.java',ROOT/'test/UpdateRulesTest.java')
-    run('java','-cp',BUILD/'tests','dev.pgrazor.UpdateRulesTest')
+    run('javac','-encoding','UTF-8','-d',BUILD/'tests',ROOT/'src/dev/pgs/ShundoPacing.java',ROOT/'test/ShundoPacingTest.java')
+    run('java','-cp',BUILD/'tests','dev.pgs.ShundoPacingTest')
+    run('javac','-encoding','UTF-8','-d',BUILD/'tests',ROOT/'src/dev/pgs/FeedSpots.java',ROOT/'test/FeedSpotsTest.java')
+    run('java','-cp',BUILD/'tests','dev.pgs.FeedSpotsTest')
+    run('javac','-encoding','UTF-8','-d',BUILD/'tests',ROOT/'src/dev/pgs/UpdateRules.java',ROOT/'test/UpdateRulesTest.java')
+    run('java','-cp',BUILD/'tests','dev.pgs.UpdateRulesTest')
     if args.test_only: return
     version = release_version(ROOT)
     # Fresh outputs prevent a failed compiler from silently reusing old classes.
     classes=BUILD/('compile-'+uuid.uuid4().hex[:12]); classes.mkdir()
     version_source = classes/'BuildVersion.java'
-    version_source.write_text('package dev.pgrazor; final class BuildVersion { static final String NAME = "' + version + '"; }\n', encoding='utf-8')
+    version_source.write_text('package dev.pgs; final class BuildVersion { static final String NAME = "' + version + '"; }\n', encoding='utf-8')
     run('javac','-encoding','UTF-8','-source','8','-target','8','-classpath',ANDROID,'-d',classes,version_source,*sorted((ROOT/'src').rglob('*.java')))
     for name in ['PreviewActivity','BootstrapProvider','LogActivity','LogExport','Control','Pad','MotionEngine','RuntimeAbi','MapProjection','WorldMapDialog','SavedPlaces','LocationState','CameraSteering','CameraHeadingState']:
-        if not (classes/f'dev/pgrazor/{name}.class').is_file():
+        if not (classes/f'dev/pgs/{name}.class').is_file():
             raise RuntimeError(f'Android compilation produced no {name} class. Check SDK access and javac output above.')
-    run('javac','-encoding','UTF-8','-classpath',str(ANDROID)+os.pathsep+str(classes),'-d',BUILD/'tests',ROOT/'src/dev/pgrazor/SavedPlaces.java',ROOT/'test/SavedPlacesValidationTest.java')
+    run('javac','-encoding','UTF-8','-classpath',str(ANDROID)+os.pathsep+str(classes),'-d',BUILD/'tests',ROOT/'src/dev/pgs/SavedPlaces.java',ROOT/'test/SavedPlacesValidationTest.java')
     run('java','-cp',BUILD/'tests','SavedPlacesValidationTest')
     jar = BUILD/'controls.jar'
     with zipfile.ZipFile(jar,'w',zipfile.ZIP_DEFLATED) as out:
@@ -143,15 +143,15 @@ def main():
     run(android_tool('aapt'),'package','-f','-M',ROOT/'AndroidManifest.xml','-I',ANDROID,'-F',unsigned)
     with zipfile.ZipFile(unsigned,'a',zipfile.ZIP_DEFLATED) as out:
         out.write(BUILD/'dex/classes.dex','classes.dex')
-        for name,path in map_icon_assets().items(): out.write(path,'assets/pgrazor/map-icons/'+name)
-        for name,path in feed_icon_assets().items(): out.write(path,'assets/pgrazor/feed-icons/pokemon/'+name)
+        for name,path in map_icon_assets().items(): out.write(path,'assets/pgs/map-icons/'+name)
+        for name,path in feed_icon_assets().items(): out.write(path,'assets/pgs/feed-icons/pokemon/'+name)
     run(android_tool('zipalign'),'-f','4',unsigned,BUILD/'preview-aligned.apk')
-    apk=BUILD/'pgrazor-preview.apk'
+    apk=BUILD/'pgs-preview.apk'
     run(android_tool('apksigner'),'sign',*signing_args(),'--out',apk,BUILD/'preview-aligned.apk')
     run(android_tool('apksigner'),'verify',apk)
-    shutil.copyfile(BUILD/'dex/classes.dex',BUILD/'pgrazor.dex')
+    shutil.copyfile(BUILD/'dex/classes.dex',BUILD/'pgs.dex')
     fingerprints=source_fingerprints(ROOT)
-    (BUILD/'build-state.json').write_text(json.dumps({'version':version,'sources':fingerprints,'dex_sha256':hashlib.sha256((BUILD/'pgrazor.dex').read_bytes()).hexdigest()},indent=2),encoding='utf-8')
+    (BUILD/'build-state.json').write_text(json.dumps({'version':version,'sources':fingerprints,'dex_sha256':hashlib.sha256((BUILD/'pgs.dex').read_bytes()).hexdigest()},indent=2),encoding='utf-8')
     print('Built:',apk)
 
 if __name__=='__main__': main()

@@ -2,7 +2,7 @@
 
 PGS has three layers:
 
-1. Java controls (`src/dev/pgrazor`) own settings, the menu, overlays, lifecycle, location state, and notifications.
+1. Java controls (`src/dev/pgs`) own settings, the menu, overlays, lifecycle, location state, and notifications.
 2. Compiled Java/ART bridges own game lifecycle, permission and location integration. `NativeRuntimeTransport` exchanges typed settings and events with native feature52.
 3. The C++ runtime manager70 drives native hosts60–71 and catch-wait58 on the verified Unity thread. Native metadata, observers and short foreground/map leases gate gameplay operations.
 
@@ -30,7 +30,7 @@ Paths below are relative to `pgrazor/`.
 
 | Area | Entry points and responsibility |
 | --- | --- |
-| Settings and feature policy | `src/dev/pgrazor/Control.java`: persisted state, readiness gates, public static bridge API |
+| Settings and feature policy | `src/dev/pgs/Control.java`: persisted state, readiness gates, public static bridge API |
 | Settings persistence | `SettingsWriter.java`: ordered, coalesced snapshot writes and explicit flush/failure reporting |
 | Accounts | `AccountProfileStore.java`: identity index and storage namespaces; `AccountProfiles.java`: identity verification and switching; `AccountsDialog.java`: chooser; `AccountRestartActivity.java`: process restart; `AccountSessionTransaction.java`: replay journal; `AccountSessionVault.java`: Android Keystore vault; native `account_host.cpp`: game identity/flush bridge |
 | Runtime policy and outcomes | `VgpController.java`, `CatchOutcomeController.java`: VGP guards/markers/notifications and queued catch toasts |
@@ -48,7 +48,7 @@ Paths below are relative to `pgrazor/`.
 
 Account namespaces are captured once at process startup. The first profile uses existing files in place; later profiles use `pgrazor-accounts-v1/profiles/<UUID>` and suffixed SharedPreferences. Location, cooldown, settings, saved places, overlay positions, map/feed preferences and GPX routes are scoped. LivePokeMap's encrypted service login stays global. Only a SHA-256 of the game's own PlayerService identity binds a profile; the display label can contain the trainer name. No game passwords or provider tokens are copied into the profile store.
 
-Switching pauses automation and movement, flushes outgoing writes, records a pending target, then calls the game's logout wrapper. A successful logout Future plus disconnected state, or confirmed cleared live provider and cached login selection after the wrapper returns, permits target selection. An unexported activity in `:pgrazor_restart` verifies and terminates the outgoing main process before reopening the launcher. This prevents stale callbacks from writing into another account's namespace. The incoming process supplies its staged stationary location for login; gameplay automation stays gated until PlayerService identity matches. A mismatched login selects the actual identity's profile and restarts again. Interrupted requests are cancelled at startup; failed persistence keeps automation paused and preserves existing files. Account index mutations after startup run on a serial executor. Device tests must verify login and switching in both directions, not just identity readiness.
+Switching pauses automation and movement, flushes outgoing writes, records a pending target, then calls the game's logout wrapper. A successful logout Future plus disconnected state, or confirmed cleared live provider and cached login selection after the wrapper returns, permits target selection. An unexported activity in `:pgs_restart` verifies and terminates the outgoing main process before reopening the launcher. This prevents stale callbacks from writing into another account's namespace. The incoming process supplies its staged stationary location for login; gameplay automation stays gated until PlayerService identity matches. A mismatched login selects the actual identity's profile and restarts again. Interrupted requests are cancelled at startup; failed persistence keeps automation paused and preserves existing files. Account index mutations after startup run on a serial executor. Device tests must verify login and switching in both directions, not just identity readiness.
 
 ## Compiled runtime and research lifecycle
 

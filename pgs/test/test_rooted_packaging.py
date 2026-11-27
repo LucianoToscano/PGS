@@ -90,7 +90,7 @@ class ToggleCapabilityTests(unittest.TestCase):
     def test_loader_checks_injection_off_before_reading_the_dex(self):
         source = (rooted.ROOT / 'zygisk/loader.cpp').read_text(encoding='utf-8')
         check = source.find('faccessat(dir, "pgrazor/injection-off", F_OK, 0) == 0')
-        dex = source.find('read_at(dir, "pgrazor/classes.dex"')
+        dex = source.find('read_at(dir, "pgs/classes.dex"')
         self.assertNotEqual(check, -1, 'loader must gate on the injection-off flag')
         self.assertNotEqual(dex, -1)
         # The switch is honoured before any payload is read, and disarms this launch.

@@ -1,4 +1,4 @@
-package dev.pgrazor;
+package dev.pgs;
 
 import android.app.Activity;
 import android.os.Handler;
@@ -19,7 +19,7 @@ public final class GameBridgeDispatchTest {
     private static void check(boolean value){if(!value)throw new AssertionError("dispatch fixture assertion");}
     private static void noSensitiveLog(){for(String line:Control.events){check(!line.contains("fixture-token")&&!line.contains("fixture-sensitive-failure"));}}
     private static void basic() throws Exception {
-        Class.forName("dev.pgrazor.GameBridgeDispatch");
+        Class.forName("dev.pgs.GameBridgeDispatch");
         check(Control.events.isEmpty()&&ContextService.factoryCalls==0&&GoogleBrowserAuth.beginCount==0);
         GameBridgeDispatch.beforePause(new Object());GameBridgeDispatch.beforeStop(null);
         check(ContextService.factoryCalls==0&&Control.events.isEmpty());

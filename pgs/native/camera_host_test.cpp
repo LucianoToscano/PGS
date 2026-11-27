@@ -767,7 +767,7 @@ int fixture_resolve(const PgrCameraMetaConfig *cfg,PgrCameraMetaOutput *out){
 }
 
 int main(int argc, char **argv) {
-  assert(argc >= 2 && "usage: camera_host_test <path/to/libpgrazor-core.so>");
+  assert(argc >= 2 && "usage: camera_host_test <path/to/libpgs-core.so>");
   void *lib = dlopen(argv[1], RTLD_NOW);
   if (!lib) {
     std::fprintf(stderr, "dlopen failed: %s\n", dlerror());

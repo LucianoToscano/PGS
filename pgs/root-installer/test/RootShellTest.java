@@ -1,4 +1,4 @@
-package dev.pgrazor.root;
+package dev.pgs.root;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;

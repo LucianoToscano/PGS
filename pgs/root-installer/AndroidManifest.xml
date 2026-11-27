@@ -6,8 +6,8 @@
     <package android:name="com.nianticlabs.pokemongo" />
   </queries>
   <application android:label="PGS Root installer (not released)" android:icon="@mipmap/ic_launcher" android:roundIcon="@mipmap/ic_launcher" android:theme="@android:style/Theme.Material.NoActionBar" android:allowBackup="false">
-    <activity android:name="dev.pgrazor.root.RestartActivity" android:exported="true" android:screenOrientation="portrait" android:excludeFromRecents="true" />
-    <activity android:name="dev.pgrazor.root.InstallerActivity" android:exported="true">
+    <activity android:name="dev.pgs.root.RestartActivity" android:exported="true" android:screenOrientation="portrait" android:excludeFromRecents="true" />
+    <activity android:name="dev.pgs.root.InstallerActivity" android:exported="true">
       <intent-filter>
         <action android:name="android.intent.action.MAIN" />
         <category android:name="android.intent.category.LAUNCHER" />

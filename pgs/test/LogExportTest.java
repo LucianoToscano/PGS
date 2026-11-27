@@ -1,4 +1,4 @@
-package dev.pgrazor;
+package dev.pgs;
 
 import java.io.*;
 import java.nio.charset.StandardCharsets;

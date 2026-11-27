@@ -8,7 +8,7 @@ from test_control_java import java_tools
 
 ROOT = Path(__file__).resolve().parents[1]
 STUBS = {
-    'NativeCore.java': '''package dev.pgrazor;
+    'NativeCore.java': '''package dev.pgs;
 public final class NativeCore {
  public static volatile int calls; public static volatile long value;
  public static int gameplayCalls,gameplayStatus;public static Runnable gameplayCallback;
@@ -19,7 +19,7 @@ public final class NativeCore {
   if(failure instanceof RuntimeException)throw (RuntimeException)failure;
   return value;}
 }''',
-    'Control.java': '''package dev.pgrazor;
+    'Control.java': '''package dev.pgs;
 public final class Control {
  public static final java.util.List<String> events=new java.util.ArrayList<>();
  public static Error failure; public static Runnable callback;
@@ -39,7 +39,7 @@ class NativeRuntimeBootstrapJavaTests(unittest.TestCase):
                 source = work / name
                 source.write_text(text, encoding='utf-8')
                 sources.append(source)
-            sources += [ROOT / 'src/dev/pgrazor/NativeRuntimeBootstrap.java',
+            sources += [ROOT / 'src/dev/pgs/NativeRuntimeBootstrap.java',
                         ROOT / 'test/NativeRuntimeBootstrapTest.java']
             classes = work / 'classes'
             compiled = subprocess.run([str(compiler), '-encoding', 'UTF-8', '-d', str(classes),
@@ -50,7 +50,7 @@ class NativeRuntimeBootstrapJavaTests(unittest.TestCase):
                              'pending', 'loader-pending'):
                 with self.subTest(scenario=scenario):
                     tested = subprocess.run([str(runtime), '-ea', '-cp', str(classes),
-                                             'dev.pgrazor.NativeRuntimeBootstrapTest', scenario],
+                                             'dev.pgs.NativeRuntimeBootstrapTest', scenario],
                                             capture_output=True, text=True, timeout=20)
                     self.assertEqual(tested.returncode, 0, tested.stdout + tested.stderr)
                     self.assertIn('PASS NativeRuntimeBootstrap ' + scenario, tested.stdout)

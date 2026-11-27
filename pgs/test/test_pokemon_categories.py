@@ -25,10 +25,10 @@ class PokemonCategoriesTests(unittest.TestCase):
         # This fails on the old 1-1008 table even though every Java filter test passes.
         raw = (ROOT/'assets/map-icons/pokemon-names.json').read_bytes()
         names = json.loads(raw)
-        picker = (ROOT/'src/dev/pgrazor/PokemonSpeciesDialog.java').read_text(encoding='utf-8')
+        picker = (ROOT/'src/dev/pgs/PokemonSpeciesDialog.java').read_text(encoding='utf-8')
         maximum = int(re.search(r'DISPLAY_MAX\s*=\s*(\d+)', picker)[1])
         required = set(range(1, maximum+1))
-        source = (ROOT/'src/dev/pgrazor/PokemonCategories.java').read_text()
+        source = (ROOT/'src/dev/pgs/PokemonCategories.java').read_text()
         for body in re.findall(r'int\[\] \w+_IDS = \{(.*?)\};', source, re.S):
             required.update(map(int, re.findall(r'\d+', body)))
         self.assertEqual([], [dex for dex in sorted(required)
@@ -92,12 +92,12 @@ class PokemonCategoriesTests(unittest.TestCase):
     def test_java_filter_contract(self):
         compiler, runtime = java_tools()
         with tempfile.TemporaryDirectory(prefix='pgrazor-categories-') as work:
-            sources = [ROOT/'src/dev/pgrazor/PokemonCategories.java',
-                       ROOT/'src/dev/pgrazor/SmartCatchPreferences.java', ROOT/'test/PokemonCategoriesTest.java']
+            sources = [ROOT/'src/dev/pgs/PokemonCategories.java',
+                       ROOT/'src/dev/pgs/SmartCatchPreferences.java', ROOT/'test/PokemonCategoriesTest.java']
             result = subprocess.run([str(compiler), '-encoding', 'UTF-8', '-d', work, *map(str, sources)],
                                     capture_output=True, text=True, timeout=30)
             self.assertEqual(result.returncode, 0, result.stdout+result.stderr)
-            result = subprocess.run([str(runtime), '-cp', work, 'dev.pgrazor.PokemonCategoriesTest'],
+            result = subprocess.run([str(runtime), '-cp', work, 'dev.pgs.PokemonCategoriesTest'],
                                     capture_output=True, text=True, timeout=30)
             self.assertEqual(result.returncode, 0, result.stdout+result.stderr)
 

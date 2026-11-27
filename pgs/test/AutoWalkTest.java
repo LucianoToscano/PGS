@@ -1,5 +1,5 @@
-import dev.pgrazor.MotionEngine;
-import dev.pgrazor.AutoWalkPlanner;
+import dev.pgs.MotionEngine;
+import dev.pgs.AutoWalkPlanner;
 
 /** Real-engine loop behaviour and pure planner validation; no Android dependencies. */
 public class AutoWalkTest {

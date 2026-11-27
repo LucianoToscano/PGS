@@ -3,7 +3,7 @@
 // Runs only in the game's main process. Before specialization it reads the
 // PGRazor dex and payload from the module directory (readable only then);
 // after specialization, as the app UID and before ActivityThread.main, it
-// loads the dex from memory and hands both blobs to dev.pgrazor.RootedEntry.
+// loads the dex from memory and hands both blobs to dev.pgs.RootedEntry.
 // Every other process unloads this library immediately. The loader installs
 // no hooks itself and keeps no state after postAppSpecialize returns.
 //
@@ -107,8 +107,8 @@ public:
             target_ = false;
             return;
         }
-        if (dir < 0 || !read_at(dir, "pgrazor/classes.dex", dex_) ||
-            !read_at(dir, "pgrazor/payload.zip", payload_)) {
+        if (dir < 0 || !read_at(dir, "pgs/classes.dex", dex_) ||
+            !read_at(dir, "pgs/payload.zip", payload_)) {
             LOGE("module payload missing or unreadable");
             dex_.reset();
             payload_.reset();
@@ -152,7 +152,7 @@ private:
         jobject loader = buffer && parent ? env->NewObject(memory, create, buffer, parent) : nullptr;
         if (failed(env, "create dex loader") || !loader) { env->PopLocalFrame(nullptr); return; }
 
-        jstring entry_name = env->NewStringUTF("dev.pgrazor.RootedEntry");
+        jstring entry_name = env->NewStringUTF("dev.pgs.RootedEntry");
         auto entry = static_cast<jclass>(env->CallObjectMethod(loader, load, entry_name));
         jmethodID entry_start = entry ? env->GetStaticMethodID(entry, "start", "([B[BLjava/lang/String;)V") : nullptr;
         if (failed(env, "load RootedEntry") || !entry_start) { env->PopLocalFrame(nullptr); return; }

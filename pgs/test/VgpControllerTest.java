@@ -1,4 +1,4 @@
-package dev.pgrazor;
+package dev.pgs;
 
 /**
  * Runs real Control VGP policy to exercise VgpController state transitions; the Android shells and

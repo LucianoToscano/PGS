@@ -10,8 +10,8 @@ class UiViewportPolicyTests(unittest.TestCase):
         java=str(home/('java'+suffix)) if (home/('java'+suffix)).is_file() else shutil.which('java')
         if not javac or not java:self.skipTest('JDK required')
         with tempfile.TemporaryDirectory(prefix='pgrazor-viewport-') as work:
-            subprocess.run([javac,'-encoding','UTF-8','-d',work,str(ROOT/'src/dev/pgrazor/UiViewportPolicy.java'),str(ROOT/'test/UiViewportPolicyTest.java')],check=True,timeout=45)
-            result=subprocess.run([java,'-cp',work,'dev.pgrazor.UiViewportPolicyTest'],capture_output=True,text=True,timeout=20)
+            subprocess.run([javac,'-encoding','UTF-8','-d',work,str(ROOT/'src/dev/pgs/UiViewportPolicy.java'),str(ROOT/'test/UiViewportPolicyTest.java')],check=True,timeout=45)
+            result=subprocess.run([java,'-cp',work,'dev.pgs.UiViewportPolicyTest'],capture_output=True,text=True,timeout=20)
             self.assertEqual(result.returncode,0,result.stdout+result.stderr)
             self.assertIn('3360 combinations',result.stdout)
             print(result.stdout.strip())

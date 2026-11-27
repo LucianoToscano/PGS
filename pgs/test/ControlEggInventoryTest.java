@@ -1,4 +1,4 @@
-package dev.pgrazor;
+package dev.pgs;
 
 /** Auto incubation must reach the screen policy even when the current screen is not the map. */
 public final class ControlEggInventoryTest {

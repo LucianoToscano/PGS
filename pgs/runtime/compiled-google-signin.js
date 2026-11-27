@@ -1,7 +1,7 @@
 // Compiled Google sign-in adapter for the selected native pilot. Creation is inert; the whole
 // browser-authentication path — pending consumers, the poll timer, the JSON/token parsing and the
 // game-facing SignInResponse callback — lives in the compiled Java helper
-// (dev.pgrazor.GameGoogleSignIn). This module only installs the single game sign-in hook and
+// (dev.pgs.GameGoogleSignIn). This module only installs the single game sign-in hook and
 // bridges it to that helper. It never retains the consumer in JS, never registers a class, never
 // runs a timer, never parses a token, and once installed it never falls back to the original
 // GoogleSignInClient flow.
@@ -18,7 +18,7 @@ globalThis.PGRazorCompiledGoogleSignIn = Object.freeze({create({Java, isDisposed
         // The helper factory is the initial install step: a failure here propagates unchanged and
         // is never swallowed into a legacy fallback. Nothing is overridden yet, so there is nothing
         // to roll back.
-        const instance = Java.use('dev.pgrazor.GameGoogleSignIn').create();
+        const instance = Java.use('dev.pgs.GameGoogleSignIn').create();
         let method = null;
         try {
             method = Java.use('com.nianticlabs.platform.authgooglesignin.SignInManager$Companion')

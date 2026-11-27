@@ -1,4 +1,4 @@
-// JNI glue for dev.pgrazor.NativeCore.
+// JNI glue for dev.pgs.NativeCore.
 //
 // RegisterNatives binds validation, owner-thread bootstrap and read-only health methods.
 // The version script publishes JNI_OnLoad, pgs_native_api and its legacy alias.
@@ -66,7 +66,7 @@ jint JNI_OnLoad(JavaVM *vm, void *) {
         return JNI_ERR;
     }
 
-    jclass clazz = env->FindClass("dev/pgrazor/NativeCore");
+    jclass clazz = env->FindClass("dev/pgs/NativeCore");
     if (clazz == nullptr) return JNI_ERR;
 
     if (env->RegisterNatives(clazz, kMethods,

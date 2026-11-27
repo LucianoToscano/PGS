@@ -16,7 +16,7 @@ class CatchChanceJavaTests(unittest.TestCase):
             self.skipTest('Android SDK JSON sources unavailable')
         with tempfile.TemporaryDirectory(prefix="pgrazor-catch-chance-") as work:
             work = Path(work)
-            sources = [ROOT / "src/dev/pgrazor/CatchChance.java", ROOT / "test/CatchChanceTest.java"]
+            sources = [ROOT / "src/dev/pgs/CatchChance.java", ROOT / "test/CatchChanceTest.java"]
             for original in json_sources[0].glob('*.java'):
                 text = original.read_text(encoding='utf-8')
                 text = re.sub(r'^import (?:static )?(?:android\.|libcore\.).*;\s*$', '', text, flags=re.M)
@@ -27,7 +27,7 @@ class CatchChanceJavaTests(unittest.TestCase):
             classes = work / 'classes'
             result = subprocess.run([str(compiler), "-encoding", "UTF-8", "-d", str(classes), *map(str, sources)], capture_output=True, text=True, timeout=60)
             self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
-            result = subprocess.run([str(runtime), "-cp", str(classes), "dev.pgrazor.CatchChanceTest"], capture_output=True, text=True, timeout=30)
+            result = subprocess.run([str(runtime), "-cp", str(classes), "dev.pgs.CatchChanceTest"], capture_output=True, text=True, timeout=30)
             self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
 if __name__ == "__main__":
     unittest.main()

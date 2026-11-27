@@ -19,7 +19,7 @@ class LogExportJavaTests(unittest.TestCase):
         with tempfile.TemporaryDirectory(prefix='pgrazor-log-export-') as directory:
             work = Path(directory)
             version = work / 'BuildVersion.java'
-            version.write_text('package dev.pgrazor; final class BuildVersion { static final String NAME="test"; }')
+            version.write_text('package dev.pgs; final class BuildVersion { static final String NAME="test"; }')
             result = subprocess.run([str(compiler), '-encoding', 'UTF-8', '-source', '8', '-target', '8', '-cp', str(android), '-d', str(work), str(version), *map(str, (ROOT / 'src').rglob('*.java'))], capture_output=True, text=True, timeout=90)
             self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
             sources = []
@@ -33,7 +33,7 @@ class LogExportJavaTests(unittest.TestCase):
             cp = str(work) + os.pathsep + str(android)
             result = subprocess.run([str(compiler), '-encoding', 'UTF-8', '-cp', cp, '-d', str(work), *sources, str(ROOT / 'test/LogExportTest.java')], capture_output=True, text=True, timeout=30)
             self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
-            result = subprocess.run([str(runtime), '-cp', cp, 'dev.pgrazor.LogExportTest'], capture_output=True, text=True, timeout=15)
+            result = subprocess.run([str(runtime), '-cp', cp, 'dev.pgs.LogExportTest'], capture_output=True, text=True, timeout=15)
             self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
 
 if __name__ == '__main__':

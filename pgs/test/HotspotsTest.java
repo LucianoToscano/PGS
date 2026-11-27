@@ -1,4 +1,4 @@
-package dev.pgrazor;
+package dev.pgs;
 import java.util.HashSet;
 public class HotspotsTest {
     static void check(boolean value){if(!value)throw new AssertionError();}

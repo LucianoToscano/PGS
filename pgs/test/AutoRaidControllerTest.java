@@ -1,4 +1,4 @@
-package dev.pgrazor;
+package dev.pgs;
 
 import android.os.Handler;
 import android.os.SystemClock;

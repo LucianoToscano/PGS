@@ -25,9 +25,9 @@ STUBS = {
     'kotlin/jvm/functions/Function1.java': 'package kotlin.jvm.functions;public interface Function1 {Object invoke(Object value);}',
     'com/nianticlabs/platform/authgooglesignin/SignInResponse.java': '''package com.nianticlabs.platform.authgooglesignin;
  public class SignInResponse {public final String status,email,idToken;public SignInResponse(String s,String e,String t){status=s;email=e;idToken=t;}}''',
-    'dev/pgrazor/Control.java': '''package dev.pgrazor;import java.util.*;public class Control {
+    'dev/pgs/Control.java': '''package dev.pgs;import java.util.*;public class Control {
  public static final List<String> logs=new ArrayList<>();public static void event(String k,String v){logs.add(k+":"+v);} }''',
-    'dev/pgrazor/GoogleBrowserAuth.java': '''package dev.pgrazor;public class GoogleBrowserAuth {
+    'dev/pgs/GoogleBrowserAuth.java': '''package dev.pgs;public class GoogleBrowserAuth {
  public static int begins,cancels,takes;public static String current,result,id;public static boolean overrideId;public static Runnable onTake;
  static void main(){if(android.os.Looper.myLooper()!=android.os.Looper.getMainLooper())throw new AssertionError("foreign browser operation");}
  public static String begin(android.app.Activity a){main();begins++;current=overrideId?id:"request-"+begins;return current;}
@@ -37,7 +37,7 @@ STUBS = {
  }''',
 }
 
-HARNESS = r'''package dev.pgrazor;
+HARNESS = r'''package dev.pgs;
 import android.app.Activity;import android.os.*;import java.util.*;import java.util.concurrent.atomic.AtomicReference;
 import com.nianticlabs.platform.authgooglesignin.SignInResponse;import kotlin.jvm.functions.Function1;
 public class GoogleSignInReentryRegression {
@@ -129,9 +129,9 @@ class GameGoogleSignInReentryTest(unittest.TestCase):
             content = re.sub(r'^import (?:static )?(?:android\.|libcore\.).*;\s*$', '', content, flags=re.M)
             content = re.sub(r'@(?:UnsupportedAppUsage|SystemApi|NonNull|Nullable)(?:\([^)]*\))?\s*', '', content)
             (cls.root / original.name).write_text(content, encoding='utf-8')
-        production = pathlib.Path(__file__).resolve().parents[1] / 'src/dev/pgrazor/GameGoogleSignIn.java'
-        shutil.copyfile(production, cls.root / 'dev/pgrazor/GameGoogleSignIn.java')
-        (cls.root / 'dev/pgrazor/GoogleSignInReentryRegression.java').write_text(HARNESS, encoding='utf-8')
+        production = pathlib.Path(__file__).resolve().parents[1] / 'src/dev/pgs/GameGoogleSignIn.java'
+        shutil.copyfile(production, cls.root / 'dev/pgs/GameGoogleSignIn.java')
+        (cls.root / 'dev/pgs/GoogleSignInReentryRegression.java').write_text(HARNESS, encoding='utf-8')
         result = subprocess.run([cls.javac, '-encoding', 'UTF-8', '-d', str(cls.root)] +
                                 [str(p) for p in cls.root.rglob('*.java')], capture_output=True, text=True, timeout=60)
         if result.returncode:
@@ -144,7 +144,7 @@ class GameGoogleSignInReentryTest(unittest.TestCase):
             cls.directory.cleanup()
 
     def run_case(self, case):
-        result = subprocess.run([self.java, '-cp', str(self.root), 'dev.pgrazor.GoogleSignInReentryRegression', case],
+        result = subprocess.run([self.java, '-cp', str(self.root), 'dev.pgs.GoogleSignInReentryRegression', case],
                                 capture_output=True, text=True, timeout=12)
         self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
 

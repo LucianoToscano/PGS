@@ -1,4 +1,4 @@
-package dev.pgrazor;
+package dev.pgs;
 
 /**
  * Exercises {@link PokemonOptionFilter} with the real catalog key shapes: composite raid-boss keys

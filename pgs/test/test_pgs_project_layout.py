@@ -17,13 +17,13 @@ class PgsProjectLayoutTests(unittest.TestCase):
                      "PGS_LAST_VERSION_CODE", "pgs_update.py"):
             self.assertTrue((PROJECT / name).is_file(), name)
 
-    def test_installed_runtime_contract_is_not_a_checkout_path(self):
-        bootstrap = (PROJECT / "src/dev/pgrazor/BootstrapProvider.java").read_text(encoding="utf-8")
+    def test_new_runtime_paths_and_installed_identity(self):
+        bootstrap = (PROJECT / "src/dev/pgs/BootstrapProvider.java").read_text(encoding="utf-8")
         packer = (PROJECT / "nonroot.py").read_text(encoding="utf-8")
         updater = (PROJECT / "pgs_update.py").read_text(encoding="utf-8")
-        self.assertIn('copyAsset(context,"pgrazor/embedded-agent.js"', bootstrap)
-        self.assertNotIn('copyAsset(context,"pgs/embedded-agent.js"', bootstrap)
-        self.assertIn("assets/pgrazor/embedded-agent.js", packer)
+        self.assertIn('copyAsset(context,"pgs/embedded-agent.js"', bootstrap)
+        self.assertNotIn('copyAsset(context,"pgrazor/embedded-agent.js"', bootstrap)
+        self.assertIn("assets/pgs/embedded-agent.js", packer)
         self.assertIn('GAME_PACKAGE = "com.nianticlabs.pokemongo"', updater)
         self.assertIn("d95c6bdfcbd91dc5c9cde698487c88e4994771a475e4efde4567b8d5f44e96cf", updater)
 

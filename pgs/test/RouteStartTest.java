@@ -1,4 +1,4 @@
-package dev.pgrazor;
+package dev.pgs;
 
 public final class RouteStartTest {
     private static void require(boolean ok, String what) { if (!ok) throw new AssertionError(what); }

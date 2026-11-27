@@ -12,13 +12,13 @@ class AccountCommandTests(unittest.TestCase):
     def test_process_lifetime_commands(self):
         compiler, runtime = java_tools()
         with tempfile.TemporaryDirectory(prefix='pgrazor-account-command-') as directory:
-            sources = [ROOT / 'src/dev/pgrazor/AccountCommandState.java',
+            sources = [ROOT / 'src/dev/pgs/AccountCommandState.java',
                        ROOT / 'test/AccountCommandStateTest.java']
             result = subprocess.run([str(compiler), '-encoding', 'UTF-8', '-d', directory,
                                      *map(str, sources)], capture_output=True, text=True, timeout=60)
             self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
             result = subprocess.run([str(runtime), '-cp', directory,
-                                     'dev.pgrazor.AccountCommandStateTest'],
+                                     'dev.pgs.AccountCommandStateTest'],
                                     capture_output=True, text=True, timeout=60)
             self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
             self.assertIn('PASS: AccountCommandState', result.stdout)

@@ -29,7 +29,7 @@ class GpxJavaTests(unittest.TestCase):
         compiler, runtime = java_tools()
         with tempfile.TemporaryDirectory(prefix='pgrazor-gpx-codec-') as directory:
             work = Path(directory)
-            sources = [ROOT / 'src/dev/pgrazor/GpxRoute.java', ROOT / 'src/dev/pgrazor/GpxCodec.java',
+            sources = [ROOT / 'src/dev/pgs/GpxRoute.java', ROOT / 'src/dev/pgs/GpxCodec.java',
                        ROOT / 'test/GpxRouteTest.java', ROOT / 'test/GpxCodecTest.java']
             compiled = subprocess.run([str(compiler), '-encoding', 'UTF-8', '-d', str(work), *map(str, sources)],
                                       capture_output=True, text=True, timeout=30)
@@ -52,7 +52,7 @@ class GpxJavaTests(unittest.TestCase):
             stub.parent.mkdir(parents=True, exist_ok=True)
             stub.write_text(CONTEXT_STUB, encoding='utf-8')
             profiles = work / 'AccountProfiles.java'
-            profiles.write_text('''package dev.pgrazor;
+            profiles.write_text('''package dev.pgs;
 final class AccountProfiles {
  static java.io.File file(android.content.Context context,String name) {
   return new java.io.File(context.getFilesDir(),name);
@@ -61,8 +61,8 @@ final class AccountProfiles {
             data = work / 'data'
             data.mkdir()
             classes = work / 'classes'
-            sources = [stub, profiles, ROOT / 'src/dev/pgrazor/GpxRoute.java', ROOT / 'src/dev/pgrazor/GpxCodec.java',
-                       ROOT / 'src/dev/pgrazor/GpxStore.java', ROOT / 'test/GpxStoreTest.java']
+            sources = [stub, profiles, ROOT / 'src/dev/pgs/GpxRoute.java', ROOT / 'src/dev/pgs/GpxCodec.java',
+                       ROOT / 'src/dev/pgs/GpxStore.java', ROOT / 'test/GpxStoreTest.java']
             compiled = subprocess.run([str(compiler), '-encoding', 'UTF-8', '-d', str(classes), *map(str, sources)],
                                       capture_output=True, text=True, timeout=30)
             self.assertEqual(compiled.returncode, 0, compiled.stdout + compiled.stderr)

@@ -1,4 +1,4 @@
-package dev.pgrazor;
+package dev.pgs;
 
 public final class ShundoPacingTest {
     private static void check(boolean condition, String what) {

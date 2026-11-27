@@ -67,7 +67,7 @@ public class LocationRewriteFixture {
   MethodImplementation rendered=BridgeRewriter.renderLoop(renderRewritten);boolean helper=false,locationHelper=false;
   for(Instruction i:rendered.getInstructions())if(i instanceof ReferenceInstruction&&((ReferenceInstruction)i).getReference() instanceof MethodReference){
    MethodReference r=(MethodReference)((ReferenceInstruction)i).getReference();
-   check(!BridgeRewriter.exactLocation(r));helper|=r.getDefiningClass().equals("Ldev/pgrazor/NativeRuntimeBootstrap;");
+   check(!BridgeRewriter.exactLocation(r));helper|=r.getDefiningClass().equals("Ldev/pgs/NativeRuntimeBootstrap;");
    locationHelper|=r.getDefiningClass().equals(BridgeRewriter.LOCATION_VALUES);
   }
   check(helper&&locationHelper&&renderCounts[0]==1);

@@ -27,7 +27,7 @@ class DialogInputTests(unittest.TestCase):
                 public boolean showing=true;public interface Listener{void dismiss(Dialog d);}private Listener listener;
                 public boolean isShowing(){return showing;}public void setOnDismissListener(Listener l){listener=l;}
                 public void dismiss(){if(showing){showing=false;listener.dismiss(this);}}}''',
-            'dev/pgrazor/DialogInputsTest.java': '''package dev.pgrazor;
+            'dev/pgs/DialogInputsTest.java': '''package dev.pgs;
                 import android.app.*;
                 public class DialogInputsTest {
                     static void check(boolean ok){if(!ok)throw new AssertionError();}
@@ -63,8 +63,8 @@ class DialogInputTests(unittest.TestCase):
                 p.parent.mkdir(parents=True, exist_ok=True)
                 p.write_text(source, encoding='utf-8')
                 paths.append(p)
-            paths += [ROOT / 'src/dev/pgrazor/CoordinateInput.java', ROOT / 'src/dev/pgrazor/DialogLifecycle.java']
+            paths += [ROOT / 'src/dev/pgs/CoordinateInput.java', ROOT / 'src/dev/pgs/DialogLifecycle.java']
             result = subprocess.run([str(javac), '-d', str(work), *map(str, paths)], capture_output=True, text=True)
             self.assertEqual(result.returncode, 0, result.stderr)
-            result = subprocess.run([str(java), '-cp', str(work), 'dev.pgrazor.DialogInputsTest'], capture_output=True, text=True)
+            result = subprocess.run([str(java), '-cp', str(work), 'dev.pgs.DialogInputsTest'], capture_output=True, text=True)
             self.assertEqual(result.returncode, 0, result.stdout + result.stderr)

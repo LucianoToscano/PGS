@@ -11,8 +11,8 @@ ROOT = Path(__file__).resolve().parents[1]
 
 
 def control_shell():
-    source = (ROOT / 'src/dev/pgrazor/Control.java').read_text(encoding='utf-8')
-    mailbox = (ROOT / 'src/dev/pgrazor/RuntimeMailbox.java').read_text(encoding='utf-8')
+    source = (ROOT / 'src/dev/pgs/Control.java').read_text(encoding='utf-8')
+    mailbox = (ROOT / 'src/dev/pgs/RuntimeMailbox.java').read_text(encoding='utf-8')
     specs = re.findall(r'^\s*"(\w+):([^":]*):([^":]+)"', mailbox, re.M)
     methods = []
     for name, params, expected_result in specs:
@@ -37,7 +37,7 @@ def control_shell():
         else:
             body = 'return true;' if expected_result == 'boolean' else ''
         methods.append('public static ' + expected_result + ' ' + name + '(' + signature + '){' + body + '}')
-    return '''package dev.pgrazor;
+    return '''package dev.pgs;
 public final class Control {
  public static int reads,mutations; public static boolean pulse,throwMutation;
  public static long timestamp; public static RuntimeMailbox mailbox;
@@ -69,7 +69,7 @@ class RuntimeMailboxJavaTests(unittest.TestCase):
             # Factory exceptions stay constant in production. A fixture-only source
             # copy includes the cause, allowing local filesystem/JVM failures to be diagnosed.
             mailbox_source = work / 'RuntimeMailbox.java'
-            mailbox_source.write_text((ROOT / 'src/dev/pgrazor/RuntimeMailbox.java').read_text(encoding='utf-8').replace(
+            mailbox_source.write_text((ROOT / 'src/dev/pgs/RuntimeMailbox.java').read_text(encoding='utf-8').replace(
                 'new IllegalArgumentException("Runtime mailbox configuration invalid")',
                 'new IllegalArgumentException("Runtime mailbox configuration invalid",error)'), encoding='utf-8')
             sources += [shell, mailbox_source, ROOT / 'test/RuntimeMailboxTest.java']
@@ -78,7 +78,7 @@ class RuntimeMailboxJavaTests(unittest.TestCase):
             self.assertEqual(compiled.returncode, 0, compiled.stdout + compiled.stderr)
             fixture = work / 'mailboxes'
             fixture.mkdir()
-            tested = subprocess.run([str(runtime), '-ea', '-cp', str(work), 'dev.pgrazor.RuntimeMailboxTest', str(fixture)],
+            tested = subprocess.run([str(runtime), '-ea', '-cp', str(work), 'dev.pgs.RuntimeMailboxTest', str(fixture)],
                                     capture_output=True, text=True, timeout=30)
             self.assertEqual(tested.returncode, 0, tested.stdout + tested.stderr)
             self.assertIn('PASS RuntimeMailbox:', tested.stdout)

@@ -24,9 +24,9 @@ class AutoRaidControllerJavaTests(unittest.TestCase):
         stub_sources = sorted(STUB_ROOT.rglob("*.java"))
         self.assertTrue(stub_sources, "auto_raid_stubs contains no stub sources")
         real_sources = [
-            ROOT / "src/dev/pgrazor/AutoRaid.java",
-            ROOT / "src/dev/pgrazor/AutoRaidPreferences.java",
-            ROOT / "src/dev/pgrazor/MotionEngine.java",
+            ROOT / "src/dev/pgs/AutoRaid.java",
+            ROOT / "src/dev/pgs/AutoRaidPreferences.java",
+            ROOT / "src/dev/pgs/MotionEngine.java",
             HERE / "AutoRaidControllerTest.java",
         ]
         for source in real_sources:
@@ -39,7 +39,7 @@ class AutoRaidControllerJavaTests(unittest.TestCase):
                 capture_output=True, text=True, timeout=60)
             self.assertEqual(compiled.returncode, 0, compiled.stdout + compiled.stderr)
             tested = subprocess.run(
-                [str(runtime), "-ea", "-cp", str(work), "dev.pgrazor.AutoRaidControllerTest"],
+                [str(runtime), "-ea", "-cp", str(work), "dev.pgs.AutoRaidControllerTest"],
                 capture_output=True, text=True, timeout=30)
             self.assertEqual(tested.returncode, 0, tested.stdout + tested.stderr)
             self.assertIn("PASS AutoRaid:", tested.stdout)

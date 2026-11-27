@@ -60,7 +60,7 @@ public final class SignInResponse {
 }''',
     # Fake browser auth with the real public contract. Scriptable so the driver controls begin success,
     # the result stream and a shutdown that races begin. The real class (PKCE/network) is excluded.
-    'dev/pgrazor/GoogleBrowserAuth.java': '''package dev.pgrazor;
+    'dev/pgs/GoogleBrowserAuth.java': '''package dev.pgs;
 import java.util.ArrayList;
 import java.util.List;
 public final class GoogleBrowserAuth {
@@ -91,7 +91,7 @@ public final class GoogleBrowserAuth {
 }''',
     # Test-only Control: an events log the driver inspects for sensitive leakage. It intentionally has
     # no active()/foreground accessor, so the production class referencing one would fail to compile.
-    'dev/pgrazor/Control.java': '''package dev.pgrazor;
+    'dev/pgs/Control.java': '''package dev.pgs;
 import java.util.ArrayList;
 import java.util.List;
 public final class Control {
@@ -208,13 +208,13 @@ class GameGoogleSignInJavaTests(unittest.TestCase):
                 source.parent.mkdir(parents=True, exist_ok=True)
                 source.write_text(text, encoding='utf-8')
                 sources.append(source)
-            sources.append(ROOT / 'src/dev/pgrazor/GameGoogleSignIn.java')
+            sources.append(ROOT / 'src/dev/pgs/GameGoogleSignIn.java')
             sources.append(ROOT / 'test/GameGoogleSignInTest.java')
             classes = work / 'classes'
             compiled = subprocess.run([str(compiler), '-encoding', 'UTF-8', '-d', str(classes),
                                        *map(str, sources)], capture_output=True, text=True, timeout=60)
             self.assertEqual(compiled.returncode, 0, compiled.stdout + compiled.stderr)
-            tested = subprocess.run([str(runtime), '-cp', str(classes), 'dev.pgrazor.GameGoogleSignInTest'],
+            tested = subprocess.run([str(runtime), '-cp', str(classes), 'dev.pgs.GameGoogleSignInTest'],
                                     capture_output=True, text=True, timeout=30)
             self.assertEqual(tested.returncode, 0, tested.stdout + tested.stderr)
             self.assertIn('PASS: GameGoogleSignIn', tested.stdout)

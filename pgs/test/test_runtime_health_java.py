@@ -9,6 +9,6 @@ class RuntimeHealthJavaTests(unittest.TestCase):
     def test_progress_diagnostics(self):
         compiler,runtime=java_tools()
         with tempfile.TemporaryDirectory(prefix='pgrazor-health-') as out:
-            subprocess.run([str(compiler),'-d',out,str(ROOT/'src/dev/pgrazor/RuntimeHealth.java'),str(ROOT/'test/RuntimeHealthTest.java')],check=True,capture_output=True,text=True)
-            result=subprocess.run([str(runtime),'-cp',out,'dev.pgrazor.RuntimeHealthTest'],capture_output=True,text=True,timeout=15)
+            subprocess.run([str(compiler),'-d',out,str(ROOT/'src/dev/pgs/RuntimeHealth.java'),str(ROOT/'test/RuntimeHealthTest.java')],check=True,capture_output=True,text=True)
+            result=subprocess.run([str(runtime),'-cp',out,'dev.pgs.RuntimeHealthTest'],capture_output=True,text=True,timeout=15)
             self.assertEqual(result.returncode,0,result.stdout+result.stderr)

@@ -11,10 +11,10 @@ class JoystickLockJavaTests(unittest.TestCase):
         with tempfile.TemporaryDirectory(prefix='pgrazor-joystick-lock-') as work:
             subprocess.run([
                 str(compiler), '-encoding', 'UTF-8', '-d', work,
-                str(ROOT / 'src/dev/pgrazor/MotionEngine.java'),
-                str(ROOT / 'src/dev/pgrazor/JoystickLock.java'),
+                str(ROOT / 'src/dev/pgs/MotionEngine.java'),
+                str(ROOT / 'src/dev/pgs/JoystickLock.java'),
                 str(ROOT / 'test/JoystickLockTest.java')
             ], check=True, timeout=45)
-            result = subprocess.run([str(runtime), '-cp', work, 'dev.pgrazor.JoystickLockTest'], capture_output=True, text=True, timeout=20)
+            result = subprocess.run([str(runtime), '-cp', work, 'dev.pgs.JoystickLockTest'], capture_output=True, text=True, timeout=20)
             self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
             self.assertIn('JoystickLock tests passed', result.stdout)

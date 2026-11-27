@@ -1,4 +1,4 @@
-package dev.pgrazor;
+package dev.pgs;
 
 /** Exercise production Control with native-timestamped screen-transition sequences. */
 public final class ControlJoystickVisibilityTest {

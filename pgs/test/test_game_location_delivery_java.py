@@ -59,7 +59,7 @@ public class SystemClock {
 }''',
     # Test-only Control: coords/activity inputs and an events log the driver inspects. The real
     # Control is intentionally excluded so this test isolates GameLocationDelivery's reflection policy.
-    'dev/pgrazor/Control.java': '''package dev.pgrazor;
+    'dev/pgs/Control.java': '''package dev.pgs;
 public final class Control {
  public static volatile boolean active=true, desired=true, observationThrows;
  public static double observedLatitude, observedLongitude;
@@ -159,13 +159,13 @@ class GameLocationDeliveryJavaTests(unittest.TestCase):
                 source.parent.mkdir(parents=True, exist_ok=True)
                 source.write_text(text, encoding='utf-8')
                 sources.append(source)
-            sources.append(ROOT / 'src/dev/pgrazor/GameLocationDelivery.java')
+            sources.append(ROOT / 'src/dev/pgs/GameLocationDelivery.java')
             sources.append(ROOT / 'test/GameLocationDeliveryTest.java')
             classes = work / 'classes'
             compiled = subprocess.run([str(compiler), '-encoding', 'UTF-8', '-d', str(classes),
                                        *map(str, sources)], capture_output=True, text=True, timeout=60)
             self.assertEqual(compiled.returncode, 0, compiled.stdout + compiled.stderr)
-            tested = subprocess.run([str(runtime), '-cp', str(classes), 'dev.pgrazor.GameLocationDeliveryTest'],
+            tested = subprocess.run([str(runtime), '-cp', str(classes), 'dev.pgs.GameLocationDeliveryTest'],
                                     capture_output=True, text=True, timeout=30)
             self.assertEqual(tested.returncode, 0, tested.stdout + tested.stderr)
             self.assertIn('PASS: GameLocationDelivery', tested.stdout)

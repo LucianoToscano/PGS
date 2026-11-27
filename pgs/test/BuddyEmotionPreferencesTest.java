@@ -1,4 +1,4 @@
-package dev.pgrazor;
+package dev.pgs;
 import java.util.Properties;
 public final class BuddyEmotionPreferencesTest {
  static void eq(Object a,Object b){if(!a.equals(b))throw new AssertionError(a+" != "+b);}

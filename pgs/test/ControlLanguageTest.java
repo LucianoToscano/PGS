@@ -1,4 +1,4 @@
-package dev.pgrazor;
+package dev.pgs;
 
 import android.util.AtomicFile;
 import java.io.*;

@@ -1,4 +1,4 @@
-package dev.pgrazor;
+package dev.pgs;
 public final class RuntimeHealthTest {
     private static void check(boolean ok){if(!ok)throw new AssertionError();}
     public static void main(String[] args){

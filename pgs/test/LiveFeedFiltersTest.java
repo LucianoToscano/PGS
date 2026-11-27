@@ -1,4 +1,4 @@
-import dev.pgrazor.LiveFeedFilters;
+import dev.pgs.LiveFeedFilters;
 import org.json.JSONArray;
 import org.json.JSONObject;
 

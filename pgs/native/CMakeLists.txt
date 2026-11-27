@@ -206,5 +206,5 @@ if(ANDROID_LOG_LIB)
   target_link_libraries(pgs_core PRIVATE ${ANDROID_LOG_LIB})
 endif()
 
-# Keep the installed SONAME libpgrazor-core.so until the JNI/bootstrap migration is proven.
-set_target_properties(pgs_core PROPERTIES OUTPUT_NAME "pgrazor-core")
+# Full-layout PGS build: Java bootstrap and JNI registration use the same new library identity.
+set_target_properties(pgs_core PROPERTIES OUTPUT_NAME "pgs-core")

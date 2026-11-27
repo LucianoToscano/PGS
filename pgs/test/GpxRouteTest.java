@@ -1,5 +1,5 @@
-import dev.pgrazor.GpxCodec;
-import dev.pgrazor.GpxRoute;
+import dev.pgs.GpxCodec;
+import dev.pgs.GpxRoute;
 
 /** Defensive validation and deep-copy guarantees of the plain GpxRoute value type. */
 public final class GpxRouteTest {

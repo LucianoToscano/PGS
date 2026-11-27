@@ -13,16 +13,16 @@ ART = ROOT / "art"
 
 
 class PgsNativeRenameTests(unittest.TestCase):
-    def test_new_native_build_names_keep_installed_binary_contract(self):
+    def test_new_native_build_names_keep_exported_binary_contract(self):
         cmake = (NATIVE / "CMakeLists.txt").read_text(encoding="utf-8")
         self.assertIn("project(pgs_core LANGUAGES C CXX)", cmake)
         self.assertIn("add_library(pgs_core SHARED", cmake)
         self.assertIn("pgs_native.cpp", cmake)
         self.assertIn("PGS_VERSION_SCRIPT", cmake)
         self.assertIn("/pgs.map", cmake)
-        self.assertIn('OUTPUT_NAME "pgrazor-core"', cmake)
+        self.assertIn('OUTPUT_NAME "pgs-core"', cmake)
         self.assertEqual(native_build.TARGET, "pgs_core")
-        self.assertEqual(native_build.OUTPUT_SONAME, "libpgrazor-core.so")
+        self.assertEqual(native_build.OUTPUT_SONAME, "libpgs-core.so")
         self.assertEqual(native_build.EXPECTED_EXPORTS,
                          frozenset({"JNI_OnLoad", "pgs_native_api", "pgrazor_native_api"}))
         self.assertTrue((NATIVE / "pgs_native.cpp").is_file())
@@ -54,19 +54,19 @@ class PgsNativeRenameTests(unittest.TestCase):
         self.assertIn("#define PGRAZOR_NATIVE_API_VERSION PGS_NATIVE_API_VERSION", header)
         self.assertIn("#define PGRAZOR_ERR_BAD_LEASE PGS_ERR_BAD_LEASE", header)
 
-    def test_art_target_is_pgs_but_abi_output_unchanged(self):
+    def test_art_target_and_output_use_pgs(self):
         cmake = (ART / "CMakeLists.txt").read_text(encoding="utf-8")
         self.assertIn("project(pgs_art LANGUAGES C CXX)", cmake)
         self.assertIn("add_library(pgs_art SHARED", cmake)
         self.assertIn("pgs-art.map", cmake)
-        self.assertIn('OUTPUT_NAME "pgrazor-art"', cmake)
+        self.assertIn('OUTPUT_NAME "pgs-art"', cmake)
         self.assertTrue((ART / "pgs-art.map").is_file())
         self.assertFalse((ART / "pgrazor-art.map").exists())
         # These are JNI/LSPlant integration hooks, not cosmetic CMake target names.
         self.assertIn("pgrazor_art_publication_begin", cmake)
         self.assertIn("PGS_ART_CHAIN_TEST", cmake)
         self.assertIn("PGRAZOR_ART_CHAIN_TEST", cmake)
-        self.assertEqual(art_build.SONAME, "libpgrazor-art.so")
+        self.assertEqual(art_build.SONAME, "libpgs-art.so")
 
     def test_new_build_options_accept_preexisting_environment_aliases(self):
         self.assertEqual(native_build._PILOT_ENV, "PGS_NATIVE_PILOT")

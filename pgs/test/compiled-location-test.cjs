@@ -38,8 +38,8 @@ function build(opts={}){
   invokeOnPause:method(self=>calls.lifecycle.push(['orig-pause',self]),'invokeOnPause'),
   invokeOnResume:method(self=>calls.lifecycle.push(['orig-resume',self]),'invokeOnResume')};
  const classes={
-  'dev.pgrazor.GameLocationPermissions':{create(){if(opts.permissionsCreateThrows)throw Error('perm-metadata');return helper;}},
-  'dev.pgrazor.GameLocationDelivery':{create(){if(opts.deliveryCreateThrows)throw Error('delivery-metadata');return delivery;}},
+  'dev.pgs.GameLocationPermissions':{create(){if(opts.permissionsCreateThrows)throw Error('perm-metadata');return helper;}},
+  'dev.pgs.GameLocationDelivery':{create(){if(opts.deliveryCreateThrows)throw Error('delivery-metadata');return delivery;}},
   [STATUS_CLASS]:{__statusClass:true},
   'com.unity3d.player.UnityPermissions':{hasUserAuthorizedPermission:unity},
   'com.unity3d.plugin.UnityAndroidPermissions':{IsPermissionGranted:plugin},

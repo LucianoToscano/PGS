@@ -1,4 +1,4 @@
-package dev.pgrazor;
+package dev.pgs;
 
 import java.lang.reflect.Field;
 import java.util.concurrent.atomic.AtomicReference;

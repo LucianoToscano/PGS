@@ -1,4 +1,4 @@
-import dev.pgrazor.PogoFeedData;
+import dev.pgs.PogoFeedData;
 import org.json.JSONObject;
 import org.json.JSONArray;
 

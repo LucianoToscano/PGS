@@ -14,7 +14,7 @@ function fixture(failAt, surveyFails=false, continuous=false) {
         configureCameraDiagnostics(v){configured=v;},setCameraDiagnosticRunning(v){busy=v;},cameraDiagnostic(s){cameraStatus.push(s);},takeCameraSampleRequest(){const r=request;request=false;return r;}};
     for(const name of ['getLatitude','getLongitude','getSpeed','getBearing']) methods[name]={implementation:null,call(obj){if(obj.error)throw obj.error;return obj[name];}};
     const location=Object.fromEntries(Object.keys(methods).map(name=>[name,{overload(){if(name===failAt)throw Error('Synthetic method failure');return methods[name];}}]));
-    const java={perform:f=>f(),performNow:f=>f(),scheduleOnMainThread:f=>f(),use:name=>name==='dev.pgrazor.Control'?control:location};
+    const java={perform:f=>f(),performNow:f=>f(),scheduleOnMainThread:f=>f(),use:name=>name==='dev.pgs.Control'?control:location};
     function File() { this.write=()=>{}; this.flush=()=>{}; this.close=()=>{}; }
     File.readAllText=()=>'';
     const survey={start(options){surveyStarts++;probeOptions=options;if(continuous){probeCompletion=new Promise(resolve=>{finishProbe=resolve;});return probeCompletion;}if(options.sampleCamera)options.onEvent({kind:'camera-sample',yawDegrees:123.456,cameraId:42,sampleIndex:1});options.onEvent({kind:'finished',status:'complete'});return Promise.resolve();},stop(){surveyStops++;return probeCompletion;}};

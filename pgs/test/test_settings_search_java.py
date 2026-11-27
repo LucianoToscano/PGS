@@ -6,7 +6,7 @@ ROOT = Path(__file__).resolve().parents[1]
 
 # Only the translation catalog is a fixture; all normalization, indexing, ranking and display
 # fields below run the production SettingsSearch. Engine/catalog completeness has its own tests.
-I18N_FIXTURE = '''package dev.pgrazor;
+I18N_FIXTURE = '''package dev.pgs;
 import java.util.HashMap;
 import java.util.Locale;
 final class I18n {
@@ -45,10 +45,10 @@ class SettingsSearchTests(unittest.TestCase):
             subprocess.run(
                 [javac, '-encoding', 'UTF-8', '-d', work,
                  str(fixture),
-                 str(ROOT / 'src/dev/pgrazor/SettingsSearch.java'),
+                 str(ROOT / 'src/dev/pgs/SettingsSearch.java'),
                  str(ROOT / 'test/SettingsSearchTest.java')],
                 check=True, timeout=45)
-            result = subprocess.run([java, '-cp', work, 'dev.pgrazor.SettingsSearchTest'],
+            result = subprocess.run([java, '-cp', work, 'dev.pgs.SettingsSearchTest'],
                                     capture_output=True, text=True, timeout=20)
             self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
             self.assertIn('SettingsSearch', result.stdout)

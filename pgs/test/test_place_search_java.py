@@ -33,10 +33,10 @@ class PlaceSearchJavaTests(unittest.TestCase):
                 target = work / original.name
                 target.write_text(text, encoding='utf-8')
                 sources.append(target)
-            sources += [ROOT / 'src/dev/pgrazor/PlaceSearchClient.java', ROOT / 'test/PlaceSearchClientTest.java']
+            sources += [ROOT / 'src/dev/pgs/PlaceSearchClient.java', ROOT / 'test/PlaceSearchClientTest.java']
             result = subprocess.run([str(compiler), '-encoding', 'UTF-8', '-d', str(work), *map(str, sources)], capture_output=True, text=True, timeout=30)
             self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
-            result = subprocess.run([str(runtime), '-cp', str(work), 'dev.pgrazor.PlaceSearchClientTest'], capture_output=True, text=True, timeout=30)
+            result = subprocess.run([str(runtime), '-cp', str(work), 'dev.pgs.PlaceSearchClientTest'], capture_output=True, text=True, timeout=30)
             self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
 
 if __name__ == '__main__':

@@ -1,4 +1,4 @@
-package dev.pgrazor;
+package dev.pgs;
 
 import java.util.Arrays;
 import java.util.Locale;

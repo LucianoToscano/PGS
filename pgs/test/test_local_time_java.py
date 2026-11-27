@@ -19,10 +19,10 @@ class LocalTimeTest(unittest.TestCase):
         spec = importlib.util.spec_from_file_location('generate_timezone_lookup', ROOT.parent/'tools/generate_timezone_lookup.py')
         generator = importlib.util.module_from_spec(spec)
         spec.loader.exec_module(generator)
-        self.assertEqual(generator.generate(), (ROOT/'src/dev/pgrazor/TimeZoneLookup.java').read_text(encoding='utf-8'))
+        self.assertEqual(generator.generate(), (ROOT/'src/dev/pgs/TimeZoneLookup.java').read_text(encoding='utf-8'))
         with tempfile.TemporaryDirectory(prefix='pgrazor-local-time-') as temp:
             work = Path(temp)
-            sources = [ROOT/'src/dev/pgrazor'/name for name in ('TimeZoneLookup.java','LocalTimeClock.java')]
+            sources = [ROOT/'src/dev/pgs'/name for name in ('TimeZoneLookup.java','LocalTimeClock.java')]
             sources.append(ROOT/'test/LocalTimeClockTest.java')
             built = subprocess.run([compiler,'-encoding','UTF-8','-d',temp,*map(str,sources)],capture_output=True,text=True,timeout=30)
             self.assertEqual(built.returncode,0,built.stdout+built.stderr)
@@ -37,7 +37,7 @@ class LocalTimeTest(unittest.TestCase):
                 expected = work/'upstream.tsv'
                 expected.write_text(original.stdout,encoding='utf-8')
                 args = [str(expected)]
-            tested = subprocess.run([runtime,'-cp',temp,'dev.pgrazor.LocalTimeClockTest',*args],capture_output=True,text=True,timeout=15)
+            tested = subprocess.run([runtime,'-cp',temp,'dev.pgs.LocalTimeClockTest',*args],capture_output=True,text=True,timeout=15)
             self.assertEqual(tested.returncode,0,tested.stdout+tested.stderr)
             print(tested.stdout.strip())
 

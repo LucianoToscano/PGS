@@ -43,7 +43,7 @@ public class Handler {
  public static void runGlobalNext(){Entry next=null;synchronized(LOCK){for(Entry e:all)if(next==null||e.delay<next.delay)next=e;if(next!=null){all.remove(next);next.owner.pending.remove(next.action);}}if(next!=null)next.action.run();}
  public static void drain(int limit){for(int i=0;i<limit;i++){synchronized(LOCK){if(all.isEmpty())return;}runGlobalNext();}}
 }'''
-    result['dev/pgrazor/Control.java'] = '''package dev.pgrazor;
+    result['dev/pgs/Control.java'] = '''package dev.pgs;
 public final class Control {
  public static volatile boolean active=true,desired=true;
  public static volatile double lat=1.0,lon=1.0;public static volatile float spd,brg;
@@ -77,7 +77,7 @@ class GameBridgeDispatchJavaTests(unittest.TestCase):
                 source.parent.mkdir(parents=True, exist_ok=True)
                 source.write_text(text, encoding='utf-8')
                 sources.append(source)
-            sources += [ROOT / 'src/dev/pgrazor' / name for name in (
+            sources += [ROOT / 'src/dev/pgs' / name for name in (
                 'GameBridgeDispatch.java', 'GameGoogleSignIn.java',
                 'GameLocationDelivery.java', 'GameLocationPermissions.java')]
             sources.append(ROOT / 'test/GameBridgeDispatchTest.java')
@@ -90,7 +90,7 @@ class GameBridgeDispatchJavaTests(unittest.TestCase):
                              'prepared-service-thread', 'browser-option'):
                 with self.subTest(scenario=scenario):
                     tested = subprocess.run([str(runtime), '-ea', '-cp', str(classes),
-                                             'dev.pgrazor.GameBridgeDispatchTest', scenario],
+                                             'dev.pgs.GameBridgeDispatchTest', scenario],
                                             capture_output=True, text=True, timeout=20)
                     self.assertEqual(tested.returncode, 0, tested.stdout + tested.stderr)
                     self.assertIn('PASS GameBridgeDispatch ' + scenario, tested.stdout)

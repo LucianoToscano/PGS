@@ -119,7 +119,7 @@ final class I18nCatalog_ko {
         values.put("After battles & periodically", "배틀 후 및 주기적으로");
         values.put("After you start a gym battle, automatically starts the next full round from the same gym screen until defeated. Uses your attack settings and waits for Smart healing when set to After battle or Both. Turn off or leave manually to stop.", "체육관 배틀을 시작하면 같은 체육관 화면에서 격파할 때까지 다음 라운드 전체를 자동으로 시작합니다. 설정한 공격 옵션을 사용하며 스마트 회복이 '배틀 후' 또는 '둘 다'이면 회복을 기다립니다. 기능을 끄거나 직접 나가면 중지됩니다.");
         values.put("All", "모두");
-        values.put("All PGRazor buttons, status bars, messages and in-game IV text will be hidden so the game looks stock. To show them again, tap the screen with three fingers at once.", "PGRazor의 모든 버튼, 상태 표시줄, 메시지, 게임 내 IV 표시를 숨겨 기본 게임처럼 보이게 합니다. 다시 표시하려면 세 손가락으로 화면을 동시에 탭하세요.");
+        values.put("All PGS buttons, status bars, messages and in-game IV text will be hidden so the game looks stock. To show them again, tap the screen with three fingers at once.", "PGS의 모든 버튼, 상태 표시줄, 메시지, 게임 내 IV 표시를 숨겨 기본 게임처럼 보이게 합니다. 다시 표시하려면 세 손가락으로 화면을 동시에 탭하세요.");
         values.put("All Pokemon", "모든 포켓몬");
         values.put("All battles", "모든 배틀");
         values.put("All off", "모두 꺼짐");
@@ -185,7 +185,7 @@ final class I18nCatalog_ko {
         values.put("Auto-walk", "자동 걷기");
         values.put("Auto-walk stopped.", "자동 걷기를 중지했습니다.");
         values.put("Auto-walking %1$s%2$s%3$s", "자동 걷기 %1$s%2$s%3$s");
-        values.put("Automatically moves toward nearby Max energy orbs during battle while PGRazor is active.", "PGRazor가 활성화된 동안 배틀에서 주변 맥스 에너지 구슬을 향해 자동으로 이동합니다.");
+        values.put("Automatically moves toward nearby Max energy orbs during battle while PGS is active.", "PGS가 활성화된 동안 배틀에서 주변 맥스 에너지 구슬을 향해 자동으로 이동합니다.");
         values.put("Automation", "자동화");
         values.put("Autowalk", "자동 걷기");
         values.put("Back to all settings", "전체 설정으로 돌아가기");
@@ -296,7 +296,7 @@ final class I18nCatalog_ko {
         values.put("Clear search", "검색 지우기");
         values.put("Clear shown", "표시된 항목 선택 해제");
         values.put("Close", "닫기");
-        values.put("Close PGRazor settings", "PGRazor 설정 닫기");
+        values.put("Close PGS settings", "PGS 설정 닫기");
         values.put("Cloudy", "흐림");
         values.put("Collecting…", "수집 중…");
         values.put("Completing the Route", "루트 완료 중");
@@ -567,7 +567,7 @@ final class I18nCatalog_ko {
         values.put("Items: Always heal fully", "도구: 항상 완전히 회복");
         values.put("Items: Smart (saves big potions)", "도구: 스마트 선택 (큰 상처약 절약)");
         values.put("Join our Discord", "Discord 참여");
-        values.put("Join the PGRazor Discord community", "PGRazor Discord 커뮤니티 참여");
+        values.put("Join the PGS Discord community", "PGS Discord 커뮤니티 참여");
         values.put("Joystick", "조이스틱");
         values.put("Joystick and coordinate controls, drawn with the same tokens as the in-game panel.\nThis preview does not change device GPS or connect to Pokémon GO. Movement pauses when you leave the app.", "게임 내 패널과 같은 디자인으로 표시되는 조이스틱 및 좌표 컨트롤입니다.\n이 미리보기는 기기 GPS를 변경하거나 Pokémon GO에 연결하지 않습니다. 앱을 벗어나면 이동이 일시 중지됩니다.");
         values.put("Joystick follows the camera", "조이스틱이 카메라 방향을 따릅니다");
@@ -725,7 +725,7 @@ final class I18nCatalog_ko {
         values.put("No favorites yet. Add places from the World map or the Teleport dialog.", "즐겨찾기가 없습니다. 세계 지도 또는 텔레포트 창에서 장소를 추가하세요.");
         values.put("No favorites yet. Add the selected map destination to find it again later.", "즐겨찾기가 없습니다. 선택한 지도 목적지를 추가하면 나중에 쉽게 찾을 수 있습니다.");
         values.put("No feeding", "먹이 주지 않음");
-        values.put("No field research seen yet. Tasks appear here as the game gives them to you while PGRazor runs.", "아직 필드리서치가 없습니다. PGRazor 실행 중 게임에서 받은 과제가 여기에 표시됩니다.");
+        values.put("No field research seen yet. Tasks appear here as the game gives them to you while PGS runs.", "아직 필드리서치가 없습니다. PGS 실행 중 게임에서 받은 과제가 여기에 표시됩니다.");
         values.put("No file picker is available.", "사용 가능한 파일 선택기가 없습니다.");
         values.put("No limit", "제한 없음");
         values.put("No limit\nGo to the nearest Rocket stop wherever it is", "제한 없음\n거리에 관계없이 가장 가까운 로켓단 포켓스톱으로 이동");
@@ -764,8 +764,8 @@ final class I18nCatalog_ko {
         values.put("Off (manual)", "꺼짐 (수동)");
         values.put("One-shot tasks", "일회성 작업");
         values.put("Only %1$s of %2$s requested stops are loaded; starting with %3$s.", "요청한 경유지 중 %1$s/%2$s개만 로드되었습니다. %3$s개로 시작합니다.");
-        values.put("Open PGRazor quick menu. Drag to reposition.", "PGRazor 빠른 메뉴 열기. 드래그하여 위치를 옮기세요.");
-        values.put("Open PGRazor settings. Drag to reposition.", "PGRazor 설정 열기. 드래그하여 위치를 옮기세요.");
+        values.put("Open PGS quick menu. Drag to reposition.", "PGS 빠른 메뉴 열기. 드래그하여 위치를 옮기세요.");
+        values.put("Open PGS settings. Drag to reposition.", "PGS 설정 열기. 드래그하여 위치를 옮기세요.");
         values.put("Open and send friend gifts in one batch.", "친구 선물을 한 번에 열고 보냅니다.");
         values.put("Open boxes and skip encounters", "상자 열고 만남 건너뛰기");
         values.put("Open even when item bag is full", "도구 가방이 가득 차도 열기");
@@ -781,13 +781,13 @@ final class I18nCatalog_ko {
         values.put("Overlay scale", "오버레이 배율");
         values.put("P", "P");
         values.put("PASS · ", "통과 · ");
-        values.put("PGRazor VGP", "PGRazor VGP");
-        values.put("PGRazor feed", "PGRazor 피드");
-        values.put("PGRazor overlay shown", "PGRazor 오버레이를 표시했습니다");
-        values.put("PGRazor shiny found", "PGRazor 이로치 발견");
-        values.put("PGRazor version %1$s", "PGRazor 버전 %1$s");
-        values.put("PGRazor · current run", "PGRazor · 현재 실행");
+        values.put("PGS VGP", "PGS VGP");
+        values.put("PGS feed", "PGS 피드");
         values.put("PGS language", "PGS 언어");
+        values.put("PGS overlay shown", "PGS 오버레이를 표시했습니다");
+        values.put("PGS shiny found", "PGS 이로치 발견");
+        values.put("PGS version %1$s", "PGS 버전 %1$s");
+        values.put("PGS · current run", "PGS · 현재 실행");
         values.put("Partly Cloudy", "약간 구름");
         values.put("Password", "비밀번호");
         values.put("Pause Virtual Go Plus during the estimated cooldown.", "예상 쿨다운 동안 Virtual Go Plus를 일시 중지합니다.");
@@ -1044,7 +1044,7 @@ final class I18nCatalog_ko {
         values.put("Show the buddy excitement status overlay.", "파트너의 신남 상태 오버레이를 표시합니다.");
         values.put("Show the catch chance during an encounter.", "포켓몬 조우 중 포획 확률을 표시합니다.");
         values.put("Show the count on the map", "지도에 횟수 표시");
-        values.put("Show the encounter count next to the PGRazor title.", "PGRazor 제목 옆에 조우 횟수를 표시합니다.");
+        values.put("Show the encounter count next to the PGS title.", "PGS 제목 옆에 조우 횟수를 표시합니다.");
         values.put("Show the estimated catch cooldown timer on the map.", "지도에 예상 포획 쿨다운 타이머를 표시합니다.");
         values.put("Show the on-screen movement joystick.", "화면에 이동 조이스틱을 표시합니다.");
         values.put("Show the wall-clock time at the spoofed coordinates.", "모의 좌표의 현지 시간을 표시합니다.");
@@ -1162,8 +1162,8 @@ final class I18nCatalog_ko {
         values.put("Tap to download", "눌러 다운로드");
         values.put("Tap to download and install", "눌러 다운로드 및 설치");
         values.put("Tap to download the Root installer", "눌러 Root 설치 프로그램 다운로드");
-        values.put("Tap to open PGRazor %1$s in Downloads and install it", "눌러 다운로드 폴더의 PGRazor %1$s을(를) 열고 설치하세요.");
-        values.put("Tap to open PGRazor %1$s in Downloads: update the installer, open it, tap Install Module, then reboot", "눌러 다운로드 폴더의 PGRazor %1$s을(를) 여세요. 설치 프로그램을 업데이트하고 연 다음 모듈 설치를 누르고 재부팅하세요.");
+        values.put("Tap to open PGS %1$s in Downloads and install it", "눌러 다운로드 폴더의 PGS %1$s을(를) 열고 설치하세요.");
+        values.put("Tap to open PGS %1$s in Downloads: update the installer, open it, tap Install Module, then reboot", "눌러 다운로드 폴더의 PGS %1$s을(를) 여세요. 설치 프로그램을 업데이트하고 연 다음 모듈 설치를 누르고 재부팅하세요.");
         values.put("Task (none = any)", "과제 (미선택 = 모두)");
         values.put("Team GO Rocket", "GO로켓단");
         values.put("Team Rocket", "로켓단");
@@ -1319,7 +1319,7 @@ final class I18nCatalog_ko {
         values.put("When species are selected, VGP+ catches only those and leaves every other Pokémon on the map, shiny or not. With \"Catch only shinies\" on as well, it catches only shinies of those species.", "종류를 선택하면 VGP+는 해당 종류만 잡고 나머지는 이로치 여부와 관계없이 지도에 남깁니다. \"이로치만 잡기\"도 켜면 선택한 종류의 이로치만 잡습니다.");
         values.put("While VGP is running on the map, spin nearby Gym discs of any team within 80 m when the item bag has room.", "지도에서 VGP가 실행 중이고 도구 가방에 여유가 있으면 80 m 이내 체육관의 포토디스크를 팀에 관계없이 돌립니다.");
         values.put("While any of these is on, the next Pokémon is picked automatically when one faints.", "이 중 하나라도 켜면 포켓몬이 기절했을 때 다음 포켓몬을 자동으로 선택합니다.");
-        values.put("Wild Pokémon this account has encountered in the last 24 hours on this device while PGRazor was running, shown next to the PGRazor title. Encounters made elsewhere, and lure, incense, raid and research encounters, are not counted.", "이 기기에서 PGRazor가 실행되는 동안 지난 24시간에 이 계정이 만난 야생 포켓몬 수를 PGRazor 제목 옆에 표시합니다. 다른 곳에서 만난 포켓몬과 루어, 향로, 레이드 및 리서치 조우는 포함하지 않습니다.");
+        values.put("Wild Pokémon this account has encountered in the last 24 hours on this device while PGS was running, shown next to the PGS title. Encounters made elsewhere, and lure, incense, raid and research encounters, are not counted.", "이 기기에서 PGS가 실행되는 동안 지난 24시간에 이 계정이 만난 야생 포켓몬 수를 PGS 제목 옆에 표시합니다. 다른 곳에서 만난 포켓몬과 루어, 향로, 레이드 및 리서치 조우는 포함하지 않습니다.");
     }
     private static void fill10(Map<String, String> values) {
         values.put("Wild encounters. Combines with throw rating and curveball.", "야생 포켓몬 조우에 적용됩니다. 던지기 등급 및 커브볼과 함께 사용할 수 있습니다.");

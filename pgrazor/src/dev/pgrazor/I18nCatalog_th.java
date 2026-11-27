@@ -119,7 +119,7 @@ final class I18nCatalog_th {
         values.put("After battles & periodically", "หลังการต่อสู้และเป็นระยะ");
         values.put("After you start a gym battle, automatically starts the next full round from the same gym screen until defeated. Uses your attack settings and waits for Smart healing when set to After battle or Both. Turn off or leave manually to stop.", "หลังเริ่มต่อสู้ในยิม ระบบจะเริ่มรอบเต็มถัดไปจากหน้าจอยิมเดิมจนชนะ ใช้การตั้งค่าการโจมตีของคุณ และรอการรักษาอัจฉริยะเมื่อเลือก “หลังการต่อสู้” หรือ “ทั้งสองแบบ” ปิดฟังก์ชันหรือออกด้วยตัวเองเพื่อหยุด");
         values.put("All", "ทั้งหมด");
-        values.put("All PGRazor buttons, status bars, messages and in-game IV text will be hidden so the game looks stock. To show them again, tap the screen with three fingers at once.", "ซ่อนปุ่ม แถบสถานะ ข้อความ และค่า IV ในเกมของ PGRazor ทั้งหมด เพื่อให้หน้าตาเหมือนเกมปกติ หากต้องการแสดงอีกครั้ง ให้แตะหน้าจอด้วยสามนิ้วพร้อมกัน");
+        values.put("All PGS buttons, status bars, messages and in-game IV text will be hidden so the game looks stock. To show them again, tap the screen with three fingers at once.", "ซ่อนปุ่ม แถบสถานะ ข้อความ และค่า IV ในเกมของ PGS ทั้งหมด เพื่อให้หน้าตาเหมือนเกมปกติ หากต้องการแสดงอีกครั้ง ให้แตะหน้าจอด้วยสามนิ้วพร้อมกัน");
         values.put("All Pokemon", "โปเกมอนทั้งหมด");
         values.put("All battles", "ทุกการต่อสู้");
         values.put("All off", "ปิดทั้งหมด");
@@ -185,7 +185,7 @@ final class I18nCatalog_th {
         values.put("Auto-walk", "เดินอัตโนมัติ");
         values.put("Auto-walk stopped.", "หยุดเดินอัตโนมัติแล้ว");
         values.put("Auto-walking %1$s%2$s%3$s", "กำลังเดินอัตโนมัติ %1$s%2$s%3$s");
-        values.put("Automatically moves toward nearby Max energy orbs during battle while PGRazor is active.", "ขณะ PGRazor ทำงาน จะเคลื่อนไปหาลูกพลังงานแมกซ์ใกล้เคียงระหว่างการต่อสู้โดยอัตโนมัติ");
+        values.put("Automatically moves toward nearby Max energy orbs during battle while PGS is active.", "ขณะ PGS ทำงาน จะเคลื่อนไปหาลูกพลังงานแมกซ์ใกล้เคียงระหว่างการต่อสู้โดยอัตโนมัติ");
         values.put("Automation", "ระบบอัตโนมัติ");
         values.put("Autowalk", "เดินอัตโนมัติ");
         values.put("Back to all settings", "กลับไปการตั้งค่าทั้งหมด");
@@ -296,7 +296,7 @@ final class I18nCatalog_th {
         values.put("Clear search", "ล้างการค้นหา");
         values.put("Clear shown", "ล้างรายการที่แสดง");
         values.put("Close", "ปิด");
-        values.put("Close PGRazor settings", "ปิดการตั้งค่า PGRazor");
+        values.put("Close PGS settings", "ปิดการตั้งค่า PGS");
         values.put("Cloudy", "เมฆมาก");
         values.put("Collecting…", "กำลังรวบรวม…");
         values.put("Completing the Route", "กำลังจบเส้นทาง");
@@ -567,7 +567,7 @@ final class I18nCatalog_th {
         values.put("Items: Always heal fully", "ไอเท็ม: รักษาเต็มเสมอ");
         values.put("Items: Smart (saves big potions)", "ไอเท็ม: อัจฉริยะ (ประหยัดยาฟื้นพลังขนาดใหญ่)");
         values.put("Join our Discord", "เข้าร่วม Discord ของเรา");
-        values.put("Join the PGRazor Discord community", "เข้าร่วมชุมชน PGRazor บน Discord");
+        values.put("Join the PGS Discord community", "เข้าร่วมชุมชน PGS บน Discord");
         values.put("Joystick", "จอยสติ๊ก");
         values.put("Joystick and coordinate controls, drawn with the same tokens as the in-game panel.\nThis preview does not change device GPS or connect to Pokémon GO. Movement pauses when you leave the app.", "การควบคุมจอยสติ๊กและพิกัด ใช้รูปแบบเดียวกับแผงในเกม\nตัวอย่างนี้ไม่เปลี่ยน GPS ของอุปกรณ์หรือเชื่อมต่อกับ Pokémon GO การเคลื่อนที่จะหยุดเมื่อออกจากแอป");
         values.put("Joystick follows the camera", "จอยสติ๊กตามทิศกล้อง");
@@ -725,7 +725,7 @@ final class I18nCatalog_th {
         values.put("No favorites yet. Add places from the World map or the Teleport dialog.", "ยังไม่มีรายการโปรด เพิ่มสถานที่จากแผนที่โลกหรือหน้าต่างเทเลพอร์ต");
         values.put("No favorites yet. Add the selected map destination to find it again later.", "ยังไม่มีรายการโปรด เพิ่มจุดหมายที่เลือกบนแผนที่เพื่อหาได้อีกภายหลัง");
         values.put("No feeding", "ไม่ให้อาหาร");
-        values.put("No field research seen yet. Tasks appear here as the game gives them to you while PGRazor runs.", "ยังไม่พบงานวิจัยภาคสนาม งานจะปรากฏที่นี่เมื่อเกมมอบให้ระหว่างที่ PGRazor ทำงาน");
+        values.put("No field research seen yet. Tasks appear here as the game gives them to you while PGS runs.", "ยังไม่พบงานวิจัยภาคสนาม งานจะปรากฏที่นี่เมื่อเกมมอบให้ระหว่างที่ PGS ทำงาน");
         values.put("No file picker is available.", "ไม่มีตัวเลือกไฟล์ให้ใช้งาน");
         values.put("No limit", "ไม่จำกัด");
         values.put("No limit\nGo to the nearest Rocket stop wherever it is", "ไม่จำกัด\nไปยังสต็อปร็อกเก็ตที่ใกล้ที่สุดไม่ว่าจะอยู่ที่ไหน");
@@ -764,8 +764,8 @@ final class I18nCatalog_th {
         values.put("Off (manual)", "ปิด (ทำเอง)");
         values.put("One-shot tasks", "งานครั้งเดียว");
         values.put("Only %1$s of %2$s requested stops are loaded; starting with %3$s.", "โหลดได้เพียง %1$s จาก %2$s จุดที่ขอ จะเริ่มด้วย %3$s จุด");
-        values.put("Open PGRazor quick menu. Drag to reposition.", "เปิดเมนูด่วน PGRazor ลากเพื่อย้ายตำแหน่ง");
-        values.put("Open PGRazor settings. Drag to reposition.", "เปิดการตั้งค่า PGRazor ลากเพื่อย้ายตำแหน่ง");
+        values.put("Open PGS quick menu. Drag to reposition.", "เปิดเมนูด่วน PGS ลากเพื่อย้ายตำแหน่ง");
+        values.put("Open PGS settings. Drag to reposition.", "เปิดการตั้งค่า PGS ลากเพื่อย้ายตำแหน่ง");
         values.put("Open and send friend gifts in one batch.", "เปิดและส่งของขวัญเพื่อนในชุดเดียว");
         values.put("Open boxes and skip encounters", "เปิดกล่องและข้ามการเผชิญหน้า");
         values.put("Open even when item bag is full", "เปิดแม้กระเป๋าไอเท็มเต็ม");
@@ -781,13 +781,13 @@ final class I18nCatalog_th {
         values.put("Overlay scale", "ขนาดโอเวอร์เลย์");
         values.put("P", "P");
         values.put("PASS · ", "ผ่าน · ");
-        values.put("PGRazor VGP", "PGRazor VGP");
-        values.put("PGRazor feed", "ฟีด PGRazor");
-        values.put("PGRazor overlay shown", "แสดงโอเวอร์เลย์ PGRazor แล้ว");
-        values.put("PGRazor shiny found", "PGRazor พบไชนี");
-        values.put("PGRazor version %1$s", "PGRazor เวอร์ชัน %1$s");
-        values.put("PGRazor · current run", "PGRazor · การทำงานปัจจุบัน");
+        values.put("PGS VGP", "PGS VGP");
+        values.put("PGS feed", "ฟีด PGS");
         values.put("PGS language", "ภาษา PGS");
+        values.put("PGS overlay shown", "แสดงโอเวอร์เลย์ PGS แล้ว");
+        values.put("PGS shiny found", "PGS พบไชนี");
+        values.put("PGS version %1$s", "PGS เวอร์ชัน %1$s");
+        values.put("PGS · current run", "PGS · การทำงานปัจจุบัน");
         values.put("Partly Cloudy", "มีเมฆบางส่วน");
         values.put("Password", "รหัสผ่าน");
         values.put("Pause Virtual Go Plus during the estimated cooldown.", "พัก Virtual Go Plus ระหว่างคูลดาวน์โดยประมาณ");
@@ -1044,7 +1044,7 @@ final class I18nCatalog_th {
         values.put("Show the buddy excitement status overlay.", "แสดงโอเวอร์เลย์สถานะตื่นเต้นของคู่หู");
         values.put("Show the catch chance during an encounter.", "แสดงโอกาสจับขณะเผชิญหน้า");
         values.put("Show the count on the map", "แสดงจำนวนบนแผนที่");
-        values.put("Show the encounter count next to the PGRazor title.", "แสดงจำนวนการเผชิญหน้าข้างชื่อ PGRazor");
+        values.put("Show the encounter count next to the PGS title.", "แสดงจำนวนการเผชิญหน้าข้างชื่อ PGS");
         values.put("Show the estimated catch cooldown timer on the map.", "แสดงเวลาคูลดาวน์การจับโดยประมาณบนแผนที่");
         values.put("Show the on-screen movement joystick.", "แสดงจอยสติ๊กเคลื่อนที่บนหน้าจอ");
         values.put("Show the wall-clock time at the spoofed coordinates.", "แสดงเวลาท้องถิ่นตามพิกัดจำลอง");
@@ -1162,8 +1162,8 @@ final class I18nCatalog_th {
         values.put("Tap to download", "แตะเพื่อดาวน์โหลด");
         values.put("Tap to download and install", "แตะเพื่อดาวน์โหลดและติดตั้ง");
         values.put("Tap to download the Root installer", "แตะเพื่อดาวน์โหลดตัวติดตั้ง Root");
-        values.put("Tap to open PGRazor %1$s in Downloads and install it", "แตะเพื่อเปิด PGRazor %1$s ในดาวน์โหลดแล้วติดตั้ง");
-        values.put("Tap to open PGRazor %1$s in Downloads: update the installer, open it, tap Install Module, then reboot", "แตะเพื่อเปิด PGRazor %1$s ในดาวน์โหลด: อัปเดตตัวติดตั้ง เปิด แล้วแตะติดตั้งโมดูล จากนั้นรีบูต");
+        values.put("Tap to open PGS %1$s in Downloads and install it", "แตะเพื่อเปิด PGS %1$s ในดาวน์โหลดแล้วติดตั้ง");
+        values.put("Tap to open PGS %1$s in Downloads: update the installer, open it, tap Install Module, then reboot", "แตะเพื่อเปิด PGS %1$s ในดาวน์โหลด: อัปเดตตัวติดตั้ง เปิด แล้วแตะติดตั้งโมดูล จากนั้นรีบูต");
         values.put("Task (none = any)", "งานวิจัย (ไม่เลือก = ทั้งหมด)");
         values.put("Team GO Rocket", "ทีม GO ร็อกเก็ต");
         values.put("Team Rocket", "ทีมร็อกเก็ต");
@@ -1319,7 +1319,7 @@ final class I18nCatalog_th {
         values.put("When species are selected, VGP+ catches only those and leaves every other Pokémon on the map, shiny or not. With \"Catch only shinies\" on as well, it catches only shinies of those species.", "เมื่อเลือกสายพันธุ์ VGP+ จะจับเฉพาะสายพันธุ์เหล่านั้น และปล่อยตัวอื่นทั้งหมดไว้บนแผนที่ไม่ว่าจะเป็นไชนีหรือไม่ หากเปิด \"จับเฉพาะไชนี\" ด้วย จะจับเฉพาะไชนีของสายพันธุ์ที่เลือก");
         values.put("While VGP is running on the map, spin nearby Gym discs of any team within 80 m when the item bag has room.", "ขณะ VGP ทำงานบนแผนที่และกระเป๋าไอเท็มมีที่ว่าง จะหมุนแผ่นยิมของทุกทีมภายใน 80 ม.");
         values.put("While any of these is on, the next Pokémon is picked automatically when one faints.", "เมื่อเปิดตัวเลือกใดตัวเลือกหนึ่ง ระบบจะเลือกโปเกมอนตัวถัดไปอัตโนมัติเมื่อตัวปัจจุบันหมดสติ");
-        values.put("Wild Pokémon this account has encountered in the last 24 hours on this device while PGRazor was running, shown next to the PGRazor title. Encounters made elsewhere, and lure, incense, raid and research encounters, are not counted.", "แสดงจำนวนโปเกมอนป่าที่บัญชีนี้พบใน 24 ชั่วโมงล่าสุดบนอุปกรณ์นี้ขณะ PGRazor ทำงาน ข้างชื่อ PGRazor ไม่นับการเผชิญหน้าจากที่อื่น หรือจากลัวร์ เครื่องหอม เรด และงานวิจัย");
+        values.put("Wild Pokémon this account has encountered in the last 24 hours on this device while PGS was running, shown next to the PGS title. Encounters made elsewhere, and lure, incense, raid and research encounters, are not counted.", "แสดงจำนวนโปเกมอนป่าที่บัญชีนี้พบใน 24 ชั่วโมงล่าสุดบนอุปกรณ์นี้ขณะ PGS ทำงาน ข้างชื่อ PGS ไม่นับการเผชิญหน้าจากที่อื่น หรือจากลัวร์ เครื่องหอม เรด และงานวิจัย");
     }
     private static void fill10(Map<String, String> values) {
         values.put("Wild encounters. Combines with throw rating and curveball.", "สำหรับการเผชิญหน้าโปเกมอนป่า ใช้ร่วมกับระดับการขว้างและลูกโค้งได้");

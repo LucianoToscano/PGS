@@ -36,8 +36,7 @@ public final class GymFeedOverlay extends View {
     public void refresh(boolean visible){
         boolean on=GymAutomationSettings.running();
         setVisibility(visible&&GymAutomationSettings.overlayEnabled()?VISIBLE:GONE);
-        setContentDescription("Gym Slotter and Berry Feeder "+(on?"on; tap to stop":"off; tap to start")
-            +". Drag to reposition. "+GymAutomationSettings.status());
+        setContentDescription(I18n.format("Gym Slotter and Berry Feeder %1$s. Drag to reposition. %2$s", String.valueOf((Object)((on?I18n.t("on; tap to stop"):I18n.t("off; tap to start")))), String.valueOf((Object)(GymAutomationSettings.status()))));
         invalidate();
     }
 
@@ -72,7 +71,7 @@ public final class GymFeedOverlay extends View {
         drawIcon(canvas,berryIcon,26,17,50,41);
         paint.setColor(on?Color.rgb(56,181,112):MapTheme.ink());
         paint.setTextSize(11);paint.setTypeface(Typeface.DEFAULT_BOLD);paint.setTextAlign(Paint.Align.CENTER);
-        canvas.drawText(on?"ON":Cooldown.remaining()>0?"CD":"OFF",27,49,paint);
+        canvas.drawText(on?I18n.t("ON"):Cooldown.remaining()>0?I18n.t("CD"):I18n.t("OFF"),27,49,paint);
         canvas.restore();
     }
 }

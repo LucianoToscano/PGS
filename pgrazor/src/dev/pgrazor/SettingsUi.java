@@ -339,7 +339,7 @@ final class SettingsUi {
         ClearGlyph(Context context) {
             super(context);
             setFocusable(true); setClickable(true);
-            setContentDescription("Clear search");
+            setContentDescription(I18n.t("Clear search"));
             setBackground(new RippleDrawable(ColorStateList.valueOf(rippleColor()), null, rounded(getContext(), 0xffffffff, 20)));
         }
         @Override protected void onDraw(Canvas canvas) {

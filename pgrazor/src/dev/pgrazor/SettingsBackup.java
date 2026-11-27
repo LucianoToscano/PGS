@@ -27,16 +27,16 @@ final class SettingsBackup {
     void show(){
         LinearLayout root=new LinearLayout(activity);root.setOrientation(LinearLayout.VERTICAL);
         int p=MapTheme.dp(activity,20);root.setPadding(p,p*3,p,p*2);
-        TextView title=new TextView(activity);title.setText("Settings backup");title.setTextSize(22);root.addView(title);
-        TextView detail=new TextView(activity);detail.setText("Save a backup outside the app to keep settings through reinstalls. Includes favorites and their coordinates. Login tokens, current location, cooldown history and active routes are excluded.\n\nImport replaces the included settings and favorites. VGP stays off.");detail.setPadding(0,p,0,p);root.addView(detail);
-        export=new Button(activity);export.setText("Export settings");root.addView(export);
-        restore=new Button(activity);restore.setText("Import settings");root.addView(restore);
+        TextView title=new TextView(activity);title.setText(I18n.t("Settings backup"));title.setTextSize(22);root.addView(title);
+        TextView detail=new TextView(activity);detail.setText(I18n.t("Save a backup outside the app to keep settings through reinstalls. Includes favorites and their coordinates. Login tokens, current location, cooldown history and active routes are excluded.\n\nImport replaces the included settings and favorites. VGP stays off."));detail.setPadding(0,p,0,p);root.addView(detail);
+        export=new Button(activity);export.setText(I18n.t("Export settings"));root.addView(export);
+        restore=new Button(activity);restore.setText(I18n.t("Import settings"));root.addView(restore);
         status=new TextView(activity);status.setPadding(0,p,0,p);root.addView(status);
-        back=new Button(activity);back.setText("Back to game");back.setOnClickListener(v->{if(dialog!=null)dialog.dismiss();else activity.finish();});root.addView(back);
+        back=new Button(activity);back.setText(I18n.t("Back to game"));back.setOnClickListener(v->{if(dialog!=null)dialog.dismiss();else activity.finish();});root.addView(back);
         export.setOnClickListener(v->pick(EXPORT));restore.setOnClickListener(v->pick(IMPORT));
         ScrollView scroll=new ScrollView(activity);scroll.addView(root);MapTheme.style(scroll);
         if(PgAssets.rooted()){
-            detail.append("\n\nRoot uses a fixed file in the game's external files folder. Copy it elsewhere before uninstalling the game; to import, place your backup at this path:\n"+rootedFile());
+            detail.append(I18n.format("\n\nRoot uses a fixed file in the game's external files folder. Copy it elsewhere before uninstalling the game; to import, place your backup at this path:\n%1$s",rootedFile()));
             dialog=new android.app.AlertDialog.Builder(MapTheme.wrap(activity)).setView(scroll).create();
             dialog.setCancelable(false);dialog.show();
         }else activity.setContentView(scroll);
@@ -45,20 +45,20 @@ final class SettingsBackup {
     private void pick(int code){
         if(PgAssets.rooted()){
             File file=rootedFile();
-            if(file==null){status.setText("External storage is unavailable.");return;}
+            if(file==null){status.setText(I18n.t("External storage is unavailable."));return;}
             new android.app.AlertDialog.Builder(MapTheme.wrap(activity))
-                .setMessage(code==EXPORT?"Replace the settings backup at "+file+"?":"Replace settings with the backup at "+file+"? VGP will stay off.")
-                .setNegativeButton("Cancel",null).setPositiveButton("Continue",(d,w)->result(code,Activity.RESULT_OK,new Intent().setData(Uri.fromFile(file)))).show();
+                .setMessage(code==EXPORT?I18n.format("Replace the settings backup at %1$s?",file):I18n.format("Replace settings with the backup at %1$s? VGP will stay off.",file))
+                .setNegativeButton(I18n.t("Cancel"),null).setPositiveButton(I18n.t("Continue"),(d,w)->result(code,Activity.RESULT_OK,new Intent().setData(Uri.fromFile(file)))).show();
             return;
         }
         Intent i=new Intent(code==EXPORT?Intent.ACTION_CREATE_DOCUMENT:Intent.ACTION_OPEN_DOCUMENT).addCategory(Intent.CATEGORY_OPENABLE).setType("application/json");
         if(code==EXPORT)i.putExtra(Intent.EXTRA_TITLE,"PGRazor-settings.json");
-        try{activity.startActivityForResult(i,code);}catch(android.content.ActivityNotFoundException e){status.setText("No file picker is available.");}
+        try{activity.startActivityForResult(i,code);}catch(android.content.ActivityNotFoundException e){status.setText(I18n.t("No file picker is available."));}
     }
     void result(int request,int result,Intent data){
         if((request!=EXPORT&&request!=IMPORT)||result!=Activity.RESULT_OK||data==null||data.getData()==null)return;
         if(busy)return;busy=true;
-        Uri uri=data.getData();export.setEnabled(false);restore.setEnabled(false);back.setEnabled(false);status.setText(request==EXPORT?"Saving backup...":"Restoring backup...");
+        Uri uri=data.getData();export.setEnabled(false);restore.setEnabled(false);back.setEnabled(false);status.setText(request==EXPORT?I18n.t("Saving backup..."):I18n.t("Restoring backup..."));
         new Thread(()->{
             String message;
             try{
@@ -66,7 +66,7 @@ final class SettingsBackup {
                     byte[] bytes=snapshot(activity).toString(2).getBytes(StandardCharsets.UTF_8);
                     if(bytes.length>LIMIT)throw new IOException("Backup is too large");
                     try(OutputStream out=activity.getContentResolver().openOutputStream(uri,"wt")){if(out==null)throw new IOException("Cannot open destination");out.write(bytes);}
-                    message="Settings exported.";
+                    message=I18n.t("Settings exported.");
                 }else{
                     JSONObject document;
                     try(InputStream in=activity.getContentResolver().openInputStream(uri)){
@@ -75,9 +75,9 @@ final class SettingsBackup {
                         while((n=in.read(buf))!=-1){if(out.size()+n>LIMIT)throw new IOException("Backup is too large");out.write(buf,0,n);}
                         document=new JSONObject(new String(out.toByteArray(),StandardCharsets.UTF_8));
                     }
-                    restore(activity,document);message="Settings restored. Return to the game to use them. VGP is off.";
+                    restore(activity,document);message=I18n.t("Settings restored. Return to the game to use them. VGP is off.");
                 }
-            }catch(Exception e){message="Backup failed: "+(e.getMessage()==null?"Invalid file or storage unavailable":e.getMessage());}
+            }catch(Exception e){message=I18n.format("Backup failed: %1$s",e.getMessage()==null?I18n.t("Invalid file or storage unavailable"):e.getMessage());}
             final String text=message;activity.runOnUiThread(()->{busy=false;if(activity.isFinishing()||activity.isDestroyed())return;status.setText(text);export.setEnabled(true);restore.setEnabled(true);back.setEnabled(true);});
         },"pgrazor-settings-backup").start();
     }

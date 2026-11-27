@@ -59,22 +59,22 @@ final class RootedLogDialog {
         actions.setOrientation(LinearLayout.HORIZONTAL);
         body.addView(actions);
         Button refresh = new Button(ui);
-        refresh.setText("Refresh");
+        refresh.setText(I18n.t("Refresh"));
         actions.addView(refresh, new LinearLayout.LayoutParams(0, -2, 1));
         Button save = new Button(ui);
-        save.setText("Save .txt");
+        save.setText(I18n.t("Save .txt"));
         actions.addView(save, new LinearLayout.LayoutParams(0, -2, 1));
         Button bundle=new Button(ui);
-        bundle.setText("Save log + settings (.zip)");
+        bundle.setText(I18n.t("Save log + settings (.zip)"));
         body.addView(bundle);
 
         Runnable reload = () -> load(hint, text);
         refresh.setOnClickListener(v -> reload.run());
 
         AlertDialog dialog = new AlertDialog.Builder(ui)
-                .setTitle("PGRazor · current run")
+                .setTitle(I18n.t("PGRazor · current run"))
                 .setView(body)
-                .setPositiveButton("Close", null)
+                .setPositiveButton(I18n.t("Close"), null)
                 .create();
 
         // Export off the main thread; the copy re-reads and digests the whole file.
@@ -82,7 +82,7 @@ final class RootedLogDialog {
         Handler handler = new Handler(Looper.getMainLooper());
         View.OnClickListener export = v -> {
             File file = Control.currentLog();
-            if (file == null) { Toast.makeText(activity, "No log file to save", Toast.LENGTH_SHORT).show(); return; }
+            if (file == null) { Toast.makeText(activity, I18n.t("No log file to save"), Toast.LENGTH_SHORT).show(); return; }
             save.setEnabled(false);
             bundle.setEnabled(false);
             boolean includeSettings=v==bundle;
@@ -91,12 +91,12 @@ final class RootedLogDialog {
                     File saved = LogExport.copyToExternal(app, file,includeSettings);
                     handler.post(() -> {
                         if (dialog.isShowing()) {save.setEnabled(true);bundle.setEnabled(true);}
-                        Toast.makeText(app, "Saved to " + saved.getAbsolutePath(), Toast.LENGTH_LONG).show();
+                        Toast.makeText(app, I18n.format("Saved to %1$s", String.valueOf((Object)(saved.getAbsolutePath()))), Toast.LENGTH_LONG).show();
                     });
                 } catch (IOException error) {
                     handler.post(() -> {
                         if (dialog.isShowing()) {save.setEnabled(true);bundle.setEnabled(true);}
-                        Toast.makeText(app, "Save failed: " + error.getMessage(), Toast.LENGTH_LONG).show();
+                        Toast.makeText(app, I18n.format("Save failed: %1$s", String.valueOf((Object)(error.getMessage()))), Toast.LENGTH_LONG).show();
                     });
                 }
             }, "pgrazor-log-export").start();
@@ -118,7 +118,7 @@ final class RootedLogDialog {
         File file = Control.currentLog();
         if (file == null) {
             hint.setText("");
-            text.setText("No log file is available yet. Android logcat may contain startup errors.");
+            text.setText(I18n.t("No log file is available yet. Android logcat may contain startup errors."));
             return;
         }
         try (RandomAccessFile input = new RandomAccessFile(file, "r")) {
@@ -126,12 +126,11 @@ final class RootedLogDialog {
             input.seek(start);
             byte[] bytes = new byte[(int) (input.length() - start)];
             input.readFully(bytes);
-            hint.setText((start > 0 ? "Showing the latest 64 KiB. " : "")
-                    + "Save exports the current log segment with retained startup diagnostics to this device. ZIP also includes a single-line settings.json; the settings snapshot excludes login tokens, account data and saved locations.");
+            hint.setText(I18n.format("%1$sSave exports the current log segment with retained startup diagnostics to this device. ZIP also includes a single-line settings.json; the settings snapshot excludes login tokens, account data and saved locations.", String.valueOf((Object)((start > 0 ? I18n.t("Showing the latest 64 KiB. ") : "")))));
             text.setText(new String(bytes, StandardCharsets.UTF_8));
         } catch (IOException error) {
             hint.setText("");
-            text.setText("Cannot read log: " + error.getMessage());
+            text.setText(I18n.format("Cannot read log: %1$s", String.valueOf((Object)(error.getMessage()))));
         }
     }
 }

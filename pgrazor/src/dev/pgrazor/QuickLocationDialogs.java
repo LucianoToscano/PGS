@@ -32,15 +32,15 @@ public final class QuickLocationDialogs {
         final double hereLat = Control.engine.latitude, hereLon = Control.engine.longitude;
         LinearLayout here = new LinearLayout(ctx); here.setGravity(android.view.Gravity.CENTER_VERTICAL);
         android.widget.TextView hereText = new android.widget.TextView(ctx);
-        hereText.setText("You are at\n" + CoordinateClipboard.text(hereLat, hereLon)); hereText.setTextSize(14);
+        hereText.setText(I18n.format("You are at\n%1$s", CoordinateClipboard.text(hereLat, hereLon))); hereText.setTextSize(14);
         here.addView(hereText, new LinearLayout.LayoutParams(0, -2, 1));
-        android.widget.Button copy = new android.widget.Button(ctx); copy.setText("Copy"); copy.setAllCaps(false); copy.setTextSize(13);
-        copy.setContentDescription("Copy your current coordinates");
+        android.widget.Button copy = new android.widget.Button(ctx); copy.setText(I18n.t("Copy")); copy.setAllCaps(false); copy.setTextSize(13);
+        copy.setContentDescription(I18n.t("Copy your current coordinates"));
         MapTheme.setButtonBackground(copy);
-        copy.setOnClickListener(v -> CoordinateClipboard.copy(activity, hereLat, hereLon, "Your location copied"));
+        copy.setOnClickListener(v -> CoordinateClipboard.copy(activity, hereLat, hereLon, I18n.t("Your location copied")));
         here.addView(copy, new LinearLayout.LayoutParams(dp(ctx, 76), dp(ctx, 48)));
-        android.widget.Button favorite = new android.widget.Button(ctx); favorite.setText("Favorite"); favorite.setAllCaps(false); favorite.setTextSize(13);
-        favorite.setContentDescription("Save your current location to Favorites");
+        android.widget.Button favorite = new android.widget.Button(ctx); favorite.setText(I18n.t("Favorite")); favorite.setAllCaps(false); favorite.setTextSize(13);
+        favorite.setContentDescription(I18n.t("Save your current location to Favorites"));
         MapTheme.setButtonBackground(favorite);
         favorite.setOnClickListener(v -> saveFavorite(activity, hereLat, hereLon));
         LinearLayout.LayoutParams favoriteLp = new LinearLayout.LayoutParams(dp(ctx, 92), dp(ctx, 48)); favoriteLp.leftMargin = dp(ctx, 6);
@@ -49,8 +49,8 @@ public final class QuickLocationDialogs {
         form.addView(here, hereLp);
         EditText coordinates = input(ctx, "Latitude, longitude");
         form.addView(coordinates);
-        AlertDialog dialog = new AlertDialog.Builder(ctx).setTitle("Go to coordinates").setView(form)
-            .setNegativeButton("Cancel", null).setNeutralButton("Walk", null).setPositiveButton("Teleport", null).create();
+        AlertDialog dialog = new AlertDialog.Builder(ctx).setTitle(I18n.t("Go to coordinates")).setView(form)
+            .setNegativeButton(I18n.t("Cancel"), null).setNeutralButton(I18n.t("Walk"), null).setPositiveButton(I18n.t("Teleport"), null).create();
         dialog.setOnShowListener(d -> {
             dialog.getButton(AlertDialog.BUTTON_POSITIVE).setOnClickListener(v -> {
                 double[] point;
@@ -68,7 +68,7 @@ public final class QuickLocationDialogs {
                 catch (IllegalArgumentException e) { coordinates.setError(e.getMessage()); return; }
                 if(walk.teleport(point[0],point[1])){
                     dialog.dismiss();
-                    Toast.makeText(activity,"Walking to "+CoordinateClipboard.text(point[0],point[1]),Toast.LENGTH_SHORT).show();
+                    Toast.makeText(activity,I18n.format("Walking to %1$s",CoordinateClipboard.text(point[0],point[1])),Toast.LENGTH_SHORT).show();
                 }
             });
         });
@@ -89,15 +89,15 @@ public final class QuickLocationDialogs {
             final SavedPlaces.Snapshot snap = snapshot;
             activity.runOnUiThread(() -> {
                 if (activity.isFinishing() || activity.isDestroyed()) return;
-                AlertDialog.Builder b = new AlertDialog.Builder(themed(activity)).setTitle("Favorites").setNegativeButton("Close", null);
-                if (snap == null) { b.setMessage("Favorites could not be read."); show(activity,b.create()); return; }
+                AlertDialog.Builder b = new AlertDialog.Builder(themed(activity)).setTitle(I18n.t("Favorites")).setNegativeButton(I18n.t("Close"), null);
+                if (snap == null) { b.setMessage(I18n.t("Favorites could not be read.")); show(activity,b.create()); return; }
                 if (snap.entries.isEmpty()) {
-                    b.setMessage(snap.damaged ? "Favorites could not be read." : "No favorites yet. Add places from the World map or the Teleport dialog.");
+                    b.setMessage(snap.damaged ? I18n.t("Favorites could not be read.") : I18n.t("No favorites yet. Add places from the World map or the Teleport dialog."));
                     show(activity,b.create()); return;
                 }
                 show(activity,ChoiceList.attach(b.create(),favoriteLabels(snap),
                     which -> favoriteActions(activity,snap.entries.get(which),target,walk,null,() -> listFavorites(activity,target,walk))));
-                if (snap.damaged) Toast.makeText(activity, "Some favorites could not be read. Valid entries are shown.", Toast.LENGTH_LONG).show();
+                if (snap.damaged) Toast.makeText(activity, I18n.t("Some favorites could not be read. Valid entries are shown."), Toast.LENGTH_LONG).show();
             });
         }, "pgrazor-favorites-read").start();
     }
@@ -122,40 +122,40 @@ public final class QuickLocationDialogs {
         if (activity.isFinishing() || activity.isDestroyed()) return;
         java.util.List<String> labels = new java.util.ArrayList<>();
         java.util.List<Runnable> actions = new java.util.ArrayList<>();
-        if (showOnMap != null) { labels.add("Show on map\nPut the pin here"); actions.add(() -> showOnMap.accept(entry)); }
-        labels.add("Teleport\nCooldown when you arrive: " + TeleportDialog.duration(Cooldown.remainingAt(entry.latitude, entry.longitude)));
+        if (showOnMap != null) { labels.add(I18n.t("Show on map\nPut the pin here")); actions.add(() -> showOnMap.accept(entry)); }
+        labels.add(I18n.format("Teleport\nCooldown when you arrive: %1$s", TeleportDialog.duration(Cooldown.remainingAt(entry.latitude, entry.longitude))));
         actions.add(() -> TeleportDialog.confirm(activity, entry.latitude, entry.longitude, teleport::teleport));
         if (walk != null) {
-            labels.add("Walk here\nAt your current walk speed");
+            labels.add(I18n.t("Walk here\nAt your current walk speed"));
             actions.add(() -> {
                 if (walk.teleport(entry.latitude, entry.longitude))
-                    Toast.makeText(activity, "Walking to " + entry.name, Toast.LENGTH_SHORT).show();
+                    Toast.makeText(activity, I18n.format("Walking to %1$s", entry.name), Toast.LENGTH_SHORT).show();
             });
         }
-        labels.add("Rename\nGive this place a new name"); actions.add(() -> renamePlace(activity, entry, reopen));
-        labels.add("Delete\nRemove it from your Favorites"); actions.add(() -> deletePlace(activity, entry, reopen));
+        labels.add(I18n.t("Rename\nGive this place a new name")); actions.add(() -> renamePlace(activity, entry, reopen));
+        labels.add(I18n.t("Delete\nRemove it from your Favorites")); actions.add(() -> deletePlace(activity, entry, reopen));
         AlertDialog dialog = new AlertDialog.Builder(themed(activity)).setTitle(entry.name)
-            .setNegativeButton("Cancel", (d, w) -> reopen.run()).create();
+            .setNegativeButton(I18n.t("Cancel"), (d, w) -> reopen.run()).create();
         show(activity, ChoiceList.attach(dialog, labels.toArray(new String[0]), which -> actions.get(which).run()));
     }
 
     private static void renamePlace(Activity activity, SavedPlaces.Entry entry, Runnable reopen) {
         Context ctx = themed(activity);
-        EditText name = input(ctx, "Place name (up to " + SavedPlaces.NAME_LIMIT + " characters)");
+        EditText name = input(ctx, I18n.format("Place name (up to %1$s characters)", SavedPlaces.NAME_LIMIT));
         name.setInputType(InputType.TYPE_CLASS_TEXT | InputType.TYPE_TEXT_FLAG_CAP_SENTENCES);
         name.setFilters(new android.text.InputFilter[]{new android.text.InputFilter.LengthFilter(SavedPlaces.NAME_LIMIT)});
         name.setText(entry.name); name.setSelection(name.getText().length());
         LinearLayout form = new LinearLayout(ctx); form.setOrientation(LinearLayout.VERTICAL);
         int p = dp(ctx, 22); form.setPadding(p, dp(ctx, 8), p, dp(ctx, 8)); form.addView(name);
-        AlertDialog dialog = new AlertDialog.Builder(ctx).setTitle("Rename place").setView(form)
-            .setNegativeButton("Cancel", (d, w) -> reopen.run()).setPositiveButton("Save", null).create();
+        AlertDialog dialog = new AlertDialog.Builder(ctx).setTitle(I18n.t("Rename place")).setView(form)
+            .setNegativeButton(I18n.t("Cancel"), (d, w) -> reopen.run()).setPositiveButton(I18n.t("Save"), null).create();
         dialog.setOnShowListener(d -> dialog.getButton(AlertDialog.BUTTON_POSITIVE).setOnClickListener(v -> {
             final String value = name.getText().toString();
             dialog.getButton(AlertDialog.BUTTON_POSITIVE).setEnabled(false);
             new Thread(() -> {
                 String error = null;
-                try { if (!new SavedPlaces(activity).rename(entry.id, value)) error = "This place no longer exists."; }
-                catch (java.io.IOException | RuntimeException e) { error = e.getMessage() == null ? "Could not rename this place." : e.getMessage(); }
+                try { if (!new SavedPlaces(activity).rename(entry.id, value)) error = I18n.t("This place no longer exists."); }
+                catch (java.io.IOException | RuntimeException e) { error = e.getMessage() == null ? I18n.t("Could not rename this place.") : e.getMessage(); }
                 final String failed = error;
                 activity.runOnUiThread(() -> {
                     if (!dialog.isShowing()) return;
@@ -168,9 +168,9 @@ public final class QuickLocationDialogs {
     }
 
     private static void deletePlace(Activity activity, SavedPlaces.Entry entry, Runnable reopen) {
-        AlertDialog confirm = new AlertDialog.Builder(themed(activity)).setTitle("Delete favorite?")
-            .setMessage(entry.name + " will be removed from your Favorites. The current location stays unchanged.")
-            .setNegativeButton("Cancel", (d, w) -> reopen.run()).setPositiveButton("Delete", null).create();
+        AlertDialog confirm = new AlertDialog.Builder(themed(activity)).setTitle(I18n.t("Delete favorite?"))
+            .setMessage(I18n.format("%1$s will be removed from your Favorites. The current location stays unchanged.", entry.name))
+            .setNegativeButton(I18n.t("Cancel"), (d, w) -> reopen.run()).setPositiveButton(I18n.t("Delete"), null).create();
         confirm.setOnShowListener(d -> confirm.getButton(AlertDialog.BUTTON_POSITIVE).setOnClickListener(v -> {
             confirm.getButton(AlertDialog.BUTTON_POSITIVE).setEnabled(false);
             new Thread(() -> {
@@ -179,9 +179,9 @@ public final class QuickLocationDialogs {
                 final boolean deleted = ok;
                 activity.runOnUiThread(() -> {
                     if (!confirm.isShowing()) return;
-                    if (!deleted) { confirm.getButton(AlertDialog.BUTTON_POSITIVE).setEnabled(true); Toast.makeText(activity, "Could not delete place. Please retry.", Toast.LENGTH_LONG).show(); return; }
+                    if (!deleted) { confirm.getButton(AlertDialog.BUTTON_POSITIVE).setEnabled(true); Toast.makeText(activity, I18n.t("Could not delete place. Please retry."), Toast.LENGTH_LONG).show(); return; }
                     confirm.dismiss();
-                    Toast.makeText(activity, "Deleted " + entry.name, Toast.LENGTH_SHORT).show();
+                    Toast.makeText(activity, I18n.format("Deleted %1$s", entry.name), Toast.LENGTH_SHORT).show();
                     reopen.run();
                 });
             }, "pgrazor-favorites-delete").start();
@@ -201,12 +201,12 @@ public final class QuickLocationDialogs {
         int p = dp(ctx, 22); form.setPadding(p, dp(ctx, 8), p, dp(ctx, 8));
         android.widget.TextView where = new android.widget.TextView(ctx); where.setText(CoordinateClipboard.text(latitude, longitude)); where.setTextSize(14);
         form.addView(where);
-        EditText name = input(ctx, "Place name (up to " + SavedPlaces.NAME_LIMIT + " characters)");
+        EditText name = input(ctx, I18n.format("Place name (up to %1$s characters)", SavedPlaces.NAME_LIMIT));
         name.setInputType(InputType.TYPE_CLASS_TEXT | InputType.TYPE_TEXT_FLAG_CAP_SENTENCES);
         name.setFilters(new android.text.InputFilter[]{new android.text.InputFilter.LengthFilter(SavedPlaces.NAME_LIMIT)});
         form.addView(name);
-        AlertDialog dialog = new AlertDialog.Builder(ctx).setTitle("Add to Favorites").setView(form)
-            .setNegativeButton("Cancel", null).setPositiveButton("Save", null).create();
+        AlertDialog dialog = new AlertDialog.Builder(ctx).setTitle(I18n.t("Add to Favorites")).setView(form)
+            .setNegativeButton(I18n.t("Cancel"), null).setPositiveButton(I18n.t("Save"), null).create();
         dialog.setOnShowListener(d -> dialog.getButton(AlertDialog.BUTTON_POSITIVE).setOnClickListener(v -> {
             final SavedPlaces.Entry entry;
             try { entry = new SavedPlaces.Entry(name.getText().toString(), latitude, longitude); }
@@ -215,13 +215,13 @@ public final class QuickLocationDialogs {
             new Thread(() -> {
                 String error = null;
                 try { new SavedPlaces(activity).add(entry); }
-                catch (java.io.IOException | RuntimeException e) { error = e.getMessage() == null ? "Could not save this place." : e.getMessage(); }
+                catch (java.io.IOException | RuntimeException e) { error = e.getMessage() == null ? I18n.t("Could not save this place.") : e.getMessage(); }
                 final String failed = error;
                 activity.runOnUiThread(() -> {
                     if (!dialog.isShowing()) return;
                     if (failed != null) { dialog.getButton(AlertDialog.BUTTON_POSITIVE).setEnabled(true); name.setError(failed); return; }
                     dialog.dismiss();
-                    Toast.makeText(activity, "Saved " + entry.name + " to Favorites", Toast.LENGTH_SHORT).show();
+                    Toast.makeText(activity, I18n.format("Saved %1$s to Favorites", entry.name), Toast.LENGTH_SHORT).show();
                 });
             }, "pgrazor-favorites-save").start();
         }));
@@ -229,7 +229,7 @@ public final class QuickLocationDialogs {
     }
 
     private static EditText input(Context ctx, String hint) {
-        EditText e = new EditText(ctx); e.setSingleLine(true); e.setHint(hint);
+        EditText e = new EditText(ctx); e.setSingleLine(true); e.setHint(I18n.t(hint));
         e.setInputType(InputType.TYPE_CLASS_TEXT | InputType.TYPE_TEXT_FLAG_NO_SUGGESTIONS);
         return e;
     }

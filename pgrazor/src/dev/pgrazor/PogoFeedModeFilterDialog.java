@@ -67,10 +67,10 @@ final class PogoFeedModeFilterDialog {
             default: return;
         }
         AlertDialog dialog = new AlertDialog.Builder(ui)
-            .setTitle(mode.filtersTitle)
+            .setTitle(I18n.t(mode.filtersTitle))
             .setView(scroll)
-            .setPositiveButton("Apply", (d, w) -> onApply.apply(working))
-            .setNegativeButton("Cancel", null)
+            .setPositiveButton(I18n.t("Apply"), (d, w) -> onApply.apply(working))
+            .setNegativeButton(I18n.t("Cancel"), null)
             .create();
         if (sink != null) sink.track(dialog);
         dialog.setOnShowListener(d -> {
@@ -106,7 +106,7 @@ final class PogoFeedModeFilterDialog {
         void raids(JSONObject catalog) {
             final LinearLayout bosses = new LinearLayout(ui), tiers = new LinearLayout(ui);
             bosses.setOrientation(LinearLayout.VERTICAL); tiers.setOrientation(LinearLayout.VERTICAL);
-            section("Filter by");
+            section(I18n.t("Filter by"));
             body.addView(pills(new String[]{"Pokémon", "Tier"}, new String[]{"pokemon", "tier"}, "filter_by", () -> {
                 boolean byTier = "tier".equals(spec.optString("filter_by", "tier"));
                 bosses.setVisibility(byTier ? View.GONE : View.VISIBLE);
@@ -114,7 +114,7 @@ final class PogoFeedModeFilterDialog {
             }));
             body.addView(bosses); body.addView(tiers);
             // Bosses: the site's current raid bosses, each with its form and variant (normal/mega/shadow).
-            sectionIn(bosses, "Raid bosses");
+            sectionIn(bosses, I18n.t("Raid bosses"));
             List<String[]> options = new ArrayList<>();
             JSONArray list = catalog == null ? null : catalog.optJSONArray("pokemon");
             if (list != null) for (int i = 0; i < list.length(); i++) {
@@ -123,7 +123,7 @@ final class PogoFeedModeFilterDialog {
                 String form = p.isNull("form_id") ? "" : String.valueOf(p.optInt("form_id"));
                 options.add(new String[]{p.optString("name", "#" + p.optInt("id")), p.optInt("id") + "|" + form + "|" + p.optString("variant", "any")});
             }
-            if (options.isEmpty()) bosses.addView(note("Couldn't load the raid bosses. Use Tier, or try again later."));
+            if (options.isEmpty()) bosses.addView(note(I18n.t("Couldn't load the raid bosses. Use Tier, or try again later.")));
             else bosses.addView(pokemonChips(options, new Selector() {
                 public boolean on(String key) { return bossIndex(key) >= 0; }
                 public void toggle(String key) {
@@ -142,14 +142,14 @@ final class PogoFeedModeFilterDialog {
                     }
                     put("bosses", out);
                 }
-            }, "Search bosses", true));
-            sectionIn(tiers, "Tier");
+            }, I18n.t("Search bosses"), true));
+            sectionIn(tiers, I18n.t("Tier"));
             List<String[]> tierOptions = new ArrayList<>();
-            for (int i = 0; i < PogoFeedModes.RAID_TIERS.length; i++) tierOptions.add(new String[]{PogoFeedModes.RAID_TIERS[i], String.valueOf(i + 1)});
+            for (int i = 0; i < PogoFeedModes.RAID_TIERS.length; i++) tierOptions.add(new String[]{I18n.t(PogoFeedModes.RAID_TIERS[i]), String.valueOf(i + 1)});
             tiers.addView(chips(tierOptions, multi("tiers", true)));
-            section("Type");
+            section(I18n.t("Type"));
             body.addView(pills(PogoFeedModes.EX_LABELS, PogoFeedModes.EX_MODES, "exclusive_mode", null));
-            section("Status");
+            section(I18n.t("Status"));
             body.addView(pills(PogoFeedModes.RAID_STATUS_LABELS, PogoFeedModes.RAID_STATUS, "status", null));
         }
 
@@ -168,9 +168,9 @@ final class PogoFeedModeFilterDialog {
         void quests(JSONObject catalog) {
             final LinearLayout dependent = new LinearLayout(ui);
             dependent.setOrientation(LinearLayout.VERTICAL);
-            section("Reward type");
+            section(I18n.t("Reward type"));
             List<String[]> types = new ArrayList<>();
-            for (String t : PogoFeedModes.REWARD_TYPES) types.add(new String[]{t, t});
+            for (String t : PogoFeedModes.REWARD_TYPES) types.add(new String[]{I18n.t(t), t});
             body.addView(chips(types, new Selector() {
                 public boolean on(String key) { return key.equals(spec.optString("reward_type", "")); }
                 public void toggle(String key) {
@@ -193,26 +193,26 @@ final class PogoFeedModeFilterDialog {
             String listKey = null, specKey = null, label = null, idKey = "value", nameKey = "label", search = null;
             boolean pokemon = false;
             switch (type) {
-                case "Pokemon": listKey = "reward_pokemon"; specKey = "reward_pokemon_ids"; label = "Reward Pokémon"; idKey = "id"; nameKey = "name"; search = "Search Pokémon"; pokemon = true; break;
-                case "Mega Energy": listKey = "mega_pokemon"; specKey = "reward_mega_pokemon_ids"; label = "Mega Energy Pokémon"; idKey = "id"; nameKey = "name"; search = "Search Pokémon"; pokemon = true; break;
-                case "Candy": listKey = "candy_pokemon"; specKey = "reward_candy_pokemon_ids"; label = "Candy Pokémon"; idKey = "id"; nameKey = "name"; search = "Search Pokémon"; pokemon = true; break;
-                case "Item": listKey = "items"; specKey = "reward_item_ids"; label = "Items"; search = "Search items"; break;
-                case "Stardust": listKey = "stardust_amounts"; specKey = "reward_stardust_amounts"; label = "Stardust amount"; break;
-                case "PokéCoin": listKey = "pokecoin_amounts"; specKey = "reward_pokecoin_amounts"; label = "PokéCoin amount"; break;
+                case "Pokemon": listKey = "reward_pokemon"; specKey = "reward_pokemon_ids"; label = I18n.t("Reward Pokémon"); idKey = "id"; nameKey = "name"; search = I18n.t("Search Pokémon"); pokemon = true; break;
+                case "Mega Energy": listKey = "mega_pokemon"; specKey = "reward_mega_pokemon_ids"; label = I18n.t("Mega Energy Pokémon"); idKey = "id"; nameKey = "name"; search = I18n.t("Search Pokémon"); pokemon = true; break;
+                case "Candy": listKey = "candy_pokemon"; specKey = "reward_candy_pokemon_ids"; label = I18n.t("Candy Pokémon"); idKey = "id"; nameKey = "name"; search = I18n.t("Search Pokémon"); pokemon = true; break;
+                case "Item": listKey = "items"; specKey = "reward_item_ids"; label = I18n.t("Items"); search = I18n.t("Search items"); break;
+                case "Stardust": listKey = "stardust_amounts"; specKey = "reward_stardust_amounts"; label = I18n.t("Stardust amount"); break;
+                case "PokéCoin": listKey = "pokecoin_amounts"; specKey = "reward_pokecoin_amounts"; label = I18n.t("PokéCoin amount"); break;
                 default: break;
             }
             if (listKey != null) {
-                sectionIn(box, label + " (none = any)");
+                sectionIn(box, I18n.format("%1$s (none = any)", String.valueOf((Object)(label))));
                 List<String[]> options = options(catalog == null ? null : catalog.optJSONArray(listKey), idKey, nameKey);
-                if (options.isEmpty()) box.addView(note(catalog == null ? "Couldn't load the options. Any reward is searched." : "No options listed right now."));
+                if (options.isEmpty()) box.addView(note(catalog == null ? I18n.t("Couldn't load the options. Any reward is searched.") : I18n.t("No options listed right now.")));
                 else if (pokemon) box.addView(pokemonChips(options, multi(specKey, true), search, false));
                 else box.addView(search != null ? searchableChips(options, multi(specKey, true), search) : chips(options, multi(specKey, true)));
             }
             JSONObject tasks = catalog == null ? null : catalog.optJSONObject("tasks");
             List<String[]> taskOptions = options(tasks == null ? null : tasks.optJSONArray(type), "value", "label");
             if (!taskOptions.isEmpty()) {
-                sectionIn(box, "Task (none = any)");
-                box.addView(searchableChips(taskOptions, multi("quest_titles", false), "Search tasks"));
+                sectionIn(box, I18n.t("Task (none = any)"));
+                box.addView(searchableChips(taskOptions, multi("quest_titles", false), I18n.t("Search tasks")));
             }
             // Refreshers added while building this box are tagged so a later rebuild can drop them.
             for (int i = start; i < refreshers.size(); i++) refreshers.set(i, new BoxRefresher(box, refreshers.get(i)));
@@ -221,14 +221,14 @@ final class PogoFeedModeFilterDialog {
         }
 
         void weather() {
-            section("Weather");
+            section(I18n.t("Weather"));
             List<String[]> options = new ArrayList<>();
-            for (int i = 0; i < PogoFeedModes.WEATHERS.length; i++) options.add(new String[]{PogoFeedModes.WEATHERS[i], String.valueOf(i + 1)});
+            for (int i = 0; i < PogoFeedModes.WEATHERS.length; i++) options.add(new String[]{I18n.t(PogoFeedModes.WEATHERS[i]), String.valueOf(i + 1)});
             body.addView(chips(options, new Selector() {
                 public boolean on(String key) { return !spec.isNull("weather_id") && String.valueOf(spec.optInt("weather_id")).equals(key); }
                 public void toggle(String key) { put("weather_id", Integer.parseInt(key)); }
             }));
-            body.addView(note("Results are areas with that weather right now."));
+            body.addView(note(I18n.t("Results are areas with that weather right now.")));
         }
 
         void rocket(JSONObject catalog) {
@@ -254,16 +254,16 @@ final class PogoFeedModeFilterDialog {
         }
 
         void spots(JSONObject catalog) {
-            section("Pokémon (none = any)");
+            section(I18n.t("Pokémon (none = any)"));
             List<String[]> options = options(catalog == null ? null : catalog.optJSONArray("pokemon"), "id", "name");
-            if (options.isEmpty()) body.addView(note("Couldn't load the Power Spot bosses. Any boss is searched."));
-            else body.addView(pokemonChips(options, multi("pokemon_ids", true), "Search Pokémon", false));
-            section("Level (none = any)");
+            if (options.isEmpty()) body.addView(note(I18n.t("Couldn't load the Power Spot bosses. Any boss is searched.")));
+            else body.addView(pokemonChips(options, multi("pokemon_ids", true), I18n.t("Search Pokémon"), false));
+            section(I18n.t("Level (none = any)"));
             List<String[]> levels = new ArrayList<>();
             for (int i = 0; i < PogoFeedModes.SPOT_LEVELS.length; i++) levels.add(new String[]{PogoFeedModes.SPOT_LEVELS[i], String.valueOf(i + 1)});
             body.addView(chips(levels, multi("battle_levels", true)));
             Switch active = new Switch(ui);
-            active.setText("Active battles only");
+            active.setText(I18n.t("Active battles only"));
             active.setChecked(spec.optBoolean("active_only", false));
             active.setOnCheckedChangeListener((v, on) -> put("active_only", on));
             LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(-1, -2);
@@ -343,7 +343,7 @@ final class PogoFeedModeFilterDialog {
             };
             for (int i = 0; i < labels.length; i++) {
                 final String v = values[i];
-                Button b = chip(labels[i]);
+                Button b = chip(I18n.t(labels[i]));
                 b.setOnClickListener(x -> { put(key, v); sync.run(); });
                 row.addView(b, new LinearLayout.LayoutParams(0, dp(40), 1));
                 buttons[i] = b;
@@ -424,7 +424,7 @@ final class PogoFeedModeFilterDialog {
             box.setBackground(FeedTheme.mintBlock(ui));
             box.setPadding(dp(8), dp(8), dp(8), dp(8));
 
-            final Button categoryButton = chip("Category: " + PokemonCategories.LABELS[PokemonCategories.ALL]);
+            final Button categoryButton = chip(I18n.format("Category: %1$s", I18n.t(PokemonCategories.LABELS[PokemonCategories.ALL])));
             box.addView(categoryButton, new LinearLayout.LayoutParams(-1, dp(40)));
             final TextView help = note(categoryHelp(category[0], raids));
             box.addView(help);
@@ -439,7 +439,7 @@ final class PogoFeedModeFilterDialog {
 
             LinearLayout bulk = new LinearLayout(ui);
             bulk.setOrientation(LinearLayout.HORIZONTAL);
-            Button selectShown = chip("Select shown"), clearShown = chip("Clear shown");
+            Button selectShown = chip(I18n.t("Select shown")), clearShown = chip(I18n.t("Clear shown"));
             bulk.addView(selectShown, new LinearLayout.LayoutParams(0, dp(38), 1));
             bulk.addView(clearShown, new LinearLayout.LayoutParams(0, dp(38), 1));
             box.addView(bulk, new LinearLayout.LayoutParams(-1, -2));
@@ -461,10 +461,10 @@ final class PogoFeedModeFilterDialog {
                     buttons.get(i).setVisibility(show ? View.VISIBLE : View.GONE);
                     if (show) visible++;
                 }
-                categoryButton.setText("Category: " + PokemonCategories.LABELS[category[0]]);
+                categoryButton.setText(I18n.format("Category: %1$s", I18n.t(PokemonCategories.LABELS[category[0]])));
                 help.setText(categoryHelp(category[0], raids));
                 // Total is selected catalog options; picks the category/search hide stay counted, not dropped.
-                feedback.setText((visible == 0 ? "No matches" : visible + " shown") + " · " + selected + " selected");
+                feedback.setText(I18n.format("%1$s · %2$s selected", String.valueOf((Object)((visible == 0 ? I18n.t("No matches") : I18n.format("%1$s shown",visible)))), String.valueOf((Object)(selected))));
             };
             for (String[] o : options) {
                 Button b = chip(o[0]);
@@ -512,8 +512,8 @@ final class PogoFeedModeFilterDialog {
             }
             cats.add(PokemonCategories.SELECTED);
             String[] labels = new String[cats.size()];
-            for (int i = 0; i < labels.length; i++) labels[i] = PokemonCategories.LABELS[cats.get(i)];
-            AlertDialog d = new AlertDialog.Builder(ui).setTitle("Browse by category").setNegativeButton("Cancel", null).create();
+            for (int i = 0; i < labels.length; i++) labels[i] = I18n.t(PokemonCategories.LABELS[cats.get(i)]);
+            AlertDialog d = new AlertDialog.Builder(ui).setTitle(I18n.t("Browse by category")).setNegativeButton(I18n.t("Cancel"), null).create();
             ChoiceList.attach(d, labels, index -> { category[0] = cats.get(index); onPicked.run(); });
             if (activity != null) DialogLifecycle.bind(activity, d, null);
             if (sink != null) sink.track(d);
@@ -524,9 +524,9 @@ final class PogoFeedModeFilterDialog {
         /** Short, contextual help under the category button; stages explain that babies count as the first stage. */
         String categoryHelp(int category, boolean raids) {
             if (category == PokemonCategories.STAGE_2 || category == PokemonCategories.STAGE_3)
-                return "Stages count from the first species, including babies. Stage 2: evolved once; Stage 3: evolved twice.";
-            if (raids) return "Filter the listed bosses by species group. Use Tier for Mega or Primal raids.";
-            return "Filter the listed species by group. Hidden selections are kept.";
+                return I18n.t("Stages count from the first species, including babies. Stage 2: evolved once; Stage 3: evolved twice.");
+            if (raids) return I18n.t("Filter the listed bosses by species group. Use Tier for Mega or Primal raids.");
+            return I18n.t("Filter the listed species by group. Hidden selections are kept.");
         }
 
         void register(Runnable sync) { refreshers.add(sync); }

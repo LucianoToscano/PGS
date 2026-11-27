@@ -155,16 +155,16 @@ public final class ShundoSniper {
     }
     private static String gapLabel() {
         synchronized (LOCK) {
-            for (int i = 0; i < GAPS.length; i++) if (GAPS[i] == gapSeconds) return "Time between teleports: " + GAP_LABELS[i];
-            return "Time between teleports: " + GAP_LABELS[0];
+            for (int i = 0; i < GAPS.length; i++) if (GAPS[i] == gapSeconds) return I18n.format("Time between teleports: %1$s", I18n.t(GAP_LABELS[i]));
+            return I18n.format("Time between teleports: %1$s", I18n.t(GAP_LABELS[0]));
         }
     }
     private static String liveIntervalLabel() {
         synchronized (LOCK) {
             for (int i = 0; i < ShundoPacing.LIVE_INTERVALS.length; i++)
                 if (ShundoPacing.LIVE_INTERVALS[i] == liveIntervalSeconds)
-                    return "LivePokeMap refresh: " + ShundoPacing.LIVE_INTERVAL_LABELS[i];
-            return "LivePokeMap refresh: " + ShundoPacing.LIVE_INTERVAL_LABELS[3];
+                    return I18n.format("LivePokeMap refresh: %1$s", I18n.t(ShundoPacing.LIVE_INTERVAL_LABELS[i]));
+            return I18n.format("LivePokeMap refresh: %1$s", I18n.t(ShundoPacing.LIVE_INTERVAL_LABELS[3]));
         }
     }
     /** The dex numbers of a comma list, ignoring anything that isn't one (1..2000), at most MAX_SPECIES. */
@@ -215,7 +215,7 @@ public final class ShundoSniper {
         return name.isEmpty() ? "#" + dex : name;
     }
     private static String speciesLabel() {
-        synchronized (LOCK) { return "Species: " + (species.isEmpty() ? "All" : species.size() + " selected"); }
+        synchronized (LOCK) { return I18n.format("Species: %1$s", species.isEmpty() ? I18n.t("All") : I18n.format("%1$s selected", species.size())); }
     }
     public static boolean active() { return enabled; }
     /** The card's black screen: it covers the game (PGRazor's overlays stay on top) while the sniper runs. */
@@ -243,8 +243,8 @@ public final class ShundoSniper {
     }
 
     static void setEnabled(Context context, boolean on) {
-        if(on&&AutoRaid.running()){Toast.makeText(context,"Stop Auto-Raid first.",Toast.LENGTH_SHORT).show();return;}
-        if(on&&AutoRocket.running()){Toast.makeText(context,"Stop Auto Rocket first.",Toast.LENGTH_SHORT).show();return;}
+        if(on&&AutoRaid.running()){Toast.makeText(context,I18n.t("Stop Auto-Raid first."),Toast.LENGTH_SHORT).show();return;}
+        if(on&&AutoRocket.running()){Toast.makeText(context,I18n.t("Stop Auto Rocket first."),Toast.LENGTH_SHORT).show();return;}
         synchronized (LOCK) {
             if (on == enabled) return;
             enabled = on; dark = false; readinessWait = "";
@@ -327,8 +327,8 @@ public final class ShundoSniper {
         long now = System.currentTimeMillis();
         if (app == null || now - lastBlockedToast < 3000) return;
         lastBlockedToast = now;
-        String thing = "pokestop".equals(what) ? "PokéStop" : "gym".equals(what) ? "Gym" : "Pokémon";
-        main.post(() -> Toast.makeText(app, "Shundo Sniper is running: " + thing + " taps are blocked. Stop it from its card to play.",
+        String thing = "pokestop".equals(what) ? I18n.t("PokéStop") : "gym".equals(what) ? I18n.t("Gym") : I18n.t("Pokémon");
+        main.post(() -> Toast.makeText(app, I18n.format("Shundo Sniper is running: %1$s taps are blocked. Stop it from its card to play.", thing),
             Toast.LENGTH_SHORT).show());
     }
     private static String ivs(JSONObject o) {
@@ -697,21 +697,21 @@ public final class ShundoSniper {
     /** One line for the card: the spawn being checked (and for how long), a held shiny, or the idle state. */
     static String overlayStep() {
         synchronized (LOCK) {
-            if (!enabled) return status.startsWith("Stopped") ? status : "Stopped";
+            if (!enabled) return status.startsWith("Stopped") ? status : I18n.t("Stopped");
             if (!readinessWait.isEmpty()) return readinessWait;
             if (target != null && !holding) {
                 long s = Math.max(0, (System.currentTimeMillis() - targetSince) / 1000);
                 // How far the player now is from where this run started.
-                String away = CooldownState.valid(startLat, startLon) ? km(CooldownState.distance(startLat, startLon, target.lat, target.lon)) + " from start" : km(targetKm);
-                return String.format(Locale.US, "Checking %s · %s · %d s", target.name, away, s);
+                String away = CooldownState.valid(startLat, startLon) ? I18n.format("%1$s from start", km(CooldownState.distance(startLat, startLon, target.lat, target.lon))) : km(targetKm);
+                return I18n.format("Checking %s · %s · %d s", target.name, away, s);
             }
             return status.isEmpty() ? looking() : status;
         }
     }
     static String overlayStats() {
         synchronized (LOCK) {
-            return teleports + " teleports · " + checked + " checked · " + shinies + " shiny · " + caught + " caught"
-                + (missed > 0 ? " · " + missed + " missed" : "");
+            return I18n.format("%1$s teleports · %2$s checked · %3$s shiny · %4$s caught", teleports, checked, shinies, caught)
+                + (missed > 0 ? " · " + I18n.format("%1$s missed", missed) : "");
         }
     }
 
@@ -722,7 +722,7 @@ public final class ShundoSniper {
             if (enabled && useLive && !liveNote.isEmpty()) b.append('\n').append(liveNote);
             if (enabled && useFeed && !feedNote.isEmpty()) b.append('\n').append(feedNote);
             if (enabled && usePogo && !pogoNote.isEmpty()) b.append('\n').append(pogoNote);
-            b.append(b.length() > 0 ? "\n" : "").append("This session: checked ").append(checked).append(" · shiny ").append(shinies).append(" · caught ").append(caught);
+            b.append(b.length() > 0 ? "\n" : "").append(I18n.format("This session: checked %1$s · shiny %2$s · caught %3$s", checked, shinies, caught));
             for (String line : recent) b.append("\n• ").append(line);
             return b.toString();
         }
@@ -735,29 +735,29 @@ public final class ShundoSniper {
         int pad = MapTheme.dp(ui, 16); body.setPadding(pad, pad, pad, pad);
         // Experimental, and it teleports and catches far more than a player could: say so before anything else.
         TextView warning = new TextView(ui);
-        warning.setText("Experimental. Constant teleporting and remote catching raise the risk of an account warning or ban. Use an alt account, not your main.");
+        warning.setText(I18n.t("Experimental. Constant teleporting and remote catching raise the risk of an account warning or ban. Use an alt account, not your main."));
         warning.setTypeface(android.graphics.Typeface.DEFAULT_BOLD);
         warning.setPadding(0, 0, 0, pad / 2);
         body.addView(warning);
-        CheckBox on = new CheckBox(ui); on.setText("Shundo Sniper on"); on.setChecked(enabled); body.addView(on);
+        CheckBox on = new CheckBox(ui); on.setText(I18n.t("Shundo Sniper on")); on.setChecked(enabled); body.addView(on);
         TextView help = new TextView(ui);
-        help.setText("Teleports to 100% IV Pokémon and checks each for shiny. A shiny is held in its encounter until your cooldown ends, then caught. VGP+ pauses while this runs.");
+        help.setText(I18n.t("Teleports to 100% IV Pokémon and checks each for shiny. A shiny is held in its encounter until your cooldown ends, then caught. VGP+ pauses while this runs."));
         body.addView(help);
-        CheckBox feedBox = new CheckBox(ui); feedBox.setText("PGRazor feed");
-        CheckBox liveBox = new CheckBox(ui); liveBox.setText("LivePokeMap (sign-in)");
-        CheckBox pogoBox = new CheckBox(ui); pogoBox.setText("PoGoCoordinates (slow)");
+        CheckBox feedBox = new CheckBox(ui); feedBox.setText(I18n.t("PGRazor feed"));
+        CheckBox liveBox = new CheckBox(ui); liveBox.setText(I18n.t("LivePokeMap (sign-in)"));
+        CheckBox pogoBox = new CheckBox(ui); pogoBox.setText(I18n.t("PoGoCoordinates (slow)"));
         synchronized (LOCK) { feedBox.setChecked(useFeed); liveBox.setChecked(useLive); pogoBox.setChecked(usePogo); }
-        TextView sources = new TextView(ui); sources.setText("Sources"); sources.setPadding(0, pad / 2, 0, 0);
+        TextView sources = new TextView(ui); sources.setText(I18n.t("Sources")); sources.setPadding(0, pad / 2, 0, 0);
         body.addView(sources); body.addView(feedBox); body.addView(liveBox); body.addView(pogoBox);
         android.widget.Button speciesButton = new android.widget.Button(ui); speciesButton.setAllCaps(false);
         speciesButton.setText(speciesLabel()); body.addView(speciesButton);
-        speciesButton.setOnClickListener(v -> SmartCatchSpeciesDialog.show(activity, "Shundo Sniper species", "species", MAX_SPECIES,
+        speciesButton.setOnClickListener(v -> SmartCatchSpeciesDialog.show(activity, I18n.t("Shundo Sniper species"), I18n.t("species"), MAX_SPECIES,
             ShundoSniper::speciesList, ShundoSniper::setSpecies, () -> speciesButton.setText(speciesLabel())));
         android.widget.Button gapButton = new android.widget.Button(ui); gapButton.setAllCaps(false);
         gapButton.setText(gapLabel()); body.addView(gapButton);
         gapButton.setOnClickListener(v -> {
-            AlertDialog choose = ChoiceList.attach(new AlertDialog.Builder(ui).setTitle("Time between teleports")
-                .setNegativeButton("Cancel", null).create(), GAP_LABELS, i -> {
+            AlertDialog choose = ChoiceList.attach(new AlertDialog.Builder(ui).setTitle(I18n.t("Time between teleports"))
+                .setNegativeButton(I18n.t("Cancel"), null).create(), I18n.options(GAP_LABELS), i -> {
                     synchronized (LOCK) { gapSeconds = GAPS[i]; }
                     Control.saveSettings(); gapButton.setText(gapLabel());
                     Control.event("shundo-sniper", "teleport gap " + GAPS[i] + " s");
@@ -769,8 +769,8 @@ public final class ShundoSniper {
         android.widget.Button liveIntervalButton = new android.widget.Button(ui); liveIntervalButton.setAllCaps(false);
         liveIntervalButton.setText(liveIntervalLabel()); body.addView(liveIntervalButton);
         liveIntervalButton.setOnClickListener(v -> {
-            AlertDialog choose = ChoiceList.attach(new AlertDialog.Builder(ui).setTitle("LivePokeMap refresh")
-                .setNegativeButton("Cancel", null).create(), ShundoPacing.LIVE_INTERVAL_LABELS, i -> {
+            AlertDialog choose = ChoiceList.attach(new AlertDialog.Builder(ui).setTitle(I18n.t("LivePokeMap refresh"))
+                .setNegativeButton(I18n.t("Cancel"), null).create(), I18n.options(ShundoPacing.LIVE_INTERVAL_LABELS), i -> {
                     int chosen = ShundoPacing.LIVE_INTERVALS[i];
                     synchronized (LOCK) {
                         liveIntervalSeconds = chosen;
@@ -793,7 +793,7 @@ public final class ShundoSniper {
         pogoBox.setOnCheckedChangeListener((v, checked) -> { synchronized (LOCK) { usePogo = checked; nextPogo = 0; } Control.saveSettings(); });
 
         ScrollView scroll = new ScrollView(ui); scroll.addView(body);
-        AlertDialog dialog = new AlertDialog.Builder(ui).setTitle("Shundo Sniper (Experimental)").setView(scroll).setPositiveButton("Done", null).create();
+        AlertDialog dialog = new AlertDialog.Builder(ui).setTitle(I18n.t("Shundo Sniper (Experimental)")).setView(scroll).setPositiveButton(I18n.t("Done"), null).create();
         Runnable refresh = new Runnable() {
             public void run() { if (dialog.isShowing()) { if (on.isChecked() != enabled) on.setChecked(enabled); state.setText(statusText()); main.postDelayed(this, 1000); } }
         };

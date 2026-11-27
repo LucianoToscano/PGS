@@ -76,28 +76,28 @@ public final class ResearchSettings {
         LinearLayout body = new LinearLayout(ui); body.setOrientation(LinearLayout.VERTICAL);
         int pad = MapTheme.dp(ui, 16); body.setPadding(pad, pad, pad, pad);
 
-        CheckBox claim = new CheckBox(ui); claim.setText("Auto-claim completed field research");
+        CheckBox claim = new CheckBox(ui); claim.setText(I18n.t("Auto-claim completed field research"));
         claim.setChecked(preferences.claim()); body.addView(claim);
         TextView claimHelp = new TextView(ui);
-        claimHelp.setText("Claims field research once its goal is met. Pokémon encounter rewards wait in the game's research view for you to catch. Special, timed and story research stay manual.");
+        claimHelp.setText(I18n.t("Claims field research once its goal is met. Pokémon encounter rewards wait in the game's research view for you to catch. Special, timed and story research stay manual."));
         body.addView(claimHelp);
 
-        CheckBox remove = new CheckBox(ui); remove.setText("Auto-delete selected tasks");
+        CheckBox remove = new CheckBox(ui); remove.setText(I18n.t("Auto-delete selected tasks"));
         remove.setChecked(preferences.remove()); body.addView(remove);
         TextView removeHelp = new TextView(ui);
-        removeHelp.setText("Deletes unfinished field research whose task is ticked below. Gym bonus tasks are never deleted.");
+        removeHelp.setText(I18n.t("Deletes unfinished field research whose task is ticked below. Gym bonus tasks are never deleted."));
         body.addView(removeHelp);
 
-        CheckBox catchEncounters = new CheckBox(ui); catchEncounters.setText("Auto-catch research encounters");
+        CheckBox catchEncounters = new CheckBox(ui); catchEncounters.setText(I18n.t("Auto-catch research encounters"));
         catchEncounters.setChecked(preferences.catchEncounters()); body.addView(catchEncounters);
         TextView catchHelp = new TextView(ui);
-        catchHelp.setText("Catches waiting field research encounters without the encounter screen, using your VGP+ ball and throw settings. Each throw uses a ball. Caught Pokémon follow your transfer rules, including Keep All. Works alongside VGP.");
+        catchHelp.setText(I18n.t("Catches waiting field research encounters without the encounter screen, using your VGP+ ball and throw settings. Each throw uses a ball. Caught Pokémon follow your transfer rules, including Keep All. Works alongside VGP."));
         body.addView(catchHelp);
 
-        EditText search = new EditText(ui); search.setHint("Search tasks or rewards"); search.setSingleLine(true);
+        EditText search = new EditText(ui); search.setHint(I18n.t("Search tasks or rewards")); search.setSingleLine(true);
         body.addView(search);
         TextView empty = new TextView(ui);
-        empty.setText("No field research seen yet. Tasks appear here as the game gives them to you while PGRazor runs.");
+        empty.setText(I18n.t("No field research seen yet. Tasks appear here as the game gives them to you while PGRazor runs."));
         body.addView(empty);
         LinearLayout list = new LinearLayout(ui); list.setOrientation(LinearLayout.VERTICAL); body.addView(list);
         TextView status = new TextView(ui); status.setText(status()); body.addView(status);
@@ -139,8 +139,8 @@ public final class ResearchSettings {
         fill[0].run();
 
         ScrollView scroll = new ScrollView(ui); scroll.addView(body);
-        AlertDialog dialog = new AlertDialog.Builder(ui).setTitle("Research").setView(scroll)
-            .setPositiveButton("Done", null).create();
+        AlertDialog dialog = new AlertDialog.Builder(ui).setTitle(I18n.t("Research")).setView(scroll)
+            .setPositiveButton(I18n.t("Done"), null).create();
         Handler handler = new Handler(Looper.getMainLooper());
         Runnable refresh = new Runnable() {
             public void run() { if (dialog.isShowing()) { status.setText(status()); handler.postDelayed(this, 1000); } }
@@ -182,7 +182,7 @@ public final class ResearchSettings {
         });
         row.addView(title, new LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f));
         CheckBox all = new CheckBox(ui);
-        all.setText("All");
+        all.setText(I18n.t("All"));
         all.setChecked(picked == templates.size());
         all.setOnCheckedChangeListener((v, on) -> {
             try { preferences.selectAll(templates, on); Control.saveSettings(); }
@@ -209,6 +209,6 @@ public final class ResearchSettings {
     }
 
     private static void toast(Activity activity, String text) {
-        Toast.makeText(activity, text == null || text.isEmpty() ? "Not saved." : text, Toast.LENGTH_SHORT).show();
+        Toast.makeText(activity, text == null || text.isEmpty() ? I18n.t("Not saved.") : text, Toast.LENGTH_SHORT).show();
     }
 }

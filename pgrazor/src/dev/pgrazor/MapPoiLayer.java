@@ -134,7 +134,7 @@ final class MapPoiLayer {
                 canvas.drawCircle(x, y, radius + 2, paint); paint.setStyle(Paint.Style.FILL);
             }
             drawIconOrFallback(canvas, loadIcon(raidIcon(point)), x, y, radius, point.optBoolean("egg") ? "E" : "R", Color.rgb(151, 65, 205));
-            if (point.optBoolean("egg")) { paint.setColor(Color.rgb(65, 45, 85)); canvas.drawCircle(x + radius * .8f, y + radius * .8f, radius * .45f, paint); paint.setColor(Color.WHITE); paint.setTextAlign(Paint.Align.CENTER); paint.setTextSize(radius * .65f); canvas.drawText("E", x + radius * .8f, y + radius * 1.02f, paint); }
+            if (point.optBoolean("egg")) { paint.setColor(Color.rgb(65, 45, 85)); canvas.drawCircle(x + radius * .8f, y + radius * .8f, radius * .45f, paint); paint.setColor(Color.WHITE); paint.setTextAlign(Paint.Align.CENTER); paint.setTextSize(radius * .65f); canvas.drawText(I18n.t("E"), x + radius * .8f, y + radius * 1.02f, paint); }
         } else if (stop) {
             Bitmap stopIcon = loadIcon("stop.png");
             boolean rocket = rocketName(point, now) != null;
@@ -148,13 +148,13 @@ final class MapPoiLayer {
                     paint.setColor(Color.WHITE); canvas.drawCircle(bx, by, r + dp(1), paint);
                     paint.setColor(Color.rgb(208, 32, 38)); canvas.drawCircle(bx, by, r, paint);
                     paint.setColor(Color.WHITE); paint.setTextAlign(Paint.Align.CENTER); paint.setFakeBoldText(true); paint.setTextSize(r * 1.4f);
-                    canvas.drawText("R", bx, by + r * .5f, paint); paint.setFakeBoldText(false);
+                    canvas.drawText(I18n.t("R"), bx, by + r * .5f, paint); paint.setFakeBoldText(false);
                 }
             } else {
                 // Fallback only if the asset can't be decoded: vector cyan disc with a thin white halo and white "S".
                 paint.setColor(Color.WHITE); canvas.drawCircle(x, y, radius + 2, paint);
                 paint.setColor(Color.rgb(20, 157, 208)); canvas.drawCircle(x, y, radius, paint);
-                paint.setColor(Color.WHITE); paint.setTextAlign(Paint.Align.CENTER); paint.setTextSize(radius * 1.25f); canvas.drawText("S", x, y + radius * .43f, paint);
+                paint.setColor(Color.WHITE); paint.setTextAlign(Paint.Align.CENTER); paint.setTextSize(radius * 1.25f); canvas.drawText(I18n.t("S"), x, y + radius * .43f, paint);
             }
         } else { // gym: a team-colour ring sits behind the disc
             paint.setColor(Color.WHITE); canvas.drawCircle(x, y, radius + 3, paint);
@@ -235,8 +235,8 @@ final class MapPoiLayer {
         if (closed || hits.isEmpty()) return;
         if (hits.size() == 1) { showPoiDetails(hits.get(0)); return; }
         String[] labels = new String[hits.size()]; for (int i = 0; i < labels.length; i++) labels[i] = poiShortLabel(hits.get(i));
-        AlertDialog chooser = ChoiceList.attach(new AlertDialog.Builder(dialogContext).setTitle("Nearby here (" + hits.size() + ")")
-            .setNegativeButton("Close", null).create(), labels, which -> showPoiDetails(hits.get(which)));
+        AlertDialog chooser = ChoiceList.attach(new AlertDialog.Builder(dialogContext).setTitle(I18n.format("Nearby here (%1$s)", String.valueOf((Object)(hits.size()))))
+            .setNegativeButton(I18n.t("Close"), null).create(), labels, which -> showPoiDetails(hits.get(which)));
         registerPoiDialog(chooser); chooser.show();
     }
     private String poiShortLabel(JSONObject point) {
@@ -255,9 +255,9 @@ final class MapPoiLayer {
         int pad = dp(18); body.setPadding(pad, pad, pad, pad); body.setTextSize(14);
         final double latitude = initial.optDouble("lat", Double.NaN), longitude = initial.optDouble("lon", Double.NaN);
         final boolean valid = Double.isFinite(latitude) && Double.isFinite(longitude) && Math.abs(latitude) <= 90 && Math.abs(longitude) <= 180;
-        AlertDialog.Builder builder = new AlertDialog.Builder(dialogContext).setTitle(poiTitle(initial)).setView(body).setNegativeButton("Close", null);
-        if (walk != null) builder.setNeutralButton("Walk", null);
-        if (teleport != null) builder.setPositiveButton("Teleport", null);
+        AlertDialog.Builder builder = new AlertDialog.Builder(dialogContext).setTitle(poiTitle(initial)).setView(body).setNegativeButton(I18n.t("Close"), null);
+        if (walk != null) builder.setNeutralButton(I18n.t("Walk"), null);
+        if (teleport != null) builder.setPositiveButton(I18n.t("Teleport"), null);
         final AlertDialog dialog = builder.create();
         dialog.setOnShowListener(d -> {
             MapTheme.styleButtons(dialog);

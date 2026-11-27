@@ -118,7 +118,7 @@ final class VgpController {
     }
     void setStatus(String value) { status = value; }
     /** A guard reason (cooldown pause/refusal) is shown in place of a generic native status. */
-    String status() { String reason=guardReason; return reason.length()>0?reason:status; }
+    String status() { String reason=guardReason; return reason.length()>0?I18n.t(reason):status; }
 
     void setTarget(boolean visible,double x,double y,boolean spin) {
         if(!visible){if(targetAt>0)targetAt=Math.min(targetAt,SystemClock.elapsedRealtime()-600);return;}
@@ -140,9 +140,9 @@ final class VgpController {
         Application app=application;if(!enabled.getAsBoolean()||(options.getAsInt()&4)==0||app==null)return;
         if(android.os.Build.VERSION.SDK_INT>=33&&app.checkSelfPermission("android.permission.POST_NOTIFICATIONS")!=android.content.pm.PackageManager.PERMISSION_GRANTED)return;
         try{android.app.NotificationManager manager=(android.app.NotificationManager)app.getSystemService(android.content.Context.NOTIFICATION_SERVICE);
-            manager.createNotificationChannel(new android.app.NotificationChannel("pgrazor-vgp","PGRazor VGP",android.app.NotificationManager.IMPORTANCE_LOW));
+            manager.createNotificationChannel(new android.app.NotificationChannel("pgrazor-vgp",I18n.t("PGRazor VGP"),android.app.NotificationManager.IMPORTANCE_LOW));
             String message=action.equals("catch")?(success?"Pokémon caught":"Pokémon not caught"):(success?"PokéStop spun":"Spin unsuccessful");
-            manager.notify(7301,new android.app.Notification.Builder(app,"pgrazor-vgp").setSmallIcon(android.R.drawable.stat_notify_sync).setContentTitle("PGRazor VGP").setContentText(message).setAutoCancel(true).build());
+            manager.notify(7301,new android.app.Notification.Builder(app,"pgrazor-vgp").setSmallIcon(android.R.drawable.stat_notify_sync).setContentTitle(I18n.t("PGRazor VGP")).setContentText(I18n.t(message)).setAutoCancel(true).build());
         }catch(RuntimeException error){event.accept("vgp-notification-error",error.toString());}
     }
     /** Losing the foreground switches VGP off, clears any target, and never auto-resumes. */

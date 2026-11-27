@@ -4,6 +4,7 @@
 
 ### New features
 
+- **PGS languages:** Added a global interface-language selector with System, German, English, Spanish, French, Brazilian Portuguese, Russian, Italian, Traditional Chinese, Dutch, Thai and Korean. Menus, fixed choices, accessibility labels and dialogs use bundled offline catalogs. The selection is included in explicit backups and takes effect after restarting the game. Settings search matches both translated and English names.
 - **Joystick direction lock:** Hold the centre for 1.5 seconds, drag and release to keep moving. Hold the padlock for half a second to stop. Hiding the joystick, leaving the map or losing its camera releases the lock.
 - **Gift shortcut:** Open Send & Open Gifts directly from the quick menu. The shortcut can be hidden independently and opening it does not start a batch.
 - **LivePokeMap refresh:** Choose a Shundo Sniper refresh interval from 30 seconds to 10 minutes, with a five-minute default. Global feed browsing refreshes manually.

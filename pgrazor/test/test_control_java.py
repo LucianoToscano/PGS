@@ -114,9 +114,10 @@ public class NotificationManager {
 }''',
     'dev/pgrazor/AccountProfiles.java': """package dev.pgrazor;
 public class AccountProfiles {
+ public static java.io.File directory;
  public static void init(android.app.Application app){}
  public static boolean allowed(){return true;}
- public static java.io.File file(android.app.Application app,String name){return new java.io.File(app.getFilesDir(),name);}
+ public static java.io.File file(android.app.Application app,String name){return new java.io.File(directory==null?app.getFilesDir():directory,name);}
  public static String command(){return "";}
  public static String[] commandSnapshot(){return new String[]{"", "0"};}
  public static void identity(String id,String name){}
@@ -249,12 +250,14 @@ class ControlJavaTests(unittest.TestCase):
             sources.extend(ROOT / 'src/dev/pgrazor' / name for name in (
                 'Control.java', 'MapCatchStatus.java', 'MotionEngine.java', 'LocationState.java', 'GameRoutesController.java',
                 'CameraHeadingState.java', 'CameraSteering.java', 'JoystickVisibilityState.java',
-                'BerryPriority.java', 'MapTapSequence.java', 'CooldownState.java',
+                'BerryPriority.java', 'MapTapSequence.java', 'CooldownState.java', 'LanguagePrefs.java', 'I18n.java',
                 'VgpController.java', 'CatchOutcomeController.java', 'SettingsWriter.java', 'SmartCatchPreferences.java', 'GymAutomationPreferences.java', 'BuddyEmotionPreferences.java', 'ResearchPreferences.java'))
+            sources.extend(sorted((ROOT / 'src/dev/pgrazor').glob('I18nCatalog*.java')))
             sources.extend([ROOT / 'test/ControlWildEventTest.java', ROOT / 'test/ControlEggInventoryTest.java', ROOT / 'test/ControlAdventureSyncTest.java', ROOT / 'test/ControlLogRetentionTest.java', ROOT / 'test/ControlQuickSummaryTest.java',ROOT / 'test/ControlQuickBallTest.java',
                             ROOT / 'test/ControlQuickBallOutcomeTest.java',ROOT / 'test/ControlSettingsTest.java',
                             ROOT / 'test/VgpControllerTest.java',ROOT / 'test/CooldownTest.java',ROOT / 'test/ControlCooldownTest.java',
                             ROOT / 'test/ControlSettingsReloadTest.java',ROOT / 'test/ControlItemCatalogTest.java',ROOT / 'test/ControlIdleWalkingTest.java',ROOT / 'test/ControlJoystickVisibilityTest.java'])
+            sources.extend([ROOT / 'test/LanguagePrefsTest.java', ROOT / 'test/ControlLanguageTest.java'])
             classes = work / 'classes'
             sdk = Path(os.environ.get('ANDROID_HOME', str(Path(os.environ.get('LOCALAPPDATA', str(Path.home()))) / 'Android/Sdk')))
             json_sources = sorted((sdk / 'sources').glob('android-*/org/json'), reverse=True)
@@ -270,6 +273,13 @@ class ControlJavaTests(unittest.TestCase):
             compiled = subprocess.run([str(compiler), '-encoding', 'UTF-8', '-d', str(classes),
                                        *map(str, sources)], capture_output=True, text=True, timeout=30)
             self.assertEqual(compiled.returncode, 0, compiled.stdout + compiled.stderr)
+            language = subprocess.run([str(runtime), '-cp', str(classes), 'dev.pgrazor.LanguagePrefsTest'],
+                                      capture_output=True, text=True, timeout=15)
+            self.assertEqual(language.returncode, 0, language.stdout + language.stderr)
+            for phase in ('save', 'load', 'invalid', 'malformed'):
+                language = subprocess.run([str(runtime), '-cp', str(classes), 'dev.pgrazor.ControlLanguageTest',
+                                           phase, str(work / 'language')], capture_output=True, text=True, timeout=15)
+                self.assertEqual(language.returncode, 0, language.stdout + language.stderr)
             wild = subprocess.run([str(runtime), '-cp', str(classes), 'dev.pgrazor.ControlWildEventTest'], capture_output=True, text=True, timeout=15)
             self.assertEqual(wild.returncode, 0, wild.stdout + wild.stderr)
             egg = subprocess.run([str(runtime), '-cp', str(classes), 'dev.pgrazor.ControlEggInventoryTest'], capture_output=True, text=True, timeout=15)

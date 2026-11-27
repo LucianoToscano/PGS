@@ -73,6 +73,7 @@ public final class AccountRestartActivity extends Activity {
 
     @Override protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        I18nAndroid.init(getApplication());
         handled = savedInstanceState != null && savedInstanceState.getBoolean(STATE_HANDLED, false);
         sessionApplied = savedInstanceState != null && savedInstanceState.getBoolean("sessionApplied",false);
         setContentView(buildView());
@@ -92,7 +93,7 @@ public final class AccountRestartActivity extends Activity {
         layout.setBackgroundColor(0xFF101014);
         layout.setPadding(48, 48, 48, 48);
         status = new TextView(this);
-        status.setText("Switching account…");
+        status.setText(I18n.t("Switching account…"));
         status.setTextColor(Color.WHITE);
         status.setTextSize(20);
         status.setGravity(Gravity.CENTER);
@@ -155,21 +156,21 @@ public final class AccountRestartActivity extends Activity {
     }
 
     private void showManualLaunch() {
-        status.setText("Couldn't finish switching accounts.\nYour saved sessions have been kept. Tap Retry to continue.");
+        status.setText(I18n.t("Couldn't finish switching accounts.\nYour saved sessions have been kept. Tap Retry to continue."));
         LinearLayout layout = (LinearLayout) status.getParent();
         if (layout != null && layout.getChildCount() < 2) {
             Button open = new Button(this);
-            open.setText("Retry");
+            open.setText(I18n.t("Retry"));
             open.setOnClickListener(v -> launchGame());
             layout.addView(open, new LinearLayout.LayoutParams(
                     ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT));
             if(getIntent().getBooleanExtra("switchSession",false)){
-                Button back=new Button(this);back.setText("Return to previous account");
+                Button back=new Button(this);back.setText(I18n.t("Return to previous account"));
                 back.setOnClickListener(v->{
                     if(processing)return;processing=true;
                     new Thread(()->{
                         try{AccountSessions.cancelSwitch(getApplicationContext());handler.post(()->{processing=false;sessionApplied=true;if(!isDestroyed())launchGame();});}
-                        catch(Exception error){handler.post(()->{processing=false;if(!isDestroyed())status.setText("Couldn't restore the previous account. Saved sessions have been kept.");});}
+                        catch(Exception error){handler.post(()->{processing=false;if(!isDestroyed())status.setText(I18n.t("Couldn't restore the previous account. Saved sessions have been kept."));});}
                     },"pgrazor-session-return").start();
                 });layout.addView(back);
             }

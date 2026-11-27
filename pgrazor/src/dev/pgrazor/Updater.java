@@ -76,27 +76,27 @@ final class Updater {
 
     static String title() {
         switch (state) {
-            case DOWNLOADING: return "Downloading " + tag;
-            case INSTALLING: return "Installing " + tag;
-            case FAILED: return "Update " + tag + " did not install";
-            case DOWNLOADED: return "Update " + tag + " downloaded";
-            default: return "Update available: " + tag;
+            case DOWNLOADING: return I18n.format("Downloading %1$s", tag);
+            case INSTALLING: return I18n.format("Installing %1$s", tag);
+            case FAILED: return I18n.format("Update %1$s did not install", tag);
+            case DOWNLOADED: return I18n.format("Update %1$s downloaded", tag);
+            default: return I18n.format("Update available: %1$s", tag);
         }
     }
 
     static String detail() {
         switch (state) {
             case DOWNLOADING:
-                return size > 0 ? Math.min(100, received * 100 / size) + "% of " + UpdateRules.megabytes(size) : "Starting";
-            case INSTALLING: return note.isEmpty() ? "Waiting for Android to install it" : note;
-            case FAILED: return note + " · tap to try again";
+                return size > 0 ? I18n.format("%1$s%% of %2$s", Math.min(100, received * 100 / size), UpdateRules.megabytes(size)) : I18n.t("Starting");
+            case INSTALLING: return note.isEmpty() ? I18n.t("Waiting for Android to install it") : I18n.t(note);
+            case FAILED: return I18n.format("%1$s · tap to try again", note);
             case DOWNLOADED:
                 // Downloads lists the file under its download title, "PGRazor <tag>".
-                return PgAssets.rooted() ? "Tap to open PGRazor " + tag + " in Downloads: update the installer, open it, tap Install Module, then reboot"
-                    : "Tap to open PGRazor " + tag + " in Downloads and install it";
+                return PgAssets.rooted() ? I18n.format("Tap to open PGRazor %1$s in Downloads: update the installer, open it, tap Install Module, then reboot", tag)
+                    : I18n.format("Tap to open PGRazor %1$s in Downloads and install it", tag);
             default:
                 String megabytes = UpdateRules.megabytes(size);
-                String what = PgAssets.rooted() ? "Tap to download the Root installer" : installsHere ? "Tap to download and install" : "Tap to download";
+                String what = PgAssets.rooted() ? I18n.t("Tap to download the Root installer") : installsHere ? I18n.t("Tap to download and install") : I18n.t("Tap to download");
                 return megabytes.isEmpty() ? what : what + " (" + megabytes + ")";
         }
     }
@@ -168,14 +168,14 @@ final class Updater {
         if (now == NONE || now == DOWNLOADING || now == INSTALLING) return;
         if (now == DOWNLOADED) {
             try { activity.startActivity(new Intent(DownloadManager.ACTION_VIEW_DOWNLOADS).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)); }
-            catch (Exception unavailable) { Toast.makeText(activity, "Open your Downloads to install " + asset, Toast.LENGTH_LONG).show(); }
+            catch (Exception unavailable) { Toast.makeText(activity, I18n.format("Open your Downloads to install %1$s", asset), Toast.LENGTH_LONG).show(); }
             return;
         }
         // Android only lets an app install packages after the player allows it once in system settings.
         if (installsHere && !activity.getPackageManager().canRequestPackageInstalls()) {
             try {
                 activity.startActivity(new Intent(Settings.ACTION_MANAGE_UNKNOWN_APP_SOURCES, Uri.parse("package:" + activity.getPackageName())));
-                Toast.makeText(activity, "Allow installs from this app, then tap the update again", Toast.LENGTH_LONG).show();
+                Toast.makeText(activity, I18n.t("Allow installs from this app, then tap the update again"), Toast.LENGTH_LONG).show();
             } catch (Exception unavailable) { openPage(activity); }
             return;
         }
@@ -194,7 +194,7 @@ final class Updater {
 
     private static void openPage(Activity activity) {
         try { activity.startActivity(new Intent(Intent.ACTION_VIEW, Uri.parse(pageUrl.isEmpty() ? RELEASES : pageUrl))); }
-        catch (Exception unavailable) { Toast.makeText(activity, "No app available to open the download page", Toast.LENGTH_SHORT).show(); }
+        catch (Exception unavailable) { Toast.makeText(activity, I18n.t("No app available to open the download page"), Toast.LENGTH_SHORT).show(); }
     }
 
     private static String expectedChecksum(String sums) throws Exception {

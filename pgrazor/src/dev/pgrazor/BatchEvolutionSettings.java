@@ -135,22 +135,22 @@ public final class BatchEvolutionSettings {
         LinearLayout body=new LinearLayout(ui);body.setOrientation(LinearLayout.VERTICAL);
         int pad=MapTheme.dp(ui,16);body.setPadding(pad,pad,pad,pad);
         TextView explanation=new TextView(ui);
-        explanation.setText("Choose a tag to preview eligible Pokemon. Each is evolved once, without the animation. Favorites, your buddy, deployed Pokemon, eggs, Shadow and purified Pokemon, and evolutions needing a branch choice or special condition are skipped. Candy and items are checked before each evolution. Start your Lucky Egg yourself if wanted.");
+        explanation.setText(I18n.t("Choose a tag to preview eligible Pokemon. Each is evolved once, without the animation. Favorites, your buddy, deployed Pokemon, eggs, Shadow and purified Pokemon, and evolutions needing a branch choice or special condition are skipped. Candy and items are checked before each evolution. Start your Lucky Egg yourself if wanted."));
         body.addView(explanation);
-        EditText tagInput=new EditText(ui);tagInput.setSingleLine(true);tagInput.setHint("Tag name (for example, Evolve)");
+        EditText tagInput=new EditText(ui);tagInput.setSingleLine(true);tagInput.setHint(I18n.t("Tag name (for example, Evolve)"));
         synchronized(LOCK) {tagInput.setText(tag);}
         body.addView(tagInput);
         CheckBox remove=new CheckBox(ui);
-        remove.setText("Remove this tag after each confirmed evolution");
+        remove.setText(I18n.t("Remove this tag after each confirmed evolution"));
         synchronized(LOCK) {remove.setChecked(removeTag);}
         body.addView(remove);
         TextView status=new TextView(ui);body.addView(status);
-        Button preview=new Button(ui);preview.setAllCaps(false);preview.setText("Preview batch");body.addView(preview);
-        Button start=new Button(ui);start.setAllCaps(false);start.setText("Start batch");body.addView(start);
-        Button stop=new Button(ui);stop.setAllCaps(false);stop.setText("Stop (current evolution may finish)");body.addView(stop);
+        Button preview=new Button(ui);preview.setAllCaps(false);preview.setText(I18n.t("Preview batch"));body.addView(preview);
+        Button start=new Button(ui);start.setAllCaps(false);start.setText(I18n.t("Start batch"));body.addView(start);
+        Button stop=new Button(ui);stop.setAllCaps(false);stop.setText(I18n.t("Stop (current evolution may finish)"));body.addView(stop);
         ScrollView scroll=new ScrollView(ui);scroll.addView(body);
-        AlertDialog dialog=new AlertDialog.Builder(ui).setTitle("Batch evolution").setView(scroll)
-            .setPositiveButton("Close",null).create();
+        AlertDialog dialog=new AlertDialog.Builder(ui).setTitle(I18n.t("Batch evolution")).setView(scroll)
+            .setPositiveButton(I18n.t("Close"),null).create();
         Handler handler=new Handler(Looper.getMainLooper());
         Runnable refresh=new Runnable(){public void run(){
             if(!dialog.isShowing())return;
@@ -180,7 +180,7 @@ public final class BatchEvolutionSettings {
             refreshControls(status,tagInput,remove,preview,start,stop);
         });
         preview.setOnClickListener(v->{
-            if(AutoRaid.running()||AutoRocket.running()||OneShotAutomation.enabled()||GiftBatchSettings.running()){android.widget.Toast.makeText(activity,"Stop the current Automation task first.",android.widget.Toast.LENGTH_SHORT).show();return;}
+            if(AutoRaid.running()||AutoRocket.running()||OneShotAutomation.enabled()||GiftBatchSettings.running()){android.widget.Toast.makeText(activity,I18n.t("Stop the current Automation task first."),android.widget.Toast.LENGTH_SHORT).show();return;}
             String value;
             try {value=normalizedTag(tagInput.getText().toString());}
             catch(IllegalArgumentException e){tagInput.setError(e.getMessage());return;}
@@ -202,11 +202,9 @@ public final class BatchEvolutionSettings {
             String cost=(candy>=0&&items>=0)
                 ?"Up to "+candy+" candy and "+items+" evolution items may be consumed. Each cost is checked before evolving."
                 :"Candy and evolution item totals are unavailable; each cost is checked before evolving.";
-            AlertDialog confirm=new AlertDialog.Builder(MapTheme.wrap(activity)).setTitle("Start batch evolution?")
-                .setMessage(count+" eligible Pokemon will be evolved once. "+cost
-                    +(removeAfter?" The selected tag will be removed after each confirmed evolution.":"")
-                    +" No Lucky Egg will be used automatically.")
-                .setNegativeButton("Cancel",null).setPositiveButton("Start batch",(d,which)->{
+            AlertDialog confirm=new AlertDialog.Builder(MapTheme.wrap(activity)).setTitle(I18n.t("Start batch evolution?"))
+                .setMessage(I18n.format("%1$s eligible Pokemon will be evolved once. %2$s%3$s No Lucky Egg will be used automatically.", String.valueOf((Object)(count)), String.valueOf((Object)(cost)), String.valueOf((Object)((removeAfter?I18n.t(" The selected tag will be removed after each confirmed evolution."):"")))))
+                .setNegativeButton(I18n.t("Cancel"),null).setPositiveButton(I18n.t("Start batch"),(d,which)->{
                     synchronized(LOCK) {
                         if(token==expectedToken&&mode==1&&"ready".equals(phase)&&total>0) {
                             mode=2;phase="running";message="Starting batch...";

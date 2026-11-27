@@ -72,6 +72,8 @@ class OneShotAutomationJavaTests(unittest.TestCase):
             sources += [ROOT / 'src/dev/pgrazor/GiftBatchSettings.java', ROOT / 'test/GiftBatchSettingsTest.java', ROOT / 'src/dev/pgrazor/OneShotAutomation.java',
                         ROOT / 'src/dev/pgrazor/MotionEngine.java',
                         ROOT / 'test/OneShotAutomationTest.java']
+            sources += [ROOT / 'src/dev/pgrazor/I18n.java', ROOT / 'src/dev/pgrazor/LanguagePrefs.java',
+                        *sorted((ROOT / 'src/dev/pgrazor').glob('I18nCatalog*.java'))]
             compiled = subprocess.run([str(compiler), '-encoding', 'UTF-8', '-d', str(work),
                                        *map(str, sources)], capture_output=True, text=True, timeout=45)
             self.assertEqual(compiled.returncode, 0, compiled.stdout + compiled.stderr)

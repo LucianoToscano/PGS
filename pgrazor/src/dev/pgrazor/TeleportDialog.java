@@ -41,9 +41,9 @@ public final class TeleportDialog {
         LinearLayout body=new LinearLayout(ui);body.setOrientation(LinearLayout.VERTICAL);
         int pad=MapTheme.dp(ui,24);body.setPadding(pad,MapTheme.dp(ui,8),pad,0);
         TextView message=new TextView(ui);message.setText(warning(lat,lon));message.setTextSize(15);body.addView(message);
-        CheckBox dontShow=new CheckBox(ui);dontShow.setText("Don't show this again");body.addView(dontShow);
-        AlertDialog dialog=new AlertDialog.Builder(ui).setTitle("Teleport cooldown")
-            .setView(body).setNegativeButton("Cancel",null).setPositiveButton("Teleport",null).create();
+        CheckBox dontShow=new CheckBox(ui);dontShow.setText(I18n.t("Don't show this again"));body.addView(dontShow);
+        AlertDialog dialog=new AlertDialog.Builder(ui).setTitle(I18n.t("Teleport cooldown"))
+            .setView(body).setNegativeButton(I18n.t("Cancel"),null).setPositiveButton(I18n.t("Teleport"),null).create();
         Runnable refresh=new Runnable(){public void run(){if(dialog.isShowing()){message.setText(warning(lat,lon));main.postDelayed(this,1000);}}};
         active=dialog;
         DialogLifecycle.bind(activity,dialog,()->{main.removeCallbacksAndMessages(null);if(active==dialog)active=null;});
@@ -53,7 +53,7 @@ public final class TeleportDialog {
                 // Only a teleport that went ahead turns the confirmation off; Cancel leaves it as it was.
                 if(dontShow.isChecked()){
                     Control.setSkipTeleportConfirm(true);
-                    Toast.makeText(activity,"Teleport confirmation off. Turn it back on in Settings, Location & Map.",Toast.LENGTH_LONG).show();
+                    Toast.makeText(activity,I18n.t("Teleport confirmation off. Turn it back on in Settings, Location & Map."),Toast.LENGTH_LONG).show();
                 }
                 dialog.dismiss();
             });
@@ -61,6 +61,6 @@ public final class TeleportDialog {
     }
     private static void cooldownToast(Activity activity,long cooldown){
         if(cooldown<=0||activity.isFinishing()||activity.isDestroyed())return;
-        Toast.makeText(activity,"Cooldown: "+duration(cooldown),Toast.LENGTH_SHORT).show();
+        Toast.makeText(activity,I18n.format("Cooldown: %1$s", String.valueOf((Object)(duration(cooldown)))),Toast.LENGTH_SHORT).show();
     }
 }

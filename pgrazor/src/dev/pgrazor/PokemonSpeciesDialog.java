@@ -60,9 +60,9 @@ final class PokemonSpeciesDialog {
 
     private static String categoryHelp(int category, boolean raid) {
         if (category == PokemonCategories.STAGE_2 || category == PokemonCategories.STAGE_3)
-            return "Stages count from the first species, including babies. Stage 2: evolved once; Stage 3: evolved twice.";
-        return raid ? "Groups can include unreleased forms, not today's raid lineup. Use Raid tiers to require Mega/Primal raids."
-            : "Choose a group, then select Pokemon individually or use Select shown. Groups can include unreleased forms.";
+            return I18n.t("Stages count from the first species, including babies. Stage 2: evolved once; Stage 3: evolved twice.");
+        return raid ? I18n.t("Groups can include unreleased forms, not today's raid lineup. Use Raid tiers to require Mega/Primal raids.")
+            : I18n.t("Choose a group, then select Pokemon individually or use Select shown. Groups can include unreleased forms.");
     }
 
     private static final class Picker {
@@ -114,7 +114,7 @@ final class PokemonSpeciesDialog {
             int pad = dp(14); body.setPadding(pad, dp(8), pad, 0);
 
             categoryButton = new android.widget.Button(ui); categoryButton.setAllCaps(false);
-            categoryButton.setText("Category: " + PokemonCategories.LABELS[category]);
+            categoryButton.setText(I18n.format("Category: %1$s", I18n.t(PokemonCategories.LABELS[category])));
             categoryButton.setOnClickListener(v -> openCategoryPicker());
             body.addView(categoryButton);
             TextView help = new TextView(ui); help.setTextSize(12);
@@ -122,16 +122,16 @@ final class PokemonSpeciesDialog {
             help.setText(categoryHelp(category, raid));
             body.addView(help);
 
-            search = new EditText(ui); search.setHint("Search name or #dex"); search.setSingleLine(true);
+            search = new EditText(ui); search.setHint(I18n.t("Search name or #dex")); search.setSingleLine(true);
             search.setInputType(InputType.TYPE_CLASS_TEXT);
             body.addView(search, new LinearLayout.LayoutParams(-1, dp(48)));
             count = new TextView(ui); count.setTextSize(12); count.setPadding(0, dp(4), 0, dp(4)); body.addView(count);
 
             LinearLayout bulk = new LinearLayout(ui); bulk.setOrientation(LinearLayout.HORIZONTAL);
             android.widget.Button selectBtn = new android.widget.Button(ui); selectBtn.setAllCaps(false);
-            selectBtn.setText("Select shown"); selectBtn.setOnClickListener(v -> selectShown());
+            selectBtn.setText(I18n.t("Select shown")); selectBtn.setOnClickListener(v -> selectShown());
             android.widget.Button clearBtn = new android.widget.Button(ui); clearBtn.setAllCaps(false);
-            clearBtn.setText("Clear shown"); clearBtn.setOnClickListener(v -> clearShown());
+            clearBtn.setText(I18n.t("Clear shown")); clearBtn.setOnClickListener(v -> clearShown());
             bulk.addView(selectBtn, new LinearLayout.LayoutParams(0, -2, 1f));
             bulk.addView(clearBtn, new LinearLayout.LayoutParams(0, -2, 1f));
             body.addView(bulk);
@@ -142,7 +142,7 @@ final class PokemonSpeciesDialog {
             list.setOnItemClickListener((parent, view, position, rowId) -> {
                 int id = shown.get(position);
                 if (!selected.remove(id)) {
-                    if(selected.size()>=max){android.widget.Toast.makeText(activity,"Choose at most "+max+" "+noun+".",android.widget.Toast.LENGTH_SHORT).show();return;}
+                    if(selected.size()>=max){android.widget.Toast.makeText(activity,I18n.format("Choose at most %1$s %2$s.", String.valueOf((Object)(max)), String.valueOf((Object)(noun))),android.widget.Toast.LENGTH_SHORT).show();return;}
                     selected.add(id);
                 }
                 onSelectionChanged();
@@ -164,9 +164,9 @@ final class PokemonSpeciesDialog {
             dialog = new AlertDialog.Builder(ui)
                 .setTitle(title)
                 .setView(body)
-                .setPositiveButton("Save", (d, w) -> commit())
-                .setNeutralButton("Clear all", null)   // click overridden below so it does not dismiss
-                .setNegativeButton("Cancel", null)
+                .setPositiveButton(I18n.t("Save"), (d, w) -> commit())
+                .setNeutralButton(I18n.t("Clear all"), null)   // click overridden below so it does not dismiss
+                .setNegativeButton(I18n.t("Cancel"), null)
                 .create();
             DialogLifecycle.bind(activity, dialog, () -> {
                 closed = true;
@@ -208,8 +208,7 @@ final class PokemonSpeciesDialog {
         private void selectShown() {
             TreeSet<Integer> union = new TreeSet<>(selected); union.addAll(shown);
             if (union.size() > max) {
-                android.widget.Toast.makeText(activity, "That would exceed " + max + " " + noun
-                    + "; narrow the list first.", android.widget.Toast.LENGTH_SHORT).show();
+                android.widget.Toast.makeText(activity, I18n.format("That would exceed %1$s %2$s; narrow the list first.", String.valueOf((Object)(max)), String.valueOf((Object)(noun))), android.widget.Toast.LENGTH_SHORT).show();
                 return;
             }
             selected.clear(); selected.addAll(union);
@@ -222,11 +221,11 @@ final class PokemonSpeciesDialog {
         }
 
         private void openCategoryPicker() {
-            AlertDialog d = new AlertDialog.Builder(ui).setTitle("Browse by category")
-                .setNegativeButton("Cancel", null).create();
-            ChoiceList.attach(d, PokemonCategories.LABELS, index -> {
+            AlertDialog d = new AlertDialog.Builder(ui).setTitle(I18n.t("Browse by category"))
+                .setNegativeButton(I18n.t("Cancel"), null).create();
+            ChoiceList.attach(d, I18n.options(PokemonCategories.LABELS), index -> {
                 category = index;
-                categoryButton.setText("Category: " + PokemonCategories.LABELS[category]);
+                categoryButton.setText(I18n.format("Category: %1$s", I18n.t(PokemonCategories.LABELS[category])));
                 categoryHelp.setText(categoryHelp(category, raid));
                 refreshShown();
             });
@@ -239,7 +238,7 @@ final class PokemonSpeciesDialog {
         }
 
         private void updateCount() {
-            String results = shown.isEmpty() ? "No matches" : shown.size() + " shown";
+            String results = shown.isEmpty() ? I18n.t("No matches") : I18n.format("%1$s shown",shown.size());
             String picked = selected.isEmpty() && emptyLabel != null ? emptyLabel
                 : selected.size() + "/" + max + " " + noun + " selected";
             count.setText(results + " \u00b7 " + picked);

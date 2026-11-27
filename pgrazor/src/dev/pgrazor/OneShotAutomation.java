@@ -21,14 +21,14 @@ public final class OneShotAutomation {
         if(incense){
             long seconds=Math.max(0,(deadline-SystemClock.elapsedRealtime())/1000);
             long meters=Math.round(Math.max(0,2625-Control.engine.routeProgress().remainingMeters));
-            return "Incense "+(seconds/60)+":"+String.format(java.util.Locale.US,"%02d",seconds%60)+" · "+meters+" m";
+            return I18n.format("Incense %1$s · %2$s m",(seconds/60)+":"+String.format(java.util.Locale.US,"%02d",seconds%60),meters);
         }
         return remote?remoteMessage:incenseMessage;
     }
     public static synchronized String incenseStatus(){
         if(!incense)return incenseMessage;
         long seconds=Math.max(0,(deadline-SystemClock.elapsedRealtime())/1000);
-        return incenseMessage+" · "+(seconds/60)+":"+String.format(java.util.Locale.US,"%02d",seconds%60)+" remaining";
+        return I18n.format("%1$s · %2$s remaining",incenseMessage,(seconds/60)+":"+String.format(java.util.Locale.US,"%02d",seconds%60));
     }
     public static synchronized String remoteFeedStatus(){return remoteMessage;}
     private static void ready(){
@@ -103,7 +103,7 @@ public final class OneShotAutomation {
         new android.os.Handler(android.os.Looper.getMainLooper()).post(()->{
             android.app.Activity activity=Control.accountActivity();
             if(activity==null||activity.isFinishing())return;
-            if(!Control.overlaysHidden())android.widget.Toast.makeText(activity,"Galarian bird found — walking and VGP stopped",android.widget.Toast.LENGTH_LONG).show();
+            if(!Control.overlaysHidden())android.widget.Toast.makeText(activity,I18n.t("Galarian bird found — walking and VGP stopped"),android.widget.Toast.LENGTH_LONG).show();
             try{
                 final android.media.ToneGenerator tone=new android.media.ToneGenerator(android.media.AudioManager.STREAM_NOTIFICATION,90);
                 tone.startTone(android.media.ToneGenerator.TONE_PROP_BEEP2,1000);

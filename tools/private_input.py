@@ -5,7 +5,7 @@ from pathlib import Path
 import urllib.parse
 import urllib.request
 from game_update import current_profile, verify_input
-ROOT = Path(__file__).resolve().parents[1]/'pgrazor'
+ROOT = Path(__file__).resolve().parents[1]/'pgs'
 class HttpsRedirect(urllib.request.HTTPRedirectHandler):
     def redirect_request(self, req, fp, code, msg, headers, newurl):
         if urllib.parse.urlsplit(newurl).scheme != 'https': raise ValueError('Insecure redirect')

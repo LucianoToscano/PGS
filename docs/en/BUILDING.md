@@ -39,7 +39,7 @@ CI also runs Linux native checks and builds Android controls in GitHub Actions. 
 The source directory name remains compatible with the existing installed runtime. To compile the Android controls:
 
 ```sh
-python -B pgrazor/build.py
+python -B pgs/build.py
 ```
 
 A compatible JDK and Android SDK are required. The resulting preview is **not** a complete game installer. Only the dedicated full-release workflow combines compiled controls with an approved base APK, hashes all original entries, and signs the complete APK.

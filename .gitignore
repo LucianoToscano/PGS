@@ -30,9 +30,9 @@ NEXT_LLM_PROMPT.txt
 Thumbs.db
 .vscode/
 .idea/
-/pgrazor/build-retention.json
+/pgs/build-retention.json
 # Local Discord branding artwork and animation exports.
-/pgrazor/branding/discord/
+/pgs/branding/discord/
 /dist/
 **/node_modules/
 /website/dist/
@@ -41,5 +41,8 @@ Thumbs.db
 *.txt
 !**/CMakeLists.txt
 *.gpx
-!/pgrazor/research/README.txt
+!/pgs/research/README.txt
 /user-reports
+
+# Keep pre-migration local build/input and other untracked files private.
+/pgrazor/

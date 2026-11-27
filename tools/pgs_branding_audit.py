@@ -18,16 +18,16 @@ ACTIVE_TEXT = (
     "website/src/content.js",
     "website/src/content.en.js",
     "website/src/content.pt-BR.js",
-    "pgrazor/AndroidManifest.xml",
-    "pgrazor/root-installer/AndroidManifest.xml",
-    "pgrazor/src/dev/pgrazor/EncounterCounter.java",
-    "pgrazor/src/dev/pgrazor/GpxCodec.java",
-    "pgrazor/src/dev/pgrazor/SettingsPanel.java",
-    "pgrazor/src/dev/pgrazor/Updater.java",
-    "pgrazor/src/dev/pgrazor/LogActivity.java",
-    "pgrazor/src/dev/pgrazor/ShundoSniper.java",
-    "pgrazor/src/dev/pgrazor/MoonaniFeed.java",
-    "pgrazor/src/dev/pgrazor/RootedLogDialog.java",
+    "pgs/AndroidManifest.xml",
+    "pgs/root-installer/AndroidManifest.xml",
+    "pgs/src/dev/pgrazor/EncounterCounter.java",
+    "pgs/src/dev/pgrazor/GpxCodec.java",
+    "pgs/src/dev/pgrazor/SettingsPanel.java",
+    "pgs/src/dev/pgrazor/Updater.java",
+    "pgs/src/dev/pgrazor/LogActivity.java",
+    "pgs/src/dev/pgrazor/ShundoSniper.java",
+    "pgs/src/dev/pgrazor/MoonaniFeed.java",
+    "pgs/src/dev/pgrazor/RootedLogDialog.java",
 )
 PGS_REPO = "https://github.com/LucianoToscano/PGS"
 PGS_CERT = "d95c6bdfcbd91dc5c9cde698487c88e4994771a475e4efde4567b8d5f44e96cf"
@@ -44,7 +44,7 @@ def check():
         if "https://github.com/jpitty03/PGRazor/releases/download/" in data:
             problems.append(path + ": upstream APK download")
     for lang in LANGUAGES:
-        path = ROOT / "pgrazor/i18n" / (lang + ".json")
+        path = ROOT / "pgs/i18n" / (lang + ".json")
         catalog = json.loads(path.read_text(encoding="utf-8"))
         if len(catalog) != 1332:
             problems.append(path.name + ": language catalog changed size")
@@ -60,7 +60,7 @@ def check():
     funding = (ROOT / ".github/FUNDING.yml").read_text(encoding="utf-8")
     if re.search(r"(?im)^\s*ko_fi\s*:\s*pgrazor\b", funding):
         problems.append("FUNDING.yml: donations still point to upstream account")
-    if "PGRazor.apk" in (ROOT / "pgrazor/release_apk.py").read_text(encoding="utf-8"):
+    if "PGRazor.apk" in (ROOT / "pgs/release_apk.py").read_text(encoding="utf-8"):
         problems.append("release_apk.py: can still emit an upstream-named APK")
     release = (ROOT / "tools/discord_release.py").read_text(encoding="utf-8")
     if "PGS." not in release or "SHA256SUMS.txt" not in release:
@@ -68,10 +68,10 @@ def check():
     flow = (ROOT / ".github/workflows/discord-release.yml").read_text(encoding="utf-8")
     if "secrets.PGS_DISCORD_RELEASE_WEBHOOK" not in flow or "vars.PGS_DISCORD_CHANNEL_ID" not in flow:
         problems.append("Discord release workflow does not require PGS-specific configuration")
-    from_code = (ROOT / "pgrazor/pgs_update.py").read_text(encoding="utf-8")
+    from_code = (ROOT / "pgs/pgs_update.py").read_text(encoding="utf-8")
     if "com.nianticlabs.pokemongo" not in from_code or PGS_CERT not in from_code.lower():
         problems.append("PGS package or permanent certificate source changed")
-    version = (ROOT / "pgrazor/PGS_LAST_VERSION_CODE").read_text(encoding="utf-8").strip()
+    version = (ROOT / "pgs/PGS_LAST_VERSION_CODE").read_text(encoding="utf-8").strip()
     if not version.isdigit() or int(version) < 2026111605:
         problems.append("PGS versionCode ledger regressed")
     # Only the exact requested attribution block may use the upstream
@@ -109,7 +109,7 @@ def check():
         problems.append("The PGS Root Portuguese guide translation is missing")
     if "guide === 'pgrazor-root' ? 'pgs-root'" not in (ROOT / "website/src/App.jsx").read_text(encoding="utf-8"):
         problems.append("Older Root guide bookmarks must still resolve")
-    if "PGRazor" in (ROOT / "pgrazor/root-installer/src/dev/pgrazor/root/RootStatus.java").read_text(encoding="utf-8"):
+    if "PGRazor" in (ROOT / "pgs/root-installer/src/dev/pgrazor/root/RootStatus.java").read_text(encoding="utf-8"):
         problems.append("Root status still displays the old name")
     pages = (ROOT / ".github/workflows/pages.yml").read_text(encoding="utf-8")
     if "name: Website" not in pages or "workflow_dispatch:" not in pages:
@@ -166,7 +166,7 @@ def check():
         ),
     }
     for basename, (expected_sha256, expected_width, expected_height) in expected_logos.items():
-        for folder in ("website/public", "pgrazor/branding"):
+        for folder in ("website/public", "pgs/branding"):
             path = ROOT / folder / basename
             if not path.is_file():
                 problems.append(str(path.relative_to(ROOT)) + ": original PNG missing")
@@ -183,8 +183,8 @@ def check():
     for old_logo in (
         "website/public/logo.svg",
         "website/public/pgs-official.svg",
-        "pgrazor/branding/pgs.svg",
-        "pgrazor/branding/pgrazor.svg",
+        "pgs/branding/pgs.svg",
+        "pgs/branding/pgrazor.svg",
     ):
         if (ROOT / old_logo).exists():
             problems.append(old_logo + ": obsolete traced SVG remains")

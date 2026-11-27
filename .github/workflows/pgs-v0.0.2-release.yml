@@ -1,12 +1,7 @@
 name: PGS v0.0.2 - Verified full APK candidate
 
 on:
-  push:
-    branches: [release/pgs-v0.0.2-brand-cleanup, main]
-    paths:
-      - .github/workflows/pgs-v0.0.2-release.yml
-      - pgrazor/pgs_rebrand.py
-      - pgrazor/test/test_pgs_rebrand.py
+  # Historical candidate: avoid rebuilding an already-versioned APK on routine maintenance.
   workflow_dispatch:
 
 permissions:
@@ -55,7 +50,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          python -B -m unittest discover -s pgrazor/test -p 'test_pgs_*.py' -v
+          python -B -m unittest discover -s pgs/test -p 'test_pgs_*.py' -v
       - name: Retrieve complete signed PGS v0.0.1
         uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
         with:
@@ -89,15 +84,15 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          python -B pgrazor/build.py
-          test -s pgrazor/build/pgrazor.dex
+          python -B pgs/build.py
+          test -s pgs/build/pgrazor.dex
       - name: Repack full signed APK, preserving native/game assets
         shell: bash
         run: |
           set -euo pipefail
-          python -B pgrazor/pgs_rebrand.py \
+          python -B pgs/pgs_rebrand.py \
             --source 'prebuilt/PGS v0.0.1.apk' \
-            --controls pgrazor/build/pgrazor.dex \
+            --controls pgs/build/pgrazor.dex \
             --output 'dist/PGS/PGS v0.0.2.apk'
           cd dist/PGS
           sha256sum -c SHA256SUMS.txt

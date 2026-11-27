@@ -35,7 +35,7 @@ jobs:
       - name: Test package and versionCode rules
         run: |
           set -euo pipefail
-          python -B -m unittest discover -s pgrazor/test -p test_pgs_update.py -v
+          python -B -m unittest discover -s pgs/test -p test_pgs_update.py -v
       - uses: android-actions/setup-android@9fc6c4e9069bf8d3d10b2204b1fb8f6ef7065407 # v3
         with:
           packages: platform-tools
@@ -62,7 +62,7 @@ jobs:
           python -B - <<'PY'
           import sys
           import zipfile
-          sys.path.insert(0, 'pgrazor')
+          sys.path.insert(0, 'pgs')
           import axml
           with zipfile.ZipFile('prebuilt/PGS.apk') as source:
               info = axml.inspect_manifest(source.read('AndroidManifest.xml'))
@@ -96,7 +96,7 @@ jobs:
           PGRAZOR_KEY_PASSWORD: ${{ secrets.PGS_KEY_PASSWORD || secrets.PGRAZOR_KEY_PASSWORD }}
         run: |
           set -euo pipefail
-          python -B pgrazor/pgs_update.py \
+          python -B pgs/pgs_update.py \
             --input prebuilt/PGS.apk \
             --output candidate/PGS.apk \
             --expected-sha256 595103b36163776b919befe57ae399b2dcc1dff0234e2c0686331389926d137b \
@@ -110,7 +110,7 @@ jobs:
           import sys
           import zipfile
           from pathlib import Path
-          sys.path.insert(0, 'pgrazor')
+          sys.path.insert(0, 'pgs')
           import axml
           file = Path('candidate/PGS.apk')
           metadata = json.loads(Path('candidate/PGS.json').read_text(encoding='utf8'))

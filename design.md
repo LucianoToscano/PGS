@@ -256,7 +256,7 @@ PreviewActivity   standalone preview of the control surface
   untouched, but their bodies are now thin delegations. This is how the whole app changed palette
   without a risky mechanical rewrite.
 - `SettingsSearch` is deliberately dependency-free so its matching and ranking are covered by a
-  plain JVM test (`pgrazor/test/SettingsSearchTest.java`) with no emulator.
+  plain JVM test (`pgs/test/SettingsSearchTest.java`) with no emulator.
 - Visual work never touches `Control` keys, `SettingsBackupRules`, export formats or the public
   runtime API.
 

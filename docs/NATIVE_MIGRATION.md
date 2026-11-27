@@ -143,7 +143,7 @@ unstripped binaries privately under the ignored build directory.
 
 
 
-Set `PGRAZOR_NATIVE_PILOT=1` before the usual `pgrazor/nonroot.py` packaging
+Set `PGRAZOR_NATIVE_PILOT=1` before the usual `pgs/nonroot.py` packaging
 
 command. First-time dependency acquisition additionally requires
 
@@ -833,7 +833,7 @@ and validation after STOP. Adapter and host tests cover exact ID bytes,
 
 transfer-before-completion ordering and ordinary-screen fallback. The harness
 
-receipt is `pgrazor/build/native/harness/20261028-045201-040242/receipt.json`.
+receipt is `pgs/build/native/harness/20261028-045201-040242/receipt.json`.
 
 Batch25 is installed on research MuMu. Cold startup reached the populated map
 
@@ -871,7 +871,7 @@ not a replacement of the full Routes controller.
 
 Both architecture builds and the full repository checks pass. The combined
 production-library harness receipt is
-`pgrazor/build/native/harness/20261028-054728-036423/receipt.json`.
+`pgs/build/native/harness/20261028-054728-036423/receipt.json`.
 Coverage includes stale commands, backwards clocks, wrong-thread calls,
 revocation during request preparation, returned-handle ownership, failed roots,
 malformed coordinates, marker visibility and cleanup. Claude implemented and
@@ -917,7 +917,7 @@ remain blocked to avoid duplicate requests.
 
 Both architecture builds and full repository checks pass. The actual production
 library harness passed candidate inspection, results and the existing request
-executor: `pgrazor/build/native/harness/20261028-162421-216682/receipt.json`.
+executor: `pgs/build/native/harness/20261028-162421-216682/receipt.json`.
 Host tests cover off-mask completion, exact IDs, relocating objects, returned-root
 cleanup, missing native components and proven-not-issued versus uncertain errors.
 Claude wrote both modules and reviewed corrected code; Agy reviewed integration;
@@ -950,7 +950,7 @@ transfer/item handoff remain in JavaScript; Frida is still required.
 Both architecture builds and full repository checks pass. The production-library
 harness passed on research MuMu, including relocation, invalid metadata, managed
 exceptions, expiry during final rooting and exact output ownership:
-`pgrazor/build/native/harness/20261028-170539-891652/receipt.json`. Adapter tests
+`pgs/build/native/harness/20261028-170539-891652/receipt.json`. Adapter tests
 cover settings changes, invalid leases and tracking failures after root adoption.
 Claude implemented the native module and adapter; Agy reviewed host integration;
 Sol added regressions; Codex integrated, corrected and verified the changes.
@@ -1000,7 +1000,7 @@ Sol added host/adapter regressions, and Agy's host review found no new defect.
 Both architecture builds and full repository checks pass. The actual production
 library passed on MuMu, including empty inventory, object relocation, managed
 exceptions, full-width timestamps and expiry before/during the setter:
-`pgrazor/build/native/harness/20261028-174046-530012/receipt.json`.
+`pgs/build/native/harness/20261028-174046-530012/receipt.json`.
 Batch32 gameplay and physical Android verification are pending. Batch30 remains
 the user-tested MuMu rollback. Frida is still required.
 
@@ -1038,7 +1038,7 @@ production library passed auxiliary, controller and targeted regression harnesse
 on MuMu, including lease expiry, manual encounters during inventory work, moved
 objects, partial root failures, one capture event, off-lease completion and
 transfer feedback ownership. Final native receipt:
-`pgrazor/build/native/harness/20261028-184150-922230/receipt.json`.
+`pgs/build/native/harness/20261028-184150-922230/receipt.json`.
 
 Batch33 first startup reached a populated map with both native modules ready.
 VGP was left off for one combined catch/transfer/spin check. The physical phone
@@ -1069,7 +1069,7 @@ the production library cover inspection errors, relocation, root cleanup and
 permissions. A separate coupling harness feeds real reader output to the real
 native keep policy, covering category protections, favorites/eggs, IV boundaries
 and custom keeps. Receipt:
-`pgrazor/build/native/harness/20261028-191921-327200/receipt.json`.
+`pgs/build/native/harness/20261028-191921-327200/receipt.json`.
 Batch34 exposed a translated-mailbox lifecycle bug: a control snapshot expiring
 during the catch heartbeat permanently suspended both catch runtimes. Batch35
 classifies that condition explicitly, revokes leases for the stale heartbeat,
@@ -1102,7 +1102,7 @@ Refusals and exceptions never fall through to a second JavaScript dismissal.
 Both ABI builds and repository checks pass. The production-library harness covers
 identity, thread/lease gates, exactly-once invocation, exceptions, real relocation
 during root allocation and managed calls, and balanced cleanup. Final receipt:
-`pgrazor/build/native/harness/20261028-200644-179502/receipt.json`.
+`pgs/build/native/harness/20261028-200644-179502/receipt.json`.
 Batch36 is installed on research MuMu. Its first cold launch reached the map
 and logged native-summary-completion-ready. The user confirmed the requested
 Quick Catch and transfer-only dismissal checks work as expected. Batch36 is the
@@ -1125,7 +1125,7 @@ count as confirmed destruction, and refusal cannot fall through to a legacy clic
 Both ABI builds and repository checks pass. The production-library tests cover
 identity, opening screens, token/lease/thread gates, relocation, root failures,
 callback ownership and invalidation during getters. Receipt:
-`pgrazor/build/native/harness/20261028-204602-273930/receipt.json`.
+`pgs/build/native/harness/20261028-204602-273930/receipt.json`.
 Claude's implementation was independently reviewed and corrected by the
 coordinator, with a separate Sol regression fixture and Agy review.
 Batch37 is installed on research MuMu. Its first cold launch reached the populated
@@ -1147,7 +1147,7 @@ unchanged; ordinary inventory details are rejected.
 Both ABI builds and repository checks pass. The production-library tests cover
 opening screens, identity mismatches, native-to-host adoption, repeated release,
 real object relocation, allocation failures, expiry and reentry. Receipt:
-`pgrazor/build/native/harness/20261028-211019-409976/receipt.json`.
+`pgs/build/native/harness/20261028-211019-409976/receipt.json`.
 Claude implemented the reader and adapter. Coordinator review corrected an early
 full-record check before the Pokemon root existed and tightened cleanup; Sol's
 independent fixture verifies the full production reader/validator path. Agy's
@@ -1173,7 +1173,7 @@ do not advance the publication serial, while pending-request cleanup still runs.
 
 Both architecture builds pass. Production-library canvas, independent lifetime and
 item regressions passed, including the slow confirmation-timeout case. Harness:
-`pgrazor/build/native/harness/20261028-214235-672781/receipt.json`.
+`pgs/build/native/harness/20261028-214235-672781/receipt.json`.
 Claude supplied the canvas implementation and adapter; coordinator/Sol review
 corrected relocation and retryable-release handling. Agy reviewed item polling;
 review dispositions are retained locally. Gameplay validation remains pending.
@@ -1195,7 +1195,7 @@ install return convention and protected output cleanup against reentry; Sol's
 independent production-library fixture reproduced the cleanup bug before the fix
 and passed afterward. Both ABI builds and the full repository checks pass.
 The final harness receipt is
-`pgrazor/build/native/harness/20261028-221122-519576/receipt.json`.
+`pgs/build/native/harness/20261028-221122-519576/receipt.json`.
 Physical Android and MuMu gameplay validation for this batch remain pending.
 
 Batch40 is installed on research MuMu. Cold startup reached a populated map and
@@ -1217,7 +1217,7 @@ Claude implemented the sampler; coordinator and Sol review corrected expiry and
 status reporting. Both architecture builds, compiled-library lifetime tests,
 adapter/host tests and repository checks pass. Agy's final review found no further
 actionable issue. Final native harness receipt:
-`pgrazor/build/native/harness/20261028-224931-805005/receipt.json`.
+`pgs/build/native/harness/20261028-224931-805005/receipt.json`.
 Physical Android remains untested for this batch.
 
 Batch41 is installed on research MuMu. Live native readings reported the map
@@ -1293,7 +1293,7 @@ review corrected expired reads, strict Boolean validation and snapshot corruptio
 during reentrant cleanup. Both architecture builds, repository checks, and native
 tests against the compiled library pass, including moving object addresses and
 cleanup-time expiry. Harness receipt:
-`pgrazor/build/native/harness/20261029-025111-277086/receipt.json`.
+`pgs/build/native/harness/20261029-025111-277086/receipt.json`.
 
 Batch44 is installed on research MuMu. The native reader displayed the same 394
 locations as the previous implementation. Gym team and occupancy, raid tier and
@@ -1319,7 +1319,7 @@ if the lease closes during its call; rejected sequences are never retried.
 Both native builds, the repository checks, and focused host checks pass. Actual
 compiled-library tests cover moving objects, completion eligibility, expired or
 revoked commands, callback identity changes and malformed Boolean fields. Receipt:
-`pgrazor/build/native/harness/20261029-032726-938593/receipt.json`.
+`pgs/build/native/harness/20261029-032726-938593/receipt.json`.
 Installed on research MuMu: native Routes readiness, current-state reads and
 discovery submission were verified, and the nearby-route list populated. Returned
 to the map with VGP off. The user subsequently confirmed route completion on MuMu. Physical Android
@@ -1494,7 +1494,7 @@ Cleanup completed 2026-10-29 22:28 UTC (supersedes repository-retirement correct
 Deleted180 obsolete gameplay JS/adapters/adapter-only tests, including46 tracked files; verified source backup and receipt retained locally. Removed2219771 source bytes; backup729611 bytes, net1490160 bytes. No additional generated APKs eligible in cleanup222659-4059747. Retained research scripts/Frida vendor dependencies and historical native-port comments intentionally.
 Routes/gift generators now use versioned neutral JSON with unchanged generated table semantics. Default local/CI production packaging is compiled with no environment opt-ins. Gadget requires explicit --research-runtime and is rejected for retired quick gameplay. Bootstrap likewise gates research mode. Production packaging rejects research payloads. Dormant research loader strings remain in DEX: strict runtime_retired inventory remains false; production_payload_retired is true. This distinction is intentional and not evidence of a bundled interpreter.
 Portable pinned native prerequisites setup and CI wiring added; local preflight/tests PASS, fresh remote CI workflow NOT run. Complete working-tree source archive includes native additions, excludes retired sources/keys/local evidence; receipt cleanup-source-archive-receipt.json. No staging/commit/push/release.
-Final local APK: pgrazor/build/release/native-cleanup-final/PGRazor.apk
+Final local APK: pgs/build/release/native-cleanup-final/PGRazor.apk
 Run20261029-152358-9320f1cc; SHA256384043a6681fdcae2a36df6405e6c1c2f625f5f9dcaaa82279e3f7b9a069e0f4;181168710bytes.
 Installed research MuMu16416, cold PID64645, populated map visually confirmed; compiled bootstrap/location/scheduler/hosts ready, Routes service became available. No phone touched. Final cleanup APK did not repeat every gameplay scenario; prior cutover gameplay evidence and limits remain applicable, not relabeled as new verification.
 Checks: tools/check.py exit0,127Python tests + Java fixtures +21Node suites; actual native/Dobby host fixtures61/63/70 PASS receipt20261029-222611-354213, packaged x64core matches385ed6d04a4d1fcec8e744efa2bbdd6ba7c2f7cebf98de3dc04583aecb93995c. BothABI core/ART packaging verified. Source archive content checks PASS. Final install/log/screenshots and payload audit use cleanup-* evidence files.

@@ -22,7 +22,7 @@ Use the PR template to provide this information. Passing CI does not replace rev
 
 ## Validation
 
-Run `python -B tools/check.py` for code changes; Android UI changes also require `python -B pgrazor/build.py`. Native behavior changes need relevant native fixtures and, when available, verification on Android and MuMu. Report the device, game version, and scenarios tested. If a device or live scenario is unavailable, record that limitation explicitly rather than claiming it works.
+Run `python -B tools/check.py` for code changes; Android UI changes also require `python -B pgs/build.py`. Native behavior changes need relevant native fixtures and, when available, verification on Android and MuMu. Report the device, game version, and scenarios tested. If a device or live scenario is unavailable, record that limitation explicitly rather than claiming it works.
 
 For website changes, follow [website development](website/README.md), including its build and applicable tests. For documentation-only changes, check links, commands, and consistency with the implementation.
 
@@ -42,17 +42,17 @@ Keep both `README.md` (English) and `README.pt-BR.md` (Brazilian Portuguese) in 
 
 - Start with the [architecture map](docs/ARCHITECTURE.md) and [maintainability guide](docs/MAINTAINABILITY.md). Keep policy, UI, and native contracts separate where existing boundaries allow it.
 - Give each runtime module explicit dependencies and ownership of its timers, hooks, and retained objects. Construction must not initialize game classes; installation belongs on the required thread.
-- Production gameplay runs in compiled native/Java code. Retained research scripts use `pgrazor/runtime/bundles.json`; do not reintroduce them as production runtime assets.
+- Production gameplay runs in compiled native/Java code. Retained research scripts use `pgs/runtime/bundles.json`; do not reintroduce them as production runtime assets.
 - Name Python tests `test_*.py` and Node tests `*-test.cjs` so `tools/check.py` discovers them. Java tests need a Python/build runner; document that mapping in the architecture page. Do not add standalone Java tests that CI never runs.
 - Prefer tests through a module API. Before extracting code covered by source-slicing tests, replace those slices with direct module fixtures. Avoid mass reformatting alongside behavioral changes.
 - Report compilation, fixture checks, and device observations separately. Passing mocked tests does not validate game offsets or Android UI behavior.
 
 For game-version compatibility work, follow [GAME_UPDATES.md](docs/GAME_UPDATES.md). Update the selected version profile and regenerate covered headers instead of editing generated headers directly. Review remaining hand-maintained bindings too; a signature match alone does not establish compatibility.
 
-CI currently sets legacy environment aliases `PGRAZOR_BUILD_TOOLS=36.0.0` and `PGRAZOR_ANDROID_PLATFORM=android-36`. For new local builds prefer `PGS_BUILD_TOOLS=36.0.0` and `PGS_ANDROID_PLATFORM=android-36`; the old variables still work. The build version can be selected with `PGS_VERSION` (or legacy `PGRAZOR_VERSION`). If both spellings are present, the PGS value wins. Local defaults still select the installed 36.1 SDK. Keep generated outputs ignored, and use `pgrazor/cleanup.ps1` after packaging with deployed/rollback retention pins preserved.
+CI currently sets legacy environment aliases `PGRAZOR_BUILD_TOOLS=36.0.0` and `PGRAZOR_ANDROID_PLATFORM=android-36`. For new local builds prefer `PGS_BUILD_TOOLS=36.0.0` and `PGS_ANDROID_PLATFORM=android-36`; the old variables still work. The build version can be selected with `PGS_VERSION` (or legacy `PGRAZOR_VERSION`). If both spellings are present, the PGS value wins. Local defaults still select the installed 36.1 SDK. Keep generated outputs ignored, and use `pgs/cleanup.ps1` after packaging with deployed/rollback retention pins preserved.
 
 ## Documentation and website languages
 
 English is the canonical language for GitHub PR titles, issue titles, commit messages, release notes, and project documentation. Provide Brazilian Portuguese counterparts for public-facing README, changelog, contribution instructions, and the core build/update/language guides. When editing those files, update both languages in the same pull request. Preserve APK versions, `versionCode`, SHA-256 hashes, command names, file paths, and legal notices verbatim.
 
-The website defaults to English and offers a Brazilian Portuguese language switch. Keep translated content, navigational labels, URL routing, and screen-reader labels in sync. Do not claim untranslated feature guides are translated. In-game localization is managed separately by `pgrazor/i18n/` and is not changed by website-language work.
+The website defaults to English and offers a Brazilian Portuguese language switch. Keep translated content, navigational labels, URL routing, and screen-reader labels in sync. Do not claim untranslated feature guides are translated. In-game localization is managed separately by `pgs/i18n/` and is not changed by website-language work.

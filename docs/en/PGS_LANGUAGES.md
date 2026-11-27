@@ -42,7 +42,7 @@ Settings search matches localized labels and descriptions **and** their English 
 
 ## Maintaining translations
 
-Editable catalogs are under `pgrazor/i18n/*.json`. `en.json` contains the canonical English keys, whose values equal their keys. Every other catalog must contain exactly the same set of keys.
+Editable catalogs are under `pgs/i18n/*.json`. `en.json` contains the canonical English keys, whose values equal their keys. Every other catalog must contain exactly the same set of keys.
 
 After editing the JSON catalogs, run from the repository root:
 
@@ -51,7 +51,7 @@ python -B tools/i18n_catalog.py
 python -B tools/check.py
 ```
 
-The generator creates `I18nCatalog.java` and one class per language under `pgrazor/src/dev/pgrazor`. These files are committed so Android controls can compile offline without base-APK resources. CI rejects stale generated classes, missing or extra keys, duplicates, and incompatible format placeholders.
+The generator creates `I18nCatalog.java` and one class per language under `pgs/src/dev/pgrazor`. These files are committed so Android controls can compile offline without base-APK resources. CI rejects stale generated classes, missing or extra keys, duplicates, and incompatible format placeholders.
 
 Use `I18n.t` for fixed texts and `I18n.format` for messages with data. Prefer indexed parameters (`%1$s`, `%2$d`) when translations may need another argument order. Preserve all placeholders, argument types, precision, and literal `%%`. Passed values remain opaque. `I18n.options` is only for fixed UI lists and must not be applied to names or user data.
 

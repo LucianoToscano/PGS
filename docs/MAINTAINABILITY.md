@@ -20,7 +20,7 @@ Reviewed after v0.1.2, October 2026. Two Claude reviews covered Java/UI and runt
 
 No settings keys, package identity, signing identity, native offsets, gameplay rules, or released asset paths are intentionally changed by this cleanup. Modules are bundled at build time so startup does not gain another runtime loader.
 
-Validation for this pass: `tools/check.py` passed with 72 Python tests, 27 Node suites, the Java core checks, and script syntax checks. Full `pgrazor/build.py` compilation and saved-place validation also passed. No device installation or gameplay validation was performed. Both Claude review workers and the Java implementation worker completed; a JavaScript fixture worker timed out without edits, and the coordinator completed those repairs and the clock-error cleanup fix.
+Validation for this pass: `tools/check.py` passed with 72 Python tests, 27 Node suites, the Java core checks, and script syntax checks. Full `pgs/build.py` compilation and saved-place validation also passed. No device installation or gameplay validation was performed. Both Claude review workers and the Java implementation worker completed; a JavaScript fixture worker timed out without edits, and the coordinator completed those repairs and the clock-error cleanup fix.
 
 ## Module cleanup
 

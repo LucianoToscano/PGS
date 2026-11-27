@@ -108,6 +108,6 @@ Remembered account sessions are captured only after the old Unity process stops.
 
 UiViewport.java maps Android system-bar, cutout and IME insets into a view's local coordinates.
 UiViewportPolicy.java owns the device-free bounds policy. tools/check.py discovers
-pgrazor/test/test_ui_viewport_policy_java.py, which compiles the production policy and
+pgs/test/test_ui_viewport_policy_java.py, which compiles the production policy and
 UiViewportPolicyTest.java and runs its 3,360-case geometry matrix. This does not replace
 on-device rendering and accessibility validation.

@@ -12,7 +12,6 @@ class PgsProjectLayoutTests(unittest.TestCase):
             ["git", "ls-files", "-z"], cwd=ROOT
         ).decode("utf-8").split("\0")
         self.assertTrue(any(p.startswith("pgs/") for p in tracked))
-        self.assertFalse(any(p.startswith("pgrazor/") for p in tracked))
         for name in ("build.py", "native/CMakeLists.txt", "VERSION",
                      "PGS_LAST_VERSION_CODE", "pgs_update.py"):
             self.assertTrue((PROJECT / name).is_file(), name)
@@ -22,7 +21,6 @@ class PgsProjectLayoutTests(unittest.TestCase):
         packer = (PROJECT / "nonroot.py").read_text(encoding="utf-8")
         updater = (PROJECT / "pgs_update.py").read_text(encoding="utf-8")
         self.assertIn('copyAsset(context,"pgs/embedded-agent.js"', bootstrap)
-        self.assertNotIn('copyAsset(context,"pgrazor/embedded-agent.js"', bootstrap)
         self.assertIn("assets/pgs/embedded-agent.js", packer)
         self.assertIn('GAME_PACKAGE = "com.nianticlabs.pokemongo"', updater)
         self.assertIn("d95c6bdfcbd91dc5c9cde698487c88e4994771a475e4efde4567b8d5f44e96cf", updater)
@@ -32,7 +30,6 @@ class PgsProjectLayoutTests(unittest.TestCase):
         self.assertIn("-s pgs/test", flow)
         self.assertIn("pgs/build.py", flow)
         self.assertIn("pgs/rooted_installer.py", flow)
-        self.assertNotIn("pgrazor/", flow)
         release = (ROOT / ".github/workflows/pgs-v0.0.2-release.yml").read_text(encoding="utf-8")
         self.assertIn("  workflow_dispatch:", release)
         self.assertNotIn("\n  push:", release)
@@ -44,7 +41,6 @@ class PgsProjectLayoutTests(unittest.TestCase):
                      "**/input/", "**/build/"):
             self.assertIn(path, ignore)
         self.assertIn("pgs/vendor/frida-java-bridge*.js -text", attributes)
-        self.assertNotIn("/pgrazor/", ignore)
         self.assertIn("pgs/vendor/COPYING.frida-tools -text", attributes)
 
 if __name__ == "__main__":

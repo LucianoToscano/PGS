@@ -394,6 +394,7 @@ def package(source, *,research_runtime=False,panel_only=False,download=False,pre
 
 def probe(report,folder,android,seconds=0):
     if report['package']!='dev.pgs.preview' or len(report['outputs'])!=1: raise RuntimeError('Probe installation restricted to our standalone preview')
+    if android is None: raise RuntimeError('Probe installation requires an attached Android device')
     report['device']={'serial':android.serial}
     for key,prop in [('model','ro.product.model'),('android','ro.build.version.release'),('sdk','ro.build.version.sdk'),('abi','ro.product.cpu.abi')]:
         report['device'][key]=android.shell('getprop',prop).strip()

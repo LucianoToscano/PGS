@@ -62,7 +62,7 @@ class NativePrerequisiteTests(unittest.TestCase):
         sdk = self.base / 'sdk'
         art = self.ndk(sdk / 'ndk' / art_build.NDK_VERSION, art_build.NDK_VERSION)
         self.assertEqual(art_build.resolve_art_ndk(self.root, {'ANDROID_HOME': str(sdk)})[0], art)
-        self.assertEqual(art_build.resolve_art_ndk(self.root, {'PGRAZOR_ART_NDK': str(art)})[0], art)
+        self.assertEqual(art_build.resolve_art_ndk(self.root, {'PGS_ART_NDK': str(art)})[0], art)
 
     def test_existing_workspace_artifact_fallback(self):
         art = self.ndk(self.root.parent / '.artifacts/native-migration/android-ndk-r29', art_build.NDK_VERSION)

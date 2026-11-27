@@ -5,7 +5,7 @@ hermes-swarm/
 frida-monitor/
 AGENTS.md
 *_HANDOFF.*
-PGRazor_NEXT_LLM.txt
+PGS_NEXT_LLM.txt
 NEXT_LLM_PROMPT.txt
 **/build/
 **/input/

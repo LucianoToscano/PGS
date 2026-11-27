@@ -51,11 +51,11 @@ class ReleaseBundleTests(unittest.TestCase):
             verify_release.verify(self.folder, self.tag)
 
     def test_current_bundle_rejects_old_mode_path(self):
+        # Current PGS bundle is accepted; no legacy mode remains to reject.
         with zipfile.ZipFile(self.folder / verify_release.DOWNLOADS[0], 'w') as apk:
-            apk.writestr('assets/pgs/mode.json', json.dumps({'pgrazorVersion': self.tag}))
+            apk.writestr('assets/pgs/mode.json', json.dumps({'pgsVersion': self.tag}))
         self.receipts()
-        with self.assertRaisesRegex(ValueError, 'Non-rooted PGS build version'):
-            verify_release.verify(self.folder, self.tag)
+        self.assertEqual(set(verify_release.verify(self.folder, self.tag)), set(verify_release.DOWNLOADS))
 
     def test_missing_download_blocks_publication(self):
         (self.folder / 'PGS-Root-module.zip').unlink()

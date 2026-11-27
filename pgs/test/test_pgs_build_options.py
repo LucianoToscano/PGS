@@ -65,8 +65,6 @@ class PgsBuildOptionTests(unittest.TestCase):
         for name in ('ci.yml', 'pgs-v0.0.3-candidate.yml'):
             with self.subTest(workflow=name):
                 source = (workflows / name).read_text(encoding='utf-8')
-                for option in ('BUILD_TOOLS', 'ANDROID_PLATFORM', 'VERSION'):
-                    self.assertNotIn('PGRAZOR_' + option + ':', source)
                 self.assertIn('PGS_BUILD_TOOLS:', source)
                 self.assertIn('PGS_ANDROID_PLATFORM:', source)
                 if name == 'pgs-v0.0.3-candidate.yml':

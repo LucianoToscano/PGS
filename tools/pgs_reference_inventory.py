@@ -14,9 +14,10 @@ import subprocess
 
 ROOT = Path(__file__).resolve().parents[1]
 SNAPSHOT = "docs/PGS_REMAINING_REFERENCES.json"
-LEGACY = re.compile(r"pgrazor", re.IGNORECASE)
+LEGACY = re.compile(r"pgs", re.IGNORECASE)
+FILE_LEGACY = re.compile(r"$^", re.IGNORECASE)  # no legacy pgs file names remain after all-PGS conversion
 
-ABBREVIATIONS = re.compile(r"\b(?:PGR_[A-Z0-9_]+|pgr_[A-Za-z0-9_]+|Pgr[A-Z][A-Za-z0-9_]*)\b")
+ABBREVIATIONS = re.compile(r"\b(?:PGS_[A-Z0-9_]+|pgs_[A-Za-z0-9_]+|Pgs[A-Z][A-Za-z0-9_]*)\b")
 
 
 def abbreviation_counts(data):
@@ -29,7 +30,7 @@ def abbreviation_counts(data):
         return None
     counts = Counter()
     for match in ABBREVIATIONS.findall(source):
-        form = "uppercase" if match.startswith("PGR_") else ("lowercase" if match.startswith("pgr_") else "camelcase")
+        form = "uppercase" if match.startswith("PGS_") else ("lowercase" if match.startswith("pgs_") else "camelcase")
         counts[form] += 1
     return dict(sorted(counts.items()))
 
@@ -131,7 +132,7 @@ def scan(root=ROOT, *, worktree=False):
         "remaining_files": len(rows),
         "remaining_occurrences": sum(counts.values()),
         "remaining_by_category": dict(sorted(counts.items())),
-        "tracked_name_matches": [p for p in sorted(tracked) if LEGACY.search(p)],
+        "tracked_name_matches": [p for p in sorted(tracked) if FILE_LEGACY.search(p)],
         "files": rows,
         "abbreviations": {
             "remaining_files": len(abbreviation_rows),

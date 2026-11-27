@@ -57,12 +57,12 @@ class RootedInstallerShellTests(unittest.TestCase):
             commands = {name: java(name).stdout for name in ('on','off','preserve','probe')}
             folder = Path(work)
             live = folder / 'live'; pending = folder / 'pending'
-            (live/'pgrazor').mkdir(parents=True)
+            (live/'pgs').mkdir(parents=True)
             (live/'module.prop').write_text('version=v0.2.5-test\n')
-            marker = live/'pgrazor/toggle-v1'; flag = live/'pgrazor/injection-off'
+            marker = live/'pgs/toggle-v1'; flag = live/'pgs/injection-off'
             stopped = folder/'stopped'
             def run(name, fail_stop=False):
-                script = commands[name].replace('/data/adb/modules_update/pgrazor','./pending').replace('/data/adb/modules/pgrazor','./live')
+                script = commands[name].replace('/data/adb/modules_update/pgs','./pending').replace('/data/adb/modules/pgs','./live')
                 fake_am = 'am(){ return 1; }; ' if fail_stop else 'am(){ [ "$1" = force-stop ] && [ "$2" = com.nianticlabs.pokemongo ] && touch stopped; }; '
                 return subprocess.run([bash,'-c',fake_am+script],cwd=work,capture_output=True,text=True,timeout=10)
             self.assertNotIn('MODTOGGLE=1',run('probe').stdout)
@@ -70,12 +70,12 @@ class RootedInstallerShellTests(unittest.TestCase):
             self.assertFalse(flag.exists()); self.assertFalse(stopped.exists())
             marker.touch()
             for staged in (False,True):
-                if staged: (pending/'pgrazor').mkdir(parents=True)
+                if staged: (pending/'pgs').mkdir(parents=True)
                 for on in (False,True):
                     result=run('on' if on else 'off')
                     self.assertEqual(result.returncode,0,result.stdout+result.stderr)
                     self.assertEqual(flag.is_file(),not on)
-                    if staged: self.assertEqual((pending/'pgrazor/injection-off').is_file(),not on)
+                    if staged: self.assertEqual((pending/'pgs/injection-off').is_file(),not on)
                     self.assertTrue(stopped.is_file()); stopped.unlink()
                     probe=run('probe').stdout
                     self.assertIn('MODTOGGLE=1',probe)
@@ -88,13 +88,13 @@ class RootedInstallerShellTests(unittest.TestCase):
             self.assertNotEqual(result.returncode,0); self.assertNotIn('PGS_TOGGLE_OK',result.stdout)
             self.assertTrue(flag.exists())
             run('on'); stopped.unlink()
-            (pending/'pgrazor/injection-off').mkdir()
+            (pending/'pgs/injection-off').mkdir()
             failed=run('off')
             self.assertNotEqual(failed.returncode,0); self.assertFalse(stopped.exists())
             self.assertNotIn('PGS_TOGGLE_OK',failed.stdout)
-            (pending/'pgrazor/injection-off').rmdir()
+            (pending/'pgs/injection-off').rmdir()
             self.assertEqual(run('preserve').returncode,0)
-            self.assertTrue((pending/'pgrazor/injection-off').is_file())
+            self.assertTrue((pending/'pgs/injection-off').is_file())
             self.assertFalse(stopped.exists())
 
 

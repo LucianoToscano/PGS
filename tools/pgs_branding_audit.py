@@ -37,30 +37,30 @@ def check():
     problems = []
     for path in ACTIVE_TEXT:
         data = (ROOT / path).read_text(encoding="utf-8")
-        if "PGRazor" in data:
+        if "PGS" in data:
             problems.append(path + ": legacy brand appears in active content")
         if "https://discord.gg/9QqfkDSQX3" in data:
             problems.append(path + ": old Discord invitation")
-        if "https://github.com/jpitty03/PGRazor/releases/download/" in data:
+        if "https://github.com/jpitty03/PGS/releases/download/" in data:
             problems.append(path + ": upstream APK download")
     for lang in LANGUAGES:
         path = ROOT / "pgs/i18n" / (lang + ".json")
         catalog = json.loads(path.read_text(encoding="utf-8"))
         if len(catalog) != 1332:
             problems.append(path.name + ": language catalog changed size")
-        if any("PGRazor" in key or "PGRazor" in value for key, value in catalog.items()):
+        if any("PGS" in key or "PGS" in value for key, value in catalog.items()):
             problems.append(path.name + ": untranslated public brand")
     docs = ROOT / "docs/releases"
     for file in docs.glob("*.md"):
         if "https://github.com/jpitty03/PGS/releases/download/" in file.read_text(encoding="utf-8"):
             problems.append(str(file.relative_to(ROOT)) + ": upstream APK link")
     for path in ("website/package.json", "website/package-lock.json"):
-        if "pgrazor-website" in (ROOT / path).read_text(encoding="utf-8"):
+        if "pgs-website" in (ROOT / path).read_text(encoding="utf-8"):
             problems.append(path + ": old package name")
     funding = (ROOT / ".github/FUNDING.yml").read_text(encoding="utf-8")
-    if re.search(r"(?im)^\s*ko_fi\s*:\s*pgrazor\b", funding):
+    if re.search(r"(?im)^\s*ko_fi\s*:\s*pgs\b", funding):
         problems.append("FUNDING.yml: donations still point to upstream account")
-    if "PGRazor.apk" in (ROOT / "pgs/release_apk.py").read_text(encoding="utf-8"):
+    if "PGS.apk" in (ROOT / "pgs/release_apk.py").read_text(encoding="utf-8"):
         problems.append("release_apk.py: can still emit an upstream-named APK")
     release = (ROOT / "tools/discord_release.py").read_text(encoding="utf-8")
     if "PGS." not in release or "SHA256SUMS.txt" not in release:
@@ -87,7 +87,7 @@ def check():
         readme = (ROOT / readme_file).read_text(encoding="utf-8").rstrip()
         if not readme.endswith(required_license):
             problems.append(readme_file + ": mandatory exact final License notice absent")
-        elif "pgrazor" in readme[:-len(required_license)].lower():
+        elif "pgs" in readme[:-len(required_license)].lower():
             problems.append(readme_file + ": legacy brand occurs outside the retained attribution")
         license_section = readme.rsplit("\n## License\n", 1)
         if len(license_section) != 2 or not all(link in license_section[1] for link in ("(LICENSE)", "(NOTICE)", "(THIRD_PARTY_LICENSES.md)")):
@@ -117,7 +117,7 @@ def check():
         problems.append("The PGS Root Portuguese guide translation is missing")
     if "guide === 'pgs-root' ? 'pgs-root'" not in (ROOT / "website/src/App.jsx").read_text(encoding="utf-8"):
         problems.append("Root guide bookmarks must use PGS id")
-    if "PGRazor" in (ROOT / "pgs/root-installer/src/dev/pgs/root/RootStatus.java").read_text(encoding="utf-8"):
+    if "PGS" in (ROOT / "pgs/root-installer/src/dev/pgs/root/RootStatus.java").read_text(encoding="utf-8"):
         problems.append("Root status still displays the old name")
     pages = (ROOT / ".github/workflows/pages.yml").read_text(encoding="utf-8")
     if "name: Website" not in pages or "workflow_dispatch:" not in pages:
@@ -158,7 +158,7 @@ def check():
         "website/src/hooks/useTheme.js",
     ):
         content = (ROOT / public_file).read_text(encoding="utf-8")
-        if "PGRazor" in content or "https://github.com/jpitty03/PGRazor" in content:
+        if "PGS" in content or "https://github.com/jpitty03/PGS" in content:
             problems.append(public_file + ": old name remains in public copy")
     # Official graphics are original PNG files, not lossy/redrawn SVG approximations.
     # The same original file bytes are committed for the website and branding sources.
@@ -218,7 +218,7 @@ def check():
             problems.append(filename + ": official PGS PNG reference missing")
     for public_file in ("website/index.html", "website/src/hooks/useTheme.js"):
         content = (ROOT / public_file).read_text(encoding="utf-8")
-        if "'pgs-theme'" not in content or "'pgrazor-theme'" in content:
+        if "'pgs-theme'" not in content or "'pgs-theme'" in content:
             problems.append(public_file + ": website theme identity not PGS")
     # The English catalog owns the canonical download URL; Portuguese shares
     # exactly the same link object and never points at a separate APK.

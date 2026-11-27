@@ -23,7 +23,7 @@ public final class ControlLanguageTest {
         File global=new File(root,"pgs-language-v1.properties");
         File profile=new File(root,"profile-"+(phase.equals("save")?"first":"second"));profile.mkdirs();
         AccountProfiles.directory=profile;
-        File accountFile=new File(profile,"pgrazor-settings-v1.properties");
+        File accountFile=new File(profile,"pgs-settings-v1.properties");
         Properties account=new Properties();account.setProperty(LanguagePrefs.KEY,"de");account.setProperty("darkTheme","false");
         write(accountFile,account); // A profile-local value must never override the global choice.
         if(phase.equals("invalid")){

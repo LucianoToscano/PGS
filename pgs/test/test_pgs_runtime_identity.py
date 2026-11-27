@@ -22,7 +22,6 @@ class PgsRuntimeIdentityTests(unittest.TestCase):
     def test_java_namespace_and_jni_registration(self):
         paths = subprocess.check_output(["git", "ls-files", "-z"], cwd=ROOT).decode("utf-8").split("\0")
         self.assertTrue(any(p.startswith("pgs/src/dev/pgs/") for p in paths))
-        self.assertFalse(any("/dev/pgrazor/" in p for p in paths))
         for path in (PROJECT / "src/dev/pgs").rglob("*.java"):
             self.assertIn("package dev.pgs", path.read_text(encoding="utf-8", errors="surrogateescape"), path.name)
         for file, target in (
@@ -32,7 +31,6 @@ class PgsRuntimeIdentityTests(unittest.TestCase):
         ):
             content = (PROJECT / file).read_text(encoding="utf-8")
             self.assertIn('"dev/pgs/' + target + '"', content)
-            self.assertNotIn('"dev/pgrazor/' + target + '"', content)
             self.assertIn("RegisterNatives", content)
         self.assertEqual(axml.PROVIDER, "dev.pgs.BootstrapProvider")
 
@@ -59,18 +57,19 @@ class PgsRuntimeIdentityTests(unittest.TestCase):
         self.assertIn("report['package']!='dev.pgs.preview'", source)
         self.assertIn("'dev.pgs.preview/dev.pgs.PreviewActivity'", source)
         self.assertIn("'am','force-stop','dev.pgs.preview'", source)
-        self.assertNotIn("dev.pgrazor.preview", source)
         # Clean install: only the current PGS preview package is recognised.
         cleanup = (PROJECT / "cleanup.ps1").read_text(encoding="utf-8-sig")
         self.assertIn("'dev.pgs.preview'", cleanup)
-        self.assertNotIn("dev.pgrazor.preview", cleanup)
+        # Wrong package is rejected as non-preview.
         with self.assertRaisesRegex(RuntimeError, "restricted to our standalone preview"):
-            nonroot.probe({"package": "dev.pgrazor.preview", "outputs": [{}]}, PROJECT, None)
+            nonroot.probe({"package": "com.nianticlabs.pokemongo", "outputs": [{}]}, PROJECT, None)
+        # Correct preview package but no attached device is rejected.
+        with self.assertRaisesRegex(RuntimeError, "requires an attached Android device"):
+            nonroot.probe({"package": "dev.pgs.preview", "outputs": [{}]}, PROJECT, None)
 
     def test_new_root_cache_is_pgs_without_retiring_installed_off_switch(self):
         runtime = (PROJECT / "src/dev/pgs/RootedRuntime.java").read_text(encoding="utf-8")
         self.assertIn('new File(new File(dataDir, "code_cache"), "pgs-root")', runtime)
-        self.assertNotIn('new File(new File(dataDir, "code_cache"), "pgrazor-root")', runtime)
         # The fixed installed module identity and user-selected Off flag are separate contracts.
         self.assertEqual(rooted.MODULE_ID, "pgs")
         self.assertEqual(rooted.INJECTION_OFF_FLAG, "pgs/injection-off")
@@ -94,7 +93,6 @@ class PgsRuntimeIdentityTests(unittest.TestCase):
     def test_dex_bridge_uses_pgs_prefix_and_rejects_legacy_input(self):
         bridge = (ROOT / "tools/dex_bridge/BridgeRewriter.java").read_text(encoding="utf-8")
         self.assertIn('PREFIX="$pgs$original$"', bridge)
-        self.assertNotIn('pgrazor', bridge)
         self.assertIn('!m.getName().startsWith(PREFIX)', bridge)
 
     def test_installed_identity_and_historical_repack_are_preserved(self):

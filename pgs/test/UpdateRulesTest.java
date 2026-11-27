@@ -31,8 +31,8 @@ public final class UpdateRulesTest {
         check(UpdateRules.checksum(hash.substring(1) + "  PGS.v0.0.1.apk\n", "PGS.v0.0.1.apk") == null, "a short checksum is rejected");
 
         check(UpdateRules.trustedUrl("https://github.com/LucianoToscano/PGS/releases/download/v0.3.7/PGS.v0.0.1.apk"), "the release URL is trusted");
-        check(!UpdateRules.trustedUrl("http://github.com/jpitty03/PGRazor/releases/download/v0.3.7/PGS.v0.0.1.apk"), "plain HTTP is refused");
-        check(!UpdateRules.trustedUrl("https://github.com/someone/PGRazor/releases/download/v0.3.7/PGS.v0.0.1.apk"), "another repository is refused");
+        check(!UpdateRules.trustedUrl("http://github.com/jpitty03/PGS/releases/download/v0.3.7/PGS.v0.0.1.apk"), "plain HTTP is refused");
+        check(!UpdateRules.trustedUrl("https://github.com/someone/PGS/releases/download/v0.3.7/PGS.v0.0.1.apk"), "another repository is refused");
         check(!UpdateRules.trustedUrl(null), "a missing URL is refused");
 
         check(UpdateRules.sizeAllowed(186_207_943L) && !UpdateRules.sizeAllowed(0) && !UpdateRules.sizeAllowed(UpdateRules.MAX_BYTES + 1), "sizes are bounded");

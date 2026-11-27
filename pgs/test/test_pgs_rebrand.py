@@ -14,23 +14,23 @@ class PgsRebrandTests(unittest.TestCase):
     def test_update_mode_preserves_native_runtime_configuration(self):
         original = {
             "gadget": False, "compiledGameplay": True,
-            "pgrazorVersion": "v0.0.1",
+            "pgsVersion": "v0.0.1",
             "runtimeAbis": ["arm64-v8a"],
             "nativePilot": True, "googleBrowserLogin": True,
         }
         result = json.loads(pgs_rebrand.updated_mode(
             json.dumps(original).encode("utf-8")))
-        self.assertEqual(result["pgrazorVersion"], "v0.0.2")
-        for key in original.keys() - {"pgrazorVersion"}:
+        self.assertEqual(result["pgsVersion"], "v0.0.2")
+        for key in original.keys() - {"pgsVersion"}:
             self.assertEqual(result[key], original[key])
 
     def test_refuse_wrong_gameplay_or_older_identity(self):
         for value in [
-            {"pgrazorVersion": "v0.0.1", "compiledGameplay": False},
-            {"pgrazorVersion": "v0.0.1"},
-            {"pgrazorVersion": "v0.0.2", "compiledGameplay": True},
-            {"pgrazorVersion": "v0.3.7", "compiledGameplay": True},
-            {"pgrazorVersion": "v0.0.1", "compiledGameplay": "true"},
+            {"pgsVersion": "v0.0.1", "compiledGameplay": False},
+            {"pgsVersion": "v0.0.1"},
+            {"pgsVersion": "v0.0.2", "compiledGameplay": True},
+            {"pgsVersion": "v0.3.7", "compiledGameplay": True},
+            {"pgsVersion": "v0.0.1", "compiledGameplay": "true"},
         ]:
             with self.subTest(value=value), self.assertRaises(ValueError):
                 pgs_rebrand.updated_mode(json.dumps(value).encode("utf-8"))

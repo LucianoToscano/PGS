@@ -194,7 +194,7 @@ target_compile_options(pgs_core PRIVATE
 
 set(PGS_VERSION_SCRIPT "${CMAKE_CURRENT_SOURCE_DIR}/pgs.map")
 target_link_options(pgs_core PRIVATE
-  "-Wl,--version-script=${PGS_VERSION_SCRIPT}" # export only JNI_OnLoad + pgs_native_api + legacy pgrazor_native_api
+  "-Wl,--version-script=${PGS_VERSION_SCRIPT}" # export only JNI_OnLoad + pgs_native_api
   "-Wl,--exclude-libs,ALL"                         # keep Dobby's static symbols unexported
   "-Wl,-z,defs"                                    # no undefined symbols at link time
   "-Wl,--gc-sections")

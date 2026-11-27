@@ -91,10 +91,9 @@ class PgsNativeAliasesTests(unittest.TestCase):
             if not path.is_file() or path.suffix not in {".h",".hpp",".cpp",".c",".cc",".inc"}:
                 continue
             data = path.read_bytes()
-            # Only the public factory spelling and the icon-source notice are retained.
+            # Preserve third-party icon-source attribution only.
             if path.name == "pvp_icons.h":
                 continue
-            data = data.replace(b"pgrazor_native_api",b"")
             self.assertNotRegex(data,rb"(?i)pgrazor",str(path.relative_to(ROOT)))
 
 

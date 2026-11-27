@@ -5,19 +5,18 @@
   "changed_files": 37,
   "added_files": 1,
   "previous_occurrences": 1041,
-  "remaining_files": 136,
-  "remaining_occurrences": 777,
+  "remaining_files": 127,
+  "remaining_occurrences": 756,
   "remaining_by_category": {
-    "workflows": 8,
-    "other": 84,
-    "documentation": 277,
-    "legal": 3,
-    "release_history": 103,
-    "native": 13,
-    "tests": 220,
+    "documentation": 276,
     "java": 62,
-    "javascript": 1,
-    "vendor": 6
+    "legal": 3,
+    "native": 6,
+    "other": 83,
+    "release_history": 103,
+    "tests": 209,
+    "vendor": 6,
+    "workflows": 8
   },
   "files": [
     {
@@ -291,41 +290,6 @@
       "occurrences": 1
     },
     {
-      "path": "pgs/native/CMakeLists.txt",
-      "category": "native",
-      "occurrences": 1
-    },
-    {
-      "path": "pgs/native/README.md",
-      "category": "documentation",
-      "occurrences": 1
-    },
-    {
-      "path": "pgs/native/adventure_sync_test.cpp",
-      "category": "tests",
-      "occurrences": 1
-    },
-    {
-      "path": "pgs/native/camera_host.cpp",
-      "category": "native",
-      "occurrences": 1
-    },
-    {
-      "path": "pgs/native/pgs.map",
-      "category": "native",
-      "occurrences": 1
-    },
-    {
-      "path": "pgs/native/pgs_native.cpp",
-      "category": "native",
-      "occurrences": 1
-    },
-    {
-      "path": "pgs/native/pgs_native_api.h",
-      "category": "native",
-      "occurrences": 2
-    },
-    {
       "path": "pgs/native/pvp_icons.h",
       "category": "native",
       "occurrences": 1
@@ -336,14 +300,9 @@
       "occurrences": 1
     },
     {
-      "path": "pgs/native/test_runner.cpp",
-      "category": "native",
-      "occurrences": 1
-    },
-    {
       "path": "pgs/native_build.py",
       "category": "other",
-      "occurrences": 4
+      "occurrences": 3
     },
     {
       "path": "pgs/nonroot.py",
@@ -394,11 +353,6 @@
       "path": "pgs/rooted_installer.py",
       "category": "other",
       "occurrences": 2
-    },
-    {
-      "path": "pgs/runtime/native-core.js",
-      "category": "javascript",
-      "occurrences": 1
     },
     {
       "path": "pgs/runtime_audit.py",
@@ -513,7 +467,7 @@
     {
       "path": "pgs/test/native-core-test.cjs",
       "category": "tests",
-      "occurrences": 4
+      "occurrences": 1
     },
     {
       "path": "pgs/test/test_account_restart_lifecycle.py",
@@ -548,7 +502,7 @@
     {
       "path": "pgs/test/test_native_build.py",
       "category": "tests",
-      "occurrences": 9
+      "occurrences": 4
     },
     {
       "path": "pgs/test/test_native_prerequisites.py",
@@ -578,12 +532,12 @@
     {
       "path": "pgs/test/test_pgs_native_aliases_native.py",
       "category": "tests",
-      "occurrences": 2
+      "occurrences": 1
     },
     {
       "path": "pgs/test/test_pgs_native_identity.py",
       "category": "tests",
-      "occurrences": 34
+      "occurrences": 33
     },
     {
       "path": "pgs/test/test_pgs_project_layout.py",
@@ -1132,7 +1086,7 @@
     "limitations": "Counts are exact deltas from the verified indexed baseline; full CI must independently reconcile the snapshot. Older backup readers do not support version 2."
   },
   "current_retention_review": {
-    "base_commit": "73c27e725d6d89691ecb637e4a21921d80f379fc",
+    "base_commit": "6d72266192a7f01c5bd74d091a5d9a2ea68d398b",
     "scope": "Current per-file triage; all matching indexed text paths classified exactly once, not a claim of necessity of each individual occurrence.",
     "groups": {
       "historical_records": {
@@ -1201,7 +1155,7 @@
       "build_signing_contracts": {
         "status": "retain_compatibility",
         "reason": "PGS-first build and signing configuration, old configuration aliases and historical guarded rebuilds. No new signing key.",
-        "occurrences": 29,
+        "occurrences": 28,
         "paths": [
           ".github/workflows/pgs-build.yml",
           "CONTRIBUTING.md",
@@ -1257,17 +1211,9 @@
       },
       "public_binary_abi": {
         "status": "retain_compatibility",
-        "reason": "Public binary factory and explicit fallback used by existing compiled clients. Private aliases already retired.",
-        "occurrences": 8,
-        "paths": [
-          "pgs/native/CMakeLists.txt",
-          "pgs/native/README.md",
-          "pgs/native/camera_host.cpp",
-          "pgs/native/pgs.map",
-          "pgs/native/pgs_native.cpp",
-          "pgs/native/pgs_native_api.h",
-          "pgs/runtime/native-core.js"
-        ]
+        "reason": "The retired public factory has been removed from current build sources; historical evidence remains.",
+        "occurrences": 0,
+        "paths": []
       },
       "compatibility_guards": {
         "status": "retain_guards",
@@ -1293,10 +1239,8 @@
       "tests": {
         "status": "retain_or_review",
         "reason": "Tests of legacy input, data continuity, ABI, build options, attribution and forbidden-name detection. Ordinary fixture use may be reviewed individually.",
-        "occurrences": 221,
+        "occurrences": 209,
         "paths": [
-          "pgs/native/adventure_sync_test.cpp",
-          "pgs/native/test_runner.cpp",
           "pgs/test/AccountProfileDataTest.java",
           "pgs/test/AccountProfileStoreTest.java",
           "pgs/test/ControlLanguageTest.java",

@@ -16,10 +16,9 @@ int main(int argc,char **argv) {
     void *lib=dlopen(argv[1],RTLD_NOW|RTLD_LOCAL);
     if(!lib){std::puts(dlerror());return 2;}
     auto get=reinterpret_cast<const void *(*)(uint32_t)>(dlsym(lib,"pgs_native_api"));
-    auto legacy=reinterpret_cast<const void *(*)(uint32_t)>(dlsym(lib,"pgrazor_native_api"));
-    if(!get||!legacy||get(0)!=nullptr||legacy(0)!=nullptr)return 3;
-    // Old and new names must point to identical read-only ABI tables.
-    if(get(1)!=legacy(1)||get(2)!=legacy(2)||get(3)!=nullptr)return 20;
+    if(!get||get(0)!=nullptr)return 3;
+    // Both supported ABI versions expose immutable tables; unknown versions fail.
+    if(!get(1)||!get(2)||get(3)!=nullptr)return 20;
     auto api=static_cast<const pgs_native_api_v1 *>(get(1));
     if(!api||api->size!=sizeof(*api))return 4;
     if(api->selftest()!=0)return 5;

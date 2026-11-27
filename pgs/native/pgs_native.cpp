@@ -401,12 +401,6 @@ const void *pgs_native_api(uint32_t version) {
     return &g_api;
 }
 
-// Preserve ABI: installed clients still dlsym this legacy symbol.
-extern "C" __attribute__((visibility("default")))
-const void *pgrazor_native_api(uint32_t version) {
-    return pgs_native_api(version);
-}
-
 // ---------------------------------------------------------------------------
 // Deterministic policy self-check for the JNI host surface (no Dobby, no device).
 // ---------------------------------------------------------------------------

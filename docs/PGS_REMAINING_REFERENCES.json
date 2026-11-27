@@ -1,7 +1,7 @@
 {
   "scope": "Git-indexed regular UTF-8 text, excluding NUL-containing files and the snapshot itself",
-  "tracked_files": 2109,
-  "text_files": 1034,
+  "tracked_files": 2111,
+  "text_files": 1036,
   "changed_files": 37,
   "added_files": 1,
   "previous_occurrences": 1041,
@@ -1423,5 +1423,20 @@
     "draft_present": false,
     "job_contents_permission": "write (manual validation job only)",
     "signed_apk_generated": false
+  },
+  "candidate_validation_followup": {
+    "source_commit": "d4eb3192c505ea53e8c072cefc1703f604c21122",
+    "run_id": 46054404520,
+    "receipt_artifact_id": 15226656243,
+    "static_candidate_checks_passed": true,
+    "signed_apk_generated": true,
+    "apk_retained": false,
+    "apk_sha256": "e9cae313bd3d98087ed370e211c690857c2acb18973f740faf1c814d86dda225",
+    "apk_bytes": 185818917,
+    "device_tested": false,
+    "in_place_update_tested": false,
+    "publish_ready": false,
+    "retention_option": "manual opt-in, unpublished draft, no overwrite, no public APK artifacts",
+    "retention_tested_live": false
   }
 }

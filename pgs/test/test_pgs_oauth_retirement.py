@@ -123,6 +123,19 @@ public class RetiredAuthTest {
         self.assertNotIn(".apk", upload)
         self.assertNotIn(".jks", upload)
         self.assertIn("if: always()", flow)
+        self.assertIn("retain_authorized_candidate:", flow)
+        retention_input = flow.split("      retain_authorized_candidate:", 1)[1].split("permissions:", 1)[0]
+        self.assertIn("default: false", retention_input)
+        for step in ("Check optional candidate draft target", "Retain authorized signed candidate"):
+            block = flow.split("name: " + step, 1)[1].split("      - name:", 1)[0].split("      - uses:", 1)[0]
+            self.assertIn("if: inputs.retain_authorized_candidate == true", block)
+            self.assertIn("PGS_RETAIN_AUTHORIZED: ${{ inputs.retain_authorized_candidate }}", block)
+        retained = flow.split("name: Retain authorized signed candidate", 1)[1].split("      - name:", 1)[0]
+        self.assertIn('rm -f -- "$PGS_KEYSTORE"', retained)
+        self.assertIn("python -B tools/pgs_candidate_draft.py", retained)
+        self.assertNotIn("KEYSTORE_BASE64", retained)
+        self.assertLess(flow.index("name: Build and verify complete candidate"), flow.index("name: Retain authorized signed candidate"))
+        self.assertEqual(flow.count("actions/upload-artifact@"), 1)
 
 
 if __name__ == "__main__":

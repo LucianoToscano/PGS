@@ -72,7 +72,7 @@ class PgsBuildOptionTests(unittest.TestCase):
 
     def test_workflows_use_pgs_nonsecret_build_options(self):
         workflows = Path(__file__).resolve().parents[2] / '.github' / 'workflows'
-        for name in ('ci.yml', 'release.yml', 'pgs-v0.0.1-release.yml',
+        for name in ('ci.yml', 'pgs-v0.0.1-release.yml',
                      'pgs-v0.0.2-release.yml', 'pgs-same-package-update.yml'):
             with self.subTest(workflow=name):
                 source = (workflows / name).read_text(encoding='utf-8')
@@ -80,8 +80,16 @@ class PgsBuildOptionTests(unittest.TestCase):
                     self.assertNotIn('PGRAZOR_' + option + ':', source)
                 self.assertIn('PGS_BUILD_TOOLS:', source)
                 self.assertIn('PGS_ANDROID_PLATFORM:', source)
-                if name in ('release.yml', 'pgs-v0.0.1-release.yml', 'pgs-v0.0.2-release.yml'):
+                if name in ('pgs-v0.0.1-release.yml', 'pgs-v0.0.2-release.yml'):
                     self.assertIn('PGS_VERSION:', source)
+
+    def test_legacy_publication_workflow_is_inert(self):
+        flow = (Path(__file__).resolve().parents[2] / '.github/workflows/release.yml').read_text(encoding='utf-8')
+        self.assertIn('  workflow_dispatch:', flow)
+        self.assertIn('contents: read', flow)
+        self.assertIn('exit 1', flow)
+        for forbidden in ('secrets.', 'contents: write', 'actions/checkout', 'gh release', 'tools/private_input.py', 'upload-artifact'):
+            self.assertNotIn(forbidden, flow)
 
 
 if __name__ == "__main__":

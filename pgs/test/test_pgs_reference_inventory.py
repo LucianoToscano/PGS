@@ -86,6 +86,17 @@ class PgsReferenceInventoryTests(unittest.TestCase):
         self.assertEqual(differences, [], "The inventory must match indexed Git text")
         self.assertEqual(result["remaining_occurrences"], previous["remaining_occurrences"])
         self.assertEqual(result["remaining_by_category"], previous["remaining_by_category"])
+        self.assertEqual(result["abbreviations"], previous["abbreviations"])
+        review = previous.get("current_retention_review")
+        if review is not None:
+            indexed = {row["path"]: row["occurrences"] for row in result["files"]}
+            classified = {}
+            for group in review["groups"].values():
+                self.assertEqual(group["occurrences"], sum(indexed[path] for path in group["paths"]))
+                for path in group["paths"]:
+                    self.assertNotIn(path, classified)
+                    classified[path] = indexed[path]
+            self.assertEqual(classified, indexed, "Retention review must account for every remaining file")
 
 
 if __name__ == "__main__":

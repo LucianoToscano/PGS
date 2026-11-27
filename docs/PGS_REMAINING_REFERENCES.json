@@ -5,16 +5,16 @@
   "changed_files": 37,
   "added_files": 1,
   "previous_occurrences": 1041,
-  "remaining_files": 146,
-  "remaining_occurrences": 823,
+  "remaining_files": 145,
+  "remaining_occurrences": 798,
   "remaining_by_category": {
-    "workflows": 38,
+    "workflows": 21,
     "other": 92,
     "documentation": 277,
     "legal": 3,
     "release_history": 103,
     "native": 14,
-    "tests": 225,
+    "tests": 217,
     "java": 64,
     "javascript": 1,
     "vendor": 6
@@ -39,11 +39,6 @@
       "path": ".github/workflows/pgs-v0.0.3-candidate.yml",
       "category": "workflows",
       "occurrences": 5
-    },
-    {
-      "path": ".github/workflows/release.yml",
-      "category": "workflows",
-      "occurrences": 17
     },
     {
       "path": ".gitignore",
@@ -653,7 +648,7 @@
     {
       "path": "pgs/test/test_release_bundle.py",
       "category": "tests",
-      "occurrences": 15
+      "occurrences": 7
     },
     {
       "path": "pgs/test/test_rooted_cleanup.py",
@@ -1180,5 +1175,235 @@
     "remaining_full_name_occurrences": 823,
     "remaining_abbreviations": 14,
     "limitations": "Counts are exact deltas from the verified indexed baseline; full CI must independently reconcile the snapshot. Older backup readers do not support version 2."
+  },
+  "current_retention_review": {
+    "base_commit": "89748d5be4ae5eb59e3ee3a223bfa3448bbba261",
+    "scope": "Current per-file triage; all matching indexed text paths classified exactly once, not a claim of necessity of each individual occurrence.",
+    "groups": {
+      "historical_records": {
+        "status": "preserve",
+        "reason": "Historical evidence, retired names and upstream release records; not present-day branding.",
+        "occurrences": 365,
+        "paths": [
+          "docs/NATIVE_MIGRATION.md",
+          "docs/PGS_BRANDING_AUDIT.md",
+          "docs/PGS_COMMUNITY_REVIEW.md",
+          "docs/PGS_FORK_INVENTORY.json",
+          "docs/PGS_NATIVE_ALIAS_INVENTORY.json",
+          "docs/en/PGS_TECHNICAL_MIGRATION.md",
+          "docs/pt-BR/PGS_TECHNICAL_MIGRATION.md",
+          "docs/releases/footer.md",
+          "docs/releases/v0.0.1.md",
+          "docs/releases/v0.1.0-alpha.3.md",
+          "docs/releases/v0.1.0-alpha.4.md",
+          "docs/releases/v0.1.0.md",
+          "docs/releases/v0.1.1.md",
+          "docs/releases/v0.1.10.md",
+          "docs/releases/v0.1.2.md",
+          "docs/releases/v0.1.3.md",
+          "docs/releases/v0.1.4.md",
+          "docs/releases/v0.1.5.md",
+          "docs/releases/v0.1.6.md",
+          "docs/releases/v0.1.7-experimental.1.md",
+          "docs/releases/v0.1.7-experimental.2.md",
+          "docs/releases/v0.1.7-experimental.3.md",
+          "docs/releases/v0.1.7.md",
+          "docs/releases/v0.1.8.md",
+          "docs/releases/v0.1.9.md",
+          "docs/releases/v0.2.0.md",
+          "docs/releases/v0.2.1.md",
+          "docs/releases/v0.2.2.md",
+          "docs/releases/v0.2.3.md",
+          "docs/releases/v0.2.4.md",
+          "docs/releases/v0.2.5.md",
+          "docs/releases/v0.3.0.md",
+          "docs/releases/v0.3.2.md",
+          "docs/releases/v0.3.3.md",
+          "docs/releases/v0.3.4.md",
+          "docs/releases/v0.3.5.md",
+          "docs/releases/v0.3.6.md",
+          "docs/releases/v0.3.7.md",
+          "docs/releases/v0.3.8.md"
+        ]
+      },
+      "legal_provenance": {
+        "status": "preserve",
+        "reason": "Original notices and source provenance; preserve attribution.",
+        "occurrences": 16,
+        "paths": [
+          "LICENSE",
+          "NOTICE",
+          "README.md",
+          "README.pt-BR.md",
+          "pgs/native/pvp_icons.h",
+          "pgs/native/schema/pvp/icons/provenance.json",
+          "pgs/vendor/bridge-provenance.json",
+          "pgs/vendor/frida-java-bridge-302a588.js",
+          "pgs/vendor/patch_bridge.py",
+          "tools/pvp_data.py"
+        ]
+      },
+      "build_signing_contracts": {
+        "status": "retain_compatibility",
+        "reason": "PGS-first build and signing configuration, old configuration aliases and historical guarded rebuilds. No new signing key.",
+        "occurrences": 42,
+        "paths": [
+          ".github/workflows/pgs-same-package-update.yml",
+          ".github/workflows/pgs-v0.0.1-release.yml",
+          ".github/workflows/pgs-v0.0.2-release.yml",
+          ".github/workflows/pgs-v0.0.3-candidate.yml",
+          "CONTRIBUTING.md",
+          "CONTRIBUTING.pt-BR.md",
+          "pgs/art/CMakeLists.txt",
+          "pgs/art_build.py",
+          "pgs/build.py",
+          "pgs/native_build.py",
+          "pgs/pgs.cmd",
+          "tools/private_input.py"
+        ]
+      },
+      "installed_identity_storage": {
+        "status": "retain_compatibility",
+        "reason": "Existing package/module IDs, physical storage, crypto, notification IDs and state markers. Require a tested migration before retirement.",
+        "occurrences": 79,
+        "paths": [
+          "docs/ARCHITECTURE.md",
+          "pgs/AndroidManifest.xml",
+          "pgs/root-installer/AndroidManifest.xml",
+          "pgs/root-installer/README.md",
+          "pgs/root-installer/src/dev/pgs/root/RootModuleState.java",
+          "pgs/root-installer/src/dev/pgs/root/RootToggleCommand.java",
+          "pgs/rooted.py",
+          "pgs/rooted_installer.py",
+          "pgs/src/dev/pgs/AccountProfileStore.java",
+          "pgs/src/dev/pgs/AccountRestartActivity.java",
+          "pgs/src/dev/pgs/AccountSessionVault.java",
+          "pgs/src/dev/pgs/AccountSessions.java",
+          "pgs/src/dev/pgs/BootstrapProvider.java",
+          "pgs/src/dev/pgs/LiveFeedSession.java",
+          "pgs/src/dev/pgs/RootedRestart.java",
+          "pgs/src/dev/pgs/RootedRuntime.java",
+          "pgs/src/dev/pgs/SettingsBackupRules.java",
+          "pgs/src/dev/pgs/ShinyScanner.java",
+          "pgs/src/dev/pgs/VgpController.java",
+          "pgs/zygisk/loader.cpp"
+        ]
+      },
+      "legacy_input_artifacts": {
+        "status": "retain_compatibility",
+        "reason": "Legacy input recognition/rejection, archived verification and cleanup rules. Some files have mixed responsibilities.",
+        "occurrences": 38,
+        "paths": [
+          "pgs/axml.py",
+          "pgs/cleanup-rooted.ps1",
+          "pgs/cleanup.ps1",
+          "pgs/nonroot.py",
+          "pgs/pgs_candidate.py",
+          "pgs/pgs_rebrand.py",
+          "pgs/runtime_audit.py",
+          "tools/dex_bridge/BridgeRewriter.java",
+          "tools/verify_release.py"
+        ]
+      },
+      "public_binary_abi": {
+        "status": "retain_compatibility",
+        "reason": "Public binary factory and explicit fallback used by existing compiled clients. Private aliases already retired.",
+        "occurrences": 8,
+        "paths": [
+          "pgs/native/CMakeLists.txt",
+          "pgs/native/README.md",
+          "pgs/native/camera_host.cpp",
+          "pgs/native/pgs.map",
+          "pgs/native/pgs_native.cpp",
+          "pgs/native/pgs_native_api.h",
+          "pgs/runtime/native-core.js"
+        ]
+      },
+      "compatibility_guards": {
+        "status": "retain_guards",
+        "reason": "Legacy redirect, translation fallback, ignored old checkout, and explicit audit/brand rejection rules.",
+        "occurrences": 25,
+        "paths": [
+          ".gitignore",
+          "pgs/src/dev/pgs/I18n.java",
+          "tools/pgs_branding_audit.py",
+          "tools/pgs_reference_inventory.py",
+          "website/src/App.jsx"
+        ]
+      },
+      "external_feed": {
+        "status": "pending_verified_replacement",
+        "reason": "Endpoint, protocol and server examples. Independent deployment and authorization are not established by this audit.",
+        "occurrences": 7,
+        "paths": [
+          "pgs/src/dev/pgs/ShundoSniper.java",
+          "tools/hundo-feed/README.md",
+          "tools/hundo-feed/hundo-feed.env.example",
+          "tools/hundo-feed/hundo_feed.py"
+        ]
+      },
+      "tests": {
+        "status": "retain_or_review",
+        "reason": "Tests of legacy input, data continuity, ABI, build options, attribution and forbidden-name detection. Ordinary fixture use may be reviewed individually.",
+        "occurrences": 218,
+        "paths": [
+          "pgs/native/adventure_sync_test.cpp",
+          "pgs/native/iv_display_test.cpp",
+          "pgs/native/test_runner.cpp",
+          "pgs/test/AccountProfileDataTest.java",
+          "pgs/test/AccountProfileStoreTest.java",
+          "pgs/test/ControlLanguageTest.java",
+          "pgs/test/ControlSettingsReloadTest.java",
+          "pgs/test/ControlSettingsTest.java",
+          "pgs/test/I18nTest.java",
+          "pgs/test/PogoFeedDataTest.java",
+          "pgs/test/SettingsBackupRulesTest.java",
+          "pgs/test/UpdateRulesTest.java",
+          "pgs/test/native-core-test.cjs",
+          "pgs/test/test_account_restart_lifecycle.py",
+          "pgs/test/test_axml.py",
+          "pgs/test/test_compiled_gameplay.py",
+          "pgs/test/test_discord_release.py",
+          "pgs/test/test_event_settings_java.py",
+          "pgs/test/test_iv_owned_refresh_native.py",
+          "pgs/test/test_log_export_java.py",
+          "pgs/test/test_native_build.py",
+          "pgs/test/test_native_prerequisites.py",
+          "pgs/test/test_packaging.py",
+          "pgs/test/test_pgs_build_options.py",
+          "pgs/test/test_pgs_candidate.py",
+          "pgs/test/test_pgs_license.py",
+          "pgs/test/test_pgs_native_aliases_native.py",
+          "pgs/test/test_pgs_native_identity.py",
+          "pgs/test/test_pgs_project_layout.py",
+          "pgs/test/test_pgs_rebrand.py",
+          "pgs/test/test_pgs_reference_inventory.py",
+          "pgs/test/test_pgs_release_policy.py",
+          "pgs/test/test_pgs_runtime_identity.py",
+          "pgs/test/test_release_bundle.py",
+          "pgs/test/test_rooted_cleanup.py",
+          "pgs/test/test_rooted_installer_shell.py",
+          "pgs/test/test_rooted_packaging.py",
+          "pgs/test/test_source_bundle.py",
+          "website/tests/guides.spec.js"
+        ]
+      },
+      "mixed_review": {
+        "status": "review_individual",
+        "reason": "Remaining mixed-purpose source/documentation; file-level classification is not proof that every occurrence is necessary.",
+        "occurrences": 0,
+        "paths": []
+      }
+    }
+  },
+  "release_identity_cleanup": {
+    "base_commit": "89748d5be4ae5eb59e3ee3a223bfa3448bbba261",
+    "disabled_upstream_workflow_inert": true,
+    "canonical_bundle_verifier_default": true,
+    "legacy_bundle_verification_explicit": true,
+    "mixed_names_rejected": true,
+    "remaining_full_name_occurrences": 798,
+    "remaining_abbreviations": 14,
+    "validation": "Counts calculated by exact changed-file deltas against the preceding indexed inventory. Full CI reconciliation required."
   }
 }

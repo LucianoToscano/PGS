@@ -18,8 +18,8 @@ from game_update import current_profile
 from pgs_pinned_input import github_env, REPOSITORY
 
 ROOT = Path(__file__).resolve().parents[1]
-TAG = "v0.0.3"
-PREVIOUS_CODE = 2026111605
+TAG = "v0.0.4"
+PREVIOUS_CODE = 2026111606
 ASSET = "PGS." + TAG + ".apk"
 NAMES = (ASSET, "PGS.json", "build-info.json", "SHA256SUMS.txt")
 
@@ -169,7 +169,7 @@ def main():
             raise ValueError("Release ledger changed; prepare a new candidate version")
         sys.path.insert(0, str(ROOT / "pgs"))
         import pgs_candidate
-        source = Path(os.environ["RUNNER_TEMP"]) / "pgs-v003-validation"
+        source = Path(os.environ["RUNNER_TEMP"]) / "pgs-v004-validation"
         retain(cli, env, source, profile, commit, pgs_candidate.verify)
         print("Verified candidate retained in unpublished draft:", TAG)
     except (ValueError, OSError, KeyError, TypeError):

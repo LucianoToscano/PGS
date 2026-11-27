@@ -1,4 +1,4 @@
-name: PGS v0.0.3 - Full candidate validation
+name: PGS v0.0.4 - Full candidate validation
 on:
   workflow_dispatch:
     inputs:
@@ -15,7 +15,7 @@ on:
 permissions:
   contents: read
 concurrency:
-  group: pgs-v0.0.3-validation
+  group: pgs-v0.0.4-validation
   cancel-in-progress: false
 jobs:
   validate:
@@ -28,7 +28,7 @@ jobs:
     permissions:
       contents: write
     env:
-      PGS_VERSION: v0.0.3
+      PGS_VERSION: v0.0.4
       PGS_BUILD_TOOLS: '36.0.0'
       PGS_ANDROID_PLATFORM: android-36
     steps:
@@ -39,8 +39,8 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          test "$(cat pgs/PGS_LAST_VERSION_CODE)" = 2026111605
-          test "$(cat pgs/VERSION)" = 0.0.2
+          test "$(cat pgs/PGS_LAST_VERSION_CODE)" = 2026111606
+          test "$(cat pgs/VERSION)" = 0.0.3
           python -B -c "import sys; sys.path.insert(0, 'tools'); from game_update import current_profile; p=current_profile(); assert p['game_version']=='0.439.0' and p['version_code']==2026111602"
       - name: Check required private configuration before installing tools
         env:
@@ -102,7 +102,7 @@ jobs:
           python -B tools/check.py
       - name: Configure existing signer path
         shell: bash
-        run: echo "PGS_KEYSTORE=$RUNNER_TEMP/pgs-v003-validation.jks" >> "$GITHUB_ENV"
+        run: echo "PGS_KEYSTORE=$RUNNER_TEMP/pgs-v004-validation.jks" >> "$GITHUB_ENV"
       - name: Retrieve and verify authorized original from unpublished draft
         env:
           GH_TOKEN: ${{ github.token }}
@@ -135,15 +135,15 @@ jobs:
           python -B pgs/nonroot.py --apk pgs/input/game.apkm
           mapfile -t reports < <(find pgs/build/nonroot -mindepth 2 -maxdepth 2 -name report.json -type f)
           test "${#reports[@]}" = 1
-          python -B pgs/release_apk.py --run "$(dirname "${reports[0]}")" --output "$RUNNER_TEMP/pgs-v003-validation"
-          python -B -c "import json, pathlib, os; d=json.loads((pathlib.Path(os.environ['RUNNER_TEMP'])/'pgs-v003-validation/PGS.json').read_text()); assert d['pgs_version']=='v0.0.3' and d['version_code']==2026111606 and d['publish_ready'] is False and d['device_tested'] is False"
+          python -B pgs/release_apk.py --run "$(dirname "${reports[0]}")" --output "$RUNNER_TEMP/pgs-v004-validation"
+          python -B -c "import json, pathlib, os; d=json.loads((pathlib.Path(os.environ['RUNNER_TEMP'])/'pgs-v004-validation/PGS.json').read_text()); assert d['pgs_version']=='v0.0.4' and d['version_code']==2026111607 and d['publish_ready'] is False and d['device_tested'] is False"
       - name: Upload verification receipts only
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
-          name: PGS-v0.0.3-validation-receipts
+          name: PGS-v0.0.4-validation-receipts
           path: |
-            ${{ runner.temp }}/pgs-v003-validation/PGS.json
-            ${{ runner.temp }}/pgs-v003-validation/build-info.json
+            ${{ runner.temp }}/pgs-v004-validation/PGS.json
+            ${{ runner.temp }}/pgs-v004-validation/build-info.json
           if-no-files-found: error
           retention-days: 3
       - name: Retain authorized signed candidate in an unpublished draft
@@ -162,4 +162,4 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          rm -f -- "$RUNNER_TEMP/pgs-v003-validation.jks" "$RUNNER_TEMP/pgs-v003-validation/PGS.apk" "$RUNNER_TEMP/pgs-v003-validation/unsigned.apk" "$RUNNER_TEMP/pgs-v003-validation/aligned.apk" pgs/input/game.apkm
+          rm -f -- "$RUNNER_TEMP/pgs-v004-validation.jks" "$RUNNER_TEMP/pgs-v004-validation/PGS.apk" "$RUNNER_TEMP/pgs-v004-validation/unsigned.apk" "$RUNNER_TEMP/pgs-v004-validation/aligned.apk" pgs/input/game.apkm

@@ -1,4 +1,4 @@
-package dev.pgrazor;
+package dev.pgs;
 
 /** Actual helper state-machine tests; native discovery is deliberately stubbed. */
 public final class NativeRuntimeBootstrapTest {

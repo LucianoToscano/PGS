@@ -123,7 +123,7 @@ class AxmlTests(unittest.TestCase):
                     after=axml.patch_manifest(before)
                     info=axml.inspect_manifest(after)
                     self.assertEqual(info['package'],'dev.example.test')
-                    self.assertEqual(info['providers'],[{'name':axml.PROVIDER,'exported':False,'authorities':'dev.example.test.pgrazor.bootstrap'}])
+                    self.assertEqual(info['providers'],[{'name':axml.PROVIDER,'exported':False,'authorities':'dev.example.test.pgs.bootstrap'}])
                     self.assertEqual(info['activities'],[{'name':axml.LOG_ACTIVITY,'exported':False}])
                     _,old_chunks,old_pool,_,_=axml._parse(before)
                     _,new_chunks,new_pool,_,_=axml._parse(after)
@@ -223,7 +223,7 @@ class AxmlTests(unittest.TestCase):
                 self.assertEqual(result.returncode,0,result.stderr)
                 self.assertIn(axml.PROVIDER,result.stdout)
                 self.assertIn(axml.LOG_ACTIVITY,result.stdout)
-                self.assertIn(before['package']+'.pgrazor.bootstrap',result.stdout)
+                self.assertIn(before['package']+'.pgs.bootstrap',result.stdout)
                 (folder/(apk.stem+'-xmltree.txt')).write_text(result.stdout,encoding='utf-8')
                 tested+=1
         self.assertGreater(tested,0,'No real manifest fixture available')

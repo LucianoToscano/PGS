@@ -1,5 +1,5 @@
-import dev.pgrazor.CameraHeadingState;
-import dev.pgrazor.CameraSteering;
+import dev.pgs.CameraHeadingState;
+import dev.pgs.CameraSteering;
 
 public final class CameraHeadingStateTest {
     static void check(boolean condition,String message) { if(!condition) throw new AssertionError(message); }

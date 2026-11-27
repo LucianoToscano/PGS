@@ -1,4 +1,4 @@
-package dev.pgrazor;
+package dev.pgs;
 
 /** Runs the real native-transport permission gate, independently of Android grants. */
 public final class ControlAdventureSyncTest {

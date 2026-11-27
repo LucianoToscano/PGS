@@ -67,7 +67,7 @@ class CompiledGameplayPackageTests(unittest.TestCase):
             native_outputs = {}
             for abi in ('arm64-v8a', 'x86_64'):
                 native_dir = work / 'build/native/out' / abi; native_dir.mkdir(parents=True)
-                binary = native_dir / 'libpgrazor-core.so'; binary.write_bytes(('native fixture ' + abi).encode())
+                binary = native_dir / 'libpgs-core.so'; binary.write_bytes(('native fixture ' + abi).encode())
                 (native_dir / 'receipt.json').write_text(json.dumps({'abi': abi, 'fixture': True}))
                 native_outputs[abi] = binary
             dobby = work / 'dobby-fixture'; dobby.mkdir(); (dobby / 'LICENSE').write_text('Dobby fixture license')
@@ -75,7 +75,7 @@ class CompiledGameplayPackageTests(unittest.TestCase):
             art_session = work / 'build/art/fixture-session'; art_outputs = {}; art_abis = {}
             for abi in ('arm64-v8a', 'x86_64'):
                 directory = art_session / abi; directory.mkdir(parents=True)
-                binary = directory / 'libpgrazor-art.so'; binary.write_bytes(('stripped ART fixture ' + abi).encode())
+                binary = directory / 'libpgs-art.so'; binary.write_bytes(('stripped ART fixture ' + abi).encode())
                 art_outputs[abi] = binary
                 art_abis[abi] = {'stripped': str(binary.resolve()), 'sha256': runtime_assets.sha256(binary), 'exports': ['JNI_OnLoad']}
             licenses = []
@@ -128,7 +128,7 @@ class CompiledGameplayPackageTests(unittest.TestCase):
 
                 with zipfile.ZipFile(report['outputs'][0]['file']) as archive:
                     names = set(archive.namelist())
-                    mode = json.loads(archive.read('assets/pgrazor/mode.json'))
+                    mode = json.loads(archive.read('assets/pgs/mode.json'))
                     self.assertIs(mode['gadget'], False)
                     self.assertIs(mode['compiledGameplay'], True)
                     for flag in ('nativePilot', 'compiledJavaBridges', 'compiledLocationGetters',
@@ -140,22 +140,22 @@ class CompiledGameplayPackageTests(unittest.TestCase):
                     self.assertEqual(mode['runtimeAbis'], ['arm64-v8a', 'x86_64'])
 
                     # Zero PGRazor JavaScript and zero Frida Gadget anywhere in the final APK.
-                    self.assertFalse(any(n.startswith('assets/pgrazor/') and n.endswith('.js') for n in names), names)
+                    self.assertFalse(any(n.startswith('assets/pgs/') and n.endswith('.js') for n in names), names)
                     self.assertFalse(any(n.endswith('libfrida-gadget.so') for n in names), names)
-                    self.assertFalse(any(n.startswith('assets/pgrazor/bridge-notices/') for n in names), names)
-                    for omitted in ('assets/pgrazor/embedded-agent.js', 'assets/pgrazor/java-bridge.js',
-                                    'assets/pgrazor/quick-close.js', 'assets/pgrazor/quick-summary.js',
-                                    'assets/pgrazor/quick-ball.js', 'assets/pgrazor/camera-probe.js',
-                                    'assets/pgrazor/interaction-probe.js'):
+                    self.assertFalse(any(n.startswith('assets/pgs/bridge-notices/') for n in names), names)
+                    for omitted in ('assets/pgs/embedded-agent.js', 'assets/pgs/java-bridge.js',
+                                    'assets/pgs/quick-close.js', 'assets/pgs/quick-summary.js',
+                                    'assets/pgs/quick-ball.js', 'assets/pgs/camera-probe.js',
+                                    'assets/pgs/interaction-probe.js'):
                         self.assertNotIn(omitted, names)
 
                     # Compiled native core, ART getters and their licenses are retained.
-                    self.assertIn('assets/pgrazor/native-notices/Dobby-LICENSE', names)
-                    self.assertEqual(len({n for n in names if n.startswith('assets/pgrazor/art-notices/')}), 5)
+                    self.assertIn('assets/pgs/native-notices/Dobby-LICENSE', names)
+                    self.assertEqual(len({n for n in names if n.startswith('assets/pgs/art-notices/')}), 5)
                     for abi, binary in native_outputs.items():
-                        self.assertEqual(archive.read('assets/pgrazor/' + abi + '/libpgrazor-core.so'), binary.read_bytes())
+                        self.assertEqual(archive.read('assets/pgs/' + abi + '/libpgs-core.so'), binary.read_bytes())
                     for abi, binary in art_outputs.items():
-                        self.assertEqual(archive.read('assets/pgrazor/' + abi + '/libpgrazor-art.so'), binary.read_bytes())
+                        self.assertEqual(archive.read('assets/pgs/' + abi + '/libpgs-art.so'), binary.read_bytes())
                     # The original game payload is preserved untouched.
                     self.assertEqual(archive.read('classes.dex'), b'original-game-dex')
 

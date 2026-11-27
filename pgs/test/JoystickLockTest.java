@@ -1,4 +1,4 @@
-package dev.pgrazor;
+package dev.pgs;
 
 public final class JoystickLockTest {
     public static void main(String[] args) {

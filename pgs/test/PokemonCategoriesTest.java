@@ -1,4 +1,4 @@
-package dev.pgrazor;
+package dev.pgs;
 
 public final class PokemonCategoriesTest {
     private static void expect(boolean condition, String message) {

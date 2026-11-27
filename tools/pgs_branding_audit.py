@@ -1,6 +1,6 @@
 """Guard PGS public identity while preserving Android/ABI/backup compatibility.
 
-Run in CI before packaging. Internal dev.pgrazor, assets/pgrazor, PGRAZOR_*
+Run in CI before packaging. Internal dev.pgs, assets/pgrazor, PGRAZOR_*
 and the original attribution remain intact until migrated with proofs.
 """
 from pathlib import Path
@@ -20,14 +20,14 @@ ACTIVE_TEXT = (
     "website/src/content.pt-BR.js",
     "pgs/AndroidManifest.xml",
     "pgs/root-installer/AndroidManifest.xml",
-    "pgs/src/dev/pgrazor/EncounterCounter.java",
-    "pgs/src/dev/pgrazor/GpxCodec.java",
-    "pgs/src/dev/pgrazor/SettingsPanel.java",
-    "pgs/src/dev/pgrazor/Updater.java",
-    "pgs/src/dev/pgrazor/LogActivity.java",
-    "pgs/src/dev/pgrazor/ShundoSniper.java",
-    "pgs/src/dev/pgrazor/MoonaniFeed.java",
-    "pgs/src/dev/pgrazor/RootedLogDialog.java",
+    "pgs/src/dev/pgs/EncounterCounter.java",
+    "pgs/src/dev/pgs/GpxCodec.java",
+    "pgs/src/dev/pgs/SettingsPanel.java",
+    "pgs/src/dev/pgs/Updater.java",
+    "pgs/src/dev/pgs/LogActivity.java",
+    "pgs/src/dev/pgs/ShundoSniper.java",
+    "pgs/src/dev/pgs/MoonaniFeed.java",
+    "pgs/src/dev/pgs/RootedLogDialog.java",
 )
 PGS_REPO = "https://github.com/LucianoToscano/PGS"
 PGS_CERT = "d95c6bdfcbd91dc5c9cde698487c88e4994771a475e4efde4567b8d5f44e96cf"
@@ -109,7 +109,7 @@ def check():
         problems.append("The PGS Root Portuguese guide translation is missing")
     if "guide === 'pgrazor-root' ? 'pgs-root'" not in (ROOT / "website/src/App.jsx").read_text(encoding="utf-8"):
         problems.append("Older Root guide bookmarks must still resolve")
-    if "PGRazor" in (ROOT / "pgs/root-installer/src/dev/pgrazor/root/RootStatus.java").read_text(encoding="utf-8"):
+    if "PGRazor" in (ROOT / "pgs/root-installer/src/dev/pgs/root/RootStatus.java").read_text(encoding="utf-8"):
         problems.append("Root status still displays the old name")
     pages = (ROOT / ".github/workflows/pages.yml").read_text(encoding="utf-8")
     if "name: Website" not in pages or "workflow_dispatch:" not in pages:

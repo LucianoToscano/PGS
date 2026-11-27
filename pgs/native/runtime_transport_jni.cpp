@@ -85,7 +85,7 @@ static_assert(sizeof(PgrRuntimeTransportConfig)==32,"transport JNI config ABI");
 }
 int pgrazor_register_runtime_transport(JNIEnv *env){
  if(!env)return -1;
- jclass klass=env->FindClass("dev/pgrazor/NativeRuntimeTransport");
+ jclass klass=env->FindClass("dev/pgs/NativeRuntimeTransport");
  if(!klass)return -1;
  jclass buffer=env->FindClass("java/nio/ByteBuffer");
  if(!buffer){env->DeleteLocalRef(klass);return -1;}

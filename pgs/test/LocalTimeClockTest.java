@@ -1,4 +1,4 @@
-package dev.pgrazor;
+package dev.pgs;
 
 import java.nio.file.Files;
 import java.nio.file.Paths;

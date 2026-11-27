@@ -28,14 +28,14 @@ public static void next(){queue.remove().run();}}''',
     'android/os/StrictMode.java': '''package android.os; public class StrictMode {
 public static class ThreadPolicy{} public static ThreadPolicy allowThreadDiskWrites(){return null;}
 public static void setThreadPolicy(ThreadPolicy p){}}''',
-    'dev/pgrazor/Control.java': '''package dev.pgrazor; public class Control {
+    'dev/pgs/Control.java': '''package dev.pgs; public class Control {
 static android.app.Activity activity; static java.util.List<String> events=new java.util.ArrayList<>();
 static android.app.Activity accountActivity(){return activity;}
 static void event(String k,String d){events.add(k+":"+d);}
 static void retargetSettings(java.io.File f){}
 static void flushAccountWrites() throws java.io.IOException{}
 static void quiesceAccounts() throws java.io.IOException{}}''',
-    'dev/pgrazor/AccountProfileStore.java': '''package dev.pgrazor; class AccountProfileStore {
+    'dev/pgs/AccountProfileStore.java': '''package dev.pgs; class AccountProfileStore {
 static class Profile {String id="default",label="Default";}
 AccountProfileStore(java.io.File f){} Profile selected(){return new Profile();}
 void cancelPending() throws java.io.IOException{} String pendingId(){return "";}
@@ -45,14 +45,15 @@ void rename(String id,String name){} void selectVerified(String id){} void activ
 void prepareSwitch(String id){} Profile add(String name){return new Profile();}
 java.io.File dataFile(String id,String name) throws java.io.IOException{return null;}
 String preferenceName(String id,String scope){return scope;}
+static String legacyStorageName(String name){return name==null?null:name.replaceFirst("^pgs-","pgrazor-");}
 static final String DEFAULT_ID="default";boolean globalSettings(){return false;}String mainId(){return DEFAULT_ID;}
 String settingsOwner(String id){return id;}void setGlobalSettings(boolean on,String main){}}''',
-    'dev/pgrazor/AccountSessions.java': '''package dev.pgrazor; class AccountSessions {
+    'dev/pgs/AccountSessions.java': '''package dev.pgs; class AccountSessions {
 static void deleteProfile(android.content.Context c,AccountProfileStore s,String id){}}''',
-    'dev/pgrazor/AccountRestartActivity.java': '''package dev.pgrazor; class AccountRestartActivity {
+    'dev/pgs/AccountRestartActivity.java': '''package dev.pgs; class AccountRestartActivity {
 static int launches; static boolean result=true,lastSwitch;
 static boolean launch(android.app.Activity a,boolean s){launches++;lastSwitch=s;return result;}}''',
-    'dev/pgrazor/RestartLifecycleTest.java': '''package dev.pgrazor;
+    'dev/pgs/RestartLifecycleTest.java': '''package dev.pgs;
 import android.os.Handler; import android.app.Activity; import java.lang.reflect.*;
 public class RestartLifecycleTest {
 static void require(boolean ok){if(!ok)throw new AssertionError();}
@@ -102,9 +103,9 @@ class AccountRestartLifecycleTests(unittest.TestCase):
                 path.parent.mkdir(parents=True, exist_ok=True)
                 path.write_text(content, encoding='utf-8')
                 sources.append(path)
-            sources += [ROOT / 'src/dev/pgrazor/AccountProfiles.java', ROOT / 'src/dev/pgrazor/AccountCommandState.java']
+            sources += [ROOT / 'src/dev/pgs/AccountProfiles.java', ROOT / 'src/dev/pgs/AccountCommandState.java']
             result = subprocess.run([str(javac), '-encoding', 'UTF-8', '-d', directory, *map(str, sources)], capture_output=True, text=True)
             self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
-            result = subprocess.run([str(java), '-cp', directory, 'dev.pgrazor.RestartLifecycleTest'], capture_output=True, text=True, timeout=20)
+            result = subprocess.run([str(java), '-cp', directory, 'dev.pgs.RestartLifecycleTest'], capture_output=True, text=True, timeout=20)
             self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
             self.assertIn('PASS account restart lifecycle', result.stdout)

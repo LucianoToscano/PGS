@@ -1,4 +1,4 @@
-package dev.pgrazor;
+package dev.pgs;
 
 public final class GiftBatchSettingsTest {
     private static void check(boolean ok) {if(!ok)throw new AssertionError();}

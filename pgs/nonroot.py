@@ -57,10 +57,10 @@ def validated_build():
     actual=build.source_fingerprints(ROOT)
     if state.get('sources')!=actual: raise RuntimeError('Built classes are stale. Run without --skip-build.')
     if state.get('version')!=build.release_version(ROOT): raise RuntimeError('Built version is stale. Run without --skip-build.')
-    dex=ROOT/'build/pgrazor.dex'
+    dex=ROOT/'build/pgs.dex'
     if not dex.is_file() or runtime_assets.sha256(dex)!=state.get('dex_sha256'): raise RuntimeError('Built DEX checksum mismatch')
     data=dex.read_bytes()
-    if not data.startswith(b'dex\n') or b'Ldev/pgrazor/BootstrapProvider;' not in data:
+    if not data.startswith(b'dex\n') or b'Ldev/pgs/BootstrapProvider;' not in data:
         raise RuntimeError('DEX does not contain the embedded bootstrap')
     return dex
 
@@ -108,15 +108,17 @@ def rewrite_apk(source,destination,*,base=False,dex=None,assets=None,preview=Fal
         names=original.namelist()
         # Bundled map-icon art may already ride along in our own preview input; any other pre-existing
         # PGS asset means the input was already instrumented and must be refused.
-        if any(name.startswith('assets/pgrazor/') and not (preview and name.startswith(('assets/pgrazor/map-icons/','assets/pgrazor/feed-icons/pokemon/'))) for name in names): raise ValueError('Input already has PGS assets')
+        if any(name.startswith(('assets/pgs/', 'assets/pgrazor/')) and not (preview and name.startswith(('assets/pgs/map-icons/','assets/pgs/feed-icons/pokemon/'))) for name in names): raise ValueError('Input already has PGS assets')
         if base:
             indices=[int(match.group(1) or '1') for name in names if (match:=re.fullmatch(r'classes(\d*)\.dex',name))]
             nextdex='classes'+str(max(indices,default=0)+1)+'.dex'
             if not indices: raise ValueError('Base APK contains no classes.dex')
             if not preview:
                 for name in names:
-                    if re.fullmatch(r'classes\d*\.dex',name) and b'Ldev/pgrazor/Control;' in original.read(name):
-                        raise ValueError('Input already contains PGS classes')
+                    if re.fullmatch(r'classes\d*\.dex',name):
+                        data=original.read(name)
+                        if any(marker in data for marker in (b'Ldev/pgs/Control;', b'Ldev/pgrazor/Control;')):
+                            raise ValueError('Input already contains PGS classes')
         for item in original.infolist():
             if signature_entry(item.filename): continue
             if base and dex_replacements and item.filename in dex_replacements:
@@ -172,9 +174,9 @@ def assert_no_research_payload(names):
         lowered=name.lower()
         if lowered.endswith('libfrida-gadget.so'):
             raise RuntimeError('Compiled production build must not ship the Frida Gadget: '+name)
-        if lowered.startswith('assets/pgrazor/') and lowered.endswith(('.js','.mjs','.cjs','.js.map')):
+        if lowered.startswith(('assets/pgs/', 'assets/pgrazor/')) and lowered.endswith(('.js','.mjs','.cjs','.js.map')):
             raise RuntimeError('Compiled production build must not ship PGS JavaScript: '+name)
-        if lowered=='assets/pgrazor/java-bridge.js' or lowered.startswith('assets/pgrazor/bridge-notices/'):
+        if lowered in ('assets/pgs/java-bridge.js', 'assets/pgrazor/java-bridge.js') or lowered.startswith(('assets/pgs/bridge-notices/', 'assets/pgrazor/bridge-notices/')):
             raise RuntimeError('Compiled production build must not ship Frida bridge assets: '+name)
 
 
@@ -249,14 +251,14 @@ def package(source, *,research_runtime=False,panel_only=False,download=False,pre
     if quick_close: mode['quickClose']=True
     if quick_ball: mode['quickBall']=True
     if google_browser_login: mode['googleBrowserLogin']=True
-    assets={'assets/pgrazor/mode.json':json.dumps(mode).encode()}
+    assets={'assets/pgs/mode.json':json.dumps(mode).encode()}
     if native_pilot:
         import native_build
         with scoped_env(PGRAZOR_NATIVE_PILOT='1'):
             native_outputs = native_build.build_all(ROOT, abis, download=download)
         for abi, binary in native_outputs.items():
-            assets[f'assets/pgrazor/{abi}/libpgrazor-core.so'] = binary
-        assets['assets/pgrazor/native-notices/Dobby-LICENSE'] = native_build.ensure_dobby(ROOT)/'LICENSE'
+            assets[f'assets/pgs/{abi}/libpgs-core.so'] = binary
+        assets['assets/pgs/native-notices/Dobby-LICENSE'] = native_build.ensure_dobby(ROOT)/'LICENSE'
     art_provenance = None
     if compiled_location:
         import art_build
@@ -273,7 +275,7 @@ def package(source, *,research_runtime=False,panel_only=False,download=False,pre
             digest = runtime_assets.sha256(binary)
             if entry.get('sha256') != digest or Path(entry.get('stripped','')).resolve() != Path(binary).resolve() or entry.get('exports') != ['JNI_OnLoad']:
                 raise RuntimeError('ART build output does not match verified receipt: '+abi)
-            asset = f'assets/pgrazor/{abi}/libpgrazor-art.so'
+            asset = f'assets/pgs/{abi}/libpgs-art.so'
             assets[asset] = binary
             libraries[abi] = {'asset':asset,'sha256':digest}
         names = ('LSPlant-LICENSE','DexBuilder-LICENSE','parallel-hashmap-LICENSE','XZ-Embedded-COPYING','Dobby-LICENSE')
@@ -282,16 +284,16 @@ def package(source, *,research_runtime=False,panel_only=False,download=False,pre
         notices = []
         for name,source_path in zip(names,sources):
             path = Path(source_path)
-            asset = 'assets/pgrazor/art-notices/'+name
+            asset = 'assets/pgs/art-notices/'+name
             assets[asset] = path
             notices.append({'asset':asset,'source':str(path),'sha256':runtime_assets.sha256(path)})
         art_provenance = {'build_receipt':art_receipt,'build_receipt_sha256':runtime_assets.sha256(art_receipt_path),
                           'libraries':libraries,'notices':notices,
                           'relinking':'Retain the recorded local ART build session and pinned source trees for LGPL relinking; debug objects are not APK assets.',
                           'runtime_validation':'UNTESTED'}
-    # POI marker art loaded by the Java map via AssetManager at pgrazor/map-icons/<name>.
-    for icon_name,icon_path in build.map_icon_assets().items(): assets['assets/pgrazor/map-icons/'+icon_name]=icon_path
-    for icon_name,icon_path in build.feed_icon_assets().items(): assets['assets/pgrazor/feed-icons/pokemon/'+icon_name]=icon_path
+    # POI marker art loaded by the Java map via AssetManager at pgs/map-icons/<name>.
+    for icon_name,icon_path in build.map_icon_assets().items(): assets['assets/pgs/map-icons/'+icon_name]=icon_path
+    for icon_name,icon_path in build.feed_icon_assets().items(): assets['assets/pgs/feed-icons/pokemon/'+icon_name]=icon_path
     certificates=[]
     for path,_ in rows:
         verified=command(build.android_tool('apksigner'),'verify','--print-certs',path,capture=True)
@@ -304,20 +306,20 @@ def package(source, *,research_runtime=False,panel_only=False,download=False,pre
     if not panel_only and not compiled_gameplay:
         for abi in abis:
             binary,metadata=runtime_assets.gadget(abi,download=download)
-            assets[f'assets/pgrazor/{abi}/libfrida-gadget.so']=binary; runtimes.append(metadata)
+            assets[f'assets/pgs/{abi}/libfrida-gadget.so']=binary; runtimes.append(metadata)
         bridge=runtime_assets.java_bridge()
-        assets['assets/pgrazor/java-bridge.js']=bridge
-        assets['assets/pgrazor/embedded-agent.js']=script_bundle.bundle(ROOT,'embedded-agent.js')
+        assets['assets/pgs/java-bridge.js']=bridge
+        assets['assets/pgs/embedded-agent.js']=script_bundle.bundle(ROOT,'embedded-agent.js')
         if il2cpp_survey:
-            assets['assets/pgrazor/il2cpp-survey.js']=ROOT/'diagnostics/il2cpp-survey.js'
+            assets['assets/pgs/il2cpp-survey.js']=ROOT/'diagnostics/il2cpp-survey.js'
         if camera_probe:
-            assets['assets/pgrazor/camera-probe.js']=script_bundle.bundle(ROOT,'camera-probe.js')
+            assets['assets/pgs/camera-probe.js']=script_bundle.bundle(ROOT,'camera-probe.js')
         if scene_probe:
-            assets['assets/pgrazor/scene-probe.js']=ROOT/'diagnostics/scene-probe.js'
+            assets['assets/pgs/scene-probe.js']=ROOT/'diagnostics/scene-probe.js'
         if interaction_probe:
-            assets['assets/pgrazor/interaction-probe.js']=ROOT/'diagnostics/interaction-probe.js'
+            assets['assets/pgs/interaction-probe.js']=ROOT/'diagnostics/interaction-probe.js'
         for notice in ['NOTICE.txt','COPYING.frida-tools','bridge-provenance.json']:
-            assets['assets/pgrazor/bridge-notices/'+notice]=ROOT/'vendor'/notice
+            assets['assets/pgs/bridge-notices/'+notice]=ROOT/'vendor'/notice
     if compiled_gameplay: assert_no_research_payload(assets)
     report={'input':str(source.resolve()),'input_sha256':runtime_assets.sha256(source),'package':package_name,
         'mode':'compiled-gameplay' if compiled_gameplay else ('panel-only' if panel_only else 'research-runtime'),'original_abis':sorted(native_abis),'runtime_abi':game_runtime_abi if not preview else probe_abi,'runtime_abis':abis,
@@ -333,35 +335,35 @@ def package(source, *,research_runtime=False,panel_only=False,download=False,pre
     if not panel_only and not compiled_gameplay:
         report['bridge_sha256']=runtime_assets.sha256(bridge)
         report['bridge_upstream_patch']=runtime_assets.BRIDGE_COMMIT
-        report['agent_sha256']=hashlib.sha256(assets['assets/pgrazor/embedded-agent.js']).hexdigest()
+        report['agent_sha256']=hashlib.sha256(assets['assets/pgs/embedded-agent.js']).hexdigest()
         manifest=json.loads((ROOT/'runtime/bundles.json').read_text(encoding='utf-8'))
         report['script_bundles']={name:{
-            'sha256':hashlib.sha256(assets['assets/pgrazor/'+name]).hexdigest(),
+            'sha256':hashlib.sha256(assets['assets/pgs/'+name]).hexdigest(),
             'sources':[{'path':part,'sha256':runtime_assets.sha256(ROOT/part)} for part in parts]
-        } for name,parts in manifest.items() if 'assets/pgrazor/'+name in assets}
+        } for name,parts in manifest.items() if 'assets/pgs/'+name in assets}
     if il2cpp_survey and not compiled_gameplay:
         report['diagnostics']={'il2cpp_survey':{
             'source':str(ROOT/'diagnostics/il2cpp-survey.js'),
-            'asset':'assets/pgrazor/il2cpp-survey.js',
+            'asset':'assets/pgs/il2cpp-survey.js',
             'sha256':runtime_assets.sha256(ROOT/'diagnostics/il2cpp-survey.js')}}
     if camera_probe and not compiled_gameplay:
         report['diagnostics']={'camera_probe':{
             'sampling':bool(camera_sample),
             'steering':bool(camera_steering),
             'source':str(ROOT/'diagnostics/camera-probe.js'),
-            'asset':'assets/pgrazor/camera-probe.js',
-            'sha256':hashlib.sha256(assets['assets/pgrazor/camera-probe.js']).hexdigest()}}
+            'asset':'assets/pgs/camera-probe.js',
+            'sha256':hashlib.sha256(assets['assets/pgs/camera-probe.js']).hexdigest()}}
     if scene_probe and not compiled_gameplay:
         report['diagnostics']={'scene_probe':{
             'observe_runtime':bool(scene_observe),
             'source':str(ROOT/'diagnostics/scene-probe.js'),
-            'asset':'assets/pgrazor/scene-probe.js',
+            'asset':'assets/pgs/scene-probe.js',
             'sha256':runtime_assets.sha256(ROOT/'diagnostics/scene-probe.js')}}
     if interaction_probe and not compiled_gameplay:
         report.setdefault('diagnostics',{})['interaction_probe']={
             'startup_mode':'metadata-only',
             'source':str(ROOT/'diagnostics/interaction-probe.js'),
-            'asset':'assets/pgrazor/interaction-probe.js',
+            'asset':'assets/pgs/interaction-probe.js',
             'sha256':runtime_assets.sha256(ROOT/'diagnostics/interaction-probe.js')}
     report['module_sha256']=runtime_assets.sha256(dex)
     if dex_bridge_receipt is not None: report['compiled_java_bridges']=dex_bridge_receipt
@@ -400,7 +402,7 @@ def probe(report,folder,android,seconds=0):
     timeout=threading.Timer(seconds,stream.terminate) if seconds else None
     if timeout: timeout.start()
     try:
-        android.shell('am','start','-n','dev.pgrazor.preview/dev.pgrazor.PreviewActivity')
+        android.shell('am','start','-n','dev.pgrazor.preview/dev.pgs.PreviewActivity')
         if report['mode']=='panel-only': print('Non-root panel-only probe launched. Location override should be unavailable.',flush=True)
         else: print('Non-root startup probe launched. Enable controls, move joystick, then pause. Expected synthetic consumer: PASS.',flush=True)
         print('Live log:',log,'(Ctrl+C stops desktop logging; the app stays installed.)',flush=True)
@@ -476,7 +478,7 @@ def main(argv=None):
     validate_survey_options(args.interaction_probe,args.panel_only,abi if args.probe or args.build_probe else (args.runtime_abi or 'auto'),'--interaction-probe')
     if not args.skip_build: command(sys.executable,ROOT/'build.py')
     preview=args.probe or args.build_probe
-    source=ROOT/'build/pgrazor-preview.apk' if preview else args.apk.resolve()
+    source=ROOT/'build/pgs-preview.apk' if preview else args.apk.resolve()
     options={'game_runtime_abi':args.runtime_abi} if args.runtime_abi else {}
     if args.research_runtime: options['research_runtime']=True
     if args.il2cpp_survey: options['il2cpp_survey']=True

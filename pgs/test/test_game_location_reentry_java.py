@@ -23,7 +23,7 @@ STUBS = {
  public synchronized void removeCallbacks(Runnable r){pending.removeIf(x->x==r);}
  public void one(){Runnable r; synchronized(this){if(pending.isEmpty())return;r=pending.remove(0);}r.run();} }''',
     'android/os/SystemClock.java': 'package android.os; public class SystemClock {public static long elapsedRealtimeNanos(){return 1234567L;}}',
-    'dev/pgrazor/Control.java': '''package dev.pgrazor; public class Control {
+    'dev/pgs/Control.java': '''package dev.pgs; public class Control {
  public static boolean active(){return true;} public static double latitude(){return 1;} public static double longitude(){return 2;}
  public static boolean desiredEnabled(){return true;} public static void observeRealLocation(double lat,double lon){}
  public static float speed(){return 3;} public static float bearing(){return 4;} public static void event(String k,String v){} }''',
@@ -50,7 +50,7 @@ STUBS = {
  }''',
 }
 
-HARNESS = r'''package dev.pgrazor;
+HARNESS = r'''package dev.pgs;
 import android.location.Location;
 import com.nianticlabs.nia.location.*;
 import com.nianticlabs.nia.contextservice.ContextService;
@@ -131,9 +131,9 @@ class GameLocationReentryTest(unittest.TestCase):
             target = cls.root / relative
             target.parent.mkdir(parents=True, exist_ok=True)
             target.write_text(content, encoding='utf-8')
-        production = pathlib.Path(__file__).resolve().parents[1] / 'src/dev/pgrazor/GameLocationDelivery.java'
-        shutil.copyfile(production, cls.root / 'dev/pgrazor/GameLocationDelivery.java')
-        (cls.root / 'dev/pgrazor/LocationReentryRegression.java').write_text(HARNESS, encoding='utf-8')
+        production = pathlib.Path(__file__).resolve().parents[1] / 'src/dev/pgs/GameLocationDelivery.java'
+        shutil.copyfile(production, cls.root / 'dev/pgs/GameLocationDelivery.java')
+        (cls.root / 'dev/pgs/LocationReentryRegression.java').write_text(HARNESS, encoding='utf-8')
         result = subprocess.run([cls.javac, '-source', '8', '-target', '8', '-d', str(cls.root)] +
                                 [str(p) for p in cls.root.rglob('*.java')], capture_output=True, text=True, timeout=60)
         if result.returncode:
@@ -146,7 +146,7 @@ class GameLocationReentryTest(unittest.TestCase):
             cls.directory.cleanup()
 
     def run_case(self, case):
-        result = subprocess.run([self.java, '-cp', str(self.root), 'dev.pgrazor.LocationReentryRegression', case],
+        result = subprocess.run([self.java, '-cp', str(self.root), 'dev.pgs.LocationReentryRegression', case],
                                 capture_output=True, text=True, timeout=12)
         self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
 

@@ -1,8 +1,8 @@
-"""Deterministic native build helper for the pilot libpgrazor-core.so.
+"""Deterministic native build helper for the pilot libpgs-core.so.
 
 This module is the pilot entry point for compiling the C++ `pgs_core`
 target into a stripped
-``libpgrazor-core.so`` per ABI. It is opt-in: the coordinator only calls it
+``libpgs-core.so`` per ABI. It is opt-in: the coordinator only calls it
 with ``PGRAZOR_NATIVE_PILOT=1`` set. It performs no network access unless a
 download is explicitly requested, pins every immutable input by SHA-256, and
 emits a reproducibility receipt.
@@ -38,7 +38,7 @@ DOBBY_SHA256 = 'a08cd9449ed39246e9a2b493a55fcc4f843a8ebe79ecef7747a02180b58b21db
 API_LEVEL = 28
 ANDROID_STL = 'c++_static'
 TARGET = 'pgs_core'
-OUTPUT_SONAME = 'libpgrazor-core.so'
+OUTPUT_SONAME = 'libpgs-core.so'
 DEFAULT_ABIS = ('arm64-v8a', 'x86_64')
 
 # EM_* machine ids keyed by ABI; both outputs must be ELFCLASS64.
@@ -502,7 +502,7 @@ def _locate_built_library(build_dir):
     if not matches:
         raise RuntimeError(
             'CMake build produced no ' + OUTPUT_SONAME + ' under ' + str(build_dir) +
-            '. The pgs_core target must emit OUTPUT_NAME pgrazor-core.')
+            '. The pgs_core target must emit OUTPUT_NAME pgs-core.')
     return matches[0]
 
 

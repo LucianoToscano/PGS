@@ -14,8 +14,8 @@ function run({selected=true,role='host',fail=false}={}) {
   setInterval(){calls.push('legacy-timer');return 1;}};
  return {calls,c,execute(){vm.runInNewContext(code,c);}};
 }
-let h=run();h.execute();assert.deepEqual(h.calls,['dev.pgrazor.RuntimeMailbox','start','translated-host-ready']);assert.equal(h.c.translatedTimer,null);
-h=run({fail:true});assert.throws(()=>h.execute(),/factory-start-failed/);assert.deepEqual(h.calls,['dev.pgrazor.RuntimeMailbox','start']);
+let h=run();h.execute();assert.deepEqual(h.calls,['dev.pgs.RuntimeMailbox','start','translated-host-ready']);assert.equal(h.c.translatedTimer,null);
+h=run({fail:true});assert.throws(()=>h.execute(),/factory-start-failed/);assert.deepEqual(h.calls,['dev.pgs.RuntimeMailbox','start']);
 h=run({selected:false});h.execute();assert.deepEqual(h.calls,['legacy-files','legacy-host','legacy-tick','legacy-timer']);
 h=run({role:'native'});h.execute();assert.deepEqual(h.calls,[]);
 console.log('PASS compiled mailbox host: Java owns timer, selected failure never falls back, guest untouched');

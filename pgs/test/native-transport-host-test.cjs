@@ -15,7 +15,7 @@ function fixture(java=false){
   desiredEnabled:()=>false,observeRealCoordinate:(...args)=>calls.events.push(args)};
  const location={};for(const name of ['getLatitude','getLongitude','getSpeed','getBearing']){
   const method={call:()=>12};location[name]={overload:()=>method,method};}
- const javaBridge={perform:fn=>fn(),scheduleOnMainThread:fn=>fn(),use:name=>name==='dev.pgrazor.Control'?lifecycle:location};
+ const javaBridge={perform:fn=>fn(),scheduleOnMainThread:fn=>fn(),use:name=>name==='dev.pgs.Control'?lifecycle:location};
  const context={bootParameters:{compiledNativeTransport:true,compiledJavaBridges:true,translatedRole:'android'},
   javaControl:java?lifecycle:null,control:null,translatedBridge:null,translatedTimer:null,disposed:false,
   hooks:[],locationAdapter:null,timer:null,Java:javaBridge,File:{readAllText:()=>''},Script:{evaluate:()=>javaBridge},

@@ -2,7 +2,7 @@
 
 See [migration gates and build instructions](../../docs/NATIVE_MIGRATION.md).
 
-The optional `libpgrazor-core.so` statically links Dobby at commit
+The optional `libpgs-core.so` statically links Dobby at commit
 `0932d69c320e786672361ab53825ba8f4245e9d3`. `native_build.py` pins the archive
 SHA-256 and verifies extracted sources on every build. Newer upstream revisions
 were evaluated but failed the Android build; this pin is a tested starting point,

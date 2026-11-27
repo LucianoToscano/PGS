@@ -1,4 +1,4 @@
-package dev.pgrazor;
+package dev.pgs;
 
 import android.location.Location;
 import com.nianticlabs.nia.contextservice.ContextService;

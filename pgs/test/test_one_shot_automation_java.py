@@ -11,8 +11,8 @@ from test_control_java import java_tools
 
 ROOT = Path(__file__).resolve().parents[1]
 STUBS = {
-    "dev/pgrazor/AutoRaid.java": "package dev.pgrazor; public class AutoRaid {public static boolean active;public static boolean running(){return active;}}",
-    "dev/pgrazor/AutoRocket.java": "package dev.pgrazor; public class AutoRocket {public static boolean active;public static boolean running(){return active;}}",
+    "dev/pgs/AutoRaid.java": "package dev.pgs; public class AutoRaid {public static boolean active;public static boolean running(){return active;}}",
+    "dev/pgs/AutoRocket.java": "package dev.pgs; public class AutoRocket {public static boolean active;public static boolean running(){return active;}}",
     'android/os/SystemClock.java': 'package android.os; public class SystemClock {public static long now=1000; public static long elapsedRealtime(){return now;}}',
     'android/os/Looper.java': 'package android.os; public class Looper {public static Looper getMainLooper(){return new Looper();}}',
     'android/os/Handler.java': 'package android.os; public class Handler {public Handler(Looper l){} public boolean post(Runnable r){r.run();return true;} public boolean postDelayed(Runnable r,long ms){r.run();return true;}}',
@@ -35,10 +35,10 @@ public class JSONObject {
  public String optString(String key){return optString(key,"");}
  public String optString(String key,String fallback){return values.getOrDefault(key,fallback);}
 }''',
-    'dev/pgrazor/BatchEvolutionSettings.java': 'package dev.pgrazor; public class BatchEvolutionSettings {public static boolean active;public static boolean enabled(){return active;}}',
-    'dev/pgrazor/GymAutomationSettings.java': 'package dev.pgrazor; public class GymAutomationSettings {public static boolean active;public static boolean running(){return active;}}',
-    'dev/pgrazor/SmartCatchSettings.java': 'package dev.pgrazor; public class SmartCatchSettings {public static boolean active;public static boolean gymSpinActive(){return active;}}',
-    'dev/pgrazor/Control.java': '''package dev.pgrazor;
+    'dev/pgs/BatchEvolutionSettings.java': 'package dev.pgs; public class BatchEvolutionSettings {public static boolean active;public static boolean enabled(){return active;}}',
+    'dev/pgs/GymAutomationSettings.java': 'package dev.pgs; public class GymAutomationSettings {public static boolean active;public static boolean running(){return active;}}',
+    'dev/pgs/SmartCatchSettings.java': 'package dev.pgs; public class SmartCatchSettings {public static boolean active;public static boolean gymSpinActive(){return active;}}',
+    'dev/pgs/Control.java': '''package dev.pgs;
 public class Control {
  public static MotionEngine engine=new MotionEngine();
  public static boolean ready=true,gameRoute,planning,vgp=true;
@@ -69,20 +69,20 @@ class OneShotAutomationJavaTests(unittest.TestCase):
                 path.parent.mkdir(parents=True, exist_ok=True)
                 path.write_text(text, encoding='utf-8')
                 sources.append(path)
-            sources += [ROOT / 'src/dev/pgrazor/GiftBatchSettings.java', ROOT / 'test/GiftBatchSettingsTest.java', ROOT / 'src/dev/pgrazor/OneShotAutomation.java',
-                        ROOT / 'src/dev/pgrazor/MotionEngine.java',
+            sources += [ROOT / 'src/dev/pgs/GiftBatchSettings.java', ROOT / 'test/GiftBatchSettingsTest.java', ROOT / 'src/dev/pgs/OneShotAutomation.java',
+                        ROOT / 'src/dev/pgs/MotionEngine.java',
                         ROOT / 'test/OneShotAutomationTest.java']
-            sources += [ROOT / 'src/dev/pgrazor/I18n.java', ROOT / 'src/dev/pgrazor/LanguagePrefs.java',
-                        *sorted((ROOT / 'src/dev/pgrazor').glob('I18nCatalog*.java'))]
+            sources += [ROOT / 'src/dev/pgs/I18n.java', ROOT / 'src/dev/pgs/LanguagePrefs.java',
+                        *sorted((ROOT / 'src/dev/pgs').glob('I18nCatalog*.java'))]
             compiled = subprocess.run([str(compiler), '-encoding', 'UTF-8', '-d', str(work),
                                        *map(str, sources)], capture_output=True, text=True, timeout=45)
             self.assertEqual(compiled.returncode, 0, compiled.stdout + compiled.stderr)
             tested = subprocess.run([str(runtime), '-ea', '-cp', str(work),
-                                     'dev.pgrazor.OneShotAutomationTest'],
+                                     'dev.pgs.OneShotAutomationTest'],
                                     capture_output=True, text=True, timeout=30)
             self.assertEqual(tested.returncode, 0, tested.stdout + tested.stderr)
             self.assertIn('PASS OneShotAutomation:', tested.stdout)
-            tested = subprocess.run([str(runtime), '-ea', '-cp', str(work), 'dev.pgrazor.GiftBatchSettingsTest'], capture_output=True, text=True, timeout=30)
+            tested = subprocess.run([str(runtime), '-ea', '-cp', str(work), 'dev.pgs.GiftBatchSettingsTest'], capture_output=True, text=True, timeout=30)
             self.assertEqual(tested.returncode, 0, tested.stdout + tested.stderr)
 
 

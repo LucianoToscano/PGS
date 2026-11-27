@@ -16,8 +16,8 @@ ROOT = Path(__file__).resolve().parents[1]
 
 def control_shell():
     """Build a Control shell whose signatures match production Control.java exactly."""
-    source = (ROOT / 'src/dev/pgrazor/Control.java').read_text(encoding='utf-8')
-    mailbox = (ROOT / 'src/dev/pgrazor/RuntimeMailbox.java').read_text(encoding='utf-8')
+    source = (ROOT / 'src/dev/pgs/Control.java').read_text(encoding='utf-8')
+    mailbox = (ROOT / 'src/dev/pgs/RuntimeMailbox.java').read_text(encoding='utf-8')
     specs = re.findall(r'^\s*"(\w+):([^":]*):([^":]+)"', mailbox, re.M)
     specs.append(('setShinyTarget', 'boolean,double,double', 'void'))  # native-only action 59
     specs.append(('eventBoxesAllowed', '', 'boolean'))
@@ -101,7 +101,7 @@ def control_shell():
         else:
             body = 'return true;' if expected_result == 'boolean' else ''
         methods.append('public static ' + expected_result + ' ' + name + '(' + signature + '){' + body + '}')
-    return '''package dev.pgrazor;
+    return '''package dev.pgs;
 public final class Control {
  public static int connects, renewals, disconnects;
  public static void connect(){connects++;}
@@ -123,15 +123,15 @@ class NativeRuntimeTransportJavaTests(unittest.TestCase):
             (work / 'Control.java').write_text(control_shell(), encoding='utf-8')
             sources = [
                 work / 'Control.java',
-                ROOT / 'src/dev/pgrazor/NativeRuntimeTransport.java',
-                ROOT / 'src/dev/pgrazor/NativeCore.java',
-                ROOT / 'src/dev/pgrazor/RuntimeHealth.java',
+                ROOT / 'src/dev/pgs/NativeRuntimeTransport.java',
+                ROOT / 'src/dev/pgs/NativeCore.java',
+                ROOT / 'src/dev/pgs/RuntimeHealth.java',
                 ROOT / 'test/NativeRuntimeTransportTest.java',
             ]
             compiled = subprocess.run([str(compiler), '-encoding', 'UTF-8', '-d', str(work), *map(str, sources)],
                                       capture_output=True, text=True, timeout=45)
             self.assertEqual(compiled.returncode, 0, compiled.stdout + compiled.stderr)
-            tested = subprocess.run([str(runtime), '-ea', '-cp', str(work), 'dev.pgrazor.NativeRuntimeTransportTest'],
+            tested = subprocess.run([str(runtime), '-ea', '-cp', str(work), 'dev.pgs.NativeRuntimeTransportTest'],
                                     capture_output=True, text=True, timeout=30)
             self.assertEqual(tested.returncode, 0, tested.stdout + tested.stderr)
             self.assertIn('PASS NativeRuntimeTransport:', tested.stdout)

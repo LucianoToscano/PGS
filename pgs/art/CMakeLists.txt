@@ -112,8 +112,8 @@ add_library(pgs_xz STATIC
 target_include_directories(pgs_xz PUBLIC "${XZ_SOURCE_DIR}/userspace" "${XZ_SOURCE_DIR}/linux/include/linux")
 target_compile_definitions(pgs_xz PUBLIC XZ_USE_CRC64 XZ_USE_SHA256 XZ_DEC_X86 XZ_DEC_ARM XZ_DEC_ARMTHUMB XZ_DEC_ARM64)
 add_library(pgs_art SHARED art_symbols.cpp java_hooks.cpp)
-# Preserve libpgrazor-art.so while Android loaders still use this filename.
-set_target_properties(pgs_art PROPERTIES OUTPUT_NAME "pgrazor-art")
+# Full-layout PGS build: loader and ART library name change together.
+set_target_properties(pgs_art PROPERTIES OUTPUT_NAME "pgs-art")
 target_compile_options(pgs_art PRIVATE -Wall -Wextra -fexceptions -frtti)
 target_link_libraries(pgs_art PRIVATE lsplant_static dobby_static pgs_xz log dl z)
 target_link_options(pgs_art PRIVATE

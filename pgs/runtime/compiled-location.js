@@ -1,6 +1,6 @@
 // Compiled game-location adapter for the selected native pilot. Creation is inert; the
 // permission policy and the whole provider/delivery path live in the compiled Java helpers
-// (dev.pgrazor.GameLocationPermissions, dev.pgrazor.GameLocationDelivery). This module only
+// (dev.pgs.GameLocationPermissions, dev.pgs.GameLocationDelivery). This module only
 // installs the game-facing hooks and bridges them to those helpers. It never constructs a
 // location fix, never replaces a native method, and never touches a real OS permission grant.
 globalThis.PGRazorCompiledLocation = Object.freeze({create({Java, control, isDisposed, bootLog}) {
@@ -19,7 +19,7 @@ globalThis.PGRazorCompiledLocation = Object.freeze({create({Java, control, isDis
     function installPermissions() {
         if (inactive() || permissionsInstalled) return;
         let helper;
-        try { helper = Java.use('dev.pgrazor.GameLocationPermissions').create(); }
+        try { helper = Java.use('dev.pgs.GameLocationPermissions').create(); }
         catch (error) { control.event('location-permission-error', String(error)); return; }
         // The permission gates are a single required group: if any hook cannot be installed,
         // roll the whole group back and shut the helper down so nothing is partially overridden.
@@ -89,7 +89,7 @@ globalThis.PGRazorCompiledLocation = Object.freeze({create({Java, control, isDis
         control.event('location-delivery', 'Initializing compiled game location adapter on main thread');
         // The selected pilot never silently falls back to the legacy adapter: a missing or
         // failing Java delivery factory propagates to the host.
-        const instance = Java.use('dev.pgrazor.GameLocationDelivery').create();
+        const instance = Java.use('dev.pgs.GameLocationDelivery').create();
         const installed = [];
         function hook(method, implementation) { installed.push(method); method.implementation = implementation; }
         try {

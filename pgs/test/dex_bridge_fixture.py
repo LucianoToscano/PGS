@@ -12,7 +12,7 @@ import build
 import dex_bridges
 
 SOURCES = {
-    'dev/pgrazor/NativeLocationValues.java': '''package dev.pgrazor;
+    'dev/pgs/NativeLocationValues.java': '''package dev.pgs;
 public final class NativeLocationValues {
  private static void receiver(android.location.Location value){if(value==null)throw new NullPointerException("fixture-location");}
  public static double getLatitude(android.location.Location value){receiver(value);return 12.25;}
@@ -20,16 +20,16 @@ public final class NativeLocationValues {
  public static float getSpeed(android.location.Location value){receiver(value);return 3.5f;}
  public static float getBearing(android.location.Location value){receiver(value);return 123.5f;}
 }''',
-    'dev/pgrazor/NativeRuntimeBootstrap.java': '''package dev.pgrazor;
+    'dev/pgs/NativeRuntimeBootstrap.java': '''package dev.pgs;
 public class NativeRuntimeBootstrap {public static void onRendered(){GameBridgeDispatch.log+="bootstrap;";}}''',
     'com/unity3d/player/UnityPlayerForActivityOrService.java': '''package com.unity3d.player;
 public class UnityPlayerForActivityOrService {public boolean result,fail; public boolean nativeRender(){
- dev.pgrazor.GameBridgeDispatch.log+="render;";if(fail)throw new IllegalStateException("render");return result;}}''',
+ dev.pgs.GameBridgeDispatch.log+="render;";if(fail)throw new IllegalStateException("render");return result;}}''',
     'com/unity3d/player/W.java': '''package com.unity3d.player;
 public class W {public UnityPlayerForActivityOrService player=new UnityPlayerForActivityOrService();
  public boolean handleMessage(android.os.Message m){if(m==null)return false;
- boolean result=player.nativeRender();dev.pgrazor.GameBridgeDispatch.log+="after;";return result;}}''',
-    'dev/pgrazor/GameBridgeDispatch.java': '''package dev.pgrazor;
+ boolean result=player.nativeRender();dev.pgs.GameBridgeDispatch.log+="after;";return result;}}''',
+    'dev/pgs/GameBridgeDispatch.java': '''package dev.pgs;
 public final class GameBridgeDispatch {
  public static String log=""; public static Object consumer; public static long wide;public static boolean browser=true;
  public static boolean browserSignInEnabled(){return browser;}
@@ -44,12 +44,12 @@ public final class GameBridgeDispatch {
     'com/google/android/gms/auth/api/signin/GoogleSignInClient.java': 'package com.google.android.gms.auth.api.signin; public class GoogleSignInClient {}',
     'com/nianticlabs/platform/authgooglesignin/SignInManager.java': '''package com.nianticlabs.platform.authgooglesignin;
 public class SignInManager { public static class Companion {
- public final void signIn(android.app.Activity a,com.google.android.gms.auth.api.signin.GoogleSignInClient c,kotlin.jvm.functions.Function1 f){dev.pgrazor.GameBridgeDispatch.log+="originalSignIn;";}
+ public final void signIn(android.app.Activity a,com.google.android.gms.auth.api.signin.GoogleSignInClient c,kotlin.jvm.functions.Function1 f){dev.pgs.GameBridgeDispatch.log+="originalSignIn;";}
 }}''',
     'com/unity3d/player/UnityPermissions.java': '''package com.unity3d.player;
-public class UnityPermissions { public static boolean hasUserAuthorizedPermission(android.content.Context c,String p){dev.pgrazor.GameBridgeDispatch.log+="permission-original;";return false;} }''',
+public class UnityPermissions { public static boolean hasUserAuthorizedPermission(android.content.Context c,String p){dev.pgs.GameBridgeDispatch.log+="permission-original;";return false;} }''',
     'com/unity3d/plugin/UnityAndroidPermissions.java': '''package com.unity3d.plugin;
-public class UnityAndroidPermissions {public boolean IsPermissionGranted(android.app.Activity a,String p){dev.pgrazor.GameBridgeDispatch.log+="activity-original;";return false;}}''',
+public class UnityAndroidPermissions {public boolean IsPermissionGranted(android.app.Activity a,String p){dev.pgs.GameBridgeDispatch.log+="activity-original;";return false;}}''',
     'com/nianticlabs/platform/niaadvsynccore/permission/PermissionStatus.java': '''package com.nianticlabs.platform.niaadvsynccore.permission;
 public enum PermissionStatus {GRANTED,DENIED}''',
     'com/nianticlabs/platform/niaadvsyncpermissions/internal/InternalPermissionManager.java': '''package com.nianticlabs.platform.niaadvsyncpermissions.internal;
@@ -58,13 +58,13 @@ public class InternalPermissionManager {public long original;
  public PermissionStatus permissionStatus(long p){original=p;return PermissionStatus.DENIED;}}''',
     'com/nianticlabs/nia/contextservice/ContextService.java': '''package com.nianticlabs.nia.contextservice;
 public class ContextService {public boolean fail;
- private void invokeOnStart(){dev.pgrazor.GameBridgeDispatch.log+="originalStart;";if(fail)throw new IllegalStateException("original");}
- private void invokeOnResume(){dev.pgrazor.GameBridgeDispatch.log+="originalResume;";}
- private void invokeOnStop(){dev.pgrazor.GameBridgeDispatch.log+="originalStop;";}
- private void invokeOnPause(){dev.pgrazor.GameBridgeDispatch.log+="originalPause;";}
+ private void invokeOnStart(){dev.pgs.GameBridgeDispatch.log+="originalStart;";if(fail)throw new IllegalStateException("original");}
+ private void invokeOnResume(){dev.pgs.GameBridgeDispatch.log+="originalResume;";}
+ private void invokeOnStop(){dev.pgs.GameBridgeDispatch.log+="originalStop;";}
+ private void invokeOnPause(){dev.pgs.GameBridgeDispatch.log+="originalPause;";}
  public void run(){invokeOnStart();invokeOnResume();invokeOnPause();invokeOnStop();}
 }''',
-    'BridgeFixture.java': '''import dev.pgrazor.GameBridgeDispatch;
+    'BridgeFixture.java': '''import dev.pgs.GameBridgeDispatch;
 import com.nianticlabs.platform.niaadvsynccore.permission.PermissionStatus;
 public class BridgeFixture {
  static void check(boolean b){if(!b)throw new AssertionError(GameBridgeDispatch.log);}
@@ -114,7 +114,7 @@ public class BridgeFixture {
 for name in ('InitialDialog', 'ManualPermissionDialog', 'FinalDialog'):
     SOURCES['com/nianticlabs/background/configuration/' + name + '.java'] = (
         'package com.nianticlabs.background.configuration; public class ' + name + ' {'
-        'protected void onCreate(android.os.Bundle b){dev.pgrazor.GameBridgeDispatch.log+="originalDialog;";}}')
+        'protected void onCreate(android.os.Bundle b){dev.pgs.GameBridgeDispatch.log+="originalDialog;";}}')
 
 
 def main():

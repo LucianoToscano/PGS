@@ -188,14 +188,14 @@ globalThis.PGRazorLocation = Object.freeze({create({Java, control, isDisposed, b
         try {
             // Use a normal provider-listener object; never replace nativeLocationUpdate.
             // ART can crash resolving calls to that replaced native method on provider threads.
-            Listener=Java.registerClass({name:'dev.pgrazor.LocationProviderListener',
+            Listener=Java.registerClass({name:'dev.pgs.LocationProviderListener',
                 implements:[Java.use('com.nianticlabs.nia.location.NianticLocationProvider$ProviderListener')],
                 fields:{key:'int'},methods:{
                     onProviderStatus:function(status){forward(this,'onProviderStatus',[status]);},
                     onProviderLocation:function(fix){forward(this,'onProviderLocation',[fix]);},
                     onProviderSatellites:function(time,satellites){forward(this,'onProviderSatellites',[time,satellites]);}
                 }});
-            const Runner = Java.registerClass({name: 'dev.pgrazor.LocationDeliveryTick',
+            const Runner = Java.registerClass({name: 'dev.pgs.LocationDeliveryTick',
                 implements: [Java.use('java.lang.Runnable')], methods: {run: tick}});
             runnable = Runner.$new();
             // Hook the private JNI lifecycle dispatchers, not virtual onStart/onStop.

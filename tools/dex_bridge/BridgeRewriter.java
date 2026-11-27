@@ -15,7 +15,7 @@ import org.jf.dexlib2.writer.pool.DexPool;
 /** Build-time method-body rewrite. Exact descriptors, preserved original bodies,
  * transactional output; no ART hooks and no runtime code generation. */
 public final class BridgeRewriter {
-    static final String DISPATCH="Ldev/pgrazor/GameBridgeDispatch;";
+    static final String DISPATCH="Ldev/pgs/GameBridgeDispatch;";
     static final String OBJECT="Ljava/lang/Object;", STRING="Ljava/lang/String;";
     static final String ACTIVITY="Landroid/app/Activity;";
     static final String PERMISSION="Lcom/nianticlabs/platform/niaadvsynccore/permission/PermissionStatus;";
@@ -114,7 +114,7 @@ public final class BridgeRewriter {
         // Keep the native method, call and result intact. The callback runs only
         // after normal native return, without consuming or replacing its result.
         body.addInstruction(insert,new BuilderInstruction35c(Opcode.INVOKE_STATIC,0,0,0,0,0,0,
-            new ImmutableMethodReference("Ldev/pgrazor/NativeRuntimeBootstrap;","onRendered",Collections.emptyList(),"V")));
+            new ImmutableMethodReference("Ldev/pgs/NativeRuntimeBootstrap;","onRendered",Collections.emptyList(),"V")));
         return body;
     }
     static Method preservedBody(Method m){
@@ -124,7 +124,7 @@ public final class BridgeRewriter {
         return new ImmutableMethod(m.getDefiningClass(),PREFIX+m.getName(),parameters,m.getReturnType(),
             ((m.getAccessFlags()&~5)|2|0x1000),Collections.emptySet(),m.getHiddenApiRestrictions(),m.getImplementation());
     }
-    static final String LOCATION="Landroid/location/Location;", LOCATION_VALUES="Ldev/pgrazor/NativeLocationValues;";
+    static final String LOCATION="Landroid/location/Location;", LOCATION_VALUES="Ldev/pgs/NativeLocationValues;";
     static final Set<String> LOCATION_NAMES=new HashSet<>(Arrays.asList("getLatitude","getLongitude","getSpeed","getBearing"));
     static String descriptor(MethodReference m){StringBuilder b=new StringBuilder(m.getDefiningClass()).append("->").append(m.getName()).append('(');
         for(CharSequence p:m.getParameterTypes())b.append(p);return b.append(')').append(m.getReturnType()).toString();}

@@ -1,4 +1,4 @@
-import dev.pgrazor.MotionEngine;
+import dev.pgs.MotionEngine;
 
 public final class IdleWalkTest {
     static void check(boolean ok,String why){if(!ok)throw new AssertionError(why);}

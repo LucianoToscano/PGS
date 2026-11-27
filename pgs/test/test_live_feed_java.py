@@ -33,10 +33,10 @@ class LiveFeedJavaTests(unittest.TestCase):
                 target = work / original.name
                 target.write_text(text, encoding='utf-8')
                 sources.append(target)
-            sources += [ROOT / 'src/dev/pgrazor/LiveFeedData.java', ROOT / 'src/dev/pgrazor/LiveFeedFilters.java', ROOT / 'src/dev/pgrazor/MapTapSequence.java', ROOT / 'src/dev/pgrazor/BerryPriority.java', ROOT / 'src/dev/pgrazor/SettingsBackupRules.java', ROOT / 'src/dev/pgrazor/AutoRaidPreferences.java', ROOT / 'src/dev/pgrazor/BuddyEmotionPreferences.java', ROOT / 'test/LiveFeedDataTest.java', ROOT / 'test/SettingsBackupRulesTest.java',
-                        ROOT / 'src/dev/pgrazor/PogoFeedData.java', ROOT / 'src/dev/pgrazor/PogoFeedFilters.java', ROOT / 'test/PogoFeedDataTest.java', ROOT / 'test/PogoFeedFiltersTest.java']
+            sources += [ROOT / 'src/dev/pgs/LiveFeedData.java', ROOT / 'src/dev/pgs/LiveFeedFilters.java', ROOT / 'src/dev/pgs/MapTapSequence.java', ROOT / 'src/dev/pgs/BerryPriority.java', ROOT / 'src/dev/pgs/SettingsBackupRules.java', ROOT / 'src/dev/pgs/AutoRaidPreferences.java', ROOT / 'src/dev/pgs/BuddyEmotionPreferences.java', ROOT / 'test/LiveFeedDataTest.java', ROOT / 'test/SettingsBackupRulesTest.java',
+                        ROOT / 'src/dev/pgs/PogoFeedData.java', ROOT / 'src/dev/pgs/PogoFeedFilters.java', ROOT / 'test/PogoFeedDataTest.java', ROOT / 'test/PogoFeedFiltersTest.java']
             if (ROOT / 'test/LiveFeedFiltersTest.java').exists(): sources.append(ROOT / 'test/LiveFeedFiltersTest.java')
-            sources.append(ROOT / 'src/dev/pgrazor/LanguagePrefs.java')
+            sources.append(ROOT / 'src/dev/pgs/LanguagePrefs.java')
             result = subprocess.run([str(compiler), '-encoding', 'UTF-8', '-d', str(work), *map(str, sources)], capture_output=True, text=True, timeout=30)
             self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
             for main in ['LiveFeedDataTest','SettingsBackupRulesTest','PogoFeedDataTest','PogoFeedFiltersTest'] + (['LiveFeedFiltersTest'] if (ROOT / 'test/LiveFeedFiltersTest.java').exists() else []):

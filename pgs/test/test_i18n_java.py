@@ -9,9 +9,9 @@ import tempfile
 import unittest
 
 ROOT = Path(__file__).resolve().parents[1]
-SOURCE = ROOT / 'src/dev/pgrazor'
+SOURCE = ROOT / 'src/dev/pgs'
 
-CATALOG_FIXTURE = '''package dev.pgrazor;
+CATALOG_FIXTURE = '''package dev.pgs;
 import java.util.HashMap;
 import java.util.Map;
 final class I18nCatalog {
@@ -59,7 +59,7 @@ class I18nJavaTests(unittest.TestCase):
         return classes
 
     def run_engine(self, classes, *args):
-        result = subprocess.run([self.java, '-cp', str(classes), 'dev.pgrazor.I18nTest', *map(str, args)],
+        result = subprocess.run([self.java, '-cp', str(classes), 'dev.pgs.I18nTest', *map(str, args)],
                                 capture_output=True, text=True, encoding='utf-8', timeout=45)
         self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
         self.assertIn('PASS I18n', result.stdout)

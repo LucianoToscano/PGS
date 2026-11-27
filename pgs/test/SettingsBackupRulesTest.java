@@ -1,7 +1,7 @@
-import dev.pgrazor.SettingsBackupRules;
-import dev.pgrazor.BerryPriority;
-import dev.pgrazor.MapTapSequence;
-import dev.pgrazor.LanguagePrefs;
+import dev.pgs.SettingsBackupRules;
+import dev.pgs.BerryPriority;
+import dev.pgs.MapTapSequence;
+import dev.pgs.LanguagePrefs;
 import org.json.*;
 
 public class SettingsBackupRulesTest {

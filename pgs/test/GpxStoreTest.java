@@ -1,6 +1,6 @@
 import android.content.Context;
-import dev.pgrazor.GpxRoute;
-import dev.pgrazor.GpxStore;
+import dev.pgs.GpxRoute;
+import dev.pgs.GpxStore;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;

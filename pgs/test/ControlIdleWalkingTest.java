@@ -1,4 +1,4 @@
-package dev.pgrazor;
+package dev.pgs;
 
 /** Exercises the actual Control gating used by Pad, with Android clock/lifecycle shells. */
 public final class ControlIdleWalkingTest {

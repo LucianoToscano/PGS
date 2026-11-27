@@ -7,12 +7,12 @@ import struct
 
 NO_INDEX = 0xffffffff
 ANDROID_NS = 'http://schemas.android.com/apk/res/android'
-PROVIDER = 'dev.pgrazor.BootstrapProvider'
-LOG_ACTIVITY = 'dev.pgrazor.LogActivity'
-GOOGLE_AUTH_ACTIVITY = 'dev.pgrazor.GoogleAuthActivity'
+PROVIDER = 'dev.pgs.BootstrapProvider'
+LOG_ACTIVITY = 'dev.pgs.LogActivity'
+GOOGLE_AUTH_ACTIVITY = 'dev.pgs.GoogleAuthActivity'
 GOOGLE_AUTH_SCHEME = 'com.googleusercontent.apps.848232511240-dmrj3gba506c9svge2p9gq35p1fg654p'
-RESTART_ACTIVITY = 'dev.pgrazor.AccountRestartActivity'
-RESTART_PROCESS = ':pgrazor_restart'
+RESTART_ACTIVITY = 'dev.pgs.AccountRestartActivity'
+RESTART_PROCESS = ':pgs_restart'
 ATTR_IDS = {'name': 0x01010003, 'exported': 0x01010010, 'authorities': 0x01010018}
 RESTART_ATTR_IDS = {'name': 0x01010003, 'exported': 0x01010010, 'process': 0x01010011}
 
@@ -288,14 +288,14 @@ def patch_manifest(data):
     info = inspect_manifest(data)
     if info['split']: raise ValueError('A base APK is required; split manifest supplied')
     if info['applications'] != 1: raise ValueError('Expected exactly one application')
-    authority = info['package']+'.pgrazor.bootstrap'
+    authority = info['package']+'.pgs.bootstrap'
     def qualified(name):
         if not isinstance(name, str): return name
         if name.startswith('.'): return info['package']+name
         return info['package']+'.'+name if '.' not in name else name
     for provider in info['providers']:
         name = qualified(provider['name'])
-        if name == PROVIDER or authority in str(provider['authorities'] or '').split(';'):
+        if name in (PROVIDER, 'dev.pgrazor.BootstrapProvider') or any(a in str(provider['authorities'] or '').split(';') for a in (authority, info['package']+'.pgrazor.bootstrap')):
             raise ValueError('Bootstrap provider or authority already exists')
     header_size, chunks, pool, maps, resources = _parse(data)
     existing_log_activity = False
@@ -452,10 +452,10 @@ def add_install_permissions(data):
 
 
 def add_account_restart_activity(data):
-    """Append an unexported AccountRestartActivity on a private :pgrazor_restart process.
+    """Append an unexported AccountRestartActivity on a private :pgs_restart process.
 
     The helper performs cold-process account switches in isolation, so it is declared
-    exported="false" with android:process=":pgrazor_restart" and no intent-filter. A
+    exported="false" with android:process=":pgs_restart" and no intent-filter. A
     conflicting preexisting activity of the same name (exported, wrongly scoped/missing
     process, or carrying an intent-filter) is rejected; an exactly-matching safe definition
     is accepted and the manifest returned unchanged. Rejects split manifests. Append-only:

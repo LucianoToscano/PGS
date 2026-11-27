@@ -91,15 +91,15 @@ class PackageTests(unittest.TestCase):
                         self.assertEqual(report['mode'],'research-runtime')
                         with zipfile.ZipFile(report['outputs'][0]['file']) as archive:
                             names=set(archive.namelist())
-                            mode=json.loads(archive.read('assets/pgrazor/mode.json'))
+                            mode=json.loads(archive.read('assets/pgs/mode.json'))
                             self.assertTrue(mode['gadget'])
                             self.assertFalse(mode.get('compiledGameplay',False))
                             self.assertEqual(archive.read('classes.dex'),b'original-game-dex')
-                            self.assertIn('assets/pgrazor/embedded-agent.js',names)
-                            self.assertIn('assets/pgrazor/java-bridge.js',names)
+                            self.assertIn('assets/pgs/embedded-agent.js',names)
+                            self.assertIn('assets/pgs/java-bridge.js',names)
                             self.assertFalse(any(name.endswith(('/quick-close.js','/quick-ball.js','/quick-summary.js')) for name in names))
                             for name,receipt in report['script_bundles'].items():
-                                self.assertEqual(receipt['sha256'],hashlib.sha256(archive.read('assets/pgrazor/'+name)).hexdigest())
+                                self.assertEqual(receipt['sha256'],hashlib.sha256(archive.read('assets/pgs/'+name)).hexdigest())
             self.assertEqual(runtime_assets.sha256(source),original_hash)
 
     def test_clean_game_baseline_rejects_both_observed_modified_signers(self):
@@ -109,12 +109,12 @@ class PackageTests(unittest.TestCase):
                 nonroot.require_clean_game_certificate([signer])
 
     def test_rewrite_preserves_app_payload_and_original(self):
-        source=ROOT/'build/pgrazor-preview.apk'
+        source=ROOT/'build/pgs-preview.apk'
         if not source.exists(): self.skipTest('Preview APK not built')
         original_hash=runtime_assets.sha256(source)
         with tempfile.TemporaryDirectory(dir=ROOT/'build') as temp:
             output=Path(temp)/'patched.apk'
-            nonroot.rewrite_apk(source,output,base=True,preview=True,assets={'assets/pgrazor/mode.json':b'{"gadget":false}'})
+            nonroot.rewrite_apk(source,output,base=True,preview=True,assets={'assets/pgs/mode.json':b'{"gadget":false}'})
             with zipfile.ZipFile(source) as before,zipfile.ZipFile(output) as after:
                 for name in before.namelist():
                     if name=='AndroidManifest.xml' or nonroot.signature_entry(name): continue
@@ -123,7 +123,7 @@ class PackageTests(unittest.TestCase):
                 info=axml.inspect_manifest(after.read('AndroidManifest.xml'))
                 self.assertTrue(any(p['name']==axml.PROVIDER and p['exported'] is False for p in info['providers']))
             self.assertEqual(original_hash,runtime_assets.sha256(source))
-            with self.assertRaisesRegex(ValueError,'already has PGRazor'):
+            with self.assertRaisesRegex(ValueError,'already has PGS'):
                 nonroot.rewrite_apk(output,Path(temp)/'twice.apk',base=True,preview=True)
 
     def test_bundle_paths_are_never_used_as_output_paths(self):
@@ -166,7 +166,7 @@ class PackageTests(unittest.TestCase):
             (work/'AndroidManifest.xml').write_text('manifest')
             (work/'VERSION').write_text('0.1.6')
             (work/'src/Example.java').write_text('class Example {}')
-            dex=work/'build/pgrazor.dex'; dex.write_bytes(b'dex\nLdev/pgrazor/BootstrapProvider;')
+            dex=work/'build/pgs.dex'; dex.write_bytes(b'dex\nLdev/pgs/BootstrapProvider;')
             state={'version':nonroot.build.release_version(work),
                    'sources':nonroot.build.source_fingerprints(work),
                    'dex_sha256':runtime_assets.sha256(dex)}
@@ -187,7 +187,7 @@ class PackageTests(unittest.TestCase):
              patch.object(nonroot,'probe') as install, patch.object(nonroot,'command') as command, \
              contextlib.redirect_stdout(io.StringIO()):
             nonroot.main(['--build-probe','--research-runtime','--abi','arm64-v8a','--skip-build'])
-        package.assert_called_once_with(ROOT/'build/pgrazor-preview.apk',panel_only=False,download=False,preview=True,probe_abi='arm64-v8a',research_runtime=True)
+        package.assert_called_once_with(ROOT/'build/pgs-preview.apk',panel_only=False,download=False,preview=True,probe_abi='arm64-v8a',research_runtime=True)
         install.assert_not_called(); command.assert_not_called()
 
     def test_phone_build_requires_explicit_architecture(self):

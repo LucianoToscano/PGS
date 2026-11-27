@@ -1,4 +1,4 @@
-package dev.pgrazor;
+package dev.pgs;
 
 public final class SessionStatsHistoryTest {
     static int checks;

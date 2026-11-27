@@ -28,13 +28,13 @@ class GameRoutesJavaTests(unittest.TestCase):
                 target = work / original.name
                 target.write_text(text, encoding='utf-8')
                 sources.append(target)
-            sources += [ROOT / 'src/dev/pgrazor/MotionEngine.java',
-                        ROOT / 'src/dev/pgrazor/GameRoutesController.java',
+            sources += [ROOT / 'src/dev/pgs/MotionEngine.java',
+                        ROOT / 'src/dev/pgs/GameRoutesController.java',
                         ROOT / 'test/GameRoutesTest.java', ROOT / 'test/GameRoutesBridgeTest.java']
             result = subprocess.run([str(compiler), '-encoding', 'UTF-8', '-d', str(work), *map(str, sources)],
                                     capture_output=True, text=True, timeout=45)
             self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
-            result = subprocess.run([str(runtime), '-cp', str(work), 'dev.pgrazor.GameRoutesBridgeTest'],
+            result = subprocess.run([str(runtime), '-cp', str(work), 'dev.pgs.GameRoutesBridgeTest'],
                                     capture_output=True, text=True, timeout=30)
             self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
             test = (ROOT / 'test/GameRoutesTest.java').read_text(encoding='utf-8')

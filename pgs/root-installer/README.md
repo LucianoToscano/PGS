@@ -52,10 +52,10 @@ manager before `customize.sh` runs, so the live module is the single source of t
 - `AndroidManifest.xml` — package `dev.pgrazor.root`, launcher activity and a game-only restart helper, `<queries>` for the
   game package so its version/signature are visible on Android 11+. `versionCode`/`versionName` are
   overwritten per build.
-- `src/dev/pgrazor/root/InstallerActivity.java` — the UI (programmatic, no resources).
-- `src/dev/pgrazor/root/RootStatus.java` — detection, honest status, install and reboot.
-- `src/dev/pgrazor/root/RestartActivity.java` ? foreground account-switch restart, with an OS-verified calling-package check and no root commands.
-- `src/dev/pgrazor/root/RootShell.java` — bounded `su -c` execution.
+- `src/dev/pgs/root/InstallerActivity.java` — the UI (programmatic, no resources).
+- `src/dev/pgs/root/RootStatus.java` — detection, honest status, install and reboot.
+- `src/dev/pgs/root/RestartActivity.java` ? foreground account-switch restart, with an OS-verified calling-package check and no root commands.
+- `src/dev/pgs/root/RootShell.java` — bounded `su -c` execution.
 - `InstallerConfig.java` is **generated per build** by `rooted_installer.build_installer` (game
   target, PGS version, module asset name, and the trusted Niantic certificate digest reused from
   `nonroot.NIANTIC_CERT_SHA256`). It is not checked in, the same way `build.py` generates

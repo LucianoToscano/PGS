@@ -1,4 +1,4 @@
-import dev.pgrazor.SavedPlaces;
+import dev.pgs.SavedPlaces;
 
 public final class SavedPlacesValidationTest {
     static void invalid(String name, double latitude, double longitude) {

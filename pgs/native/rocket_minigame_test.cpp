@@ -1,6 +1,6 @@
 // Standalone Android harness for feature 6 (rocket minigame collector). Never linked
 // into or packaged with the app; the coordinator cross-compiles it and runs it against a
-// real libpgrazor-core.so with `./rocket_minigame_test <path-to-.so>`.
+// real libpgs-core.so with `./rocket_minigame_test <path-to-.so>`.
 //
 // The four lifecycle/update sites are REAL Dobby hooks (padded no-inline targets reached
 // through volatile call pointers, exactly like ar_throw_test.cpp). Everything the native

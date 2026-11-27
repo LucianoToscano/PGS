@@ -1,4 +1,4 @@
-import dev.pgrazor.PogoFeedFilters;
+import dev.pgs.PogoFeedFilters;
 import org.json.JSONArray;
 import org.json.JSONObject;
 

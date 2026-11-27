@@ -1,4 +1,4 @@
-package dev.pgrazor;
+package dev.pgs;
 
 public final class ControlCooldownTest {
     private static void check(boolean value){if(!value)throw new AssertionError();}

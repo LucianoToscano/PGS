@@ -1,6 +1,6 @@
 // Standalone host/Android harness for feature 8 (catch animation speed ownership).
 // Never linked into or packaged with the app; the coordinator cross-compiles it and
-// runs it against a real libpgrazor-core.so with `./catch_animation_test <path-to-.so>`.
+// runs it against a real libpgs-core.so with `./catch_animation_test <path-to-.so>`.
 //
 // catch_animation installs NO Dobby hook in this stage: the JS adapter owns the Gum
 // observers and CALLS apply()/complete() on a confirmed success/finish. So, unlike

@@ -24,7 +24,7 @@ class AccountProfileStoreJavaTests(unittest.TestCase):
             classes = work / 'classes'
             data = work / 'data'
             data.mkdir()
-            sources = [ROOT / 'src/dev/pgrazor/AccountProfileStore.java',
+            sources = [ROOT / 'src/dev/pgs/AccountProfileStore.java',
                        ROOT / 'test/AccountProfileStoreTest.java']
             compiled = subprocess.run([str(compiler), '-encoding', 'UTF-8', '-d', str(classes), *map(str, sources)],
                                       capture_output=True, text=True, timeout=60)

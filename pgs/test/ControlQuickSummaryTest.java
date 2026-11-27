@@ -1,4 +1,4 @@
-package dev.pgrazor;
+package dev.pgs;
 
 /** Runs real Control code; Android lifecycle/clock shells are supplied by test_control_java.py. */
 public final class ControlQuickSummaryTest {

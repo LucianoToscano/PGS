@@ -114,7 +114,7 @@ extern "C" JNIEXPORT jint JNICALL JNI_OnLoad(JavaVM *vm,void *){
   }
  }catch(...){initialized=false;}
  if(env->ExceptionCheck())return JNI_ERR;
- jclass cls=env->FindClass("dev/pgrazor/NativeJavaHooks");if(!cls)return JNI_ERR;
+ jclass cls=env->FindClass("dev/pgs/NativeJavaHooks");if(!cls)return JNI_ERR;
  const int status=env->RegisterNatives(cls,methods,sizeof(methods)/sizeof(methods[0]));env->DeleteLocalRef(cls);
  return status==0?JNI_VERSION_1_6:JNI_ERR;
 }

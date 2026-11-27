@@ -1,4 +1,4 @@
-import dev.pgrazor.MotionEngine;
+import dev.pgs.MotionEngine;
 public class MotionTest {
     static void check(boolean ok,String message) { if(!ok) throw new AssertionError(message); }
     static void near(double actual,double expected,double tolerance,String message) {

@@ -3,7 +3,7 @@
 'use strict';
 const assert=require('node:assert/strict'),fs=require('node:fs'),vm=require('node:vm');
 const source=fs.readFileSync(__dirname+'/../runtime/native-transport.js','utf8');
-const java=fs.readFileSync(__dirname+'/../src/dev/pgrazor/NativeRuntimeTransport.java','utf8');
+const java=fs.readFileSync(__dirname+'/../src/dev/pgs/NativeRuntimeTransport.java','utf8');
 const legacy=fs.readFileSync(__dirname+'/../runtime/translated.js','utf8');
 const javaArray=name=>{const found=java.match(new RegExp('private static final String\\[\\] '+name+' = \\{([\\s\\S]*?)\\};'));assert.ok(found,name);return JSON.parse('['+found[1]+']');};
 function fixture(){

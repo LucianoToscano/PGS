@@ -1,4 +1,4 @@
-package dev.pgrazor;
+package dev.pgs;
 import java.util.Properties;
 public final class SmartCatchPreferencesTest {
     static int checks;

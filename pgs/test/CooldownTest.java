@@ -1,4 +1,4 @@
-package dev.pgrazor;
+package dev.pgs;
 public class CooldownTest {
  static void check(boolean b){if(!b)throw new AssertionError();}
  public static void main(String[] args){

@@ -9,19 +9,19 @@ class AccountSessionTests(unittest.TestCase):
         compiler,runtime=java_tools()
         with tempfile.TemporaryDirectory(prefix='pgrazor-profile-delete-') as folder:
             work=Path(folder)
-            sources=[ROOT/'src/dev/pgrazor/AccountProfileStore.java',ROOT/'src/dev/pgrazor/AccountProfileData.java',ROOT/'test/AccountProfileDataTest.java']
+            sources=[ROOT/'src/dev/pgs/AccountProfileStore.java',ROOT/'src/dev/pgs/AccountProfileData.java',ROOT/'test/AccountProfileDataTest.java']
             result=subprocess.run([str(compiler),'-encoding','UTF-8','-d',str(work/'classes'),*map(str,sources)],capture_output=True,text=True)
             self.assertEqual(result.returncode,0,result.stdout+result.stderr)
-            result=subprocess.run([str(runtime),'-cp',str(work/'classes'),'dev.pgrazor.AccountProfileDataTest',str(work/'data')],capture_output=True,text=True)
+            result=subprocess.run([str(runtime),'-cp',str(work/'classes'),'dev.pgs.AccountProfileDataTest',str(work/'data')],capture_output=True,text=True)
             self.assertEqual(result.returncode,0,result.stdout+result.stderr)
             self.assertIn('PASS:',result.stdout)
     def test_roundtrip_and_recovery(self):
         compiler,runtime=java_tools()
         with tempfile.TemporaryDirectory(prefix='pgrazor-session-test-') as folder:
             work=Path(folder)
-            sources=[ROOT/'src/dev/pgrazor/AccountProfileStore.java',ROOT/'src/dev/pgrazor/AccountSessionTransaction.java',ROOT/'test/AccountSessionTransactionTest.java']
+            sources=[ROOT/'src/dev/pgs/AccountProfileStore.java',ROOT/'src/dev/pgs/AccountSessionTransaction.java',ROOT/'test/AccountSessionTransactionTest.java']
             result=subprocess.run([str(compiler),'-encoding','UTF-8','-d',str(work/'classes'),*map(str,sources)],capture_output=True,text=True)
             self.assertEqual(result.returncode,0,result.stdout+result.stderr)
-            result=subprocess.run([str(runtime),'-cp',str(work/'classes'),'dev.pgrazor.AccountSessionTransactionTest',str(work/'data')],capture_output=True,text=True)
+            result=subprocess.run([str(runtime),'-cp',str(work/'classes'),'dev.pgs.AccountSessionTransactionTest',str(work/'data')],capture_output=True,text=True)
             self.assertEqual(result.returncode,0,result.stdout+result.stderr)
             self.assertIn('PASS:',result.stdout)

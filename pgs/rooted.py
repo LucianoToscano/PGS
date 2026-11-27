@@ -6,8 +6,8 @@ PGS's DEX and native libraries.
 
 Module layout:
   module.prop, META-INF/... (Magisk installer), zygisk/<abi>.so (the loader),
-  pgrazor/classes.dex (PGS), pgrazor/payload.zip (everything the APK build ships under
-  assets/, plus pgrazor/rooted/target.json and location-callers.txt).
+  pgs/classes.dex (PGS), pgs/payload.zip (everything the APK build ships under
+  assets/, plus pgs/rooted/target.json and location-callers.txt).
 """
 import argparse
 import datetime as dt
@@ -142,15 +142,15 @@ def location_callers(locations_tsv):
 
 
 def payload_assets(download=False):
-    """Everything the APK build ships under assets/pgrazor/ for compiled gameplay, keyed by asset name."""
+    """Everything the APK build ships under assets/pgs/ for compiled gameplay, keyed by asset name."""
     import art_build
     import native_build
     assets = {}
     with nonroot.scoped_env(PGRAZOR_NATIVE_PILOT='1'):
         native_outputs = native_build.build_all(ROOT, ABIS, download=download)
     if set(native_outputs) != set(ABIS): raise RuntimeError('Native core ABI set mismatch')
-    for abi, binary in native_outputs.items(): assets[f'pgrazor/{abi}/libpgrazor-core.so'] = Path(binary)
-    assets['pgrazor/native-notices/Dobby-LICENSE'] = native_build.ensure_dobby(ROOT) / 'LICENSE'
+    for abi, binary in native_outputs.items(): assets[f'pgs/{abi}/libpgs-core.so'] = Path(binary)
+    assets['pgs/native-notices/Dobby-LICENSE'] = native_build.ensure_dobby(ROOT) / 'LICENSE'
     art_outputs = art_build.build_all(ROOT, ABIS)
     if set(art_outputs) != set(ABIS): raise RuntimeError('ART build ABI set mismatch')
     sessions = {Path(binary).resolve().parent.parent for binary in art_outputs.values()}
@@ -161,13 +161,13 @@ def payload_assets(download=False):
         entry = art_receipt.get('abis', {}).get(abi, {})
         if entry.get('sha256') != runtime_assets.sha256(binary) or entry.get('exports') != ['JNI_OnLoad']:
             raise RuntimeError('ART build output does not match verified receipt: ' + abi)
-        assets[f'pgrazor/{abi}/libpgrazor-art.so'] = Path(binary)
+        assets[f'pgs/{abi}/libpgs-art.so'] = Path(binary)
     names = ('LSPlant-LICENSE', 'DexBuilder-LICENSE', 'parallel-hashmap-LICENSE', 'XZ-Embedded-COPYING', 'Dobby-LICENSE')
     sources = art_receipt.get('license_sources', [])
     if len(sources) != len(names): raise RuntimeError('All five ART dependency licenses required')
-    for name, source in zip(names, sources): assets['pgrazor/art-notices/' + name] = Path(source)
-    for name, path in build.map_icon_assets().items(): assets['pgrazor/map-icons/' + name] = Path(path)
-    for name, path in build.feed_icon_assets().items(): assets['pgrazor/feed-icons/pokemon/' + name] = Path(path)
+    for name, source in zip(names, sources): assets['pgs/art-notices/' + name] = Path(source)
+    for name, path in build.map_icon_assets().items(): assets['pgs/map-icons/' + name] = Path(path)
+    for name, path in build.feed_icon_assets().items(): assets['pgs/feed-icons/pokemon/' + name] = Path(path)
     return assets
 
 
@@ -208,9 +208,9 @@ def package(source, download=False, installer=True):
     callers = location_callers(folder / 'java-bridges/rewritten/locations.tsv')
 
     assets = payload_assets(download)
-    assets['pgrazor/mode.json'] = json.dumps(compiled_mode(ABIS))
-    assets['pgrazor/rooted/target.json'] = json.dumps(target)
-    assets['pgrazor/rooted/location-callers.txt'] = '\n'.join(callers) + '\n'
+    assets['pgs/mode.json'] = json.dumps(compiled_mode(ABIS))
+    assets['pgs/rooted/target.json'] = json.dumps(target)
+    assets['pgs/rooted/location-callers.txt'] = '\n'.join(callers) + '\n'
     payload = write_zip(folder / 'payload.zip', assets, zipfile.ZIP_STORED)
 
     module = {
@@ -219,8 +219,8 @@ def package(source, download=False, installer=True):
                                   f'description=PGS for the official Pokémon GO app ({target["versionName"]}). Requires Zygisk.', '']),
         'META-INF/com/google/android/update-binary': UPDATE_BINARY,
         'META-INF/com/google/android/updater-script': '#MAGISK\n',
-        'pgrazor/classes.dex': Path(dex),
-        'pgrazor/payload.zip': payload,
+        'pgs/classes.dex': Path(dex),
+        'pgs/payload.zip': payload,
     }
     module.update(capability_module_entries())
     for abi in ABIS: module[f'zygisk/{abi}.so'] = build_loader(abi, folder / f'loader-{abi}.so')

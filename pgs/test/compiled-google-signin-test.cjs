@@ -22,7 +22,7 @@ function build(opts={}){
   return {signIn:{overload(...t){m.overloadTypes=t;return m;}},m};}
  const signInMethod=method();
  const classes={
-  'dev.pgrazor.GameGoogleSignIn':{create(){if(opts.helperCreateThrows)throw Error('helper-metadata:tok_x');return helper;}},
+  'dev.pgs.GameGoogleSignIn':{create(){if(opts.helperCreateThrows)throw Error('helper-metadata:tok_x');return helper;}},
   [COMPANION]:signInMethod};
  const Java={use(n){accessed.push(n);if(opts.throwOnUse===n)throw Error('use-missing:'+n+':tok_y');if(!(n in classes))throw Error('missing:'+n);return classes[n];}};
  const ctx={};vm.createContext(ctx);vm.runInContext(code,ctx);
@@ -42,7 +42,7 @@ function build(opts={}){
  const env=build();env.adapter.install();
  const {m,helper,accessed}=env;
  assert.deepEqual(m.overloadTypes,TYPES,'exact overload types');
- assert.ok(accessed.includes('dev.pgrazor.GameGoogleSignIn')&&accessed.includes(COMPANION));
+ assert.ok(accessed.includes('dev.pgs.GameGoogleSignIn')&&accessed.includes(COMPANION));
  assert.equal(typeof m.implementation,'function','hook installed');
  // The hook forwards only (activity,consumer); the GoogleSignInClient is ignored and the original
  // is never called. The live helper begins a browser.

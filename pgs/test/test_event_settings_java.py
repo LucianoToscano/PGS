@@ -41,12 +41,12 @@ class EventSettingsJavaTests(unittest.TestCase):
                 source.parent.mkdir(parents=True, exist_ok=True)
                 source.write_text(text, encoding='utf-8')
                 sources.append(source)
-            sources += [ROOT/'src/dev/pgrazor/events/EventSettings.java', ROOT/'test/EventSettingsTest.java']
+            sources += [ROOT/'src/dev/pgs/AccountProfileStore.java', ROOT/'src/dev/pgs/events/EventSettings.java', ROOT/'test/EventSettingsTest.java']
             compiled = subprocess.run([str(compiler), '-encoding', 'UTF-8', '-d', str(work/'classes'),
                                        *map(str, sources)], capture_output=True, text=True, timeout=60)
             self.assertEqual(compiled.returncode, 0, compiled.stdout + compiled.stderr)
             tested = subprocess.run([str(runtime), '-ea', '-cp', str(work/'classes'),
-                                     'dev.pgrazor.events.EventSettingsTest'],
+                                     'dev.pgs.events.EventSettingsTest'],
                                     capture_output=True, text=True, timeout=20)
             self.assertEqual(tested.returncode, 0, tested.stdout + tested.stderr)
             self.assertIn('PASS EventSettings', tested.stdout)

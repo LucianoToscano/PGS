@@ -1,4 +1,4 @@
-package dev.pgrazor;
+package dev.pgs;
 
 public final class UpdateRulesTest {
     private static void check(boolean ok, String what) { if (!ok) throw new AssertionError(what); }

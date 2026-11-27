@@ -33,7 +33,7 @@ function installGoogleBrowserLogin() {
         control.event('google-browser', 'Compiled browser sign-in hook ready');
         return;
     }
-    const Browser = Java.use('dev.pgrazor.GoogleBrowserAuth');
+    const Browser = Java.use('dev.pgs.GoogleBrowserAuth');
     const Manager = Java.use('com.nianticlabs.platform.authgooglesignin.SignInManager$Companion');
     const signIn = Manager.signIn.overload('android.app.Activity', 'com.google.android.gms.auth.api.signin.GoogleSignInClient', 'kotlin.jvm.functions.Function1');
     signIn.implementation = function (activity, client, consumer) {
@@ -288,7 +288,7 @@ function start() {
         Java.perform(() => {
             if (disposed) return;
             try {
-                control = javaControl = Java.use('dev.pgrazor.Control');
+                control = javaControl = Java.use('dev.pgs.Control');
                 const locationControl=javaControl;
                 if(!bootParameters.compiledJavaBridges){
                     locationAdapter = PGRazorLocation.create({Java, control, isDisposed: () => disposed, bootLog});
@@ -317,7 +317,7 @@ function start() {
                     if(bootParameters.compiledNativeTransport) {
                         control.event('translated-host-ready','Compiled JNI transport v1; Java owns cadence');
                     } else if(globalThis.PGRazorNativeCorePath) {
-                        translatedBridge=Java.use('dev.pgrazor.RuntimeMailbox').create(
+                        translatedBridge=Java.use('dev.pgs.RuntimeMailbox').create(
                             bootParameters.mailboxPath,bootParameters.mailboxSession);
                         translatedBridge.start();
                         control.event('translated-host-ready','Compiled Java mailbox v1');
@@ -371,7 +371,7 @@ rpc.exports = {
         if (compiledGoogleSignIn !== null && typeof Java !== 'undefined') Java.performNow(stopCompiledGoogleSignIn);
         if (googleSignInTimer !== null) { clearInterval(googleSignInTimer); googleSignInTimer = null; }
         if (googleSignInPending && typeof Java !== 'undefined') Java.performNow(() => {
-            try { Java.use('dev.pgrazor.GoogleBrowserAuth').cancel(googleSignInPending.id); }
+            try { Java.use('dev.pgs.GoogleBrowserAuth').cancel(googleSignInPending.id); }
             finally { finishGoogleSignIn('Cancelled', null, null); }
         });
         if (diagnosticTimer !== null) clearTimeout(diagnosticTimer);

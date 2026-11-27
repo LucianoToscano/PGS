@@ -1,4 +1,4 @@
-package dev.pgrazor;
+package dev.pgs;
 import java.io.*;import java.nio.file.*;import java.lang.reflect.*;
 public class ControlLogRetentionTest {
  static void set(String n,Object v)throws Exception{Field f=Control.class.getDeclaredField(n);f.setAccessible(true);f.set(null,v);}

@@ -1,18 +1,18 @@
-package dev.pgrazor;
+package dev.pgs;
 
 /** Actual Control wire construction; EventSettings persistence has its own fixture. */
 public final class ControlWildEventTest {
     private static void check(boolean value) { if (!value) throw new AssertionError("Go Wild wire mismatch"); }
     public static void main(String[] args) throws Exception {
         java.lang.reflect.Field host=Control.class.getDeclaredField("hostApplication");host.setAccessible(true);
-        dev.pgrazor.events.EventSettings.vgpSafari=true;
-        dev.pgrazor.events.EventSettings.autoSafari=true;
+        dev.pgs.events.EventSettings.vgpSafari=true;
+        dev.pgs.events.EventSettings.autoSafari=true;
         check(Control.smartCatchConfig().endsWith(";0"));
         check(Control.catchChanceConfig().endsWith("|0|1")); // onMap off, Catch preview on by default
         host.set(null,new android.app.Application());
         for(int mask=0;mask<4;mask++) {
-            dev.pgrazor.events.EventSettings.vgpSafari=(mask&1)!=0;
-            dev.pgrazor.events.EventSettings.autoSafari=(mask&2)!=0;
+            dev.pgs.events.EventSettings.vgpSafari=(mask&1)!=0;
+            dev.pgs.events.EventSettings.autoSafari=(mask&2)!=0;
             String[] smart=Control.smartCatchConfig().split(";",-1);
             String[] manual=Control.catchChanceConfig().split("\\|",-1);
             check(smart.length==17&&smart[0].equals("7")&&smart[1].equals("0")&&smart[15].equals("0")&&smart[16].equals("0"));

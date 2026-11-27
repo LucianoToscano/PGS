@@ -4,8 +4,8 @@ import com.nianticlabs.background.configuration.InitialDialog;
 import com.nianticlabs.background.configuration.ManualPermissionDialog;
 import com.nianticlabs.platform.niaadvsynccore.permission.Permissions;
 import com.nianticlabs.platform.niaadvsynccore.permission.PermissionStatus;
-import dev.pgrazor.Control;
-import dev.pgrazor.GameLocationPermissions;
+import dev.pgs.Control;
+import dev.pgs.GameLocationPermissions;
 
 /**
  * Exercises the production {@link GameLocationPermissions} reflective policy against narrow

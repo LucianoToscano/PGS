@@ -1,4 +1,4 @@
-package dev.pgrazor;
+package dev.pgs;
 
 public final class FeedSpotsTest {
     private static void check(boolean condition, String what) {

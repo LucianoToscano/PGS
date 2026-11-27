@@ -1,4 +1,4 @@
-package dev.pgrazor;
+package dev.pgs;
 public final class ControlItemCatalogTest {
     static void check(boolean value,String message){if(!value)throw new AssertionError(message);}
     static void flag(String name,boolean value)throws Exception{java.lang.reflect.Field f=Control.class.getDeclaredField(name);f.setAccessible(true);f.setBoolean(null,value);}

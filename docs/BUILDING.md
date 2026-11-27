@@ -82,7 +82,7 @@ Local development creates an ignored `build/pgrazor-development.jks` key with al
 
 For explicit signing, set `PGRAZOR_KEYSTORE`, `PGRAZOR_KEY_ALIAS`, `PGRAZOR_STORE_PASSWORD`, and `PGRAZOR_KEY_PASSWORD`. Passwords are passed to Android signing tools through environment variable references, not command-line values. A missing configured key or password fails the build. Keep the same certificate across updates.
 
-The `build.py` output named `pgrazor-preview.apk` is a controls preview, **not the game**. Do not publish it as a working PGRazor release.
+The `build.py` output named `pgs-preview.apk` is a controls preview, **not the game**. Do not publish it as a working PGRazor release.
 
 ## GitHub Actions: non-root and rooted releases
 

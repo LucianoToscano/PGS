@@ -106,7 +106,7 @@ foreach ($directory in Get-ChildItem -LiteralPath $nonroot -Directory) {
             elseif ((Get-Property $report 'mode') -eq 'panel-only') { $abi = 'panel-only' }
         }
         $outputs = @(Get-Property $report 'outputs')
-        if ($package -notin @('dev.pgrazor.preview', 'com.nianticlabs.pokemongo') -or
+        if ($package -notin @('dev.pgs.preview', 'com.nianticlabs.pokemongo') -or
             $abi -notin @('arm64-v8a', 'x86_64', 'auto', 'panel-only') -or $outputs.Count -eq 0) {
             throw 'Missing/unsupported package, runtime ABI or outputs'
         }

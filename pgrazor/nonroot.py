@@ -208,7 +208,7 @@ def package(source, *,research_runtime=False,panel_only=False,download=False,pre
     folder=ROOT/'build/nonroot'/(dt.datetime.now().strftime('%Y%m%d-%H%M%S')+'-'+uuid.uuid4().hex[:8]); folder.mkdir(parents=True)
     inputs=input_apks(source,folder)
     package_name,base,rows,native_abis=inspect_set(inputs)
-    if preview and package_name!='dev.pgrazor.preview': raise ValueError('Probe can only use our preview package')
+    if preview and package_name!='dev.pgs.preview': raise ValueError('Probe can only use our preview package')
     if preview:
         with zipfile.ZipFile(base) as archive:
             if hashlib.sha256(archive.read('classes.dex')).hexdigest()!=runtime_assets.sha256(dex):
@@ -385,7 +385,7 @@ def package(source, *,research_runtime=False,panel_only=False,download=False,pre
     return report,folder
 
 def probe(report,folder,android,seconds=0):
-    if report['package']!='dev.pgrazor.preview' or len(report['outputs'])!=1: raise RuntimeError('Probe installation restricted to our standalone preview')
+    if report['package']!='dev.pgs.preview' or len(report['outputs'])!=1: raise RuntimeError('Probe installation restricted to our standalone preview')
     report['device']={'serial':android.serial}
     for key,prop in [('model','ro.product.model'),('android','ro.build.version.release'),('sdk','ro.build.version.sdk'),('abi','ro.product.cpu.abi')]:
         report['device'][key]=android.shell('getprop',prop).strip()
@@ -394,13 +394,13 @@ def probe(report,folder,android,seconds=0):
     report['installation']='Installed PGRazor Preview on '+android.serial+'; game installation unchanged.'
     (folder/'report.json').write_text(json.dumps(report,indent=2),encoding='utf-8')
     # Fresh process is required to test the ContentProvider and native loader.
-    android.shell('am','force-stop','dev.pgrazor.preview')
+    android.shell('am','force-stop','dev.pgs.preview')
     log=folder/'device-test.txt'
     stream=subprocess.Popen(android.command('logcat','-v','threadtime','-T','1','PGRazor:I','AndroidRuntime:E','libc:F','DEBUG:F','crash_dump64:E','*:S'),stdout=subprocess.PIPE,stderr=subprocess.STDOUT,text=True,encoding='utf-8',errors='replace')
     timeout=threading.Timer(seconds,stream.terminate) if seconds else None
     if timeout: timeout.start()
     try:
-        android.shell('am','start','-n','dev.pgrazor.preview/dev.pgrazor.PreviewActivity')
+        android.shell('am','start','-n','dev.pgs.preview/dev.pgrazor.PreviewActivity')
         if report['mode']=='panel-only': print('Non-root panel-only probe launched. Location override should be unavailable.',flush=True)
         else: print('Non-root startup probe launched. Enable controls, move joystick, then pause. Expected synthetic consumer: PASS.',flush=True)
         print('Live log:',log,'(Ctrl+C stops desktop logging; the app stays installed.)',flush=True)
@@ -476,7 +476,7 @@ def main(argv=None):
     validate_survey_options(args.interaction_probe,args.panel_only,abi if args.probe or args.build_probe else (args.runtime_abi or 'auto'),'--interaction-probe')
     if not args.skip_build: command(sys.executable,ROOT/'build.py')
     preview=args.probe or args.build_probe
-    source=ROOT/'build/pgrazor-preview.apk' if preview else args.apk.resolve()
+    source=ROOT/'build/pgs-preview.apk' if preview else args.apk.resolve()
     options={'game_runtime_abi':args.runtime_abi} if args.runtime_abi else {}
     if args.research_runtime: options['research_runtime']=True
     if args.il2cpp_survey: options['il2cpp_survey']=True

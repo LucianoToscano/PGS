@@ -18,3 +18,20 @@ A five-minute cron writes 288 simulated snapshots per day plus up to 288 product
 - EN — The isolated `/simulation/hundos.json` route exercises Cron, KV, filtering and HTTPS with explicitly labelled synthetic data. Run `node worker.test.mjs` for local checks. Production returns 503 without an active, validated source. Each service read uses KV. The cache header permits reuse for 15 seconds.
 - PT-BR — Em 27/11/2026 o endereço candidato da FaustusFoundry retornou um agregado com PoGoCoordinates. Os [termos de uso](https://pogocoordinates.com/terms) restringem a redistribuição em massa. As linhas compactas não identificam o fornecedor individual. O operador confirmou que a autorização específica do PGS abrange esses fornecedores. O agregado está configurado para consulta a cada cinco minutos e as cinco instâncias municipais a cada dez minutos. O intervalo de 300 segundos é uma decisão operacional do PGS. O fornecedor não informou cota.
 - EN — On 2026-11-27 the candidate FaustusFoundry feed included PoGoCoordinates. Its [terms](https://pogocoordinates.com/terms) restrict bulk redistribution. Compact rows lack individual provider attribution. The operator confirmed project-specific permission covering the named providers. The aggregate is configured for five-minute polling and the five city instances for ten-minute polling. The 300-second interval is an operator setting. The provider has supplied no quota.
+
+## Fontes e cobertura / Sources and coverage
+
+| Provedor / Provider | Consulta / Query | Cobertura / Coverage |
+| --- | --- | --- |
+| FaustusFoundry | Compact v1, 5 min | Agregado; cada registro mantém o formato do APK. Aggregate provenance only. Alternate PGS path returned 404 on 2026-11-27. |
+| NYC, SG, London, Sydney, Vancouver PokéMap | One city adapter, five instances, 10 min each | Only 15/15/15 spawns with known expiry. City sources may overlap the aggregate. |
+| iFlowGo | One global search page plus one bounded nearby request, 10 min each | One provider. Pokémon: global page 1. Raids: Times Square, 2 km. No worldwide raid coverage claim. |
+| Moonani / PokeList | Public v2 sample | A 2 km species-25 query at Times Square returned an empty list. Zero confirmed records. |
+| PoGoCoordinates / LivePokéMap | Existing operator-account Python adapters | Direct collection needs operator credentials. The Worker does not use third-party accounts. |
+| ARSpoofing / WeCatch / PokeCoords | Public validation | ARSpoofing returned 403 for snipe and nests. WeCatch timed out. No validated PokeCoords response. |
+| PoGoMap.info | Public map | Web interface available; no confirmed machine-readable feed in this review. |
+| PkmSpawn / PSSnipeFeeder / PoracleNG / RocketMap / ReactMap / Golbat / Aegis | Integration software | Requires a running instance or configured webhook. Repository URLs are not live data sources. |
+
+PT-BR — `/pokemon.json` e `/raids.json` publicam apenas registros reais válidos. Consultas a categorias sem registros validados não geram um catálogo fictício. O campo `source` identifica o provedor. Em `/hundos.json`, as contagens por origem são calculadas depois de filtrar expirados e comparar duplicatas. A rota de simulação nunca alimenta essas categorias.
+
+EN — Pokémon and raid responses use separate routes and include only validated, unexpired records. Each item retains its provider. Hundo source counts report active and unique records after merging. Rare Pokémon, quests, rare candy, Rocket, nests, power spots, gyms and stops await confirmed category-specific records and contracts.

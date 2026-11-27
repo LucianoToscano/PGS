@@ -1,0 +1,247 @@
+name: PGS complete coordinated source identity migration
+on:
+  push:
+    branches: [refactor/pgs-mass-identity-20261127]
+permissions:
+  contents: read
+jobs:
+  migrate:
+    if: github.repository == 'LucianoToscano/PGS' && github.ref == 'refs/heads/refactor/pgs-mass-identity-20261127'
+    permissions:
+      contents: write
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          fetch-depth: 2
+      - name: Complete the coordinated source and generator migration
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD^)" = "de6bf02f451d0c0c72ba38c2fca4a79e7900f02e"
+          test -z "$(git status --porcelain)"
+          python3 - <<'PY'
+          import collections
+          import hashlib
+          import json
+          import os
+          import pathlib
+          import re
+          import subprocess
+          import sys
+          
+          ROOT = pathlib.Path.cwd()
+          BASE = "de6bf02f451d0c0c72ba38c2fca4a79e7900f02e"
+          TEMP = ".github/workflows/pgs-one-time-complete-identity.yml"
+          SNAP = "docs/PGS_REMAINING_REFERENCES.json"
+          raw = subprocess.check_output(["git", "ls-tree", "-r", "-z", BASE])
+          paths = []
+          for item in raw.split(b"\0"):
+              if not item:
+                  continue
+              meta, name = item.split(b"\t", 1)
+              mode, kind, oid = meta.split()
+              if kind == b"blob" and mode in (b"100644", b"100755"):
+                  paths.append(name.decode("utf-8"))
+          source_suffix = {".h", ".hpp", ".c", ".cc", ".cpp", ".inc", ".js", ".cjs", ".mjs",
+                           ".java", ".py", ".json", ".in", ".cmake", ".map", ".xml", ".yml", ".yaml"}
+          exclude = {"pgs/test/test_pgs_reference_inventory.py", "tools/pgs_reference_inventory.py",
+                     "pgs/test/test_pgs_native_identity.py", "pgs/native/account_source_compat.h"}
+          selected_tools = {"tools/game_bindings.py", "tools/game_update.py", "tools/native_gift_schema.py",
+                            "tools/native_routes_schema.py", "tools/pvp_data.py"}
+          pattern = re.compile(rb"PGR_|pgr_|Pgr(?=[A-Z])")
+          subs = {b"PGR_": b"PGS_", b"pgr_": b"pgs_", b"Pgr": b"Pgs"}
+          def canonical(data):
+              return pattern.sub(lambda m: subs[m.group()], data)
+          def get(path):
+              return (ROOT / path).read_bytes()
+          def put(path, data):
+              (ROOT / path).write_bytes(data)
+          def edit(path, old, new, count=1):
+              data = get(path)
+              assert data.count(old) == count, (path, old[:100], data.count(old), count)
+              put(path, data.replace(old, new))
+          def selected(path):
+              if path in exclude:
+                  return False
+              return path in selected_tools or path == "docs/GAME_UPDATES.md" or (
+                  path.startswith(("pgs/native/", "pgs/art/", "pgs/runtime/", "pgs/src/dev/pgs/", "pgs/test/", "pgs/zygisk/"))
+                  and (pathlib.PurePosixPath(path).suffix in source_suffix or path.endswith("CMakeLists.txt")))
+          # Resolve the three existing canonical-name collisions before broad renaming.
+          edit("pgs/native/hook_engine.h", b"\nusing PgsPaddingRanges = PgrPaddingRanges;\nconstexpr PgsPaddingRanges pgs_padding_ranges(uintptr_t begin, uintptr_t end, uintptr_t alignment) {\n    return pgr_padding_ranges(begin, end, alignment);\n}\n", b"\n")
+          edit("pgs/native/hook_engine_diag.h", b"// The PGS type aliases the exact same 48-byte diagnostic layout.\nusing PgsHookDiag = PgrHookDiag;\nstatic_assert(sizeof(PgsHookDiag) == sizeof(PgrHookDiag), \"PGS hook diagnostic ABI\");\n", b"")
+          # Verify source bytes against Git before transforming; no decode or re-encoding of account host.
+          # Explicit edit above is limited to two checked-in UTF-8 headers.
+          counts = {}
+          for path in paths:
+              if not selected(path):
+                  continue
+              data = get(path)
+              if b"\0" in data and path != "pgs/native/account_host.cpp":
+                  continue
+              if not pattern.search(data):
+                  continue
+              if path not in {"pgs/native/hook_engine.h", "pgs/native/hook_engine_diag.h"}:
+                  assert data == subprocess.check_output(["git", "show", BASE + ":" + path]), path
+              n = len(pattern.findall(data))
+              result = canonical(data)
+              # Prefix-only byte substitution; numbers, layout, literal non-branding bytes stay unchanged.
+              assert len(data) == len(result), path
+              put(path, result)
+              counts[path] = n
+          assert "pgs/native/account_host.cpp" in counts
+          # Previous compatibility aliases are no longer needed by the migrated account implementation.
+          edit("pgs/native/accounts.h", b"// Compatibility for the preserved account-host source.\n#include \"account_source_compat.h\"\n\n", b"")
+          compat = get("pgs/native/account_source_compat.h")
+          assert len(re.findall(rb"(?m)^#define PGR_", compat)) == 16
+          put("pgs/native/account_source_compat.h", b"#pragma once\n// The account implementation now uses canonical PGS source names.\n")
+          # Update assertions that intentionally pin the renamed type declarations.
+          test = "pgs/test/test_pgs_native_identity.py"
+          edit(test, b'self.assertIn("using PgsHookDiag = PgrHookDiag;", diag)', b'self.assertIn("struct PgsHookDiag {", diag)')
+          edit(test, b'self.assertIn("using PgsPaddingRanges = PgrPaddingRanges;", header)', b'self.assertIn("struct PgsPaddingRanges {", header)')
+          edit(test, b'        self.assertIn(\'#include "account_source_compat.h"\', header)\n        self.assertIn("#define PGR_ACC_CMD_NONE PGS_ACC_CMD_NONE", compat)\n        self.assertEqual(len(re.findall(r"^#define PGR_[A-Z0-9_]+ PGS_[A-Z0-9_]+$", compat, re.M)), 16)', b'        self.assertNotIn(\'#include "account_source_compat.h"\', header)\n        self.assertNotRegex(compat, r"\\bPGR_[A-Z0-9_]+")\n        account = (NATIVE / "account_host.cpp").read_bytes()\n        self.assertNotRegex(account, rb"\\b(?:PGR_|pgr_|Pgr[A-Z])")\n        self.assertIn(b"PGS_ACC_CMD_NONE", account)')
+          # Preserve the existing content golden, normalizing the renamed namespace only.
+          edit("pgs/test/test_game_update.py", b"        tokens = re.sub(r'\\s+', '', re.sub(r'//[^\\n]*', '', rendered))", b"        tokens = re.sub(r'\\s+', '', re.sub(r'//[^\\n]*', '', rendered))\n        # Compare the original signed-metadata golden with only the namespace spelling normalized.\n        tokens = tokens.replace('pgs_catch_wait_schema', 'pgr_catch_wait_schema')")
+          # Regenerate the source-derived outputs, verifying exact equality to the prefix-only edit.
+          sys.path.insert(0, str(ROOT / "tools"))
+          import game_update
+          outputs = game_update.generated_outputs(game_update.current_profile())
+          for path, expected in outputs.items():
+              path = pathlib.Path(path)
+              assert path.read_bytes() == expected.encode("utf-8"), "Generated output mismatch: " + str(path)
+          # Canonical signing environment. Keep existing release key and legacy secret fallback.
+          build = "pgs/build.py"
+          data = get(build)
+          start = data.index(b"def signing_args():")
+          end = data.index(b"\ndef main():", start)
+          original_signing = data[start:end]
+          assert b"PGRAZOR_KEYSTORE" in original_signing and b"pgrazor-development.jks" in original_signing
+          replacement = b'''def signing_setting(name, default=None, environ=None):
+              """Use PGS signing variables first; retain the existing external alias."""
+              env = os.environ if environ is None else environ
+              return env.get('PGS_' + name) or env.get('PGRAZOR_' + name) or default
+          
+          
+          def signing_args():
+              configured = any(name in os.environ for name in ('PGS_KEYSTORE', 'PGRAZOR_KEYSTORE'))
+              selected = signing_setting('KEYSTORE')
+              if configured:
+                  if not selected:
+                      raise RuntimeError('Configured signing key path is empty')
+                  key = Path(selected)
+                  alias = signing_setting('KEY_ALIAS')
+                  store = signing_setting('STORE_PASSWORD')
+                  password = signing_setting('KEY_PASSWORD')
+                  if not key.is_file() or not alias or not store or not password:
+                      raise RuntimeError('Configured signing key, alias or password environment variables are missing')
+              else:
+                  # Reuse an existing local development key; never substitute a release key.
+                  legacy_key = BUILD / 'pgrazor-development.jks'
+                  key = legacy_key if legacy_key.exists() else BUILD / 'pgs-development.jks'
+                  alias = signing_setting('KEY_ALIAS', 'pgrazor' if legacy_key.exists() else 'pgs')
+                  store = signing_setting('STORE_PASSWORD', 'android')
+                  password = signing_setting('KEY_PASSWORD', 'android')
+              os.environ['PGS_STORE_PASSWORD'] = store
+              os.environ['PGS_KEY_PASSWORD'] = password
+              if not configured and not key.exists():
+                  run('keytool','-genkeypair','-keystore',key,'-storepass:env','PGS_STORE_PASSWORD','-keypass:env','PGS_KEY_PASSWORD','-alias',alias,'-keyalg','RSA','-keysize','2048','-validity','3650','-dname','CN=PGS Local Development')
+              return ['--ks',key,'--ks-pass','env:PGS_STORE_PASSWORD','--key-pass','env:PGS_KEY_PASSWORD','--ks-key-alias',alias]
+          
+          '''
+          put(build, data[:start] + replacement + data[end:])
+          edit("pgs/pgs_update.py", b'os.environ.get("PGRAZOR_KEYSTORE")', b'build.signing_setting("KEYSTORE")')
+          edit("pgs/release_apk.py", b"os.environ.get('PGRAZOR_KEYSTORE')", b"build.signing_setting('KEYSTORE')")
+          private = "tools/private_input.py"
+          edit(private, b"def main():\n    url=os.environ['PGRAZOR_INPUT_URL']", b"def required_setting(name):\n    value = os.environ.get('PGS_' + name) or os.environ.get('PGRAZOR_' + name)\n    if not value:\n        raise SystemExit('Required PGS input/signing setting is missing: ' + name)\n    return value\n\ndef main():\n    url=required_setting('INPUT_URL')")
+          edit(private, b"os.environ['PGRAZOR_KEYSTORE']", b"required_setting('KEYSTORE')")
+          edit(private, b"os.environ['PGRAZOR_KEYSTORE_BASE64']", b"required_setting('KEYSTORE_BASE64')")
+          secret_names = ("KEYSTORE_BASE64", "KEYSTORE", "KEY_ALIAS", "STORE_PASSWORD", "KEY_PASSWORD", "INPUT_URL")
+          workflow_paths = [p for p in paths if p in {
+              ".github/workflows/pgs-same-package-update.yml", ".github/workflows/pgs-v0.0.1-release.yml",
+              ".github/workflows/pgs-v0.0.2-release.yml", ".github/workflows/pgs-v0.0.3-candidate.yml",
+              ".github/workflows/release.yml"}]
+          for path in workflow_paths:
+              data = get(path)
+              # The existing secret names remain as fallbacks, not as active environment variable names.
+              for name in secret_names:
+                  old = ("PGRAZOR_" + name).encode()
+                  new = ("PGS_" + name).encode()
+                  data = re.sub(rb"(?<!secrets\.)\b" + old + rb"\b", new, data)
+                  data = data.replace(b"secrets." + old + b" }}", b"secrets." + old + b" }}")
+                  # Upgrade old-only secret expressions without duplicating existing fallback chains.
+                  data = data.replace(b"\${{ secrets." + old + b" }}", b"\${{ secrets." + new + b" || secrets." + old + b" }}")
+              # Correct Windows PowerShell env: and temporary local filename, not the signer bytes.
+              data = data.replace(b"pgrazor-signing.jks", b"pgs-signing.jks")
+              put(path, data)
+          for path in ["docs/PGS_UPDATE_POLICY.md", "docs/en/PGS_UPDATE_POLICY.md", "docs/pt-BR/PGS_UPDATE_POLICY.md"]:
+              edit(path, b"PGRAZOR_KEYSTORE", b"PGS_KEYSTORE")
+          # Exercise the primary and fallback signing setting without reading or logging any real secret.
+          p = "pgs/test/test_pgs_build_options.py"
+          edit(p, b"    def test_workflows_use_pgs_nonsecret_build_options(self):", b'''    def test_signing_setting_pgs_priority_and_legacy_fallback(self):
+                  self.assertEqual(build.signing_setting("KEYSTORE", environ={"PGS_KEYSTORE": "new", "PGRAZOR_KEYSTORE": "old"}), "new")
+                  self.assertEqual(build.signing_setting("KEYSTORE", environ={"PGRAZOR_KEYSTORE": "old"}), "old")
+                  self.assertIsNone(build.signing_setting("KEYSTORE", environ={}))
+                  with tempfile.TemporaryDirectory() as folder:
+                      key = Path(folder) / "existing.jks"
+                      key.write_bytes(b"fixture")
+                      env = {"PGS_KEYSTORE": str(key), "PGS_KEY_ALIAS": "alias",
+                             "PGS_STORE_PASSWORD": "fixture-store", "PGS_KEY_PASSWORD": "fixture-key"}
+                      with patch.dict(build.os.environ, env, clear=True), patch.object(build, "run") as run:
+                          args = build.signing_args()
+                          self.assertEqual(args[1], key)
+                          self.assertEqual(args[-1], "alias")
+                          self.assertIn("env:PGS_STORE_PASSWORD", args)
+                          run.assert_not_called()
+                      with patch.dict(build.os.environ, {"PGS_KEYSTORE": ""}, clear=True):
+                          with self.assertRaises(RuntimeError):
+                              build.signing_args()
+          
+              def test_workflows_use_pgs_nonsecret_build_options(self):''')
+          edit("pgs/test/test_pgs_release_policy.py", b'{"PGRAZOR_KEYSTORE": ""}', b'{"PGS_KEYSTORE": "", "PGRAZOR_KEYSTORE": ""}')
+          edit("pgs/test/test_pgs_release_policy.py", b'{"PGRAZOR_KEYSTORE": "/existing/pgs.jks"}', b'{"PGS_KEYSTORE": "/existing/pgs.jks"}')
+          # Correct the signing workflow's historical full-candidate version test was already fixed on main.
+          # Add a fresh audit of the selected active-code abbreviation scope.
+          active = []
+          for path in paths:
+              if selected(path) and b"\0" not in get(path) and pattern.search(get(path)):
+                  # Only the normalized original golden is expected in this selected scope.
+                  if path == "pgs/test/test_game_update.py" and len(pattern.findall(get(path))) == 1:
+                      continue
+                  active.append(path)
+          assert not active, active
+          # Recompute the indexed inventory excluding the temporary execution workflow.
+          subprocess.run(["git", "add", "-u"], check=True)
+          subprocess.run(["git", "rm", "--cached", TEMP], check=True)
+          import pgs_reference_inventory as inventory
+          fresh = inventory.scan(ROOT)
+          old = json.loads(get(SNAP))
+          for key, value in fresh.items():
+              old[key] = value
+          old["previous_retention_review"] = old.pop("retention_review", {})
+          old["previous_retention_review"]["scope"] = "Historical phase-20 file grouping; not a current classification."
+          old["complete_abbreviation_migration"] = {
+              "base_commit": BASE,
+              "selected_prefix_replacements": sum(counts.values()),
+              "selected_prefix_files": len(counts),
+              "account_host_bytes_migrated": True,
+              "generated_outputs_match": True,
+              "full_name_and_abbreviation_counts_recomputed": True,
+              "scope": "All selected first-party native, runtime, generator, game schema, Java and fixture prefixes. Historical, audit, legacy ABI and data-contract references remain intentionally identifiable.",
+              "validation": "Generated output equality and exact indexed inventory verified. Full source CI and APK/device gates separate."
+          }
+          put(SNAP, (json.dumps(old, indent=2, ensure_ascii=True) + "\n").encode())
+          subprocess.run(["git", "add", TEMP, SNAP], check=True)
+          print(json.dumps({"additional_prefix_replacements": sum(counts.values()), "prefix_files": len(counts),
+                            "fresh_remaining_full_names": fresh["remaining_occurrences"],
+                            "fresh_remaining_abbreviations": fresh["abbreviations"]["remaining_occurrences"],
+                            "fresh_abbreviation_files": fresh["abbreviations"]["files"],
+                            "active_abbreviation_scope_remaining": active}, indent=2))
+          
+          PY
+          git diff --cached --check
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git diff --cached --stat
+          git commit -m "PGS: finish coordinated abbreviation, generator and signing identity migration"
+          git push origin HEAD:refs/heads/refactor/pgs-mass-identity-20261127

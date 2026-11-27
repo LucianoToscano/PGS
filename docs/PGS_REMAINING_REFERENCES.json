@@ -1,20 +1,20 @@
 {
   "scope": "Git-indexed regular UTF-8 text, excluding NUL-containing files and the snapshot itself",
-  "tracked_files": 2115,
-  "text_files": 1040,
+  "tracked_files": 2116,
+  "text_files": 1041,
   "changed_files": 37,
   "added_files": 1,
   "previous_occurrences": 1041,
-  "remaining_files": 127,
-  "remaining_occurrences": 756,
+  "remaining_files": 125,
+  "remaining_occurrences": 745,
   "remaining_by_category": {
-    "documentation": 276,
+    "documentation": 274,
     "java": 62,
     "legal": 3,
     "native": 6,
-    "other": 83,
+    "other": 80,
     "release_history": 103,
-    "tests": 209,
+    "tests": 203,
     "vendor": 6,
     "workflows": 8
   },
@@ -28,16 +28,6 @@
       "path": ".gitignore",
       "category": "other",
       "occurrences": 2
-    },
-    {
-      "path": "CONTRIBUTING.md",
-      "category": "documentation",
-      "occurrences": 1
-    },
-    {
-      "path": "CONTRIBUTING.pt-BR.md",
-      "category": "documentation",
-      "occurrences": 1
     },
     {
       "path": "LICENSE",
@@ -277,7 +267,7 @@
     {
       "path": "pgs/build.py",
       "category": "other",
-      "occurrences": 7
+      "occurrences": 4
     },
     {
       "path": "pgs/cleanup-rooted.ps1",
@@ -512,12 +502,12 @@
     {
       "path": "pgs/test/test_packaging.py",
       "category": "tests",
-      "occurrences": 4
+      "occurrences": 3
     },
     {
       "path": "pgs/test/test_pgs_build_options.py",
       "category": "tests",
-      "occurrences": 14
+      "occurrences": 9
     },
     {
       "path": "pgs/test/test_pgs_candidate.py",
@@ -1086,7 +1076,7 @@
     "limitations": "Counts are exact deltas from the verified indexed baseline; full CI must independently reconcile the snapshot. Older backup readers do not support version 2."
   },
   "current_retention_review": {
-    "base_commit": "6d72266192a7f01c5bd74d091a5d9a2ea68d398b",
+    "base_commit": "2793326dfaf9abfbabf39f6382cf203f376a6831",
     "scope": "Current per-file triage; all matching indexed text paths classified exactly once, not a claim of necessity of each individual occurrence.",
     "groups": {
       "historical_records": {
@@ -1155,11 +1145,9 @@
       "build_signing_contracts": {
         "status": "retain_compatibility",
         "reason": "PGS-first build and signing configuration, old configuration aliases and historical guarded rebuilds. No new signing key.",
-        "occurrences": 28,
+        "occurrences": 23,
         "paths": [
           ".github/workflows/pgs-build.yml",
-          "CONTRIBUTING.md",
-          "CONTRIBUTING.pt-BR.md",
           "pgs/art/CMakeLists.txt",
           "pgs/art_build.py",
           "pgs/build.py",
@@ -1239,7 +1227,7 @@
       "tests": {
         "status": "retain_or_review",
         "reason": "Tests of legacy input, data continuity, ABI, build options, attribution and forbidden-name detection. Ordinary fixture use may be reviewed individually.",
-        "occurrences": 209,
+        "occurrences": 203,
         "paths": [
           "pgs/test/AccountProfileDataTest.java",
           "pgs/test/AccountProfileStoreTest.java",

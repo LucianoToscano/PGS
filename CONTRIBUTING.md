@@ -49,7 +49,7 @@ Keep both `README.md` (English) and `README.pt-BR.md` (Brazilian Portuguese) in 
 
 For game-version compatibility work, follow [GAME_UPDATES.md](docs/GAME_UPDATES.md). Update the selected version profile and regenerate covered headers instead of editing generated headers directly. Review remaining hand-maintained bindings too; a signature match alone does not establish compatibility.
 
-CI uses the PGS environment names. For new local builds use `PGS_BUILD_TOOLS=36.0.0` and `PGS_ANDROID_PLATFORM=android-36`; the old variables still work. The build version can be selected with `PGS_VERSION` (or legacy `PGRAZOR_VERSION`). If both spellings are present, the PGS value wins. Local defaults still select the installed 36.1 SDK. Keep generated outputs ignored, and use `pgs/cleanup.ps1` after packaging with deployed/rollback retention pins preserved.
+CI uses the PGS environment names. For new local builds use `PGS_BUILD_TOOLS=36.0.0` and `PGS_ANDROID_PLATFORM=android-36`; the build version is selected with `PGS_VERSION`. Retired non-secret aliases are ignored; the configured signing identity is unchanged. Local defaults still select the installed 36.1 SDK. Keep generated outputs ignored, and use `pgs/cleanup.ps1` after packaging with deployed/rollback retention pins preserved.
 
 ## Documentation and website languages
 

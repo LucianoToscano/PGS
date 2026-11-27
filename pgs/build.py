@@ -12,15 +12,10 @@ import json
 
 ROOT = Path(__file__).resolve().parent
 
-def build_setting(primary, legacy, default=None, environ=None):
-    """Prefer a PGS build setting while retaining the previous environment alias.
-
-    Values are selected without modifying the process environment, so existing
-    GitHub Actions secrets and SDK configurations are not rewritten. Empty
-    values behave as unset. These are NON-SECRET build options only.
-    """
+def build_setting(primary, default=None, environ=None):
+    """Use only canonical PGS non-secret build options; empty values are unset."""
     env = os.environ if environ is None else environ
-    return env.get(primary) or env.get(legacy) or default
+    return env.get(primary) or default
 
 
 def source_fingerprints(root):
@@ -28,10 +23,22 @@ def source_fingerprints(root):
     return {p.relative_to(root).as_posix(): hashlib.sha256(p.read_bytes()).hexdigest() for p in paths}
 
 def release_version(root):
-    version = build_setting('PGS_VERSION', 'PGRAZOR_VERSION', (root/'VERSION').read_text(encoding='utf-8').strip())
+    version = build_setting('PGS_VERSION', (root/'VERSION').read_text(encoding='utf-8').strip())
     if not re.fullmatch(r'v?[0-9]+\.[0-9]+\.[0-9]+(?:-[A-Za-z0-9.-]+)?', version):
         raise ValueError('Invalid PGS version')
     return 'v' + version.removeprefix('v')
+
+LAUNCHER_BRANDING_SHA256 = "30f51e26c20ea0aba1687e4c1e22adce093b238c3879492342163f818b438300"
+LAUNCHER_BRANDING_ASSET = "pgs/branding/pgs-shield.png"
+
+
+def launcher_branding_asset():
+    """Use the original transparent project shield, not a redraw or old glyph."""
+    path = ROOT / "branding" / "pgs-shield.png"
+    if path.is_symlink() or not path.is_file() or hashlib.sha256(path.read_bytes()).hexdigest() != LAUNCHER_BRANDING_SHA256:
+        raise RuntimeError("Official PGS launcher PNG is missing or differs from the verified original")
+    return path
+
 
 def map_icon_assets():
     """Bundled POI marker PNGs plus the Pokemon name table for assets/pgs/map-icons.
@@ -69,8 +76,8 @@ def feed_icon_assets():
     return icons
 
 SDK = Path(os.environ.get('ANDROID_HOME', str(Path(os.environ.get('LOCALAPPDATA', str(Path.home()))) / 'Android/Sdk')))
-TOOLS = SDK / 'build-tools' / build_setting('PGS_BUILD_TOOLS', 'PGRAZOR_BUILD_TOOLS', '36.1.0')
-ANDROID = SDK / 'platforms' / build_setting('PGS_ANDROID_PLATFORM', 'PGRAZOR_ANDROID_PLATFORM', 'android-36.1') / 'android.jar'
+TOOLS = SDK / 'build-tools' / build_setting('PGS_BUILD_TOOLS', '36.1.0')
+ANDROID = SDK / 'platforms' / build_setting('PGS_ANDROID_PLATFORM', 'android-36.1') / 'android.jar'
 BUILD = ROOT / 'build'
 
 def android_tool(name):
@@ -163,6 +170,7 @@ def main():
     run(android_tool('aapt'),'package','-f','-M',ROOT/'AndroidManifest.xml','-I',ANDROID,'-F',unsigned)
     with zipfile.ZipFile(unsigned,'a',zipfile.ZIP_DEFLATED) as out:
         out.write(BUILD/'dex/classes.dex','classes.dex')
+        out.write(launcher_branding_asset(), 'assets/' + LAUNCHER_BRANDING_ASSET)
         for name,path in map_icon_assets().items(): out.write(path,'assets/pgs/map-icons/'+name)
         for name,path in feed_icon_assets().items(): out.write(path,'assets/pgs/feed-icons/pokemon/'+name)
     run(android_tool('zipalign'),'-f','4',unsigned,BUILD/'preview-aligned.apk')

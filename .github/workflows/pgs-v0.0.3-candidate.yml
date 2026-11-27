@@ -18,6 +18,10 @@ jobs:
     if: github.repository == 'LucianoToscano/PGS' && github.ref == 'refs/heads/main' && inputs.authorized_input == true
     runs-on: ubuntu-24.04
     timeout-minutes: 60
+    # GitHub requires repository push access to read draft release assets.
+    # Only this manually authorized main-branch job has elevated contents access.
+    permissions:
+      contents: write
     env:
       PGS_VERSION: v0.0.3
       PGS_BUILD_TOOLS: '36.0.0'
@@ -35,7 +39,6 @@ jobs:
           python -B -c "import sys; sys.path.insert(0, 'tools'); from game_update import current_profile; p=current_profile(); assert p['game_version']=='0.439.0' and p['version_code']==2026111602"
       - name: Check required private configuration before installing tools
         env:
-          PGS_INPUT_URL: ${{ secrets.PGS_INPUT_URL || secrets.PGRAZOR_INPUT_URL }}
           PGS_KEYSTORE_BASE64: ${{ secrets.PGS_KEYSTORE_BASE64 || secrets.PGRAZOR_KEYSTORE_BASE64 }}
           PGS_KEY_ALIAS: ${{ secrets.PGS_KEY_ALIAS || secrets.PGRAZOR_KEY_ALIAS }}
           PGS_STORE_PASSWORD: ${{ secrets.PGS_STORE_PASSWORD || secrets.PGRAZOR_STORE_PASSWORD }}
@@ -44,7 +47,7 @@ jobs:
         run: |
           set -euo pipefail
           missing=0
-          for name in PGS_INPUT_URL PGS_KEYSTORE_BASE64 PGS_KEY_ALIAS PGS_STORE_PASSWORD PGS_KEY_PASSWORD; do
+          for name in PGS_KEYSTORE_BASE64 PGS_KEY_ALIAS PGS_STORE_PASSWORD PGS_KEY_PASSWORD; do
             if [[ -z "${!name}" ]]; then
               echo "::error::Missing required configuration: $name. Configure the authorized repository Actions secret."
               missing=1
@@ -54,6 +57,10 @@ jobs:
       - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5
         with:
           python-version: '3.12'
+      - name: Check authorized draft input before installing tools
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: python -B tools/pgs_pinned_input.py --preflight
       - uses: actions/setup-java@cf277c60eb25467037889841efdb72551f06f6c3 # v4
         with:
           distribution: temurin
@@ -85,18 +92,22 @@ jobs:
       - name: Configure existing signer path
         shell: bash
         run: echo "PGS_KEYSTORE=$RUNNER_TEMP/pgs-v003-validation.jks" >> "$GITHUB_ENV"
-      - name: Validate configured private input and load existing key
+      - name: Retrieve and verify authorized original from unpublished draft
         env:
-          GITHUB_TOKEN: ${{ github.token }}
-          PGS_INPUT_URL: ${{ secrets.PGS_INPUT_URL || secrets.PGRAZOR_INPUT_URL }}
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          umask 077
+          python -B tools/pgs_pinned_input.py
+      - name: Load existing signer only after input verification
+        env:
           PGS_KEYSTORE_BASE64: ${{ secrets.PGS_KEYSTORE_BASE64 || secrets.PGRAZOR_KEYSTORE_BASE64 }}
         shell: bash
         run: |
           set -euo pipefail
           umask 077
-          test -n "$PGS_INPUT_URL" || { echo "::error::PGS_INPUT_URL is missing"; exit 1; }
-          test -n "$PGS_KEYSTORE_BASE64" || { echo "::error::PGS_KEYSTORE_BASE64 is missing"; exit 1; }
-          python -B tools/private_input.py
+          python -B tools/pgs_pinned_input.py --load-key
       - name: Build and verify complete candidate in runner only
         env:
           PGS_KEY_ALIAS: ${{ secrets.PGS_KEY_ALIAS || secrets.PGRAZOR_KEY_ALIAS }}

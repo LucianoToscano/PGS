@@ -222,7 +222,7 @@ test("failure backoff is capped and legacy far-future next values are clamped",a
   t.mock.method(globalThis,"fetch",async()=>{ throw new TypeError("fetch failed"); });
   const {db,env}=makeEnv([citySource]);
   const legacy={entries:[{name:"nycpokemap",url:cityUrl,kind:"city",interval_s:600,
-    status:"offline",failures:8,next:Date.now()+100*3600*1000,updated:null}],history:[]};
+    reason:"connection_error",status:"offline",failures:8,next:Date.now()+100*3600*1000,updated:null}],history:[]};
   db.set("pgs-feed-v1",JSON.stringify(legacy));
   const before=Date.now();
   await worker.scheduled({scheduledTime:before},env);
@@ -386,10 +386,21 @@ test("adapter version change forces immediate recollection despite legacy next",
     return Response.json({pokemons:[],meta:{inserted:1,time:2},weathers:[]});
   });
   const legacy={entries:[{name:"nycpokemap",url:cityUrl,kind:"city",interval_s:600,
-    status:"offline",failures:3,next:now+7*24*3600*1000}],history:[]}; // no adapter_v: stale writer
+    reason:"invalid_json",status:"offline",failures:3,next:now+7*24*3600*1000}],history:[]}; // no adapter_v: stale writer
   const {db,env}=makeEnv([citySource]);
   db.set("pgs-feed-v1",JSON.stringify(legacy));
   await worker.scheduled({scheduledTime:now},env);
   assert.equal(calls.length,1);
   assert.equal(JSON.parse(db.get("pgs-feed-v1")).entries[0].adapter_v,2);
+});
+
+test("legacy restrictions survive migrations and repeated cron calls",async t=>{
+  t.mock.method(globalThis,"fetch",async()=>assert.fail("early retry"));
+  for (const httpStatus of [403,429,503]) {
+    const {db,env}=makeEnv([citySource]);
+    const next=Date.now()+86400000;
+    db.set("pgs-feed-v1",JSON.stringify({entries:[{...citySource,httpStatus,next,status:"offline",reason:"upstream_http"}]}));
+    await worker.scheduled({},env);
+    assert.equal(JSON.parse(db.get("pgs-feed-v1")).entries[0].next,next);
+  }
 });

@@ -64,3 +64,5 @@ Em 27/11/2026 às 14h15 de Fortaleza, a coleta confirmou 156 registros únicos d
 **Administração.** O resumo `/admin` usa autenticação própria e cache desativado. Cadastre uma senha exclusiva como segredo `ADMIN_PASSWORD` diretamente na Cloudflare e utilize o usuário `admin`. Configurações de fontes e intervalos são versionadas no GitHub. Métricas de consumo ficam no painel da Cloudflare.
 
 **Enrichment / Enriquecimento.** PoGoAPI, PokéAPI, DittoBase, Leek Duck and PvPoke are candidates for metadata and event enrichment. OpenStreetMap and Overpass supply geographic context. Shungo, iPogo, Pokemod, MAD, RealDeviceMap, Fletchling and Koji are research or architecture references here. None is counted as a live instance by the PGS collector.
+
+O coletor limita cada ciclo a 15 consultas (MAX_UPSTREAM_REQUESTS), em lotes de quatro fontes. iFlowGo consulta até cinco páginas e Moonani até três. Uma falha durante a paginação preserva os registros válidos e o prazo de nova tentativa.

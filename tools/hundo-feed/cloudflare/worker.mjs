@@ -17,7 +17,7 @@ const MAX_MOONANI_PAGES=3, MOONANI_PAGE_SIZE=100;
 const RATE_LIMIT_FLOOR_MS=1800*1000;
 // iFlowGo exposes an IV index filter (min_iv=100) and paginates at 25 rows.
 // Fetching every page is bounded here and stays well below provider quotas.
-const maxIflowPages=8;
+const maxIflowPages=5;
 // Filter legacy category configuration as well as persisted KV snapshots. A removed
 // raid source must not be queried even if dashboard variables still contain it.
 const hundoOnly=s=>s && s.name!=="iflowgo-raids" && [undefined,"hundos","pokemon"].includes(s.category);
@@ -30,9 +30,6 @@ function hundoState(state,configs,now=Date.now()) {
   const active=new Set(configs.map(sourceKey)), names=new Set(configs.map(s=>s.name));
   const entries=(state?.entries || []).filter(s=>hundoOnly(s) && active.has(sourceKey(s))).map(s=>{
     const {records,...entry}=s; // Never retain the legacy arbitrary-IV/raid catalogue.
-    // Legacy snapshots may carry next-attempt values up to ~21h in the future.
-    // Clamp them so a recovering upstream is retried within one backoff window.
-    if (Number.isSafeInteger(entry.next) && entry.next>now+backoffCapMs) entry.next=now;
     return entry;
   });
   const history=(state?.history || []).map(h=>({...h,online:(h.online || []).filter(name=>names.has(name))}));
@@ -48,7 +45,7 @@ function encounter(value) {
 }
 // Unambiguous numeric normalization: accepts numbers and trimmed numeric
 // strings only; everything else becomes NaN and is rejected downstream.
-const num=v=>typeof v==="number"?v:(typeof v==="string"&&v.trim()!==""?Number(v.trim()):NaN);
+const num=v=>typeof v==="number"?v:(typeof v==="string"&&/^-?(?:\d+(?:\.\d*)?|\.\d+)$/.test(v.trim())?Number(v.trim()):NaN);
 
 export function rows(body, now) {
   if (body?.v !== 1 || !Number.isSafeInteger(body.fetched_ms) || body.fetched_ms < now-600000 ||
@@ -105,7 +102,7 @@ export async function cityRows(body,now) {
   if (!Array.isArray(body?.pokemons)) throw Error("city_schema");
   // The upstream contract sends numeric IVs and unix-seconds expiry. Numeric
   // strings are accepted only when unambiguous (see num()).
-  const spawns=body.pokemons.map(p=>({attack:p?.attack,defence:p?.defence,stamina:p?.stamina,
+  const spawns=body.pokemons.filter(p=>p && (p.coordinate_precision==null || p.coordinate_precision==="exact") && (p.iv_percent==null || num(p.iv_percent)===100) && (p.defense==null || num(p.defense)===15)).map(p=>({attack:p?.attack,defence:p?.defence??p?.defense,stamina:p?.stamina,
     pokemon_id:p?.pokemon_id,lat:p?.lat,lng:p?.lng,despawn:p?.despawn,form:p?.form,cp:p?.cp,level:p?.level}));
   return spotsFromSpawns(spawns,body.pokemons.length,now);
 }
@@ -114,7 +111,7 @@ export function iflowRows(body,now) {
   if (!Array.isArray(body?.items)) throw Error("iflow_schema");
   const spots=[];
   for (const p of body.items) {
-    if (!p || ![p.attack_iv,p.defense_iv,p.stamina_iv].every(v=>num(v)===15) ||
+    if (!p || (p.coordinate_precision!=null && p.coordinate_precision!=="exact") || ![p.attack_iv,p.defense_iv,p.stamina_iv].every(v=>num(v)===15) ||
         (p.percent_iv!=null && num(p.percent_iv)!==100)) continue;
     const end=Date.parse(p.expires_at);
     const idnum=num(p.pokemon_id);
@@ -164,10 +161,11 @@ export async function gocoordsRows(body,now) {
   if (!body || Number(body.schema_version)!==2 || !Array.isArray(body.rows)) throw Error("gocoords_schema");
   const generated=Date.parse(body.generated_at);
   if (!Number.isFinite(generated) || generated<now-600000 || generated>now+60000) throw Error("invalid_feed");
+  if (body.rows.length>10 || body.count!==body.rows.length) throw Error("gocoords_schema");
   const hundos=[], spots=[];
   for (const p of body.rows) {
     if (!p) continue;
-    if (num(p.iv)!==100) continue; // IV 45/45 == 15/15/15
+    if ((p.coordinate_precision!=null && p.coordinate_precision!=="exact") || (p.raw_iv!=null && p.raw_iv!=="15/15/15") || num(p.iv)!==100) continue; // IV 45/45 == 15/15/15
     const attrs=[p.atk_iv,p.def_iv,p.sta_iv].map(num);
     if ([p.atk_iv,p.def_iv,p.sta_iv].some(v=>v!=null) && !attrs.every(v=>v===15)) continue;
     const end=Date.parse(p.expires_at_utc), lat=num(p.lat), lon=num(p.lon), dex=num(p.pokemon_id);
@@ -191,9 +189,9 @@ export async function gocoordsRows(body,now) {
 
 // Shared bounded read + JSON decode. Strips a UTF-8 BOM, reports the upstream
 // Content-Type for diagnostics and classifies hard failures precisely.
-async function fetchJson(url,init,now) {
+async function fetchJson(url,init,now,remaining) {
   const controller=new AbortController();
-  const timer=setTimeout(()=>controller.abort(),timeoutMs);
+  const timer=setTimeout(()=>controller.abort(),remaining);
   try {
     const response=await fetch(url,{redirect:"manual",signal:controller.signal,...init});
     const contentType=(response.headers.get("content-type")||"").split(";")[0].trim().toLowerCase()||null;
@@ -201,9 +199,10 @@ async function fetchJson(url,init,now) {
       const error = Error("upstream_http");
       error.httpStatus=response.status; error.contentType=contentType;
       const retry = response.headers.get("Retry-After");
-      if (retry) error.retryAt = /^\d+$/.test(retry) ? now + Number(retry)*1000 : Date.parse(retry);
+      if (retry) error.retryAt = /^\d+$/.test(retry) ? Date.now() + Number(retry)*1000 : Date.parse(retry);
       throw error;
     }
+    if (!response.body) throw Object.assign(Error("empty_response"),{contentType});
     const reader=response.body.getReader(), decoder=new TextDecoder("utf-8",{fatal:true});
     let bytes=0, data="";
     while (true) {
@@ -227,7 +226,17 @@ async function fetchJson(url,init,now) {
   } finally { clearTimeout(timer); }
 }
 
-async function collect(source, now) {
+async function collect(source, now, metrics) {
+  const deadline=Date.now()+timeoutMs;
+  let partialError;
+  async function page(url,init) {
+    metrics.attemptedPages++;
+    const remaining=deadline-Date.now();
+    if (remaining<=0) throw Error("timeout");
+    const result=await fetchJson(url,init,now,remaining);
+    metrics.collectedPages++;
+    return result;
+  }
   const url = new URL(source.url);
   const city=source.kind==="city" && cityHosts.has(url.hostname) && url.pathname==="/query2.php";
   const moonani=source.kind==="moonani" && url.href==="https://moonani.com/PokeList/ajax.php";
@@ -249,7 +258,7 @@ async function collect(source, now) {
     const u = new URL(url.href); u.search="page=pokemon&action=load";
     const mHeaders={Accept:"application/json","User-Agent":"PGS-Hundo-Feed/1.1 (+https://github.com/LucianoToscano/PGS)",
       "Content-Type":"application/x-www-form-urlencoded","X-Requested-With":"XMLHttpRequest",Referer:"https://moonani.com/PokeList/"};
-    const postPage=(draw,start)=>fetchJson(u,{method:"POST",
+    const postPage=(draw,start)=>page(u,{method:"POST",
       body:`draw=${draw}&start=${start}&length=${MOONANI_PAGE_SIZE}&pokemons=&iv=100&pvp=0`,headers:mHeaders},now);
     const first=await postPage(1,0);
     if (!Array.isArray(first.body?.data)) throw Object.assign(Error("moonani_schema"),{contentType:first.contentType});
@@ -264,9 +273,9 @@ async function collect(source, now) {
         if (!Array.isArray(next.body?.data) || !next.body.data.length) break;
         all.push(...next.body.data);
         if (next.body.data.length < MOONANI_PAGE_SIZE) break;
-      } catch { console.warn("PGS moonani page "+page+" unavailable; keeping partial data"); break; }
+      } catch (error) { partialError=error; break; }
     }
-    return {...await moonaniRows({data:all},now),contentType:first.contentType};
+    return {partialError,...await moonaniRows({data:all},now),contentType:first.contentType};
   }
   // Honest AJAX-contract headers for the map sites whose own frontend queries these
   // endpoints as XHR JSON. Identity stays truthful (no browser fingerprint, no cookies);
@@ -278,26 +287,26 @@ async function collect(source, now) {
       :{Accept:"application/json"})};
   const init={method:"GET",headers};
   if (iflow) {
-    const first=await fetchJson(url,init,now);
+    const first=await page(url,init);
+    if (!Array.isArray(first.body?.items)) throw Error("iflow_schema");
     const items=[...(Array.isArray(first.body?.items)?first.body.items:[])];
     const pages=Number.isSafeInteger(first.body?.total_pages)?Math.min(Math.max(first.body.total_pages,1),maxIflowPages):1;
-    if (pages>1) {
-      const rest=await Promise.all(Array.from({length:pages-1},(_,i)=>{
-        const pageUrl=new URL(url.href); pageUrl.search=new URLSearchParams({page:String(i+2),min_iv:"100"}).toString();
-        return fetchJson(pageUrl,{method:"GET",headers},now);
-      }));
-      for (const page of rest) {
-        if (!Array.isArray(page.body?.items)) throw Object.assign(Error("iflow_schema"),{contentType:page.contentType});
-        items.push(...page.body.items);
-      }
+    for (let n=2;n<=pages;n++) {
+      const next=new URL(url);
+      next.searchParams.set("page",String(n));
+      try {
+        const response=await page(next,init);
+        if (!Array.isArray(response.body?.items)) throw Error("iflow_schema");
+        items.push(...response.body.items);
+      } catch (error) { partialError=error; break; }
     }
     const seen=new Set(), unique=[];
     for (const item of items) { const key=item&&typeof item.id==="string"?item.id:null; if (key && seen.has(key)) continue; if (key) seen.add(key); unique.push(item); }
     const result=iflowRows({items:unique},now);
     // received counts raw rows including any cross-page duplicates.
-    return {...result,received:items.length,discarded:Math.max(0,items.length-result.validated),contentType:first.contentType};
+    return {partialError,...result,received:items.length,discarded:Math.max(0,items.length-result.validated),contentType:first.contentType};
   }
-  const {body,contentType}=await fetchJson(url,init,now);
+  const {body,contentType}=await page(url,init);
   if (gocoords) return {...await gocoordsRows(body,now),contentType};
   if (moonani) return {...await moonaniRows(body,now),contentType};
   if (city) return {...await cityRows(body,now),contentType};
@@ -306,7 +315,7 @@ async function collect(source, now) {
 }
 
 // Granular outcome for status.json / sources.json. Never throws.
-const STATE_LABELS={online_with_results:"Online com resultados",online_without_hundos:"Online sem Hundos",
+const STATE_LABELS={pending:"Aguardando primeira coleta",online_with_results:"Online com resultados",online_without_hundos:"Online sem Hundos",
   offline_connection:"Offline por falha de conexão",invalid_response:"Resposta inválida",access_denied:"Acesso recusado",
   rate_limited:"Limite de consultas",upstream_http:"Erro HTTP do fornecedor",offline_error:"Offline"};
 function stateOf(entry) {
@@ -332,24 +341,40 @@ async function refresh(env) {
       !Number.isSafeInteger(s.interval_s) || s.interval_s<interval) ||
       new Set(configs.map(s=>s.name)).size!==configs.length) throw Error("invalid_config");
   const previous=hundoState(await env.FEED.get(stateKey,"json") || {},configs,now);
-  const entries=await Promise.all(configs.map(async source=>{
+  const budget=Number(env.MAX_UPSTREAM_REQUESTS ?? 15);
+  const required=configs.reduce((n,s)=>n+(s.kind==="iflow"?maxIflowPages:s.kind==="moonani"?MAX_MOONANI_PAGES:1),0);
+  if (!Number.isSafeInteger(budget)||budget>15||required>budget) throw Error("invalid_config");
+  async function poll(source) {
     const old=previous.entries?.find(x=>x.name===source.name && x.url===source.url);
-    if (old?.adapter_v===ADAPTER_VERSION && old?.next>now) return old;
-    const base={name:source.name,url:source.url,adapter_v:ADAPTER_VERSION,next:now+source.interval_s*1000};
+    const recover=old?.adapter_v!==ADAPTER_VERSION && old?.status==="offline" &&
+      ["empty_response","invalid_json","connection_error","timeout"].includes(old.reason) &&
+      !old.httpStatus && !old.retryAt;
+    if (old?.next>now && !recover) return old;
+    const metrics={attemptedPages:0,collectedPages:0};
+    let partial;
+    const base={name:source.name,url:source.url,adapter_v:ADAPTER_VERSION,lastAttempt:now,next:now+source.interval_s*1000};
     try {
-      const result=await collect(source,now);
-      return {...base,...result,updated:now,status:"online",failures:0,reason:null,httpStatus:null};
+      const {partialError,...result}=await collect(source,now,metrics);
+      if (partialError) {
+        const cached=rows({v:1,fetched_ms:now,hundos:[...result.hundos,...(old?.hundos??[])],
+          spots:[...result.spots,...(old?.spots??[])]},now);
+        partial={...result,...cached};
+        throw partialError;
+      }
+      return {...base,...metrics,...result,updated:now,status:"online",failures:0,reason:null,httpStatus:null};
     }
     catch(error) {
       console.warn("PGS upstream unavailable",source.name);
       const failures=Math.min((old?.failures||0)+1,maxFailures);
       const reason=classifyError(error);
-      return {...(old||{}),...base,status:"offline",httpStatus:error.httpStatus || null,contentType:error.contentType ?? old?.contentType ?? null,
+      return {...(old||{}),...base,...partial,...metrics,updated:partial?now:old?.updated,retryAt:error.retryAt??null,status:"offline",httpStatus:error.httpStatus || null,contentType:error.contentType ?? old?.contentType ?? null,
         reason,failures,
         next:Math.max(base.next,now+Math.min(backoffCapMs,interval*1000*2**failures),
           error.httpStatus===429?now+RATE_LIMIT_FLOOR_MS:0,Number.isFinite(error.retryAt)?error.retryAt:0)};
     }
-  }));
+  }
+  const entries=[];
+  for (let i=0;i<configs.length;i+=4) entries.push(...await Promise.all(configs.slice(i,i+4).map(poll)));
   const history=[...(previous.history || []),{time:now,online:entries.filter(e=>e.status==="online").map(e=>e.name)}].slice(-288);
   if (previous.entries?.some(e=>e.updated)) await env.FEED.put(backupKey,JSON.stringify(previous));
   await env.FEED.put(stateKey,JSON.stringify({entries:entries.map(e=>({...e})),time:now,history}));
@@ -453,10 +478,15 @@ async function readFeed(request,env) {
     }
     if (health) {
       const summary=Object.create(null);
-      const connections=(state?.entries || []).map(e=>{
-        const stateName=stateOf(e);
+      const counts=feed(state,Date.now()).sources;
+      const connections=configs.map(source=>{
+        const e=state.entries.find(item=>sourceKey(item)===sourceKey(source)) || {...source,status:"pending"};
+        const stateName=e.status==="pending"?"pending":stateOf(e);
         summary[stateName]=(summary[stateName]||0)+1;
         return {provider:providerName(e),category:"hundos",
+          active:counts[providerName(e)]?.active??0,unique:counts[providerName(e)]?.unique??0,
+          detail_status:stateName==="invalid_response"?e.reason:stateName,last_attempt:e.lastAttempt??null,
+          next_attempt:e.next??null,attempted_pages:e.attemptedPages??null,collected_pages:e.collectedPages??null,
           status:e.status,state:stateName,state_label:STATE_LABELS[stateName]||"Desconhecido",
           last_success:e.updated || null,next_retry:Number.isSafeInteger(e.next)?e.next:null,
           http_status:e.httpStatus || null,reason:e.reason || null,content_type:e.contentType ?? null,

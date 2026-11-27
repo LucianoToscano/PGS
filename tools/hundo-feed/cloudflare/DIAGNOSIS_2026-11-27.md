@@ -196,3 +196,10 @@ Como antes: `npx wrangler deploy` + observar `/status.json` por 2–3 ciclos. Ne
 ## TESTES
 
 `node worker.test.mjs` → **23/23** (5 novos: paginação Moonani de 2 páginas com `recordsFiltered=105`, Moonani página-1-só/zero hundos online com 1 chamada, piso de 30 min para HTTP 429 sem `Retry-After`, `state_label` presente + backoff ≤30 min, `ADAPTER_VERSION` ausente no KV legado → recoleta imediata). Ensaio offline (fixtures reais capturadas) reproduz 8 fontes online antes da fixture envelhecer — os dados expirados são corretamente descartados.
+## Ensaio local de 27/11, 18h47 de Fortaleza
+
+Uma execução com KV temporário consultou nove fontes. O resultado continha 74 encontros e 214 spots, todos futuros no momento da leitura. Contagens ativas/únicas por fonte: FaustusFoundry 68/68, NYC 1/0, Singapura 1/0, Londres 0/0, Sydney 1/1, Vancouver 0/0, iFlowGo 91/49, Moonani 167/162 e GOCoords 9/8. iFlowGo respondeu em cinco páginas e Moonani em duas. São métricas do ensaio durante o desenvolvimento. Em produção, a captura anterior da mesma sessão tinha 64 encontros e 90 spots, com os cinco mapas regionais em invalid_json.
+
+A página pública GhostDex expôs IVs, coordenadas e expiração UTC na apresentação. O HTML mediu 1.154.609 bytes, acima do orçamento por resposta do Worker. A vinculação de cada expiração à espécie e a uma coordenada exata precisa ser validada antes da ativação. GOCoords oferece até dez linhas na interface gratuita.
+
+A configuração candidata prevê até 15 consultas externas por ciclo e quatro conexões simultâneas. Com 288 ciclos diários, o coletor usa até 576 escritas KV e 288 leituras agendadas. As leituras públicas somam-se às agendadas. A CPU e o consumo total da conta precisam ser medidos na Cloudflare. A produção ainda requer verificação do namespace existente e da versão para rollback antes da implantação.

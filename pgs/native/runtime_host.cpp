@@ -31,8 +31,8 @@
 int pgrazor_hook_diag(PgrHookDiag *) __attribute__((weak));
 namespace {
 template<class T> const T *as(const void *p){return static_cast<const T*>(p);}
-const auto scheduler=as<PgrUnitySchedulerApi>(pgrazor_unity_scheduler_api(2));
-const auto shared=as<PgrSharedHostApi>(pgrazor_shared_host_api(1));
+const auto scheduler=as<PgrUnitySchedulerApi>(pgs_unity_scheduler_api(2));
+const auto shared=as<PgrSharedHostApi>(pgs_shared_host_api(1));
 const auto quick=as<PgrQuickballHostApi>(pgs_quickball_host_api(1));
 const auto routes=as<PgrRoutesHostApi>(pgs_routes_host_api(1));
 const auto inventory=as<PgrInventoryHostApi>(pgs_inventory_host_api(1));
@@ -41,7 +41,7 @@ const auto wait_host=as<PgrCatchWaitApi>(pgs_catch_wait_api(1));
 const auto spawn=as<PgrSpawnHostApi>(pgs_spawn_host_api(1));
 const auto camera=as<PgrCameraHostApi>(pgs_camera_host_api(1));
 const auto combat=as<PgrCombatHostApi>(pgs_combat_host_api(1));
-const auto account=as<PgrAccountHostApi>(pgrazor_account_host_api(1));
+const auto account=as<PgrAccountHostApi>(pgs_account_host_api(1));
 const auto interaction=as<PgrInteractionHostApi>(pgs_interaction_host_api(1));
 const auto encounter=as<PgrEncounterHostApi>(pgs_encounter_host_api(1));
 constexpr uint32_t pending_mask=0;
@@ -79,12 +79,12 @@ bool attached(){return owner.load()==uint64_t(gettid())&&binding.runtime.thread_
 // reenter48; independent47 reflection and54 snapshot have no managed gameplay calls.
 int verify(const PgrUnitySchedulerConfig *c){
  if(!c||!attached()||c->exclusive_owner!=1||c->expected_owner_tid!=gettid())return 0;
- PgrBootBinding b{};const auto boot=as<PgrBootApi>(pgrazor_runtime_bootstrap_api(1));
+ PgrBootBinding b{};const auto boot=as<PgrBootApi>(pgs_runtime_bootstrap_api(1));
  if(boot->snapshot(&b)||b.handle!=binding.handle||b.execute_tasks!=binding.execute_tasks||
  c->execute_tasks!=b.execute_tasks||c->runtime_invoke!=b.runtime.runtime_invoke||
  c->runtime_invoke_convert_args!=b.runtime.runtime_invoke_convert_args||
  reinterpret_cast<void*>(c->thread_current)!=b.runtime.thread_current)return 0;
- const auto md=as<PgrMetaApi>(pgrazor_runtime_metadata_api(1));
+ const auto md=as<PgrMetaApi>(pgs_runtime_metadata_api(1));
  const void *addresses[]={c->runtime_invoke,c->runtime_invoke_convert_args,b.runtime.thread_current};
  for(const void *address:addresses){PgrMetaCodeQuery q{1,sizeof(q),address,4,nullptr,0,0};if(md->validate_code(&q))return 0;}
  if(b.execute_tasks_code){PgrMetaCodeQuery q{1,sizeof(q),b.execute_tasks_code,4,nullptr,0,0};if(md->validate_code(&q))return 0;}
@@ -106,7 +106,7 @@ void report_host(unsigned i){
   i<10?60+i:i==10?58u:71u,names[i],state,state<6?states[state]:"unknown",reported_states[i],error,caps,slots[i].owned.load());
  const char channel[]="native-runtime";
  PgrRuntimeTransportString strings[]={{channel,sizeof(channel)-1},{json,uint32_t(std::strlen(json))}};
- if(as<PgrRuntimeTransportApi>(pgrazor_runtime_transport_api(1))->emit(19,nullptr,0,strings,2)==0){reported_states[i]=state;reported_errors[i]=error;reported_caps[i]=caps;}
+ if(as<PgrRuntimeTransportApi>(pgs_runtime_transport_api(1))->emit(19,nullptr,0,strings,2)==0){reported_states[i]=state;reported_errors[i]=error;reported_caps[i]=caps;}
 }
 void failed(unsigned i,int error){slots[i].error=error;slots[i].state=PGR_RTH_FAILED;stop_host(i);report_host(i);}
 int configure_host(unsigned i){
@@ -156,7 +156,7 @@ void observe(unsigned i){auto &s=slots[i];uint32_t ready=0,cap=0,owned=0;int err
  s.state=stopping.load()?PGR_RTH_STOPPED:ready?PGR_RTH_READY:PGR_RTH_CONFIGURED;
 }
 void wait_tick(bool cleanup){
- const auto tr=as<PgrRuntimeTransportApi>(pgrazor_runtime_transport_api(1));
+ const auto tr=as<PgrRuntimeTransportApi>(pgs_runtime_transport_api(1));
  if(!cleanup){PgrRuntimeTransportSample before{},after{};int allowed=0;
   const bool fresh=!tr->sample(&before)&&before.snapshot_fresh&&!before.fault&&
    !tr->get_bool(25,&allowed)&&!tr->sample(&after)&&after.snapshot_fresh&&!after.fault&&
@@ -185,7 +185,7 @@ void pulse(void*,const PgrUnityPulse *p){
  struct Clear{~Clear(){pulse_busy.clear(std::memory_order_release);}} clear;
  ++pulses;const uint64_t time=clock_ms();if(!time){fault=-8;stopping=true;}
  {
-  const auto tr=as<PgrRuntimeTransportApi>(pgrazor_runtime_transport_api(1));
+  const auto tr=as<PgrRuntimeTransportApi>(pgs_runtime_transport_api(1));
   PgrRuntimeTransportSample before{},after{};int enabled=0,has_lat=0,has_lng=0;
   double lat=NAN,lng=NAN;
   const bool fresh=!stopping.load()&&!tr->sample(&before)&&before.snapshot_fresh&&!before.fault&&
@@ -225,7 +225,7 @@ void pulse(void*,const PgrUnityPulse *p){
    if(i==10){PgrCatchWaitSample v{};if(wait_host->sample(&v)){failed(i,-10058);continue;}
     char json[192];std::snprintf(json,sizeof(json),"{\"kind\":\"metadata-ready\",\"backend\":\"native\",\"allowed\":false,\"leaseMs\":2500,\"state\":7,\"successValue\":%d}",v.success_value);
     const char channel[]="quick-catch-wait";PgrRuntimeTransportString strings[]={{channel,sizeof(channel)-1},{json,uint32_t(std::strlen(json))}};
-    if(as<PgrRuntimeTransportApi>(pgrazor_runtime_transport_api(1))->emit(19,nullptr,0,strings,2)){failed(i,-10058);continue;}
+    if(as<PgrRuntimeTransportApi>(pgs_runtime_transport_api(1))->emit(19,nullptr,0,strings,2)){failed(i,-10058);continue;}
    }
   }
   if(!s.configured.load(std::memory_order_acquire))continue;
@@ -278,7 +278,7 @@ void report_hook_failures(){
  json[t++]='}';json[t]=0;
  const char channel[]="native-hook";
  PgrRuntimeTransportString strings[]={{channel,sizeof(channel)-1},{json,uint32_t(t)}};
- if(as<PgrRuntimeTransportApi>(pgrazor_runtime_transport_api(1))->emit(19,nullptr,0,strings,2)==0)reported=h.failures;
+ if(as<PgrRuntimeTransportApi>(pgs_runtime_transport_api(1))->emit(19,nullptr,0,strings,2)==0)reported=h.failures;
 }
 void emit_startup_locked(const char *stage,const char *reason,int32_t status,int32_t detail,bool identity){
  const uint64_t now=clock_ms();
@@ -287,7 +287,7 @@ void emit_startup_locked(const char *stage,const char *reason,int32_t status,int
  int n=pgr_rtd_base_json(json,int(sizeof(json)),stage,reason,status,detail);
  if(!n)return;
  if(identity){
-  const auto sched4=as<PgrUnitySchedulerApi4>(pgrazor_unity_scheduler_api(4));
+  const auto sched4=as<PgrUnitySchedulerApi4>(pgs_unity_scheduler_api(4));
   PgrUnitySchedulerDiag d{};const char *hook_stage="unknown";int inv_rc=0,con_rc=0;
   if(sched4&&sched4->version==4&&sched4->size==sizeof(PgrUnitySchedulerApi4)&&sched4->diagnostics&&!sched4->diagnostics(&d)){
    hook_stage=pgr_rtd_sched_stage(d.failed_stage);inv_rc=d.invoke_hook_rc;con_rc=d.convert_hook_rc;
@@ -312,7 +312,7 @@ void emit_startup_locked(const char *stage,const char *reason,int32_t status,int
  }
  const char channel[]="native-runtime-start";
  PgrRuntimeTransportString strings[]={{channel,sizeof(channel)-1},{json,uint32_t(std::strlen(json))}};
- as<PgrRuntimeTransportApi>(pgrazor_runtime_transport_api(1))->emit(19,nullptr,0,strings,2);
+ as<PgrRuntimeTransportApi>(pgs_runtime_transport_api(1))->emit(19,nullptr,0,strings,2);
 }
 void emit_startup(const char *stage,const char *reason,int32_t status,int32_t detail,bool identity){
  std::lock_guard<std::mutex> l(startup_mutex);emit_startup_locked(stage,reason,status,detail,identity);
@@ -335,11 +335,11 @@ int configure(const PgrRuntimeHostConfig *c){
  if(setup_busy.test_and_set(std::memory_order_acquire))return 1;
  struct Clear{~Clear(){setup_busy.clear(std::memory_order_release);}} clear;
  if(installed.load())return attached()?0:-2;
- PgrBootBinding b{};const auto boot=as<PgrBootApi>(pgrazor_runtime_bootstrap_api(1));const int status=boot->snapshot(&b);
+ PgrBootBinding b{};const auto boot=as<PgrBootApi>(pgs_runtime_bootstrap_api(1));const int status=boot->snapshot(&b);
  if(status){if(status<0)emit_startup("bootstrap",pgr_rtd_boot_reason(status),status,b.detail,false);else emit_startup("bootstrap","not-ready",1,0,false);return status>0?1:status;}
  if(!b.runtime.thread_current||!reinterpret_cast<void*(*)()>(b.runtime.thread_current)()){emit_startup("attach","not-attached",-2,0,false);return -2;}
  PgrRuntimeTransportSample transport{};
- if(as<PgrRuntimeTransportApi>(pgrazor_runtime_transport_api(1))->sample(&transport)!=0){emit_startup("transport","unavailable",1,0,false);return 1;}
+ if(as<PgrRuntimeTransportApi>(pgs_runtime_transport_api(1))->sample(&transport)!=0){emit_startup("transport","unavailable",1,0,false);return 1;}
  if(transport.fault){emit_startup("transport","faulted",-6,0,false);return -6;}
  if(!transport.snapshot_fresh){emit_startup("transport","stale",1,0,false);return 1;}
  binding=b;owner=uint64_t(gettid());scheduler_config={};scheduler_config.version=2;scheduler_config.size=sizeof(scheduler_config);

@@ -325,10 +325,10 @@ int validate_export(void *p,uint64_t rva,const unsigned char (&bytes)[16]){
   PgrMetaCodeQuery q{};q.version=1;q.size=sizeof(q);q.address=p;q.length=16;q.prologue=bytes;q.prologue_len=16;return metadata->validate_code(&q);
 }
 int install(uint64_t tid){
-  auto boot=static_cast<const PgrBootApi*>(pgrazor_runtime_bootstrap_api(1));if(!boot)return 1;
+  auto boot=static_cast<const PgrBootApi*>(pgs_runtime_bootstrap_api(1));if(!boot)return 1;
   binding={};binding.version=1;binding.size=sizeof(binding);int rc=boot->snapshot(&binding);if(rc)return rc>0?1:rc;
   if(!binding.runtime.thread_current||!reinterpret_cast<Current>(binding.runtime.thread_current)())return 1;
-  metadata=static_cast<const PgrMetaApi*>(pgrazor_runtime_metadata_api(1));if(!metadata)return -2;
+  metadata=static_cast<const PgrMetaApi*>(pgs_runtime_metadata_api(1));if(!metadata)return -2;
   const void *&service=service_class;
   struct Cls{const char *ns,*name;const void **out;};
   Cls classes[]={{"Niantic.Holoholo.Services.DynamicTappables","DynamicTappablesSession",&session_class},{"Niantic.Holoholo.Services.DynamicTappables","DynamicTappableBehaviorService",&service},{"","DynamicTappableController",&controller_class},{"Holoholo.Rpc","ProcessTappableOutProto",&response_class},{"Holoholo.Rpc","TappableEncounterProto",&encounter_class},{"System","String",&string_class},{"System","Int32",&int32_class},{"Holoholo.Rpc","LootProto",&loot_class},{"Holoholo.Rpc","LootItemProto",&loot_item_class},{"Holoholo.Rpc","HoloPokemonId",&species_class},{"Holoholo.Rpc","Item",&item_class}};

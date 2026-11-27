@@ -1,4 +1,4 @@
-// PGRazor native migration: Team GO Rocket combat controller (feature id 21).
+// PGS native migration: Team GO Rocket combat controller (feature id 21).
 // See rocket_combat.h for the ABI, the "installs no hooks" rationale (the RVCHARGE
 // ObserveBattleState entry is shared with the still-Gum battle controller feature 19) and the
 // observe()/begin_ui()/end_ui() forwarding contract. Built -fno-exceptions / -fno-rtti like every

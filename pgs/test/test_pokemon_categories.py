@@ -91,7 +91,7 @@ class PokemonCategoriesTests(unittest.TestCase):
 
     def test_java_filter_contract(self):
         compiler, runtime = java_tools()
-        with tempfile.TemporaryDirectory(prefix='pgrazor-categories-') as work:
+        with tempfile.TemporaryDirectory(prefix='pgs-categories-') as work:
             sources = [ROOT/'src/dev/pgs/PokemonCategories.java',
                        ROOT/'src/dev/pgs/SmartCatchPreferences.java', ROOT/'test/PokemonCategoriesTest.java']
             result = subprocess.run([str(compiler), '-encoding', 'UTF-8', '-d', work, *map(str, sources)],

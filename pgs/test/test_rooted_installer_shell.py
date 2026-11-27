@@ -24,7 +24,7 @@ class RootedInstallerShellTests(unittest.TestCase):
             ROOT / 'root-installer/src/dev/pgs/root/RootShell.java',
             ROOT / 'root-installer/test/RootShellTest.java',
         ]
-        with tempfile.TemporaryDirectory(prefix='pgrazor-rootshell-') as work:
+        with tempfile.TemporaryDirectory(prefix='pgs-rootshell-') as work:
             compiled = subprocess.run(
                 [str(compiler), '-encoding', 'UTF-8', '-d', work, *map(str, sources)],
                 capture_output=True, text=True, timeout=30)
@@ -41,7 +41,7 @@ class RootedInstallerShellTests(unittest.TestCase):
         if os.name == 'nt':
             candidate = Path(os.environ.get('ProgramFiles', 'C:/Program Files')) / 'Git/bin/bash.exe'
             if candidate.exists(): bash = str(candidate)
-        with tempfile.TemporaryDirectory(prefix='pgrazor-root-toggle-') as work:
+        with tempfile.TemporaryDirectory(prefix='pgs-root-toggle-') as work:
             base = ROOT / 'root-installer'
             sources = [base / 'src/dev/pgs/root/RootModuleState.java',
                        base / 'src/dev/pgs/root/RootToggleCommand.java', base / 'test/RootToggleTest.java']

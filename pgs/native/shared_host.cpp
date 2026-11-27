@@ -43,7 +43,7 @@ const auto tx=table<PgrTransferExecApi>(pgs_transfer_execution_api(1));
 const auto tf=table<PgrTransferFactsApi>(pgs_transfer_facts_api(1));
 const auto cc=table<PgrCatchCompletionApi>(pgs_catch_completion_api(1));
 const auto bridge=table<PgrCatchApi>(pgs_catch_presentation_api(1));
-const auto transport=table<PgrRuntimeTransportApi>(pgrazor_runtime_transport_api(1));
+const auto transport=table<PgrRuntimeTransportApi>(pgs_runtime_transport_api(1));
 const auto transfer_policy=table<PgrTransferApi>(pgs_transfer_policy_api(1));
 PgrSharedHostConfig cfg{},accepted_config{};
 PgrMetaExports exports{};
@@ -93,7 +93,7 @@ void emit(uint32_t kind,uint64_t slot=0,int status=0,uint32_t flags=0,int before
 void fault(int rc){failed=true;stopping=true;emit(8,0,rc);}
 struct Gate {uint32_t flags,protect,count,keep_iv;uint64_t epoch,remaining;std::array<int32_t,2000> ids;};
 Gate gate(){Gate g{};std::lock_guard<std::mutex> lock(options_mutex);g.flags=options.flags;g.protect=options.protect;g.keep_iv=options.keep_iv;g.epoch=options.epoch;g.count=options.keep_count;std::copy_n(keep.begin(),g.count,g.ids.begin());const auto n=now();g.remaining=!stopping&&!failed&&(g.flags&PGR_SHH_ALLOWED)&&n&&n<deadline?std::min<uint64_t>(2500,deadline-n):0;return g;}
-bool scheduler_current(){return !pulse_generation||table<PgrUnitySchedulerApi>(pgrazor_unity_scheduler_api(2))->valid(pulse_generation)==1;}
+bool scheduler_current(){return !pulse_generation||table<PgrUnitySchedulerApi>(pgs_unity_scheduler_api(2))->valid(pulse_generation)==1;}
 bool transport_current(){if(!(cfg.transport_flags&1))return true;PgrRuntimeTransportSample s{};return transport->sample(&s)==0&&s.snapshot_fresh&&!s.fault&&s.snapshot_seq==transport_sequence&&s.generation==transport_generation;}
 bool refresh_transport_current();
 bool current(uint64_t epoch){if(!owned()||!scheduler_current()||!refresh_transport_current())return false;const auto g=gate();return g.remaining&&g.epoch==epoch;}
@@ -492,8 +492,8 @@ struct OkCalls {bool tried=false,ok=false;void *(*field)(void*,const char*)=null
  const char *(*class_name)(void*)=nullptr;size_t (*array_length)(void*)=nullptr;} ok_calls;
 bool ok_calls_ready(){
  if(ok_calls.tried)return ok_calls.ok;ok_calls.tried=true;
- PgrBootBinding b{};if(table<PgrBootApi>(pgrazor_runtime_bootstrap_api(1))->snapshot(&b)||!b.handle)return false;
- const auto meta=table<PgrMetaApi>(pgrazor_runtime_metadata_api(1));
+ PgrBootBinding b{};if(table<PgrBootApi>(pgs_runtime_bootstrap_api(1))->snapshot(&b)||!b.handle)return false;
+ const auto meta=table<PgrMetaApi>(pgs_runtime_metadata_api(1));
  auto find=[&](const char *ns,const char *name)->void*{PgrMetaClassQuery q{1,sizeof(q)};q.name_space=ns;q.name=name;PgrMetaClassResult r{};return meta->resolve_class(&q,&r)?nullptr:const_cast<void*>(r.klass);};
  // The summary's OK is the game's own PgoButton (Pixel, 2026-11-20); Unity's Button is kept as a fallback.
  void *button=find("UnityEngine.UI","Button"),*pgo=find("Niantic.Holoholo.UI","PgoButton"),*component=find("UnityEngine","Component");
@@ -607,7 +607,7 @@ PgrMetaExports default_exports{};
 PgrSharedMetaExtraExports default_extra{};
 bool default_built=false;
 int install_summary_alpha(){
- const auto meta=table<PgrMetaApi>(pgrazor_runtime_metadata_api(1));
+ const auto meta=table<PgrMetaApi>(pgs_runtime_metadata_api(1));
  auto klass=[&](const char *ns,const char *name)->const void*{PgrMetaClassQuery q{1,sizeof(q)};q.name_space=ns;q.name=name;PgrMetaClassResult r{};return meta->resolve_class(&q,&r)?nullptr:r.klass;};
  const void *group=klass("UnityEngine","CanvasGroup"),*object=klass("UnityEngine","Object");
  if(!group||!object)return -1;
@@ -615,7 +615,7 @@ int install_summary_alpha(){
  PgrMetaFieldResult root{},native{};if(meta->validate_field(&q,&root))return -2;
  q.owner=object;q.name="m_CachedPtr";q.offset=PGR_GAME_SHARED_HOST_CPP_M_CACHEDPTR_OFFSET;q.kind=PGR_MD_FIELD_VALUE;q.value_size=8;q.type_name="System.IntPtr";
  if(meta->validate_field(&q,&native))return -3;
- PgrBootBinding binding{};if(table<PgrBootApi>(pgrazor_runtime_bootstrap_api(1))->snapshot(&binding)||!binding.handle)return -4;
+ PgrBootBinding binding{};if(table<PgrBootApi>(pgs_runtime_bootstrap_api(1))->snapshot(&binding)||!binding.handle)return -4;
  auto resolve=reinterpret_cast<void*(*)(const char*)>(dlsym(binding.handle,"il2cpp_resolve_icall"));if(!resolve)return -5;
  void *address=resolve("UnityEngine.CanvasGroup::set_alpha_Injected(System.IntPtr,System.Single)");if(!address)return -6;
  PgrCatchCanvasAlphaConfig alpha{1,sizeof(alpha),address,const_cast<void*>(root.field),const_cast<void*>(native.field),const_cast<void*>(group)};
@@ -625,11 +625,11 @@ int configure_default(){
  if(default_busy.test_and_set(std::memory_order_acquire))return 1;
  struct Clear{~Clear(){default_busy.clear(std::memory_order_release);}} clear;
  if(!default_built){
-  PgrBootBinding b{};const auto boot=table<PgrBootApi>(pgrazor_runtime_bootstrap_api(1));
+  PgrBootBinding b{};const auto boot=table<PgrBootApi>(pgs_runtime_bootstrap_api(1));
   const int rc=boot->snapshot(&b);if(rc)return rc>0?1:rc;
   if(!b.handle||!b.module_base||!b.module_size||!b.runtime.thread_current)return -7;
   if(!reinterpret_cast<void *(*)()>(b.runtime.thread_current)())return 1;
-  const auto metadata=table<PgrMetaApi>(pgrazor_runtime_metadata_api(1));
+  const auto metadata=table<PgrMetaApi>(pgs_runtime_metadata_api(1));
   int export_error=0;
   auto symbol=[&](const char *name){char full[80];std::snprintf(full,sizeof(full),"il2cpp_%s",name);void *address=dlsym(b.handle,full);
    if(address){PgrMetaCodeQuery q{1,sizeof(q),address,4,nullptr,0,0};if(metadata->validate_code(&q)!=0){export_error=-7;return static_cast<void*>(nullptr);}}
@@ -669,7 +669,7 @@ int update(const PgrSharedHostOptions *input){if(!input||input->version!=1||inpu
 int sample(PgrSharedHostSample *out){if(!out)return -1;*out={1,sizeof(*out),uint32_t(ready.load()),capabilities.load(),uint32_t(stopping.load()),uint32_t(failed.load()),record_count.load(),root_count.load(),owner.load(),ticks.load(),frames.load()};return 0;}
 int next_event(PgrSharedHostEvent *out){if(!out)return -1;std::lock_guard<std::mutex> lock(event_mutex);if(!event_count){*out={};return 0;}*out=events[event_head];event_head=(event_head+1)%events.size();--event_count;return 1;}
 const PgrSharedMetadataOutput *metadata(){return ready?&md:nullptr;}
-void pulse(void*,const PgrUnityPulse *p){if(!p||p->reserved||p->tid<=0)return;auto scheduler=table<PgrUnitySchedulerApi>(pgrazor_unity_scheduler_api(2));if(!scheduler||scheduler->valid(p->generation)!=1)return;const auto previous=pulse_generation;pulse_generation=p->generation;try{tick(uint64_t(p->tid),p->sequence);}catch(...){fault(-11);}pulse_generation=previous;}
+void pulse(void*,const PgrUnityPulse *p){if(!p||p->reserved||p->tid<=0)return;auto scheduler=table<PgrUnitySchedulerApi>(pgs_unity_scheduler_api(2));if(!scheduler||scheduler->valid(p->generation)!=1)return;const auto previous=pulse_generation;pulse_generation=p->generation;try{tick(uint64_t(p->tid),p->sequence);}catch(...){fault(-11);}pulse_generation=previous;}
 const PgrSharedHostApi api{1,sizeof(api),configure,update,tick,stop,sample,next_event,metadata,pulse};
 const PgrSharedHostTransferApi transfer_api{2,sizeof(transfer_api),transfer_ready,external_submit,external_next_event};
 }

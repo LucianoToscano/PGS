@@ -118,7 +118,7 @@ struct DiscoveryTrace {
 void discoveryEvent(uint64_t now) {
   auto &d=discoveryTrace;
   if(now<d.next)return;
-  const auto *t=static_cast<const PgrRuntimeTransportApi*>(pgrazor_runtime_transport_api(1));
+  const auto *t=static_cast<const PgrRuntimeTransportApi*>(pgs_runtime_transport_api(1));
   char detail[512];int n=snprintf(detail,sizeof(detail),
     "scans=%llu hiddenScans=%llu enumerated=%llu rejected=%llu stale=%llu recent=%llu issued=%llu notListed=%llu invalid=%llu manual=%llu hidden=%llu range=%llu",
     (unsigned long long)d.scans,(unsigned long long)d.hiddenScans,(unsigned long long)d.loaded,
@@ -130,7 +130,7 @@ void discoveryEvent(uint64_t now) {
   d={};d.next=now+30000;
 }
 std::string smartConfig(){
-  const auto *t=static_cast<const PgrRuntimeTransportApi*>(pgrazor_runtime_transport_api(1));
+  const auto *t=static_cast<const PgrRuntimeTransportApi*>(pgs_runtime_transport_api(1));
   char text[4096];uint32_t size=0;
   if(!t||t->get_string(7,text,sizeof(text),&size)!=0||size>=sizeof(text))return {};
   return std::string(text,size);
@@ -138,7 +138,7 @@ std::string smartConfig(){
 int smartSpeed(const std::string &s){PgrSmartSettings options{};pgr_smart_parse_settings(s.data(),s.size(),&options);return options.enabled?options.speed:0;}
 bool smartEnabled(const std::string &s){PgrSmartSettings options{};pgr_smart_parse_settings(s.data(),s.size(),&options);return options.enabled!=0;}
 void smartEvent(int ball,int berry,unsigned attempt,int grade=-1){
-  const auto *t=static_cast<const PgrRuntimeTransportApi*>(pgrazor_runtime_transport_api(1));
+  const auto *t=static_cast<const PgrRuntimeTransportApi*>(pgs_runtime_transport_api(1));
   char detail[128];int n=grade<0?snprintf(detail,sizeof(detail),"ball=%d berry=%d attempt=%u",ball,berry,attempt):snprintf(detail,sizeof(detail),"ball=%d berry=%d grade=%d attempt=%u",ball,berry,grade,attempt);
   const char name[]="smart-catch-request";
   PgrRuntimeTransportString text[]={{name,sizeof(name)-1},{detail,uint32_t(n)}};

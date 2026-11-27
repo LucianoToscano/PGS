@@ -1128,7 +1128,7 @@ void *interface_pokemon(void *map, Ctx &c) {
   static bool resolved = false;
   if (!resolved) {
     resolved = true;
-    const auto *api = static_cast<const PgrBootApi *>(pgrazor_runtime_bootstrap_api(1));
+    const auto *api = static_cast<const PgrBootApi *>(pgs_runtime_bootstrap_api(1));
     PgrBootBinding b{};
     b.version = 1;
     b.size = sizeof(b);

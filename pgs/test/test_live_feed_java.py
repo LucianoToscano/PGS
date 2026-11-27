@@ -23,7 +23,7 @@ class LiveFeedJavaTests(unittest.TestCase):
         if not candidates:
             self.skipTest('Install Android SDK sources to run the Android JSON parser on the JVM')
         compiler, runtime = java_tools()
-        with tempfile.TemporaryDirectory(prefix='pgrazor-feed-test-') as directory:
+        with tempfile.TemporaryDirectory(prefix='pgs-feed-test-') as directory:
             work = Path(directory)
             sources = []
             for original in candidates[0].glob('*.java'):

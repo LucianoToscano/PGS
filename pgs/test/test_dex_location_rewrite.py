@@ -94,7 +94,7 @@ class DexLocationRewriteTests(unittest.TestCase):
     def test_actual_dexlib_structural_roundtrip(self):
         compiler, runtime = java_tools()
         jars = dex_bridges.dependencies(download=False)
-        with tempfile.TemporaryDirectory(prefix='pgrazor-location-dex-') as directory:
+        with tempfile.TemporaryDirectory(prefix='pgs-location-dex-') as directory:
             work = Path(directory)
             source = work / 'LocationRewriteFixture.java'
             source.write_text(JAVA, encoding='utf-8')

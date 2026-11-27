@@ -239,7 +239,7 @@ def java_tools():
 class ControlJavaTests(unittest.TestCase):
     def test_quick_summary_policy_and_location_isolation(self):
         compiler, runtime = java_tools()
-        with tempfile.TemporaryDirectory(prefix='pgrazor-control-test-') as directory:
+        with tempfile.TemporaryDirectory(prefix='pgs-control-test-') as directory:
             work = Path(directory)
             sources = []
             for relative, text in STUBS.items():

@@ -33,7 +33,7 @@ public class Context {
 class EventSettingsJavaTests(unittest.TestCase):
     def test_capability_revocation_and_persistent_intent(self):
         compiler, runtime = java_tools()
-        with tempfile.TemporaryDirectory(prefix='pgrazor-events-') as directory:
+        with tempfile.TemporaryDirectory(prefix='pgs-events-') as directory:
             work = Path(directory)
             sources = []
             for name, text in STUBS.items():

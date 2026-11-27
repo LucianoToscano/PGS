@@ -51,7 +51,7 @@ void *call(void *o,const char *name,int n=0,void **args=nullptr){return invoke(m
 template<class T>T unbox(void *o){require(o,"boxed value");T v{};auto p=fn<void*(*)(void*)>(boot.runtime.object_unbox)(o);require(p,"boxed value");std::memcpy(&v,p,sizeof(v));return v;}
 void *managed_string(const std::string &s){void *v=fn<void*(*)(const char*)>(boot.runtime.string_new)(s.c_str());require(v,"string");return v;}
 std::string class_name(void *o){return fn<const char*(*)(void*)>(exp("class_get_name"))(klass(o));}
-const PgrRuntimeTransportApi *transport(){return static_cast<const PgrRuntimeTransportApi*>(pgrazor_runtime_transport_api(1));}
+const PgrRuntimeTransportApi *transport(){return static_cast<const PgrRuntimeTransportApi*>(pgs_runtime_transport_api(1));}
 void event(const std::string &json){auto tr=transport();if(!tr)return;PgrRuntimeTransportString strings[]={{"storage-iv",10},{json.c_str(),uint32_t(json.size())}};tr->emit(19,nullptr,0,strings,2);}
 void status(const char *phase,const std::string &message){event(std::string("{\"phase\":\"")+phase+"\",\"message\":\""+message+"\"}");}
 
@@ -77,7 +77,7 @@ bool register_sized(const void *type){
  return false;
 }
 void *class_of(const char *ns,const char *name){
- const auto *api=static_cast<const PgrMetaApi*>(pgrazor_runtime_metadata_api(1));require(api,"metadata API");
+ const auto *api=static_cast<const PgrMetaApi*>(pgs_runtime_metadata_api(1));require(api,"metadata API");
  PgrMetaClassQuery q{};q.version=1;q.size=sizeof(q);q.name_space=ns;q.name=name;q.canonical_match=PGR_MD_MATCH_EXACT;
  PgrMetaClassResult r{};require(api->resolve_class(&q,&r)==0,name);return const_cast<void*>(r.klass);
 }
@@ -368,7 +368,7 @@ void hook_initialize(void *self,void *initializer,const void *info){
 }
 
 void install(){
- const auto *api=static_cast<const PgrMetaApi*>(pgrazor_runtime_metadata_api(1));require(api&&api->resolve_class&&api->validate_method,"metadata API");
+ const auto *api=static_cast<const PgrMetaApi*>(pgs_runtime_metadata_api(1));require(api&&api->resolve_class&&api->validate_method,"metadata API");
  require(boot.module_base,"il2cpp module");
  PgrMetaClassQuery cq{};cq.version=1;cq.size=sizeof(cq);cq.name_space="Niantic.Holoholo.UI";cq.name="PokemonInventoryCellView";cq.canonical_match=PGR_MD_MATCH_EXACT;
  PgrMetaClassResult cr{};require(api->resolve_class(&cq,&cr)==0,"PokemonInventoryCellView");
@@ -407,7 +407,7 @@ void pgr_storage_iv_tick(uint64_t tid,const PgrSharedMetadataOutput *metadata){
  if(m&&installed.load(std::memory_order_acquire)&&!faulted.load(std::memory_order_acquire))tick_levels();
  if(!m||installed.load(std::memory_order_acquire)||faulted.load(std::memory_order_acquire))return;
  try{
-  if(!ready){auto api=static_cast<const PgrBootApi*>(pgrazor_runtime_bootstrap_api(1));boot.version=1;boot.size=sizeof(boot);require(api&&api->snapshot(&boot)==0,"Runtime unavailable");ready=true;}
+  if(!ready){auto api=static_cast<const PgrBootApi*>(pgs_runtime_bootstrap_api(1));boot.version=1;boot.size=sizeof(boot);require(api&&api->snapshot(&boot)==0,"Runtime unavailable");ready=true;}
   install();
  }catch(const Failure &f){faulted.store(true,std::memory_order_release);status("error",std::string("Storage IVs unavailable: ")+f.where);}
  catch(...){faulted.store(true,std::memory_order_release);status("error","Storage IVs unavailable: native failure");}

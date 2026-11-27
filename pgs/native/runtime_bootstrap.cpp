@@ -404,7 +404,7 @@ int api_probe(const PgrBootConfig *cfg, PgrBootBinding *out) {
 
   // 3. feature 47 metadata API.
   const void *raw = cfg->metadata_fn ? cfg->metadata_fn(cfg->seam_ctx, PGR_MD_API_VERSION)
-                                     : pgrazor_runtime_metadata_api(PGR_MD_API_VERSION);
+                                     : pgs_runtime_metadata_api(PGR_MD_API_VERSION);
   const PgrMetaApi *md = static_cast<const PgrMetaApi *>(raw);
   if (md == nullptr || md->version != PGR_MD_API_VERSION || md->size != sizeof(PgrMetaApi) ||
       !md->bind || !md->resolve_module || !md->resolve_class || !md->validate_method || !md->validate_code)

@@ -106,7 +106,7 @@ struct Root {
 };
 void *klass(void *o){require(o,"null object");return fn<void*(*)(void*)>(boot.runtime.object_get_class)(o);}
 void *cls(const char *ns,const char *name){
- const auto *api=static_cast<const PgrMetaApi*>(pgrazor_runtime_metadata_api(1));require(api,"metadata API");
+ const auto *api=static_cast<const PgrMetaApi*>(pgs_runtime_metadata_api(1));require(api,"metadata API");
  PgrMetaClassQuery q{};q.version=1;q.size=sizeof(q);q.name_space=ns;q.name=name;q.canonical_match=PGR_MD_MATCH_EXACT;
  PgrMetaClassResult out{};require(api->resolve_class(&q,&out)==0,name);return const_cast<void*>(out.klass);
 }
@@ -132,7 +132,7 @@ size_t offset_of(void *k,const char *name,const char *type){
 template<class T>T at(void *o,size_t off){T v{};memcpy(&v,static_cast<char*>(o)+off,sizeof(v));return v;}
 bool has_text(void *o,size_t off){void *s=at<void*>(o,off);return s&&at<int32_t>(s,0x10)>0;}  // System.String length
 
-const PgrRuntimeTransportApi *transport(){return static_cast<const PgrRuntimeTransportApi*>(pgrazor_runtime_transport_api(1));}
+const PgrRuntimeTransportApi *transport(){return static_cast<const PgrRuntimeTransportApi*>(pgs_runtime_transport_api(1));}
 std::string escape(const std::string &s){std::string out;for(unsigned char c:s){if(c=='"'||c=='\\')out+='\\';if(c>=32)out+=char(c);}return out;}
 void event(const std::string &json){auto tr=transport();if(!tr)return;PgrRuntimeTransportString s[]={{"smart-heal",10},{json.c_str(),uint32_t(json.size())}};tr->emit(19,nullptr,0,s,2);}
 void status(const char *phase,const std::string &message){event(std::string("{\"phase\":\"")+phase+"\",\"message\":\""+escape(message)+"\"}");}
@@ -291,7 +291,7 @@ void poll_use(uint64_t now){
 // One-time runtime binding, shared by the map tick and the gym calls.
 void ensure_init(const PgrSharedMetadataOutput *metadata,uint64_t tid,uint64_t now){
  if(initialized)return;
- auto api=static_cast<const PgrBootApi*>(pgrazor_runtime_bootstrap_api(1));boot.version=1;boot.size=sizeof(boot);
+ auto api=static_cast<const PgrBootApi*>(pgs_runtime_bootstrap_api(1));boot.version=1;boot.size=sizeof(boot);
  require(api&&api->snapshot(&boot)==0,"runtime unavailable");md=metadata;require(md,"shared metadata");owner=tid;initialized=true;
  st.next_sweep=now+kFirstSweepMs;status("ready","Smart healing ready");
 }

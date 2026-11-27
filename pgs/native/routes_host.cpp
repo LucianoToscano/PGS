@@ -626,8 +626,8 @@ std::atomic<uint32_t> g_cached_route_count{0};
 uint64_t g_gate_handle = 0;
 bool g_desired_allowed = false;
 std::atomic<uint64_t> g_lease_until_ms{0};
-// While PGRazor supplies the location (transport "active"), a Route the player walks themselves needs the
-// same nested location-service answer as one PGRazor walks, or the game pauses it. This lease keeps only the
+// While PGS supplies the location (transport "active"), a Route the player walks themselves needs the
+// same nested location-service answer as one PGS walks, or the game pauses it. This lease keeps only the
 // route-tracking observers live; actions, discovery and result capture still follow g_lease_until_ms.
 std::atomic<uint64_t> g_tracking_until_ms{0};
 std::atomic<bool> g_reset_cadence{false};
@@ -684,7 +684,7 @@ const PgrBootApi *bootstrap_api() {
   return static_cast<const PgrBootApi *>(pgrazor_runtime_bootstrap_api(1));
 }
 const PgrRuntimeTransportApi *transport_api() {
-  return static_cast<const PgrRuntimeTransportApi *>(pgrazor_runtime_transport_api(1));
+  return static_cast<const PgrRuntimeTransportApi *>(pgs_runtime_transport_api(1));
 }
 
 uint64_t ensure_gate_locked() {
@@ -1545,7 +1545,7 @@ uint64_t current_residual_ms() {
   return rem > PGR_RH_MAX_LEASE_MS ? PGR_RH_MAX_LEASE_MS : rem;
 }
 
-// Observer lease: the full lease, or the tracking-only lease while PGRazor supplies the location.
+// Observer lease: the full lease, or the tracking-only lease while PGS supplies the location.
 uint64_t observers_residual_ms() {
   const uint64_t full = current_residual_ms();
   uint64_t now = 0;
@@ -1991,7 +1991,7 @@ int api_set_options(int allowed, const char *command_json, uint32_t command_len,
       if (const auto *act = actions_api()) act->revoke();
       if (const auto *dsc = discovery_api()) dsc->revoke();
       // Revoking the observers also ends route tracking, so keep them when only the tracking lease is
-      // live; still revoke once when PGRazor's own walk ends, dropping any result capture it started.
+      // live; still revoke once when PGS's own walk ends, dropping any result capture it started.
       if (was_allowed || g_tracking_until_ms.load(std::memory_order_acquire) <= now_ms) {
         if (const auto *obs = observers_api()) obs->revoke();
       }
@@ -2036,7 +2036,7 @@ void poll_transport52_options() {
   // In Feature 52: bool[2] is gameRoutesAllowed (guarded bool: returns 0 when stale); string[1] is gameRoutesCommand.
   int allowed = 0;
   if (tr->get_bool(2u, &allowed) != PGR_TRANSPORT_OK) allowed = 0;
-  // bool[3] "active": PGRazor is supplying the player location (enabled, foreground, ready, connected).
+  // bool[3] "active": PGS is supplying the player location (enabled, foreground, ready, connected).
   int spoofing = 0;
   if (tr->get_bool(3u, &spoofing) != PGR_TRANSPORT_OK) spoofing = 0;
   uint64_t now_ms = 0;

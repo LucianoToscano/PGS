@@ -265,7 +265,7 @@ const PgrCameraSamplerApi *resolve_sampler_api() {
 const PgrRuntimeTransportApi *resolve_transport_api() {
 #if !defined(PGR_CAMERA_HOST_STANDALONE_TEST)
   const void *direct =
-      pgrazor_runtime_transport_api(PGR_TRANSPORT_API_VERSION);
+      pgs_runtime_transport_api(PGR_TRANSPORT_API_VERSION);
   if (direct != nullptr) {
     return static_cast<const PgrRuntimeTransportApi *>(direct);
   }
@@ -280,7 +280,7 @@ const PgrRuntimeTransportApi *resolve_transport_api() {
 
 const PgrBootApi *resolve_bootstrap_api() {
 #if !defined(PGR_CAMERA_HOST_STANDALONE_TEST)
-  const void *direct = pgrazor_runtime_bootstrap_api(PGR_BOOT_API_VERSION);
+  const void *direct = pgs_runtime_bootstrap_api(PGR_BOOT_API_VERSION);
   if (direct != nullptr) return static_cast<const PgrBootApi *>(direct);
 #endif
   const pgs_native_api_v2 *native = resolve_native_api();

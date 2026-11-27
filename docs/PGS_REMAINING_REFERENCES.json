@@ -1,21 +1,21 @@
 {
-  "scope": "Consolidated Phase 17 indexed regular UTF-8 source snapshot, excluding the inventory itself and NUL-containing or non-UTF-8 blobs. Exact staged per-file deltas; final independent CI confirmation pending.",
+  "scope": "Phase 18 indexed regular UTF-8 source snapshot; exact deltas against independently validated phase 17, final source CI pending.",
   "tracked_files": 2106,
   "text_files": 1031,
-  "changed_files": 222,
+  "changed_files": 123,
   "added_files": 0,
-  "previous_occurrences": 2362,
-  "remaining_files": 370,
-  "remaining_occurrences": 1728,
+  "previous_occurrences": 1728,
+  "remaining_files": 297,
+  "remaining_occurrences": 1463,
   "remaining_by_category": {
     "workflows": 71,
-    "other": 117,
+    "other": 116,
     "documentation": 273,
     "release_history": 103,
     "legal": 3,
-    "native": 605,
-    "tests": 468,
-    "java": 79,
+    "native": 415,
+    "tests": 404,
+    "java": 69,
     "javascript": 3,
     "vendor": 6
   },
@@ -311,11 +311,6 @@
       "occurrences": 2
     },
     {
-      "path": "pgs/art/java_hooks.cpp",
-      "category": "native",
-      "occurrences": 1
-    },
-    {
       "path": "pgs/axml.py",
       "category": "other",
       "occurrences": 2
@@ -353,17 +348,17 @@
     {
       "path": "pgs/native/account_host.h",
       "category": "native",
-      "occurrences": 4
+      "occurrences": 5
     },
     {
       "path": "pgs/native/accounts.cpp",
       "category": "native",
-      "occurrences": 2
+      "occurrences": 1
     },
     {
       "path": "pgs/native/accounts.h",
       "category": "native",
-      "occurrences": 19
+      "occurrences": 20
     },
     {
       "path": "pgs/native/adventure_sync_test.cpp",
@@ -373,17 +368,17 @@
     {
       "path": "pgs/native/adventure_sync.cpp",
       "category": "native",
-      "occurrences": 6
+      "occurrences": 5
     },
     {
       "path": "pgs/native/adventure_sync.h",
       "category": "native",
-      "occurrences": 35
+      "occurrences": 36
     },
     {
       "path": "pgs/native/always_hit.cpp",
       "category": "native",
-      "occurrences": 5
+      "occurrences": 1
     },
     {
       "path": "pgs/native/always_hit.h",
@@ -396,16 +391,6 @@
       "occurrences": 1
     },
     {
-      "path": "pgs/native/ar_values.cpp",
-      "category": "native",
-      "occurrences": 3
-    },
-    {
-      "path": "pgs/native/auto_boost.cpp",
-      "category": "native",
-      "occurrences": 3
-    },
-    {
       "path": "pgs/native/auto_raid_game_map.inc",
       "category": "native",
       "occurrences": 1
@@ -416,19 +401,9 @@
       "occurrences": 3
     },
     {
-      "path": "pgs/native/auto_raid.cpp",
-      "category": "native",
-      "occurrences": 4
-    },
-    {
       "path": "pgs/native/auto_raid.h",
       "category": "native",
       "occurrences": 1
-    },
-    {
-      "path": "pgs/native/auto_rocket.cpp",
-      "category": "native",
-      "occurrences": 3
     },
     {
       "path": "pgs/native/batch_evolution_runtime_test.cpp",
@@ -438,20 +413,10 @@
     {
       "path": "pgs/native/batch_evolution.cpp",
       "category": "native",
-      "occurrences": 8
-    },
-    {
-      "path": "pgs/native/battery.cpp",
-      "category": "native",
-      "occurrences": 5
+      "occurrences": 4
     },
     {
       "path": "pgs/native/battery.h",
-      "category": "native",
-      "occurrences": 1
-    },
-    {
-      "path": "pgs/native/battles.cpp",
       "category": "native",
       "occurrences": 1
     },
@@ -468,12 +433,7 @@
     {
       "path": "pgs/native/buddy_emotion.cpp",
       "category": "native",
-      "occurrences": 6
-    },
-    {
-      "path": "pgs/native/buddy_feeding.cpp",
-      "category": "native",
-      "occurrences": 1
+      "occurrences": 2
     },
     {
       "path": "pgs/native/buddy_feeding.h",
@@ -488,7 +448,7 @@
     {
       "path": "pgs/native/camera_host.cpp",
       "category": "native",
-      "occurrences": 7
+      "occurrences": 5
     },
     {
       "path": "pgs/native/camera_host.h",
@@ -526,11 +486,6 @@
       "occurrences": 3
     },
     {
-      "path": "pgs/native/catch_chance.cpp",
-      "category": "native",
-      "occurrences": 4
-    },
-    {
       "path": "pgs/native/catch_completion_test.cpp",
       "category": "tests",
       "occurrences": 2
@@ -558,7 +513,7 @@
     {
       "path": "pgs/native/combat_host.cpp",
       "category": "native",
-      "occurrences": 9
+      "occurrences": 1
     },
     {
       "path": "pgs/native/combat_host.h",
@@ -571,11 +526,6 @@
       "occurrences": 3
     },
     {
-      "path": "pgs/native/cutscene_skip.cpp",
-      "category": "native",
-      "occurrences": 4
-    },
-    {
       "path": "pgs/native/details_completion_test.cpp",
       "category": "tests",
       "occurrences": 2
@@ -584,11 +534,6 @@
       "path": "pgs/native/details_recovery_test.cpp",
       "category": "tests",
       "occurrences": 2
-    },
-    {
-      "path": "pgs/native/encounter_berries.cpp",
-      "category": "native",
-      "occurrences": 1
     },
     {
       "path": "pgs/native/encounter_berries.h",
@@ -601,18 +546,8 @@
       "occurrences": 4
     },
     {
-      "path": "pgs/native/encounter_host.cpp",
-      "category": "native",
-      "occurrences": 5
-    },
-    {
       "path": "pgs/native/events/event_collector_test.cpp",
       "category": "tests",
-      "occurrences": 2
-    },
-    {
-      "path": "pgs/native/events/event_collector.cpp",
-      "category": "native",
       "occurrences": 2
     },
     {
@@ -623,16 +558,11 @@
     {
       "path": "pgs/native/evolve_transfer.cpp",
       "category": "native",
-      "occurrences": 8
+      "occurrences": 2
     },
     {
       "path": "pgs/native/gift_batch_test.cpp",
       "category": "tests",
-      "occurrences": 4
-    },
-    {
-      "path": "pgs/native/gift_batch.cpp",
-      "category": "native",
       "occurrences": 4
     },
     {
@@ -643,7 +573,7 @@
     {
       "path": "pgs/native/gym_repeat.cpp",
       "category": "native",
-      "occurrences": 8
+      "occurrences": 4
     },
     {
       "path": "pgs/native/gym_repeat.h",
@@ -658,16 +588,11 @@
     {
       "path": "pgs/native/gym_runtime.cpp",
       "category": "native",
-      "occurrences": 7
+      "occurrences": 2
     },
     {
       "path": "pgs/native/heal_runtime_test.cpp",
       "category": "tests",
-      "occurrences": 3
-    },
-    {
-      "path": "pgs/native/heal.cpp",
-      "category": "native",
       "occurrences": 3
     },
     {
@@ -696,11 +621,6 @@
       "occurrences": 3
     },
     {
-      "path": "pgs/native/incense_guard.cpp",
-      "category": "native",
-      "occurrences": 4
-    },
-    {
       "path": "pgs/native/incoming_gifts_test.cpp",
       "category": "tests",
       "occurrences": 2
@@ -708,7 +628,7 @@
     {
       "path": "pgs/native/incubation.cpp",
       "category": "native",
-      "occurrences": 2
+      "occurrences": 1
     },
     {
       "path": "pgs/native/incubation.h",
@@ -733,12 +653,12 @@
     {
       "path": "pgs/native/inventory_host.cpp",
       "category": "native",
-      "occurrences": 7
+      "occurrences": 3
     },
     {
       "path": "pgs/native/items.cpp",
       "category": "native",
-      "occurrences": 2
+      "occurrences": 1
     },
     {
       "path": "pgs/native/items.h",
@@ -749,11 +669,6 @@
       "path": "pgs/native/iv_display_test.cpp",
       "category": "tests",
       "occurrences": 5
-    },
-    {
-      "path": "pgs/native/iv_display.cpp",
-      "category": "native",
-      "occurrences": 1
     },
     {
       "path": "pgs/native/iv_owned_refresh_test.cpp",
@@ -768,12 +683,12 @@
     {
       "path": "pgs/native/iv_panel.cpp",
       "category": "native",
-      "occurrences": 11
+      "occurrences": 8
     },
     {
       "path": "pgs/native/jni_core.cpp",
       "category": "native",
-      "occurrences": 2
+      "occurrences": 1
     },
     {
       "path": "pgs/native/map_auto_throw_game.inc",
@@ -796,11 +711,6 @@
       "occurrences": 3
     },
     {
-      "path": "pgs/native/max_orbs.cpp",
-      "category": "native",
-      "occurrences": 3
-    },
-    {
       "path": "pgs/native/menu_visibility_test.cpp",
       "category": "tests",
       "occurrences": 3
@@ -808,7 +718,7 @@
     {
       "path": "pgs/native/menu_visibility.cpp",
       "category": "native",
-      "occurrences": 4
+      "occurrences": 1
     },
     {
       "path": "pgs/native/outgoing_gifts_test.cpp",
@@ -823,7 +733,7 @@
     {
       "path": "pgs/native/pgs_native.cpp",
       "category": "native",
-      "occurrences": 9
+      "occurrences": 1
     },
     {
       "path": "pgs/native/pgs.map",
@@ -838,17 +748,12 @@
     {
       "path": "pgs/native/profile_scroll.cpp",
       "category": "native",
-      "occurrences": 3
+      "occurrences": 1
     },
     {
       "path": "pgs/native/pvp_icons.h",
       "category": "native",
       "occurrences": 1
-    },
-    {
-      "path": "pgs/native/pvp_keep.cpp",
-      "category": "native",
-      "occurrences": 4
     },
     {
       "path": "pgs/native/quick_spin_test.cpp",
@@ -863,7 +768,7 @@
     {
       "path": "pgs/native/quickball_host.cpp",
       "category": "native",
-      "occurrences": 3
+      "occurrences": 1
     },
     {
       "path": "pgs/native/quickball_metadata.cpp",
@@ -886,34 +791,9 @@
       "occurrences": 3
     },
     {
-      "path": "pgs/native/remote_gym.cpp",
-      "category": "native",
-      "occurrences": 4
-    },
-    {
-      "path": "pgs/native/research.cpp",
-      "category": "native",
-      "occurrences": 3
-    },
-    {
-      "path": "pgs/native/rocket_combat.cpp",
-      "category": "native",
-      "occurrences": 1
-    },
-    {
       "path": "pgs/native/rocket_combat.h",
       "category": "native",
       "occurrences": 1
-    },
-    {
-      "path": "pgs/native/rocket_swap.cpp",
-      "category": "native",
-      "occurrences": 3
-    },
-    {
-      "path": "pgs/native/route_gift.cpp",
-      "category": "native",
-      "occurrences": 4
     },
     {
       "path": "pgs/native/routes_actions_test.cpp",
@@ -928,7 +808,7 @@
     {
       "path": "pgs/native/routes_host.cpp",
       "category": "native",
-      "occurrences": 8
+      "occurrences": 2
     },
     {
       "path": "pgs/native/routes_metadata.cpp",
@@ -943,12 +823,12 @@
     {
       "path": "pgs/native/runtime_bootstrap.cpp",
       "category": "native",
-      "occurrences": 2
+      "occurrences": 1
     },
     {
       "path": "pgs/native/runtime_bootstrap.h",
       "category": "native",
-      "occurrences": 4
+      "occurrences": 5
     },
     {
       "path": "pgs/native/runtime_host_diag_test.cpp",
@@ -963,7 +843,7 @@
     {
       "path": "pgs/native/runtime_host.cpp",
       "category": "native",
-      "occurrences": 19
+      "occurrences": 5
     },
     {
       "path": "pgs/native/runtime_loader_live_test.cpp",
@@ -983,12 +863,12 @@
     {
       "path": "pgs/native/runtime_metadata.h",
       "category": "native",
-      "occurrences": 2
+      "occurrences": 3
     },
     {
       "path": "pgs/native/runtime_transport_jni.cpp",
       "category": "native",
-      "occurrences": 2
+      "occurrences": 1
     },
     {
       "path": "pgs/native/runtime_transport_jni.h",
@@ -1008,17 +888,12 @@
     {
       "path": "pgs/native/runtime_transport.h",
       "category": "native",
-      "occurrences": 2
+      "occurrences": 3
     },
     {
       "path": "pgs/native/schema/pvp/icons/provenance.json",
       "category": "native",
       "occurrences": 1
-    },
-    {
-      "path": "pgs/native/session_stats.cpp",
-      "category": "native",
-      "occurrences": 3
     },
     {
       "path": "pgs/native/shared_catch_test.cpp",
@@ -1033,32 +908,17 @@
     {
       "path": "pgs/native/shared_host.cpp",
       "category": "native",
-      "occurrences": 10
+      "occurrences": 1
     },
     {
       "path": "pgs/native/shared_host.h",
       "category": "native",
-      "occurrences": 1
+      "occurrences": 2
     },
     {
       "path": "pgs/native/shared_metadata.cpp",
       "category": "native",
       "occurrences": 2
-    },
-    {
-      "path": "pgs/native/shiny_scan.cpp",
-      "category": "native",
-      "occurrences": 3
-    },
-    {
-      "path": "pgs/native/shundo.cpp",
-      "category": "native",
-      "occurrences": 4
-    },
-    {
-      "path": "pgs/native/smart_battle.cpp",
-      "category": "native",
-      "occurrences": 4
     },
     {
       "path": "pgs/native/smart_catch_binding.cpp",
@@ -1081,11 +941,6 @@
       "occurrences": 1
     },
     {
-      "path": "pgs/native/smart_catch.cpp",
-      "category": "native",
-      "occurrences": 2
-    },
-    {
       "path": "pgs/native/smart_catch.h",
       "category": "native",
       "occurrences": 3
@@ -1093,7 +948,7 @@
     {
       "path": "pgs/native/spawn_host.cpp",
       "category": "native",
-      "occurrences": 6
+      "occurrences": 1
     },
     {
       "path": "pgs/native/spin_camera_test.cpp",
@@ -1106,14 +961,9 @@
       "occurrences": 3
     },
     {
-      "path": "pgs/native/spin_host.cpp",
-      "category": "native",
-      "occurrences": 3
-    },
-    {
       "path": "pgs/native/storage_iv.cpp",
       "category": "native",
-      "occurrences": 15
+      "occurrences": 11
     },
     {
       "path": "pgs/native/summary_completion_test.cpp",
@@ -1133,7 +983,7 @@
     {
       "path": "pgs/native/tests/accounts_test.cpp",
       "category": "tests",
-      "occurrences": 17
+      "occurrences": 2
     },
     {
       "path": "pgs/native/throws.h",
@@ -1151,19 +1001,14 @@
       "occurrences": 1
     },
     {
-      "path": "pgs/native/unity_scheduler_diag_test.cpp",
-      "category": "tests",
-      "occurrences": 1
-    },
-    {
       "path": "pgs/native/unity_scheduler.cpp",
       "category": "native",
-      "occurrences": 2
+      "occurrences": 1
     },
     {
       "path": "pgs/native/unity_scheduler.h",
       "category": "native",
-      "occurrences": 1
+      "occurrences": 2
     },
     {
       "path": "pgs/native/vgp_actions_test.cpp",
@@ -1193,7 +1038,7 @@
     {
       "path": "pgs/native/vgp_controller.cpp",
       "category": "native",
-      "occurrences": 4
+      "occurrences": 1
     },
     {
       "path": "pgs/native/vgp_controller.h",
@@ -1256,19 +1101,9 @@
       "occurrences": 4
     },
     {
-      "path": "pgs/root-installer/src/dev/pgs/root/InstallerActivity.java",
-      "category": "java",
-      "occurrences": 4
-    },
-    {
       "path": "pgs/root-installer/src/dev/pgs/root/RootModuleState.java",
       "category": "java",
-      "occurrences": 7
-    },
-    {
-      "path": "pgs/root-installer/src/dev/pgs/root/RootShell.java",
-      "category": "java",
-      "occurrences": 2
+      "occurrences": 4
     },
     {
       "path": "pgs/root-installer/src/dev/pgs/root/RootToggleCommand.java",
@@ -1283,7 +1118,7 @@
     {
       "path": "pgs/rooted_installer.py",
       "category": "other",
-      "occurrences": 4
+      "occurrences": 3
     },
     {
       "path": "pgs/rooted.py",
@@ -1313,7 +1148,7 @@
     {
       "path": "pgs/src/dev/pgs/AccountProfileStore.java",
       "category": "java",
-      "occurrences": 19
+      "occurrences": 18
     },
     {
       "path": "pgs/src/dev/pgs/AccountRestartActivity.java",
@@ -1431,19 +1266,9 @@
       "occurrences": 14
     },
     {
-      "path": "pgs/test/test_account_commands.py",
-      "category": "tests",
-      "occurrences": 1
-    },
-    {
-      "path": "pgs/test/test_account_profile_store.py",
-      "category": "tests",
-      "occurrences": 1
-    },
-    {
       "path": "pgs/test/test_account_restart_lifecycle.py",
       "category": "tests",
-      "occurrences": 2
+      "occurrences": 1
     },
     {
       "path": "pgs/test/test_account_restart_manifest.py",
@@ -1451,34 +1276,9 @@
       "occurrences": 2
     },
     {
-      "path": "pgs/test/test_account_sessions.py",
-      "category": "tests",
-      "occurrences": 2
-    },
-    {
-      "path": "pgs/test/test_auto_raid_controller_java.py",
-      "category": "tests",
-      "occurrences": 1
-    },
-    {
-      "path": "pgs/test/test_auto_raid_preferences_java.py",
-      "category": "tests",
-      "occurrences": 1
-    },
-    {
       "path": "pgs/test/test_axml.py",
       "category": "tests",
       "occurrences": 3
-    },
-    {
-      "path": "pgs/test/test_buddy_emotion_preferences_java.py",
-      "category": "tests",
-      "occurrences": 1
-    },
-    {
-      "path": "pgs/test/test_catch_chance_java.py",
-      "category": "tests",
-      "occurrences": 1
     },
     {
       "path": "pgs/test/test_compiled_gameplay.py",
@@ -1486,77 +1286,12 @@
       "occurrences": 11
     },
     {
-      "path": "pgs/test/test_control_java.py",
-      "category": "tests",
-      "occurrences": 1
-    },
-    {
-      "path": "pgs/test/test_dex_location_rewrite.py",
-      "category": "tests",
-      "occurrences": 1
-    },
-    {
       "path": "pgs/test/test_discord_release.py",
       "category": "tests",
       "occurrences": 4
     },
     {
-      "path": "pgs/test/test_encounter_window_java.py",
-      "category": "tests",
-      "occurrences": 1
-    },
-    {
       "path": "pgs/test/test_event_settings_java.py",
-      "category": "tests",
-      "occurrences": 2
-    },
-    {
-      "path": "pgs/test/test_game_bridge_dispatch_java.py",
-      "category": "tests",
-      "occurrences": 1
-    },
-    {
-      "path": "pgs/test/test_game_google_signin_java.py",
-      "category": "tests",
-      "occurrences": 1
-    },
-    {
-      "path": "pgs/test/test_game_google_signin_reentry_java.py",
-      "category": "tests",
-      "occurrences": 1
-    },
-    {
-      "path": "pgs/test/test_game_location_delivery_java.py",
-      "category": "tests",
-      "occurrences": 1
-    },
-    {
-      "path": "pgs/test/test_game_location_permissions_java.py",
-      "category": "tests",
-      "occurrences": 1
-    },
-    {
-      "path": "pgs/test/test_game_location_reentry_java.py",
-      "category": "tests",
-      "occurrences": 1
-    },
-    {
-      "path": "pgs/test/test_game_routes_java.py",
-      "category": "tests",
-      "occurrences": 1
-    },
-    {
-      "path": "pgs/test/test_gpx_java.py",
-      "category": "tests",
-      "occurrences": 2
-    },
-    {
-      "path": "pgs/test/test_gym_automation_preferences_java.py",
-      "category": "tests",
-      "occurrences": 1
-    },
-    {
-      "path": "pgs/test/test_hotspots_java.py",
       "category": "tests",
       "occurrences": 1
     },
@@ -1571,24 +1306,9 @@
       "occurrences": 4
     },
     {
-      "path": "pgs/test/test_joystick_lock_java.py",
-      "category": "tests",
-      "occurrences": 1
-    },
-    {
-      "path": "pgs/test/test_live_feed_java.py",
-      "category": "tests",
-      "occurrences": 1
-    },
-    {
-      "path": "pgs/test/test_local_time_java.py",
-      "category": "tests",
-      "occurrences": 1
-    },
-    {
       "path": "pgs/test/test_log_export_java.py",
       "category": "tests",
-      "occurrences": 2
+      "occurrences": 1
     },
     {
       "path": "pgs/test/test_native_build.py",
@@ -1598,22 +1318,7 @@
     {
       "path": "pgs/test/test_native_prerequisites.py",
       "category": "tests",
-      "occurrences": 7
-    },
-    {
-      "path": "pgs/test/test_native_runtime_bootstrap_java.py",
-      "category": "tests",
-      "occurrences": 1
-    },
-    {
-      "path": "pgs/test/test_native_runtime_transport_java.py",
-      "category": "tests",
-      "occurrences": 1
-    },
-    {
-      "path": "pgs/test/test_one_shot_automation_java.py",
-      "category": "tests",
-      "occurrences": 1
+      "occurrences": 6
     },
     {
       "path": "pgs/test/test_packaging.py",
@@ -1638,7 +1343,7 @@
     {
       "path": "pgs/test/test_pgs_native_aliases_native.py",
       "category": "tests",
-      "occurrences": 3
+      "occurrences": 4
     },
     {
       "path": "pgs/test/test_pgs_native_identity.py",
@@ -1676,34 +1381,9 @@
       "occurrences": 8
     },
     {
-      "path": "pgs/test/test_place_search_java.py",
-      "category": "tests",
-      "occurrences": 1
-    },
-    {
-      "path": "pgs/test/test_pokemon_categories.py",
-      "category": "tests",
-      "occurrences": 1
-    },
-    {
-      "path": "pgs/test/test_pokemon_option_filter_java.py",
-      "category": "tests",
-      "occurrences": 1
-    },
-    {
       "path": "pgs/test/test_release_bundle.py",
       "category": "tests",
       "occurrences": 15
-    },
-    {
-      "path": "pgs/test/test_research_preferences_java.py",
-      "category": "tests",
-      "occurrences": 1
-    },
-    {
-      "path": "pgs/test/test_root_diagnostics_java.py",
-      "category": "tests",
-      "occurrences": 1
     },
     {
       "path": "pgs/test/test_rooted_cleanup.py",
@@ -1713,62 +1393,17 @@
     {
       "path": "pgs/test/test_rooted_installer_shell.py",
       "category": "tests",
-      "occurrences": 14
+      "occurrences": 12
     },
     {
       "path": "pgs/test/test_rooted_packaging.py",
       "category": "tests",
-      "occurrences": 10
-    },
-    {
-      "path": "pgs/test/test_route_start_java.py",
-      "category": "tests",
-      "occurrences": 1
-    },
-    {
-      "path": "pgs/test/test_runtime_health_java.py",
-      "category": "tests",
-      "occurrences": 1
-    },
-    {
-      "path": "pgs/test/test_runtime_mailbox_java.py",
-      "category": "tests",
-      "occurrences": 1
-    },
-    {
-      "path": "pgs/test/test_session_stats_history_java.py",
-      "category": "tests",
-      "occurrences": 1
-    },
-    {
-      "path": "pgs/test/test_settings_search_java.py",
-      "category": "tests",
-      "occurrences": 1
-    },
-    {
-      "path": "pgs/test/test_settings_writer_java.py",
-      "category": "tests",
-      "occurrences": 1
-    },
-    {
-      "path": "pgs/test/test_shiny_scan_preferences_java.py",
-      "category": "tests",
-      "occurrences": 1
-    },
-    {
-      "path": "pgs/test/test_smart_catch_preferences_java.py",
-      "category": "tests",
-      "occurrences": 1
+      "occurrences": 9
     },
     {
       "path": "pgs/test/test_source_bundle.py",
       "category": "tests",
       "occurrences": 2
-    },
-    {
-      "path": "pgs/test/test_ui_viewport_policy_java.py",
-      "category": "tests",
-      "occurrences": 1
     },
     {
       "path": "pgs/test/UpdateRulesTest.java",
@@ -1874,28 +1509,19 @@
   "previous_verified_scan": {
     "tracked_files": 2106,
     "text_files": 1031,
-    "remaining_files": 496,
-    "remaining_occurrences": 2362,
-    "workflow_run": 46022301886,
+    "remaining_files": 370,
+    "remaining_occurrences": 1728,
+    "workflow_run": 46024297377,
     "scope": "indexed Git blobs"
   },
   "bulk_migration": {
-    "reviewed_paths": 391,
-    "private_native_getters": 63,
-    "native_and_related_files_migrated": 181,
-    "javascript_files": 14,
-    "javascript_test_files": 15,
-    "preserved_native_getters": [
-      "pgrazor_native_api",
-      "pgrazor_accounts_api",
-      "pgrazor_adventure_sync_api",
-      "pgrazor_runtime_metadata_api",
-      "pgrazor_runtime_bootstrap_api",
-      "pgrazor_runtime_transport_api",
-      "pgrazor_shared_host_api",
-      "pgrazor_unity_scheduler_api",
-      "pgrazor_account_host_api"
-    ],
-    "validation": "pending full source checks"
+    "reviewed_native_sources": 128,
+    "native_consumers_changed": 59,
+    "native_consumer_occurrences_removed": 213,
+    "private_source_getter_wrappers": 8,
+    "reviewed_python_sources": 89,
+    "temporary_prefix_files_changed": 47,
+    "temporary_prefix_occurrences_removed": 50,
+    "validation": "pending full source CI"
   }
 }

@@ -20,7 +20,7 @@ class LocalTimeTest(unittest.TestCase):
         generator = importlib.util.module_from_spec(spec)
         spec.loader.exec_module(generator)
         self.assertEqual(generator.generate(), (ROOT/'src/dev/pgs/TimeZoneLookup.java').read_text(encoding='utf-8'))
-        with tempfile.TemporaryDirectory(prefix='pgrazor-local-time-') as temp:
+        with tempfile.TemporaryDirectory(prefix='pgs-local-time-') as temp:
             work = Path(temp)
             sources = [ROOT/'src/dev/pgs'/name for name in ('TimeZoneLookup.java','LocalTimeClock.java')]
             sources.append(ROOT/'test/LocalTimeClockTest.java')

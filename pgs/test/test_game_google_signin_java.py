@@ -200,7 +200,7 @@ public class JSONObject {
 class GameGoogleSignInJavaTests(unittest.TestCase):
     def test_sign_in_policy(self):
         compiler, runtime = java_tools()
-        with tempfile.TemporaryDirectory(prefix='pgrazor-google-signin-test-') as directory:
+        with tempfile.TemporaryDirectory(prefix='pgs-google-signin-test-') as directory:
             work = Path(directory)
             sources = []
             for relative, text in STUBS.items():

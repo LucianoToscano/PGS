@@ -1,4 +1,4 @@
-// PGRazor native migration: unlimited-incubator auto-incubation (feature id 9).
+// PGS native migration: unlimited-incubator auto-incubation (feature id 9).
 //
 // Full native port of runtime/features/incubation.js. See incubation.h for the ABI and
 // the division of labour with runtime/native-incubation.js. Built -fno-exceptions /

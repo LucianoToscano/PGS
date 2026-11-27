@@ -23,7 +23,7 @@ jlong JNICALL native_install(JNIEnv *,jclass,jint lease,jint events,jint string_
  std::lock_guard<std::mutex> lock(lifecycle);
  if(attempted)return 0;
  attempted=true;
- const auto *api=static_cast<const PgrRuntimeTransportApi *>(pgrazor_runtime_transport_api(1));
+ const auto *api=static_cast<const PgrRuntimeTransportApi *>(pgs_runtime_transport_api(1));
  if(!api||api->version!=1||api->size!=sizeof(PgrRuntimeTransportApi)||!api->install||!api->exchange||!api->stop)return 0;
  if(api->install(&config)!=PGR_TRANSPORT_OK)return 0;
  transport=api;active=true;return kOwnerToken;

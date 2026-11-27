@@ -45,7 +45,7 @@ void *method(void *k,const char *name,int n){void *m=fn<void*(*)(void*,const cha
 template<class T>T unbox(void *o){require(o,"boxed value");T v{};auto p=fn<void*(*)(void*)>(boot.runtime.object_unbox)(o);require(p,"boxed value");std::memcpy(&v,p,sizeof(v));return v;}
 void *ref_field(void *o,void *f){void *v=nullptr;fn<void(*)(void*,void*,void*)>(boot.runtime.field_get_value)(o,f,&v);return v;}
 std::string typename_of(const void *type){char *p=fn<char*(*)(const void*)>(boot.meta.type_get_name)(type);require(p,"type name");std::string s=p;fn<void(*)(void*)>(boot.meta.mem_free)(p);return s;}
-const PgrRuntimeTransportApi *transport(){return static_cast<const PgrRuntimeTransportApi*>(pgrazor_runtime_transport_api(1));}
+const PgrRuntimeTransportApi *transport(){return static_cast<const PgrRuntimeTransportApi*>(pgs_runtime_transport_api(1));}
 void event(const std::string &json){auto tr=transport();if(!tr)return;PgrRuntimeTransportString s[]={{"rocket-swap",11},{json.c_str(),uint32_t(json.size())}};tr->emit(19,nullptr,0,s,2);}
 void status(const char *phase,const std::string &message){event(std::string("{\"phase\":\"")+phase+"\",\"message\":\""+message+"\"}");}
 
@@ -112,7 +112,7 @@ void *class_of(const PgrMetaApi *api,const char *ns,const char *name){
  PgrMetaClassResult r{};require(api->resolve_class(&q,&r)==0,name);return const_cast<void*>(r.klass);
 }
 void install(){
- const auto *api=static_cast<const PgrMetaApi*>(pgrazor_runtime_metadata_api(1));require(api&&api->resolve_class&&api->validate_method,"metadata API");
+ const auto *api=static_cast<const PgrMetaApi*>(pgs_runtime_metadata_api(1));require(api&&api->resolve_class&&api->validate_method,"metadata API");
  require(boot.module_base,"il2cpp module");
  void *widget=class_of(api,"Niantic.Holoholo.Combat.UI","CombatVNextSwapPromptWidget");
  void *button=class_of(api,"Niantic.Holoholo.VNext","SwapButtonVNext");
@@ -164,7 +164,7 @@ void pgr_rocket_swap_tick(uint64_t tid){
  if(!on||tried||faulted.load(std::memory_order_acquire))return;
  tried=true;
  try{
-  if(!ready){auto api=static_cast<const PgrBootApi*>(pgrazor_runtime_bootstrap_api(1));boot.version=1;boot.size=sizeof(boot);require(api&&api->snapshot(&boot)==0,"Runtime unavailable");ready=true;}
+  if(!ready){auto api=static_cast<const PgrBootApi*>(pgs_runtime_bootstrap_api(1));boot.version=1;boot.size=sizeof(boot);require(api&&api->snapshot(&boot)==0,"Runtime unavailable");ready=true;}
   install();
  }catch(const Failure &f){faulted.store(true,std::memory_order_release);status("error",std::string("Rocket auto swap unavailable: ")+f.where);}
  catch(...){faulted.store(true,std::memory_order_release);status("error","Rocket auto swap unavailable: native failure");}

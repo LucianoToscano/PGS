@@ -68,7 +68,7 @@ public class FaultyDialog extends InitialDialog {
 class GameLocationPermissionsJavaTests(unittest.TestCase):
     def test_permission_policy(self):
         compiler, runtime = java_tools()
-        with tempfile.TemporaryDirectory(prefix='pgrazor-location-perm-test-') as directory:
+        with tempfile.TemporaryDirectory(prefix='pgs-location-perm-test-') as directory:
             work = Path(directory)
             sources = []
             for relative, text in STUBS.items():

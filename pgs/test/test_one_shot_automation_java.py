@@ -61,7 +61,7 @@ public class Control {
 class OneShotAutomationJavaTests(unittest.TestCase):
     def test_lifecycle(self):
         compiler, runtime = java_tools()
-        with tempfile.TemporaryDirectory(prefix='pgrazor-one-shot-') as directory:
+        with tempfile.TemporaryDirectory(prefix='pgs-one-shot-') as directory:
             work = Path(directory)
             sources = []
             for relative, text in STUBS.items():

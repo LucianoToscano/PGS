@@ -60,3 +60,7 @@ struct PgrSharedHostTransferApi {
 };
 static_assert(sizeof(PgrSharedHostTransferApi)==32,"LP64 transfer broker API2");
 extern "C" const void *pgrazor_shared_host_api(uint32_t version);
+// Canonical source spelling; retain the hidden legacy linkage for older objects and fixtures.
+static inline const void *pgs_shared_host_api(uint32_t version) {
+    return pgrazor_shared_host_api(version);
+}

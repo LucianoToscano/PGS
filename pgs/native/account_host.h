@@ -264,6 +264,10 @@ static_assert(sizeof(PgrAccountHostApi) == 80, "PgrAccountHostApi size must be 8
 #endif
 
 const void *pgrazor_account_host_api(uint32_t version);
+// Canonical source spelling; retain the hidden legacy linkage for older objects and fixtures.
+static inline const void *pgs_account_host_api(uint32_t version) {
+    return pgrazor_account_host_api(version);
+}
 
 #ifdef __cplusplus
 }

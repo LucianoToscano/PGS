@@ -125,7 +125,7 @@ class GameLocationReentryTest(unittest.TestCase):
         cls.java = shutil.which('java')
         if not cls.javac or not cls.java:
             raise unittest.SkipTest('javac/java unavailable')
-        cls.directory = tempfile.TemporaryDirectory(prefix='pgrazor-location-reentry-')
+        cls.directory = tempfile.TemporaryDirectory(prefix='pgs-location-reentry-')
         cls.root = pathlib.Path(cls.directory.name)
         for relative, content in STUBS.items():
             target = cls.root / relative

@@ -42,7 +42,7 @@ void *klass(void *o){require(o,"null object");return fn<void*(*)(void*)>(boot.ru
 std::string class_name(void *o){return fn<const char*(*)(void*)>(exp("class_get_name"))(klass(o));}
 void *cls(const char *ns,const char *name){
  static std::map<std::string,void*> cache;std::string key=std::string(ns)+"."+name;auto it=cache.find(key);if(it!=cache.end())return it->second;
- const auto *api=static_cast<const PgrMetaApi*>(pgrazor_runtime_metadata_api(1));require(api,"metadata API");
+ const auto *api=static_cast<const PgrMetaApi*>(pgs_runtime_metadata_api(1));require(api,"metadata API");
  PgrMetaClassQuery q{};q.version=1;q.size=sizeof(q);q.name_space=ns;q.name=name;q.canonical_match=PGR_MD_MATCH_EXACT;
  PgrMetaClassResult out{};require(api->resolve_class(&q,&out)==0,name);return cache[key]=const_cast<void*>(out.klass);
 }
@@ -64,12 +64,12 @@ Root resolve(const char *ns,const char *name){
  Root target=type_object(cls(ns,name));void *resolve_args[]={target.get()};return Root(invoke(h(H_IL_RESOLVE_M),container.get(),resolve_args));
 }
 void event(const std::string &json){
- auto tr=static_cast<const PgrRuntimeTransportApi*>(pgrazor_runtime_transport_api(1));if(!tr)return;
+ auto tr=static_cast<const PgrRuntimeTransportApi*>(pgs_runtime_transport_api(1));if(!tr)return;
  PgrRuntimeTransportString strings[]={{"session-stats",13},{json.c_str(),uint32_t(json.size())}};tr->emit(19,nullptr,0,strings,2);
 }
 Root player,iap;  // cached game services
 void step(){
- if(!ready){auto api=static_cast<const PgrBootApi*>(pgrazor_runtime_bootstrap_api(1));boot.version=1;boot.size=sizeof(boot);require(md&&api&&api->snapshot(&boot)==0,"Runtime unavailable");ready=true;}
+ if(!ready){auto api=static_cast<const PgrBootApi*>(pgs_runtime_bootstrap_api(1));boot.version=1;boot.size=sizeof(boot);require(md&&api&&api->snapshot(&boot)==0,"Runtime unavailable");ready=true;}
  const uint64_t now=clock_ms();if(now<next_sample)return;next_sample=now+kRetryMs;
  // Looked up again each minute: the game rebuilds its services after an account switch.
  if(!player||now-services_at>=kServicesMs){

@@ -8,7 +8,7 @@ ROOT = Path(__file__).resolve().parents[1]
 class ShinyScanPreferencesJavaTests(unittest.TestCase):
     def test_settings_contract(self):
         compiler, runtime = java_tools()
-        with tempfile.TemporaryDirectory(prefix="pgrazor-shiny-scan-") as work:
+        with tempfile.TemporaryDirectory(prefix="pgs-shiny-scan-") as work:
             sources = [ROOT / "src/dev/pgs/AutoRaidPreferences.java", ROOT / "src/dev/pgs/ShinyScanPreferences.java",
                        ROOT / "test/ShinyScanPreferencesTest.java"]
             result = subprocess.run([str(compiler), "-encoding", "UTF-8", "-d", work, *map(str, sources)], capture_output=True, text=True, timeout=30)

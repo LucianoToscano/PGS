@@ -69,7 +69,7 @@ public class ContextService {
 class GameBridgeDispatchJavaTests(unittest.TestCase):
     def test_dispatch_and_actual_helpers(self):
         compiler, runtime = java_tools()
-        with tempfile.TemporaryDirectory(prefix='pgrazor-game-bridge-') as directory:
+        with tempfile.TemporaryDirectory(prefix='pgs-game-bridge-') as directory:
             work = Path(directory)
             sources = []
             for relative, text in stubs().items():

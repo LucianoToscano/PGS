@@ -8,7 +8,7 @@ ROOT = Path(__file__).resolve().parents[1]
 class JoystickLockJavaTests(unittest.TestCase):
     def test_state_machine_and_idle_immunity(self):
         compiler, runtime = java_tools()
-        with tempfile.TemporaryDirectory(prefix='pgrazor-joystick-lock-') as work:
+        with tempfile.TemporaryDirectory(prefix='pgs-joystick-lock-') as work:
             subprocess.run([
                 str(compiler), '-encoding', 'UTF-8', '-d', work,
                 str(ROOT / 'src/dev/pgs/MotionEngine.java'),

@@ -40,7 +40,7 @@ struct Root {
 void *klass(void *o){require(o,"null object");return fn<void*(*)(void*)>(boot.runtime.object_get_class)(o);}
 void *cls(const char *ns,const char *name){
  static std::map<std::string,void*> cache;const std::string key=std::string(ns)+"."+name;auto it=cache.find(key);if(it!=cache.end())return it->second;
- const auto *api=static_cast<const PgrMetaApi*>(pgrazor_runtime_metadata_api(1));require(api,"metadata API");
+ const auto *api=static_cast<const PgrMetaApi*>(pgs_runtime_metadata_api(1));require(api,"metadata API");
  PgrMetaClassQuery q{};q.version=1;q.size=sizeof(q);q.name_space=ns;q.name=name;q.canonical_match=PGR_MD_MATCH_EXACT;
  PgrMetaClassResult out{};require(api->resolve_class(&q,&out)==0,name);return cache[key]=const_cast<void*>(out.klass);
 }
@@ -80,7 +80,7 @@ size_t offset_by_type(void *wild_class,const char *type){
  require(found==1&&offset>=0x10&&offset<0x1000,type);return offset;
 }
 std::string quote(const std::string &s){std::string out="\"";for(unsigned char c:s){if(c=='"'||c=='\\')out+='\\';if(c>=32)out+=char(c);}return out+'"';}
-const PgrRuntimeTransportApi *transport(){return static_cast<const PgrRuntimeTransportApi*>(pgrazor_runtime_transport_api(1));}
+const PgrRuntimeTransportApi *transport(){return static_cast<const PgrRuntimeTransportApi*>(pgs_runtime_transport_api(1));}
 
 struct Config {Command command;bool valid=false,active=false,map=false;double lat=0,lon=0;};
 Config configured(){
@@ -388,7 +388,7 @@ void pgr_shiny_scan_tick(uint64_t tid,const PgrSharedMetadataOutput *metadata){
   if(!c.valid||(!c.command.on&&!c.command.count&&st.step==C_NONE))return;
   if(c.command.session==st.stopped_session)return;
   if(!initialized){
-   auto api=static_cast<const PgrBootApi*>(pgrazor_runtime_bootstrap_api(1));boot.version=1;boot.size=sizeof(boot);
+   auto api=static_cast<const PgrBootApi*>(pgs_runtime_bootstrap_api(1));boot.version=1;boot.size=sizeof(boot);
    require(api&&api->snapshot(&boot)==0,"runtime unavailable");md=metadata;owner=tid;initialized=true;
   }
   require(fn<void*(*)()>(boot.runtime.thread_current)()!=nullptr,"owner thread not attached");

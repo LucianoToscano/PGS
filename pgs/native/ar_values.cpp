@@ -36,7 +36,7 @@ struct Root {
 };
 void *klass(void *o){require(o,"null object");return fn<void*(*)(void*)>(boot.runtime.object_get_class)(o);}
 void *cls(const char *ns,const char *name){
- const auto *api=static_cast<const PgrMetaApi*>(pgrazor_runtime_metadata_api(1));require(api,"metadata API");
+ const auto *api=static_cast<const PgrMetaApi*>(pgs_runtime_metadata_api(1));require(api,"metadata API");
  PgrMetaClassQuery q{};q.version=1;q.size=sizeof(q);q.name_space=ns;q.name=name;q.canonical_match=PGR_MD_MATCH_EXACT;
  PgrMetaClassResult out{};require(api->resolve_class(&q,&out)==0,name);return const_cast<void*>(out.klass);
 }
@@ -51,7 +51,7 @@ Root resolve(const char *ns,const char *name){
  Root container(invoke(h(H_IL_CONTAINER_M),map.get()));if(!container)return {};
  Root target=type_object(cls(ns,name));void *resolve_args[]={target.get()};return Root(invoke(h(H_IL_RESOLVE_M),container.get(),resolve_args));
 }
-const PgrRuntimeTransportApi *transport(){return static_cast<const PgrRuntimeTransportApi*>(pgrazor_runtime_transport_api(1));}
+const PgrRuntimeTransportApi *transport(){return static_cast<const PgrRuntimeTransportApi*>(pgs_runtime_transport_api(1));}
 void event(const std::string &json){auto tr=transport();if(!tr)return;PgrRuntimeTransportString strings[]={{"ar-values",9},{json.c_str(),uint32_t(json.size())}};tr->emit(19,nullptr,0,strings,2);}
 
 // IGameMasterData.Get<EncounterSettingsProto>(), closed once through reflection.
@@ -80,7 +80,7 @@ float number(void *o,const char *name){
  const std::string getter=std::string("get_")+name;return unbox<float>(call(o,getter.c_str()));
 }
 void step(){
- if(!ready){auto api=static_cast<const PgrBootApi*>(pgrazor_runtime_bootstrap_api(1));boot.version=1;boot.size=sizeof(boot);require(md&&api&&api->snapshot(&boot)==0,"Runtime unavailable");ready=true;}
+ if(!ready){auto api=static_cast<const PgrBootApi*>(pgs_runtime_bootstrap_api(1));boot.version=1;boot.size=sizeof(boot);require(md&&api&&api->snapshot(&boot)==0,"Runtime unavailable");ready=true;}
  Root gm=resolve("","IGameMasterData");require(bool(gm),"game master");
  if(!unbox<bool>(call(gm.get(),"get_IsReady")))return;  // try again later
  Root settings=encounter_settings(gm.get());require(bool(settings),"encounter settings");

@@ -119,3 +119,7 @@ static_assert(sizeof(PgrUnitySchedulerConfig)==448,"Config ABI");
 static_assert(sizeof(PgrUnitySchedulerSnapshot)==32,"Snapshot ABI");
 static_assert(sizeof(PgrUnitySchedulerApi)==48,"API ABI");
 extern "C" const void *pgrazor_unity_scheduler_api(uint32_t version);
+// Canonical source spelling; retain the hidden legacy linkage for older objects and fixtures.
+static inline const void *pgs_unity_scheduler_api(uint32_t version) {
+    return pgrazor_unity_scheduler_api(version);
+}

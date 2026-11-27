@@ -33,7 +33,7 @@ void event(const std::string &message,int result=0,int dust=0,bool spin=false){
  if(message==last&&result==0&&dust==0)return;last=message;
  const char *kind=spin?"gym-spin":"gym-automation";
  __android_log_print(ANDROID_LOG_INFO,"PGRazorGym","%s result=%d dust=%d",message.c_str(),result,dust);
- const auto *tr=static_cast<const PgrRuntimeTransportApi*>(pgrazor_runtime_transport_api(1));
+ const auto *tr=static_cast<const PgrRuntimeTransportApi*>(pgs_runtime_transport_api(1));
  std::string json=std::string("{\"kind\":\"")+kind+"\",\"message\":\""+message+"\",\"result\":"+std::to_string(result)+",\"dust\":"+std::to_string(dust)+"}";
  // Use the existing host diagnostic event action; no gameplay pointer crosses it.
  if(tr){PgrRuntimeTransportString strings[]={{kind,uint32_t(strlen(kind))},{json.c_str(),uint32_t(json.size())}};if(tr->emit(19,nullptr,0,strings,2)!=0)paused=true;}
@@ -51,7 +51,7 @@ struct Root {
 void *klass(void *o){require(o,"null object");return fn<void*(*)(void*)>(boot.runtime.object_get_class)(o);}
 void *cls(const char *ns,const char *name){
  static std::map<std::string,void*> cache;std::string key=std::string(ns)+"."+name;auto it=cache.find(key);if(it!=cache.end())return it->second;
- const auto *api=static_cast<const PgrMetaApi*>(pgrazor_runtime_metadata_api(1));require(api,"metadata API");
+ const auto *api=static_cast<const PgrMetaApi*>(pgs_runtime_metadata_api(1));require(api,"metadata API");
  PgrMetaClassQuery q{};q.version=1;q.size=sizeof(q);q.name_space=ns;q.name=name;q.canonical_match=PGR_MD_MATCH_EXACT;
  PgrMetaClassResult out{};require(api->resolve_class(&q,&out)==0,name);return cache[key]=const_cast<void*>(out.klass);
 }
@@ -98,7 +98,7 @@ std::string result_words(void *o){
 int count(Root &list,int cap){int n=boxed<int>(call(list.get(),"get_Count"),"System.Int32");require(n>=0&&n<=cap,"collection bound");return n;}
 Root item(Root &list,int index){void *args[]={&index};return Root(call(list.get(),"get_Item",1,args));}
 struct Permission {Settings settings;std::string config;double lat=0,lon=0;uint64_t seq=0;bool allowed=false,valid_config=false;};
-Permission permission(){Permission p;auto tr=static_cast<const PgrRuntimeTransportApi*>(pgrazor_runtime_transport_api(1));if(!tr)return p;
+Permission permission(){Permission p;auto tr=static_cast<const PgrRuntimeTransportApi*>(pgs_runtime_transport_api(1));if(!tr)return p;
  PgrRuntimeTransportSample a{},z{};if(tr->sample(&a)||!a.snapshot_fresh||a.fault)return p;
  char text[65]{};uint32_t len=0;int active=0,ready=0,map=0,has=0;
  if(tr->get_string(8,text,sizeof(text),&len)||len>64||!parse(text,len,p.settings))return p;p.config.assign(text,len);
@@ -304,7 +304,7 @@ bool issue_feed(const Permission &p){
  try{int after=boxed<int>(call(bag.get(),"GetItemCount",1,stock_args),"System.Int32");pgr_gym_feed::observe_stock(pending.stock_seen,current,after);}catch(...){}
  event("Feeding gym defender");return true;
 }
-void cooldown(const char *label){const auto *t=static_cast<const PgrRuntimeTransportApi*>(pgrazor_runtime_transport_api(1));PgrRuntimeTransportString s{label,uint32_t(strlen(label))};if(t&&t->emit(17,nullptr,0,&s,1)!=0)paused=true;}
+void cooldown(const char *label){const auto *t=static_cast<const PgrRuntimeTransportApi*>(pgs_runtime_transport_api(1));PgrRuntimeTransportString s{label,uint32_t(strlen(label))};if(t&&t->emit(17,nullptr,0,&s,1)!=0)paused=true;}
 void act(const Permission &p){
  if(!snapshot_valid(p)){retry_no_action(clock_ms(),1500);return;}auto rows=defenders();
  if(p.settings.deploy&&rows.size()<6&&history.deploy_allowed(pending.id,clock_ms())&&gym_valid(pending.gym,p,nullptr,nullptr,true)){
@@ -482,7 +482,7 @@ void pgr_gym_tick(uint64_t tid,const PgrSharedMetadataOutput *metadata){
  struct Guard{Guard(){busy=true;}~Guard(){busy=false;}} guard;
  try{
   auto p=permission();if(remote_hold)p.allowed=false;if(p.valid_config&&!p.settings.deploy&&!p.settings.feed&&!p.settings.spin)paused=false;
-  if(!initialized){if(!p.allowed||paused)return;auto api=static_cast<const PgrBootApi*>(pgrazor_runtime_bootstrap_api(1));boot.version=1;boot.size=sizeof(boot);require(api&&api->snapshot(&boot)==0,"runtime bootstrap");md=metadata;require(md,"shared metadata");owner=tid;validate_bindings();initialized=true;}
+  if(!initialized){if(!p.allowed||paused)return;auto api=static_cast<const PgrBootApi*>(pgs_runtime_bootstrap_api(1));boot.version=1;boot.size=sizeof(boot);require(api&&api->snapshot(&boot)==0,"runtime bootstrap");md=metadata;require(md,"shared metadata");owner=tid;validate_bindings();initialized=true;}
   require(fn<void*(*)()>(boot.runtime.thread_current)()!=nullptr,"owner not attached");
   if(p.allowed){Root player=resolve("Niantic.Holoholo","IPlayerService");if(!player){if(pending.phase)pending.canceled=true;return;}std::string id=string(call(player.get(),"get_PlayerId"));if(id.empty())return;
    if(account!=id){clear_pending();account=id;history=History{};inspected.clear();reserved.clear();no_defender_until=0;}}

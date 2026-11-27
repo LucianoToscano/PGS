@@ -95,7 +95,7 @@ System.out.println("PASS account restart lifecycle: resume gap, duplicate reques
 class AccountRestartLifecycleTests(unittest.TestCase):
     def test_restart_during_activity_transition(self):
         javac, java = java_tools()
-        with tempfile.TemporaryDirectory(prefix='pgrazor-restart-lifecycle-') as directory:
+        with tempfile.TemporaryDirectory(prefix='pgs-restart-lifecycle-') as directory:
             temp = Path(directory)
             sources = []
             for name, content in STUBS.items():

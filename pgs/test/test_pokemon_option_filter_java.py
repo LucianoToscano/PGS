@@ -14,7 +14,7 @@ class PokemonOptionFilterTests(unittest.TestCase):
         sources = [ROOT / 'src/dev/pgs/PokemonCategories.java',
                    ROOT / 'src/dev/pgs/PokemonOptionFilter.java',
                    ROOT / 'test/PokemonOptionFilterTest.java']
-        with tempfile.TemporaryDirectory(prefix='pgrazor-option-filter-') as work:
+        with tempfile.TemporaryDirectory(prefix='pgs-option-filter-') as work:
             result = subprocess.run([str(compiler), '-encoding', 'UTF-8', '-d', work,
                                      *map(str, sources)], capture_output=True, text=True, timeout=30)
             self.assertEqual(result.returncode, 0, result.stdout + result.stderr)

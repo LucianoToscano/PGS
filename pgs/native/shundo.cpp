@@ -41,7 +41,7 @@ struct Root {
 void *klass(void *o){require(o,"null object");return fn<void*(*)(void*)>(boot.runtime.object_get_class)(o);}
 void *cls(const char *ns,const char *name){
  static std::map<std::string,void*> cache;const std::string key=std::string(ns)+"."+name;auto it=cache.find(key);if(it!=cache.end())return it->second;
- const auto *api=static_cast<const PgrMetaApi*>(pgrazor_runtime_metadata_api(1));require(api,"metadata API");
+ const auto *api=static_cast<const PgrMetaApi*>(pgs_runtime_metadata_api(1));require(api,"metadata API");
  PgrMetaClassQuery q{};q.version=1;q.size=sizeof(q);q.name_space=ns;q.name=name;q.canonical_match=PGR_MD_MATCH_EXACT;
  PgrMetaClassResult out{};require(api->resolve_class(&q,&out)==0,name);return cache[key]=const_cast<void*>(out.klass);
 }
@@ -83,7 +83,7 @@ double distance_m(double lat1,double lon1,double lat2,double lon2){
  return 12742000.0*std::asin(std::sqrt(std::fmin(1.0,h)));
 }
 std::string quote(const std::string &s){std::string out="\"";for(unsigned char c:s){if(c=='"'||c=='\\')out+='\\';if(c>=32)out+=char(c);}return out+'"';}
-const PgrRuntimeTransportApi *transport(){return static_cast<const PgrRuntimeTransportApi*>(pgrazor_runtime_transport_api(1));}
+const PgrRuntimeTransportApi *transport(){return static_cast<const PgrRuntimeTransportApi*>(pgs_runtime_transport_api(1));}
 
 struct Config {uint64_t request=0,id=0;int dex=0;double lat=0,lon=0;bool go=false,running=false,active=false,map=false;};
 // "S1|<request>|<encounter id>|<go>|<running>", or for a spawn a feed lists without an encounter id (a
@@ -404,7 +404,7 @@ void hook_gym_selected(void *self,void *gym,void *flag,void *done,void *context,
  reinterpret_cast<void(*)(void*,void*,void*,void*,void*,void*,const void*)>(orig_gym.load(std::memory_order_acquire))(self,gym,flag,done,context,recovery,m);
 }
 bool pin(void *owner,const char *name,unsigned params,uint64_t rva,const uint8_t *prologue,void *replacement,std::atomic<void*> &original){
- const auto *api=static_cast<const PgrMetaApi*>(pgrazor_runtime_metadata_api(1));if(!api)return false;
+ const auto *api=static_cast<const PgrMetaApi*>(pgs_runtime_metadata_api(1));if(!api)return false;
  PgrMetaMethodQuery q{};q.version=1;q.size=sizeof(q);q.owner=owner;q.name=name;q.return_type="System.Void";q.return_match=PGR_MD_MATCH_EXACT;
  q.param_count=params;q.expected_code=static_cast<const char*>(boot.module_base)+rva;q.prologue=prologue;q.prologue_len=24;
  PgrMetaMethodResult r{};if(api->validate_method(&q,&r)!=0||!r.code)return false;
@@ -433,7 +433,7 @@ void pgr_shundo_tick(uint64_t tid,const PgrSharedMetadataOutput *metadata){
   blocking.store(c.running&&!faulted,std::memory_order_release);last_tick_ms.store(now,std::memory_order_release);
   if(!c.request&&!c.running){if(st.step!=IDLE){reset();st.request=0;}return;}
   if(!initialized){
-   auto api=static_cast<const PgrBootApi*>(pgrazor_runtime_bootstrap_api(1));boot.version=1;boot.size=sizeof(boot);
+   auto api=static_cast<const PgrBootApi*>(pgs_runtime_bootstrap_api(1));boot.version=1;boot.size=sizeof(boot);
    require(api&&api->snapshot(&boot)==0,"runtime unavailable");md=metadata;require(md,"shared metadata");owner=tid;initialized=true;
   }
   require(fn<void*(*)()>(boot.runtime.thread_current)()!=nullptr,"owner thread not attached");

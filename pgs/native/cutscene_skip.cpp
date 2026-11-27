@@ -197,7 +197,7 @@ void *exp(const char *name){std::string n="il2cpp_";n+=name;void *p=dlsym(boot.h
 void *klass(void *o){require(o,"null object");return fn<void*(*)(void*)>(boot.runtime.object_get_class)(o);}
 void *invoke(void *m,void *o,void **args=nullptr){void *ex=nullptr;void *v=fn<void*(*)(void*,void*,void**,void**)>(boot.runtime.runtime_invoke)(m,o,args,&ex);require(!ex,"managed call failed");return v;}
 std::string typename_of(const void *type){char *p=fn<char*(*)(const void*)>(boot.meta.type_get_name)(type);require(p,"type name");std::string s=p;fn<void(*)(void*)>(boot.meta.mem_free)(p);return s;}
-const PgrRuntimeTransportApi *transport(){return static_cast<const PgrRuntimeTransportApi*>(pgrazor_runtime_transport_api(1));}
+const PgrRuntimeTransportApi *transport(){return static_cast<const PgrRuntimeTransportApi*>(pgs_runtime_transport_api(1));}
 void event(const std::string &json){auto tr=transport();if(!tr)return;PgrRuntimeTransportString s[]={{"cutscene-skip",13},{json.c_str(),uint32_t(json.size())}};tr->emit(19,nullptr,0,s,2);}
 void status(const char *phase,const std::string &message){event(std::string("{\"phase\":\"")+phase+"\",\"message\":\""+message+"\"}");}
 void skipped(Kind k){event(std::string("{\"phase\":\"skipped\",\"kind\":\"")+kNames[k]+"\"}");}
@@ -938,7 +938,7 @@ bool hook(const PgrMetaApi *api,const Target &t,std::string &why){
 }
 
 void install(){
- const auto *api=static_cast<const PgrMetaApi*>(pgrazor_runtime_metadata_api(1));require(api&&api->resolve_class&&api->validate_method,"metadata API");
+ const auto *api=static_cast<const PgrMetaApi*>(pgs_runtime_metadata_api(1));require(api&&api->resolve_class&&api->validate_method,"metadata API");
  require(boot.module_base,"il2cpp module");
  promise_class=class_of(api,"Niantic.Promises","Promise");
  auto method=[&](void *k,const char *name,int n){void *m=fn<void*(*)(void*,const char*,int)>(boot.meta.class_get_method_from_name)(k,name,n);require(m,name);return m;};
@@ -1223,7 +1223,7 @@ void mark_safety_seen(){
  if(!safety_resolved){
   safety_resolved=true;
   try{
-   const auto *api=static_cast<const PgrMetaApi*>(pgrazor_runtime_metadata_api(1));require(api&&api->resolve_class,"metadata API");
+   const auto *api=static_cast<const PgrMetaApi*>(pgs_runtime_metadata_api(1));require(api&&api->resolve_class,"metadata API");
    auto method=[&](void *k,const char *name,int n){void *m=fn<void*(*)(void*,const char*,int)>(boot.meta.class_get_method_from_name)(k,name,n);require(m,name);return m;};
    safety_set=method(class_of(api,"Niantic.Holoholo.PersistentData","Preferences"),"set_DayLastSeenAwarenessSafetyPopUp",1);
    safety_today=method(class_of(api,"Niantic.Holoholo","TimeUtil"),"GetUniqueIndexForToday",0);
@@ -1262,7 +1262,7 @@ void pgr_cutscene_skip_tick(uint64_t tid,const PgrSharedMetadataOutput *){
  if((!on&&!policy.inventory)||tried||faulted.load(std::memory_order_acquire))return;
  tried=true;
  try{
-  if(!ready){auto api=static_cast<const PgrBootApi*>(pgrazor_runtime_bootstrap_api(1));boot.version=1;boot.size=sizeof(boot);require(api&&api->snapshot(&boot)==0,"Runtime unavailable");ready=true;}
+  if(!ready){auto api=static_cast<const PgrBootApi*>(pgs_runtime_bootstrap_api(1));boot.version=1;boot.size=sizeof(boot);require(api&&api->snapshot(&boot)==0,"Runtime unavailable");ready=true;}
   install();
  }catch(const Failure &f){faulted.store(true,std::memory_order_release);status("error",std::string("Skip cutscenes unavailable: ")+f.where);}
  catch(...){faulted.store(true,std::memory_order_release);status("error","Skip cutscenes unavailable: native failure");}

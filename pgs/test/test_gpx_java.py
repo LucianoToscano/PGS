@@ -27,7 +27,7 @@ public class Context {
 class GpxJavaTests(unittest.TestCase):
     def test_codec_and_route(self):
         compiler, runtime = java_tools()
-        with tempfile.TemporaryDirectory(prefix='pgrazor-gpx-codec-') as directory:
+        with tempfile.TemporaryDirectory(prefix='pgs-gpx-codec-') as directory:
             work = Path(directory)
             sources = [ROOT / 'src/dev/pgs/GpxRoute.java', ROOT / 'src/dev/pgs/GpxCodec.java',
                        ROOT / 'test/GpxRouteTest.java', ROOT / 'test/GpxCodecTest.java']
@@ -46,7 +46,7 @@ class GpxJavaTests(unittest.TestCase):
 
     def test_store(self):
         compiler, runtime = java_tools()
-        with tempfile.TemporaryDirectory(prefix='pgrazor-gpx-store-') as directory:
+        with tempfile.TemporaryDirectory(prefix='pgs-gpx-store-') as directory:
             work = Path(directory)
             stub = work / 'android/content/Context.java'
             stub.parent.mkdir(parents=True, exist_ok=True)

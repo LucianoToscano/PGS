@@ -80,8 +80,8 @@ int fail(const char *what) {
 }
 
 int bind(uint64_t owner) {
-  const auto *boot = static_cast<const PgrBootApi *>(pgrazor_runtime_bootstrap_api(PGR_BOOT_API_VERSION));
-  const auto *md = static_cast<const PgrMetaApi *>(pgrazor_runtime_metadata_api(PGR_MD_API_VERSION));
+  const auto *boot = static_cast<const PgrBootApi *>(pgs_runtime_bootstrap_api(PGR_BOOT_API_VERSION));
+  const auto *md = static_cast<const PgrMetaApi *>(pgs_runtime_metadata_api(PGR_MD_API_VERSION));
   if (!boot || !md || boot->size != sizeof(PgrBootApi) || md->size != sizeof(PgrMetaApi)) return 0;
   PgrBootBinding snap{};
   snap.version = PGR_BOOT_BINDING_VERSION;
@@ -153,7 +153,7 @@ int bind(uint64_t owner) {
 
 bool settings(pgr_pvp::Settings *out) {
   *out = pgr_pvp::Settings{};
-  const auto *tr = static_cast<const PgrRuntimeTransportApi *>(pgrazor_runtime_transport_api(1));
+  const auto *tr = static_cast<const PgrRuntimeTransportApi *>(pgs_runtime_transport_api(1));
   char text[41]{};
   uint32_t length = 0;
   return tr && tr->get_string(16, text, sizeof(text), &length) == 0 && pgr_pvp::parse(text, length, out);
@@ -191,7 +191,7 @@ Lookup lookup(void *pokemon, uint64_t owner, Facts *out) {
 
 // The IV format for this screen from "S2|<storage>|<encounter>|<details>".
 bool pvp_format(int screen) {
-  const auto *tr = static_cast<const PgrRuntimeTransportApi *>(pgrazor_runtime_transport_api(1));
+  const auto *tr = static_cast<const PgrRuntimeTransportApi *>(pgs_runtime_transport_api(1));
   char text[16]{};
   uint32_t length = 0;
   return tr && tr->get_string(14, text, sizeof(text), &length) == 0 && length == 8 && !std::memcmp(text, "S2|", 3) &&

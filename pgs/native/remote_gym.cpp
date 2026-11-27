@@ -37,7 +37,7 @@ struct Root {
 void *klass(void *o){require(o,"null object");return fn<void*(*)(void*)>(boot.runtime.object_get_class)(o);}
 void *cls(const char *ns,const char *name){
  static std::map<std::string,void*> cache;std::string key=std::string(ns)+"."+name;auto it=cache.find(key);if(it!=cache.end())return it->second;
- const auto *api=static_cast<const PgrMetaApi*>(pgrazor_runtime_metadata_api(1));require(api,"metadata API");
+ const auto *api=static_cast<const PgrMetaApi*>(pgs_runtime_metadata_api(1));require(api,"metadata API");
  PgrMetaClassQuery q{};q.version=1;q.size=sizeof(q);q.name_space=ns;q.name=name;q.canonical_match=PGR_MD_MATCH_EXACT;
  PgrMetaClassResult out{};require(api->resolve_class(&q,&out)==0,name);return cache[key]=const_cast<void*>(out.klass);
 }
@@ -79,7 +79,7 @@ Root item(Root &list,int index){void *args[]={&index};return Root(call(list.get(
 void *virtual_call(Root &o,void *m,void **args=nullptr){void *v=fn<void*(*)(void*,void*)>(exp("object_get_virtual_method"))(o.get(),m);require(v,"virtual method");return invoke(v,o.get(),args);}
 struct Permission {Command command;double lat=0,lon=0;bool allowed=false,valid=false;};
 Permission permission(){
- Permission p;auto tr=static_cast<const PgrRuntimeTransportApi*>(pgrazor_runtime_transport_api(1));if(!tr)return p;
+ Permission p;auto tr=static_cast<const PgrRuntimeTransportApi*>(pgs_runtime_transport_api(1));if(!tr)return p;
  PgrRuntimeTransportSample before{},after{};if(tr->sample(&before)||!before.snapshot_fresh||before.fault)return p;
  char text[97]{};uint32_t len=0;int active=0,ready=0,has=0;
  if(tr->get_string(12,text,sizeof(text),&len)||!parse(text,len,p.command))return p;
@@ -100,7 +100,7 @@ struct Session {
 Session session;
 std::string quote(const std::string &s){std::string out="\"";for(unsigned char c:s){if(c=='"'||c=='\\')out+='\\';if(c>=32)out+=char(c);}return out+'"';}
 void event(const char *phase,const std::string &message){
- auto tr=static_cast<const PgrRuntimeTransportApi*>(pgrazor_runtime_transport_api(1));if(!tr)return;
+ auto tr=static_cast<const PgrRuntimeTransportApi*>(pgs_runtime_transport_api(1));if(!tr)return;
  std::string json="{\"kind\":\"remote-gym\",\"token\":"+quote(std::to_string(session.command.token))+",\"phase\":"+quote(phase)+",\"message\":"+quote(message)+",\"berries\":"+std::to_string(session.berries)+",\"dust\":"+std::to_string(session.dust)+",\"gyms\":"+std::to_string(session.visited.size())+"}";
  PgrRuntimeTransportString strings[]={{"remote-gym",10},{json.c_str(),uint32_t(json.size())}};
  if(tr->emit(19,nullptr,0,strings,2)!=0)session.canceled=true;
@@ -206,7 +206,7 @@ void pgr_remote_gym_tick(uint64_t tid,const PgrSharedMetadataOutput *metadata){
   if(!session.active){
    if(!p.valid||!p.allowed||p.command.mode!=1||p.command.token==finished_token)return;
    owner=tid;md=metadata;require(md,"Shared metadata unavailable");
-   auto api=static_cast<const PgrBootApi*>(pgrazor_runtime_bootstrap_api(1));boot.version=1;boot.size=sizeof(boot);require(api&&api->snapshot(&boot)==0,"Runtime unavailable");
+   auto api=static_cast<const PgrBootApi*>(pgs_runtime_bootstrap_api(1));boot.version=1;boot.size=sizeof(boot);require(api&&api->snapshot(&boot)==0,"Runtime unavailable");
    session.active=true;session.command=p.command;session.started=clock_ms();session.account=player();require(!session.account.empty(),"Account identity unavailable");
    session.bag=resolve("Niantic.Holoholo","IPokemonBag");require(bool(session.bag),"Pokemon bag unavailable");
    Root all(call(session.bag.get(),"get_AllPokemon"));require(bool(all),"Pokemon collection unavailable");

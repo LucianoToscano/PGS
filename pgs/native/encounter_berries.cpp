@@ -1,4 +1,4 @@
-// PGRazor native migration: encounter berry priority / request / lifetime controller
+// PGS native migration: encounter berry priority / request / lifetime controller
 // (feature id 18). See encounter_berries.h for the ABI, the "installs no hooks" rationale and
 // the begin/finish_resume protocol. Built -fno-exceptions / -fno-rtti like every sibling: the
 // JS "throw" paths become fail-closed error flags and RAII destructors free each managed root

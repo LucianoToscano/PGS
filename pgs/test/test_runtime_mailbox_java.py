@@ -54,7 +54,7 @@ class RuntimeMailboxJavaTests(unittest.TestCase):
         if not candidates:
             self.skipTest('Android SDK JSON sources unavailable')
         compiler, runtime = java_tools()
-        with tempfile.TemporaryDirectory(prefix='pgrazor-runtime-mailbox-') as directory:
+        with tempfile.TemporaryDirectory(prefix='pgs-runtime-mailbox-') as directory:
             work = Path(directory)
             sources = []
             for original in candidates[0].glob('*.java'):

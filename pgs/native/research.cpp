@@ -48,7 +48,7 @@ void *klass(void *o){require(o,"null object");return fn<void*(*)(void*)>(boot.ru
 std::string class_name(void *o){return fn<const char*(*)(void*)>(exp("class_get_name"))(klass(o));}
 void *cls(const char *ns,const char *name){
  static std::map<std::string,void*> cache;std::string key=std::string(ns)+"."+name;auto it=cache.find(key);if(it!=cache.end())return it->second;
- const auto *api=static_cast<const PgrMetaApi*>(pgrazor_runtime_metadata_api(1));require(api,"metadata API");
+ const auto *api=static_cast<const PgrMetaApi*>(pgs_runtime_metadata_api(1));require(api,"metadata API");
  PgrMetaClassQuery q{};q.version=1;q.size=sizeof(q);q.name_space=ns;q.name=name;q.canonical_match=PGR_MD_MATCH_EXACT;
  PgrMetaClassResult out{};require(api->resolve_class(&q,&out)==0,name);return cache[key]=const_cast<void*>(out.klass);
 }
@@ -97,7 +97,7 @@ Root resolve(const char *ns,const char *name){
 int count(void *list,unsigned cap){int n=unbox<int>(call(list,"get_Count"));require(n>=0&&unsigned(n)<=cap,"collection bound");return n;}
 Root item(void *list,int index){void *args[]={&index};return Root(call(list,"get_Item",1,args));}
 std::string quote(const std::string &s){std::string out="\"";for(unsigned char c:s){if(c=='"'||c=='\\')out+='\\';if(c>=32)out+=char(c);}return out+'"';}
-const PgrRuntimeTransportApi *transport(){return static_cast<const PgrRuntimeTransportApi*>(pgrazor_runtime_transport_api(1));}
+const PgrRuntimeTransportApi *transport(){return static_cast<const PgrRuntimeTransportApi*>(pgs_runtime_transport_api(1));}
 void event(const std::string &json){auto tr=transport();if(!tr)return;PgrRuntimeTransportString strings[]={{"research",8},{json.c_str(),uint32_t(json.size())}};tr->emit(19,nullptr,0,strings,2);}
 void status(const char *phase,const std::string &message,const std::string &templ=""){
  event("{\"kind\":\"research\",\"phase\":"+quote(phase)+",\"template\":"+quote(templ)+",\"message\":"+quote(message)+"}");}
@@ -361,7 +361,7 @@ void poll_encounter(uint64_t tid){
 }
 
 void step(uint64_t tid){
- if(!ready){auto api=static_cast<const PgrBootApi*>(pgrazor_runtime_bootstrap_api(1));boot.version=1;boot.size=sizeof(boot);require(md&&api&&api->snapshot(&boot)==0,"Runtime unavailable");ready=true;}
+ if(!ready){auto api=static_cast<const PgrBootApi*>(pgs_runtime_bootstrap_api(1));boot.version=1;boot.size=sizeof(boot);require(md&&api&&api->snapshot(&boot)==0,"Runtime unavailable");ready=true;}
  if(!services())return;
  if(st.enc!=E_IDLE){poll_encounter(tid);return;}
  if(st.promise){poll(tid);return;}

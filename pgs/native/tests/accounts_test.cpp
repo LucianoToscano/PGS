@@ -416,7 +416,7 @@ bool run_isolated(const char* name, void (*fn)()) {
 }
 
 void test_monotonic_tokens_and_init() {
-  const auto* api = pgrazor_accounts_api(PGR_ACCOUNTS_API_VERSION);
+  const auto* api = pgs_accounts_api(PGR_ACCOUNTS_API_VERSION);
   assert(api && api->version == 1 && api->size == sizeof(pgs_accounts_api_v1_t));
   auto cfg = make_valid_config();
   assert(api->api_init(&cfg));
@@ -451,7 +451,7 @@ void test_monotonic_tokens_and_init() {
 }
 
 void test_config_rebind_rejected() {
-  const auto* api = pgrazor_accounts_api(PGR_ACCOUNTS_API_VERSION);
+  const auto* api = pgs_accounts_api(PGR_ACCOUNTS_API_VERSION);
   auto cfg1 = make_valid_config();
   assert(api->api_init(&cfg1));
   assert(api->api_init(&cfg1));
@@ -462,7 +462,7 @@ void test_config_rebind_rejected() {
 }
 
 void test_wrong_thread_cannot_steal_owner() {
-  const auto* api = pgrazor_accounts_api(PGR_ACCOUNTS_API_VERSION);
+  const auto* api = pgs_accounts_api(PGR_ACCOUNTS_API_VERSION);
   auto cfg = make_valid_config();
   assert(api->api_init(&cfg));
 
@@ -493,7 +493,7 @@ void test_wrong_thread_cannot_steal_owner() {
 }
 
 void test_save_session_once() {
-  const auto* api = pgrazor_accounts_api(PGR_ACCOUNTS_API_VERSION);
+  const auto* api = pgs_accounts_api(PGR_ACCOUNTS_API_VERSION);
   auto cfg = make_valid_config();
   assert(api->api_init(&cfg));
   pgs_account_event_v1_t ev[8]{};
@@ -510,7 +510,7 @@ void test_save_session_once() {
 }
 
 void test_reset_login_exact_keys() {
-  const auto* api = pgrazor_accounts_api(PGR_ACCOUNTS_API_VERSION);
+  const auto* api = pgs_accounts_api(PGR_ACCOUNTS_API_VERSION);
   auto cfg = make_valid_config();
   assert(api->api_init(&cfg));
   pgs_account_event_v1_t ev[8]{};
@@ -533,14 +533,14 @@ void test_reset_login_exact_keys() {
 }
 
 void test_revocation_and_reenable_during_getter_stops_stale_mutation() {
-  const auto* api = pgrazor_accounts_api(PGR_ACCOUNTS_API_VERSION);
+  const auto* api = pgs_accounts_api(PGR_ACCOUNTS_API_VERSION);
   auto cfg = make_valid_config();
   assert(api->api_init(&cfg));
   pgs_account_event_v1_t ev[8]{};
   api->api_drain(ev, 8);
 
   g_rt.on_get_player_name = []() {
-    const auto* a = pgrazor_accounts_api(PGR_ACCOUNTS_API_VERSION);
+    const auto* a = pgs_accounts_api(PGR_ACCOUNTS_API_VERSION);
     assert(a->api_update(false, 0, PGR_ACC_CMD_NONE, 0));
     assert(a->api_update(true, 2000, PGR_ACC_CMD_LOGOUT, 1));
   };
@@ -557,12 +557,12 @@ void test_revocation_and_reenable_during_getter_stops_stale_mutation() {
 }
 
 void test_reentrant_clear_and_nested_tick_protect_active_roots() {
-  const auto* api = pgrazor_accounts_api(PGR_ACCOUNTS_API_VERSION);
+  const auto* api = pgs_accounts_api(PGR_ACCOUNTS_API_VERSION);
   auto cfg = make_valid_config();
   assert(api->api_init(&cfg));
 
   g_rt.on_wrapper_logout = []() {
-    const auto* a = pgrazor_accounts_api(PGR_ACCOUNTS_API_VERSION);
+    const auto* a = pgs_accounts_api(PGR_ACCOUNTS_API_VERSION);
     pgs_account_snapshot_v1_t mid{};
     a->api_sample(&mid);
     assert(mid.active_depth == 1);
@@ -588,7 +588,7 @@ void test_reentrant_clear_and_nested_tick_protect_active_roots() {
 }
 
 void test_no_root_leak_after_clear() {
-  const auto* api = pgrazor_accounts_api(PGR_ACCOUNTS_API_VERSION);
+  const auto* api = pgs_accounts_api(PGR_ACCOUNTS_API_VERSION);
   auto cfg = make_valid_config();
   assert(api->api_init(&cfg));
 
@@ -612,7 +612,7 @@ void test_no_root_leak_after_clear() {
 }
 
 void test_identity_snapshots_and_session_ended() {
-  const auto* api = pgrazor_accounts_api(PGR_ACCOUNTS_API_VERSION);
+  const auto* api = pgs_accounts_api(PGR_ACCOUNTS_API_VERSION);
   auto cfg = make_valid_config();
   assert(api->api_init(&cfg));
   pgs_account_event_v1_t ev[8]{};
@@ -645,7 +645,7 @@ void test_identity_snapshots_and_session_ended() {
 }
 
 void test_uncertainty_stops_replay_on_new_token_after_invoked_logout_fails() {
-  const auto* api = pgrazor_accounts_api(PGR_ACCOUNTS_API_VERSION);
+  const auto* api = pgs_accounts_api(PGR_ACCOUNTS_API_VERSION);
   auto cfg = make_valid_config();
   assert(api->api_init(&cfg));
   pgs_account_event_v1_t ev[8]{};
@@ -666,7 +666,7 @@ void test_uncertainty_stops_replay_on_new_token_after_invoked_logout_fails() {
 }
 
 void test_partial_reset_blocks_new_command() {
-  const auto* api=pgrazor_accounts_api(1); auto cfg=make_valid_config();
+  const auto* api=pgs_accounts_api(1); auto cfg=make_valid_config();
   assert(api->api_init(&cfg));
   g_rt.first_delete_throws=true;
   assert(api->api_update(true,2000,PGR_ACC_CMD_RESET_LOGIN,1));
@@ -678,7 +678,7 @@ void test_partial_reset_blocks_new_command() {
   assert(g_rt.prefs_save_calls==0);
 }
 void test_failed_save_blocks_retry() {
-  const auto* api=pgrazor_accounts_api(1); auto cfg=make_valid_config();
+  const auto* api=pgs_accounts_api(1); auto cfg=make_valid_config();
   assert(api->api_init(&cfg)); g_rt.prefs_save_throws=true;
   assert(api->api_update(true,2000,PGR_ACC_CMD_SAVE_SESSION,1));
   api->api_tick(0,current_os_tid());
@@ -690,7 +690,7 @@ void test_failed_save_blocks_retry() {
 }
 
 void test_bounded_queue_overflow_fails_closed() {
-  const auto* api = pgrazor_accounts_api(PGR_ACCOUNTS_API_VERSION);
+  const auto* api = pgs_accounts_api(PGR_ACCOUNTS_API_VERSION);
   auto cfg = make_valid_config();
   assert(api->api_init(&cfg));
 

@@ -179,6 +179,10 @@ static_assert(sizeof(pgs_accounts_api_v1_t) == 32, "ILP32 api table layout misma
 #endif
 
 const pgs_accounts_api_v1_t* pgrazor_accounts_api(uint32_t version);
+// Canonical source spelling; retain the hidden legacy linkage for older objects and fixtures.
+static inline const pgs_accounts_api_v1_t* pgs_accounts_api(uint32_t version) {
+    return pgrazor_accounts_api(version);
+}
 
 #ifdef __cplusplus
 }

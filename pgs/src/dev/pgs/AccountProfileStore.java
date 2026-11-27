@@ -479,7 +479,7 @@ public final class AccountProfileStore {
         props.setProperty(KEY_IDS, ids.toString());
 
         ByteArrayOutputStream buffer = new ByteArrayOutputStream();
-        props.store(buffer, "pgrazor account index v" + INDEX_VERSION + " - no secrets stored");
+        props.store(buffer, "PGS account index v" + INDEX_VERSION + " - no secrets stored");
         byte[] bytes = buffer.toByteArray();
         if (bytes.length > MAX_INDEX_BYTES) throw new IOException("Index would exceed the size bound.");
 

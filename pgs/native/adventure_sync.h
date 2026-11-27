@@ -182,6 +182,10 @@ typedef pgrazor_advsync_api_v1 pgs_advsync_api_v1;
  * table lives for the process lifetime and must not be freed or modified.
  */
 const void *pgrazor_adventure_sync_api(uint32_t version);
+// Canonical source spelling; retain the hidden legacy linkage for older objects and fixtures.
+static inline const void *pgs_adventure_sync_api(uint32_t version) {
+    return pgrazor_adventure_sync_api(version);
+}
 
 /*
  * Host-independent policy self-check (no Dobby, no device). Returns 0 on success or

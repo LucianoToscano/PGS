@@ -1,4 +1,4 @@
-// PGRazor native migration: Adventure Sync popup suppression (feature id 2).
+// PGS native migration: Adventure Sync popup suppression (feature id 2).
 //
 // Mirrors runtime/features/adventureSync.js. On the Adventure Sync DialogController it
 // declines the initial and instruction dialogs and acknowledges the result dialog by

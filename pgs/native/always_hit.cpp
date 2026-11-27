@@ -18,10 +18,10 @@
 // general.regs.rdi) is present in the pinned Dobby register-context header for both
 // ABIs; any other ABI fails loudly here rather than reading the wrong register.
 #if defined(__aarch64__)
-#define PGRAZOR_ALWAYSHIT_CTX_SELF(ctx) \
+#define PGS_ALWAYSHIT_CTX_SELF(ctx) \
     (reinterpret_cast<void *>((ctx)->general.regs.x0))
 #elif defined(__x86_64__)
-#define PGRAZOR_ALWAYSHIT_CTX_SELF(ctx) \
+#define PGS_ALWAYSHIT_CTX_SELF(ctx) \
     (reinterpret_cast<void *>((ctx)->general.regs.rdi))
 #else
 #error "Always Hit native instrument supports arm64 and x86_64 register contexts only."
@@ -301,11 +301,11 @@ void reset_handled(void *ball) {
 }
 void instrument_launch(void *, DobbyRegisterContext *ctx) {
     maybe_clear_handled();
-    reset_handled(PGRAZOR_ALWAYSHIT_CTX_SELF(ctx));
+    reset_handled(PGS_ALWAYSHIT_CTX_SELF(ctx));
 }
 void instrument_release(void *, DobbyRegisterContext *ctx) {
     maybe_clear_handled();
-    reset_handled(PGRAZOR_ALWAYSHIT_CTX_SELF(ctx));
+    reset_handled(PGS_ALWAYSHIT_CTX_SELF(ctx));
 }
 
 // ---------------------------------------------------------------------------

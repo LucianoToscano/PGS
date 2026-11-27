@@ -1,4 +1,4 @@
-// PGRazor native migration: buddy auto-feeding (feature id 12).
+// PGS native migration: buddy auto-feeding (feature id 12).
 //
 // Full native port of runtime/features/buddy.js. See buddy_feeding.h for the ABI and the
 // division of labour with runtime/native-buddy-feeding.js. Built -fno-exceptions / -fno-rtti

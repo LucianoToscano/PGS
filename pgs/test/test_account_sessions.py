@@ -7,7 +7,7 @@ ROOT=Path(__file__).resolve().parents[1]
 class AccountSessionTests(unittest.TestCase):
     def test_inactive_profile_deletion(self):
         compiler,runtime=java_tools()
-        with tempfile.TemporaryDirectory(prefix='pgrazor-profile-delete-') as folder:
+        with tempfile.TemporaryDirectory(prefix='pgs-profile-delete-') as folder:
             work=Path(folder)
             sources=[ROOT/'src/dev/pgs/AccountProfileStore.java',ROOT/'src/dev/pgs/AccountProfileData.java',ROOT/'test/AccountProfileDataTest.java']
             result=subprocess.run([str(compiler),'-encoding','UTF-8','-d',str(work/'classes'),*map(str,sources)],capture_output=True,text=True)
@@ -17,7 +17,7 @@ class AccountSessionTests(unittest.TestCase):
             self.assertIn('PASS:',result.stdout)
     def test_roundtrip_and_recovery(self):
         compiler,runtime=java_tools()
-        with tempfile.TemporaryDirectory(prefix='pgrazor-session-test-') as folder:
+        with tempfile.TemporaryDirectory(prefix='pgs-session-test-') as folder:
             work=Path(folder)
             sources=[ROOT/'src/dev/pgs/AccountProfileStore.java',ROOT/'src/dev/pgs/AccountSessionTransaction.java',ROOT/'test/AccountSessionTransactionTest.java']
             result=subprocess.run([str(compiler),'-encoding','UTF-8','-d',str(work/'classes'),*map(str,sources)],capture_output=True,text=True)

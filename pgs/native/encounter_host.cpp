@@ -258,7 +258,7 @@ static void pack_throw_value(const PgrThrowValue &tv, uint64_t *first, uint64_t 
 // ============================================================================
 static const PgrRuntimeTransportApi *transport_api() {
   const auto *t = static_cast<const PgrRuntimeTransportApi *>(
-      pgrazor_runtime_transport_api(PGR_TRANSPORT_API_VERSION));
+      pgs_runtime_transport_api(PGR_TRANSPORT_API_VERSION));
   return t;
 }
 
@@ -1744,7 +1744,7 @@ static void map_poi_incident_fields(PgrMapPoiConfig *cfg) {
 }
 
 static int install_transfer_leaves() {
-  auto broker = static_cast<const TransferBroker*>(pgrazor_shared_host_api(2));
+  auto broker = static_cast<const TransferBroker*>(pgs_shared_host_api(2));
   if (!broker || broker->version!=2 || broker->size!=sizeof(TransferBroker) ||
       !broker->ready || !broker->submit || !broker->next_event || broker->ready()!=1)
     return PGR_EH_RETRY;
@@ -2173,7 +2173,7 @@ static int api_configure(const PgrEncounterHostConfig *config) {
 
   // Fill any missing runtime/meta exports from Feature 54 (runtime_bootstrap) if available.
   const auto *boot = static_cast<const PgrBootApi *>(
-      pgrazor_runtime_bootstrap_api(PGR_BOOT_API_VERSION));
+      pgs_runtime_bootstrap_api(PGR_BOOT_API_VERSION));
   PgrBootBinding b = {};
   b.version = PGR_BOOT_BINDING_VERSION;
   b.size = sizeof(PgrBootBinding);
@@ -2224,7 +2224,7 @@ static int api_configure(const PgrEncounterHostConfig *config) {
     if (b.handle) {
       auto sym = [&](const char *n) {
         void *p=dlsym(b.handle,n);
-        const auto *mdapi=static_cast<const PgrMetaApi*>(pgrazor_runtime_metadata_api(1));
+        const auto *mdapi=static_cast<const PgrMetaApi*>(pgs_runtime_metadata_api(1));
         PgrMetaCodeQuery q{1,sizeof(q),p,4,nullptr,0,0};
         return p && mdapi && mdapi->validate_code(&q)==0 ? p : nullptr;
       };
@@ -2256,7 +2256,7 @@ static int api_configure(const PgrEncounterHostConfig *config) {
   // Resolve Feature 56 metadata if not already provided: first check Feature 61 shared_host,
   // then fall back to Feature 56 pgs_shared_metadata_api(2)->resolve().
   if (!have_md) {
-    const auto *sh = static_cast<const PgrSharedHostApi *>(pgrazor_shared_host_api(1));
+    const auto *sh = static_cast<const PgrSharedHostApi *>(pgs_shared_host_api(1));
     const PgrSharedMetadataOutput *sh_md = (sh && sh->metadata) ? sh->metadata() : nullptr;
     if (sh_md && sh_md->version == 2u && sh_md->size == sizeof(PgrSharedMetadataOutput)) {
       md = *sh_md;

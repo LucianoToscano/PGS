@@ -32,7 +32,7 @@ public final class Control {
 class NativeRuntimeBootstrapJavaTests(unittest.TestCase):
     def test_actual_bootstrap_state_machine(self):
         compiler, runtime = java_tools()
-        with tempfile.TemporaryDirectory(prefix='pgrazor-bootstrap-') as directory:
+        with tempfile.TemporaryDirectory(prefix='pgs-bootstrap-') as directory:
             work = Path(directory)
             sources = []
             for name, text in STUBS.items():

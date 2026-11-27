@@ -150,7 +150,7 @@ struct Root {
 };
 
 const PgrRuntimeTransportApi* transport() {
-    return static_cast<const PgrRuntimeTransportApi*>(pgrazor_runtime_transport_api(1));
+    return static_cast<const PgrRuntimeTransportApi*>(pgs_runtime_transport_api(1));
 }
 
 std::string json_quote(const std::string& s) {
@@ -513,7 +513,7 @@ void* resolve_class_optional(const char* ns, const char* name) {
     auto it = cache.find(key);
     if (it != cache.end()) return it->second;
 
-    const auto* api = static_cast<const PgrMetaApi*>(pgrazor_runtime_metadata_api(1));
+    const auto* api = static_cast<const PgrMetaApi*>(pgs_runtime_metadata_api(1));
     require(api != nullptr, "metadata API unavailable");
     PgrMetaClassQuery q{};
     q.version = 1;
@@ -1669,7 +1669,7 @@ void pgr_auto_throw_tick(uint64_t tid,const PgrSharedMetadataOutput* metadata,bo
     owner=tid;md=metadata;
     try {
         if(!boot_ready){
-            const auto* api=static_cast<const PgrBootApi*>(pgrazor_runtime_bootstrap_api(1));
+            const auto* api=static_cast<const PgrBootApi*>(pgs_runtime_bootstrap_api(1));
             boot.version=1;boot.size=sizeof(boot);
             if(!md||!api||api->snapshot(&boot)!=0)return;
             boot_ready=true;
@@ -1705,7 +1705,7 @@ void pgr_map_auto_throw_tick(uint64_t tid,const PgrSharedMetadataOutput* metadat
     owner=tid;md=metadata;map_gate=!blocked;
     struct Guard{Guard(){busy=true;}~Guard(){busy=false;}} guard;
     try{
-        if(!boot_ready){auto api=static_cast<const PgrBootApi*>(pgrazor_runtime_bootstrap_api(1));boot.version=1;boot.size=sizeof(boot);if(!api||api->snapshot(&boot)!=0)return;boot_ready=true;}
+        if(!boot_ready){auto api=static_cast<const PgrBootApi*>(pgs_runtime_bootstrap_api(1));boot.version=1;boot.size=sizeof(boot);if(!api||api->snapshot(&boot)!=0)return;boot_ready=true;}
         if(map_mode_on(map_permission()))map_install_hook();
         step_map_auto_throw(tid,blocked||!map_command_free(),map_vgp_busy());
     }catch(const Failure& f){map_block(f.where);}catch(...){map_block("Unexpected native failure; not retried");}

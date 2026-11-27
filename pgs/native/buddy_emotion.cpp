@@ -36,7 +36,7 @@ struct Root {
 void *klass(void *o){require(o,"null object");return fn<void*(*)(void*)>(boot.runtime.object_get_class)(o);}
 void *cls(const char *ns,const char *name){
  static std::map<std::string,void*> cache;std::string key=std::string(ns)+"."+name;auto it=cache.find(key);if(it!=cache.end())return it->second;
- const auto *api=static_cast<const PgrMetaApi*>(pgrazor_runtime_metadata_api(1));require(api,"metadata API");
+ const auto *api=static_cast<const PgrMetaApi*>(pgs_runtime_metadata_api(1));require(api,"metadata API");
  PgrMetaClassQuery q{};q.version=1;q.size=sizeof(q);q.name_space=ns;q.name=name;q.canonical_match=PGR_MD_MATCH_EXACT;
  PgrMetaClassResult out{};require(api->resolve_class(&q,&out)==0,name);return cache[key]=const_cast<void*>(out.klass);
 }
@@ -84,7 +84,7 @@ int count(Root &list,int cap){int n=boxed<int>(call(list.get(),"get_Count"),"Sys
 Root item(Root &list,int index){void *args[]={&index};return Root(call(list.get(),"get_Item",1,args));}
 struct Permission {Settings settings;std::string config,saved;bool valid=false,allowed=false,ready=false;};
 Permission permission(){
- Permission p;auto tr=static_cast<const PgrRuntimeTransportApi*>(pgrazor_runtime_transport_api(1));if(!tr)return p;
+ Permission p;auto tr=static_cast<const PgrRuntimeTransportApi*>(pgs_runtime_transport_api(1));if(!tr)return p;
  PgrRuntimeTransportSample a{},z{};if(tr->sample(&a)||!a.snapshot_fresh||a.fault)return p;
  char text[257]{};uint32_t len=0;int ready=0;
  if(tr->get_string(9,text,sizeof(text),&len)||!parse(text,len,p.settings))return p;p.config.assign(text,len);
@@ -99,7 +99,7 @@ void publish(const std::string &message,bool force=false){
  auto wall=clock_ms(CLOCK_REALTIME);uint64_t maintenance=history.interaction&&wall>=history.interaction?((wall-history.interaction>=1200000)?0:(1200000-(wall-history.interaction))/1000):0;
  std::string json="{\"message\":\""+message+"\",\"ep\":"+std::to_string(ep)+",\"excited\":"+(excited?"true":"false")+",\"maintenanceSeconds\":"+std::to_string(maintenance)+",\"history\":\""+encode(history)+"\",\"account\":\""+account+"\"}";
  __android_log_print(ANDROID_LOG_INFO,"PGRazorBuddyEP","%s EP=%d excited=%d",message.c_str(),ep,int(excited));
- auto tr=static_cast<const PgrRuntimeTransportApi*>(pgrazor_runtime_transport_api(1));PgrRuntimeTransportString values[]={{"buddy-emotion",13},{json.c_str(),uint32_t(json.size())}};
+ auto tr=static_cast<const PgrRuntimeTransportApi*>(pgs_runtime_transport_api(1));PgrRuntimeTransportString values[]={{"buddy-emotion",13},{json.c_str(),uint32_t(json.size())}};
  if(tr&&tr->emit(19,nullptr,0,values,2))paused=true;
 }
 struct Pending {Root promise,reflection;int phase=0;uint64_t since=0,buddy=0;int64_t snapshot_started=0;std::string config,account;bool canceled=false;};Pending pending;
@@ -231,7 +231,7 @@ void pgr_buddy_emotion_tick(uint64_t tid,const PgrSharedMetadataOutput *metadata
   const uint64_t now=clock_ms();
   if(!pending.phase&&now<next_poll)return;
   if(!pending.phase)next_poll=now+1000;
-  if(!initialized){if(!p.allowed)return;auto api=static_cast<const PgrBootApi*>(pgrazor_runtime_bootstrap_api(1));boot.version=1;boot.size=sizeof(boot);require(api&&api->snapshot(&boot)==0,"runtime bootstrap");md=metadata;require(md,"metadata");owner=tid;validate();initialized=true;}
+  if(!initialized){if(!p.allowed)return;auto api=static_cast<const PgrBootApi*>(pgs_runtime_bootstrap_api(1));boot.version=1;boot.size=sizeof(boot);require(api&&api->snapshot(&boot)==0,"runtime bootstrap");md=metadata;require(md,"metadata");owner=tid;validate();initialized=true;}
   if(p.valid&&p.settings.enabled){Root player=resolve("Niantic.Holoholo","IPlayerService");if(!player){if(pending.phase){p.allowed=false;poll(p);}else publish("Waiting for buddy services");return;}std::string id=string(call(player.get(),"get_PlayerId"));if(id.empty()){if(pending.phase){p.allowed=false;poll(p);}else publish("Waiting for account identity");return;}bool buddy_available=false;uint64_t buddy=current_buddy(&buddy_available);
    if(!buddy_available){if(pending.phase){p.allowed=false;poll(p);}else publish("Waiting for buddy services");return;}
    adopt_buddy(id,buddy,p.saved);}

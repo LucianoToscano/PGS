@@ -51,7 +51,7 @@ void *klass(void *o){require(o,"null object");return fn<void*(*)(void*)>(boot.ru
 std::string class_name(void *o){return fn<const char*(*)(void*)>(exp("class_get_name"))(klass(o));}
 std::string typename_of(const void *type){char *p=fn<char*(*)(const void*)>(boot.meta.type_get_name)(type);require(p,"type name");std::string s=p;fn<void(*)(void*)>(boot.meta.mem_free)(p);return s;}
 void *cls(const char *ns,const char *name){
- const auto *api=static_cast<const PgrMetaApi*>(pgrazor_runtime_metadata_api(1));require(api,"metadata API");
+ const auto *api=static_cast<const PgrMetaApi*>(pgs_runtime_metadata_api(1));require(api,"metadata API");
  PgrMetaClassQuery q{};q.version=1;q.size=sizeof(q);q.name_space=ns;q.name=name;q.canonical_match=PGR_MD_MATCH_EXACT;
  PgrMetaClassResult out{};require(api->resolve_class(&q,&out)==0,name);return const_cast<void*>(out.klass);
 }
@@ -71,7 +71,7 @@ Root resolve(const char *ns,const char *name){
  Root container(invoke(h(H_IL_CONTAINER_M),map.get()));if(!container)return {};
  Root target=type_object(cls(ns,name));void *resolve_args[]={target.get()};return Root(invoke(h(H_IL_RESOLVE_M),container.get(),resolve_args));
 }
-const PgrRuntimeTransportApi *transport(){return static_cast<const PgrRuntimeTransportApi*>(pgrazor_runtime_transport_api(1));}
+const PgrRuntimeTransportApi *transport(){return static_cast<const PgrRuntimeTransportApi*>(pgs_runtime_transport_api(1));}
 void event(const std::string &json){auto tr=transport();if(!tr)return;PgrRuntimeTransportString strings[]={{"catch-chance",12},{json.c_str(),uint32_t(json.size())}};tr->emit(19,nullptr,0,strings,2);}
 void status(const char *phase,const std::string &message){event(std::string("{\"phase\":\"")+phase+"\",\"message\":\""+message+"\"}");}
 uint64_t clock_ms(){timespec t{};clock_gettime(CLOCK_BOOTTIME,&t);return uint64_t(t.tv_sec)*1000+t.tv_nsec/1000000;}
@@ -192,7 +192,7 @@ void step(){
  void *probability=call(state,"get_CaptureProbability");if(!probability)return;  // not loaded yet
  void *types=ref_field(probability,"PokeballType"),*values=ref_field(probability,"CaptureProbability");if(!types||!values)return;
  const int n=unbox<int>(call(types,"get_Count"));require(n>=0&&n<=16&&unbox<int>(call(values,"get_Count"))==n,"capture probability count");
- // A berry already in the game wins; otherwise the one PGRazor's picker will feed on release.
+ // A berry already in the game wins; otherwise the one PGS's picker will feed on release.
  int berry=0;{void *b=call(state,"get_ActiveBerry");if(b&&fn<bool(*)(void*)>(exp("class_is_enum"))(klass(b)))berry=boxed_item(b);}
  // A fed berry is already in the server's rates (feeding a Razz moved Growlithe's Poke rate from
  // .2763 to exactly 1-(1-.2763)^1.5), so only a berry still to be fed adds its multiplier.
@@ -250,7 +250,7 @@ void pgr_catch_chance_tick(uint64_t tid,const PgrSharedMetadataOutput *metadata)
  if(busy||!tid||tid!=uint64_t(gettid())||(owner&&owner!=tid)||faulted.load())return;
  struct Guard{Guard(){busy=true;}~Guard(){busy=false;}}guard;owner=tid;md=metadata;
  try{
-  if(!ready){auto api=static_cast<const PgrBootApi*>(pgrazor_runtime_bootstrap_api(1));boot.version=1;boot.size=sizeof(boot);require(md&&api&&api->snapshot(&boot)==0,"Runtime unavailable");ready=true;bind_safari();}
+  if(!ready){auto api=static_cast<const PgrBootApi*>(pgs_runtime_bootstrap_api(1));boot.version=1;boot.size=sizeof(boot);require(md&&api&&api->snapshot(&boot)==0,"Runtime unavailable");ready=true;bind_safari();}
   if(!installed.load()){const Config c=config();if(!c.valid||(!c.show&&!c.autoball))return;install();}
  }catch(const Failure &f){faulted.store(true);status("error",std::string("Catch chance unavailable: ")+f.where);return;}
  catch(...){faulted.store(true);status("error","Catch chance unavailable: native failure");return;}

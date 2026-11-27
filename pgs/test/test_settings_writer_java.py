@@ -11,7 +11,7 @@ ROOT = Path(__file__).resolve().parents[1]
 class SettingsWriterTests(unittest.TestCase):
     def test_ordered_snapshots(self):
         compiler, runtime = java_tools()
-        with tempfile.TemporaryDirectory(prefix='pgrazor-settings-test-') as directory:
+        with tempfile.TemporaryDirectory(prefix='pgs-settings-test-') as directory:
             result = subprocess.run([str(compiler), '-encoding', 'UTF-8', '-d', directory,
                                      str(ROOT/'src/dev/pgs/SettingsWriter.java'),
                                      str(ROOT/'test/SettingsWriterTest.java')], capture_output=True, text=True, timeout=30)

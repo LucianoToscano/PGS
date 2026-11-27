@@ -178,7 +178,7 @@ static_assert(sizeof(pgs_accounts_config_v1_t) == 42 * 4, "ILP32 config layout m
 static_assert(sizeof(pgs_accounts_api_v1_t) == 32, "ILP32 api table layout mismatch");
 #endif
 
-const pgrazor_accounts_api_v1_t* pgrazor_accounts_api(uint32_t version);
+const pgs_accounts_api_v1_t* pgrazor_accounts_api(uint32_t version);
 
 #ifdef __cplusplus
 }

@@ -32,7 +32,7 @@ Do not submit game APKs/assets, signing keys, private logs, account details, or 
 
 Native changes must validate metadata and preserve foreground/map leases, GC ownership, cancellation, and error handling. Destructive inventory automation must keep uncertain data and honor selected protection rules. Never use an automated test to spend balls, transfer live Pokémon, or change a user's inventory.
 
-Use PGS for every public display name. The existing `dev.pgrazor` Java namespace is retained exclusively for binary compatibility until a tested migration is available. Preserve the public `Control` bridge API and existing saved-setting keys when moving code into smaller classes. Changes to the supported game version need updated contracts and explicit device testing.
+Use PGS for every public display name. New source and builds use the `dev.pgs` Java namespace; retain explicitly documented legacy ABI and storage compatibility contracts. Preserve the public `Control` bridge API and existing saved-setting keys when moving code into smaller classes. Changes to the supported game version need updated contracts and explicit device testing.
 
 APK publishing is a maintainer operation, not a pull-request workflow. See [BUILDING.md](docs/BUILDING.md).
 
@@ -49,7 +49,7 @@ Keep both `README.md` (English) and `README.pt-BR.md` (Brazilian Portuguese) in 
 
 For game-version compatibility work, follow [GAME_UPDATES.md](docs/GAME_UPDATES.md). Update the selected version profile and regenerate covered headers instead of editing generated headers directly. Review remaining hand-maintained bindings too; a signature match alone does not establish compatibility.
 
-CI currently sets legacy environment aliases `PGRAZOR_BUILD_TOOLS=36.0.0` and `PGRAZOR_ANDROID_PLATFORM=android-36`. For new local builds prefer `PGS_BUILD_TOOLS=36.0.0` and `PGS_ANDROID_PLATFORM=android-36`; the old variables still work. The build version can be selected with `PGS_VERSION` (or legacy `PGRAZOR_VERSION`). If both spellings are present, the PGS value wins. Local defaults still select the installed 36.1 SDK. Keep generated outputs ignored, and use `pgs/cleanup.ps1` after packaging with deployed/rollback retention pins preserved.
+CI uses the PGS environment names. For new local builds use `PGS_BUILD_TOOLS=36.0.0` and `PGS_ANDROID_PLATFORM=android-36`; the old variables still work. The build version can be selected with `PGS_VERSION` (or legacy `PGRAZOR_VERSION`). If both spellings are present, the PGS value wins. Local defaults still select the installed 36.1 SDK. Keep generated outputs ignored, and use `pgs/cleanup.ps1` after packaging with deployed/rollback retention pins preserved.
 
 ## Documentation and website languages
 

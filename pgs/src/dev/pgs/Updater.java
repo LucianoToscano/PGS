@@ -150,7 +150,7 @@ final class Updater {
             } finally {
                 synchronized (LOCK) { busy = false; }
             }
-        }, "pgrazor-update-check").start();
+        }, "pgs-update-check").start();
     }
 
     private static boolean declaresInstallPermission(Context app) {
@@ -189,7 +189,7 @@ final class Updater {
             try { if (installsHere) downloadAndInstall(app); else downloadWithSystem(app); }
             catch (Exception e) { fail(e.getMessage() == null || e.getMessage().isEmpty() ? "Download failed" : e.getMessage()); }
             finally { synchronized (LOCK) { busy = false; } }
-        }, "pgrazor-update").start();
+        }, "pgs-update").start();
     }
 
     private static void openPage(Activity activity) {
@@ -216,7 +216,7 @@ final class Updater {
         if (!UpdateRules.sizeAllowed(expected)) throw new IOException("Unexpected download size");
         // The checksum list is small; without it the download is not trusted.
         String wanted = expectedChecksum(sums);
-        File folder = new File(app.getCacheDir(), "pgrazor-update");
+        File folder = new File(app.getCacheDir(), "pgs-update");
         File[] old = folder.listFiles();
         if (old != null) for (File file : old) file.delete();
         if (!folder.isDirectory() && !folder.mkdirs()) throw new IOException("No room to save the update");
@@ -309,7 +309,7 @@ final class Updater {
         int id = installer.createSession(params);
         PackageInstaller.Session session = installer.openSession(id);
         try {
-            try (InputStream in = new FileInputStream(file); OutputStream out = session.openWrite("pgrazor", 0, file.length())) {
+            try (InputStream in = new FileInputStream(file); OutputStream out = session.openWrite("pgs", 0, file.length())) {
                 byte[] buffer = new byte[64 * 1024]; int count;
                 while ((count = in.read(buffer)) != -1) out.write(buffer, 0, count);
                 session.fsync(out);

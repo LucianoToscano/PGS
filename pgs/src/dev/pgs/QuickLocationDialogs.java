@@ -99,7 +99,7 @@ public final class QuickLocationDialogs {
                     which -> favoriteActions(activity,snap.entries.get(which),target,walk,null,() -> listFavorites(activity,target,walk))));
                 if (snap.damaged) Toast.makeText(activity, I18n.t("Some favorites could not be read. Valid entries are shown."), Toast.LENGTH_LONG).show();
             });
-        }, "pgrazor-favorites-read").start();
+        }, "pgs-favorites-read").start();
     }
 
     /** The list rows shared by the quick menu and the World map: name, then coordinates. */
@@ -162,7 +162,7 @@ public final class QuickLocationDialogs {
                     if (failed != null) { dialog.getButton(AlertDialog.BUTTON_POSITIVE).setEnabled(true); name.setError(failed); return; }
                     dialog.dismiss(); reopen.run();
                 });
-            }, "pgrazor-favorites-rename").start();
+            }, "pgs-favorites-rename").start();
         }));
         show(activity, dialog);
     }
@@ -184,7 +184,7 @@ public final class QuickLocationDialogs {
                     Toast.makeText(activity, I18n.format("Deleted %1$s", entry.name), Toast.LENGTH_SHORT).show();
                     reopen.run();
                 });
-            }, "pgrazor-favorites-delete").start();
+            }, "pgs-favorites-delete").start();
         }));
         show(activity, confirm);
     }
@@ -223,7 +223,7 @@ public final class QuickLocationDialogs {
                     dialog.dismiss();
                     Toast.makeText(activity, I18n.format("Saved %1$s to Favorites", entry.name), Toast.LENGTH_SHORT).show();
                 });
-            }, "pgrazor-favorites-save").start();
+            }, "pgs-favorites-save").start();
         }));
         show(activity, dialog);
     }

@@ -3,7 +3,7 @@
 This module is the pilot entry point for compiling the C++ `pgs_core`
 target into a stripped
 ``libpgs-core.so`` per ABI. It is opt-in: the coordinator only calls it
-with ``PGRAZOR_NATIVE_PILOT=1`` set. It performs no network access unless a
+with ``PGS_NATIVE_PILOT=1`` set. It performs no network access unless a
 download is explicitly requested, pins every immutable input by SHA-256, and
 emits a reproducibility receipt.
 

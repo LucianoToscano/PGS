@@ -6,6 +6,8 @@ PGS contributions and the inherited MIT-licensed source are covered by the proje
 
 ## Included materials
 
+See the [detailed component licenses and pinned provenance](THIRD_PARTY.md) for additional terms, including the website map attribution, PvPoke and build-time DEX tools.
+
 | Component | Recorded terms or exclusion | License / provenance |
 |---|---|---|
 | Original upstream source | MIT; original copyright retained | [LICENSE](LICENSE), [NOTICE](NOTICE) |

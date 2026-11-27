@@ -146,7 +146,7 @@ def payload_assets(download=False):
     import art_build
     import native_build
     assets = {}
-    with nonroot.scoped_env(PGRAZOR_NATIVE_PILOT='1'):
+    with nonroot.scoped_env(PGS_NATIVE_PILOT='1'):
         native_outputs = native_build.build_all(ROOT, ABIS, download=download)
     if set(native_outputs) != set(ABIS): raise RuntimeError('Native core ABI set mismatch')
     for abi, binary in native_outputs.items(): assets[f'pgs/{abi}/libpgs-core.so'] = Path(binary)

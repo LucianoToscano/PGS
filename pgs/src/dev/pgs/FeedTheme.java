@@ -40,7 +40,7 @@ final class FeedTheme {
     // ---------------------------------------------------------------------------------------
     static final class Size {
         private Size() {}
-        /** Screen titles such as "PGRAZOR" and dialog titles. */
+        /** Screen titles such as "PGS" and dialog titles. */
         static final float TITLE_SP = 20f;
         /** Row labels in cards, the quick menu and switches. */
         static final float ROW_TEXT_SP = 14f;
@@ -293,7 +293,7 @@ final class FeedTheme {
         t.setAllCaps(false); t.setLetterSpacing(0.01f); t.setTypeface(SettingsUi.medium());
         t.setTextSize(Size.TITLE_SP); t.setTextColor(title()); t.setGravity(Gravity.CENTER);
     }
-    /** The "PGRAZOR" title only: the same title treatment as every other screen. */
+    /** The "PGS" title only: the same title treatment as every other screen. */
     static void styleBrandTitle(TextView t) {
         styleTitle(t);
     }
@@ -307,7 +307,7 @@ final class FeedTheme {
             ? android.R.style.Theme_Material_Dialog_Alert : android.R.style.Theme_Material_Light_Dialog_Alert);
     }
     /**
-     * PGRazorX: a dialog is drawn once before its OnShowListener restyles it, so for a frame the stock Material
+     * UI: a dialog is drawn once before its OnShowListener restyles it, so for a frame the stock Material
      * dialog showed through. Every dialog built on this context (its layout is inflated through it) holds back that
      * first frame until the show listener has run; at most a few frames are held, so a dialog is never left blank.
      */

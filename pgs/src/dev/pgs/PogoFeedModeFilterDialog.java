@@ -24,7 +24,7 @@ import org.json.JSONException;
 import org.json.JSONObject;
 
 /**
- * PGRazorX: the Filters dialog of the non-Pokémon search modes (Raids, Quests, Weather, Rocket, Power
+ * UI: the Filters dialog of the non-Pokémon search modes (Raids, Quests, Weather, Rocket, Power
  * Spots). It shows the same choices as the site's search page for that mode and edits a copy of the
  * mode's spec; Apply hands the copy back. Option lists that come from the site (raid bosses, quest
  * rewards and tasks, Rocket types, Power Spot bosses) are fetched by the owner and cached here.

@@ -433,12 +433,12 @@ public final class Control {
     private static boolean stateWriteFailed;
     private static final AtomicBoolean checkpointPending = new AtomicBoolean();
     private static final ExecutorService stateWriter = Executors.newSingleThreadExecutor(task -> {
-        Thread thread = new Thread(task, "pgrazor-state-writer"); thread.setDaemon(true); return thread;
+        Thread thread = new Thread(task, "pgs-state-writer"); thread.setDaemon(true); return thread;
     });
     // One daemon worker per burst: SettingsWriter only schedules a drain when idle, so at most one
     // drain writes at a time, and it exits once the queue empties. Nothing permanent blocks JVM exit.
     private static final Executor settingsIo = task -> {
-        Thread thread = new Thread(task, "pgrazor-settings-writer"); thread.setDaemon(true); thread.start();
+        Thread thread = new Thread(task, "pgs-settings-writer"); thread.setDaemon(true); thread.start();
     };
     private static SettingsWriter settingsWriter;
     // Explicit export/import block until durable; a shorter bound keeps a background flush from stalling.
@@ -1025,7 +1025,7 @@ public final class Control {
             log = new PrintWriter(new FileOutputStream(logFile), true);
         } catch (IOException error) { Log.e("PGS", "File logging unavailable", error); }
         // Recover recent run tails after a crash without changing or deleting private originals.
-        new Thread(() -> recoverRunLogs(app),"pgrazor-log-recovery").start();
+        new Thread(() -> recoverRunLogs(app),"pgs-log-recovery").start();
         event("session-start", connection);
         AccountProfiles.init(app);
         loadState(app);

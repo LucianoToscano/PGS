@@ -145,7 +145,7 @@ typedef struct pgrazor_items_rules_v1 {
     uint32_t count;                /* number of valid entries (<= PGRAZOR_ITEMS_MAX_RULES) */
     uint64_t generation;           /* config generation; a change clears blocked */
     uint64_t epoch;                /* s.itemEpoch (recorded in pending; vestigial, kept for parity) */
-    pgrazor_item_cap entries[PGRAZOR_ITEMS_MAX_RULES];
+    pgs_item_cap entries[PGS_ITEMS_MAX_RULES];
 } pgrazor_items_rules_v1;
 typedef pgrazor_items_rules_v1 pgs_items_rules_v1;
 
@@ -269,7 +269,7 @@ typedef pgrazor_items_sample_v1 pgs_items_sample_v1;
  * hook addresses collide; HOOK on a Dobby failure (the failed attempt latches and never unhooks
  * a published trampoline). NO_CLOCK if CLOCK_BOOTTIME is unavailable. No managed call here.
  */
-typedef int (*pgrazor_items_install_fn)(const pgrazor_items_config_v1 *config);
+typedef int (*pgrazor_items_install_fn)(const pgs_items_config_v1 *config);
 
 /*
  * tick(rules, force_poll, remaining_lease_ms, proven_tid): one orchestration pass. Runs ONLY
@@ -284,7 +284,7 @@ typedef int (*pgrazor_items_install_fn)(const pgrazor_items_config_v1 *config);
  * re-checked immediately before the single RecycleItem (0/expired -> no managed recycle).
  * Returns OK, NOT_INSTALLED or BAD_RULES.
  */
-typedef int (*pgrazor_items_tick_fn)(const pgrazor_items_rules_v1 *rules, uint32_t force_poll,
+typedef int (*pgrazor_items_tick_fn)(const pgs_items_rules_v1 *rules, uint32_t force_poll,
                                      uint64_t remaining_lease_ms, uint64_t proven_tid);
 
 /*
@@ -298,13 +298,13 @@ typedef int (*pgrazor_items_tick_fn)(const pgrazor_items_rules_v1 *rules, uint32
 typedef int (*pgrazor_items_clear_fn)(uint64_t proven_tid);
 
 /* sample(out): copy the latest telemetry snapshot. Safe from any thread; never frees. */
-typedef int (*pgrazor_items_sample_fn)(pgrazor_items_sample_v1 *out);
+typedef int (*pgrazor_items_sample_fn)(pgs_items_sample_v1 *out);
 
 /*
  * catalog(out, max, written): copy up to `max` catalog rows into `out`, writing the count into
  * *written. Safe from any thread; never frees. Returns OK, NOT_INSTALLED or NULL_ARG.
  */
-typedef int (*pgrazor_items_catalog_fn)(pgrazor_item_row *out, uint32_t max, uint32_t *written);
+typedef int (*pgrazor_items_catalog_fn)(pgs_item_row *out, uint32_t max, uint32_t *written);
 
 /*
  * drain(out, max, written): copy up to `max` queued request/confirm/error events into `out` in
@@ -313,7 +313,7 @@ typedef int (*pgrazor_items_catalog_fn)(pgrazor_item_row *out, uint32_t max, uin
  * thread (a tiny mutex guards the ring-buffer copy only; never a managed call, never frees).
  * Returns OK, NOT_INSTALLED or NULL_ARG.
  */
-typedef int (*pgrazor_items_drain_fn)(pgrazor_item_event *out, uint32_t max, uint32_t *written);
+typedef int (*pgrazor_items_drain_fn)(pgs_item_event *out, uint32_t max, uint32_t *written);
 
 /*
  * service_handle(): the current durable service GC handle (an il2cpp gchandle, pointer-sized) or

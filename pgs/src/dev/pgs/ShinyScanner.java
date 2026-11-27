@@ -194,7 +194,7 @@ public final class ShinyScanner {
         if (context == null || app != null) return;
         final Context application = context.getApplicationContext();
         app = application;
-        new Thread(() -> names = PokemonSpeciesDialog.readNames(application), "pgrazor-shiny-names").start();
+        new Thread(() -> names = PokemonSpeciesDialog.readNames(application), "pgs-shiny-names").start();
     }
 
     private static double meters(double lat1, double lon1, double lat2, double lon2) {

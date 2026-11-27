@@ -63,7 +63,7 @@ public final class PogoFeedData {
     }
 
     /**
-     * PGRazorX: flag emoji of the country that ends a row's place ("Roanoke, Texas, United States" → 🇺🇸).
+     * UI: flag emoji of the country that ends a row's place ("Roanoke, Texas, United States" → 🇺🇸).
      * The place is the last " · " part of {@code details}; its last comma-separated part must name a
      * country (English, as the feed sends it), otherwise "" (no flag rather than a wrong one).
      */

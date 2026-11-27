@@ -296,7 +296,7 @@ const PgrBootApi *resolve_bootstrap_api() {
 
 int call_hook(void *target, void *replacement, void **original) {
 #if !defined(PGR_CAMERA_HOST_STANDALONE_TEST)
-  return pgrazor_hook(target, replacement, original);
+  return pgs_hook(target, replacement, original);
 #else
   if (g_standalone_hook != nullptr) {
     return g_standalone_hook(target, replacement, original);

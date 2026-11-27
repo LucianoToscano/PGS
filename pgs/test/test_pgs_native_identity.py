@@ -207,6 +207,7 @@ class PgsNativeRenameTests(unittest.TestCase):
         fallback = 'dlsym(g_state.core_handle, "pgrazor_native_api")'
         self.assertLess(camera.index(primary), camera.index(fallback))
         self.assertIn("*>(pgs_native_api(2u))", camera)
+        self.assertIn("return pgs_hook(target, replacement, original);", camera)
         self.assertIn("*>(pgs_native_api(1))", spawn)
         self.assertNotIn("*>(pgrazor_native_api(1))", spawn)
 

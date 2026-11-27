@@ -1,7 +1,7 @@
 #pragma once
 #include <cstdint>
 
-// PGRazor native migration: throw grade / curveball policy (feature id 1).
+// PGS native module: throw grade / curveball policy (feature id 1).
 //
 // Mirrors the throw-rewriting policy in diagnostics/quick-ball.js (throwWords /
 // throwForRoute). The JS adapter resolves and validates every il2cpp pointer

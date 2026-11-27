@@ -673,4 +673,4 @@ void pulse(void*,const PgrUnityPulse *p){if(!p||p->reserved||p->tid<=0)return;au
 const PgrSharedHostApi api{1,sizeof(api),configure,update,tick,stop,sample,next_event,metadata,pulse};
 const PgrSharedHostTransferApi transfer_api{2,sizeof(transfer_api),transfer_ready,external_submit,external_next_event};
 }
-extern "C" const void *pgrazor_shared_host_api(uint32_t version){if(version==1)return &api;if(version==2)return &transfer_api;return nullptr;}
+extern "C" const void *pgs_shared_host_api(uint32_t version){if(version==1)return &api;if(version==2)return &transfer_api;return nullptr;}

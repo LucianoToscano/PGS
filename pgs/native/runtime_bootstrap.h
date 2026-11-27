@@ -33,7 +33,7 @@
 //  * NO production-readiness claim. A successful compile or fixture-harness run is NOT evidence that real
 //    translated-ARM64 resolution under Houdini on the game works. The default module/segment resolver is
 //    feature 47's (UNVERIFIED on real Houdini per the feature 47 contract).
-//  * Internal C++ interface: the single hidden getter is NOT added to pgrazor.map; the coordinator
+//  * Internal C++ interface: the single hidden getter is NOT added to pgs.map; the coordinator
 //    registers it under query_feature(54) (same pattern as features 24/43/47/53).
 
 #ifdef __cplusplus
@@ -98,7 +98,7 @@ typedef void *(*pgr_boot_dlsym_fn)(void *ctx, void *handle, const char *name);
 // module resolver: return 0 and fill base/size when the module range was found, negative on fault.
 // null -> delegate to feature 47 resolve_module(soname,...) (same range Routes 53 binds against).
 typedef int (*pgr_boot_module_fn)(void *ctx, const char *soname, const void **base, uint64_t *size);
-// feature 47 getter seam: null -> pgrazor_runtime_metadata_api. The fixture passes the REAL getter so the
+// feature 47 getter seam: null -> pgs_runtime_metadata_api. The fixture passes the REAL getter so the
 // real feature 47 validators run over a fake il2cpp universe.
 typedef const void *(*pgr_boot_metadata_fn)(void *ctx, uint32_t version);
 
@@ -115,7 +115,7 @@ struct PgrBootConfig {
   pgr_boot_dlsym_fn dlsym_fn;    // null -> ::dlsym
   pgr_boot_module_fn module_fn;  // null -> feature 47 resolve_module
   void *seam_ctx;                // ctx passed to dlopen_fn/dlsym_fn/module_fn
-  pgr_boot_metadata_fn metadata_fn; // null -> pgrazor_runtime_metadata_api
+  pgr_boot_metadata_fn metadata_fn; // null -> pgs_runtime_metadata_api
   pgr_meta_seg_fn seg_query;     // feature 47 bind segment resolver; MUST be null in production
   void *seg_ctx;                 // ctx for seg_query; MUST be null in production
   // ExecuteTasks descriptor (DATA, never a guessed pointer). Null string -> compiled default.
@@ -195,10 +195,10 @@ static_assert(sizeof(PgrBootApi) == 24, "PgrBootApi must remain a 24-byte versio
 
 // Hidden getter. NOT exported by the version script; the coordinator registers it in query_feature under
 // feature id 54 and answers only on an exact version match.
-const void *pgrazor_runtime_bootstrap_api(uint32_t version);
-// Canonical source spelling; retain the hidden legacy linkage for older objects and fixtures.
-static inline const void *pgs_runtime_bootstrap_api(uint32_t version) {
-    return pgrazor_runtime_bootstrap_api(version);
+const void *pgs_runtime_bootstrap_api(uint32_t version);
+// Compatibility for older source consumers; the PGS name is the primary hidden getter.
+static inline const void *pgrazor_runtime_bootstrap_api(uint32_t version) {
+    return pgs_runtime_bootstrap_api(version);
 }
 
 #ifdef __cplusplus

@@ -3,7 +3,7 @@
  *
  * Feature id 2 of the native pilot. The gameplay runtime resolves this feature's
  * table through the coordinator-owned loader (root.PGSNativeFeature(2, version,
- * tableByteSize) in JS, backed by the hidden getter pgrazor_adventure_sync_api()
+ * tableByteSize) in JS, backed by the hidden getter pgs_adventure_sync_api()
  * registered in the core getter registry). Nothing here is exported directly; the
  * linker version script (coordinator-owned) keeps the getter local, and the core's
  * registry hands it out only on an exact version+size match.
@@ -22,8 +22,8 @@
  * install(); the native layer trusts the validated pointers/offsets it is handed and
  * re-validates the config header and every pointer before it patches anything.
  */
-#ifndef PGRAZOR_ADVENTURE_SYNC_H
-#define PGRAZOR_ADVENTURE_SYNC_H
+#ifndef PGS_ADVENTURE_SYNC_H
+#define PGS_ADVENTURE_SYNC_H
 
 #include <stdint.h>
 
@@ -32,7 +32,7 @@ extern "C" {
 #endif
 
 /* Feature id in the native pilot registry. */
-#define PGRAZOR_ADVSYNC_FEATURE_ID 2u
+#define PGS_ADVSYNC_FEATURE_ID 2u
 
 /* Table + config ABI version. The getter answers an exact match only. */
 #define PGS_ADVSYNC_API_VERSION 1u
@@ -64,7 +64,7 @@ enum {
     PGS_ADVSYNC_ERR_BAD_LEASE = 5,      /* lease was 0 or exceeded the max */
     PGS_ADVSYNC_ERR_NO_CLOCK = 6,       /* CLOCK_BOOTTIME was unavailable */
     PGS_ADVSYNC_ERR_NOT_INSTALLED = 7,  /* operation needs a successful install() */
-    PGRAZOR_ADVSYNC_ERR_SELFTEST = 8,        /* a self-check assertion failed */
+    PGS_ADVSYNC_ERR_SELFTEST = 8,        /* a self-check assertion failed */
     // Legacy aliases retain the same enum type and numeric values.
     PGRAZOR_ADVSYNC_OK = PGS_ADVSYNC_OK,
     PGRAZOR_ADVSYNC_ERR_NULL_ARG = PGS_ADVSYNC_ERR_NULL_ARG,
@@ -85,7 +85,7 @@ enum {
  * touches the process image. Layout is fixed (LP64, 8-byte fields); JS must write it
  * byte-for-byte and set size == sizeof(pgs_advsync_config_v1).
  */
-typedef struct pgrazor_advsync_config_v1 {
+typedef struct pgs_advsync_config_v1 {
     uint32_t version;              /* == PGS_ADVSYNC_API_VERSION */
     uint32_t size;                 /* == sizeof(pgs_advsync_config_v1) */
 
@@ -112,8 +112,8 @@ typedef struct pgrazor_advsync_config_v1 {
     void *controller_class;        /* DialogController il2cpp class, for object_get_class checks */
     uint64_t off_on_confirm;       /* byte offset of _onConfirm delegate field (0xa8) */
     uint64_t off_on_decline;       /* byte offset of _onDecline delegate field (0xb0) */
-} pgrazor_advsync_config_v1;
-typedef pgrazor_advsync_config_v1 pgs_advsync_config_v1;
+} pgs_advsync_config_v1;
+typedef pgs_advsync_config_v1 pgrazor_advsync_config_v1;
 
 /*
  * install(config): validate the config and install the module's hooks once for the
@@ -126,8 +126,8 @@ typedef pgrazor_advsync_config_v1 pgs_advsync_config_v1;
  * permanently and returns HOOK_FAILED: the JS adapter must NOT fall back to a second
  * engine on these targets.
  */
-typedef int (*pgrazor_advsync_install_fn)(const pgs_advsync_config_v1 *config);
-typedef pgrazor_advsync_install_fn pgs_advsync_install_fn;
+typedef int (*pgs_advsync_install_fn)(const pgs_advsync_config_v1 *config);
+typedef pgs_advsync_install_fn pgrazor_advsync_install_fn;
 
 /*
  * update(allowed, lease_ms, unity_tid): arm or clear the dismissal window and record
@@ -143,8 +143,8 @@ typedef pgrazor_advsync_install_fn pgs_advsync_install_fn;
  *                              and auto-dismissal never run off this thread.
  * This call only mutates atomics; it is safe to call from any thread.
  */
-typedef int (*pgrazor_advsync_update_fn)(int allowed, uint64_t lease_ms, uint64_t unity_tid);
-typedef pgrazor_advsync_update_fn pgs_advsync_update_fn;
+typedef int (*pgs_advsync_update_fn)(int allowed, uint64_t lease_ms, uint64_t unity_tid);
+typedef pgs_advsync_update_fn pgrazor_advsync_update_fn;
 
 /*
  * retire(unity_tid): Unity-thread-only maintenance, called from the host heartbeat
@@ -153,27 +153,27 @@ typedef pgrazor_advsync_update_fn pgs_advsync_update_fn;
  * freeing their GC handles. It NEVER drives UI. Called off the guard thread it is a
  * no-op. Returns OK or NOT_INSTALLED.
  */
-typedef int (*pgrazor_advsync_retire_fn)(uint64_t unity_tid);
-typedef pgrazor_advsync_retire_fn pgs_advsync_retire_fn;
+typedef int (*pgs_advsync_retire_fn)(uint64_t unity_tid);
+typedef pgs_advsync_retire_fn pgrazor_advsync_retire_fn;
 
 /*
  * selftest(): explicit-only self-check of the pure pending policy (lease bounds, the
  * decline-not-confirm dialog mapping, delay/expiry ordering). No Dobby, no device, no
  * process mutation. NEVER run automatically in production.
  */
-typedef int (*pgrazor_advsync_selftest_fn)(void);
-typedef pgrazor_advsync_selftest_fn pgs_advsync_selftest_fn;
+typedef int (*pgs_advsync_selftest_fn)(void);
+typedef pgs_advsync_selftest_fn pgrazor_advsync_selftest_fn;
 
 /* Ordered, read-only table advertised by the getter. Header first, then pointers. */
-typedef struct pgrazor_advsync_api_v1 {
+typedef struct pgs_advsync_api_v1 {
     uint32_t version;                    /* == PGS_ADVSYNC_API_VERSION */
     uint32_t size;                       /* == sizeof(pgs_advsync_api_v1) */
     pgs_advsync_install_fn  install;
     pgs_advsync_update_fn   update;
     pgs_advsync_retire_fn   retire;
     pgs_advsync_selftest_fn selftest;
-} pgrazor_advsync_api_v1;
-typedef pgrazor_advsync_api_v1 pgs_advsync_api_v1;
+} pgs_advsync_api_v1;
+typedef pgs_advsync_api_v1 pgrazor_advsync_api_v1;
 
 /*
  * Hidden getter (NOT exported by the version script). The coordinator registers it in
@@ -181,10 +181,10 @@ typedef pgrazor_advsync_api_v1 pgs_advsync_api_v1;
  * the JS adapter the table pointer on an exact version match, else NULL. The returned
  * table lives for the process lifetime and must not be freed or modified.
  */
-const void *pgrazor_adventure_sync_api(uint32_t version);
-// Canonical source spelling; retain the hidden legacy linkage for older objects and fixtures.
-static inline const void *pgs_adventure_sync_api(uint32_t version) {
-    return pgrazor_adventure_sync_api(version);
+const void *pgs_adventure_sync_api(uint32_t version);
+// Compatibility for older source consumers; the PGS name is the primary hidden getter.
+static inline const void *pgrazor_adventure_sync_api(uint32_t version) {
+    return pgs_adventure_sync_api(version);
 }
 
 /*
@@ -192,10 +192,10 @@ static inline const void *pgs_adventure_sync_api(uint32_t version) {
  * the id of the first failing case. Exposed for an optional JNI host test the
  * coordinator may wire; safe to call anywhere.
  */
-int pgrazor_adventure_sync_selfcheck(void);
+int pgs_adventure_sync_selfcheck(void);
 
 #ifdef __cplusplus
 } /* extern "C" */
 #endif
 
-#endif /* PGRAZOR_ADVENTURE_SYNC_H */
+#endif /* PGS_ADVENTURE_SYNC_H */

@@ -43,7 +43,7 @@ def verify(folder, tag):
         mode_paths = [n for n in ('assets/pgs/mode.json', 'assets/pgrazor/mode.json') if n in apk.namelist()]
         if len(mode_paths) != 1: raise ValueError('Expected exactly one PGS mode asset')
         mode = json.loads(apk.read(mode_paths[0]))
-        if mode.get('pgrazorVersion') != tag:
+        if mode.get('pgsVersion', mode.get('pgrazorVersion')) != tag or ('pgrazorVersion' in mode and mode['pgrazorVersion'] != tag):
             raise ValueError('Non-rooted build version differs from release tag')
     with zipfile.ZipFile(folder / DOWNLOADS[2]) as module:
         props = dict(line.split('=', 1) for line in module.read('module.prop').decode().splitlines()

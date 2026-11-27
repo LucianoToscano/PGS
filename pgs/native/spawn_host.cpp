@@ -22,7 +22,7 @@ void *thread_current=nullptr;const void *spawn_code=nullptr;
 PgrSpawnHostOptions policy{};uint64_t deadline=0;
 uint64_t sample_at=0,logged_at=0;double previous_original=0,previous_effective=0;bool sampled=false;
 PgrSpawnHostEvent events[32]{};uint32_t head=0,count=0;
-const pgs_native_api_v1 *leaf(){return static_cast<const pgs_native_api_v1*>(pgrazor_native_api(1));}
+const pgs_native_api_v1 *leaf(){return static_cast<const pgs_native_api_v1*>(pgs_native_api(1));}
 const PgrRuntimeTransportApi *transport(){return static_cast<const PgrRuntimeTransportApi*>(pgs_runtime_transport_api(1));}
 uint64_t now(){timespec t{};return clock_gettime(CLOCK_BOOTTIME,&t)||t.tv_sec<0?0:uint64_t(t.tv_sec)*1000+uint64_t(t.tv_nsec)/1000000;}
 void disable(){auto l=leaf();if(l&&l->update)l->update(0,0,0);}

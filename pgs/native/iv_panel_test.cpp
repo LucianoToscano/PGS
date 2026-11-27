@@ -91,9 +91,9 @@ static void *fixture_symbol(void *,const char *name) {
  if (!std::strcmp(name,"il2cpp_method_get_param")) return reinterpret_cast<void*>(method_param);
  assert(false);return nullptr;
 }
-extern "C" const void *pgrazor_runtime_metadata_api(uint32_t) { return &metadata; }
-extern "C" const void *pgrazor_runtime_bootstrap_api(uint32_t) { return nullptr; }
-extern "C" const void *pgrazor_runtime_transport_api(uint32_t) { return nullptr; }
+extern "C" const void *pgs_runtime_metadata_api(uint32_t) { return &metadata; }
+extern "C" const void *pgs_runtime_bootstrap_api(uint32_t) { return nullptr; }
+extern "C" const void *pgs_runtime_transport_api(uint32_t) { return nullptr; }
 void pgr_iv_display_set_panel_hooks(const PgrIvPanelHooks *) {}
 
 int main() {

@@ -22,7 +22,7 @@ int pgr_smart_auto_ball(const double base[4], const int stock[4], int min_ball, 
                         bool curve, int target);
 
 // Smart Background Catcher native helper (FEATURE_PROPOSALS module2). This is an INTERNAL C++ helper
-// surface (NOT an exported pgrazor_native_api feature table): the VGP controller (feature 25/26) and the
+// surface (NOT an exported pgs_native_api feature table): the VGP controller (feature 25/26) and the
 // existing VGP actions/aux modules link these functions directly and drive them from the ALREADY-PROVEN
 // Unity owner thread. The coordinator integrates the controller plumbing and the Java transport; this
 // module only:
@@ -47,8 +47,8 @@ int pgr_smart_auto_ball(const double base[4], const int stock[4], int min_ball, 
 //     DISTINCTLY from an unavailable/data error.
 //
 // RUNTIME METADATA SOURCING. The helper caches a once-published, validated binding (bind()). The
-// controller assembles it from the pgrazor_runtime_bootstrap_api(54) snapshot (the il2cpp runtime +
-// reflection exports) and from pgrazor_runtime_metadata_api(47) validators (resolve_class / validate_field
+// controller assembles it from the pgs_runtime_bootstrap_api(54) snapshot (the il2cpp runtime +
+// reflection exports) and from pgs_runtime_metadata_api(47) validators (resolve_class / validate_field
 // / validate_method) for every game class/field/method listed below -- i.e. the field offsets and
 // method signatures are validated by feature 47, NOT blindly trusted. This leaf does not self-resolve the
 // translated-ARM64 metadata (that would be an unverifiable Houdini claim and is untestable in a fixture);

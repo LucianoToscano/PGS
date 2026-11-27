@@ -38,7 +38,7 @@ extern "C" {
 static_assert(sizeof(void *) == 8, "Buddy feeding native ABI requires LP64");
 
 // Feature id in the native pilot registry (coordinator wires the getter under this id).
-#define PGRAZOR_BUDDY_FEATURE_ID 12u
+#define PGS_BUDDY_FEATURE_ID 12u
 
 // Table + config + sample ABI version. The getter answers an exact match only.
 #define PGS_BUDDY_API_VERSION 1u
@@ -95,7 +95,7 @@ enum {
 // Fixed LP64 layout (8-byte fields; see the static_asserts in buddy_feeding.cpp). Every
 // pointer is an already-validated il2cpp export, MethodInfo*, hook address, class pointer
 // or FieldInfo*; the native layer re-checks the header and rejects any null before use.
-typedef struct pgrazor_buddy_config_v1 {
+typedef struct pgs_buddy_config_v1 {
     uint32_t version;              /* == PGS_BUDDY_API_VERSION */
     uint32_t size;                 /* == sizeof(pgs_buddy_config_v1) */
 
@@ -153,8 +153,8 @@ typedef struct pgrazor_buddy_config_v1 {
 
     int32_t success;               /* BuddyFeedingOutProto.Result == Success literal */
     int32_t reserved;              /* 0; keeps the config 8-byte aligned (size 352) */
-} pgrazor_buddy_config_v1;
-typedef pgrazor_buddy_config_v1 pgs_buddy_config_v1;
+} pgs_buddy_config_v1;
+typedef pgs_buddy_config_v1 pgrazor_buddy_config_v1;
 
 // Pull-only telemetry snapshot (56 bytes). status_serial increments on each distinct
 // status transition; feed_request_serial once per issued Feed (counted at issuance, even
@@ -163,7 +163,7 @@ typedef pgrazor_buddy_config_v1 pgs_buddy_config_v1;
 // resolved service; fault_serial on each managed-exception / fail-closed error. owned_roots
 // is the number of durable GC roots held (service + pending rpc + pending promise) so the
 // coordinator can gate a finish/teardown on this layer having released them.
-typedef struct pgrazor_buddy_sample_v1 {
+typedef struct pgs_buddy_sample_v1 {
     uint32_t version;              /* == PGS_BUDDY_API_VERSION */
     uint32_t size;                 /* == sizeof(pgs_buddy_sample_v1) */
     uint32_t status;               /* one of PGR_BUDDY_STATUS_* */
@@ -175,8 +175,8 @@ typedef struct pgrazor_buddy_sample_v1 {
     uint64_t service_serial;       /* bumped on each freshly resolved service */
     uint32_t fault_serial;         /* bumped on each fail-closed error */
     uint32_t owned_roots;          /* durable roots plus active owner frames (conservative finish guard) */
-} pgrazor_buddy_sample_v1;
-typedef pgrazor_buddy_sample_v1 pgs_buddy_sample_v1;
+} pgs_buddy_sample_v1;
+typedef pgs_buddy_sample_v1 pgrazor_buddy_sample_v1;
 
 /*
  * install(config): validate and publish the config once for the process lifetime, then
@@ -185,8 +185,8 @@ typedef pgrazor_buddy_sample_v1 pgs_buddy_sample_v1;
  * duplicate hook address DUP_HOOK; on a Dobby failure HOOK_FEED/HOOK_RESULT (the failed
  * attempt latches for the process lifetime and never unhooks a published trampoline).
  */
-typedef int (*pgrazor_buddy_install_fn)(const pgs_buddy_config_v1 *config);
-typedef pgrazor_buddy_install_fn pgs_buddy_install_fn;
+typedef int (*pgs_buddy_install_fn)(const pgs_buddy_config_v1 *config);
+typedef pgs_buddy_install_fn pgrazor_buddy_install_fn;
 
 /*
  * tick(berry, remaining_lease_ms, proven_tid): one orchestration pass. Runs the full feed
@@ -198,9 +198,9 @@ typedef pgrazor_buddy_install_fn pgs_buddy_install_fn;
  * turned into an absolute CLOCK_BOOTTIME deadline re-checked immediately before the single
  * Feed (0/expired -> no managed feed). Returns OK or NOT_INSTALLED.
  */
-typedef int (*pgrazor_buddy_tick_fn)(int32_t berry, uint64_t remaining_lease_ms,
+typedef int (*pgs_buddy_tick_fn)(int32_t berry, uint64_t remaining_lease_ms,
                                      uint64_t proven_tid);
-typedef pgrazor_buddy_tick_fn pgs_buddy_tick_fn;
+typedef pgs_buddy_tick_fn pgrazor_buddy_tick_fn;
 
 /*
  * clear(proven_tid): Unity-thread-only teardown for stop/detach. RELEASES the durable GC
@@ -210,23 +210,23 @@ typedef pgrazor_buddy_tick_fn pgs_buddy_tick_fn;
  * thread it is a no-op (never frees handles off the Unity thread). Returns OK or
  * NOT_INSTALLED.
  */
-typedef int (*pgrazor_buddy_clear_fn)(uint64_t proven_tid);
-typedef pgrazor_buddy_clear_fn pgs_buddy_clear_fn;
+typedef int (*pgs_buddy_clear_fn)(uint64_t proven_tid);
+typedef pgs_buddy_clear_fn pgrazor_buddy_clear_fn;
 
 /* sample(out): copy the latest telemetry snapshot. Safe from any thread; never frees. */
-typedef int (*pgrazor_buddy_sample_fn)(pgs_buddy_sample_v1 *out);
-typedef pgrazor_buddy_sample_fn pgs_buddy_sample_fn;
+typedef int (*pgs_buddy_sample_fn)(pgs_buddy_sample_v1 *out);
+typedef pgs_buddy_sample_fn pgrazor_buddy_sample_fn;
 
 // Ordered, read-only table advertised by the getter (40 bytes: header + 4 pointers).
-typedef struct pgrazor_buddy_api_v1 {
+typedef struct pgs_buddy_api_v1 {
     uint32_t version;              /* == PGS_BUDDY_API_VERSION */
     uint32_t size;                 /* == sizeof(pgs_buddy_api_v1) */
     pgs_buddy_install_fn install;
     pgs_buddy_tick_fn    tick;
     pgs_buddy_clear_fn   clear;
     pgs_buddy_sample_fn  sample;
-} pgrazor_buddy_api_v1;
-typedef pgrazor_buddy_api_v1 pgs_buddy_api_v1;
+} pgs_buddy_api_v1;
+typedef pgs_buddy_api_v1 pgrazor_buddy_api_v1;
 
 /*
  * Hidden getter (NOT exported by the version script). The coordinator registers it in the

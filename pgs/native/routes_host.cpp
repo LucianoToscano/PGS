@@ -678,10 +678,10 @@ const PgrRoutesMetadataApi *routes_meta_api() {
   return static_cast<const PgrRoutesMetadataApi *>(pgs_routes_metadata_api(1));
 }
 const PgrMetaApi *runtime_meta_api() {
-  return static_cast<const PgrMetaApi *>(pgrazor_runtime_metadata_api(1));
+  return static_cast<const PgrMetaApi *>(pgs_runtime_metadata_api(1));
 }
 const PgrBootApi *bootstrap_api() {
-  return static_cast<const PgrBootApi *>(pgrazor_runtime_bootstrap_api(1));
+  return static_cast<const PgrBootApi *>(pgs_runtime_bootstrap_api(1));
 }
 const PgrRuntimeTransportApi *transport_api() {
   return static_cast<const PgrRuntimeTransportApi *>(pgs_runtime_transport_api(1));

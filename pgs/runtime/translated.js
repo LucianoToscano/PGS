@@ -33,7 +33,7 @@
   let state=null,seq=0,pending=null,queue=[],stopped=false;const consumed={};
   const fresh=()=>!stopped&&state&&!state.fault&&now()-state.at>=0&&now()-state.at<=500;
   const control={renewLease(){},disconnect(){},connect(){}};
-  for(const name of readers)control[name]=()=>{if(!fresh()){if(guarded(name))return false;const error=Error('Translated control snapshot unavailable');error.code='PGRAZOR_TRANSLATED_SNAPSHOT_UNAVAILABLE';throw error;}return name==='accountCommandSnapshot'?snapshot(state.values[name]):state.values[name];};
+  for(const name of readers)control[name]=()=>{if(!fresh()){if(guarded(name))return false;const error=Error('Translated control snapshot unavailable');error.code='PGS_TRANSLATED_SNAPSHOT_UNAVAILABLE';throw error;}return name==='accountCommandSnapshot'?snapshot(state.values[name]):state.values[name];};
   for(const name of pulses)control[name]=()=>{if(!fresh())return false;const count=state.pulses[name]||0;if(count>(consumed[name]||0)){consumed[name]=count;return true;}return false;};
   for(const name of actions)control[name]=(...args)=>{if(stopped)return;if(queue.length>=2048)throw Error('Translated event queue full');queue.push([name,args]);};
   function tick(){if(stopped)return false;const next=io.read('state');if(next&&next.session===session)state=next;

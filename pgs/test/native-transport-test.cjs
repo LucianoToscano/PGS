@@ -106,9 +106,9 @@ for(const [name,args] of [
 ]){const n=f.emissions.length;assert.throws(()=>control[name](...args),undefined,'invalid case '+(invalidCase++)+' '+name);assert.equal(f.emissions.length,n,'invalid '+name+' never reaches native emit');}
 for(const code of [-13,-20,-16]){f.emitCode(code);const n=f.emissions.length;assert.throws(()=>control.accountSessionSaved(),new RegExp('rejected:accountSessionSaved:'+code));assert.equal(f.emissions.length,n+1,'one explicit failed emit, no JS retry queue');}
 f.emitCode(0);
-f.errors.set('int:0',-19);assert.throws(()=>control.battleOptions(),e=>e.code==='PGRAZOR_TRANSLATED_SNAPSHOT_UNAVAILABLE'&&e.message.includes('-19'));f.errors.clear();
+f.errors.set('int:0',-19);assert.throws(()=>control.battleOptions(),e=>e.code==='PGS_TRANSLATED_SNAPSHOT_UNAVAILABLE'&&e.message.includes('-19'));f.errors.clear();
 f.boolValues.set(3,0);assert.equal(control.active(),false,'native guarded stale false passes through without a JS lease');
-f.errors.set('bool:3',-19);assert.throws(()=>control.active(),e=>e.code==='PGRAZOR_TRANSLATED_SNAPSHOT_UNAVAILABLE');f.errors.clear();
+f.errors.set('bool:3',-19);assert.throws(()=>control.active(),e=>e.code==='PGS_TRANSLATED_SNAPSHOT_UNAVAILABLE');f.errors.clear();
 f.sample(1,0);assert.equal(f.bridge.fresh(),true);assert.equal(f.bridge.tick(),true);
 f.sample(0,0);assert.equal(f.bridge.fresh(),false,'fresh is offset80, not bound offset76');
 f.sample(1,1);assert.equal(f.bridge.fresh(),false,'fault offset84 disarms fresh');

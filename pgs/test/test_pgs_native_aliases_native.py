@@ -48,7 +48,7 @@ class PgsNativeAliasesTests(unittest.TestCase):
                     self.assertEqual(entry["kind"], "type")
                     self.assertTrue(old.startswith("pgrazor_"))
                     self.assertEqual(new, "pgs_" + old[8:])
-                    pattern = r"\btypedef\s+" + re.escape(old) + r"\s+" + re.escape(new) + r"\s*;"
+                    pattern = r"\btypedef\s+" + re.escape(new) + r"\s+" + re.escape(old) + r"\s*;"
                 self.assertRegex(source, pattern)
 
     @unittest.skipUnless(sys.platform.startswith("linux") and COMPILER,
@@ -94,7 +94,8 @@ class PgsNativeAliasesTests(unittest.TestCase):
             old, new = "pgrazor_" + name + "_api", "pgs_" + name + "_api"
             typ = "pgs_accounts_api_v1_t" if name == "accounts" else "unsigned"
             ret = "const pgs_accounts_api_v1_t*" if name == "accounts" else "const void*"
-            code.append('extern "C" ' + ret + ' ' + old +
+            primary = old if name == "account_host" else new
+            code.append('extern "C" ' + ret + ' ' + primary +
                         '(uint32_t version) { static ' + typ +
                         ' value{}; return version == 1 ? &value : nullptr; }')
             code.append('static_assert(std::is_same_v<decltype(&' + old +

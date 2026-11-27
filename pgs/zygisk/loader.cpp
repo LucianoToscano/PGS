@@ -1,13 +1,13 @@
-// PGRazor Zygisk loader.
+// PGS Zygisk loader.
 //
 // Runs only in the game's main process. Before specialization it reads the
-// PGRazor dex and payload from the module directory (readable only then);
+// PGS dex and payload from the module directory (readable only then);
 // after specialization, as the app UID and before ActivityThread.main, it
 // loads the dex from memory and hands both blobs to dev.pgs.RootedEntry.
 // Every other process unloads this library immediately. The loader installs
 // no hooks itself and keeps no state after postAppSpecialize returns.
 //
-// Launch-time switch: PGRazor can be turned off without disabling the module.
+// Launch-time switch: PGS can be turned off without disabling the module.
 // When the module directory holds the empty flag pgrazor/injection-off, the
 // loader logs and skips injection for this launch (the module stays enabled).
 // The flag is read once per process start, so flipping it only takes effect at
@@ -22,7 +22,7 @@
 
 #include "zygisk.hpp"
 
-#define TAG "PGRazor-zygisk"
+#define TAG "PGS-zygisk"
 #define LOGI(...) __android_log_print(ANDROID_LOG_INFO, TAG, __VA_ARGS__)
 #define LOGE(...) __android_log_print(ANDROID_LOG_ERROR, TAG, __VA_ARGS__)
 
@@ -103,7 +103,7 @@ public:
         }
         int dir = api_->getModuleDir();
         if (dir >= 0 && faccessat(dir, "pgrazor/injection-off", F_OK, 0) == 0) {
-            LOGI("PGRazor switched off (pgrazor/injection-off present); skipping injection for this launch");
+            LOGI("PGS switched off (pgrazor/injection-off present); skipping injection for this launch");
             target_ = false;
             return;
         }
@@ -159,7 +159,7 @@ private:
 
         jstring data_dir = env->NewStringUTF(data_dir_);
         env->CallStaticVoidMethod(entry, entry_start, dex, payload, data_dir);
-        if (!failed(env, "RootedEntry.start")) LOGI("PGRazor handed off (dex %zu bytes, payload %zu bytes)", dex_.size, payload_.size);
+        if (!failed(env, "RootedEntry.start")) LOGI("PGS handed off (dex %zu bytes, payload %zu bytes)", dex_.size, payload_.size);
         env->PopLocalFrame(nullptr);
     }
 

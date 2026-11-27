@@ -320,8 +320,8 @@ decltype(&fixture_adv_update) volatile call_adv_update = &fixture_adv_update;
 
 // --- Fake IL2CPP exports -----------------------------------------------------------
 void *fake_domain_get() {
- if(stop_during_metadata){stop_during_metadata=false;auto host=static_cast<const PgrAccountHostApi*>(pgrazor_account_host_api(1));assert(host->stop()==0);}
- if(reenter_metadata){reenter_metadata=false;PgrAccountHostMetadataOutput out;std::memset(&out,0xa5,sizeof(out));auto host=static_cast<const PgrAccountHostApi*>(pgrazor_account_host_api(1));assert(host->resolve_metadata(reentry_config,&out)==PGR_ACH_ERR_BUSY);PgrAccountHostMetadataOutput zero{};assert(!std::memcmp(&out,&zero,sizeof(out)));assert(host->configure(reentry_config)==PGR_ACH_ERR_BUSY);}
+ if(stop_during_metadata){stop_during_metadata=false;auto host=static_cast<const PgrAccountHostApi*>(pgs_account_host_api(1));assert(host->stop()==0);}
+ if(reenter_metadata){reenter_metadata=false;PgrAccountHostMetadataOutput out;std::memset(&out,0xa5,sizeof(out));auto host=static_cast<const PgrAccountHostApi*>(pgs_account_host_api(1));assert(host->resolve_metadata(reentry_config,&out)==PGR_ACH_ERR_BUSY);PgrAccountHostMetadataOutput zero{};assert(!std::memcmp(&out,&zero,sizeof(out)));assert(host->configure(reentry_config)==PGR_ACH_ERR_BUSY);}
  return &g_domain_token;
 }
 void *fake_domain_assemblies(void *, size_t *count) {
@@ -710,13 +710,13 @@ void setup_universe() {
   extern "C" const void *NAME(uint32_t v) {                                        \
     return fixture::g_core ? fixture::g_core->query_feature(ID, v) : nullptr;      \
   }
-FORWARD_FEATURE(pgrazor_adventure_sync_api, 2)
-extern "C" const pgs_accounts_api_v1_t *pgrazor_accounts_api(uint32_t v){return fixture::g_core?static_cast<const pgs_accounts_api_v1_t*>(fixture::g_core->query_feature(16,v)):nullptr;}
-FORWARD_FEATURE(pgrazor_runtime_metadata_api, 47)
-FORWARD_FEATURE(pgrazor_unity_scheduler_api, 48)
-FORWARD_FEATURE(pgrazor_runtime_transport_api, 52)
-FORWARD_FEATURE(pgrazor_runtime_bootstrap_api, 54)
-FORWARD_FEATURE(pgrazor_shared_host_api, 61)
+FORWARD_FEATURE(pgs_adventure_sync_api, 2)
+extern "C" const pgs_accounts_api_v1_t *pgs_accounts_api(uint32_t v){return fixture::g_core?static_cast<const pgs_accounts_api_v1_t*>(fixture::g_core->query_feature(16,v)):nullptr;}
+FORWARD_FEATURE(pgs_runtime_metadata_api, 47)
+FORWARD_FEATURE(pgs_unity_scheduler_api, 48)
+FORWARD_FEATURE(pgs_runtime_transport_api, 52)
+FORWARD_FEATURE(pgs_runtime_bootstrap_api, 54)
+FORWARD_FEATURE(pgs_shared_host_api, 61)
 #undef FORWARD_FEATURE
 
 int main(int argc, char **argv) {
@@ -731,9 +731,9 @@ int main(int argc, char **argv) {
   g_core = static_cast<const pgs_native_api_v2 *>(get_api(2));
   assert(g_core && g_core->query_feature);
 
-  const auto *host = static_cast<const PgrAccountHostApi *>(pgrazor_account_host_api(1));
+  const auto *host = static_cast<const PgrAccountHostApi *>(pgs_account_host_api(1));
   assert(host && host->version == 1 && host->size == sizeof(PgrAccountHostApi));
-  assert(pgrazor_account_host_api(2) == nullptr);
+  assert(pgs_account_host_api(2) == nullptr);
 
   setup_universe();
 
@@ -1024,7 +1024,7 @@ int main(int argc, char **argv) {
   assert(host->set_options(&opts) == PGR_ACH_ERR_STOPPED);
   assert(host->set_adventure_sync_allowed(1) == PGR_ACH_ERR_STOPPED);
   // Simulate a previously-entered setter reaching its pure publication after stop.
-  const auto *acc=pgrazor_accounts_api(1);pgs_account_snapshot_v1_t before{},after{};acc->api_sample(&before);
+  const auto *acc=pgs_accounts_api(1);pgs_account_snapshot_v1_t before{},after{};acc->api_sample(&before);
   publish_accounts(true,2000,PGR_ACC_CMD_LOGOUT,UINT64_C(9223372036854775807));
   publish_advsync(true,2500);acc->api_sample(&after);
   assert(before.last_accepted_token==after.last_accepted_token&&after.active_gc_roots==0);

@@ -25,9 +25,9 @@ PgrRuntimeTransportApi test_transport{};
 PgrBootApi test_bootstrap{};
 PgrMetaApi test_metadata{};
 }
-extern "C" const void *pgrazor_runtime_transport_api(uint32_t v){return v==1?&test_transport:nullptr;}
-extern "C" const void *pgrazor_runtime_bootstrap_api(uint32_t v){return v==1?&test_bootstrap:nullptr;}
-extern "C" const void *pgrazor_runtime_metadata_api(uint32_t v){return v==1?&test_metadata:nullptr;}
+extern "C" const void *pgs_runtime_transport_api(uint32_t v){return v==1?&test_transport:nullptr;}
+extern "C" const void *pgs_runtime_bootstrap_api(uint32_t v){return v==1?&test_bootstrap:nullptr;}
+extern "C" const void *pgs_runtime_metadata_api(uint32_t v){return v==1?&test_metadata:nullptr;}
 int main(){
  test_transport.sample=transport_sample;test_transport.get_string=transport_string;test_transport.emit=transport_emit;
  test_bootstrap.snapshot=bootstrap_snapshot;test_metadata.resolve_class=metadata_class;

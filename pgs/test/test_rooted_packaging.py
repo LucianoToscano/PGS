@@ -34,7 +34,7 @@ class RootedPackagingTests(unittest.TestCase):
 
 
 class ToggleCapabilityTests(unittest.TestCase):
-    """The launch-time PGRazor: On / Off switch: capability marker, preservation script, loader."""
+    """The launch-time PGS: On / Off switch: capability marker, preservation script, loader."""
 
     def test_capability_marker_is_an_empty_file_under_pgrazor(self):
         entries = rooted.capability_module_entries()

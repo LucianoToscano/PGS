@@ -148,13 +148,13 @@ void cleared(unsigned polls, unsigned events, unsigned allocations) {
 }
 }
 
-extern "C" const void* pgrazor_runtime_bootstrap_api(uint32_t) {
+extern "C" const void* pgs_runtime_bootstrap_api(uint32_t) {
     assert(false && "fixture must not bootstrap"); return nullptr;
 }
-extern "C" const void* pgrazor_runtime_metadata_api(uint32_t) {
+extern "C" const void* pgs_runtime_metadata_api(uint32_t) {
     assert(false && "fixture must not resolve metadata"); return nullptr;
 }
-extern "C" const void* pgrazor_runtime_transport_api(uint32_t version) {
+extern "C" const void* pgs_runtime_transport_api(uint32_t version) {
     assert(version == 1); return &test_transport;
 }
 extern "C" const void* pgs_vgp_results_api(uint32_t version) {

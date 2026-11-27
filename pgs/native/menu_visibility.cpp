@@ -115,7 +115,7 @@ void install(){
   if(ok)ok=pgs_hook(op_code,reinterpret_cast<void*>(open_menu),reinterpret_cast<void**>(&original_open))==0&&original_open;
  }
  ready=ok;
- __android_log_print(ok?ANDROID_LOG_INFO:ANDROID_LOG_WARN,"PGRazor","menu-visibility: %s",ok?"installed":"unsupported; joystick hidden");
+ __android_log_print(ok?ANDROID_LOG_INFO:ANDROID_LOG_WARN,"PGS","menu-visibility: %s",ok?"installed":"unsupported; joystick hidden");
 }
 }
 void pgr_menu_visibility_tick(uint64_t now_ms){

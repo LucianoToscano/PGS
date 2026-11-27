@@ -1,7 +1,7 @@
 #pragma once
 #include <cstdint>
 
-// PGRazor native migration: Always Hit throw normalisation (feature id 7).
+// PGS native module: Always Hit throw normalisation (feature id 7).
 //
 // Mirrors the Always Hit block in diagnostics/quick-ball.js (the launch/release
 // observers, the OnCollisionEnter / OnTriggerEnter replacements and the btyb

@@ -1,7 +1,7 @@
 #pragma once
 #include <stdint.h>
 
-// Native Auto-Raid controller for PGRazor (0.435.2).
+// Native Auto-Raid controller (original 0.435.2 implementation).
 // Runs exclusively on the proven Unity main gameplay thread. Discovers nearby active raid bosses matching
 // user tier/species filters, requests travel via the runtime transport, opens the local gym, enforces
 // Free Daily Pass first and optional Premium Battle Pass (strictly forbidding Remote Raid Passes and

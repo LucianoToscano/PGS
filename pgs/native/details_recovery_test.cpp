@@ -22,7 +22,7 @@
 // snapshot calls feature 37 validate() -- both read this same fake metadata. The GC is moving:
 // alive/count/item can relocate the whole scene, and every native root is re-resolved afterwards. No
 // hook, no real game method; the module installs NO hook and NEVER calls back into JS. The coordinator
-// builds and runs this against libpgrazor.so after registering query_feature case 38 and linking
+// builds and runs this against libpgs-core.so after registering query_feature case 38 and linking
 // details_recovery.cpp (and details_completion.cpp).
 
 namespace {
@@ -233,7 +233,7 @@ void expect_refused() {
 }  // namespace
 
 int main(int argc, char **argv) {
-  const char *so_path = argc > 1 ? argv[1] : "./libpgrazor.so";
+  const char *so_path = argc > 1 ? argv[1] : "./libpgs-core.so";
   void *lib = ::dlopen(so_path, RTLD_NOW | RTLD_LOCAL);
   if (!lib) { std::fprintf(stderr, "dlopen(%s) failed: %s\n", so_path, ::dlerror()); return 1; }
   auto getter = reinterpret_cast<GetApiFn>(::dlsym(lib, "pgs_native_api"));

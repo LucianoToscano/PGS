@@ -517,7 +517,7 @@ int end_catch(uint64_t token,uint64_t tid){
  return iv()->end_catch(token,tid);
 }
 void on_pulse(void *,const PgrUnityPulse *pulse){if(pulse&&pulse->tid>0&&pulse->generation){
- const auto *api=static_cast<const PgrUnitySchedulerApi*>(pgrazor_unity_scheduler_api(2));if(api&&api->valid(pulse->generation)==1)tick(uint64_t(pulse->tid));}}
+ const auto *api=static_cast<const PgrUnitySchedulerApi*>(pgs_unity_scheduler_api(2));if(api&&api->valid(pulse->generation)==1)tick(uint64_t(pulse->tid));}}
 const PgrQuickballHostApi api{1,sizeof(PgrQuickballHostApi),configure,set_options,shared_sites,tick,stop,sample,next_event,rewrite_submit,begin_catch,end_catch,on_pulse};
 }
 extern "C" const void *pgs_quickball_host_api(uint32_t version){return version==1?&api:nullptr;}

@@ -58,7 +58,7 @@ std::atomic<uint64_t> g_request_serial{0};
 std::atomic<uint64_t> g_distance_bits{0};   // bit-cast double
 std::atomic<uint32_t> g_longest{0};
 std::atomic<uint32_t> g_fault_serial{0};
-std::atomic<uint32_t> g_fault_step{0};      // PGRAZOR_INC_FAULT_* of the latest fault
+std::atomic<uint32_t> g_fault_step{0};      // PGS_INC_FAULT_* of the latest fault
 std::atomic<uint32_t> g_root_count{0};     // durable pending roots currently held
 
 // --- ownership / reentrancy -------------------------------------------------------

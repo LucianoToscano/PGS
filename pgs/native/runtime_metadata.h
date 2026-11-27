@@ -23,7 +23,7 @@
 //    by the compiled harness) and the real loaded-module base/size.
 //  * NO callback into JS and NO production-readiness claim. A successful compile or fixture harness
 //    run is NOT evidence that real translated-ARM64 resolution under Houdini works on the game.
-//  * Internal C++ interface: the single hidden getter below is NOT added to pgrazor.map; the
+//  * Internal C++ interface: the single hidden getter below is NOT added to pgs.map; the
 //    coordinator registers it under query_feature(47) (same pattern as features 24/43).
 
 #ifdef __cplusplus
@@ -302,10 +302,10 @@ static_assert(sizeof(PgrMetaApi) == 64, "PgrMetaApi must remain a 64-byte versio
 
 // Hidden getter. NOT exported by the version script; the coordinator registers it in query_feature
 // under feature id 47 and answers only on an exact version match.
-const void *pgrazor_runtime_metadata_api(uint32_t version);
-// Canonical source spelling; retain the hidden legacy linkage for older objects and fixtures.
-static inline const void *pgs_runtime_metadata_api(uint32_t version) {
-    return pgrazor_runtime_metadata_api(version);
+const void *pgs_runtime_metadata_api(uint32_t version);
+// Compatibility for older source consumers; the PGS name is the primary hidden getter.
+static inline const void *pgrazor_runtime_metadata_api(uint32_t version) {
+    return pgs_runtime_metadata_api(version);
 }
 
 #ifdef __cplusplus

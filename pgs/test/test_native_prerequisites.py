@@ -21,7 +21,7 @@ class NativePrerequisiteTests(unittest.TestCase):
         self.temp = tempfile.TemporaryDirectory(prefix='pgs-native-prerequisites-')
         self.addCleanup(self.temp.cleanup)
         self.base = Path(self.temp.name).resolve()
-        self.root = self.base / 'checkout/pgrazor'
+        self.root = self.base / 'checkout/pgs'
         self.root.mkdir(parents=True)
 
     def ndk(self, path, revision):
@@ -56,7 +56,7 @@ class NativePrerequisiteTests(unittest.TestCase):
         sdk = self.base / 'sdk'
         self.ndk(sdk / 'ndk' / art_build.NDK_VERSION, art_build.NDK_VERSION)
         with self.assertRaisesRegex(RuntimeError, 'Pinned NDK'):
-            art_build.resolve_art_ndk(self.root, {'PGRAZOR_ART_NDK': str(wrong), 'ANDROID_SDK_ROOT': str(sdk)})
+            art_build.resolve_art_ndk(self.root, {'PGS_ART_NDK': str(wrong), 'ANDROID_SDK_ROOT': str(sdk)})
 
     def test_android_home_and_explicit_art_selection(self):
         sdk = self.base / 'sdk'
@@ -73,7 +73,7 @@ class NativePrerequisiteTests(unittest.TestCase):
         path.mkdir()
         (path / 'source.properties').write_text('Pkg.Revision = ' + art_build.NDK_VERSION)
         with self.assertRaisesRegex(RuntimeError, 'toolchain missing'):
-            art_build.resolve_art_ndk(self.root, {'PGRAZOR_ART_NDK': str(path)})
+            art_build.resolve_art_ndk(self.root, {'PGS_ART_NDK': str(path)})
 
     def test_dependency_cache_precedence_and_legacy_compatibility(self):
         portable = self.root / 'build/native/deps'

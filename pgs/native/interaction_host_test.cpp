@@ -1325,7 +1325,7 @@ void prepared_run(){
     ScopedLock lock;assert(start_observation_locked()==0);
 }
 }
-extern "C" const void *pgrazor_runtime_transport_api(uint32_t v){return v==1?actual_transport:nullptr;}
+extern "C" const void *pgs_runtime_transport_api(uint32_t v){return v==1?actual_transport:nullptr;}
 int main(int argc,char **argv){
     assert(argc==2);void *lib=dlopen(argv[1],RTLD_NOW|RTLD_LOCAL);if(!lib)puts(dlerror());assert(lib);
     auto get=(const void*(*)(uint32_t))dlsym(lib,"pgs_native_api");assert(get);

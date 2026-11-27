@@ -2,7 +2,7 @@
 
 These tests exercise the real ZIP rewriting while native/ART/DEX compilation and the Android SDK
 commands are inert fixtures, so nothing here builds, installs or touches a device. They assert the
-final production APK carries zero PGRazor JavaScript or Frida assets, keeps the compiled native/ART
+final production APK carries zero PGS JavaScript or Frida assets, keeps the compiled native/ART
 runtimes and their licenses, and that the packaging report omits every reference to omitted assets.
 """
 import contextlib
@@ -151,7 +151,7 @@ class CompiledGameplayPackageTests(unittest.TestCase):
                     self.assertEqual(mode['preferredAbi'], '')
                     self.assertEqual(mode['runtimeAbis'], ['arm64-v8a', 'x86_64'])
 
-                    # Zero PGRazor JavaScript and zero Frida Gadget anywhere in the final APK.
+                    # Zero PGS JavaScript and zero Frida Gadget anywhere in the final APK.
                     self.assertFalse(any(n.startswith('assets/pgs/') and n.endswith('.js') for n in names), names)
                     self.assertFalse(any(n.endswith('libfrida-gadget.so') for n in names), names)
                     self.assertFalse(any(n.startswith('assets/pgs/bridge-notices/') for n in names), names)

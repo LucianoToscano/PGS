@@ -39,6 +39,12 @@ class ReleaseBundleTests(unittest.TestCase):
     def test_complete_bundle(self):
         self.assertEqual(set(verify_release.verify(self.folder, self.tag)), set(verify_release.DOWNLOADS))
 
+    def test_canonical_version_metadata(self):
+        with zipfile.ZipFile(self.folder / verify_release.DOWNLOADS[0], 'w') as apk:
+            apk.writestr('assets/pgs/mode.json', json.dumps({'version': '17.24.2', 'pgsVersion': self.tag}))
+        self.receipts()
+        self.assertEqual(set(verify_release.verify(self.folder, self.tag)), set(verify_release.DOWNLOADS))
+
     def test_missing_download_blocks_publication(self):
         (self.folder / 'PGRazor-Root-module.zip').unlink()
         with self.assertRaisesRegex(ValueError, 'Missing'):

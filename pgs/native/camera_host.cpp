@@ -222,13 +222,16 @@ const pgs_native_api_v2 *resolve_native_api() {
   if (g_state.core_handle != nullptr) {
     typedef const void *(*NativeApiFn)(uint32_t);
     auto fn = reinterpret_cast<NativeApiFn>(
-        dlsym(g_state.core_handle, "pgrazor_native_api"));
+        dlsym(g_state.core_handle, "pgs_native_api"));
+    if (fn == nullptr) {
+      fn = reinterpret_cast<NativeApiFn>(dlsym(g_state.core_handle, "pgrazor_native_api"));
+    }
     if (fn != nullptr) {
       return static_cast<const pgs_native_api_v2 *>(fn(2u));
     }
   }
 #if !defined(PGR_CAMERA_HOST_STANDALONE_TEST)
-  return static_cast<const pgs_native_api_v2 *>(pgrazor_native_api(2u));
+  return static_cast<const pgs_native_api_v2 *>(pgs_native_api(2u));
 #else
   return nullptr;
 #endif
@@ -293,7 +296,7 @@ const PgrBootApi *resolve_bootstrap_api() {
 
 int call_hook(void *target, void *replacement, void **original) {
 #if !defined(PGR_CAMERA_HOST_STANDALONE_TEST)
-  return pgrazor_hook(target, replacement, original);
+  return pgs_hook(target, replacement, original);
 #else
   if (g_standalone_hook != nullptr) {
     return g_standalone_hook(target, replacement, original);
@@ -1668,7 +1671,7 @@ void execute_sample_locked(uint64_t tid, void *rig_receiver,
 uint64_t idle_getter_generation(uint64_t tid) {
  const PgrUnitySchedulerApi3 *scheduler=nullptr;
 #if !defined(PGR_CAMERA_HOST_STANDALONE_TEST)
- scheduler=static_cast<const PgrUnitySchedulerApi3*>(pgrazor_unity_scheduler_api(3));
+ scheduler=static_cast<const PgrUnitySchedulerApi3*>(pgs_unity_scheduler_api(3));
 #else
  auto core=resolve_native_api();if(core&&core->query_feature)scheduler=static_cast<const PgrUnitySchedulerApi3*>(core->query_feature(48,3));
 #endif

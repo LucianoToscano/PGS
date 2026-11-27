@@ -1059,7 +1059,7 @@ const pgs_accounts_api_v1_t kAccountsApiV1 = {
 
 }  // namespace
 
-extern "C" const pgs_accounts_api_v1_t* pgrazor_accounts_api(uint32_t version) {
+extern "C" const pgs_accounts_api_v1_t* pgs_accounts_api(uint32_t version) {
   if (version != PGR_ACCOUNTS_API_VERSION) {
     return nullptr;
   }

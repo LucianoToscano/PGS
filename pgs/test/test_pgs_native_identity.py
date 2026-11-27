@@ -37,7 +37,7 @@ class PgsNativeRenameTests(unittest.TestCase):
         shim = (NATIVE / "pgs_native_api_compat.h").read_text(encoding="utf-8")
         self.assertFalse((NATIVE / "pgrazor_native_api.h").exists())
         internal = (NATIVE / "pgs_internal.h").read_text(encoding="utf-8")
-        self.assertIn("typedef pgrazor_native_api_v2 pgs_native_api_v2;", header)
+        self.assertIn("typedef pgs_native_api_v2 pgrazor_native_api_v2;", header)
         self.assertIn('#include "pgs_native_api.h"', shim)
         self.assertIn("int pgs_policy_selfcheck(void);", internal)
         self.assertFalse((NATIVE / "pgrazor_internal.h").exists())
@@ -199,6 +199,17 @@ class PgsNativeRenameTests(unittest.TestCase):
                 content = (NATIVE / name).read_text(encoding='utf-8')
                 self.assertIsNone(legacy.search(content))
                 self.assertIsNotNone(primary.search(content))
+
+    def test_primary_native_factory_consumers(self):
+        camera = (NATIVE / "camera_host.cpp").read_text(encoding="utf-8")
+        spawn = (NATIVE / "spawn_host.cpp").read_text(encoding="utf-8")
+        primary = 'dlsym(g_state.core_handle, "pgs_native_api")'
+        fallback = 'dlsym(g_state.core_handle, "pgrazor_native_api")'
+        self.assertLess(camera.index(primary), camera.index(fallback))
+        self.assertIn("*>(pgs_native_api(2u))", camera)
+        self.assertIn("return pgs_hook(target, replacement, original);", camera)
+        self.assertIn("*>(pgs_native_api(1))", spawn)
+        self.assertNotIn("*>(pgrazor_native_api(1))", spawn)
 
     def test_pgs_cmd_is_primary_and_legacy_launcher_forwards(self):
         primary = (ROOT / "pgs.cmd").read_text(encoding="utf-8")

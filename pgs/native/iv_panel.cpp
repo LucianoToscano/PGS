@@ -11,7 +11,7 @@
 #include <string>
 // Encounter and Pokemon-details IVs in the storage list's style. iv_display.cpp decides when an
 // IV overlay is applied or restored; this draws it. Instead of re-texting the game's CP label,
-// a soft off-white panel named PGRazorIvLine is added next to the label (under it in encounters,
+// a soft off-white panel named PGSIvLine is added next to the label (under it in encounters,
 // above it on the Pokemon details screen, where the level arc runs just below the CP) and holds a
 // smaller copy of it reading "Lv 25 · IV 91.1% · 15/14/12", or the chosen part of that, with the
 // percent colored by tier. Restoring hides the panel;
@@ -25,7 +25,7 @@ template<class F>F fn(void *p){require(p,"missing runtime export");return reinte
 PgrBootBinding boot{};
 bool ready=false,faulted=false,busy=false,announced=false,announced_owned=false;
 void *instantiate=nullptr,*get_component=nullptr,*get_components=nullptr,*find_child=nullptr,*new_game_object=nullptr,*set_parent=nullptr;
-const char *kName="PGRazorIvLine";
+const char *kName="PGSIvLine";
 
 void *exp(const char *name){std::string n="il2cpp_";n+=name;void *p=dlsym(boot.handle,n.c_str());require(p,name);return p;}
 void *klass(void *o){require(o,"null object");return fn<void*(*)(void*)>(boot.runtime.object_get_class)(o);}
@@ -124,8 +124,8 @@ std::string line(int32_t level_half,int atk,int def,int sta,int fmt){
 
 // PvP pieces of a format-4 line, per league (Great, Ultra, Master): the crest (an Image) and the rank
 // (a further text copy), children of the panel after the main text.
-const char *const kRankNames[]={"PGRazorPvpRank0","PGRazorPvpRank1","PGRazorPvpRank2"};
-const char *const kIconNames[]={"PGRazorPvpIcon0","PGRazorPvpIcon1","PGRazorPvpIcon2"};
+const char *const kRankNames[]={"PGSPvpRank0","PGSPvpRank1","PGSPvpRank2"};
+const char *const kIconNames[]={"PGSPvpIcon0","PGSPvpIcon1","PGSPvpIcon2"};
 const char *const kLeagueColor[]={"#2a63c4","#a87405","#6a3fb5"};
 struct Line {void *panel=nullptr,*text=nullptr,*rank[3]={},*icon[3]={};};
 void *child_named(void *transform,const char *name){void *args[]={managed_string(name)};return invoke(find_child,transform,args);}

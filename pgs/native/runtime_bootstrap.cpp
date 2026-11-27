@@ -514,6 +514,6 @@ const PgrBootApi g_api = {PGR_BOOT_API_VERSION, sizeof(PgrBootApi), api_probe, a
 
 } // namespace
 
-const void *pgrazor_runtime_bootstrap_api(uint32_t version) {
+const void *pgs_runtime_bootstrap_api(uint32_t version) {
   return version == PGR_BOOT_API_VERSION ? &g_api : nullptr;
 }

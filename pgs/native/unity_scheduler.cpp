@@ -216,6 +216,6 @@ const PgrUnitySchedulerApi api{2,sizeof(PgrUnitySchedulerApi),install,activate,r
 const PgrUnitySchedulerApi3 api3{3,sizeof(PgrUnitySchedulerApi3),install,activate,revoke,valid,snapshot,executing_generation};
 const PgrUnitySchedulerApi4 api4{4,sizeof(PgrUnitySchedulerApi4),install,activate,revoke,valid,snapshot,executing_generation,diagnostics};
 }
-extern "C" const void *pgrazor_unity_scheduler_api(uint32_t version){
+extern "C" const void *pgs_unity_scheduler_api(uint32_t version){
  if(version==2)return &api;if(version==3)return &api3;if(version==4)return &api4;return nullptr;
 }

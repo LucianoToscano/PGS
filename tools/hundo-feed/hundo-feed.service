@@ -1,5 +1,5 @@
 [Unit]
-Description=PGRazor hundo feed (provider 100% IV list -> static JSON)
+Description=PGS hundo feed (provider 100% IV list -> static JSON)
 After=network-online.target
 Wants=network-online.target
 

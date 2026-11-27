@@ -83,7 +83,7 @@ void scenario(unsigned mode){
 }
 extern "C" const void *pgs_spin_camera_api(uint32_t v){return v==1?&spin_fixture::camera_table:nullptr;}
 extern "C" const void *pgs_quick_spin_api(uint32_t v){return v==1?&spin_fixture::quick_table:nullptr;}
-const void *pgrazor_runtime_transport_api(uint32_t v){return v==1?&spin_fixture::transport_table:nullptr;}
-extern "C" const void *pgrazor_unity_scheduler_api(uint32_t v){return v==2?&spin_fixture::scheduler_table:nullptr;}
-extern "C" const void *pgrazor_shared_host_api(uint32_t v){return v==1?&spin_fixture::shared_table:nullptr;}
+const void *pgs_runtime_transport_api(uint32_t v){return v==1?&spin_fixture::transport_table:nullptr;}
+extern "C" const void *pgs_unity_scheduler_api(uint32_t v){return v==2?&spin_fixture::scheduler_table:nullptr;}
+extern "C" const void *pgs_shared_host_api(uint32_t v){return v==1?&spin_fixture::shared_table:nullptr;}
 int main(){for(unsigned mode=0;mode<5;++mode){pid_t child=fork();assert(child>=0);if(!child){spin_fixture::scenario(mode);_exit(0);}int status=0;assert(waitpid(child,&status,0)==child&&WIFEXITED(status)&&WEXITSTATUS(status)==0);}puts("PASS spin_host production-source boundary fixture: independent caps, config mapping, lease/proof/epoch, transport actions, stop and reentry");}

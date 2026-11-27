@@ -29,7 +29,7 @@ static void *fixture_dlsym(void *handle, const char *symbol);
 #undef dlclose
 #undef dlsym
 
-const void *pgrazor_runtime_metadata_api(uint32_t) { return nullptr; }
+const void *pgs_runtime_metadata_api(uint32_t) { return nullptr; }
 
 // Sentinel handles. RTLD_DEFAULT is (void*)0 on LP64 NDK; none of these collide with it.
 static void *const LIBDL_HANDLE = reinterpret_cast<void *>(0x4001);

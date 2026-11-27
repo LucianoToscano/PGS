@@ -42,10 +42,10 @@ extern "C" const void *pgs_encounter_berries_api(uint32_t v){return core?core->q
 extern "C" const void *pgs_inventory_host_api(uint32_t v){return core?core->query_feature(65,v):nullptr;}
 extern "C" const void *pgs_items_api(uint32_t v){return core?core->query_feature(14,v):nullptr;}
 extern "C" const void *pgs_map_poi_api(uint32_t v){return core?core->query_feature(42,v):nullptr;}
-extern "C" const void *pgrazor_runtime_bootstrap_api(uint32_t v){return core?core->query_feature(54,v):nullptr;}
-extern "C" const void *pgrazor_runtime_metadata_api(uint32_t v){return core?core->query_feature(47,v):nullptr;}
-extern "C" const void *pgrazor_runtime_transport_api(uint32_t v){return core?core->query_feature(52,v):nullptr;}
-extern "C" const void *pgrazor_shared_host_api(uint32_t v){return core?core->query_feature(61,v):nullptr;}
+extern "C" const void *pgs_runtime_bootstrap_api(uint32_t v){return core?core->query_feature(54,v):nullptr;}
+extern "C" const void *pgs_runtime_metadata_api(uint32_t v){return core?core->query_feature(47,v):nullptr;}
+extern "C" const void *pgs_runtime_transport_api(uint32_t v){return core?core->query_feature(52,v):nullptr;}
+extern "C" const void *pgs_shared_host_api(uint32_t v){return core?core->query_feature(61,v):nullptr;}
 extern "C" const void *pgs_shared_metadata_api(uint32_t v){return core?core->query_feature(56,v):nullptr;}
 extern "C" const void *pgs_transfer_facts_api(uint32_t v){return core?core->query_feature(35,v):nullptr;}
 const void *pgs_transfer_policy_api(uint32_t v){return core?core->query_feature(4,v):nullptr;}

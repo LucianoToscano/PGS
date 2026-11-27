@@ -30,14 +30,14 @@ const void *fixture_boot_api(uint32_t v){return fixture_core->query_feature(54,v
 const void *fixture_scheduler_api(uint32_t v){return fixture_core->query_feature(48,v);}
 int fixture_hook(void *target,void *replacement,void **original){return DobbyHook(target,replacement,original);}
 int fixture_unhook(void *target){return DobbyDestroy(target);}
-#define pgrazor_native_api fixture_core_api
+#define pgs_native_api fixture_core_api
 #define pgs_camera_metadata_api fixture_metadata_api
 #define pgs_camera_sampler_api fixture_sampler_api
-#define pgrazor_runtime_transport_api fixture_transport_api
-#define pgrazor_runtime_bootstrap_api fixture_boot_api
-#define pgrazor_unity_scheduler_api fixture_scheduler_api
-#define pgrazor_hook fixture_hook
-#define pgrazor_unhook fixture_unhook
+#define pgs_runtime_transport_api fixture_transport_api
+#define pgs_runtime_bootstrap_api fixture_boot_api
+#define pgs_unity_scheduler_api fixture_scheduler_api
+#define pgs_hook fixture_hook
+#define pgs_unhook fixture_unhook
 #define pgs_camera_host_api fixture_host_api
 #include "camera_host.cpp"
 #include <sys/mman.h>

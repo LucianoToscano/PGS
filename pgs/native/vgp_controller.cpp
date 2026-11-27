@@ -627,7 +627,7 @@ void tickPending(const PgrVgpControllerTick *in, PgrVgpControllerOut *o, uint64_
     if (destroy && alive(target)) {
       void *exc = nullptr;
       reinterpret_cast<Invoke>(cfg.runtime_invoke)(destroy, target, nullptr, &exc);
-      __android_log_print(exc ? ANDROID_LOG_WARN : ANDROID_LOG_INFO, "PGRazorVgp", "Caught %s spawn %s from the map",
+      __android_log_print(exc ? ANDROID_LOG_WARN : ANDROID_LOG_INFO, "PGSVgp", "Caught %s spawn %s from the map",
                           kind ? "non-wild" : "wild", exc ? "could not be removed" : "removed");
     }
   }

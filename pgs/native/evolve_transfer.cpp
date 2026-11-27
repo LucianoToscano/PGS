@@ -57,7 +57,7 @@ void *field_info(void *k,const char *name,const char *type){
 template<class T>T field(void *o,const char *name,const char *type){T value{};auto f=field_info(klass(o),name,type);fn<void(*)(void*,void*,void*)>(boot.runtime.field_get_value)(o,f,&value);return value;}
 template<class T>void put(void *o,const char *name,const char *type,T value){auto f=field_info(klass(o),name,type);fn<void(*)(void*,void*,void*)>(boot.runtime.field_set_value)(o,f,&value);}
 void *method(void *k,const char *name,int count){void *m=fn<void*(*)(void*,const char*,int)>(boot.meta.class_get_method_from_name)(k,name,count);require(m,name);require(fn<unsigned(*)(void*)>(boot.meta.method_get_param_count)(m)==unsigned(count),name);return m;}
-void *invoke(void *m,void *o,void **args=nullptr){void *ex=nullptr;void *v=fn<void*(*)(void*,void*,void**,void**)>(boot.runtime.runtime_invoke)(m,o,args,&ex);if(ex){char detail[512]{};auto format=reinterpret_cast<void(*)(void*,char*,int)>(dlsym(boot.handle,"il2cpp_format_exception"));if(format)format(ex,detail,sizeof(detail));__android_log_print(ANDROID_LOG_ERROR,"PGRazorEvolveTransfer","%s: %s",managed_context,detail);throw Failure{managed_context};}return v;}
+void *invoke(void *m,void *o,void **args=nullptr){void *ex=nullptr;void *v=fn<void*(*)(void*,void*,void**,void**)>(boot.runtime.runtime_invoke)(m,o,args,&ex);if(ex){char detail[512]{};auto format=reinterpret_cast<void(*)(void*,char*,int)>(dlsym(boot.handle,"il2cpp_format_exception"));if(format)format(ex,detail,sizeof(detail));__android_log_print(ANDROID_LOG_ERROR,"PGSEvolveTransfer","%s: %s",managed_context,detail);throw Failure{managed_context};}return v;}
 void *call(void *o,const char *name,int n=0,void **args=nullptr){return invoke(method(klass(o),name,n),o,args);}
 template<class T>T boxed(void *o,const char *type){require(o&&typename_of(fn<void*(*)(void*)>(boot.meta.class_get_type)(klass(o)))==type,type);T v{};auto p=fn<void*(*)(void*)>(boot.runtime.object_unbox)(o);require(p,"boxed value");memcpy(&v,p,sizeof(v));return v;}
 std::string string(void *o){
@@ -118,7 +118,7 @@ struct Job : Pending {
 };
 Job job;std::deque<Pending> queue;std::set<std::pair<std::string,uint64_t>> seen;
 void status(const std::string &message){
- __android_log_print(ANDROID_LOG_INFO,"PGRazorEvolveTransfer","%s",message.c_str());
+ __android_log_print(ANDROID_LOG_INFO,"PGSEvolveTransfer","%s",message.c_str());
  auto tr=static_cast<const PgrRuntimeTransportApi*>(pgs_runtime_transport_api(1));
  PgrRuntimeTransportString s{message.c_str(),uint32_t(message.size())};if(tr)tr->emit(56,nullptr,0,&s,1);
 }

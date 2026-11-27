@@ -55,12 +55,12 @@ TABLE(flow_inventory_api,flow_inventory) TABLE(flow_spin_api,flow_spin) TABLE(fl
 TABLE(flow_camera_api,flow_camera) TABLE(flow_combat_api,flow_combat) TABLE(flow_account_api,flow_account)
 TABLE(flow_encounter_api,flow_encounter) TABLE(flow_interaction_api,flow_interaction)
 #undef TABLE
-#define pgrazor_unity_scheduler_api flow_scheduler_api
-#define pgrazor_runtime_transport_api flow_transport_api
-#define pgrazor_runtime_bootstrap_api flow_boot_api
-#define pgrazor_runtime_metadata_api flow_metadata_api
+#define pgs_unity_scheduler_api flow_scheduler_api
+#define pgs_runtime_transport_api flow_transport_api
+#define pgs_runtime_bootstrap_api flow_boot_api
+#define pgs_runtime_metadata_api flow_metadata_api
 #define pgs_catch_wait_api flow_wait_api
-#define pgrazor_shared_host_api flow_shared_api
+#define pgs_shared_host_api flow_shared_api
 #define pgs_quickball_host_api flow_quick_api
 #define pgs_routes_host_api flow_routes_api
 #define pgs_inventory_host_api flow_inventory_api

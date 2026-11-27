@@ -28,7 +28,7 @@ int g_hook_install_calls = 0;
 #if PGR_ACCOUNTS_REAL_DOBBY
 // Real-Dobby mode keeps scenario counters and forced-install errors, then delegates
 // through the explicit C-to-C++ test bridge to the production hook engine.
-extern "C" int pgrazor_test_real_hook(void* target, void* replacement, void** original);
+extern "C" int pgs_test_real_hook(void* target, void* replacement, void** original);
 extern "C" int pgs_hook(void* target, void* replacement, void** original) {
   ++g_hook_install_calls;
   if (g_hook_install_rc != 0) {
@@ -36,7 +36,7 @@ extern "C" int pgs_hook(void* target, void* replacement, void** original) {
   }
   g_hook_target = target;
   g_hook_replacement = replacement;
-  return pgrazor_test_real_hook(target, replacement, original);
+  return pgs_test_real_hook(target, replacement, original);
 }
 #else
 // Stub mode (default): provide pgs_hook directly; no Dobby, no real patching.

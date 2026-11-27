@@ -9,11 +9,11 @@ import struct
 import unittest
 
 ROOT = Path(__file__).resolve().parents[1]
-spec = importlib.util.spec_from_file_location('pgrazor_axml', ROOT / 'axml.py')
+spec = importlib.util.spec_from_file_location('pgs_axml', ROOT / 'axml.py')
 axml = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(axml)
 
-test_spec = importlib.util.spec_from_file_location('pgrazor_test_axml', Path(__file__).resolve().parent / 'test_axml.py')
+test_spec = importlib.util.spec_from_file_location('pgs_test_axml', Path(__file__).resolve().parent / 'test_axml.py')
 test_axml = importlib.util.module_from_spec(test_spec)
 test_spec.loader.exec_module(test_axml)
 fixture = test_axml.fixture

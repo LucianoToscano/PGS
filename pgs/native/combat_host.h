@@ -20,7 +20,7 @@ extern "C" {
 //   - Feature 21 (`rocket_combat.h`):   Rocket scope / UI / vNext / shield / hold-gate controller
 //
 // Consumes canonical Feature 56 (`PgrSharedMetadataOutput`, 67304B) resolved from
-// explicit `cfg->metadata`, `pgrazor_shared_host_api(1)->metadata()`, or
+// explicit `cfg->metadata`, `pgs_shared_host_api(1)->metadata()`, or
 // `pgs_shared_metadata_api(2)->prepare(&cfg->metadata_config, ...)`.
 //
 // Owns all synchronous Dobby observer hooks for Rocket Combat (10 dedicated +
@@ -107,7 +107,7 @@ struct PgrCombatHostConfig {
     uint32_t reserved0;                        // 12: 0
 
     // Optional pre-prepared Feature 56 output. If NULL, resolved from
-    // `pgrazor_shared_host_api(1)->metadata()` or `metadata_config`.
+    // `pgs_shared_host_api(1)->metadata()` or `metadata_config`.
     const PgrSharedMetadataOutput *metadata;   // 16
 
     // Direct IL2CPP exports required by leaves 6 / 19 / 20 / 21.

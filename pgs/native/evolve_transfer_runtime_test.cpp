@@ -136,9 +136,9 @@ void accept(){response_ready=true;tick();assert(job.await_inventory);}
 void reconcile(uint64_t id=10){O *p=object("Holoholo.Rpc.PokemonProto");p->data["id_"]=id;p->data["pokemonId_"]=next_target;inventory.erase(job.sending.id);inventory[id]=p;stock-=cost-1;tick();}
 }
 void *fixture_symbol(void*,const char*n){if(!strcmp(n,"il2cpp_type_get_object"))return reinterpret_cast<void*>(fixture_type_object);if(!strcmp(n,"il2cpp_string_length"))return reinterpret_cast<void*>(string_length);return nullptr;}
-const void *pgrazor_runtime_bootstrap_api(uint32_t){return &boot_api;}const void *pgrazor_runtime_metadata_api(uint32_t){return &meta_api;}
-const void *pgrazor_runtime_transport_api(uint32_t){return &transport_api;}
-extern "C" const void *pgrazor_shared_host_api(uint32_t v){return v==2?static_cast<void*>(&broker_api):static_cast<void*>(&host_api);}
+const void *pgs_runtime_bootstrap_api(uint32_t){return &boot_api;}const void *pgs_runtime_metadata_api(uint32_t){return &meta_api;}
+const void *pgs_runtime_transport_api(uint32_t){return &transport_api;}
+extern "C" const void *pgs_shared_host_api(uint32_t v){return v==2?static_cast<void*>(&broker_api):static_cast<void*>(&host_api);}
 const void *pgs_transfer_facts_api(uint32_t){return &facts_api;}const void *pgs_vgp_results_api(uint32_t){return &result_api;}
 extern "C" int pgr_pvp_keep(void*,int,int,int,int,uint64_t,char*,uint32_t){return pvp_protected?1:0;}
 bool pgr_evolution_busy(){return batch_busy;}

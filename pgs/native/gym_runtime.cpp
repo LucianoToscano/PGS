@@ -32,7 +32,7 @@ void event(const std::string &message,int result=0,int dust=0,bool spin=false){
  std::string &last=spin?spin_status:status;
  if(message==last&&result==0&&dust==0)return;last=message;
  const char *kind=spin?"gym-spin":"gym-automation";
- __android_log_print(ANDROID_LOG_INFO,"PGRazorGym","%s result=%d dust=%d",message.c_str(),result,dust);
+ __android_log_print(ANDROID_LOG_INFO,"PGSGym","%s result=%d dust=%d",message.c_str(),result,dust);
  const auto *tr=static_cast<const PgrRuntimeTransportApi*>(pgs_runtime_transport_api(1));
  std::string json=std::string("{\"kind\":\"")+kind+"\",\"message\":\""+message+"\",\"result\":"+std::to_string(result)+",\"dust\":"+std::to_string(dust)+"}";
  // Use the existing host diagnostic event action; no gameplay pointer crosses it.
@@ -378,7 +378,7 @@ void poll(const Permission &p){
  auto vr=static_cast<const PgrVgpResultsApi*>(pgs_vgp_results_api(1));PgrVgpResultsResult out{};int rc=vr->poll(pending.promise.get(),1,owner,&out);if(!rc)return;
  if(rc!=PGR_VR_DONE){
   if(rc<0&&pending.promise){void *k=klass(pending.promise.get());auto nm=fn<const char*(*)(void*)>(exp("class_get_name"));auto ns=fn<const char*(*)(void*)>(exp("class_get_namespace"));
-   __android_log_print(ANDROID_LOG_INFO,"PGRazorGym","Gym request unreadable: phase=%d rc=%d promise=%s.%s",pending.phase,rc,ns(k),nm(k));}
+   __android_log_print(ANDROID_LOG_INFO,"PGSGym","Gym request unreadable: phase=%d rc=%d promise=%s.%s",pending.phase,rc,ns(k),nm(k));}
   if(pending.phase==3)history.refuse(pending.defender,now);event("Gym request rejected",rc);clear_pending();next_scan=now+10000;return;}
  Root response;response.h=out.value_handle;
  pending.promise.reset();pending.reflection.reset();

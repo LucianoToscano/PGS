@@ -81,9 +81,9 @@ void *fake_symbol(void*,const char *name){
  if(std::strcmp(name,"il2cpp_class_is_enum")==0)return reinterpret_cast<void*>(is_enum);
  return nullptr;
 }
-extern "C" const void *pgrazor_runtime_transport_api(uint32_t){return &transport_api;}
-extern "C" const void *pgrazor_runtime_bootstrap_api(uint32_t){return nullptr;}
-extern "C" const void *pgrazor_runtime_metadata_api(uint32_t){return nullptr;}
+extern "C" const void *pgs_runtime_transport_api(uint32_t){return &transport_api;}
+extern "C" const void *pgs_runtime_bootstrap_api(uint32_t){return nullptr;}
+extern "C" const void *pgs_runtime_metadata_api(uint32_t){return nullptr;}
 
 int main(){
  assert(pgr_parse_catch_chance("C1|1|1|75").valid);

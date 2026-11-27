@@ -7,4 +7,4 @@
 // No Java class/global object is retained; ByteBuffer's boot-class method ID is
 // VM-lifetime metadata. Production must ship NativeRuntimeTransport even in a
 // diagnostic APK that loads this newer core.
-int pgrazor_register_runtime_transport(JNIEnv *env);
+int pgs_register_runtime_transport(JNIEnv *env);

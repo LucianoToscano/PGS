@@ -166,7 +166,7 @@ void pure_tests(){
 double source_base[4]={0,0.41,0.55,0.66};bool source_ok=true;int source_calls=0;
 bool capture_source(void *target,uint64_t,double out[4]){assert(target==&wild);++source_calls;if(!source_ok)return false;for(int i=0;i<4;i++)out[i]=source_base[i];return true;}
 }
-extern "C" const void *pgrazor_runtime_transport_api(uint32_t version){return version==1?&transport:nullptr;}
+extern "C" const void *pgs_runtime_transport_api(uint32_t version){return version==1?&transport:nullptr;}
 int main(){
  pure_tests();transport.version=1;transport.size=sizeof(transport);transport.sample=sample;transport.get_bool=get_bool;transport.get_string=get_string;
  auto b=binding();assert(pgr_smart_bind(nullptr)==PGR_SMART_ERR_NULL_ARG);auto bad=b;bad.gc_new=nullptr;assert(pgr_smart_bind(&bad)==PGR_SMART_ERR_MISSING_PTR);assert(pgr_smart_bind(&b)==0);assert(pgr_smart_bind(&b)==0);bad=b;bad.rpc_id++;assert(pgr_smart_bind(&bad)==PGR_SMART_ERR_RECONFIG);

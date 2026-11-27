@@ -90,6 +90,30 @@ def check():
             problems.append(readme_file + ": mandatory exact final License notice absent")
         elif "pgrazor" in readme[:-len(required_license)].lower():
             problems.append(readme_file + ": legacy brand occurs before License")
+    # The public GitHub home is bilingual and uses the exact requested stacked title.
+    stacked_title = '<h1 align="center">PGS</h1>' + chr(10) + '<h3 align="center">Pokémon GO Spoofers</h3>'
+    for readme_file in ("README.md", "README.pt-BR.md"):
+        content = (ROOT / readme_file).read_text(encoding="utf-8")
+        if stacked_title not in content:
+            problems.append(readme_file + ": PGS title must be centered above the subtitle")
+        if "PGS — Pokémon GO Spoofers</h1>" in content:
+            problems.append(readme_file + ": obsolete single-line heading reintroduced")
+        if "docs/en/PGS_REPOSITORY_SETTINGS.md" not in content or "docs/pt-BR/PGS_REPOSITORY_SETTINGS.md" not in content:
+            problems.append(readme_file + ": bilingual repository settings link missing")
+    for lang in ("en", "pt-BR"):
+        if not (ROOT / "docs" / lang / "PGS_REPOSITORY_SETTINGS.md").is_file():
+            problems.append("Missing bilingual repository settings guide: " + lang)
+    if "id: 'pgs-root'" not in (ROOT / "website/src/featureGuides.js").read_text(encoding="utf-8"):
+        problems.append("The Root guide must use a PGS-specific public id")
+    if "'pgs-root': {" not in (ROOT / "website/src/featureGuides.pt-BR.d.js").read_text(encoding="utf-8"):
+        problems.append("The PGS Root Portuguese guide translation is missing")
+    if "guide === 'pgrazor-root' ? 'pgs-root'" not in (ROOT / "website/src/App.jsx").read_text(encoding="utf-8"):
+        problems.append("Older Root guide bookmarks must still resolve")
+    if "PGRazor" in (ROOT / "pgrazor/root-installer/src/dev/pgrazor/root/RootStatus.java").read_text(encoding="utf-8"):
+        problems.append("Root status still displays the old name")
+    pages = (ROOT / ".github/workflows/pages.yml").read_text(encoding="utf-8")
+    if "name: Website" not in pages or "workflow_dispatch:" not in pages:
+        problems.append("Website workflow must remain discoverable and manually runnable")
     required_pairs = (
         ("README.md", "README.pt-BR.md"),
         ("CHANGELOG.md", "CHANGELOG.pt-BR.md"),

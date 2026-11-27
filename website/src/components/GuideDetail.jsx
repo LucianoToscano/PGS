@@ -111,7 +111,7 @@ export default function GuideDetail({ id }) {
             {ui.guide.all}
           </a>
           <a className="btn btn--ghost" href={homeHref}>
-            Back to homepage
+            {ui.guide.back}
           </a>
         </p>
       </nav>

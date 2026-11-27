@@ -11,7 +11,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 /**
- * A read-only snapshot of the device's root solution, Zygisk provider, installed PGRazor module and
+ * A read-only snapshot of the device's root solution, Zygisk provider, installed PGS module and
  * the official Pokémon GO install. Everything reported here is observed, never assumed: unknown
  * states are labelled "Unknown" rather than guessed. Detection runs one root shell probe and a
  * PackageManager query; {@link #detect} must be called off the main thread because of the probe.
@@ -169,7 +169,7 @@ final class RootStatus {
     private static final long TOGGLE_TIMEOUT = 20000;
 
     /**
-     * Turns PGRazor injection on (remove the live {@code injection-off} flag) or off (create it) in
+     * Turns PGS injection on (remove the live {@code injection-off} flag) or off (create it) in
      * one bounded su command. The command re-validates the live marker and the no-disable/no-remove
      * state, writes the flag in the live and (if present) the staged module, verifies the final state,
      * force-stops the game only after successful writes, and echoes an explicit OK/FAIL token — so a
@@ -202,13 +202,13 @@ final class RootStatus {
         RootShell.Result preserved = RootShell.run(RootToggleCommand.preserveOffCommand(), TOGGLE_TIMEOUT);
         String note;
         if (preserved.ok() && RootToggleCommand.hasLine(preserved.output,RootToggleCommand.OK_PREFIX + "=preserved_off")) {
-            note = "PGRazor was Off; the update keeps it Off (reboot to apply).";
+            note = "PGS was Off; the update keeps it Off (reboot to apply).";
         } else if (preserved.timedOut) {
-            note = "WARNING: PGRazor was Off, but keeping it Off in the update could not be confirmed. "
-                + "After rebooting, turn PGRazor Off again if it came back On.";
+            note = "WARNING: PGS was Off, but keeping it Off in the update could not be confirmed. "
+                + "After rebooting, turn PGS Off again if it came back On.";
         } else {
-            note = "WARNING: PGRazor was Off, but the update may not have kept it Off. "
-                + "After rebooting, turn PGRazor Off again if it came back On.";
+            note = "WARNING: PGS was Off, but the update may not have kept it Off. "
+                + "After rebooting, turn PGS Off again if it came back On.";
         }
         String combined = installed.output
             + (preserved.output.isEmpty() ? "" : "\n" + preserved.output)
@@ -244,7 +244,7 @@ final class RootStatus {
         text.append("Root access: ").append(rooted ? "granted" : "not granted").append('\n');
         text.append("Root manager: ").append(managerLabel).append('\n');
         text.append("Zygisk: ").append(zygiskLabel).append('\n');
-        text.append("PGRazor module: ").append(moduleLabel).append('\n');
+        text.append("PGS module: ").append(moduleLabel).append('\n');
         text.append("Pokémon GO: ").append(describeGame());
         return text.toString();
     }
@@ -254,7 +254,7 @@ final class RootStatus {
         String base = (gameVersionName.isEmpty() ? "?" : gameVersionName) + " (" + gameVersionCode + ")";
         if (!gameCertTrusted) return base + " — not the official Niantic signature";
         if (gameVersionMatch) return base + " — supported";
-        return base + " — not " + InstallerConfig.GAME_VERSION_NAME + "; PGRazor will stay off until it matches";
+        return base + " — not " + InstallerConfig.GAME_VERSION_NAME + "; PGS will stay off until it matches";
     }
 
     private static String firstNonEmpty(String... options) {

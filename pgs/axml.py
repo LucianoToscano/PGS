@@ -10,7 +10,6 @@ ANDROID_NS = 'http://schemas.android.com/apk/res/android'
 PROVIDER = 'dev.pgs.BootstrapProvider'
 LOG_ACTIVITY = 'dev.pgs.LogActivity'
 GOOGLE_AUTH_ACTIVITY = 'dev.pgs.GoogleAuthActivity'
-GOOGLE_AUTH_SCHEME = 'com.googleusercontent.apps.848232511240-dmrj3gba506c9svge2p9gq35p1fg654p'
 RESTART_ACTIVITY = 'dev.pgs.AccountRestartActivity'
 RESTART_PROCESS = ':pgs_restart'
 ATTR_IDS = {'name': 0x01010003, 'exported': 0x01010010, 'authorities': 0x01010018}
@@ -18,58 +17,8 @@ RESTART_ATTR_IDS = {'name': 0x01010003, 'exported': 0x01010010, 'process': 0x010
 
 
 def add_google_browser_callback(data):
-    """Opt-in prototype callback; preserve all existing components and filters."""
-    header, chunks, pool, maps, resources = _parse(data)
-    if any(a['name'] == GOOGLE_AUTH_ACTIVITY for a in inspect_manifest(data)['activities']):
-        raise ValueError('Google callback activity already exists')
-    ns = pool.add(ANDROID_NS)
-    prefix = pool.add('android')
-    attr_names = {}
-    for key, resource_id in {'name': 0x01010003, 'exported': 0x01010010, 'scheme': 0x01010027}.items():
-        index = next((i for i, value in enumerate(pool.strings) if value == key and i < len(resources) and resources[i] == resource_id), None)
-        if index is None:
-            index = len(pool.strings)
-            pool.strings.append(key)
-            resources.extend([0] * (index + 1 - len(resources)))
-            resources[index] = resource_id
-        attr_names[key] = index
-    def node(kind, payload):
-        return struct.pack('<HHIII', kind, 16, 16 + len(payload), 0, NO_INDEX) + payload
-    def start(tag, attrs=()):
-        encoded = b''
-        for key, value in attrs:
-            boolean = isinstance(value, bool)
-            index = NO_INDEX if boolean else pool.add(value)
-            encoded += struct.pack('<IIIHBBI', ns, attr_names[key], index, 8, 0, 0x12 if boolean else 3, int(value) if boolean else index)
-        return node(0x102, struct.pack('<IIHHHHHH', NO_INDEX, pool.add(tag), 20, 20, len(attrs), 0, 0, 0) + encoded)
-    def end(tag):
-        return node(0x103, struct.pack('<II', NO_INDEX, pool.add(tag)))
-    extra = [node(0x100, struct.pack('<II', prefix, ns)),
-             start('activity', [('name', GOOGLE_AUTH_ACTIVITY), ('exported', True)]), start('intent-filter')]
-    for tag, key, value in [('action', 'name', 'android.intent.action.VIEW'),
-                             ('category', 'name', 'android.intent.category.DEFAULT'),
-                             ('category', 'name', 'android.intent.category.BROWSABLE'),
-                             ('data', 'scheme', GOOGLE_AUTH_SCHEME)]:
-        extra.extend([start(tag, [(key, value)]), end(tag)])
-    extra.extend([end('intent-filter'), end('activity'), node(0x101, struct.pack('<II', prefix, ns))])
-    ends = [i for i, event, tag, _, depth in _walk(chunks, pool) if event == 'end' and tag == 'application' and depth == 1]
-    if len(ends) != 1:
-        raise ValueError('Application end not found')
-    resource_chunk = struct.pack('<HHI', 0x180, 8, 8 + 4 * len(resources)) + struct.pack('<' + 'I' * len(resources), *resources)
-    output = []
-    for i, (kind, raw) in enumerate(chunks):
-        if i == ends[0]: output.extend(extra)
-        if i == 0:
-            output.append(pool.build())
-            if not maps: output.append(resource_chunk)
-        elif kind == 0x180: output.append(resource_chunk)
-        else: output.append(raw)
-    body = b''.join(output)
-    outer = bytearray(data[:header])
-    struct.pack_into('<I', outer, 4, len(outer) + len(body))
-    result = bytes(outer) + body
-    inspect_manifest(result)
-    return result
+    """Retired compatibility entrypoint: no third-party OAuth callback may be added."""
+    raise ValueError('Experimental browser OAuth is retired; authorized PGS configuration required')
 
 
 def _u16(data, offset): return struct.unpack_from('<H', data, offset)[0]

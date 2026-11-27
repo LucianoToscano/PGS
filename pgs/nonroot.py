@@ -104,6 +104,7 @@ def signature_entry(name):
     return upper=='STAMP-CERT-SHA256' or (upper.startswith('META-INF/') and (upper.endswith(('.SF','.RSA','.DSA','.EC')) or upper=='META-INF/MANIFEST.MF'))
 
 def rewrite_apk(source,destination,*,base=False,dex=None,assets=None,preview=False,google_browser_login=False,dex_replacements=None):
+    if google_browser_login: raise ValueError('Experimental browser OAuth is retired; authorized PGS configuration required')
     with zipfile.ZipFile(source) as original,zipfile.ZipFile(destination,'w') as output:
         names=original.namelist()
         # Bundled map-icon art may already ride along in our own preview input; any other pre-existing
@@ -127,7 +128,6 @@ def rewrite_apk(source,destination,*,base=False,dex=None,assets=None,preview=Fal
             if base and assets and item.filename in assets: continue  # re-added from the current asset set below; prevents duplicate entries
             if base and item.filename=='AndroidManifest.xml':
                 manifest=axml.patch_manifest(original.read(item))
-                if google_browser_login: manifest=axml.add_google_browser_callback(manifest)
                 # Cold-process account switches need the isolated restart helper in every base build;
                 # an exactly-matching definition (our preview manifest) is accepted and left unchanged.
                 manifest=axml.add_account_restart_activity(manifest)
@@ -181,6 +181,7 @@ def assert_no_research_payload(names):
 
 
 def package(source, *,research_runtime=False,panel_only=False,download=False,preview=False,probe_abi=None,game_runtime_abi='auto',il2cpp_survey=False,camera_probe=False,camera_sample=False,camera_steering=False,scene_probe=False,scene_observe=False,interaction_probe=False,quick_summary=False,quick_ball=False,quick_close=False,google_browser_login=False):
+    if google_browser_login: raise ValueError('Experimental browser OAuth is retired; authorized PGS configuration required')
     if quick_summary: raise ValueError('--quick-summary is retired; production gameplay is compiled by default')
     if research_runtime and panel_only: raise ValueError('--research-runtime cannot be combined with --panel-only')
     if preview and not (research_runtime or panel_only): raise ValueError('Preview requires --research-runtime or --panel-only')
@@ -250,7 +251,6 @@ def package(source, *,research_runtime=False,panel_only=False,download=False,pre
     if quick_summary: mode['quickSummary']=True
     if quick_close: mode['quickClose']=True
     if quick_ball: mode['quickBall']=True
-    if google_browser_login: mode['googleBrowserLogin']=True
     assets={'assets/pgs/mode.json':json.dumps(mode).encode()}
     if native_pilot:
         import native_build
@@ -436,11 +436,12 @@ def main(argv=None):
     parser.add_argument('--interaction-probe',action='store_true',help='Opt-in interaction metadata probe with later user-requested observation; native ARM64, optionally with camera steering')
     parser.add_argument('--quick-close',action='store_true',help='Compatibility flag: compiled production includes quick close by default')
     parser.add_argument('--quick-ball',action='store_true',help='Compatibility flag: compiled production includes quick ball by default')
-    parser.add_argument('--google-browser-login',action='store_true',help='Opt-in experimental Google browser sign-in')
+    parser.add_argument('--google-browser-login',action='store_true',help='Retired option; rejected pending authorized PGS OAuth configuration')
     parser.add_argument('--download-runtime',action='store_true',help='Fetch pinned build dependencies and, for explicit research builds, the verified Gadget asset')
     parser.add_argument('--skip-build',action='store_true',help='Use compiled module only if source/checksums still match')
     parser.add_argument('--seconds',type=float,default=0,help='Stop probe desktop logging after this many seconds; 0 waits for Ctrl+C')
     args=parser.parse_args(argv)
+    if args.google_browser_login: parser.error('Experimental browser OAuth is retired; authorized PGS configuration required')
     if args.research_runtime and args.panel_only: parser.error('--research-runtime cannot be combined with --panel-only')
     if (args.probe or args.build_probe) and not (args.research_runtime or args.panel_only): parser.error('Preview requires --research-runtime or --panel-only')
     if args.research_runtime and (args.quick_close or args.quick_ball): parser.error('Research runtime does not support retired quick gameplay scripts')
@@ -490,7 +491,6 @@ def main(argv=None):
     if args.interaction_probe: options['interaction_probe']=True
     if args.quick_close: options['quick_close']=True
     if args.quick_ball: options['quick_ball']=True
-    if args.google_browser_login: options['google_browser_login']=True
     report,folder=package(source,panel_only=args.panel_only,download=args.download_runtime,preview=preview,probe_abi=abi,**options)
     cleanup_generated_builds()
     if args.probe: probe(report,folder,android,args.seconds)

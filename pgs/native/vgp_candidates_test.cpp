@@ -199,7 +199,7 @@ std::string key_of(const PgrVgpCandidateResult &out) { return std::string(out.ke
 }  // namespace
 
 int main(int argc, char **argv) {
-  const char *so_path = argc > 1 ? argv[1] : "./libpgrazor.so";
+  const char *so_path = argc > 1 ? argv[1] : "./libpgs-core.so";
   void *lib = ::dlopen(so_path, RTLD_NOW | RTLD_LOCAL);
   if (!lib) { std::fprintf(stderr, "dlopen(%s) failed: %s\n", so_path, ::dlerror()); return 1; }
   auto getter = reinterpret_cast<GetApiFn>(::dlsym(lib, "pgs_native_api"));

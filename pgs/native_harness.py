@@ -51,7 +51,7 @@ def main(argv=None):
 
     try:
         library = (args.library or root / 'build/native/out' / args.abi / native_build.OUTPUT_SONAME).resolve()
-        remote = '/data/local/tmp/pgrazor-harness-' + stamp
+        remote = '/data/local/tmp/pgs-harness-' + stamp
         adb = [args.adb, '-s', args.serial] if args.serial else None
         if adb:
             # MuMu may report aarch64 through uname even with an x86_64 host

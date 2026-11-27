@@ -211,14 +211,14 @@ typedef pgs_incubation_config_v1 pgrazor_incubation_config_v1;
 typedef struct pgs_incubation_sample_v1 {
     uint32_t version;              /* == PGS_INCUBATION_API_VERSION */
     uint32_t size;                 /* == sizeof(pgs_incubation_sample_v1) */
-    uint32_t status;               /* one of PGRAZOR_INC_STATUS_* */
+    uint32_t status;               /* one of PGS_INC_STATUS_* */
     uint32_t status_serial;        /* bumped on each status change */
     uint64_t request_serial;       /* bumped on each issued request */
     double   distance;             /* km of the most recent choice/request */
     uint32_t longest;              /* 1 == longest priority, 0 == shortest */
     uint32_t fault_serial;         /* bumped on each fail-closed error */
     uint32_t owned_roots;          /* durable pending GC roots currently held (0..4) */
-    uint32_t fault_step;           /* PGRAZOR_INC_FAULT_* of the latest fault (was reserved 0) */
+    uint32_t fault_step;           /* PGS_INC_FAULT_* of the latest fault (was reserved 0) */
 } pgs_incubation_sample_v1;
 typedef pgs_incubation_sample_v1 pgrazor_incubation_sample_v1;
 

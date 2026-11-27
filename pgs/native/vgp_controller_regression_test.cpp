@@ -1,5 +1,5 @@
 // Reuse the production-query/fake-table scaffold without executing its baseline main. This separate
-// executable focuses on coordinator fixes; it is never linked into libpgrazor or the app.
+// executable focuses on coordinator fixes; it is never linked into libpgs-core or the app.
 #define main vgp_controller_baseline_main_unused
 #include "vgp_controller_test.cpp"
 #undef main

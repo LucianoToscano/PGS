@@ -18,7 +18,7 @@
 // controller against a fake managed heap (classes/methods/fields, boxed bool/int returns, virtual
 // enumerator dispatch, System.String content, synchronous RPC callbacks). The module installs NO
 // hook. The quarantine case waits 31 seconds against the production clock. The coordinator
-// builds and runs this against libpgrazor.so after registering query_feature case 22.
+// builds and runs this against libpgs-core.so after registering query_feature case 22.
 
 namespace {
 
@@ -305,7 +305,7 @@ void wire(Scene &s, int gift_count) {
 }  // namespace
 
 int main(int argc, char **argv) {
-  const char *so_path = argc > 1 ? argv[1] : "./libpgrazor.so";
+  const char *so_path = argc > 1 ? argv[1] : "./libpgs-core.so";
   void *lib = ::dlopen(so_path, RTLD_NOW | RTLD_LOCAL);
   if (!lib) { std::fprintf(stderr, "dlopen(%s) failed: %s\n", so_path, ::dlerror()); return 1; }
   auto getter = reinterpret_cast<GetApiFn>(::dlsym(lib, "pgs_native_api"));

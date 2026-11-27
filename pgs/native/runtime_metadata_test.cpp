@@ -186,7 +186,7 @@ PgrMetaClassQuery cq(const char *ns, const char *name, const char *canon) {
 }  // namespace
 
 int main(int argc, char **argv) {
-  const char *so = argc > 1 ? argv[1] : "./libpgrazor.so";
+  const char *so = argc > 1 ? argv[1] : "./libpgs-core.so";
   void *lib = ::dlopen(so, RTLD_NOW | RTLD_LOCAL);
   if (!lib) { std::fprintf(stderr, "dlopen(%s) failed: %s\n", so, ::dlerror()); return 1; }
   auto getter = reinterpret_cast<GetApiFn>(::dlsym(lib, "pgs_native_api"));

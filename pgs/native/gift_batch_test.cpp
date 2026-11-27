@@ -1,6 +1,6 @@
 // Standalone host/NDK fixture: compile this TU alone with -ldl -rdynamic.
 // -rdynamic exposes the fake IL2CPP string export used by production dlsym.
-// Never link or package this fixture into libpgrazor.
+// Never link or package this fixture into libpgs-core.
 #include <cassert>
 #include <cstdio>
 #include <cstdlib>

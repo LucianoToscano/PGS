@@ -50,6 +50,7 @@ public final class Control {
  public static final java.util.List<String> events=java.util.Collections.synchronizedList(new java.util.ArrayList<>());
  public static Runnable onEvent;
  public static boolean active(){return active;}public static boolean desiredEnabled(){return desired;}
+ public static void observeRealLocation(double latitude,double longitude){}
  public static double latitude(){return lat;}public static double longitude(){return lon;}
  public static float speed(){return spd;}public static float bearing(){return brg;}
  public static void event(String kind,String detail){events.add(kind+"|"+detail);if(onEvent!=null){Runnable r=onEvent;onEvent=null;r.run();}}

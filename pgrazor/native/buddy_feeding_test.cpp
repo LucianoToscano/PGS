@@ -26,6 +26,7 @@
 #include <cstdio>
 #include <cstdint>
 #include <cstring>
+#include <limits>
 
 // ---- symbolic il2cpp identities (compared by address only) -----------------------
 static int c_map, c_ctx, c_contract, c_stats, c_pokesvc, c_rpc, c_proto, c_observed,
@@ -97,6 +98,37 @@ __attribute__((noinline)) void target_result(void *self, void *proto, void *meth
 }
 void *(*volatile call_feed)(void *, int32_t, int32_t, void *) = &target_feed;
 void  (*volatile call_result)(void *, void *, void *) = &target_result;
+
+#ifdef PGR_BUDDY_HOST_TEST
+// The host fixture exercises the production state machine with deterministic
+// time and direct function-pointer hooks. The Android mode above still verifies
+// the real core registry and Dobby trampolines on an explicitly selected device.
+static uint64_t host_clock_ns = 1000000000;
+extern "C" int __wrap_clock_gettime(clockid_t clock, timespec *out) {
+    if (clock != CLOCK_BOOTTIME || out == nullptr) return -1;
+    out->tv_sec = host_clock_ns / 1000000000;
+    out->tv_nsec = host_clock_ns % 1000000000;
+    return 0;
+}
+extern "C" int __wrap_nanosleep(const timespec *delay, timespec *) {
+    if (delay == nullptr || delay->tv_sec < 0 || delay->tv_nsec < 0 || delay->tv_nsec >= 1000000000) return -1;
+    host_clock_ns += static_cast<uint64_t>(delay->tv_sec) * 1000000000 + delay->tv_nsec;
+    return 0;
+}
+int pgrazor_hook(void *address, void *replacement, void **original) {
+    if (address == reinterpret_cast<void *>(&target_feed)) {
+        *original = reinterpret_cast<void *>(&target_feed);
+        call_feed = reinterpret_cast<decltype(call_feed)>(replacement);
+        return 0;
+    }
+    if (address == reinterpret_cast<void *>(&target_result)) {
+        *original = reinterpret_cast<void *>(&target_result);
+        call_result = reinterpret_cast<decltype(call_result)>(replacement);
+        return 0;
+    }
+    return -1;
+}
+#endif
 
 static void *runtime_invoke(void *method, void *obj, void **params, void **exc) {
     asm volatile("nop; nop; nop; nop" ::: "memory");
@@ -327,11 +359,53 @@ static int scenario(int which) {
         g_api->clear(tid);
         return g_roots || snap().owned_roots || g_bad_free ? 3 : 0;
     }
+    case 16: case 17: { // Lost/ambiguous completion: only a later fed state releases uncertainty.
+        g_api->tick(701,2500,tid);
+        if (snap().feed_request_serial != 1) return 1;
+        if (which == 17) call_feed(&g_rpc,701,1,&m_feed);
+        const int calls = g_feed_target_calls;
+        // Off/config changes and owner clear must not duplicate an uncertain request.
+        g_api->tick(0,2500,tid);
+        g_api->clear(tid);
+        if (g_roots || snap().owned_roots || g_bad_free) return 2;
+        g_api->tick(703,2500,tid);
+        if (snap().feed_request_serial != 1 || g_feed_target_calls != calls) return 3;
+        timespec timeout{31,0}; nanosleep(&timeout,nullptr);
+        g_api->tick(701,2500,tid); // timeout while still hungry: no retry
+        if (snap().feed_request_serial != 1 || snap().result_serial) return 4;
+        auto wait_poll = [] { timespec delay{5,100000000}; nanosleep(&delay,nullptr); };
+        if (which == 17) {
+            g_remaining = 300; ++g_proto.buddy_id; // another buddy cannot settle our request
+            wait_poll(); g_api->tick(701,2500,tid);
+            if (snap().status == PGR_BUDDY_STATUS_FED || snap().result_serial) return 5;
+            --g_proto.buddy_id;
+            g_remaining = std::numeric_limits<float>::quiet_NaN();
+            wait_poll(); g_api->tick(701,2500,tid);
+            if (snap().status != PGR_BUDDY_STATUS_ERROR || !snap().fault_serial) return 6;
+        }
+        g_remaining = 300;
+        wait_poll(); g_api->tick(701,2500,tid);
+        auto fed = snap();
+        if (fed.status != PGR_BUDDY_STATUS_FED) return 7;
+        if (fed.feed_request_serial != 1 || fed.result_serial || g_feed_target_calls != calls) return 8;
+        if (fed.owned_roots != 1 || g_roots != 1 || g_bad_free) return 9;
+        g_remaining = 0;
+        wait_poll(); g_api->tick(701,2500,tid); // later hungry transition permits ONE new request
+        g_api->tick(701,2500,tid);
+        if (snap().feed_request_serial != 2 || snap().result_serial || g_feed_target_calls != calls+1) return 10;
+        g_api->clear(tid);
+        return g_roots || snap().owned_roots || g_bad_free ? 11 : 0;
+    }
     default: return 0;
     }
 }
 
 int main(int argc, char **argv) {
+#ifdef PGR_BUDDY_HOST_TEST
+    (void)argc; (void)argv;
+    if (pgrazor_buddy_feeding_api(99) != nullptr) { std::puts("FAIL exact-version"); return 3; }
+    g_api = static_cast<const pgrazor_buddy_api_v1 *>(pgrazor_buddy_feeding_api(1));
+#else
     if (argc != 2) return 1;
     void *lib = dlopen(argv[1], RTLD_NOW | RTLD_LOCAL);
     if (!lib) { std::puts(dlerror()); return 2; }
@@ -339,6 +413,7 @@ int main(int argc, char **argv) {
     auto core = getter ? static_cast<const pgrazor_native_api_v2 *>(getter(2)) : nullptr;
     if (!core || core->query_feature(12, 99) != nullptr) { std::puts("FAIL exact-version"); return 3; }
     g_api = static_cast<const pgrazor_buddy_api_v1 *>(core->query_feature(12, 1));
+#endif
     if (!g_api || g_api->size != 40) { std::puts("FAIL feature 12 not wired"); return 3; }
 
     // Config validation (parent process; these all fail before any hook is attempted).
@@ -354,7 +429,7 @@ int main(int argc, char **argv) {
     bad = c; bad.result_address = bad.feed_address;
     if (g_api->install(&bad) != PGR_BUDDY_ERR_DUP_HOOK) { std::puts("FAIL dup"); return 5; }
 
-    const int cases = 16;
+    const int cases = 18;
     for (int i = 0; i < cases; ++i) {
         pid_t pid = fork();
         if (pid == 0) _exit(scenario(i));          // fresh process -> clean module/hook state
@@ -369,6 +444,7 @@ int main(int argc, char **argv) {
               "ambiguity, result failure no retry, in-flight no duplicate, lease expiry mid-getter "
               "no feed, off-thread clear no free + stop/root balance with preserved pending, "
               "wrong-thread no-op, config validation, delayed hunger snapshot recovery without "
-              "setting changes, managed hunger exception remains fail-closed");
+              "setting changes, managed hunger exception remains fail-closed, lost/ambiguous "
+              "completion recovers only after same-buddy fed observation without synthetic results");
     return 0;
 }

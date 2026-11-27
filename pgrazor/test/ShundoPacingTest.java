@@ -18,6 +18,52 @@ public final class ShundoPacingTest {
         check(ShundoPacing.feedDelay(0, false) == ShundoPacing.FEED_SOON_MS, "an empty queue reads again soon");
         check(ShundoPacing.feedDelay(4000, true) == ShundoPacing.FEED_SOON_MS, "a failed read retries soon");
 
+        check(ShundoPacing.LIVE_INTERVALS.length == ShundoPacing.LIVE_INTERVAL_LABELS.length, "live interval labels match options");
+        for (int s : new int[]{30, 60, 180, 300, 600})
+            check(ShundoPacing.liveInterval(String.valueOf(s)) == s, "known live interval kept: " + s);
+        check(ShundoPacing.liveInterval("45") == ShundoPacing.LIVE_DEFAULT_S, "unknown live interval defaults to 5 minutes");
+        check(ShundoPacing.liveInterval("") == ShundoPacing.LIVE_DEFAULT_S, "empty live interval defaults to 5 minutes");
+        check(ShundoPacing.liveInterval(null) == ShundoPacing.LIVE_DEFAULT_S, "null live interval defaults to 5 minutes");
+        check(ShundoPacing.liveDelay(300, 15_000, 0.5) == 300_000, "neutral jitter preserves configured 5 minute delay");
+        check(ShundoPacing.liveDelay(30, 15_000, 0.5) == 30_000, "explicit 30 second choice is honored");
+        check(ShundoPacing.liveDelay(60, 15_000, 0.5) == 60_000, "explicit 1 minute choice is honored");
+        check(ShundoPacing.liveDelay(180, 15_000, 0.5) == 180_000, "explicit 3 minute choice is honored");
+        check(ShundoPacing.liveDelay(600, 15_000, 0.5) == 600_000, "explicit 10 minute choice is honored");
+        check(ShundoPacing.liveDelay(30, 15_000, 0.0) == 24_000, "low jitter reduces delay by 20% above floor");
+        check(ShundoPacing.liveDelay(30, 15_000, 1.0) == 36_000, "high jitter increases delay by 20%");
+        check(ShundoPacing.liveDelay(30, 15_000, -5.0) == 24_000, "out-of-range low jitter is clamped");
+        check(ShundoPacing.liveDelay(30, 15_000, 5.0) == 36_000, "out-of-range high jitter is clamped");
+        check(ShundoPacing.liveDelay(30, 45_000, 0.5) == 45_000, "server refresh floor is respected");
+        check(ShundoPacing.liveDelay(30, -10_000, 0.5) == 30_000, "negative server refresh is ignored");
+        check(ShundoPacing.liveDelay(30, 15_000, Double.NaN) == 30_000, "non-finite jitter falls back to neutral");
+        check(ShundoPacing.liveDelay(30, 45_000, 0.0) == 45_000, "negative jitter cannot reduce the server floor");
+        check(ShundoPacing.liveDelay(30, 45_000, 1.0) == 45_000, "server floor applies after user jitter");
+        check(ShundoPacing.rescheduleLive(-1, 600, 0, 0, 0.5) == 0, "unpolled session stays ready immediately");
+        check(ShundoPacing.rescheduleLive(0, 30, 0, 0, 0.5) == 30_000, "a poll at monotonic zero is still a poll");
+        check(ShundoPacing.rescheduleLive(100_000, 600, 0, 0, 0.5) == 700_000, "lengthening interval waits from last poll without immediate fetch");
+        check(ShundoPacing.rescheduleLive(100_000, 60, 0, 0, 0.5) == 160_000, "shortening interval becomes due once elapsed from last poll");
+        check(ShundoPacing.rescheduleLive(100_000, 30, 90_000, 0, 0.0) == 190_000, "changing options keeps the server floor");
+        check(ShundoPacing.rescheduleLive(100_000, 30, 90_000, 500_000, 0.0) == 500_000, "changing options keeps Retry-After");
+        check(ShundoPacing.rescheduleLive(Long.MAX_VALUE - 1, 600, 0, 0, 1.0) == Long.MAX_VALUE, "deadline cannot wrap and become immediately due");
+
+        ShundoPacing.LivePoll poll = new ShundoPacing.LivePoll();
+        check(poll.start(100_000), "first poll is immediate");
+        poll.reschedule(30, 0.0);
+        check(!poll.start(900_000), "an interval change or long request cannot start overlapping requests");
+        poll.complete(120_000, 300, 45_000, 0, 0.5);
+        poll.reschedule(600, 0.5);
+        check(!poll.start(719_999), "lengthened delay counts from completion of the last request");
+        poll.reschedule(30, 0.0);
+        check(!poll.start(164_999) && poll.start(165_000), "shortening still keeps the server minimum");
+        poll.complete(170_000, 30, -1, 300_000, 0.0);
+        poll.reschedule(60, 0.5);
+        poll.reschedule(30, 0.0);
+        check(!poll.start(469_999) && poll.start(470_000), "repeated settings changes cannot erase a rate-limit backoff");
+        poll.complete(480_000, 30, -1, 0, 0.0);
+        check(!poll.start(524_999) && poll.start(525_000), "failed responses keep the last known server floor");
+        poll.complete(530_000, 30, 15_000, 0, 0.5);
+        check(!poll.start(559_999) && poll.start(560_000), "a later successful response may update the server cadence");
+
         ShundoPacing.EmptyStops stops = new ShundoPacing.EmptyStops();
         check(!stops.missed(0, 78) && !stops.missed(0, 78) && !stops.missed(0, 78), "three empty stops are not enough");
         check(stops.missed(0, 78), "the fourth empty stop in a row stops the sniper");

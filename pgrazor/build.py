@@ -62,6 +62,14 @@ TOOLS = SDK / 'build-tools' / os.environ.get('PGRAZOR_BUILD_TOOLS', '36.1.0')
 ANDROID = SDK / 'platforms' / os.environ.get('PGRAZOR_ANDROID_PLATFORM', 'android-36.1') / 'android.jar'
 BUILD = ROOT / 'build'
 
+def android_tool(name):
+    """Resolve an Android SDK build tool for the current host OS."""
+    if os.name == 'nt':
+        suffix = '.bat' if name in ('d8', 'apksigner') else '.exe'
+    else:
+        suffix = ''
+    return TOOLS / (name + suffix)
+
 def run(*args):
     subprocess.run([str(a) for a in args], cwd=ROOT, check=True)
 
@@ -119,17 +127,17 @@ def main():
     jar = BUILD/'controls.jar'
     with zipfile.ZipFile(jar,'w',zipfile.ZIP_DEFLATED) as out:
         for path in classes.rglob('*.class'): out.write(path,path.relative_to(classes).as_posix())
-    run(TOOLS/'d8.bat','--min-api','28','--lib',ANDROID,'--output',BUILD/'dex',jar)
+    run(android_tool('d8'),'--min-api','28','--lib',ANDROID,'--output',BUILD/'dex',jar)
     unsigned=BUILD/'preview-unsigned.apk'
-    run(TOOLS/'aapt.exe','package','-f','-M',ROOT/'AndroidManifest.xml','-I',ANDROID,'-F',unsigned)
+    run(android_tool('aapt'),'package','-f','-M',ROOT/'AndroidManifest.xml','-I',ANDROID,'-F',unsigned)
     with zipfile.ZipFile(unsigned,'a',zipfile.ZIP_DEFLATED) as out:
         out.write(BUILD/'dex/classes.dex','classes.dex')
         for name,path in map_icon_assets().items(): out.write(path,'assets/pgrazor/map-icons/'+name)
         for name,path in feed_icon_assets().items(): out.write(path,'assets/pgrazor/feed-icons/pokemon/'+name)
-    run(TOOLS/'zipalign.exe','-f','4',unsigned,BUILD/'preview-aligned.apk')
+    run(android_tool('zipalign'),'-f','4',unsigned,BUILD/'preview-aligned.apk')
     apk=BUILD/'pgrazor-preview.apk'
-    run(TOOLS/'apksigner.bat','sign',*signing_args(),'--out',apk,BUILD/'preview-aligned.apk')
-    run(TOOLS/'apksigner.bat','verify',apk)
+    run(android_tool('apksigner'),'sign',*signing_args(),'--out',apk,BUILD/'preview-aligned.apk')
+    run(android_tool('apksigner'),'verify',apk)
     shutil.copyfile(BUILD/'dex/classes.dex',BUILD/'pgrazor.dex')
     fingerprints=source_fingerprints(ROOT)
     (BUILD/'build-state.json').write_text(json.dumps({'version':version,'sources':fingerprints,'dex_sha256':hashlib.sha256((BUILD/'pgrazor.dex').read_bytes()).hexdigest()},indent=2),encoding='utf-8')

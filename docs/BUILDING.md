@@ -6,7 +6,7 @@ For the separate Zygisk module and root installer APK, see [PGRazor Root](ROOTED
 
 ## Requirements
 
-The APK packaging toolchain currently supports Windows. Install Python 3.12+, Node.js 22+, JDK 17+, and the Android SDK. The Python build scripts use the standard library; native compilation also requires Git, CMake 4.4.4 and Ninja 1.13.2.
+The APK packaging toolchain supports Windows and Linux. Install Python 3.12+, Node.js 22+, JDK 17+, and the Android SDK. The Python build scripts use the standard library; native compilation also requires Git, CMake 4.4.4 and Ninja 1.13.2. SDK executables are selected for the host; do not rename Linux tools to `.exe` or `.bat`.
 
 Default SDK packages are `platforms;android-36.1` and `build-tools;36.1.0`. CI uses API 36 / Build Tools 36.0.0. The gameplay core requires NDK `27.3.13750724`; the ART bridge requires NDK `29.0.14206865`. Install both: they serve different compiler requirements.
 
@@ -24,6 +24,21 @@ sdkmanager "platforms;android-36" "build-tools;36.0.0" "ndk;27.3.13750724" "ndk;
 $env:ANDROID_NDK_HOME = Join-Path $env:ANDROID_SDK_ROOT 'ndk/27.3.13750724'
 $env:PGRAZOR_ART_NDK = Join-Path $env:ANDROID_SDK_ROOT 'ndk/29.0.14206865'
 $env:PGRAZOR_NATIVE_DEPS = Join-Path (Get-Location) 'pgrazor/build/native/deps'
+python -B tools/prepare_native.py --download
+```
+
+On Linux, use the equivalent environment setup (replace `/path/to/android-sdk` with the installed SDK):
+
+```bash
+export ANDROID_HOME=/path/to/android-sdk
+export ANDROID_SDK_ROOT="$ANDROID_HOME"
+export PGRAZOR_ANDROID_PLATFORM=android-36
+export PGRAZOR_BUILD_TOOLS=36.0.0
+export ANDROID_NDK_HOME="$ANDROID_HOME/ndk/27.3.13750724"
+export PGRAZOR_ART_NDK="$ANDROID_HOME/ndk/29.0.14206865"
+export PGRAZOR_NATIVE_DEPS="$PWD/pgrazor/build/native/deps"
+python -m pip install "cmake==4.4.4" "ninja==1.13.2"
+sdkmanager "platforms;android-36" "sources;android-36" "build-tools;36.0.0" "ndk;27.3.13750724" "ndk;29.0.14206865"
 python -B tools/prepare_native.py --download
 ```
 

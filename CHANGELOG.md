@@ -1,5 +1,23 @@
 # Changelog
 
+## Unreleased — PGS
+
+### New features
+
+- **Joystick direction lock:** Hold the centre for 1.5 seconds, drag and release to keep moving. Hold the padlock for half a second to stop. Hiding the joystick, leaving the map or losing its camera releases the lock.
+- **Gift shortcut:** Open Send & Open Gifts directly from the quick menu. The shortcut can be hidden independently and opening it does not start a batch.
+- **LivePokeMap refresh:** Choose a Shundo Sniper refresh interval from 30 seconds to 10 minutes, with a five-minute default. Global feed browsing refreshes manually.
+
+### Improvements & fixes
+
+- **VGP+ IV rules:** Wild catches use the encounter's populated IVs when selecting premium balls and berries.
+- **Owned IV display:** The line stays above the details screen when opened over the Pokédex, and CP/level refresh after power-up without reopening the screen.
+- **Real location:** VGP+ can receive a valid real GPS fix through the active game provider when spoofing is off, including devices where the framework getter hook is not called.
+- **LivePokeMap limits:** Server refresh floors and Retry-After survive timing variation, interval changes, settings imports and stopping/restarting the sniper. Cancelled requests do not publish stale results.
+- **Settings backup:** Global radius and the new refresh/menu options export and import correctly.
+- **Buddy feeding:** A missing response no longer leaves feeding stuck after the same buddy is observed fed. Uncertain requests are not repeated or counted as confirmed successes.
+- **Silver Pinap:** Corrected its item selection and migrated legacy manual-catch and buddy preferences while preserving berry priority.
+
 ## v0.3.8
 
 [Full release notes](docs/releases/v0.3.8.md)

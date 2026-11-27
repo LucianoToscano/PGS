@@ -11,8 +11,10 @@ public final class ControlSettingsTest {
         Control.configureQuickBall(true); Control.configureQuickSummary(true); Control.configureCameraSteering(true);
         if(args[0].equals("save")) {
             Control.setGiftOptions(7);
+            Control.setQuickMenuVisible(8192, false);
+            Control.setQuickMenuVisible(16384, false); // Unknown future bits remain rejected.
             Control.setSpawnBooster(true);Control.setIdleWalking(true);
-            Control.setAutoBerry(705); Control.setEncounterBerryEnabled(true); Control.setBuddyBerry(703);
+            Control.setAutoBerry(708); Control.setEncounterBerryEnabled(true); Control.setBuddyBerry(708);
             Control.setBattleOptions(111); Control.setBattleOptions(981); // Rapid change: the newest value must win after coalescing.
             Control.setGymRepeatEnabled(true);
             Control.setLocalTimeOverlay(true);
@@ -33,8 +35,9 @@ public final class ControlSettingsTest {
         if(!Control.idleWalking()||Control.engine.idleWalkingActive())throw new AssertionError("Idle preference persistence without active motion");
         if(!Control.spawnBooster()||Control.spawnAllowed())throw new AssertionError("Spawn persistence/readiness");
         if(Control.giftOptions()!=7||Control.giftsAllowed())throw new AssertionError("Gift persistence/readiness");
-        if(Control.buddyBerry()!=703||Control.buddyAllowed())throw new AssertionError("Buddy preference/readiness");
-        if(!Control.encounterBerryEnabled()||!Control.berryPriority().equals("705")||Control.autoBerry()!=705)
+        if(Control.quickMenuHidden()!=8192||Control.quickMenuVisible(8192)||!Control.quickMenuVisible(1))throw new AssertionError("Gift shortcut visibility must persist independently of existing rows");
+        if(Control.buddyBerry()!=708||Control.buddyAllowed())throw new AssertionError("Buddy preference/readiness");
+        if(!Control.encounterBerryEnabled()||!Control.berryPriority().equals("708")||Control.autoBerry()!=708)
             throw new AssertionError("Berry choice/overlay not persisted");
         if(Control.battleOptions()!=981||Control.battlesAllowed())throw new AssertionError("Other battle persistence/readiness");
         if(!Control.gymRepeatEnabled())throw new AssertionError("Gym repeat not persisted across process restart");
@@ -59,7 +62,7 @@ public final class ControlSettingsTest {
             // Read the file directly: this proves the daemon writer drained the newest coalesced snapshot.
             java.util.Properties saved=new java.util.Properties();
             try(java.io.FileInputStream in=new java.io.FileInputStream(new java.io.File(args[1],"pgrazor-settings-v1.properties"))){saved.load(in);}
-            if(!"981".equals(saved.getProperty("battleOptions"))||!"705".equals(saved.getProperty("berryPriority"))||!"5".equals(saved.getProperty("rocketOptions"))||!"true".equals(saved.getProperty("gymRepeatEnabled")))
+            if(!"981".equals(saved.getProperty("battleOptions"))||!"708".equals(saved.getProperty("berryPriority"))||!"708".equals(saved.getProperty("buddyBerry"))||!"5".equals(saved.getProperty("rocketOptions"))||!"true".equals(saved.getProperty("gymRepeatEnabled")))
                 throw new AssertionError("Queued settings were not flushed to disk before exit");
         }
         System.out.println("PASS: settings "+args[0]);

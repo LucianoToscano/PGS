@@ -28,6 +28,7 @@ public final class QuickMenu {
         void onHotspots();
         void onTeleport();
         void onAccounts();
+        void onGifts();
         void onSettings();
         /** Asks to hide every PGRazor overlay (three fingers on screen show them again). */
         void onHideOverlays();
@@ -37,7 +38,7 @@ public final class QuickMenu {
         ACCOUNTS = MenuIcon.ACCOUNTS, SETTINGS = MenuIcon.SETTINGS, EVENTS = MenuIcon.EVENTS, AUTOMATION = MenuIcon.AUTOMATION, HIDE = MenuIcon.HIDE, ROUTES = MenuIcon.ROUTES, RESEARCH = MenuIcon.RESEARCH;
 
     // Append-only order: persisted visibility bits must not follow icon IDs (some are shared).
-    static final String[] CUSTOMIZABLE = {"Map", "Walking speed", "Autowalk", "In-game Routes", "Feeds", "Favorites", "Hotspots", "Teleport", "Switch account", "Events", "Automation", "Research", "Hide overlay"};
+    static final String[] CUSTOMIZABLE = {"Map", "Walking speed", "Autowalk", "In-game Routes", "Feeds", "Favorites", "Hotspots", "Teleport", "Switch account", "Events", "Automation", "Research", "Hide overlay", "Send & Open Gifts"};
     private final List<View> rows = new ArrayList<>();
     private final List<Integer> visibilityBits = new ArrayList<>();
     private int appliedHidden = -1;
@@ -78,6 +79,7 @@ public final class QuickMenu {
         card.addView(row(EVENTS, "Events", true, () -> dev.pgrazor.events.EventPanel.showSelector(activity, Control.darkTheme()), 512));
         card.addView(row(AUTOMATION, "Automation", true, () -> AutomationPanel.show(activity), 1024));
         card.addView(row(RESEARCH, "Research", true, () -> ResearchSettings.show(activity), 2048));
+        card.addView(row(MenuIcon.HEART, "Send & Open Gifts", true, listener::onGifts, 8192));
         card.addView(row(HIDE, "Hide overlay", true, listener::onHideOverlays, 4096));
         card.addView(row(SETTINGS, "Settings", true, listener::onSettings, 0));
         viewport=new ScrollView(activity);viewport.setFillViewport(false);

@@ -9,6 +9,7 @@ STUBS = {
     'android/content/Context.java': 'package android.content; public class Context {}',
     'android/location/Location.java': '''package android.location; public class Location {
  public Location(String p){} public void setLatitude(double v){} public void setLongitude(double v){}
+ public double getLatitude(){return 0;} public double getLongitude(){return 0;}
  public void setSpeed(float v){} public void setBearing(float v){} public void setAltitude(double v){}
  public void setAccuracy(float v){} public void setTime(long v){} public void setElapsedRealtimeNanos(long v){} }''',
     'android/os/Looper.java': '''package android.os; public class Looper {
@@ -24,6 +25,7 @@ STUBS = {
     'android/os/SystemClock.java': 'package android.os; public class SystemClock {public static long elapsedRealtimeNanos(){return 1234567L;}}',
     'dev/pgrazor/Control.java': '''package dev.pgrazor; public class Control {
  public static boolean active(){return true;} public static double latitude(){return 1;} public static double longitude(){return 2;}
+ public static boolean desiredEnabled(){return true;} public static void observeRealLocation(double lat,double lon){}
  public static float speed(){return 3;} public static float bearing(){return 4;} public static void event(String k,String v){} }''',
     'com/nianticlabs/nia/contextservice/ContextService.java': '''package com.nianticlabs.nia.contextservice;
  public class ContextService {public static final android.os.Handler HANDLER=new android.os.Handler();

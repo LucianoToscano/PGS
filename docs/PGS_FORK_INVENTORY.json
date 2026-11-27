@@ -1,0 +1,664 @@
+{
+  "reviewed_on": "2026-11-27",
+  "upstream": "jpitty03/PGRazor",
+  "base_commit": "1106592aa045759f55f594ff6968f783ff636fe9",
+  "scope": "History comparison of all 78 visible branches; source review of selected divergent changes. This is not a line-by-line security review of every fork.",
+  "counts": {
+    "listed": 29,
+    "accessible": 27,
+    "inaccessible": 2,
+    "branches": 78,
+    "uniqueHeads": 43,
+    "ancestorHeads": 21,
+    "divergentHeads": 22,
+    "defaultBranchesWithoutNewCommits": 22,
+    "divergentDefaultBranches": 5
+  },
+  "repositories": [
+    {
+      "repo": "ReneeAraujo/PGRazor",
+      "refs": [
+        {
+          "name": "main",
+          "sha": "084d70012624ba32ba361bc31db6ac0eb17811b7",
+          "behind": 16,
+          "ahead": 0
+        }
+      ]
+    },
+    {
+      "repo": "celestialeye/PGRazor",
+      "refs": [
+        {
+          "name": "main",
+          "sha": "be363440fae15e57858cfeb3b83c7ed90c4e8438",
+          "behind": 60,
+          "ahead": 0
+        }
+      ]
+    },
+    {
+      "repo": "JxstMichie/PGRazor",
+      "refs": [
+        {
+          "name": "main",
+          "sha": "7d464b958a5428f0647710606640912b689462e5",
+          "behind": 152,
+          "ahead": 0
+        }
+      ]
+    },
+    {
+      "repo": "vantrox/PGRazor",
+      "refs": [
+        {
+          "name": "main",
+          "sha": "084d70012624ba32ba361bc31db6ac0eb17811b7",
+          "behind": 16,
+          "ahead": 0
+        }
+      ]
+    },
+    {
+      "repo": "Axe2230/PGRazor",
+      "refs": [
+        {
+          "name": "main",
+          "sha": "abfc33b0fb97c20debe1c47805b1ed3e61562ba7",
+          "behind": 207,
+          "ahead": 0
+        }
+      ]
+    },
+    {
+      "repo": "arisuryohei911-dot/PGRazor",
+      "refs": [
+        {
+          "name": "main",
+          "sha": "c998ed10a0f4d85281e4acea804958c01e082fd7",
+          "behind": 18,
+          "ahead": 0
+        }
+      ]
+    },
+    {
+      "repo": "kunal2801/PGRazor",
+      "refs": [
+        {
+          "name": "main",
+          "sha": "bea392449ff0353e1874e4611c701e03ea65d6a1",
+          "behind": 191,
+          "ahead": 0
+        }
+      ]
+    },
+    {
+      "repo": "belalsalah74/PGRazor",
+      "refs": [
+        {
+          "name": "feature/auto-max-battle-and-apk-build",
+          "sha": "b6a8a45e6e08916d305ef1fd4a7c142e7981e910",
+          "behind": 18,
+          "ahead": 13
+        },
+        {
+          "name": "main",
+          "sha": "10c523009955317d456af55d00abb5b05022ed7e",
+          "behind": 18,
+          "ahead": 8
+        }
+      ]
+    },
+    {
+      "repo": "DevPGSV/PGRazor",
+      "refs": [
+        {
+          "name": "dev",
+          "sha": "97479b71ef2f616a6c20e572daae8c3333536ca7",
+          "behind": 16,
+          "ahead": 8
+        },
+        {
+          "name": "feature/device-regression",
+          "sha": "0d1b600a22d4cd1e9183b4cd78b2ca1f8ff90afa",
+          "behind": 106,
+          "ahead": 2
+        },
+        {
+          "name": "feature/http-api",
+          "sha": "7d2ffd503af9d23d8e179bb02a97fa35975bafe6",
+          "behind": 16,
+          "ahead": 25
+        },
+        {
+          "name": "feature/linux-build",
+          "sha": "dfbc550c32bad304572711f69ec44672af0c113d",
+          "behind": 16,
+          "ahead": 7
+        },
+        {
+          "name": "feature/shiny-scanner",
+          "sha": "339525cb1749bd93f918ce37e841441b473e3d86",
+          "behind": 188,
+          "ahead": 1
+        },
+        {
+          "name": "feature/showcase-keepers",
+          "sha": "469a40ed3232851e0e8e84dd83f67ef49d4e9b9a",
+          "behind": 97,
+          "ahead": 1
+        },
+        {
+          "name": "main",
+          "sha": "084d70012624ba32ba361bc31db6ac0eb17811b7",
+          "behind": 16,
+          "ahead": 0
+        },
+        {
+          "name": "research-deep-radar",
+          "sha": "9d25631e08a519cf11f73fefcd4a991711c63a98",
+          "behind": 97,
+          "ahead": 1
+        },
+        {
+          "name": "rooted",
+          "sha": "85acb315f6586d97b4c27ff86cf5e39b897120ca",
+          "behind": 89,
+          "ahead": 0
+        },
+        {
+          "name": "smart-battling",
+          "sha": "67b24c7c2b6a72459062fe9e0a8cb1655bc1fa0a",
+          "behind": 97,
+          "ahead": 0
+        }
+      ]
+    },
+    {
+      "repo": "yaboi-zombies/PGRazor",
+      "refs": [
+        {
+          "name": "feature/device-regression",
+          "sha": "0d1b600a22d4cd1e9183b4cd78b2ca1f8ff90afa",
+          "behind": 106,
+          "ahead": 2
+        },
+        {
+          "name": "feature/shiny-scanner",
+          "sha": "339525cb1749bd93f918ce37e841441b473e3d86",
+          "behind": 188,
+          "ahead": 1
+        },
+        {
+          "name": "feature/showcase-keepers",
+          "sha": "469a40ed3232851e0e8e84dd83f67ef49d4e9b9a",
+          "behind": 97,
+          "ahead": 1
+        },
+        {
+          "name": "main",
+          "sha": "084d70012624ba32ba361bc31db6ac0eb17811b7",
+          "behind": 16,
+          "ahead": 0
+        },
+        {
+          "name": "research-deep-radar",
+          "sha": "9d25631e08a519cf11f73fefcd4a991711c63a98",
+          "behind": 97,
+          "ahead": 1
+        },
+        {
+          "name": "rooted",
+          "sha": "85acb315f6586d97b4c27ff86cf5e39b897120ca",
+          "behind": 89,
+          "ahead": 0
+        },
+        {
+          "name": "smart-battling",
+          "sha": "67b24c7c2b6a72459062fe9e0a8cb1655bc1fa0a",
+          "behind": 97,
+          "ahead": 0
+        }
+      ]
+    },
+    {
+      "repo": "randrew87/PGRazorX",
+      "refs": [
+        {
+          "name": "contrib/mejoras-adicionales",
+          "sha": "d0326bcaa5667564a26962f5249e7c3d4ea8c917",
+          "behind": 157,
+          "ahead": 2
+        },
+        {
+          "name": "contrib/ui-adaptativa",
+          "sha": "763f595ba3302f65e45f5747ad668588ee01b775",
+          "behind": 140,
+          "ahead": 0
+        },
+        {
+          "name": "main",
+          "sha": "2fa85ac04d6f3818b1be0962ce0e9300186093d1",
+          "behind": 209,
+          "ahead": 0
+        }
+      ]
+    },
+    {
+      "repo": "Petit-Prince-dev/PGRazor",
+      "refs": [
+        {
+          "name": "feat/ecran-eteint-et-francais",
+          "sha": "d3407184171e8455b035908332e4df6640313aca",
+          "behind": 36,
+          "ahead": 35
+        },
+        {
+          "name": "feature/device-regression",
+          "sha": "0d1b600a22d4cd1e9183b4cd78b2ca1f8ff90afa",
+          "behind": 106,
+          "ahead": 2
+        },
+        {
+          "name": "feature/shiny-scanner",
+          "sha": "339525cb1749bd93f918ce37e841441b473e3d86",
+          "behind": 188,
+          "ahead": 1
+        },
+        {
+          "name": "feature/showcase-keepers",
+          "sha": "469a40ed3232851e0e8e84dd83f67ef49d4e9b9a",
+          "behind": 97,
+          "ahead": 1
+        },
+        {
+          "name": "main",
+          "sha": "d3407184171e8455b035908332e4df6640313aca",
+          "behind": 36,
+          "ahead": 35
+        },
+        {
+          "name": "research-deep-radar",
+          "sha": "9d25631e08a519cf11f73fefcd4a991711c63a98",
+          "behind": 97,
+          "ahead": 1
+        },
+        {
+          "name": "rooted",
+          "sha": "85acb315f6586d97b4c27ff86cf5e39b897120ca",
+          "behind": 89,
+          "ahead": 0
+        },
+        {
+          "name": "smart-battling",
+          "sha": "67b24c7c2b6a72459062fe9e0a8cb1655bc1fa0a",
+          "behind": 97,
+          "ahead": 0
+        }
+      ]
+    },
+    {
+      "repo": "dhanush-c-c/PGRazor",
+      "refs": [
+        {
+          "name": "feature/interface-redesign",
+          "sha": "ef004ffde2fdb54823fed81afbf02a06a28f87ea",
+          "behind": 48,
+          "ahead": 0
+        },
+        {
+          "name": "fix/windows-art-build",
+          "sha": "a7022d7050addf5c80b676ebe20f86df585bee67",
+          "behind": 53,
+          "ahead": 0
+        },
+        {
+          "name": "main",
+          "sha": "e36bcab41cafb90c0f5a7bcd12b2ef623f2e0a69",
+          "behind": 54,
+          "ahead": 0
+        }
+      ]
+    },
+    {
+      "repo": "gloiae/PGRazor",
+      "refs": [
+        {
+          "name": "main",
+          "sha": "d084a20e82bd873a7f81704f0d599689062ae453",
+          "behind": 182,
+          "ahead": 0
+        }
+      ]
+    },
+    {
+      "repo": "ToxSylph/PGRazor",
+      "refs": [
+        {
+          "name": "feature/native-runtime-migration",
+          "sha": "55c687bc367711558ca8ecb5089b38ff49b3cbaa",
+          "behind": 180,
+          "ahead": 0
+        },
+        {
+          "name": "feature/shiny-scanner",
+          "sha": "339525cb1749bd93f918ce37e841441b473e3d86",
+          "behind": 188,
+          "ahead": 1
+        },
+        {
+          "name": "main",
+          "sha": "dfeeeee6637d00fc81dece4f73b5649b3e500778",
+          "behind": 106,
+          "ahead": 0
+        }
+      ]
+    },
+    {
+      "repo": "Benjaminlooi/PGRazor",
+      "refs": [
+        {
+          "name": "codex/fix-vector-art-hook-chain",
+          "sha": "b9d0d2ce445024b143894484f69ccbc2aaefb6c9",
+          "behind": 18,
+          "ahead": 1
+        },
+        {
+          "name": "feature/device-regression",
+          "sha": "0d1b600a22d4cd1e9183b4cd78b2ca1f8ff90afa",
+          "behind": 106,
+          "ahead": 2
+        },
+        {
+          "name": "feature/shiny-scanner",
+          "sha": "339525cb1749bd93f918ce37e841441b473e3d86",
+          "behind": 188,
+          "ahead": 1
+        },
+        {
+          "name": "feature/showcase-keepers",
+          "sha": "469a40ed3232851e0e8e84dd83f67ef49d4e9b9a",
+          "behind": 97,
+          "ahead": 1
+        },
+        {
+          "name": "main",
+          "sha": "c998ed10a0f4d85281e4acea804958c01e082fd7",
+          "behind": 18,
+          "ahead": 0
+        },
+        {
+          "name": "research-deep-radar",
+          "sha": "9d25631e08a519cf11f73fefcd4a991711c63a98",
+          "behind": 97,
+          "ahead": 1
+        },
+        {
+          "name": "rooted",
+          "sha": "85acb315f6586d97b4c27ff86cf5e39b897120ca",
+          "behind": 89,
+          "ahead": 0
+        },
+        {
+          "name": "smart-battling",
+          "sha": "67b24c7c2b6a72459062fe9e0a8cb1655bc1fa0a",
+          "behind": 97,
+          "ahead": 0
+        }
+      ]
+    },
+    {
+      "repo": "gv2598/PGRazor",
+      "refs": [
+        {
+          "name": "main",
+          "sha": "2fa85ac04d6f3818b1be0962ce0e9300186093d1",
+          "behind": 209,
+          "ahead": 0
+        }
+      ]
+    },
+    {
+      "repo": "foxartic/PGRazor",
+      "refs": [
+        {
+          "name": "main",
+          "sha": "c998ed10a0f4d85281e4acea804958c01e082fd7",
+          "behind": 18,
+          "ahead": 0
+        }
+      ]
+    },
+    {
+      "repo": "ar5hil/PGRazor",
+      "refs": [
+        {
+          "name": "Rasiel",
+          "sha": "e6b49acd32f1a30d4f42dcf2d06f8d2cce20c49b",
+          "behind": 211,
+          "ahead": 4
+        },
+        {
+          "name": "main",
+          "sha": "2c0f331a48d41285f40f3f11251b31ec5f2df19f",
+          "behind": 168,
+          "ahead": 0
+        }
+      ]
+    },
+    {
+      "repo": "privacyportalUK/pgrazor",
+      "refs": [
+        {
+          "name": "main",
+          "sha": "879bd39ce9f79a5f6704f0b5153eac4f92527e6f",
+          "behind": 85,
+          "ahead": 0
+        }
+      ]
+    },
+    {
+      "repo": "Fixuuu/PGRazor",
+      "refs": [
+        {
+          "name": "feature/device-regression",
+          "sha": "0d1b600a22d4cd1e9183b4cd78b2ca1f8ff90afa",
+          "behind": 106,
+          "ahead": 2
+        },
+        {
+          "name": "feature/shiny-scanner",
+          "sha": "339525cb1749bd93f918ce37e841441b473e3d86",
+          "behind": 188,
+          "ahead": 1
+        },
+        {
+          "name": "feature/showcase-keepers",
+          "sha": "469a40ed3232851e0e8e84dd83f67ef49d4e9b9a",
+          "behind": 97,
+          "ahead": 1
+        },
+        {
+          "name": "feedlivepokemap-flag-bypass",
+          "sha": "76fc5eaa4f1776b899fae88f27b48ebcfc75b392",
+          "behind": 3,
+          "ahead": 1
+        },
+        {
+          "name": "fixu/vgp-plus-wild-ivs",
+          "sha": "02a6c2a388b4a96078a7f4390df63d7742e0e646",
+          "behind": 3,
+          "ahead": 1
+        },
+        {
+          "name": "main",
+          "sha": "00e3efccf3fc7fae7e00bc727ed7dc071f2922d4",
+          "behind": 3,
+          "ahead": 0
+        },
+        {
+          "name": "next",
+          "sha": "00e3efccf3fc7fae7e00bc727ed7dc071f2922d4",
+          "behind": 3,
+          "ahead": 0
+        },
+        {
+          "name": "research-deep-radar",
+          "sha": "9d25631e08a519cf11f73fefcd4a991711c63a98",
+          "behind": 97,
+          "ahead": 1
+        },
+        {
+          "name": "rooted",
+          "sha": "85acb315f6586d97b4c27ff86cf5e39b897120ca",
+          "behind": 89,
+          "ahead": 0
+        },
+        {
+          "name": "smart-battling",
+          "sha": "67b24c7c2b6a72459062fe9e0a8cb1655bc1fa0a",
+          "behind": 97,
+          "ahead": 0
+        }
+      ]
+    },
+    {
+      "repo": "7sarus/PGRazor",
+      "refs": [
+        {
+          "name": "feature/joystick-lock",
+          "sha": "78cc1c4696a19bbfa469630341cc18cc80b9ffb7",
+          "behind": 3,
+          "ahead": 21
+        },
+        {
+          "name": "feature/overlay-hide",
+          "sha": "114e3e160d51b786511fc7fa8c88b9a1d81f2766",
+          "behind": 16,
+          "ahead": 3
+        },
+        {
+          "name": "feature/pokemon-dump",
+          "sha": "e5ee55ac959ad2847736f6e1b9416a11c4f9a1b4",
+          "behind": 3,
+          "ahead": 32
+        },
+        {
+          "name": "main",
+          "sha": "2f6dc7f3faecd7e1b85c321e65bda3c18354dc35",
+          "behind": 3,
+          "ahead": 28
+        },
+        {
+          "name": "pr/joystick-lock",
+          "sha": "8c1adb6c8bb89c5d36a734cc6add8c85dafa86e4",
+          "behind": 3,
+          "ahead": 1
+        }
+      ]
+    },
+    {
+      "repo": "Archit-barge/PGRazortrial",
+      "refs": [
+        {
+          "name": "main",
+          "sha": "084d70012624ba32ba361bc31db6ac0eb17811b7",
+          "behind": 16,
+          "ahead": 0
+        }
+      ]
+    },
+    {
+      "repo": "dojistarman/PGRazor-Savant",
+      "refs": [
+        {
+          "name": "codex/pvp-root-integration",
+          "sha": "4da955651ec24b1c3d2a97fce412cc57c78eb9c1",
+          "behind": 18,
+          "ahead": 10
+        },
+        {
+          "name": "main",
+          "sha": "4da955651ec24b1c3d2a97fce412cc57c78eb9c1",
+          "behind": 18,
+          "ahead": 10
+        }
+      ]
+    },
+    {
+      "repo": "NPSummers/PGRazor-Aureal",
+      "refs": [
+        {
+          "name": "main",
+          "sha": "0993d1083813ace5cb834c83e41133b1561c0c6a",
+          "behind": 36,
+          "ahead": 0
+        }
+      ]
+    },
+    {
+      "repo": "hugoalves6/PGRazor_Pokematrix",
+      "refs": [
+        {
+          "name": "main",
+          "sha": "31c6f2b30a184394f33f8f5272991580463f95ca",
+          "behind": 18,
+          "ahead": 18
+        }
+      ]
+    },
+    {
+      "repo": "sreenushenoy07/PGRazor-Rooted",
+      "refs": {
+        "content": [
+          {
+            "type": "text",
+            "text": "GitHub API error 404: {\"message\":\"Not Found\",\"documentation_url\":\"https://docs.github.com/rest\",\"status\":\"404\"}"
+          }
+        ],
+        "structuredContent": {
+          "error": "GitHub API error 404: {\"message\":\"Not Found\",\"documentation_url\":\"https://docs.github.com/rest\",\"status\":\"404\"}",
+          "error_code": "NOT_FOUND",
+          "error_data": {
+            "message": "Not Found",
+            "documentation_url": "https://docs.github.com/rest",
+            "status": "404"
+          }
+        },
+        "isError": true
+      }
+    },
+    {
+      "repo": "Slumpz2460/PGRaz",
+      "refs": [
+        {
+          "name": "main",
+          "sha": "b880b36c45cc9c28aef16c8952cf3627794b3760",
+          "behind": 204,
+          "ahead": 0
+        }
+      ]
+    },
+    {
+      "repo": "sreenushenoy/PGRazor-root",
+      "refs": {
+        "content": [
+          {
+            "type": "text",
+            "text": "GitHub API error 404: {\"message\":\"Not Found\",\"documentation_url\":\"https://docs.github.com/rest\",\"status\":\"404\"}"
+          }
+        ],
+        "structuredContent": {
+          "error": "GitHub API error 404: {\"message\":\"Not Found\",\"documentation_url\":\"https://docs.github.com/rest\",\"status\":\"404\"}",
+          "error_code": "NOT_FOUND",
+          "error_data": {
+            "message": "Not Found",
+            "documentation_url": "https://docs.github.com/rest",
+            "status": "404"
+          }
+        },
+        "isError": true
+      }
+    }
+  ]
+}

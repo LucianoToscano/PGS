@@ -78,6 +78,13 @@ int inventory_run(int argc,char **argv){
  PgrInventoryHostSample s{};assert(api->sample(&s)==0);assert((s.capabilities&7)==7&&!s.ready&&s.roots==0);assert(calls==0);
  // Real7 Dobby-installed leaf sites still chain their manual originals exactly once.
  decltype(&init) volatile init_call=&init;decltype(&feed) volatile feed_call=&feed;init_call(nullptr,nullptr);feed_call(nullptr,701,1,nullptr);assert(original_calls==2);
+ // Actual65 must forward Silver Pinap708 to actual12. The real buddy module then
+ // resolves the map (missing in this fixture);707 must remain an invalid choice.
+ p.buddy_berry=708;p.buddy_allowed=1;int before_buddy=calls;
+ assert(api->update(&p)==0&&api->tick(gettid())==0&&calls>before_buddy&&handles.empty());
+ p.buddy_berry=707;before_buddy=calls;
+ assert(api->update(&p)==0&&api->tick(gettid())==0&&calls==before_buddy);
+ p.buddy_berry=p.buddy_allowed=0;assert(api->update(&p)==0);
  // Real native incubation resolves the map via configured56 slots, reports waiting,
  // balances the temporary System.Type root, and issues no assignment without a map.
  p.incubator_enabled=1;p.incubator_allowed=1;assert(api->update(&p)==0);assert(api->tick(gettid())==0);assert(calls>0&&handles.empty());

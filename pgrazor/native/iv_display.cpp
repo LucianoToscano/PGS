@@ -75,7 +75,7 @@ std::atomic<const PgrIvPanelHooks *> g_panel_hooks{nullptr};
 std::atomic<uint64_t> g_owner_tid{0};
 
 // Conservative finish/root accounting (atomic so sample is lock-free for these).
-std::atomic<uint32_t> g_durable_roots{0};  // text + outline handles held by live records
+std::atomic<uint32_t> g_durable_roots{0};  // text + outline + owned source panel/proto handles
 std::atomic<uint32_t> g_temp_roots{0};     // ScopedRoot handles in flight
 std::atomic<uint32_t> g_active_depth{0};   // owner-thread hook/tick reentrancy depth
 
@@ -109,6 +109,10 @@ char g_owned_label[kLabelCap] = {0};
 struct Record {
   uintptr_t text;    // durable GC root to the UI.Text
   uintptr_t outline; // durable GC root to the UI.Outline (0 when none)
+  uintptr_t source_panel; // details panel for bounded power-up refresh; 0 for encounters
+  uintptr_t source_proto; // identity of the displayed Pokemon, resolved through its GC handle
+  int32_t cp;
+  float cpmul, addcpmul;
   bool applied;
   bool owned;
   bool panel;  // applied as the light-panel line (restore hides it; the label is untouched)
@@ -863,6 +867,16 @@ bool is_alive(void *obj, Ctx &c) {
 }
 
 void free_record(Record &r) {
+  if (r.source_proto != 0) {
+    const uintptr_t h = r.source_proto;
+    r.source_proto = 0;
+    free_durable(h);
+  }
+  if (r.source_panel != 0) {
+    const uintptr_t h = r.source_panel;
+    r.source_panel = 0;
+    free_durable(h);
+  }
   if (r.outline != 0) {
     const uintptr_t h = r.outline;
     r.outline = 0;
@@ -912,6 +926,23 @@ void drop_owned_matching(void *text_obj) {
   }
 }
 
+// A panel can replace its Text while the old Text is still alive. Remove its prior record
+// by rooted panel identity as well, so the abandoned Text cannot keep triggering recaptures.
+void drop_owned_panel(const ScopedRoot &panel) {
+  for (uint32_t i = 0; i < g_owned_count;) {
+    void *obj = g_owned_recs[i].source_panel ? gc_get()(g_owned_recs[i].source_panel) : nullptr;
+    if (obj != nullptr && obj == panel.target()) {
+      Record r = g_owned_recs[i];
+      for (uint32_t j = i; j + 1 < g_owned_count; ++j) g_owned_recs[j] = g_owned_recs[j + 1];
+      --g_owned_count;
+      g_owned_recs[g_owned_count] = Record{};
+      drop_record(r);
+    } else {
+      ++i;
+    }
+  }
+}
+
 void evict_oldest_owned() {
   if (g_owned_count == 0) return;
   Record r = g_owned_recs[0];
@@ -924,7 +955,9 @@ void evict_oldest_owned() {
 // Snapshot the authentic UI state, build the overlay and apply/restore per the gate. On
 // any error the partial record's roots are freed and the channel faults.
 void capture_overlay(bool is_catch, void *text_obj, int32_t cp, int32_t level_half, int atk,
-                     int def, int sta, uint64_t tid, const PgrPvpBest &pvp) {
+                     int def, int sta, uint64_t tid, const PgrPvpBest &pvp,
+                     const ScopedRoot *source_panel = nullptr, const ScopedRoot *source_proto = nullptr,
+                     float cpmul = 0, float addcpmul = 0) {
   // Use the generation pinned at hook entry, including an explicitly disabled zero value.
   // Only callers without a pinned generation take a fresh snapshot. A zero result
   // means the channel was disabled/expired: the record is still captured, just left un-applied
@@ -949,8 +982,10 @@ void capture_overlay(bool is_catch, void *text_obj, int32_t cp, int32_t level_ha
   // never overwritten without freeing its roots.
   if (is_catch)
     drop_catch();
-  else
+  else {
+    if (source_panel) drop_owned_panel(*source_panel);
     drop_owned_matching(incoming_root.target());
+  }
 
   Ctx c;
   Record r{};
@@ -960,6 +995,16 @@ void capture_overlay(bool is_catch, void *text_obj, int32_t cp, int32_t level_ha
     publish_unavailable(is_catch, PGR_IV_REASON_GCHANDLE, tid);
     return;
   }
+  if (!is_catch && source_panel && source_proto) {
+    r.source_panel = hold_durable(source_panel->target());
+    r.source_proto = hold_durable(source_proto->target());
+    if (!r.source_panel || !r.source_proto) {
+      free_record(r);
+      publish_owned_unavailable(PGR_IV_REASON_GCHANDLE, tid);
+      return;
+    }
+  }
+  r.cp = cp; r.cpmul = cpmul; r.addcpmul = addcpmul;
   // Every managed read below re-resolves the Text from r.text first: the prior managed call
   // may have moved it.
   char original[kLabelCap];
@@ -1204,48 +1249,92 @@ void capture_catch(void *plate, void *map, uint64_t tid) {
   capture_overlay(true, text_obj, cp, level_half, atk, def, sta, tid, pvp);
 }
 
-void capture_owned(void *panel, void *proto, uint64_t tid) {
+void capture_owned(const ScopedRoot &panel_root, const ScopedRoot &proto_root, uint64_t tid) {
   Ctx c;
-  if (!is_exact(proto, g_cfg.class_pokemon)) return;
-  if (field_ptr(panel, g_cfg.f_panel_displayed) != proto) {
+  if (!is_exact(proto_root.target(), g_cfg.class_pokemon)) return;
+  if (field_ptr(panel_root.target(), g_cfg.f_panel_displayed) != proto_root.target()) {
     publish_owned_unavailable(PGR_IV_REASON_OWNED_IDENTITY, tid);
     return;
   }
 
-  int32_t cp = field_i32(proto, g_cfg.f_cp);
-  int32_t atk = field_i32(proto, g_cfg.f_atk);
-  int32_t def = field_i32(proto, g_cfg.f_def);
-  int32_t sta = field_i32(proto, g_cfg.f_sta);
-  float cpmul = field_f32(proto, g_cfg.f_cpmul);
-  float addcpmul = field_f32(proto, g_cfg.f_addcpmul);
+  int32_t cp = field_i32(proto_root.target(), g_cfg.f_cp);
+  int32_t atk = field_i32(proto_root.target(), g_cfg.f_atk);
+  int32_t def = field_i32(proto_root.target(), g_cfg.f_def);
+  int32_t sta = field_i32(proto_root.target(), g_cfg.f_sta);
+  float cpmul = field_f32(proto_root.target(), g_cfg.f_cpmul);
+  float addcpmul = field_f32(proto_root.target(), g_cfg.f_addcpmul);
   if (cp <= 0 || !(std::isfinite(cpmul) && cpmul > 0.0f)) {
     publish_owned_pending(PGR_IV_REASON_STATS_NOT_POPULATED, tid);
     return;
   }
 
-  void *text_obj = field_ptr(panel, g_cfg.f_panel_cptext);
+  void *text_obj = field_ptr(panel_root.target(), g_cfg.f_panel_cptext);
   ScopedRoot text_root;
   text_root.acquire(text_obj);
   if (text_obj == nullptr || !text_root.ok()) {
     publish_owned_unavailable(PGR_IV_REASON_GCHANDLE, tid);
     return;
   }
-  if (assignable()(g_cfg.class_text, obj_class()(text_obj)) == 0) {
+  if (assignable()(g_cfg.class_text, obj_class()(text_root.target())) == 0) {
     publish_owned_unavailable(PGR_IV_REASON_TEXT_CLASS, tid);
     return;
   }
 
-  void *gm = field_ptr(panel, g_cfg.f_panel_gm);
+  void *gm = field_ptr(panel_root.target(), g_cfg.f_panel_gm);
   ScopedRoot gm_root;
   gm_root.acquire(gm);
-  int32_t level_half = resolve_level(gm, cpmul, addcpmul, c);
+  int32_t level_half = resolve_level(gm_root.target(), cpmul, addcpmul, c);
   if (!c.ok) {
     publish_owned_unavailable(c.reason, tid);
     return;
   }
   PgrPvpBest pvp{};
-  if (pgr_pvp_best) pgr_pvp_best(proto, PGR_PVP_DETAILS, atk, def, sta, tid, &pvp);
-  capture_overlay(false, text_obj, cp, level_half, atk, def, sta, tid, pvp);
+  if (pgr_pvp_best) pgr_pvp_best(proto_root.target(), PGR_PVP_DETAILS, atk, def, sta, tid, &pvp);
+  capture_overlay(false, text_root.target(), cp, level_half, atk, def, sta, tid, pvp,
+                  &panel_root, &proto_root, cpmul, addcpmul);
+}
+
+// Power-up can replace/update the panel's Pokemon without calling DoUpdate. Inspect only the
+// already tracked panels, every 150 ms; refresh at most one per tick using existing validated fields.
+// The caller owns the Unity thread/reentrancy guard. Handles are freed with their overlay record.
+void refresh_owned_stats(uint64_t now, uint64_t tid) {
+  static uint64_t next = 0;
+  const uint64_t gen = snapshot_apply_gen(false), stop_serial = g_stop_serial.load(std::memory_order_acquire);
+  if (!gen || !now || now < next) return;
+  next = now + 150;
+  for (uint32_t i = 0; i < g_owned_count; ++i) {
+    const Record &r = g_owned_recs[i];
+    if (!r.source_panel) continue;
+    ScopedRoot panel, proto;
+    panel.acquire(gc_get()(r.source_panel));
+    if (!panel.ok() || !is_exact(panel.target(), g_cfg.class_panel)) continue;
+    // A render/relayout callback earlier in this tick may have destroyed the panel.
+    // Recheck before accessing its fields, and do not retain a dead source until another tick.
+    Ctx alive;
+    if (!is_alive(panel.target(), alive) || !alive.ok) {
+      drop_owned_panel(panel);
+      return; // dropping shifts the records array
+    }
+    proto.acquire(field_ptr(panel.target(), g_cfg.f_panel_displayed));
+    if (!proto.ok() || !is_exact(proto.target(), g_cfg.class_pokemon)) continue;
+    const int32_t cp = field_i32(proto.target(), g_cfg.f_cp);
+    const int32_t atk = field_i32(proto.target(), g_cfg.f_atk);
+    const int32_t def = field_i32(proto.target(), g_cfg.f_def);
+    const int32_t sta = field_i32(proto.target(), g_cfg.f_sta);
+    const float mult = field_f32(proto.target(), g_cfg.f_cpmul), add = field_f32(proto.target(), g_cfg.f_addcpmul);
+    void *text = field_ptr(panel.target(), g_cfg.f_panel_cptext);
+    if (!text) continue; // the panel may be between labels while rebuilding its contents
+    const bool same_text = r.text && gc_get()(r.text) == text;
+    const bool same_proto = r.source_proto && gc_get()(r.source_proto) == proto.target();
+    if (cp <= 0 || !std::isfinite(mult) || mult <= 0 || !std::isfinite(add) ||
+        (same_text && same_proto && r.cp == cp && r.cpmul == mult && r.addcpmul == add &&
+         r.atk == atk && r.def == def && r.sta == sta)) continue;
+    if (g_stop_serial.load(std::memory_order_acquire) != stop_serial) return;
+    g_pending_apply_gen = gen; g_pending_apply_valid = true;
+    capture_owned(panel, proto, tid);
+    g_pending_apply_gen = 0; g_pending_apply_valid = false;
+    return; // capture replaces its record, so never continue with an invalidated array reference
+  }
 }
 
 // --- hooks -------------------------------------------------------------------------
@@ -1389,6 +1478,7 @@ void hook_owned(void *self, void *proto, const void *method) {
     do_capture = panel_root.ok() && proto_root.ok();
     // onEnter: drop any existing overlay for this panel's label before the native refresh.
     if (!do_capture) publish_owned_unavailable(PGR_IV_REASON_GCHANDLE, tid);
+    if (do_capture) drop_owned_panel(panel_root);
     void *panel_obj = do_capture ? panel_root.target() : nullptr;
     void *existing = panel_obj != nullptr ? field_ptr(panel_obj, g_cfg.f_panel_cptext) : nullptr;
     if (existing != nullptr) drop_owned_matching(existing);
@@ -1409,7 +1499,7 @@ void hook_owned(void *self, void *proto, const void *method) {
           entry_stop_serial == g_stop_serial.load(std::memory_order_acquire)) {
         g_pending_apply_gen = entry_apply_gen;
         g_pending_apply_valid = true;
-        capture_owned(panel_root.target(), proto_root.target(), tid);
+        capture_owned(panel_root, proto_root, tid);
         g_pending_apply_gen = 0;
         g_pending_apply_valid = false;
       }
@@ -1627,8 +1717,11 @@ int api_tick(uint64_t proven_tid, int stopping) {
   for (uint32_t i = 0; i < g_owned_count;) {
     const uint64_t apply_gen = clock_ok ? snapshot_apply_gen(false) : 0;
     Ctx c;
+    void *panel = g_owned_recs[i].source_panel ? gc_get()(g_owned_recs[i].source_panel) : nullptr;
+    const bool panel_alive = !g_owned_recs[i].source_panel ||
+        (panel != nullptr && is_exact(panel, g_cfg.class_panel) && is_alive(panel, c) && c.ok);
     void *obj = g_owned_recs[i].text ? gc_get()(g_owned_recs[i].text) : nullptr;
-    bool alive = obj != nullptr && is_alive(obj, c) && c.ok;
+    bool alive = panel_alive && obj != nullptr && is_alive(obj, c) && c.ok;
     if (stop || !alive || !clock_ok) {
       Record r = g_owned_recs[i];
       for (uint32_t j = i; j + 1 < g_owned_count; ++j) g_owned_recs[j] = g_owned_recs[j + 1];
@@ -1655,6 +1748,7 @@ int api_tick(uint64_t proven_tid, int stopping) {
     ++i;
   }
 
+  if (!stop && clock_ok) refresh_owned_stats(now, tid);
   g_active_depth.fetch_sub(1, std::memory_order_relaxed);
   return PGR_IV_OK;
 }

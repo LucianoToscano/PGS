@@ -47,16 +47,29 @@ public class SettingsBackupRulesTest {
         for(int scale:new int[]{100,75,50,25}){JSONObject scaled=valid();scaled.getJSONObject("settings").put("uiScalePercent",String.valueOf(scale));SettingsBackupRules.validate(scaled);}
         for(String scale:new String[]{"0","24","101","50.5","bad"}){JSONObject scaled=valid();scaled.getJSONObject("settings").put("uiScalePercent",scale);rejects(scaled);}
         String choices="";
-        choices=BerryPriority.select(choices,707);choices=BerryPriority.select(choices,705);choices=BerryPriority.select(choices,701);
-        if(!choices.equals("707,705,701"))throw new AssertionError("Selection order lost");
+        choices=BerryPriority.select(choices,708);choices=BerryPriority.select(choices,705);choices=BerryPriority.select(choices,701);
+        if(!choices.equals("708,705,701"))throw new AssertionError("Selection order lost");
         if(!BerryPriority.select(choices,706).equals("706"))throw new AssertionError("Fourth choice must reset");
         if(!BerryPriority.select(choices,0).isEmpty())throw new AssertionError("Off must clear all");
-        if(!BerryPriority.select("707,705",707).equals("707,705"))throw new AssertionError("Duplicate priority");
+        if(!BerryPriority.select("708,705",708).equals("708,705"))throw new AssertionError("Duplicate priority");
+        if(BerryPriority.validId(707)||!BerryPriority.validId(708))throw new AssertionError("Silver Pinap must use its game item ID");
+        try{BerryPriority.select("705",707);throw new AssertionError("New choice accepted legacy berry ID");}catch(IllegalArgumentException expected){}
+        try{BerryPriority.parse("707");throw new AssertionError("Runtime parser accepted legacy berry ID");}catch(IllegalArgumentException expected){}
+        if(!BerryPriority.migrateLegacy("707,705,701").equals(choices)||!BerryPriority.migrateLegacy(choices).equals(choices)||!BerryPriority.migrateLegacy("").isEmpty())
+            throw new AssertionError("Legacy berry migration must preserve order, be idempotent, and keep Off");
         JSONObject berries=valid();berries.getJSONObject("settings").put("berryPriority",choices);SettingsBackupRules.validate(berries);
+        berries.getJSONObject("settings").put("berryPriority","707,705,701");SettingsBackupRules.validate(berries);
+        if(!berries.getJSONObject("settings").getString("berryPriority").equals("707,705,701"))throw new AssertionError("Backup validation must not mutate input");
         berries.getJSONObject("settings").put("berryPriority","");SettingsBackupRules.validate(berries);
-        for(String bad:new String[]{"701,701","701,703,705,706","702","701,","701, 703","0"}){berries.getJSONObject("settings").put("berryPriority",bad);rejects(berries);}
+        for(String bad:new String[]{"701,701","707,707","707,708","708,707","701,703,705,706","702","701,","701, 703","0"}){berries.getJSONObject("settings").put("berryPriority",bad);rejects(berries);}
+        for(String key:new String[]{"buddyBerry","autoBerry"}){
+            for(String id:new String[]{"0","701","703","705","706","707","708"}){JSONObject oldBerry=valid();oldBerry.getJSONObject("settings").put(key,id);SettingsBackupRules.validate(oldBerry);}
+            for(String id:new String[]{"702","704","709","-708","708.0"}){JSONObject badBerry=valid();badBerry.getJSONObject("settings").put(key,id);rejects(badBerry);}
+        }
         rejects(valid().put("version",1.5));rejects(valid().put("speedKmh",99));
         JSONObject v=valid();v.getJSONObject("settings").put("vgpEnabled","true");rejects(v);
+        for(String mask:new String[]{"0","8191","8192","16383"}){v=valid();v.getJSONObject("settings").put("quickMenuHidden",mask);SettingsBackupRules.validate(v);}
+        for(String mask:new String[]{"-1","16384","8192.5"}){v=valid();v.getJSONObject("settings").put("quickMenuHidden",mask);rejects(v);}
         v=valid();v.getJSONObject("preferences").put("pgrazor-livefeed-session",new JSONObject().put("token","secret"));rejects(v);
         v=valid();v.getJSONObject("settings").put("itemRules","1:100001;");rejects(v);
         v=valid();v.getJSONObject("settings").put("idleWalking","true");SettingsBackupRules.validate(v);
@@ -107,11 +120,13 @@ public class SettingsBackupRulesTest {
         v=valid();v.getJSONObject("settings").put("shundoSpecies","");SettingsBackupRules.validate(v);
         v=valid();v.getJSONObject("settings").put("shundoSpecies","129,129");rejects(v);           // duplicate dex id
         v=valid();v.getJSONObject("settings").put("shundoGap","60");SettingsBackupRules.validate(v);
+        for(String ok:new String[]{"30","60","180","300","600"}){v=valid();v.getJSONObject("settings").put("shundoLiveInterval",ok);SettingsBackupRules.validate(v);}
         v=valid();v.getJSONObject("settings").put("shinyScan","true").put("shinyScanSpeed","2").put("shinyScanSpecies","25,129")
             .put("shinyScanDailyLimit","5000").put("encounterCounter","false").put("encounterOverlay","true");SettingsBackupRules.validate(v);
         for(String[] bad:new String[][]{{"shinyScan","yes"},{"shinyScanSpeed","3"},{"shinyScanSpecies","0"},{"shinyScanDailyLimit","123"},{"shinyScanDay","20261115"},{"encounterOverlay","yes"}}){
             v=valid();v.getJSONObject("settings").put(bad[0],bad[1]);rejects(v);}
         v=valid();v.getJSONObject("settings").put("shundoGap","45");rejects(v);                    // not an offered gap
+        for(String bad:new String[]{"0","15","45","900","","5m"}){v=valid();v.getJSONObject("settings").put("shundoLiveInterval",bad);rejects(v);}
         {StringBuilder many=new StringBuilder();for(int i=1;i<=501;i++){if(i>1)many.append(',');many.append(i);}
          v=valid();v.getJSONObject("settings").put("shundoSpecies",many.toString());rejects(v);}   // over 500 species
         v=valid();v.getJSONObject("settings").put("transferKeepSpecies","1,4,2001");rejects(v);   // out of range (>2000)
@@ -134,7 +149,8 @@ public class SettingsBackupRulesTest {
         v=valid();v.getJSONObject("settings").put("evolveTransferSpecies","2001");rejects(v);        // out of range (>2000)
         v=valid();v.getJSONObject("preferences").put("pgrazor-overlays",new JSONObject().put("transfer.fx",0.5).put("transfer.fy",0.25));SettingsBackupRules.validate(v);
         v=valid();v.getJSONObject("preferences").put("pgrazor-overlays",new JSONObject().put("transfer.fx",1.5));rejects(v);
-        v=valid();v.getJSONObject("preferences").put("pgrazor-livefeed",new JSONObject().put("radius","2"));rejects(v);
+        for(int r:new int[]{0,1,2,3}){v=valid();v.getJSONObject("preferences").put("pgrazor-livefeed",new JSONObject().put("radius",r));SettingsBackupRules.validate(v);}
+        for(Object bad:new Object[]{-1,4,1.5,"2",true}){v=valid();v.getJSONObject("preferences").put("pgrazor-livefeed",new JSONObject().put("radius",bad));rejects(v);}
         String places="[{\"id\":\"a\",\"name\":\"Home\",\"latitude\":40,\"longitude\":-70}]";
         v=valid();v.getJSONObject("preferences").put("pgrazor-saved-places-v1",new JSONObject().put("places",places));SettingsBackupRules.validate(v);
         v.getJSONObject("preferences").getJSONObject("pgrazor-saved-places-v1").put("places",places.replace("40","400"));rejects(v);

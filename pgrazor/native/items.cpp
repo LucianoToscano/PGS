@@ -708,7 +708,7 @@ void refresh_berries(uint64_t now, uint64_t deadline) {
     if (!exact(b, g_cfg.class_bag)) return;
     bag.set(b, &err);
     int32_t counts[5] = {};
-    const int32_t ids[5] = {701,703,705,706,707};
+    const int32_t ids[5] = {701,703,705,706,708};
     for (int i = 0; i < 5 && !err; ++i) {
         uint64_t t = boottime_ms();
         if (g_revoke || !t || t >= deadline) return;

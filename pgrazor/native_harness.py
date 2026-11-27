@@ -125,6 +125,14 @@ def main(argv=None):
                 owner = root / 'native/smart_catch.cpp'
                 extra_flags = [owner]
                 entry['owner_sha256'] = native_build.sha256(owner)
+            if source.stem == 'iv_panel_test':
+                extra_flags = ['-fexceptions']
+                entry['included_source_sha256'] = native_build.sha256(root/'native/iv_panel.cpp')
+            if source.stem == 'iv_owned_refresh_test':
+                vendor = native_build.ensure_dobby(root, download=False)
+                extra_flags = [root/'native/iv_display.cpp', '-I'+str(vendor/'include')]
+                entry['owner_sha256'] = native_build.sha256(root/'native/iv_display.cpp')
+                entry['fixture_base_sha256'] = native_build.sha256(root/'native/iv_display_test.cpp')
             if source.stem == 'smart_catch_controller_test':
                 controller = root / 'native/vgp_controller.cpp'
                 extra_flags = [controller, '-llog']

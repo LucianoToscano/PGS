@@ -304,7 +304,7 @@ int tick(uint64_t tid){
  {std::lock_guard<std::mutex> lock(policy_lock);p=policy;local_rules=rules;expires=deadline;}
  uint64_t time=clock_ms();uint64_t lease=time&&time<expires&&!stopping.load()&&count>=3?expires-time:0;
  if(caps.load()&PGR_IH_ITEMS){if(stopping.load())items()->clear(tid);else if(!(faults.load()&PGR_IH_ITEMS)){uint32_t force=(force_poll.exchange(false)?1:0)|(cleanup_poll.exchange(false)?9:0)|(p.item_catalog==2?2:p.item_catalog==1?4:0);if(items()->tick(&local_rules,force,p.item_allowed?lease:0,tid)){faults.fetch_or(PGR_IH_ITEMS);items()->clear(tid);}}}
- int32_t berry=(p.buddy_berry==701||p.buddy_berry==703||p.buddy_berry==705||p.buddy_berry==706||p.buddy_berry==707)?p.buddy_berry:0;
+ int32_t berry=(p.buddy_berry==701||p.buddy_berry==703||p.buddy_berry==705||p.buddy_berry==706||p.buddy_berry==708)?p.buddy_berry:0;
  if(caps.load()&PGR_IH_BUDDY){if(stopping.load())buddy()->clear(tid);else if(!(faults.load()&PGR_IH_BUDDY)&&buddy()->tick(berry,p.buddy_allowed?lease:0,tid)){faults.fetch_or(PGR_IH_BUDDY);buddy()->clear(tid);}}
  if(caps.load()&PGR_IH_INCUBATION){if(stopping.load())inc()->clear(tid);else if(!(faults.load()&PGR_IH_INCUBATION)&&inc()->tick(p.incubator_enabled,p.incubator_longest,p.incubator_allowed?lease:0,tid)){faults.fetch_or(PGR_IH_INCUBATION);inc()->clear(tid);}}
  drain_inventory(berry);social_tick(time,tid,lease,p);refresh_roots();return 0;

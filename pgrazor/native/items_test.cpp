@@ -148,6 +148,38 @@ void *(*volatile call_recycle)(void *, void *, int32_t, void *, void *) = &targe
 void  (*volatile call_result)(void *, void *, void *) = &target_result;
 void  (*volatile call_error)(void *, void *, void *) = &target_error;
 
+#ifdef PGR_ITEMS_HOST_TEST
+// Host mode links the real items module. Only clock and hook installation are
+// substituted; Android mode below still validates the core's Dobby trampolines.
+static uint64_t host_clock_ns = 1000000000;
+extern "C" int __wrap_clock_gettime(clockid_t clock, timespec *out) {
+    if ((clock != CLOCK_BOOTTIME && clock != CLOCK_MONOTONIC) || out == nullptr) return -1;
+    out->tv_sec = host_clock_ns / 1000000000;
+    out->tv_nsec = host_clock_ns % 1000000000;
+    return 0;
+}
+extern "C" int __wrap_nanosleep(const timespec *delay, timespec *) {
+    if (delay == nullptr || delay->tv_sec < 0 || delay->tv_nsec < 0 || delay->tv_nsec >= 1000000000) return -1;
+    host_clock_ns += static_cast<uint64_t>(delay->tv_sec) * 1000000000 + delay->tv_nsec;
+    return 0;
+}
+int pgrazor_hook(void *address, void *replacement, void **original) {
+#define ITEMS_HOOK(name) \
+    if (address == reinterpret_cast<void *>(&target_##name)) { \
+        *original = reinterpret_cast<void *>(&target_##name); \
+        call_##name = reinterpret_cast<decltype(call_##name)>(replacement); \
+        return 0; \
+    }
+    ITEMS_HOOK(init)
+    ITEMS_HOOK(list)
+    ITEMS_HOOK(recycle)
+    ITEMS_HOOK(result)
+    ITEMS_HOOK(error)
+#undef ITEMS_HOOK
+    return -1;
+}
+#endif
+
 static void *runtime_invoke(void *method, void *obj, void **params, void **exc) {
     asm volatile("nop; nop; nop; nop" ::: "memory");
     *exc = nullptr;
@@ -642,7 +674,7 @@ static int scenario(int which) {
     case 32: { // explicit berry overlay remains fresh with automatic selected/no-rule cleanup
         auto r=make_rules(true,1);if(which==32)r.count=0;g_current=8;
         g_api->tick(&r,5,2500,tid);
-        const int expected=which==32?5:6;const int berry_ids[]={701,703,705,706,707};
+        const int expected=which==32?5:6;const int berry_ids[]={701,703,705,706,708};
         if(g_quantity_calls!=expected||g_list_calls||g_get_calls||g_recycle_calls)return 1;
         for(int i=0;i<5;++i)if(g_quantity_ids[i]!=berry_ids[i])return 2;
         if(which==31&&g_quantity_ids[5]!=101)return 3;
@@ -652,11 +684,33 @@ static int scenario(int which) {
         if(g_quantity_calls!=expected+(which==31?1:0)||g_list_calls||g_get_calls)return 5;
         g_api->clear(tid);if(g_roots||g_bad_free)return 6;return 0;
     }
+    case 33: { // Silver Pinap is708; inventory707 remains its own real item.
+        g_inv[0] = {&c_data,707,37,1}; g_inv[1] = {&c_data,708,11,1};
+        auto r = make_rules(false,1);
+        g_api->tick(&r,3,2500,tid);
+        pgrazor_item_row rows[16]{}; uint32_t written=0;
+        if(g_api->catalog(rows,16,&written) || written!=2) return 1;
+        auto quantity=[&](int32_t id){for(uint32_t i=0;i<written;++i)if(rows[i].id==id)return rows[i].count;return -1;};
+        if(quantity(707)!=37 || quantity(708)!=11) return 2;
+        g_current=9; g_quantity_calls=0;
+        g_api->tick(&r,5,2500,tid);
+        if(g_quantity_calls!=5 || g_quantity_ids[4]!=708) return 3;
+        for(int i=0;i<g_quantity_calls;++i) if(g_quantity_ids[i]==707) return 4;
+        if(g_api->catalog(rows,16,&written) || quantity(707)!=37 || quantity(708)!=9) return 5;
+        if(g_recycle_calls) return 6;
+        g_api->clear(tid); return g_roots || g_bad_free ? 7 : 0;
+    }
     default: return 0;
     }
 }
 
 int main(int argc, char **argv) {
+#ifdef PGR_ITEMS_HOST_TEST
+    (void)argc; (void)argv;
+    const bool slow = true; // deterministic time also exercises confirmation expiry
+    if (pgrazor_items_api(99) != nullptr) { std::puts("FAIL exact-version"); return 3; }
+    g_api = static_cast<const pgrazor_items_api_v1 *>(pgrazor_items_api(1));
+#else
     if (argc < 2) return 1;
     const bool slow = (argc >= 3 && std::strcmp(argv[2], "slow") == 0);
     void *lib = dlopen(argv[1], RTLD_NOW | RTLD_LOCAL);
@@ -665,6 +719,7 @@ int main(int argc, char **argv) {
     auto core = getter ? static_cast<const pgrazor_native_api_v2 *>(getter(2)) : nullptr;
     if (!core || core->query_feature(14, 99) != nullptr) { std::puts("FAIL exact-version"); return 3; }
     g_api = static_cast<const pgrazor_items_api_v1 *>(core->query_feature(14, 1));
+#endif
     if (!g_api || g_api->size != 72) { std::puts("FAIL feature 14 not wired"); return 3; }
 
     // Config validation (parent process; all fail before any hook is attempted).
@@ -681,7 +736,7 @@ int main(int argc, char **argv) {
     bad = c; bad.result_address = bad.error_address;
     if (g_api->install(&bad) != PGR_ITEMS_ERR_DUP_HOOK) { std::puts("FAIL dup"); return 5; }
 
-    const int cases = 33;
+    const int cases = 34;
     for (int i = 0; i < cases; ++i) {
         if (i == 14 && !slow) continue;
         pid_t pid = fork();

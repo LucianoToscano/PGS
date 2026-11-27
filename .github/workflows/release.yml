@@ -25,9 +25,9 @@ jobs:
     env:
       PGS_BUILD_TOOLS: 36.0.0
       PGS_ANDROID_PLATFORM: android-36
-      PGRAZOR_KEY_ALIAS: ${{ secrets.PGRAZOR_KEY_ALIAS }}
-      PGRAZOR_STORE_PASSWORD: ${{ secrets.PGRAZOR_STORE_PASSWORD }}
-      PGRAZOR_KEY_PASSWORD: ${{ secrets.PGRAZOR_KEY_PASSWORD }}
+      PGS_KEY_ALIAS: ${{ secrets.PGS_KEY_ALIAS || secrets.PGRAZOR_KEY_ALIAS }}
+      PGS_STORE_PASSWORD: ${{ secrets.PGS_STORE_PASSWORD || secrets.PGRAZOR_STORE_PASSWORD }}
+      PGS_KEY_PASSWORD: ${{ secrets.PGS_KEY_PASSWORD || secrets.PGRAZOR_KEY_PASSWORD }}
     steps:
       - name: Block legacy release workflow to protect PGS identity
         if: github.repository == 'LucianoToscano/PGS'
@@ -89,12 +89,12 @@ jobs:
       - run: python -B tools/check.py
       - name: Configure temporary signing path
         shell: pwsh
-        run: Add-Content -LiteralPath $env:GITHUB_ENV -Value "PGRAZOR_KEYSTORE=$env:RUNNER_TEMP\pgrazor-signing.jks"
+        run: Add-Content -LiteralPath $env:GITHUB_ENV -Value "PGS_KEYSTORE=$env:RUNNER_TEMP\pgs-signing.jks"
       - name: Prepare pinned input and signing key
         env:
           GITHUB_TOKEN: ${{ github.token }}
-          PGRAZOR_INPUT_URL: ${{ secrets.PGRAZOR_INPUT_URL }}
-          PGRAZOR_KEYSTORE_BASE64: ${{ secrets.PGRAZOR_KEYSTORE_BASE64 }}
+          PGS_INPUT_URL: ${{ secrets.PGS_INPUT_URL || secrets.PGRAZOR_INPUT_URL }}
+          PGS_KEYSTORE_BASE64: ${{ secrets.PGS_KEYSTORE_BASE64 || secrets.PGRAZOR_KEYSTORE_BASE64 }}
         run: python -B tools/private_input.py
       - name: Build playable package
         env:
@@ -135,8 +135,8 @@ jobs:
         if: always()
         shell: pwsh
         run: |
-          if (!$env:PGRAZOR_KEYSTORE) { exit 0 }
-          $keyPath = [IO.Path]::GetFullPath($env:PGRAZOR_KEYSTORE)
+          if (!$env:PGS_KEYSTORE) { exit 0 }
+          $keyPath = [IO.Path]::GetFullPath($env:PGS_KEYSTORE)
           $tempRoot = [IO.Path]::GetFullPath($env:RUNNER_TEMP).TrimEnd('\') + '\'
           if (!$keyPath.StartsWith($tempRoot, [StringComparison]::OrdinalIgnoreCase)) { throw 'Key is outside runner temp' }
           if (Test-Path -LiteralPath $keyPath) { Remove-Item -LiteralPath $keyPath }

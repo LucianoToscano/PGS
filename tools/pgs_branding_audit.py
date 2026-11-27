@@ -70,6 +70,53 @@ def check():
     version = (ROOT / "pgrazor/PGS_LAST_VERSION_CODE").read_text(encoding="utf-8").strip()
     if not version.isdigit() or int(version) < 2026111605:
         problems.append("PGS versionCode ledger regressed")
+    # Only the exact requested attribution block may use the upstream
+    # public name in README. Internal ABI and saved-state identifiers are
+    # checked by their own compatibility fixtures rather than renamed here.
+    required_license = (
+        "## License" + chr(10) + chr(10)
+        + "Original PGRazor source is available under the MIT License. "
+        + "Third-party components retain their own licenses. "
+        + "Pokémon GO and its assets are not covered by this license. "
+        + "PGRazor is an independent project and is not affiliated with the game publisher."
+    )
+    readme = (ROOT / "README.md").read_text(encoding="utf-8").rstrip()
+    if not readme.endswith(required_license):
+        problems.append("README.md: mandatory exact final License notice absent")
+    elif "pgrazor" in readme[:-len(required_license)].lower():
+        problems.append("README.md: legacy brand occurs before License")
+    for public_file in (
+        "CONTRIBUTING.md",
+        "CHANGELOG.md",
+        "website/README.md",
+        "website/src/content.js",
+        "website/src/components/Footer.jsx",
+        "website/index.html",
+        "website/src/hooks/useTheme.js",
+    ):
+        content = (ROOT / public_file).read_text(encoding="utf-8")
+        if "PGRazor" in content or "https://github.com/jpitty03/PGRazor" in content:
+            problems.append(public_file + ": old name remains in public copy")
+    for logo_file in (
+        "website/public/logo.svg",
+        "website/public/pgs-official.svg",
+        "pgrazor/branding/pgs.svg",
+    ):
+        item = ROOT / logo_file
+        if not item.is_file() or "PGS" not in item.read_text(encoding="utf-8"):
+            problems.append(logo_file + ": PGS official brand asset missing")
+    if (ROOT / "pgrazor/branding/pgrazor.svg").exists():
+        problems.append("Old public-logo path must not remain")
+    for public_file in ("website/index.html", "website/src/hooks/useTheme.js"):
+        content = (ROOT / public_file).read_text(encoding="utf-8")
+        if "'pgs-theme'" not in content or "'pgrazor-theme'" in content:
+            problems.append(public_file + ": website theme identity not PGS")
+    for public_file in ("website/src/content.js", "website/index.html", "website/tests/site.spec.js"):
+        content = (ROOT / public_file).read_text(encoding="utf-8")
+        if "pgs-v0.0.2-release.yml" not in content:
+            problems.append(public_file + ": does not point to the actual PGS build workflow")
+    if not (ROOT / ".github/workflows/pgs-v0.0.2-release.yml").is_file():
+        problems.append("Approved v0.0.2 workflow missing")
     if problems:
         raise SystemExit("PGS branding audit failed:\n" + "\n".join(" - " + p for p in problems))
     print("PGS branding audit PASS: active UI, URLs, 11 catalogs, release identity and Android continuity")

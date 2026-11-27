@@ -20,10 +20,8 @@ export default function Footer({ onGuide = false }) {
           </nav>
         </div>
         <p className="site-footer__legal">
-          Original PGRazor source is released under the MIT License; bundled third-party components
-          keep their own licenses. PGS is an independent, open-source project and is not
-          affiliated with the publisher of Pokémon GO. Pokémon and its assets belong to their
-          respective owners.
+          PGS — Pokémon GO Spoofers. Consulte a licença e os avisos de terceiros no repositório.
+          O projeto não é afiliado à editora do jogo.
         </p>
         <p className="site-footer__legal">Map screenshot © <a href="https://www.openstreetmap.org/copyright">OpenStreetMap contributors</a>.</p>
       </div>

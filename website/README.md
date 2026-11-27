@@ -44,7 +44,7 @@ Release-specific availability and validation details belong in the release notes
 
 ## Screenshots and artwork
 
-- `public/logo.svg`: upstream R symbol (preserved in the in-game menu), shared with `pgrazor/branding/pgrazor.svg`.
+- `public/logo.svg`: official PGS shield; `public/pgs-official.svg`: full official PGS wordmark. The in-game menu icon is preserved independently for Android compatibility.
 - `public/images/main-menu.png`: canonical app settings screenshot (the v0.3.5 Settings home on MuMu), also referenced by the repository README.
 - `public/images/encounter.png`: real encounter capture showing the IV/level, transfer and berry overlays.
 - `public/images/world-map.png`: November 2026 MuMu capture of the app's world map (v0.3.5 interface). OpenStreetMap attribution is visible in the capture.

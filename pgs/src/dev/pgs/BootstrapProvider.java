@@ -338,8 +338,8 @@ public final class BootstrapProvider extends ContentProvider {
     }
     /**
      * A new folder for this run's native libraries, after removing the folders earlier runs left behind
-     * (5 MB each). Only this process's startup reaches here. PGS Root's fixed pgrazor-root folder does
-     * not match the name and is kept.
+     * (5 MB each). Only this process's startup reaches here. Fixed Root cache directories do not
+     * match the session-folder pattern and are kept for compatibility and rollback.
      */
     private static File runtimeDirectory(Context context) throws IOException {
         File parent=context.getCodeCacheDir();

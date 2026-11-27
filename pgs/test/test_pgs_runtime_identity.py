@@ -50,6 +50,14 @@ class PgsRuntimeIdentityTests(unittest.TestCase):
         self.assertEqual(rooted.MODULE_ID, "pgrazor")
         self.assertEqual(rooted.INJECTION_OFF_FLAG, "pgrazor/injection-off")
 
+    def test_new_root_cache_is_pgs_without_retiring_installed_off_switch(self):
+        runtime = (PROJECT / "src/dev/pgs/RootedRuntime.java").read_text(encoding="utf-8")
+        self.assertIn('new File(new File(dataDir, "code_cache"), "pgs-root")', runtime)
+        self.assertNotIn('new File(new File(dataDir, "code_cache"), "pgrazor-root")', runtime)
+        # The fixed installed module identity and user-selected Off flag are separate contracts.
+        self.assertEqual(rooted.MODULE_ID, "pgrazor")
+        self.assertEqual(rooted.INJECTION_OFF_FLAG, "pgrazor/injection-off")
+
     def test_reject_both_legacy_and_new_patched_input(self):
         for asset in ("assets/pgrazor/mode.json", "assets/pgs/mode.json"):
             with self.subTest(asset=asset), tempfile.TemporaryDirectory() as folder:

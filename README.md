@@ -71,7 +71,7 @@ Experimental features depend on the game's version and environment. They do not 
 
 More technical references: [Architecture](docs/ARCHITECTURE.md), [community improvements](docs/PGS_COMMUNITY_REVIEW.md), [official artwork](docs/PGS_OFFICIAL_LOGOS.md), and [repository/Pages setup](docs/PGS_REPOSITORY_SETTINGS.md). These additional technical references are not all translated yet; their language is indicated by the document itself.
 
-Existing code, native libraries, Java/JNI symbols, saved-setting keys, and provenance records remain intact for update compatibility. Historical records should not be confused with current PGS releases.
+The current source uses PGS names for its own Java/JNI classes, native libraries, private C/C++ interfaces and generated assets. Installed storage keys, selected public compatibility contracts and provenance are retained where changing them could break older installations. Historical records are not current PGS releases.
 
 ## Community
 

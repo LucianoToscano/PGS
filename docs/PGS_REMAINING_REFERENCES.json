@@ -5,7 +5,7 @@
   "changed_files": 37,
   "added_files": 1,
   "previous_occurrences": 1041,
-  "remaining_files": 140,
+  "remaining_files": 139,
   "remaining_occurrences": 779,
   "remaining_by_category": {
     "workflows": 5,
@@ -13,9 +13,9 @@
     "documentation": 277,
     "legal": 3,
     "release_history": 103,
-    "native": 14,
-    "tests": 214,
-    "java": 64,
+    "native": 13,
+    "tests": 217,
+    "java": 62,
     "javascript": 1,
     "vendor": 6
   },
@@ -433,7 +433,7 @@
     {
       "path": "pgs/src/dev/pgs/BootstrapProvider.java",
       "category": "java",
-      "occurrences": 2
+      "occurrences": 1
     },
     {
       "path": "pgs/src/dev/pgs/I18n.java",
@@ -449,11 +449,6 @@
       "path": "pgs/src/dev/pgs/RootedRestart.java",
       "category": "java",
       "occurrences": 3
-    },
-    {
-      "path": "pgs/src/dev/pgs/RootedRuntime.java",
-      "category": "java",
-      "occurrences": 1
     },
     {
       "path": "pgs/src/dev/pgs/SettingsBackupRules.java",
@@ -618,7 +613,7 @@
     {
       "path": "pgs/test/test_pgs_runtime_identity.py",
       "category": "tests",
-      "occurrences": 9
+      "occurrences": 12
     },
     {
       "path": "pgs/test/test_release_bundle.py",
@@ -663,7 +658,7 @@
     {
       "path": "pgs/zygisk/loader.cpp",
       "category": "native",
-      "occurrences": 3
+      "occurrences": 2
     },
     {
       "path": "tools/dex_bridge/BridgeRewriter.java",
@@ -1152,7 +1147,7 @@
     "limitations": "Counts are exact deltas from the verified indexed baseline; full CI must independently reconcile the snapshot. Older backup readers do not support version 2."
   },
   "current_retention_review": {
-    "base_commit": "5824214bdba54178b968d5239537dfc93f1fe114",
+    "base_commit": "5441d7850310eb76689f72b79c50a466a4a7e55a",
     "scope": "Current per-file triage; all matching indexed text paths classified exactly once, not a claim of necessity of each individual occurrence.",
     "groups": {
       "historical_records": {
@@ -1237,7 +1232,7 @@
       "installed_identity_storage": {
         "status": "retain_compatibility",
         "reason": "Existing package/module IDs, physical storage, crypto, notification IDs and state markers. Require a tested migration before retirement.",
-        "occurrences": 79,
+        "occurrences": 76,
         "paths": [
           "docs/ARCHITECTURE.md",
           "pgs/AndroidManifest.xml",
@@ -1254,7 +1249,6 @@
           "pgs/src/dev/pgs/BootstrapProvider.java",
           "pgs/src/dev/pgs/LiveFeedSession.java",
           "pgs/src/dev/pgs/RootedRestart.java",
-          "pgs/src/dev/pgs/RootedRuntime.java",
           "pgs/src/dev/pgs/SettingsBackupRules.java",
           "pgs/src/dev/pgs/ShinyScanner.java",
           "pgs/src/dev/pgs/VgpController.java",
@@ -1317,7 +1311,7 @@
       "tests": {
         "status": "retain_or_review",
         "reason": "Tests of legacy input, data continuity, ABI, build options, attribution and forbidden-name detection. Ordinary fixture use may be reviewed individually.",
-        "occurrences": 215,
+        "occurrences": 218,
         "paths": [
           "pgs/native/adventure_sync_test.cpp",
           "pgs/native/test_runner.cpp",
@@ -1383,5 +1377,34 @@
     "ordinary_iv_test_requires_canonical_factory": true,
     "remaining_occurrences": 779,
     "validation": "Exact changed-file count deltas against previous verified index; independent CI required."
+  },
+  "final_candidate_boundary": {
+    "base_commit": "5441d7850310eb76689f72b79c50a466a4a7e55a",
+    "root_runtime_cache": "pgs-root",
+    "prior_cache_deleted": false,
+    "installed_contracts_unchanged": true,
+    "raw_source_rename_complete_claim": false,
+    "remaining_references_individually_justified_claim": false,
+    "remaining_full_name_occurrences": 779,
+    "remaining_abbreviations": 14,
+    "retained_contracts": [
+      "existing Android package and module identity",
+      "physical account storage and cryptographic AAD/keystore",
+      "existing notification channels",
+      "public binary factory compatibility",
+      "legacy input rejection and archived verification",
+      "existing signing/build aliases",
+      "external feed until separately verified",
+      "original attribution and regression evidence"
+    ],
+    "required_gates": [
+      "independent CI on final head",
+      "merge",
+      "main validation",
+      "authorized full candidate workflow",
+      "controlled signed APK retention",
+      "physical device verification"
+    ],
+    "signed_apk_generated": false
   }
 }

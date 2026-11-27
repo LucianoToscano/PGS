@@ -14,12 +14,12 @@ jobs:
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
         with:
-          fetch-depth: 2
+          fetch-depth: 3
       - name: Complete the coordinated source and generator migration
         shell: bash
         run: |
           set -euo pipefail
-          test "$(git rev-parse HEAD^)" = "de6bf02f451d0c0c72ba38c2fca4a79e7900f02e"
+          git diff --quiet de6bf02f451d0c0c72ba38c2fca4a79e7900f02e HEAD -- . ":!.github/workflows/pgs-one-time-complete-identity.yml"
           test -z "$(git status --porcelain)"
           python3 - <<'PY'
           import collections
@@ -170,7 +170,7 @@ jobs:
                   data = re.sub(rb"(?<!secrets\.)\b" + old + rb"\b", new, data)
                   data = data.replace(b"secrets." + old + b" }}", b"secrets." + old + b" }}")
                   # Upgrade old-only secret expressions without duplicating existing fallback chains.
-                  data = data.replace(b"\${{ secrets." + old + b" }}", b"\${{ secrets." + new + b" || secrets." + old + b" }}")
+                  data = data.replace(b"$" + b"{{ secrets." + old + b" }}", b"$" + b"{{ secrets." + new + b" || secrets." + old + b" }}")
               # Correct Windows PowerShell env: and temporary local filename, not the signer bytes.
               data = data.replace(b"pgrazor-signing.jks", b"pgs-signing.jks")
               put(path, data)

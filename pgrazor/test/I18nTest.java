@@ -140,7 +140,10 @@ public final class I18nTest {
         for (Map.Entry<String, I18n.Translator> entry : translators.entrySet()) {
             equal(counts.get("en").toString(), counts.get(entry.getKey()).toString());
             I18n.Translator translator = entry.getValue();
-            equal(translator.text("PGS VGP"), translator.text("PGRazor VGP"));
+            // English deliberately has no generated map: the public I18n.t() applies branding.
+            // Locale maps have canonical PGS keys while older Java call sites still work.
+            if (!"en".equals(entry.getKey()))
+                equal(translator.text("PGS VGP"), translator.text("PGRazor VGP"));
             String formatted = translator.format("Saved %1$s to Favorites", opaque);
             if (!formatted.contains(opaque)) throw new AssertionError("Catalog translated opaque data: " + entry.getKey());
             equal(translator.text("Language") + ": " + opaque, translator.row("Language: " + opaque));

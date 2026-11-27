@@ -38,5 +38,6 @@ jobs:
                   raise RuntimeError("Configured signing certificate could not be exported")
               digest = hashlib.sha256(cert.read_bytes()).hexdigest()
               print("PGS signing certificate SHA-256: " + digest)
+              print("PGS public certificate DER: " + base64.b64encode(cert.read_bytes()).decode("ascii"))
               with open(os.environ["GITHUB_STEP_SUMMARY"], "a", encoding="utf-8") as report:
                   report.write("Public certificate SHA-256: `" + digest + "`\n")

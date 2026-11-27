@@ -1,0 +1,53 @@
+name: PGS — Verificar configuração
+on:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  check:
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    steps:
+      - name: Check configuration without displaying secret values
+        shell: bash
+        env:
+          PGS_INPUT_URL: ${{ secrets.PGS_INPUT_URL }}
+          PGS_KEYSTORE_BASE64: ${{ secrets.PGS_KEYSTORE_BASE64 }}
+          PGS_KEY_ALIAS: ${{ secrets.PGS_KEY_ALIAS }}
+          PGS_KEY_PASSWORD: ${{ secrets.PGS_KEY_PASSWORD }}
+          PGS_STORE_PASSWORD: ${{ secrets.PGS_STORE_PASSWORD }}
+          PGS_AUTO_SYNC_ENABLED: ${{ vars.PGS_AUTO_SYNC_ENABLED }}
+          PGS_PUBLISH_ENABLED: ${{ vars.PGS_PUBLISH_ENABLED }}
+          PGS_DISCORD_ENABLED: ${{ vars.PGS_DISCORD_ENABLED }}
+        run: |
+          set -euo pipefail
+          missing=0
+          {
+            echo '### PGS — configuração'
+            echo '| Secret obrigatório | Estado |'
+            echo '| --- | --- |'
+            for name in PGS_INPUT_URL PGS_KEYSTORE_BASE64 PGS_KEY_ALIAS PGS_KEY_PASSWORD PGS_STORE_PASSWORD; do
+              if [[ -n "${!name}" && -n "${!name//[[:space:]]/}" ]]; then
+                echo "| $name | Presente |"
+              else
+                echo "| $name | Ausente |"
+                missing=$((missing+1))
+              fi
+            done
+            echo
+            echo '| Controle opcional | Estado |'
+            echo '| --- | --- |'
+            for name in PGS_AUTO_SYNC_ENABLED PGS_PUBLISH_ENABLED PGS_DISCORD_ENABLED; do
+              state=Desativado
+              if [[ "${!name}" == true ]]; then state=Ativado; fi
+              echo "| $name | $state |"
+            done
+            echo
+            echo "Secrets ausentes: $missing."
+            echo 'Presença não confirma validade, assinatura ou compatibilidade. Nenhum build executado.'
+          } >> "$GITHUB_STEP_SUMMARY"
+          if (( missing > 0 )); then
+            echo "::error::Missing required PGS secrets: $missing"
+            exit 1
+          fi

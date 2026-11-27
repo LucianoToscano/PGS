@@ -230,7 +230,8 @@ def ensure_dobby(root, download=False):
     vendor.mkdir(parents=True, exist_ok=True)
     archive = vendor / ('dobby-' + DOBBY_COMMIT + '.zip')
     extracted = vendor / ('Dobby-' + DOBBY_COMMIT)
-    marker = extracted / '.pgrazor-verified'
+    marker = extracted / '.pgs-verified'
+    legacy_marker = extracted / '.pgrazor-verified'
 
     if not archive.is_file():
         if not download:
@@ -249,6 +250,9 @@ def ensure_dobby(root, download=False):
     # Never trust a marker alone: validate the actual compiler inputs against the
     # verified archive on every build. Refuse altered caches instead of deleting them.
     if extracted.exists():
+        for receipt in (marker, legacy_marker):
+            if receipt.is_symlink() or (receipt.exists() and not receipt.is_file()):
+                raise RuntimeError('Invalid Dobby verification marker: ' + str(receipt))
         with zipfile.ZipFile(archive) as package:
             expected = set()
             for info, target in _safe_members(package, vendor):
@@ -256,8 +260,14 @@ def ensure_dobby(root, download=False):
                 expected.add(target)
                 if target.is_symlink() or not target.is_file() or target.read_bytes() != package.read(info):
                     raise RuntimeError('Dobby source cache changed: ' + str(target))
-            actual = {p.resolve() for p in extracted.rglob('*') if p.is_file() and p != marker}
+            actual = {p.resolve() for p in extracted.rglob('*') if p.is_file() and p not in (marker, legacy_marker)}
             if actual != expected: raise RuntimeError('Unexpected files in Dobby source cache')
+        # Rename only our disposable receipt after independent archive and source verification.
+        if not marker.exists():
+            with marker.open('x', encoding='utf-8') as receipt:
+                receipt.write(DOBBY_SHA256)
+        if legacy_marker.exists():
+            legacy_marker.unlink()
         return extracted
     safe_extract(archive, vendor)
     if not extracted.is_dir():

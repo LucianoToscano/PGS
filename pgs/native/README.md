@@ -47,7 +47,7 @@ the current device validation status.
 The account controller has a separate fork-isolated harness in `tests/accounts_test.cpp`.
 It includes the production controller to inspect cancellation and replay state. Compile it
 with the NDK C++ driver, `-O2 -std=c++17 -pthread -static-libstdc++`, the Dobby include
-directory, and `-DPGR_ACCOUNTS_REAL_DOBBY=1`; link `tests/accounts_dobby_bridge.cpp`,
+directory, and `-DPGS_ACCOUNTS_REAL_DOBBY=1`; link `tests/accounts_dobby_bridge.cpp`,
 `hook_engine.cpp`, the matching ABI's `libdobby.a`, `-llog`, and `-ldl`. The explicit
 bridge connects the fixture's C hook stub to the production C++ hook engine; no linker
 `--wrap` flag is used. Run the executable in a separate device process. It uses synthetic
@@ -63,4 +63,4 @@ production-library harness; device validation is tracked in `docs/NATIVE_MIGRATI
 
 ## PGS hook-engine names
 
-The internal C++ hook engine now implements `pgs_hook`, `pgs_unhook`, `pgs_instrument` and `pgs_hook_diag`. Existing `pgrazor_*` C++ names remain forwarding functions for already-compiled and test modules. This does not export new ELF symbols, change the Dobby registry, or introduce additional hooks. Diagnostic layout and padding arithmetic are identical through `PgsHookDiag` / `PgsPaddingRanges` aliases. The core's own hook call sites use PGS names. Android diagnostic log tags use `PGS` instead of the previous label.
+The internal C++ hook engine exposes only the canonical source names `pgs_hook`, `pgs_unhook`, `pgs_instrument` and `pgs_hook_diag`. The private forwarding functions and source-only type/constant aliases have been retired. The standalone consumers and fixtures use matching declarations. No new ELF exports or hook targets were added. The diagnostic layout and padding arithmetic use `PgsHookDiag` and `PgsPaddingRanges`. The separate public compatibility factory remains available for previously built consumers; physical-device verification is separate.

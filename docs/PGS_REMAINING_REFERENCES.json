@@ -5,19 +5,19 @@
   "changed_files": 37,
   "added_files": 1,
   "previous_occurrences": 1041,
-  "remaining_files": 147,
-  "remaining_occurrences": 829,
+  "remaining_files": 146,
+  "remaining_occurrences": 823,
   "remaining_by_category": {
-    "documentation": 278,
-    "java": 69,
-    "javascript": 1,
+    "workflows": 38,
+    "other": 92,
+    "documentation": 277,
     "legal": 3,
-    "native": 14,
-    "other": 95,
     "release_history": 103,
-    "tests": 222,
-    "vendor": 6,
-    "workflows": 38
+    "native": 14,
+    "tests": 225,
+    "java": 64,
+    "javascript": 1,
+    "vendor": 6
   },
   "files": [
     {
@@ -323,7 +323,7 @@
     {
       "path": "pgs/native/README.md",
       "category": "documentation",
-      "occurrences": 2
+      "occurrences": 1
     },
     {
       "path": "pgs/native/adventure_sync_test.cpp",
@@ -413,12 +413,7 @@
     {
       "path": "pgs/root-installer/src/dev/pgs/root/RootToggleCommand.java",
       "category": "java",
-      "occurrences": 12
-    },
-    {
-      "path": "pgs/root-installer/test/RootToggleTest.java",
-      "category": "other",
-      "occurrences": 3
+      "occurrences": 10
     },
     {
       "path": "pgs/rooted.py",
@@ -488,7 +483,7 @@
     {
       "path": "pgs/src/dev/pgs/SettingsBackupRules.java",
       "category": "java",
-      "occurrences": 8
+      "occurrences": 5
     },
     {
       "path": "pgs/src/dev/pgs/ShinyScanner.java",
@@ -543,7 +538,7 @@
     {
       "path": "pgs/test/SettingsBackupRulesTest.java",
       "category": "tests",
-      "occurrences": 14
+      "occurrences": 18
     },
     {
       "path": "pgs/test/UpdateRulesTest.java",
@@ -593,7 +588,7 @@
     {
       "path": "pgs/test/test_native_build.py",
       "category": "tests",
-      "occurrences": 8
+      "occurrences": 9
     },
     {
       "path": "pgs/test/test_native_prerequisites.py",
@@ -668,7 +663,7 @@
     {
       "path": "pgs/test/test_rooted_installer_shell.py",
       "category": "tests",
-      "occurrences": 12
+      "occurrences": 10
     },
     {
       "path": "pgs/test/test_rooted_packaging.py",
@@ -1173,5 +1168,17 @@
     "previous_full_name_occurrences": 990,
     "remaining_full_name_occurrences": 829,
     "limitations": "Source-only aliases removed; installed data and external/legacy contracts remain. Full CI and APK/device validation separate."
+  },
+  "current_artifact_identity": {
+    "base_commit": "ef766e93073e9670f61c508ae4c3321ff6ddc0cc",
+    "settings_backup_version": 2,
+    "legacy_backup_reading": true,
+    "physical_storage_unchanged": true,
+    "dobby_cache_marker_migrated_after_verification": true,
+    "root_receipt_prefix_migrated": true,
+    "root_paths_unchanged": true,
+    "remaining_full_name_occurrences": 823,
+    "remaining_abbreviations": 14,
+    "limitations": "Counts are exact deltas from the verified indexed baseline; full CI must independently reconcile the snapshot. Older backup readers do not support version 2."
   }
 }

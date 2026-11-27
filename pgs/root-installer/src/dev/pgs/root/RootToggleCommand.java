@@ -3,9 +3,9 @@ package dev.pgs.root;
 /** Fixed-path launch-time switch commands, shared by the installer and the JVM/shell fixtures. */
 final class RootToggleCommand {
     private RootToggleCommand() {}
-    static final String OK_PREFIX = "PGRAZOR_TOGGLE_OK";
+    static final String OK_PREFIX = "PGS_TOGGLE_OK";
     private static final String PATHS = "L=/data/adb/modules/pgrazor\nU=/data/adb/modules_update/pgrazor\nF=pgrazor/injection-off\n"
-        + "fail(){ echo PGRAZOR_TOGGLE_FAIL=$1; exit 1; }\n";
+        + "fail(){ echo PGS_TOGGLE_FAIL=$1; exit 1; }\n";
     static final String LIVE_INJECTION_PROBE =
         "if [ -f /data/adb/modules/pgrazor/pgrazor/injection-off ]; then echo MODOFF=1; else echo MODOFF=0; fi";
 

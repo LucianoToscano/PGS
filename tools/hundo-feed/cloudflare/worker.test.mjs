@@ -163,3 +163,83 @@ test("unapproved GOCoords source is not queried; pending config appears in statu
   assert.equal(calls,0);
   assert.equal((await (await read()).json()).connections[0].detail_status,"invalid_configuration");
 });
+
+
+function envFor(sources,previous) {
+  const db=new Map();
+  if (previous) db.set("pgs-feed-v1",JSON.stringify(previous));
+  return {db,env:{SOURCES:JSON.stringify(sources),FEED:{put:(k,v)=>db.set(k,v),get:k=>JSON.parse(db.get(k)||"null")}}};
+}
+const statusFor=async env=>(await (await worker.fetch(new Request("https://example.org/status.json"),env)).json()).connections;
+test("candidate iFlowGo pagination filters locally and obeys provider page count",async t=>{
+  const calls=[],cfg={...iflow,min_iv_100:true,max_pages:5};
+  t.mock.method(globalThis,"fetch",async url=>{
+    const p=Number(url.searchParams.get("page"));
+    calls.push(p);assert.equal(url.searchParams.get("min_iv"),"100");
+    return Response.json({total_pages:99,items:[{...perfect,id:String(5000+p),lat:10+p},
+      {...perfect,id:String(6000+p),attack_iv:14}]});
+  });
+  const {env}=envFor([cfg]);
+  await worker.scheduled({},env);
+  assert.deepEqual(calls,[1,2,3,4,5]);
+  const [s]=await statusFor(env);
+  assert.equal(s.status,"online");assert.equal(s.collected_pages,5);
+  assert.equal(s.received,10);assert.equal(s.validated,5);assert.equal(s.discarded,5);
+});
+test("Moonani candidate reads up to three DataTables pages and deduplicates",async t=>{
+  const fmt=ms=>new Date(ms).toISOString().slice(0,19).replace("T"," ");
+  const make=i=>({Number:String(i+1),Coords:"12.34567, 23.45678",Attack:"15",Defense:"15",HP:"15",
+    CP:"-1",Level:"-1","Start Time":fmt(now-60000),"End Time":fmt(now+600000)});
+  const calls=[],cfg={name:"moonani",kind:"moonani",url:"https://moonani.com/PokeList/ajax.php",interval_s:900,max_pages:3};
+  t.mock.method(globalThis,"fetch",async (url,options)=>{
+    const form=new URLSearchParams(options.body),start=Number(form.get("start"));
+    calls.push(start);assert.equal(form.get("iv"),"100");assert.equal(form.get("length"),"100");
+    return Response.json({recordsFiltered:203,data:Array.from({length:Math.min(100,203-start)},(_,i)=>make(start+i))});
+  });
+  const {env}=envFor([cfg]);
+  await worker.scheduled({},env);
+  assert.deepEqual(calls,[0,100,200]);const [s]=await statusFor(env);
+  assert.equal(s.collected_pages,3);assert.equal(s.received,203);assert.equal(s.validated,203);
+});
+test("later-page rate limit is not hidden; last good data and Retry-After survive",async t=>{
+  const cfg={...iflow,max_pages:5,min_iv_100:true};
+  const previous={time:now-1000,entries:[{...cfg,updated:now-1000,status:"online",next:now-1,hundos:[],spots:[spot],received:1,validated:1,discarded:0}],history:[]};
+  const {env,db}=envFor([cfg],previous);let calls=0;
+  t.mock.method(globalThis,"fetch",async()=>{
+    if (++calls===1)return Response.json({total_pages:5,items:[perfect]});
+    return new Response(null,{status:429,headers:{"Retry-After":"90000"}});
+  });
+  await worker.scheduled({},env);
+  const [s]=await statusFor(env);
+  assert.equal(calls,2);assert.equal(s.detail_status,"rate_limited");assert.equal(s.attempted_pages,2);
+  assert.ok(s.next_attempt>=s.last_attempt+90000000);assert.equal(s.last_success,now-1000);
+  assert.deepEqual(JSON.parse(db.get("pgs-feed-v1")).entries[0].spots,[spot]);
+  await worker.scheduled({},env);assert.equal(calls,2);
+});
+test("one-time city recovery resets old invalid JSON delay, not access refusal or Retry-After",async t=>{
+  const names=["nycpokemap","sgpokemap","londonpogomap"];
+  const cfg=names.map(name=>({name,kind:"city",url:"https://"+name+".com/query2.php",interval_s:600}));
+  const prev={time:now,entries:cfg.map((s,i)=>({...s,status:"offline",next:now+76800000,failures:8,
+    reason:i===0?"invalid_json":"upstream_http",httpStatus:i===0?null:i===1?403:429})),history:[]};
+  const {env,db}=envFor(cfg,prev);let calls=0;
+  t.mock.method(globalThis,"fetch",async url=>{calls++;assert.equal(url.hostname,"nycpokemap.com");return new Response("",{status:200});});
+  await worker.scheduled({},env);
+  const by=Object.fromEntries((await statusFor(env)).map(s=>[s.provider,s]));
+  assert.equal(calls,1);assert.equal(by.nycpokemap.reason,"empty_response");assert.equal(by.nycpokemap.http_status,200);
+  assert.ok(by.nycpokemap.next_attempt<=Date.now()+3601000);
+  assert.equal(by.sgpokemap.next_attempt,prev.entries[1].next);assert.equal(by.londonpogomap.next_attempt,prev.entries[2].next);
+  assert.equal(JSON.parse(db.get("pgs-feed-v1")).entries[0].adapter_v,2);
+  await worker.scheduled({},env);assert.equal(calls,1);
+});
+test("source validation rejects ambiguous numeric input, approximate coordinates and excessive request budget",async t=>{
+  const city={name:"nycpokemap",kind:"city",url:"https://nycpokemap.com/query2.php",interval_s:600};
+  const p={pokemon_id:"25",lat:"12.3456789",lng:"23.4567891",despawn:Math.floor((now+600000)/1000),
+    attack:"15",defence:"15",stamina:15,cp:"-1",level:-1,form:-1};
+  t.mock.method(globalThis,"fetch",async()=>Response.json({pokemons:[p,{...p,lat:"0x10"},{...p,pokemon_id:true},
+    {...p,coordinate_precision:"approximate"},{...p,defense:14}]}));
+  const {env,db}=envFor([city]);await worker.scheduled({},env);
+  const r=JSON.parse(db.get("pgs-feed-v1")).entries[0];assert.equal(r.spots.length,1);assert.equal(r.discarded,4);
+  assert.deepEqual(r.spots[0].slice(6),[0,0]);assert.equal(r.spots[0][2],0);
+  const over=envFor(Array.from({length:4},(_,i)=>({...iflow,name:"iflow-"+i,max_pages:5}))).env;
+  await assert.rejects(()=>worker.scheduled({},over),/invalid_config/);
+});

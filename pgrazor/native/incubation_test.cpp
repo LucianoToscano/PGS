@@ -18,7 +18,7 @@
 // the enumerator, GC-root balance throughout, more incubators than the old 128 cap, and the
 // fault step reported for the incubator cap and an incubator read failure.
 #include "incubation.h"
-#include "pgrazor_native_api.h"
+#include "pgs_native_api.h"
 #include <dlfcn.h>
 #include <unistd.h>
 #include <sys/wait.h>

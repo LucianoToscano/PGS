@@ -21,7 +21,7 @@
 //   * Scheduler 48 `on_unity_pulse` callback and `revoke()` / `stop(tid)` root cleanup
 #include "combat_host.h"
 #include "battles.h"
-#include "pgrazor_native_api.h"
+#include "pgs_native_api.h"
 #include "rocket_combat.h"
 #include "rocket_minigame.h"
 #include "runtime_transport.h"

@@ -1,6 +1,6 @@
 // Actual production-library ABI/fail-closed boundary. Flow fixture is separate.
 #include "shared_host.h"
-#include "pgrazor_native_api.h"
+#include "pgs_native_api.h"
 #include <cassert>
 #include <cstring>
 #include <dlfcn.h>

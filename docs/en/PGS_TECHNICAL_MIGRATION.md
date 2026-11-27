@@ -33,3 +33,9 @@ This phase is covered by new offline identity tests and existing CMake/native ch
 5. Rebuild a **complete** signed PGS APK and test in-place upgrade on a physical device before publishing.
 
 Track the remainder in [issue #38](https://github.com/LucianoToscano/PGS/issues/38). Git history and MIT/third-party provenance are retained.
+
+## Phase 2 — native include consolidation
+
+The active first-party C++ modules and native test fixtures now include `pgs_native_api.h` instead of `pgrazor_native_api.h`. The compatibility forwarding header remains so older external includes still compile; public factory name, table layout and SONAME remain unchanged. An automated test scans native sources to reject reintroduction of old include paths.
+
+This phase changes header references only, not runtime logic or the Android app identity. A complete, newly signed APK and an in-place update test are **not** implied by successful host regression tests.

@@ -37,7 +37,7 @@
 #include <unistd.h>
 #include <thread>
 #ifndef PGR_RC_DIRECT_TEST
-#include "pgrazor_native_api.h"
+#include "pgs_native_api.h"
 #include <dlfcn.h>
 static const pgrazor_native_api_v2 *loaded_core = nullptr;
 #endif

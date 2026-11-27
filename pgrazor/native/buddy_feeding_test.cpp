@@ -17,7 +17,7 @@
 // here is owned_roots == 1 (service) outside a pending request, and 0 only after clear().
 // This harness is never packaged into the app.
 #include "buddy_feeding.h"
-#include "pgrazor_native_api.h"
+#include "pgs_native_api.h"
 #include <dlfcn.h>
 #include <unistd.h>
 #include <sys/wait.h>

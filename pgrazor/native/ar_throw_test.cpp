@@ -1,6 +1,6 @@
 // Standalone Android test of the real hook, argument ABI, roots and failure gate.
 #include "ar_throw.h"
-#include "pgrazor_native_api.h"
+#include "pgs_native_api.h"
 #include <dlfcn.h>
 #include <unistd.h>
 #include <cstdio>

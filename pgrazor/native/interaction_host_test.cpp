@@ -1,6 +1,6 @@
 #include <assert.h>
 #include "dobby.h"
-#include "pgrazor_native_api.h"
+#include "pgs_native_api.h"
 #include <dlfcn.h>
 #include <stdint.h>
 #include <stdio.h>

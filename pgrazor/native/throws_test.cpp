@@ -1,7 +1,7 @@
 // Standalone Android test. Exercises the actual native policy and hit trampoline.
 #include "throws.h"
 #include "auto_throw_values.h"
-#include "pgrazor_native_api.h"
+#include "pgs_native_api.h"
 #include <dlfcn.h>
 #include <unistd.h>
 #include <cstdio>

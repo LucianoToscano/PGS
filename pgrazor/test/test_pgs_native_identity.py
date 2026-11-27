@@ -68,6 +68,16 @@ class PgsNativeRenameTests(unittest.TestCase):
         self.assertFalse(native_build._enabled("PGS_NATIVE_PILOT", "PGRAZOR_NATIVE_PILOT",
                                                {"PGS_NATIVE_PILOT": "0", "PGRAZOR_NATIVE_PILOT": "0"}))
 
+    def test_first_party_native_sources_no_longer_include_old_api_header(self):
+        old = b'#include "pgrazor_native_api.h"'
+        offenders = []
+        for source in NATIVE.rglob("*"):
+            if source.is_file() and source.suffix in {".cpp", ".cc", ".c", ".h", ".hpp", ".inc"}:
+                if old in source.read_bytes():
+                    offenders.append(str(source.relative_to(ROOT)))
+        self.assertEqual(offenders, [],
+                         "All native sources must include pgs_native_api.h; old shim is for compatibility only")
+
     def test_pgs_cmd_is_primary_and_legacy_launcher_forwards(self):
         primary = (ROOT / "pgs.cmd").read_text(encoding="utf-8")
         legacy = (ROOT / "nonroot.cmd").read_text(encoding="utf-8")

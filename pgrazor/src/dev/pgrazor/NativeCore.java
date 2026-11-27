@@ -9,7 +9,7 @@ package dev.pgrazor;
 public final class NativeCore {
     private NativeCore() {}
 
-    /** Returns the native C-API table version the loaded library implements (see pgrazor_native_api.h). */
+    /** Returns the native C-API table version the loaded library implements (see pgs_native_api.h). */
     public static native int apiVersion();
 
     /**

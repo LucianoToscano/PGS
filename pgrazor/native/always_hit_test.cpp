@@ -12,7 +12,7 @@
 // frees the single handled GC root on stop/expiry. It must only free when the caller is
 // truly that thread, so an off-thread tick (proven_tid != gettid()) must not free.
 #include "always_hit.h"
-#include "pgrazor_native_api.h"
+#include "pgs_native_api.h"
 #include <dlfcn.h>
 #include <unistd.h>
 #include <cstdio>

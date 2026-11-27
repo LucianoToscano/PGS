@@ -1,7 +1,7 @@
 // Actual dlopen/query71 + real existing v1 spawn Dobby hook + real52 wire.
 // Synthetic validated56 output supplies ONLY the test-owned native target.
 #include "spawn_host.h"
-#include "pgrazor_native_api.h"
+#include "pgs_native_api.h"
 #include "runtime_transport.h"
 #include <cassert>
 #include <cmath>

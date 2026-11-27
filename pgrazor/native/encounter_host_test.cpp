@@ -1,7 +1,7 @@
 // Includes unchanged production63; actual18/42/52/etc come from the dlopened core.
 // Synthetic IL2CPP universe is reused from the independently exercised berry fixture.
 // This tests compiled orchestration and Dobby boundaries, not live game parity.
-#include "pgrazor_native_api.h"
+#include "pgs_native_api.h"
 #include <cassert>
 #include <cstdint>
 #include <cstdio>

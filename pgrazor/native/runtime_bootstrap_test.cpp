@@ -9,7 +9,7 @@
 #endif
 #include "runtime_bootstrap.h"
 #include "runtime_metadata.h"
-#include "pgrazor_native_api.h"
+#include "pgs_native_api.h"
 #include <cassert>
 #include <cstdio>
 #include <cstdlib>

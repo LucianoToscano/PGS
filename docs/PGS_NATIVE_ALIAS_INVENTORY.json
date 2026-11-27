@@ -1,5 +1,45 @@
 [
   {
+    "old": "pgrazor_account_event_v1_t",
+    "new": "pgs_account_event_v1_t",
+    "kind": "type",
+    "header": "pgs/native/accounts.h",
+    "introduced": true,
+    "migrated_uses": 12
+  },
+  {
+    "old": "pgrazor_account_snapshot_v1_t",
+    "new": "pgs_account_snapshot_v1_t",
+    "kind": "type",
+    "header": "pgs/native/accounts.h",
+    "introduced": true,
+    "migrated_uses": 12
+  },
+  {
+    "old": "pgrazor_accounts_api_v1_t",
+    "new": "pgs_accounts_api_v1_t",
+    "kind": "type",
+    "header": "pgs/native/accounts.h",
+    "introduced": true,
+    "migrated_uses": 10
+  },
+  {
+    "old": "pgrazor_accounts_config_v1_t",
+    "new": "pgs_accounts_config_v1_t",
+    "kind": "type",
+    "header": "pgs/native/accounts.h",
+    "introduced": true,
+    "migrated_uses": 7
+  },
+  {
+    "old": "pgrazor_advsync_api_v1",
+    "new": "pgs_advsync_api_v1",
+    "kind": "type",
+    "header": "pgs/native/adventure_sync.h",
+    "introduced": true,
+    "migrated_uses": 6
+  },
+  {
     "old": "PGRAZOR_ADVSYNC_API_VERSION",
     "new": "PGS_ADVSYNC_API_VERSION",
     "kind": "constant",
@@ -8,9 +48,73 @@
     "migrated_uses": 3
   },
   {
+    "old": "pgrazor_advsync_config_v1",
+    "new": "pgs_advsync_config_v1",
+    "kind": "type",
+    "header": "pgs/native/adventure_sync.h",
+    "introduced": true,
+    "migrated_uses": 6
+  },
+  {
     "old": "PGRAZOR_ADVSYNC_DELAY_MS",
     "new": "PGS_ADVSYNC_DELAY_MS",
     "kind": "constant",
+    "header": "pgs/native/adventure_sync.h",
+    "introduced": true,
+    "migrated_uses": 1
+  },
+  {
+    "old": "PGRAZOR_ADVSYNC_ERR_ALREADY_BOUND",
+    "new": "PGS_ADVSYNC_ERR_ALREADY_BOUND",
+    "kind": "enumerator",
+    "header": "pgs/native/adventure_sync.h",
+    "introduced": true,
+    "migrated_uses": 1
+  },
+  {
+    "old": "PGRAZOR_ADVSYNC_ERR_BAD_CONFIG",
+    "new": "PGS_ADVSYNC_ERR_BAD_CONFIG",
+    "kind": "enumerator",
+    "header": "pgs/native/adventure_sync.h",
+    "introduced": true,
+    "migrated_uses": 1
+  },
+  {
+    "old": "PGRAZOR_ADVSYNC_ERR_BAD_LEASE",
+    "new": "PGS_ADVSYNC_ERR_BAD_LEASE",
+    "kind": "enumerator",
+    "header": "pgs/native/adventure_sync.h",
+    "introduced": true,
+    "migrated_uses": 1
+  },
+  {
+    "old": "PGRAZOR_ADVSYNC_ERR_HOOK_FAILED",
+    "new": "PGS_ADVSYNC_ERR_HOOK_FAILED",
+    "kind": "enumerator",
+    "header": "pgs/native/adventure_sync.h",
+    "introduced": true,
+    "migrated_uses": 5
+  },
+  {
+    "old": "PGRAZOR_ADVSYNC_ERR_NO_CLOCK",
+    "new": "PGS_ADVSYNC_ERR_NO_CLOCK",
+    "kind": "enumerator",
+    "header": "pgs/native/adventure_sync.h",
+    "introduced": true,
+    "migrated_uses": 1
+  },
+  {
+    "old": "PGRAZOR_ADVSYNC_ERR_NOT_INSTALLED",
+    "new": "PGS_ADVSYNC_ERR_NOT_INSTALLED",
+    "kind": "enumerator",
+    "header": "pgs/native/adventure_sync.h",
+    "introduced": true,
+    "migrated_uses": 2
+  },
+  {
+    "old": "PGRAZOR_ADVSYNC_ERR_NULL_ARG",
+    "new": "PGS_ADVSYNC_ERR_NULL_ARG",
+    "kind": "enumerator",
     "header": "pgs/native/adventure_sync.h",
     "introduced": true,
     "migrated_uses": 1
@@ -24,12 +128,28 @@
     "migrated_uses": 1
   },
   {
+    "old": "pgrazor_advsync_install_fn",
+    "new": "pgs_advsync_install_fn",
+    "kind": "type",
+    "header": "pgs/native/adventure_sync.h",
+    "introduced": true,
+    "migrated_uses": 1
+  },
+  {
     "old": "PGRAZOR_ADVSYNC_MAX_LEASE_MS",
     "new": "PGS_ADVSYNC_MAX_LEASE_MS",
     "kind": "constant",
     "header": "pgs/native/adventure_sync.h",
     "introduced": true,
     "migrated_uses": 1
+  },
+  {
+    "old": "PGRAZOR_ADVSYNC_OK",
+    "new": "PGS_ADVSYNC_OK",
+    "kind": "enumerator",
+    "header": "pgs/native/adventure_sync.h",
+    "introduced": true,
+    "migrated_uses": 6
   },
   {
     "old": "PGRAZOR_ADVSYNC_QUEUE_MAX",
@@ -40,6 +160,38 @@
     "migrated_uses": 1
   },
   {
+    "old": "pgrazor_advsync_retire_fn",
+    "new": "pgs_advsync_retire_fn",
+    "kind": "type",
+    "header": "pgs/native/adventure_sync.h",
+    "introduced": true,
+    "migrated_uses": 1
+  },
+  {
+    "old": "pgrazor_advsync_selftest_fn",
+    "new": "pgs_advsync_selftest_fn",
+    "kind": "type",
+    "header": "pgs/native/adventure_sync.h",
+    "introduced": true,
+    "migrated_uses": 1
+  },
+  {
+    "old": "pgrazor_advsync_update_fn",
+    "new": "pgs_advsync_update_fn",
+    "kind": "type",
+    "header": "pgs/native/adventure_sync.h",
+    "introduced": true,
+    "migrated_uses": 1
+  },
+  {
+    "old": "pgrazor_buddy_api_v1",
+    "new": "pgs_buddy_api_v1",
+    "kind": "type",
+    "header": "pgs/native/buddy_feeding.h",
+    "introduced": true,
+    "migrated_uses": 10
+  },
+  {
     "old": "PGRAZOR_BUDDY_API_VERSION",
     "new": "PGS_BUDDY_API_VERSION",
     "kind": "constant",
@@ -48,9 +200,33 @@
     "migrated_uses": 5
   },
   {
+    "old": "pgrazor_buddy_clear_fn",
+    "new": "pgs_buddy_clear_fn",
+    "kind": "type",
+    "header": "pgs/native/buddy_feeding.h",
+    "introduced": true,
+    "migrated_uses": 1
+  },
+  {
+    "old": "pgrazor_buddy_config_v1",
+    "new": "pgs_buddy_config_v1",
+    "kind": "type",
+    "header": "pgs/native/buddy_feeding.h",
+    "introduced": true,
+    "migrated_uses": 23
+  },
+  {
     "old": "PGRAZOR_BUDDY_FEED_MS",
     "new": "PGS_BUDDY_FEED_MS",
     "kind": "constant",
+    "header": "pgs/native/buddy_feeding.h",
+    "introduced": true,
+    "migrated_uses": 1
+  },
+  {
+    "old": "pgrazor_buddy_install_fn",
+    "new": "pgs_buddy_install_fn",
+    "kind": "type",
     "header": "pgs/native/buddy_feeding.h",
     "introduced": true,
     "migrated_uses": 1
@@ -96,6 +272,238 @@
     "migrated_uses": 1
   },
   {
+    "old": "pgrazor_buddy_sample_fn",
+    "new": "pgs_buddy_sample_fn",
+    "kind": "type",
+    "header": "pgs/native/buddy_feeding.h",
+    "introduced": true,
+    "migrated_uses": 1
+  },
+  {
+    "old": "pgrazor_buddy_sample_v1",
+    "new": "pgs_buddy_sample_v1",
+    "kind": "type",
+    "header": "pgs/native/buddy_feeding.h",
+    "introduced": true,
+    "migrated_uses": 16
+  },
+  {
+    "old": "pgrazor_buddy_tick_fn",
+    "new": "pgs_buddy_tick_fn",
+    "kind": "type",
+    "header": "pgs/native/buddy_feeding.h",
+    "introduced": true,
+    "migrated_uses": 1
+  },
+  {
+    "old": "PGRAZOR_INC_ERR_ALREADY_BOUND",
+    "new": "PGS_INC_ERR_ALREADY_BOUND",
+    "kind": "enumerator",
+    "header": "pgs/native/incubation.h",
+    "introduced": true,
+    "migrated_uses": 1
+  },
+  {
+    "old": "PGRAZOR_INC_ERR_BAD_CONFIG",
+    "new": "PGS_INC_ERR_BAD_CONFIG",
+    "kind": "enumerator",
+    "header": "pgs/native/incubation.h",
+    "introduced": true,
+    "migrated_uses": 1
+  },
+  {
+    "old": "PGRAZOR_INC_ERR_NOT_INSTALLED",
+    "new": "PGS_INC_ERR_NOT_INSTALLED",
+    "kind": "enumerator",
+    "header": "pgs/native/incubation.h",
+    "introduced": true,
+    "migrated_uses": 2
+  },
+  {
+    "old": "PGRAZOR_INC_ERR_NULL_ARG",
+    "new": "PGS_INC_ERR_NULL_ARG",
+    "kind": "enumerator",
+    "header": "pgs/native/incubation.h",
+    "introduced": true,
+    "migrated_uses": 2
+  },
+  {
+    "old": "PGRAZOR_INC_FAULT_EGG_LIMIT",
+    "new": "PGS_INC_FAULT_EGG_LIMIT",
+    "kind": "enumerator",
+    "header": "pgs/native/incubation.h",
+    "introduced": true,
+    "migrated_uses": 1
+  },
+  {
+    "old": "PGRAZOR_INC_FAULT_EGGS",
+    "new": "PGS_INC_FAULT_EGGS",
+    "kind": "enumerator",
+    "header": "pgs/native/incubation.h",
+    "introduced": true,
+    "migrated_uses": 1
+  },
+  {
+    "old": "PGRAZOR_INC_FAULT_INCUBATOR_LIMIT",
+    "new": "PGS_INC_FAULT_INCUBATOR_LIMIT",
+    "kind": "enumerator",
+    "header": "pgs/native/incubation.h",
+    "introduced": true,
+    "migrated_uses": 2
+  },
+  {
+    "old": "PGRAZOR_INC_FAULT_INCUBATORS",
+    "new": "PGS_INC_FAULT_INCUBATORS",
+    "kind": "enumerator",
+    "header": "pgs/native/incubation.h",
+    "introduced": true,
+    "migrated_uses": 2
+  },
+  {
+    "old": "PGRAZOR_INC_FAULT_MAP",
+    "new": "PGS_INC_FAULT_MAP",
+    "kind": "enumerator",
+    "header": "pgs/native/incubation.h",
+    "introduced": true,
+    "migrated_uses": 1
+  },
+  {
+    "old": "PGRAZOR_INC_FAULT_PLAYER",
+    "new": "PGS_INC_FAULT_PLAYER",
+    "kind": "enumerator",
+    "header": "pgs/native/incubation.h",
+    "introduced": true,
+    "migrated_uses": 1
+  },
+  {
+    "old": "PGRAZOR_INC_FAULT_REQUEST",
+    "new": "PGS_INC_FAULT_REQUEST",
+    "kind": "enumerator",
+    "header": "pgs/native/incubation.h",
+    "introduced": true,
+    "migrated_uses": 1
+  },
+  {
+    "old": "PGRAZOR_INC_FAULT_SERVICE",
+    "new": "PGS_INC_FAULT_SERVICE",
+    "kind": "enumerator",
+    "header": "pgs/native/incubation.h",
+    "introduced": true,
+    "migrated_uses": 1
+  },
+  {
+    "old": "PGRAZOR_INC_OK",
+    "new": "PGS_INC_OK",
+    "kind": "enumerator",
+    "header": "pgs/native/incubation.h",
+    "introduced": true,
+    "migrated_uses": 11
+  },
+  {
+    "old": "PGRAZOR_INC_STATUS_ALREADY_IN_USE",
+    "new": "PGS_INC_STATUS_ALREADY_IN_USE",
+    "kind": "enumerator",
+    "header": "pgs/native/incubation.h",
+    "introduced": true,
+    "migrated_uses": 1
+  },
+  {
+    "old": "PGRAZOR_INC_STATUS_CONFIRMING",
+    "new": "PGS_INC_STATUS_CONFIRMING",
+    "kind": "enumerator",
+    "header": "pgs/native/incubation.h",
+    "introduced": true,
+    "migrated_uses": 3
+  },
+  {
+    "old": "PGRAZOR_INC_STATUS_EGG_INCUBATING",
+    "new": "PGS_INC_STATUS_EGG_INCUBATING",
+    "kind": "enumerator",
+    "header": "pgs/native/incubation.h",
+    "introduced": true,
+    "migrated_uses": 2
+  },
+  {
+    "old": "PGRAZOR_INC_STATUS_ERROR_RETRY",
+    "new": "PGS_INC_STATUS_ERROR_RETRY",
+    "kind": "enumerator",
+    "header": "pgs/native/incubation.h",
+    "introduced": true,
+    "migrated_uses": 3
+  },
+  {
+    "old": "PGRAZOR_INC_STATUS_NO_EGGS",
+    "new": "PGS_INC_STATUS_NO_EGGS",
+    "kind": "enumerator",
+    "header": "pgs/native/incubation.h",
+    "introduced": true,
+    "migrated_uses": 1
+  },
+  {
+    "old": "PGRAZOR_INC_STATUS_NO_FREE",
+    "new": "PGS_INC_STATUS_NO_FREE",
+    "kind": "enumerator",
+    "header": "pgs/native/incubation.h",
+    "introduced": true,
+    "migrated_uses": 1
+  },
+  {
+    "old": "PGRAZOR_INC_STATUS_NONE",
+    "new": "PGS_INC_STATUS_NONE",
+    "kind": "enumerator",
+    "header": "pgs/native/incubation.h",
+    "introduced": true,
+    "migrated_uses": 3
+  },
+  {
+    "old": "PGRAZOR_INC_STATUS_OFF",
+    "new": "PGS_INC_STATUS_OFF",
+    "kind": "enumerator",
+    "header": "pgs/native/incubation.h",
+    "introduced": true,
+    "migrated_uses": 1
+  },
+  {
+    "old": "PGRAZOR_INC_STATUS_STARTING",
+    "new": "PGS_INC_STATUS_STARTING",
+    "kind": "enumerator",
+    "header": "pgs/native/incubation.h",
+    "introduced": true,
+    "migrated_uses": 3
+  },
+  {
+    "old": "PGRAZOR_INC_STATUS_STOPPED_RETRY",
+    "new": "PGS_INC_STATUS_STOPPED_RETRY",
+    "kind": "enumerator",
+    "header": "pgs/native/incubation.h",
+    "introduced": true,
+    "migrated_uses": 1
+  },
+  {
+    "old": "PGRAZOR_INC_STATUS_UNCONFIRMED",
+    "new": "PGS_INC_STATUS_UNCONFIRMED",
+    "kind": "enumerator",
+    "header": "pgs/native/incubation.h",
+    "introduced": true,
+    "migrated_uses": 4
+  },
+  {
+    "old": "PGRAZOR_INC_STATUS_WAIT_MAP",
+    "new": "PGS_INC_STATUS_WAIT_MAP",
+    "kind": "enumerator",
+    "header": "pgs/native/incubation.h",
+    "introduced": true,
+    "migrated_uses": 2
+  },
+  {
+    "old": "pgrazor_incubation_api_v1",
+    "new": "pgs_incubation_api_v1",
+    "kind": "type",
+    "header": "pgs/native/incubation.h",
+    "introduced": true,
+    "migrated_uses": 9
+  },
+  {
     "old": "PGRAZOR_INCUBATION_API_VERSION",
     "new": "PGS_INCUBATION_API_VERSION",
     "kind": "constant",
@@ -104,9 +512,33 @@
     "migrated_uses": 5
   },
   {
+    "old": "pgrazor_incubation_clear_fn",
+    "new": "pgs_incubation_clear_fn",
+    "kind": "type",
+    "header": "pgs/native/incubation.h",
+    "introduced": true,
+    "migrated_uses": 1
+  },
+  {
+    "old": "pgrazor_incubation_config_v1",
+    "new": "pgs_incubation_config_v1",
+    "kind": "type",
+    "header": "pgs/native/incubation.h",
+    "introduced": true,
+    "migrated_uses": 19
+  },
+  {
     "old": "PGRAZOR_INCUBATION_DEADLINE_MS",
     "new": "PGS_INCUBATION_DEADLINE_MS",
     "kind": "constant",
+    "header": "pgs/native/incubation.h",
+    "introduced": true,
+    "migrated_uses": 1
+  },
+  {
+    "old": "pgrazor_incubation_install_fn",
+    "new": "pgs_incubation_install_fn",
+    "kind": "type",
     "header": "pgs/native/incubation.h",
     "introduced": true,
     "migrated_uses": 1
@@ -160,6 +592,70 @@
     "migrated_uses": 1
   },
   {
+    "old": "pgrazor_incubation_sample_fn",
+    "new": "pgs_incubation_sample_fn",
+    "kind": "type",
+    "header": "pgs/native/incubation.h",
+    "introduced": true,
+    "migrated_uses": 1
+  },
+  {
+    "old": "pgrazor_incubation_sample_v1",
+    "new": "pgs_incubation_sample_v1",
+    "kind": "type",
+    "header": "pgs/native/incubation.h",
+    "introduced": true,
+    "migrated_uses": 16
+  },
+  {
+    "old": "pgrazor_incubation_tick_fn",
+    "new": "pgs_incubation_tick_fn",
+    "kind": "type",
+    "header": "pgs/native/incubation.h",
+    "introduced": true,
+    "migrated_uses": 1
+  },
+  {
+    "old": "pgrazor_install_fn",
+    "new": "pgs_install_fn",
+    "kind": "type",
+    "header": "pgs/native/pgs_native_api.h",
+    "introduced": false,
+    "migrated_uses": 2
+  },
+  {
+    "old": "pgrazor_item_cap",
+    "new": "pgs_item_cap",
+    "kind": "type",
+    "header": "pgs/native/items.h",
+    "introduced": true,
+    "migrated_uses": 1
+  },
+  {
+    "old": "pgrazor_item_event",
+    "new": "pgs_item_event",
+    "kind": "type",
+    "header": "pgs/native/items.h",
+    "introduced": true,
+    "migrated_uses": 10
+  },
+  {
+    "old": "pgrazor_item_row",
+    "new": "pgs_item_row",
+    "kind": "type",
+    "header": "pgs/native/items.h",
+    "introduced": true,
+    "migrated_uses": 11
+  },
+  {
+    "old": "pgrazor_items_api_v1",
+    "new": "pgs_items_api_v1",
+    "kind": "type",
+    "header": "pgs/native/items.h",
+    "introduced": true,
+    "migrated_uses": 20
+  },
+  {
     "old": "PGRAZOR_ITEMS_API_VERSION",
     "new": "PGS_ITEMS_API_VERSION",
     "kind": "constant",
@@ -176,9 +672,49 @@
     "migrated_uses": 1
   },
   {
+    "old": "pgrazor_items_catalog_fn",
+    "new": "pgs_items_catalog_fn",
+    "kind": "type",
+    "header": "pgs/native/items.h",
+    "introduced": true,
+    "migrated_uses": 1
+  },
+  {
+    "old": "pgrazor_items_clear_fn",
+    "new": "pgs_items_clear_fn",
+    "kind": "type",
+    "header": "pgs/native/items.h",
+    "introduced": true,
+    "migrated_uses": 1
+  },
+  {
+    "old": "pgrazor_items_config_v1",
+    "new": "pgs_items_config_v1",
+    "kind": "type",
+    "header": "pgs/native/items.h",
+    "introduced": true,
+    "migrated_uses": 21
+  },
+  {
     "old": "PGRAZOR_ITEMS_CONFIRM_MS",
     "new": "PGS_ITEMS_CONFIRM_MS",
     "kind": "constant",
+    "header": "pgs/native/items.h",
+    "introduced": true,
+    "migrated_uses": 1
+  },
+  {
+    "old": "pgrazor_items_drain_fn",
+    "new": "pgs_items_drain_fn",
+    "kind": "type",
+    "header": "pgs/native/items.h",
+    "introduced": true,
+    "migrated_uses": 1
+  },
+  {
+    "old": "pgrazor_items_install_fn",
+    "new": "pgs_items_install_fn",
+    "kind": "type",
     "header": "pgs/native/items.h",
     "introduced": true,
     "migrated_uses": 1
@@ -256,150 +792,6 @@
     "migrated_uses": 1
   },
   {
-    "old": "PGRAZOR_ITEMS_SETTLE_MS",
-    "new": "PGS_ITEMS_SETTLE_MS",
-    "kind": "constant",
-    "header": "pgs/native/items.h",
-    "introduced": true,
-    "migrated_uses": 1
-  },
-  {
-    "old": "pgrazor_account_event_v1_t",
-    "new": "pgs_account_event_v1_t",
-    "kind": "type",
-    "header": "pgs/native/accounts.h",
-    "introduced": true,
-    "migrated_uses": 12
-  },
-  {
-    "old": "pgrazor_account_snapshot_v1_t",
-    "new": "pgs_account_snapshot_v1_t",
-    "kind": "type",
-    "header": "pgs/native/accounts.h",
-    "introduced": true,
-    "migrated_uses": 12
-  },
-  {
-    "old": "pgrazor_accounts_api_v1_t",
-    "new": "pgs_accounts_api_v1_t",
-    "kind": "type",
-    "header": "pgs/native/accounts.h",
-    "introduced": true,
-    "migrated_uses": 10
-  },
-  {
-    "old": "pgrazor_accounts_config_v1_t",
-    "new": "pgs_accounts_config_v1_t",
-    "kind": "type",
-    "header": "pgs/native/accounts.h",
-    "introduced": true,
-    "migrated_uses": 7
-  },
-  {
-    "old": "pgrazor_advsync_api_v1",
-    "new": "pgs_advsync_api_v1",
-    "kind": "type",
-    "header": "pgs/native/adventure_sync.h",
-    "introduced": true,
-    "migrated_uses": 6
-  },
-  {
-    "old": "pgrazor_advsync_config_v1",
-    "new": "pgs_advsync_config_v1",
-    "kind": "type",
-    "header": "pgs/native/adventure_sync.h",
-    "introduced": true,
-    "migrated_uses": 6
-  },
-  {
-    "old": "pgrazor_buddy_api_v1",
-    "new": "pgs_buddy_api_v1",
-    "kind": "type",
-    "header": "pgs/native/buddy_feeding.h",
-    "introduced": true,
-    "migrated_uses": 10
-  },
-  {
-    "old": "pgrazor_buddy_config_v1",
-    "new": "pgs_buddy_config_v1",
-    "kind": "type",
-    "header": "pgs/native/buddy_feeding.h",
-    "introduced": true,
-    "migrated_uses": 23
-  },
-  {
-    "old": "pgrazor_buddy_sample_v1",
-    "new": "pgs_buddy_sample_v1",
-    "kind": "type",
-    "header": "pgs/native/buddy_feeding.h",
-    "introduced": true,
-    "migrated_uses": 16
-  },
-  {
-    "old": "pgrazor_incubation_api_v1",
-    "new": "pgs_incubation_api_v1",
-    "kind": "type",
-    "header": "pgs/native/incubation.h",
-    "introduced": true,
-    "migrated_uses": 9
-  },
-  {
-    "old": "pgrazor_incubation_config_v1",
-    "new": "pgs_incubation_config_v1",
-    "kind": "type",
-    "header": "pgs/native/incubation.h",
-    "introduced": true,
-    "migrated_uses": 19
-  },
-  {
-    "old": "pgrazor_incubation_sample_v1",
-    "new": "pgs_incubation_sample_v1",
-    "kind": "type",
-    "header": "pgs/native/incubation.h",
-    "introduced": true,
-    "migrated_uses": 16
-  },
-  {
-    "old": "pgrazor_item_cap",
-    "new": "pgs_item_cap",
-    "kind": "type",
-    "header": "pgs/native/items.h",
-    "introduced": true,
-    "migrated_uses": 1
-  },
-  {
-    "old": "pgrazor_item_event",
-    "new": "pgs_item_event",
-    "kind": "type",
-    "header": "pgs/native/items.h",
-    "introduced": true,
-    "migrated_uses": 10
-  },
-  {
-    "old": "pgrazor_item_row",
-    "new": "pgs_item_row",
-    "kind": "type",
-    "header": "pgs/native/items.h",
-    "introduced": true,
-    "migrated_uses": 11
-  },
-  {
-    "old": "pgrazor_items_api_v1",
-    "new": "pgs_items_api_v1",
-    "kind": "type",
-    "header": "pgs/native/items.h",
-    "introduced": true,
-    "migrated_uses": 20
-  },
-  {
-    "old": "pgrazor_items_config_v1",
-    "new": "pgs_items_config_v1",
-    "kind": "type",
-    "header": "pgs/native/items.h",
-    "introduced": true,
-    "migrated_uses": 21
-  },
-  {
     "old": "pgrazor_items_rules_v1",
     "new": "pgs_items_rules_v1",
     "kind": "type",
@@ -408,12 +800,52 @@
     "migrated_uses": 35
   },
   {
+    "old": "pgrazor_items_sample_fn",
+    "new": "pgs_items_sample_fn",
+    "kind": "type",
+    "header": "pgs/native/items.h",
+    "introduced": true,
+    "migrated_uses": 1
+  },
+  {
     "old": "pgrazor_items_sample_v1",
     "new": "pgs_items_sample_v1",
     "kind": "type",
     "header": "pgs/native/items.h",
     "introduced": true,
     "migrated_uses": 18
+  },
+  {
+    "old": "pgrazor_items_service_acquire_fn",
+    "new": "pgs_items_service_acquire_fn",
+    "kind": "type",
+    "header": "pgs/native/items.h",
+    "introduced": true,
+    "migrated_uses": 1
+  },
+  {
+    "old": "pgrazor_items_service_handle_fn",
+    "new": "pgs_items_service_handle_fn",
+    "kind": "type",
+    "header": "pgs/native/items.h",
+    "introduced": true,
+    "migrated_uses": 1
+  },
+  {
+    "old": "PGRAZOR_ITEMS_SETTLE_MS",
+    "new": "PGS_ITEMS_SETTLE_MS",
+    "kind": "constant",
+    "header": "pgs/native/items.h",
+    "introduced": true,
+    "migrated_uses": 1
+  },
+  {
+    "old": "pgrazor_items_tick_fn",
+    "new": "pgs_items_tick_fn",
+    "kind": "type",
+    "header": "pgs/native/items.h",
+    "introduced": true,
+    "migrated_uses": 1
   },
   {
     "old": "pgrazor_native_api_v1",
@@ -432,8 +864,40 @@
     "migrated_uses": 106
   },
   {
+    "old": "pgrazor_query_feature_fn",
+    "new": "pgs_query_feature_fn",
+    "kind": "type",
+    "header": "pgs/native/pgs_native_api.h",
+    "introduced": false,
+    "migrated_uses": 1
+  },
+  {
+    "old": "pgrazor_sample_fn",
+    "new": "pgs_sample_fn",
+    "kind": "type",
+    "header": "pgs/native/pgs_native_api.h",
+    "introduced": false,
+    "migrated_uses": 2
+  },
+  {
+    "old": "pgrazor_selftest_fn",
+    "new": "pgs_selftest_fn",
+    "kind": "type",
+    "header": "pgs/native/pgs_native_api.h",
+    "introduced": false,
+    "migrated_uses": 2
+  },
+  {
     "old": "pgrazor_spawn_snapshot",
     "new": "pgs_spawn_snapshot",
+    "kind": "type",
+    "header": "pgs/native/pgs_native_api.h",
+    "introduced": false,
+    "migrated_uses": 2
+  },
+  {
+    "old": "pgrazor_update_fn",
+    "new": "pgs_update_fn",
     "kind": "type",
     "header": "pgs/native/pgs_native_api.h",
     "introduced": false,

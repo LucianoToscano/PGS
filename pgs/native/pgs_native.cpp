@@ -2,7 +2,7 @@
 //
 // Scope is deliberately narrow (one production hook) so the ARM gameplay runtime can
 // keep using the Frida shim and migrate call sites incrementally through the stable
-// pgrazor_native_api table. The hook mirrors runtime/features/spawn.js: call the
+// pgs_native_api table. The hook mirrors runtime/features/spawn.js: call the
 // original double(void*,void*) getter, then raise a finite positive radius to a floor
 // of 80 only while an enabled+allowed policy window with a valid monotonic deadline is
 // live. JS still performs its metadata validation before calling install(address).

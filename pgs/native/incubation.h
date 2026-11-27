@@ -1,7 +1,7 @@
 #pragma once
 #include <stdint.h>
 
-// PGRazor native migration: unlimited-incubator auto-incubation (feature id 9).
+// PGS native module: unlimited-incubator auto-incubation (feature id 9).
 //
 // Full port of runtime/features/incubation.js. The JS factory only ever drives the
 // single permanent "unlimited" incubator, confirms every assignment through the live
@@ -63,50 +63,78 @@ extern "C" {
 // Status codes surfaced through the sample. The adapter maps each to the exact JS
 // status string; code 10 (STARTING) carries the chosen distance in the sample.
 enum {
-    PGRAZOR_INC_STATUS_NONE          = 0,  /* initial; no event emitted */
-    PGRAZOR_INC_STATUS_OFF           = 1,  /* "Off" */
-    PGRAZOR_INC_STATUS_WAIT_MAP      = 2,  /* "Waiting for the map" */
-    PGRAZOR_INC_STATUS_EGG_INCUBATING= 3,  /* "Egg incubating" */
-    PGRAZOR_INC_STATUS_ALREADY_IN_USE= 4,  /* "Incubator already in use" */
-    PGRAZOR_INC_STATUS_UNCONFIRMED   = 5,  /* "Assignment unconfirmed; waiting for inventory" */
-    PGRAZOR_INC_STATUS_CONFIRMING    = 6,  /* "Confirming egg assignment" */
-    PGRAZOR_INC_STATUS_STOPPED_RETRY = 7,  /* "Incubation stopped; toggle off/on to retry" */
-    PGRAZOR_INC_STATUS_NO_FREE       = 8,  /* "Unlimited incubator in use or unavailable" */
-    PGRAZOR_INC_STATUS_NO_EGGS       = 9,  /* "No eggs waiting" */
-    PGRAZOR_INC_STATUS_STARTING      = 10, /* "Starting <distance> km egg" */
-    PGRAZOR_INC_STATUS_ERROR_RETRY   = 11  /* "Incubation unavailable; toggle off/on to retry" */
+    PGS_INC_STATUS_NONE          = 0,  /* initial; no event emitted */
+    PGS_INC_STATUS_OFF           = 1,  /* "Off" */
+    PGS_INC_STATUS_WAIT_MAP      = 2,  /* "Waiting for the map" */
+    PGS_INC_STATUS_EGG_INCUBATING= 3,  /* "Egg incubating" */
+    PGS_INC_STATUS_ALREADY_IN_USE= 4,  /* "Incubator already in use" */
+    PGS_INC_STATUS_UNCONFIRMED   = 5,  /* "Assignment unconfirmed; waiting for inventory" */
+    PGS_INC_STATUS_CONFIRMING    = 6,  /* "Confirming egg assignment" */
+    PGS_INC_STATUS_STOPPED_RETRY = 7,  /* "Incubation stopped; toggle off/on to retry" */
+    PGS_INC_STATUS_NO_FREE       = 8,  /* "Unlimited incubator in use or unavailable" */
+    PGS_INC_STATUS_NO_EGGS       = 9,  /* "No eggs waiting" */
+    PGS_INC_STATUS_STARTING      = 10, /* "Starting <distance> km egg" */
+    PGS_INC_STATUS_ERROR_RETRY   = 11,  /* "Incubation unavailable; toggle off/on to retry" */
+    // Legacy aliases retain the same enum type and numeric values.
+    PGRAZOR_INC_STATUS_NONE = PGS_INC_STATUS_NONE,
+    PGRAZOR_INC_STATUS_OFF = PGS_INC_STATUS_OFF,
+    PGRAZOR_INC_STATUS_WAIT_MAP = PGS_INC_STATUS_WAIT_MAP,
+    PGRAZOR_INC_STATUS_EGG_INCUBATING = PGS_INC_STATUS_EGG_INCUBATING,
+    PGRAZOR_INC_STATUS_ALREADY_IN_USE = PGS_INC_STATUS_ALREADY_IN_USE,
+    PGRAZOR_INC_STATUS_UNCONFIRMED = PGS_INC_STATUS_UNCONFIRMED,
+    PGRAZOR_INC_STATUS_CONFIRMING = PGS_INC_STATUS_CONFIRMING,
+    PGRAZOR_INC_STATUS_STOPPED_RETRY = PGS_INC_STATUS_STOPPED_RETRY,
+    PGRAZOR_INC_STATUS_NO_FREE = PGS_INC_STATUS_NO_FREE,
+    PGRAZOR_INC_STATUS_NO_EGGS = PGS_INC_STATUS_NO_EGGS,
+    PGRAZOR_INC_STATUS_STARTING = PGS_INC_STATUS_STARTING,
+    PGRAZOR_INC_STATUS_ERROR_RETRY = PGS_INC_STATUS_ERROR_RETRY,
 };
 
 // Step of the most recent fail-closed error (sample.fault_step), so a log shows where it stopped.
 enum {
     PGRAZOR_INC_FAULT_NONE           = 0,
-    PGRAZOR_INC_FAULT_MAP            = 1,  /* map scene / DI container lookup */
-    PGRAZOR_INC_FAULT_PLAYER         = 2,  /* player profile resolve */
-    PGRAZOR_INC_FAULT_INCUBATORS     = 3,  /* incubator list read */
-    PGRAZOR_INC_FAULT_INCUBATOR_LIMIT= 4,  /* more incubators than MAX_INCUBATORS */
-    PGRAZOR_INC_FAULT_EGGS           = 5,  /* item bag / egg list read */
-    PGRAZOR_INC_FAULT_EGG_LIMIT      = 6,  /* more Pokemon and eggs than MAX_EGGS */
-    PGRAZOR_INC_FAULT_SERVICE        = 7,  /* incubator service resolve */
-    PGRAZOR_INC_FAULT_REQUEST        = 8   /* PutEggInIncubator call or its result */
+    PGS_INC_FAULT_MAP            = 1,  /* map scene / DI container lookup */
+    PGS_INC_FAULT_PLAYER         = 2,  /* player profile resolve */
+    PGS_INC_FAULT_INCUBATORS     = 3,  /* incubator list read */
+    PGS_INC_FAULT_INCUBATOR_LIMIT= 4,  /* more incubators than MAX_INCUBATORS */
+    PGS_INC_FAULT_EGGS           = 5,  /* item bag / egg list read */
+    PGS_INC_FAULT_EGG_LIMIT      = 6,  /* more Pokemon and eggs than MAX_EGGS */
+    PGS_INC_FAULT_SERVICE        = 7,  /* incubator service resolve */
+    PGS_INC_FAULT_REQUEST        = 8,   /* PutEggInIncubator call or its result */
+    // Legacy aliases retain the same enum type and numeric values.
+    PGRAZOR_INC_FAULT_MAP = PGS_INC_FAULT_MAP,
+    PGRAZOR_INC_FAULT_PLAYER = PGS_INC_FAULT_PLAYER,
+    PGRAZOR_INC_FAULT_INCUBATORS = PGS_INC_FAULT_INCUBATORS,
+    PGRAZOR_INC_FAULT_INCUBATOR_LIMIT = PGS_INC_FAULT_INCUBATOR_LIMIT,
+    PGRAZOR_INC_FAULT_EGGS = PGS_INC_FAULT_EGGS,
+    PGRAZOR_INC_FAULT_EGG_LIMIT = PGS_INC_FAULT_EGG_LIMIT,
+    PGRAZOR_INC_FAULT_SERVICE = PGS_INC_FAULT_SERVICE,
+    PGRAZOR_INC_FAULT_REQUEST = PGS_INC_FAULT_REQUEST,
 };
 
 // Status codes returned by every table function. 0 == success.
 enum {
-    PGRAZOR_INC_OK            = 0,
-    PGRAZOR_INC_ERR_NULL_ARG  = 1,  /* required pointer argument was null */
-    PGRAZOR_INC_ERR_BAD_CONFIG= 2,  /* config header/size/pointer/literal invalid */
-    PGRAZOR_INC_ERR_ALREADY_BOUND = 3, /* install() called again with a different config */
-    PGRAZOR_INC_ERR_NOT_INSTALLED = 6  /* operation needs a successful install() */
+    PGS_INC_OK            = 0,
+    PGS_INC_ERR_NULL_ARG  = 1,  /* required pointer argument was null */
+    PGS_INC_ERR_BAD_CONFIG= 2,  /* config header/size/pointer/literal invalid */
+    PGS_INC_ERR_ALREADY_BOUND = 3, /* install() called again with a different config */
+    PGS_INC_ERR_NOT_INSTALLED = 6,  /* operation needs a successful install() */
+    // Legacy aliases retain the same enum type and numeric values.
+    PGRAZOR_INC_OK = PGS_INC_OK,
+    PGRAZOR_INC_ERR_NULL_ARG = PGS_INC_ERR_NULL_ARG,
+    PGRAZOR_INC_ERR_BAD_CONFIG = PGS_INC_ERR_BAD_CONFIG,
+    PGRAZOR_INC_ERR_ALREADY_BOUND = PGS_INC_ERR_ALREADY_BOUND,
+    PGRAZOR_INC_ERR_NOT_INSTALLED = PGS_INC_ERR_NOT_INSTALLED,
 };
 
 // Install-time configuration, packed by the JS adapter after its metadata validation.
 // Fixed LP64 layout (8-byte fields); the adapter writes it byte-for-byte and sets
-// size == sizeof(pgrazor_incubation_config_v1). Every pointer is an already-validated
+// size == sizeof(pgs_incubation_config_v1). Every pointer is an already-validated
 // il2cpp export, managed MethodInfo*, class pointer or FieldInfo*; the native layer
 // re-checks the header and rejects any null pointer or invalid literal before use.
 typedef struct pgrazor_incubation_config_v1 {
-    uint32_t version;              /* == PGRAZOR_INCUBATION_API_VERSION */
-    uint32_t size;                 /* == sizeof(pgrazor_incubation_config_v1) */
+    uint32_t version;              /* == PGS_INCUBATION_API_VERSION */
+    uint32_t size;                 /* == sizeof(pgs_incubation_config_v1) */
 
     /* il2cpp runtime exports (pointer-sized GC-handle ABI; real module exports). */
     void *runtime_invoke;          /* void* (MethodInfo*, void* obj, void** params, void** exc) */
@@ -181,8 +209,8 @@ typedef pgrazor_incubation_config_v1 pgs_incubation_config_v1;
 // durable pending GC roots currently held so the coordinator can gate a finish/teardown
 // on this layer having released them.
 typedef struct pgrazor_incubation_sample_v1 {
-    uint32_t version;              /* == PGRAZOR_INCUBATION_API_VERSION */
-    uint32_t size;                 /* == sizeof(pgrazor_incubation_sample_v1) */
+    uint32_t version;              /* == PGS_INCUBATION_API_VERSION */
+    uint32_t size;                 /* == sizeof(pgs_incubation_sample_v1) */
     uint32_t status;               /* one of PGRAZOR_INC_STATUS_* */
     uint32_t status_serial;        /* bumped on each status change */
     uint64_t request_serial;       /* bumped on each issued request */
@@ -201,6 +229,7 @@ typedef pgrazor_incubation_sample_v1 pgs_incubation_sample_v1;
  * process image is mutated and no managed call is made here.
  */
 typedef int (*pgrazor_incubation_install_fn)(const pgs_incubation_config_v1 *config);
+typedef pgrazor_incubation_install_fn pgs_incubation_install_fn;
 
 /*
  * tick(enabled, longest, remaining_lease_ms, proven_tid): one orchestration pass. Runs
@@ -208,7 +237,7 @@ typedef int (*pgrazor_incubation_install_fn)(const pgs_incubation_config_v1 *con
  * current OS thread (the host has already proven this is the Unity thread) AND no other
  * caller already owns a pass (a non-blocking owner-tid guard; a nested/foreign call is a
  * no-op). enabled and longest carry the current settings; remaining_lease_ms is the
- * residual (incubatorLease - now) window, clamped here to PGRAZOR_INCUBATION_MAX_LEASE_MS
+ * residual (incubatorLease - now) window, clamped here to PGS_INCUBATION_MAX_LEASE_MS
  * and turned into an absolute CLOCK_BOOTTIME deadline re-checked immediately before the
  * single PutEggInIncubator (0 == expired -> no managed work). Off (enabled==0) reports
  * "Off" and keeps any pending assignment; the host calls clear() for stop. Returns OK or
@@ -216,6 +245,7 @@ typedef int (*pgrazor_incubation_install_fn)(const pgs_incubation_config_v1 *con
  */
 typedef int (*pgrazor_incubation_tick_fn)(int enabled, int longest,
                                           uint64_t remaining_lease_ms, uint64_t proven_tid);
+typedef pgrazor_incubation_tick_fn pgs_incubation_tick_fn;
 
 /*
  * clear(proven_tid): Unity-thread-only teardown for stop/detach. RELEASES the durable
@@ -227,18 +257,20 @@ typedef int (*pgrazor_incubation_tick_fn)(int enabled, int longest,
  * own pass defers the free until that pass finishes). Returns OK or NOT_INSTALLED.
  */
 typedef int (*pgrazor_incubation_clear_fn)(uint64_t proven_tid);
+typedef pgrazor_incubation_clear_fn pgs_incubation_clear_fn;
 
 /* sample(out): copy the latest telemetry snapshot. Safe from any thread. */
 typedef int (*pgrazor_incubation_sample_fn)(pgs_incubation_sample_v1 *out);
+typedef pgrazor_incubation_sample_fn pgs_incubation_sample_fn;
 
 // Ordered, read-only table advertised by the getter (40 bytes: header + 4 pointers).
 typedef struct pgrazor_incubation_api_v1 {
-    uint32_t version;              /* == PGRAZOR_INCUBATION_API_VERSION */
-    uint32_t size;                 /* == sizeof(pgrazor_incubation_api_v1) */
-    pgrazor_incubation_install_fn install;
-    pgrazor_incubation_tick_fn    tick;
-    pgrazor_incubation_clear_fn   clear;
-    pgrazor_incubation_sample_fn  sample;
+    uint32_t version;              /* == PGS_INCUBATION_API_VERSION */
+    uint32_t size;                 /* == sizeof(pgs_incubation_api_v1) */
+    pgs_incubation_install_fn install;
+    pgs_incubation_tick_fn    tick;
+    pgs_incubation_clear_fn   clear;
+    pgs_incubation_sample_fn  sample;
 } pgrazor_incubation_api_v1;
 typedef pgrazor_incubation_api_v1 pgs_incubation_api_v1;
 

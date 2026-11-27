@@ -1,7 +1,7 @@
 #pragma once
 #include <stdint.h>
 
-// PGRazor native migration: inventory item catalog + auto-recycle (feature id 14).
+// PGS native module: inventory item catalog + auto-recycle (feature id 14).
 //
 // Full native port of runtime/features/items.js. The JS factory resolves the single
 // IItemInventoryService through the game's own Map/DiContainer (an optional path), builds
@@ -105,7 +105,7 @@ enum {
 // One published catalog row (POD; read back through catalog()).
 typedef struct pgrazor_item_row {
     int32_t id;     /* Holoholo.Rpc.Item enum value (>0) */
-    int32_t count;  /* current quantity (0..PGRAZOR_ITEMS_MAX_QTY) */
+    int32_t count;  /* current quantity (0..PGS_ITEMS_MAX_QTY) */
 } pgrazor_item_row;
 typedef pgrazor_item_row pgs_item_row;
 
@@ -139,10 +139,10 @@ typedef pgrazor_item_cap pgs_item_cap;
 // config (itemConfig+':'+itemEnabled) changes, so the native layer can clear the blocked set
 // exactly when the JS factory did. Snapshotted atomically at the start of each pass.
 typedef struct pgrazor_items_rules_v1 {
-    uint32_t version;              /* == PGRAZOR_ITEMS_API_VERSION */
-    uint32_t size;                 /* == sizeof(pgrazor_items_rules_v1) */
+    uint32_t version;              /* == PGS_ITEMS_API_VERSION */
+    uint32_t size;                 /* == sizeof(pgs_items_rules_v1) */
     uint32_t enabled;              /* s.itemEnabled (0/1) */
-    uint32_t count;                /* number of valid entries (<= PGRAZOR_ITEMS_MAX_RULES) */
+    uint32_t count;                /* number of valid entries (<= PGS_ITEMS_MAX_RULES) */
     uint64_t generation;           /* config generation; a change clears blocked */
     uint64_t epoch;                /* s.itemEpoch (recorded in pending; vestigial, kept for parity) */
     pgs_item_cap entries[PGS_ITEMS_MAX_RULES];
@@ -156,8 +156,8 @@ typedef pgrazor_items_rules_v1 pgs_items_rules_v1;
 // already-validated il2cpp export, MethodInfo*, hook address, class pointer, FieldInfo* or
 // Il2CppType*; the native layer re-checks the header and rejects any null before use.
 typedef struct pgrazor_items_config_v1 {
-    uint32_t version;              /* == PGRAZOR_ITEMS_API_VERSION */
-    uint32_t size;                 /* == sizeof(pgrazor_items_config_v1) */
+    uint32_t version;              /* == PGS_ITEMS_API_VERSION */
+    uint32_t size;                 /* == sizeof(pgs_items_config_v1) */
     uint32_t has_lookup;           /* 1 == the lookup group is provided and validated */
     uint32_t reserved0;            /* 0 */
 
@@ -249,8 +249,8 @@ typedef pgrazor_items_config_v1 pgs_items_config_v1;
 // count. owned_roots is durable roots (service + two filters + any pending bag) plus active owner
 // frames (conservative finish guard).
 typedef struct pgrazor_items_sample_v1 {
-    uint32_t version;              /* == PGRAZOR_ITEMS_API_VERSION */
-    uint32_t size;                 /* == sizeof(pgrazor_items_sample_v1) */
+    uint32_t version;              /* == PGS_ITEMS_API_VERSION */
+    uint32_t size;                 /* == sizeof(pgs_items_sample_v1) */
     uint64_t bag_ready_serial;     /* item-bag-ready (edge-triggered) */
     uint64_t catalog_serial;       /* catalog rows changed (edge-triggered) */
     uint64_t fault_serial;         /* fail-closed orchestration faults */
@@ -270,6 +270,7 @@ typedef pgrazor_items_sample_v1 pgs_items_sample_v1;
  * a published trampoline). NO_CLOCK if CLOCK_BOOTTIME is unavailable. No managed call here.
  */
 typedef int (*pgrazor_items_install_fn)(const pgs_items_config_v1 *config);
+typedef pgrazor_items_install_fn pgs_items_install_fn;
 
 /*
  * tick(rules, force_poll, remaining_lease_ms, proven_tid): one orchestration pass. Runs ONLY
@@ -280,12 +281,13 @@ typedef int (*pgrazor_items_install_fn)(const pgs_items_config_v1 *config);
  * catalog while recycling is off, 4 requests only five berry counts. Bits 2/4 preserve cadence;
  * enabled recycling always scans fully. Disabled with neither 2 nor 4 never enumerates.
  * remaining_lease_ms is the residual (itemLease - now) window,
- * clamped here to PGRAZOR_ITEMS_MAX_LEASE_MS and turned into an absolute CLOCK_BOOTTIME deadline
+ * clamped here to PGS_ITEMS_MAX_LEASE_MS and turned into an absolute CLOCK_BOOTTIME deadline
  * re-checked immediately before the single RecycleItem (0/expired -> no managed recycle).
  * Returns OK, NOT_INSTALLED or BAD_RULES.
  */
 typedef int (*pgrazor_items_tick_fn)(const pgs_items_rules_v1 *rules, uint32_t force_poll,
                                      uint64_t remaining_lease_ms, uint64_t proven_tid);
+typedef pgrazor_items_tick_fn pgs_items_tick_fn;
 
 /*
  * clear(proven_tid): Unity-thread-only teardown for stop/detach. RELEASES every durable GC root
@@ -296,15 +298,18 @@ typedef int (*pgrazor_items_tick_fn)(const pgs_items_rules_v1 *rules, uint32_t f
  * defers the free to the pass epilogue. Returns OK or NOT_INSTALLED.
  */
 typedef int (*pgrazor_items_clear_fn)(uint64_t proven_tid);
+typedef pgrazor_items_clear_fn pgs_items_clear_fn;
 
 /* sample(out): copy the latest telemetry snapshot. Safe from any thread; never frees. */
 typedef int (*pgrazor_items_sample_fn)(pgs_items_sample_v1 *out);
+typedef pgrazor_items_sample_fn pgs_items_sample_fn;
 
 /*
  * catalog(out, max, written): copy up to `max` catalog rows into `out`, writing the count into
  * *written. Safe from any thread; never frees. Returns OK, NOT_INSTALLED or NULL_ARG.
  */
 typedef int (*pgrazor_items_catalog_fn)(pgs_item_row *out, uint32_t max, uint32_t *written);
+typedef pgrazor_items_catalog_fn pgs_items_catalog_fn;
 
 /*
  * drain(out, max, written): copy up to `max` queued request/confirm/error events into `out` in
@@ -314,6 +319,7 @@ typedef int (*pgrazor_items_catalog_fn)(pgs_item_row *out, uint32_t max, uint32_
  * Returns OK, NOT_INSTALLED or NULL_ARG.
  */
 typedef int (*pgrazor_items_drain_fn)(pgs_item_event *out, uint32_t max, uint32_t *written);
+typedef pgrazor_items_drain_fn pgs_items_drain_fn;
 
 /*
  * service_handle(): the current durable service GC handle (an il2cpp gchandle, pointer-sized) or
@@ -322,6 +328,7 @@ typedef int (*pgrazor_items_drain_fn)(pgs_item_event *out, uint32_t max, uint32_
  * clear(). Safe from any thread; never creates or frees a handle.
  */
 typedef void *(*pgrazor_items_service_handle_fn)(void);
+typedef pgrazor_items_service_handle_fn pgs_items_service_handle_fn;
 
 /*
  * service_acquire(): return a NEW, INDEPENDENTLY OWNED il2cpp gchandle rooting the current service
@@ -332,19 +339,20 @@ typedef void *(*pgrazor_items_service_handle_fn)(void);
  * from any other thread or before the Unity identity latches).
  */
 typedef void *(*pgrazor_items_service_acquire_fn)(void);
+typedef pgrazor_items_service_acquire_fn pgs_items_service_acquire_fn;
 
 // Ordered, read-only table advertised by the getter (72 bytes: header + 8 pointers).
 typedef struct pgrazor_items_api_v1 {
-    uint32_t version;              /* == PGRAZOR_ITEMS_API_VERSION */
-    uint32_t size;                 /* == sizeof(pgrazor_items_api_v1) */
-    pgrazor_items_install_fn         install;
-    pgrazor_items_tick_fn            tick;
-    pgrazor_items_clear_fn           clear;
-    pgrazor_items_sample_fn          sample;
-    pgrazor_items_catalog_fn         catalog;
-    pgrazor_items_service_handle_fn  service_handle;
-    pgrazor_items_drain_fn           drain;
-    pgrazor_items_service_acquire_fn service_acquire;
+    uint32_t version;              /* == PGS_ITEMS_API_VERSION */
+    uint32_t size;                 /* == sizeof(pgs_items_api_v1) */
+    pgs_items_install_fn         install;
+    pgs_items_tick_fn            tick;
+    pgs_items_clear_fn           clear;
+    pgs_items_sample_fn          sample;
+    pgs_items_catalog_fn         catalog;
+    pgs_items_service_handle_fn  service_handle;
+    pgs_items_drain_fn           drain;
+    pgs_items_service_acquire_fn service_acquire;
 } pgrazor_items_api_v1;
 typedef pgrazor_items_api_v1 pgs_items_api_v1;
 

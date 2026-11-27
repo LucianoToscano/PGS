@@ -195,7 +195,7 @@ static int scenario(int which) {
     const uint64_t tid = static_cast<uint64_t>(gettid());
     g_inc_coll.rows = reinterpret_cast<void **>(g_inc_rows);
     g_egg_coll.rows = reinterpret_cast<void **>(g_egg_rows);
-    if (install(g_api) != PGRAZOR_INC_OK) return 90;
+    if (install(g_api) != PGS_INC_OK) return 90;
 
     static const uint16_t U[] = {'U'};
     Inc inc_unl{&c_inc, 901, mkstr(U, 1), 0, 0};        // free unlimited incubator
@@ -210,7 +210,7 @@ static int scenario(int which) {
         g_egg_rows[0] = &a; g_egg_rows[1] = &b; g_egg_rows[2] = &c; g_egg_coll.count = 3;
         g_api->tick(1, 0, 2500, tid);
         if (g_put_calls != 1 || g_put_egg != 11) return 1;      // shortest, first of the tie
-        if (sample_status(g_api) != PGRAZOR_INC_STATUS_STARTING) return 2;
+        if (sample_status(g_api) != PGS_INC_STATUS_STARTING) return 2;
         pgs_incubation_sample_v1 s{}; g_api->sample(&s);
         if (s.request_serial != 1 || s.owned_roots == 0 || s.distance != 2) return 3;
         if (g_roots != s.owned_roots) return 4;                 // only durable roots remain
@@ -246,7 +246,7 @@ static int scenario(int which) {
         inc_unl.pokemon = 11;                                   // inventory now shows our egg
         repoll(tid); g_api->tick(1, 0, 2500, tid);
         if (g_put_calls != 1) return 2;                         // never resubmit
-        if (sample_status(g_api) != PGRAZOR_INC_STATUS_EGG_INCUBATING) return 3;
+        if (sample_status(g_api) != PGS_INC_STATUS_EGG_INCUBATING) return 3;
         pgs_incubation_sample_v1 s{}; g_api->sample(&s);
         if (s.owned_roots != 0 || g_roots != 0) return 4;       // confirmed -> roots dropped
         return 0;
@@ -258,7 +258,7 @@ static int scenario(int which) {
         if (g_put_calls != 1) return 1;
         repoll(tid); g_api->tick(1, 0, 2500, tid);              // still pokemon==0
         if (g_put_calls != 1) return 2;
-        if (sample_status(g_api) != PGRAZOR_INC_STATUS_CONFIRMING) return 3;
+        if (sample_status(g_api) != PGS_INC_STATUS_CONFIRMING) return 3;
         return 0;
     }
     case 5: { // stop/restart: clear frees roots but keeps the uncertain pending IDs
@@ -271,7 +271,7 @@ static int scenario(int which) {
         if (s.owned_roots != 0 || g_roots != 0) return 2;       // roots released on stop
         repoll(tid); g_api->tick(1, 0, 2500, tid);              // restart
         if (g_put_calls != 1) return 3;                         // pending preserved -> no resubmit
-        if (sample_status(g_api) != PGRAZOR_INC_STATUS_CONFIRMING) return 4;
+        if (sample_status(g_api) != PGS_INC_STATUS_CONFIRMING) return 4;
         return 0;
     }
     case 6: { // managed throw on Put -> uncertain, request counted once, roots kept
@@ -281,7 +281,7 @@ static int scenario(int which) {
         g_api->tick(1, 0, 2500, tid);
         pgs_incubation_sample_v1 s{}; g_api->sample(&s);
         if (s.request_serial != 1) return 1;                    // issued once, even though it threw
-        if (s.status != PGRAZOR_INC_STATUS_UNCONFIRMED) return 2;
+        if (s.status != PGS_INC_STATUS_UNCONFIRMED) return 2;
         if (s.fault_serial == 0 || s.owned_roots == 0) return 3; // fault noted, roots retained
         repoll(tid); g_api->tick(1, 0, 2500, tid);
         g_api->sample(&s);
@@ -302,7 +302,7 @@ static int scenario(int which) {
         g_egg_rows[0] = &a; g_egg_coll.count = 1;
         g_api->tick(1, 0, 2500, tid + 1);
         if (g_put_calls != 0 || g_roots != 0) return 1;
-        if (sample_status(g_api) != PGRAZOR_INC_STATUS_NONE) return 2;
+        if (sample_status(g_api) != PGS_INC_STATUS_NONE) return 2;
         return 0;
     }
     case 9: { // reentrant clear during the pass revokes submission, defers the free
@@ -329,7 +329,7 @@ static int scenario(int which) {
         g_no_map = true;
         g_api->tick(1, 0, 2500, tid);
         if (g_put_calls != 0 || g_roots != 0) return 1;
-        if (sample_status(g_api) != PGRAZOR_INC_STATUS_NONE) return 2;
+        if (sample_status(g_api) != PGS_INC_STATUS_NONE) return 2;
         return 0;
     }
     case 12: { // an idle owner cannot be replaced by a caller providing its own real tid
@@ -371,7 +371,7 @@ static int scenario(int which) {
         g_api->tick(1, 0, 2500, tid);
         if (g_put_calls != 1 || g_put_egg != 11 || g_put_inc != &inc_unl) return 1;
         pgs_incubation_sample_v1 s{}; g_api->sample(&s);
-        if (s.fault_serial != 0 || s.status != PGRAZOR_INC_STATUS_STARTING) return 2;
+        if (s.fault_serial != 0 || s.status != PGS_INC_STATUS_STARTING) return 2;
         return 0;
     }
     case 16: { // one more incubator than the cap: fail closed, no Put, reason names the limit
@@ -388,8 +388,8 @@ static int scenario(int which) {
         g_api->tick(1, 0, 2500, tid);
         if (g_put_calls != 0 || g_roots != 0) return 1;
         pgs_incubation_sample_v1 s{}; g_api->sample(&s);
-        if (s.status != PGRAZOR_INC_STATUS_ERROR_RETRY || s.fault_serial != 1) return 2;
-        if (s.fault_step != PGRAZOR_INC_FAULT_INCUBATOR_LIMIT) return 3;
+        if (s.status != PGS_INC_STATUS_ERROR_RETRY || s.fault_serial != 1) return 2;
+        if (s.fault_step != PGS_INC_FAULT_INCUBATOR_LIMIT) return 3;
         return 0;
     }
     case 17: { // a managed throw reading the incubators names that step
@@ -398,7 +398,7 @@ static int scenario(int which) {
         g_throw_method = &m_incubators;
         g_api->tick(1, 0, 2500, tid);
         pgs_incubation_sample_v1 s{}; g_api->sample(&s);
-        if (g_put_calls != 0 || s.fault_step != PGRAZOR_INC_FAULT_INCUBATORS) return 1;
+        if (g_put_calls != 0 || s.fault_step != PGS_INC_FAULT_INCUBATORS) return 1;
         return 0;
     }
     default: return 0;

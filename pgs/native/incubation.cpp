@@ -52,7 +52,7 @@ pgs_incubation_config_v1     g_config{};
 std::atomic<bool>                g_installed{false};
 
 // --- telemetry (pull-only; any thread) --------------------------------------------
-std::atomic<uint32_t> g_status{PGRAZOR_INC_STATUS_NONE};
+std::atomic<uint32_t> g_status{PGS_INC_STATUS_NONE};
 std::atomic<uint32_t> g_status_serial{0};
 std::atomic<uint64_t> g_request_serial{0};
 std::atomic<uint64_t> g_distance_bits{0};   // bit-cast double
@@ -331,12 +331,12 @@ void orchestrate(uint64_t now, uint64_t deadline, int longest) {
     uint64_t choice_id = 0;
     double choice_km = 0;
     bool have_free = false, have_choice = false, matched = false;
-    uint32_t step = PGRAZOR_INC_FAULT_MAP;                 // reported if this pass fails closed
+    uint32_t step = PGS_INC_FAULT_MAP;                 // reported if this pass fails closed
 
     // FindObjectOfType(typeof(MapSceneContext)) -> soft return when the map is absent.
     void *map_type = type_obj(cls_type(g_config.class_map));
     if (map_type == nullptr) { note_fault(step); g_st.blocked = true;
-        set_status(PGRAZOR_INC_STATUS_ERROR_RETRY); return; }
+        set_status(PGS_INC_STATUS_ERROR_RETRY); return; }
     map_type_h.set(map_type, &err); if (err) goto fail;    // root the System.Type over the invoke
     {
         void *map_params[1] = { map_type_h.target() };
@@ -350,13 +350,13 @@ void orchestrate(uint64_t now, uint64_t deadline, int longest) {
         if (err) goto fail;
         container_h.set(container, &err); if (err) goto fail;
 
-        step = PGRAZOR_INC_FAULT_PLAYER;
+        step = PGS_INC_FAULT_PLAYER;
         void *player = resolve(container_h.target(), g_config.class_player_contract,
                                g_config.class_player, &player_h, &err);
         if (err) goto fail;
 
         // --- incubators: confirm any pending assignment and find the free unlimited one.
-        step = PGRAZOR_INC_FAULT_INCUBATORS;
+        step = PGS_INC_FAULT_INCUBATORS;
         void *incubators = invoke(g_config.m_incubators, player, nullptr, &err);
         if (err) goto fail;
         if (incubators == nullptr) { err = true; goto fail; }
@@ -371,8 +371,8 @@ void orchestrate(uint64_t now, uint64_t deadline, int longest) {
                     bool ours = (assigned == g_st.pending_egg);
                     pending_reset();                       // inventory confirmed -> drop IDs + roots
                     g_st.blocked = false;
-                    set_status(ours ? PGRAZOR_INC_STATUS_EGG_INCUBATING
-                                     : PGRAZOR_INC_STATUS_ALREADY_IN_USE);
+                    set_status(ours ? PGS_INC_STATUS_EGG_INCUBATING
+                                     : PGS_INC_STATUS_ALREADY_IN_USE);
                 }
             }
             if (!have_free && item == g_config.unlimited && id.len > 0 && assigned == 0 &&
@@ -381,7 +381,7 @@ void orchestrate(uint64_t now, uint64_t deadline, int longest) {
                 free_id = id; have_free = true;
             }
             return true;
-        })) step = PGRAZOR_INC_FAULT_INCUBATOR_LIMIT;
+        })) step = PGS_INC_FAULT_INCUBATOR_LIMIT;
         if (err) goto fail;
         if (matched) return;                               // inventory confirmed -> done
 
@@ -389,15 +389,15 @@ void orchestrate(uint64_t now, uint64_t deadline, int longest) {
             // Confirmation still outstanding. Never retry / duplicate an uncertain request;
             // the next poll re-enumerates and can confirm (IDs persist process lifetime).
             if (now >= g_st.pending_deadline) { g_st.blocked = true;
-                set_status(PGRAZOR_INC_STATUS_UNCONFIRMED); }
-            else set_status(PGRAZOR_INC_STATUS_CONFIRMING);
+                set_status(PGS_INC_STATUS_UNCONFIRMED); }
+            else set_status(PGS_INC_STATUS_CONFIRMING);
             return;
         }
-        if (g_st.blocked) { set_status(PGRAZOR_INC_STATUS_STOPPED_RETRY); return; }
-        if (!have_free) { set_status(PGRAZOR_INC_STATUS_NO_FREE); return; }
+        if (g_st.blocked) { set_status(PGS_INC_STATUS_STOPPED_RETRY); return; }
+        if (!have_free) { set_status(PGS_INC_STATUS_NO_FREE); return; }
 
         // --- eggs: choose shortest/longest eligible (first stable tie).
-        step = PGRAZOR_INC_FAULT_EGGS;
+        step = PGS_INC_FAULT_EGGS;
         void *bag = resolve(container_h.target(), g_config.class_bag_contract,
                             g_config.class_bag, &bag_h, &err);
         if (err) goto fail;
@@ -419,9 +419,9 @@ void orchestrate(uint64_t now, uint64_t deadline, int longest) {
                 choice_id = id; choice_km = km; have_choice = true;
             }
             return true;
-        })) step = PGRAZOR_INC_FAULT_EGG_LIMIT;
+        })) step = PGS_INC_FAULT_EGG_LIMIT;
         if (err) goto fail;
-        if (!have_choice) { set_status(PGRAZOR_INC_STATUS_NO_EGGS);
+        if (!have_choice) { set_status(PGS_INC_STATUS_NO_EGGS);
             g_st.next_ms = now + kNoEggsMs; return; }
 
         // Recheck both assignment fields immediately before resolving the service.
@@ -436,7 +436,7 @@ void orchestrate(uint64_t now, uint64_t deadline, int longest) {
             if (present) return;
         }
 
-        step = PGRAZOR_INC_FAULT_SERVICE;
+        step = PGS_INC_FAULT_SERVICE;
         void *service = resolve(container_h.target(), g_config.class_service_contract,
                                g_config.class_service, &service_h, &err);
         if (err) goto fail;
@@ -457,7 +457,7 @@ void orchestrate(uint64_t now, uint64_t deadline, int longest) {
         // residual lease aborts safely with no managed call, even if it elapsed mid-pass).
         { uint64_t t = boottime_ms(); if (t == 0 || t >= deadline) return; }
 
-        step = PGRAZOR_INC_FAULT_REQUEST;
+        step = PGS_INC_FAULT_REQUEST;
         // Record the pending assignment (durable roots) BEFORE the request, so a managed
         // exception from the call keeps us in the uncertain/confirming state.
         pending_reset();
@@ -477,7 +477,7 @@ void orchestrate(uint64_t now, uint64_t deadline, int longest) {
         g_st.pending_inc = free_id;
         g_st.pending_egg = choice_id;
         g_st.pending_deadline = now + kDeadlineMs;
-        set_status_distance(PGRAZOR_INC_STATUS_STARTING, choice_km);
+        set_status_distance(PGS_INC_STATUS_STARTING, choice_km);
         g_longest.store(longest ? 1u : 0u, std::memory_order_release);
 
         // Count the issued invocation exactly once, BEFORE the call, because the server may
@@ -493,7 +493,7 @@ void orchestrate(uint64_t now, uint64_t deadline, int longest) {
             // Could not root the returned task: report uncertain (not silent) and keep the
             // pending assignment; a later inventory poll still decides the outcome.
             note_fault(step);
-            set_status(PGRAZOR_INC_STATUS_UNCONFIRMED);
+            set_status(PGS_INC_STATUS_UNCONFIRMED);
         }
         return;
     }
@@ -502,7 +502,7 @@ fail:
     // Managed exception / fail-closed error. Block and surface the uncertain state if a
     // request may already be in flight; keep the pending roots in that case.
     g_st.blocked = true;
-    set_status(g_st.pending ? PGRAZOR_INC_STATUS_UNCONFIRMED : PGRAZOR_INC_STATUS_ERROR_RETRY);
+    set_status(g_st.pending ? PGS_INC_STATUS_UNCONFIRMED : PGS_INC_STATUS_ERROR_RETRY);
     note_fault(step);
 }
 
@@ -524,22 +524,22 @@ bool config_ok(const pgs_incubation_config_v1 *c) {
 }
 
 int api_install(const pgs_incubation_config_v1 *config) {
-    if (config == nullptr) return PGRAZOR_INC_ERR_NULL_ARG;
+    if (config == nullptr) return PGS_INC_ERR_NULL_ARG;
     std::lock_guard<std::mutex> lock(g_install_mutex);
     if (config->version != PGS_INCUBATION_API_VERSION ||
         config->size != sizeof(pgs_incubation_config_v1) || !config_ok(config))
-        return PGRAZOR_INC_ERR_BAD_CONFIG;
+        return PGS_INC_ERR_BAD_CONFIG;
     if (g_installed.load(std::memory_order_acquire))
         return (std::memcmp(&g_config, config, sizeof(g_config)) == 0)
-                   ? PGRAZOR_INC_OK : PGRAZOR_INC_ERR_ALREADY_BOUND;
+                   ? PGS_INC_OK : PGS_INC_ERR_ALREADY_BOUND;
     g_config = *config;
     g_installed.store(true, std::memory_order_release);
-    return PGRAZOR_INC_OK;
+    return PGS_INC_OK;
 }
 
 int api_tick(int enabled, int longest, uint64_t remaining_lease_ms, uint64_t proven_tid) {
-    if (!g_installed.load(std::memory_order_acquire)) return PGRAZOR_INC_ERR_NOT_INSTALLED;
-    if (!bind_unity_thread(proven_tid)) return PGRAZOR_INC_OK;
+    if (!g_installed.load(std::memory_order_acquire)) return PGS_INC_ERR_NOT_INSTALLED;
+    if (!bind_unity_thread(proven_tid)) return PGS_INC_OK;
 
     // Claim ownership. A nested call on this thread, or any concurrent caller supplying
     // its own tid, loses the exchange and must not run / steal the owner's state.
@@ -550,25 +550,25 @@ int api_tick(int enabled, int longest, uint64_t remaining_lease_ms, uint64_t pro
             g_revoke = true;
             if (!enabled) g_st.enabled = false;
         }
-        return PGRAZOR_INC_OK;
+        return PGS_INC_OK;
     }
     g_revoke = false;
     g_teardown_defer = false;
 
     if (!enabled) {
         g_st.enabled = false;
-        set_status(PGRAZOR_INC_STATUS_OFF);                // keep pending for later confirmation
+        set_status(PGS_INC_STATUS_OFF);                // keep pending for later confirmation
     } else {
         if (!g_st.enabled) { g_st.enabled = true; if (!g_st.pending) g_st.blocked = false; g_st.next_ms = 0; }
 
         uint64_t lease = remaining_lease_ms;
         if (lease > kMaxLeaseMs) lease = kMaxLeaseMs;      // clamp the residual window
         if (lease == 0) {
-            set_status(PGRAZOR_INC_STATUS_WAIT_MAP);
+            set_status(PGS_INC_STATUS_WAIT_MAP);
         } else {
             uint64_t now = boottime_ms();
             if (now == 0) {
-                set_status(PGRAZOR_INC_STATUS_WAIT_MAP);
+                set_status(PGS_INC_STATUS_WAIT_MAP);
             } else if (now >= g_st.next_ms) {
                 g_st.next_ms = now + kPollMs;
                 orchestrate(now, now + lease, longest);    // absolute CLOCK_BOOTTIME deadline
@@ -581,13 +581,13 @@ int api_tick(int enabled, int longest, uint64_t remaining_lease_ms, uint64_t pro
     g_revoke = false;
     g_teardown_defer = false;
     g_owner_tid.store(0, std::memory_order_release);
-    return PGRAZOR_INC_OK;
+    return PGS_INC_OK;
 }
 
 int api_clear(uint64_t proven_tid) {
-    if (!g_installed.load(std::memory_order_acquire)) return PGRAZOR_INC_ERR_NOT_INSTALLED;
+    if (!g_installed.load(std::memory_order_acquire)) return PGS_INC_ERR_NOT_INSTALLED;
     if (!on_unity_thread(proven_tid) || g_unity_tid.load(std::memory_order_acquire) != proven_tid)
-        return PGRAZOR_INC_OK; // never bind/steal ownership during cleanup
+        return PGS_INC_OK; // never bind/steal ownership during cleanup
 
     uint64_t owner = g_owner_tid.load(std::memory_order_acquire);
     if (owner != 0) {
@@ -599,22 +599,22 @@ int api_clear(uint64_t proven_tid) {
             g_st.enabled = false;
         }
         // owner != proven_tid: a different thread owns the pass; do not steal or free.
-        return PGRAZOR_INC_OK;
+        return PGS_INC_OK;
     }
 
     // No pass in progress: become the transient owner and release roots now. The uncertain
     // pending IDs are PRESERVED (by value) for post-restart inventory confirmation.
     uint64_t expected = 0;
     if (!g_owner_tid.compare_exchange_strong(expected, proven_tid,
-                                             std::memory_order_acq_rel)) return PGRAZOR_INC_OK;
+                                             std::memory_order_acq_rel)) return PGS_INC_OK;
     release_roots();
     g_st.enabled = false;
     g_owner_tid.store(0, std::memory_order_release);
-    return PGRAZOR_INC_OK;
+    return PGS_INC_OK;
 }
 
 int api_sample(pgs_incubation_sample_v1 *out) {
-    if (out == nullptr) return PGRAZOR_INC_ERR_NULL_ARG;
+    if (out == nullptr) return PGS_INC_ERR_NULL_ARG;
     out->version = PGS_INCUBATION_API_VERSION;
     out->size = sizeof(pgs_incubation_sample_v1);
     out->status = g_status.load(std::memory_order_acquire);
@@ -626,7 +626,7 @@ int api_sample(pgs_incubation_sample_v1 *out) {
     out->fault_serial = g_fault_serial.load(std::memory_order_acquire);
     out->owned_roots = g_root_count.load(std::memory_order_acquire);
     out->fault_step = g_fault_step.load(std::memory_order_acquire);
-    return PGRAZOR_INC_OK;
+    return PGS_INC_OK;
 }
 
 const pgs_incubation_api_v1 g_api = {

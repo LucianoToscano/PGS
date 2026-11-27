@@ -53,10 +53,10 @@ namespace {
 // the one Dobby-version-dependent line per ABI is easy to confirm/adjust; both fields
 // exist in the pinned Dobby register-context header.
 #if defined(__aarch64__)
-#define PGRAZOR_ADVSYNC_CTX_SELF(ctx) \
+#define PGS_ADVSYNC_CTX_SELF(ctx) \
     (reinterpret_cast<void *>((ctx)->general.regs.x0))
 #elif defined(__x86_64__)
-#define PGRAZOR_ADVSYNC_CTX_SELF(ctx) \
+#define PGS_ADVSYNC_CTX_SELF(ctx) \
     (reinterpret_cast<void *>((ctx)->general.regs.rdi))
 #else
 #error "Adventure Sync native instrument supports arm64 and x86_64 register contexts only."
@@ -301,13 +301,13 @@ void on_decline_replacement(void *self, void *method_info) {
 
 // Entry instruments for the Initialize overloads (read x0 only; do not alter the call).
 void instrument_initial(void *, DobbyRegisterContext *ctx) {
-    tag_dialog(PGRAZOR_ADVSYNC_CTX_SELF(ctx), DLG_INITIAL);
+    tag_dialog(PGS_ADVSYNC_CTX_SELF(ctx), DLG_INITIAL);
 }
 void instrument_instruction(void *, DobbyRegisterContext *ctx) {
-    tag_dialog(PGRAZOR_ADVSYNC_CTX_SELF(ctx), DLG_INSTRUCTION);
+    tag_dialog(PGS_ADVSYNC_CTX_SELF(ctx), DLG_INSTRUCTION);
 }
 void instrument_result(void *, DobbyRegisterContext *ctx) {
-    tag_dialog(PGRAZOR_ADVSYNC_CTX_SELF(ctx), DLG_RESULT);
+    tag_dialog(PGS_ADVSYNC_CTX_SELF(ctx), DLG_RESULT);
 }
 
 // ---------------------------------------------------------------------------
@@ -331,23 +331,23 @@ bool config_pointers_ok(const pgs_advsync_config_v1 *c) {
 // C API table functions.
 // ---------------------------------------------------------------------------
 int api_install(const pgs_advsync_config_v1 *config) {
-    if (config == nullptr) return PGRAZOR_ADVSYNC_ERR_NULL_ARG;
+    if (config == nullptr) return PGS_ADVSYNC_ERR_NULL_ARG;
 
     std::lock_guard<std::mutex> lock(g_install_mutex);
-    if (g_install_failed) return PGRAZOR_ADVSYNC_ERR_HOOK_FAILED;
+    if (g_install_failed) return PGS_ADVSYNC_ERR_HOOK_FAILED;
 
     if (config->version != PGS_ADVSYNC_API_VERSION ||
         config->size != sizeof(pgs_advsync_config_v1) ||
         !config_pointers_ok(config)) {
-        return PGRAZOR_ADVSYNC_ERR_BAD_CONFIG;
+        return PGS_ADVSYNC_ERR_BAD_CONFIG;
     }
 
     if (g_installed.load(std::memory_order_acquire)) {
         // Hook lives for the process lifetime; a repeat install of the identical config
         // is a no-op success, a different config is refused.
         return (std::memcmp(&g_config, config, sizeof(g_config)) == 0)
-                   ? PGRAZOR_ADVSYNC_OK
-                   : PGRAZOR_ADVSYNC_ERR_ALREADY_BOUND;
+                   ? PGS_ADVSYNC_OK
+                   : PGS_ADVSYNC_ERR_ALREADY_BOUND;
     }
 
     g_config = *config; // publish before any callback can read it (still under lock)
@@ -371,9 +371,9 @@ int api_install(const pgs_advsync_config_v1 *config) {
     // game's own method (the `if (orig)` chain becomes a no-op), silently skipping the
     // original Update/OnConfirm/OnDecline. That must never happen: undo exactly that
     // target so the original runs unmodified, and treat the install as failed.
-    if (rc_u == 0 && u == nullptr) { pgs_unhook(g_config.code_update);     rc_u = PGRAZOR_ADVSYNC_ERR_HOOK_FAILED; }
-    if (rc_c == 0 && c == nullptr) { pgs_unhook(g_config.code_on_confirm); rc_c = PGRAZOR_ADVSYNC_ERR_HOOK_FAILED; }
-    if (rc_d == 0 && d == nullptr) { pgs_unhook(g_config.code_on_decline); rc_d = PGRAZOR_ADVSYNC_ERR_HOOK_FAILED; }
+    if (rc_u == 0 && u == nullptr) { pgs_unhook(g_config.code_update);     rc_u = PGS_ADVSYNC_ERR_HOOK_FAILED; }
+    if (rc_c == 0 && c == nullptr) { pgs_unhook(g_config.code_on_confirm); rc_c = PGS_ADVSYNC_ERR_HOOK_FAILED; }
+    if (rc_d == 0 && d == nullptr) { pgs_unhook(g_config.code_on_decline); rc_d = PGS_ADVSYNC_ERR_HOOK_FAILED; }
 
     if (rc_u != 0 || rc_c != 0 || rc_d != 0 || rc_i0 != 0 || rc_i1 != 0 || rc_i2 != 0) {
         // A failed partial patch is permanent and inert: targets that patched cleanly
@@ -386,18 +386,18 @@ int api_install(const pgs_advsync_config_v1 *config) {
         g_orig_on_decline.store(d, std::memory_order_release);
         g_install_failed = true;
         logw("partial hook failure; policy permanently disabled, clean originals chained");
-        return PGRAZOR_ADVSYNC_ERR_HOOK_FAILED;
+        return PGS_ADVSYNC_ERR_HOOK_FAILED;
     }
 
     g_orig_update.store(u, std::memory_order_release);
     g_orig_on_confirm.store(c, std::memory_order_release);
     g_orig_on_decline.store(d, std::memory_order_release);
     g_installed.store(true, std::memory_order_release);
-    return PGRAZOR_ADVSYNC_OK;
+    return PGS_ADVSYNC_OK;
 }
 
 int api_update(int allowed, uint64_t lease_ms, uint64_t unity_tid) {
-    if (!g_installed.load(std::memory_order_acquire)) return PGRAZOR_ADVSYNC_ERR_NOT_INSTALLED;
+    if (!g_installed.load(std::memory_order_acquire)) return PGS_ADVSYNC_ERR_NOT_INSTALLED;
     if (unity_tid != 0) g_unity_tid.store(unity_tid, std::memory_order_release);
 
     if (allowed == 0) {
@@ -405,25 +405,25 @@ int api_update(int allowed, uint64_t lease_ms, uint64_t unity_tid) {
         // retire()/Update; nothing is driven and no GC handle is freed from here.
         g_allowed.store(false, std::memory_order_release);
         g_deadline_ns.store(0, std::memory_order_release);
-        return PGRAZOR_ADVSYNC_OK;
+        return PGS_ADVSYNC_OK;
     }
 
     g_allowed.store(false, std::memory_order_release);
     g_deadline_ns.store(0, std::memory_order_release);
-    if (!lease_ok(lease_ms)) return PGRAZOR_ADVSYNC_ERR_BAD_LEASE;
+    if (!lease_ok(lease_ms)) return PGS_ADVSYNC_ERR_BAD_LEASE;
     uint64_t now = boottime_ns();
-    if (now == 0) return PGRAZOR_ADVSYNC_ERR_NO_CLOCK;
+    if (now == 0) return PGS_ADVSYNC_ERR_NO_CLOCK;
 
     g_deadline_ns.store(now + lease_ms * 1000000ull, std::memory_order_release);
     g_allowed.store(true, std::memory_order_release);
-    return PGRAZOR_ADVSYNC_OK;
+    return PGS_ADVSYNC_OK;
 }
 
 int api_retire(uint64_t unity_tid) {
-    if (!g_installed.load(std::memory_order_acquire)) return PGRAZOR_ADVSYNC_ERR_NOT_INSTALLED;
+    if (!g_installed.load(std::memory_order_acquire)) return PGS_ADVSYNC_ERR_NOT_INSTALLED;
     if (unity_tid != 0 && unity_tid == static_cast<uint64_t>(gettid()))
         g_unity_tid.store(unity_tid, std::memory_order_release);
-    if (!on_unity_thread()) return PGRAZOR_ADVSYNC_OK; // only drop on the guard thread
+    if (!on_unity_thread()) return PGS_ADVSYNC_OK; // only drop on the guard thread
 
     uint64_t now = boottime_ns();
     bool active = policy_active_now();
@@ -433,7 +433,7 @@ int api_retire(uint64_t unity_tid) {
         if (!active || now <= g_slots[i].captured_ns || now - g_slots[i].captured_ns > kExpiryNs)
             drop_locked(i);
     }
-    return PGRAZOR_ADVSYNC_OK;
+    return PGS_ADVSYNC_OK;
 }
 
 int api_selftest() {

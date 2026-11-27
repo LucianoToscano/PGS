@@ -1,5 +1,7 @@
 # PGS internal naming migration — Phase 1
 
+**Current status (phase 15):** phase 12 already migrated Java/JNI, native library names and asset layout in source. The earlier sections below are historical records, not the current build layout. A complete signed APK and physical-device upgrade have not been verified.
+
 Status: code migration started in `refactor/pgs-native-build-names-phase1`. No new signed APK is released by this phase.
 
 [🇺🇸 English](PGS_TECHNICAL_MIGRATION.md) · [🇧🇷 Português (Brasil)](../pt-BR/PGS_TECHNICAL_MIGRATION.md)
@@ -110,3 +112,20 @@ PGS contributions have their own copyright notice under MIT, alongside the uncha
 ## Phase 14 — remaining active names and full inventory
 
 Use PGS names for Java thread labels, diagnostic tags, disposable cache directories, UI descriptions, and existing native typedef/macro consumers. Temporary-directory cleanup accepts both previous and current names. Non-secret runtime build options now accept PGS names while retaining the previous opt-in aliases. No persistent storage identifiers, Android package IDs, signing configuration, or binary ABI exports change in this phase. The [tracked-text inventory](../PGS_REMAINING_REFERENCES.json) records the remaining original-name references by file and category; it is a snapshot for review, not a declaration that every remaining reference is necessary. Binary content and temporary migration files are excluded. Legal attribution and historical release records stay intact. Full source and native ABI validation are required before integration.
+
+
+## Phase 15 — native source aliases and reproducible audit
+
+The new source aliases for equivalent enum values and function pointer types preserve the original enum type, numeric values, pointer signatures, struct tags, layout, ABI exports and dynamic lookup strings. The existing C++17 regression now checks enum type identity and that the legacy enumerators are not macros. File-local helper names and equivalent active references use the PGS spelling. No native feature behavior or protection policy changes.
+
+Run `python -B tools/pgs_reference_inventory.py --summary` from a Git checkout for a fresh read-only scan. Omit `--summary` for per-file counts. The general source CI runs the inventory test; the checked-in snapshot is an exact delta from the preceding inventory, not yet an independent scan. The new tool's UTF-8/NUL rule is explicit; differences in scope must be reconciled before comparing snapshots.
+
+### Classification for remaining work
+
+- Replaceable now: verified equivalent source-only constants, types, private helpers, and non-contract display or diagnostic labels.
+- Coordinated migration: hidden native getters and their weak/dynamic lookups, JS bridge names, DEX rewriter method prefixes, and runtime object names. Review every producer, consumer and fixture before changing these.
+- Compatibility: physical account and preference identifiers, AndroidKeyStore and notification channel IDs, Root and preview application/module IDs, old-input rejection markers, existing signing configuration and environment fallbacks. Preserve until an explicit compatible migration is established.
+- Attribution/license and historical records: retain original notices and prior release/build records.
+- Compatibility tests: retain assertions of old identifiers where they specifically prove fallback, ABI identity, input rejection or data continuity. Ordinary consumers may use verified equivalent PGS names.
+
+Remaining occurrence counts are not a determination that all remaining references are necessary. A complete signed release, authorized input, and physical-device testing are separate gates. No APK or ledger update is part of this batch.

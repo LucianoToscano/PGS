@@ -1,6 +1,6 @@
 // Standalone Android (x86_64 host) test of the real native incubation module. Modelled on
 // always_hit_test.cpp / adventure_sync_test.cpp: it dlopen()s the built core, pulls the
-// pgrazor_native_api v2 table and asks query_feature(9, 1) for the incubation API (it does
+// pgs_native_api v2 table and asks query_feature(9, 1) for the incubation API (it does
 // NOT invent any getter), then drives a compact fake IL2CPP through the install/tick/clear/
 // sample ABI. The fake models the game's own FindObjectOfType / DiContainer.Resolve,
 // Player.get_Incubators / IItemBag.get_AllPokemon, the GetEnumerator/MoveNext/get_Current/
@@ -409,7 +409,7 @@ int main(int argc, char **argv) {
     if (argc != 2) return 1;
     void *lib = dlopen(argv[1], RTLD_NOW | RTLD_LOCAL);
     if (!lib) { std::puts(dlerror()); return 2; }
-    auto getter = reinterpret_cast<const void *(*)(uint32_t)>(dlsym(lib, "pgrazor_native_api"));
+    auto getter = reinterpret_cast<const void *(*)(uint32_t)>(dlsym(lib, "pgs_native_api"));
     auto core = getter ? static_cast<const pgs_native_api_v2 *>(getter(2)) : nullptr;
     g_api = core ? static_cast<const pgs_incubation_api_v1 *>(core->query_feature(9, 1)) : nullptr;
     if (!g_api || g_api->size != 40) return 3;   // feature 9 must be wired into query_feature

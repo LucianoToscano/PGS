@@ -574,7 +574,7 @@ int main(int argc, char **argv) {
 #else
   if (argc != 2) return 80;
   void *lib = dlopen(argv[1], RTLD_NOW); if (!lib) return 81;
-  auto get = reinterpret_cast<const void *(*)(uint32_t)>(dlsym(lib, "pgrazor_native_api"));
+  auto get = reinterpret_cast<const void *(*)(uint32_t)>(dlsym(lib, "pgs_native_api"));
   loaded_core = get ? static_cast<const pgs_native_api_v2 *>(get(2)) : nullptr;
   if (!loaded_core || loaded_core->version != 2 || !loaded_core->query_feature) return 82;
   api = static_cast<const pgr_rocket_combat_api_v1 *>(loaded_core->query_feature(21, 1));

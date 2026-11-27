@@ -15,7 +15,7 @@
 #include <unistd.h>
 
 // Actual-library fixture harness for feature 47 (reusable IL2CPP metadata discovery/validation). It
-// resolves the table through the exported pgrazor_native_api v2 registry (query_feature(47,1) -- the
+// resolves the table through the exported pgs_native_api v2 registry (query_feature(47,1) -- the
 // coordinator registers the hidden getter there) and drives bind + resolve_class / validate_field /
 // validate_method / validate_code against a FAKE IL2CPP metadata universe: classes/fields/methods as
 // tokens, fixture il2cpp exports over them, and a fixture segment resolver over a REAL page-aligned
@@ -189,7 +189,7 @@ int main(int argc, char **argv) {
   const char *so = argc > 1 ? argv[1] : "./libpgrazor.so";
   void *lib = ::dlopen(so, RTLD_NOW | RTLD_LOCAL);
   if (!lib) { std::fprintf(stderr, "dlopen(%s) failed: %s\n", so, ::dlerror()); return 1; }
-  auto getter = reinterpret_cast<GetApiFn>(::dlsym(lib, "pgrazor_native_api"));
+  auto getter = reinterpret_cast<GetApiFn>(::dlsym(lib, "pgs_native_api"));
   assert(getter);
   const auto *core = static_cast<const pgs_native_api_v2 *>(getter(2));
   assert(core && core->query_feature);

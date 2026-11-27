@@ -76,7 +76,7 @@ int sample(uint64_t remaining,PgrCameraSamplerOutput &out){
 }
 int main(int argc,char **argv){
  if(argc!=2)return 1;void *lib=dlopen(argv[1],RTLD_NOW|RTLD_LOCAL);if(!lib){std::puts(dlerror());return 2;}
- auto get=reinterpret_cast<const void*(*)(uint32_t)>(dlsym(lib,"pgrazor_native_api"));
+ auto get=reinterpret_cast<const void*(*)(uint32_t)>(dlsym(lib,"pgs_native_api"));
  auto core=get?static_cast<const pgs_native_api_v2*>(get(2)):nullptr;assert(core&&core->query_feature(41,99)==nullptr);
  api=static_cast<const PgrCameraSamplerApi*>(core->query_feature(41,1));assert(api&&api->size==24&&api->version==1);
  PgrCameraSamplerConfig c{};c.version=1;c.size=sizeof(c);

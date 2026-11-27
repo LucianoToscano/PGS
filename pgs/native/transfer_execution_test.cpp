@@ -14,7 +14,7 @@
 #include <vector>
 
 // Real-API fake-IL2CPP harness for feature 23 (native transfer request lifecycle). It resolves the
-// table through the exported pgrazor_native_api v2 registry (query_feature(23,1)) and drives the
+// table through the exported pgs_native_api v2 registry (query_feature(23,1)) and drives the
 // controller against a fake managed heap (classes/methods/fields, GetPokemon identity lookup,
 // ReleasePokemon with optional null/throw/synchronous callbacks). The module installs NO hook and
 // re-runs the REAL feature-4 transfer_policy decide() in the same library. The 10 s timeout case
@@ -214,7 +214,7 @@ int main(int argc, char **argv) {
   const char *so_path = argc > 1 ? argv[1] : "./libpgrazor.so";
   void *lib = ::dlopen(so_path, RTLD_NOW | RTLD_LOCAL);
   if (!lib) { std::fprintf(stderr, "dlopen(%s) failed: %s\n", so_path, ::dlerror()); return 1; }
-  auto getter = reinterpret_cast<GetApiFn>(::dlsym(lib, "pgrazor_native_api"));
+  auto getter = reinterpret_cast<GetApiFn>(::dlsym(lib, "pgs_native_api"));
   assert(getter);
   const auto *core = static_cast<const pgs_native_api_v2 *>(getter(2));
   assert(core && core->size == 48);

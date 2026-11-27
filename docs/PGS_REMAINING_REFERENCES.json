@@ -1,12 +1,12 @@
 {
-  "scope": "Phase 15: exact per-file deltas from phase 14 tracked-text snapshot. Binary content, temporary migration files and this inventory excluded; independent UTF-8/NUL tracked scan runs in source CI.",
+  "scope": "Phase 16 provisional exact deltas from phase 15 checked-in snapshot. Independent CI scan and per-file comparison pending; prior scope discrepancy is documented.",
   "tracked_files": 2106,
   "text_files": 1032,
-  "changed_files": 14,
-  "added_files": 2,
-  "previous_occurrences": 2549,
-  "remaining_files": 540,
-  "remaining_occurrences": 2477,
+  "changed_files": 80,
+  "added_files": 0,
+  "previous_occurrences": 2477,
+  "remaining_files": 500,
+  "remaining_occurrences": 2382,
   "remaining_by_category": {
     "workflows": 71,
     "other": 119,
@@ -15,7 +15,7 @@
     "legal": 3,
     "native": 959,
     "javascript": 98,
-    "tests": 765,
+    "tests": 670,
     "java": 79,
     "vendor": 6
   },
@@ -416,11 +416,6 @@
       "occurrences": 36
     },
     {
-      "path": "pgs/native/always_hit_test.cpp",
-      "category": "tests",
-      "occurrences": 1
-    },
-    {
       "path": "pgs/native/always_hit.cpp",
       "category": "native",
       "occurrences": 6
@@ -429,11 +424,6 @@
       "path": "pgs/native/always_hit.h",
       "category": "native",
       "occurrences": 2
-    },
-    {
-      "path": "pgs/native/ar_throw_test.cpp",
-      "category": "tests",
-      "occurrences": 1
     },
     {
       "path": "pgs/native/ar_throw.cpp",
@@ -523,7 +513,7 @@
     {
       "path": "pgs/native/battles_test.cpp",
       "category": "tests",
-      "occurrences": 4
+      "occurrences": 3
     },
     {
       "path": "pgs/native/battles.cpp",
@@ -548,7 +538,7 @@
     {
       "path": "pgs/native/buddy_feeding_test.cpp",
       "category": "tests",
-      "occurrences": 4
+      "occurrences": 2
     },
     {
       "path": "pgs/native/buddy_feeding.cpp",
@@ -576,11 +566,6 @@
       "occurrences": 4
     },
     {
-      "path": "pgs/native/camera_metadata_test.cpp",
-      "category": "tests",
-      "occurrences": 1
-    },
-    {
       "path": "pgs/native/camera_metadata.cpp",
       "category": "native",
       "occurrences": 3
@@ -591,14 +576,9 @@
       "occurrences": 3
     },
     {
-      "path": "pgs/native/camera_sampler_lifetime_test.cpp",
-      "category": "tests",
-      "occurrences": 1
-    },
-    {
       "path": "pgs/native/camera_sampler_test.cpp",
       "category": "tests",
-      "occurrences": 3
+      "occurrences": 1
     },
     {
       "path": "pgs/native/camera_sampler.cpp",
@@ -613,7 +593,7 @@
     {
       "path": "pgs/native/catch_animation_test.cpp",
       "category": "tests",
-      "occurrences": 3
+      "occurrences": 1
     },
     {
       "path": "pgs/native/catch_animation.cpp",
@@ -626,14 +606,9 @@
       "occurrences": 2
     },
     {
-      "path": "pgs/native/catch_canvas_lifetime_test.cpp",
-      "category": "tests",
-      "occurrences": 1
-    },
-    {
       "path": "pgs/native/catch_canvas_test.cpp",
       "category": "tests",
-      "occurrences": 4
+      "occurrences": 2
     },
     {
       "path": "pgs/native/catch_canvas.cpp",
@@ -658,7 +633,7 @@
     {
       "path": "pgs/native/catch_completion_test.cpp",
       "category": "tests",
-      "occurrences": 4
+      "occurrences": 2
     },
     {
       "path": "pgs/native/catch_completion.cpp",
@@ -671,14 +646,9 @@
       "occurrences": 1
     },
     {
-      "path": "pgs/native/catch_discovery_lifetime_test.cpp",
-      "category": "tests",
-      "occurrences": 1
-    },
-    {
       "path": "pgs/native/catch_discovery_test.cpp",
       "category": "tests",
-      "occurrences": 3
+      "occurrences": 1
     },
     {
       "path": "pgs/native/catch_discovery.cpp",
@@ -696,11 +666,6 @@
       "occurrences": 2
     },
     {
-      "path": "pgs/native/catch_observers_test.cpp",
-      "category": "tests",
-      "occurrences": 1
-    },
-    {
       "path": "pgs/native/catch_observers.cpp",
       "category": "native",
       "occurrences": 1
@@ -711,11 +676,6 @@
       "occurrences": 2
     },
     {
-      "path": "pgs/native/catch_presentation_test.cpp",
-      "category": "tests",
-      "occurrences": 1
-    },
-    {
       "path": "pgs/native/catch_presentation.cpp",
       "category": "native",
       "occurrences": 1
@@ -723,11 +683,6 @@
     {
       "path": "pgs/native/catch_presentation.h",
       "category": "native",
-      "occurrences": 1
-    },
-    {
-      "path": "pgs/native/catch_wait_test.cpp",
-      "category": "tests",
       "occurrences": 1
     },
     {
@@ -743,11 +698,6 @@
     {
       "path": "pgs/native/CMakeLists.txt",
       "category": "native",
-      "occurrences": 1
-    },
-    {
-      "path": "pgs/native/combat_host_test.cpp",
-      "category": "tests",
       "occurrences": 1
     },
     {
@@ -771,14 +721,9 @@
       "occurrences": 4
     },
     {
-      "path": "pgs/native/details_completion_lifetime_test.cpp",
-      "category": "tests",
-      "occurrences": 1
-    },
-    {
       "path": "pgs/native/details_completion_test.cpp",
       "category": "tests",
-      "occurrences": 4
+      "occurrences": 2
     },
     {
       "path": "pgs/native/details_completion.cpp",
@@ -791,14 +736,9 @@
       "occurrences": 1
     },
     {
-      "path": "pgs/native/details_recovery_lifetime_test.cpp",
-      "category": "tests",
-      "occurrences": 1
-    },
-    {
       "path": "pgs/native/details_recovery_test.cpp",
       "category": "tests",
-      "occurrences": 4
+      "occurrences": 2
     },
     {
       "path": "pgs/native/details_recovery.cpp",
@@ -813,7 +753,7 @@
     {
       "path": "pgs/native/encounter_berries_test.cpp",
       "category": "tests",
-      "occurrences": 5
+      "occurrences": 4
     },
     {
       "path": "pgs/native/encounter_berries.cpp",
@@ -938,7 +878,7 @@
     {
       "path": "pgs/native/incoming_gifts_test.cpp",
       "category": "tests",
-      "occurrences": 4
+      "occurrences": 2
     },
     {
       "path": "pgs/native/incoming_gifts.cpp",
@@ -949,11 +889,6 @@
       "path": "pgs/native/incoming_gifts.h",
       "category": "native",
       "occurrences": 3
-    },
-    {
-      "path": "pgs/native/incubation_test.cpp",
-      "category": "tests",
-      "occurrences": 2
     },
     {
       "path": "pgs/native/incubation.cpp",
@@ -991,11 +926,6 @@
       "occurrences": 12
     },
     {
-      "path": "pgs/native/inventory_host_test.cpp",
-      "category": "tests",
-      "occurrences": 2
-    },
-    {
       "path": "pgs/native/inventory_host.cpp",
       "category": "native",
       "occurrences": 14
@@ -1008,7 +938,7 @@
     {
       "path": "pgs/native/items_test.cpp",
       "category": "tests",
-      "occurrences": 4
+      "occurrences": 2
     },
     {
       "path": "pgs/native/items.cpp",
@@ -1061,14 +991,9 @@
       "occurrences": 4
     },
     {
-      "path": "pgs/native/map_poi_independent_test.cpp",
-      "category": "tests",
-      "occurrences": 1
-    },
-    {
       "path": "pgs/native/map_poi_test.cpp",
       "category": "tests",
-      "occurrences": 3
+      "occurrences": 1
     },
     {
       "path": "pgs/native/map_poi.cpp",
@@ -1118,7 +1043,7 @@
     {
       "path": "pgs/native/outgoing_gifts_test.cpp",
       "category": "tests",
-      "occurrences": 4
+      "occurrences": 2
     },
     {
       "path": "pgs/native/outgoing_gifts.cpp",
@@ -1173,7 +1098,7 @@
     {
       "path": "pgs/native/quick_spin_test.cpp",
       "category": "tests",
-      "occurrences": 4
+      "occurrences": 2
     },
     {
       "path": "pgs/native/quick_spin.cpp",
@@ -1198,11 +1123,6 @@
     {
       "path": "pgs/native/quickball_host.h",
       "category": "native",
-      "occurrences": 1
-    },
-    {
-      "path": "pgs/native/quickball_metadata_test.cpp",
-      "category": "tests",
       "occurrences": 1
     },
     {
@@ -1236,11 +1156,6 @@
       "occurrences": 6
     },
     {
-      "path": "pgs/native/rocket_actions_test.cpp",
-      "category": "tests",
-      "occurrences": 1
-    },
-    {
       "path": "pgs/native/rocket_actions.cpp",
       "category": "native",
       "occurrences": 1
@@ -1253,7 +1168,7 @@
     {
       "path": "pgs/native/rocket_combat_test.cpp",
       "category": "tests",
-      "occurrences": 3
+      "occurrences": 2
     },
     {
       "path": "pgs/native/rocket_combat.cpp",
@@ -1264,11 +1179,6 @@
       "path": "pgs/native/rocket_combat.h",
       "category": "native",
       "occurrences": 5
-    },
-    {
-      "path": "pgs/native/rocket_minigame_test.cpp",
-      "category": "tests",
-      "occurrences": 1
     },
     {
       "path": "pgs/native/rocket_minigame.cpp",
@@ -1291,14 +1201,9 @@
       "occurrences": 4
     },
     {
-      "path": "pgs/native/routes_actions_independent_test.cpp",
-      "category": "tests",
-      "occurrences": 1
-    },
-    {
       "path": "pgs/native/routes_actions_test.cpp",
       "category": "tests",
-      "occurrences": 3
+      "occurrences": 1
     },
     {
       "path": "pgs/native/routes_actions.cpp",
@@ -1311,14 +1216,9 @@
       "occurrences": 1
     },
     {
-      "path": "pgs/native/routes_discovery_independent_test.cpp",
-      "category": "tests",
-      "occurrences": 1
-    },
-    {
       "path": "pgs/native/routes_discovery_test.cpp",
       "category": "tests",
-      "occurrences": 3
+      "occurrences": 1
     },
     {
       "path": "pgs/native/routes_discovery.cpp",
@@ -1328,11 +1228,6 @@
     {
       "path": "pgs/native/routes_discovery.h",
       "category": "native",
-      "occurrences": 1
-    },
-    {
-      "path": "pgs/native/routes_gate_test.cpp",
-      "category": "tests",
       "occurrences": 1
     },
     {
@@ -1346,11 +1241,6 @@
       "occurrences": 1
     },
     {
-      "path": "pgs/native/routes_host_test.cpp",
-      "category": "tests",
-      "occurrences": 1
-    },
-    {
       "path": "pgs/native/routes_host.cpp",
       "category": "native",
       "occurrences": 16
@@ -1358,11 +1248,6 @@
     {
       "path": "pgs/native/routes_host.h",
       "category": "native",
-      "occurrences": 1
-    },
-    {
-      "path": "pgs/native/routes_metadata_test.cpp",
-      "category": "tests",
       "occurrences": 1
     },
     {
@@ -1376,16 +1261,6 @@
       "occurrences": 1
     },
     {
-      "path": "pgs/native/routes_observers_regression_test.cpp",
-      "category": "tests",
-      "occurrences": 1
-    },
-    {
-      "path": "pgs/native/routes_observers_test.cpp",
-      "category": "tests",
-      "occurrences": 1
-    },
-    {
       "path": "pgs/native/routes_observers.cpp",
       "category": "native",
       "occurrences": 1
@@ -1396,16 +1271,6 @@
       "occurrences": 1
     },
     {
-      "path": "pgs/native/routes_services_regression_test.cpp",
-      "category": "tests",
-      "occurrences": 1
-    },
-    {
-      "path": "pgs/native/routes_services_test.cpp",
-      "category": "tests",
-      "occurrences": 1
-    },
-    {
       "path": "pgs/native/routes_services.cpp",
       "category": "native",
       "occurrences": 1
@@ -1413,11 +1278,6 @@
     {
       "path": "pgs/native/routes_services.h",
       "category": "native",
-      "occurrences": 1
-    },
-    {
-      "path": "pgs/native/routes_tracking_test.cpp",
-      "category": "tests",
       "occurrences": 1
     },
     {
@@ -1432,11 +1292,6 @@
     },
     {
       "path": "pgs/native/runtime_bootstrap_namespace_test.cpp",
-      "category": "tests",
-      "occurrences": 1
-    },
-    {
-      "path": "pgs/native/runtime_bootstrap_test.cpp",
       "category": "tests",
       "occurrences": 1
     },
@@ -1461,11 +1316,6 @@
       "occurrences": 18
     },
     {
-      "path": "pgs/native/runtime_host_test.cpp",
-      "category": "tests",
-      "occurrences": 1
-    },
-    {
       "path": "pgs/native/runtime_host.cpp",
       "category": "native",
       "occurrences": 30
@@ -1483,7 +1333,7 @@
     {
       "path": "pgs/native/runtime_metadata_test.cpp",
       "category": "tests",
-      "occurrences": 3
+      "occurrences": 1
     },
     {
       "path": "pgs/native/runtime_metadata.cpp",
@@ -1508,7 +1358,7 @@
     {
       "path": "pgs/native/runtime_transport_test.cpp",
       "category": "tests",
-      "occurrences": 4
+      "occurrences": 2
     },
     {
       "path": "pgs/native/runtime_transport.cpp",
@@ -1538,7 +1388,7 @@
     {
       "path": "pgs/native/shared_catch_test.cpp",
       "category": "tests",
-      "occurrences": 4
+      "occurrences": 2
     },
     {
       "path": "pgs/native/shared_catch.cpp",
@@ -1556,11 +1406,6 @@
       "occurrences": 20
     },
     {
-      "path": "pgs/native/shared_host_test.cpp",
-      "category": "tests",
-      "occurrences": 1
-    },
-    {
       "path": "pgs/native/shared_host.cpp",
       "category": "native",
       "occurrences": 24
@@ -1568,11 +1413,6 @@
     {
       "path": "pgs/native/shared_host.h",
       "category": "native",
-      "occurrences": 1
-    },
-    {
-      "path": "pgs/native/shared_metadata_test.cpp",
-      "category": "tests",
       "occurrences": 1
     },
     {
@@ -1636,11 +1476,6 @@
       "occurrences": 3
     },
     {
-      "path": "pgs/native/spawn_host_test.cpp",
-      "category": "tests",
-      "occurrences": 1
-    },
-    {
       "path": "pgs/native/spawn_host.cpp",
       "category": "native",
       "occurrences": 7
@@ -1658,7 +1493,7 @@
     {
       "path": "pgs/native/spin_camera_test.cpp",
       "category": "tests",
-      "occurrences": 2
+      "occurrences": 1
     },
     {
       "path": "pgs/native/spin_camera.cpp",
@@ -1691,14 +1526,9 @@
       "occurrences": 15
     },
     {
-      "path": "pgs/native/summary_completion_lifetime_test.cpp",
-      "category": "tests",
-      "occurrences": 1
-    },
-    {
       "path": "pgs/native/summary_completion_test.cpp",
       "category": "tests",
-      "occurrences": 4
+      "occurrences": 2
     },
     {
       "path": "pgs/native/summary_completion.cpp",
@@ -1726,11 +1556,6 @@
       "occurrences": 17
     },
     {
-      "path": "pgs/native/throws_test.cpp",
-      "category": "tests",
-      "occurrences": 1
-    },
-    {
       "path": "pgs/native/throws.cpp",
       "category": "native",
       "occurrences": 1
@@ -1748,7 +1573,7 @@
     {
       "path": "pgs/native/transfer_execution_test.cpp",
       "category": "tests",
-      "occurrences": 4
+      "occurrences": 2
     },
     {
       "path": "pgs/native/transfer_execution.cpp",
@@ -1768,7 +1593,7 @@
     {
       "path": "pgs/native/transfer_facts_test.cpp",
       "category": "tests",
-      "occurrences": 3
+      "occurrences": 1
     },
     {
       "path": "pgs/native/transfer_facts.cpp",
@@ -1781,11 +1606,6 @@
       "occurrences": 1
     },
     {
-      "path": "pgs/native/transfer_observers_test.cpp",
-      "category": "tests",
-      "occurrences": 1
-    },
-    {
       "path": "pgs/native/transfer_observers.cpp",
       "category": "native",
       "occurrences": 2
@@ -1793,11 +1613,6 @@
     {
       "path": "pgs/native/transfer_observers.h",
       "category": "native",
-      "occurrences": 1
-    },
-    {
-      "path": "pgs/native/transfer_policy_test.cpp",
-      "category": "tests",
       "occurrences": 1
     },
     {
@@ -1816,11 +1631,6 @@
       "occurrences": 1
     },
     {
-      "path": "pgs/native/unity_scheduler_test.cpp",
-      "category": "tests",
-      "occurrences": 1
-    },
-    {
       "path": "pgs/native/unity_scheduler.cpp",
       "category": "native",
       "occurrences": 2
@@ -1833,7 +1643,7 @@
     {
       "path": "pgs/native/vgp_actions_test.cpp",
       "category": "tests",
-      "occurrences": 3
+      "occurrences": 1
     },
     {
       "path": "pgs/native/vgp_actions.cpp",
@@ -1848,7 +1658,7 @@
     {
       "path": "pgs/native/vgp_aux_test.cpp",
       "category": "tests",
-      "occurrences": 3
+      "occurrences": 1
     },
     {
       "path": "pgs/native/vgp_aux.cpp",
@@ -1863,7 +1673,7 @@
     {
       "path": "pgs/native/vgp_candidates_test.cpp",
       "category": "tests",
-      "occurrences": 3
+      "occurrences": 1
     },
     {
       "path": "pgs/native/vgp_candidates.cpp",
@@ -1878,12 +1688,12 @@
     {
       "path": "pgs/native/vgp_controller_regression_test.cpp",
       "category": "tests",
-      "occurrences": 2
+      "occurrences": 1
     },
     {
       "path": "pgs/native/vgp_controller_test.cpp",
       "category": "tests",
-      "occurrences": 2
+      "occurrences": 1
     },
     {
       "path": "pgs/native/vgp_controller.cpp",
@@ -1898,7 +1708,7 @@
     {
       "path": "pgs/native/vgp_discovery_test.cpp",
       "category": "tests",
-      "occurrences": 3
+      "occurrences": 1
     },
     {
       "path": "pgs/native/vgp_discovery.cpp",
@@ -1913,7 +1723,7 @@
     {
       "path": "pgs/native/vgp_maintenance_test.cpp",
       "category": "tests",
-      "occurrences": 3
+      "occurrences": 1
     },
     {
       "path": "pgs/native/vgp_maintenance.cpp",
@@ -1923,11 +1733,6 @@
     {
       "path": "pgs/native/vgp_maintenance.h",
       "category": "native",
-      "occurrences": 1
-    },
-    {
-      "path": "pgs/native/vgp_marker_test.cpp",
-      "category": "tests",
       "occurrences": 1
     },
     {
@@ -1943,7 +1748,7 @@
     {
       "path": "pgs/native/vgp_policy_test.cpp",
       "category": "tests",
-      "occurrences": 4
+      "occurrences": 2
     },
     {
       "path": "pgs/native/vgp_policy.cpp",
@@ -1953,11 +1758,6 @@
     {
       "path": "pgs/native/vgp_policy.h",
       "category": "native",
-      "occurrences": 1
-    },
-    {
-      "path": "pgs/native/vgp_results_test.cpp",
-      "category": "tests",
       "occurrences": 1
     },
     {
@@ -2248,7 +2048,7 @@
     {
       "path": "pgs/test/native-core-test.cjs",
       "category": "tests",
-      "occurrences": 9
+      "occurrences": 16
     },
     {
       "path": "pgs/test/native-transport-host-test.cjs",
@@ -2720,5 +2520,12 @@
       "category": "tests",
       "occurrences": 1
     }
-  ]
+  ],
+  "previous_verified_scan": {
+    "tracked_files": 2106,
+    "text_files": 1031,
+    "remaining_files": 539,
+    "remaining_occurrences": 2468,
+    "workflow_run": 46019749696
+  }
 }

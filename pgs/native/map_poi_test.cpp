@@ -15,7 +15,7 @@
 #include <unistd.h>
 
 // Real-API fake-IL2CPP harness for feature 42 (native map POI snapshot). It resolves the table through the
-// exported pgrazor_native_api v2 registry (query_feature(42,1)) and drives scan() against a fake managed
+// exported pgs_native_api v2 registry (query_feature(42,1)) and drives scan() against a fake managed
 // heap: PokeStop/Gym candidates, each exposing a virtually-resolved Fort (System.String id + lat/lon +
 // optional gym display + raid info), boxed Boolean alive() results, a boxed team enum, and bounded
 // UnityEngine.Object[] arrays whose element data begins at offset 32. gchandle_new/get/free back a handle
@@ -255,7 +255,7 @@ int main(int argc, char **argv) {
   const char *so_path = argc > 1 ? argv[1] : "./libpgrazor.so";
   void *lib = ::dlopen(so_path, RTLD_NOW | RTLD_LOCAL);
   if (!lib) { std::fprintf(stderr, "dlopen(%s) failed: %s\n", so_path, ::dlerror()); return 1; }
-  auto getter = reinterpret_cast<GetApiFn>(::dlsym(lib, "pgrazor_native_api"));
+  auto getter = reinterpret_cast<GetApiFn>(::dlsym(lib, "pgs_native_api"));
   assert(getter);
   const auto *core = static_cast<const pgs_native_api_v2 *>(getter(2));
   assert(core && core->size == 48);

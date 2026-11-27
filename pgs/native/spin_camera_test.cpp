@@ -178,7 +178,7 @@ int main(int argc, char **argv) {
         return 1;
     }
 
-    auto getter = reinterpret_cast<GetHookApiFn>(::dlsym(lib, "pgrazor_native_api"));
+    auto getter = reinterpret_cast<GetHookApiFn>(::dlsym(lib, "pgs_native_api"));
     assert(getter);
     const auto *core = static_cast<const pgs_native_api_v2 *>(getter(2));
     assert(core && core->size == 48);

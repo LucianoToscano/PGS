@@ -504,7 +504,7 @@ int main(int argc, char **argv) {
   assert(argc == 2);
   void *library = dlopen(argv[1], RTLD_NOW | RTLD_LOCAL);
   assert(library);
-  auto get = reinterpret_cast<const void *(*)(uint32_t)>(dlsym(library, "pgrazor_native_api"));
+  auto get = reinterpret_cast<const void *(*)(uint32_t)>(dlsym(library, "pgs_native_api"));
   assert(get);
   auto *core = static_cast<const pgs_native_api_v2 *>(get(2));
   assert(core && core->query_feature);

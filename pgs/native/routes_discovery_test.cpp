@@ -13,7 +13,7 @@
 #include <vector>
 
 // Real-API fake-IL2CPP harness for feature 44 (native Routes discovery reader + rooted route cache). It
-// resolves the table through the exported pgrazor_native_api v2 registry (query_feature(44,1)) and drives
+// resolves the table through the exported pgs_native_api v2 registry (query_feature(44,1)) and drives
 // discover() / points() / lookup() / drain() against a fake managed heap: a RoutesService -> didn ->
 // NearbyRoutesInfo -> List<SharedRouteProto>, each proto with an id/name String, reversible/distance/stats
 // fields, start/end RoutePoiAnchor -> RouteWaypointProto, and a RepeatedField<RouteWaypointProto>.
@@ -182,7 +182,7 @@ int main(int argc, char **argv) {
   const char *so = argc > 1 ? argv[1] : "./libpgrazor.so";
   void *lib = ::dlopen(so, RTLD_NOW | RTLD_LOCAL);
   if (!lib) { std::fprintf(stderr, "dlopen(%s) failed: %s\n", so, ::dlerror()); return 1; }
-  auto getter = reinterpret_cast<GetApiFn>(::dlsym(lib, "pgrazor_native_api"));
+  auto getter = reinterpret_cast<GetApiFn>(::dlsym(lib, "pgs_native_api"));
   assert(getter);
   const auto *core = static_cast<const pgs_native_api_v2 *>(getter(2));
   assert(core && core->query_feature);

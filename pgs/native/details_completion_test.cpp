@@ -14,7 +14,7 @@
 #include <unistd.h>
 
 // Production feature 37 ABI/behaviour harness (native post-catch DETAILS completion). It resolves the
-// table through the exported pgrazor_native_api v2 registry (query_feature(37,1)) and drives the
+// table through the exported pgs_native_api v2 registry (query_feature(37,1)) and drives the
 // controller against a fake IL2CPP heap of borrowed GC handles: a details scene (gui/view/response/
 // data/pokemon/action) plus a one-element backing list, a static op_Implicit "alive" probe returning a
 // boxed System.Boolean, a list.count() returning a boxed System.Int32, a list.item(int) returning the
@@ -245,7 +245,7 @@ int main(int argc, char **argv) {
   const char *so_path = argc > 1 ? argv[1] : "./libpgrazor.so";
   void *lib = ::dlopen(so_path, RTLD_NOW | RTLD_LOCAL);
   if (!lib) { std::fprintf(stderr, "dlopen(%s) failed: %s\n", so_path, ::dlerror()); return 1; }
-  auto getter = reinterpret_cast<GetApiFn>(::dlsym(lib, "pgrazor_native_api"));
+  auto getter = reinterpret_cast<GetApiFn>(::dlsym(lib, "pgs_native_api"));
   assert(getter);
   const auto *core = static_cast<const pgs_native_api_v2 *>(getter(2));
   assert(core && core->size == sizeof(pgs_native_api_v2));

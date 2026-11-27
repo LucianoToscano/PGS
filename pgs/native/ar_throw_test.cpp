@@ -23,7 +23,7 @@ __attribute__((noinline)) void *capture(void *,PgrThrowValue t,void *v,void *m){
 }
 int main(int argc,char **argv){
  if(argc!=2)return 1;void *lib=dlopen(argv[1],RTLD_NOW|RTLD_LOCAL);if(!lib){std::puts(dlerror());return 2;}
- auto getter=reinterpret_cast<const void *(*)(uint32_t)>(dlsym(lib,"pgrazor_native_api"));
+ auto getter=reinterpret_cast<const void *(*)(uint32_t)>(dlsym(lib,"pgs_native_api"));
  auto core=getter?static_cast<const pgs_native_api_v2 *>(getter(2)):nullptr;
  auto api=core?static_cast<const PgrArThrowApi *>(core->query_feature(5,1)):nullptr;if(!api||api->size!=32)return 3;
  PgrArThrowConfig cfg{1,sizeof(cfg),(void *)&capture,&wild,&values,(void *)&klass,(void *)&assignable,(void *)&allocate,(void *)&root,(void *)&target,(void *)&free_root,(void *)&set,&proximity,&awareness,&frightened};

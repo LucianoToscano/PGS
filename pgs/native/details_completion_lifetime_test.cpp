@@ -101,7 +101,7 @@ PgrDetailsCompletionOutput complete(int expected=1){PgrDetailsCompletionOutput o
 }
 int main(int argc,char **argv){
  assert(argc==2);void *lib=dlopen(argv[1],RTLD_NOW|RTLD_LOCAL);assert(lib);
- auto get=reinterpret_cast<const void*(*)(uint32_t)>(dlsym(lib,"pgrazor_native_api"));assert(get);
+ auto get=reinterpret_cast<const void*(*)(uint32_t)>(dlsym(lib,"pgs_native_api"));assert(get);
  auto *core=static_cast<const pgs_native_api_v2*>(get(2));assert(core);
  api=static_cast<const PgrDetailsCompletionApi*>(core->query_feature(37,1));assert(api&&api->size==64);
  assert(sizeof(PgrDetailsCompletionConfig)==272&&sizeof(req)==80);owner=gettid();auto cfg=config();assert(api->install(&cfg)==0);

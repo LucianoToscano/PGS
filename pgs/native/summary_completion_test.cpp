@@ -13,7 +13,7 @@
 #include <unistd.h>
 
 // Real-API fake-IL2CPP harness for feature 36 (native ordinary summary dismissal). It resolves the
-// table through the exported pgrazor_native_api v2 registry (query_feature(36,1)) and drives the
+// table through the exported pgs_native_api v2 registry (query_feature(36,1)) and drives the
 // controller against a fake managed heap (gui/state/response/action objects, field reads, a static
 // op_Implicit "alive" probe that returns a boxed System.Boolean, and a GuiController.Dismiss() that
 // advances currentState and can throw or re-enter). The module installs NO hook and NEVER calls back
@@ -195,7 +195,7 @@ int main(int argc, char **argv) {
   const char *so_path = argc > 1 ? argv[1] : "./libpgrazor.so";
   void *lib = ::dlopen(so_path, RTLD_NOW | RTLD_LOCAL);
   if (!lib) { std::fprintf(stderr, "dlopen(%s) failed: %s\n", so_path, ::dlerror()); return 1; }
-  auto getter = reinterpret_cast<GetApiFn>(::dlsym(lib, "pgrazor_native_api"));
+  auto getter = reinterpret_cast<GetApiFn>(::dlsym(lib, "pgs_native_api"));
   assert(getter);
   const auto *core = static_cast<const pgs_native_api_v2 *>(getter(2));
   assert(core && core->size == 48);

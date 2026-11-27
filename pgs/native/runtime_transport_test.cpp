@@ -13,7 +13,7 @@
 
 // Native-process unit harness for feature 52 (compiled runtime transport). This module installs NO hook and
 // makes NO managed/il2cpp call -- it is pure bounded typed bookkeeping -- so the meaningful actual-native test
-// is this process-level harness resolved through the exported pgrazor_native_api v2 registry
+// is this process-level harness resolved through the exported pgs_native_api v2 registry
 // (query_feature(52,1)), NOT a Dobby attach (there is no target). The coordinator builds and runs it against
 // libpgrazor.so after registering query_feature case 52 and linking runtime_transport.cpp. It exercises frame
 // malformation, snapshot staleness/freshness, guarded getters, coord null sentinel, exact 64-bit scalars,
@@ -145,7 +145,7 @@ int main(int argc, char **argv) {
   const char *so_path = argc > 1 ? argv[1] : "./libpgrazor.so";
   void *lib = ::dlopen(so_path, RTLD_NOW | RTLD_LOCAL);
   if (!lib) { std::fprintf(stderr, "dlopen(%s) failed: %s\n", so_path, ::dlerror()); return 1; }
-  auto getter = reinterpret_cast<GetApiFn>(::dlsym(lib, "pgrazor_native_api"));
+  auto getter = reinterpret_cast<GetApiFn>(::dlsym(lib, "pgs_native_api"));
   assert(getter);
   const auto *core = static_cast<const pgs_native_api_v2 *>(getter(2));
   assert(core && core->size == 48);

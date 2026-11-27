@@ -89,7 +89,7 @@ int main(int argc, char **argv) {
     if (argc != 2) return 1;
     void *lib = dlopen(argv[1], RTLD_NOW | RTLD_LOCAL);
     if (!lib) { std::puts(dlerror()); return 2; }
-    auto getter = reinterpret_cast<const void *(*)(uint32_t)>(dlsym(lib, "pgrazor_native_api"));
+    auto getter = reinterpret_cast<const void *(*)(uint32_t)>(dlsym(lib, "pgs_native_api"));
     auto core = getter ? static_cast<const pgs_native_api_v2 *>(getter(2)) : nullptr;
     auto api  = core ? static_cast<const PgrAlwaysHitApi *>(core->query_feature(7, 1)) : nullptr;
     if (!api || api->size != 40) return 3; // 40-byte table incl. tick

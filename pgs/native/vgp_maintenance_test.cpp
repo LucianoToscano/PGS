@@ -12,7 +12,7 @@
 #include <unistd.h>
 
 // Real-API fake-IL2CPP harness for feature 32 (native VGP maintenance). It resolves the table through the
-// exported pgrazor_native_api v2 registry (query_feature(32,1)) and drives balls()/cooldown() against a
+// exported pgs_native_api v2 registry (query_feature(32,1)) and drives balls()/cooldown() against a
 // fake managed heap: a service object whose item-bag reference field yields an item bag, an Int32 count
 // box, a Boolean alive box, a stop object with a virtual SetCooldownTime slot, and a spin-result object
 // carrying an Int32 result code plus an Int64 until field. gchandle_new/get/free back a handle table so
@@ -185,7 +185,7 @@ int main(int argc, char **argv) {
   const char *so_path = argc > 1 ? argv[1] : "./libpgrazor.so";
   void *lib = ::dlopen(so_path, RTLD_NOW | RTLD_LOCAL);
   if (!lib) { std::fprintf(stderr, "dlopen(%s) failed: %s\n", so_path, ::dlerror()); return 1; }
-  auto getter = reinterpret_cast<GetApiFn>(::dlsym(lib, "pgrazor_native_api"));
+  auto getter = reinterpret_cast<GetApiFn>(::dlsym(lib, "pgs_native_api"));
   assert(getter);
   const auto *core = static_cast<const pgs_native_api_v2 *>(getter(2));
   assert(core && core->size == 48);

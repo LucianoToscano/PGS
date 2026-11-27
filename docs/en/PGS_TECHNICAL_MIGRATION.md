@@ -129,3 +129,9 @@ Run `python -B tools/pgs_reference_inventory.py --summary` from a Git checkout f
 - Compatibility tests: retain assertions of old identifiers where they specifically prove fallback, ABI identity, input rejection or data continuity. Ordinary consumers may use verified equivalent PGS names.
 
 Remaining occurrence counts are not a determination that all remaining references are necessary. A complete signed release, authorized input, and physical-device testing are separate gates. No APK or ledger update is part of this batch.
+
+## Phase 16 — canonical factory consumers and inventory reconciliation
+
+The active JS loader resolves `pgs_native_api` first and uses the existing legacy export only if the primary symbol is absent. It retains the exact previous ABI checks and never falls back on an ABI validation error. Ordinary native test fixtures now resolve the PGS factory; an explicit integration fixture verifies identical v1/v2 pointers and unsupported-version rejection through both exports. The JS fixture checks primary lookup, compatibility fallback, missing symbols and existing ABI rejection. Neither export nor feature behavior changes.
+
+Phase 15 independent CI reported 2,468 references in 539 files, from 1,031 UTF-8 text files among 2,106 tracked paths (snapshot excluded). The checked-in delta snapshot reported 2,477 references. The difference is nine references and one matching file in the native category; its precise cause is not established. Phase 16 preserves exact deltas against the checked-in snapshot and adds `--compare-snapshot` to report the differing paths and counts from a fresh scan, including during CI. Reconcile the scope before declaring an exact new independent count. License, data keys, old input rejection, release history and signing contracts are untouched. No APK issuance or physical-device verification is implied.

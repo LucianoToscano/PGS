@@ -63,7 +63,7 @@ void invoke(){void *e=nullptr;assert(call_invoke(&execute_token,nullptr,nullptr,
 }
 int main(int argc,char **argv){
  assert(argc==2);void *library=dlopen(argv[1],RTLD_NOW|RTLD_LOCAL);assert(library);
- auto get=reinterpret_cast<const void *(*)(uint32_t)>(dlsym(library,"pgrazor_native_api"));assert(get);
+ auto get=reinterpret_cast<const void *(*)(uint32_t)>(dlsym(library,"pgs_native_api"));assert(get);
  const auto *core=static_cast<const pgs_native_api_v2 *>(get(2));assert(core&&core->query_feature);
  assert(!core->query_feature(48,1));api=static_cast<const PgrUnitySchedulerApi *>(core->query_feature(48,2));
  assert(api&&api->version==2&&api->size==sizeof(*api));assert(!api->activate());

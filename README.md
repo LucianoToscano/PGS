@@ -37,21 +37,20 @@ The feature list and how-to guides live on the website, so there is one place to
 - **[Feature guides](https://jpitty03.github.io/PGRazor/?guide=all)**: where each feature is in the app and how to use it.
 - **[Changelog](CHANGELOG.md)** and [release notes](https://github.com/jpitty03/PGRazor/releases): what each version added.
 
-## Install
+## Install PGS (Android, non-root)
 
-There are two builds. Each release lists the Pokémon GO version it supports; native features are built for that exact version.
+The latest **PGS** candidate verified by GitHub Actions is **v0.3.8-pgs.3**, based on **Pokémon GO 0.439.0** for ARM64. It is a complete APK, not the small source/preview package. **Installation, login and gameplay on a real device have not yet been confirmed.**
 
-**PGRazor (no root).** One APK for ARM64 Android phones and the MuMu emulator.
+1. Open the [PGS v0.3.8-pgs.3 successful build](https://github.com/LucianoToscano/PGS/actions/runs/45963966748). Under **Artifacts**, download **PGS-v0.3.8-pgs.3** (GitHub sign-in may be required).
+2. Extract the archive and use **PGS.apk**. Do not attempt to install the artifact ZIP, the source-tools bundle or a ~2 MB preview.
+3. Verify the `PGS.apk` SHA-256 checksum: `1e42c50f84afe5edf9570dfa808ba5e4be99b64d3ae28199b7316981c7414d4c`. The artifact also contains `SHA256SUMS.txt` and `PGS.json`.
+4. Install on an ARM64 device and check launch and login. Report the exact Android error if installation fails; a successful GitHub build is **not** a successful device installation.
 
-1. Open [Releases](https://github.com/jpitty03/PGRazor/releases/latest) and download **PGRazor.apk**, not a source archive.
-2. Open the APK on your device and allow installation from your file manager.
-3. Launch **Pokémon GO** and tap the small **R** icon for the quick menu. Choose **Settings** for the full controls.
+The installer filename is `PGS.apk`, but the **installed app name remains Pokémon GO** and its package remains **`com.nianticlabs.pokemongo`**. The permanent PGS signing certificate is documented in [PGS update policy](docs/PGS_UPDATE_POLICY.md). After the initial installation, future updates must keep this package, certificate and increasing `versionCode`; they should not require removing the installed PGS or its saved data. Physical in-place update testing remains pending.
 
-A Play Store install is signed with a different certificate, so PGRazor cannot update it in place; it replaces that copy.
+**Availability:** this specific GitHub Actions artifact is retained for seven days and is scheduled to expire on **December 4, 2026**. A successful CI/source-tools artifact is not an alternative game installer. No permanent PGS GitHub Release has been published yet.
 
-**PGRazor Root (experimental).** For rooted devices using the official game. It installs a Zygisk module through Magisk 27+, KernelSU, or APatch and leaves the game's APK untouched. Download **PGRazor-Root.apk** from the same release and follow [the Root guide](docs/ROOTED.md).
-
-Each release includes a changelog, SHA-256 checksums, and build information. See [installation and builds](docs/BUILDING.md) for details.
+**Do not confuse PGS with PGRazor.** The [upstream PGRazor releases](https://github.com/jpitty03/PGRazor/releases) and [upstream Root guide](docs/ROOTED.md) document the original, separate project; their APKs and signing identities are **not** PGS updates. This PGS download does not modify PGBR, PGSharp or PGRazor. A dedicated, protected full-release workflow is still required before a future PGS version can be published.
 
 ## Good to know
 

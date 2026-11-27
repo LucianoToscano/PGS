@@ -242,7 +242,7 @@ void install_social(){
  uint32_t instruction=0;memcpy(&instruction,h(H_GF_M_OPEN_READY_CODE),4);needs_visibility=instruction==0xd65f03c0;
  void *addresses[]={h(H_GF_M_PROF_OPEN_CODE),h(H_GF_M_PROF_CLOSE_CODE),h(H_GF_M_OPEN_READY_CODE),h(H_GF_M_OPEN_CODE),h(H_GF_M_OPEN_CLOSE_CODE),h(H_GF_M_SEQ_CODE),h(H_GF_M_RPC_RESULT_CODE),h(H_GF_M_RPC_FINALLY_CODE),h(H_GF_M_CHOOSE_CODE)};
  void *hooks[]={reinterpret_cast<void*>(hook_zero<0,true>),reinterpret_cast<void*>(hook_zero<1,false>),reinterpret_cast<void*>(hook_zero<2,true>),reinterpret_cast<void*>(hook_zero<3,false>),reinterpret_cast<void*>(hook_zero<4,false>),reinterpret_cast<void*>(hook_sequence),reinterpret_cast<void*>(hook_result),reinterpret_cast<void*>(hook_zero<7,true>),reinterpret_cast<void*>(hook_choose)};
- std::lock_guard<std::mutex> lock(hook_lock);for(unsigned i=0;i<9;++i){if(i==2&&needs_visibility)continue;if(!addresses[i]||pgrazor_hook(addresses[i],hooks[i],&originals[i])!=0){faults.fetch_or(PGR_IH_SOCIAL);return;}}
+ std::lock_guard<std::mutex> lock(hook_lock);for(unsigned i=0;i<9;++i){if(i==2&&needs_visibility)continue;if(!addresses[i]||pgs_hook(addresses[i],hooks[i],&originals[i])!=0){faults.fetch_or(PGR_IH_SOCIAL);return;}}
  social_hooks=true;
 }
 void drain_social(){

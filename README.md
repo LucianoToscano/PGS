@@ -1,4 +1,4 @@
-<p align="center"><img src="pgrazor/branding/pgrazor.svg" width="88" alt="PGRazor logo"></p>
+<p align="center"><img src="pgrazor/branding/pgrazor.svg" width="88" alt="PGS emblem (upstream drawing retained)"></p>
 <h1 align="center">PGS — Pokémon GO Spoofers</h1>
 <p align="center">A compact Android interface for location controls and Pokémon GO automation.</p>
 
@@ -27,7 +27,7 @@ Translations are bundled offline. Search accepts both the selected language and 
 
 See [the language guide and translation workflow](docs/PGS_LANGUAGES.md) for the complete language list, backup behavior, validation and translation maintenance.
 
-<p align="center"><img src="website/public/images/main-menu.png" width="320" alt="PGRazor dark-theme main settings menu with feature sections and Discord footer"></p>
+<p align="center"><img src="website/public/images/main-menu.png" width="320" alt="PGS dark-theme main settings menu with feature sections and Discord footer"></p>
 
 ## Features and guides
 
@@ -66,7 +66,7 @@ Join the [PGS Discord](https://discord.gg/SdwU4VnfW), also linked from the setti
 
 - [Build, signing, release CI, and installation](docs/BUILDING.md)
 - [Architecture and compatibility](docs/ARCHITECTURE.md)
-- [PGRazor Root](docs/ROOTED.md)
+- [Root support (upstream reference; no PGS Root release)](docs/ROOTED.md)
 - [Native migration verification and history](docs/NATIVE_MIGRATION.md)
 - [Maintainability review and refactoring priorities](docs/MAINTAINABILITY.md)
 - [Contributing and checks](CONTRIBUTING.md)
@@ -86,8 +86,8 @@ docs/                 Build, architecture, and release notes
 pgrazor/src/          Android UI and control bridge
 pgrazor/native/       Compiled gameplay runtime and native tests
 pgrazor/art/          Compiled Android runtime bridges
-pgrazor/zygisk/       PGRazor Root loader
-pgrazor/root-installer/  PGRazor Root installer app
+pgrazor/zygisk/       Legacy upstream Root loader (not released by PGS)
+pgrazor/root-installer/  Legacy upstream Root installer (not released by PGS)
 pgrazor/test/         Regression tests
 pgrazor/vendor/       Pinned dependencies, provenance, and licenses
 tools/                Checks, source packaging, release CI setup

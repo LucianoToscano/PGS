@@ -11,7 +11,7 @@ import android.widget.*;
 import java.util.Locale;
 
 /**
- * The full-screen PGRazor settings body: a home screen of icon rows, one per category, each opening
+ * The full-screen PGS settings body: a home screen of icon rows, one per category, each opening
  * a page that holds that category's switches, checkboxes, status captions and groups, plus their
  * construction and per-frame refresh. Extracted from {@link Pad}, which keeps overlay
  * attachment/lifecycle, the launcher/quick menu and the joystick. This panel never touches those
@@ -208,7 +208,7 @@ final class SettingsPanel {
     /** A clean close affix: a small X drawn inside a 48dp hitbox. */
     private final class CloseIcon extends View {
         private final Paint paint=new Paint(Paint.ANTI_ALIAS_FLAG);
-        CloseIcon(Context c){super(c);setContentDescription(I18n.t("Close PGRazor settings"));setFocusable(true);setClickable(true);
+        CloseIcon(Context c){super(c);setContentDescription(I18n.t("Close PGS settings"));setFocusable(true);setClickable(true);
             setBackground(new android.graphics.drawable.RippleDrawable(android.content.res.ColorStateList.valueOf(0x3345e1ba),null,rounded(0xffffffff,24)));}
         protected void onDraw(Canvas c){super.onDraw(c);float cx=getWidth()/2f,cy=getHeight()/2f,r=dp(8);paint.setStyle(Paint.Style.STROKE);paint.setStrokeCap(Paint.Cap.ROUND);paint.setStrokeWidth(dp(2));paint.setColor(muted());c.drawLine(cx-r,cy-r,cx+r,cy+r,paint);c.drawLine(cx-r,cy+r,cx+r,cy-r,paint);}
     }
@@ -287,7 +287,7 @@ final class SettingsPanel {
         versionLabel.setTypeface(SettingsUi.mono());
         versionLabel.setSingleLine(true); versionLabel.setGravity(Gravity.CENTER_VERTICAL);
         versionLabel.setPadding(dp(4), 0, dp(6), 0);
-        versionLabel.setContentDescription(I18n.format("PGRazor version %1$s",BuildVersion.NAME));
+        versionLabel.setContentDescription(I18n.format("PGS version %1$s",BuildVersion.NAME));
         captions.add(versionLabel);
         header.addView(versionLabel, new LinearLayout.LayoutParams(-2, dp(48)));
         closeIcon = new CloseIcon(activity); header.addView(closeIcon, new LinearLayout.LayoutParams(dp(48), dp(48)));
@@ -324,7 +324,7 @@ final class SettingsPanel {
 
         discord = text("Join our Discord", 12, accent());
         discord.setGravity(Gravity.CENTER); discord.setMinimumHeight(dp(44));
-        discord.setContentDescription(I18n.t("Join the PGRazor Discord community"));
+        discord.setContentDescription(I18n.t("Join the PGS Discord community"));
         discord.setClickable(true); discord.setFocusable(true);
         discord.setBackground(SettingsUi.pressable(activity));
         content.addView(discord, new LinearLayout.LayoutParams(-1,dp(44)));
@@ -442,7 +442,7 @@ final class SettingsPanel {
         encounterCounterSwitch.setOnCheckedChangeListener((v,checked) -> { if(checked==Control.encounterCounter())return; Control.setEncounterCounter(encounterCounterSwitch.isChecked()); host.refresh(); });
         encounterOverlaySwitch = switchRow(encounters, "Show the count on the map"); encounterOverlaySwitch.setChecked(Control.encounterOverlay());
         encounterOverlaySwitch.setOnCheckedChangeListener((v,checked) -> { if(checked==Control.encounterOverlay())return; Control.setEncounterOverlay(encounterOverlaySwitch.isChecked()); host.refresh(); });
-        caption(encounters, "Wild Pokémon this account has encountered in the last 24 hours on this device while PGRazor was running, shown next to the PGRazor title. Encounters made elsewhere, and lure, incense, raid and research encounters, are not counted.");
+        caption(encounters, "Wild Pokémon this account has encountered in the last 24 hours on this device while PGS was running, shown next to the PGS title. Encounters made elsewhere, and lure, incense, raid and research encounters, are not counted.");
     }
 
     private void buildCatchingPage() {
@@ -709,7 +709,7 @@ final class SettingsPanel {
         battleChoice(maxC,5,"Auto charged attack");
         battleChoice(maxC,6,"Auto Max attack");
         battleChoice(maxC,9,"Auto dodge");
-        caption(maxC,"Automatically moves toward nearby Max energy orbs during battle while PGRazor is active.");
+        caption(maxC,"Automatically moves toward nearby Max energy orbs during battle while PGS is active.");
         battleStatus = caption(battleC, "");
     }
 

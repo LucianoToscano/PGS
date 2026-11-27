@@ -83,7 +83,7 @@ final class SettingsBackup {
     }
     boolean isBusy(){return busy;}
     private static synchronized JSONObject snapshot(Context context)throws Exception{
-        JSONObject result=new JSONObject();result.put("format","PGRazor settings");result.put("version",1);result.put("speedKmh",Control.engine.speedKmh);
+        JSONObject result=new JSONObject();result.put("format","PGS settings");result.put("version",1);result.put("speedKmh",Control.engine.speedKmh);
         JSONObject settings=new JSONObject();Properties p=Control.exportSettings();
         for(String key:SettingsBackupRules.SETTINGS)if(p.containsKey(key))settings.put(key,p.getProperty(key));result.put("settings",settings);
         JSONObject prefs=new JSONObject();for(int i=0;i<SCOPES.length;i++){

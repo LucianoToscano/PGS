@@ -152,6 +152,40 @@ async function moonaniRows(body,now) {
   return spotsFromSpawns(pokemons,body.data.length,now);
 }
 
+// GOCoords (https://gocoords.com/api/spawns) publishes a free public hundo feed
+// (schema_version 2, max 10 rows, iv=100 == 15/15/15). Rows carrying a game
+// encounter_id go to `hundos`; provider-keyed rows without one become
+// synthetic-id `spots` (never invent encounter ids). Dormant until the
+// operator adds the SOURCES entry and attests permission, like PGSharp.
+export async function gocoordsRows(body,now) {
+  if (!body || Number(body.schema_version)!==2 || !Array.isArray(body.rows)) throw Error("gocoords_schema");
+  const generated=Date.parse(body.generated_at);
+  if (!Number.isFinite(generated) || generated<now-600000 || generated>now+60000) throw Error("invalid_feed");
+  const hundos=[], spots=[];
+  for (const p of body.rows) {
+    if (!p) continue;
+    if (num(p.iv)!==100) continue; // IV 45/45 == 15/15/15
+    const attrs=[p.atk_iv,p.def_iv,p.sta_iv].map(num);
+    if ([p.atk_iv,p.def_iv,p.sta_iv].some(v=>v!=null) && !attrs.every(v=>v===15)) continue;
+    const end=Date.parse(p.expires_at_utc), lat=num(p.lat), lon=num(p.lon), dex=num(p.pokemon_id);
+    if (!Number.isFinite(end) || end<now+60000 || !Number.isFinite(lat) || Math.abs(lat)>90 ||
+        !Number.isFinite(lon) || Math.abs(lon)>180 || (lat===0 && lon===0) ||
+        !Number.isSafeInteger(dex) || dex<=0) continue;
+    const form=Number.isSafeInteger(num(p.form))&&num(p.form)>=0?num(p.form):0;
+    const cp=Number.isSafeInteger(num(p.cp))&&num(p.cp)>=0?num(p.cp):0;
+    const level=Number.isFinite(num(p.lvl))&&num(p.lvl)>=0&&num(p.lvl)<=55?num(p.lvl):0;
+    const enc=encounter(p.encounter_id);
+    if (enc && enc!=="0") { hundos.push([enc,dex,form,lat,lon,end,cp,level]); continue; }
+    const seed="gocoords:"+(typeof p.provider_unique_id==="string"&&p.provider_unique_id?p.provider_unique_id:[dex,lat.toFixed(5),lon.toFixed(5),Math.floor(end/60000)].join(":"));
+    const hash=new Uint8Array(await crypto.subtle.digest("SHA-1",new TextEncoder().encode(seed)));
+    const key="s"+Array.from(hash.slice(0,8),v=>v.toString(16).padStart(2,"0")).join("");
+    spots.push([key,dex,form,lat,lon,end,cp,level]);
+  }
+  const clean=rows({v:1,fetched_ms:now,hundos,spots},now);
+  return {...clean,received:body.rows.length,validated:clean.hundos.length+clean.spots.length,
+    discarded:Math.max(0,body.rows.length-clean.hundos.length-clean.spots.length)};
+}
+
 // Shared bounded read + JSON decode. Strips a UTF-8 BOM, reports the upstream
 // Content-Type for diagnostics and classifies hard failures precisely.
 async function fetchJson(url,init,now) {
@@ -196,9 +230,10 @@ async function collect(source, now) {
   const moonani=source.kind==="moonani" && url.href==="https://moonani.com/PokeList/ajax.php";
   const iflow=source.kind==="iflow" && url.hostname==="pokecoords.iflowgo.com" &&
     source.category==="pokemon" && url.pathname==="/iflowgopokecoords/api/v1/pokemon-search";
+  const gocoords=source.kind==="gocoords" && url.href==="https://gocoords.com/api/spawns";
   const compact=(!source.kind || source.kind==="compact") && url.pathname.endsWith("/hundos.json");
   if (url.protocol !== "https:" || url.username || url.password || url.search || url.hash ||
-      !hundoOnly(source) || (!moonani && !iflow && !city && !compact)) throw Error("source_url");
+      !hundoOnly(source) || (!moonani && !iflow && !city && !compact && !gocoords)) throw Error("source_url");
   // iFlowGo officially answers the provider's IV index when min_iv=100 is set;
   // each page is still verified row-by-row before persistence.
   if (iflow) url.search=new URLSearchParams({page:"1",min_iv:"100"}).toString();
@@ -206,8 +241,15 @@ async function collect(source, now) {
   // block reports seconds as well. mons covers species 1..1025 with minIV=100.
   if (city) url.search=new URLSearchParams({mons:Array.from({length:1025},(_,i)=>i+1).join(","),minIV:"100",since:"0",time:String(Math.floor(now/1000))}).toString();
   if (moonani) url.search="page=pokemon&action=load";
-  const headers={Accept:"application/json","User-Agent":"PGS-Hundo-Feed/1.1 (+https://github.com/LucianoToscano/PGS)",
-    ...(moonani?{"Content-Type":"application/x-www-form-urlencoded"}:{})};
+  // Honest AJAX-contract headers for the map sites whose own frontend queries these
+  // endpoints as XHR JSON. Identity stays truthful (no browser fingerprint, no cookies);
+  // the city instances serve their own public map data. If an instance requires more
+  // than the contract headers, its status will read invalid_response with content_type.
+  const acceptAjax="application/json, text/javascript, */*; q=0.01";
+  const headers={"User-Agent":"PGS-Hundo-Feed/1.1 (+https://github.com/LucianoToscano/PGS)",
+    ...(moonani?{Accept:"application/json","Content-Type":"application/x-www-form-urlencoded","X-Requested-With":"XMLHttpRequest",Referer:"https://moonani.com/PokeList/"}
+      :city?{Accept:acceptAjax,"X-Requested-With":"XMLHttpRequest",Referer:`https://${url.hostname}/`}
+      :{Accept:"application/json"})};
   const init={method:moonani?"POST":"GET",headers,
     body:moonani?"draw=1&start=0&length=100&pokemons=&iv=100&pvp=0":undefined};
   if (iflow) {
@@ -231,6 +273,7 @@ async function collect(source, now) {
     return {...result,received:items.length,discarded:Math.max(0,items.length-result.validated),contentType:first.contentType};
   }
   const {body,contentType}=await fetchJson(url,init,now);
+  if (gocoords) return {...await gocoordsRows(body,now),contentType};
   if (moonani) return {...await moonaniRows(body,now),contentType};
   if (city) return {...await cityRows(body,now),contentType};
   const clean=counted(body,now);
@@ -248,7 +291,7 @@ function stateOf(entry) {
   if (entry.httpStatus===429) return "rate_limited";
   if (entry.reason==="timeout" || entry.reason==="connection_error") return "offline_connection";
   if (["invalid_json","empty_response","invalid_encoding","invalid_content_type","invalid_feed","size",
-       "city_schema","iflow_schema","moonani_schema","source_url","invalid_config"].includes(entry.reason))
+       "city_schema","iflow_schema","moonani_schema","gocoords_schema","source_url","invalid_config"].includes(entry.reason))
     return "invalid_response";
   if (entry.reason==="upstream_http") return "upstream_http";
   return "offline_error";
@@ -288,7 +331,7 @@ function classifyError(error) {
   if (name==="AbortError" || message==="timeout") return "timeout";
   if (name==="SyntaxError" || message==="invalid_json") return "invalid_json";
   if (name==="TypeError" || message==="connection_error") return "connection_error";
-  if (["invalid_feed","source_url","city_schema","iflow_schema","moonani_schema","size","empty_response","invalid_encoding"].includes(message)) return message;
+  if (["invalid_feed","source_url","city_schema","iflow_schema","moonani_schema","gocoords_schema","size","empty_response","invalid_encoding"].includes(message)) return message;
   return "runtime_"+String(name||"Error").slice(0,24);
 }
 
@@ -374,7 +417,8 @@ async function readFeed(request,env) {
         item.categories.push("hundos"); byProvider.set(provider,item);
       }
       for (const provider of ["pogocoordinates","livepokemap"]) byProvider.set(provider,{provider,status:"REQUER AUTENTICAÇÃO"});
-      for (const provider of ["pgsharp-free-100iv","pgsharp-standard","rocketmap-instance"]) byProvider.set(provider,{provider,status:"AGUARDANDO CONTRATO"});
+      for (const provider of ["pgsharp-free-100iv","pgsharp-standard","rocketmap-instance","gocoords"])
+        if (!byProvider.has(provider)) byProvider.set(provider,{provider,status:"AGUARDANDO AUTORIZAÇÃO DO FORNECEDOR"});
       const data={time:state?.time || null,providers:[...byProvider.values()]};
       return new Response(request.method==="HEAD"?null:JSON.stringify(data),{headers:{"Content-Type":"application/json","Cache-Control":"public, max-age=15"}});
     }

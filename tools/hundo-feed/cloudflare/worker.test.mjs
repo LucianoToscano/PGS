@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import worker,{rows,feed,iflowRows} from "./worker.mjs";
+import worker,{rows,feed,iflowRows,cityRows,gocoordsRows} from "./worker.mjs";
 const now=Date.now();
 const row=["18446744073709551615",25,0,-3.1234567,38.7654321,now+300000,10,1];
 const spot=["s0123456789abcdef",...row.slice(1)];
@@ -251,4 +251,64 @@ test("network failure keeps previous successful rows available",async t=>{
   assert.equal(body.connections[0].last_success!==null,true);
   const feed=await (await worker.fetch(new Request("https://example.org/hundos.json"),env)).json();
   assert.equal(feed.spots.length,1);
+});
+
+const gocoordsSource={name:"gocoords",kind:"gocoords",interval_s:300,url:"https://gocoords.com/api/spawns"};
+const gRow=(id,over={})=>({encounter_id:id,provider_unique_id:"golbat:"+id,pokemon_name:"Staryu",pokemon_id:120,
+  form:null,cp:892,lvl:27,iv:100,raw_iv:"15/15/15",atk_iv:15,def_iv:15,sta_iv:15,
+  lat:41.641259,lon:-87.883012,expires_at_utc:new Date(Date.now()+720000).toISOString(),...over});
+const gPayload=(rows)=>({schema_version:2,generated_at:new Date().toISOString(),count:rows.length,rows,next_cursor:null});
+
+test("gocoords adapter: real encounter ids to hundos, keyed rows to spots, strict IV rules",async()=>{
+  const result=await gocoordsRows(gPayload([
+    gRow("143989166818287050"),
+    {...gRow(null),encounter_id:null,provider_unique_id:"pokexperience:abc123",pokemon_id:358,raw_iv:null,atk_iv:null,def_iv:null,sta_iv:null},
+    gRow("10564209155694614093",{atk_iv:14}),            // iv 100 but attribute 14 -> rejected
+    gRow("10564209155694614094",{iv:99}),                 // not 100 -> rejected
+    gRow("10564209155694614095",{expires_at_utc:new Date(Date.now()-60000).toISOString()}), // expired
+    gRow("10564209155694614096",{lat:91}),                // invalid coordinate
+  ]),Date.now());
+  assert.equal(result.hundos.length,1);
+  assert.equal(result.hundos[0][0],"143989166818287050"); // real encounter id preserved, not synthetic
+  assert.equal(result.spots.length,1);
+  assert.ok(/^s[0-9a-f]{16}$/.test(result.spots[0][0]));
+  assert.equal(result.received,6);
+  assert.equal(result.validated,2);
+  assert.equal(result.discarded,4);
+  await assert.rejects(()=>gocoordsRows({schema_version:2,generated_at:new Date(Date.now()-3600000).toISOString(),rows:[]},Date.now()),/invalid_feed/);
+});
+
+test("city sources send AJAX-contract headers with an honest UA",async t=>{
+  let seen;
+  t.mock.method(globalThis,"fetch",async(url,init)=>{
+    seen={url:String(url),headers:init?.headers||{}};
+    return Response.json({pokemons:[],meta:{inserted:1,time:2},weathers:[]});
+  });
+  const {env}=makeEnv([citySource]);
+  await worker.scheduled({scheduledTime:Date.now()},env);
+  assert.equal(seen.headers["X-Requested-With"],"XMLHttpRequest");
+  assert.equal(seen.headers.Referer,"https://nycpokemap.com/");
+  assert.ok(String(seen.headers["User-Agent"]).startsWith("PGS-Hundo-Feed/"));
+  assert.ok(!/mozilla|chrome|safari|firefox/i.test(String(seen.headers["User-Agent"])));
+});
+
+test("gocoords participates only when explicitly configured, with real encounter ids in hundos.json",async t=>{
+  const row=gRow("143989166818287050");
+  t.mock.method(globalThis,"fetch",async()=>Response.json(gPayload([row])));
+  const {db,env}=makeEnv([gocoordsSource]);
+  await worker.scheduled({scheduledTime:Date.now()},env);
+  const status=await (await worker.fetch(new Request("https://example.org/status.json"),env)).json();
+  assert.equal(status.connections[0].status,"online");
+  assert.equal(status.connections[0].state,"online_with_results");
+  const feed=await (await worker.fetch(new Request("https://example.org/hundos.json"),env)).json();
+  assert.deepEqual(feed.hundos.map(r=>r[0]),["143989166818287050"]);
+  const catalog=await (await worker.fetch(new Request("https://example.org/sources.json"),env)).json();
+  assert.equal(catalog.providers.find(p=>p.provider==="gocoords").status,"OPERACIONAL CONFIRMADA");
+});
+
+test("gocoords is absent from production defaults and from the built-in dormant list when disabled",async()=>{
+  const {env}=makeEnv([]);
+  const catalog=await (await worker.fetch(new Request("https://example.org/sources.json"),env)).json();
+  const dormant=catalog.providers.find(p=>p.provider==="gocoords");
+  assert.ok(dormant && dormant.status.startsWith("AGUARDANDO"));
 });

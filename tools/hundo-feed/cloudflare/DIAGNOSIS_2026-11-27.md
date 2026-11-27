@@ -118,3 +118,46 @@ Esperado após o primeiro ciclo: `iFlowGo` com `state="online_with_results"` e `
 - Código original (pré-correção) preservado no histórico do git (arquivos copiados de `FETCH_HEAD` de `feature/pgs-hundo-feed-sources` antes de qualquer edição) e também em `/tmp/backup-worker.mjs`, `/tmp/backup-worker.test.mjs`, `/tmp/backup-wrangler.json` durante a execução.
 - KV não é alterado por este patch; o Worker migra o estado antigo na leitura (clamp de `next`, remoção de `records` legados, filtro de categorias legadas). O snapshot `pgs-feed-backup-v1` continua sendo gravado.
 - Reversão de código em produção: histórico de implantações do Worker (`npx wrangler deployments list` / rollback no dashboard). Reversão de KV: não suportada pela Cloudflare; por isso nenhuma chave foi removida pelo patch.
+
+
+---
+
+# Addendum — 2026-11-27, segunda rodada (revisão de relatório externo)
+
+## VERIFICAÇÃO DO RELATÓRIO EXTERNO
+
+Um relatório externo (outro agente) foi apresentado como correção concluída. Verificação independente:
+
+| Alegação | Veredito |
+|---|---|
+| `/home/workdir/artifacts/` contém `worker.mjs`/`wrangler.json` corrigidos | **Falso** — o diretório não existe no workspace. Nenhum arquivo foi entregue. |
+| "Todos os 7 testes passando" | **Inconsistente** — o repositório tem 18 testes (14 antes desta rodada). Nada foi executado/entregue por aquele agente. |
+| "GOCoords adicionado e funcionando" | **Não existia código** — mas o endpoint é real (verificado nesta rodada). |
+| "Headers de browser (User-Agent Mozilla + X-Requested-With + Referer) corrigem os PokéMaps" | **Parcialmente plausível, não verificável no sandbox, e spoofing não foi adotado.** |
+| "status.json deve distinguir online com 0 hundos" | **Já implementado** nesta entrega (`online_without_hundos`). |
+| iFlowGo: "paginar 2–3 páginas; não inventar filtros" | **Superado** — `min_iv=100` foi verificado empiricamente no servidor (`candidate_source` muda `expiry`→`iv_index`); o adapter pagina até 8 páginas com validação por linha. Não é filtro inventado; é o contrato real do provedor. |
+
+## CORREÇÃO APLICADA NO CÓDIGO (esta rodada)
+
+1. **PokéMaps / Moonani — contrato AJAX honesto (não impersona navegador):**
+   - Mantida identidade `PGS-Hundo-Feed/1.1 (+https://github.com/LucianoToscano/PGS)` (sem string Mozilla/Chrome).
+   - Adicionados apenas headers do próprio contrato AJAX do site: `X-Requested-With: XMLHttpRequest`, `Referer: https://<host>/`, e `Accept: application/json, text/javascript, */*; q=0.01` para as cidades (o que jQuery/XHR envia; descreve corretamente um cliente XHR). Moonani recebeu os mesmos reforços.
+   - **Não** foram adicionados cookies, não foi usado User-Agent de navegador, não houve TLS/fingerprint games. Se uma instância exigir impersonar um navegador, continua `invalid_response` com `content_type` visível — não contornar.
+   - A autorização do operador para os cinco mapas está registrada no README (PR #62). Com essa autorização, usar o contrato AJAX público é legítimo; se o fornecedor objetar, a coleta deve cessar.
+   - Não é possível validar o efeito no sandbox (egress bloqueado). Após o deploy, `/status.json` decide: `online_with_results` ou `invalid_response` com `content_type:"text/html"` (o que prova interstício e mantém a via do agregado FaustusFoundry).
+2. **GOCoords (https://gocoords.com/api/spawns) — fonte real, entregue APAGADA por padrão:**
+   - Evidência (2026-11-27 ~20:52 UTC): HTTP 200, JSON válido, `schema_version:2`, `generated_at` fresco, `count:10`, `next_cursor:null`. Projeto independente ("GO Coords is an independent project and not affiliated with Scopely, Niantic, Nintendo, The Pokémon Company, or Pokémon GO"). `robots.txt` permite `Allow: /` para todos (só crawlers de treino de IA bloqueados); sem auth/CAPTCHA; feed gratuito "Free 100% IV" com links iPoGo — público e voltado à comunidade de spoofing.
+   - Linhas: `iv:100` (implica 15/15/15), metade com `raw_iv:"15/15/15"` e `atk_iv/def_iv/sta_iv=15` + `encounter_id` real do jogo (namespace golbat); metade (pokexperience) sem `encounter_id` e sem IVs por atributo. `expires_at_utc` ISO real; `cp`, `lvl`, `form` ("Alolan" como string → tratado como forma 0), `lat/lon`.
+   - **Por que não foi ativada em produção:** redistribuição do feed em massa não possui licença verificada (`/terms` renderiza a SPA; há apenas Discord/"Free 10 spawns"). Como toda fonte do projeto, exige a atestação de permissão do operador (padrão PGSharp "AGUARDANDO CONTRATO"). O adaptador está pronto e testado; entra em produção só quando o operador adicionar à variável `SOURCES`:
+     `{"name":"gocoords","kind":"gocoords","url":"https://gocoords.com/api/spawns","interval_s":300}`
+   - Regras do adaptador: `schema_version===2`; `generated_at` dentro de ±10 min; `iv===100` obrigatório; IVs por atributo, quando presentes, devem ser 15; expiração futura; coordenadas válidas; não nulas. Linhas com `encounter_id` viram `hundos` com o id real; sem id viram `spots` com id sintético `s`+16 hex (nunca inventamos id de encontro). `form` string → 0. Deduplica contra as demais fontes pelas regras existentes (id de encontro; janela 50 m / ±3 min).
+   - `sources.json` lista `gocoords` como `AGUARDANDO AUTORIZAÇÃO DO FORNECEDOR` até ser habilitada; quando habilitada e online, vira `OPERACIONAL CONFIRMADA`.
+3. **Fontes máximas:** permanece 9 (limite atual; gocoords seria a 9ª).
+
+## TESTES
+
+`node worker.test.mjs` → **18/18** (4 novos: regra de IVs do gocoords com casos válidos/inválidos, stale `generated_at`, headers AJAX com UA honesto, gocoords só atua quando configurado e honra ids reais em `hundos.json`, oculto como dormant por padrão). Ensaio offline com respostas reais capturadas: 8 fontes coletando; fixture Faustus propositadamente envelhecida → corretamente `invalid_response` (prova do passe de expiração).
+
+## IMPLANTAÇÃO
+
+Como antes: `npx wrangler deploy` + observar `/status.json` por 2–3 ciclos. Nenhuma alteração de KV/rotas/custos. Backup do estado anterior em `pgs-feed-backup-v1` permanece válido.

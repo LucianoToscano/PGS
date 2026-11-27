@@ -1,15 +1,15 @@
 {
-  "scope": "Indexed UTF-8 snapshot after synchronizing PR 62 with the validated phase-20 main; the documented legacy endpoint is retained for provenance and permission verification. Fresh source CI required.",
-  "tracked_files": 2107,
-  "text_files": 1032,
+  "scope": "Indexed UTF-8 snapshot including the authorized upstream URL in the Cloudflare configuration.",
+  "tracked_files": 2111,
+  "text_files": 1036,
   "changed_files": 5,
   "added_files": 1,
   "previous_occurrences": 1041,
-  "remaining_files": 174,
-  "remaining_occurrences": 1042,
+  "remaining_files": 175,
+  "remaining_occurrences": 1043,
   "remaining_by_category": {
     "workflows": 71,
-    "other": 112,
+    "other": 113,
     "documentation": 269,
     "release_history": 103,
     "legal": 3,
@@ -61,17 +61,27 @@
       "occurrences": 1
     },
     {
-      "path": "docs/ARCHITECTURE.md",
-      "category": "documentation",
+      "path": "LICENSE",
+      "category": "legal",
       "occurrences": 1
     },
     {
-      "path": "docs/en/PGS_TECHNICAL_MIGRATION.md",
-      "category": "documentation",
-      "occurrences": 26
+      "path": "NOTICE",
+      "category": "legal",
+      "occurrences": 2
     },
     {
-      "path": "docs/en/PGS_UPDATE_POLICY.md",
+      "path": "README.md",
+      "category": "documentation",
+      "occurrences": 2
+    },
+    {
+      "path": "README.pt-BR.md",
+      "category": "documentation",
+      "occurrences": 2
+    },
+    {
+      "path": "docs/ARCHITECTURE.md",
       "category": "documentation",
       "occurrences": 1
     },
@@ -102,6 +112,16 @@
     },
     {
       "path": "docs/PGS_UPDATE_POLICY.md",
+      "category": "documentation",
+      "occurrences": 1
+    },
+    {
+      "path": "docs/en/PGS_TECHNICAL_MIGRATION.md",
+      "category": "documentation",
+      "occurrences": 26
+    },
+    {
+      "path": "docs/en/PGS_UPDATE_POLICY.md",
       "category": "documentation",
       "occurrences": 1
     },
@@ -276,29 +296,19 @@
       "occurrences": 2
     },
     {
-      "path": "LICENSE",
-      "category": "legal",
-      "occurrences": 1
-    },
-    {
-      "path": "NOTICE",
-      "category": "legal",
-      "occurrences": 2
-    },
-    {
       "path": "pgs/AndroidManifest.xml",
       "category": "other",
       "occurrences": 1
     },
     {
-      "path": "pgs/art_build.py",
-      "category": "other",
-      "occurrences": 3
-    },
-    {
       "path": "pgs/art/CMakeLists.txt",
       "category": "native",
       "occurrences": 2
+    },
+    {
+      "path": "pgs/art_build.py",
+      "category": "other",
+      "occurrences": 3
     },
     {
       "path": "pgs/axml.py",
@@ -321,9 +331,14 @@
       "occurrences": 1
     },
     {
-      "path": "pgs/native_build.py",
-      "category": "other",
-      "occurrences": 4
+      "path": "pgs/native/CMakeLists.txt",
+      "category": "native",
+      "occurrences": 1
+    },
+    {
+      "path": "pgs/native/README.md",
+      "category": "documentation",
+      "occurrences": 2
     },
     {
       "path": "pgs/native/account_host.h",
@@ -336,14 +351,14 @@
       "occurrences": 5
     },
     {
-      "path": "pgs/native/adventure_sync_test.cpp",
-      "category": "tests",
-      "occurrences": 1
-    },
-    {
       "path": "pgs/native/adventure_sync.h",
       "category": "native",
       "occurrences": 20
+    },
+    {
+      "path": "pgs/native/adventure_sync_test.cpp",
+      "category": "tests",
+      "occurrences": 1
     },
     {
       "path": "pgs/native/buddy_feeding.h",
@@ -356,9 +371,14 @@
       "occurrences": 2
     },
     {
-      "path": "pgs/native/CMakeLists.txt",
+      "path": "pgs/native/hook_engine.cpp",
       "category": "native",
-      "occurrences": 1
+      "occurrences": 4
+    },
+    {
+      "path": "pgs/native/hook_engine.h",
+      "category": "native",
+      "occurrences": 3
     },
     {
       "path": "pgs/native/hook_engine_diag.h",
@@ -371,29 +391,19 @@
       "occurrences": 6
     },
     {
-      "path": "pgs/native/hook_engine.cpp",
-      "category": "native",
-      "occurrences": 4
-    },
-    {
-      "path": "pgs/native/hook_engine.h",
-      "category": "native",
-      "occurrences": 3
-    },
-    {
       "path": "pgs/native/incubation.h",
       "category": "native",
       "occurrences": 40
     },
     {
-      "path": "pgs/native/interaction_host_test.cpp",
-      "category": "tests",
-      "occurrences": 4
-    },
-    {
       "path": "pgs/native/interaction_host.cpp",
       "category": "native",
       "occurrences": 9
+    },
+    {
+      "path": "pgs/native/interaction_host_test.cpp",
+      "category": "tests",
+      "occurrences": 4
     },
     {
       "path": "pgs/native/items.h",
@@ -406,9 +416,9 @@
       "occurrences": 2
     },
     {
-      "path": "pgs/native/pgs_native_api.h",
+      "path": "pgs/native/pgs.map",
       "category": "native",
-      "occurrences": 22
+      "occurrences": 1
     },
     {
       "path": "pgs/native/pgs_native.cpp",
@@ -416,9 +426,9 @@
       "occurrences": 1
     },
     {
-      "path": "pgs/native/pgs.map",
+      "path": "pgs/native/pgs_native_api.h",
       "category": "native",
-      "occurrences": 1
+      "occurrences": 22
     },
     {
       "path": "pgs/native/pvp_icons.h",
@@ -426,14 +436,14 @@
       "occurrences": 1
     },
     {
-      "path": "pgs/native/README.md",
-      "category": "documentation",
-      "occurrences": 2
-    },
-    {
       "path": "pgs/native/runtime_bootstrap.h",
       "category": "native",
       "occurrences": 1
+    },
+    {
+      "path": "pgs/native/runtime_host.cpp",
+      "category": "native",
+      "occurrences": 5
     },
     {
       "path": "pgs/native/runtime_host_diag_test.cpp",
@@ -444,11 +454,6 @@
       "path": "pgs/native/runtime_host_flow_test.cpp",
       "category": "tests",
       "occurrences": 1
-    },
-    {
-      "path": "pgs/native/runtime_host.cpp",
-      "category": "native",
-      "occurrences": 5
     },
     {
       "path": "pgs/native/runtime_metadata.h",
@@ -481,9 +486,19 @@
       "occurrences": 1
     },
     {
+      "path": "pgs/native_build.py",
+      "category": "other",
+      "occurrences": 4
+    },
+    {
       "path": "pgs/nonroot.py",
       "category": "other",
       "occurrences": 10
+    },
+    {
+      "path": "pgs/pgs.cmd",
+      "category": "other",
+      "occurrences": 2
     },
     {
       "path": "pgs/pgs_candidate.py",
@@ -499,11 +514,6 @@
       "path": "pgs/pgs_update.py",
       "category": "other",
       "occurrences": 1
-    },
-    {
-      "path": "pgs/pgs.cmd",
-      "category": "other",
-      "occurrences": 2
     },
     {
       "path": "pgs/release_apk.py",
@@ -536,17 +546,12 @@
       "occurrences": 3
     },
     {
-      "path": "pgs/rooted_installer.py",
-      "category": "other",
-      "occurrences": 2
-    },
-    {
       "path": "pgs/rooted.py",
       "category": "other",
       "occurrences": 7
     },
     {
-      "path": "pgs/runtime_audit.py",
+      "path": "pgs/rooted_installer.py",
       "category": "other",
       "occurrences": 2
     },
@@ -554,6 +559,11 @@
       "path": "pgs/runtime/native-core.js",
       "category": "javascript",
       "occurrences": 1
+    },
+    {
+      "path": "pgs/runtime_audit.py",
+      "category": "other",
+      "occurrences": 2
     },
     {
       "path": "pgs/src/dev/pgs/AccountProfileStore.java",
@@ -566,12 +576,12 @@
       "occurrences": 1
     },
     {
-      "path": "pgs/src/dev/pgs/AccountSessions.java",
+      "path": "pgs/src/dev/pgs/AccountSessionVault.java",
       "category": "java",
       "occurrences": 5
     },
     {
-      "path": "pgs/src/dev/pgs/AccountSessionVault.java",
+      "path": "pgs/src/dev/pgs/AccountSessions.java",
       "category": "java",
       "occurrences": 5
     },
@@ -651,11 +661,6 @@
       "occurrences": 4
     },
     {
-      "path": "pgs/test/native-core-test.cjs",
-      "category": "tests",
-      "occurrences": 4
-    },
-    {
       "path": "pgs/test/PogoFeedDataTest.java",
       "category": "tests",
       "occurrences": 1
@@ -664,6 +669,16 @@
       "path": "pgs/test/SettingsBackupRulesTest.java",
       "category": "tests",
       "occurrences": 14
+    },
+    {
+      "path": "pgs/test/UpdateRulesTest.java",
+      "category": "tests",
+      "occurrences": 2
+    },
+    {
+      "path": "pgs/test/native-core-test.cjs",
+      "category": "tests",
+      "occurrences": 4
     },
     {
       "path": "pgs/test/test_account_restart_lifecycle.py",
@@ -796,11 +811,6 @@
       "occurrences": 2
     },
     {
-      "path": "pgs/test/UpdateRulesTest.java",
-      "category": "tests",
-      "occurrences": 2
-    },
-    {
       "path": "pgs/vendor/bridge-provenance.json",
       "category": "vendor",
       "occurrences": 2
@@ -821,29 +831,9 @@
       "occurrences": 3
     },
     {
-      "path": "README.md",
-      "category": "documentation",
-      "occurrences": 2
-    },
-    {
-      "path": "README.pt-BR.md",
-      "category": "documentation",
-      "occurrences": 2
-    },
-    {
       "path": "tools/dex_bridge/BridgeRewriter.java",
       "category": "other",
       "occurrences": 1
-    },
-    {
-      "path": "tools/hundo-feed/hundo_feed.py",
-      "category": "other",
-      "occurrences": 1
-    },
-    {
-      "path": "tools/hundo-feed/hundo-feed.env.example",
-      "category": "other",
-      "occurrences": 2
     },
     {
       "path": "tools/hundo-feed/ORACLE_CLOUD.md",
@@ -854,6 +844,21 @@
       "path": "tools/hundo-feed/README.md",
       "category": "documentation",
       "occurrences": 3
+    },
+    {
+      "path": "tools/hundo-feed/cloudflare/wrangler.json",
+      "category": "other",
+      "occurrences": 1
+    },
+    {
+      "path": "tools/hundo-feed/hundo-feed.env.example",
+      "category": "other",
+      "occurrences": 2
+    },
+    {
+      "path": "tools/hundo-feed/hundo_feed.py",
+      "category": "other",
+      "occurrences": 1
     },
     {
       "path": "tools/pgs_branding_audit.py",

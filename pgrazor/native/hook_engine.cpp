@@ -280,7 +280,7 @@ void *near_island(void *address, void *replacement) {
 }
 }
 #endif
-int pgrazor_hook(void *address, void *replacement, void **original) {
+int pgs_hook(void *address, void *replacement, void **original) {
     std::lock_guard<std::mutex> guard(engine_mutex);
 #if defined(__aarch64__)
     // Compiling the plugin does not activate it. Prefer a single instruction
@@ -297,7 +297,7 @@ int pgrazor_hook(void *address, void *replacement, void **original) {
     if (!island) {
         record_failure(address, PGR_HOOK_REASON_NEAR_ISLAND, 0, attempt.error,
             attempt.gaps, attempt.padding);
-        __android_log_print(ANDROID_LOG_WARN, "PGRazor",
+        __android_log_print(ANDROID_LOG_WARN, "PGS",
             "hook-install-failed target=%p reason=near-island gaps=%u padding=%u errno=%d",
             address, attempt.gaps, attempt.padding, attempt.error);
         return -1;
@@ -307,7 +307,7 @@ int pgrazor_hook(void *address, void *replacement, void **original) {
     if (rc != 0 || !*original) {
         const int error = errno;
         record_failure(address, PGR_HOOK_REASON_DOBBY, rc, error, attempt.gaps, attempt.padding);
-        __android_log_print(ANDROID_LOG_WARN, "PGRazor",
+        __android_log_print(ANDROID_LOG_WARN, "PGS",
             "hook-install-failed target=%p reason=dobby rc=%d errno=%d", address, rc, error);
     }
     return rc;
@@ -318,20 +318,36 @@ int pgrazor_hook(void *address, void *replacement, void **original) {
     return rc;
 #endif
 }
-int pgrazor_hook_diag(PgrHookDiag *out) {
+int pgs_hook_diag(PgsHookDiag *out) {
     if (!out) return -1;
     std::lock_guard<std::mutex> guard(engine_mutex);
     *out = hook_diag;
     return 0;
 }
-int pgrazor_unhook(void *address) {
+int pgs_unhook(void *address) {
     std::lock_guard<std::mutex> guard(engine_mutex);
     return DobbyDestroy(address);
 }
-int pgrazor_instrument(void *address, dobby_instrument_callback_t callback) {
+int pgs_instrument(void *address, dobby_instrument_callback_t callback) {
     std::lock_guard<std::mutex> guard(engine_mutex);
 #if defined(__aarch64__)
     enable_near_once();
 #endif
     return DobbyInstrument(address, callback);
+}
+
+
+// Existing modules and test fixtures may still link these old C++ names.
+// They forward to the same serialized PGS hook engine and do not add ELF exports.
+int pgrazor_hook(void *address, void *replacement, void **original) {
+    return pgs_hook(address, replacement, original);
+}
+int pgrazor_unhook(void *address) {
+    return pgs_unhook(address);
+}
+int pgrazor_instrument(void *address, dobby_instrument_callback_t callback) {
+    return pgs_instrument(address, callback);
+}
+int pgrazor_hook_diag(PgrHookDiag *out) {
+    return pgs_hook_diag(out);
 }

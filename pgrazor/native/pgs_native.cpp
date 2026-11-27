@@ -188,13 +188,13 @@ int api_install(void *address) {
     }
 
     spawn_getter_fn original = nullptr;
-    int rc = pgrazor_hook(address,
+    int rc = pgs_hook(address,
                        reinterpret_cast<void *>(&spawn_replacement),
                        reinterpret_cast<void **>(&original));
     if (rc != 0 || original == nullptr) {
         // In the pinned Dobby, nonzero returns precede patching. A zero result
         // with no trampoline is different: undo that binding before returning.
-        if(rc == 0) pgrazor_unhook(address);
+        if(rc == 0) pgs_unhook(address);
         g_install_failed=true;
         return PGS_ERR_HOOK_FAILED;
     }
@@ -271,7 +271,7 @@ int api_selftest() {
     if (call(1) != 2) return PGS_ERR_SELFTEST; // baseline
     __android_log_write(ANDROID_LOG_INFO,"PGSNative","selftest baseline; hook begin");
 
-    int rc = pgrazor_hook(reinterpret_cast<void *>(&selftest_target),
+    int rc = pgs_hook(reinterpret_cast<void *>(&selftest_target),
                        reinterpret_cast<void *>(&selftest_replacement),
                        reinterpret_cast<void **>(&g_selftest_original));
     if (rc != 0 || g_selftest_original == nullptr) return PGS_ERR_SELFTEST;
@@ -283,7 +283,7 @@ int api_selftest() {
     if (g_selftest_calls.load(std::memory_order_relaxed) != 1) status = PGS_ERR_SELFTEST;
     __android_log_write(ANDROID_LOG_INFO,"PGSNative","selftest invoke complete; restore begin");
 
-    if (pgrazor_unhook(reinterpret_cast<void *>(&selftest_target)) != 0) status = PGS_ERR_SELFTEST;
+    if (pgs_unhook(reinterpret_cast<void *>(&selftest_target)) != 0) status = PGS_ERR_SELFTEST;
 
     // Detach must restore original behaviour with no dangling hook.
     if (call(1) != 2) status = PGS_ERR_SELFTEST;

@@ -3,7 +3,7 @@
 // Read-only hook-engine diagnostic, free of the Dobby header so the runtime
 // host can export it. It carries code addresses and counters only: no account
 // id, token or coordinate. The failure fields describe the FIRST failed
-// pgrazor_hook() of the process (the scheduler hook when startup fails).
+// pgs_hook() of the process (the scheduler hook when startup fails).
 enum PgrHookReason : int32_t {
     PGR_HOOK_REASON_NONE = 0, PGR_HOOK_REASON_BAD_ARGS = 1,
     PGR_HOOK_REASON_NEAR_ISLAND = 2, PGR_HOOK_REASON_DOBBY = 3
@@ -38,5 +38,10 @@ struct PgrHookDiag {
     uint32_t island_pages;    // island pages claimed so far
 };
 static_assert(sizeof(PgrHookDiag) == 48, "Hook diag ABI1");
-// Returns 0 and fills *out, or -1 for a null argument. Installs nothing.
+// The PGS type aliases the exact same 48-byte diagnostic layout.
+using PgsHookDiag = PgrHookDiag;
+static_assert(sizeof(PgsHookDiag) == sizeof(PgrHookDiag), "PGS hook diagnostic ABI");
+int pgs_hook_diag(PgsHookDiag *out);
+
+// Compatibility name: returns the same diagnostic, installs nothing.
 int pgrazor_hook_diag(PgrHookDiag *out);

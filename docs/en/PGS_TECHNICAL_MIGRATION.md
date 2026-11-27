@@ -47,3 +47,10 @@ This phase changes header references only, not runtime logic or the Android app 
 - Public header constants, result codes and function typedefs now support `PGS_*` / `pgs_*` spellings as primary source names, with the old spellings preserved as compatibility aliases. The size and field ordering of the v1/v2 ABI tables are unchanged.
 - Android still loads `libpgrazor-core.so` and `libpgrazor-art.so`, and existing Java/JNI code may still resolve the legacy factory. No rename is applied to DEX package `dev.pgrazor`, data/backup paths, Android package `com.nianticlabs.pokemongo`, the established PGS signing certificate or the version code.
 - This phase is validated by source checks and native symbol tests. It is **not** a complete signed APK build or a confirmed real-device upgrade. Remaining migration work stays in [issue #38](https://github.com/LucianoToscano/PGS/issues/38).
+
+## Phase 4 — internal C++ hook engine naming
+
+- The primary internal implementations are now `pgs_hook`, `pgs_unhook`, `pgs_instrument` and `pgs_hook_diag`. Previously compiled native call sites can still resolve `pgrazor_*` forwarding functions; all share the **same Dobby registry and mutex**.
+- `PgsHookDiag` and `PgsPaddingRanges` are type aliases retaining the original ABI/layout and padding math. The active core uses the PGS names, and the native near-island regression exercises both names.
+- Android hook failure messages use `PGS` as their log tag. No additional public ELF exports, changed SONAME, package/signing change, new gameplay hook or installed APK results from this phase.
+- Later migrations will address Java/JNI, native library filenames, asset paths and persisted settings after real-device compatibility tests; see [issue #38](https://github.com/LucianoToscano/PGS/issues/38).

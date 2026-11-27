@@ -18,6 +18,9 @@ static uintptr_t replacement(uintptr_t) { return 99; }
 namespace padding_check {
 constexpr uintptr_t base = 0x7000000000, begin = base + 0x45fd3a0, end = base + 0xe296c10;
 constexpr PgrPaddingRanges wide = pgr_padding_ranges(begin, end, 16384);
+constexpr PgsPaddingRanges pgsWide = pgs_padding_ranges(begin, end, 16384);
+static_assert(pgsWide.before_lo == wide.before_lo && pgsWide.after_hi == wide.after_hi,
+              "PGS padding aliases must preserve the legacy arithmetic");
 constexpr PgrPaddingRanges narrow = pgr_padding_ranges(begin, end, 4096);
 static_assert(wide.before_lo == base + 0x45fc000 && wide.before_hi == begin, "ELF-aligned lead");
 static_assert(narrow.before_lo == base + 0x45fd000 && narrow.before_hi == begin, "4K-aligned lead");
@@ -38,8 +41,9 @@ static_assert((224 - 16) / 8 + (2016 - 16) / 8 == 276, "dispatched capacity");
 }
 
 int main() {
-    PgrHookDiag diag{};
-    require(pgrazor_hook_diag(nullptr) == -1 && pgrazor_hook_diag(&diag) == 0 &&
+    PgsHookDiag diag{};
+    require(pgs_hook_diag(nullptr) == -1 && pgs_hook_diag(&diag) == 0 &&
+        pgrazor_hook_diag(&diag) == 0 &&
         diag.version == 1 && diag.size == sizeof(diag) && diag.failures == 0 &&
         diag.reason == PGR_HOOK_REASON_NONE && diag.island_source == PGR_HOOK_ISLAND_NONE,
         "clean diagnostic before any hook");
@@ -74,7 +78,7 @@ int main() {
         getter(reinterpret_cast<uintptr_t>(object)) == 42 && after_getter(0) == 33,
         "pristine fixture behavior");
     void *tiny_original = nullptr, *getter_original = nullptr;
-    require(pgrazor_hook(code, reinterpret_cast<void *>(replacement), &tiny_original) == 0,
+    require(pgs_hook(code, reinterpret_cast<void *>(replacement), &tiny_original) == 0,
         "hook four-byte method");
     require((code[0] & 0xfc000000u) == 0x14000000u, "single B patch");
     {
@@ -99,7 +103,7 @@ int main() {
     require(getter(reinterpret_cast<uintptr_t>(object)) == 99 &&
         reinterpret_cast<Method>(getter_original)(reinterpret_cast<uintptr_t>(object)) == 42 &&
         after_getter(0) == 33, "getter replacement and original");
-    require(pgrazor_unhook(code + 3) == 0 && pgrazor_unhook(code) == 0, "unhook both");
+    require(pgs_unhook(code + 3) == 0 && pgrazor_unhook(code) == 0, "unhook both");
     require(std::memcmp(code, pristine, sizeof(pristine)) == 0, "restore original bytes");
     require(munmap(code, page) == 0, "unmap fixture");
     require(pgrazor_hook_diag(&diag) == 0 && diag.failures == 0 &&

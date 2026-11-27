@@ -86,6 +86,30 @@ class PgsNativeRenameTests(unittest.TestCase):
         self.assertEqual(offenders, [],
                          "All native sources must include pgs_native_api.h; old shim is for compatibility only")
 
+
+    def test_hook_engine_pgs_names_and_old_cpp_linkage(self):
+        header = (NATIVE / "hook_engine.h").read_text(encoding="utf-8")
+        diag = (NATIVE / "hook_engine_diag.h").read_text(encoding="utf-8")
+        impl = (NATIVE / "hook_engine.cpp").read_text(encoding="utf-8")
+        core = (NATIVE / "pgs_native.cpp").read_text(encoding="utf-8")
+        for prefix in ("pgs_hook(", "pgs_unhook(", "pgs_instrument("):
+            self.assertIn("int " + prefix, header)
+            self.assertIn("int " + prefix, impl)
+        for legacy, modern in (
+            ("pgrazor_hook(", "pgs_hook("),
+            ("pgrazor_unhook(", "pgs_unhook("),
+            ("pgrazor_instrument(", "pgs_instrument("),
+            ("pgrazor_hook_diag(", "pgs_hook_diag("),
+        ):
+            self.assertIn("int " + legacy, impl)
+            self.assertIn("return " + modern, impl)
+        self.assertIn("using PgsHookDiag = PgrHookDiag;", diag)
+        self.assertIn("using PgsPaddingRanges = PgrPaddingRanges;", header)
+        self.assertNotIn('"PGRazor"', impl)
+        self.assertIn("pgs_hook(", core)
+        self.assertIn("pgs_unhook(", core)
+        self.assertNotIn("pgrazor_hook(", core)
+
     def test_pgs_cmd_is_primary_and_legacy_launcher_forwards(self):
         primary = (ROOT / "pgs.cmd").read_text(encoding="utf-8")
         legacy = (ROOT / "nonroot.cmd").read_text(encoding="utf-8")

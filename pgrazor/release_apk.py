@@ -63,7 +63,7 @@ def standalone_manifest(data):
     return result
 
 
-def merge(apks, output):
+def merge(apks, output, *, pgs_previous_version_code=None):
     package, base, rows, abis = nonroot.inspect_set(apks)
     if package != 'com.nianticlabs.pokemongo' or abis != {'arm64-v8a'}:
         raise ValueError('Release supports the ARM64 Pokemon GO APK set only')
@@ -83,7 +83,13 @@ def merge(apks, output):
             if nonroot.signature_entry(entry.filename): continue
             seen.add(entry.filename)
             if entry.filename == 'AndroidManifest.xml':
-                target.writestr(copy.copy(entry), standalone_manifest(source.read(entry))); continue
+                manifest = standalone_manifest(source.read(entry))
+                if pgs_previous_version_code is not None:
+                    from pgs_update import next_version_code, patch_manifest_version_code
+                    current_code = axml.inspect_manifest(manifest)['versionCode']
+                    replacement = next_version_code(current_code, pgs_previous_version_code)
+                    manifest = patch_manifest_version_code(manifest, current_code, replacement)
+                target.writestr(copy.copy(entry), manifest); continue
             with source.open(entry) as reader, target.open(copy.copy(entry), 'w') as writer: shutil.copyfileobj(reader, writer)
         for path, entry in extras:
             if entry.filename in seen: raise ValueError('Duplicate split member: '+entry.filename)
@@ -108,13 +114,21 @@ def release(run, destination):
         raise ValueError('Base game must declare versionName and numeric versionCode')
     destination.mkdir(parents=True, exist_ok=True)
     unsigned, aligned, signed = (destination/name for name in ('unsigned.apk', 'aligned.apk', 'PGRazor.apk'))
-    merge(apks, unsigned)
+    # A PGS-only version ledger is intentionally absent in upstream PGRazor.
+    # Future PGS releases always exceed the last PGS Android versionCode.
+    ledger = Path(__file__).resolve().parent / 'PGS_LAST_VERSION_CODE'
+    previous_pgs_version = None
+    if ledger.is_file():
+        previous_pgs_version = int(ledger.read_text(encoding='utf-8').strip())
+    merge(apks, unsigned, pgs_previous_version_code=previous_pgs_version)
+    with zipfile.ZipFile(unsigned) as preview:
+        apk_version_code = axml.inspect_manifest(preview.read('AndroidManifest.xml'))['versionCode']
     nonroot.command(build.android_tool('zipalign'), '-f', '-P', '16', '4', unsigned, aligned)
     nonroot.command(build.android_tool('apksigner'), 'sign', *build.signing_args(), '--out', signed, aligned)
     nonroot.command(build.android_tool('apksigner'), 'verify', signed)
     nonroot.command(build.android_tool('zipalign'), '-c', '-P', '16', '4', signed)
     (destination/'SHA256SUMS.txt').write_text(runtime_assets.sha256(signed)+'  PGRazor.apk\n', encoding='utf8')
-    (destination/'build-info.json').write_text(json.dumps({'game_version':game_version,'game_version_code':game_code,'architecture':'arm64-v8a','hook_runtime_architectures':report.get('runtime_abis',[report.get('runtime_abi','arm64-v8a')]),'input_sha256':report['input_sha256'],'apk_sha256':runtime_assets.sha256(signed),'source_commit':os.environ.get('GITHUB_SHA'),'device_tested':False},indent=2)+'\n',encoding='utf8')
+    (destination/'build-info.json').write_text(json.dumps({'game_version':game_version,'game_version_code':game_code,'apk_version_code':apk_version_code,'architecture':'arm64-v8a','hook_runtime_architectures':report.get('runtime_abis',[report.get('runtime_abi','arm64-v8a')]),'input_sha256':report['input_sha256'],'apk_sha256':runtime_assets.sha256(signed),'source_commit':os.environ.get('GITHUB_SHA'),'device_tested':False},indent=2)+'\n',encoding='utf8')
     unsigned.unlink(); aligned.unlink()
     print('Release candidate:', signed)
     return signed

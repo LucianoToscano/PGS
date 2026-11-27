@@ -1,4 +1,4 @@
-name: Android release (non-root and rooted)
+name: Legacy upstream release DISABLED in PGS
 on:
   workflow_dispatch:
     inputs:
@@ -29,7 +29,7 @@ jobs:
       PGRAZOR_STORE_PASSWORD: ${{ secrets.PGRAZOR_STORE_PASSWORD }}
       PGRAZOR_KEY_PASSWORD: ${{ secrets.PGRAZOR_KEY_PASSWORD }}
     steps:
-      - name: Reject upstream PGRazor release workflow in PGS
+      - name: Block legacy release workflow to protect PGS identity
         if: github.repository == 'LucianoToscano/PGS'
         run: |
           throw 'PGS requires a dedicated full release workflow with PGS signing and PGS.apk verification.'
@@ -174,10 +174,3 @@ jobs:
             assets+=(release/release-highlight.png)
           fi
           gh release create "$RELEASE_TAG" "${assets[@]}" --target "$RELEASE_COMMIT" --title "PGRazor $RELEASE_TAG" --latest --notes-file "$RUNNER_TEMP/release-notes.md"
-  discord:
-    needs: release
-    uses: ./.github/workflows/discord-release.yml
-    with:
-      tag: ${{ inputs.tag }}
-    secrets:
-      DISCORD_RELEASE_WEBHOOK: ${{ secrets.DISCORD_RELEASE_WEBHOOK }}

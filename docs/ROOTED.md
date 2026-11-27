@@ -1,3 +1,5 @@
+> **PGS — Atenção:** a variante Root abaixo é documentação técnica herdada do projeto original. **Não existe release PGS Root homologado.** Não use os downloads ou a assinatura do projeto original para atualizar o PGS. O APK completo PGS é distribuído somente pelo [workflow PGS](https://github.com/LucianoToscano/PGS/actions/workflows/pgs-v0.0.1-release.yml), com pacote Android e chave definitiva preservados.
+
 # PGRazor Root
 
 PGRazor Root is a separate installer (`dev.pgrazor.root`) for the official, Niantic-signed Pokémon GO app. It carries a Zygisk module and installs it through Magisk 27+, KernelSU, or APatch. KernelSU and APatch also need a Zygisk provider. The patched `PGRazor.apk` remains the non-root build.

@@ -39,7 +39,7 @@
 #ifndef PGR_RC_DIRECT_TEST
 #include "pgs_native_api.h"
 #include <dlfcn.h>
-static const pgrazor_native_api_v2 *loaded_core = nullptr;
+static const pgs_native_api_v2 *loaded_core = nullptr;
 #endif
 
 namespace {
@@ -575,7 +575,7 @@ int main(int argc, char **argv) {
   if (argc != 2) return 80;
   void *lib = dlopen(argv[1], RTLD_NOW); if (!lib) return 81;
   auto get = reinterpret_cast<const void *(*)(uint32_t)>(dlsym(lib, "pgrazor_native_api"));
-  loaded_core = get ? static_cast<const pgrazor_native_api_v2 *>(get(2)) : nullptr;
+  loaded_core = get ? static_cast<const pgs_native_api_v2 *>(get(2)) : nullptr;
   if (!loaded_core || loaded_core->version != 2 || !loaded_core->query_feature) return 82;
   api = static_cast<const pgr_rocket_combat_api_v1 *>(loaded_core->query_feature(21, 1));
   if (!api || api->size != 72 || loaded_core->query_feature(21, 99)) return 83;

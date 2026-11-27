@@ -22,7 +22,7 @@ void *thread_current=nullptr;const void *spawn_code=nullptr;
 PgrSpawnHostOptions policy{};uint64_t deadline=0;
 uint64_t sample_at=0,logged_at=0;double previous_original=0,previous_effective=0;bool sampled=false;
 PgrSpawnHostEvent events[32]{};uint32_t head=0,count=0;
-const pgrazor_native_api_v1 *leaf(){return static_cast<const pgrazor_native_api_v1*>(pgrazor_native_api(1));}
+const pgs_native_api_v1 *leaf(){return static_cast<const pgs_native_api_v1*>(pgrazor_native_api(1));}
 const PgrRuntimeTransportApi *transport(){return static_cast<const PgrRuntimeTransportApi*>(pgrazor_runtime_transport_api(1));}
 uint64_t now(){timespec t{};return clock_gettime(CLOCK_BOOTTIME,&t)||t.tv_sec<0?0:uint64_t(t.tv_sec)*1000+uint64_t(t.tv_nsec)/1000000;}
 void disable(){auto l=leaf();if(l&&l->update)l->update(0,0,0);}
@@ -72,7 +72,7 @@ int tick(uint64_t tid){
  }
  int rc=0;{std::lock_guard<std::mutex> lock(policy_mutex);bool active=!stopping&&policy.enabled&&policy.allowed&&t<deadline;rc=leaf()->update(active,active,active?std::min<uint64_t>(2500,deadline-t):0);}
  if(rc){leaf_error=rc;fault(PGR_SPAH_UNAVAILABLE);publish_ready(false);return PGR_SPAH_UNAVAILABLE;}
- pgrazor_spawn_snapshot s{};rc=leaf()->sample(&s);if(rc){leaf_error=rc;fault(PGR_SPAH_UNAVAILABLE);return PGR_SPAH_UNAVAILABLE;}
+ pgs_spawn_snapshot s{};rc=leaf()->sample(&s);if(rc){leaf_error=rc;fault(PGR_SPAH_UNAVAILABLE);return PGR_SPAH_UNAVAILABLE;}
  if(std::isfinite(s.original)&&s.original>0&&std::isfinite(s.effective)&&s.effective>0&&(!sampled||t-sample_at>=2000||s.original!=previous_original||s.effective!=previous_effective)){
   // Java keeps the 2 s setSpawnRange refresh; the log needs only changes plus a 30 s heartbeat.
   const bool log=!sampled||t-logged_at>=30000||s.original!=previous_original||s.effective!=previous_effective;
@@ -81,7 +81,7 @@ int tick(uint64_t tid){
   int64_t values[2];std::memcpy(values,&s.original,8);std::memcpy(values+1,&s.effective,8);action(48,values,2,nullptr,0);
  }return stopping?PGR_SPAH_STOPPED:0;
 }
-int sample(PgrSpawnHostSample *s){if(!s)return PGR_SPAH_BAD_CONFIG;pgrazor_spawn_snapshot v{};auto l=leaf();if(l&&l->sample)l->sample(&v);*s={1,sizeof(*s),uint32_t(configured.load()),uint32_t(installed.load()),uint32_t(stopping.load()),uint32_t(ready.load()),error.load(),leaf_error.load(),owner_tid.load(),ticks.load(),v.original,v.effective,v.count};return 0;}
+int sample(PgrSpawnHostSample *s){if(!s)return PGR_SPAH_BAD_CONFIG;pgs_spawn_snapshot v{};auto l=leaf();if(l&&l->sample)l->sample(&v);*s={1,sizeof(*s),uint32_t(configured.load()),uint32_t(installed.load()),uint32_t(stopping.load()),uint32_t(ready.load()),error.load(),leaf_error.load(),owner_tid.load(),ticks.load(),v.original,v.effective,v.count};return 0;}
 int next(PgrSpawnHostEvent *e){if(!e)return PGR_SPAH_BAD_CONFIG;std::lock_guard<std::mutex> lock(event_mutex);if(!count){*e={};return PGR_SPAH_EMPTY;}*e=events[head];head=(head+1)%32;--count;return 0;}
 void pulse(void*,const PgrUnityPulse *p){if(!p||p->reserved||p->tid<=0)return;auto a=static_cast<const PgrUnitySchedulerApi*>(pgrazor_unity_scheduler_api(2));if(a&&a->valid(p->generation)==1)tick(p->tid);}
 const PgrSpawnHostApi api{1,sizeof(api),configure,update,tick,stop,sample,next,pulse};

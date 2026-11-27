@@ -11,7 +11,7 @@
 #include <vector>
 
 namespace fixture {
-const pgrazor_native_api_v2 *core=nullptr;
+const pgs_native_api_v2 *core=nullptr;
 int class_tokens[kClassCount]{},field_tokens[kFieldCount]{},method_tokens[kMethodCount]{};
 int max_field,max_type;
 int context_field,context_type,interface_type,bool_type,lazy_class,state_class,value_method,full_method;
@@ -143,7 +143,7 @@ int main(int argc,char **argv){
  using namespace fixture;
  assert(argc==2);void *lib=dlopen(argv[1],RTLD_NOW|RTLD_LOCAL);if(!lib)std::puts(dlerror());assert(lib);
  auto get=reinterpret_cast<const void*(*)(uint32_t)>(dlsym(lib,"pgrazor_native_api"));assert(get);
- core=static_cast<const pgrazor_native_api_v2*>(get(2));assert(core&&core->query_feature(62,1)&&!core->query_feature(62,2));
+ core=static_cast<const pgs_native_api_v2*>(get(2));assert(core&&core->query_feature(62,1)&&!core->query_feature(62,2));
  host=static_cast<const PgrQuickballHostApi*>(pgrazor_quickball_host_api(1));assert(host&&host->size==96);
  initialize();wrapped_btxu();assert(learned_caller);
  PgrMetaExports meta_exports{};meta_exports.class_get_type=reinterpret_cast<void*>(type_object);

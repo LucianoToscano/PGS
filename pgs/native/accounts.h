@@ -112,6 +112,7 @@ typedef struct pgrazor_accounts_config_v1 {
   int32_t promise_succeeded_value;
   int32_t promise_failed_value;
 } pgrazor_accounts_config_v1_t;
+typedef pgrazor_accounts_config_v1_t pgs_accounts_config_v1_t;
 
 typedef struct pgrazor_account_event_v1 {
   uint64_t seq;
@@ -126,6 +127,7 @@ typedef struct pgrazor_account_event_v1 {
   uint16_t id[PGR_ACCOUNTS_MAX_UTF16];
   uint16_t name[PGR_ACCOUNTS_MAX_UTF16];
 } pgrazor_account_event_v1_t;
+typedef pgrazor_account_event_v1_t pgs_account_event_v1_t;
 
 static_assert(sizeof(pgrazor_account_event_v1_t) == 1056, "event POD layout mismatch");
 
@@ -149,6 +151,7 @@ typedef struct pgrazor_account_snapshot_v1 {
   uint16_t id[PGR_ACCOUNTS_MAX_UTF16];
   uint16_t name[PGR_ACCOUNTS_MAX_UTF16];
 } pgrazor_account_snapshot_v1_t;
+typedef pgrazor_account_snapshot_v1_t pgs_account_snapshot_v1_t;
 
 static_assert(sizeof(pgrazor_account_snapshot_v1_t) == 1080, "snapshot POD layout mismatch");
 
@@ -162,6 +165,7 @@ typedef struct pgrazor_accounts_api_v1 {
   void (*api_sample)(pgrazor_account_snapshot_v1_t* out_snapshot);
   size_t (*api_drain)(pgrazor_account_event_v1_t* out_events, size_t max_events);
 } pgrazor_accounts_api_v1_t;
+typedef pgrazor_accounts_api_v1_t pgs_accounts_api_v1_t;
 
 #if defined(__LP64__) || UINTPTR_MAX == 0xffffffffffffffffULL
 static_assert(sizeof(void*) == 8, "LP64 ABI required");

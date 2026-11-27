@@ -224,7 +224,7 @@ int main(int argc, char **argv) {
   if (!lib) { std::fprintf(stderr, "dlopen(%s) failed: %s\n", so_path, ::dlerror()); return 1; }
   auto getter = reinterpret_cast<GetApiFn>(::dlsym(lib, "pgrazor_native_api"));
   assert(getter);
-  const auto *core = static_cast<const pgrazor_native_api_v2 *>(getter(2));
+  const auto *core = static_cast<const pgs_native_api_v2 *>(getter(2));
   assert(core && core->query_feature);
   assert(core->query_feature(43, 99) == nullptr);
   const auto *api = static_cast<const PgrRoutesActionsApi *>(core->query_feature(43, 1));

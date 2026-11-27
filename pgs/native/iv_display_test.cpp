@@ -402,7 +402,7 @@ uint64_t begin_shared(const PgrIvDisplayApi *api, void *plate, void *map, uint64
 int run_shared_mode(void *lib) {
   auto getter = reinterpret_cast<GetHookApiFn>(::dlsym(lib, "pgrazor_native_api"));
   assert(getter);
-  const auto *core = static_cast<const pgrazor_native_api_v2 *>(getter(2));
+  const auto *core = static_cast<const pgs_native_api_v2 *>(getter(2));
   assert(core && core->size == 48);
   const auto *api = static_cast<const PgrIvDisplayApi *>(core->query_feature(15, 1));
   assert(api != nullptr && api->version == 1 && api->size == sizeof(PgrIvDisplayApi));
@@ -590,7 +590,7 @@ int main(int argc, char **argv) {
 
   auto getter = reinterpret_cast<GetHookApiFn>(::dlsym(lib, "pgrazor_native_api"));
   assert(getter);
-  const auto *core = static_cast<const pgrazor_native_api_v2 *>(getter(2));
+  const auto *core = static_cast<const pgs_native_api_v2 *>(getter(2));
   assert(core && core->size == 48);
   assert(core->query_feature(15, 99) == nullptr);  // exact version only
   const auto *api = static_cast<const PgrIvDisplayApi *>(core->query_feature(15, 1));

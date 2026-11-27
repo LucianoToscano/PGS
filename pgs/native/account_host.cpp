@@ -65,14 +65,14 @@ const char *const kAccountsReasonStrings[] = {"","cleared-auth-state","session-s
 constexpr size_t kAccountsReasonCount = sizeof(kAccountsReasonStrings) / sizeof(kAccountsReasonStrings[0]);
 
 // --- Feature getters ---------------------------------------------------------------
-const pgrazor_accounts_api_v1_t *accounts_api() {
-  const auto *p = static_cast<const pgrazor_accounts_api_v1_t *>(pgrazor_accounts_api(1));
-  return (p && p->version == 1 && p->size == sizeof(pgrazor_accounts_api_v1_t)) ? p : nullptr;
+const pgs_accounts_api_v1_t *accounts_api() {
+  const auto *p = static_cast<const pgs_accounts_api_v1_t *>(pgrazor_accounts_api(1));
+  return (p && p->version == 1 && p->size == sizeof(pgs_accounts_api_v1_t)) ? p : nullptr;
 }
 
-const pgrazor_advsync_api_v1 *advsync_api() {
-  const auto *p = static_cast<const pgrazor_advsync_api_v1 *>(pgrazor_adventure_sync_api(1));
-  return (p && p->version == 1 && p->size == sizeof(pgrazor_advsync_api_v1)) ? p : nullptr;
+const pgs_advsync_api_v1 *advsync_api() {
+  const auto *p = static_cast<const pgs_advsync_api_v1 *>(pgrazor_adventure_sync_api(1));
+  return (p && p->version == 1 && p->size == sizeof(pgs_advsync_api_v1)) ? p : nullptr;
 }
 
 const PgrMetaApi *meta_api() {
@@ -349,7 +349,7 @@ int drain_accounts_events() {
   const auto *acc = accounts_api();
   if (!acc || !(g.caps.load(std::memory_order_acquire) & PGR_ACH_CAP_ACCOUNTS)) return PGR_ACH_OK;
 
-  pgrazor_account_event_v1_t batch[PGR_ACCOUNTS_EVENT_QUEUE_CAP]{};
+  pgs_account_event_v1_t batch[PGR_ACCOUNTS_EVENT_QUEUE_CAP]{};
   for (int pass = 0; pass < 4; ++pass) {
     uint32_t n = acc->api_drain(batch, PGR_ACCOUNTS_EVENT_QUEUE_CAP);
     if (n == 0) break;
@@ -1023,7 +1023,7 @@ int api_configure(const PgrAccountHostConfig *config) {
       g.accounts_attempted = true;
       const auto *acc = accounts_api();
       if (acc && validate_accounts_metadata_pointers(md_out)) {
-        pgrazor_accounts_config_v1_t acfg{};
+        pgs_accounts_config_v1_t acfg{};
         void *pointers[]={ec.runtime.boot.runtime_invoke,ec.runtime.boot.gchandle_new,ec.runtime.boot.gchandle_get_target,ec.runtime.boot.gchandle_free,ec.runtime.boot.object_get_class,ec.runtime.boot.object_unbox,ec.meta.class_get_type,ec.runtime.type_get_object,ec.runtime.string_new,ec.runtime.string_length,ec.runtime.boot.string_chars,ec.runtime.boot.field_get_value,md_out.boolean_class,md_out.string_class,md_out.future_class,md_out.map_scene_context_class,md_out.di_container_class,md_out.player_service_class,md_out.iplayer_service_class,md_out.auth_service_class,md_out.iauth_service_class,md_out.logout_wrapper_class,md_out.ilogout_wrapper_class,md_out.player_prefs_class,md_out.auth_active_provider_field,md_out.future_status_field,md_out.future_is_disposed_field,md_out.find_object_of_type_method,md_out.map_get_container_method,md_out.container_resolve_method,md_out.player_get_id_method,md_out.player_get_name_method,md_out.auth_get_is_connected_method,md_out.auth_get_cached_credentials_method,md_out.wrapper_logout_method,md_out.auth_logout_method,md_out.prefs_has_key_method,md_out.prefs_delete_key_method,md_out.prefs_save_method,md_out.auth_logout_target_fn};
         static_assert(sizeof(pointers)==320,"Accounts16 pointer ABI");
         std::memcpy(&acfg,pointers,sizeof(pointers));
@@ -1051,7 +1051,7 @@ int api_configure(const PgrAccountHostConfig *config) {
       g.advsync_attempted = true;
       const auto *adv = advsync_api();
       if (adv && validate_advsync_metadata_pointers(md_out)) {
-        pgrazor_advsync_config_v1 adv_cfg{};
+        pgs_advsync_config_v1 adv_cfg{};
         adv_cfg.version = 1;
         adv_cfg.size = sizeof(adv_cfg);
         adv_cfg.runtime_invoke = ec.runtime.boot.runtime_invoke;
@@ -1386,7 +1386,7 @@ int api_tick(uint64_t tid) {
       if (const auto *acc = accounts_api()) {
         if (!g.accounts_cleared.load(std::memory_order_acquire)) {
           acc->api_clear();
-          pgrazor_account_snapshot_v1_t snap{};
+          pgs_account_snapshot_v1_t snap{};
           acc->api_sample(&snap);
           if (snap.active_depth == 0 && snap.active_gc_roots == 0) {
             g.accounts_cleared.store(true, std::memory_order_release);
@@ -1454,7 +1454,7 @@ int api_sample(PgrAccountHostSample *out) {
 
   if (out->capabilities & PGR_ACH_CAP_ACCOUNTS) {
     if (const auto *acc = accounts_api()) {
-      pgrazor_account_snapshot_v1_t snap{};
+      pgs_account_snapshot_v1_t snap{};
       acc->api_sample(&snap);
       out->active_hook_depth = snap.active_depth;
       out->active_roots = snap.active_gc_roots;

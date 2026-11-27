@@ -58,7 +58,7 @@ struct ControllerState {
   std::atomic<uint32_t> active_gc_roots{0};
   std::atomic<bool> logging_out{false};
 
-  pgrazor_accounts_config_v1_t cfg{};
+  pgs_accounts_config_v1_t cfg{};
 
   // Policy & command fields (guarded by policy_mu)
   uint64_t lease_until_ms = 0;
@@ -71,7 +71,7 @@ struct ControllerState {
   uint64_t mutation_epoch = 1;
 
   // Bounded FIFO event ring (guarded by policy_mu, fail-closed on overflow)
-  pgrazor_account_event_v1_t ring[PGR_ACCOUNTS_EVENT_QUEUE_CAP]{};
+  pgs_account_event_v1_t ring[PGR_ACCOUNTS_EVENT_QUEUE_CAP]{};
   size_t ring_head = 0;
   size_t ring_count = 0;
   uint64_t next_seq = 1;
@@ -96,7 +96,7 @@ struct ControllerState {
 
 ControllerState g_state;
 
-bool validate_config(const pgrazor_accounts_config_v1_t* c) noexcept {
+bool validate_config(const pgs_accounts_config_v1_t* c) noexcept {
   if (!c) return false;
   if (!c->runtime_invoke || !c->gchandle_new || !c->gchandle_get_target ||
       !c->gchandle_free || !c->object_get_class || !c->object_unbox ||
@@ -156,7 +156,7 @@ void push_event_locked(uint32_t kind, uint32_t reason, bool available,
     return;
   }
   const size_t idx = (g_state.ring_head + g_state.ring_count) % PGR_ACCOUNTS_EVENT_QUEUE_CAP;
-  pgrazor_account_event_v1_t& ev = g_state.ring[idx];
+  pgs_account_event_v1_t& ev = g_state.ring[idx];
   std::memset(&ev, 0, sizeof(ev));
   ev.seq = g_state.next_seq++;
   ev.timestamp_ms = clock_boottime_ms();
@@ -649,7 +649,7 @@ void execute_reset_login_owner(uint64_t epoch) noexcept {
   emit_simple_event(PGR_ACC_EVT_LOGIN_RESET_COMPLETE, PGR_ACC_REASON_NONE);
 }
 
-bool api_init_impl(const pgrazor_accounts_config_v1_t* cfg) noexcept {
+bool api_init_impl(const pgs_accounts_config_v1_t* cfg) noexcept {
   if (g_state.hook_failed_latched.load(std::memory_order_acquire) ||
       !validate_config(cfg)) {
     return false;
@@ -1010,7 +1010,7 @@ bool api_clear_impl() noexcept {
   return true;
 }
 
-void api_sample_impl(pgrazor_account_snapshot_v1_t* out_snapshot) noexcept {
+void api_sample_impl(pgs_account_snapshot_v1_t* out_snapshot) noexcept {
   if (!out_snapshot) return;
   std::memset(out_snapshot, 0, sizeof(*out_snapshot));
   std::lock_guard<std::mutex> lock(g_state.policy_mu);
@@ -1033,7 +1033,7 @@ void api_sample_impl(pgrazor_account_snapshot_v1_t* out_snapshot) noexcept {
   std::memcpy(out_snapshot->name, g_state.snap_name, sizeof(out_snapshot->name));
 }
 
-size_t api_drain_impl(pgrazor_account_event_v1_t* out_events, size_t max_events) noexcept {
+size_t api_drain_impl(pgs_account_event_v1_t* out_events, size_t max_events) noexcept {
   if (!out_events || max_events == 0) return 0;
   std::lock_guard<std::mutex> lock(g_state.policy_mu);
   const size_t n = g_state.ring_count < max_events ? g_state.ring_count : max_events;
@@ -1046,9 +1046,9 @@ size_t api_drain_impl(pgrazor_account_event_v1_t* out_events, size_t max_events)
   return n;
 }
 
-const pgrazor_accounts_api_v1_t kAccountsApiV1 = {
+const pgs_accounts_api_v1_t kAccountsApiV1 = {
     PGR_ACCOUNTS_API_VERSION,
-    static_cast<uint32_t>(sizeof(pgrazor_accounts_api_v1_t)),
+    static_cast<uint32_t>(sizeof(pgs_accounts_api_v1_t)),
     &api_init_impl,
     &api_update_impl,
     &api_tick_impl,
@@ -1059,7 +1059,7 @@ const pgrazor_accounts_api_v1_t kAccountsApiV1 = {
 
 }  // namespace
 
-extern "C" const pgrazor_accounts_api_v1_t* pgrazor_accounts_api(uint32_t version) {
+extern "C" const pgs_accounts_api_v1_t* pgrazor_accounts_api(uint32_t version) {
   if (version != PGR_ACCOUNTS_API_VERSION) {
     return nullptr;
   }

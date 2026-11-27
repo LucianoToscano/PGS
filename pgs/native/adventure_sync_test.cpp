@@ -21,9 +21,9 @@ void settle(){timespec t{0,120000000};nanosleep(&t,nullptr);}
 int main(int argc,char **argv){
  if(argc!=2)return 1;auto lib=dlopen(argv[1],RTLD_NOW|RTLD_LOCAL);if(!lib){std::puts(dlerror());return 2;}
  auto getter=reinterpret_cast<const void *(*)(uint32_t)>(dlsym(lib,"pgrazor_native_api"));
- auto core=getter?static_cast<const pgrazor_native_api_v2 *>(getter(2)):nullptr;
- auto api=core?static_cast<const pgrazor_advsync_api_v1 *>(core->query_feature(2,1)):nullptr;if(!api)return 3;
- pgrazor_advsync_config_v1 cfg{1,sizeof(cfg),(void *)&invoke,(void *)&root,(void *)&target,(void *)&free_root,(void *)&klass,&confirm_info,&decline_info,(void *)&update,(void *)&confirm,(void *)&decline,(void *)&initial,(void *)&instruction,(void *)&result,&controller,offsetof(Dialog,confirm),offsetof(Dialog,decline)};
+ auto core=getter?static_cast<const pgs_native_api_v2 *>(getter(2)):nullptr;
+ auto api=core?static_cast<const pgs_advsync_api_v1 *>(core->query_feature(2,1)):nullptr;if(!api)return 3;
+ pgs_advsync_config_v1 cfg{1,sizeof(cfg),(void *)&invoke,(void *)&root,(void *)&target,(void *)&free_root,(void *)&klass,&confirm_info,&decline_info,(void *)&update,(void *)&confirm,(void *)&decline,(void *)&initial,(void *)&instruction,(void *)&result,&controller,offsetof(Dialog,confirm),offsetof(Dialog,decline)};
  if(api->install(&cfg)||api->install(&cfg))return 4;
  Dialog d{&controller,nullptr,nullptr};
  decltype(&initial) volatile init=&initial;decltype(&instruction) volatile instruct=&instruction;decltype(&result) volatile res=&result;decltype(&update) volatile tick=&update;

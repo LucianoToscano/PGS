@@ -76,7 +76,7 @@ void invoke(){unsigned before=original_calls;assert(call(&coroutine,&method_toke
 void install(){assert(api->install(&config)==0);assert(sample().ready==1);}
 void run(const char *name,const std::function<void()> &fn){pid_t p=fork();assert(p>=0);if(!p){setup();fn();std::_Exit(0);}int status;assert(waitpid(p,&status,0)==p);if(!WIFEXITED(status)||WEXITSTATUS(status)){std::fprintf(stderr,"FAIL catch_wait %s\n",name);std::abort();}}
 }
-int main(int argc,char **argv){using namespace cw;assert(argc==2);auto lib=dlopen(argv[1],RTLD_NOW|RTLD_LOCAL);assert(lib);auto get=reinterpret_cast<GetApiFn>(dlsym(lib,"pgrazor_native_api"));assert(get);auto core=static_cast<const pgrazor_native_api_v2 *>(get(2));assert(core);assert(!core->query_feature(58,2));api=static_cast<const PgrCatchWaitApi *>(core->query_feature(58,1));assert(api&&api->size==48);
+int main(int argc,char **argv){using namespace cw;assert(argc==2);auto lib=dlopen(argv[1],RTLD_NOW|RTLD_LOCAL);assert(lib);auto get=reinterpret_cast<GetApiFn>(dlsym(lib,"pgrazor_native_api"));assert(get);auto core=static_cast<const pgs_native_api_v2 *>(get(2));assert(core);assert(!core->query_feature(58,2));api=static_cast<const PgrCatchWaitApi *>(core->query_feature(58,1));assert(api&&api->size==48);
  run("bootstrap not ready",[]{assert(api->install(nullptr)==1&&!sample().ready);});
  run("bad config",[]{auto bad=config;bad.size--;assert(api->install(&bad)<0);});
  run("field offset",[]{field[0].offset++;assert(api->install(&config)<0);});

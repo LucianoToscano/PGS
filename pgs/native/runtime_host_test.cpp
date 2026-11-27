@@ -7,7 +7,7 @@
 int main(int argc,char **argv){
  assert(argc==2);void *lib=dlopen(argv[1],RTLD_NOW|RTLD_LOCAL);assert(lib);
  auto get=reinterpret_cast<const void *(*)(uint32_t)>(dlsym(lib,"pgrazor_native_api"));assert(get);
- auto core=static_cast<const pgrazor_native_api_v2*>(get(2));assert(core);
+ auto core=static_cast<const pgs_native_api_v2*>(get(2));assert(core);
  auto host=static_cast<const PgrRuntimeHostApi*>(core->query_feature(70,1));assert(host&&host->size==32&&!core->query_feature(70,2));
  auto scheduler=static_cast<const PgrUnitySchedulerApi*>(core->query_feature(48,2));assert(scheduler);
  PgrUnitySchedulerSnapshot before{},after{};assert(!scheduler->snapshot(&before)&&!before.installed);

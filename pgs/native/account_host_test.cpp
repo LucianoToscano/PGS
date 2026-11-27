@@ -25,7 +25,7 @@
 
 namespace fixture {
 
-const pgrazor_native_api_v2 *g_core = nullptr;
+const pgs_native_api_v2 *g_core = nullptr;
 
 // --- Synthetic IL2CPP metadata & managed object model ------------------------------
 struct Class;
@@ -711,7 +711,7 @@ void setup_universe() {
     return fixture::g_core ? fixture::g_core->query_feature(ID, v) : nullptr;      \
   }
 FORWARD_FEATURE(pgrazor_adventure_sync_api, 2)
-extern "C" const pgrazor_accounts_api_v1_t *pgrazor_accounts_api(uint32_t v){return fixture::g_core?static_cast<const pgrazor_accounts_api_v1_t*>(fixture::g_core->query_feature(16,v)):nullptr;}
+extern "C" const pgs_accounts_api_v1_t *pgrazor_accounts_api(uint32_t v){return fixture::g_core?static_cast<const pgs_accounts_api_v1_t*>(fixture::g_core->query_feature(16,v)):nullptr;}
 FORWARD_FEATURE(pgrazor_runtime_metadata_api, 47)
 FORWARD_FEATURE(pgrazor_unity_scheduler_api, 48)
 FORWARD_FEATURE(pgrazor_runtime_transport_api, 52)
@@ -728,7 +728,7 @@ int main(int argc, char **argv) {
 
   auto get_api = reinterpret_cast<const void *(*)(uint32_t)>(dlsym(lib, "pgrazor_native_api"));
   assert(get_api);
-  g_core = static_cast<const pgrazor_native_api_v2 *>(get_api(2));
+  g_core = static_cast<const pgs_native_api_v2 *>(get_api(2));
   assert(g_core && g_core->query_feature);
 
   const auto *host = static_cast<const PgrAccountHostApi *>(pgrazor_account_host_api(1));
@@ -1024,7 +1024,7 @@ int main(int argc, char **argv) {
   assert(host->set_options(&opts) == PGR_ACH_ERR_STOPPED);
   assert(host->set_adventure_sync_allowed(1) == PGR_ACH_ERR_STOPPED);
   // Simulate a previously-entered setter reaching its pure publication after stop.
-  const auto *acc=pgrazor_accounts_api(1);pgrazor_account_snapshot_v1_t before{},after{};acc->api_sample(&before);
+  const auto *acc=pgrazor_accounts_api(1);pgs_account_snapshot_v1_t before{},after{};acc->api_sample(&before);
   publish_accounts(true,2000,PGR_ACC_CMD_LOGOUT,UINT64_C(9223372036854775807));
   publish_advsync(true,2500);acc->api_sample(&after);
   assert(before.last_accepted_token==after.last_accepted_token&&after.active_gc_roots==0);

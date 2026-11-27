@@ -32,25 +32,33 @@ extern "C" {
 #define PGRAZOR_INCUBATION_FEATURE_ID 9u
 
 // Table + config ABI version. The getter answers an exact match only.
-#define PGRAZOR_INCUBATION_API_VERSION 1u
+#define PGS_INCUBATION_API_VERSION 1u
+#define PGRAZOR_INCUBATION_API_VERSION PGS_INCUBATION_API_VERSION
 
 // Bounds (fail closed on overflow). Players can hold well over 128 incubators (every
 // limited and Super Incubator is its own entry), and a 128 cap stopped auto-incubation
 // for them, so the incubator bound now sits above any realistic item bag.
-#define PGRAZOR_INCUBATION_MAX_INCUBATORS 10000u
-#define PGRAZOR_INCUBATION_MAX_EGGS       25000u
-#define PGRAZOR_INCUBATION_MAX_STRLEN     256u
+#define PGS_INCUBATION_MAX_INCUBATORS 10000u
+#define PGRAZOR_INCUBATION_MAX_INCUBATORS PGS_INCUBATION_MAX_INCUBATORS
+#define PGS_INCUBATION_MAX_EGGS       25000u
+#define PGRAZOR_INCUBATION_MAX_EGGS PGS_INCUBATION_MAX_EGGS
+#define PGS_INCUBATION_MAX_STRLEN     256u
+#define PGRAZOR_INCUBATION_MAX_STRLEN PGS_INCUBATION_MAX_STRLEN
 
 // Timers, milliseconds (CLOCK_BOOTTIME). 5s poll, 15s back-off with no eggs, 30s
 // confirmation deadline; identical to the JS now+5000 / now+15000 / now+30000.
-#define PGRAZOR_INCUBATION_POLL_MS     5000u
-#define PGRAZOR_INCUBATION_NO_EGGS_MS  15000u
-#define PGRAZOR_INCUBATION_DEADLINE_MS 30000u
+#define PGS_INCUBATION_POLL_MS     5000u
+#define PGRAZOR_INCUBATION_POLL_MS PGS_INCUBATION_POLL_MS
+#define PGS_INCUBATION_NO_EGGS_MS  15000u
+#define PGRAZOR_INCUBATION_NO_EGGS_MS PGS_INCUBATION_NO_EGGS_MS
+#define PGS_INCUBATION_DEADLINE_MS 30000u
+#define PGRAZOR_INCUBATION_DEADLINE_MS PGS_INCUBATION_DEADLINE_MS
 
 // Hard cap on the per-tick authorization lease the host may hand us (ms). The host
 // passes the RESIDUAL window; we clamp to this and build an absolute CLOCK_BOOTTIME
 // deadline that is re-checked immediately before the single PutEggInIncubator.
-#define PGRAZOR_INCUBATION_MAX_LEASE_MS 2500u
+#define PGS_INCUBATION_MAX_LEASE_MS 2500u
+#define PGRAZOR_INCUBATION_MAX_LEASE_MS PGS_INCUBATION_MAX_LEASE_MS
 
 // Status codes surfaced through the sample. The adapter maps each to the exact JS
 // status string; code 10 (STARTING) carries the chosen distance in the sample.
@@ -163,6 +171,7 @@ typedef struct pgrazor_incubation_config_v1 {
     void *class_boolean;           /* System.Boolean (exact check before unbox) (offset 344) */
     void *class_string;            /* System.String  (exact check before chars)  (offset 352) */
 } pgrazor_incubation_config_v1;
+typedef pgrazor_incubation_config_v1 pgs_incubation_config_v1;
 
 // Pull-only telemetry snapshot (48 bytes). status_serial increments on each distinct
 // status transition; request_serial increments once per issued PutEggInIncubator (the
@@ -183,6 +192,7 @@ typedef struct pgrazor_incubation_sample_v1 {
     uint32_t owned_roots;          /* durable pending GC roots currently held (0..4) */
     uint32_t fault_step;           /* PGRAZOR_INC_FAULT_* of the latest fault (was reserved 0) */
 } pgrazor_incubation_sample_v1;
+typedef pgrazor_incubation_sample_v1 pgs_incubation_sample_v1;
 
 /*
  * install(config): validate and publish the config once for the process lifetime. A
@@ -230,6 +240,7 @@ typedef struct pgrazor_incubation_api_v1 {
     pgrazor_incubation_clear_fn   clear;
     pgrazor_incubation_sample_fn  sample;
 } pgrazor_incubation_api_v1;
+typedef pgrazor_incubation_api_v1 pgs_incubation_api_v1;
 
 /*
  * Hidden getter (NOT exported by the version script). The coordinator registers it in

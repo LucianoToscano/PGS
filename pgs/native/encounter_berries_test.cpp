@@ -30,7 +30,7 @@
 #ifndef PGR_BERRY_DIRECT_TEST
 #include "pgs_native_api.h"
 #include <dlfcn.h>
-static const pgrazor_native_api_v2 *loaded_core = nullptr;
+static const pgs_native_api_v2 *loaded_core = nullptr;
 extern "C" const void *pgrazor_encounter_berries_api(uint32_t version) {
   return loaded_core ? loaded_core->query_feature(18, version) : nullptr;
 }
@@ -545,7 +545,7 @@ int main(int argc, char **argv) {
   if(!library){std::puts(dlerror());return 2;}
   using GetApi=const void *(*)(uint32_t);
   auto get=reinterpret_cast<GetApi>(dlsym(library,"pgrazor_native_api"));
-  loaded_core=get?static_cast<const pgrazor_native_api_v2 *>(get(2)):nullptr;
+  loaded_core=get?static_cast<const pgs_native_api_v2 *>(get(2)):nullptr;
   if(!loaded_core||loaded_core->version!=2||loaded_core->size!=sizeof(*loaded_core)||!loaded_core->query_feature)return 2;
 #endif
   g_api = static_cast<const pgr_berry_api_v1 *>(pgrazor_encounter_berries_api(1));

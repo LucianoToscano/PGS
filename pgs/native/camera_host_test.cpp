@@ -19,7 +19,7 @@
 #include "runtime_bootstrap.h"
 #include "hook_engine.h"
 #include "dobby.h"
-static const pgrazor_native_api_v2 *fixture_core=nullptr;
+static const pgs_native_api_v2 *fixture_core=nullptr;
 int fixture_resolve(const PgrCameraMetaConfig*,PgrCameraMetaOutput*);
 static const PgrCameraMetaApi fixture_metadata{1,sizeof(PgrCameraMetaApi),sizeof(PgrCameraMetaConfig),sizeof(PgrCameraMetaOutput),fixture_resolve};
 const void *fixture_core_api(uint32_t v){return v==2?fixture_core:nullptr;}
@@ -778,7 +778,7 @@ int main(int argc, char **argv) {
   auto get_native =
       reinterpret_cast<NativeApiFn>(dlsym(lib, "pgrazor_native_api"));
   assert(get_native != nullptr);
-  const auto *core = static_cast<const pgrazor_native_api_v2 *>(get_native(2u));
+  const auto *core = static_cast<const pgs_native_api_v2 *>(get_native(2u));
   assert(core != nullptr && core->query_feature != nullptr);
 
   fixture_core=core;

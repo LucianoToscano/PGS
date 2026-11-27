@@ -61,7 +61,7 @@ unsigned attach_calls = 0, detach_calls = 0, reentries = 0;
 void *last_detached = nullptr;
 bool reenter = false;       // domain_get seam reenters probe to prove BUSY / no deadlock
 
-const pgrazor_native_api_v2 *core = nullptr;
+const pgs_native_api_v2 *core = nullptr;
 const PgrBootApi *api = nullptr;
 PgrBootConfig base_config{};
 
@@ -292,7 +292,7 @@ int main(int argc, char **argv) {
   assert(library);
   auto get = reinterpret_cast<const void *(*)(uint32_t)>(dlsym(library, "pgrazor_native_api"));
   assert(get);
-  core = static_cast<const pgrazor_native_api_v2 *>(get(2));
+  core = static_cast<const pgs_native_api_v2 *>(get(2));
   assert(core && core->query_feature);
   assert(!core->query_feature(54, 2)); // exact-version only
   api = static_cast<const PgrBootApi *>(core->query_feature(54, 1));

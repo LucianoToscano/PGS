@@ -30,7 +30,7 @@ int main(int argc,char **argv){
  assert(argc==2);
  void *lib=dlopen(argv[1],RTLD_NOW|RTLD_LOCAL);assert(lib);
  auto getter=reinterpret_cast<GetApiFn>(dlsym(lib,"pgrazor_native_api"));assert(getter);
- auto *core=static_cast<const pgrazor_native_api_v2 *>(getter(2));assert(core);
+ auto *core=static_cast<const pgs_native_api_v2 *>(getter(2));assert(core);
  g_api=static_cast<const PgrTransferExecApi *>(core->query_feature(23,1));assert(g_api);
  auto *observers=static_cast<const PgrTransferObserversApi *>(core->query_feature(57,1));assert(observers);
  auto config=make_config();assert(g_api->install(&config)==0);g_owner=this_tid();

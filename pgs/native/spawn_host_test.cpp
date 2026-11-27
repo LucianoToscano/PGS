@@ -28,7 +28,7 @@ std::vector<unsigned> drain(const PgrRuntimeTransportApi *tr,const std::vector<u
 }
 void scenario(const char *library,unsigned mode){
  auto lib=dlopen(library,RTLD_NOW|RTLD_LOCAL);assert(lib);auto get=reinterpret_cast<const void*(*)(uint32_t)>(dlsym(lib,"pgrazor_native_api"));assert(get);
- auto core=static_cast<const pgrazor_native_api_v2*>(get(2));assert(core&&core->query_feature);auto api=static_cast<const PgrSpawnHostApi*>(core->query_feature(71,1));assert(api&&api->version==1&&api->size==64&&!core->query_feature(71,2));
+ auto core=static_cast<const pgs_native_api_v2*>(get(2));assert(core&&core->query_feature);auto api=static_cast<const PgrSpawnHostApi*>(core->query_feature(71,1));assert(api&&api->version==1&&api->size==64&&!core->query_feature(71,2));
  auto tr=static_cast<const PgrRuntimeTransportApi*>(core->query_feature(52,1));assert(tr);
  PgrSharedMetadataOutput md{};md.version=2;md.size=sizeof(md);md.optional[pgr_shared_meta::OPT_SPAWN]=mode==2?PGR_SHARED_OPT_UNAVAILABLE:PGR_SHARED_OPT_AVAILABLE;md.opt_handles[pgr_shared_meta::H_SP_CODE]=reinterpret_cast<void*>(target);md.opt_handles[pgr_shared_meta::H_SP_METHOD]=&method_token;
  PgrSpawnHostConfig c{1,sizeof(c),mode==1?1u:0u,1,&md,reinterpret_cast<void*>(thread_current),uint64_t(gettid())};

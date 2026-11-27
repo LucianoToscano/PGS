@@ -35,19 +35,24 @@ extern "C" {
 #define PGRAZOR_ADVSYNC_FEATURE_ID 2u
 
 /* Table + config ABI version. The getter answers an exact match only. */
-#define PGRAZOR_ADVSYNC_API_VERSION 1u
+#define PGS_ADVSYNC_API_VERSION 1u
+#define PGRAZOR_ADVSYNC_API_VERSION PGS_ADVSYNC_API_VERSION
 
 /* Maximum accepted dismissal lease, in milliseconds (matches the JS 2500 ms window). */
-#define PGRAZOR_ADVSYNC_MAX_LEASE_MS 2500u
+#define PGS_ADVSYNC_MAX_LEASE_MS 2500u
+#define PGRAZOR_ADVSYNC_MAX_LEASE_MS PGS_ADVSYNC_MAX_LEASE_MS
 
 /* Delay before an eligible captured dialog may be auto-dismissed (ms). */
-#define PGRAZOR_ADVSYNC_DELAY_MS 100u
+#define PGS_ADVSYNC_DELAY_MS 100u
+#define PGRAZOR_ADVSYNC_DELAY_MS PGS_ADVSYNC_DELAY_MS
 
 /* A captured dialog that is never dismissed is dropped after this age (ms). */
-#define PGRAZOR_ADVSYNC_EXPIRY_MS 10000u
+#define PGS_ADVSYNC_EXPIRY_MS 10000u
+#define PGRAZOR_ADVSYNC_EXPIRY_MS PGS_ADVSYNC_EXPIRY_MS
 
 /* Bound on simultaneously tracked dialogs (matches the JS pending cap). */
-#define PGRAZOR_ADVSYNC_QUEUE_MAX 4u
+#define PGS_ADVSYNC_QUEUE_MAX 4u
+#define PGRAZOR_ADVSYNC_QUEUE_MAX PGS_ADVSYNC_QUEUE_MAX
 
 /* Status codes. 0 == success. Shared spirit with pgs_native_api.h. */
 enum {
@@ -99,6 +104,7 @@ typedef struct pgrazor_advsync_config_v1 {
     uint64_t off_on_confirm;       /* byte offset of _onConfirm delegate field (0xa8) */
     uint64_t off_on_decline;       /* byte offset of _onDecline delegate field (0xb0) */
 } pgrazor_advsync_config_v1;
+typedef pgrazor_advsync_config_v1 pgs_advsync_config_v1;
 
 /*
  * install(config): validate the config and install the module's hooks once for the
@@ -154,6 +160,7 @@ typedef struct pgrazor_advsync_api_v1 {
     pgrazor_advsync_retire_fn   retire;
     pgrazor_advsync_selftest_fn selftest;
 } pgrazor_advsync_api_v1;
+typedef pgrazor_advsync_api_v1 pgs_advsync_api_v1;
 
 /*
  * Hidden getter (NOT exported by the version script). The coordinator registers it in

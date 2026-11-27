@@ -77,7 +77,7 @@ const PgrVgpResultsApi      *RES = nullptr;
 const PgrVgpDiscoveryApi    *DSC = nullptr;
 const PgrVgpMaintenanceApi  *MNT = nullptr;
 const PgrVgpMarkerApi       *MRK = nullptr;
-const pgrazor_items_api_v1  *ITM = nullptr;
+const pgs_items_api_v1  *ITM = nullptr;
 const AuxApi                *AUX = nullptr;
 
 // ---- controller state -----------------------------------------------------------------------------
@@ -952,7 +952,7 @@ int install(const PgrVgpControllerConfig *c) {
   auto dsc = checkTable<PgrVgpDiscoveryApi>(c->discovery_table, PGR_VD_API_VERSION, sizeof(PgrVgpDiscoveryApi));
   auto mnt = checkTable<PgrVgpMaintenanceApi>(c->maintenance_table, PGR_VM_API_VERSION, sizeof(PgrVgpMaintenanceApi));
   auto mrk = checkTable<PgrVgpMarkerApi>(c->marker_table, 1, sizeof(PgrVgpMarkerApi));
-  auto itm = checkTable<pgrazor_items_api_v1>(c->items_table, PGRAZOR_ITEMS_API_VERSION, sizeof(pgrazor_items_api_v1));
+  auto itm = checkTable<pgs_items_api_v1>(c->items_table, PGS_ITEMS_API_VERSION, sizeof(pgs_items_api_v1));
   auto aux = checkTable<AuxApi>(c->aux_table, 1, sizeof(AuxApi));
   if (!pol || !act || !cnd || !res || !dsc || !mnt || !mrk || !itm || !aux) return PGR_VGC_ERR_BAD_TABLE;
   if (!allFns(reinterpret_cast<const void *const *>(&pol->install), 13) ||

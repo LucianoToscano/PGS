@@ -26,11 +26,11 @@ std::atomic<uint32_t> caps{0},faults{0},roots{0};std::atomic<uint64_t> owner{0},
 PgrSharedMetadataOutput md{};PgrInventoryRuntime rt{};bool binding=false;std::atomic<bool> installed{false};uint32_t flags=0;
 bool permission_seen=false;
 PgrInventoryHostOptions policy{};std::string rule_text;uint64_t deadline=0,revision=0,rule_generation=0,rule_epoch=0;
-pgrazor_items_rules_v1 rules{};std::string event_queue[64];uint32_t event_head=0,event_count=0;uint64_t event_seq=0;
-pgrazor_items_sample_v1 old_items{};pgrazor_buddy_sample_v1 old_buddy{};pgrazor_incubation_sample_v1 old_inc{};
-const pgrazor_items_api_v1 *items(){return static_cast<const pgrazor_items_api_v1*>(pgrazor_items_api(1));}
-const pgrazor_buddy_api_v1 *buddy(){return static_cast<const pgrazor_buddy_api_v1*>(pgrazor_buddy_feeding_api(1));}
-const pgrazor_incubation_api_v1 *inc(){return static_cast<const pgrazor_incubation_api_v1*>(pgrazor_incubation_api(1));}
+pgs_items_rules_v1 rules{};std::string event_queue[64];uint32_t event_head=0,event_count=0;uint64_t event_seq=0;
+pgs_items_sample_v1 old_items{};pgs_buddy_sample_v1 old_buddy{};pgs_incubation_sample_v1 old_inc{};
+const pgs_items_api_v1 *items(){return static_cast<const pgs_items_api_v1*>(pgrazor_items_api(1));}
+const pgs_buddy_api_v1 *buddy(){return static_cast<const pgs_buddy_api_v1*>(pgrazor_buddy_feeding_api(1));}
+const pgs_incubation_api_v1 *inc(){return static_cast<const pgs_incubation_api_v1*>(pgrazor_incubation_api(1));}
 const PgrRuntimeTransportApi *transport(){return static_cast<const PgrRuntimeTransportApi*>(pgrazor_runtime_transport_api(1));}
 void *h(unsigned n){return const_cast<void*>(md.opt_handles[n]);}void *c(unsigned n){return const_cast<void*>(md.opt_classes[n]);}
 void *core_m(unsigned n){return const_cast<void*>(md.methods[n]);}void *core_c(unsigned n){return const_cast<void*>(md.classes[n]);}
@@ -62,7 +62,7 @@ int bind_default(){
 void install_inventory(){
  auto &r=rt.boot;
  if(available(OPT_ITEMS)){
-  pgrazor_items_config_v1 cfg{};cfg.version=1;cfg.size=sizeof(cfg);cfg.has_lookup=available(OPT_ITEMS_LOOKUP);
+  pgs_items_config_v1 cfg{};cfg.version=1;cfg.size=sizeof(cfg);cfg.has_lookup=available(OPT_ITEMS_LOOKUP);
   void *p[]={r.runtime_invoke,r.gchandle_new,r.gchandle_get_target,r.gchandle_free,r.object_get_class,r.object_unbox,r.field_get_value,
    h(H_IT_LIST_M),h(H_IT_COUNT_M),h(H_IT_GET_M),h(H_IT_QUANTITY_M),h(H_IT_EXPIRING_M),h(H_IT_RECYCLE_M),h(H_IT_PROTO_M),
    h(H_IT_INIT_CODE),h(H_IT_LIST_CODE),h(H_IT_RECYCLE_CODE),h(H_IT_RESULT_CODE),h(H_IT_ERROR_CODE),c(OC_ISERVICE),c(OC_IBAG),h(H_IT_DK),h(H_IT_CB),c(OC_IRESPONSE),c(OC_INT),
@@ -74,7 +74,7 @@ void install_inventory(){
   cfg.success=md.opt_ints[I_ITEMS_SUCCESS];feature_ready(PGR_IH_ITEMS,"item-bag-ready",38,items()->install(&cfg));
  }else feature_ready(PGR_IH_ITEMS,"item-bag-ready",38,-1);
  if(available(OPT_BUDDY)&&available(OPT_ITEMS)&&available(OPT_ITEMS_LOOKUP)){
-  pgrazor_buddy_config_v1 cfg{};cfg.version=1;cfg.size=sizeof(cfg);
+  pgs_buddy_config_v1 cfg{};cfg.version=1;cfg.size=sizeof(cfg);
   void *p[]={r.runtime_invoke,r.gchandle_new,r.gchandle_get_target,r.gchandle_free,r.object_get_class,r.object_unbox,rt.class_get_type,rt.type_get_object,r.field_get_value,
    h(H_IL_FIND_M),h(H_IL_CONTAINER_M),h(H_IL_RESOLVE_M),h(H_BD_M_HAS),h(H_BD_M_POKEMON),h(H_BD_M_STATS),h(H_BD_M_REMAINING),h(H_BD_M_FULLNESS),h(H_BD_M_COOLDOWN),h(H_IT_QUANTITY_M),h(H_BD_M_FEED),core_m(5),
    h(H_BD_M_FEED_CODE),h(H_BD_M_RESULT_CODE),h(H_IL_MAP),h(H_BD_CONTRACT),c(OC_BUDDY_7769),c(OC_BUDDY_8109),c(OC_BUDDY_7768),c(OC_BUDDY_PK_PROTO),c(OC_BUDDY_OBS),c(OC_IBAG),core_c(6),c(OC_INT),c(OC_SINGLE),h(H_BD_CALLBACK),c(OC_BUDDY_FEED_OUT),
@@ -82,7 +82,7 @@ void install_inventory(){
   static_assert(sizeof(p)==42*8,"buddy config");memcpy(&cfg.runtime_invoke,p,sizeof(p));cfg.success=md.opt_ints[I_BUDDY_SUCCESS];feature_ready(PGR_IH_BUDDY,"buddy-ready",27,buddy()->install(&cfg));
  }else feature_ready(PGR_IH_BUDDY,"buddy-ready",27,-1);
  if(available(OPT_INCUBATOR)&&available(OPT_ITEMS)&&available(OPT_ITEMS_LOOKUP)){
-  pgrazor_incubation_config_v1 cfg{};cfg.version=1;cfg.size=sizeof(cfg);
+  pgs_incubation_config_v1 cfg{};cfg.version=1;cfg.size=sizeof(cfg);
   void *p[]={r.runtime_invoke,r.gchandle_new,r.gchandle_get_target,r.gchandle_free,r.object_get_class,r.object_unbox,rt.string_length,r.string_chars,rt.object_get_virtual_method,rt.class_get_type,rt.type_get_object,r.field_get_value,
    h(H_IL_FIND_M),h(H_IL_CONTAINER_M),h(H_IL_RESOLVE_M),h(H_INC_M_INCUBATORS),h(H_INC_M_EGGS),h(H_INC_M_PUT),h(H_INC_M_ENUMERATE),h(H_INC_M_MOVE),h(H_INC_M_CURRENT),h(H_INC_M_DISPOSE),
    h(H_IL_MAP),c(OC_VGP_PLAYER_CONTRACT),c(OC_VGP_PLAYER),c(OC_VGP_BAG_CONTRACT),c(OC_BAG),c(OC_INC_PROTO),c(OC_PK),c(OC_INC_CONTRACT),c(OC_INC_SERVICE),
@@ -92,7 +92,7 @@ void install_inventory(){
  }else feature_ready(PGR_IH_INCUBATION,"incubator-ready",34,-1);
  if(caps.load()&PGR_IH_ITEMS)items()->sample(&old_items);if(caps.load()&PGR_IH_BUDDY)buddy()->sample(&old_buddy);if(caps.load()&PGR_IH_INCUBATION)inc()->sample(&old_inc);
 }
-bool parse_rules(const std::string &text,pgrazor_items_rules_v1 &out){
+bool parse_rules(const std::string &text,pgs_items_rules_v1 &out){
  out={};out.version=1;out.size=sizeof(out);size_t pos=0;while(pos<text.size()){
   size_t end=text.find(';',pos);if(end==std::string::npos)end=text.size();if(end==pos){pos=end+1;continue;}
   size_t colon=text.find(':',pos);if(colon==std::string::npos||colon>=end||colon==pos||colon-pos>7||end-colon<2||end-colon>7)return false;
@@ -107,7 +107,7 @@ int update(const PgrInventoryHostOptions *p){
  if(!p||p->version!=1||p->size!=sizeof(*p)||p->reserved||p->item_enabled>1||p->item_allowed>1||p->item_catalog>2||p->buddy_allowed>1||p->incubator_enabled>1||p->incubator_longest>1||p->incubator_allowed>1||p->gift_mask>7||p->gift_allowed>1||p->lease_ms>2500){std::lock_guard<std::mutex> lock(policy_lock);deadline=0;++revision;return -2;}
  if(stopping.load())return -3;
  size_t len=p->item_rules?strnlen(p->item_rules,8193):0;if(len>8192){std::lock_guard<std::mutex> lock(policy_lock);deadline=0;++revision;return -2;}
- std::string text=p->item_rules?std::string(p->item_rules,len):"";pgrazor_items_rules_v1 next{};bool valid=parse_rules(text,next);if(!valid){next={};next.version=1;next.size=sizeof(next);}
+ std::string text=p->item_rules?std::string(p->item_rules,len):"";pgs_items_rules_v1 next{};bool valid=parse_rules(text,next);if(!valid){next={};next.version=1;next.size=sizeof(next);}
  next.enabled=p->item_enabled&&valid;uint64_t time=clock_ms();if(!time){stopping.store(true);return -4;}
  bool permission_changed=false;
  {std::lock_guard<std::mutex> lock(policy_lock);
@@ -132,22 +132,22 @@ void poll_policy(){
 }
 std::string number(double value){char text[32];snprintf(text,sizeof(text),"%.15g",value);return text;}
 void drain_inventory(int32_t berry){
- if(caps.load()&PGR_IH_ITEMS){pgrazor_items_sample_v1 v{};if(!items()->sample(&v)){
+ if(caps.load()&PGR_IH_ITEMS){pgs_items_sample_v1 v{};if(!items()->sample(&v)){
   if(v.bag_ready_serial!=old_items.bag_ready_serial)event("item-bag-ready");
-  if(v.catalog_serial!=old_items.catalog_serial){pgrazor_item_row row[1024]{};uint32_t n=0;if(!items()->catalog(row,1024,&n)&&n<=1024){std::string rows;
+  if(v.catalog_serial!=old_items.catalog_serial){pgs_item_row row[1024]{};uint32_t n=0;if(!items()->catalog(row,1024,&n)&&n<=1024){std::string rows;
    for(uint32_t i=0;i<n;++i){std::string name="Item "+std::to_string(row[i].id);for(uint32_t k=0;k<md.item_name_count&&k<kItemNameMax;++k)if(md.item_names[k].value==row[i].id){name=md.item_names[k].name;break;}
     if(i)rows+='\n';rows+=std::to_string(row[i].id)+"|"+name+"|"+std::to_string(row[i].count);}
    event("item-catalog","\"rows\":"+quote(rows));text_action(37,rows);
   }}
   if(v.events_lost!=old_items.events_lost){event("item-transfer-error","\"reason\":\"Native item event queue overflow; recycling paused\"");text_action(39,"Item transfer: Native item event queue overflow; recycling paused");}old_items=v;
  }
- pgrazor_item_event records[64]{};uint32_t n=0;if(!items()->drain(records,64,&n)&&n<=64)for(uint32_t i=0;i<n;++i){auto &v=records[i];std::string body="\"id\":"+std::to_string(v.id)+",\"amount\":"+std::to_string(v.amount);
+ pgs_item_event records[64]{};uint32_t n=0;if(!items()->drain(records,64,&n)&&n<=64)for(uint32_t i=0;i<n;++i){auto &v=records[i];std::string body="\"id\":"+std::to_string(v.id)+",\"amount\":"+std::to_string(v.amount);
   if(v.kind==1)event("item-transfer-requested",body+",\"keep\":"+std::to_string(v.aux));
   else if(v.kind==2){event("item-transfer-confirmed",body);text_action(39,"Transferred "+std::to_string(v.amount)+" items");}
   else if(v.kind==3){const char *reason=v.aux==1?"Timed out; item paused until app restart":v.aux==2?"Game rejected recycling; item paused until settings change":"native";event(v.aux==4?"item-lookup-error":"item-transfer-error",body+",\"reason\":"+quote(reason));if(v.aux!=4)text_action(39,"Item transfer: "+std::string(reason));}
  }
  }
- if(caps.load()&PGR_IH_BUDDY){pgrazor_buddy_sample_v1 v{};if(!buddy()->sample(&v)){
+ if(caps.load()&PGR_IH_BUDDY){pgs_buddy_sample_v1 v{};if(!buddy()->sample(&v)){
   const char *msg[]={"","Off","Waiting for the map","Choose a buddy first","Waiting for buddy hunger data","","Waiting for buddy feeding cooldown","Feeding paused after six berries; check your buddy","Selected berry is out of stock","Feeding buddy","Berry fed; checking buddy hunger","","Buddy feed timed out; no automatic retry","Hunger did not update; toggle Off to retry","Buddy feeding paused: native"};
   if(v.status_serial!=old_buddy.status_serial){std::string m=v.status<15?msg[v.status]:"";if(v.status==5)m="Buddy fed - "+std::to_string(v.detail)+" min remaining";if(v.status==11)m="Buddy feed failed (result "+std::to_string(v.detail)+"); toggle Off to retry";if(!m.empty())status("buddy-status",28,m);}
   if(v.service_serial!=old_buddy.service_serial)event("buddy-service-ready");
@@ -155,7 +155,7 @@ void drain_inventory(int32_t berry){
   if(v.result_serial!=old_buddy.result_serial)force_poll.store(true);
   if(v.fault_serial!=old_buddy.fault_serial)event("buddy-error","\"reason\":\"native\"");old_buddy=v;
  }}
- if(caps.load()&PGR_IH_INCUBATION){pgrazor_incubation_sample_v1 v{};if(!inc()->sample(&v)){
+ if(caps.load()&PGR_IH_INCUBATION){pgs_incubation_sample_v1 v{};if(!inc()->sample(&v)){
   const char *msg[]={"","Off","Waiting for the map","Egg incubating","Incubator already in use","Assignment unconfirmed; waiting for inventory","Confirming egg assignment","Incubation stopped; toggle off/on to retry","Unlimited incubator in use or unavailable","No eggs waiting","","Incubation unavailable; toggle off/on to retry"};
   if(v.status_serial!=old_inc.status_serial){std::string m=v.status<12?msg[v.status]:"";if(v.status==10)m="Starting "+number(v.distance)+" km egg";if(!m.empty())status("incubator-status",35,m);}
   if(v.request_serial!=old_inc.request_serial)event("incubator-request","\"distance\":"+(std::isfinite(v.distance)?std::to_string(v.distance):"null")+",\"priority\":"+quote(v.longest?"longest":"shortest"));
@@ -284,9 +284,9 @@ void social_tick(uint64_t time,uint64_t tid,uint64_t lease,const PgrInventoryHos
  if((gift_mask&1)&&!profile_checked){profile_checked=true;profile_next=time+1200;if(boolean(h(H_GF_M_CHECK),panel.get())){profile_deadline=time+30000;profile_next=time+500;}}
 }
 void refresh_roots(){uint32_t n=social_roots.load()+social_frames.load();
- if(caps.load()&PGR_IH_ITEMS){pgrazor_items_sample_v1 s{};n+=items()->sample(&s)?1:s.owned_roots;}
- if(caps.load()&PGR_IH_BUDDY){pgrazor_buddy_sample_v1 s{};n+=buddy()->sample(&s)?1:s.owned_roots;}
- if(caps.load()&PGR_IH_INCUBATION){pgrazor_incubation_sample_v1 s{};n+=inc()->sample(&s)?1:s.owned_roots;}
+ if(caps.load()&PGR_IH_ITEMS){pgs_items_sample_v1 s{};n+=items()->sample(&s)?1:s.owned_roots;}
+ if(caps.load()&PGR_IH_BUDDY){pgs_buddy_sample_v1 s{};n+=buddy()->sample(&s)?1:s.owned_roots;}
+ if(caps.load()&PGR_IH_INCUBATION){pgs_incubation_sample_v1 s{};n+=inc()->sample(&s)?1:s.owned_roots;}
  if(caps.load()&PGR_IH_INCOMING){PgrIncomingGiftsSample s{};n+=incoming()->sample(&s)?1:s.root_count;}
  if(caps.load()&PGR_IH_OUTGOING){PgrOutgoingGiftsSample s{};n+=outgoing()->sample(&s)?1:s.roots;}roots.store(n);
 }
@@ -300,7 +300,7 @@ int tick(uint64_t tid){
  if(!binding&&bind_default())return 1;if(!attached(tid))return -5;uint64_t zero=0;owner.compare_exchange_strong(zero,tid);if(owner.load()!=tid)return -5;uint64_t count=ticks.fetch_add(1)+1;
  if(!installed&&!stopping.load()){installed=true;install_inventory();install_social();}
  if(!installed)return stopping.load()?-3:1;
- if(!stopping.load())poll_policy();PgrInventoryHostOptions p{};pgrazor_items_rules_v1 local_rules{};uint64_t expires=0;
+ if(!stopping.load())poll_policy();PgrInventoryHostOptions p{};pgs_items_rules_v1 local_rules{};uint64_t expires=0;
  {std::lock_guard<std::mutex> lock(policy_lock);p=policy;local_rules=rules;expires=deadline;}
  uint64_t time=clock_ms();uint64_t lease=time&&time<expires&&!stopping.load()&&count>=3?expires-time:0;
  if(caps.load()&PGR_IH_ITEMS){if(stopping.load())items()->clear(tid);else if(!(faults.load()&PGR_IH_ITEMS)){uint32_t force=(force_poll.exchange(false)?1:0)|(cleanup_poll.exchange(false)?9:0)|(p.item_catalog==2?2:p.item_catalog==1?4:0);if(items()->tick(&local_rules,force,p.item_allowed?lease:0,tid)){faults.fetch_or(PGR_IH_ITEMS);items()->clear(tid);}}}

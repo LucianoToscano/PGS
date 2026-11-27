@@ -58,7 +58,7 @@ void drain_all() {
 void setup_library(const char *path) {
   void *library=dlopen(path,RTLD_NOW|RTLD_LOCAL);assert(library);
   auto get=reinterpret_cast<const void *(*)(uint32_t)>(dlsym(library,"pgrazor_native_api"));
-  auto core=get?static_cast<const pgrazor_native_api_v2 *>(get(2)):nullptr;assert(core);
+  auto core=get?static_cast<const pgs_native_api_v2 *>(get(2)):nullptr;assert(core);
   loaded=static_cast<const PgrRoutesServicesApi *>(core->query_feature(45,1));assert(loaded);
   PgrRoutesServicesConfig c;make_config(&c);
   c.gchandle_new=reinterpret_cast<void *>(&regression_new);

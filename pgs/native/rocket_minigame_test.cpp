@@ -128,7 +128,7 @@ int main(int argc, char **argv) {
     void *lib = dlopen(argv[1], RTLD_NOW | RTLD_LOCAL);
     if (!lib) { std::puts(dlerror()); return 2; }
     auto get = reinterpret_cast<const void *(*)(uint32_t)>(dlsym(lib, "pgrazor_native_api"));
-    auto core = get ? static_cast<const pgrazor_native_api_v2 *>(get(2)) : nullptr;
+    auto core = get ? static_cast<const pgs_native_api_v2 *>(get(2)) : nullptr;
     if (!core || core->size != 48 || core->query_feature(6, 99) || core->query_feature(99, 1)) return 3;
     auto api = static_cast<const PgrRocketMiniApi *>(core->query_feature(6, 1));
     if (!api || api->version != 1 || api->size != 40) return 4;

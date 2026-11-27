@@ -37,7 +37,7 @@ int scenario(int n){
 int main(int argc,char **argv){
  if(argc!=2)return 80;void *lib=dlopen(argv[1],RTLD_NOW);if(!lib)return 81;
  auto get=reinterpret_cast<const void *(*)(uint32_t)>(dlsym(lib,"pgrazor_native_api"));
- auto core=get?static_cast<const pgrazor_native_api_v2 *>(get(2)):nullptr;if(!core)return 82;
+ auto core=get?static_cast<const pgs_native_api_v2 *>(get(2)):nullptr;if(!core)return 82;
  api=static_cast<const pgr_rocket_actions_api_v1 *>(core->query_feature(20,1));
  if(!api||api->size!=48||core->query_feature(20,99))return 83;
  for(int n=0;n<17;++n){pid_t pid=fork();if(pid==0)_exit(scenario(n));int status=0;waitpid(pid,&status,0);

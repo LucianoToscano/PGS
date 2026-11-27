@@ -218,17 +218,17 @@ void copy_str(char *dst, size_t cap, const char *src) {
   dst[len] = '\0';
 }
 
-const pgrazor_native_api_v2 *resolve_native_api() {
+const pgs_native_api_v2 *resolve_native_api() {
   if (g_state.core_handle != nullptr) {
     typedef const void *(*NativeApiFn)(uint32_t);
     auto fn = reinterpret_cast<NativeApiFn>(
         dlsym(g_state.core_handle, "pgrazor_native_api"));
     if (fn != nullptr) {
-      return static_cast<const pgrazor_native_api_v2 *>(fn(2u));
+      return static_cast<const pgs_native_api_v2 *>(fn(2u));
     }
   }
 #if !defined(PGR_CAMERA_HOST_STANDALONE_TEST)
-  return static_cast<const pgrazor_native_api_v2 *>(pgrazor_native_api(2u));
+  return static_cast<const pgs_native_api_v2 *>(pgrazor_native_api(2u));
 #else
   return nullptr;
 #endif
@@ -239,7 +239,7 @@ const PgrCameraMetaApi *resolve_metadata_api() {
   const void *direct = pgrazor_camera_metadata_api(PGR_CAM_API_VERSION);
   if (direct != nullptr) return static_cast<const PgrCameraMetaApi *>(direct);
 #endif
-  const pgrazor_native_api_v2 *native = resolve_native_api();
+  const pgs_native_api_v2 *native = resolve_native_api();
   if (native != nullptr && native->query_feature != nullptr) {
     return static_cast<const PgrCameraMetaApi *>(
         native->query_feature(PGR_CAM_FEATURE_ID, PGR_CAM_API_VERSION));
@@ -254,7 +254,7 @@ const PgrCameraSamplerApi *resolve_sampler_api() {
     return static_cast<const PgrCameraSamplerApi *>(direct);
   }
 #endif
-  const pgrazor_native_api_v2 *native = resolve_native_api();
+  const pgs_native_api_v2 *native = resolve_native_api();
   if (native != nullptr && native->query_feature != nullptr) {
     return static_cast<const PgrCameraSamplerApi *>(
         native->query_feature(PGR_CS_FEATURE_ID, PGR_CS_API_VERSION));
@@ -270,7 +270,7 @@ const PgrRuntimeTransportApi *resolve_transport_api() {
     return static_cast<const PgrRuntimeTransportApi *>(direct);
   }
 #endif
-  const pgrazor_native_api_v2 *native = resolve_native_api();
+  const pgs_native_api_v2 *native = resolve_native_api();
   if (native != nullptr && native->query_feature != nullptr) {
     return static_cast<const PgrRuntimeTransportApi *>(native->query_feature(
         PGR_TRANSPORT_FEATURE_ID, PGR_TRANSPORT_API_VERSION));
@@ -283,7 +283,7 @@ const PgrBootApi *resolve_bootstrap_api() {
   const void *direct = pgrazor_runtime_bootstrap_api(PGR_BOOT_API_VERSION);
   if (direct != nullptr) return static_cast<const PgrBootApi *>(direct);
 #endif
-  const pgrazor_native_api_v2 *native = resolve_native_api();
+  const pgs_native_api_v2 *native = resolve_native_api();
   if (native != nullptr && native->query_feature != nullptr) {
     return static_cast<const PgrBootApi *>(
         native->query_feature(PGR_BOOT_FEATURE_ID, PGR_BOOT_API_VERSION));

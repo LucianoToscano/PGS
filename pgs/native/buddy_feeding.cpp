@@ -29,31 +29,31 @@
 #include <mutex>
 #include <unistd.h>
 
-static_assert(sizeof(pgrazor_buddy_config_v1) == 352, "config must be 352 bytes");
-static_assert(sizeof(pgrazor_buddy_sample_v1) == 56,  "sample must be 56 bytes");
-static_assert(sizeof(pgrazor_buddy_api_v1)    == 40,  "table must be 40 bytes");
-static_assert(offsetof(pgrazor_buddy_config_v1, runtime_invoke)  == 8,   "layout");
-static_assert(offsetof(pgrazor_buddy_config_v1, field_get_value) == 72,  "layout");
-static_assert(offsetof(pgrazor_buddy_config_v1, m_find)          == 80,  "layout");
-static_assert(offsetof(pgrazor_buddy_config_v1, m_alive)         == 168, "layout");
-static_assert(offsetof(pgrazor_buddy_config_v1, feed_address)    == 176, "layout");
-static_assert(offsetof(pgrazor_buddy_config_v1, result_address)  == 184, "layout");
-static_assert(offsetof(pgrazor_buddy_config_v1, class_map)       == 192, "layout");
-static_assert(offsetof(pgrazor_buddy_config_v1, class_out_proto) == 288, "layout");
-static_assert(offsetof(pgrazor_buddy_config_v1, f_rpc)           == 296, "layout");
-static_assert(offsetof(pgrazor_buddy_config_v1, f_buddy_id)      == 336, "layout");
-static_assert(offsetof(pgrazor_buddy_config_v1, success)         == 344, "layout");
-static_assert(offsetof(pgrazor_buddy_sample_v1, feed_request_serial) == 24, "layout");
-static_assert(offsetof(pgrazor_buddy_sample_v1, owned_roots)     == 52,  "layout");
+static_assert(sizeof(pgs_buddy_config_v1) == 352, "config must be 352 bytes");
+static_assert(sizeof(pgs_buddy_sample_v1) == 56,  "sample must be 56 bytes");
+static_assert(sizeof(pgs_buddy_api_v1)    == 40,  "table must be 40 bytes");
+static_assert(offsetof(pgs_buddy_config_v1, runtime_invoke)  == 8,   "layout");
+static_assert(offsetof(pgs_buddy_config_v1, field_get_value) == 72,  "layout");
+static_assert(offsetof(pgs_buddy_config_v1, m_find)          == 80,  "layout");
+static_assert(offsetof(pgs_buddy_config_v1, m_alive)         == 168, "layout");
+static_assert(offsetof(pgs_buddy_config_v1, feed_address)    == 176, "layout");
+static_assert(offsetof(pgs_buddy_config_v1, result_address)  == 184, "layout");
+static_assert(offsetof(pgs_buddy_config_v1, class_map)       == 192, "layout");
+static_assert(offsetof(pgs_buddy_config_v1, class_out_proto) == 288, "layout");
+static_assert(offsetof(pgs_buddy_config_v1, f_rpc)           == 296, "layout");
+static_assert(offsetof(pgs_buddy_config_v1, f_buddy_id)      == 336, "layout");
+static_assert(offsetof(pgs_buddy_config_v1, success)         == 344, "layout");
+static_assert(offsetof(pgs_buddy_sample_v1, feed_request_serial) == 24, "layout");
+static_assert(offsetof(pgs_buddy_sample_v1, owned_roots)     == 52,  "layout");
 
 namespace {
 
-constexpr uint64_t kPollMs     = PGRAZOR_BUDDY_POLL_MS;
-constexpr uint64_t kFeedMs     = PGRAZOR_BUDDY_FEED_MS;
-constexpr uint64_t kProgressMs = PGRAZOR_BUDDY_PROGRESS_MS;
-constexpr uint64_t kManualMs   = PGRAZOR_BUDDY_MANUAL_MS;
-constexpr uint64_t kMaxLeaseMs = PGRAZOR_BUDDY_MAX_LEASE_MS;
-constexpr int      kMaxFeeds   = PGRAZOR_BUDDY_MAX_FEEDS;
+constexpr uint64_t kPollMs     = PGS_BUDDY_POLL_MS;
+constexpr uint64_t kFeedMs     = PGS_BUDDY_FEED_MS;
+constexpr uint64_t kProgressMs = PGS_BUDDY_PROGRESS_MS;
+constexpr uint64_t kManualMs   = PGS_BUDDY_MANUAL_MS;
+constexpr uint64_t kMaxLeaseMs = PGS_BUDDY_MAX_LEASE_MS;
+constexpr int      kMaxFeeds   = PGS_BUDDY_MAX_FEEDS;
 
 // Hook signatures (exact game ABI; enum ItemId and int arrive in integer registers).
 using FeedFn   = void *(*)(void *self, int32_t item, int32_t count, void *method);
@@ -61,7 +61,7 @@ using ResultFn = void  (*)(void *self, void *proto, void *method);
 
 // --- lifetime / publication -------------------------------------------------------
 std::mutex                g_install_mutex;
-pgrazor_buddy_config_v1   g_cfg{};
+pgs_buddy_config_v1   g_cfg{};
 std::atomic<bool>         g_installed{false};
 bool                      g_install_attempted = false;   // install mutex; failure latches
 int                       g_install_error = PGR_BUDDY_ERR_NOT_INSTALLED;
@@ -612,7 +612,7 @@ void hook_result(void *self, void *proto, void *method) {
 }
 
 // --- C API table functions --------------------------------------------------------
-bool config_ok(const pgrazor_buddy_config_v1 *c) {
+bool config_ok(const pgs_buddy_config_v1 *c) {
     const void *const ptrs[] = {
         c->runtime_invoke, c->gchandle_new, c->gchandle_get_target, c->gchandle_free,
         c->object_get_class, c->object_unbox, c->class_get_type, c->type_get_object,
@@ -627,11 +627,11 @@ bool config_ok(const pgrazor_buddy_config_v1 *c) {
     return true;
 }
 
-int api_install(const pgrazor_buddy_config_v1 *config) {
+int api_install(const pgs_buddy_config_v1 *config) {
     if (config == nullptr) return PGR_BUDDY_ERR_NULL_ARG;
     std::lock_guard<std::mutex> lock(g_install_mutex);
-    if (config->version != PGRAZOR_BUDDY_API_VERSION ||
-        config->size != sizeof(pgrazor_buddy_config_v1) || !config_ok(config))
+    if (config->version != PGS_BUDDY_API_VERSION ||
+        config->size != sizeof(pgs_buddy_config_v1) || !config_ok(config))
         return PGR_BUDDY_ERR_BAD_CONFIG;
     if (config->feed_address == config->result_address) return PGR_BUDDY_ERR_DUP_HOOK;
 
@@ -702,10 +702,10 @@ int api_clear(uint64_t proven_tid) {
     return PGR_BUDDY_OK;
 }
 
-int api_sample(pgrazor_buddy_sample_v1 *out) {
+int api_sample(pgs_buddy_sample_v1 *out) {
     if (out == nullptr) return PGR_BUDDY_ERR_NULL_ARG;
-    out->version = PGRAZOR_BUDDY_API_VERSION;
-    out->size = sizeof(pgrazor_buddy_sample_v1);
+    out->version = PGS_BUDDY_API_VERSION;
+    out->size = sizeof(pgs_buddy_sample_v1);
     out->status = g_status.load(std::memory_order_acquire);
     out->status_serial = g_status_serial.load(std::memory_order_acquire);
     out->detail = g_detail.load(std::memory_order_acquire);
@@ -718,9 +718,9 @@ int api_sample(pgrazor_buddy_sample_v1 *out) {
     return PGR_BUDDY_OK;
 }
 
-const pgrazor_buddy_api_v1 g_api = {
-    PGRAZOR_BUDDY_API_VERSION,
-    static_cast<uint32_t>(sizeof(pgrazor_buddy_api_v1)),
+const pgs_buddy_api_v1 g_api = {
+    PGS_BUDDY_API_VERSION,
+    static_cast<uint32_t>(sizeof(pgs_buddy_api_v1)),
     &api_install,
     &api_tick,
     &api_clear,
@@ -730,6 +730,6 @@ const pgrazor_buddy_api_v1 g_api = {
 } // namespace
 
 const void *pgrazor_buddy_feeding_api(uint32_t version) {
-    if (version != PGRAZOR_BUDDY_API_VERSION) return nullptr;
+    if (version != PGS_BUDDY_API_VERSION) return nullptr;
     return &g_api;
 }

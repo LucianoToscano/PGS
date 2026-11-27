@@ -110,6 +110,16 @@ class PgsNativeRenameTests(unittest.TestCase):
         self.assertIn("pgs_unhook(", core)
         self.assertNotIn("pgrazor_hook(", core)
 
+    def test_phase6_hook_consumers_and_host_fixtures_use_pgs_name(self):
+        for name, expected in (("buddy_feeding", 2), ("items", 5)):
+            with self.subTest(module=name):
+                source = (NATIVE / (name + ".cpp")).read_text(encoding="utf-8")
+                fixture = (NATIVE / (name + "_test.cpp")).read_text(encoding="utf-8")
+                self.assertNotIn("pgrazor_hook(", source)
+                self.assertNotIn("pgrazor_hook(", fixture)
+                self.assertEqual(source.count("pgs_hook("), expected)
+                self.assertIn("int pgs_hook(", fixture)
+
     def test_pgs_cmd_is_primary_and_legacy_launcher_forwards(self):
         primary = (ROOT / "pgs.cmd").read_text(encoding="utf-8")
         legacy = (ROOT / "nonroot.cmd").read_text(encoding="utf-8")

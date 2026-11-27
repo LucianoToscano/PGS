@@ -27,7 +27,7 @@ A five-minute cron writes 288 simulated snapshots per day plus up to 288 product
 | NYC, SG, London, Sydney, Vancouver PokéMap | One city adapter, five instances, 10 min each | Only 15/15/15 spawns with known expiry. City sources may overlap the aggregate. |
 | iFlowGo | One global search page plus one bounded nearby request, 10 min each | One provider. Pokémon: global page 1. Raids: Times Square, 2 km. No worldwide raid coverage claim. |
 | PGSharp Free 100% IV | Candidate only · `pgsharp-free-100iv` · [identified service](https://f.pgsharp.com/peanuts) | Independent provider; zero verified records. No scheduled requests. |
-| Moonani / PokeList | Public v2 sample | A 2 km species-25 query at Times Square returned an empty list. Zero confirmed records. |
+| Moonani / PokeList | [IV100 table](https://moonani.com/PokeList/), 15 min | Página inicial mostrou 217 registros; amostra 15/15/15 com coordenadas e expiração. Worker requests the first 100 rows via the existing table contract. The separate v2 NYC species-25 query returned zero. One provider across both endpoints. |
 | PoGoCoordinates / LivePokéMap | Existing operator-account Python adapters | Direct collection needs operator credentials. The Worker does not use third-party accounts. |
 | ARSpoofing / WeCatch / PokeCoords | Public validation | ARSpoofing returned 403 for snipe and nests. WeCatch timed out. No validated PokeCoords response. |
 | PoGoMap.info | Public map | Web interface available; no confirmed machine-readable feed in this review. |

@@ -5,11 +5,11 @@
   "changed_files": 37,
   "added_files": 1,
   "previous_occurrences": 1041,
-  "remaining_files": 121,
-  "remaining_occurrences": 728,
+  "remaining_files": 120,
+  "remaining_occurrences": 727,
   "remaining_by_category": {
     "documentation": 274,
-    "java": 62,
+    "java": 61,
     "legal": 3,
     "native": 4,
     "other": 72,
@@ -383,11 +383,6 @@
       "path": "pgs/src/dev/pgs/ShinyScanner.java",
       "category": "java",
       "occurrences": 2
-    },
-    {
-      "path": "pgs/src/dev/pgs/ShundoSniper.java",
-      "category": "java",
-      "occurrences": 1
     },
     {
       "path": "pgs/src/dev/pgs/VgpController.java",
@@ -1195,9 +1190,8 @@
       "external_feed": {
         "status": "pending_verified_replacement",
         "reason": "Endpoint, protocol and server examples. Independent deployment and authorization are not established by this audit.",
-        "occurrences": 4,
+        "occurrences": 3,
         "paths": [
-          "pgs/src/dev/pgs/ShundoSniper.java",
           "tools/hundo-feed/README.md"
         ]
       },
@@ -1362,11 +1356,17 @@
     "base_commit": "6d72266192a7f01c5bd74d091a5d9a2ea68d398b",
     "scope": "PGS launcher, canonical public native ABI, Windows/ART/nonsecret options; legal, account/storage, secret migration and historical evidence retained",
     "old_occurrences": 777,
-    "new_occurrences": 728,
+    "new_occurrences": 727,
     "full_ci": "pending",
     "device_tested": false,
     "authentication_fixed": false,
     "signer_changed": false,
     "auto_build_preserved": true
+  },
+  "feed_endpoint_followup": {
+    "base_commit": "032d99c07bb16e65a822572f2a20c5d35d61cfac",
+    "endpoint": "https://pgs-hundo-feed.lucianotoscano.workers.dev/hundos.json",
+    "scope": "Configured endpoint only; existing v1 parser and other sources unchanged",
+    "live_availability_verified": false
   }
 }

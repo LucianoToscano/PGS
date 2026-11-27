@@ -2,6 +2,9 @@
 
 Publishes the existing PGRazor `v:1` JSON format. Switching providers or map coverage requires only a server update; the APK and public feed URL stay the same.
 
+The Android client's configured PGS feed endpoint is `https://pgs-hundo-feed.lucianotoscano.workers.dev/hundos.json`. It must serve HTTP 200 and the existing `v:1` JSON schema with `hundos` (and optional `spots`). The endpoint was selected by the maintainer; this configuration change alone does not verify live availability or data quality. No fallback to the previous server is configured for this endpoint.
+
+
 ## Server configuration
 
 Install `hundo_feed.py` at `/opt/hundo-feed/hundo_feed.py`. Configure `/etc/hundo-feed.env` using the example, preserving `HUNDO_OUT`. Use `HUNDO_PROVIDER=pogocoordinates` and set `POGO_TOKEN` to the bearer value without the prefix. Keep the env mode 600. Restart with `sudo systemctl restart hundo-feed`; inspect `sudo journalctl -u hundo-feed -n 30 --no-pager`. The script itself does not load the env file; systemd does.

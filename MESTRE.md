@@ -20,8 +20,9 @@
 | #7 | Inventário técnico | Integrada em `d5c39c4db149784b1644eaf2d9da72b5a99314c6` |
 | #8 | AUTO SYNC inicial | Integrada em `1863a9d66c1339143c0db29665cfbb9c1d696c42` |
 | #9 | Identidade da prévia Android | Integrada em `646aae7b2e5acc706a8a4925d78fdd38ac801e0e` |
-
 | #10 | Verificador de configuração e notas iniciais | Integrada em `7ff567c7aacf005b9ea813ceeb41b48e267dfe8a` |
+
+| #11 | AUTO BACKUP inicial | Integrada em `ef94f379155970f7b2270d598f35e40acab1c334` |
 
 ## Inventário confirmado
 
@@ -38,7 +39,9 @@ CI [45913909515](https://github.com/LucianoToscano/PGS/actions/runs/45913909515)
 - [x] AUTO SYNC inicial integrado; execução real e agendamento ainda não confirmados.
 - [ ] Monitoramento de versões do jogo separado, sem download ou publicação não autorizados.
 - [x] Verificador de configuração e notas iniciais integrados; execução manual do diagnóstico pendente.
-- [ ] Validar AUTO BACKUP de código-fonte, com ZIP, SHA-256 e registro do commit; agendamento opcional e desativado por padrão.
+- [x] AUTO BACKUP inicial integrado; execução do workflow específico ainda pendente.
+- [x] Compilação CI da prévia `pgs-preview.apk` confirmada no [run 45929853563](https://github.com/LucianoToscano/PGS/actions/runs/45929853563); não é o jogo.
+- [ ] Validar verificação de pacote e hash da prévia e disponibilização opcional para testes; nenhum APK jogável produzido.
 - [ ] Revisar melhorias legadas individualmente, com evidência e testes.
 
 ## Regras

@@ -197,7 +197,7 @@ class SourceAndNdkTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as tmp:
             source = Path(tmp) / 'native'
             source.mkdir()
-            (source / 'CMakeLists.txt').write_text('project(pgrazor_core)\n', encoding='utf-8')
+            (source / 'CMakeLists.txt').write_text('project(pgs_core)\n', encoding='utf-8')
             (source / 'core.cpp').write_text('int a;\n', encoding='utf-8')
             before = nb.source_fingerprint(source)
             (source / 'core.cpp').write_text('int b;\n', encoding='utf-8')

@@ -1,13 +1,4 @@
 @echo off
-setlocal
-if defined PGRAZOR_PYTHON (
-  "%PGRAZOR_PYTHON%" "%~dp0nonroot.py" %*
-  exit /b %errorlevel%
-)
-where py >nul 2>&1
-if not errorlevel 1 (
-  py -3 "%~dp0nonroot.py" %*
-) else (
-  python "%~dp0nonroot.py" %*
-)
+rem Compatibility launcher: use pgs.cmd for new builds.
+call "%~dp0pgs.cmd" %*
 exit /b %errorlevel%

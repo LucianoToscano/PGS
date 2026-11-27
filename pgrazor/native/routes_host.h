@@ -24,7 +24,7 @@
 //     marshalling adapter) and optional direct Feature 52 (runtime_transport) emission (opcodes 7, 8,
 //     9, 19), plus a Feature 48 (unity_scheduler) PgrUnityWork subscriber entry point.
 //
-// True feature IDs in pgrazor_native.cpp (query_feature):
+// True feature IDs in pgs_native.cpp (query_feature):
 //   27 = routes_gate, 43 = routes_actions, 44 = routes_discovery, 45 = routes_services,
 //   46 = routes_observers, 47 = runtime_metadata, 48 = unity_scheduler, 50 = routes_tracking,
 //   52 = runtime_transport, 53 = routes_metadata, 54 = runtime_bootstrap, 60 = routes_host.

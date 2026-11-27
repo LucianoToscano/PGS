@@ -28,7 +28,7 @@ XZ_URL = 'https://github.com/tukaani-project/xz-embedded.git'
 def dependency_paths(root, cache=None, environ=None):
     env = os.environ if environ is None else environ
     root = Path(root).resolve()
-    chosen = cache or env.get('PGRAZOR_NATIVE_DEPS')
+    chosen = cache or env.get('PGS_NATIVE_DEPS') or env.get('PGRAZOR_NATIVE_DEPS')
     if chosen:
         cache = Path(chosen).expanduser().resolve()
     else:
@@ -69,7 +69,10 @@ def resolve_pinned_ndk(root, revision, explicit_env, fallback_name, environ=None
 
 
 def resolve_art_ndk(root, environ=None):
-    return resolve_pinned_ndk(root, NDK_VERSION, 'PGRAZOR_ART_NDK', 'android-ndk-r29', environ)
+    env = os.environ if environ is None else environ
+    key = ('PGS_ART_NDK' if env.get('PGS_ART_NDK') or not env.get('PGRAZOR_ART_NDK')
+           else 'PGRAZOR_ART_NDK')
+    return resolve_pinned_ndk(root, NDK_VERSION, key, 'android-ndk-r29', env)
 
 
 def run(args):
@@ -113,7 +116,7 @@ def preflight(root, cache=None):
     provenance['dobby'] = {'path': str(dobby), 'commit': native_build.DOBBY_COMMIT,
                            'archive_sha256': native_build.DOBBY_SHA256}
     source = root / 'art'
-    for name in ('CMakeLists.txt', 'pgrazor-art.map', 'art_symbols.cpp', 'art_symbols.h', 'java_hooks.cpp'):
+    for name in ('CMakeLists.txt', 'pgs-art.map', 'art_symbols.cpp', 'art_symbols.h', 'java_hooks.cpp'):
         if not (source / name).is_file():
             raise RuntimeError('Required ART source missing: ' + name)
     # The pinned ART engine uses C++23 facilities requiring its upstream r29
@@ -154,7 +157,7 @@ def build_all(root, abis, cache=None):
                  '-DANDROID_STL=c++_static', '-DCMAKE_BUILD_TYPE=Release',
                  '-DLSPLANT_SOURCE_DIR=' + str(lsplant), '-DDOBBY_SOURCE_DIR=' + str(dobby),
                  '-DXZ_SOURCE_DIR=' + str(xz)])
-            run([cmake, '--build', work, '--target', 'pgrazor_art'])
+            run([cmake, '--build', work, '--target', 'pgs_art'])
             built = work / SONAME
             unstripped = out / 'unstripped' / SONAME
             unstripped.parent.mkdir()
@@ -185,7 +188,7 @@ def build_all(root, abis, cache=None):
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--abi', action='append', choices=native_build.DEFAULT_ABIS)
-    parser.add_argument('--cache', type=Path, help='Pinned dependency cache (or PGRAZOR_NATIVE_DEPS)')
+    parser.add_argument('--cache', type=Path, help='Pinned cache (PGS_NATIVE_DEPS; legacy name accepted)')
     parser.add_argument('--check', action='store_true', help='Verify offline prerequisites without compiling')
     args = parser.parse_args()
     root = Path(__file__).resolve().parent

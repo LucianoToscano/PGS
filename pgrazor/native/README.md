@@ -10,7 +10,7 @@ not a statement that it is the newest or universally compatible version.
 
 Only `JNI_OnLoad` and `pgrazor_native_api` are exported. Java uses RegisterNatives
 for `NativeCore.apiVersion()` and `policySelfcheck()`. Gameplay resolves the C
-function table documented in `pgrazor_native_api.h`: version and size followed by
+function table documented in `pgs_native_api.h` (legacy header stays as a forwarding shim): version and size followed by
 install, update, sample, and selftest pointers (40 bytes on both supported ABIs).
 Version 2 preserves those entries and adds `query_feature` (48 bytes total).
 Feature tables isolate throw grading, Adventure Sync, catch presentation,

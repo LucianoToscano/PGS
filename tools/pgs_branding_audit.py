@@ -78,10 +78,10 @@ def check():
     # public name in README. Internal ABI and saved-state identifiers are
     # checked by their own compatibility fixtures rather than renamed here.
     required_license = (
-        "Original PGRazor source is available under the MIT License. "
+        "Original PGS source is available under the MIT License. "
         + "Third-party components retain their own licenses. "
         + "Pokémon GO and its assets are not covered by this license. "
-        + "PGRazor is an independent project and is not affiliated with the game publisher."
+        + "PGS is an independent project and is not affiliated with the game publisher."
     )
     for readme_file in ("README.md", "README.pt-BR.md"):
         readme = (ROOT / readme_file).read_text(encoding="utf-8").rstrip()
@@ -93,8 +93,8 @@ def check():
         if len(license_section) != 2 or not all(link in license_section[1] for link in ("(LICENSE)", "(NOTICE)", "(THIRD_PARTY_LICENSES.md)")):
             problems.append(readme_file + ": project license and attribution links missing")
     license_text = (ROOT / "LICENSE").read_text(encoding="utf-8")
-    if not all(line in license_text.splitlines() for line in ("Copyright (c) 2026 PGS contributors", "Copyright (c) 2026 PGRazor contributors")):
-        problems.append("LICENSE: project or upstream copyright missing")
+    if "Copyright (c) 2026 PGS contributors" not in license_text.splitlines():
+        problems.append("LICENSE: project copyright missing")
     for name in ("NOTICE", "THIRD_PARTY_LICENSES.md"):
         if not (ROOT / name).is_file():
             problems.append(name + ": required attribution document missing")
@@ -115,8 +115,8 @@ def check():
         problems.append("The Root guide must use a PGS-specific public id")
     if "'pgs-root': {" not in (ROOT / "website/src/featureGuides.pt-BR.d.js").read_text(encoding="utf-8"):
         problems.append("The PGS Root Portuguese guide translation is missing")
-    if "guide === 'pgrazor-root' ? 'pgs-root'" not in (ROOT / "website/src/App.jsx").read_text(encoding="utf-8"):
-        problems.append("Older Root guide bookmarks must still resolve")
+    if "guide === 'pgs-root' ? 'pgs-root'" not in (ROOT / "website/src/App.jsx").read_text(encoding="utf-8"):
+        problems.append("Root guide bookmarks must use PGS id")
     if "PGRazor" in (ROOT / "pgs/root-installer/src/dev/pgs/root/RootStatus.java").read_text(encoding="utf-8"):
         problems.append("Root status still displays the old name")
     pages = (ROOT / ".github/workflows/pages.yml").read_text(encoding="utf-8")

@@ -224,7 +224,7 @@ const pgs_native_api_v2 *resolve_native_api() {
     auto fn = reinterpret_cast<NativeApiFn>(
         dlsym(g_state.core_handle, "pgs_native_api"));
     if (fn == nullptr) {
-      fn = reinterpret_cast<NativeApiFn>(dlsym(g_state.core_handle, "pgrazor_native_api"));
+      fn = reinterpret_cast<NativeApiFn>(dlsym(g_state.core_handle, "pgs_native_api"));
     }
     if (fn != nullptr) {
       return static_cast<const pgs_native_api_v2 *>(fn(2u));

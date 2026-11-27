@@ -6,7 +6,7 @@ if defined PGS_PYTHON (
 )
 rem Continue accepting the environment variable from earlier PGS builds.
 if defined PGRAZOR_PYTHON (
-  "%PGRAZOR_PYTHON%" "%~dp0nonroot.py" %*
+  "%PGS_PYTHON%" "%~dp0nonroot.py" %*
   exit /b %errorlevel%
 )
 where py >nul 2>&1

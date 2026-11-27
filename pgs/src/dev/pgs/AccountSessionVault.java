@@ -27,9 +27,9 @@ import javax.crypto.spec.GCMParameterSpec;
  * holds one ciphertext; the vault never interprets, logs, or exports the plaintext and exposes no
  * listing API — the coordinator owns which profile ids exist and when to switch between them.
  *
- * <p>Blobs live under {@code getNoBackupFilesDir()/pgrazor-account-sessions-v1} so they are excluded
+ * <p>Blobs live under {@code getNoBackupFilesDir()/pgs-account-sessions-v1} so they are excluded
  * from Android auto-backup and never leave the device. Each blob is encrypted with a dedicated
- * AES-256/GCM key held in the {@code AndroidKeyStore} under alias {@code pgrazor-account-sessions-v1}.
+ * AES-256/GCM key held in the {@code AndroidKeyStore} under alias {@code pgs-account-sessions-v1}.
  * A fresh random IV is used per write and the GCM AAD binds the envelope format version and the
  * profile id, so a ciphertext file cannot be renamed/copied to masquerade as another profile's
  * session: decryption of a swapped file fails authentication and is reported as a generic failure.
@@ -47,8 +47,8 @@ import javax.crypto.spec.GCMParameterSpec;
  * third-party libraries, no runtime permissions, Java 8 / Android API 28 compatible.
  */
 final class AccountSessionVault {
-    private static final String DIR = "pgrazor-account-sessions-v1";
-    private static final String KEY_ALIAS = "pgrazor-account-sessions-v1";
+    private static final String DIR = "pgs-account-sessions-v1";
+    private static final String KEY_ALIAS = "pgs-account-sessions-v1";
     private static final String KEYSTORE = "AndroidKeyStore";
     private static final String TRANSFORMATION = "AES/GCM/NoPadding";
     private static final String FILE_SUFFIX = ".bin";
@@ -211,7 +211,7 @@ final class AccountSessionVault {
 
     /** AAD binds the envelope version and profile id so blobs cannot be swapped between profiles. */
     private static byte[] aad(String id) {
-        return ("pgrazor-account-sessions-v" + FORMAT_VERSION + ":" + id).getBytes(StandardCharsets.UTF_8);
+        return ("pgs-account-sessions-v" + FORMAT_VERSION + ":" + id).getBytes(StandardCharsets.UTF_8);
     }
 
     private static byte[] wrap(byte[] iv, byte[] ciphertext) throws IOException {

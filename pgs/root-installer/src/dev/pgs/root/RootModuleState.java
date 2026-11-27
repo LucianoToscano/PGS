@@ -15,13 +15,13 @@ import java.util.Map;
  */
 final class RootModuleState {
     static final String PROBE = String.join("\n",
-        "M=/data/adb/modules/pgrazor",
+        "M=/data/adb/modules/pgs",
         "[ -f \"$M/module.prop\" ] && echo \"MODVER=$(sed -n 's/^version=//p' \"$M/module.prop\")\"",
-        "[ -f \"$M/pgrazor/toggle-v1\" ] && echo MODTOGGLE=1",
-        "[ -f \"$M/pgrazor/injection-off\" ] && echo MODOFF=1",
+        "[ -f \"$M/pgs/toggle-v1\" ] && echo MODTOGGLE=1",
+        "[ -f \"$M/pgs/injection-off\" ] && echo MODOFF=1",
         "[ -f \"$M/disable\" ] && echo MODDISABLED=1",
         "[ -f \"$M/remove\" ] && echo MODREMOVE=1",
-        "[ -d /data/adb/modules_update/pgrazor ] && echo MODPENDING=1",
+        "[ -d /data/adb/modules_update/pgs ] && echo MODPENDING=1",
         "true");
     final boolean rooted;
     final boolean installed;        // live module.prop present

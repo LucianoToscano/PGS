@@ -88,8 +88,8 @@ jobs:
       - name: Validate configured private input and load existing key
         env:
           GITHUB_TOKEN: ${{ github.token }}
-          PGS_INPUT_URL: ${{ secrets.PGS_INPUT_URL || secrets.PGRAZOR_INPUT_URL }}
-          PGS_KEYSTORE_BASE64: ${{ secrets.PGS_KEYSTORE_BASE64 || secrets.PGRAZOR_KEYSTORE_BASE64 }}
+          PGS_INPUT_URL: ${{ secrets.PGS_INPUT_URL || secrets.PGS_INPUT_URL }}
+          PGS_KEYSTORE_BASE64: ${{ secrets.PGS_KEYSTORE_BASE64 || secrets.PGS_KEYSTORE_BASE64 }}
         shell: bash
         run: |
           set -euo pipefail
@@ -99,9 +99,9 @@ jobs:
           python -B tools/private_input.py
       - name: Build and verify complete candidate in runner only
         env:
-          PGS_KEY_ALIAS: ${{ secrets.PGS_KEY_ALIAS || secrets.PGRAZOR_KEY_ALIAS }}
-          PGS_STORE_PASSWORD: ${{ secrets.PGS_STORE_PASSWORD || secrets.PGRAZOR_STORE_PASSWORD }}
-          PGS_KEY_PASSWORD: ${{ secrets.PGS_KEY_PASSWORD || secrets.PGRAZOR_KEY_PASSWORD }}
+          PGS_KEY_ALIAS: ${{ secrets.PGS_KEY_ALIAS || secrets.PGS_KEY_ALIAS }}
+          PGS_STORE_PASSWORD: ${{ secrets.PGS_STORE_PASSWORD || secrets.PGS_STORE_PASSWORD }}
+          PGS_KEY_PASSWORD: ${{ secrets.PGS_KEY_PASSWORD || secrets.PGS_KEY_PASSWORD }}
         shell: bash
         run: |
           set -euo pipefail

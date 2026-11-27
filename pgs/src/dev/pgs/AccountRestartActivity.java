@@ -40,7 +40,7 @@ import java.util.List;
 public final class AccountRestartActivity extends Activity {
     /** Int extra: pid of the main process that asked for the restart. */
     public static final String EXTRA_SOURCE_PID = "sourcePid";
-    private static final String STATE_HANDLED = "pgrazor_restart_handled";
+    private static final String STATE_HANDLED = "pgs_restart_handled";
     private static final long LAUNCH_DELAY_MS = 400L;
 
     private final Handler handler = new Handler(Looper.getMainLooper());

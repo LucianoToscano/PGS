@@ -46,3 +46,5 @@ Thumbs.db
 
 # Keep pre-migration local build/input and other untracked files private.
 /pgrazor/
+/**/input/
+/**/build/

@@ -8,16 +8,16 @@ Estado: migração do código iniciada na branch `refactor/pgs-native-build-name
 
 ## O que está sendo renomeado
 
-- Arquivos principais: `pgrazor_native.cpp` → `pgs_native.cpp`; `pgrazor.map` → `pgs.map`.
-- Cabeçalhos: `pgrazor_internal.h` → `pgs_internal.h`; `pgrazor_native_api.h` → `pgs_native_api.h`, com arquivo de encaminhamento para includes antigos.
-- Script de exportação ART: `pgrazor-art.map` → `pgs-art.map`.
-- Alvos internos do CMake: `pgrazor_core` → `pgs_core` e `pgrazor_art` → `pgs_art`.
+- Arquivos principais: `pgs_native.cpp` → `pgs_native.cpp`; `pgs.map` → `pgs.map`.
+- Cabeçalhos: `pgs_internal.h` → `pgs_internal.h`; `pgs_native_api.h` → `pgs_native_api.h`, com arquivo de encaminhamento para includes antigos.
+- Script de exportação ART: `pgs-art.map` → `pgs-art.map`.
+- Alvos internos do CMake: `pgs_core` → `pgs_core` e `pgs_art` → `pgs_art`.
 - Novas variáveis `PGS_NATIVE_PILOT`, `PGS_NATIVE_DOWNLOAD`, `PGS_ART_NDK` e `PGS_NATIVE_DEPS`, mantendo os aliases anteriores.
 - Novo comando de Windows `pgs.cmd`; o antigo `nonroot.cmd` continua funcionando como encaminhamento.
 
 ## Compatibilidade obrigatória
 
-Os binários `libpgrazor-core.so` e `libpgrazor-art.so`, a função nativa exportada `pgrazor_native_api`, o namespace Java `dev.pgrazor` e os caminhos `assets/pgrazor` continuam temporariamente iguais, pois são referenciados pelo carregamento do aplicativo. A troca integral deles exige atualizar os consumidores ao mesmo tempo e criar testes de compatibilidade.
+Os binários `libpgs-core.so` e `libpgs-art.so`, a função nativa exportada `pgs_native_api`, o namespace Java `dev.pgs` e os caminhos `assets/pgs` continuam temporariamente iguais, pois são referenciados pelo carregamento do aplicativo. A troca integral deles exige atualizar os consumidores ao mesmo tempo e criar testes de compatibilidade.
 
 **Nada altera** o nome instalado **Pokémon GO**, o package **`com.nianticlabs.pokemongo`**, o certificado PGS, o `versionCode` ou os dados de instalações anteriores.
 
@@ -31,34 +31,34 @@ Acompanhe o restante na [issue #38](https://github.com/LucianoToscano/PGS/issues
 
 ## Etapa 2 — migração dos includes C++
 
-Os módulos C++ do projeto e os testes nativos passam a incluir `pgs_native_api.h`, no lugar de `pgrazor_native_api.h`. O cabeçalho de compatibilidade antigo continua disponível para builds anteriores. Uma nova verificação automática impede que includes antigos retornem ao código.
+Os módulos C++ do projeto e os testes nativos passam a incluir `pgs_native_api.h`, no lugar de `pgs_native_api.h`. O cabeçalho de compatibilidade antigo continua disponível para builds anteriores. Uma nova verificação automática impede que includes antigos retornem ao código.
 
 Esta etapa não altera os símbolos exportados, os nomes de bibliotecas `.so`, o identificador Android, o certificado ou as preferências salvas. Aprovação dos testes de código **não** significa APK completo recompilado ou atualização física aprovada.
 
 ## Etapa 3 — fábrica nativa PGS sem perder compatibilidade
 
-- A nova função C exportada `pgs_native_api(uint32_t)` é o nome principal. A função antiga `pgrazor_native_api(uint32_t)` continua presente e encaminha à nova. As duas devolvem **as mesmas tabelas imutáveis v1/v2** para as versões válidas e `null` para versões incompatíveis.
-- O script `pgs.map`, a verificação de símbolos ELF e o teste nativo exigem exatamente **três símbolos** exportados: `JNI_OnLoad`, `pgs_native_api` e `pgrazor_native_api`. Os demais ficam ocultos.
+- A nova função C exportada `pgs_native_api(uint32_t)` é o nome principal. A função antiga `pgs_native_api(uint32_t)` continua presente e encaminha à nova. As duas devolvem **as mesmas tabelas imutáveis v1/v2** para as versões válidas e `null` para versões incompatíveis.
+- O script `pgs.map`, a verificação de símbolos ELF e o teste nativo exigem exatamente **três símbolos** exportados: `JNI_OnLoad`, `pgs_native_api` e `pgs_native_api`. Os demais ficam ocultos.
 - Constantes, códigos de erro e tipos de funções podem ser escritos como `PGS_*` / `pgs_*`. Os nomes antigos funcionam como aliases e o tamanho e a ordem dos campos das tabelas v1/v2 não mudam.
-- O Android ainda carrega `libpgrazor-core.so` e `libpgrazor-art.so`, e os módulos Java/JNI podem continuar usando o nome antigo. Não são alterados o pacote Java `dev.pgrazor`, backups, dados, pacote Android `com.nianticlabs.pokemongo`, chave PGS ou `versionCode`.
+- O Android ainda carrega `libpgs-core.so` e `libpgs-art.so`, e os módulos Java/JNI podem continuar usando o nome antigo. Não são alterados o pacote Java `dev.pgs`, backups, dados, pacote Android `com.nianticlabs.pokemongo`, chave PGS ou `versionCode`.
 - Esta etapa depende de testes de código e símbolos nativos. **Não** é uma compilação de APK completo nem comprova atualização física. O restante permanece na [issue #38](https://github.com/LucianoToscano/PGS/issues/38).
 
 ## Etapa 4 — nomes PGS no motor de hooks C++
 
-- As implementações internas principais passam a ser `pgs_hook`, `pgs_unhook`, `pgs_instrument` e `pgs_hook_diag`. Os nomes antigos `pgrazor_*` continuam funcionando como encaminhamento, usando **o mesmo mutex e registro Dobby**.
+- As implementações internas principais passam a ser `pgs_hook`, `pgs_unhook`, `pgs_instrument` e `pgs_hook_diag`. Os nomes antigos `pgs_*` continuam funcionando como encaminhamento, usando **o mesmo mutex e registro Dobby**.
 - Os tipos `PgsHookDiag` e `PgsPaddingRanges` conservam o layout e os cálculos originais. O núcleo chama os nomes PGS e o teste de ilhas ARM valida ambas as interfaces.
 - Os logs de erro do Android passam a usar a etiqueta `PGS`. Esta etapa não exporta novos símbolos ELF, não muda arquivos `.so`, package, certificado, assinatura, nem cria hooks adicionais ou APK completo.
 - A migração de Java/JNI, bibliotecas, caminhos e preferências exige verificação de instalação física e continua na [issue #38](https://github.com/LucianoToscano/PGS/issues/38).
 
 ## Etapa 5 — opções não confidenciais de compilação com nomes PGS
 
-O compilador Java em `pgs/build.py` agora usa prioritariamente `PGS_VERSION`, `PGS_BUILD_TOOLS` e `PGS_ANDROID_PLATFORM`. Os aliases `PGRAZOR_*` continuam aceitos para manter os workflows existentes e as compilações antigas. Se ambas as opções estiverem definidas, a versão PGS não vazia prevalece; valores vazios utilizam o alias.
+O compilador Java em `pgs/build.py` agora usa prioritariamente `PGS_VERSION`, `PGS_BUILD_TOOLS` e `PGS_ANDROID_PLATFORM`. Os aliases `PGS_*` continuam aceitos para manter os workflows existentes e as compilações antigas. Se ambas as opções estiverem definidas, a versão PGS não vazia prevalece; valores vazios utilizam o alias.
 
-As variáveis de chave e senhas `PGRAZOR_KEYSTORE`, o arquivo da chave, os caminhos de preview/DEX, o pacote Android, o certificado definitivo e o registro de `versionCode` **não mudam** nesta etapa. A alteração não gera outra chave. Um teste isolado verifica padrões, aliases, precedência e versão sem executar assinatura ou Android SDK. Testes de fonte aprovados não comprovam APK completo nem instalação no celular.
+As variáveis de chave e senhas `PGS_KEYSTORE`, o arquivo da chave, os caminhos de preview/DEX, o pacote Android, o certificado definitivo e o registro de `versionCode` **não mudam** nesta etapa. A alteração não gera outra chave. Um teste isolado verifica padrões, aliases, precedência e versão sem executar assinatura ou Android SDK. Testes de fonte aprovados não comprovam APK completo nem instalação no celular.
 
 ## Etapa 6 — consumidores diretos de hooks (alimentação de companheiro e itens)
 
-Os módulos de produção `buddy_feeding.cpp` e `items.cpp` passam a chamar diretamente `pgs_hook` (dois e cinco pontos de chamada, respectivamente). Os respectivos simuladores isolados para Linux definem o símbolo principal correspondente; os testes existentes de compilação e execução verificam os consumidores migrados sem depender do encaminhamento antigo. O teste de identidade também impede o retorno acidental de `pgrazor_hook` nesses pontos.
+Os módulos de produção `buddy_feeding.cpp` e `items.cpp` passam a chamar diretamente `pgs_hook` (dois e cinco pontos de chamada, respectivamente). Os respectivos simuladores isolados para Linux definem o símbolo principal correspondente; os testes existentes de compilação e execução verificam os consumidores migrados sem depender do encaminhamento antigo. O teste de identidade também impede o retorno acidental de `pgs_hook` nesses pontos.
 
 A mudança é apenas de nomenclatura: argumentos, ordem de instalação, encadeamento original, estado, motor Dobby, ABI C, SONAME, JNI, pacote, assinatura, preferências e registro de versões permanecem iguais. Os encaminhamentos legados do motor continuam disponíveis para os outros consumidores; as declarações fracas e resoluções dinâmicas de `interaction_host.cpp` e `camera_host.cpp` ficam para uma etapa separada. A integração depende da aprovação das verificações de código e regressões nativas Linux. Os simuladores não comprovam funcionamento em aparelho físico ou instalação do APK; esta etapa não gera APK completo. Consulte a [issue #38](https://github.com/LucianoToscano/PGS/issues/38).
 
@@ -159,7 +159,7 @@ O inventário indexado agrupa todos os arquivos restantes por finalidade de rete
 
 ## Limpeza das abreviações da identidade nativa
 
-O inventário anterior do nome completo não contabilizava as grafias separadas `PGR_`, `pgr_` ou `PgrCamelCase`. A auditoria ampliada de texto indexado agora informa essas formas separadamente, com contagem exata por arquivo; a série anterior do nome completo permanece disponível para comparação. Este lote exclusivamente de código migra 258 nomes distintos e 1.600 usos nos headers de contas, spin, spawn, map tap, map POI, VGP auxiliar e batalhas e nos consumidores identificados. Valores de constantes e enums, membros de estruturas, verificações de layout, versões de API e exports públicos permanecem inalterados. Os tipos C++ privados são reconstruídos em conjunto; retirar grafias antigas não implica compatibilidade com objetos privados compilados separadamente. O blob original do account-host não pode ser verificado pelo texto reconstruído do conector e permanece intacto. Seus dezesseis nomes legados de constantes identificados continuam como aliases de código em `account_source_compat.h`. A migração das abreviações ainda não é exaustiva: o inventário geral do CI estabelecerá a contagem restante e validará os nomes propostos. A branch do feed independente, assinatura, dados instalados, artefatos de release e avisos originais permanecem intactos.
+O inventário anterior do nome completo não contabilizava as grafias separadas `PGS_`, `pgs_` ou `PgsCamelCase`. A auditoria ampliada de texto indexado agora informa essas formas separadamente, com contagem exata por arquivo; a série anterior do nome completo permanece disponível para comparação. Este lote exclusivamente de código migra 258 nomes distintos e 1.600 usos nos headers de contas, spin, spawn, map tap, map POI, VGP auxiliar e batalhas e nos consumidores identificados. Valores de constantes e enums, membros de estruturas, verificações de layout, versões de API e exports públicos permanecem inalterados. Os tipos C++ privados são reconstruídos em conjunto; retirar grafias antigas não implica compatibilidade com objetos privados compilados separadamente. O blob original do account-host não pode ser verificado pelo texto reconstruído do conector e permanece intacto. Seus dezesseis nomes legados de constantes identificados continuam como aliases de código em `account_source_compat.h`. A migração das abreviações ainda não é exaustiva: o inventário geral do CI estabelecerá a contagem restante e validará os nomes propostos. A branch do feed independente, assinatura, dados instalados, artefatos de release e avisos originais permanecem intactos.
 
 ## Retirada dos aliases privados e identidade dos novos artefatos
 

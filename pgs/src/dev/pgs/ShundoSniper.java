@@ -48,7 +48,7 @@ public final class ShundoSniper {
     // The PGS feed: one server polls LivePokeMap's whole-map 100% IV list and publishes it as a compact
     // file, {"v":1,"fetched_ms":..,"interval_s":..,"hundos":[[encounter_id,dex,form,lat,lon,despawn_ms,cp,level],..]},
     // so no sign-in is needed. About 130 KB gzipped; ShundoPacing decides how often it is read.
-    static final String FEED_URL = "https://feed.faustusfoundry.com/pgrazor/hundos.json";
+    static final String FEED_URL = "https://feed.faustusfoundry.com/pgs/hundos.json";
 
     /**
      * One 100% IV spawn from a feed; coordinates are NaN until PoGoCoordinates reveals them. A spot is a

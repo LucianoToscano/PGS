@@ -56,7 +56,7 @@ foreach ($run in $runs) {
         # Input APKs are packaging copies: every complete module is self-contained.
         $inputCopy=$file.Name -match '^input-[0-9]+\.apk$'
         $obsoleteOutput=!$protected -and $file.LastWriteTimeUtc -lt $cutoff -and
-            $file.Name -match '^(PGRazor-Root(-module-[A-Za-z0-9.-]+\.zip|(-[A-Za-z0-9.-]+)?\.apk)|installer-(unsigned|aligned)\.apk|payload\.zip|loader-(arm64-v8a|x86_64)\.so)$'
+            $file.Name -match '^(PGS-Root(-module-[A-Za-z0-9.-]+\.zip|(-[A-Za-z0-9.-]+)?\.apk)|installer-(unsigned|aligned)\.apk|payload\.zip|loader-(arm64-v8a|x86_64)\.so)$'
         if (!$inputCopy -and !$obsoleteOutput) { continue }
         $entries+= [pscustomobject]@{path=(Checked $file.FullName); bytes=$file.Length;
             sha256=(Get-FileHash -LiteralPath $file.FullName).Hash; report=$reportPath;

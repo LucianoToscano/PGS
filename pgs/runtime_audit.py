@@ -24,7 +24,7 @@ def audit(path):
                  b'quick-close.js', b'quick-ball.js', b'quick-summary.js', b'Script.evaluate')
     with zipfile.ZipFile(path) as archive:
         names = archive.namelist()
-        for mode_name in ('assets/pgs/mode.json', 'assets/pgrazor/mode.json'):
+        for mode_name in ('assets/pgs/mode.json', 'assets/pgs/mode.json'):
             if mode_name in names:
                 report['mode'] = json.loads(archive.read(mode_name))
                 break
@@ -32,7 +32,7 @@ def audit(path):
             raise ValueError('Duplicate APK entries')
         for item in archive.infolist():
             name = item.filename
-            production = name.startswith(('assets/pgs/', 'assets/pgrazor/'))
+            production = name.startswith(('assets/pgs/', 'assets/pgs/'))
             dex = re.fullmatch(r'classes\d*\.dex', name) is not None
             native = name.startswith('lib/') and name.endswith('.so')
             if not production and not dex and not native:

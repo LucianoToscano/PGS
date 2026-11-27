@@ -1,6 +1,6 @@
 > **PGS — módulo Root ainda não lançado.** Este diretório contém código histórico do instalador experimental. Não é o APK principal do PGS. O PGS v0.0.1 usa somente o APK não-root assinado com a chave definitiva, identificado no Android como Pokémon GO.
 
-# PGS Root installer (`dev.pgrazor.root`)
+# PGS Root installer (`dev.pgs.root`)
 
 Standalone Android installer APK that carries the PGS Root Zygisk module in its assets and
 installs it with the phone's root manager. It is the rooted counterpart of the patched `PGS.apk`;
@@ -22,12 +22,12 @@ read-only.
 
 ## PGS: On / Off
 
-A module built with the launch-time switch carries an empty `pgrazor/toggle-v1` capability
+A module built with the launch-time switch carries an empty `pgs/toggle-v1` capability
 marker; the installer uses that marker to tell a toggle-aware module from an older one. Once
 such a module is installed, PGS can be turned **On** or **Off** without reinstalling or
 disabling the module in the root manager:
 
-- **Off** is a *soft* switch: the installer creates an empty `pgrazor/injection-off` flag in
+- **Off** is a *soft* switch: the installer creates an empty `pgs/injection-off` flag in
   the live module. At the game's next cold start the Zygisk loader sees the flag and declines to
   inject, while the module itself stays enabled. **On** removes the flag so the next launch injects
   again.
@@ -49,7 +49,7 @@ manager before `customize.sh` runs, so the live module is the single source of t
 
 ## Files
 
-- `AndroidManifest.xml` — package `dev.pgrazor.root`, launcher activity and a game-only restart helper, `<queries>` for the
+- `AndroidManifest.xml` — package `dev.pgs.root`, launcher activity and a game-only restart helper, `<queries>` for the
   game package so its version/signature are visible on Android 11+. `versionCode`/`versionName` are
   overwritten per build.
 - `src/dev/pgs/root/InstallerActivity.java` — the UI (programmatic, no resources).

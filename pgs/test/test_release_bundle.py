@@ -19,7 +19,7 @@ class ReleaseBundleTests(unittest.TestCase):
         with zipfile.ZipFile(self.folder / 'PGS.apk', 'w') as apk:
             apk.writestr('assets/pgs/mode.json', json.dumps({'version': '17.24.2', 'pgsVersion': self.tag}))
         with zipfile.ZipFile(self.folder / 'PGS-Root-module.zip', 'w') as module:
-            module.writestr('module.prop', 'id=pgrazor\nversion=' + self.tag + '\n')
+            module.writestr('module.prop', 'id=pgs\nversion=' + self.tag + '\n')
         self.installer(self.folder / 'PGS-Root-module.zip')
         self.receipts()
 

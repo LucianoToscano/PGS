@@ -17,7 +17,7 @@ public final class SettingsBackupRules {
         double version=number(root.get("version"),1,2,"backup version");
         require(version==1||version==2,"Unsupported settings backup");
         String format=root.optString("format");
-        require("PGS settings".equals(format)||(version==1&&"PGRazor settings".equals(format)),"Unsupported settings backup");
+        require("PGS settings".equals(format)||(version==1&&"PGS settings".equals(format)),"Unsupported settings backup");
         return (int)version;
     }
     /** Resolve historical JSON scope names without changing the document or stored preferences. */
@@ -28,10 +28,10 @@ public final class SettingsBackupRules {
             String raw=it.next(),scope=raw;
             if(version==1){
                 switch(raw){
-                    case "pgrazor-map": scope="pgs-map"; break;
-                    case "pgrazor-overlays": scope="pgs-overlays"; break;
-                    case "pgrazor-saved-places-v1": scope="pgs-saved-places-v1"; break;
-                    case "pgrazor-livefeed": scope="pgs-livefeed"; break;
+                    case "pgs-map": scope="pgs-map"; break;
+                    case "pgs-overlays": scope="pgs-overlays"; break;
+                    case "pgs-saved-places-v1": scope="pgs-saved-places-v1"; break;
+                    case "pgs-livefeed": scope="pgs-livefeed"; break;
                     default: throw new JSONException("Unknown version-1 settings group");
                 }
             }

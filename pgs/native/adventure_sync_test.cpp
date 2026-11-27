@@ -22,7 +22,7 @@ int main(int argc,char **argv){
  if(argc!=2)return 1;auto lib=dlopen(argv[1],RTLD_NOW|RTLD_LOCAL);if(!lib){std::puts(dlerror());return 2;}
  auto getter=reinterpret_cast<const void *(*)(uint32_t)>(dlsym(lib,"pgs_native_api"));
  // Explicit compatibility coverage: the legacy factory shares both immutable tables.
- auto legacy=reinterpret_cast<const void *(*)(uint32_t)>(dlsym(lib,"pgrazor_native_api"));
+ auto legacy=reinterpret_cast<const void *(*)(uint32_t)>(dlsym(lib,"pgs_native_api"));
  if(!getter||!legacy||!getter(1)||!getter(2)||legacy(1)!=getter(1)||legacy(2)!=getter(2)||getter(0)!=nullptr||legacy(0)!=nullptr||getter(3)!=nullptr||legacy(3)!=nullptr)return 14;
  auto core=getter?static_cast<const pgs_native_api_v2 *>(getter(2)):nullptr;
  auto api=core?static_cast<const pgs_advsync_api_v1 *>(core->query_feature(2,1)):nullptr;if(!api)return 3;

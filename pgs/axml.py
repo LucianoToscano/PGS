@@ -244,7 +244,7 @@ def patch_manifest(data):
         return info['package']+'.'+name if '.' not in name else name
     for provider in info['providers']:
         name = qualified(provider['name'])
-        if name in (PROVIDER, 'dev.pgrazor.BootstrapProvider') or any(a in str(provider['authorities'] or '').split(';') for a in (authority, info['package']+'.pgrazor.bootstrap')):
+        if name in (PROVIDER, 'dev.pgs.BootstrapProvider') or any(a in str(provider['authorities'] or '').split(';') for a in (authority, info['package']+'.pgs.bootstrap')):
             raise ValueError('Bootstrap provider or authority already exists')
     header_size, chunks, pool, maps, resources = _parse(data)
     existing_log_activity = False

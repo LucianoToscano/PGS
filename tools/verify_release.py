@@ -45,17 +45,22 @@ def verify(folder, tag, *, legacy_names=False):
     if root['version'] != tag:
         raise ValueError('Rooted build version differs from release tag')
     with zipfile.ZipFile(folder / downloads[0]) as apk:
-        mode_paths = [n for n in ('assets/pgs/mode.json', 'assets/pgrazor/mode.json') if n in apk.namelist()]
+        candidates = ('assets/pgrazor/mode.json', 'assets/pgs/mode.json') if legacy_names else ('assets/pgs/mode.json',)
+        mode_paths = [n for n in candidates if n in apk.namelist()]
+        if not legacy_names and 'assets/pgrazor/mode.json' in apk.namelist() and 'assets/pgs/mode.json' not in apk.namelist():
+            raise ValueError('Legacy pgrazor mode asset present; canonical mode asset assets/pgs/mode.json required')
         if len(mode_paths) != 1: raise ValueError('Expected exactly one PGS mode asset')
         mode = json.loads(apk.read(mode_paths[0]))
         if not legacy_names and (mode_paths != ['assets/pgs/mode.json'] or mode.get('pgsVersion') != tag):
             raise ValueError('Non-rooted PGS build version or canonical mode asset differs from release tag')
-        if mode.get('pgsVersion', mode.get('pgrazorVersion')) != tag or ('pgrazorVersion' in mode and mode['pgrazorVersion'] != tag):
+        if not legacy_names and mode.get('pgrazorVersion') not in (None, tag):
+            raise ValueError('Non-rooted build version differs from release tag')
+        if mode.get('pgsVersion', mode.get('pgsVersion')) != tag or ('pgsVersion' in mode and mode['pgsVersion'] != tag):
             raise ValueError('Non-rooted build version differs from release tag')
     with zipfile.ZipFile(folder / downloads[2]) as module:
         props = dict(line.split('=', 1) for line in module.read('module.prop').decode().splitlines()
                      if '=' in line)
-        if props.get('id') != 'pgrazor' or props.get('version') != tag:
+        if props.get('id') != 'pgs' or props.get('version') != tag:
             raise ValueError('Module identity/version differs from release tag')
     with zipfile.ZipFile(folder / downloads[1]) as installer:
         embedded = [name for name in installer.namelist() if name.startswith('assets/') and name.endswith('.zip')]

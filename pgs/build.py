@@ -104,9 +104,9 @@ def signing_args():
             raise RuntimeError('Configured signing key, alias or password environment variables are missing')
     else:
         # Reuse an existing local development key; never substitute a release key.
-        legacy_key = BUILD / 'pgrazor-development.jks'
+        legacy_key = BUILD / 'pgs-development.jks'
         key = legacy_key if legacy_key.exists() else BUILD / 'pgs-development.jks'
-        alias = signing_setting('KEY_ALIAS', 'pgrazor' if legacy_key.exists() else 'pgs')
+        alias = signing_setting('KEY_ALIAS', 'pgs' if legacy_key.exists() else 'pgs')
         store = signing_setting('STORE_PASSWORD', 'android')
         password = signing_setting('KEY_PASSWORD', 'android')
     os.environ['PGS_STORE_PASSWORD'] = store

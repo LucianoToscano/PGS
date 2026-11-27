@@ -343,7 +343,7 @@ public final class BootstrapProvider extends ContentProvider {
      */
     private static File runtimeDirectory(Context context) throws IOException {
         File parent=context.getCodeCacheDir();
-        File[] stale=parent.listFiles((dir,name)->name.matches("(?:pgs|pgrazor)-[0-9]+-[0-9]+"));
+        File[] stale=parent.listFiles((dir,name)->name.matches("(?:pgs|pgs)-[0-9]+-[0-9]+"));
         if(stale!=null)for(File old:stale)deleteTree(old);
         File directory=new File(parent,"pgs-"+android.os.Process.myPid()+"-"+System.currentTimeMillis());
         if(!directory.mkdirs()) throw new IOException("Cannot create private runtime directory");

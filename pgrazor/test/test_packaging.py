@@ -109,7 +109,7 @@ class PackageTests(unittest.TestCase):
                 nonroot.require_clean_game_certificate([signer])
 
     def test_rewrite_preserves_app_payload_and_original(self):
-        source=ROOT/'build/pgrazor-preview.apk'
+        source=ROOT/'build/pgs-preview.apk'
         if not source.exists(): self.skipTest('Preview APK not built')
         original_hash=runtime_assets.sha256(source)
         with tempfile.TemporaryDirectory(dir=ROOT/'build') as temp:
@@ -187,7 +187,7 @@ class PackageTests(unittest.TestCase):
              patch.object(nonroot,'probe') as install, patch.object(nonroot,'command') as command, \
              contextlib.redirect_stdout(io.StringIO()):
             nonroot.main(['--build-probe','--research-runtime','--abi','arm64-v8a','--skip-build'])
-        package.assert_called_once_with(ROOT/'build/pgrazor-preview.apk',panel_only=False,download=False,preview=True,probe_abi='arm64-v8a',research_runtime=True)
+        package.assert_called_once_with(ROOT/'build/pgs-preview.apk',panel_only=False,download=False,preview=True,probe_abi='arm64-v8a',research_runtime=True)
         install.assert_not_called(); command.assert_not_called()
 
     def test_phone_build_requires_explicit_architecture(self):

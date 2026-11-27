@@ -1,4 +1,4 @@
-"""Opt-in retention of one verified candidate in an unpublished release.
+"""Opt-in retention of one verified three-variant candidate in an unpublished release.
 
 The default validation workflow remains receipt-only. No source input, signing
 material, unverified APK, or public workflow artifact is retained by this tool.
@@ -17,6 +17,7 @@ import tempfile
 from game_update import current_profile
 from pgs_pinned_input import github_env, REPOSITORY
 from pgs_build_request import authorize, load_request
+from verify_release import verify_signed_candidate
 
 ROOT = Path(__file__).resolve().parents[1]
 SIGNER = "d95c6bdfcbd91dc5c9cde698487c88e4994771a475e4efde4567b8d5f44e96cf"
@@ -120,7 +121,10 @@ def stage_bundle(source, target, profile, commit, verifier, request):
     apk = safe_file(source, "PGS.apk")
     receipt_path = safe_file(source, "PGS.json")
     info_path = safe_file(source, "build-info.json")
-    sums_path = safe_file(source, "SHA256SUMS.txt")
+    safe_file(source, "SHA256SUMS.txt")
+    root_apk = safe_file(source, "PGS-Root.apk")
+    root_module = safe_file(source, "PGS-Root-module.zip")
+    root_info = safe_file(source, "root-build-info.json")
     receipt = json.loads(receipt_path.read_text(encoding="utf-8"))
     info = json.loads(info_path.read_text(encoding="utf-8"))
     verified = verifier(apk, tag=request.tag, game_version=profile["game_version"],
@@ -139,13 +143,21 @@ def stage_bundle(source, target, profile, commit, verifier, request):
             or info.get("apk_sha256") != receipt["sha256"]):
         raise ValueError("Build receipts do not describe this untested candidate and source commit")
     sha = digest(apk)
-    if (sha != receipt["sha256"] or apk.stat().st_size != receipt["bytes"]
-            or sums_path.read_text(encoding="utf-8").split() != [sha, "PGS.apk"]):
+    if sha != receipt["sha256"] or apk.stat().st_size != receipt["bytes"]:
         raise ValueError("Candidate checksum or size differs from its receipts")
-    shutil.copyfile(apk, target / request.asset)
+    actual = verify_signed_candidate(source, request.tag, commit)
+    downloads = ((apk, request.asset), (root_apk, request.root_asset),
+                 (root_module, request.module_asset))
+    for path, name in downloads:
+        shutil.copyfile(path, target / name)
+        if digest(target / name) != actual[path.name]:
+            raise ValueError("Staged download differs from verified source")
     shutil.copyfile(receipt_path, target / "PGS.json")
     shutil.copyfile(info_path, target / "build-info.json")
-    (target / "SHA256SUMS.txt").write_text(sha + "  " + request.asset + "\n", encoding="utf-8")
+    shutil.copyfile(root_info, target / "root-build-info.json")
+    (target / "SHA256SUMS.txt").write_text(
+        "".join(actual[path.name] + "  " + name + "\n" for path, name in downloads),
+        encoding="utf-8")
     return {name: {"size": (target / name).stat().st_size,
                    "digest": "sha256:" + digest(target / name)} for name in request.names}
 
@@ -180,7 +192,7 @@ def retain(cli, env, source, profile, commit, verifier, request):
         require_unused_target(cli, env, request)
         run_gh(cli, env, ["release", "create", request.tag, "--repo", REPOSITORY,
                "--draft", "--target", commit, "--title", "PGS " + request.tag + " - device test candidate",
-               "--notes", "UNPUBLISHED candidate. Static checks passed. Device test and in-place update test pending. Not approved for distribution. Source: " + commit,
+               "--notes", "UNPUBLISHED Root and Non-Root candidate. Static bundle checks passed. Device test and in-place update test pending. Not approved for distribution. Source: " + commit,
                *[str(target / name) for name in request.names]], timeout=600)
         verify_retained(releases(cli, env), expected, commit, request)
 

@@ -30,6 +30,9 @@ class BuildRequestTests(unittest.TestCase):
         self.assertEqual(request.previous_tag, "v0.0.4")
         self.assertEqual(request.expected_code, 2026111608)
         self.assertEqual(request.asset, "PGS.v0.0.5.apk")
+        self.assertEqual(request.names, ("PGS.v0.0.5.apk", "PGS.v0.0.5-Root.apk",
+                         "PGS.v0.0.5-Root-module.zip", "PGS.json", "build-info.json",
+                         "root-build-info.json", "SHA256SUMS.txt"))
         self.assertTrue(build.authorize(request, self.env))
 
     def test_invalid_requests_fail_closed(self):

@@ -51,7 +51,7 @@ jobs:
     needs: request
     if: needs.request.outputs.enabled == 'true' && github.repository == 'LucianoToscano/PGS' && github.ref == 'refs/heads/main'
     runs-on: ubuntu-24.04
-    timeout-minutes: 60
+    timeout-minutes: 90
     # GitHub requires repository push access to read draft release assets.
     # Only a validated explicit request on main has elevated contents access.
     permissions:
@@ -160,6 +160,8 @@ jobs:
           mapfile -t reports < <(find pgs/build/nonroot -mindepth 2 -maxdepth 2 -name report.json -type f)
           test "${#reports[@]}" = 1
           python -B pgs/release_apk.py --run "$(dirname "${reports[0]}")" --output "$RUNNER_TEMP/pgs-candidate-validation"
+          python -B pgs/rooted.py pgs/input/game.apkm --skip-build --download --output "$RUNNER_TEMP/pgs-candidate-validation"
+          python -B tools/verify_release.py "$RUNNER_TEMP/pgs-candidate-validation" --tag "$PGS_VERSION" --signed-candidate --source-commit "$GITHUB_SHA"
           python -B -c "import json, pathlib, os; d=json.loads((pathlib.Path(os.environ['RUNNER_TEMP'])/'pgs-candidate-validation/PGS.json').read_text()); assert d['pgs_version']==os.environ['PGS_VERSION'] and d['version_code']==int(os.environ['PGS_EXPECTED_VERSION_CODE']) and d['publish_ready'] is False and d['device_tested'] is False"
       - name: Upload verification receipts only
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
@@ -168,6 +170,8 @@ jobs:
           path: |
             ${{ runner.temp }}/pgs-candidate-validation/PGS.json
             ${{ runner.temp }}/pgs-candidate-validation/build-info.json
+            ${{ runner.temp }}/pgs-candidate-validation/root-build-info.json
+            ${{ runner.temp }}/pgs-candidate-validation/SHA256SUMS.txt
           if-no-files-found: error
           retention-days: 3
       - name: Retain authorized signed candidate in an unpublished draft
@@ -185,4 +189,5 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          rm -f -- "$RUNNER_TEMP/pgs-candidate-validation.jks" "$RUNNER_TEMP/pgs-candidate-validation/PGS.apk" "$RUNNER_TEMP/pgs-candidate-validation/unsigned.apk" "$RUNNER_TEMP/pgs-candidate-validation/aligned.apk" pgs/input/game.apkm
+          rm -f -- "$RUNNER_TEMP/pgs-candidate-validation.jks" pgs/input/game.apkm
+          rm -rf -- "$RUNNER_TEMP/pgs-candidate-validation" pgs/build/nonroot pgs/build/rooted

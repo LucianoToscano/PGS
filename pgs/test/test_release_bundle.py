@@ -1,5 +1,7 @@
 """Exercise release rejection with real ZIPs and mismatched publication artifacts."""
 import json
+import io
+import hashlib
 from pathlib import Path
 import sys
 import tempfile
@@ -35,6 +37,54 @@ class ReleaseBundleTests(unittest.TestCase):
         (self.folder / 'root-build-info.json').write_text(json.dumps({
             'version': self.tag, 'target': {'versionName': '0.435.2', 'versionCode': 2026110702},
             'installer_sha256': hashes[names[1]], 'module_sha256': hashes[names[2]]}))
+
+    def test_signed_candidate_metadata_and_cross_variant_dex(self):
+        controls = b"shared controls fixture"
+        payload = io.BytesIO()
+        abis = ['arm64-v8a', 'x86_64']
+        target = {'versionName': '0.435.2', 'versionCode': 2026110702}
+        with zipfile.ZipFile(payload, 'w') as data:
+            data.writestr('pgs/rooted/target.json', json.dumps(target))
+            data.writestr('pgs/mode.json', json.dumps({'pgsVersion': self.tag,
+                'compiledGameplay': True, 'gadget': False, 'runtimeAbis': abis}))
+            for abi in abis:
+                for library in ('libpgs-core.so', 'libpgs-art.so'):
+                    data.writestr('pgs/' + abi + '/' + library, b'fixture')
+        def make_bundle(root_controls):
+            with zipfile.ZipFile(self.folder / 'PGS.apk', 'w') as apk:
+                apk.writestr('assets/pgs/mode.json', json.dumps({'pgsVersion': self.tag}))
+                apk.writestr('classes2.dex', controls)
+            with zipfile.ZipFile(self.folder / 'PGS-Root-module.zip', 'w') as module:
+                module.writestr('module.prop', 'id=pgrazor\nversion=' + self.tag + '\n')
+                module.writestr('pgs/classes.dex', root_controls)
+                module.writestr('pgs/payload.zip', payload.getvalue())
+                for abi in abis:
+                    module.writestr('zygisk/' + abi + '.so', b'fixture')
+            self.installer(self.folder / 'PGS-Root-module.zip')
+            self.receipts()
+            commit = 'a' * 40
+            for filename, additions in (
+                ('build-info.json', {'source_commit': commit, 'input_sha256': 'b' * 64,
+                                     'device_tested': False, 'apk_version_code': 2026110703}),
+                ('root-build-info.json', {'source_commit': commit, 'input_sha256': 'b' * 64,
+                    'device_tested': False, 'installed': False, 'abis': abis,
+                    'dex_sha256': hashlib.sha256(root_controls).hexdigest(),
+                    'payload_sha256': hashlib.sha256(payload.getvalue()).hexdigest()})):
+                path = self.folder / filename
+                path.write_text(json.dumps(dict(json.loads(path.read_text()), **additions)))
+            (self.folder / 'PGS.json').write_text(json.dumps({'pgs_version': self.tag,
+                'sha256': verify_release.digest(self.folder / 'PGS.apk'), 'version_code': 2026110703,
+                'controls_dex': 'classes2.dex', 'device_tested': False,
+                'in_place_update_tested': False, 'publish_ready': False}))
+            return commit
+        commit = make_bundle(controls)
+        self.assertEqual(set(verify_release.verify_candidate_metadata(self.folder, self.tag, commit)),
+                         set(verify_release.DOWNLOADS))
+        with self.assertRaisesRegex(ValueError, 'provenance'):
+            verify_release.verify_candidate_metadata(self.folder, self.tag, 'c' * 40)
+        make_bundle(b'different controls')
+        with self.assertRaisesRegex(ValueError, 'shared DEX'):
+            verify_release.verify_candidate_metadata(self.folder, self.tag, commit)
 
     def test_complete_bundle(self):
         self.assertEqual(set(verify_release.verify(self.folder, self.tag)), set(verify_release.DOWNLOADS))

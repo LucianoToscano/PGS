@@ -93,7 +93,8 @@ def capability_module_entries():
 
 def compiled_mode(abis):
     """The release (compiled gameplay) flags, minus browser sign-in: the official app's works."""
-    return {'gadget': False, 'version': runtime_assets.VERSION, 'preferredAbi': '', 'runtimeAbis': abis,
+    return {'gadget': False, 'version': runtime_assets.VERSION, 'pgsVersion': build.release_version(ROOT),
+            'preferredAbi': '', 'runtimeAbis': abis,
             'compiledGameplay': True, 'nativePilot': True, 'compiledNativeTransport': True,
             'compiledCatchWait': True, 'compiledLocationGetters': True, 'compiledJavaBridges': True,
             'cameraProbe': True, 'cameraSteering': True, 'interactionProbe': True,
@@ -229,7 +230,9 @@ def package(source, download=False, installer=True):
 
     report = {'version': version, 'target': target, 'module': str(module_zip), 'module_sha256': runtime_assets.sha256(module_zip),
               'dex_sha256': runtime_assets.sha256(dex), 'payload_sha256': runtime_assets.sha256(payload),
-              'location_callers': len(callers), 'abis': ABIS, 'installed': False}
+              'location_callers': len(callers), 'abis': ABIS, 'installed': False,
+              'input_sha256': runtime_assets.sha256(Path(source)),
+              'source_commit': os.environ.get('GITHUB_SHA'), 'device_tested': False}
     if installer:
         from rooted_installer import build_installer
         apk = build_installer(module_zip, target, version, folder)
@@ -262,7 +265,9 @@ def main(argv=None):
         args.output.mkdir(parents=True, exist_ok=True)
         shutil.copyfile(report['installer'], args.output / 'PGS-Root.apk')
         shutil.copyfile(report['module'], args.output / 'PGS-Root-module.zip')
-        public = {key: report[key] for key in ('version', 'target', 'module_sha256', 'installer_sha256', 'abis')}
+        public = {key: report[key] for key in ('version', 'target', 'module_sha256', 'installer_sha256',
+                  'abis', 'dex_sha256', 'payload_sha256', 'input_sha256', 'source_commit',
+                  'installed', 'device_tested')}
         (args.output / 'root-build-info.json').write_text(json.dumps(public, indent=2) + '\n', encoding='utf-8')
         sums = args.output / 'SHA256SUMS.txt'
         lines = sums.read_text(encoding='utf-8').splitlines() if sums.exists() else []

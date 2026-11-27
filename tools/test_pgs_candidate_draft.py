@@ -26,7 +26,17 @@ class CandidateDraftTests(unittest.TestCase):
                 "apk_version_code": receipt["version_code"], "apk_sha256": sha}
         (source / "PGS.json").write_text(json.dumps(receipt), encoding="utf-8")
         (source / "build-info.json").write_text(json.dumps(info), encoding="utf-8")
-        (source / "SHA256SUMS.txt").write_text(sha + "  PGS.apk\n", encoding="utf-8")
+        (source / "PGS-Root.apk").write_bytes(b"synthetic root installer")
+        (source / "PGS-Root-module.zip").write_bytes(b"synthetic root module")
+        (source / "root-build-info.json").write_text("{}", encoding="utf-8")
+        hashes = {name: draft.digest(source / name) for name in
+                  ("PGS.apk", "PGS-Root.apk", "PGS-Root-module.zip")}
+        (source / "SHA256SUMS.txt").write_text(
+            "".join(value + "  " + name + "\n" for name, value in hashes.items()), encoding="utf-8")
+        # The independent ZIP/provenance verifier has real ZIP fixtures in test_release_bundle.py.
+        mocked = patch.object(draft, "verify_signed_candidate", return_value=hashes)
+        mocked.start()
+        self.addCleanup(mocked.stop)
         return receipt
 
     def test_candidate_allocation(self):
@@ -78,7 +88,7 @@ class CandidateDraftTests(unittest.TestCase):
                 with self.assertRaises(ValueError):
                     draft.require_previous_candidate("gh", {}, request)
 
-    def test_stage_only_canonical_four_files(self):
+    def test_stage_only_canonical_seven_files(self):
         with tempfile.TemporaryDirectory() as tmp:
             source, target = Path(tmp) / "source", Path(tmp) / "target"
             source.mkdir()
@@ -89,8 +99,30 @@ class CandidateDraftTests(unittest.TestCase):
             expected = draft.stage_bundle(source, target, self.profile, self.commit, lambda *a, **k: receipt, self.request)
             self.assertEqual(set(expected), set(self.request.names))
             self.assertEqual({p.name for p in target.iterdir()}, set(self.request.names))
-            self.assertEqual((target / "SHA256SUMS.txt").read_text(encoding="utf-8").split(),
-                             [receipt["sha256"], self.request.asset])
+            names = (self.request.asset, self.request.root_asset, self.request.module_asset)
+            self.assertEqual((target / "SHA256SUMS.txt").read_text(encoding="utf-8"),
+                             "".join(draft.digest(target / name) + "  " + name + "\n" for name in names))
+
+    def test_missing_or_rejected_root_variant_blocks_retention(self):
+        for missing in ("PGS-Root.apk", "PGS-Root-module.zip", "root-build-info.json"):
+            with self.subTest(missing=missing), tempfile.TemporaryDirectory() as tmp:
+                source, target = Path(tmp) / "source", Path(tmp) / "target"
+                source.mkdir()
+                target.mkdir()
+                receipt = self.fixture(source)
+                (source / missing).unlink()
+                with self.assertRaises(ValueError):
+                    draft.stage_bundle(source, target, self.profile, self.commit, lambda *a, **k: receipt, self.request)
+                self.assertEqual(list(target.iterdir()), [])
+        with tempfile.TemporaryDirectory() as tmp:
+            source, target = Path(tmp) / "source", Path(tmp) / "target"
+            source.mkdir()
+            target.mkdir()
+            receipt = self.fixture(source)
+            with patch.object(draft, "verify_signed_candidate", side_effect=ValueError("Root rejected")):
+                with self.assertRaises(ValueError):
+                    draft.stage_bundle(source, target, self.profile, self.commit, lambda *a, **k: receipt, self.request)
+            self.assertEqual(list(target.iterdir()), [])
 
     def test_tampered_candidate_and_receipt_rejected(self):
         for corrupt in ("apk", "receipt", "source"):
@@ -134,7 +166,7 @@ class CandidateDraftTests(unittest.TestCase):
             self.assertEqual(args[:3], ["release", "create", self.request.tag])
             self.assertIn("--draft", args)
             self.assertIn(self.commit, args)
-            self.assertEqual({Path(p).name for p in args[-4:]}, set(self.request.names))
+            self.assertEqual({Path(p).name for p in args[-7:]}, set(self.request.names))
             self.assertNotIn("--clobber", args)
             self.assertEqual(unused.call_count, 2)
             releases.assert_called_once()

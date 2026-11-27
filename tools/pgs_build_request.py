@@ -31,8 +31,17 @@ class BuildRequest:
         return "PGS." + self.tag + ".apk"
 
     @property
+    def root_asset(self):
+        return "PGS." + self.tag + "-Root.apk"
+
+    @property
+    def module_asset(self):
+        return "PGS." + self.tag + "-Root-module.zip"
+
+    @property
     def names(self):
-        return (self.asset, "PGS.json", "build-info.json", "SHA256SUMS.txt")
+        return (self.asset, self.root_asset, self.module_asset, "PGS.json",
+                "build-info.json", "root-build-info.json", "SHA256SUMS.txt")
 
 
 def parse_request(data, previous_version, ledger, profile):

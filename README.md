@@ -7,7 +7,7 @@ Projeto independente derivado de uma base de código aberto para Android. O PGS 
 - Base original preservada; mudanças revisadas separadamente.
 - Monitor de versões estáveis do Pokémon GO no catálogo público do APKMirror, com consulta diária às 09h23 (horário de Brasília).
 - Download automático de APKM desativado: o monitor consulta somente metadados.
-- Ainda não há um APK jogável do PGS validado para publicação. Não confunda os artefatos de código-fonte do GitHub Actions com instaladores.
+- Ainda não há um APK jogável do PGS validado para publicação. O pacote de código-fonte não é um instalador. Em testes internos e execuções manuais, o GitHub Actions pode disponibilizar `PGS-preview.apk`, uma prévia independente com assinatura de desenvolvimento, sem o jogo original. Não é uma versão jogável nem uma release de produção.
 
 ## Repositório e acompanhamento
 

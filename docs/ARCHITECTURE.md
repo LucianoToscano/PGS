@@ -26,7 +26,7 @@ Game inputs, generated APKs, credentials, device logs, coordinates, handoffs, an
 
 ## Source map
 
-Paths below are relative to `pgrazor/`.
+Paths below are relative to `pgs/`.
 
 | Area | Entry points and responsibility |
 | --- | --- |

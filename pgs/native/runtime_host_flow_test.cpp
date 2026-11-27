@@ -200,7 +200,7 @@ int main(int argc,char **argv){
  s.update_calls=100;s.owner_updates=80;s.scan_calls=50;collector_status_key(s,false,next,sizeof(next));assert(!strcmp(first,next));
  s.completed=1;collector_status_key(s,false,next,sizeof(next));assert(strcmp(first,next));
  s.completed=0;s.ready=true;collector_status_key(s,false,next,sizeof(next));assert(strcmp(first,next));}
-using namespace test70;assert(argc==2);void *lib=dlopen(argv[1],RTLD_NOW|RTLD_LOCAL);assert(lib);auto get=reinterpret_cast<const void *(*)(uint32_t)>(dlsym(lib,"pgrazor_native_api"));assert(get);core=static_cast<const pgs_native_api_v2*>(get(2));assert(core&&core->query_feature(70,1));owner_tid=gettid();
+using namespace test70;assert(argc==2);void *lib=dlopen(argv[1],RTLD_NOW|RTLD_LOCAL);assert(lib);auto get=reinterpret_cast<const void *(*)(uint32_t)>(dlsym(lib,"pgs_native_api"));assert(get);core=static_cast<const pgs_native_api_v2*>(get(2));assert(core&&core->query_feature(70,1));owner_tid=gettid();
 #define LOAD(VAR,TYPE,ID,VER) VAR=*static_cast<const TYPE*>(core->query_feature(ID,VER));
  LOAD(flow_scheduler,PgrUnitySchedulerApi,48,2) LOAD(flow_transport,PgrRuntimeTransportApi,52,1) LOAD(flow_boot,PgrBootApi,54,1) LOAD(flow_metadata,PgrMetaApi,47,1)
 #undef LOAD

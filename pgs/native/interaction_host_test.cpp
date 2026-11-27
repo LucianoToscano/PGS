@@ -1328,7 +1328,7 @@ void prepared_run(){
 extern "C" const void *pgrazor_runtime_transport_api(uint32_t v){return v==1?actual_transport:nullptr;}
 int main(int argc,char **argv){
     assert(argc==2);void *lib=dlopen(argv[1],RTLD_NOW|RTLD_LOCAL);if(!lib)puts(dlerror());assert(lib);
-    auto get=(const void*(*)(uint32_t))dlsym(lib,"pgrazor_native_api");assert(get);
+    auto get=(const void*(*)(uint32_t))dlsym(lib,"pgs_native_api");assert(get);
     auto core=(const pgs_native_api_v2*)get(2);assert(core);
     auto exported=(const PgrInteractionHostApi*)core->query_feature(69,1);
     auto exported2=(const PgrInteractionHostApi2*)core->query_feature(69,2);

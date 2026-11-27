@@ -338,7 +338,7 @@ def manifest_permissions(data):
 def add_install_permissions(data):
     """Declare the permissions the in-app updater needs, just before <application>.
 
-    REQUEST_INSTALL_PACKAGES lets the app hand a downloaded PGRazor APK to the system
+    REQUEST_INSTALL_PACKAGES lets the app hand a downloaded PGS APK to the system
     installer; UPDATE_PACKAGES_WITHOUT_USER_ACTION lets Android 12+ skip the confirmation
     when the app updates itself. Both are install-time permissions with no runtime prompt.
     Permissions already declared are left alone, so the result is unchanged when both are

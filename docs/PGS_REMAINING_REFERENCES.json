@@ -1,21 +1,21 @@
 {
-  "scope": "Phase 16 provisional exact deltas from phase 15 checked-in snapshot. Independent CI scan and per-file comparison pending; prior scope discrepancy is documented.",
+  "scope": "Phase 17 provisional indexed Git source snapshot; exact deltas against phase 16, including the valid original account_host.cpp blob. CI indexed audit pending.",
   "tracked_files": 2106,
   "text_files": 1032,
-  "changed_files": 80,
+  "changed_files": 18,
   "added_files": 0,
-  "previous_occurrences": 2477,
-  "remaining_files": 500,
-  "remaining_occurrences": 2382,
+  "previous_occurrences": 2382,
+  "remaining_files": 497,
+  "remaining_occurrences": 2371,
   "remaining_by_category": {
     "workflows": 71,
-    "other": 119,
-    "documentation": 274,
+    "other": 117,
+    "documentation": 273,
     "release_history": 103,
     "legal": 3,
     "native": 959,
     "javascript": 98,
-    "tests": 670,
+    "tests": 662,
     "java": 79,
     "vendor": 6
   },
@@ -63,7 +63,7 @@
     {
       "path": "docs/ARCHITECTURE.md",
       "category": "documentation",
-      "occurrences": 2
+      "occurrences": 1
     },
     {
       "path": "docs/en/PGS_REPOSITORY_SETTINGS.md",
@@ -318,7 +318,7 @@
     {
       "path": "pgs/axml.py",
       "category": "other",
-      "occurrences": 3
+      "occurrences": 2
     },
     {
       "path": "pgs/build.py",
@@ -378,7 +378,7 @@
     {
       "path": "pgs/native/account_host_test.cpp",
       "category": "tests",
-      "occurrences": 13
+      "occurrences": 12
     },
     {
       "path": "pgs/native/account_host.cpp",
@@ -553,7 +553,7 @@
     {
       "path": "pgs/native/camera_host_test.cpp",
       "category": "tests",
-      "occurrences": 10
+      "occurrences": 9
     },
     {
       "path": "pgs/native/camera_host.cpp",
@@ -768,7 +768,7 @@
     {
       "path": "pgs/native/encounter_host_test.cpp",
       "category": "tests",
-      "occurrences": 28
+      "occurrences": 27
     },
     {
       "path": "pgs/native/encounter_host.cpp",
@@ -903,7 +903,7 @@
     {
       "path": "pgs/native/interaction_host_test.cpp",
       "category": "tests",
-      "occurrences": 8
+      "occurrences": 7
     },
     {
       "path": "pgs/native/interaction_host.cpp",
@@ -953,7 +953,7 @@
     {
       "path": "pgs/native/iv_display_test.cpp",
       "category": "tests",
-      "occurrences": 5
+      "occurrences": 3
     },
     {
       "path": "pgs/native/iv_display.cpp",
@@ -1008,7 +1008,7 @@
     {
       "path": "pgs/native/map_tap_test.cpp",
       "category": "tests",
-      "occurrences": 4
+      "occurrences": 3
     },
     {
       "path": "pgs/native/map_tap.cpp",
@@ -1113,7 +1113,7 @@
     {
       "path": "pgs/native/quickball_host_test.cpp",
       "category": "tests",
-      "occurrences": 13
+      "occurrences": 12
     },
     {
       "path": "pgs/native/quickball_host.cpp",
@@ -1313,7 +1313,7 @@
     {
       "path": "pgs/native/runtime_host_flow_test.cpp",
       "category": "tests",
-      "occurrences": 18
+      "occurrences": 17
     },
     {
       "path": "pgs/native/runtime_host.cpp",
@@ -1403,7 +1403,7 @@
     {
       "path": "pgs/native/shared_host_flow_test.cpp",
       "category": "tests",
-      "occurrences": 20
+      "occurrences": 19
     },
     {
       "path": "pgs/native/shared_host.cpp",
@@ -1566,11 +1566,6 @@
       "occurrences": 2
     },
     {
-      "path": "pgs/native/transfer_execution_observers_test.cpp",
-      "category": "tests",
-      "occurrences": 1
-    },
-    {
       "path": "pgs/native/transfer_execution_test.cpp",
       "category": "tests",
       "occurrences": 2
@@ -1584,11 +1579,6 @@
       "path": "pgs/native/transfer_execution.h",
       "category": "native",
       "occurrences": 2
-    },
-    {
-      "path": "pgs/native/transfer_facts_policy_test.cpp",
-      "category": "tests",
-      "occurrences": 1
     },
     {
       "path": "pgs/native/transfer_facts_test.cpp",
@@ -1844,11 +1834,6 @@
       "path": "pgs/rooted.py",
       "category": "other",
       "occurrences": 7
-    },
-    {
-      "path": "pgs/runtime_assets.py",
-      "category": "other",
-      "occurrences": 1
     },
     {
       "path": "pgs/runtime_audit.py",
@@ -2303,7 +2288,7 @@
     {
       "path": "pgs/test/test_pgs_reference_inventory.py",
       "category": "tests",
-      "occurrences": 4
+      "occurrences": 8
     },
     {
       "path": "pgs/test/test_pgs_release_policy.py",
@@ -2524,8 +2509,9 @@
   "previous_verified_scan": {
     "tracked_files": 2106,
     "text_files": 1031,
-    "remaining_files": 539,
-    "remaining_occurrences": 2468,
-    "workflow_run": 46019749696
+    "remaining_files": 499,
+    "remaining_occurrences": 2373,
+    "workflow_run": 46020977136,
+    "scope": "checkout"
   }
 }

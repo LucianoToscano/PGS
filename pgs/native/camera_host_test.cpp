@@ -776,7 +776,7 @@ int main(int argc, char **argv) {
 
   using NativeApiFn = const void *(*)(uint32_t);
   auto get_native =
-      reinterpret_cast<NativeApiFn>(dlsym(lib, "pgrazor_native_api"));
+      reinterpret_cast<NativeApiFn>(dlsym(lib, "pgs_native_api"));
   assert(get_native != nullptr);
   const auto *core = static_cast<const pgs_native_api_v2 *>(get_native(2u));
   assert(core != nullptr && core->query_feature != nullptr);

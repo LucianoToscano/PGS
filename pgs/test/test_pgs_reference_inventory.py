@@ -2,6 +2,8 @@
 import json
 from pathlib import Path
 import sys
+import subprocess
+import tempfile
 import unittest
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -25,6 +27,27 @@ class PgsReferenceInventoryTests(unittest.TestCase):
         ])
         self.assertEqual(snapshot_differences(current, current), [])
 
+    def test_index_is_independent_of_worktree_drift(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            subprocess.run(["git", "init", "-q"], cwd=root, check=True)
+            (root / "docs").mkdir()
+            (root / "docs/PGS_REMAINING_REFERENCES.json").write_text('{"files": []}', encoding="utf-8")
+            (root / "notes.txt").write_bytes(b"PGRAZOR pgrazor\n")
+            (root / "binary.bin").write_bytes(b"\x00pgrazor")
+            subprocess.run(["git", "add", "--all"], cwd=root, check=True)
+            (root / "notes.txt").write_bytes(b"PGS\n")
+            (root / "untracked.txt").write_bytes(b"pgrazor")
+            indexed = scan(root)
+            checkout = scan(root, worktree=True)
+            self.assertEqual(indexed["tracked_files"], 2)
+            self.assertEqual(indexed["text_files"], 1)
+            self.assertEqual(indexed["remaining_occurrences"], 2)
+            self.assertEqual(checkout["remaining_occurrences"], 0)
+            self.assertEqual(snapshot_differences(indexed, checkout), [
+                {"path": "notes.txt", "snapshot": 2, "actual": 0},
+            ])
+
     @unittest.skipUnless((ROOT / ".git").exists(), "Requires a Git checkout")
     def test_full_tracked_tree(self):
         result = scan(ROOT)
@@ -41,7 +64,13 @@ class PgsReferenceInventoryTests(unittest.TestCase):
         summary = {key: val for key, val in result.items() if key != "files"}
         print("PGS fresh tracked-reference inventory: " + json.dumps(summary, sort_keys=True))
         previous = json.loads((ROOT / "docs/PGS_REMAINING_REFERENCES.json").read_text(encoding="utf-8"))
-        print("PGS snapshot differences: " + json.dumps(snapshot_differences(previous, result), sort_keys=True))
+        differences = snapshot_differences(previous, result)
+        print("PGS snapshot differences: " + json.dumps(differences, sort_keys=True))
+        checkout = scan(ROOT, worktree=True)
+        print("PGS index/worktree differences: " + json.dumps(snapshot_differences(result, checkout), sort_keys=True))
+        self.assertEqual(differences, [], "The inventory must match indexed Git text")
+        self.assertEqual(result["remaining_occurrences"], previous["remaining_occurrences"])
+        self.assertEqual(result["remaining_by_category"], previous["remaining_by_category"])
 
 
 if __name__ == "__main__":

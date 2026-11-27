@@ -142,7 +142,7 @@ QFORWARD(pgrazor_unity_scheduler_api,48)
 int main(int argc,char **argv){
  using namespace fixture;
  assert(argc==2);void *lib=dlopen(argv[1],RTLD_NOW|RTLD_LOCAL);if(!lib)std::puts(dlerror());assert(lib);
- auto get=reinterpret_cast<const void*(*)(uint32_t)>(dlsym(lib,"pgrazor_native_api"));assert(get);
+ auto get=reinterpret_cast<const void*(*)(uint32_t)>(dlsym(lib,"pgs_native_api"));assert(get);
  core=static_cast<const pgs_native_api_v2*>(get(2));assert(core&&core->query_feature(62,1)&&!core->query_feature(62,2));
  host=static_cast<const PgrQuickballHostApi*>(pgrazor_quickball_host_api(1));assert(host&&host->size==96);
  initialize();wrapped_btxu();assert(learned_caller);

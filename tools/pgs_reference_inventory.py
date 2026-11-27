@@ -27,7 +27,39 @@ def text_count(data):
     return len(LEGACY.findall(text))
 
 
-def scan(root=ROOT):
+def index_blobs(root, tracked):
+    """Read exact staged bytes with one Git process, independent of checkout filters."""
+    with subprocess.Popen(["git", "cat-file", "--batch"], cwd=root,
+                          stdin=subprocess.PIPE, stdout=subprocess.PIPE) as git:
+        for path, (mode, oid) in sorted(tracked.items()):
+            if mode not in (b"100644", b"100755"):
+                continue
+            git.stdin.write(oid + b"\n")
+            git.stdin.flush()
+            header = git.stdout.readline().split()
+            if len(header) != 3 or header[0] != oid or header[1] != b"blob":
+                raise ValueError("Cannot read indexed blob: " + path)
+            size = int(header[2])
+            data = git.stdout.read(size)
+            if len(data) != size or git.stdout.read(1) != b"\n":
+                raise ValueError("Incomplete indexed blob: " + path)
+            yield path, data
+        git.stdin.close()
+        if git.wait() != 0:
+            raise ValueError("Git blob scan failed")
+
+
+def worktree_blobs(root, tracked):
+    for path, (mode, _) in sorted(tracked.items()):
+        if mode not in (b"100644", b"100755"):
+            continue
+        target = root / path
+        if target.is_symlink() or not target.is_file():
+            raise ValueError("Tracked regular file missing or replaced: " + path)
+        yield path, target.read_bytes()
+
+
+def scan(root=ROOT, *, worktree=False):
     root = Path(root)
     raw = subprocess.check_output(["git", "ls-files", "--stage", "-z"], cwd=root)
     tracked = {}
@@ -35,25 +67,21 @@ def scan(root=ROOT):
         if not item:
             continue
         metadata, name = item.split(b"\t", 1)
-        mode, _, stage = metadata.split()
+        mode, oid, stage = metadata.split()
         if stage != b"0":
             raise ValueError("Cannot audit an unmerged index")
         path = name.decode("utf-8")
         if path == SNAPSHOT:
             continue
-        tracked[path] = mode
-    previous = json.loads((root / SNAPSHOT).read_text(encoding="utf-8"))
+        tracked[path] = (mode, oid)
+    previous = json.loads(subprocess.check_output(["git", "show", ":" + SNAPSHOT], cwd=root).decode("utf-8"))
     categories = {row["path"]: row["category"] for row in previous["files"]}
     rows = []
     counts = Counter()
     text_files = 0
-    for path, mode in sorted(tracked.items()):
-        if mode not in (b"100644", b"100755"):
-            continue
-        target = root / path
-        if target.is_symlink() or not target.is_file():
-            raise ValueError("Tracked regular file missing or replaced: " + path)
-        n = text_count(target.read_bytes())
+    blobs = worktree_blobs(root, tracked) if worktree else index_blobs(root, tracked)
+    for path, data in blobs:
+        n = text_count(data)
         if n is None:
             continue
         text_files += 1
@@ -73,7 +101,8 @@ def scan(root=ROOT):
             rows.append({"path": path, "category": category, "occurrences": n})
             counts[category] += n
     return {
-        "scope": "Git-tracked regular UTF-8 text, excluding NUL-containing files and the snapshot itself",
+        "scope": ("Working-tree copies of Git-tracked regular UTF-8 text" if worktree
+                  else "Git-indexed regular UTF-8 text") + ", excluding NUL-containing files and the snapshot itself",
         "tracked_files": len(tracked),
         "text_files": text_files,
         "remaining_files": len(rows),
@@ -98,10 +127,12 @@ def main():
     parser.add_argument("--summary", action="store_true", help="Omit per-file rows")
     parser.add_argument("--compare-snapshot", action="store_true",
                         help="Include per-file count differences against the checked-in snapshot")
+    parser.add_argument("--worktree", action="store_true",
+                        help="Inspect checkout bytes instead of indexed Git blobs")
     args = parser.parse_args()
-    result = scan()
+    result = scan(worktree=args.worktree)
     if args.compare_snapshot:
-        previous = json.loads((ROOT / SNAPSHOT).read_text(encoding="utf-8"))
+        previous = json.loads(subprocess.check_output(["git", "show", ":" + SNAPSHOT], cwd=ROOT).decode("utf-8"))
         result["snapshot_differences"] = snapshot_differences(previous, result)
     if args.summary:
         result.pop("files")

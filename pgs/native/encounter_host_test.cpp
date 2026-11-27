@@ -211,7 +211,7 @@ static int nameplate_case(){
 }
 int main(int argc,char **argv){
  assert(argc>=2);void *lib=dlopen(argv[1],RTLD_NOW|RTLD_LOCAL);assert(lib);
- auto get=reinterpret_cast<const pgs_native_api_v2*(*)(uint32_t)>(dlsym(lib,"pgrazor_native_api"));assert(get);core=get(2);assert(core&&core->query_feature(63,1));
+ auto get=reinterpret_cast<const pgs_native_api_v2*(*)(uint32_t)>(dlsym(lib,"pgs_native_api"));assert(get);core=get(2);assert(core&&core->query_feature(63,1));
  host=static_cast<const PgrEncounterHostApi*>(fixture_encounter_host_api(1));g_api=static_cast<const pgr_berry_api_v1*>(core->query_feature(18,1));assert(g_api);
  pid_t child=fork();assert(child>=0);if(child==0)_exit(map_case());int status=0;assert(waitpid(child,&status,0)==child&&WIFEXITED(status)&&WEXITSTATUS(status)==0);
  child=fork();assert(child>=0);if(child==0)_exit(vgp_case());assert(waitpid(child,&status,0)==child&&WIFEXITED(status)&&WEXITSTATUS(status)==0);

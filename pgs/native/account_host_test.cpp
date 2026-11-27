@@ -710,13 +710,13 @@ void setup_universe() {
   extern "C" const void *NAME(uint32_t v) {                                        \
     return fixture::g_core ? fixture::g_core->query_feature(ID, v) : nullptr;      \
   }
-FORWARD_FEATURE(pgrazor_adventure_sync_api, 2)
-extern "C" const pgs_accounts_api_v1_t *pgrazor_accounts_api(uint32_t v){return fixture::g_core?static_cast<const pgs_accounts_api_v1_t*>(fixture::g_core->query_feature(16,v)):nullptr;}
-FORWARD_FEATURE(pgrazor_runtime_metadata_api, 47)
-FORWARD_FEATURE(pgrazor_unity_scheduler_api, 48)
-FORWARD_FEATURE(pgrazor_runtime_transport_api, 52)
-FORWARD_FEATURE(pgrazor_runtime_bootstrap_api, 54)
-FORWARD_FEATURE(pgrazor_shared_host_api, 61)
+FORWARD_FEATURE(pgs_adventure_sync_api, 2)
+extern "C" const pgs_accounts_api_v1_t *pgs_accounts_api(uint32_t v){return fixture::g_core?static_cast<const pgs_accounts_api_v1_t*>(fixture::g_core->query_feature(16,v)):nullptr;}
+FORWARD_FEATURE(pgs_runtime_metadata_api, 47)
+FORWARD_FEATURE(pgs_unity_scheduler_api, 48)
+FORWARD_FEATURE(pgs_runtime_transport_api, 52)
+FORWARD_FEATURE(pgs_runtime_bootstrap_api, 54)
+FORWARD_FEATURE(pgs_shared_host_api, 61)
 #undef FORWARD_FEATURE
 
 int main(int argc, char **argv) {
@@ -1024,7 +1024,7 @@ int main(int argc, char **argv) {
   assert(host->set_options(&opts) == PGR_ACH_ERR_STOPPED);
   assert(host->set_adventure_sync_allowed(1) == PGR_ACH_ERR_STOPPED);
   // Simulate a previously-entered setter reaching its pure publication after stop.
-  const auto *acc=pgrazor_accounts_api(1);pgs_account_snapshot_v1_t before{},after{};acc->api_sample(&before);
+  const auto *acc=pgs_accounts_api(1);pgs_account_snapshot_v1_t before{},after{};acc->api_sample(&before);
   publish_accounts(true,2000,PGR_ACC_CMD_LOGOUT,UINT64_C(9223372036854775807));
   publish_advsync(true,2500);acc->api_sample(&after);
   assert(before.last_accepted_token==after.last_accepted_token&&after.active_gc_roots==0);

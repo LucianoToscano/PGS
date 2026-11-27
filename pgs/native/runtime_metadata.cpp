@@ -542,6 +542,6 @@ const PgrMetaApi g_api = {
 
 }  // namespace
 
-const void *pgrazor_runtime_metadata_api(uint32_t version) {
+const void *pgs_runtime_metadata_api(uint32_t version) {
   return version == PGR_MD_API_VERSION ? &g_api : nullptr;
 }

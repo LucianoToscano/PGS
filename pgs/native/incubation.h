@@ -29,7 +29,7 @@ extern "C" {
 #endif
 
 // Feature id in the native pilot registry (coordinator wires the getter under this id).
-#define PGRAZOR_INCUBATION_FEATURE_ID 9u
+#define PGS_INCUBATION_FEATURE_ID 9u
 
 // Table + config ABI version. The getter answers an exact match only.
 #define PGS_INCUBATION_API_VERSION 1u
@@ -92,7 +92,7 @@ enum {
 
 // Step of the most recent fail-closed error (sample.fault_step), so a log shows where it stopped.
 enum {
-    PGRAZOR_INC_FAULT_NONE           = 0,
+    PGS_INC_FAULT_NONE           = 0,
     PGS_INC_FAULT_MAP            = 1,  /* map scene / DI container lookup */
     PGS_INC_FAULT_PLAYER         = 2,  /* player profile resolve */
     PGS_INC_FAULT_INCUBATORS     = 3,  /* incubator list read */
@@ -132,7 +132,7 @@ enum {
 // size == sizeof(pgs_incubation_config_v1). Every pointer is an already-validated
 // il2cpp export, managed MethodInfo*, class pointer or FieldInfo*; the native layer
 // re-checks the header and rejects any null pointer or invalid literal before use.
-typedef struct pgrazor_incubation_config_v1 {
+typedef struct pgs_incubation_config_v1 {
     uint32_t version;              /* == PGS_INCUBATION_API_VERSION */
     uint32_t size;                 /* == sizeof(pgs_incubation_config_v1) */
 
@@ -198,8 +198,8 @@ typedef struct pgrazor_incubation_config_v1 {
        string field read (ItemId / egg assignment). */
     void *class_boolean;           /* System.Boolean (exact check before unbox) (offset 344) */
     void *class_string;            /* System.String  (exact check before chars)  (offset 352) */
-} pgrazor_incubation_config_v1;
-typedef pgrazor_incubation_config_v1 pgs_incubation_config_v1;
+} pgs_incubation_config_v1;
+typedef pgs_incubation_config_v1 pgrazor_incubation_config_v1;
 
 // Pull-only telemetry snapshot (48 bytes). status_serial increments on each distinct
 // status transition; request_serial increments once per issued PutEggInIncubator (the
@@ -208,19 +208,19 @@ typedef pgrazor_incubation_config_v1 pgs_incubation_config_v1;
 // recent request (and the STARTING status message). owned_roots exposes the number of
 // durable pending GC roots currently held so the coordinator can gate a finish/teardown
 // on this layer having released them.
-typedef struct pgrazor_incubation_sample_v1 {
+typedef struct pgs_incubation_sample_v1 {
     uint32_t version;              /* == PGS_INCUBATION_API_VERSION */
     uint32_t size;                 /* == sizeof(pgs_incubation_sample_v1) */
-    uint32_t status;               /* one of PGRAZOR_INC_STATUS_* */
+    uint32_t status;               /* one of PGS_INC_STATUS_* */
     uint32_t status_serial;        /* bumped on each status change */
     uint64_t request_serial;       /* bumped on each issued request */
     double   distance;             /* km of the most recent choice/request */
     uint32_t longest;              /* 1 == longest priority, 0 == shortest */
     uint32_t fault_serial;         /* bumped on each fail-closed error */
     uint32_t owned_roots;          /* durable pending GC roots currently held (0..4) */
-    uint32_t fault_step;           /* PGRAZOR_INC_FAULT_* of the latest fault (was reserved 0) */
-} pgrazor_incubation_sample_v1;
-typedef pgrazor_incubation_sample_v1 pgs_incubation_sample_v1;
+    uint32_t fault_step;           /* PGS_INC_FAULT_* of the latest fault (was reserved 0) */
+} pgs_incubation_sample_v1;
+typedef pgs_incubation_sample_v1 pgrazor_incubation_sample_v1;
 
 /*
  * install(config): validate and publish the config once for the process lifetime. A
@@ -228,8 +228,8 @@ typedef pgrazor_incubation_sample_v1 pgs_incubation_sample_v1;
  * ALREADY_BOUND. On any header/size/pointer/literal problem returns BAD_CONFIG. No
  * process image is mutated and no managed call is made here.
  */
-typedef int (*pgrazor_incubation_install_fn)(const pgs_incubation_config_v1 *config);
-typedef pgrazor_incubation_install_fn pgs_incubation_install_fn;
+typedef int (*pgs_incubation_install_fn)(const pgs_incubation_config_v1 *config);
+typedef pgs_incubation_install_fn pgrazor_incubation_install_fn;
 
 /*
  * tick(enabled, longest, remaining_lease_ms, proven_tid): one orchestration pass. Runs
@@ -243,9 +243,9 @@ typedef pgrazor_incubation_install_fn pgs_incubation_install_fn;
  * "Off" and keeps any pending assignment; the host calls clear() for stop. Returns OK or
  * NOT_INSTALLED.
  */
-typedef int (*pgrazor_incubation_tick_fn)(int enabled, int longest,
+typedef int (*pgs_incubation_tick_fn)(int enabled, int longest,
                                           uint64_t remaining_lease_ms, uint64_t proven_tid);
-typedef pgrazor_incubation_tick_fn pgs_incubation_tick_fn;
+typedef pgs_incubation_tick_fn pgrazor_incubation_tick_fn;
 
 /*
  * clear(proven_tid): Unity-thread-only teardown for stop/detach. RELEASES the durable
@@ -256,23 +256,23 @@ typedef pgrazor_incubation_tick_fn pgs_incubation_tick_fn;
  * Unity thread or out from under a running pass; a reentrant clear from inside the owner's
  * own pass defers the free until that pass finishes). Returns OK or NOT_INSTALLED.
  */
-typedef int (*pgrazor_incubation_clear_fn)(uint64_t proven_tid);
-typedef pgrazor_incubation_clear_fn pgs_incubation_clear_fn;
+typedef int (*pgs_incubation_clear_fn)(uint64_t proven_tid);
+typedef pgs_incubation_clear_fn pgrazor_incubation_clear_fn;
 
 /* sample(out): copy the latest telemetry snapshot. Safe from any thread. */
-typedef int (*pgrazor_incubation_sample_fn)(pgs_incubation_sample_v1 *out);
-typedef pgrazor_incubation_sample_fn pgs_incubation_sample_fn;
+typedef int (*pgs_incubation_sample_fn)(pgs_incubation_sample_v1 *out);
+typedef pgs_incubation_sample_fn pgrazor_incubation_sample_fn;
 
 // Ordered, read-only table advertised by the getter (40 bytes: header + 4 pointers).
-typedef struct pgrazor_incubation_api_v1 {
+typedef struct pgs_incubation_api_v1 {
     uint32_t version;              /* == PGS_INCUBATION_API_VERSION */
     uint32_t size;                 /* == sizeof(pgs_incubation_api_v1) */
     pgs_incubation_install_fn install;
     pgs_incubation_tick_fn    tick;
     pgs_incubation_clear_fn   clear;
     pgs_incubation_sample_fn  sample;
-} pgrazor_incubation_api_v1;
-typedef pgrazor_incubation_api_v1 pgs_incubation_api_v1;
+} pgs_incubation_api_v1;
+typedef pgs_incubation_api_v1 pgrazor_incubation_api_v1;
 
 /*
  * Hidden getter (NOT exported by the version script). The coordinator registers it in

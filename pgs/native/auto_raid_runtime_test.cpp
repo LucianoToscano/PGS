@@ -404,13 +404,13 @@ void reset_fixture() {
 
 } // namespace
 
-extern "C" const void* pgrazor_runtime_transport_api(uint32_t v) {
+extern "C" const void* pgs_runtime_transport_api(uint32_t v) {
     return v == 1 ? &g_transport_api : nullptr;
 }
-extern "C" const void* pgrazor_runtime_bootstrap_api(uint32_t v) {
+extern "C" const void* pgs_runtime_bootstrap_api(uint32_t v) {
     return v == 1 ? &g_boot_api : nullptr;
 }
-extern "C" const void* pgrazor_runtime_metadata_api(uint32_t v) {
+extern "C" const void* pgs_runtime_metadata_api(uint32_t v) {
     return v == 1 ? &g_meta_api : nullptr;
 }
 extern "C" const void* pgs_vgp_results_api(uint32_t v) {

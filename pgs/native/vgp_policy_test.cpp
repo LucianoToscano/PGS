@@ -16,7 +16,7 @@
 // seen-key quarantine with monotonic expiry and capacity ceiling (seen/touch/sweep), the catch-delay
 // table, and the uncertain-response latch (block/clear_block) which preserves the quarantine across a
 // mask toggle and is dropped only by reset(). The module installs NO hook and NEVER calls back into
-// JS. The coordinator builds and runs this against libpgrazor.so after registering query_feature
+// JS. The coordinator builds and runs this against libpgs-core.so after registering query_feature
 // case 25 and linking vgp_policy.cpp.
 
 namespace {
@@ -66,7 +66,7 @@ int touch(uint64_t tid, const std::string &k, uint64_t ms) {
 }  // namespace
 
 int main(int argc, char **argv) {
-  const char *so_path = argc > 1 ? argv[1] : "./libpgrazor.so";
+  const char *so_path = argc > 1 ? argv[1] : "./libpgs-core.so";
   void *lib = ::dlopen(so_path, RTLD_NOW | RTLD_LOCAL);
   if (!lib) { std::fprintf(stderr, "dlopen(%s) failed: %s\n", so_path, ::dlerror()); return 1; }
   auto getter = reinterpret_cast<GetApiFn>(::dlsym(lib, "pgs_native_api"));

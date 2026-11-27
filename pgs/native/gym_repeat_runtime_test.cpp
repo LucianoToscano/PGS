@@ -303,9 +303,9 @@ void won_approach(){
 } // namespace
 
 // --- injected API accessors / globals the included module links against -----------
-const void *pgrazor_runtime_bootstrap_api(uint32_t) { return &boot_api; }
-const void *pgrazor_runtime_metadata_api(uint32_t) { return &meta_api; }
-const void *pgrazor_runtime_transport_api(uint32_t) { return &transport_api; }
+const void *pgs_runtime_bootstrap_api(uint32_t) { return &boot_api; }
+const void *pgs_runtime_metadata_api(uint32_t) { return &meta_api; }
+const void *pgs_runtime_transport_api(uint32_t) { return &transport_api; }
 int pgs_hook(void *address, void *replacement, void **original) {
     hooks[address] = replacement;
     *original = address == &code_re ? reinterpret_cast<void*>(noop4) : reinterpret_cast<void*>(noop2);
@@ -327,7 +327,7 @@ void *fixture_symbol(void *, const char *n) {
 
 extern "C" int fixture_clock(clockid_t,struct timespec *t){t->tv_sec=fixture_now/1000;t->tv_nsec=(fixture_now%1000)*1000000;return 0;}
 int main(){
- api=static_cast<const PgrGymRepeatApi*>(pgrazor_gym_repeat_api(1));
+ api=static_cast<const PgrGymRepeatApi*>(pgs_gym_repeat_api(1));
  reset_world();PgrGymRepeatConfig cfg{1,sizeof(cfg),self_tid(),&fixture_md};fail_validation=true;
  assert(api->configure(&cfg)==PGR_GR_ERR_BINDING&&hooks.empty()&&!g_ready.load());fail_validation=false;fail_hook_at=3;
  assert(api->configure(&cfg)==PGR_GR_ERR_BINDING&&!g_ready.load()&&hooks.size()==3);

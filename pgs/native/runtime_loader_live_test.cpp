@@ -11,7 +11,7 @@ static void *without_default(void *handle, const char *symbol) {
 #define dlsym without_default
 #include "runtime_bootstrap.cpp"
 #undef dlsym
-const void *pgrazor_runtime_metadata_api(uint32_t) { return nullptr; }
+const void *pgs_runtime_metadata_api(uint32_t) { return nullptr; }
 int main() {
   auto loader = resolve_loader_dlopen();
   assert(loader && "explicit libdl/ld-android lookup must resolve the real Android loader");

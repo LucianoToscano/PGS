@@ -27,7 +27,7 @@ enum PgrHookPadding : uint32_t {
 };
 struct PgrHookDiag {
     uint32_t version, size;   // version==1, size==sizeof(PgrHookDiag)
-    uint32_t failures;        // failed pgrazor_hook() calls so far
+    uint32_t failures;        // failed pgs_hook() calls so far
     int32_t reason;           // PgrHookReason of the first failure
     int32_t rc;               // Dobby rc of the first failure (0 unless reason is DOBBY)
     int32_t error;            // errno of the last refused mmap (near-island) or after Dobby

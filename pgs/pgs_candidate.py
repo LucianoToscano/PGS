@@ -78,7 +78,7 @@ def verify(apk, *, tag, game_version, game_version_code, previous_version_code):
         if labels != ["Pok\u00e9mon GO"]:
             raise ValueError("Installed application label must remain Pok\u00e9mon GO")
         mode = json.loads(read_bounded(archive, MODE, 256 * 1024))
-        if not isinstance(mode, dict) or mode.get("pgrazorVersion") != tag:
+        if not isinstance(mode, dict) or mode.get("pgsVersion") != tag or ("pgrazorVersion" in mode and mode["pgrazorVersion"] != tag):
             raise ValueError("PGS mode version differs from the requested release")
         if mode.get("googleBrowserLogin", False) is not False:
             raise ValueError("Experimental OAuth must stay disabled pending authorized PGS configuration")

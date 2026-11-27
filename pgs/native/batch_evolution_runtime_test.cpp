@@ -319,9 +319,9 @@ void finish_inventory_fixture(){
 }
 }
 
-extern "C" const void* pgrazor_runtime_bootstrap_api(uint32_t){assert(false&&"no bootstrap in fixture");return nullptr;}
-extern "C" const void* pgrazor_runtime_metadata_api(uint32_t v){assert(v==1);return &metadata;}
-extern "C" const void* pgrazor_runtime_transport_api(uint32_t v){assert(v==1);return &transport;}
+extern "C" const void* pgs_runtime_bootstrap_api(uint32_t){assert(false&&"no bootstrap in fixture");return nullptr;}
+extern "C" const void* pgs_runtime_metadata_api(uint32_t v){assert(v==1);return &metadata;}
+extern "C" const void* pgs_runtime_transport_api(uint32_t v){assert(v==1);return &transport;}
 extern "C" const void* pgs_vgp_results_api(uint32_t v){assert(v==1);return &results;}
 
 int main(){

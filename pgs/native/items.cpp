@@ -1203,6 +1203,6 @@ const void *pgs_items_api(uint32_t version) {
     return &g_api;
 }
 
-extern "C" uint64_t pgrazor_items_cleanup_serial() {
+extern "C" uint64_t pgs_items_cleanup_serial() {
     return g_cleanup_serial.load(std::memory_order_acquire);
 }

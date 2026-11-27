@@ -13,11 +13,11 @@ using namespace pgr_camera_schema;
 std::mutex g_resolving;
 
 const PgrMetaApi *metadata() {
-  return static_cast<const PgrMetaApi *>(pgrazor_runtime_metadata_api(1));
+  return static_cast<const PgrMetaApi *>(pgs_runtime_metadata_api(1));
 }
 
 const PgrBootApi *bootstrap() {
-  return static_cast<const PgrBootApi *>(pgrazor_runtime_bootstrap_api(1));
+  return static_cast<const PgrBootApi *>(pgs_runtime_bootstrap_api(1));
 }
 
 bool attached(const PgrCameraMetaConfig &c) {

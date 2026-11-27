@@ -1,9 +1,9 @@
 #include <cassert>
 #include <cstdio>
 #include "menu_visibility.cpp"
-extern "C" const void *pgrazor_runtime_bootstrap_api(uint32_t){return nullptr;}
-extern "C" const void *pgrazor_runtime_metadata_api(uint32_t){return nullptr;}
-extern "C" const void *pgrazor_runtime_transport_api(uint32_t){return nullptr;}
+extern "C" const void *pgs_runtime_bootstrap_api(uint32_t){return nullptr;}
+extern "C" const void *pgs_runtime_metadata_api(uint32_t){return nullptr;}
+extern "C" const void *pgs_runtime_transport_api(uint32_t){return nullptr;}
 int pgs_hook(void*,void*,void**){return -1;}
 namespace {
 bool state=false,fail=false,reject=false;

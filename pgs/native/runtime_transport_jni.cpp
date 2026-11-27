@@ -83,7 +83,7 @@ const JNINativeMethod methods[]={
 };
 static_assert(sizeof(PgrRuntimeTransportConfig)==32,"transport JNI config ABI");
 }
-int pgrazor_register_runtime_transport(JNIEnv *env){
+int pgs_register_runtime_transport(JNIEnv *env){
  if(!env)return -1;
  jclass klass=env->FindClass("dev/pgs/NativeRuntimeTransport");
  if(!klass)return -1;

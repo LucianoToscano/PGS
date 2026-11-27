@@ -289,7 +289,7 @@ const PgrRuntimeTransportApi *transport() { return static_cast<const PgrRuntimeT
 void status(const char *msg) {
     if (g_last_status == msg) return;
     g_last_status = msg;
-    __android_log_print(ANDROID_LOG_INFO, "PGRazorGymRepeat", "%s", msg);
+    __android_log_print(ANDROID_LOG_INFO, "PGSGymRepeat", "%s", msg);
     const auto *tr = transport();
     if (tr && tr->emit) { PgrRuntimeTransportString s{msg, uint32_t(std::strlen(msg))}; tr->emit(24, nullptr, 0, &s, 1); }
 }
@@ -774,7 +774,7 @@ int api_configure(const PgrGymRepeatConfig *cfg) {
     try {
         if (!install()) { return PGR_GR_ERR_BINDING; }
     } catch (const Failure &f) {
-        __android_log_print(ANDROID_LOG_WARN, "PGRazorGymRepeat", "binding unavailable: %s", f.where);
+        __android_log_print(ANDROID_LOG_WARN, "PGSGymRepeat", "binding unavailable: %s", f.where);
         return PGR_GR_ERR_BINDING;
     } catch (...) { return PGR_GR_ERR_BINDING; }
     g_ready.store(true, std::memory_order_release);
@@ -861,7 +861,7 @@ int api_tick(uint64_t proven_tid) {
         // Recoverable: end this session and release roots; a new user Battle press can
         // re-arm. The existing combat hooks are untouched.
         g_last_end = END_ERROR;
-        __android_log_print(ANDROID_LOG_WARN, "PGRazorGymRepeat", "session ended: %s", f.where);
+        __android_log_print(ANDROID_LOG_WARN, "PGSGymRepeat", "session ended: %s", f.where);
         g_approach_root.reset(); g_prep_root.reset(); g_badge_root.reset();g_badge_sent=g_badge_retry=false;g_badge_scan=0; clear_events();
         g_gym_fort_id.clear(); g_account_hash = 0;
         policy.reset();
@@ -920,6 +920,6 @@ const PgrGymRepeatApi kApi = {
 
 } // namespace
 
-const void *pgrazor_gym_repeat_api(uint32_t version) {
+const void *pgs_gym_repeat_api(uint32_t version) {
     return version == PGR_GYM_REPEAT_API_VERSION ? &kApi : nullptr;
 }

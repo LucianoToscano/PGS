@@ -2,8 +2,8 @@
 #include "event_collector.cpp"
 #include <cassert>
 #include <stdexcept>
-extern "C" const void *pgrazor_runtime_bootstrap_api(uint32_t){return nullptr;}
-extern "C" const void *pgrazor_runtime_metadata_api(uint32_t){return nullptr;}
+extern "C" const void *pgs_runtime_bootstrap_api(uint32_t){return nullptr;}
+extern "C" const void *pgs_runtime_metadata_api(uint32_t){return nullptr;}
 int pgs_hook(void*,void*,void**){return -1;}
 namespace {
 struct Obj {alignas(16) unsigned char b[2048]{};};

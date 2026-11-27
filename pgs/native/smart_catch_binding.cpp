@@ -30,7 +30,7 @@ bool g_bound = false;
 void diagnostic(const char *name,int rc){
  static const char *last=nullptr;static int last_rc=0;
  if(last==name&&last_rc==rc)return;last=name;last_rc=rc;
- __android_log_print(ANDROID_LOG_WARN,"PGRazorSmartCatch","Binding %s: %d",name,rc);
+ __android_log_print(ANDROID_LOG_WARN,"PGSSmartCatch","Binding %s: %d",name,rc);
 }
 
 // Module-local pointers used ONLY by pgr_smart_spawn_fresh (NOT part of PgrSmartBinding, which the helper
@@ -52,14 +52,14 @@ void *encounter_wrapper=nullptr,*map_encounter=nullptr;
 int32_t encounter_success=0;
 
 const PgrBootApi *bootstrap_api() {
-  const auto *api = static_cast<const PgrBootApi *>(pgrazor_runtime_bootstrap_api(PGR_BOOT_API_VERSION));
+  const auto *api = static_cast<const PgrBootApi *>(pgs_runtime_bootstrap_api(PGR_BOOT_API_VERSION));
   if (!api || api->version != PGR_BOOT_API_VERSION || api->size != sizeof(PgrBootApi) || !api->snapshot)
     return nullptr;
   return api;
 }
 
 const PgrMetaApi *metadata_api() {
-  const auto *api = static_cast<const PgrMetaApi *>(pgrazor_runtime_metadata_api(PGR_MD_API_VERSION));
+  const auto *api = static_cast<const PgrMetaApi *>(pgs_runtime_metadata_api(PGR_MD_API_VERSION));
   if (!api || api->version != PGR_MD_API_VERSION || api->size != sizeof(PgrMetaApi) ||
       !api->resolve_class || !api->validate_field || !api->validate_method)
     return nullptr;
@@ -400,8 +400,8 @@ int pgr_smart_ensure_bound(uint64_t owner) {
       validate_field(md,b.class_display_proto,"IsStrongPokemon",offset(strong),PGR_MD_FIELD_VALUE,1,"System.Boolean",&strong,nullptr)==0;
   }
   if(safari_ok)pgr_smart_set_safari_source(strong,wild_ball,safari_offered);
-  __android_log_print(ANDROID_LOG_INFO,"PGRazorSmartCatch","Mighty Safari binding %s (inventory ball=%d)",safari_ok?"ready":"unavailable; normal balls retained",safari_ok?wild_ball:0);
-  __android_log_print(ANDROID_LOG_INFO,"PGRazorSmartCatch","Native catch binding ready (level rules and berry RPC validated)");
+  __android_log_print(ANDROID_LOG_INFO,"PGSSmartCatch","Mighty Safari binding %s (inventory ball=%d)",safari_ok?"ready":"unavailable; normal balls retained",safari_ok?wild_ball:0);
+  __android_log_print(ANDROID_LOG_INFO,"PGSSmartCatch","Native catch binding ready (level rules and berry RPC validated)");
   return PGR_SMARTBIND_OK;
 }
 
@@ -520,7 +520,7 @@ int pgr_vgp_incense_bind(uint64_t owner) {
   const int incense_rc = bind_incense(snap, md, v);
   if (incense_rc == 0) {
     publish_kind(v);
-    __android_log_print(ANDROID_LOG_INFO, "PGRazorSmartCatch", "Incense VGP support ready");
+    __android_log_print(ANDROID_LOG_INFO, "PGSSmartCatch", "Incense VGP support ready");
   }
   void *base = nullptr, *wild = nullptr;
   if (resolve_class(md, "Niantic.Holoholo.Map", "MapPokemon", &base) == 0 && base &&
@@ -532,10 +532,10 @@ int pgr_vgp_incense_bind(uint64_t owner) {
       const std::string why = bind_kind(snap, md, base, name, &kind);
       if (why.empty()) {
         publish_kind(kind);
-        __android_log_print(ANDROID_LOG_INFO, "PGRazorSmartCatch", "%s VGP support ready%s%s", name,
+        __android_log_print(ANDROID_LOG_INFO, "PGSSmartCatch", "%s VGP support ready%s%s", name,
                             kind.m_spawn ? "" : " (no berries)", kind.m_destroy ? "" : " (no removal)");
       } else {
-        __android_log_print(ANDROID_LOG_WARN, "PGRazorSmartCatch", "%s VGP support unavailable (%s)", name, why.c_str());
+        __android_log_print(ANDROID_LOG_WARN, "PGSSmartCatch", "%s VGP support unavailable (%s)", name, why.c_str());
       }
     }
   }
@@ -546,7 +546,7 @@ int pgr_vgp_incense_bind(uint64_t owner) {
 namespace {
 int bind_incense(const PgrBootBinding &snap, const PgrMetaApi *md, PgrVgpIncense &v) {
   auto fail = [](int rc, const char *what) {
-    __android_log_print(ANDROID_LOG_WARN, "PGRazorSmartCatch", "Incense VGP support unavailable (%s)", what);
+    __android_log_print(ANDROID_LOG_WARN, "PGSSmartCatch", "Incense VGP support unavailable (%s)", what);
     return rc;
   };
   auto parent = reinterpret_cast<void *(*)(void *)>(::dlsym(snap.handle, "il2cpp_class_get_parent"));

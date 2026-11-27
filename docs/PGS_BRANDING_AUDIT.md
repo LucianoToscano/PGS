@@ -13,7 +13,9 @@ O PGS é o aplicativo Android **Pokémon GO** com package `com.nianticlabs.pokem
 - Política de release falha se o ledger de `versionCode` PGS desaparecer, em vez de produzir um instalador com identificação externa
 - Arquivo histórico das releases upstream explicitamente identificado para que o usuário não instale o binário errado
 
-## Referências legadas intencionalmente preservadas
+## Referências legadas na etapa histórica da PR #33
+
+Esta seção registra a situação daquela PR, não o layout atual. Para a situação técnica vigente, consulte o [inventário atual](PGS_REMAINING_REFERENCES.json) e a [documentação de migração](pt-BR/PGS_TECHNICAL_MIGRATION.md).
 
 Não é seguro fazer substituição global nas chaves ou símbolos de protocolo. Nesta etapa permanecem:
 

@@ -24,7 +24,7 @@ The site has a selector **EN / PT-BR** independent of the Android application's 
 
 ## Why does code search still show the previous project's name?
 
-The `pgrazor/` source tree, `dev.pgs` Java classes, `assets/pgrazor` runtime paths, native ABI names, and certain saved backup keys are **technical compatibility contracts**. Old Git history and backup branches are retained, not silently rewritten. Renaming these before an Android/JNI migration could prevent the signed PGS APK from starting or reading data.
+Current source, Java and runtime paths are `pgs/`, `dev.pgs` and `assets/pgs/`. Existing installed application IDs, root-module paths, stored backup keys, signing identity and preserved ABI aliases are **technical compatibility contracts**. Keep legacy input detection, original credits, Git history and backup branches intact.
 
 Current PGS public display names and downloads must use PGS. The exact license attribution is retained. The migration of internal identifiers is tracked in [issue #38](https://github.com/LucianoToscano/PGS/issues/38) and requires automated tests, an unchanged Android package/certificate, a full signed APK, and real-device update testing. Do not delete historic backup branches or test fixtures simply to reduce search results.
 

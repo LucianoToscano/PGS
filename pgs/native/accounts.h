@@ -26,14 +26,14 @@ typedef struct MethodInfo MethodInfo;
 typedef struct FieldInfo FieldInfo;
 typedef struct Il2CppString Il2CppString;
 
-typedef enum pgrazor_account_cmd_kind : uint32_t {
+typedef enum pgs_account_cmd_kind : uint32_t {
   PGR_ACC_CMD_NONE = 0,
   PGR_ACC_CMD_SAVE_SESSION = 1,
   PGR_ACC_CMD_RESET_LOGIN = 2,
   PGR_ACC_CMD_LOGOUT = 3
-} pgrazor_account_cmd_kind_t;
+} pgs_account_cmd_kind_t;
 
-typedef enum pgrazor_account_event_kind : uint32_t {
+typedef enum pgs_account_event_kind : uint32_t {
   PGR_ACC_EVT_NONE = 0,
   PGR_ACC_EVT_READY = 1,
   PGR_ACC_EVT_SESSION_ENDED = 2,
@@ -44,9 +44,9 @@ typedef enum pgrazor_account_event_kind : uint32_t {
   PGR_ACC_EVT_LOGIN_RESET_COMPLETE = 7,
   PGR_ACC_EVT_IDENTITY = 8,
   PGR_ACC_EVT_READ_ERROR = 9
-} pgrazor_account_event_kind_t;
+} pgs_account_event_kind_t;
 
-typedef enum pgrazor_account_reason_code : uint32_t {
+typedef enum pgs_account_reason_code : uint32_t {
   PGR_ACC_REASON_NONE = 0,
   PGR_ACC_REASON_CLEARED_AUTH_STATE = 1,
   PGR_ACC_REASON_SESSION_SAVE_UNAVAILABLE = 2,
@@ -62,9 +62,9 @@ typedef enum pgrazor_account_reason_code : uint32_t {
   PGR_ACC_REASON_LEASE_EXPIRED = 12,
   PGR_ACC_REASON_REENTRANT_ABORT = 13,
   PGR_ACC_REASON_QUEUE_OVERFLOW = 14
-} pgrazor_account_reason_code_t;
+} pgs_account_reason_code_t;
 
-typedef struct pgrazor_accounts_config_v1 {
+typedef struct pgs_accounts_config_v1 {
   Il2CppObject* (*runtime_invoke)(const MethodInfo* method, void* obj, void** params, Il2CppObject** exc);
   uintptr_t (*gchandle_new)(Il2CppObject* obj, bool pinned);
   Il2CppObject* (*gchandle_get_target)(uintptr_t gchandle);
@@ -111,10 +111,10 @@ typedef struct pgrazor_accounts_config_v1 {
   void* auth_logout_target_fn;
   int32_t promise_succeeded_value;
   int32_t promise_failed_value;
-} pgrazor_accounts_config_v1_t;
-typedef pgrazor_accounts_config_v1_t pgs_accounts_config_v1_t;
+} pgs_accounts_config_v1_t;
+typedef pgs_accounts_config_v1_t pgrazor_accounts_config_v1_t;
 
-typedef struct pgrazor_account_event_v1 {
+typedef struct pgs_account_event_v1 {
   uint64_t seq;
   uint64_t timestamp_ms;
   uint32_t kind;
@@ -126,12 +126,12 @@ typedef struct pgrazor_account_event_v1 {
   uint16_t reserved;
   uint16_t id[PGR_ACCOUNTS_MAX_UTF16];
   uint16_t name[PGR_ACCOUNTS_MAX_UTF16];
-} pgrazor_account_event_v1_t;
-typedef pgrazor_account_event_v1_t pgs_account_event_v1_t;
+} pgs_account_event_v1_t;
+typedef pgs_account_event_v1_t pgrazor_account_event_v1_t;
 
 static_assert(sizeof(pgs_account_event_v1_t) == 1056, "event POD layout mismatch");
 
-typedef struct pgrazor_account_snapshot_v1 {
+typedef struct pgs_account_snapshot_v1 {
   uint64_t seq;
   uint64_t last_identity_ms;
   uint64_t last_accepted_token;
@@ -150,12 +150,12 @@ typedef struct pgrazor_account_snapshot_v1 {
   uint16_t reserved;
   uint16_t id[PGR_ACCOUNTS_MAX_UTF16];
   uint16_t name[PGR_ACCOUNTS_MAX_UTF16];
-} pgrazor_account_snapshot_v1_t;
-typedef pgrazor_account_snapshot_v1_t pgs_account_snapshot_v1_t;
+} pgs_account_snapshot_v1_t;
+typedef pgs_account_snapshot_v1_t pgrazor_account_snapshot_v1_t;
 
 static_assert(sizeof(pgs_account_snapshot_v1_t) == 1080, "snapshot POD layout mismatch");
 
-typedef struct pgrazor_accounts_api_v1 {
+typedef struct pgs_accounts_api_v1 {
   uint32_t version;
   uint32_t size;
   bool (*api_init)(const pgs_accounts_config_v1_t* cfg);
@@ -164,8 +164,8 @@ typedef struct pgrazor_accounts_api_v1 {
   bool (*api_clear)(void);
   void (*api_sample)(pgs_account_snapshot_v1_t* out_snapshot);
   size_t (*api_drain)(pgs_account_event_v1_t* out_events, size_t max_events);
-} pgrazor_accounts_api_v1_t;
-typedef pgrazor_accounts_api_v1_t pgs_accounts_api_v1_t;
+} pgs_accounts_api_v1_t;
+typedef pgs_accounts_api_v1_t pgrazor_accounts_api_v1_t;
 
 #if defined(__LP64__) || UINTPTR_MAX == 0xffffffffffffffffULL
 static_assert(sizeof(void*) == 8, "LP64 ABI required");
@@ -178,10 +178,10 @@ static_assert(sizeof(pgs_accounts_config_v1_t) == 42 * 4, "ILP32 config layout m
 static_assert(sizeof(pgs_accounts_api_v1_t) == 32, "ILP32 api table layout mismatch");
 #endif
 
-const pgs_accounts_api_v1_t* pgrazor_accounts_api(uint32_t version);
-// Canonical source spelling; retain the hidden legacy linkage for older objects and fixtures.
-static inline const pgs_accounts_api_v1_t* pgs_accounts_api(uint32_t version) {
-    return pgrazor_accounts_api(version);
+const pgs_accounts_api_v1_t* pgs_accounts_api(uint32_t version);
+// Compatibility for older source consumers; the PGS name is the primary hidden getter.
+static inline const pgs_accounts_api_v1_t* pgrazor_accounts_api(uint32_t version) {
+    return pgs_accounts_api(version);
 }
 
 #ifdef __cplusplus

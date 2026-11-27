@@ -32,11 +32,11 @@ namespace {
 #define PGR_WEAK
 #endif
 
-extern "C" const void *pgrazor_runtime_metadata_api(uint32_t version) PGR_WEAK;
-extern "C" const void *pgrazor_runtime_bootstrap_api(uint32_t version) PGR_WEAK;
-extern "C" const void *pgrazor_runtime_transport_api(uint32_t version) PGR_WEAK;
-extern "C" const void *pgrazor_unity_scheduler_api(uint32_t version) PGR_WEAK;
-extern "C" const void *pgrazor_shared_host_api(uint32_t version) PGR_WEAK;
+extern "C" const void *pgs_runtime_metadata_api(uint32_t version) PGR_WEAK;
+extern "C" const void *pgs_runtime_bootstrap_api(uint32_t version) PGR_WEAK;
+extern "C" const void *pgs_runtime_transport_api(uint32_t version) PGR_WEAK;
+extern "C" const void *pgs_unity_scheduler_api(uint32_t version) PGR_WEAK;
+extern "C" const void *pgs_shared_host_api(uint32_t version) PGR_WEAK;
 extern "C" const void *pgs_spin_host_api(uint32_t version) PGR_WEAK;
 extern "C" const void *pgs_catch_observers_api(uint32_t version) PGR_WEAK;
 extern "C" const void *pgs_transfer_observers_api(uint32_t version) PGR_WEAK;
@@ -44,13 +44,13 @@ extern "C" int pgrazor_hook(void *target, void *replacement, void **original) PG
 extern "C" int pgrazor_unhook(void *target) PGR_WEAK;
 
 static const PgrMetaApi *resolve_metadata_api() {
-    if (pgrazor_runtime_metadata_api != nullptr) {
+    if (pgs_runtime_metadata_api != nullptr) {
         return static_cast<const PgrMetaApi *>(
-            pgrazor_runtime_metadata_api(PGR_MD_API_VERSION));
+            pgs_runtime_metadata_api(PGR_MD_API_VERSION));
     }
 #if !defined(_WIN32) && defined(PGR_INTERACTION_HOST_STANDALONE_TEST)
     using Fn = const void *(*)(uint32_t);
-    auto fn = reinterpret_cast<Fn>(dlsym(RTLD_DEFAULT, "pgrazor_runtime_metadata_api"));
+    auto fn = reinterpret_cast<Fn>(dlsym(RTLD_DEFAULT, "pgs_runtime_metadata_api"));
     if (fn != nullptr) {
         return static_cast<const PgrMetaApi *>(fn(PGR_MD_API_VERSION));
     }
@@ -59,13 +59,13 @@ static const PgrMetaApi *resolve_metadata_api() {
 }
 
 static const PgrBootApi *resolve_bootstrap_api() {
-    if (pgrazor_runtime_bootstrap_api != nullptr) {
+    if (pgs_runtime_bootstrap_api != nullptr) {
         return static_cast<const PgrBootApi *>(
-            pgrazor_runtime_bootstrap_api(PGR_BOOT_API_VERSION));
+            pgs_runtime_bootstrap_api(PGR_BOOT_API_VERSION));
     }
 #if !defined(_WIN32) && defined(PGR_INTERACTION_HOST_STANDALONE_TEST)
     using Fn = const void *(*)(uint32_t);
-    auto fn = reinterpret_cast<Fn>(dlsym(RTLD_DEFAULT, "pgrazor_runtime_bootstrap_api"));
+    auto fn = reinterpret_cast<Fn>(dlsym(RTLD_DEFAULT, "pgs_runtime_bootstrap_api"));
     if (fn != nullptr) {
         return static_cast<const PgrBootApi *>(fn(PGR_BOOT_API_VERSION));
     }
@@ -74,13 +74,13 @@ static const PgrBootApi *resolve_bootstrap_api() {
 }
 
 static const PgrRuntimeTransportApi *resolve_transport_api() {
-    if (pgrazor_runtime_transport_api != nullptr) {
+    if (pgs_runtime_transport_api != nullptr) {
         return static_cast<const PgrRuntimeTransportApi *>(
-            pgrazor_runtime_transport_api(PGR_TRANSPORT_API_VERSION));
+            pgs_runtime_transport_api(PGR_TRANSPORT_API_VERSION));
     }
 #if !defined(_WIN32) && defined(PGR_INTERACTION_HOST_STANDALONE_TEST)
     using Fn = const void *(*)(uint32_t);
-    auto fn = reinterpret_cast<Fn>(dlsym(RTLD_DEFAULT, "pgrazor_runtime_transport_api"));
+    auto fn = reinterpret_cast<Fn>(dlsym(RTLD_DEFAULT, "pgs_runtime_transport_api"));
     if (fn != nullptr) {
         return static_cast<const PgrRuntimeTransportApi *>(fn(PGR_TRANSPORT_API_VERSION));
     }
@@ -89,16 +89,16 @@ static const PgrRuntimeTransportApi *resolve_transport_api() {
 }
 
 static const PgrUnitySchedulerApi *resolve_scheduler_api() {
-    if (pgrazor_unity_scheduler_api != nullptr) {
-        const void *p = pgrazor_unity_scheduler_api(2);
+    if (pgs_unity_scheduler_api != nullptr) {
+        const void *p = pgs_unity_scheduler_api(2);
         if (p == nullptr) {
-            p = pgrazor_unity_scheduler_api(3);
+            p = pgs_unity_scheduler_api(3);
         }
         return static_cast<const PgrUnitySchedulerApi *>(p);
     }
 #if !defined(_WIN32) && defined(PGR_INTERACTION_HOST_STANDALONE_TEST)
     using Fn = const void *(*)(uint32_t);
-    auto fn = reinterpret_cast<Fn>(dlsym(RTLD_DEFAULT, "pgrazor_unity_scheduler_api"));
+    auto fn = reinterpret_cast<Fn>(dlsym(RTLD_DEFAULT, "pgs_unity_scheduler_api"));
     if (fn != nullptr) {
         const void *p = fn(2);
         if (p == nullptr) {
@@ -111,12 +111,12 @@ static const PgrUnitySchedulerApi *resolve_scheduler_api() {
 }
 
 static const PgrSharedHostApi *resolve_shared_host_api() {
-    if (pgrazor_shared_host_api != nullptr) {
-        return static_cast<const PgrSharedHostApi *>(pgrazor_shared_host_api(1));
+    if (pgs_shared_host_api != nullptr) {
+        return static_cast<const PgrSharedHostApi *>(pgs_shared_host_api(1));
     }
 #if !defined(_WIN32) && defined(PGR_INTERACTION_HOST_STANDALONE_TEST)
     using Fn = const void *(*)(uint32_t);
-    auto fn = reinterpret_cast<Fn>(dlsym(RTLD_DEFAULT, "pgrazor_shared_host_api"));
+    auto fn = reinterpret_cast<Fn>(dlsym(RTLD_DEFAULT, "pgs_shared_host_api"));
     if (fn != nullptr) {
         return static_cast<const PgrSharedHostApi *>(fn(1));
     }

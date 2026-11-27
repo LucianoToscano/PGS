@@ -91,7 +91,7 @@ struct PgrGymRepeatApi {
     int  (*sample)(PgrGymRepeatSample *out);
 };
 
-const void *pgrazor_gym_repeat_api(uint32_t version);
+const void *pgs_gym_repeat_api(uint32_t version);
 
 #ifdef __cplusplus
 }

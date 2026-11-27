@@ -110,7 +110,7 @@ int32_t read_repeated_field_items(void* repeated_field, int32_t max_items, std::
 
 bool real_ensure_ready() {
     if (!boot_ready) {
-        const auto* api = static_cast<const PgrBootApi*>(pgrazor_runtime_bootstrap_api(1));
+        const auto* api = static_cast<const PgrBootApi*>(pgs_runtime_bootstrap_api(1));
         boot.version = 1;
         boot.size = sizeof(boot);
         require(md != nullptr && api != nullptr && api->snapshot(&boot) == 0, "Runtime bootstrap unavailable");

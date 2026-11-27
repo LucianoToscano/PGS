@@ -149,15 +149,15 @@ void *test_virtual_invoke(void *m,void *receiver,void **args,void **exception){
  if(args)assert(*static_cast<int64_t*>(args[0])==123456);
  *exception=nullptr;return &test_objects[3];
 }
-extern "C" const void *pgrazor_runtime_bootstrap_api(uint32_t) {
+extern "C" const void *pgs_runtime_bootstrap_api(uint32_t) {
  assert(false && "poll fixture must not bootstrap");
  return nullptr;
 }
-extern "C" const void *pgrazor_runtime_metadata_api(uint32_t) {
+extern "C" const void *pgs_runtime_metadata_api(uint32_t) {
  assert(false && "poll fixture must not resolve metadata");
  return nullptr;
 }
-extern "C" const void *pgrazor_runtime_transport_api(uint32_t version) {
+extern "C" const void *pgs_runtime_transport_api(uint32_t version) {
  assert(version == 1);
  return &test_transport;
 }

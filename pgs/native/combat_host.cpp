@@ -1347,7 +1347,7 @@ int finish_setup_locked(uint64_t tid) {
     // inert and never fails host setup or disturbs the existing battle hooks. Gated to
     // the production default-bind path exactly like install_gym_next above.
     if(g_default_bind_mode&&(caps&PGR_CBH_CAP_BATTLES)&&!g_gym_repeat_configured) {
-        g_gym_repeat=static_cast<const PgrGymRepeatApi*>(pgrazor_gym_repeat_api(PGR_GYM_REPEAT_API_VERSION));
+        g_gym_repeat=static_cast<const PgrGymRepeatApi*>(pgs_gym_repeat_api(PGR_GYM_REPEAT_API_VERSION));
         bool repeat_ready=false;
         if(g_gym_repeat&&g_gym_repeat->version==PGR_GYM_REPEAT_API_VERSION&&
            g_gym_repeat->size==sizeof(PgrGymRepeatApi)&&g_gym_repeat->configure) {

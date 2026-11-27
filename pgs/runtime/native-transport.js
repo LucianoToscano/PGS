@@ -19,7 +19,7 @@
    for(let i=0;i<raw.length;i++)binary+=String.fromCharCode(raw[i]);
    return decodeURIComponent(escape(binary));
   }
-  function checked(rc){if(stopped||rc!==0){const e=Error('Compiled control snapshot unavailable:'+rc);e.code='PGRAZOR_TRANSLATED_SNAPSHOT_UNAVAILABLE';throw e;}}
+  function checked(rc){if(stopped||rc!==0){const e=Error('Compiled control snapshot unavailable:'+rc);e.code='PGS_TRANSLATED_SNAPSHOT_UNAVAILABLE';throw e;}}
   const control={connect(){},disconnect(){},renewLease(){}};
   SCHEMA.BOOL_READERS.forEach((name,i)=>control[name]=()=>{checked(getBool(i,scalar));return scalar.readS32()!==0;});
   SCHEMA.INT_READERS.forEach((name,i)=>control[name]=()=>{checked(getInt(i,scalar));return scalar.readS32();});

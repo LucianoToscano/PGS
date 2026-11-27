@@ -153,7 +153,7 @@ struct PgrVgpControllerConfig {
   void *discovery_table;    // 4  PgrVgpDiscoveryApi*     (feature 31)
   void *maintenance_table;  // 5  PgrVgpMaintenanceApi*   (feature 32)
   void *marker_table;       // 6  PgrVgpMarkerApi*        (feature 28)
-  void *items_table;        // 7  pgrazor_items_api_v1*   (feature 14)
+  void *items_table;        // 7  pgs_items_api_v1*   (feature 14)
   void *aux_table;          // 8  pgs_vgp_aux_api*    (feature 34)
 
   void *gc_new;             // 9  uintptr_t (void* obj, int pinned)

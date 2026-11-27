@@ -59,7 +59,7 @@ export default function Cooldown() {
       </figure>
 
       <p className="cooldown__note">
-        PGRazor's timer is a local estimate, not a server countdown. Waiting does not
+        PGS's timer is a local estimate, not a server countdown. Waiting does not
         guarantee that an action will succeed.
       </p>
     </section>

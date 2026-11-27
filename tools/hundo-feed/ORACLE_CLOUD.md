@@ -35,13 +35,13 @@ For an existing installation, do not recreate the user or overwrite the live env
 
 ## 3. Configure approved sources
 
-Enable only sources for which the operator has permission to collect and redistribute data. The existing client reads FaustusFoundry at `/pgrazor/hundos.json`; the proposed `/pgs/hundos.json` endpoint has not been verified. Client access does not by itself establish permission to republish.
+Enable only sources for which the operator has permission to collect and redistribute data. The existing client reads FaustusFoundry at `/pgrazor/hundos.json`; the alternate PGS path returned HTTP 404. Client access does not by itself establish permission to republish.
 
 For a first authorized published-source-only deployment, use the following environment settings (replace the example URL with the verified authorized endpoint):
 
 ```ini
 HUNDO_SOURCES=published
-PGS_UPSTREAM_FEED_URL=https://feed.faustusfoundry.com/pgs/hundos.json
+PGS_UPSTREAM_FEED_URL=https://feed.faustusfoundry.com/pgrazor/hundos.json
 PGS_UPSTREAM_FEED_INTERVAL=60
 HUNDO_OUT=/var/www/pgs/feed/hundos.json
 ```

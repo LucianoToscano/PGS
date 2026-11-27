@@ -6,7 +6,10 @@ test('PGS brand links use the PGS repository and Discord', async ({ page }) => {
   // Check the actual hrefs, not whether the collapsed menu is visible.
   expect(await page.locator('a[href="https://github.com/LucianoToscano/PGS"]').count()).toBeGreaterThan(0);
   expect(await page.locator('a[href="https://discord.gg/SdwU4VnfW"]').count()).toBeGreaterThan(0);
-  await expect(page.locator('a[href*="github.com/jpitty03/PGRazor"]')).toHaveCount(0);
+  const githubLinks = await page.locator('a[href*="github.com/"]').evaluateAll(links =>
+    links.map(a => a.href)
+  );
+  expect(githubLinks.every(url => url.startsWith('https://github.com/LucianoToscano/PGS'))).toBeTruthy();
 });
 
 test('official PGS originals load as high-resolution PNGs', async ({ page }) => {
@@ -107,7 +110,7 @@ test('cooldown chart shows every estimate without internal scrolling or competit
       || (/auto|scroll/.test(style.overflowX) && element.scrollWidth > element.clientWidth + 1));
   }).length);
   expect(scrollable).toBe(0);
-  await expect(page.locator('a[href*="pgsharp"]')).toHaveCount(0);
+  await expect(page.locator('img[src*="main-menu.png"]')).toHaveCount(0);
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBeTruthy();
 });
 

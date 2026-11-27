@@ -11,7 +11,7 @@ import java.util.List;
 import java.util.Locale;
 
 /**
- * Compact vertical icon+text quick menu toggled by the R launcher (PGSharp-style).
+ * Compact vertical icon+text quick menu toggled by the R launcher with accessible controls.
  * Icons are the shared {@link MenuIcon} glyphs, also used by the settings home screen. Theme and the
  * walking-speed caption follow {@link Control}; map/autowalk/location actions are delegated
  * to the host through {@link Listener} so map handling is never duplicated here.

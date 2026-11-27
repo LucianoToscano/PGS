@@ -32,9 +32,9 @@ A versão v0.3.8-pgs.3 foi gerada e assinada em [GitHub Actions #45963966748](ht
 
 ## Proteção do caminho de release completo
 
-O código `pgrazor/release_apk.py` agora distingue o PGS pelo seu ledger `PGS_LAST_VERSION_CODE`: exige a variável `PGRAZOR_KEYSTORE` apontando para a chave existente, gera `PGS.apk` e rejeita o binário se o SHA-256 do certificado não for o definido para PGS. Se o ledger PGS não existir, o processo é **bloqueado**; não será gerado nenhum `PGRazor.apk` com a assinatura PGS.
+O código `pgrazor/release_apk.py` agora distingue o PGS pelo seu ledger `PGS_LAST_VERSION_CODE`: exige a variável `PGRAZOR_KEYSTORE` apontando para a chave existente, gera `PGS.apk` e rejeita o binário se o SHA-256 do certificado não for o definido para PGS. Se o ledger PGS não existir, o processo é **bloqueado**; não será gerado um instalador de outro projeto com a assinatura PGS.
 
-O workflow herdado `Android release (non-root and rooted)` está **explicitamente bloqueado no repositório PGS**, porque ainda é específico do PGRazor e não deve publicar pacotes com nomes ou segredos de assinatura misturados. O PGS usa agora o workflow próprio `.github/workflows/pgs-v0.0.1-release.yml`, validado para gerar APK completo com os controles Java recompilados, mantendo os demais arquivos do APK anterior por hash. O bloqueio não modifica nem elimina o instalador v0.3.8-pgs.3 já assinado.
+O workflow herdado `Android release (non-root and rooted)` está **explicitamente bloqueado no repositório PGS**, porque ainda é específico do PGRazor e não deve publicar pacotes com nomes ou segredos de assinatura misturados. A candidata atual PGS v0.0.2 usa o workflow próprio `.github/workflows/pgs-v0.0.2-release.yml`, validado para gerar APK completo com os controles Java recompilados, mantendo os demais arquivos do APK anterior por hash. O bloqueio não modifica nem elimina o instalador v0.3.8-pgs.3 já assinado.
 
 Os testes automatizados cobrem a recusa de chaves ausentes, de `versionCode` inválido e de certificados divergentes. **Eles não substituem a validação de uma build completa e sua instalação física.**
 

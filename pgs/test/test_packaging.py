@@ -177,11 +177,9 @@ class PackageTests(unittest.TestCase):
                 self.assertEqual(nonroot.validated_build(),dex)
             with patch.dict(nonroot.build.os.environ, {'PGS_VERSION':'v0.1.7'}):
                 with self.assertRaisesRegex(RuntimeError,'version is stale'): nonroot.validated_build()
-            # Verify the fallback independently of the caller's release environment.
-            with patch.dict(nonroot.build.os.environ, {'PGS_VERSION':'','PGRAZOR_VERSION':'v0.1.6'}):
+            # The retired non-secret alias must not change the ledger-based version.
+            with patch.dict(nonroot.build.os.environ, {'PGS_VERSION':'','PGRAZOR_VERSION':'v0.1.7'}):
                 self.assertEqual(nonroot.validated_build(),dex)
-                with patch.dict(nonroot.build.os.environ, {'PGRAZOR_VERSION':'v0.1.7'}):
-                    with self.assertRaisesRegex(RuntimeError,'version is stale'): nonroot.validated_build()
             (work/'VERSION').write_text('0.1.7')
             with self.assertRaisesRegex(RuntimeError,'classes are stale'): nonroot.validated_build()
 

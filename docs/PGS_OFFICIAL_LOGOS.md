@@ -19,7 +19,7 @@ Estas são as **três imagens originais** fornecidas pelo projeto, copiadas **se
 - As imagens da pasta `website/public/` são usadas diretamente pelo GitHub Pages e pelo README.
 - As três cópias byte a byte iguais em `pgs/branding/` servem como arquivos de marca do PGS dentro da árvore principal. O Git deduplica blobs idênticos.
 - Como os arquivos são brancos com **transparência**, o site usa um fundo escuro para exibi-los em ambos os temas.
-- A logo dentro do jogo e o joystick **não são alterados** por esta atualização.
+- A primeira migração preservou a logo dentro do jogo e o joystick. A rodada de identidade de 27/11/2026 substitui o launcher pela cópia oficial do escudo, empacotada sem alterar os pixels; o joystick continua intacto. O launcher mantém o indicador de estado e usa sombra discreta, sem fundo sólido.
 - A numeração do PGS, o package Android e o certificado de assinatura não dependem destas imagens.
 
 Substituições futuras só devem ser feitas após comparar os bytes com uma versão autorizada pelo responsável do projeto e atualizar os testes de integridade.

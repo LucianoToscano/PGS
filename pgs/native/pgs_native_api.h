@@ -1,15 +1,13 @@
 /*
  * Stable C ABI for the PGS native migration pilot.
  *
- * New native clients resolve `pgs_native_api`; existing gameplay clients keep
- * resolving `pgrazor_native_api` (both names return the exact same ABI table).
- * calls it with the ABI version it was built against, and (on an exact match)
+ * Native clients resolve `pgs_native_api` and call it with the ABI version
+ * they were built against, and (on an exact match)
  * receives a pointer to a read-only, ordered function table prefixed by a
  * {version, size} header. Fields are never reordered or removed; a new ABI
  * version only appends fields and bumps PGS_NATIVE_API_VERSION.
  *
- * This PGS source header retains the legacy exported symbol and struct layout
- * as an explicit compatibility contract; the PGS factory is additive.
+ * The PGS factory is the only public entry point for these stable tables.
  */
 #ifndef PGS_NATIVE_API_H
 #define PGS_NATIVE_API_H
@@ -105,11 +103,8 @@ typedef struct pgs_native_api_v2 {
  * PGS_NATIVE_API_VERSION, otherwise NULL. The returned table lives for the
  * process lifetime and must not be freed or modified by the caller.
  */
-/* Primary PGS C factory, sharing immutable function tables with the old name. */
+/* PGS C factory for immutable function tables. */
 const void *pgs_native_api(uint32_t version);
-
-/* Required compatibility export for existing Android clients. */
-const void *pgrazor_native_api(uint32_t version);
 
 
 #ifdef __cplusplus

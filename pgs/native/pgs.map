@@ -3,7 +3,6 @@
   global:
     JNI_OnLoad;
     pgs_native_api;
-    pgrazor_native_api;
   local:
     *;
 };

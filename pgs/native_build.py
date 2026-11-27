@@ -45,23 +45,21 @@ DEFAULT_ABIS = ('arm64-v8a', 'x86_64')
 ELF_MACHINE = {'arm64-v8a': 183, 'x86_64': 62}
 
 # The library must export exactly these dynamic symbols and nothing else.
-EXPECTED_EXPORTS = frozenset({'JNI_OnLoad', 'pgs_native_api', 'pgrazor_native_api'})
+EXPECTED_EXPORTS = frozenset({'JNI_OnLoad', 'pgs_native_api'})
 
 # Download opt-in. Mirror of runtime_assets' explicit-network contract.
 _DOWNLOAD_ENV = 'PGS_NATIVE_DOWNLOAD'
-_LEGACY_DOWNLOAD_ENV = 'PGRAZOR_NATIVE_DOWNLOAD'
 _PILOT_ENV = 'PGS_NATIVE_PILOT'
-_LEGACY_PILOT_ENV = 'PGRAZOR_NATIVE_PILOT'
 _MAX_EXTRACT_BYTES = 500_000_000
 
 
 # --------------------------------------------------------------------------- #
 # Hashing helpers
 # --------------------------------------------------------------------------- #
-def _enabled(primary, legacy, env=None):
-    """Enable a PGS build option while accepting the previously configured alias."""
+def _enabled(primary, env=None):
+    """Enable a native build option only through its canonical PGS name."""
     values = os.environ if env is None else env
-    return values.get(primary) == '1' or values.get(legacy) == '1'
+    return values.get(primary) == '1'
 
 
 def sha256(path):
@@ -522,15 +520,15 @@ def build_all(root, abis=DEFAULT_ABIS, download=False):
     Opt-in: requires PGS_NATIVE_PILOT=1 (old environment variable is accepted). Shared NDK/CMake/Ninja/Dobby
     resolution is done once and reused across ABIs.
     """
-    if not _enabled(_PILOT_ENV, _LEGACY_PILOT_ENV):
+    if not _enabled(_PILOT_ENV):
         raise RuntimeError(
-            'Native pilot build is opt-in. Set ' + _PILOT_ENV + '=1 (legacy ' + _LEGACY_PILOT_ENV + '=1 also accepted).')
+            'Native pilot build is opt-in. Set ' + _PILOT_ENV + '=1.')
     root = Path(root).resolve()
     schema_generator=root.parent/'tools/game_update.py'
     if not schema_generator.is_file():
         raise RuntimeError('Missing game binding profile generator')
     subprocess.run([sys.executable,'-B',str(schema_generator),'generate','--check'],check=True,timeout=30)
-    download = download or _enabled(_DOWNLOAD_ENV, _LEGACY_DOWNLOAD_ENV)
+    download = download or _enabled(_DOWNLOAD_ENV)
     abis = list(dict.fromkeys(abis))
     if not abis:
         raise RuntimeError('No ABIs requested')

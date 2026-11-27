@@ -24,15 +24,15 @@ class PgsNativeRenameTests(unittest.TestCase):
         self.assertEqual(native_build.TARGET, "pgs_core")
         self.assertEqual(native_build.OUTPUT_SONAME, "libpgs-core.so")
         self.assertEqual(native_build.EXPECTED_EXPORTS,
-                         frozenset({"JNI_OnLoad", "pgs_native_api", "pgrazor_native_api"}))
+                         frozenset({"JNI_OnLoad", "pgs_native_api"}))
         self.assertTrue((NATIVE / "pgs_native.cpp").is_file())
         self.assertFalse((NATIVE / "pgrazor_native.cpp").exists())
         self.assertFalse((NATIVE / "pgrazor.map").exists())
         exports = (NATIVE / "pgs.map").read_text(encoding="utf-8")
-        self.assertIn("pgrazor_native_api;", exports)
+        self.assertNotIn("pgrazor_native_api;", exports)
         self.assertIn("pgs_native_api;", exports)
 
-    def test_pgs_header_is_primary_and_legacy_abi_remains_valid(self):
+    def test_pgs_header_and_factory_are_canonical(self):
         header = (NATIVE / "pgs_native_api.h").read_text(encoding="utf-8")
         shim = (NATIVE / "pgs_native_api_compat.h").read_text(encoding="utf-8")
         self.assertFalse((NATIVE / "pgrazor_native_api.h").exists())
@@ -48,10 +48,9 @@ class PgsNativeRenameTests(unittest.TestCase):
             self.assertIn('#include "pgs_internal.h"', content)
             self.assertIn("pgs_policy_selfcheck", content)
         self.assertIn("pgs_native_api(uint32_t version)", core)
-        self.assertIn("pgrazor_native_api(uint32_t version)", core)
-        self.assertIn("return pgs_native_api(version);", core)
+        self.assertNotIn("pgrazor_native_api(uint32_t version)", core)
         self.assertIn("const void *pgs_native_api(uint32_t version);", header)
-        self.assertIn("const void *pgrazor_native_api(uint32_t version);", header)
+        self.assertNotIn("const void *pgrazor_native_api(uint32_t version);", header)
         self.assertIn("#define PGS_NATIVE_API_VERSION 1u", header)
         self.assertIn("PGS_ERR_BAD_LEASE = 4", header)
 
@@ -71,19 +70,17 @@ class PgsNativeRenameTests(unittest.TestCase):
             self.assertNotIn("pgrazor_art_publication_" + suffix, cmake)
             self.assertNotIn("pgrazor_art_publication_" + suffix, hooks)
         self.assertIn("PGS_ART_CHAIN_TEST", cmake)
-        self.assertIn("PGRAZOR_ART_CHAIN_TEST", cmake)
+        self.assertNotIn("PGRAZOR_ART_CHAIN_TEST", cmake)
         self.assertEqual(art_build.SONAME, "libpgs-art.so")
 
-    def test_new_build_options_accept_preexisting_environment_aliases(self):
+    def test_native_build_options_require_canonical_pgs_names(self):
         self.assertEqual(native_build._PILOT_ENV, "PGS_NATIVE_PILOT")
         self.assertEqual(native_build._DOWNLOAD_ENV, "PGS_NATIVE_DOWNLOAD")
-        self.assertFalse(native_build._enabled("PGS_NATIVE_PILOT", "PGRAZOR_NATIVE_PILOT", {}))
-        self.assertTrue(native_build._enabled("PGS_NATIVE_PILOT", "PGRAZOR_NATIVE_PILOT",
-                                              {"PGS_NATIVE_PILOT": "1"}))
-        self.assertTrue(native_build._enabled("PGS_NATIVE_PILOT", "PGRAZOR_NATIVE_PILOT",
-                                              {"PGRAZOR_NATIVE_PILOT": "1"}))
-        self.assertFalse(native_build._enabled("PGS_NATIVE_PILOT", "PGRAZOR_NATIVE_PILOT",
-                                               {"PGS_NATIVE_PILOT": "0", "PGRAZOR_NATIVE_PILOT": "0"}))
+        self.assertFalse(native_build._enabled("PGS_NATIVE_PILOT", {}))
+        self.assertTrue(native_build._enabled("PGS_NATIVE_PILOT", {"PGS_NATIVE_PILOT": "1"}))
+        self.assertFalse(native_build._enabled("PGS_NATIVE_PILOT", {"PGRAZOR_NATIVE_PILOT": "1"}))
+        self.assertFalse(native_build._enabled("PGS_NATIVE_PILOT",
+                                               {"PGS_NATIVE_PILOT": "0", "PGRAZOR_NATIVE_PILOT": "1"}))
 
     def test_first_party_native_sources_no_longer_include_old_api_header(self):
         old = b'#include "pgrazor_native_api.h"'
@@ -93,7 +90,7 @@ class PgsNativeRenameTests(unittest.TestCase):
                 if old in source.read_bytes():
                     offenders.append(str(source.relative_to(ROOT)))
         self.assertEqual(offenders, [],
-                         "All native sources must include pgs_native_api.h; compatibility symbols remain available")
+                         "All native sources must include the canonical PGS API header")
 
 
     def test_hook_engine_pgs_names_and_retired_cpp_linkage(self):
@@ -221,7 +218,8 @@ class PgsNativeRenameTests(unittest.TestCase):
         spawn = (NATIVE / "spawn_host.cpp").read_text(encoding="utf-8")
         primary = 'dlsym(g_state.core_handle, "pgs_native_api")'
         fallback = 'dlsym(g_state.core_handle, "pgrazor_native_api")'
-        self.assertLess(camera.index(primary), camera.index(fallback))
+        self.assertIn(primary, camera)
+        self.assertNotIn(fallback, camera)
         self.assertIn("*>(pgs_native_api(2u))", camera)
         self.assertIn("return pgs_hook(target, replacement, original);", camera)
         self.assertIn("*>(pgs_native_api(1))", spawn)
@@ -231,7 +229,7 @@ class PgsNativeRenameTests(unittest.TestCase):
         primary = (ROOT / "pgs.cmd").read_text(encoding="utf-8")
         legacy = (ROOT / "nonroot.cmd").read_text(encoding="utf-8")
         self.assertIn("PGS_PYTHON", primary)
-        self.assertIn("PGRAZOR_PYTHON", primary)
+        self.assertNotIn("PGRAZOR_PYTHON", primary)
         self.assertIn("pgs.cmd", legacy)
         self.assertIn("nonroot.py", primary)
 

@@ -1,12 +1,12 @@
-"""PGRazor Root packager: a Zygisk module, and the installer app that carries it.
+"""PGS Root packager: a Zygisk module, and the installer app that carries it.
 
-PGRazor Root runs PGRazor inside the unmodified, Niantic-signed game on rooted phones (Magisk 27+,
+PGS Root runs PGS inside the unmodified, Niantic-signed game on rooted phones (Magisk 27+,
 KernelSU or APatch, with Zygisk). The patched APK (nonroot.py) is unaffected; both builds share
-PGRazor's DEX and native libraries.
+PGS's DEX and native libraries.
 
 Module layout:
   module.prop, META-INF/... (Magisk installer), zygisk/<abi>.so (the loader),
-  pgrazor/classes.dex (PGRazor), pgrazor/payload.zip (everything the APK build ships under
+  pgrazor/classes.dex (PGS), pgrazor/payload.zip (everything the APK build ships under
   assets/, plus pgrazor/rooted/target.json and location-callers.txt).
 """
 import argparse
@@ -53,12 +53,12 @@ exit 0
 '''
 
 # Capability marker: an empty file that advertises this module understands the launch-time
-# PGRazor: On / Off switch (the loader reads pgrazor/injection-off). The installer uses its
+# PGS: On / Off switch (the loader reads pgrazor/injection-off). The installer uses its
 # presence to tell a toggle-aware module from an older one.
 TOGGLE_CAPABILITY = 'pgrazor/toggle-v1'
 
 # Soft-off flag the installer writes/removes in the live module. It is never shipped in the
-# package (a fresh install defaults to On); it only ever exists because a user turned PGRazor off.
+# package (a fresh install defaults to On); it only ever exists because a user turned PGS off.
 INJECTION_OFF_FLAG = 'pgrazor/injection-off'
 
 # Sourced by the root manager (Magisk / KernelSU / APatch) during install, after the zip is
@@ -68,19 +68,19 @@ INJECTION_OFF_FLAG = 'pgrazor/injection-off'
 # rather than silently re-enabling. A fresh install ships no flag, so injection defaults to On. The
 # same script runs whether the update is installed straight through the root manager or by the APK.
 CUSTOMIZE_SH = '''#!/system/bin/sh
-# PGRazor Root install customizer: preserve the user's PGRazor: On / Off choice across updates.
+# PGS Root install customizer: preserve the user's PGS: On / Off choice across updates.
 LIVE_FLAG="/data/adb/modules/pgrazor/''' + INJECTION_OFF_FLAG + '''"
 STAGED_FLAG="${MODPATH}/''' + INJECTION_OFF_FLAG + '''"
 
 # The live module is the source of truth for the current switch state. Staging dirs are wiped and
 # re-extracted by the manager before this runs, so an earlier staged flag cannot be read here.
 if [ -e "${LIVE_FLAG}" ]; then
-  ui_print "- PGRazor is switched Off on this device; keeping it Off after this update."
-  mkdir -p "${MODPATH}/pgrazor" || abort "! Cannot preserve the PGRazor Off switch (mkdir failed); aborting instead of silently re-enabling PGRazor."
+  ui_print "- PGS is switched Off on this device; keeping it Off after this update."
+  mkdir -p "${MODPATH}/pgrazor" || abort "! Cannot preserve the PGS Off switch (mkdir failed); aborting instead of silently re-enabling PGS."
   : > "${STAGED_FLAG}" 2>/dev/null
-  [ -f "${STAGED_FLAG}" ] || abort "! Cannot preserve the PGRazor Off switch; aborting instead of silently re-enabling PGRazor."
+  [ -f "${STAGED_FLAG}" ] || abort "! Cannot preserve the PGS Off switch; aborting instead of silently re-enabling PGS."
 else
-  rm -f "${STAGED_FLAG}" || abort "! Cannot preserve the PGRazor On switch."
+  rm -f "${STAGED_FLAG}" || abort "! Cannot preserve the PGS On switch."
 fi
 '''
 
@@ -113,7 +113,7 @@ def require_supported_target(target):
     profile = json.loads((schema / name).read_text(encoding='utf-8'))
     if (target['versionCode'] != profile['version_code'] or
             target['versionName'] != profile['game_version']):
-        raise ValueError('PGRazor Root requires the reviewed native game target ' + profile['game_version'])
+        raise ValueError('PGS Root requires the reviewed native game target ' + profile['game_version'])
 
 
 def clang(abi):
@@ -182,7 +182,7 @@ def write_zip(path, entries, compression=zipfile.ZIP_DEFLATED):
 
 
 def package(source, download=False, installer=True):
-    """Builds the PGRazor Root module zip for the game in `source` (original APK/APKM)."""
+    """Builds the PGS Root module zip for the game in `source` (original APK/APKM)."""
     dex = nonroot.validated_build()
     version = build.release_version(ROOT)
     folder = ROOT / 'build/rooted' / (dt.datetime.now().strftime('%Y%m%d-%H%M%S') + '-' + uuid.uuid4().hex[:8])
@@ -202,7 +202,7 @@ def package(source, download=False, installer=True):
     require_supported_target(target)
 
     # The same exact-descriptor validation as the patched build: every bridge target must exist in
-    # this game version. Its Location inventory lists the callers PGRazor Root deoptimizes.
+    # this game version. Its Location inventory lists the callers PGS Root deoptimizes.
     import dex_bridges
     dex_bridges.rewrite(base, folder / 'java-bridges', download=download)
     callers = location_callers(folder / 'java-bridges/rewritten/locations.tsv')
@@ -214,9 +214,9 @@ def package(source, download=False, installer=True):
     payload = write_zip(folder / 'payload.zip', assets, zipfile.ZIP_STORED)
 
     module = {
-        'module.prop': '\n'.join([f'id={MODULE_ID}', 'name=PGRazor Root', f'version={version}',
-                                  f'versionCode={version_code(version)}', 'author=PGRazor',
-                                  f'description=PGRazor for the official Pokémon GO app ({target["versionName"]}). Requires Zygisk.', '']),
+        'module.prop': '\n'.join([f'id={MODULE_ID}', 'name=PGS Root', f'version={version}',
+                                  f'versionCode={version_code(version)}', 'author=PGS',
+                                  f'description=PGS for the official Pokémon GO app ({target["versionName"]}). Requires Zygisk.', '']),
         'META-INF/com/google/android/update-binary': UPDATE_BINARY,
         'META-INF/com/google/android/updater-script': '#MAGISK\n',
         'pgrazor/classes.dex': Path(dex),
@@ -224,7 +224,7 @@ def package(source, download=False, installer=True):
     }
     module.update(capability_module_entries())
     for abi in ABIS: module[f'zygisk/{abi}.so'] = build_loader(abi, folder / f'loader-{abi}.so')
-    module_zip = write_zip(folder / f'PGRazor-Root-module-{version}.zip', module)
+    module_zip = write_zip(folder / f'PGS-Root-module-{version}.zip', module)
 
     report = {'version': version, 'target': target, 'module': str(module_zip), 'module_sha256': runtime_assets.sha256(module_zip),
               'dex_sha256': runtime_assets.sha256(dex), 'payload_sha256': runtime_assets.sha256(payload),
@@ -249,7 +249,7 @@ def main(argv=None):
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     parser.add_argument('source', help='Original Pokémon GO APK or APKM (Niantic-signed)')
     parser.add_argument('--download', action='store_true', help='Download pinned build dependencies when missing')
-    parser.add_argument('--skip-build', action='store_true', help='Reuse a source-validated PGRazor DEX')
+    parser.add_argument('--skip-build', action='store_true', help='Reuse a source-validated PGS DEX')
     parser.add_argument('--module-only', action='store_true', help='Build only the development module ZIP')
     parser.add_argument('--output', type=Path, help='Copy installer, module ZIP, and rooted build receipt to this release directory')
     args = parser.parse_args(argv)
@@ -259,15 +259,15 @@ def main(argv=None):
     report, _ = package(args.source, download=args.download, installer=not args.module_only)
     if args.output:
         args.output.mkdir(parents=True, exist_ok=True)
-        shutil.copyfile(report['installer'], args.output / 'PGRazor-Root.apk')
-        shutil.copyfile(report['module'], args.output / 'PGRazor-Root-module.zip')
+        shutil.copyfile(report['installer'], args.output / 'PGS-Root.apk')
+        shutil.copyfile(report['module'], args.output / 'PGS-Root-module.zip')
         public = {key: report[key] for key in ('version', 'target', 'module_sha256', 'installer_sha256', 'abis')}
         (args.output / 'root-build-info.json').write_text(json.dumps(public, indent=2) + '\n', encoding='utf-8')
         sums = args.output / 'SHA256SUMS.txt'
         lines = sums.read_text(encoding='utf-8').splitlines() if sums.exists() else []
-        lines = [line for line in lines if not line.endswith(('  PGRazor-Root.apk', '  PGRazor-Root-module.zip'))]
-        lines.append(report['installer_sha256'] + '  PGRazor-Root.apk')
-        lines.append(report['module_sha256'] + '  PGRazor-Root-module.zip')
+        lines = [line for line in lines if not line.endswith(('  PGS-Root.apk', '  PGS-Root-module.zip'))]
+        lines.append(report['installer_sha256'] + '  PGS-Root.apk')
+        lines.append(report['module_sha256'] + '  PGS-Root-module.zip')
         sums.write_text('\n'.join(lines) + '\n', encoding='utf-8')
 
 

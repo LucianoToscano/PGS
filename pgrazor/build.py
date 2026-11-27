@@ -19,7 +19,7 @@ def source_fingerprints(root):
 def release_version(root):
     version = os.environ.get('PGRAZOR_VERSION', (root/'VERSION').read_text(encoding='utf-8').strip())
     if not re.fullmatch(r'v?[0-9]+\.[0-9]+\.[0-9]+(?:-[A-Za-z0-9.-]+)?', version):
-        raise ValueError('Invalid PGRazor version')
+        raise ValueError('Invalid PGS version')
     return 'v' + version.removeprefix('v')
 
 def map_icon_assets():
@@ -82,7 +82,7 @@ def signing_args():
         os.environ.setdefault('PGRAZOR_STORE_PASSWORD','android')
         os.environ.setdefault('PGRAZOR_KEY_PASSWORD','android')
         if not key.exists():
-            run('keytool','-genkeypair','-keystore',key,'-storepass:env','PGRAZOR_STORE_PASSWORD','-keypass:env','PGRAZOR_KEY_PASSWORD','-alias','pgrazor','-keyalg','RSA','-keysize','2048','-validity','3650','-dname','CN=PGRazor Local Development')
+            run('keytool','-genkeypair','-keystore',key,'-storepass:env','PGRAZOR_STORE_PASSWORD','-keypass:env','PGRAZOR_KEY_PASSWORD','-alias','pgrazor','-keyalg','RSA','-keysize','2048','-validity','3650','-dname','CN=PGS Local Development')
     return ['--ks',key,'--ks-pass','env:PGRAZOR_STORE_PASSWORD','--key-pass','env:PGRAZOR_KEY_PASSWORD','--ks-key-alias',os.environ.get('PGRAZOR_KEY_ALIAS','pgrazor')]
 
 def main():

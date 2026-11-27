@@ -1,5 +1,5 @@
 /*
- * Stable C ABI for the PGRazor native migration pilot.
+ * Stable C ABI for the PGS native migration pilot.
  *
  * The gameplay runtime resolves the single exported symbol `pgrazor_native_api`,
  * calls it with the ABI version it was built against, and (on an exact match)

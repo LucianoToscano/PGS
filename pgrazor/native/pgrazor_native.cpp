@@ -1,4 +1,4 @@
-// PGRazor native migration pilot: spawn-getter radius floor via a single Dobby hook.
+// PGS native migration pilot: spawn-getter radius floor via a single Dobby hook.
 //
 // Scope is deliberately narrow (one production hook) so the ARM gameplay runtime can
 // keep using the Frida shim and migrate call sites incrementally through the stable
@@ -258,7 +258,7 @@ int selftest_replacement(int x) {
 }
 
 int api_selftest() {
-    __android_log_write(ANDROID_LOG_INFO,"PGRazorNative","selftest enter");
+    __android_log_write(ANDROID_LOG_INFO,"PGSNative","selftest enter");
     static std::mutex mutex;
     std::lock_guard<std::mutex> lock(mutex);
     static int cached = -1;
@@ -269,25 +269,25 @@ int api_selftest() {
     g_selftest_original = nullptr;
 
     if (call(1) != 2) return PGRAZOR_ERR_SELFTEST; // baseline
-    __android_log_write(ANDROID_LOG_INFO,"PGRazorNative","selftest baseline; hook begin");
+    __android_log_write(ANDROID_LOG_INFO,"PGSNative","selftest baseline; hook begin");
 
     int rc = pgrazor_hook(reinterpret_cast<void *>(&selftest_target),
                        reinterpret_cast<void *>(&selftest_replacement),
                        reinterpret_cast<void **>(&g_selftest_original));
     if (rc != 0 || g_selftest_original == nullptr) return PGRAZOR_ERR_SELFTEST;
-    __android_log_write(ANDROID_LOG_INFO,"PGRazorNative","selftest hook complete; invoke begin");
+    __android_log_write(ANDROID_LOG_INFO,"PGSNative","selftest hook complete; invoke begin");
 
     int status = PGRAZOR_OK;
     // Chaining: replacement calls original (1+1) then adds 100 => 102, exactly once.
     if (call(1) != 102) status = PGRAZOR_ERR_SELFTEST;
     if (g_selftest_calls.load(std::memory_order_relaxed) != 1) status = PGRAZOR_ERR_SELFTEST;
-    __android_log_write(ANDROID_LOG_INFO,"PGRazorNative","selftest invoke complete; restore begin");
+    __android_log_write(ANDROID_LOG_INFO,"PGSNative","selftest invoke complete; restore begin");
 
     if (pgrazor_unhook(reinterpret_cast<void *>(&selftest_target)) != 0) status = PGRAZOR_ERR_SELFTEST;
 
     // Detach must restore original behaviour with no dangling hook.
     if (call(1) != 2) status = PGRAZOR_ERR_SELFTEST;
-    __android_log_write(ANDROID_LOG_INFO,"PGRazorNative","selftest restore complete");
+    __android_log_write(ANDROID_LOG_INFO,"PGSNative","selftest restore complete");
 
     // Retain the trampoline pointer even if detach failed; no dangling callback.
     cached = status;

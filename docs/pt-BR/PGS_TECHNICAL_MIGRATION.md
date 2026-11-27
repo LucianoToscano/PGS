@@ -40,3 +40,10 @@ Esta etapa não altera os símbolos exportados, os nomes de bibliotecas `.so`, o
 - Constantes, códigos de erro e tipos de funções podem ser escritos como `PGS_*` / `pgs_*`. Os nomes antigos funcionam como aliases e o tamanho e a ordem dos campos das tabelas v1/v2 não mudam.
 - O Android ainda carrega `libpgrazor-core.so` e `libpgrazor-art.so`, e os módulos Java/JNI podem continuar usando o nome antigo. Não são alterados o pacote Java `dev.pgrazor`, backups, dados, pacote Android `com.nianticlabs.pokemongo`, chave PGS ou `versionCode`.
 - Esta etapa depende de testes de código e símbolos nativos. **Não** é uma compilação de APK completo nem comprova atualização física. O restante permanece na [issue #38](https://github.com/LucianoToscano/PGS/issues/38).
+
+## Etapa 4 — nomes PGS no motor de hooks C++
+
+- As implementações internas principais passam a ser `pgs_hook`, `pgs_unhook`, `pgs_instrument` e `pgs_hook_diag`. Os nomes antigos `pgrazor_*` continuam funcionando como encaminhamento, usando **o mesmo mutex e registro Dobby**.
+- Os tipos `PgsHookDiag` e `PgsPaddingRanges` conservam o layout e os cálculos originais. O núcleo chama os nomes PGS e o teste de ilhas ARM valida ambas as interfaces.
+- Os logs de erro do Android passam a usar a etiqueta `PGS`. Esta etapa não exporta novos símbolos ELF, não muda arquivos `.so`, package, certificado, assinatura, nem cria hooks adicionais ou APK completo.
+- A migração de Java/JNI, bibliotecas, caminhos e preferências exige verificação de instalação física e continua na [issue #38](https://github.com/LucianoToscano/PGS/issues/38).

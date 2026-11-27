@@ -233,7 +233,7 @@ Root real_submit_raid_berry(void* state,void* pokemon,int item) {
 
 int real_poll_berry_promise(void* promise,uint64_t tid,int& result) {
     result=BerryRefused;
-    const auto* vr=static_cast<const PgrVgpResultsApi*>(pgrazor_vgp_results_api(1));
+    const auto* vr=static_cast<const PgrVgpResultsApi*>(pgs_vgp_results_api(1));
     require(vr && vr->poll,"Raid berry promise observer unavailable");
     PgrVgpResultsResult response{};
     const int rc=vr->poll(promise,PGR_VR_PHASE_ENCOUNTER,tid,&response);
@@ -273,7 +273,7 @@ void finish_owned_raid_encounter(bool caught){
 
 int real_poll_catch_promise(void* promise, uint64_t tid, int& out_catch_status) {
     out_catch_status = 0;
-    const auto* vr = static_cast<const PgrVgpResultsApi*>(pgrazor_vgp_results_api(1));
+    const auto* vr = static_cast<const PgrVgpResultsApi*>(pgs_vgp_results_api(1));
     require(vr != nullptr && vr->poll != nullptr, "Promise observer API unavailable");
 
     // Phase 2 classifies an exact CatchPokemonOutProto and reads its Status via the installed

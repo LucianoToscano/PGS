@@ -162,7 +162,7 @@ struct PgrEncounterHostApi {
 static_assert(sizeof(PgrEncounterHostApi) == 72,
               "PgrEncounterHostApi must be 72 bytes on LP64");
 
-const void *pgrazor_encounter_host_api(uint32_t version);
+const void *pgs_encounter_host_api(uint32_t version);
 
 #ifdef __cplusplus
 }

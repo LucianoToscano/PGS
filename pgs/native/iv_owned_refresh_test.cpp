@@ -44,7 +44,7 @@ void clean() {
 }
 
 int main() {
- g_api=static_cast<const PgrIvDisplayApi*>(pgrazor_iv_display_api(1));assert(g_api);
+ g_api=static_cast<const PgrIvDisplayApi*>(pgs_iv_display_api(1));assert(g_api);
  g_owner=this_tid();auto config=make_config();config.gchandle_new=(void*)refresh_gc_new;
  config.field_get_value=(void*)refresh_field_get;
  assert(g_api->install(&config)==PGR_IV_OK);

@@ -1,6 +1,6 @@
 const assert=require('node:assert/strict'),fs=require('node:fs'),vm=require('node:vm');
 const scope={};vm.runInNewContext(fs.readFileSync('pgs/runtime/translated.js','utf8'),scope);
-const bridge=scope.PGRazorTranslated, storage={}, calls=[];let time=1000,pulse=false;
+const bridge=scope.PGSTranslated, storage={}, calls=[];let time=1000,pulse=false;
 const io={read:n=>storage[n],write:(n,v)=>storage[n]=JSON.parse(JSON.stringify(v))};
 const control=Object.fromEntries(bridge.readers.map(n=>[n,()=>true]));
 for(const n of bridge.actions)control[n]=(...args)=>calls.push([n,args]);
@@ -42,11 +42,11 @@ const bytes=Buffer.alloc(4096);bytes.writeUInt32LE(0x464c457f);bytes[4]=2;bytes[
 class Pointer {constructor(n){this.n=n;}add(n){return new Pointer(this.n+n);}compare(p){return Math.sign(this.n-p.n);}toString(){return String(this.n);}readU8(){return bytes.readUInt8(this.n);}readU16(){return bytes.readUInt16LE(this.n);}readU32(){return bytes.readUInt32LE(this.n);}readU64(){return {toNumber:()=>Number(bytes.readBigUInt64LE(this.n))};}}
 scope.Process={arch:'arm64'};bridge.installCodeValidation();
 const mod={base:new Pointer(0),size:4096,path:'/lib/game.so'},range={base:new Pointer(0),size:4096,protection:'r--',file:{path:'/lib/game.so'}};
-assert.equal(scope.PGRazorGuestCode(mod,new Pointer(512),32,range),true);
-assert.equal(scope.PGRazorGuestCode(mod,new Pointer(256),32,range),false);
-assert.equal(scope.PGRazorGuestCode(mod,new Pointer(760),16,range),false);
-assert.equal(scope.PGRazorGuestCode(mod,new Pointer(512),32,{...range,protection:'rw-'}),false);
-assert.equal(scope.PGRazorGuestCode(mod,new Pointer(512),32,{...range,file:{path:'/other'}}),false);
+assert.equal(scope.PGSGuestCode(mod,new Pointer(512),32,range),true);
+assert.equal(scope.PGSGuestCode(mod,new Pointer(256),32,range),false);
+assert.equal(scope.PGSGuestCode(mod,new Pointer(760),16,range),false);
+assert.equal(scope.PGSGuestCode(mod,new Pointer(512),32,{...range,protection:'rw-'}),false);
+assert.equal(scope.PGSGuestCode(mod,new Pointer(512),32,{...range,file:{path:'/other'}}),false);
 console.log('Guest executable segment tests passed');
 
 // Account command tokens survive the Java-array mailbox without numeric coercion.

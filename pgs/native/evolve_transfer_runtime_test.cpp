@@ -103,7 +103,7 @@ int transport_int(uint32_t,int32_t*out){*out=protect;return 0;}
 int transport_emit(uint32_t,const int64_t*,uint32_t,const PgrRuntimeTransportString*s,uint32_t n){if(n)messages.emplace_back(s[0].ptr,s[0].len);return 0;}
 int inspect(const PgrTransferFactsRequest*q,PgrTransferFactsOut*out){auto*p=static_cast<O*>(q->pokemon);*out={1,sizeof(*out),iv_attack,iv_defense,iv_stamina,int32_t(p->data["pokemonId_"]),255,uint32_t(p->data["favorite_"]?64:0),q->caught_id};return 1;}
 int ready(){return 1;}
-int submit(const PgrTransferExecRequest*q,uint64_t*token){assert(pgrazor_transfer_policy_api(1));assert(q->captured_id==job.id);assert(q->pokemon==inventory.at(job.id));++release_calls;*token=100+release_calls;
+int submit(const PgrTransferExecRequest*q,uint64_t*token){assert(pgs_transfer_policy_api(1));assert(q->captured_id==job.id);assert(q->pokemon==inventory.at(job.id));++release_calls;*token=100+release_calls;
  if(synchronous){inventory.erase(job.id);PgrTransferExecEvent e{PGR_TX_EVENT_COMPLETE,0,*token,1,0};assert(pgr_evolve_transfer_event(&e));}return 1;
 }
 int poll_response(void*,uint32_t,uint64_t,PgrVgpResultsResult*out){*out={};if(poll_error)return -1;if(!response_ready)return 0;
@@ -139,7 +139,7 @@ void *fixture_symbol(void*,const char*n){if(!strcmp(n,"il2cpp_type_get_object"))
 const void *pgrazor_runtime_bootstrap_api(uint32_t){return &boot_api;}const void *pgrazor_runtime_metadata_api(uint32_t){return &meta_api;}
 const void *pgrazor_runtime_transport_api(uint32_t){return &transport_api;}
 extern "C" const void *pgrazor_shared_host_api(uint32_t v){return v==2?static_cast<void*>(&broker_api):static_cast<void*>(&host_api);}
-const void *pgrazor_transfer_facts_api(uint32_t){return &facts_api;}const void *pgrazor_vgp_results_api(uint32_t){return &result_api;}
+const void *pgs_transfer_facts_api(uint32_t){return &facts_api;}const void *pgs_vgp_results_api(uint32_t){return &result_api;}
 extern "C" int pgr_pvp_keep(void*,int,int,int,int,uint64_t,char*,uint32_t){return pvp_protected?1:0;}
 bool pgr_evolution_busy(){return batch_busy;}
 int main(){

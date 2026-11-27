@@ -3,7 +3,7 @@
 // (dev.pgs.GameLocationPermissions, dev.pgs.GameLocationDelivery). This module only
 // installs the game-facing hooks and bridges them to those helpers. It never constructs a
 // location fix, never replaces a native method, and never touches a real OS permission grant.
-globalThis.PGRazorCompiledLocation = Object.freeze({create({Java, control, isDisposed, bootLog}) {
+globalThis.PGSCompiledLocation = Object.freeze({create({Java, control, isDisposed, bootLog}) {
     const permissionHooks = [];
     let permissionsHelper = null, permissionsInstalled = false;
     let delivery = null, deliveryHooks = [], deliveryInstalled = false;

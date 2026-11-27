@@ -1,7 +1,7 @@
 #pragma once
 #include <stdint.h>
 
-extern "C" const void *pgrazor_interaction_host_api(uint32_t);
+extern "C" const void *pgs_interaction_host_api(uint32_t);
 
 // Private owner-side view of feature69 API2. No dependency on API1's diagnostic
 // snapshot size. Missing API2 is an inert observer, never permission to re-hook.
@@ -17,7 +17,7 @@ static_assert(sizeof(Api)==40,"interaction observer API2");
 struct Phase {
     const Api *api=nullptr;uint64_t token=0;uint32_t target;
     explicit Phase(uint32_t id):target(id){
-        const auto *p=static_cast<const Api*>(pgrazor_interaction_host_api(2));
+        const auto *p=static_cast<const Api*>(pgs_interaction_host_api(2));
         if(p&&p->version==2&&p->size==sizeof(Api)&&p->wants_target&&p->observe_enter&&p->observe_leave&&p->observe_abort&&p->wants_target(id))api=p;
     }
     bool wanted()const{return api!=nullptr;}

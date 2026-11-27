@@ -77,10 +77,10 @@ void* require_map_method(void*,const char*,int,const char*,const char*,const cha
 void* invoke_method(void*,void*,void**){return &promise;}
 int rewrite_throw(void* b,PgrThrowValue* v){assert(b==&ball);v->radius=0.5f;v->bullseye=1;v->spinning=0;return 0;}
 PgrThrowApi throws_api{1,sizeof(PgrThrowApi),nullptr,nullptr,nullptr,rewrite_throw};
-const void* pgrazor_throws_api(uint32_t){return &throws_api;}
+const void* pgs_throws_api(uint32_t){return &throws_api;}
 Root submit_auto_throw(Root& s,Root& p,const PgrThrowValue& v){assert(s.get()==&state&&p.get()==&pokemon&&v.item==selected&&v.radius==0.5f&&v.bullseye==1&&v.spinning==0&&v.missed==0);++attempts;return Root(&promise);}
 int poll_auto_throw(Root& p,uint64_t,Root& value,int& status){assert(p.get()==&promise);++polls;if(poll_rc==PGR_VR_DONE){value=Root(&response);status=result;}return poll_rc;}
-const void* pgrazor_vgp_results_api(uint32_t){return nullptr;}
+const void* pgs_vgp_results_api(uint32_t){return nullptr;}
 int rocket_keeps=0,transfers=0,transfer_rc=1;
 int pgr_auto_rocket_keeps_catches(){return rocket_keeps;}
 #include "auto_throw_controller.inc"

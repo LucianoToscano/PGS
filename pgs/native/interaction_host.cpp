@@ -37,9 +37,9 @@ extern "C" const void *pgrazor_runtime_bootstrap_api(uint32_t version) PGR_WEAK;
 extern "C" const void *pgrazor_runtime_transport_api(uint32_t version) PGR_WEAK;
 extern "C" const void *pgrazor_unity_scheduler_api(uint32_t version) PGR_WEAK;
 extern "C" const void *pgrazor_shared_host_api(uint32_t version) PGR_WEAK;
-extern "C" const void *pgrazor_spin_host_api(uint32_t version) PGR_WEAK;
-extern "C" const void *pgrazor_catch_observers_api(uint32_t version) PGR_WEAK;
-extern "C" const void *pgrazor_transfer_observers_api(uint32_t version) PGR_WEAK;
+extern "C" const void *pgs_spin_host_api(uint32_t version) PGR_WEAK;
+extern "C" const void *pgs_catch_observers_api(uint32_t version) PGR_WEAK;
+extern "C" const void *pgs_transfer_observers_api(uint32_t version) PGR_WEAK;
 extern "C" int pgrazor_hook(void *target, void *replacement, void **original) PGR_WEAK;
 extern "C" int pgrazor_unhook(void *target) PGR_WEAK;
 
@@ -125,12 +125,12 @@ static const PgrSharedHostApi *resolve_shared_host_api() {
 }
 
 static const PgrSpinHostApi *resolve_spin_host_api() {
-    if (pgrazor_spin_host_api != nullptr) {
-        return static_cast<const PgrSpinHostApi *>(pgrazor_spin_host_api(1));
+    if (pgs_spin_host_api != nullptr) {
+        return static_cast<const PgrSpinHostApi *>(pgs_spin_host_api(1));
     }
 #if !defined(_WIN32) && defined(PGR_INTERACTION_HOST_STANDALONE_TEST)
     using Fn = const void *(*)(uint32_t);
-    auto fn = reinterpret_cast<Fn>(dlsym(RTLD_DEFAULT, "pgrazor_spin_host_api"));
+    auto fn = reinterpret_cast<Fn>(dlsym(RTLD_DEFAULT, "pgs_spin_host_api"));
     if (fn != nullptr) {
         return static_cast<const PgrSpinHostApi *>(fn(1));
     }
@@ -139,12 +139,12 @@ static const PgrSpinHostApi *resolve_spin_host_api() {
 }
 
 static const PgrObsApi *resolve_catch_observers_api() {
-    if (pgrazor_catch_observers_api != nullptr) {
-        return static_cast<const PgrObsApi *>(pgrazor_catch_observers_api(PGR_OBS_API_VERSION));
+    if (pgs_catch_observers_api != nullptr) {
+        return static_cast<const PgrObsApi *>(pgs_catch_observers_api(PGR_OBS_API_VERSION));
     }
 #if !defined(_WIN32) && defined(PGR_INTERACTION_HOST_STANDALONE_TEST)
     using Fn = const void *(*)(uint32_t);
-    auto fn = reinterpret_cast<Fn>(dlsym(RTLD_DEFAULT, "pgrazor_catch_observers_api"));
+    auto fn = reinterpret_cast<Fn>(dlsym(RTLD_DEFAULT, "pgs_catch_observers_api"));
     if (fn != nullptr) {
         return static_cast<const PgrObsApi *>(fn(PGR_OBS_API_VERSION));
     }
@@ -2844,7 +2844,7 @@ static const PgrInteractionHostApi2 kObserverApi={2,sizeof(PgrInteractionHostApi
 
 }  // namespace
 
-extern "C" const void *pgrazor_interaction_host_api(uint32_t version) {
+extern "C" const void *pgs_interaction_host_api(uint32_t version) {
     if(version==2)return &kObserverApi;
     if (version != PGR_IH_API_VERSION) {
         return nullptr;

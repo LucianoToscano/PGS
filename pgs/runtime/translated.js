@@ -53,7 +53,7 @@
  function installCodeValidation(){
   if(Process.arch!=='arm64')throw Error('Guest code validation requires ARM64');
   const cache=new Map();
-  root.PGRazorGuestCode=function(module,address,size,range){try{
+  root.PGSGuestCode=function(module,address,size,range){try{
    if(!Number.isSafeInteger(size)||size<=0||!range||!range.protection.includes('r')||range.protection.includes('w')||!range.file||range.file.path!==module.path)return false;
    if(address.compare(module.base)<0||address.add(size).compare(module.base.add(module.size))>0||address.add(size).compare(range.base.add(range.size))>0)return false;
    const key=module.base.toString();let segments=cache.get(key);
@@ -74,5 +74,5 @@
    return segments.some(([start,end])=>address.compare(start)>=0&&address.add(size).compare(end)<=0);
   }catch(_){return false;}};
  }
- root.PGRazorTranslated=Object.freeze({host,client,files,readers,actions,installCodeValidation});
+ root.PGSTranslated=Object.freeze({host,client,files,readers,actions,installCodeValidation});
 })(globalThis);

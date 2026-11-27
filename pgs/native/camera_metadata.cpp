@@ -632,6 +632,6 @@ const PgrCameraMetaApi g_api = {
 
 }  // namespace
 
-extern "C" const void *pgrazor_camera_metadata_api(uint32_t version) {
+extern "C" const void *pgs_camera_metadata_api(uint32_t version) {
   return version == PGR_CAM_API_VERSION ? &g_api : nullptr;
 }

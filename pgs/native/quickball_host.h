@@ -63,4 +63,4 @@ static_assert(sizeof(PgrQuickballHostOptions)==72,"Options ABI");
 static_assert(sizeof(PgrQuickballHostSample)==64,"Sample ABI");
 static_assert(sizeof(PgrQuickballHostEvent)==1600,"Event ABI");
 static_assert(sizeof(PgrQuickballHostApi)==96,"API ABI");
-extern "C" const void *pgrazor_quickball_host_api(uint32_t version);
+extern "C" const void *pgs_quickball_host_api(uint32_t version);

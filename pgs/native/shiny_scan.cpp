@@ -172,7 +172,7 @@ void mark(uint64_t now){
   if(!st.gone_told){st.gone_told=true;event("\"phase\":\"gone\",\"id\":\""+std::to_string(st.shiny_id)+"\"");}
   return;
  }
- const auto *api=static_cast<const PgrVgpMarkerApi*>(pgrazor_vgp_marker_api(1));
+ const auto *api=static_cast<const PgrVgpMarkerApi*>(pgs_vgp_marker_api(1));
  PgrVgpMarkerResult r{};r.version=1;r.size=sizeof(r);
  const bool visible=api&&api->project&&api->project(wild,2500,owner,&r)==1&&r.visible&&std::isfinite(r.x)&&std::isfinite(r.y);
  if(!visible){if(st.marked)show_mark(false,0,0);return;}
@@ -300,7 +300,7 @@ void catch_step(const Config &c,uint64_t now){
   st.throws=0;st.step=C_BERRY;st.catch_next=now;catch_event("throwing","Catching");
  }
  if(st.step==C_BERRY_WAIT||st.step==C_THROW_WAIT){
-  auto vr=static_cast<const PgrVgpResultsApi*>(pgrazor_vgp_results_api(1));require(vr,"response polling unavailable");
+  auto vr=static_cast<const PgrVgpResultsApi*>(pgs_vgp_results_api(1));require(vr,"response polling unavailable");
   PgrVgpResultsResult out{};const int rc=vr->poll(st.promise.get(),PGR_VR_PHASE_ENCOUNTER,owner,&out);Root value;value.h=out.value_handle;
   if(rc==PGR_VR_PENDING&&now-st.catch_since<=(st.step==C_BERRY_WAIT?kBerryMs:kThrowMs))return;
   st.promise.reset();

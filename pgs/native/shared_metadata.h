@@ -560,7 +560,7 @@ struct PgrSharedMetadataApi {
 };
 static_assert(sizeof(PgrSharedMetadataApi) == 24, "LP64 API");
 
-const void *pgrazor_shared_metadata_api(uint32_t version);
+const void *pgs_shared_metadata_api(uint32_t version);
 
 #ifdef __cplusplus
 }

@@ -119,7 +119,7 @@ void report_catch(void *response){
 }
 void poll_catch(uint64_t tid){
  if(!promise){promise=reinterpret_cast<uintptr_t>(pgr_ar_throw_take_promise());promise_since=clock_ms();if(!promise)return;}
- auto api=static_cast<const PgrVgpResultsApi*>(pgrazor_vgp_results_api(1));
+ auto api=static_cast<const PgrVgpResultsApi*>(pgs_vgp_results_api(1));
  void *target=fn<void*(*)(uintptr_t)>(boot.runtime.gchandle_get_target)(promise);
  PgrVgpResultsResult out{};const int rc=api&&target?api->poll(target,PGR_VR_PHASE_ENCOUNTER,tid,&out):PGR_VR_DONE;
  if(rc==0&&clock_ms()-promise_since<20000)return;

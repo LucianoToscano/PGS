@@ -18,4 +18,4 @@ struct pgr_rocket_actions_api_v1 {
  int (*claim)(uint64_t ticket,uint32_t action,uint64_t proven_tid);
  int (*stop)(uint64_t proven_tid);
 };
-extern "C" const void *pgrazor_rocket_actions_api(uint32_t version);
+extern "C" const void *pgs_rocket_actions_api(uint32_t version);

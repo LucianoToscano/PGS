@@ -183,7 +183,7 @@ std::string result_name(void *o){
  }return "Unknown result "+std::to_string(value);
 }
 void poll(){
- auto api=static_cast<const PgrVgpResultsApi*>(pgrazor_vgp_results_api(1));require(api,"Promise observer unavailable");
+ auto api=static_cast<const PgrVgpResultsApi*>(pgs_vgp_results_api(1));require(api,"Promise observer unavailable");
  PgrVgpResultsResult out{};int rc=api->poll(session.promise.get(),1,owner,&out);Root result;result.h=out.value_handle;
  if(!rc){if(clock_ms()-session.since>=20000)finish("error","Request outcome unknown; not retried");return;}
  session.promise.reset();require(rc==PGR_VR_DONE&&result,"Request failed; batch stopped without retry");
@@ -212,9 +212,9 @@ void poll(){
  if(session.canceled)finish("stopped","Batch stopped");
 }
 bool manual_request_pending(){
- auto og=static_cast<const PgrOutgoingGiftsApi*>(pgrazor_outgoing_gifts_api(1));PgrOutgoingGiftsSample a{};
+ auto og=static_cast<const PgrOutgoingGiftsApi*>(pgs_outgoing_gifts_api(1));PgrOutgoingGiftsSample a{};
  if(og&&!og->sample(&a)&&a.active)return true;
- auto ig=static_cast<const PgrIncomingGiftsApi*>(pgrazor_incoming_gifts_api(1));PgrIncomingGiftsSample b{};
+ auto ig=static_cast<const PgrIncomingGiftsApi*>(pgs_incoming_gifts_api(1));PgrIncomingGiftsSample b{};
  return ig&&!ig->sample(&b)&&b.owned&&b.attempted;
 }
 // The game's own record of a gift this friend has not opened yet (GiftingService.HasSentGiftToFriend over

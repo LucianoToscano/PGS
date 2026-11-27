@@ -403,8 +403,8 @@ static int scenario(int which) {
 int main(int argc, char **argv) {
 #ifdef PGR_BUDDY_HOST_TEST
     (void)argc; (void)argv;
-    if (pgrazor_buddy_feeding_api(99) != nullptr) { std::puts("FAIL exact-version"); return 3; }
-    g_api = static_cast<const pgs_buddy_api_v1 *>(pgrazor_buddy_feeding_api(1));
+    if (pgs_buddy_feeding_api(99) != nullptr) { std::puts("FAIL exact-version"); return 3; }
+    g_api = static_cast<const pgs_buddy_api_v1 *>(pgs_buddy_feeding_api(1));
 #else
     if (argc != 2) return 1;
     void *lib = dlopen(argv[1], RTLD_NOW | RTLD_LOCAL);

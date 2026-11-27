@@ -6,7 +6,7 @@ const fixtureSource=fs.readFileSync(__dirname+'/camera-probe-test.cjs','utf8');
 const boundary=fixtureSource.indexOf('async function main(){');assert.ok(boundary>0);
 // Mock feature59's validated output shape, not its retired JS discovery. The
 // surrounding complete production probe still owns attachment, timers and hooks.
-const metadataStub=`PGRazorNativeCameraMetadata:options.metadataMissing?undefined:{discover({host}){
+const metadataStub=`PGSNativeCameraMetadata:options.metadataMissing?undefined:{discover({host}){
  stats.nativeMetadata=(stats.nativeMetadata||0)+1;
  if(options.metadataFailure)throw Error('native-camera-metadata-status:-17');
  const methods={get_main:new P('Camera.get_main'),get_transform:new P('Component.get_transform'),
@@ -22,7 +22,7 @@ const metadataStub=`PGRazorNativeCameraMetadata:options.metadataMissing?undefine
  return {execute:methods.ExecuteTasks,events:[],vectorFields:'verified',sample};
 }},`;
 const prefix=fixtureSource.slice(0,boundary).replace('const context={Process:',
- 'const context={PGRazorNativeCorePath:options.nativeSelected,PGRazorNativeCameraSampler:options.nativeFactory,'+metadataStub+'Process:');
+ 'const context={PGSNativeCorePath:options.nativeSelected,PGSNativeCameraSampler:options.nativeFactory,'+metadataStub+'Process:');
 assert.notEqual(prefix,fixtureSource.slice(0,boundary),'fixture global injection seam exists');
 const fixture=vm.runInNewContext(prefix+'\nfixture;',{require,__dirname});
 function setup(options={}){

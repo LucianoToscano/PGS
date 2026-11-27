@@ -154,7 +154,7 @@ struct PgrVgpControllerConfig {
   void *maintenance_table;  // 5  PgrVgpMaintenanceApi*   (feature 32)
   void *marker_table;       // 6  PgrVgpMarkerApi*        (feature 28)
   void *items_table;        // 7  pgrazor_items_api_v1*   (feature 14)
-  void *aux_table;          // 8  pgrazor_vgp_aux_api*    (feature 34)
+  void *aux_table;          // 8  pgs_vgp_aux_api*    (feature 34)
 
   void *gc_new;             // 9  uintptr_t (void* obj, int pinned)
   void *gc_get;             // 10 void*     (uintptr_t handle)
@@ -278,7 +278,7 @@ static_assert(sizeof(PgrVgpControllerApi) == 72,
 
 // Hidden getter. NOT exported by the version script; the coordinator registers it in query_feature under
 // feature id 33 and answers only on an exact version match.
-const void *pgrazor_vgp_controller_api(uint32_t version);
+const void *pgs_vgp_controller_api(uint32_t version);
 // Called once by the metadata owner with the validated CatchEscape literal.
 void pgr_vgp_smart_escape_status(int32_t status);
 

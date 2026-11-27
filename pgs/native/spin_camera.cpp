@@ -526,7 +526,7 @@ const PgrSpinCameraApi kApiTable = {
 
 } // namespace
 
-extern "C" const void *pgrazor_spin_camera_api(uint32_t version) {
+extern "C" const void *pgs_spin_camera_api(uint32_t version) {
     if (version != 1) return nullptr;
     return &kApiTable;
 }

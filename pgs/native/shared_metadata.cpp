@@ -1483,7 +1483,7 @@ const PgrSharedMetadataApi kApi = {
 } // namespace
 } // namespace pgr_shared_meta
 
-extern "C" const void *pgrazor_shared_metadata_api(uint32_t version) {
+extern "C" const void *pgs_shared_metadata_api(uint32_t version) {
   if (version != pgr_shared_meta::kApiVersion) return nullptr;
   return &pgr_shared_meta::kApi;
 }

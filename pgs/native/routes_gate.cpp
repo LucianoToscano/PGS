@@ -60,4 +60,4 @@ int clear(uint64_t h){
 uint64_t lastSeq(uint64_t h){std::lock_guard<std::mutex> guard(mutex);return valid(h)?last:0;}
 const PgrRoutesGateApi api={1,sizeof(PgrRoutesGateApi),open,set,take,active,clear,lastSeq};
 }
-extern "C" const void *pgrazor_routes_gate_api(uint32_t version){return version==1?&api:nullptr;}
+extern "C" const void *pgs_routes_gate_api(uint32_t version){return version==1?&api:nullptr;}

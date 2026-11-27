@@ -36,4 +36,4 @@ static_assert(sizeof(PgrCatchWaitConfig)==48,"config");
 static_assert(sizeof(PgrCatchWaitSample)==48,"sample");
 static_assert(sizeof(PgrCatchWaitEvent)==32,"event");
 static_assert(sizeof(PgrCatchWaitApi)==48,"API");
-extern "C" const void *pgrazor_catch_wait_api(uint32_t);
+extern "C" const void *pgs_catch_wait_api(uint32_t);

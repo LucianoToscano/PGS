@@ -224,7 +224,7 @@ static_assert(sizeof(PgrDetailsCompletionApi) == 64,
 
 // Hidden getter. NOT exported by the version script; the coordinator registers it in query_feature
 // under feature id 37 and answers only on an exact version match.
-const void *pgrazor_details_completion_api(uint32_t version);
+const void *pgs_details_completion_api(uint32_t version);
 
 #ifdef __cplusplus
 }

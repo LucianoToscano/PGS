@@ -10,7 +10,7 @@ void *menu_invoke(void *m,void *o,void **args,void **ex){
 }
 }
 int main(){
- auto api=static_cast<const PgrVgpDiscoveryApi*>(pgrazor_vgp_discovery_api(1));
+ auto api=static_cast<const PgrVgpDiscoveryApi*>(pgs_vgp_discovery_api(1));
  auto c=make_config();c.runtime_invoke=reinterpret_cast<void*>(menu_invoke);assert(api->install(&c)==0);reset();
  PgrVgpDiscoveryEnumeration out{};
  assert(api->enumerate(PGR_VD_KIND_CATCH_LOADED,this_tid(),2000,&out)==PGR_VD_ERR_METADATA);assert(g_handles.empty());

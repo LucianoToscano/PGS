@@ -236,7 +236,7 @@ const pgs_native_api_v2 *resolve_native_api() {
 
 const PgrCameraMetaApi *resolve_metadata_api() {
 #if !defined(PGR_CAMERA_HOST_STANDALONE_TEST)
-  const void *direct = pgrazor_camera_metadata_api(PGR_CAM_API_VERSION);
+  const void *direct = pgs_camera_metadata_api(PGR_CAM_API_VERSION);
   if (direct != nullptr) return static_cast<const PgrCameraMetaApi *>(direct);
 #endif
   const pgs_native_api_v2 *native = resolve_native_api();
@@ -249,7 +249,7 @@ const PgrCameraMetaApi *resolve_metadata_api() {
 
 const PgrCameraSamplerApi *resolve_sampler_api() {
 #if !defined(PGR_CAMERA_HOST_STANDALONE_TEST)
-  const void *direct = pgrazor_camera_sampler_api(PGR_CS_API_VERSION);
+  const void *direct = pgs_camera_sampler_api(PGR_CS_API_VERSION);
   if (direct != nullptr) {
     return static_cast<const PgrCameraSamplerApi *>(direct);
   }
@@ -2500,7 +2500,7 @@ const PgrCameraHostApi kApi = {
 
 }  // namespace
 
-const void *pgrazor_camera_host_api(uint32_t version) {
+const void *pgs_camera_host_api(uint32_t version) {
   if (version != PGR_CH_API_VERSION) return nullptr;
   return &kApi;
 }

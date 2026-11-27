@@ -203,7 +203,7 @@ static_assert(sizeof(PgrVgpActionsApi) == 64,
 
 // Hidden getter. NOT exported by the version script; the coordinator registers it in query_feature
 // under feature id 26 and answers only on an exact version match.
-const void *pgrazor_vgp_actions_api(uint32_t version);
+const void *pgs_vgp_actions_api(uint32_t version);
 
 // Compiled smart-catch extension; same lease/epoch/owner gates as API1 capture.
 // Internal only: no changes to the versioned feature table used by existing clients.

@@ -59,19 +59,19 @@ TABLE(flow_encounter_api,flow_encounter) TABLE(flow_interaction_api,flow_interac
 #define pgrazor_runtime_transport_api flow_transport_api
 #define pgrazor_runtime_bootstrap_api flow_boot_api
 #define pgrazor_runtime_metadata_api flow_metadata_api
-#define pgrazor_catch_wait_api flow_wait_api
+#define pgs_catch_wait_api flow_wait_api
 #define pgrazor_shared_host_api flow_shared_api
-#define pgrazor_quickball_host_api flow_quick_api
-#define pgrazor_routes_host_api flow_routes_api
-#define pgrazor_inventory_host_api flow_inventory_api
-#define pgrazor_spin_host_api flow_spin_api
-#define pgrazor_spawn_host_api flow_spawn_api
-#define pgrazor_camera_host_api flow_camera_api
-#define pgrazor_combat_host_api flow_combat_api
+#define pgs_quickball_host_api flow_quick_api
+#define pgs_routes_host_api flow_routes_api
+#define pgs_inventory_host_api flow_inventory_api
+#define pgs_spin_host_api flow_spin_api
+#define pgs_spawn_host_api flow_spawn_api
+#define pgs_camera_host_api flow_camera_api
+#define pgs_combat_host_api flow_combat_api
 #define pgrazor_account_host_api flow_account_api
-#define pgrazor_encounter_host_api flow_encounter_api
-#define pgrazor_interaction_host_api flow_interaction_api
-#define pgrazor_runtime_host_api flow_manager_api
+#define pgs_encounter_host_api flow_encounter_api
+#define pgs_interaction_host_api flow_interaction_api
+#define pgs_runtime_host_api flow_manager_api
 #include "runtime_host.cpp"
 
 // Collector is another gameplay boundary spy. The real transport still supplies

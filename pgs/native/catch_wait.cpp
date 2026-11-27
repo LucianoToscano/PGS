@@ -183,4 +183,4 @@ int next(PgrCatchWaitEvent *out){if(!out)return -2;std::lock_guard<std::mutex> g
 int stop(){std::lock_guard<std::mutex> guard(gate_mutex);active.store(false);deadline.store(0);return 0;}
 const PgrCatchWaitApi api{1,sizeof(PgrCatchWaitApi),install,update,sample,next,stop};
 }
-extern "C" const void *pgrazor_catch_wait_api(uint32_t version){return version==1?&api:nullptr;}
+extern "C" const void *pgs_catch_wait_api(uint32_t version){return version==1?&api:nullptr;}

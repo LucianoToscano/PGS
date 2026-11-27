@@ -238,7 +238,7 @@ static_assert(offsetof(PgrCameraHostSample, failure_message) == 288, "failure_me
 static_assert(sizeof(PgrCameraHostApi) == 112, "PgrCameraHostApi size");
 #endif
 
-const void *pgrazor_camera_host_api(uint32_t version);
+const void *pgs_camera_host_api(uint32_t version);
 
 #ifdef __cplusplus
 }

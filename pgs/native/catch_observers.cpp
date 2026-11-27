@@ -690,7 +690,7 @@ const PgrObsApi4 g_api4={4,sizeof(PgrObsApi4),register_context};
 
 } // namespace
 
-const void *pgrazor_catch_observers_api(uint32_t version) {
+const void *pgs_catch_observers_api(uint32_t version) {
     if(version==4)return &g_api4;
     if(version==3)return &g_api3;
     if(version==2)return &g_api2;

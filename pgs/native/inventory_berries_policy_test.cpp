@@ -34,22 +34,22 @@ const pgs_buddy_api_v1 buddy_api{1, sizeof(pgs_buddy_api_v1), install_buddy,
 void *attached_thread() { static int token; return &token; }
 }
 
-extern "C" const void *pgrazor_items_api(uint32_t v) { return v == 1 ? &item_api : nullptr; }
+extern "C" const void *pgs_items_api(uint32_t v) { return v == 1 ? &item_api : nullptr; }
 extern "C" uint64_t pgrazor_items_cleanup_serial() { return 0; }
-extern "C" const void *pgrazor_buddy_feeding_api(uint32_t v) { return v == 1 ? &buddy_api : nullptr; }
-extern "C" const void *pgrazor_incubation_api(uint32_t) { return nullptr; }
-extern "C" const void *pgrazor_incoming_gifts_api(uint32_t) { return nullptr; }
-extern "C" const void *pgrazor_outgoing_gifts_api(uint32_t) { return nullptr; }
+extern "C" const void *pgs_buddy_feeding_api(uint32_t v) { return v == 1 ? &buddy_api : nullptr; }
+extern "C" const void *pgs_incubation_api(uint32_t) { return nullptr; }
+extern "C" const void *pgs_incoming_gifts_api(uint32_t) { return nullptr; }
+extern "C" const void *pgs_outgoing_gifts_api(uint32_t) { return nullptr; }
 extern "C" const void *pgrazor_runtime_transport_api(uint32_t) { return nullptr; }
 extern "C" const void *pgrazor_shared_host_api(uint32_t) { return nullptr; }
 extern "C" const void *pgrazor_runtime_bootstrap_api(uint32_t) { return nullptr; }
 extern "C" const void *pgrazor_unity_scheduler_api(uint32_t) { return nullptr; }
-extern "C" const void *pgrazor_catch_canvas_api(uint32_t) { return nullptr; }
+extern "C" const void *pgs_catch_canvas_api(uint32_t) { return nullptr; }
 int pgs_hook(void *, void *, void **) { assert(false && "no social hooks in this fixture"); return -1; }
 
 int main() {
     using namespace pgr_shared_meta;
-    const auto *host = static_cast<const PgrInventoryHostApi *>(pgrazor_inventory_host_api(1));
+    const auto *host = static_cast<const PgrInventoryHostApi *>(pgs_inventory_host_api(1));
     assert(host && host->version == 1);
     PgrSharedMetadataOutput metadata{};
     metadata.version = 2; metadata.size = sizeof(metadata);

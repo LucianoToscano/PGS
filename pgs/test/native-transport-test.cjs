@@ -47,12 +47,12 @@ function fixture(){
  install(9,out=>{calls.push('sample');out.add(76).writeU32(1-fresh);out.add(80).writeU32(fresh);out.add(84).writeU32(fault);return sampleCode;});
  install(10,()=>assert.fail('Guest local stop must not invoke Java-owned native global stop'));
  const forbidden=()=>assert.fail('scalar adapter must not use JSON/files/timers');
- const context={PGRazorNativeFeature(id,version,size){assert.deepEqual([id,version,size],[52,1,96]);return table;},
+ const context={PGSNativeFeature(id,version,size){assert.deepEqual([id,version,size],[52,1,96]);return table;},
   NativeFunction:function(p,ret,args,options){assert.equal(options&&options.scheduling,'exclusive','shared scalar/text scratch requires callback-free native call to retain JS lock');assert.equal(options.exceptions,'propagate');const call=functions.get(p.n);assert.equal(typeof call,'function');return call;},
   Memory:{alloc,allocUtf8String(value){const nul=value.indexOf('\0'),cString=nul<0?value:value.slice(0,nul);const bytes=Buffer.from(cString+'\0','utf8'),p=alloc(bytes.length);p.writeBytes(bytes);return p;}},
   JSON:{parse:forbidden,stringify:forbidden},File:{readAllText:forbidden,writeAllText:forbidden},setInterval:forbidden,setTimeout:forbidden};
  vm.runInNewContext(source,context);
- return {bridge:context.PGRazorNativeTransport.create(),schema:context.PGRazorNativeTransport.schema,calls,emissions,errors,boolValues,
+ return {bridge:context.PGSNativeTransport.create(),schema:context.PGSNativeTransport.schema,calls,emissions,errors,boolValues,
   emitCode:value=>emitCode=value,sample:(isFresh,isFault,rc=0)=>{fresh=isFresh;fault=isFault;sampleCode=rc;}};
 }
 const f=fixture(),{control}=f.bridge;

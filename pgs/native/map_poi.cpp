@@ -609,7 +609,7 @@ const PgrMapPoiApi kApiTable = {
 
 }  // namespace
 
-extern "C" const void *pgrazor_map_poi_api(uint32_t version) {
+extern "C" const void *pgs_map_poi_api(uint32_t version) {
   if (version != PGR_MP_API_VERSION) return nullptr;
   return &kApiTable;
 }

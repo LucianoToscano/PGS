@@ -439,7 +439,7 @@ const PgrAlwaysHitApi g_api = {
 
 } // namespace
 
-const void *pgrazor_always_hit_api(uint32_t version) {
+const void *pgs_always_hit_api(uint32_t version) {
     if (version != 1) return nullptr;
     return &g_api;
 }

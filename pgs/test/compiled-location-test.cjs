@@ -53,7 +53,7 @@ function build(opts={}){
  const Java={use(n){accessed.push(n);if(opts.throwOnUse===n)throw Error('use-missing:'+n);if(!(n in classes))throw Error('missing:'+n);return classes[n];},
   cast(o,t){casts.push([o,t]);return o;}};
  const ctx={};vm.createContext(ctx);vm.runInContext(code,ctx);
- const adapter=ctx.PGRazorCompiledLocation.create({Java,control,isDisposed:()=>state.disposed,bootLog:m=>bootLogs.push(m)});
+ const adapter=ctx.PGSCompiledLocation.create({Java,control,isDisposed:()=>state.disposed,bootLog:m=>bootLogs.push(m)});
  return {adapter,state,events,bootLogs,casts,accessed,calls,classes,unity,plugin,status,Service,helper,delivery};
 }
 

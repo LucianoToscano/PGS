@@ -237,7 +237,7 @@ void *encounter_response(void *wild){
  return at<void*>(wild,offset);
 }
 int poll(Root &value){
- auto vr=static_cast<const PgrVgpResultsApi*>(pgrazor_vgp_results_api(1));require(vr,"response polling unavailable");
+ auto vr=static_cast<const PgrVgpResultsApi*>(pgs_vgp_results_api(1));require(vr,"response polling unavailable");
  PgrVgpResultsResult out{};const int rc=vr->poll(st.promise.get(),PGR_VR_PHASE_ENCOUNTER,owner,&out);value.h=out.value_handle;return rc;
 }
 int count(int item){void *a[]={&item};const int n=unbox<int32_t>(call(st.items.get(),"GetItemCount",1,a));return n>0?n:0;}

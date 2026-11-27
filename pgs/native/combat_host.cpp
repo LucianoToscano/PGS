@@ -842,7 +842,7 @@ bool install_shared_vnext_hook() {
 bool configure_and_install_rocket(uint64_t tid) {
     if (g_md.optional[OPT_ROCKET] != PGR_SHARED_OPT_AVAILABLE) return false;
 
-    g_rocket_actions = api_table<pgr_rocket_actions_api_v1>(pgrazor_rocket_actions_api(1));
+    g_rocket_actions = api_table<pgr_rocket_actions_api_v1>(pgs_rocket_actions_api(1));
     if (g_rocket_actions && g_rocket_actions->version == 1 &&
         g_rocket_actions->size == sizeof(pgr_rocket_actions_api_v1)) {
         g_capabilities.fetch_or(PGR_CBH_CAP_ROCKET_ACTIONS, std::memory_order_release);
@@ -850,7 +850,7 @@ bool configure_and_install_rocket(uint64_t tid) {
         return false;
     }
 
-    g_rocket_combat = api_table<pgr_rocket_combat_api_v1>(pgrazor_rocket_combat_api(1));
+    g_rocket_combat = api_table<pgr_rocket_combat_api_v1>(pgs_rocket_combat_api(1));
     if (!g_rocket_combat || g_rocket_combat->version != 1 ||
         g_rocket_combat->size != sizeof(pgr_rocket_combat_api_v1)) {
         return false;
@@ -939,7 +939,7 @@ bool configure_and_install_rocket(uint64_t tid) {
     }
 
     // Configure & install Feature 6 (Rocket Particle Minigame) if available.
-    g_rocket_mini = api_table<PgrRocketMiniApi>(pgrazor_rocket_minigame_api(1));
+    g_rocket_mini = api_table<PgrRocketMiniApi>(pgs_rocket_minigame_api(1));
     if (g_rocket_mini && g_rocket_mini->version == 1 &&
         g_rocket_mini->size == sizeof(PgrRocketMiniApi)) {
         // Ensure none of leaf 6's 4 minigame hook addresses collide with host hooks.
@@ -1007,7 +1007,7 @@ bool configure_and_install_rocket(uint64_t tid) {
 bool configure_and_install_battles() {
     if (g_md.optional[OPT_BATTLES] != PGR_SHARED_OPT_AVAILABLE) return false;
 
-    g_battles = api_table<pgr_battle_api_v1>(pgrazor_battles_api(1));
+    g_battles = api_table<pgr_battle_api_v1>(pgs_battles_api(1));
     if (!g_battles || g_battles->version != 1 ||
         g_battles->size != sizeof(pgr_battle_api_v1)) {
         return false;
@@ -1252,7 +1252,7 @@ int finish_setup_locked(uint64_t tid) {
         g_md = *md_ptr;
     } else if ((g_cfg.flags & PGR_CBH_CFG_HAS_METADATA_CONFIG) != 0) {
         const auto *md_api = api_table<PgrSharedMetadataApi>(
-            pgrazor_shared_metadata_api(2u));
+            pgs_shared_metadata_api(2u));
         if (!md_api || md_api->version != 2u ||
             md_api->size != sizeof(PgrSharedMetadataApi) || !md_api->resolve) {
             g_failed.store(true, std::memory_order_release);
@@ -1757,6 +1757,6 @@ const PgrCombatHostApi kApiTable = {
 
 } // namespace
 
-extern "C" const void *pgrazor_combat_host_api(uint32_t version) {
+extern "C" const void *pgs_combat_host_api(uint32_t version) {
     return version == PGR_COMBAT_HOST_API_VERSION ? &kApiTable : nullptr;
 }

@@ -32,7 +32,7 @@ const classes={
  'java.lang.System':{currentTimeMillis:()=>now},'android.os.SystemClock':{elapsedRealtimeNanos:()=>now*1000000},'java.lang.Runnable':{}
 };
 const ctx={hooks:[],disposed:false,control:{desiredEnabled:()=>desired,active:()=>active,latitude:()=>12,longitude:()=>34,speed:()=>2,bearing:()=>90,event:()=>{}},bootLog:()=>{},Java:{use:n=>{assert.ok(classes[n],n);return classes[n]},retain:o=>o,cast:o=>o,synchronized:(l,f)=>{locked=true;try{f()}finally{locked=false}},registerClass:spec=>({$new:()=>({key:{value:0},$dispose(){},...spec.methods})})}};
-vm.createContext(ctx);vm.runInContext(code+'\nconst adapter=PGRazorLocation.create({Java,control,isDisposed:()=>disposed,bootLog});adapter.installPermissions();this.install=adapter.installDelivery;this.stop=adapter.stop;',ctx);ctx.install();
+vm.createContext(ctx);vm.runInContext(code+'\nconst adapter=PGSLocation.create({Java,control,isDisposed:()=>disposed,bootLog});adapter.installPermissions();this.install=adapter.installDelivery;this.stop=adapter.stop;',ctx);ctx.install();
 const invoke=(n,m,...args)=>{if(n==='nativeLocationUpdate'){const [,fix,status]=args;return fix===null?m.provider.providerListener.value.onProviderStatus(status):m.provider.providerListener.value.onProviderLocation(fix);}return Service['invoke'+n.slice(0,1).toUpperCase()+n.slice(1)].m.implementation.call(m,...args);};
 assert.equal(Manager.nativeLocationUpdate.m.implementation,undefined,'Native method must never be replaced');
 function tick(){assert.ok(queue.length);queue.shift().run();}

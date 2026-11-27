@@ -135,7 +135,7 @@ static_assert(sizeof(PgrCatchConfig)==72, "catch config ABI");
 static_assert(sizeof(PgrCatchCapture)==48, "capture ABI");
 static_assert(sizeof(PgrCatchApi)==40, "catch API ABI");
 }
-const void *pgrazor_catch_presentation_api(uint32_t version) { return version == 1 ? &api : nullptr; }
+const void *pgs_catch_presentation_api(uint32_t version) { return version == 1 ? &api : nullptr; }
 int pgr_catch_presentation_set_bypass(PgrCatchBypass fn, void *address) {
     if(fn) { const int rc = attach_passthrough(address); if(rc) return rc; }
     bypass.store(fn, std::memory_order_release);

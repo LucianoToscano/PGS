@@ -54,7 +54,7 @@ struct PgrArThrowApi {           // 32 bytes: ordered, read-only table
 
 // Hidden getter. NOT exported by the version script; the coordinator registers it in the
 // core getter registry under feature id 5, answering only on an exact version match.
-const void *pgrazor_ar_throw_api(uint32_t version);
+const void *pgs_ar_throw_api(uint32_t version);
 
 // AR+ values for the next throws: proximity (meters, closer is smaller) and awareness, both
 // above zero. Called by ar_values.cpp; out-of-range values are ignored.

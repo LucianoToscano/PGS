@@ -90,9 +90,9 @@
  const CONFIG_BYTES=112,EXTRA_BYTES=112,OUTPUT_BYTES=368,REASON_MAX=120;
 
  function discover({host}){
-  if(!root.PGRazorNativeCorePath)return null;
-  if(typeof root.PGRazorNativeFeature!=='function')throw Error('native-camera-metadata-loader');
-  const table=root.PGRazorNativeFeature(59,1,24);
+  if(!root.PGSNativeCorePath)return null;
+  if(typeof root.PGSNativeFeature!=='function')throw Error('native-camera-metadata-loader');
+  const table=root.PGSNativeFeature(59,1,24);
   if(!table||table.isNull())throw Error('native-camera-metadata-table');
   if(table.add(8).readU32()!==CONFIG_BYTES||table.add(12).readU32()!==OUTPUT_BYTES)throw Error('native-camera-metadata-layout');
   const {Memory,NativeFunction,Process,module,api,domain,sampleCamera,continuous,ptr}=host;
@@ -215,5 +215,5 @@
   return {execute,events,vectorFields,sample};
  }
 
- root.PGRazorNativeCameraMetadata={discover,resolve:discover};
+ root.PGSNativeCameraMetadata={discover,resolve:discover};
 })(typeof globalThis!=='undefined'?globalThis:this);

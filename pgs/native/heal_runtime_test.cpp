@@ -136,7 +136,7 @@ void tests(){
 const void *pgrazor_runtime_bootstrap_api(uint32_t){return &fixture::boot_api;}
 const void *pgrazor_runtime_metadata_api(uint32_t){return &fixture::meta_api;}
 const void *pgrazor_runtime_transport_api(uint32_t){return &fixture::transport_api;}
-const void *pgrazor_vgp_results_api(uint32_t){return &fixture::results_api;}
+const void *pgs_vgp_results_api(uint32_t){return &fixture::results_api;}
 extern "C" void *heal_fixture_symbol(void *,const char *n){
  std::string s=n;if(s=="il2cpp_type_get_object")return reinterpret_cast<void*>(fixture::type_object);
  if(s=="il2cpp_array_new")return reinterpret_cast<void*>(fixture::array_new);

@@ -32,7 +32,7 @@
 //     (double), LngDegrees @0x20 (double): direct, guaranteed-nonallocating reads.
 //
 // This module OWNS NO STATE. It forwards every observation to the feature-46 routes_observers API,
-// obtained INTERNALLY through that module's hidden getter pgrazor_routes_observers_api(1):
+// obtained INTERNALLY through that module's hidden getter pgs_routes_observers_api(1):
 //   * CheckTrackingErrorStatus -> tracking_enter(gettid()) BEFORE and tracking_leave(gettid(),ret) AFTER
 //     the original (balanced across reentry and an expired lease: leave is called iff enter counted).
 //   * IsServiceEnabledByUser -> chains the original FIRST, then returns 1 only when location_gate(gettid())
@@ -121,7 +121,7 @@ static_assert(sizeof(PgrRoutesTrackingApi) == 24, "PgrRoutesTrackingApi must rem
 
 // Hidden getter. NOT exported by the version script; the coordinator registers it in query_feature under
 // feature id 50 and answers only on an exact version match.
-const void *pgrazor_routes_tracking_api(uint32_t version);
+const void *pgs_routes_tracking_api(uint32_t version);
 
 #ifdef __cplusplus
 }

@@ -71,10 +71,10 @@ extern "C" int pgr_smart_berry(void *target,void *bag,int32_t berry,uint64_t own
 }
 extern "C" int pgr_smart_berry_success(void *response,uint64_t owner){assert(response==respObj.p()&&owner==tid);++berry_confirmations;return 1;}
 extern "C" const void *pgrazor_runtime_transport_api(uint32_t version){return version==1?&smart_transport:nullptr;}
-extern "C" const void *pgrazor_vgp_actions_api(uint32_t version){return version==2?&selected_api:nullptr;}
+extern "C" const void *pgs_vgp_actions_api(uint32_t version){return version==2?&selected_api:nullptr;}
 extern "C" void pgr_vgp_smart_escape_status(int32_t);
 int main(){
- api=static_cast<const PgrVgpControllerApi*>(pgrazor_vgp_controller_api(1));assert(api);tid=gettid();
+ api=static_cast<const PgrVgpControllerApi*>(pgs_vgp_controller_api(1));assert(api);tid=gettid();
  smart_transport.version=1;smart_transport.size=sizeof(smart_transport);smart_transport.get_string=smart_string;smart_transport.emit=smart_emit;
  auto cfg=makeConfig();assert(api->install(&cfg)==0);pgr_vgp_smart_escape_status(2);
  // Visible map uses active-only discovery; menus retain inactive discovery.

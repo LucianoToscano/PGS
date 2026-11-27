@@ -5,7 +5,7 @@
 // bridges it to that helper. It never retains the consumer in JS, never registers a class, never
 // runs a timer, never parses a token, and once installed it never falls back to the original
 // GoogleSignInClient flow.
-globalThis.PGRazorCompiledGoogleSignIn = Object.freeze({create({Java, isDisposed, bootLog}) {
+globalThis.PGSCompiledGoogleSignIn = Object.freeze({create({Java, isDisposed, bootLog}) {
     let helper = null, hook = null, installed = false, stopped = false;
     function inactive() { return stopped || isDisposed(); }
     // Errors are logged by constant phase only. A raw exception can carry a token, email or other

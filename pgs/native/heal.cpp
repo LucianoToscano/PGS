@@ -275,7 +275,7 @@ void finish_use(bool ok,const std::string &why){
 // Waits for the game's answer, then for storage to show the new HP before the next item.
 void poll_use(uint64_t now){
  if(!st.use_done){
-  auto vr=static_cast<const PgrVgpResultsApi*>(pgrazor_vgp_results_api(1));require(vr,"response polling unavailable");
+  auto vr=static_cast<const PgrVgpResultsApi*>(pgs_vgp_results_api(1));require(vr,"response polling unavailable");
   PgrVgpResultsResult out{};const int rc=vr->poll(st.promise.get(),PGR_VR_PHASE_ENCOUNTER,owner,&out);
   if(out.value_handle)fn<void(*)(uintptr_t)>(boot.runtime.gchandle_free)(uintptr_t(out.value_handle));
   if(rc==PGR_VR_PENDING&&now-st.use_sent<=kResponseMs)return;

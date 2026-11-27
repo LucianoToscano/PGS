@@ -87,7 +87,7 @@ void poll_manual_throw(uint64_t tid,int64_t now) {
     const uint64_t generation=manual_throw_generation;
     Root response;int result=0;int rc=PGR_VR_PENDING;
     if(manual_throw.berry_item){
-        const auto* api=static_cast<const PgrVgpResultsApi*>(pgrazor_vgp_results_api(1));
+        const auto* api=static_cast<const PgrVgpResultsApi*>(pgs_vgp_results_api(1));
         require(api&&api->poll,"Berry promise observer unavailable");
         PgrVgpResultsResult out{};rc=api->poll(manual_throw.promise.get(),PGR_VR_PHASE_ENCOUNTER,tid,&out);response.h=out.value_handle;
     }else rc=poll_auto_throw(manual_throw.promise,tid,response,result);
@@ -194,7 +194,7 @@ void step_manual_throw(uint64_t tid,bool raid_owns_game) {
         }
     }
     PgrThrowValue value{};
-    const auto* throws=static_cast<const PgrThrowApi*>(pgrazor_throws_api(1));
+    const auto* throws=static_cast<const PgrThrowApi*>(pgs_throws_api(1));
     require(pgr_manual_throw_value(throws,ball.get(),item,value),"Throw settings unavailable; no throw sent");
     manual_throw.uncertain=true;manual_throw.promise_ms=now;++manual_throw.attempts;
     const uint64_t generation=manual_throw_generation;

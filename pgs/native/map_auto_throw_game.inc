@@ -7,7 +7,7 @@ MapTapFn map_original=nullptr;
 void* map_wild_class=nullptr;
 
 bool map_vgp_busy(){
-    auto api=static_cast<const PgrVgpControllerApi*>(pgrazor_vgp_controller_api(1));
+    auto api=static_cast<const PgrVgpControllerApi*>(pgs_vgp_controller_api(1));
     if(!api||!api->sample)return true;
     PgrVgpControllerSample sample{};sample.version=1;sample.size=sizeof(sample);
     return api->sample(&sample)!=0||sample.phase!=PGR_VGC_PH_NONE;
@@ -98,7 +98,7 @@ Root map_real_encounter(void* raw){
     return Root(invoke_method(kind.m_encounter,target.get()));
 }
 int map_poll_response(void* promise,uint64_t tid,Root& response){
-    Root hold(promise);auto api=static_cast<const PgrVgpResultsApi*>(pgrazor_vgp_results_api(1));
+    Root hold(promise);auto api=static_cast<const PgrVgpResultsApi*>(pgs_vgp_results_api(1));
     require(api&&api->poll,"Promise observer unavailable");PgrVgpResultsResult out{};
     int rc=api->poll(hold.get(),PGR_VR_PHASE_ENCOUNTER,tid,&out);response.h=out.value_handle;return rc;
 }
@@ -181,7 +181,7 @@ int map_real_poll_capture(void* promise,uint64_t tid,Root& response,int& status)
 int map_real_transfer(void* raw_response,uint64_t tid){
     Root response(raw_response);require(bool(response),"catch response missing");
     Root bag=resolve_di_service("Niantic.Holoholo","IPokemonBag");require(bool(bag),"Pokemon storage unavailable");
-    auto aux=static_cast<const PgrVgpAuxApi*>(pgrazor_vgp_aux_api(1));require(aux&&aux->transfer,"transfer lookup unavailable");
+    auto aux=static_cast<const PgrVgpAuxApi*>(pgs_vgp_aux_api(1));require(aux&&aux->transfer,"transfer lookup unavailable");
     PgrVgpAuxTransfer out{};out.version=1;out.size=sizeof(out);
     const int rc=aux->transfer(response.get(),bag.get(),tid,2500,&out);
     if(rc==PGR_VX_OK)return 0;

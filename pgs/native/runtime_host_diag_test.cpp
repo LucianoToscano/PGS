@@ -109,17 +109,17 @@ const void *host_stub(uint32_t){ return &g_unused; }
 #define pgrazor_runtime_bootstrap_api diagfix::boot_api
 #define pgrazor_runtime_metadata_api  diagfix::metadata_api
 #define pgrazor_shared_host_api       diagfix::host_stub
-#define pgrazor_quickball_host_api    diagfix::host_stub
-#define pgrazor_routes_host_api       diagfix::host_stub
-#define pgrazor_inventory_host_api    diagfix::host_stub
-#define pgrazor_spin_host_api         diagfix::host_stub
-#define pgrazor_catch_wait_api        diagfix::host_stub
-#define pgrazor_spawn_host_api        diagfix::host_stub
-#define pgrazor_camera_host_api       diagfix::host_stub
-#define pgrazor_combat_host_api       diagfix::host_stub
+#define pgs_quickball_host_api    diagfix::host_stub
+#define pgs_routes_host_api       diagfix::host_stub
+#define pgs_inventory_host_api    diagfix::host_stub
+#define pgs_spin_host_api         diagfix::host_stub
+#define pgs_catch_wait_api        diagfix::host_stub
+#define pgs_spawn_host_api        diagfix::host_stub
+#define pgs_camera_host_api       diagfix::host_stub
+#define pgs_combat_host_api       diagfix::host_stub
 #define pgrazor_account_host_api      diagfix::host_stub
-#define pgrazor_interaction_host_api  diagfix::host_stub
-#define pgrazor_encounter_host_api    diagfix::host_stub
+#define pgs_interaction_host_api  diagfix::host_stub
+#define pgs_encounter_host_api    diagfix::host_stub
 #include "runtime_host.cpp"
 
 // Collector boundary: never exercised (no pulse). Present for linkage only.
@@ -136,7 +136,7 @@ unsigned startup_events(){
 }
 
 int main(){
-  const auto *host=static_cast<const PgrRuntimeHostApi*>(pgrazor_runtime_host_api(1));
+  const auto *host=static_cast<const PgrRuntimeHostApi*>(pgs_runtime_host_api(1));
   assert(host&&host->size==sizeof(PgrRuntimeHostApi));
   PgrRuntimeHostConfig cfg{1,sizeof(cfg),1,0};
 

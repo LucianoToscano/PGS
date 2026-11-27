@@ -24,7 +24,7 @@ struct PgrCatchApi {
     int (*end)(PgrCatchCapture *);
     int (*dispose)();
 };
-const void *pgrazor_catch_presentation_api(uint32_t version);
+const void *pgs_catch_presentation_api(uint32_t version);
 
 // Shared use of the one ShowPokemonInfo hook (a second hook on the same code is not supported).
 // A bypass, when set, is asked about every call this bridge does not capture; returning true means

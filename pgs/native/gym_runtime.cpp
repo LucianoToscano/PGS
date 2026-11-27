@@ -375,7 +375,7 @@ void poll(const Permission &p){
   if(now<next_scan)return;
   act(p);return;}
  if(now-pending.since>15000){paused=true;event("Paused: gym request timed out; toggle off to resume");clear_pending();return;}
- auto vr=static_cast<const PgrVgpResultsApi*>(pgrazor_vgp_results_api(1));PgrVgpResultsResult out{};int rc=vr->poll(pending.promise.get(),1,owner,&out);if(!rc)return;
+ auto vr=static_cast<const PgrVgpResultsApi*>(pgs_vgp_results_api(1));PgrVgpResultsResult out{};int rc=vr->poll(pending.promise.get(),1,owner,&out);if(!rc)return;
  if(rc!=PGR_VR_DONE){
   if(rc<0&&pending.promise){void *k=klass(pending.promise.get());auto nm=fn<const char*(*)(void*)>(exp("class_get_name"));auto ns=fn<const char*(*)(void*)>(exp("class_get_namespace"));
    __android_log_print(ANDROID_LOG_INFO,"PGRazorGym","Gym request unreadable: phase=%d rc=%d promise=%s.%s",pending.phase,rc,ns(k),nm(k));}

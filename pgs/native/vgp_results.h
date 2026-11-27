@@ -157,7 +157,7 @@ static_assert(sizeof(PgrVgpResultsApi) == 32,
 
 // Hidden getter. NOT exported by the version script; the coordinator registers it in query_feature
 // under feature id 30 and answers only on an exact version match.
-const void *pgrazor_vgp_results_api(uint32_t version);
+const void *pgs_vgp_results_api(uint32_t version);
 
 #ifdef __cplusplus
 }

@@ -28,9 +28,9 @@ bool permission_seen=false;
 PgrInventoryHostOptions policy{};std::string rule_text;uint64_t deadline=0,revision=0,rule_generation=0,rule_epoch=0;
 pgs_items_rules_v1 rules{};std::string event_queue[64];uint32_t event_head=0,event_count=0;uint64_t event_seq=0;
 pgs_items_sample_v1 old_items{};pgs_buddy_sample_v1 old_buddy{};pgs_incubation_sample_v1 old_inc{};
-const pgs_items_api_v1 *items(){return static_cast<const pgs_items_api_v1*>(pgrazor_items_api(1));}
-const pgs_buddy_api_v1 *buddy(){return static_cast<const pgs_buddy_api_v1*>(pgrazor_buddy_feeding_api(1));}
-const pgs_incubation_api_v1 *inc(){return static_cast<const pgs_incubation_api_v1*>(pgrazor_incubation_api(1));}
+const pgs_items_api_v1 *items(){return static_cast<const pgs_items_api_v1*>(pgs_items_api(1));}
+const pgs_buddy_api_v1 *buddy(){return static_cast<const pgs_buddy_api_v1*>(pgs_buddy_feeding_api(1));}
+const pgs_incubation_api_v1 *inc(){return static_cast<const pgs_incubation_api_v1*>(pgs_incubation_api(1));}
 const PgrRuntimeTransportApi *transport(){return static_cast<const PgrRuntimeTransportApi*>(pgrazor_runtime_transport_api(1));}
 void *h(unsigned n){return const_cast<void*>(md.opt_handles[n]);}void *c(unsigned n){return const_cast<void*>(md.opt_classes[n]);}
 void *core_m(unsigned n){return const_cast<void*>(md.methods[n]);}void *core_c(unsigned n){return const_cast<void*>(md.classes[n]);}
@@ -162,8 +162,8 @@ void drain_inventory(int32_t berry){
   if(v.fault_serial!=old_inc.fault_serial){const char *step[]={"native","map","player","incubators","too many incubators","eggs","too many Pokemon and eggs","incubator service","request"};event("incubator-error","\"reason\":"+quote(v.fault_step<9?step[v.fault_step]:"native"));}old_inc=v;
  }}
 }
-const PgrIncomingGiftsApi *incoming(){return static_cast<const PgrIncomingGiftsApi*>(pgrazor_incoming_gifts_api(1));}
-const PgrOutgoingGiftsApi *outgoing(){return static_cast<const PgrOutgoingGiftsApi*>(pgrazor_outgoing_gifts_api(1));}
+const PgrIncomingGiftsApi *incoming(){return static_cast<const PgrIncomingGiftsApi*>(pgs_incoming_gifts_api(1));}
+const PgrOutgoingGiftsApi *outgoing(){return static_cast<const PgrOutgoingGiftsApi*>(pgs_outgoing_gifts_api(1));}
 std::atomic<uint32_t> social_roots{0},social_frames{0};std::atomic<bool> visibility_wired{false};
 void *profile=nullptr,*open_gui=nullptr,*guest_open=nullptr;bool guest_fired=false,profile_checked=false,profile_failed=false;
 std::string friend_id;uint64_t profile_next=0,profile_deadline=0,dialog_serial=0;uint32_t gift_mask=0;uint64_t gift_deadline=0;
@@ -223,7 +223,7 @@ void hook_choose(void *self,void *info){auto orig=reinterpret_cast<void(*)(void*
 void visibility(void *gui,uint64_t tid){if(tid!=uint64_t(gettid())||!observation_allowed()||!needs_visibility||!exact(gui,c(OC_GIFT_6240)))return;if(target(guest_open)==gui)return;drop(guest_open);guest_open=hold(gui);guest_fired=false;}
 int visibility_filter(void*,void *gui,uint64_t tid){return tid==uint64_t(gettid())&&observation_allowed()&&needs_visibility&&exact(gui,c(OC_GIFT_6240))?1:0;}
 void visibility_enter(void*,void *gui,uint64_t tid){visibility(gui,tid);}
-void bind_visibility(){if(!needs_visibility||visibility_wired.load())return;auto api=static_cast<const PgrCatchCanvasApi2*>(pgrazor_catch_canvas_api(2));
+void bind_visibility(){if(!needs_visibility||visibility_wired.load())return;auto api=static_cast<const PgrCatchCanvasApi2*>(pgs_catch_canvas_api(2));
  if(api){PgrCatchCanvasObserver observer{1,sizeof(observer),visibility_filter,visibility_enter,nullptr};if(api->subscribe(&observer)==0)visibility_wired.store(true);}}
 int visibility_site(uint32_t ready){if(ready>1)return -2;visibility_wired.store(ready!=0);return 0;}
 void install_social(){
@@ -339,4 +339,4 @@ int cleanup_pending(uint64_t ticket){
 const PgrInventoryCleanupApi cleanup_api{2,sizeof(PgrInventoryCleanupApi),request_cleanup,cleanup_pending};
 const PgrInventoryHostApi api{1,sizeof(PgrInventoryHostApi),configure,update,tick,stop,sample,next_event,request_item_poll,acquire_item_service,on_pulse,visibility_site,visibility};
 }
-extern "C" const void *pgrazor_inventory_host_api(uint32_t version){return version==1?static_cast<const void*>(&api):version==2?static_cast<const void*>(&cleanup_api):nullptr;}
+extern "C" const void *pgs_inventory_host_api(uint32_t version){return version==1?static_cast<const void*>(&api):version==2?static_cast<const void*>(&cleanup_api):nullptr;}

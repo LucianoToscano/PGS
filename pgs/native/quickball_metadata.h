@@ -469,7 +469,7 @@ static_assert(sizeof(PgrQuickballMetaApi) == 24, "LP64 API");
 static_assert(sizeof(PgrQuickballMetaOutput) == 3712, "fixed positional output ABI (adapter mirrors)");
 #endif
 
-const void *pgrazor_quickball_metadata_api(uint32_t version);
+const void *pgs_quickball_metadata_api(uint32_t version);
 
 #ifdef __cplusplus
 }

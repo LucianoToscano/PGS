@@ -158,7 +158,7 @@ static_assert(sizeof(PgrRoutesServicesApi) == 48, "PgrRoutesServicesApi must rem
 
 // Hidden getter. NOT exported by the version script; the coordinator registers it in query_feature under
 // feature id 45 and answers only on an exact version match.
-const void *pgrazor_routes_services_api(uint32_t version);
+const void *pgs_routes_services_api(uint32_t version);
 
 #ifdef __cplusplus
 }

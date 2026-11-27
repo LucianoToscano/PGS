@@ -531,12 +531,12 @@ void step_rocket(uint64_t now){
 }
 
 bool gym_battle(){
- auto api=static_cast<const PgrCombatHostApi*>(pgrazor_combat_host_api(1));if(!api||!api->sample)return false;
+ auto api=static_cast<const PgrCombatHostApi*>(pgs_combat_host_api(1));if(!api||!api->sample)return false;
  PgrCombatHostSample s{};s.version=1;s.size=sizeof(s);
  return api->sample(&s)==0&&s.battle_scope_active==1&&s.battle_mode==1;
 }
 bool rocket_battle(){
- auto api=static_cast<const pgr_rocket_combat_api_v1*>(pgrazor_rocket_combat_api(1));if(!api||!api->sample)return false;
+ auto api=static_cast<const pgr_rocket_combat_api_v1*>(pgs_rocket_combat_api(1));if(!api||!api->sample)return false;
  pgr_rocket_combat_sample_v1 s{};s.version=PGR_RC_API_VERSION;s.size=sizeof(s);
  return api->sample(&s)==0&&s.scope_active==1;
 }

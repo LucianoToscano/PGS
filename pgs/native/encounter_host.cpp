@@ -604,7 +604,7 @@ static void hook_pokeball_submit(void *ball, uint64_t first, uint64_t second, vo
     }
   }
   const auto *qb = static_cast<const PgrQuickballHostApi *>(
-      pgrazor_quickball_host_api(1));
+      pgs_quickball_host_api(1));
   if (tid && qb && qb->rewrite_submit) {
     PgrThrowValue tv = unpack_throw_value(first, second);
     qb->rewrite_submit(pin_ball.get(), &tv);
@@ -638,7 +638,7 @@ static void hook_nameplate_set_pokemon_ui(void *self, void *map_pokemon, int32_t
   }
 
   const auto *qb = static_cast<const PgrQuickballHostApi *>(
-      pgrazor_quickball_host_api(1));
+      pgs_quickball_host_api(1));
   uint64_t iv_tok = 0;
   if (tid != 0 && !g_stopped && qb && qb->begin_catch) {
     // begin_catch returns two rooted arguments: nameplate, then map Pokemon.
@@ -662,13 +662,13 @@ static void hook_nameplate_set_pokemon_ui(void *self, void *map_pokemon, int32_t
 // ============================================================================
 static void *proxy_items_service_acquire(void) {
   const auto *inv = static_cast<const PgrInventoryHostApi *>(
-      pgrazor_inventory_host_api(1));
+      pgs_inventory_host_api(1));
   if (inv && inv->acquire_item_service) {
     void *h = inv->acquire_item_service();
     if (h) return h;
   }
   const auto *it = static_cast<const pgs_items_api_v1 *>(
-      pgrazor_items_api(PGS_ITEMS_API_VERSION));
+      pgs_items_api(PGS_ITEMS_API_VERSION));
   if (it && it->service_acquire) {
     return it->service_acquire();
   }
@@ -677,7 +677,7 @@ static void *proxy_items_service_acquire(void) {
 
 static void *proxy_items_service_handle(void) {
   const auto *it = static_cast<const pgs_items_api_v1 *>(
-      pgrazor_items_api(PGS_ITEMS_API_VERSION));
+      pgs_items_api(PGS_ITEMS_API_VERSION));
   if (it && it->service_handle) {
     return it->service_handle();
   }
@@ -978,7 +978,7 @@ static const char *berry_error_reason_str(int32_t aux) {
 
 static void notify_inventory_poll() {
   const auto *inv = static_cast<const PgrInventoryHostApi *>(
-      pgrazor_inventory_host_api(1));
+      pgs_inventory_host_api(1));
   if (inv && inv->request_item_poll) {
     inv->request_item_poll();
   }
@@ -1010,7 +1010,7 @@ static void pump_berry_events_and_resume(uint64_t tid, int stopping) {
     uint64_t first = res.first;
     uint64_t second = res.second;
     const auto *qb = static_cast<const PgrQuickballHostApi *>(
-        pgrazor_quickball_host_api(1));
+        pgs_quickball_host_api(1));
     if (resumed_ball.valid() && qb && qb->rewrite_submit) {
       PgrThrowValue tv = unpack_throw_value(first, second);
       qb->rewrite_submit(resumed_ball.get(), &tv);
@@ -1106,7 +1106,7 @@ static void tick_vgp_controller(uint64_t tid, uint64_t now_ms, uint64_t lease_ms
   in.allowed_ms = (g_opts.vgp_allowed && g_opts.vgp_enabled && lease_ms > 0)
                       ? lease_ms
                       : 0;
-  const auto *cleanup = static_cast<const PgrInventoryCleanupApi *>(pgrazor_inventory_host_api(2));
+  const auto *cleanup = static_cast<const PgrInventoryCleanupApi *>(pgs_inventory_host_api(2));
   if (!g_opts.item_transfer_enabled || !g_opts.item_access_allowed ||
       !cleanup || !cleanup->pending || !cleanup->pending(g_vgp_cleanup_ticket))
     g_vgp_cleanup_until_ms = 0;
@@ -1126,7 +1126,7 @@ static void tick_vgp_controller(uint64_t tid, uint64_t now_ms, uint64_t lease_ms
   if (g_opts.item_transfer_enabled && g_opts.item_access_allowed) {
     flags |= PGR_VGC_TF_ITEM_ENABLED;
   }
-  const auto *quick=static_cast<const PgrQuickballHostApi*>(pgrazor_quickball_host_api(1));
+  const auto *quick=static_cast<const PgrQuickballHostApi*>(pgs_quickball_host_api(1));
   PgrQuickballHostSample quick_state{1,sizeof(quick_state)};
   if (quick && quick->sample && quick->sample(&quick_state)==0 && quick_state.ready && !quick_state.stopping)
     flags |= PGR_VGC_TF_MANUAL_READY;
@@ -1187,7 +1187,7 @@ static void tick_vgp_controller(uint64_t tid, uint64_t now_ms, uint64_t lease_ms
 
   }
   if (out.flags & PGR_VGC_EV_ITEM_CLEANUP) {
-    const auto *cleanup = static_cast<const PgrInventoryCleanupApi *>(pgrazor_inventory_host_api(2));
+    const auto *cleanup = static_cast<const PgrInventoryCleanupApi *>(pgs_inventory_host_api(2));
     g_vgp_cleanup_ticket = g_opts.item_transfer_enabled && g_opts.item_access_allowed &&
         cleanup && cleanup->request ? cleanup->request() : 0;
     g_vgp_cleanup_until_ms = g_vgp_cleanup_ticket ? now_ms + 20000ULL : 0;
@@ -1528,7 +1528,7 @@ static int install_berries_leaf() {
     return PGR_EH_ERR_METADATA;
   }
   const auto *api = static_cast<const pgr_berry_api_v1 *>(
-      pgrazor_encounter_berries_api(PGR_BERRY_API_VERSION));
+      pgs_encounter_berries_api(PGR_BERRY_API_VERSION));
   if (!api || !api->install) return PGR_EH_ERR_LEAF;
 
   if (!g_exp.meta.method_get_param || !g_exp.meta.class_from_type || !g_exp.extra.class_get_fields ||
@@ -1612,7 +1612,7 @@ static int install_map_poi_leaf(bool *out_has_extra) {
     return PGR_EH_ERR_METADATA;
   }
   const auto *api = static_cast<const PgrMapPoiApi *>(
-      pgrazor_map_poi_api(PGR_MP_API_VERSION));
+      pgs_map_poi_api(PGR_MP_API_VERSION));
   if (!api || !api->install) return PGR_EH_ERR_LEAF;
 
   PgrMapPoiConfig mcfg = {};
@@ -1748,15 +1748,15 @@ static int install_transfer_leaves() {
   if (!broker || broker->version!=2 || broker->size!=sizeof(TransferBroker) ||
       !broker->ready || !broker->submit || !broker->next_event || broker->ready()!=1)
     return PGR_EH_RETRY;
-  g_tp=static_cast<const PgrTransferApi*>(pgrazor_transfer_policy_api(1));
-  g_tf=static_cast<const PgrTransferFactsApi*>(pgrazor_transfer_facts_api(PGR_TF_API_VERSION));
+  g_tp=static_cast<const PgrTransferApi*>(pgs_transfer_policy_api(1));
+  g_tf=static_cast<const PgrTransferFactsApi*>(pgs_transfer_facts_api(PGR_TF_API_VERSION));
   if(!g_tp || !g_tf) return PGR_EH_ERR_LEAF;
   g_broker=broker;
   return PGR_EH_OK;
 }
 
 static int install_vgp_leaves(bool *out_has_marker) {
-  const auto *items=static_cast<const pgs_items_api_v1*>(pgrazor_items_api(PGS_ITEMS_API_VERSION));
+  const auto *items=static_cast<const pgs_items_api_v1*>(pgs_items_api(PGS_ITEMS_API_VERSION));
   if(!items || items->version!=PGS_ITEMS_API_VERSION || items->size!=sizeof(*items))return PGR_EH_ERR_LEAF;
   kProxyItemsApi=*items;kProxyItemsApi.service_handle=&proxy_items_service_handle;kProxyItemsApi.service_acquire=&proxy_items_service_acquire;
   if (out_has_marker) *out_has_marker = false;
@@ -1767,21 +1767,21 @@ static int install_vgp_leaves(bool *out_has_marker) {
   }
 
   const auto *vp = static_cast<const PgrVgpPolicyApi *>(
-      pgrazor_vgp_policy_api(PGR_VP_API_VERSION));
+      pgs_vgp_policy_api(PGR_VP_API_VERSION));
   const auto *va = static_cast<const PgrVgpActionsApi *>(
-      pgrazor_vgp_actions_api(PGR_VA_API_VERSION));
+      pgs_vgp_actions_api(PGR_VA_API_VERSION));
   const auto *vc = static_cast<const PgrVgpCandidateApi *>(
-      pgrazor_vgp_candidates_api(PGR_VC_API_VERSION));
+      pgs_vgp_candidates_api(PGR_VC_API_VERSION));
   const auto *vr = static_cast<const PgrVgpResultsApi *>(
-      pgrazor_vgp_results_api(PGR_VR_API_VERSION));
+      pgs_vgp_results_api(PGR_VR_API_VERSION));
   const auto *vd = static_cast<const PgrVgpDiscoveryApi *>(
-      pgrazor_vgp_discovery_api(PGR_VD_API_VERSION));
+      pgs_vgp_discovery_api(PGR_VD_API_VERSION));
   const auto *vm = static_cast<const PgrVgpMaintenanceApi *>(
-      pgrazor_vgp_maintenance_api(PGR_VM_API_VERSION));
+      pgs_vgp_maintenance_api(PGR_VM_API_VERSION));
   const auto *vx = static_cast<const PgrVgpAuxApi *>(
-      pgrazor_vgp_aux_api(PGR_VX_API_VERSION));
+      pgs_vgp_aux_api(PGR_VX_API_VERSION));
   const auto *vgc = static_cast<const PgrVgpControllerApi *>(
-      pgrazor_vgp_controller_api(PGR_VGC_API_VERSION));
+      pgs_vgp_controller_api(PGR_VGC_API_VERSION));
   if (!vp || !va || !vc || !vr || !vd || !vm || !vx || !vgc) return PGR_EH_ERR_LEAF;
 
   // 1. Feature 25: VGP Policy
@@ -2013,11 +2013,11 @@ static int install_vgp_leaves(bool *out_has_marker) {
   if (vx->install(&vx_cfg) != 0) return PGR_EH_ERR_LEAF;
 
   // 8. Optional Feature 28: VGP Marker
-  const PgrVgpMarkerApi *vmk = static_cast<const PgrVgpMarkerApi*>(pgrazor_vgp_marker_api(1));
+  const PgrVgpMarkerApi *vmk = static_cast<const PgrVgpMarkerApi*>(pgs_vgp_marker_api(1));
   bool has_marker = false;
   if (g_md.optional[OPT_VGP_MARKER] == PGR_SHARED_OPT_AVAILABLE) {
     const auto *mk = static_cast<const PgrVgpMarkerApi *>(
-        pgrazor_vgp_marker_api(1));
+        pgs_vgp_marker_api(1));
     if (mk && mk->install) {
       PgrVgpMarkerConfig mk_cfg = {};
       mk_cfg.version = 1;
@@ -2254,7 +2254,7 @@ static int api_configure(const PgrEncounterHostConfig *config) {
   }
 
   // Resolve Feature 56 metadata if not already provided: first check Feature 61 shared_host,
-  // then fall back to Feature 56 pgrazor_shared_metadata_api(2)->resolve().
+  // then fall back to Feature 56 pgs_shared_metadata_api(2)->resolve().
   if (!have_md) {
     const auto *sh = static_cast<const PgrSharedHostApi *>(pgrazor_shared_host_api(1));
     const PgrSharedMetadataOutput *sh_md = (sh && sh->metadata) ? sh->metadata() : nullptr;
@@ -2265,7 +2265,7 @@ static int api_configure(const PgrEncounterHostConfig *config) {
   }
   if (!have_md) {
     const auto *sm = static_cast<const PgrSharedMetadataApi *>(
-        pgrazor_shared_metadata_api(2u));
+        pgs_shared_metadata_api(2u));
     if (!sm || !sm->resolve) {
 
       return PGR_EH_ERR_METADATA;
@@ -2337,7 +2337,7 @@ static int api_install(void) {
 
   // Register before publishing any63 hooks:49 owns the shared btxu trampoline.
   if(req_mask&PGR_EH_CAP_BERRIES){
-    auto f=static_cast<const BerryFilterApi*>(pgrazor_catch_observers_api(2));
+    auto f=static_cast<const BerryFilterApi*>(pgs_catch_observers_api(2));
     if(!f || f->version!=2 || f->size!=sizeof(BerryFilterApi) || !f->register_filter) return PGR_EH_RETRY;
     int rc=f->register_filter(&berry_hold_filter,g_owner_tid);
     if(rc!=0) return rc==6?PGR_EH_RETRY:PGR_EH_ERR_HOOK;
@@ -2442,7 +2442,7 @@ static int api_install(void) {
 
   if (qb_shared_mask != 0) {
     const auto *qb = static_cast<const PgrQuickballHostApi *>(
-        pgrazor_quickball_host_api(1));
+        pgs_quickball_host_api(1));
     if (qb && qb->shared_sites) {
       qb->shared_sites(qb_shared_mask);
     }
@@ -2693,7 +2693,7 @@ static const PgrEncounterHostApi kEncounterHostApi = {
 
 }  // namespace
 
-extern "C" const void *pgrazor_encounter_host_api(uint32_t version) {
+extern "C" const void *pgs_encounter_host_api(uint32_t version) {
   if (version != PGR_EH_API_VERSION) return nullptr;
   return &kEncounterHostApi;
 }

@@ -59,7 +59,7 @@ bool configured(){
  return active==1&&allowed==1&&(options>0||pgr_smart_battle_enabled());
 }
 bool rocket_battle(){
- auto api=static_cast<const pgr_rocket_combat_api_v1*>(pgrazor_rocket_combat_api(1));
+ auto api=static_cast<const pgr_rocket_combat_api_v1*>(pgs_rocket_combat_api(1));
  if(!api||!api->sample)return false;
  pgr_rocket_combat_sample_v1 s{};s.version=PGR_RC_API_VERSION;s.size=sizeof(s);
  return api->sample(&s)==0&&s.scope_active==1;

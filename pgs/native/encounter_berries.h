@@ -9,7 +9,7 @@
 // WHAT THIS MODULE IS NOT:
 //   * It installs NO Dobby and NO Gum hooks. The game's Pokeball submit address already
 //     carries runtime/features/throws.js's Gum observer (see native-throws.js -- it attaches
-//     an Interceptor there and delegates the transform into pgrazor_throws_api.rewrite_submit);
+//     an Interceptor there and delegates the transform into pgs_throws_api.rewrite_submit);
 //     stacking a Dobby inline trampoline on that same prologue would corrupt the throw site.
 //     So the berry layer, exactly like the IV-display catch channel (iv_display.h external
 //     observer mode), keeps the EXISTING JS Gum replacements (submit + peek) and the four
@@ -296,7 +296,7 @@ typedef struct pgr_berry_api_v1 {
 /* Hidden getter. NOT exported by the version script. The coordinator registers it in
  * query_feature under feature id 18; it answers only on an exact version match. The returned
  * table lives for the process lifetime. */
-const void *pgrazor_encounter_berries_api(uint32_t version);
+const void *pgs_encounter_berries_api(uint32_t version);
 
 #ifdef __cplusplus
 } /* extern "C" */

@@ -47,7 +47,7 @@
 // closed (fault latched; no further issue) rather than dropping silently.
 //
 // Loader contract (matches the other native features):
-//   root.PGRazorNativeFeature(17,1,64) -> query_feature(17,1) -> pgrazor_incoming_gifts_api(1).
+//   root.PGSNativeFeature(17,1,64) -> query_feature(17,1) -> pgs_incoming_gifts_api(1).
 // The adapter factory returns null ONLY when the native pilot is absent; inert/missing metadata
 // throws (fails local); an install failure throws (no second-engine fallback).
 //
@@ -250,7 +250,7 @@ static_assert(sizeof(PgrIncomingGiftsApi) == 64,
 
 // Standard feature getter. Returns the static const 64-byte table when `version` == 1, else NULL.
 // The coordinator registers it in query_feature as case 17.
-const void *pgrazor_incoming_gifts_api(uint32_t version);
+const void *pgs_incoming_gifts_api(uint32_t version);
 
 #ifdef __cplusplus
 }

@@ -36,13 +36,13 @@ PgrQuickballHostEvent events[128]{};uint32_t event_head=0,event_count=0;uint64_t
 uint64_t obs_cursor=0,throws_cursor=0,ar_cursor=0,hit_cursor=0,hit_normal_cursor=0,hit_error_cursor=0;
 uint32_t speed_cursor=0;uint64_t catch_cursor=0,owned_cursor=0,position_cursor=0,encounter_cursor=0;
 bool ready_emitted=false,terminal_emitted=false,control_configured=false;uint32_t previous_ready_bits=UINT32_MAX;
-const PgrSpeedApi *speed(){return static_cast<const PgrSpeedApi*>(pgrazor_catch_animation_api(1));}
-const PgrObsApi *obs(){return static_cast<const PgrObsApi*>(pgrazor_catch_observers_api(1));}
-const PgrThrowApi *throws(){return static_cast<const PgrThrowApi*>(pgrazor_throws_api(1));}
-const PgrAlwaysHitApi *hit(){return static_cast<const PgrAlwaysHitApi*>(pgrazor_always_hit_api(1));}
-const PgrArThrowApi *ar(){return static_cast<const PgrArThrowApi*>(pgrazor_ar_throw_api(1));}
-const PgrMapTapApi *map(){return static_cast<const PgrMapTapApi*>(pgrazor_map_tap_api(1));}
-const PgrIvDisplayApi *iv(){return static_cast<const PgrIvDisplayApi*>(pgrazor_iv_display_api(1));}
+const PgrSpeedApi *speed(){return static_cast<const PgrSpeedApi*>(pgs_catch_animation_api(1));}
+const PgrObsApi *obs(){return static_cast<const PgrObsApi*>(pgs_catch_observers_api(1));}
+const PgrThrowApi *throws(){return static_cast<const PgrThrowApi*>(pgs_throws_api(1));}
+const PgrAlwaysHitApi *hit(){return static_cast<const PgrAlwaysHitApi*>(pgs_always_hit_api(1));}
+const PgrArThrowApi *ar(){return static_cast<const PgrArThrowApi*>(pgs_ar_throw_api(1));}
+const PgrMapTapApi *map(){return static_cast<const PgrMapTapApi*>(pgs_map_tap_api(1));}
+const PgrIvDisplayApi *iv(){return static_cast<const PgrIvDisplayApi*>(pgs_iv_display_api(1));}
 const PgrRuntimeTransportApi *transport(){return static_cast<const PgrRuntimeTransportApi*>(pgrazor_runtime_transport_api(1));}
 bool now(uint64_t *v){timespec t{};if(clock_gettime(CLOCK_BOOTTIME,&t)||t.tv_sec<0)return false;*v=uint64_t(t.tv_sec)*1000+uint64_t(t.tv_nsec)/1000000;return true;}
 void *mut(const void *p){return const_cast<void*>(p);}
@@ -191,7 +191,7 @@ bool install_max_context(){
  }
  if(!match)return false;
  max_context_field=match;
- auto api=static_cast<const PgrObsApi4*>(pgrazor_catch_observers_api(4));
+ auto api=static_cast<const PgrObsApi4*>(pgs_catch_observers_api(4));
  return api&&api->register_context(read_max_context,owner.load())==0;
 }
 
@@ -213,8 +213,8 @@ bool install_max_speed(){
    if(name)reinterpret_cast<void(*)(void*)>(me.mem_free)(name);
    reason="breadballAnimSpeed-type";
    if(valid){
-    auto bridge=static_cast<const PgrObsApi3*>(pgrazor_catch_observers_api(3));
-    auto max=static_cast<const PgrSpeedApi2*>(pgrazor_catch_animation_api(2));
+    auto bridge=static_cast<const PgrObsApi3*>(pgs_catch_observers_api(3));
+    auto max=static_cast<const PgrSpeedApi2*>(pgs_catch_animation_api(2));
     reason="max-speed-registration";
     if(bridge&&bridge->register_max(f,max,owner.load())==0){
      const bool context=install_max_context();
@@ -448,7 +448,7 @@ int tick(uint64_t tid){
  if(!control_configured&&!stopping.load()){control_configured=true;bool_action(15,true);}
  if(!meta_ready.load()&&!stopping.load()){
   if(time<metadata_retry)return PGR_QBH_NOT_READY;metadata_retry=time+1000;mc.owner_tid=tid;
-  const auto *api=static_cast<const PgrQuickballMetaApi*>(pgrazor_quickball_metadata_api(2));
+  const auto *api=static_cast<const PgrQuickballMetaApi*>(pgs_quickball_metadata_api(2));
   int rc=api?api->resolve(&mc,&md):PGR_QBH_METADATA;meta_error.store(rc);
   if(rc==PGR_QB_NOT_READY)return PGR_QBH_NOT_READY;
   if(rc){fail(PGR_QBH_METADATA);event("unavailable","\"reason\":\"native-metadata\",\"code\":"+std::to_string(rc));return PGR_QBH_METADATA;}
@@ -520,4 +520,4 @@ void on_pulse(void *,const PgrUnityPulse *pulse){if(pulse&&pulse->tid>0&&pulse->
  const auto *api=static_cast<const PgrUnitySchedulerApi*>(pgrazor_unity_scheduler_api(2));if(api&&api->valid(pulse->generation)==1)tick(uint64_t(pulse->tid));}}
 const PgrQuickballHostApi api{1,sizeof(PgrQuickballHostApi),configure,set_options,shared_sites,tick,stop,sample,next_event,rewrite_submit,begin_catch,end_catch,on_pulse};
 }
-extern "C" const void *pgrazor_quickball_host_api(uint32_t version){return version==1?&api:nullptr;}
+extern "C" const void *pgs_quickball_host_api(uint32_t version){return version==1?&api:nullptr;}

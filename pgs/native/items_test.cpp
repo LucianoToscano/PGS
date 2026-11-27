@@ -708,8 +708,8 @@ int main(int argc, char **argv) {
 #ifdef PGR_ITEMS_HOST_TEST
     (void)argc; (void)argv;
     const bool slow = true; // deterministic time also exercises confirmation expiry
-    if (pgrazor_items_api(99) != nullptr) { std::puts("FAIL exact-version"); return 3; }
-    g_api = static_cast<const pgs_items_api_v1 *>(pgrazor_items_api(1));
+    if (pgs_items_api(99) != nullptr) { std::puts("FAIL exact-version"); return 3; }
+    g_api = static_cast<const pgs_items_api_v1 *>(pgs_items_api(1));
 #else
     if (argc < 2) return 1;
     const bool slow = (argc >= 3 && std::strcmp(argv[2], "slow") == 0);

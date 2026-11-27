@@ -515,7 +515,7 @@ const PgrSpeedApi2 g_api2 = {
 
 } // namespace
 
-const void *pgrazor_catch_animation_api(uint32_t version) {
+const void *pgs_catch_animation_api(uint32_t version) {
     if (version == 1) return &g_api;
     if (version == 2) return &g_api2;
     return nullptr;

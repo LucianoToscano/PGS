@@ -644,7 +644,7 @@ const PgrRoutesDiscoveryApi kApiTable = {
 
 }  // namespace
 
-extern "C" const void *pgrazor_routes_discovery_api(uint32_t version) {
+extern "C" const void *pgs_routes_discovery_api(uint32_t version) {
   if (version != PGR_RD_API_VERSION) return nullptr;
   return &kApiTable;
 }

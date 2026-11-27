@@ -1,5 +1,5 @@
 // Opt-in metadata survey. Loading this file performs no native calls.
-// Explicitly call PGRazorIl2CppSurvey.start({ enabled: true }).
+// Explicitly call PGSIl2CppSurvey.start({ enabled: true }).
 (function (root) {
     'use strict';
     const LIMITS = Object.freeze({ attempts: 20, retryMs: 1000, durationMs: 20000,
@@ -32,7 +32,7 @@
         const event = Object.assign({
             time: new Date().toISOString(), kind: kind
         }, fields || {});
-        console.log('[pgrazor-il2cpp-survey] ' + JSON.stringify(event));
+        console.log('[pgs-il2cpp-survey] ' + JSON.stringify(event));
         const callback = sink || (running && running.onEvent);
         if (typeof callback === 'function') {
             try { callback(event); } catch (_) { /* Diagnostics must not abort the survey. */ }
@@ -179,7 +179,7 @@
     function stop() {
         if (running !== null) running.finish({ status: 'cancelled' });
     }
-    root.PGRazorIl2CppSurvey = Object.freeze({ start: start, stop: stop, limits: LIMITS });
+    root.PGSIl2CppSurvey = Object.freeze({ start: start, stop: stop, limits: LIMITS });
 })(globalThis);
 // Script.evaluate returns this object; standalone REPL can call the global name.
-globalThis.PGRazorIl2CppSurvey;
+globalThis.PGSIl2CppSurvey;

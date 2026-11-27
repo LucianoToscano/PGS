@@ -24,4 +24,4 @@ static_assert(sizeof(PgrSpawnHostConfig)==40,"Spawn host config");
 static_assert(sizeof(PgrSpawnHostOptions)==24,"Spawn host options");
 static_assert(sizeof(PgrSpawnHostSample)==72,"Spawn host sample");
 static_assert(sizeof(PgrSpawnHostApi)==64,"Spawn host API");
-extern "C" const void *pgrazor_spawn_host_api(uint32_t version);
+extern "C" const void *pgs_spawn_host_api(uint32_t version);

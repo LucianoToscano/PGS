@@ -13,8 +13,8 @@
 //
 // Loader contract (identical to the other feature modules). Nothing here is exported by
 // the version script. The JS adapter resolves the table through the coordinator-owned
-// loader root.PGRazorNativeFeature(6, 1, 40); the hidden getter
-// pgrazor_rocket_minigame_api() is registered by the coordinator in the core getter
+// loader root.PGSNativeFeature(6, 1, 40); the hidden getter
+// pgs_rocket_minigame_api() is registered by the coordinator in the core getter
 // registry, which answers only on an exact version match. A null table means the pilot
 // is absent (JS keeps the Gum fallback); an ABI mismatch is a hard error (JS goes inert,
 // never Gum).
@@ -107,7 +107,7 @@ extern "C" {
 // Hidden getter (NOT exported by the version script); the coordinator registers it in
 // the core getter registry. Returns the process-lifetime table on an exact version
 // match, else nullptr.
-const void *pgrazor_rocket_minigame_api(uint32_t version);
+const void *pgs_rocket_minigame_api(uint32_t version);
 #ifdef __cplusplus
 }
 #endif

@@ -62,24 +62,24 @@ int fixture_hook(void *address,void *replacement,void **original){return DobbyHo
 // The optional shadow / Max transfer facts live in transfer_facts.cpp, which this fixture replaces.
 extern "C" void pgr_transfer_facts_set_shadow(void*,int32_t){}
 extern "C" void pgr_transfer_facts_set_max(void*,int32_t,int32_t,int32_t,int32_t){}
-#define pgrazor_shared_catch_api fixture_shared_api
-#define pgrazor_summary_completion_api fixture_summary_api
-#define pgrazor_details_completion_api fixture_details_api
-#define pgrazor_details_recovery_api fixture_recovery_api
-#define pgrazor_catch_discovery_api fixture_discovery_api
-#define pgrazor_catch_canvas_api fixture_canvas_api
-#define pgrazor_catch_completion_api fixture_completion_api
-#define pgrazor_catch_presentation_api fixture_presentation_api
-#define pgrazor_transfer_execution_api fixture_transfer_api
-#define pgrazor_transfer_facts_api fixture_facts_api
-#define pgrazor_transfer_observers_api fixture_observers_api
+#define pgs_shared_catch_api fixture_shared_api
+#define pgs_summary_completion_api fixture_summary_api
+#define pgs_details_completion_api fixture_details_api
+#define pgs_details_recovery_api fixture_recovery_api
+#define pgs_catch_discovery_api fixture_discovery_api
+#define pgs_catch_canvas_api fixture_canvas_api
+#define pgs_catch_completion_api fixture_completion_api
+#define pgs_catch_presentation_api fixture_presentation_api
+#define pgs_transfer_execution_api fixture_transfer_api
+#define pgs_transfer_facts_api fixture_facts_api
+#define pgs_transfer_observers_api fixture_observers_api
 #define pgrazor_unity_scheduler_api fixture_scheduler_api
-#define pgrazor_shared_metadata_api fixture_metadata_api
+#define pgs_shared_metadata_api fixture_metadata_api
 #define pgrazor_runtime_transport_api fixture_transport_api
-#define pgrazor_transfer_policy_api fixture_transfer_policy_api
+#define pgs_transfer_policy_api fixture_transfer_policy_api
 #define pgrazor_runtime_bootstrap_api fixture_boot_api
 #define pgrazor_runtime_metadata_api fixture_meta_api
-#define pgrazor_interaction_host_api fixture_interaction_api
+#define pgs_interaction_host_api fixture_interaction_api
 #define pgrazor_shared_host_api fixture_host_api
 #define pgs_hook fixture_hook
 #include "shared_host.cpp"

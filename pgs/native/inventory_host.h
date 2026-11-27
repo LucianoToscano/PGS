@@ -45,4 +45,4 @@ struct PgrInventoryCleanupApi {
  uint64_t (*request)(); // Unity owner thread only; zero means unavailable; otherwise an opaque completion ticket
  int (*pending)(uint64_t); // 1 pending, 0 complete or unavailable
 };
-extern "C" const void *pgrazor_inventory_host_api(uint32_t);
+extern "C" const void *pgs_inventory_host_api(uint32_t);

@@ -1337,8 +1337,8 @@ int main(int argc,char **argv){
     PgrRuntimeTransportConfig tc{1,sizeof(tc),2500,2048,65536,1048576,0,0};assert(actual_transport->install(&tc)==0);
     PgrInteractionHostConfig cfg{};reset_fake_universe(&cfg);g_state.cfg=cfg;g_state.meta_exports=g_fx_meta_exports;g_state.configured=true;
     g_state.cfg.flags=PGR_IH_CFG_NO_AUTO_SHARED_DETECT;g_owner_tid=gettid();
-    auto api=(const PgrInteractionHostApi*)pgrazor_interaction_host_api(1);
-    auto observer=(const PgrInteractionHostApi2*)pgrazor_interaction_host_api(2);
+    auto api=(const PgrInteractionHostApi*)pgs_interaction_host_api(1);
+    auto observer=(const PgrInteractionHostApi2*)pgs_interaction_host_api(2);
     alignas(8) uint64_t self[4]{},arg[4]{},result[4]{},moved[4]{};
     call0(self,nullptr);assert(original_calls[0]==1&&roots()==0);
     prepared_run();assert(g_hook_count==20&&g_total_hook_calls==20);

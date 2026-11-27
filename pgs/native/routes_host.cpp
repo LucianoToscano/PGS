@@ -657,25 +657,25 @@ uint32_t g_event_count = 0;
 
 // --- leaf API getters --------------------------------------------------------------
 const PgrRoutesGateApi *gate_api() {
-  return static_cast<const PgrRoutesGateApi *>(pgrazor_routes_gate_api(1));
+  return static_cast<const PgrRoutesGateApi *>(pgs_routes_gate_api(1));
 }
 const PgrRoutesActionsApi *actions_api() {
-  return static_cast<const PgrRoutesActionsApi *>(pgrazor_routes_actions_api(1));
+  return static_cast<const PgrRoutesActionsApi *>(pgs_routes_actions_api(1));
 }
 const PgrRoutesDiscoveryApi *discovery_api() {
-  return static_cast<const PgrRoutesDiscoveryApi *>(pgrazor_routes_discovery_api(1));
+  return static_cast<const PgrRoutesDiscoveryApi *>(pgs_routes_discovery_api(1));
 }
 const PgrRoutesServicesApi *services_api() {
-  return static_cast<const PgrRoutesServicesApi *>(pgrazor_routes_services_api(1));
+  return static_cast<const PgrRoutesServicesApi *>(pgs_routes_services_api(1));
 }
 const PgrRoutesObserversApi *observers_api() {
-  return static_cast<const PgrRoutesObserversApi *>(pgrazor_routes_observers_api(1));
+  return static_cast<const PgrRoutesObserversApi *>(pgs_routes_observers_api(1));
 }
 const PgrRoutesTrackingApi *tracking_api() {
-  return static_cast<const PgrRoutesTrackingApi *>(pgrazor_routes_tracking_api(1));
+  return static_cast<const PgrRoutesTrackingApi *>(pgs_routes_tracking_api(1));
 }
 const PgrRoutesMetadataApi *routes_meta_api() {
-  return static_cast<const PgrRoutesMetadataApi *>(pgrazor_routes_metadata_api(1));
+  return static_cast<const PgrRoutesMetadataApi *>(pgs_routes_metadata_api(1));
 }
 const PgrMetaApi *runtime_meta_api() {
   return static_cast<const PgrMetaApi *>(pgrazor_runtime_metadata_api(1));
@@ -2402,6 +2402,6 @@ const PgrRoutesHostApi kApiTable = {
 
 } // namespace
 
-extern "C" const void *pgrazor_routes_host_api(uint32_t version) {
+extern "C" const void *pgs_routes_host_api(uint32_t version) {
   return version == PGR_RH_API_VERSION ? &kApiTable : nullptr;
 }

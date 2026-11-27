@@ -171,7 +171,7 @@ void expand_defenders(void *response,pgr_gym::History &history){
  }
 }
 void poll(pgr_gym::History &history){
- auto now=clock_ms();auto vr=static_cast<const PgrVgpResultsApi*>(pgrazor_vgp_results_api(1));require(vr,"Promise observer unavailable");
+ auto now=clock_ms();auto vr=static_cast<const PgrVgpResultsApi*>(pgs_vgp_results_api(1));require(vr,"Promise observer unavailable");
  PgrVgpResultsResult out{};int rc=vr->poll(session.promise.get(),1,owner,&out);
  if(!rc){if(now-session.since>15000){history.refuse(session.targets[session.cursor].id,now);finish("error","Feed outcome unknown; not retried");}return;}
  Root response;if(out.value_handle)response.h=out.value_handle;

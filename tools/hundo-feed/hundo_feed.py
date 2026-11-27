@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""PGRazor hundo feed: polls a configured provider's 100% IV list and publishes it as a
+"""PGS hundo feed: polls a configured provider's 100% IV list and publishes it as a
 static JSON file, so the app can read it without each user signing in.
 
 Runs on a server (systemd: hundo-feed.service). Standard library only. Configuration comes from the
@@ -41,7 +41,7 @@ import urllib.parse
 
 BASE = "https://play.livepokemap.com"
 POGO_API = "https://coordinates-api.pokemongopro.com"
-USER_AGENT = "PGRazor-hundo-feed/1.0 (+https://github.com/jpitty03/PGRazor)"
+USER_AGENT = "PGS-hundo-feed/1.0 (+https://github.com/LucianoToscano/PGS)"
 TIMEOUT_S = 20
 WORLD = (-85.0, 85.0, -180.0, 180.0)  # min_lat, max_lat, min_lon, max_lon
 MAX_TILE_LON = 90.0  # widest tile below the whole map: LivePokeMap sends nothing for a 180 degree one

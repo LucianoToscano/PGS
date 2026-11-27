@@ -193,3 +193,8 @@ jobs:
               --repo "$GH_REPO" --target "$GITHUB_SHA" --title 'PGS v0.0.1' \
               --draft --notes-file "$RUNNER_TEMP/pgs-notes.md"
           fi
+          # Pin the still-private draft to the exact source commit of this APK.
+          gh release edit v0.0.1 --repo "$GH_REPO" --target "$GITHUB_SHA"
+          release_target="$(gh api "repos/$GH_REPO/releases?per_page=100" --jq '.[] | select(.tag_name == "v0.0.1" and .draft) | .target_commitish' | head -n 1)"
+          test "$release_target" = "$GITHUB_SHA"
+          echo "PGS v0.0.1 draft targets the exact source commit: $release_target"

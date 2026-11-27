@@ -1,5 +1,12 @@
 import { test, expect } from '@playwright/test';
 
+test('PGS brand links use the PGS repository and Discord', async ({ page }) => {
+  await page.goto('./');
+  await expect(page.locator('a[href="https://github.com/LucianoToscano/PGS"]').first()).toBeVisible();
+  await expect(page.locator('a[href="https://discord.gg/SdwU4VnfW"]').first()).toBeVisible();
+  await expect(page.locator('a[href*="github.com/jpitty03/PGRazor"]')).toHaveCount(0);
+});
+
 test('production page loads its assets and stays within the viewport', async ({ page }) => {
   const errors = [];
   page.on('pageerror', error => errors.push(error.message));

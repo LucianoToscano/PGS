@@ -55,7 +55,7 @@ Mantenha os dois READMEs atualizados na mesma PR. Revise descrições e guias do
 
 Para atualizações do jogo, siga [docs/GAME_UPDATES.md](docs/GAME_UPDATES.md). Atualize o perfil da versão e regenere os cabeçalhos cobertos, revisando também bindings mantidos manualmente; um match de assinatura sozinho não prova compatibilidade.
 
-O CI usa `PGRAZOR_BUILD_TOOLS=36.0.0` e `PGRAZOR_ANDROID_PLATFORM=android-36`. Mantenha as variáveis de compilação exigidas, mesmo que seus nomes internos sejam legados; não recrie chaves nem altere o identificador Android.
+O CI ainda define os aliases `PGRAZOR_BUILD_TOOLS=36.0.0` e `PGRAZOR_ANDROID_PLATFORM=android-36`. Para novas compilações locais, prefira `PGS_BUILD_TOOLS=36.0.0` e `PGS_ANDROID_PLATFORM=android-36`; as variáveis antigas continuam aceitas. A versão usa `PGS_VERSION` (ou o alias `PGRAZOR_VERSION`), com prioridade para o nome PGS. Essas opções NÃO alteram as variáveis de assinatura: não recrie chaves nem mude o identificador Android.
 
 ## Idiomas da documentação
 

@@ -36,9 +36,9 @@ const auto shared=as<PgrSharedHostApi>(pgs_shared_host_api(1));
 const auto quick=as<PgrQuickballHostApi>(pgs_quickball_host_api(1));
 const auto routes=as<PgrRoutesHostApi>(pgs_routes_host_api(1));
 const auto inventory=as<PgrInventoryHostApi>(pgs_inventory_host_api(1));
-const auto spin=as<PgrSpinHostApi>(pgs_spin_host_api(1));
+const auto spin=as<PgsSpinHostApi>(pgs_spin_host_api(1));
 const auto wait_host=as<PgrCatchWaitApi>(pgs_catch_wait_api(1));
-const auto spawn=as<PgrSpawnHostApi>(pgs_spawn_host_api(1));
+const auto spawn=as<PgsSpawnHostApi>(pgs_spawn_host_api(1));
 const auto camera=as<PgrCameraHostApi>(pgs_camera_host_api(1));
 const auto combat=as<PgrCombatHostApi>(pgs_combat_host_api(1));
 const auto account=as<PgrAccountHostApi>(pgs_account_host_api(1));
@@ -56,7 +56,7 @@ std::atomic<uint64_t> owner{0},generation{0},pulses{0};
 PgrBootBinding binding{};
 PgrUnitySchedulerConfig scheduler_config{};
 PgrSharedMetaExtraExports spin_extra{};
-PgrSpinHostConfig spin_config{};
+PgsSpinHostConfig spin_config{};
 uint32_t interaction_forwarding=0;
 // Startup diagnostics: delivered through the transport event queue (opcode 19,
 // channel "native-runtime-start") so a failed native startup is visible even
@@ -67,7 +67,7 @@ PgrStartupThrottle startup_throttle{};
 void update_interaction_sites(){
  PgrSharedHostSample s{};if(!shared->sample(&s)&&s.ready)interaction_forwarding|=PGR_IH_SHARED_MASK_61;
  PgrQuickballHostSample q{};if(!quick->sample(&q)&&(q.capabilities&PGR_QBH_OBSERVERS))interaction_forwarding|=PGR_IH_SHARED_MASK_49;
- PgrSpinHostSample p{};if(!spin->sample(&p)){
+ PgsSpinHostSample p{};if(!spin->sample(&p)){
   if(p.capabilities&1)interaction_forwarding|=PGR_IH_SHARED_MASK_67_CAMERA;
   if(p.capabilities&2)interaction_forwarding|=PGR_IH_SHARED_MASK_67_QUICK;
  }
@@ -130,7 +130,7 @@ int configure_host(unsigned i){
  case 5:if(!shared->metadata())return 1;return inventory->configure(nullptr);
  case 7:{const auto metadata=shared->metadata();if(!metadata)return 1;
   spin_extra={};spin_extra.field_static_get_value=binding.runtime.field_static_get_value;spin_extra.gchandle_new=binding.runtime.gchandle_new;spin_extra.gchandle_get_target=binding.runtime.gchandle_get_target;spin_extra.gchandle_free=binding.runtime.gchandle_free;
-  spin_config={1,sizeof(spin_config),PGR_SPH_TRANSPORT,1,metadata,&spin_extra,binding.runtime.object_get_class,binding.runtime.field_get_value,binding.runtime.runtime_invoke,binding.runtime.object_unbox,reinterpret_cast<void*(*)()>(binding.runtime.thread_current),owner.load()};
+  spin_config={1,sizeof(spin_config),PGS_SPH_TRANSPORT,1,metadata,&spin_extra,binding.runtime.object_get_class,binding.runtime.field_get_value,binding.runtime.runtime_invoke,binding.runtime.object_unbox,reinterpret_cast<void*(*)()>(binding.runtime.thread_current),owner.load()};
   return spin->configure(&spin_config);}
  default:return -1;
  }
@@ -142,9 +142,9 @@ void observe(unsigned i){auto &s=slots[i];uint32_t ready=0,cap=0,owned=0;int err
  case 2:{PgrQuickballHostSample v{};if(quick->sample(&v)){failed(i,-10062);return;}ready=v.ready;cap=v.capabilities;owned=v.owned;error=v.error?v.error:v.metadata_error;terminal=v.stopping&&v.error;break;}
  case 3:{PgrEncounterHostSample v{};v.version=1;v.size=sizeof(v);if(encounter->sample(&v)){failed(i,-10063);return;}ready=v.installed;cap=v.active_capabilities;error=v.last_error;break;}
  case 5:{PgrInventoryHostSample v{};if(inventory->sample(&v)){failed(i,-10065);return;}ready=v.ready;cap=v.capabilities;owned=v.roots;error=int32_t(v.error);terminal=v.stopping&&v.error;break;}
- case 7:{PgrSpinHostSample v{};if(spin->sample(&v)){failed(i,-10067);return;}ready=v.capabilities==3&&!v.stopping&&!v.camera_error&&!v.quick_error;cap=v.capabilities;owned=v.owned;error=v.camera_error?v.camera_error:v.quick_error;terminal=v.stopping&&error;break;}
+ case 7:{PgsSpinHostSample v{};if(spin->sample(&v)){failed(i,-10067);return;}ready=v.capabilities==3&&!v.stopping&&!v.camera_error&&!v.quick_error;cap=v.capabilities;owned=v.owned;error=v.camera_error?v.camera_error:v.quick_error;terminal=v.stopping&&error;break;}
  case 10:{PgrCatchWaitSample v{};if(wait_host->sample(&v)){failed(i,-10058);return;}ready=v.ready;cap=v.ready;error=v.fault;terminal=v.fault!=0;break;}
- case 11:{PgrSpawnHostSample v{};if(spawn->sample(&v)){failed(i,-10071);return;}ready=v.ready;cap=v.installed;error=v.error;terminal=v.stopping&&v.error;break;}
+ case 11:{PgsSpawnHostSample v{};if(spawn->sample(&v)){failed(i,-10071);return;}ready=v.ready;cap=v.installed;error=v.error;terminal=v.stopping&&v.error;break;}
  case 4:{PgrCameraHostSample v{};v.version=1;v.size=sizeof(v);if(camera->sample(&v)){failed(i,-10064);return;}ready=v.ready&&!v.stopping;cap=v.ready;error=v.last_error;terminal=!v.active&&v.last_error!=0;break;}
  case 6:{PgrCombatHostSample v{};if(combat->sample(&v)){failed(i,-10066);return;}ready=v.ready&&!v.stopping;cap=v.capabilities;owned=v.roots;error=v.last_error;terminal=v.failed;break;}
  case 9:{PgrInteractionHostSample v{};if(interaction->sample(&v)){failed(i,-10069);return;}ready=v.configured;cap=v.installed_target_mask;owned=v.in_flight;error=v.status==PGR_IH_STATUS_FAILED?-10069:0;break;}

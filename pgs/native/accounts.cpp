@@ -62,7 +62,7 @@ struct ControllerState {
 
   // Policy & command fields (guarded by policy_mu)
   uint64_t lease_until_ms = 0;
-  uint32_t pending_cmd_kind = PGR_ACC_CMD_NONE;
+  uint32_t pending_cmd_kind = PGS_ACC_CMD_NONE;
   uint64_t pending_cmd_token = 0;
   uint64_t last_accepted_token = 0;
   uint64_t last_consumed_token = 0;
@@ -71,7 +71,7 @@ struct ControllerState {
   uint64_t mutation_epoch = 1;
 
   // Bounded FIFO event ring (guarded by policy_mu, fail-closed on overflow)
-  pgs_account_event_v1_t ring[PGR_ACCOUNTS_EVENT_QUEUE_CAP]{};
+  pgs_account_event_v1_t ring[PGS_ACCOUNTS_EVENT_QUEUE_CAP]{};
   size_t ring_head = 0;
   size_t ring_count = 0;
   uint64_t next_seq = 1;
@@ -81,8 +81,8 @@ struct ControllerState {
   bool snap_has_identity = false;
   uint16_t snap_id_len = 0;
   uint16_t snap_name_len = 0;
-  uint16_t snap_id[PGR_ACCOUNTS_MAX_UTF16]{};
-  uint16_t snap_name[PGR_ACCOUNTS_MAX_UTF16]{};
+  uint16_t snap_id[PGS_ACCOUNTS_MAX_UTF16]{};
+  uint16_t snap_name[PGS_ACCOUNTS_MAX_UTF16]{};
   uint64_t snap_last_identity_ms = 0;
 
   // Unity-owner-only runtime state (touched exclusively when current_os_tid() == owner_tid)
@@ -144,18 +144,18 @@ void push_event_locked(uint32_t kind, uint32_t reason, bool available,
   if (g_state.queue_overflow_latched) {
     return;
   }
-  if (g_state.ring_count >= PGR_ACCOUNTS_EVENT_QUEUE_CAP) {
+  if (g_state.ring_count >= PGS_ACCOUNTS_EVENT_QUEUE_CAP) {
     g_state.queue_overflow_latched = true;
     g_state.enabled.store(false, std::memory_order_release);
     g_state.mutation_epoch++;
     g_state.lease_until_ms = 0;
-    g_state.pending_cmd_kind = PGR_ACC_CMD_NONE;
+    g_state.pending_cmd_kind = PGS_ACC_CMD_NONE;
     g_state.pending_cmd_token = 0;
     g_state.deferred_clear_requested = true;
     clear_identity_locked();
     return;
   }
-  const size_t idx = (g_state.ring_head + g_state.ring_count) % PGR_ACCOUNTS_EVENT_QUEUE_CAP;
+  const size_t idx = (g_state.ring_head + g_state.ring_count) % PGS_ACCOUNTS_EVENT_QUEUE_CAP;
   pgs_account_event_v1_t& ev = g_state.ring[idx];
   std::memset(&ev, 0, sizeof(ev));
   ev.seq = g_state.next_seq++;
@@ -164,18 +164,18 @@ void push_event_locked(uint32_t kind, uint32_t reason, bool available,
   ev.reason = reason;
   ev.available = available ? 1u : 0u;
   ev.future_captured = future_captured ? 1u : 0u;
-  if (id && id_len > 0 && id_len <= PGR_ACCOUNTS_MAX_UTF16) {
+  if (id && id_len > 0 && id_len <= PGS_ACCOUNTS_MAX_UTF16) {
     ev.id_len = id_len;
     std::memcpy(ev.id, id, static_cast<size_t>(id_len) * sizeof(uint16_t));
   }
-  if (name && name_len > 0 && name_len <= PGR_ACCOUNTS_MAX_UTF16) {
+  if (name && name_len > 0 && name_len <= PGS_ACCOUNTS_MAX_UTF16) {
     ev.name_len = name_len;
     std::memcpy(ev.name, name, static_cast<size_t>(name_len) * sizeof(uint16_t));
   }
   g_state.ring_count++;
 }
 
-void emit_simple_event(uint32_t kind, uint32_t reason = PGR_ACC_REASON_NONE,
+void emit_simple_event(uint32_t kind, uint32_t reason = PGS_ACC_REASON_NONE,
                        bool available = false, bool future_captured = false) noexcept {
   std::lock_guard<std::mutex> lock(g_state.policy_mu);
   push_event_locked(kind, reason, available, future_captured, nullptr, 0, nullptr, 0);
@@ -187,7 +187,7 @@ void emit_logout_failed_and_clear_identity(uint32_t reason) noexcept {
   // have started even when a getter, future, or wrapper later fails.
   g_state.uncertain_op_tainted = true;
   clear_identity_locked();
-  push_event_locked(PGR_ACC_EVT_LOGOUT_FAILED, reason, false, false, nullptr, 0, nullptr, 0);
+  push_event_locked(PGS_ACC_EVT_LOGOUT_FAILED, reason, false, false, nullptr, 0, nullptr, 0);
 }
 
 uintptr_t alloc_gc_handle_owner(Il2CppObject* obj) noexcept {
@@ -346,7 +346,7 @@ bool read_utf16_bounded(Il2CppObject* str_obj, uint16_t* out_buf,
   if (!is_exact_class(str_obj, g_state.cfg.string_class)) return false;
   auto* s = reinterpret_cast<Il2CppString*>(str_obj);
   const int32_t len = g_state.cfg.string_length(s);
-  if (len < 1 || len > static_cast<int32_t>(PGR_ACCOUNTS_MAX_UTF16)) {
+  if (len < 1 || len > static_cast<int32_t>(PGS_ACCOUNTS_MAX_UTF16)) {
     return false;
   }
   const uint16_t* chars = g_state.cfg.string_chars(s);
@@ -455,7 +455,7 @@ Il2CppObject* hook_auth_logout(Il2CppObject* self, const MethodInfo* method) noe
     std::lock_guard<std::mutex> lock(g_state.policy_mu);
     if (!g_state.deferred_clear_requested) {
       clear_identity_locked();
-      push_event_locked(PGR_ACC_EVT_SESSION_ENDED, PGR_ACC_REASON_NONE,
+      push_event_locked(PGS_ACC_EVT_SESSION_ENDED, PGS_ACC_REASON_NONE,
                         false, false, nullptr, 0, nullptr, 0);
     }
   }
@@ -485,21 +485,21 @@ void poll_logout_owner(uint64_t now_ms) noexcept {
     if (!is_exact_class(a, g_state.cfg.auth_class)) {
       free_logout_handles_owner();
       g_state.logging_out.store(false, std::memory_order_release);
-      emit_logout_failed_and_clear_identity(PGR_ACC_REASON_LOGOUT_AUTH_INVALID);
+      emit_logout_failed_and_clear_identity(PGS_ACC_REASON_LOGOUT_AUTH_INVALID);
       return;
     }
     bool is_conn = true;
     if (!invoke_bool_getter(g_state.cfg.auth_get_connected_method, a, nullptr, &is_conn)) {
       free_logout_handles_owner();
       g_state.logging_out.store(false, std::memory_order_release);
-      emit_logout_failed_and_clear_identity(PGR_ACC_REASON_MISSING_AUTH_STATE);
+      emit_logout_failed_and_clear_identity(PGS_ACC_REASON_MISSING_AUTH_STATE);
       return;
     }
     Il2CppObject* refreshed_a = g_state.cfg.gchandle_get_target(g_state.auth_handle);
     if (!is_exact_class(refreshed_a, g_state.cfg.auth_class)) {
       free_logout_handles_owner();
       g_state.logging_out.store(false, std::memory_order_release);
-      emit_logout_failed_and_clear_identity(PGR_ACC_REASON_LOGOUT_AUTH_INVALID);
+      emit_logout_failed_and_clear_identity(PGS_ACC_REASON_LOGOUT_AUTH_INVALID);
       return;
     }
     void* active_provider = nullptr;
@@ -508,7 +508,7 @@ void poll_logout_owner(uint64_t now_ms) noexcept {
     if (!invoke_bool_getter(g_state.cfg.auth_get_cached_method, refreshed_a, nullptr, &has_cached)) {
       free_logout_handles_owner();
       g_state.logging_out.store(false, std::memory_order_release);
-      emit_logout_failed_and_clear_identity(PGR_ACC_REASON_MISSING_AUTH_STATE);
+      emit_logout_failed_and_clear_identity(PGS_ACC_REASON_MISSING_AUTH_STATE);
       return;
     }
     if (!is_conn && active_provider == nullptr && !has_cached) {
@@ -516,7 +516,7 @@ void poll_logout_owner(uint64_t now_ms) noexcept {
       g_state.logging_out.store(false, std::memory_order_release);
       std::lock_guard<std::mutex> lock(g_state.policy_mu);
       clear_identity_locked();
-      push_event_locked(PGR_ACC_EVT_LOGOUT_COMPLETE, PGR_ACC_REASON_CLEARED_AUTH_STATE,
+      push_event_locked(PGS_ACC_EVT_LOGOUT_COMPLETE, PGS_ACC_REASON_CLEARED_AUTH_STATE,
                         false, false, nullptr, 0, nullptr, 0);
       return;
     }
@@ -529,7 +529,7 @@ void poll_logout_owner(uint64_t now_ms) noexcept {
         !is_exact_class(a, g_state.cfg.auth_class)) {
       free_logout_handles_owner();
       g_state.logging_out.store(false, std::memory_order_release);
-      emit_logout_failed_and_clear_identity(PGR_ACC_REASON_LOGOUT_FUTURE_INVALID);
+      emit_logout_failed_and_clear_identity(PGS_ACC_REASON_LOGOUT_FUTURE_INVALID);
       return;
     }
     uint8_t is_disposed = 1;
@@ -537,7 +537,7 @@ void poll_logout_owner(uint64_t now_ms) noexcept {
     if (is_disposed != 0) {
       free_logout_handles_owner();
       g_state.logging_out.store(false, std::memory_order_release);
-      emit_logout_failed_and_clear_identity(PGR_ACC_REASON_LOGOUT_FUTURE_INVALID);
+      emit_logout_failed_and_clear_identity(PGS_ACC_REASON_LOGOUT_FUTURE_INVALID);
       return;
     }
     int32_t status_val = 0;
@@ -545,7 +545,7 @@ void poll_logout_owner(uint64_t now_ms) noexcept {
     if (status_val == g_state.cfg.promise_failed_value) {
       free_logout_handles_owner();
       g_state.logging_out.store(false, std::memory_order_release);
-      emit_logout_failed_and_clear_identity(PGR_ACC_REASON_LOGOUT_FAILED);
+      emit_logout_failed_and_clear_identity(PGS_ACC_REASON_LOGOUT_FAILED);
       return;
     }
     if (status_val == g_state.cfg.promise_succeeded_value) {
@@ -553,23 +553,23 @@ void poll_logout_owner(uint64_t now_ms) noexcept {
       if (!invoke_bool_getter(g_state.cfg.auth_get_connected_method, a, nullptr, &is_conn)) {
         free_logout_handles_owner();
         g_state.logging_out.store(false, std::memory_order_release);
-        emit_logout_failed_and_clear_identity(PGR_ACC_REASON_MISSING_AUTH_STATE);
+        emit_logout_failed_and_clear_identity(PGS_ACC_REASON_MISSING_AUTH_STATE);
         return;
       }
   if (!is_conn) {
         free_logout_handles_owner();
         g_state.logging_out.store(false, std::memory_order_release);
-        emit_simple_event(PGR_ACC_EVT_LOGOUT_COMPLETE, PGR_ACC_REASON_NONE);
+        emit_simple_event(PGS_ACC_EVT_LOGOUT_COMPLETE, PGS_ACC_REASON_NONE);
         return;
       }
     }
   }
 
   if (now_ms >= g_state.logout_started_ms &&
-      (now_ms - g_state.logout_started_ms) > PGR_ACCOUNTS_LOGOUT_TIMEOUT_MS) {
+      (now_ms - g_state.logout_started_ms) > PGS_ACCOUNTS_LOGOUT_TIMEOUT_MS) {
     free_logout_handles_owner();
     g_state.logging_out.store(false, std::memory_order_release);
-    emit_logout_failed_and_clear_identity(PGR_ACC_REASON_LOGOUT_TIMEOUT);
+    emit_logout_failed_and_clear_identity(PGS_ACC_REASON_LOGOUT_TIMEOUT);
   }
 }
 
@@ -588,17 +588,17 @@ struct MutationOutcome {
 void execute_save_session_owner(uint64_t epoch) noexcept {
   MutationOutcome outcome;
   if (!can_mutate_now(epoch)) {
-    emit_simple_event(PGR_ACC_EVT_LOGOUT_FAILED, PGR_ACC_REASON_SESSION_SAVE_UNAVAILABLE);
+    emit_simple_event(PGS_ACC_EVT_LOGOUT_FAILED, PGS_ACC_REASON_SESSION_SAVE_UNAVAILABLE);
     return;
   }
   outcome.attempted = true;
   if (!invoke_checked(g_state.cfg.prefs_save_method, nullptr, nullptr, nullptr)) {
-    emit_simple_event(PGR_ACC_EVT_LOGOUT_FAILED, PGR_ACC_REASON_SESSION_SAVE_UNAVAILABLE);
+    emit_simple_event(PGS_ACC_EVT_LOGOUT_FAILED, PGS_ACC_REASON_SESSION_SAVE_UNAVAILABLE);
     return;
   }
   if (!can_mutate_now(epoch)) return;
   outcome.completed = true;
-  emit_simple_event(PGR_ACC_EVT_SESSION_SAVED, PGR_ACC_REASON_NONE);
+  emit_simple_event(PGS_ACC_EVT_SESSION_SAVED, PGS_ACC_REASON_NONE);
 }
 
 void execute_reset_login_owner(uint64_t epoch) noexcept {
@@ -607,46 +607,46 @@ void execute_reset_login_owner(uint64_t epoch) noexcept {
   for (size_t i = 0; i < 2; ++i) {
     Il2CppString* s = g_state.cfg.string_new(keys[i]);
     if (!s) {
-      emit_simple_event(PGR_ACC_EVT_LOGOUT_FAILED, PGR_ACC_REASON_LOGIN_RESET_UNAVAILABLE);
+      emit_simple_event(PGS_ACC_EVT_LOGOUT_FAILED, PGS_ACC_REASON_LOGIN_RESET_UNAVAILABLE);
       return;
     }
     ScopedGcRoot key_root(reinterpret_cast<Il2CppObject*>(s));
     if (!key_root.handle) {
-      emit_simple_event(PGR_ACC_EVT_LOGOUT_FAILED, PGR_ACC_REASON_LOGIN_RESET_UNAVAILABLE);
+      emit_simple_event(PGS_ACC_EVT_LOGOUT_FAILED, PGS_ACC_REASON_LOGIN_RESET_UNAVAILABLE);
       return;
     }
     Il2CppObject* key_target = key_root.target();
     if (!key_target || !can_mutate_now(epoch)) {
-      emit_simple_event(PGR_ACC_EVT_LOGOUT_FAILED, PGR_ACC_REASON_LOGIN_RESET_UNAVAILABLE);
+      emit_simple_event(PGS_ACC_EVT_LOGOUT_FAILED, PGS_ACC_REASON_LOGIN_RESET_UNAVAILABLE);
       return;
     }
     void* args[1] = {key_target};
     outcome.attempted = true;
     if (!invoke_checked(g_state.cfg.prefs_delete_key_method, nullptr, args, nullptr)) {
-      emit_simple_event(PGR_ACC_EVT_LOGOUT_FAILED, PGR_ACC_REASON_LOGIN_RESET_UNAVAILABLE);
+      emit_simple_event(PGS_ACC_EVT_LOGOUT_FAILED, PGS_ACC_REASON_LOGIN_RESET_UNAVAILABLE);
       return;
     }
     Il2CppObject* refreshed_key = key_root.target();
     if (!refreshed_key) {
-      emit_simple_event(PGR_ACC_EVT_LOGOUT_FAILED, PGR_ACC_REASON_LOGIN_RESET_UNAVAILABLE);
+      emit_simple_event(PGS_ACC_EVT_LOGOUT_FAILED, PGS_ACC_REASON_LOGIN_RESET_UNAVAILABLE);
       return;
     }
     void* has_args[1] = {refreshed_key};
     bool still_has = true;
     if (!invoke_bool_getter(g_state.cfg.prefs_has_key_method, nullptr, has_args, &still_has) ||
         still_has) {
-      emit_simple_event(PGR_ACC_EVT_LOGOUT_FAILED, PGR_ACC_REASON_LOGIN_RESET_NOT_SAVED);
+      emit_simple_event(PGS_ACC_EVT_LOGOUT_FAILED, PGS_ACC_REASON_LOGIN_RESET_NOT_SAVED);
       return;
     }
   }
   if (!can_mutate_now(epoch) ||
       !invoke_checked(g_state.cfg.prefs_save_method, nullptr, nullptr, nullptr)) {
-    emit_simple_event(PGR_ACC_EVT_LOGOUT_FAILED, PGR_ACC_REASON_LOGIN_RESET_UNAVAILABLE);
+    emit_simple_event(PGS_ACC_EVT_LOGOUT_FAILED, PGS_ACC_REASON_LOGIN_RESET_UNAVAILABLE);
     return;
   }
   if (!can_mutate_now(epoch)) return;
   outcome.completed = true;
-  emit_simple_event(PGR_ACC_EVT_LOGIN_RESET_COMPLETE, PGR_ACC_REASON_NONE);
+  emit_simple_event(PGS_ACC_EVT_LOGIN_RESET_COMPLETE, PGS_ACC_REASON_NONE);
 }
 
 bool api_init_impl(const pgs_accounts_config_v1_t* cfg) noexcept {
@@ -694,7 +694,7 @@ bool api_init_impl(const pgs_accounts_config_v1_t* cfg) noexcept {
     // Preserve deferred_clear_requested if true so owner thread finalizes stale roots first.
     g_state.mutation_epoch++;
     g_state.enabled.store(true, std::memory_order_release);
-    push_event_locked(PGR_ACC_EVT_READY, PGR_ACC_REASON_NONE, true, false,
+    push_event_locked(PGS_ACC_EVT_READY, PGS_ACC_REASON_NONE, true, false,
                       nullptr, 0, nullptr, 0);
   }
   return true;
@@ -710,7 +710,7 @@ bool api_update_impl(bool allowed, uint32_t lease_ms,
   const uint64_t now_bt = clock_boottime_ms();
   if (now_bt == 0) return false;
   const uint32_t clamped_lease =
-      lease_ms > PGR_ACCOUNTS_MAX_LEASE_MS ? PGR_ACCOUNTS_MAX_LEASE_MS : lease_ms;
+      lease_ms > PGS_ACCOUNTS_MAX_LEASE_MS ? PGS_ACCOUNTS_MAX_LEASE_MS : lease_ms;
 
   std::lock_guard<std::mutex> lock(g_state.policy_mu);
   if (g_state.queue_overflow_latched || !g_state.enabled.load(std::memory_order_acquire)) {
@@ -719,13 +719,13 @@ bool api_update_impl(bool allowed, uint32_t lease_ms,
   if (!allowed || clamped_lease == 0) {
     g_state.mutation_epoch++;
     g_state.lease_until_ms = 0;
-    g_state.pending_cmd_kind = PGR_ACC_CMD_NONE;
+    g_state.pending_cmd_kind = PGS_ACC_CMD_NONE;
     g_state.pending_cmd_token = 0;
     return true;
   }
   g_state.lease_until_ms = now_bt + clamped_lease;
-  if (cmd_kind == PGR_ACC_CMD_NONE) {
-    g_state.pending_cmd_kind = PGR_ACC_CMD_NONE;
+  if (cmd_kind == PGS_ACC_CMD_NONE) {
+    g_state.pending_cmd_kind = PGS_ACC_CMD_NONE;
     g_state.pending_cmd_token = 0;
   } else if (cmd_token > g_state.last_accepted_token && !g_state.uncertain_op_tainted) {
     g_state.last_accepted_token = cmd_token;
@@ -777,7 +777,7 @@ void api_tick_impl(uint64_t /*caller_now_ms*/, int32_t caller_tid) noexcept {
   if (now_bt == 0 || now_bt < g_state.next_tick_ms) {
     return;
   }
-  g_state.next_tick_ms = now_bt + PGR_ACCOUNTS_TICK_INTERVAL_MS;
+  g_state.next_tick_ms = now_bt + PGS_ACCOUNTS_TICK_INTERVAL_MS;
 
   if (g_state.logging_out.load(std::memory_order_relaxed)) {
     poll_logout_owner(now_bt);
@@ -785,7 +785,7 @@ void api_tick_impl(uint64_t /*caller_now_ms*/, int32_t caller_tid) noexcept {
   }
 
   uint64_t lease_until = 0;
-  uint32_t cmd_kind = PGR_ACC_CMD_NONE;
+  uint32_t cmd_kind = PGS_ACC_CMD_NONE;
   uint64_t cmd_token = 0;
   uint64_t epoch = 0;
   {
@@ -794,14 +794,14 @@ void api_tick_impl(uint64_t /*caller_now_ms*/, int32_t caller_tid) noexcept {
     epoch = g_state.mutation_epoch;
     if (now_bt < lease_until && !g_state.uncertain_op_tainted &&
         !g_state.deferred_clear_requested &&
-        g_state.pending_cmd_kind != PGR_ACC_CMD_NONE &&
+        g_state.pending_cmd_kind != PGS_ACC_CMD_NONE &&
         g_state.pending_cmd_token > g_state.last_consumed_token) {
       cmd_kind = g_state.pending_cmd_kind;
       cmd_token = g_state.pending_cmd_token;
-      if (cmd_kind == PGR_ACC_CMD_SAVE_SESSION ||
-          cmd_kind == PGR_ACC_CMD_RESET_LOGIN) {
+      if (cmd_kind == PGS_ACC_CMD_SAVE_SESSION ||
+          cmd_kind == PGS_ACC_CMD_RESET_LOGIN) {
         g_state.last_consumed_token = cmd_token;
-        g_state.pending_cmd_kind = PGR_ACC_CMD_NONE;
+        g_state.pending_cmd_kind = PGS_ACC_CMD_NONE;
         g_state.pending_cmd_token = 0;
       }
     }
@@ -811,12 +811,12 @@ void api_tick_impl(uint64_t /*caller_now_ms*/, int32_t caller_tid) noexcept {
     return;
   }
 
-  if (cmd_kind == PGR_ACC_CMD_SAVE_SESSION) {
+  if (cmd_kind == PGS_ACC_CMD_SAVE_SESSION) {
     execute_save_session_owner(epoch);
     return;
   }
 
-  if (cmd_kind == PGR_ACC_CMD_RESET_LOGIN) {
+  if (cmd_kind == PGS_ACC_CMD_RESET_LOGIN) {
     execute_reset_login_owner(epoch);
     return;
   }
@@ -830,9 +830,9 @@ void api_tick_impl(uint64_t /*caller_now_ms*/, int32_t caller_tid) noexcept {
   bool is_conn = false;
   if (!auth_obj || !invoke_bool_getter(g_state.cfg.auth_get_connected_method,
                                        auth_obj, nullptr, &is_conn)) {
-    g_state.next_tick_ms = now_bt + PGR_ACCOUNTS_ERROR_BACKOFF_MS;
+    g_state.next_tick_ms = now_bt + PGS_ACCOUNTS_ERROR_BACKOFF_MS;
     report_identity_gate("auth-state-read-failed",now_bt);
-    emit_simple_event(PGR_ACC_EVT_READ_ERROR, PGR_ACC_REASON_MISSING_AUTH_STATE);
+    emit_simple_event(PGS_ACC_EVT_READ_ERROR, PGS_ACC_REASON_MISSING_AUTH_STATE);
     return;
   }
   if (!is_conn) {
@@ -849,9 +849,9 @@ void api_tick_impl(uint64_t /*caller_now_ms*/, int32_t caller_tid) noexcept {
   Il2CppObject* id_obj = nullptr;
   if (!player_obj || !invoke_checked(g_state.cfg.player_get_id_method,
                                      player_obj, nullptr, &id_obj)) {
-    g_state.next_tick_ms = now_bt + PGR_ACCOUNTS_ERROR_BACKOFF_MS;
+    g_state.next_tick_ms = now_bt + PGS_ACCOUNTS_ERROR_BACKOFF_MS;
     report_identity_gate("identity-read-failed",now_bt);
-    emit_simple_event(PGR_ACC_EVT_READ_ERROR, PGR_ACC_REASON_INVOCATION_EXCEPTION);
+    emit_simple_event(PGS_ACC_EVT_READ_ERROR, PGS_ACC_REASON_INVOCATION_EXCEPTION);
     return;
   }
   ScopedGcRoot id_root(id_obj);
@@ -860,15 +860,15 @@ void api_tick_impl(uint64_t /*caller_now_ms*/, int32_t caller_tid) noexcept {
   Il2CppObject* name_obj = nullptr;
   if (!player_obj || !invoke_checked(g_state.cfg.player_get_name_method,
                                      player_obj, nullptr, &name_obj)) {
-    g_state.next_tick_ms = now_bt + PGR_ACCOUNTS_ERROR_BACKOFF_MS;
+    g_state.next_tick_ms = now_bt + PGS_ACCOUNTS_ERROR_BACKOFF_MS;
     report_identity_gate("identity-read-failed",now_bt);
-    emit_simple_event(PGR_ACC_EVT_READ_ERROR, PGR_ACC_REASON_INVOCATION_EXCEPTION);
+    emit_simple_event(PGS_ACC_EVT_READ_ERROR, PGS_ACC_REASON_INVOCATION_EXCEPTION);
     return;
   }
   ScopedGcRoot name_root(name_obj);
 
-  uint16_t id_buf[PGR_ACCOUNTS_MAX_UTF16]{};
-  uint16_t name_buf[PGR_ACCOUNTS_MAX_UTF16]{};
+  uint16_t id_buf[PGS_ACCOUNTS_MAX_UTF16]{};
+  uint16_t name_buf[PGS_ACCOUNTS_MAX_UTF16]{};
   uint16_t id_len = 0;
   uint16_t name_len = 0;
   if (!read_utf16_bounded(id_root.target(), id_buf, &id_len) ||
@@ -878,25 +878,25 @@ void api_tick_impl(uint64_t /*caller_now_ms*/, int32_t caller_tid) noexcept {
 
   report_identity_gate("identity-observed",now_bt);
 
-  if (cmd_kind == PGR_ACC_CMD_LOGOUT) {
+  if (cmd_kind == PGS_ACC_CMD_LOGOUT) {
     ScopedGcRoot wrapper_root;
     if (!resolve_service_owner(g_state.cfg.wrapper_contract_class,
                                g_state.cfg.wrapper_class, &wrapper_root)) {
-      g_state.next_tick_ms = now_bt + PGR_ACCOUNTS_ERROR_BACKOFF_MS;
-      emit_simple_event(PGR_ACC_EVT_READ_ERROR, PGR_ACC_REASON_LOGOUT_WRAPPER_INVALID);
+      g_state.next_tick_ms = now_bt + PGS_ACCOUNTS_ERROR_BACKOFF_MS;
+      emit_simple_event(PGS_ACC_EVT_READ_ERROR, PGS_ACC_REASON_LOGOUT_WRAPPER_INVALID);
       return;
     }
     Il2CppObject* refreshed_auth = auth_root.target();
     if (!refreshed_auth || !wrapper_root.target()) {
-      g_state.next_tick_ms = now_bt + PGR_ACCOUNTS_ERROR_BACKOFF_MS;
-      emit_simple_event(PGR_ACC_EVT_READ_ERROR, PGR_ACC_REASON_LOGOUT_WRAPPER_INVALID);
+      g_state.next_tick_ms = now_bt + PGS_ACCOUNTS_ERROR_BACKOFF_MS;
+      emit_simple_event(PGS_ACC_EVT_READ_ERROR, PGS_ACC_REASON_LOGOUT_WRAPPER_INVALID);
       return;
     }
     free_logout_handles_owner();
     g_state.auth_handle = alloc_gc_handle_owner(refreshed_auth);
     if (!g_state.auth_handle) {
-      g_state.next_tick_ms = now_bt + PGR_ACCOUNTS_ERROR_BACKOFF_MS;
-      emit_simple_event(PGR_ACC_EVT_READ_ERROR, PGR_ACC_REASON_LOGOUT_AUTH_INVALID);
+      g_state.next_tick_ms = now_bt + PGS_ACCOUNTS_ERROR_BACKOFF_MS;
+      emit_simple_event(PGS_ACC_EVT_READ_ERROR, PGS_ACC_REASON_LOGOUT_AUTH_INVALID);
       return;
     }
 
@@ -910,19 +910,19 @@ void api_tick_impl(uint64_t /*caller_now_ms*/, int32_t caller_tid) noexcept {
           !g_state.deferred_clear_requested &&
           !g_state.uncertain_op_tainted &&
           g_state.mutation_epoch == epoch &&
-          g_state.pending_cmd_kind == PGR_ACC_CMD_LOGOUT &&
+          g_state.pending_cmd_kind == PGS_ACC_CMD_LOGOUT &&
           g_state.pending_cmd_token == cmd_token &&
           cmd_token > g_state.last_consumed_token &&
           pre_call_bt != 0 && pre_call_bt < g_state.lease_until_ms) {
         g_state.last_consumed_token = cmd_token;
-        g_state.pending_cmd_kind = PGR_ACC_CMD_NONE;
+        g_state.pending_cmd_kind = PGS_ACC_CMD_NONE;
         g_state.pending_cmd_token = 0;
         can_proceed = true;
       }
     }
     if (!can_proceed) {
       free_logout_handles_owner();
-      emit_simple_event(PGR_ACC_EVT_LOGOUT_FAILED, PGR_ACC_REASON_LEASE_EXPIRED);
+      emit_simple_event(PGS_ACC_EVT_LOGOUT_FAILED, PGS_ACC_REASON_LEASE_EXPIRED);
       return;
     }
 
@@ -944,10 +944,10 @@ void api_tick_impl(uint64_t /*caller_now_ms*/, int32_t caller_tid) noexcept {
     if (!ok) {
       free_logout_handles_owner();
       g_state.logging_out.store(false, std::memory_order_release);
-      emit_logout_failed_and_clear_identity(PGR_ACC_REASON_INVOCATION_EXCEPTION);
+      emit_logout_failed_and_clear_identity(PGS_ACC_REASON_INVOCATION_EXCEPTION);
       return;
     }
-    emit_simple_event(PGR_ACC_EVT_LOGOUT_REQUESTED, PGR_ACC_REASON_NONE,
+    emit_simple_event(PGS_ACC_EVT_LOGOUT_REQUESTED, PGS_ACC_REASON_NONE,
                       false, g_state.future_handle != 0);
     return;
   }
@@ -964,7 +964,7 @@ void api_tick_impl(uint64_t /*caller_now_ms*/, int32_t caller_tid) noexcept {
     const bool same_id =
         g_state.snap_has_identity && g_state.snap_id_len == id_len &&
         std::memcmp(g_state.snap_id, id_buf, static_cast<size_t>(id_len) * sizeof(uint16_t)) == 0;
-    if (!same_id || (publish_bt - g_state.snap_last_identity_ms) >= PGR_ACCOUNTS_IDENTITY_HEARTBEAT_MS) {
+    if (!same_id || (publish_bt - g_state.snap_last_identity_ms) >= PGS_ACCOUNTS_IDENTITY_HEARTBEAT_MS) {
       g_state.snap_has_identity = true;
       g_state.snap_id_len = id_len;
       g_state.snap_name_len = name_len;
@@ -973,7 +973,7 @@ void api_tick_impl(uint64_t /*caller_now_ms*/, int32_t caller_tid) noexcept {
       std::memcpy(g_state.snap_id, id_buf, static_cast<size_t>(id_len) * sizeof(uint16_t));
       std::memcpy(g_state.snap_name, name_buf, static_cast<size_t>(name_len) * sizeof(uint16_t));
       g_state.snap_last_identity_ms = publish_bt;
-      push_event_locked(PGR_ACC_EVT_IDENTITY, PGR_ACC_REASON_NONE, true, false,
+      push_event_locked(PGS_ACC_EVT_IDENTITY, PGS_ACC_REASON_NONE, true, false,
                         id_buf, id_len, name_buf, name_len);
     }
   }
@@ -991,7 +991,7 @@ bool api_clear_impl() noexcept {
     std::lock_guard<std::mutex> lock(g_state.policy_mu);
     g_state.mutation_epoch++;
     g_state.lease_until_ms = 0;
-    g_state.pending_cmd_kind = PGR_ACC_CMD_NONE;
+    g_state.pending_cmd_kind = PGS_ACC_CMD_NONE;
     g_state.pending_cmd_token = 0;
     clear_identity_locked();
     if (g_state.logging_out.load(std::memory_order_relaxed) ||
@@ -1038,16 +1038,16 @@ size_t api_drain_impl(pgs_account_event_v1_t* out_events, size_t max_events) noe
   std::lock_guard<std::mutex> lock(g_state.policy_mu);
   const size_t n = g_state.ring_count < max_events ? g_state.ring_count : max_events;
   for (size_t i = 0; i < n; ++i) {
-    const size_t idx = (g_state.ring_head + i) % PGR_ACCOUNTS_EVENT_QUEUE_CAP;
+    const size_t idx = (g_state.ring_head + i) % PGS_ACCOUNTS_EVENT_QUEUE_CAP;
     out_events[i] = g_state.ring[idx];
   }
-  g_state.ring_head = (g_state.ring_head + n) % PGR_ACCOUNTS_EVENT_QUEUE_CAP;
+  g_state.ring_head = (g_state.ring_head + n) % PGS_ACCOUNTS_EVENT_QUEUE_CAP;
   g_state.ring_count -= n;
   return n;
 }
 
 const pgs_accounts_api_v1_t kAccountsApiV1 = {
-    PGR_ACCOUNTS_API_VERSION,
+    PGS_ACCOUNTS_API_VERSION,
     static_cast<uint32_t>(sizeof(pgs_accounts_api_v1_t)),
     &api_init_impl,
     &api_update_impl,
@@ -1060,7 +1060,7 @@ const pgs_accounts_api_v1_t kAccountsApiV1 = {
 }  // namespace
 
 extern "C" const pgs_accounts_api_v1_t* pgs_accounts_api(uint32_t version) {
-  if (version != PGR_ACCOUNTS_API_VERSION) {
+  if (version != PGS_ACCOUNTS_API_VERSION) {
     return nullptr;
   }
   return &kAccountsApiV1;

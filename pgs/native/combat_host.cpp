@@ -132,7 +132,7 @@ PgrSharedMetadataOutput g_md{};
 const PgrRocketMiniApi         *g_rocket_mini    = nullptr;
 const pgr_rocket_actions_api_v1 *g_rocket_actions = nullptr;
 const pgr_rocket_combat_api_v1 *g_rocket_combat  = nullptr;
-const pgr_battle_api_v1        *g_battles        = nullptr;
+const pgs_battle_api_v1        *g_battles        = nullptr;
 
 std::array<std::atomic<void *>, HK_COUNT> g_originals{};
 std::array<void *, HK_COUNT> g_hook_targets{};
@@ -440,14 +440,14 @@ void drain_leaf_events(uint64_t tid) {
     }
 
     if ((caps & PGR_CBH_CAP_BATTLES) && g_battles) {
-        pgr_battle_event_v1 bev{};
+        pgs_battle_event_v1 bev{};
         for (int i = 0; i < 64 && g_battles->next_event(&bev) == 1; ++i) {
             char buf[256];
             switch (bev.code) {
-                case PGR_BATTLE_EVT_READY:
+                case PGS_BATTLE_EVT_READY:
                     queue_event(PGR_CBH_EV_BATTLES_READY, 1, 0, tid, "{\"available\":true}");
                     break;
-                case PGR_BATTLE_EVT_SCOPE:
+                case PGS_BATTLE_EVT_SCOPE:
                     std::snprintf(buf, sizeof(buf), "{\"mode\":%d,\"active\":%s}",
                                   bev.id, bev.aux ? "true" : "false");
                     queue_event(PGR_CBH_EV_BATTLE_SCOPE, bev.id, bev.aux, tid, buf);
@@ -458,7 +458,7 @@ void drain_leaf_events(uint64_t tid) {
                         transport_text_action(24, "Ready");
                     }
                     break;
-                case PGR_BATTLE_EVT_INPUT:
+                case PGS_BATTLE_EVT_INPUT:
                     if (bev.aux & 2) {
                         std::snprintf(buf, sizeof(buf),
                                       "{\"mode\":%d,\"legacy\":%s,\"source\":\"scope\"}",
@@ -469,17 +469,17 @@ void drain_leaf_events(uint64_t tid) {
                     }
                     queue_event(PGR_CBH_EV_BATTLE_INPUT, bev.id, bev.aux, tid, buf);
                     break;
-                case PGR_BATTLE_EVT_ENDED:
+                case PGS_BATTLE_EVT_ENDED:
                     std::snprintf(buf, sizeof(buf), "{\"mode\":%d,\"status\":%d}",
                                   bev.id, bev.aux);
                     queue_event(PGR_CBH_EV_BATTLE_ENDED, bev.id, bev.aux, tid, buf);
                     transport_text_action(24, "Battle ended");
                     break;
-                case PGR_BATTLE_EVT_DODGE_CUE:
+                case PGS_BATTLE_EVT_DODGE_CUE:
                     std::snprintf(buf, sizeof(buf), "{\"mode\":%d}", bev.id);
                     queue_event(PGR_CBH_EV_BATTLE_DODGE_CUE, bev.id, 0, tid, buf);
                     break;
-                case PGR_BATTLE_EVT_ACTION: {
+                case PGS_BATTLE_EVT_ACTION: {
                     static const char *const kActions[5] = {
                         "quick", "charged", "dodge", "max-attack", "max-orb-move"
                     };
@@ -491,7 +491,7 @@ void drain_leaf_events(uint64_t tid) {
                     transport_text_action(24, buf);
                     break;
                 }
-                case PGR_BATTLE_EVT_SWITCH:
+                case PGS_BATTLE_EVT_SWITCH:
                     std::snprintf(buf, sizeof(buf), "{\"mode\":%d,\"active\":%s}",
                                   bev.id, bev.aux ? "true" : "false");
                     queue_event(PGR_CBH_EV_BATTLE_MANUAL_SWITCH, bev.id, bev.aux, tid, buf);
@@ -499,7 +499,7 @@ void drain_leaf_events(uint64_t tid) {
                         transport_text_action(24, "Paused: swap menu open");
                     }
                     break;
-                case PGR_BATTLE_EVT_ERROR:
+                case PGS_BATTLE_EVT_ERROR:
                     std::snprintf(buf, sizeof(buf),
                                   "{\"mode\":%d,\"reason\":\"native-managed-invoke\"}",
                                   bev.id);
@@ -515,7 +515,7 @@ void drain_leaf_events(uint64_t tid) {
 
 void emit_gym_cooldown(uint64_t tid) {
     g_gym_cooldown_serial.fetch_add(1, std::memory_order_release);
-    queue_event(PGR_CBH_EV_COOLDOWN_ACTION, PGR_BATTLE_MODE_GYM, 0, tid,
+    queue_event(PGR_CBH_EV_COOLDOWN_ACTION, PGS_BATTLE_MODE_GYM, 0, tid,
                 "{\"action\":\"Gym battle\"}");
     transport_text_action(17, "Gym battle");
 }
@@ -644,7 +644,7 @@ void hook_shared_vn_observe(void *self,void *battle_state,void *method){
  if(!observation_allowed(&tid)){orig(self,battle_state,method);return;}PinnedArgs pins{self,battle_state};
  if(pins.valid&&observation_allowed(&tid)){
   if(rocket_gate(&tid))g_rocket_combat->observe(PGR_RC_OBS_CHARGE,pins.get(0),0,tid);
-  if(battle_gate(&tid))g_battles->observe(PGR_BATTLE_OBS_CHARGE,pins.get(0),0,tid);drain_leaf_events(tid);
+  if(battle_gate(&tid))g_battles->observe(PGS_BATTLE_OBS_CHARGE,pins.get(0),0,tid);drain_leaf_events(tid);
  }orig(pins.get(0),pins.get(1),method);
 }
 template<HookSlot SLOT,uint32_t KIND,int DESC> void hook_bt_2arg(void *self,void *method){
@@ -669,12 +669,12 @@ template<HookSlot SLOT,uint32_t KIND,int DESC> void hook_bt_4arg(void *self,void
 void hook_bt_leg_init(void *self,void *p1,void *p2,PgrVec3Val pos,void *method){
  auto orig=reinterpret_cast<FnLegInitPtr>(load_original(HK_BT_LEG_INIT));FrameGuard frame;uint64_t tid=0;
  if(!battle_gate(&tid)){orig(self,p1,p2,pos,method);return;}PinnedArgs pins{self,p1,p2};
- if(pins.valid&&battle_gate(&tid)){g_battles->observe(PGR_BATTLE_OBS_CHARGE,pins.get(0),1,tid);drain_leaf_events(tid);}orig(pins.get(0),pins.get(1),pins.get(2),pos,method);
+ if(pins.valid&&battle_gate(&tid)){g_battles->observe(PGS_BATTLE_OBS_CHARGE,pins.get(0),1,tid);drain_leaf_events(tid);}orig(pins.get(0),pins.get(1),pins.get(2),pos,method);
 }
 void hook_bt_max_warn(void *self,float seconds,void *method){
  auto orig=reinterpret_cast<FnPtrF32Ptr>(load_original(HK_BT_MAX_WARN));FrameGuard frame;uint64_t tid=0;
  if(!battle_gate(&tid)){orig(self,seconds,method);return;}PinnedArgs pins{self};
- if(pins.valid&&battle_gate(&tid)){g_battles->observe(PGR_BATTLE_OBS_WARNING,pins.get(0),PGR_BATTLE_MODE_MAX,tid);drain_leaf_events(tid);}orig(pins.get(0),seconds,method);
+ if(pins.valid&&battle_gate(&tid)){g_battles->observe(PGS_BATTLE_OBS_WARNING,pins.get(0),PGS_BATTLE_MODE_MAX,tid);drain_leaf_events(tid);}orig(pins.get(0),seconds,method);
 }
 uint8_t hook_bt_gym_warn(void *self,void *method){
  auto orig=reinterpret_cast<FnRetBoolPtr>(load_original(HK_BT_GYM_WARN));FrameGuard frame;uint64_t tid=0;
@@ -685,12 +685,12 @@ uint8_t hook_bt_gym_warn(void *self,void *method){
 }
 void hook_bt_leg_fast(void *self,void *sender,void *args,void *method){
  auto orig=reinterpret_cast<Fn4Ptr>(load_original(HK_BT_LEG_FAST));FrameGuard frame;uint64_t tid=0;
- if(battle_gate(&tid)){pgr_battle_sample_v1 sample{};if(g_battles->sample(&sample)==0&&sample.scope_active&&sample.mode==PGR_BATTLE_MODE_GYM)emit_gym_cooldown(tid);}
+ if(battle_gate(&tid)){pgs_battle_sample_v1 sample{};if(g_battles->sample(&sample)==0&&sample.scope_active&&sample.mode==PGS_BATTLE_MODE_GYM)emit_gym_cooldown(tid);}
  orig(self,sender,args,method); // telemetry is callback-free; no managed work before original
 }
 void hook_bt_leg_charge(void *self,void *method){
  auto orig=reinterpret_cast<Fn2Ptr>(load_original(HK_BT_LEG_CHARGE));FrameGuard frame;uint64_t tid=0;
- if(battle_gate(&tid)){pgr_battle_sample_v1 sample{};if(g_battles->sample(&sample)==0&&sample.scope_active&&sample.mode==PGR_BATTLE_MODE_GYM)emit_gym_cooldown(tid);}orig(self,method);
+ if(battle_gate(&tid)){pgs_battle_sample_v1 sample{};if(g_battles->sample(&sample)==0&&sample.scope_active&&sample.mode==PGS_BATTLE_MODE_GYM)emit_gym_cooldown(tid);}orig(self,method);
 }
 
 // The next-opponent dialog is separate from the active battle scope. Capture its
@@ -1007,13 +1007,13 @@ bool configure_and_install_rocket(uint64_t tid) {
 bool configure_and_install_battles() {
     if (g_md.optional[OPT_BATTLES] != PGR_SHARED_OPT_AVAILABLE) return false;
 
-    g_battles = api_table<pgr_battle_api_v1>(pgs_battles_api(1));
+    g_battles = api_table<pgs_battle_api_v1>(pgs_battles_api(1));
     if (!g_battles || g_battles->version != 1 ||
-        g_battles->size != sizeof(pgr_battle_api_v1)) {
+        g_battles->size != sizeof(pgs_battle_api_v1)) {
         return false;
     }
 
-    pgr_battle_config_v1 bt_cfg{};
+    pgs_battle_config_v1 bt_cfg{};
     bt_cfg.version             = 1;
     bt_cfg.size                = sizeof(bt_cfg);
     bt_cfg.gchandle_new        = reinterpret_cast<void *>(g_cfg.gchandle_new);
@@ -1066,14 +1066,14 @@ bool configure_and_install_battles() {
     bt_cfg.class_bool          = md_c(6);
 
     // Scopes: 0 = Raid (31514), 1 = Gym (10591), 2 = Max (31244)
-    bt_cfg.scopes[0] = {md_h(H_BT_SC0_CLASS), PGR_BATTLE_MODE_RAID, 0};
-    bt_cfg.scopes[1] = {md_h(H_BT_SC1_CLASS), PGR_BATTLE_MODE_GYM,  0};
-    bt_cfg.scopes[2] = {md_h(H_BT_SC2_CLASS), PGR_BATTLE_MODE_MAX,  0};
+    bt_cfg.scopes[0] = {md_h(H_BT_SC0_CLASS), PGS_BATTLE_MODE_RAID, 0};
+    bt_cfg.scopes[1] = {md_h(H_BT_SC1_CLASS), PGS_BATTLE_MODE_GYM,  0};
+    bt_cfg.scopes[2] = {md_h(H_BT_SC2_CLASS), PGS_BATTLE_MODE_MAX,  0};
 
     // Swaps (matches quick-close.js:695: 0=gym 9322 mode 1, 1=raid 31639 mode 0, 2=max 31337 mode 2)
-    bt_cfg.swaps[0] = {md_h(H_BT_SW0_CLASS), md_h(H_BT_SW0_SHOW_M), PGR_BATTLE_MODE_GYM,  0};
-    bt_cfg.swaps[1] = {md_h(H_BT_SW1_CLASS), md_h(H_BT_SW1_SHOW_M), PGR_BATTLE_MODE_RAID, 0};
-    bt_cfg.swaps[2] = {md_h(H_BT_SW2_CLASS), md_h(H_BT_SW2_SHOW_M), PGR_BATTLE_MODE_MAX,  0};
+    bt_cfg.swaps[0] = {md_h(H_BT_SW0_CLASS), md_h(H_BT_SW0_SHOW_M), PGS_BATTLE_MODE_GYM,  0};
+    bt_cfg.swaps[1] = {md_h(H_BT_SW1_CLASS), md_h(H_BT_SW1_SHOW_M), PGS_BATTLE_MODE_RAID, 0};
+    bt_cfg.swaps[2] = {md_h(H_BT_SW2_CLASS), md_h(H_BT_SW2_SHOW_M), PGS_BATTLE_MODE_MAX,  0};
 
     bt_cfg.status_active = g_md.opt_ints[I_BAT_STATUS_ACTIVE];
     bt_cfg.status_unset  = g_md.opt_ints[I_BAT_STATUS_UNSET];
@@ -1084,71 +1084,71 @@ bool configure_and_install_battles() {
     bt_cfg.max_orb_direction = pgr_max_orb_direction;
     pgr_max_orbs_prepare(bt_cfg.m_dodge);
 
-    if (g_battles->install(&bt_cfg) != PGR_BATTLE_OK) {
+    if (g_battles->install(&bt_cfg) != PGS_BATTLE_OK) {
         return false;
     }
 
     const HookEntry bt_entries[30] = {
         // Scopes (6)
         {HK_BT_SC0_ENTER, md_h(H_BT_SC0_ENTER_CODE),
-         reinterpret_cast<void *>(hook_bt_4arg<HK_BT_SC0_ENTER, PGR_BATTLE_OBS_SCOPE_ENTER, 0>)},
+         reinterpret_cast<void *>(hook_bt_4arg<HK_BT_SC0_ENTER, PGS_BATTLE_OBS_SCOPE_ENTER, 0>)},
         {HK_BT_SC0_EXIT,  md_h(H_BT_SC0_EXIT_CODE),
-         reinterpret_cast<void *>(hook_bt_2arg<HK_BT_SC0_EXIT,  PGR_BATTLE_OBS_SCOPE_EXIT,  0>)},
+         reinterpret_cast<void *>(hook_bt_2arg<HK_BT_SC0_EXIT,  PGS_BATTLE_OBS_SCOPE_EXIT,  0>)},
         {HK_BT_SC1_ENTER, md_h(H_BT_SC1_ENTER_CODE),
-         reinterpret_cast<void *>(hook_bt_2arg<HK_BT_SC1_ENTER, PGR_BATTLE_OBS_SCOPE_ENTER, 1>)},
+         reinterpret_cast<void *>(hook_bt_2arg<HK_BT_SC1_ENTER, PGS_BATTLE_OBS_SCOPE_ENTER, 1>)},
         {HK_BT_SC1_EXIT,  md_h(H_BT_SC1_EXIT_CODE),
-         reinterpret_cast<void *>(hook_bt_2arg<HK_BT_SC1_EXIT,  PGR_BATTLE_OBS_SCOPE_EXIT,  1>)},
+         reinterpret_cast<void *>(hook_bt_2arg<HK_BT_SC1_EXIT,  PGS_BATTLE_OBS_SCOPE_EXIT,  1>)},
         {HK_BT_SC2_ENTER, md_h(H_BT_SC2_ENTER_CODE),
-         reinterpret_cast<void *>(hook_bt_4arg<HK_BT_SC2_ENTER, PGR_BATTLE_OBS_SCOPE_ENTER, 2>)},
+         reinterpret_cast<void *>(hook_bt_4arg<HK_BT_SC2_ENTER, PGS_BATTLE_OBS_SCOPE_ENTER, 2>)},
         {HK_BT_SC2_EXIT,  md_h(H_BT_SC2_EXIT_CODE),
-         reinterpret_cast<void *>(hook_bt_2arg<HK_BT_SC2_EXIT,  PGR_BATTLE_OBS_SCOPE_EXIT,  2>)},
+         reinterpret_cast<void *>(hook_bt_2arg<HK_BT_SC2_EXIT,  PGS_BATTLE_OBS_SCOPE_EXIT,  2>)},
 
         // Swaps (9)
         {HK_BT_SW0_OPEN, md_h(H_BT_SW0_OPEN_CODE),
-         reinterpret_cast<void *>(hook_bt_2arg<HK_BT_SW0_OPEN, PGR_BATTLE_OBS_SWAP_OPEN,  0>)},
+         reinterpret_cast<void *>(hook_bt_2arg<HK_BT_SW0_OPEN, PGS_BATTLE_OBS_SWAP_OPEN,  0>)},
         {HK_BT_SW0_CL0,  md_h(H_BT_SW0_CL0_CODE),
-         reinterpret_cast<void *>(hook_bt_2arg<HK_BT_SW0_CL0,  PGR_BATTLE_OBS_SWAP_CLOSE, 0>)},
+         reinterpret_cast<void *>(hook_bt_2arg<HK_BT_SW0_CL0,  PGS_BATTLE_OBS_SWAP_CLOSE, 0>)},
         {HK_BT_SW0_CL1,  md_h(H_BT_SW0_CL1_CODE),
-         reinterpret_cast<void *>(hook_bt_2arg<HK_BT_SW0_CL1,  PGR_BATTLE_OBS_SWAP_CLOSE, 0>)},
+         reinterpret_cast<void *>(hook_bt_2arg<HK_BT_SW0_CL1,  PGS_BATTLE_OBS_SWAP_CLOSE, 0>)},
         {HK_BT_SW1_OPEN, md_h(H_BT_SW1_OPEN_CODE),
-         reinterpret_cast<void *>(hook_bt_2arg<HK_BT_SW1_OPEN, PGR_BATTLE_OBS_SWAP_OPEN,  1>)},
+         reinterpret_cast<void *>(hook_bt_2arg<HK_BT_SW1_OPEN, PGS_BATTLE_OBS_SWAP_OPEN,  1>)},
         {HK_BT_SW1_CL0,  md_h(H_BT_SW1_CL0_CODE),
-         reinterpret_cast<void *>(hook_bt_2arg<HK_BT_SW1_CL0,  PGR_BATTLE_OBS_SWAP_CLOSE, 1>)},
+         reinterpret_cast<void *>(hook_bt_2arg<HK_BT_SW1_CL0,  PGS_BATTLE_OBS_SWAP_CLOSE, 1>)},
         {HK_BT_SW1_CL1,  md_h(H_BT_SW1_CL1_CODE),
-         reinterpret_cast<void *>(hook_bt_2arg<HK_BT_SW1_CL1,  PGR_BATTLE_OBS_SWAP_CLOSE, 1>)},
+         reinterpret_cast<void *>(hook_bt_2arg<HK_BT_SW1_CL1,  PGS_BATTLE_OBS_SWAP_CLOSE, 1>)},
         {HK_BT_SW2_OPEN, md_h(H_BT_SW2_OPEN_CODE),
-         reinterpret_cast<void *>(hook_bt_2arg<HK_BT_SW2_OPEN, PGR_BATTLE_OBS_SWAP_OPEN,  2>)},
+         reinterpret_cast<void *>(hook_bt_2arg<HK_BT_SW2_OPEN, PGS_BATTLE_OBS_SWAP_OPEN,  2>)},
         {HK_BT_SW2_CL0,  md_h(H_BT_SW2_CL0_CODE),
-         reinterpret_cast<void *>(hook_bt_2arg<HK_BT_SW2_CL0,  PGR_BATTLE_OBS_SWAP_CLOSE, 2>)},
+         reinterpret_cast<void *>(hook_bt_2arg<HK_BT_SW2_CL0,  PGS_BATTLE_OBS_SWAP_CLOSE, 2>)},
         {HK_BT_SW2_CL1,  md_h(H_BT_SW2_CL1_CODE),
-         reinterpret_cast<void *>(hook_bt_2arg<HK_BT_SW2_CL1,  PGR_BATTLE_OBS_SWAP_CLOSE, 2>)},
+         reinterpret_cast<void *>(hook_bt_2arg<HK_BT_SW2_CL1,  PGS_BATTLE_OBS_SWAP_CLOSE, 2>)},
 
         // Gestures (7)
         {HK_BT_ENABLE,      md_h(H_BT_M_ENABLE_CODE),
-         reinterpret_cast<void *>(hook_bt_2arg<HK_BT_ENABLE,      PGR_BATTLE_OBS_GESTURE,      0>)},
+         reinterpret_cast<void *>(hook_bt_2arg<HK_BT_ENABLE,      PGS_BATTLE_OBS_GESTURE,      0>)},
         {HK_BT_BUTTONS,     md_h(H_BT_M_BUTTONS_CODE),
-         reinterpret_cast<void *>(hook_bt_3arg<HK_BT_BUTTONS,     PGR_BATTLE_OBS_GESTURE,      0>)},
+         reinterpret_cast<void *>(hook_bt_3arg<HK_BT_BUTTONS,     PGS_BATTLE_OBS_GESTURE,      0>)},
         {HK_BT_LEG_ENABLE,  md_h(H_BT_M_LEG_ENABLE_CODE),
-         reinterpret_cast<void *>(hook_bt_2arg<HK_BT_LEG_ENABLE,  PGR_BATTLE_OBS_GESTURE,      1>)},
+         reinterpret_cast<void *>(hook_bt_2arg<HK_BT_LEG_ENABLE,  PGS_BATTLE_OBS_GESTURE,      1>)},
         {HK_BT_LEG_BUTTONS, md_h(H_BT_M_LEG_BUTTONS_CODE),
-         reinterpret_cast<void *>(hook_bt_3arg<HK_BT_LEG_BUTTONS, PGR_BATTLE_OBS_GESTURE,      1>)},
+         reinterpret_cast<void *>(hook_bt_3arg<HK_BT_LEG_BUTTONS, PGS_BATTLE_OBS_GESTURE,      1>)},
         {HK_BT_DISABLE,     md_h(H_BT_M_DISABLE_CODE),
-         reinterpret_cast<void *>(hook_bt_2arg<HK_BT_DISABLE,     PGR_BATTLE_OBS_GESTURE_DROP, 0>)},
+         reinterpret_cast<void *>(hook_bt_2arg<HK_BT_DISABLE,     PGS_BATTLE_OBS_GESTURE_DROP, 0>)},
         {HK_BT_LEG_DISABLE, md_h(H_BT_M_LEG_DISABLE_CODE),
-         reinterpret_cast<void *>(hook_bt_2arg<HK_BT_LEG_DISABLE, PGR_BATTLE_OBS_GESTURE_DROP, 0>)},
+         reinterpret_cast<void *>(hook_bt_2arg<HK_BT_LEG_DISABLE, PGS_BATTLE_OBS_GESTURE_DROP, 0>)},
         {HK_BT_DESTROY,     md_h(H_BT_M_DESTROY_CODE),
-         reinterpret_cast<void *>(hook_bt_2arg<HK_BT_DESTROY,     PGR_BATTLE_OBS_GESTURE_DROP, 0>)},
+         reinterpret_cast<void *>(hook_bt_2arg<HK_BT_DESTROY,     PGS_BATTLE_OBS_GESTURE_DROP, 0>)},
 
         // Charges & Max Widgets (3)
         {HK_BT_LEG_INIT,    md_h(H_BT_M_LEG_INIT_CODE),    reinterpret_cast<void *>(hook_bt_leg_init)},
         {HK_BT_MAX_REFRESH, md_h(H_BT_M_MAX_REFRESH_CODE),
-         reinterpret_cast<void *>(hook_bt_3arg<HK_BT_MAX_REFRESH, PGR_BATTLE_OBS_MAX_REFRESH, 0>)},
+         reinterpret_cast<void *>(hook_bt_3arg<HK_BT_MAX_REFRESH, PGS_BATTLE_OBS_MAX_REFRESH, 0>)},
         {HK_BT_MAX_CLEANUP, md_h(H_BT_M_MAX_CLEANUP_CODE),
-         reinterpret_cast<void *>(hook_bt_2arg<HK_BT_MAX_CLEANUP, PGR_BATTLE_OBS_MAX_CLEANUP, 0>)},
+         reinterpret_cast<void *>(hook_bt_2arg<HK_BT_MAX_CLEANUP, PGS_BATTLE_OBS_MAX_CLEANUP, 0>)},
 
         // Warnings (3)
         {HK_BT_RAID_WARN, md_h(H_BT_M_RAID_WARN_CODE),
-         reinterpret_cast<void *>(hook_bt_2arg<HK_BT_RAID_WARN, PGR_BATTLE_OBS_WARNING, PGR_BATTLE_MODE_RAID>)},
+         reinterpret_cast<void *>(hook_bt_2arg<HK_BT_RAID_WARN, PGS_BATTLE_OBS_WARNING, PGS_BATTLE_MODE_RAID>)},
         {HK_BT_MAX_WARN,  md_h(H_BT_M_MAX_WARN_CODE),  reinterpret_cast<void *>(hook_bt_max_warn)},
         {HK_BT_GYM_WARN,  md_h(H_BT_M_GYM_WARN_CODE),  reinterpret_cast<void *>(hook_bt_gym_warn)},
 
@@ -1645,8 +1645,8 @@ int api_sample(PgrCombatHostSample *out) {
 
     const uint32_t caps = g_capabilities.load(std::memory_order_acquire);
     if ((caps & PGR_CBH_CAP_BATTLES) && g_battles) {
-        pgr_battle_sample_v1 bs{};
-        if (g_battles->sample(&bs) == PGR_BATTLE_OK) {
+        pgs_battle_sample_v1 bs{};
+        if (g_battles->sample(&bs) == PGS_BATTLE_OK) {
             b_roots  = bs.owned_roots;
             b_scope  = bs.scope_active;
             b_mode   = bs.mode;

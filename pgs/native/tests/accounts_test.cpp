@@ -416,16 +416,16 @@ bool run_isolated(const char* name, void (*fn)()) {
 }
 
 void test_monotonic_tokens_and_init() {
-  const auto* api = pgs_accounts_api(PGR_ACCOUNTS_API_VERSION);
+  const auto* api = pgs_accounts_api(PGS_ACCOUNTS_API_VERSION);
   assert(api && api->version == 1 && api->size == sizeof(pgs_accounts_api_v1_t));
   auto cfg = make_valid_config();
   assert(api->api_init(&cfg));
 
   pgs_account_event_v1_t ev[8]{};
-  assert(api->api_drain(ev, 8) == 1 && ev[0].kind == PGR_ACC_EVT_READY && ev[0].available == 1);
+  assert(api->api_drain(ev, 8) == 1 && ev[0].kind == PGS_ACC_EVT_READY && ev[0].available == 1);
 
   const int32_t tid = current_os_tid();
-  assert(api->api_update(true, 2000, PGR_ACC_CMD_SAVE_SESSION, 10));
+  assert(api->api_update(true, 2000, PGS_ACC_CMD_SAVE_SESSION, 10));
   api->api_tick(0, tid);
   assert(g_rt.prefs_save_calls == 1);
 
@@ -434,24 +434,24 @@ void test_monotonic_tokens_and_init() {
   assert(snap.last_accepted_token == 10 && snap.last_consumed_token == 10);
 
   // Duplicate token 10 and older token 5 must be rejected.
-  assert(api->api_update(true, 2000, PGR_ACC_CMD_SAVE_SESSION, 10));
+  assert(api->api_update(true, 2000, PGS_ACC_CMD_SAVE_SESSION, 10));
   usleep(260000);
   api->api_tick(0, tid);
-  assert(api->api_update(true, 2000, PGR_ACC_CMD_SAVE_SESSION, 5));
+  assert(api->api_update(true, 2000, PGS_ACC_CMD_SAVE_SESSION, 5));
   usleep(260000);
   api->api_tick(0, tid);
   assert(g_rt.prefs_save_calls == 1);
 
   // High-water mark at submission: token 20 followed by token 15 before tick keeps token 20.
-  assert(api->api_update(true, 2000, PGR_ACC_CMD_SAVE_SESSION, 20));
-  assert(api->api_update(true, 2000, PGR_ACC_CMD_RESET_LOGIN, 15));
+  assert(api->api_update(true, 2000, PGS_ACC_CMD_SAVE_SESSION, 20));
+  assert(api->api_update(true, 2000, PGS_ACC_CMD_RESET_LOGIN, 15));
   usleep(260000);
   api->api_tick(0, tid);
   assert(g_rt.prefs_save_calls == 2 && g_rt.deleted_keys.empty());
 }
 
 void test_config_rebind_rejected() {
-  const auto* api = pgs_accounts_api(PGR_ACCOUNTS_API_VERSION);
+  const auto* api = pgs_accounts_api(PGS_ACCOUNTS_API_VERSION);
   auto cfg1 = make_valid_config();
   assert(api->api_init(&cfg1));
   assert(api->api_init(&cfg1));
@@ -462,7 +462,7 @@ void test_config_rebind_rejected() {
 }
 
 void test_wrong_thread_cannot_steal_owner() {
-  const auto* api = pgs_accounts_api(PGR_ACCOUNTS_API_VERSION);
+  const auto* api = pgs_accounts_api(PGS_ACCOUNTS_API_VERSION);
   auto cfg = make_valid_config();
   assert(api->api_init(&cfg));
 
@@ -481,7 +481,7 @@ void test_wrong_thread_cannot_steal_owner() {
   // Worker thread supplying its own tid cannot steal owner or clear.
   std::thread worker([&]() {
     const int32_t wtid = current_os_tid();
-    assert(api->api_update(true, 2000, PGR_ACC_CMD_SAVE_SESSION, 1));
+    assert(api->api_update(true, 2000, PGS_ACC_CMD_SAVE_SESSION, 1));
     usleep(260000);
     api->api_tick(0, wtid);
     assert(!api->api_clear());
@@ -493,31 +493,31 @@ void test_wrong_thread_cannot_steal_owner() {
 }
 
 void test_save_session_once() {
-  const auto* api = pgs_accounts_api(PGR_ACCOUNTS_API_VERSION);
+  const auto* api = pgs_accounts_api(PGS_ACCOUNTS_API_VERSION);
   auto cfg = make_valid_config();
   assert(api->api_init(&cfg));
   pgs_account_event_v1_t ev[8]{};
   api->api_drain(ev, 8);
 
   const int32_t tid = current_os_tid();
-  assert(api->api_update(true, 2000, PGR_ACC_CMD_SAVE_SESSION, 1));
+  assert(api->api_update(true, 2000, PGS_ACC_CMD_SAVE_SESSION, 1));
   api->api_tick(0, tid);
   usleep(260000);
   api->api_tick(0, tid);
   assert(g_rt.prefs_save_calls == 1);
   size_t n = api->api_drain(ev, 8);
-  assert(n >= 1 && ev[0].kind == PGR_ACC_EVT_SESSION_SAVED);
+  assert(n >= 1 && ev[0].kind == PGS_ACC_EVT_SESSION_SAVED);
 }
 
 void test_reset_login_exact_keys() {
-  const auto* api = pgs_accounts_api(PGR_ACCOUNTS_API_VERSION);
+  const auto* api = pgs_accounts_api(PGS_ACCOUNTS_API_VERSION);
   auto cfg = make_valid_config();
   assert(api->api_init(&cfg));
   pgs_account_event_v1_t ev[8]{};
   api->api_drain(ev, 8);
 
   const int32_t tid = current_os_tid();
-  assert(api->api_update(true, 2000, PGR_ACC_CMD_RESET_LOGIN, 1));
+  assert(api->api_update(true, 2000, PGS_ACC_CMD_RESET_LOGIN, 1));
   api->api_tick(0, tid);
 
   assert(g_rt.deleted_keys.size() == 2);
@@ -528,41 +528,41 @@ void test_reset_login_exact_keys() {
   assert(g_rt.prefs_save_calls == 1);
 
   size_t n = api->api_drain(ev, 8);
-  assert(n == 1 && ev[0].kind == PGR_ACC_EVT_LOGIN_RESET_COMPLETE);
+  assert(n == 1 && ev[0].kind == PGS_ACC_EVT_LOGIN_RESET_COMPLETE);
   assert(g_rt.live_handle_count == 0);
 }
 
 void test_revocation_and_reenable_during_getter_stops_stale_mutation() {
-  const auto* api = pgs_accounts_api(PGR_ACCOUNTS_API_VERSION);
+  const auto* api = pgs_accounts_api(PGS_ACCOUNTS_API_VERSION);
   auto cfg = make_valid_config();
   assert(api->api_init(&cfg));
   pgs_account_event_v1_t ev[8]{};
   api->api_drain(ev, 8);
 
   g_rt.on_get_player_name = []() {
-    const auto* a = pgs_accounts_api(PGR_ACCOUNTS_API_VERSION);
-    assert(a->api_update(false, 0, PGR_ACC_CMD_NONE, 0));
-    assert(a->api_update(true, 2000, PGR_ACC_CMD_LOGOUT, 1));
+    const auto* a = pgs_accounts_api(PGS_ACCOUNTS_API_VERSION);
+    assert(a->api_update(false, 0, PGS_ACC_CMD_NONE, 0));
+    assert(a->api_update(true, 2000, PGS_ACC_CMD_LOGOUT, 1));
   };
 
   const int32_t tid = current_os_tid();
-  assert(api->api_update(true, 2000, PGR_ACC_CMD_LOGOUT, 1));
+  assert(api->api_update(true, 2000, PGS_ACC_CMD_LOGOUT, 1));
   api->api_tick(0, tid);
 
   assert(g_rt.wrapper_logout_calls == 0);
   size_t n = api->api_drain(ev, 8);
-  assert(n == 1 && ev[0].kind == PGR_ACC_EVT_LOGOUT_FAILED &&
-         ev[0].reason == PGR_ACC_REASON_LEASE_EXPIRED);
+  assert(n == 1 && ev[0].kind == PGS_ACC_EVT_LOGOUT_FAILED &&
+         ev[0].reason == PGS_ACC_REASON_LEASE_EXPIRED);
   assert(g_rt.live_handle_count == 0);
 }
 
 void test_reentrant_clear_and_nested_tick_protect_active_roots() {
-  const auto* api = pgs_accounts_api(PGR_ACCOUNTS_API_VERSION);
+  const auto* api = pgs_accounts_api(PGS_ACCOUNTS_API_VERSION);
   auto cfg = make_valid_config();
   assert(api->api_init(&cfg));
 
   g_rt.on_wrapper_logout = []() {
-    const auto* a = pgs_accounts_api(PGR_ACCOUNTS_API_VERSION);
+    const auto* a = pgs_accounts_api(PGS_ACCOUNTS_API_VERSION);
     pgs_account_snapshot_v1_t mid{};
     a->api_sample(&mid);
     assert(mid.active_depth == 1);
@@ -577,7 +577,7 @@ void test_reentrant_clear_and_nested_tick_protect_active_roots() {
   };
 
   const int32_t tid = current_os_tid();
-  assert(api->api_update(true, 2000, PGR_ACC_CMD_LOGOUT, 1));
+  assert(api->api_update(true, 2000, PGS_ACC_CMD_LOGOUT, 1));
   api->api_tick(0, tid);
 
   pgs_account_snapshot_v1_t post{};
@@ -588,12 +588,12 @@ void test_reentrant_clear_and_nested_tick_protect_active_roots() {
 }
 
 void test_no_root_leak_after_clear() {
-  const auto* api = pgs_accounts_api(PGR_ACCOUNTS_API_VERSION);
+  const auto* api = pgs_accounts_api(PGS_ACCOUNTS_API_VERSION);
   auto cfg = make_valid_config();
   assert(api->api_init(&cfg));
 
   const int32_t tid = current_os_tid();
-  assert(api->api_update(true, 2000, PGR_ACC_CMD_LOGOUT, 1));
+  assert(api->api_update(true, 2000, PGS_ACC_CMD_LOGOUT, 1));
   api->api_tick(0, tid);
 
   pgs_account_snapshot_v1_t snap{};
@@ -612,14 +612,14 @@ void test_no_root_leak_after_clear() {
 }
 
 void test_identity_snapshots_and_session_ended() {
-  const auto* api = pgs_accounts_api(PGR_ACCOUNTS_API_VERSION);
+  const auto* api = pgs_accounts_api(PGS_ACCOUNTS_API_VERSION);
   auto cfg = make_valid_config();
   assert(api->api_init(&cfg));
   pgs_account_event_v1_t ev[8]{};
   api->api_drain(ev, 8);
 
   const int32_t tid = current_os_tid();
-  assert(api->api_update(true, 2000, PGR_ACC_CMD_NONE, 0));
+  assert(api->api_update(true, 2000, PGS_ACC_CMD_NONE, 0));
   api->api_tick(0, tid);
 
   pgs_account_snapshot_v1_t snap{};
@@ -629,7 +629,7 @@ void test_identity_snapshots_and_session_ended() {
   assert(std::u16string(reinterpret_cast<const char16_t*>(snap.name), snap.name_len) == u"TrainerAsh");
 
   size_t n = api->api_drain(ev, 8);
-  assert(n == 1 && ev[0].kind == PGR_ACC_EVT_IDENTITY);
+  assert(n == 1 && ev[0].kind == PGS_ACC_EVT_IDENTITY);
 
   // External game logout hits hook directly; must chain original once, clear identity, and not capture future.
   Il2CppObject* ret = invoke_installed_auth_logout(
@@ -641,11 +641,11 @@ void test_identity_snapshots_and_session_ended() {
   assert(snap.has_identity == 0);
   assert(snap.active_gc_roots == 0);
   n = api->api_drain(ev, 8);
-  assert(n == 1 && ev[0].kind == PGR_ACC_EVT_SESSION_ENDED);
+  assert(n == 1 && ev[0].kind == PGS_ACC_EVT_SESSION_ENDED);
 }
 
 void test_uncertainty_stops_replay_on_new_token_after_invoked_logout_fails() {
-  const auto* api = pgs_accounts_api(PGR_ACCOUNTS_API_VERSION);
+  const auto* api = pgs_accounts_api(PGS_ACCOUNTS_API_VERSION);
   auto cfg = make_valid_config();
   assert(api->api_init(&cfg));
   pgs_account_event_v1_t ev[8]{};
@@ -653,14 +653,14 @@ void test_uncertainty_stops_replay_on_new_token_after_invoked_logout_fails() {
 
   g_rt.wrapper_throws = true;
   const int32_t tid = current_os_tid();
-  assert(api->api_update(true, 2000, PGR_ACC_CMD_LOGOUT, 1));
+  assert(api->api_update(true, 2000, PGS_ACC_CMD_LOGOUT, 1));
   api->api_tick(0, tid);
   assert(g_rt.wrapper_logout_calls == 1);
 
   // Wrapper.Logout was invoked and threw an exception (uncertain state). Subsequent command
   // with a new token must be blocked rather than replaying or mutating uncertain state.
   usleep(260000);
-  assert(api->api_update(true, 2000, PGR_ACC_CMD_SAVE_SESSION, 2));
+  assert(api->api_update(true, 2000, PGS_ACC_CMD_SAVE_SESSION, 2));
   api->api_tick(0, tid);
   assert(g_rt.prefs_save_calls == 0);
 }
@@ -669,35 +669,35 @@ void test_partial_reset_blocks_new_command() {
   const auto* api=pgs_accounts_api(1); auto cfg=make_valid_config();
   assert(api->api_init(&cfg));
   g_rt.first_delete_throws=true;
-  assert(api->api_update(true,2000,PGR_ACC_CMD_RESET_LOGIN,1));
+  assert(api->api_update(true,2000,PGS_ACC_CMD_RESET_LOGIN,1));
   api->api_tick(0,current_os_tid());
   assert(g_rt.deleted_keys.size()==1 && !g_rt.has_key1 && g_rt.has_key2);
   usleep(260000);
-  assert(api->api_update(true,2000,PGR_ACC_CMD_SAVE_SESSION,2));
+  assert(api->api_update(true,2000,PGS_ACC_CMD_SAVE_SESSION,2));
   api->api_tick(0,current_os_tid());
   assert(g_rt.prefs_save_calls==0);
 }
 void test_failed_save_blocks_retry() {
   const auto* api=pgs_accounts_api(1); auto cfg=make_valid_config();
   assert(api->api_init(&cfg)); g_rt.prefs_save_throws=true;
-  assert(api->api_update(true,2000,PGR_ACC_CMD_SAVE_SESSION,1));
+  assert(api->api_update(true,2000,PGS_ACC_CMD_SAVE_SESSION,1));
   api->api_tick(0,current_os_tid());
   assert(g_rt.prefs_save_calls==1);
   usleep(260000);
-  assert(api->api_update(true,2000,PGR_ACC_CMD_SAVE_SESSION,2));
+  assert(api->api_update(true,2000,PGS_ACC_CMD_SAVE_SESSION,2));
   api->api_tick(0,current_os_tid());
   assert(g_rt.prefs_save_calls==1);
 }
 
 void test_bounded_queue_overflow_fails_closed() {
-  const auto* api = pgs_accounts_api(PGR_ACCOUNTS_API_VERSION);
+  const auto* api = pgs_accounts_api(PGS_ACCOUNTS_API_VERSION);
   auto cfg = make_valid_config();
   assert(api->api_init(&cfg));
 
   const int32_t tid = current_os_tid();
   api->api_tick(0, tid);  // Binds owner_tid
 
-  for (size_t i = 0; i < PGR_ACCOUNTS_EVENT_QUEUE_CAP + 8; ++i) {
+  for (size_t i = 0; i < PGS_ACCOUNTS_EVENT_QUEUE_CAP + 8; ++i) {
     invoke_installed_auth_logout(reinterpret_cast<Il2CppObject*>(&g_rt.auth_obj),
                                  reinterpret_cast<const MethodInfo*>(&kMthAuthLogout));
   }
@@ -705,12 +705,12 @@ void test_bounded_queue_overflow_fails_closed() {
   pgs_account_snapshot_v1_t snap{};
   api->api_sample(&snap);
   assert(snap.queue_overflow_latched == 1);
-  assert(!api->api_update(true, 2000, PGR_ACC_CMD_SAVE_SESSION, 99));
+  assert(!api->api_update(true, 2000, PGS_ACC_CMD_SAVE_SESSION, 99));
   assert(!api->api_init(&cfg));
 
-  pgs_account_event_v1_t events[PGR_ACCOUNTS_EVENT_QUEUE_CAP + 4]{};
-  size_t drained = api->api_drain(events, PGR_ACCOUNTS_EVENT_QUEUE_CAP + 4);
-  assert(drained == PGR_ACCOUNTS_EVENT_QUEUE_CAP);
+  pgs_account_event_v1_t events[PGS_ACCOUNTS_EVENT_QUEUE_CAP + 4]{};
+  size_t drained = api->api_drain(events, PGS_ACCOUNTS_EVENT_QUEUE_CAP + 4);
+  assert(drained == PGS_ACCOUNTS_EVENT_QUEUE_CAP);
   for (size_t i = 0; i < drained; ++i) {
     assert(events[i].seq == i + 1);
   }

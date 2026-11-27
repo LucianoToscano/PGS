@@ -21,7 +21,7 @@ int quick_install(const PgrQuickSpinConfig *p){quick_config=*p;++quick_installs;
 int camera_update(int a,uint64_t l,uint64_t tid,uint64_t){assert(tid==uint64_t(gettid()));camera_allowed=a;camera_lease=l;return 0;}
 int quick_update(int a,uint64_t l,uint64_t,uint64_t){quick_allowed=a;quick_lease=l;return 0;}
 int camera_tick(uint64_t){return 0;}
-int quick_tick(uint64_t tid,uint64_t seq,uint64_t opener){quick_sequence=seq;quick_opener=opener;if(reenter){reenter=false;auto a=static_cast<const PgrSpinHostApi*>(pgs_spin_host_api(1));assert(a->tick(tid,seq,opener)==PGR_SPH_BUSY);}return 0;}
+int quick_tick(uint64_t tid,uint64_t seq,uint64_t opener){quick_sequence=seq;quick_opener=opener;if(reenter){reenter=false;auto a=static_cast<const PgsSpinHostApi*>(pgs_spin_host_api(1));assert(a->tick(tid,seq,opener)==PGS_SPH_BUSY);}return 0;}
 int camera_read(PgrSpinCameraSample *p){*p=camera_sample;return 0;}
 int quick_read(PgrQuickSpinSample *p){*p=quick_sample;return 0;}
 int clear(){++clear_count;return 0;}
@@ -46,21 +46,21 @@ void scenario(unsigned mode){
  if(mode!=2)md.optional[OPT_SPIN]=PGR_SHARED_OPT_AVAILABLE;
  if(mode==3)install_quick_error=-7;
  PgrSharedMetaExtraExports ex{};ex.gchandle_new=pointer(2100);ex.gchandle_get_target=pointer(2101);ex.gchandle_free=pointer(2102);
- PgrSpinHostConfig c{1,sizeof(c),mode==4?1u:0u,1,&md,&ex,pointer(2110),pointer(2111),pointer(2112),pointer(2113),thread,uint64_t(gettid())};
- const auto a=static_cast<const PgrSpinHostApi*>(pgs_spin_host_api(1));assert(a&&a->size==64&&!pgs_spin_host_api(2));
- auto bad=c;bad.exclusive_owner=0;assert(a->configure(&bad)==PGR_SPH_BAD_CONFIG);
- assert(a->configure(&c)==0&&a->configure(&c)==0);bad=c;bad.object_unbox=pointer(2114);assert(a->configure(&bad)==PGR_SPH_REBIND);
- PgrSpinHostSample s{};assert(a->sample(&s)==0);assert(s.capabilities==((mode==1?0:1)|(mode==2||mode==3?0:2)));
+ PgsSpinHostConfig c{1,sizeof(c),mode==4?1u:0u,1,&md,&ex,pointer(2110),pointer(2111),pointer(2112),pointer(2113),thread,uint64_t(gettid())};
+ const auto a=static_cast<const PgsSpinHostApi*>(pgs_spin_host_api(1));assert(a&&a->size==64&&!pgs_spin_host_api(2));
+ auto bad=c;bad.exclusive_owner=0;assert(a->configure(&bad)==PGS_SPH_BAD_CONFIG);
+ assert(a->configure(&c)==0&&a->configure(&c)==0);bad=c;bad.object_unbox=pointer(2114);assert(a->configure(&bad)==PGS_SPH_REBIND);
+ PgsSpinHostSample s{};assert(a->sample(&s)==0);assert(s.capabilities==((mode==1?0:1)|(mode==2||mode==3?0:2)));
  assert(camera_installs==(mode!=1)&&quick_installs==(mode!=2));
  if(mode!=1){assert(camera_config.in_enter_addr==md.opt_handles[H_SC_APP_ENTER_CODE]);assert(camera_config.move_next_addr==md.opt_handles[H_SC_MOVE_CODE]);assert(camera_config.owner_field==md.opt_handles[H_SC_THIS_F]);assert(camera_config.spline_class==md.opt_classes[OC_SPLINE]);}
  if(mode!=2){assert(quick_config.success_value==23&&quick_config.state_open_value==2);assert(quick_config.spin_address==md.opt_handles[H_SPIN_SPIN_CODE]);assert(quick_config.spin_method==md.opt_handles[H_SPIN_SPIN_M]);assert(quick_config.alive_method==md.methods[5]);assert(quick_config.current_state_field==md.fields[1]);assert(quick_config.spin_result_class==md.opt_classes[OC_SPINRESULT]);}
- PgrSpinHostOptions p{1,sizeof(p),1,2500,1};assert(a->update(&p)==0);
+ PgsSpinHostOptions p{1,sizeof(p),1,2500,1};assert(a->update(&p)==0);
  assert(a->tick(c.owner_tid,1,0)==0);assert(camera_allowed<=0&&quick_allowed<=0);
  assert(a->tick(c.owner_tid,2,0)==0);reenter=true;assert(a->tick(c.owner_tid,3,4)==0);
  if(mode!=2&&mode!=3){assert(quick_allowed==1&&quick_lease<=2500&&quick_sequence==3&&quick_opener==4);}
  if(mode!=1)assert(camera_allowed==1&&camera_lease<=2500);
- attached=false;assert(a->tick(c.owner_tid,4,0)==PGR_SPH_OFF_OWNER);attached=true;
- std::thread wrong([&]{assert(a->tick(c.owner_tid,4,0)==PGR_SPH_OFF_OWNER);});wrong.join();
+ attached=false;assert(a->tick(c.owner_tid,4,0)==PGS_SPH_OFF_OWNER);attached=true;
+ std::thread wrong([&]{assert(a->tick(c.owner_tid,4,0)==PGS_SPH_OFF_OWNER);});wrong.join();
  if(mode==4){quick_sample.cooldown_serial=2;quick_sample.request_serial=1;quick_sample.last_tid=c.owner_tid;quick_sample.last_gui_state=2;
   assert(a->tick(c.owner_tid,4,0)==0);unsigned cooldowns=0;for(auto op:opcodes)cooldowns+=op==17;assert(cooldowns==2);assert(!payloads.empty());
   PgrUnityPulse pulse{9,5,int32_t(c.owner_tid),0};a->on_unity_pulse(nullptr,&pulse);assert(quick_opener==7);
@@ -77,7 +77,7 @@ void scenario(unsigned mode){
   last_poll=0;fresh=false;assert(a->tick(c.owner_tid,6,0)==0);assert(camera_allowed==0&&quick_allowed==0);
  }
  p.enabled=0;p.epoch=policy.epoch+1;assert(a->update(&p)==0);assert(a->tick(c.owner_tid,7,0)==0);assert(camera_allowed<=0&&quick_allowed<=0);
- assert(a->stop()==0&&a->stop()==0);assert(a->update(&p)==PGR_SPH_STOPPED);assert(a->tick(c.owner_tid,8,0)==PGR_SPH_STOPPED);
+ assert(a->stop()==0&&a->stop()==0);assert(a->update(&p)==PGS_SPH_STOPPED);assert(a->tick(c.owner_tid,8,0)==PGS_SPH_STOPPED);
  assert(a->sample(&s)==0&&s.stopping);if(mode==3)assert(s.quick_error==-7&&s.capabilities==1);
 }
 }

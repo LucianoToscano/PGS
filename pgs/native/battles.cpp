@@ -26,45 +26,45 @@
 #include <mutex>
 #include <unistd.h>
 
-static_assert(sizeof(pgr_battle_scope_desc) == 16, "scope desc must be 16 bytes");
-static_assert(sizeof(pgr_battle_swap_desc) == 24, "swap desc must be 24 bytes");
-static_assert(sizeof(pgr_battle_config_v1) == 520, "config must be 520 bytes");
-static_assert(offsetof(pgr_battle_config_v1,max_orb_direction)==512,"optional config extension");
-static_assert(sizeof(pgr_battle_sample_v1) == 64, "sample must be 64 bytes");
-static_assert(sizeof(pgr_battle_event_v1) == 16, "event must be 16 bytes");
-static_assert(sizeof(pgr_battle_api_v1) == 72, "table must be 72 bytes");
-static_assert(offsetof(pgr_battle_config_v1, gchandle_new) == 8, "layout");
-static_assert(offsetof(pgr_battle_config_v1, m_current_state) == 64, "layout");
-static_assert(offsetof(pgr_battle_config_v1, m_vnext_visible) == 176, "layout");
-static_assert(offsetof(pgr_battle_config_v1, f_director) == 184, "layout");
-static_assert(offsetof(pgr_battle_config_v1, f_gym_warning_state) == 272, "layout");
-static_assert(offsetof(pgr_battle_config_v1, class_battlestate) == 280, "layout");
-static_assert(offsetof(pgr_battle_config_v1, class_bool) == 360, "layout");
-static_assert(offsetof(pgr_battle_config_v1, scopes) == 368, "layout");
-static_assert(offsetof(pgr_battle_config_v1, swaps) == 416, "layout");
-static_assert(offsetof(pgr_battle_config_v1, status_active) == 488, "layout");
-static_assert(offsetof(pgr_battle_config_v1, reserved1) == 508, "layout");
-static_assert(offsetof(pgr_battle_sample_v1, owned_roots) == 56, "sample owned_roots @56");
+static_assert(sizeof(pgs_battle_scope_desc) == 16, "scope desc must be 16 bytes");
+static_assert(sizeof(pgs_battle_swap_desc) == 24, "swap desc must be 24 bytes");
+static_assert(sizeof(pgs_battle_config_v1) == 520, "config must be 520 bytes");
+static_assert(offsetof(pgs_battle_config_v1,max_orb_direction)==512,"optional config extension");
+static_assert(sizeof(pgs_battle_sample_v1) == 64, "sample must be 64 bytes");
+static_assert(sizeof(pgs_battle_event_v1) == 16, "event must be 16 bytes");
+static_assert(sizeof(pgs_battle_api_v1) == 72, "table must be 72 bytes");
+static_assert(offsetof(pgs_battle_config_v1, gchandle_new) == 8, "layout");
+static_assert(offsetof(pgs_battle_config_v1, m_current_state) == 64, "layout");
+static_assert(offsetof(pgs_battle_config_v1, m_vnext_visible) == 176, "layout");
+static_assert(offsetof(pgs_battle_config_v1, f_director) == 184, "layout");
+static_assert(offsetof(pgs_battle_config_v1, f_gym_warning_state) == 272, "layout");
+static_assert(offsetof(pgs_battle_config_v1, class_battlestate) == 280, "layout");
+static_assert(offsetof(pgs_battle_config_v1, class_bool) == 360, "layout");
+static_assert(offsetof(pgs_battle_config_v1, scopes) == 368, "layout");
+static_assert(offsetof(pgs_battle_config_v1, swaps) == 416, "layout");
+static_assert(offsetof(pgs_battle_config_v1, status_active) == 488, "layout");
+static_assert(offsetof(pgs_battle_config_v1, reserved1) == 508, "layout");
+static_assert(offsetof(pgs_battle_sample_v1, owned_roots) == 56, "sample owned_roots @56");
 
 namespace {
 
-constexpr uint64_t kMaxLeaseMs  = PGR_BATTLE_MAX_LEASE_MS;
-constexpr uint32_t kMaxList     = PGR_BATTLE_MAX_LIST;
-constexpr uint64_t kQuickMs     = PGR_BATTLE_QUICK_MS;
-constexpr uint64_t kChargedMs   = PGR_BATTLE_CHARGED_MS;
-constexpr uint64_t kMaxMs       = PGR_BATTLE_MAX_MS;
-constexpr uint64_t kDodgeCueMs  = PGR_BATTLE_DODGE_CUE_MS;
-constexpr uint64_t kDodgeNextMs = PGR_BATTLE_DODGE_NEXT_MS;
-constexpr uint64_t kDodgeGapMs  = PGR_BATTLE_DODGE_GAP_MS;
-constexpr uint64_t kSwapGraceMs = PGR_BATTLE_SWAP_GRACE_MS;
-constexpr uint64_t kQuickLogMs  = PGR_BATTLE_QUICK_LOG_MS;
+constexpr uint64_t kMaxLeaseMs  = PGS_BATTLE_MAX_LEASE_MS;
+constexpr uint32_t kMaxList     = PGS_BATTLE_MAX_LIST;
+constexpr uint64_t kQuickMs     = PGS_BATTLE_QUICK_MS;
+constexpr uint64_t kChargedMs   = PGS_BATTLE_CHARGED_MS;
+constexpr uint64_t kMaxMs       = PGS_BATTLE_MAX_MS;
+constexpr uint64_t kDodgeCueMs  = PGS_BATTLE_DODGE_CUE_MS;
+constexpr uint64_t kDodgeNextMs = PGS_BATTLE_DODGE_NEXT_MS;
+constexpr uint64_t kDodgeGapMs  = PGS_BATTLE_DODGE_GAP_MS;
+constexpr uint64_t kSwapGraceMs = PGS_BATTLE_SWAP_GRACE_MS;
+constexpr uint64_t kQuickLogMs  = PGS_BATTLE_QUICK_LOG_MS;
 
 // --- lifetime / publication ---------------------------------------------------------
 std::mutex           g_install_mutex;
-pgr_battle_config_v1 g_cfg{};
+pgs_battle_config_v1 g_cfg{};
 std::atomic<bool>    g_installed{false};
 bool                 g_install_attempted = false;
-int                  g_install_error = PGR_BATTLE_ERR_NOT_INSTALLED;
+int                  g_install_error = PGS_BATTLE_ERR_NOT_INSTALLED;
 
 // --- thread identity ----------------------------------------------------------------
 std::atomic<uint64_t> g_unity_tid{0};  // permanent Unity identity, latched once from tick
@@ -102,7 +102,7 @@ std::atomic<bool> g_stop_requested{false};
 
 // --- bounded telemetry FIFO (owner thread writes + drains) --------------------------
 std::mutex          g_fifo_mutex;
-pgr_battle_event_v1 g_fifo[PGR_BATTLE_EVENT_CAP]{};
+pgs_battle_event_v1 g_fifo[PGS_BATTLE_EVENT_CAP]{};
 uint32_t            g_fifo_head = 0, g_fifo_tail = 0, g_fifo_size = 0;
 
 // --- owner-thread-only battle state (mirrors battleState in battles.js) -------------
@@ -115,9 +115,9 @@ bool     g_legacy = false;
 void    *g_swap_handle = nullptr;
 void    *g_swap_show = nullptr;  // MethodInfo* from the swap descriptor at open
 uint64_t g_swap_until_ms = 0;
-void    *g_charges[PGR_BATTLE_MAX_LIST] = {nullptr};
+void    *g_charges[PGS_BATTLE_MAX_LIST] = {nullptr};
 uint32_t g_charge_count = 0;
-void    *g_max_moves[PGR_BATTLE_MAX_LIST] = {nullptr};
+void    *g_max_moves[PGS_BATTLE_MAX_LIST] = {nullptr};
 uint32_t g_max_count = 0;
 uint64_t g_next_ms = 0;
 uint64_t g_dodge_until_ms = 0;
@@ -238,18 +238,18 @@ void refresh_root_count() {
 // --- bounded FIFO (owner thread) ----------------------------------------------------
 void push_event(uint32_t code, int32_t id, int32_t aux) {
   std::lock_guard<std::mutex> lock(g_fifo_mutex);
-  if (g_fifo_size >= PGR_BATTLE_EVENT_CAP) {
+  if (g_fifo_size >= PGS_BATTLE_EVENT_CAP) {
     g_dropped_events.fetch_add(1, std::memory_order_relaxed);
     g_actions_locked.store(true, std::memory_order_release);  // fail-closed: block new actions
     return;
   }
-  g_fifo[g_fifo_tail] = pgr_battle_event_v1{code, id, aux, 0};
-  g_fifo_tail = (g_fifo_tail + 1) % PGR_BATTLE_EVENT_CAP;
+  g_fifo[g_fifo_tail] = pgs_battle_event_v1{code, id, aux, 0};
+  g_fifo_tail = (g_fifo_tail + 1) % PGS_BATTLE_EVENT_CAP;
   ++g_fifo_size;
 }
 void note_fault(int32_t mode) {
   g_fault_serial.fetch_add(1, std::memory_order_release);
-  push_event(PGR_BATTLE_EVT_ERROR, mode, PGR_BATTLE_REASON_INVOKE);
+  push_event(PGS_BATTLE_EVT_ERROR, mode, PGS_BATTLE_REASON_INVOKE);
 }
 
 // --- list helpers (owner thread) ----------------------------------------------------
@@ -334,11 +334,11 @@ void dodge_cue(int32_t mode) {
   if ((mask & (128u << mode)) == 0) return;
   if (now < g_dodge_next_ms || g_dodge_until_ms != 0) return;
   g_dodge_until_ms = now + kDodgeCueMs;
-  push_event(PGR_BATTLE_EVT_DODGE_CUE, mode, 0);
+  push_event(PGS_BATTLE_EVT_DODGE_CUE, mode, 0);
 }
 
 // --- config validation + install ----------------------------------------------------
-bool config_ok(const pgr_battle_config_v1 *c) {
+bool config_ok(const pgs_battle_config_v1 *c) {
   const void *const ptrs[] = {
       c->gchandle_new, c->gchandle_get_target, c->gchandle_free, c->object_get_class, c->object_unbox,
       c->runtime_invoke, c->field_get_value, c->m_current_state, c->m_active, c->m_press,
@@ -351,11 +351,11 @@ bool config_ok(const pgr_battle_config_v1 *c) {
       c->class_max_widget, c->class_rvcharge, c->class_raid_warning, c->class_max_warning,
       c->class_gym_iterator, c->class_bool};
   for (const void *p : ptrs) if (p == nullptr) return false;
-  for (int i = 0; i < PGR_BATTLE_NUM_SCOPES; ++i) {
+  for (int i = 0; i < PGS_BATTLE_NUM_SCOPES; ++i) {
     if (c->scopes[i].klass == nullptr) return false;
     if (c->scopes[i].mode < 0 || c->scopes[i].mode > 2 || c->scopes[i].reserved != 0) return false;
   }
-  for (int i = 0; i < PGR_BATTLE_NUM_SWAPS; ++i) {
+  for (int i = 0; i < PGS_BATTLE_NUM_SWAPS; ++i) {
     if (c->swaps[i].klass == nullptr || c->swaps[i].show == nullptr) return false;
     if (c->swaps[i].mode < 0 || c->swaps[i].mode > 2 || c->swaps[i].reserved != 0) return false;
   }
@@ -363,29 +363,29 @@ bool config_ok(const pgr_battle_config_v1 *c) {
   return true;
 }
 
-int api_install(const pgr_battle_config_v1 *config) {
-  if (config == nullptr) return PGR_BATTLE_ERR_NULL_ARG;
+int api_install(const pgs_battle_config_v1 *config) {
+  if (config == nullptr) return PGS_BATTLE_ERR_NULL_ARG;
   std::lock_guard<std::mutex> lock(g_install_mutex);
-  if (config->version != PGR_BATTLE_API_VERSION ||
-      (config->size != 512 && config->size != sizeof(pgr_battle_config_v1)) || !config_ok(config))
-    return PGR_BATTLE_ERR_BAD_CONFIG;
-  pgr_battle_config_v1 normalized{};
+  if (config->version != PGS_BATTLE_API_VERSION ||
+      (config->size != 512 && config->size != sizeof(pgs_battle_config_v1)) || !config_ok(config))
+    return PGS_BATTLE_ERR_BAD_CONFIG;
+  pgs_battle_config_v1 normalized{};
   std::memcpy(&normalized,config,config->size);normalized.size=sizeof(normalized);
   if (g_installed.load(std::memory_order_acquire))
-    return (std::memcmp(&g_cfg, &normalized, sizeof(g_cfg)) == 0) ? PGR_BATTLE_OK
-                                                             : PGR_BATTLE_ERR_ALREADY_BOUND;
+    return (std::memcmp(&g_cfg, &normalized, sizeof(g_cfg)) == 0) ? PGS_BATTLE_OK
+                                                             : PGS_BATTLE_ERR_ALREADY_BOUND;
   if (g_install_attempted) return g_install_error;
   g_install_attempted = true;
-  if (boottime_ms() == 0) return g_install_error = PGR_BATTLE_ERR_NO_CLOCK;
+  if (boottime_ms() == 0) return g_install_error = PGS_BATTLE_ERR_NO_CLOCK;
   g_cfg = normalized;
   g_installed.store(true, std::memory_order_release);
-  push_event(PGR_BATTLE_EVT_READY, 0, 1);
-  return g_install_error = PGR_BATTLE_OK;
+  push_event(PGS_BATTLE_EVT_READY, 0, 1);
+  return g_install_error = PGS_BATTLE_OK;
 }
 
 int api_update(uint32_t mask, uint64_t residual_lease_ms, uint32_t rocket_active,
                uint64_t proven_tid) {
-  if (!g_installed.load(std::memory_order_acquire)) return PGR_BATTLE_ERR_NOT_INSTALLED;
+  if (!g_installed.load(std::memory_order_acquire)) return PGS_BATTLE_ERR_NOT_INSTALLED;
   // Policy update is allowed off-thread, but once the owner is latched a foreign thread can only
   // disarm (it must not be able to arm the mask/lease it does not own).
   std::lock_guard<std::mutex> lock(g_policy_mutex);
@@ -396,7 +396,7 @@ int api_update(uint32_t mask, uint64_t residual_lease_ms, uint32_t rocket_active
     g_mask.store(0, std::memory_order_release);
     g_lease_until_ms.store(0, std::memory_order_release);
     g_rocket_active.store(0, std::memory_order_release);
-    return wrong_thread ? PGR_BATTLE_ERR_NULL_ARG : PGR_BATTLE_OK;
+    return wrong_thread ? PGS_BATTLE_ERR_NULL_ARG : PGS_BATTLE_OK;
   }
   const uint64_t clamped = residual_lease_ms > kMaxLeaseMs ? kMaxLeaseMs : residual_lease_ms;
   const uint64_t now = boottime_ms();
@@ -405,20 +405,20 @@ int api_update(uint32_t mask, uint64_t residual_lease_ms, uint32_t rocket_active
   g_mask.store(mask, std::memory_order_release);
   g_lease_until_ms.store((clamped > 0 && now != 0) ? now + clamped : 0, std::memory_order_release);
   g_rocket_active.store(rocket_active ? 1u : 0u, std::memory_order_release);
-  return PGR_BATTLE_OK;
+  return PGS_BATTLE_OK;
 }
 
 // --- observations (owner thread; exact-class identity checks live here) -------------
 int api_observe(uint32_t kind, void *obj, int32_t descriptor, uint64_t proven_tid) {
-  if (!g_installed.load(std::memory_order_acquire) || !on_unity(proven_tid)) return PGR_BATTLE_OK;
-  if (g_stop_requested.load()) return PGR_BATTLE_OK;
+  if (!g_installed.load(std::memory_order_acquire) || !on_unity(proven_tid)) return PGS_BATTLE_OK;
+  if (g_stop_requested.load()) return PGS_BATTLE_OK;
   FrameGuard guard;
   const uint64_t now = boottime_ms();
   const uint64_t observation = ++g_epoch;
   switch (kind) {
-    case PGR_BATTLE_OBS_SCOPE_ENTER: {
+    case PGS_BATTLE_OBS_SCOPE_ENTER: {
       bool err=false; Root incoming;
-      if(descriptor<0 || descriptor>=PGR_BATTLE_NUM_SCOPES ||
+      if(descriptor<0 || descriptor>=PGS_BATTLE_NUM_SCOPES ||
          !exact(obj,g_cfg.scopes[descriptor].klass)) break;
       incoming.acquire(obj,&err);
       if(err || observation_stale(observation)) break;
@@ -428,24 +428,24 @@ int api_observe(uint32_t kind, void *obj, int32_t descriptor, uint64_t proven_ti
       g_scope_handle=incoming.release();
       g_mode=g_cfg.scopes[descriptor].mode;
       g_scope_serial.fetch_add(1);
-      push_event(PGR_BATTLE_EVT_SCOPE,g_mode,1);
+      push_event(PGS_BATTLE_EVT_SCOPE,g_mode,1);
       refresh_root_count();
       break;
     }
-    case PGR_BATTLE_OBS_SCOPE_EXIT: {
+    case PGS_BATTLE_OBS_SCOPE_EXIT: {
       void *current=g_scope_handle?gc_target(g_scope_handle):nullptr;
       if (!observation_stale(observation) && current && current == obj) {
-        push_event(PGR_BATTLE_EVT_SCOPE, g_mode, 0);
+        push_event(PGS_BATTLE_EVT_SCOPE, g_mode, 0);
         battle_clear();  // bumps epoch
       }
       break;
     }
-    case PGR_BATTLE_OBS_GESTURE: {
+    case PGS_BATTLE_OBS_GESTURE: {
       if (!g_scope_handle) break;
       const bool legacy = descriptor != 0;
-      if (legacy && g_mode != PGR_BATTLE_MODE_GYM) break;  // legacy gesture only in gym
+      if (legacy && g_mode != PGS_BATTLE_MODE_GYM) break;  // legacy gesture only in gym
       void *k = legacy ? g_cfg.class_legacy_gesture
-                       : (g_mode == PGR_BATTLE_MODE_MAX ? g_cfg.class_max_gesture
+                       : (g_mode == PGS_BATTLE_MODE_MAX ? g_cfg.class_max_gesture
                                                         : g_cfg.class_raid_gesture);
       if (!exact(obj, k)) break;
       bool err=false; Root incoming; incoming.acquire(obj,&err);
@@ -454,19 +454,19 @@ int api_observe(uint32_t kind, void *obj, int32_t descriptor, uint64_t proven_ti
       if(observation_stale(observation)) break;
       g_gesture_handle = incoming.release();
       g_legacy = legacy;
-      push_event(PGR_BATTLE_EVT_INPUT, g_mode, legacy ? 1 : 0);
+      push_event(PGS_BATTLE_EVT_INPUT, g_mode, legacy ? 1 : 0);
       refresh_root_count();
       break;
     }
-    case PGR_BATTLE_OBS_GESTURE_DROP: {
+    case PGS_BATTLE_OBS_GESTURE_DROP: {
       void *current=g_gesture_handle?gc_target(g_gesture_handle):nullptr;
       if (!observation_stale(observation) && current && current == obj) { drop_gesture(); refresh_root_count(); }
       break;
     }
-    case PGR_BATTLE_OBS_CHARGE: {
+    case PGS_BATTLE_OBS_CHARGE: {
       if (!g_scope_handle) break;
       if (descriptor != 0) {  // legacy Init (9308): gym mode only
-        if (g_mode != PGR_BATTLE_MODE_GYM || !exact(obj, g_cfg.class_legacy_charge)) break;
+        if (g_mode != PGS_BATTLE_MODE_GYM || !exact(obj, g_cfg.class_legacy_charge)) break;
       } else {                // shared RVCHARGE ObserveBattleState
         if (!exact(obj, g_cfg.class_rvcharge)) break;
       }
@@ -474,19 +474,19 @@ int api_observe(uint32_t kind, void *obj, int32_t descriptor, uint64_t proven_ti
       refresh_root_count();
       break;
     }
-    case PGR_BATTLE_OBS_MAX_REFRESH: {
-      if (!g_scope_handle || g_mode != PGR_BATTLE_MODE_MAX || !exact(obj, g_cfg.class_max_widget)) break;
+    case PGS_BATTLE_OBS_MAX_REFRESH: {
+      if (!g_scope_handle || g_mode != PGS_BATTLE_MODE_MAX || !exact(obj, g_cfg.class_max_widget)) break;
       list_capture(g_max_moves, &g_max_count, obj);
       refresh_root_count();
       break;
     }
-    case PGR_BATTLE_OBS_MAX_CLEANUP: {
+    case PGS_BATTLE_OBS_MAX_CLEANUP: {
       list_remove(g_max_moves, &g_max_count, obj);
       refresh_root_count();
       break;
     }
-    case PGR_BATTLE_OBS_SWAP_OPEN: {
-      if (!g_scope_handle || descriptor < 0 || descriptor >= PGR_BATTLE_NUM_SWAPS) break;
+    case PGS_BATTLE_OBS_SWAP_OPEN: {
+      if (!g_scope_handle || descriptor < 0 || descriptor >= PGS_BATTLE_NUM_SWAPS) break;
       if (g_mode != g_cfg.swaps[descriptor].mode || !exact(obj, g_cfg.swaps[descriptor].klass)) break;
       bool err=false; Root incoming; incoming.acquire(obj,&err);
       if(err || observation_stale(observation)) break;
@@ -497,11 +497,11 @@ int api_observe(uint32_t kind, void *obj, int32_t descriptor, uint64_t proven_ti
       g_swap_until_ms = now + kSwapGraceMs;
       g_dodge_until_ms = 0;
       g_swap_blocked_pub.store(1, std::memory_order_release);
-      push_event(PGR_BATTLE_EVT_SWITCH, g_mode, 1);
+      push_event(PGS_BATTLE_EVT_SWITCH, g_mode, 1);
       refresh_root_count();
       break;
     }
-    case PGR_BATTLE_OBS_SWAP_CLOSE: {
+    case PGS_BATTLE_OBS_SWAP_CLOSE: {
       void *current=g_swap_handle?gc_target(g_swap_handle):nullptr;
       if (!observation_stale(observation) && current && current == obj) {
         void *old = g_swap_handle; g_swap_handle = nullptr; g_swap_show = nullptr; refresh_root_count(); gc_free(old);
@@ -509,27 +509,27 @@ int api_observe(uint32_t kind, void *obj, int32_t descriptor, uint64_t proven_ti
         g_swap_until_ms = now + kSwapGraceMs;
         if (g_next_ms < g_swap_until_ms) g_next_ms = g_swap_until_ms;
         g_dodge_until_ms = 0;
-        push_event(PGR_BATTLE_EVT_SWITCH, g_mode, 0);
+        push_event(PGS_BATTLE_EVT_SWITCH, g_mode, 0);
         refresh_root_count();
       }
       break;
     }
-    case PGR_BATTLE_OBS_WARNING: {
-      if(descriptor != PGR_BATTLE_MODE_RAID && descriptor != PGR_BATTLE_MODE_MAX) break;
-      void *k = (descriptor == PGR_BATTLE_MODE_RAID) ? g_cfg.class_raid_warning : g_cfg.class_max_warning;
+    case PGS_BATTLE_OBS_WARNING: {
+      if(descriptor != PGS_BATTLE_MODE_RAID && descriptor != PGS_BATTLE_MODE_MAX) break;
+      void *k = (descriptor == PGS_BATTLE_MODE_RAID) ? g_cfg.class_raid_warning : g_cfg.class_max_warning;
       if (exact(obj, k) && !observation_stale(observation)) dodge_cue(descriptor);
       break;
     }
     default: break;
   }
-  return PGR_BATTLE_OK;
+  return PGS_BATTLE_OK;
 }
 
 uint64_t api_gym_begin(void *obj, uint64_t proven_tid) {
   if (!g_installed.load(std::memory_order_acquire) || !on_unity(proven_tid)) return 0;
   FrameGuard guard;
   const uint64_t epoch=g_epoch;
-  if(g_stop_requested.load() || g_mode != PGR_BATTLE_MODE_GYM || !exact(obj, g_cfg.class_gym_iterator)) return 0;
+  if(g_stop_requested.load() || g_mode != PGS_BATTLE_MODE_GYM || !exact(obj, g_cfg.class_gym_iterator)) return 0;
   const int32_t state = read_s32(obj, g_cfg.f_gym_warning_state);
   if(observation_stale(epoch) || g_gym_token_src==UINT64_MAX) return 0;
   if (state != 0 && state != 1) return 0;  // eligible iterator state 0 or 1
@@ -541,13 +541,13 @@ uint64_t api_gym_begin(void *obj, uint64_t proven_tid) {
 }
 
 int api_gym_end(uint64_t token, int ret_is_zero, uint64_t proven_tid) {
-  if (!g_installed.load(std::memory_order_acquire)) return PGR_BATTLE_ERR_NOT_INSTALLED;
-  if (!on_unity(proven_tid) || token == 0) return PGR_BATTLE_ERR_BAD_TOKEN;
+  if (!g_installed.load(std::memory_order_acquire)) return PGS_BATTLE_ERR_NOT_INSTALLED;
+  if (!on_unity(proven_tid) || token == 0) return PGS_BATTLE_ERR_BAD_TOKEN;
   FrameGuard guard;
-  if (token != g_gym_token) return PGR_BATTLE_ERR_BAD_TOKEN;  // stale / replayed / superseded
+  if (token != g_gym_token) return PGS_BATTLE_ERR_BAD_TOKEN;  // stale / replayed / superseded
   g_gym_token = 0;  // consume once
-  if (g_gym_epoch == g_epoch && ret_is_zero) dodge_cue(PGR_BATTLE_MODE_GYM);
-  return PGR_BATTLE_OK;
+  if (g_gym_epoch == g_epoch && ret_is_zero) dodge_cue(PGS_BATTLE_MODE_GYM);
+  return PGS_BATTLE_OK;
 }
 
 // --- tick helpers -------------------------------------------------------------------
@@ -611,13 +611,13 @@ void run_tick_body(uint64_t now) {
   if (!g_scope_handle || g_failed || !lease_ok || rocket) { g_swap_blocked_pub.store(0, std::memory_order_release); return; }
 
   const uint64_t local_epoch = g_epoch;
-  const uint32_t mask = (mask_policy >> (g_mode * 2)) & (g_mode == PGR_BATTLE_MODE_MAX ? 7u : 3u);
+  const uint32_t mask = (mask_policy >> (g_mode * 2)) & (g_mode == PGS_BATTLE_MODE_MAX ? 7u : 3u);
   bool err = false;
 
   // (1) Dynamax scope-gesture recovery (mode 2, no gesture yet): pin the scope, read its gesture,
   // and adopt it if it is the exact Max gesture class and alive+active. Re-check the epoch before
   // mutating so a reentrant exit cannot make us adopt a gesture into a torn-down scope.
-  if (g_mode == PGR_BATTLE_MODE_MAX && g_gesture_handle == nullptr) {
+  if (g_mode == PGS_BATTLE_MODE_MAX && g_gesture_handle == nullptr) {
     Root scope_r; scope_r.acquire(gc_target(g_scope_handle), &err);
     if (!err) {
       bool alive = m_is_alive(scope_r.target(), &err);
@@ -627,11 +627,11 @@ void run_tick_body(uint64_t now) {
           Root g_r; g_r.acquire(g, &err);
           bool g_alive = !err && m_is_alive(g_r.target(), &err);
           bool g_active = !err && g_alive && m_is_active(g_r.target(), &err);
-          if (!err && g_active && !stale(local_epoch) && g_mode == PGR_BATTLE_MODE_MAX &&
+          if (!err && g_active && !stale(local_epoch) && g_mode == PGS_BATTLE_MODE_MAX &&
               g_gesture_handle == nullptr && g_scope_handle != nullptr) {
             g_gesture_handle = g_r.release();
             g_legacy = false;
-            push_event(PGR_BATTLE_EVT_INPUT, PGR_BATTLE_MODE_MAX, 0 | 2);  // bit1: scope source
+            push_event(PGS_BATTLE_EVT_INPUT, PGS_BATTLE_MODE_MAX, 0 | 2);  // bit1: scope source
             refresh_root_count();
           }
         }
@@ -667,7 +667,7 @@ void run_tick_body(uint64_t now) {
     if (status != g_cfg.status_active) {
       g_dodge_until_ms = 0;
       if (status != g_cfg.status_unset) {
-        push_event(PGR_BATTLE_EVT_ENDED, g_mode, status);
+        push_event(PGS_BATTLE_EVT_ENDED, g_mode, status);
         battle_clear();
       }
       return;
@@ -682,7 +682,7 @@ void run_tick_body(uint64_t now) {
   // Max orbs run independently of the attack/dodge switches, within the same
   // active-scope/lease/manual-menu gates. The probe only reads current state;
   // this controller owns the final mutation and re-checks after all callbacks.
-  if(g_mode==PGR_BATTLE_MODE_MAX && g_cfg.max_orb_direction && state_r.target() &&
+  if(g_mode==PGS_BATTLE_MODE_MAX && g_cfg.max_orb_direction && state_r.target() &&
      now>=g_next_ms && now>=g_dodge_next_ms && g_gesture_handle){
     int32_t direction=g_cfg.max_orb_direction(state_r.target(),g_cfg.m_dodge);
     if(stale(local_epoch))return;
@@ -696,7 +696,7 @@ void run_tick_body(uint64_t now) {
       void *args[]={&direction};invoke(g_cfg.m_dodge,g_r.target(),args,&err);
       if(err){if(!stale(local_epoch)){g_failed=true;note_fault(g_mode);}return;}
       g_action_serial.fetch_add(1,std::memory_order_release);
-      push_event(PGR_BATTLE_EVT_ACTION,g_mode,PGR_BATTLE_ACT_MAX_ORB);
+      push_event(PGS_BATTLE_EVT_ACTION,g_mode,PGS_BATTLE_ACT_MAX_ORB);
       return;
     }
   }
@@ -725,7 +725,7 @@ void run_tick_body(uint64_t now) {
              g_legacy ? legacy_params : modern_params, &err);
       if (err) { if(stale(local_epoch)) return; g_failed = true; note_fault(g_mode); refresh_root_count(); return; }
       g_action_serial.fetch_add(1, std::memory_order_release);
-      push_event(PGR_BATTLE_EVT_ACTION, g_mode, PGR_BATTLE_ACT_DODGE);
+      push_event(PGS_BATTLE_EVT_ACTION, g_mode, PGS_BATTLE_ACT_DODGE);
     }
     return;
   }
@@ -734,7 +734,7 @@ void run_tick_body(uint64_t now) {
   if (now < g_next_ms || mask == 0) return;
 
   // (6) Max attack (mode 2, mask bit 4): press the first BreadAttack move's interactable button.
-  if (g_mode == PGR_BATTLE_MODE_MAX && (mask & 4u)) {
+  if (g_mode == PGS_BATTLE_MODE_MAX && (mask & 4u)) {
     for (uint32_t i = 0; i < g_max_count; ++i) {
       if (i >= g_max_count) break;
       Root o_r; o_r.acquire(gc_target(g_max_moves[i]), &err);
@@ -757,7 +757,7 @@ void run_tick_body(uint64_t now) {
         invoke(g_cfg.m_press, action_target, nullptr, &err);
         if (err) { if(stale(local_epoch)) return; g_failed = true; note_fault(g_mode); refresh_root_count(); return; }
         g_action_serial.fetch_add(1, std::memory_order_release);
-        push_event(PGR_BATTLE_EVT_ACTION, g_mode, PGR_BATTLE_ACT_MAX);
+        push_event(PGS_BATTLE_EVT_ACTION, g_mode, PGS_BATTLE_ACT_MAX);
         return;
       }
     }
@@ -794,7 +794,7 @@ void run_tick_body(uint64_t now) {
       invoke(legacyC ? g_cfg.m_legacy_charge : g_cfg.m_vnext_charge, action_target, nullptr, &err);
       if (err) { if(stale(local_epoch)) return; g_failed = true; note_fault(g_mode); refresh_root_count(); return; }
       g_action_serial.fetch_add(1, std::memory_order_release);
-      push_event(PGR_BATTLE_EVT_ACTION, g_mode, PGR_BATTLE_ACT_CHARGED);
+      push_event(PGS_BATTLE_EVT_ACTION, g_mode, PGS_BATTLE_ACT_CHARGED);
       return;
     }
   }
@@ -815,25 +815,25 @@ void run_tick_body(uint64_t now) {
   if(stale(local_epoch)) return;
   if (!action_target || !tap || !final_ok(now, local_epoch)) return;
   void *method = g_legacy ? g_cfg.m_legacy_fast
-                          : (g_mode == PGR_BATTLE_MODE_MAX ? g_cfg.m_max_fast : g_cfg.m_raid_fast);
+                          : (g_mode == PGS_BATTLE_MODE_MAX ? g_cfg.m_max_fast : g_cfg.m_raid_fast);
   void *params[2] = {tap, nullptr};  // (sender=tap, EventArgs=null)
   g_next_ms = now + kQuickMs;
   // raid quick takes no args (params NULL); gym/Max quick take the sender + null EventArgs.
-  invoke(method, action_target, g_mode == PGR_BATTLE_MODE_RAID ? nullptr : params, &err);
+  invoke(method, action_target, g_mode == PGS_BATTLE_MODE_RAID ? nullptr : params, &err);
   if (err) { if(stale(local_epoch)) return; g_failed = true; note_fault(g_mode); refresh_root_count(); return; }
   g_action_serial.fetch_add(1, std::memory_order_release);
   if (!g_last_log_ms || (now >= g_last_log_ms && now - g_last_log_ms > kQuickLogMs)) {  // 5 s de-dupe of the quick telemetry event
     g_last_log_ms = now;
-    push_event(PGR_BATTLE_EVT_ACTION, g_mode, PGR_BATTLE_ACT_QUICK);
+    push_event(PGS_BATTLE_EVT_ACTION, g_mode, PGS_BATTLE_ACT_QUICK);
   }
 }
 
 int api_tick(uint64_t proven_tid, int stopping) {
-  if (!g_installed.load(std::memory_order_acquire)) return PGR_BATTLE_ERR_NOT_INSTALLED;
-  if (proven_tid == 0 || current_tid() != proven_tid) return PGR_BATTLE_OK;
+  if (!g_installed.load(std::memory_order_acquire)) return PGS_BATTLE_ERR_NOT_INSTALLED;
+  if (proven_tid == 0 || current_tid() != proven_tid) return PGS_BATTLE_OK;
   uint64_t expected = 0;
   g_unity_tid.compare_exchange_strong(expected, proven_tid, std::memory_order_acq_rel);
-  if (g_unity_tid.load(std::memory_order_acquire) != proven_tid) return PGR_BATTLE_OK;
+  if (g_unity_tid.load(std::memory_order_acquire) != proven_tid) return PGS_BATTLE_OK;
 
   // Record a stop + disarm IMMEDIATELY (even nested) so no action can start between now and the
   // outermost drain. A nested tick returns here; the outer frame already running drains the stop.
@@ -843,20 +843,20 @@ int api_tick(uint64_t proven_tid, int stopping) {
     g_mask.store(0, std::memory_order_release);
     g_lease_until_ms.store(0, std::memory_order_release);
   }
-  if (g_in_tick || g_active_frames.load() != 0) return PGR_BATTLE_OK;
+  if (g_in_tick || g_active_frames.load() != 0) return PGS_BATTLE_OK;
 
   g_in_tick = true;
   FrameGuard guard;
   const uint64_t now = boottime_ms();
   if (!g_stop_requested.load(std::memory_order_acquire)) run_tick_body(now);
   g_in_tick = false;
-  return PGR_BATTLE_OK;
+  return PGS_BATTLE_OK;
 }
 
-int api_sample(pgr_battle_sample_v1 *out) {
-  if (out == nullptr) return PGR_BATTLE_ERR_NULL_ARG;
-  out->version = PGR_BATTLE_API_VERSION;
-  out->size = sizeof(pgr_battle_sample_v1);
+int api_sample(pgs_battle_sample_v1 *out) {
+  if (out == nullptr) return PGS_BATTLE_ERR_NULL_ARG;
+  out->version = PGS_BATTLE_API_VERSION;
+  out->size = sizeof(pgs_battle_sample_v1);
   out->scope_active = g_scope_active.load(std::memory_order_acquire);
   out->mode = g_mode_pub.load(std::memory_order_acquire);
   out->failed = g_failed_pub.load(std::memory_order_acquire);
@@ -871,23 +871,23 @@ int api_sample(pgr_battle_sample_v1 *out) {
   out->owned_roots = g_durable_roots.load(std::memory_order_acquire) +
                      g_active_frames.load(std::memory_order_acquire);
   out->reserved = 0;
-  return PGR_BATTLE_OK;
+  return PGS_BATTLE_OK;
 }
 
-int api_next_event(pgr_battle_event_v1 *out) {
+int api_next_event(pgs_battle_event_v1 *out) {
   if (out == nullptr) return 0;
   std::lock_guard<std::mutex> lock(g_fifo_mutex);
   if (g_fifo_size == 0) { g_actions_locked.store(false, std::memory_order_release); return 0; }
   *out = g_fifo[g_fifo_head];
-  g_fifo_head = (g_fifo_head + 1) % PGR_BATTLE_EVENT_CAP;
+  g_fifo_head = (g_fifo_head + 1) % PGS_BATTLE_EVENT_CAP;
   --g_fifo_size;
   if (g_fifo_size == 0) g_actions_locked.store(false, std::memory_order_release);
   return 1;
 }
 
-const pgr_battle_api_v1 g_api = {
-    PGR_BATTLE_API_VERSION,
-    static_cast<uint32_t>(sizeof(pgr_battle_api_v1)),
+const pgs_battle_api_v1 g_api = {
+    PGS_BATTLE_API_VERSION,
+    static_cast<uint32_t>(sizeof(pgs_battle_api_v1)),
     &api_install,
     &api_update,
     &api_observe,
@@ -901,6 +901,6 @@ const pgr_battle_api_v1 g_api = {
 }  // namespace
 
 const void *pgs_battles_api(uint32_t version) {
-  if (version != PGR_BATTLE_API_VERSION) return nullptr;
+  if (version != PGS_BATTLE_API_VERSION) return nullptr;
   return &g_api;
 }

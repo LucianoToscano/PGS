@@ -185,7 +185,7 @@ static uint32_t g_keep_species_count = 0;
 
 // Leaf API pointers
 static const pgr_berry_api_v1 *g_berries = nullptr;
-static const PgrMapPoiApi *g_map_poi = nullptr;
+static const PgsMapPoiApi *g_map_poi = nullptr;
 static const PgrVgpPolicyApi *g_vp = nullptr;
 static const PgrVgpActionsApi *g_va = nullptr;
 static const PgrVgpMarkerApi *g_vmk = nullptr;
@@ -193,7 +193,7 @@ static const PgrVgpCandidateApi *g_vc = nullptr;
 static const PgrVgpResultsApi *g_vr = nullptr;
 static const PgrVgpDiscoveryApi *g_vd = nullptr;
 static const PgrVgpMaintenanceApi *g_vm = nullptr;
-static const PgrVgpAuxApi *g_vx = nullptr;
+static const PgsVgpAuxApi *g_vx = nullptr;
 static const PgrVgpControllerApi *g_vgc = nullptr;
 static const PgrTransferApi *g_tp = nullptr;
 static const PgrTransferExecApi *g_tx = nullptr;
@@ -206,7 +206,7 @@ static void *g_berry_response_class = nullptr;
 static bool g_ticking = false;
 static bool g_direct_transport = false;
 // Heap-allocated 294,928-byte MapPOI output buffer (never on stack)
-static PgrMapPoiOutput *g_map_poi_out = nullptr;
+static PgsMapPoiOutput *g_map_poi_out = nullptr;
 
 // VGP -> Transfer active handoff state (4 owned GC handles from PGR_VGC_EV_TRANSFER_READY)
 struct ActiveVgpTransfer {
@@ -1264,15 +1264,15 @@ static void tick_map_poi(uint64_t tid, uint64_t now_ms, uint64_t lease_ms) {
   if (g_last_map_poi_ms != 0 && (now_ms - g_last_map_poi_ms) < 2000ULL) return;
   g_last_map_poi_ms = now_ms;
 
-  PgrMapPoiRequest req = {};
-  req.version = PGR_MP_REQUEST_VERSION;
-  req.size = sizeof(PgrMapPoiRequest);
+  PgsMapPoiRequest req = {};
+  req.version = PGS_MP_REQUEST_VERSION;
+  req.size = sizeof(PgsMapPoiRequest);
   req.tid = tid;
   req.remaining_ms = lease_ms;
   req.wall_ms = wall_clock_ms();
 
   int rc = g_map_poi->scan(&req, g_map_poi_out);
-  if (rc != PGR_MP_OK) {
+  if (rc != PGS_MP_OK) {
     if (rc < 0) g_sample.last_error = rc;
     return;
   }
@@ -1285,23 +1285,23 @@ static void tick_map_poi(uint64_t tid, uint64_t now_ms, uint64_t lease_ms) {
   size_t pos = 0;
   s_poi_json[pos++] = '[';
   uint32_t count = g_map_poi_out->count;
-  if (count > PGR_MP_MAX_POINTS) count = PGR_MP_MAX_POINTS;
+  if (count > PGS_MP_MAX_POINTS) count = PGS_MP_MAX_POINTS;
 
   for (uint32_t i = 0; i < count && pos + 2048 < sizeof(s_poi_json); ++i) {
-    const PgrMapPoiPoint &pt = g_map_poi_out->points[i];
+    const PgsMapPoiPoint &pt = g_map_poi_out->points[i];
     if (i > 0) s_poi_json[pos++] = ',';
     char id_buf[1600];
-    uint32_t id_len = pt.id_length <= PGR_MP_MAX_ID ? pt.id_length : PGR_MP_MAX_ID;
+    uint32_t id_len = pt.id_length <= PGS_MP_MAX_ID ? pt.id_length : PGS_MP_MAX_ID;
     utf16_to_escaped_json(pt.id, id_len, id_buf, sizeof(id_buf));
 
-    const char *kind_str = (pt.kind == PGR_MP_KIND_GYM) ? "gym" : "stop";
+    const char *kind_str = (pt.kind == PGS_MP_KIND_GYM) ? "gym" : "stop";
     pos += static_cast<size_t>(snprintf(
         s_poi_json + pos, sizeof(s_poi_json) - pos,
         "{\"id\":\"%s\",\"kind\":\"%s\",\"lat\":%.6f,\"lon\":%.6f",
         id_buf, kind_str, pt.lat, pt.lon));
 
-    if (pt.kind == PGR_MP_KIND_GYM) {
-      if (pt.flags & PGR_MP_FLAG_TEAM) {
+    if (pt.kind == PGS_MP_KIND_GYM) {
+      if (pt.flags & PGS_MP_FLAG_TEAM) {
         pos += static_cast<size_t>(snprintf(
             s_poi_json + pos, sizeof(s_poi_json) - pos, ",\"teamId\":%d", pt.team_id));
         const char *tn = lookup_team_name(pt.team_id);
@@ -1310,7 +1310,7 @@ static void tick_map_poi(uint64_t tid, uint64_t now_ms, uint64_t lease_ms) {
               s_poi_json + pos, sizeof(s_poi_json) - pos, ",\"team\":\"%s\"", tn));
         }
       }
-      if (pt.flags & PGR_MP_FLAG_SLOTS) {
+      if (pt.flags & PGS_MP_FLAG_SLOTS) {
         pos += static_cast<size_t>(snprintf(
             s_poi_json + pos, sizeof(s_poi_json) - pos, ",\"slots\":%d", pt.slots));
       }
@@ -1319,9 +1319,9 @@ static void tick_map_poi(uint64_t tid, uint64_t now_ms, uint64_t lease_ms) {
             s_poi_json + pos, sizeof(s_poi_json) - pos,
             ",\"raidEnd\":%.0f,\"raidStart\":%.0f,\"egg\":%s",
             pt.raid_end, pt.raid_start,
-            (pt.flags & PGR_MP_FLAG_EGG) ? "true" : "false"));
+            (pt.flags & PGS_MP_FLAG_EGG) ? "true" : "false"));
       }
-      if (pt.flags & PGR_MP_FLAG_LEVEL) {
+      if (pt.flags & PGS_MP_FLAG_LEVEL) {
         pos += static_cast<size_t>(snprintf(
             s_poi_json + pos, sizeof(s_poi_json) - pos, ",\"level\":%d", pt.level));
         const char *rt = lookup_raid_tier(pt.level);
@@ -1330,11 +1330,11 @@ static void tick_map_poi(uint64_t tid, uint64_t now_ms, uint64_t lease_ms) {
               s_poi_json + pos, sizeof(s_poi_json) - pos, ",\"tier\":\"%s\"", rt));
         }
       }
-      if (pt.flags & PGR_MP_FLAG_BOSS) {
+      if (pt.flags & PGS_MP_FLAG_BOSS) {
         pos += static_cast<size_t>(snprintf(
             s_poi_json + pos, sizeof(s_poi_json) - pos, ",\"boss\":%d", pt.boss));
       }
-    } else if (pt.flags & PGR_MP_FLAG_INCIDENT) {
+    } else if (pt.flags & PGS_MP_FLAG_INCIDENT) {
       // Raw Holoholo.Rpc.IncidentDisplayType (1 grunt, 2 leader, 3 Giovanni, 4 grunt B, 5+ other incidents).
       pos += static_cast<size_t>(snprintf(
           s_poi_json + pos, sizeof(s_poi_json) - pos, ",\"incident\":%u,\"incidentEnd\":%.0f",
@@ -1604,20 +1604,20 @@ static int install_berries_leaf() {
   return PGR_EH_OK;
 }
 
-static void map_poi_incident_fields(PgrMapPoiConfig *cfg);
+static void map_poi_incident_fields(PgsMapPoiConfig *cfg);
 static int install_map_poi_leaf(bool *out_has_extra) {
   if (out_has_extra) *out_has_extra = false;
   if (g_md.optional[OPT_MAP_POI] != PGR_SHARED_OPT_AVAILABLE ||
       g_md.optional[OPT_VGP] != PGR_SHARED_OPT_AVAILABLE) {
     return PGR_EH_ERR_METADATA;
   }
-  const auto *api = static_cast<const PgrMapPoiApi *>(
-      pgs_map_poi_api(PGR_MP_API_VERSION));
+  const auto *api = static_cast<const PgsMapPoiApi *>(
+      pgs_map_poi_api(PGS_MP_API_VERSION));
   if (!api || !api->install) return PGR_EH_ERR_LEAF;
 
-  PgrMapPoiConfig mcfg = {};
-  mcfg.version = PGR_MP_CONFIG_VERSION;
-  mcfg.size = sizeof(PgrMapPoiConfig);
+  PgsMapPoiConfig mcfg = {};
+  mcfg.version = PGS_MP_CONFIG_VERSION;
+  mcfg.size = sizeof(PgsMapPoiConfig);
   mcfg.runtime_invoke = reinterpret_cast<void *>(g_exp.runtime_invoke);
   mcfg.object_get_class = reinterpret_cast<void *>(g_exp.object_get_class);
   mcfg.field_get_value = reinterpret_cast<void *>(g_exp.field_get_value);
@@ -1691,7 +1691,7 @@ static int install_map_poi_leaf(bool *out_has_extra) {
   if (rc != 0) return PGR_EH_ERR_LEAF;
 
   if (!g_map_poi_out) {
-    g_map_poi_out = static_cast<PgrMapPoiOutput *>(calloc(1, sizeof(PgrMapPoiOutput)));
+    g_map_poi_out = static_cast<PgsMapPoiOutput *>(calloc(1, sizeof(PgsMapPoiOutput)));
     if (!g_map_poi_out) return PGR_EH_ERR_LEAF;
   }
   g_map_poi = api;
@@ -1701,7 +1701,7 @@ static int install_map_poi_leaf(bool *out_has_extra) {
 
 // Optional stop incident group for the map scan (Team GO Rocket invasions etc.), resolved by name with
 // exact type checks. Any miss leaves the whole group null, which only turns the incident field off.
-static void map_poi_incident_fields(PgrMapPoiConfig *cfg) {
+static void map_poi_incident_fields(PgsMapPoiConfig *cfg) {
   const auto &m = g_exp.meta;
   if (!m.class_get_field_from_name || !m.field_get_type || !m.class_from_type || !m.type_get_name ||
       !m.mem_free || !m.field_get_flags) return;
@@ -1778,8 +1778,8 @@ static int install_vgp_leaves(bool *out_has_marker) {
       pgs_vgp_discovery_api(PGR_VD_API_VERSION));
   const auto *vm = static_cast<const PgrVgpMaintenanceApi *>(
       pgs_vgp_maintenance_api(PGR_VM_API_VERSION));
-  const auto *vx = static_cast<const PgrVgpAuxApi *>(
-      pgs_vgp_aux_api(PGR_VX_API_VERSION));
+  const auto *vx = static_cast<const PgsVgpAuxApi *>(
+      pgs_vgp_aux_api(PGS_VX_API_VERSION));
   const auto *vgc = static_cast<const PgrVgpControllerApi *>(
       pgs_vgp_controller_api(PGR_VGC_API_VERSION));
   if (!vp || !va || !vc || !vr || !vd || !vm || !vx || !vgc) return PGR_EH_ERR_LEAF;
@@ -1975,8 +1975,8 @@ static int install_vgp_leaves(bool *out_has_marker) {
 
   // 7. Feature 34: VGP Aux
   void *f_rpc = resolve_rpc_field(md_k(OC_IBAG), md_k(OC_VGP_RPC));
-  PgrVgpAuxConfig vx_cfg = {};
-  vx_cfg.version = PGR_VX_CONFIG_VERSION;
+  PgsVgpAuxConfig vx_cfg = {};
+  vx_cfg.version = PGS_VX_CONFIG_VERSION;
   vx_cfg.size = sizeof(vx_cfg);
   vx_cfg.gc_new = reinterpret_cast<void *>(g_exp.gchandle_new);
   vx_cfg.gc_get = reinterpret_cast<void *>(g_exp.gchandle_get_target);
@@ -2062,7 +2062,7 @@ static int install_vgp_leaves(bool *out_has_marker) {
   vgc_cfg.maintenance_table = const_cast<PgrVgpMaintenanceApi *>(vm);
   vgc_cfg.marker_table = const_cast<PgrVgpMarkerApi *>(vmk);
   vgc_cfg.items_table = const_cast<pgs_items_api_v1 *>(&kProxyItemsApi);
-  vgc_cfg.aux_table = const_cast<PgrVgpAuxApi *>(vx);
+  vgc_cfg.aux_table = const_cast<PgsVgpAuxApi *>(vx);
   vgc_cfg.gc_new = reinterpret_cast<void *>(g_exp.gchandle_new);
   vgc_cfg.gc_get = reinterpret_cast<void *>(g_exp.gchandle_get_target);
   vgc_cfg.gc_free = reinterpret_cast<void *>(g_exp.gchandle_free);

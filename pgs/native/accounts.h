@@ -1,5 +1,5 @@
-#ifndef PGR_ACCOUNTS_H_
-#define PGR_ACCOUNTS_H_
+#ifndef PGS_ACCOUNTS_H_
+#define PGS_ACCOUNTS_H_
 
 #include <stddef.h>
 #include <stdint.h>
@@ -8,16 +8,16 @@
 extern "C" {
 #endif
 
-#define PGR_FEATURE_ACCOUNTS 16u
-#define PGR_ACCOUNTS_API_VERSION 1u
-#define PGR_ACCOUNTS_API_TABLE_SIZE 56u
-#define PGR_ACCOUNTS_MAX_UTF16 256u
-#define PGR_ACCOUNTS_EVENT_QUEUE_CAP 64u
-#define PGR_ACCOUNTS_MAX_LEASE_MS 2000u
-#define PGR_ACCOUNTS_TICK_INTERVAL_MS 250u
-#define PGR_ACCOUNTS_ERROR_BACKOFF_MS 5000u
-#define PGR_ACCOUNTS_IDENTITY_HEARTBEAT_MS 5000u
-#define PGR_ACCOUNTS_LOGOUT_TIMEOUT_MS 15000u
+#define PGS_FEATURE_ACCOUNTS 16u
+#define PGS_ACCOUNTS_API_VERSION 1u
+#define PGS_ACCOUNTS_API_TABLE_SIZE 56u
+#define PGS_ACCOUNTS_MAX_UTF16 256u
+#define PGS_ACCOUNTS_EVENT_QUEUE_CAP 64u
+#define PGS_ACCOUNTS_MAX_LEASE_MS 2000u
+#define PGS_ACCOUNTS_TICK_INTERVAL_MS 250u
+#define PGS_ACCOUNTS_ERROR_BACKOFF_MS 5000u
+#define PGS_ACCOUNTS_IDENTITY_HEARTBEAT_MS 5000u
+#define PGS_ACCOUNTS_LOGOUT_TIMEOUT_MS 15000u
 
 typedef struct Il2CppClass Il2CppClass;
 typedef struct Il2CppObject Il2CppObject;
@@ -27,41 +27,41 @@ typedef struct FieldInfo FieldInfo;
 typedef struct Il2CppString Il2CppString;
 
 typedef enum pgs_account_cmd_kind : uint32_t {
-  PGR_ACC_CMD_NONE = 0,
-  PGR_ACC_CMD_SAVE_SESSION = 1,
-  PGR_ACC_CMD_RESET_LOGIN = 2,
-  PGR_ACC_CMD_LOGOUT = 3
+  PGS_ACC_CMD_NONE = 0,
+  PGS_ACC_CMD_SAVE_SESSION = 1,
+  PGS_ACC_CMD_RESET_LOGIN = 2,
+  PGS_ACC_CMD_LOGOUT = 3
 } pgs_account_cmd_kind_t;
 
 typedef enum pgs_account_event_kind : uint32_t {
-  PGR_ACC_EVT_NONE = 0,
-  PGR_ACC_EVT_READY = 1,
-  PGR_ACC_EVT_SESSION_ENDED = 2,
-  PGR_ACC_EVT_LOGOUT_REQUESTED = 3,
-  PGR_ACC_EVT_LOGOUT_COMPLETE = 4,
-  PGR_ACC_EVT_LOGOUT_FAILED = 5,
-  PGR_ACC_EVT_SESSION_SAVED = 6,
-  PGR_ACC_EVT_LOGIN_RESET_COMPLETE = 7,
-  PGR_ACC_EVT_IDENTITY = 8,
-  PGR_ACC_EVT_READ_ERROR = 9
+  PGS_ACC_EVT_NONE = 0,
+  PGS_ACC_EVT_READY = 1,
+  PGS_ACC_EVT_SESSION_ENDED = 2,
+  PGS_ACC_EVT_LOGOUT_REQUESTED = 3,
+  PGS_ACC_EVT_LOGOUT_COMPLETE = 4,
+  PGS_ACC_EVT_LOGOUT_FAILED = 5,
+  PGS_ACC_EVT_SESSION_SAVED = 6,
+  PGS_ACC_EVT_LOGIN_RESET_COMPLETE = 7,
+  PGS_ACC_EVT_IDENTITY = 8,
+  PGS_ACC_EVT_READ_ERROR = 9
 } pgs_account_event_kind_t;
 
 typedef enum pgs_account_reason_code : uint32_t {
-  PGR_ACC_REASON_NONE = 0,
-  PGR_ACC_REASON_CLEARED_AUTH_STATE = 1,
-  PGR_ACC_REASON_SESSION_SAVE_UNAVAILABLE = 2,
-  PGR_ACC_REASON_LOGIN_RESET_UNAVAILABLE = 3,
-  PGR_ACC_REASON_LOGIN_RESET_NOT_SAVED = 4,
-  PGR_ACC_REASON_LOGOUT_WRAPPER_INVALID = 5,
-  PGR_ACC_REASON_LOGOUT_AUTH_INVALID = 6,
-  PGR_ACC_REASON_LOGOUT_FUTURE_INVALID = 7,
-  PGR_ACC_REASON_LOGOUT_FAILED = 8,
-  PGR_ACC_REASON_LOGOUT_TIMEOUT = 9,
-  PGR_ACC_REASON_MISSING_AUTH_STATE = 10,
-  PGR_ACC_REASON_INVOCATION_EXCEPTION = 11,
-  PGR_ACC_REASON_LEASE_EXPIRED = 12,
-  PGR_ACC_REASON_REENTRANT_ABORT = 13,
-  PGR_ACC_REASON_QUEUE_OVERFLOW = 14
+  PGS_ACC_REASON_NONE = 0,
+  PGS_ACC_REASON_CLEARED_AUTH_STATE = 1,
+  PGS_ACC_REASON_SESSION_SAVE_UNAVAILABLE = 2,
+  PGS_ACC_REASON_LOGIN_RESET_UNAVAILABLE = 3,
+  PGS_ACC_REASON_LOGIN_RESET_NOT_SAVED = 4,
+  PGS_ACC_REASON_LOGOUT_WRAPPER_INVALID = 5,
+  PGS_ACC_REASON_LOGOUT_AUTH_INVALID = 6,
+  PGS_ACC_REASON_LOGOUT_FUTURE_INVALID = 7,
+  PGS_ACC_REASON_LOGOUT_FAILED = 8,
+  PGS_ACC_REASON_LOGOUT_TIMEOUT = 9,
+  PGS_ACC_REASON_MISSING_AUTH_STATE = 10,
+  PGS_ACC_REASON_INVOCATION_EXCEPTION = 11,
+  PGS_ACC_REASON_LEASE_EXPIRED = 12,
+  PGS_ACC_REASON_REENTRANT_ABORT = 13,
+  PGS_ACC_REASON_QUEUE_OVERFLOW = 14
 } pgs_account_reason_code_t;
 
 typedef struct pgs_accounts_config_v1 {
@@ -124,8 +124,8 @@ typedef struct pgs_account_event_v1 {
   uint16_t id_len;
   uint16_t name_len;
   uint16_t reserved;
-  uint16_t id[PGR_ACCOUNTS_MAX_UTF16];
-  uint16_t name[PGR_ACCOUNTS_MAX_UTF16];
+  uint16_t id[PGS_ACCOUNTS_MAX_UTF16];
+  uint16_t name[PGS_ACCOUNTS_MAX_UTF16];
 } pgs_account_event_v1_t;
 typedef pgs_account_event_v1_t pgrazor_account_event_v1_t;
 
@@ -148,8 +148,8 @@ typedef struct pgs_account_snapshot_v1 {
   uint16_t id_len;
   uint16_t name_len;
   uint16_t reserved;
-  uint16_t id[PGR_ACCOUNTS_MAX_UTF16];
-  uint16_t name[PGR_ACCOUNTS_MAX_UTF16];
+  uint16_t id[PGS_ACCOUNTS_MAX_UTF16];
+  uint16_t name[PGS_ACCOUNTS_MAX_UTF16];
 } pgs_account_snapshot_v1_t;
 typedef pgs_account_snapshot_v1_t pgrazor_account_snapshot_v1_t;
 
@@ -171,7 +171,7 @@ typedef pgs_accounts_api_v1_t pgrazor_accounts_api_v1_t;
 static_assert(sizeof(void*) == 8, "LP64 ABI required");
 static_assert(sizeof(uintptr_t) == 8, "LP64 uintptr_t required");
 static_assert(sizeof(pgs_accounts_config_v1_t) == 41 * 8, "LP64 config layout mismatch");
-static_assert(sizeof(pgs_accounts_api_v1_t) == PGR_ACCOUNTS_API_TABLE_SIZE, "LP64 api table layout mismatch");
+static_assert(sizeof(pgs_accounts_api_v1_t) == PGS_ACCOUNTS_API_TABLE_SIZE, "LP64 api table layout mismatch");
 #else
 static_assert(sizeof(void*) == 4, "ILP32 ABI expected on 32-bit build");
 static_assert(sizeof(pgs_accounts_config_v1_t) == 42 * 4, "ILP32 config layout mismatch");
@@ -188,4 +188,7 @@ static inline const pgs_accounts_api_v1_t* pgrazor_accounts_api(uint32_t version
 }
 #endif
 
-#endif  // PGR_ACCOUNTS_H_
+// Compatibility for the preserved account-host source.
+#include "account_source_compat.h"
+
+#endif  // PGS_ACCOUNTS_H_

@@ -1,10 +1,10 @@
 {
-  "scope": "Phase 20 provisional indexed UTF-8 inventory with file-level retention review; exact deltas from validated phase 19; full CI pending.",
-  "tracked_files": 2106,
-  "text_files": 1031,
-  "changed_files": 8,
-  "added_files": 0,
-  "previous_occurrences": 1054,
+  "scope": "Full-name indexed UTF-8 count unchanged from validated phase 20; abbreviation metrics separately reported by fresh scanner, exact candidate CI pending.",
+  "tracked_files": 2107,
+  "text_files": 1032,
+  "changed_files": 37,
+  "added_files": 1,
+  "previous_occurrences": 1041,
   "remaining_files": 173,
   "remaining_occurrences": 1041,
   "remaining_by_category": {
@@ -1150,5 +1150,57 @@
     "excluded_blob": "pgs/native/account_host.cpp",
     "excluded_blob_reason": "Previous connector text reconstruction did not match the original blob hash; preserve exact bytes and review through a verified checkout.",
     "external_feed_pr": 62
+  },
+  "abbreviation_migration": {
+    "base_commit": "186e6e86aac0a0bc2d7939a58e934378fab7bdd3",
+    "scope": "Separate full tracked-text abbreviation audit; original full-name inventory unchanged. Initial canonical identifier migration.",
+    "reviewed_files": 11,
+    "account_identifiers": 40,
+    "account_renamed_occurrences": 196,
+    "account_compatibility_aliases": 16,
+    "protected_blob": "pgs/native/account_host.cpp",
+    "collisions": [],
+    "validation": "pending exact head CI",
+    "additional_groups": [
+      {
+        "modules": [
+          "spin_host.h",
+          "spawn_host.h"
+        ],
+        "reviewed_files": 10,
+        "identifiers": 37,
+        "renamed_occurrences": 207,
+        "collisions": [],
+        "modified": 9
+      },
+      {
+        "modules": [
+          "map_tap.h",
+          "map_poi.h",
+          "vgp_aux.h"
+        ],
+        "reviewed_files": 16,
+        "identifiers": 109,
+        "renamed_occurrences": 796,
+        "collisions": [],
+        "modified": 14
+      },
+      {
+        "modules": [
+          "battles.h"
+        ],
+        "reviewed_files": 6,
+        "identifiers": 72,
+        "renamed_occurrences": 401,
+        "collisions": [],
+        "modified": 5
+      }
+    ],
+    "total_identifiers": 258,
+    "total_renamed_occurrences": 1600,
+    "modified_native_files": 32,
+    "original_full_name_count": 1041,
+    "original_full_name_remaining": 1041,
+    "count_excludes_legacy_alias_additions_and_new_audit_fixtures": true
   }
 }

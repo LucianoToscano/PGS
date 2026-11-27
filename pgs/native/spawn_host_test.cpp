@@ -28,34 +28,34 @@ std::vector<unsigned> drain(const PgrRuntimeTransportApi *tr,const std::vector<u
 }
 void scenario(const char *library,unsigned mode){
  auto lib=dlopen(library,RTLD_NOW|RTLD_LOCAL);assert(lib);auto get=reinterpret_cast<const void*(*)(uint32_t)>(dlsym(lib,"pgs_native_api"));assert(get);
- auto core=static_cast<const pgs_native_api_v2*>(get(2));assert(core&&core->query_feature);auto api=static_cast<const PgrSpawnHostApi*>(core->query_feature(71,1));assert(api&&api->version==1&&api->size==64&&!core->query_feature(71,2));
+ auto core=static_cast<const pgs_native_api_v2*>(get(2));assert(core&&core->query_feature);auto api=static_cast<const PgsSpawnHostApi*>(core->query_feature(71,1));assert(api&&api->version==1&&api->size==64&&!core->query_feature(71,2));
  auto tr=static_cast<const PgrRuntimeTransportApi*>(core->query_feature(52,1));assert(tr);
  PgrSharedMetadataOutput md{};md.version=2;md.size=sizeof(md);md.optional[pgr_shared_meta::OPT_SPAWN]=mode==2?PGR_SHARED_OPT_UNAVAILABLE:PGR_SHARED_OPT_AVAILABLE;md.opt_handles[pgr_shared_meta::H_SP_CODE]=reinterpret_cast<void*>(target);md.opt_handles[pgr_shared_meta::H_SP_METHOD]=&method_token;
- PgrSpawnHostConfig c{1,sizeof(c),mode==1?1u:0u,1,&md,reinterpret_cast<void*>(thread_current),uint64_t(gettid())};
+ PgsSpawnHostConfig c{1,sizeof(c),mode==1?1u:0u,1,&md,reinterpret_cast<void*>(thread_current),uint64_t(gettid())};
  if(mode==1){PgrRuntimeTransportConfig tc{1,sizeof(tc),500,128,4096,65536,0,0};assert(tr->install(&tc)==0);}
- auto bad=c;bad.exclusive_owner=0;assert(api->configure(&bad)==PGR_SPAH_BAD_CONFIG);assert(api->configure(&c)==0&&api->configure(&c)==0);
- bad=c;bad.flags^=1;assert(api->configure(&bad)==PGR_SPAH_REBIND);
+ auto bad=c;bad.exclusive_owner=0;assert(api->configure(&bad)==PGS_SPAH_BAD_CONFIG);assert(api->configure(&c)==0&&api->configure(&c)==0);
+ bad=c;bad.flags^=1;assert(api->configure(&bad)==PGS_SPAH_REBIND);
  double radius=40;assert(call(&radius,&method_token)==40);
- if(mode==2){assert(api->tick(gettid())==PGR_SPAH_UNAVAILABLE);assert(call(&radius,&method_token)==40);return;}
+ if(mode==2){assert(api->tick(gettid())==PGS_SPAH_UNAVAILABLE);assert(call(&radius,&method_token)==40);return;}
  std::vector<uint8_t> frame(PGR_TRANSPORT_SNAPSHOT_FIXED+PGR_TRANSPORT_STRINGS*4,0);put32(frame,0,PGR_TRANSPORT_SNAPSHOT_MAGIC);put32(frame,4,PGR_TRANSPORT_FRAME_VERSION);put32(frame,8,frame.size());put64(frame,16,1);
  frame[32+27]=frame[32+28]=frame[32+3]=1;
  if(mode==1)drain(tr,&frame);
- PgrSpawnHostOptions p{1,sizeof(p),1,1,2500,0};if(!mode)assert(api->update(&p)==0);
+ PgsSpawnHostOptions p{1,sizeof(p),1,1,2500,0};if(!mode)assert(api->update(&p)==0);
  assert(api->tick(gettid())==0);assert(call(&radius,&method_token)==80);assert(api->tick(gettid())==0);
- PgrSpawnHostSample s{};assert(api->sample(&s)==0&&s.installed&&s.ready&&s.original==40&&s.effective==80);
+ PgsSpawnHostSample s{};assert(api->sample(&s)==0&&s.installed&&s.ready&&s.original==40&&s.effective==80);
  if(mode==1){auto ops=drain(tr);bool ready=false,range=false,event=false;for(auto op:ops){ready|=op==49;range|=op==48;event|=op==19;}assert(ready&&range&&event);assert(drain(tr).empty());}
- else{PgrSpawnHostEvent e{};unsigned ranges=0;while(api->next_event(&e)==0)ranges+=std::strstr(e.json,"spawn-range")!=nullptr;assert(ranges==1);}
+ else{PgsSpawnHostEvent e{};unsigned ranges=0;while(api->next_event(&e)==0)ranges+=std::strstr(e.json,"spawn-range")!=nullptr;assert(ranges==1);}
  radius=120;assert(call(&radius,&method_token)==120);assert(api->tick(gettid())==0);
  radius=std::numeric_limits<double>::quiet_NaN();assert(std::isnan(call(&radius,&method_token)));assert(api->tick(gettid())==0);
- attached=false;assert(api->tick(gettid())==PGR_SPAH_OFF_OWNER);attached=true;
- std::thread foreign([&]{assert(api->tick(c.owner_tid)==PGR_SPAH_OFF_OWNER);});foreign.join();
+ attached=false;assert(api->tick(gettid())==PGS_SPAH_OFF_OWNER);attached=true;
+ std::thread foreign([&]{assert(api->tick(c.owner_tid)==PGS_SPAH_OFF_OWNER);});foreign.join();
  if(mode==1){put64(frame,16,2);frame[32+27]=0;drain(tr,&frame);assert(api->tick(gettid())==0);}
  else{p.enabled=0;assert(api->update(&p)==0);}
  radius=40;assert(call(&radius,&method_token)==40);
  if(mode==1){put64(frame,16,3);frame[32+27]=1;drain(tr,&frame);assert(api->tick(gettid())==0);assert(call(&radius,&method_token)==80);}
  else{p.enabled=1;p.lease_ms=10;assert(api->update(&p)==0);assert(api->tick(gettid())==0);assert(call(&radius,&method_token)==80);}
  timespec delay{0,150000000};nanosleep(&delay,nullptr);assert(call(&radius,&method_token)==40);
- assert(api->stop()==0&&api->stop()==0);assert(call(&radius,&method_token)==40);assert(api->update(&p)==PGR_SPAH_STOPPED);assert(api->tick(gettid())==PGR_SPAH_STOPPED);
+ assert(api->stop()==0&&api->stop()==0);assert(call(&radius,&method_token)==40);assert(api->update(&p)==PGS_SPAH_STOPPED);assert(api->tick(gettid())==PGS_SPAH_STOPPED);
  assert(api->sample(&s)==0&&s.stopping&&!s.ready);assert(originals>=8);
  // Published trampoline intentionally retained; never dlclose or unhook here.
 }

@@ -8,7 +8,7 @@ import unittest
 
 ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT / "tools"))
-from pgs_reference_inventory import scan, snapshot_differences, text_count
+from pgs_reference_inventory import abbreviation_counts, scan, snapshot_differences, text_count
 
 
 class PgsReferenceInventoryTests(unittest.TestCase):
@@ -17,6 +17,13 @@ class PgsReferenceInventoryTests(unittest.TestCase):
         self.assertEqual(text_count(b"PGS"), 0)
         self.assertIsNone(text_count(b"\x00pgrazor"))
         self.assertIsNone(text_count(b"\xff"))
+
+    def test_abbreviations_are_counted_separately(self):
+        data = b"PGR_ACCOUNTS_H_ PGR_ACC_CMD_NONE pgr_battle_api_v1 PgrSpinHostConfig PGS_ACCOUNTS_H_ XPGR_TEST"
+        self.assertEqual(abbreviation_counts(data), {"uppercase": 2, "lowercase": 1, "camelcase": 1})
+        self.assertEqual(abbreviation_counts(b"PGS_TEST pgs_test PgsType"), {})
+        self.assertIsNone(abbreviation_counts(b"\x00PGR_TEST"))
+        self.assertIsNone(abbreviation_counts(b"\xff"))
 
     def test_snapshot_differences_reports_exact_paths_and_counts(self):
         previous = {"files": [{"path": "a", "occurrences": 9}, {"path": "b", "occurrences": 1}]}
@@ -33,7 +40,7 @@ class PgsReferenceInventoryTests(unittest.TestCase):
             subprocess.run(["git", "init", "-q"], cwd=root, check=True)
             (root / "docs").mkdir()
             (root / "docs/PGS_REMAINING_REFERENCES.json").write_text('{"files": []}', encoding="utf-8")
-            (root / "notes.txt").write_bytes(b"PGRAZOR pgrazor\n")
+            (root / "notes.txt").write_bytes(b"PGRAZOR pgrazor PGR_TEST PgrTest pgr_test\n")
             (root / "binary.bin").write_bytes(b"\x00pgrazor")
             subprocess.run(["git", "add", "--all"], cwd=root, check=True)
             (root / "notes.txt").write_bytes(b"PGS\n")
@@ -44,6 +51,8 @@ class PgsReferenceInventoryTests(unittest.TestCase):
             self.assertEqual(indexed["text_files"], 1)
             self.assertEqual(indexed["remaining_occurrences"], 2)
             self.assertEqual(checkout["remaining_occurrences"], 0)
+            self.assertEqual(indexed["abbreviations"]["remaining_occurrences"], 3)
+            self.assertEqual(checkout["abbreviations"]["remaining_occurrences"], 0)
             self.assertEqual(snapshot_differences(indexed, checkout), [
                 {"path": "notes.txt", "snapshot": 2, "actual": 0},
             ])
@@ -61,7 +70,13 @@ class PgsReferenceInventoryTests(unittest.TestCase):
                          sum(result["remaining_by_category"].values()))
         self.assertTrue(all(row["path"] != "docs/PGS_REMAINING_REFERENCES.json"
                             for row in result["files"]))
-        summary = {key: val for key, val in result.items() if key != "files"}
+        abbreviations = result["abbreviations"]
+        self.assertEqual(abbreviations["remaining_files"], len(abbreviations["files"]))
+        self.assertEqual(abbreviations["remaining_occurrences"], sum(row["occurrences"] for row in abbreviations["files"]))
+        self.assertEqual(abbreviations["remaining_occurrences"], sum(abbreviations["by_form"].values()))
+        summary = {key: val for key, val in result.items() if key not in ("files", "abbreviations")}
+        print("PGS abbreviated reference summary: " + json.dumps({k: v for k, v in abbreviations.items() if k != "files"}, sort_keys=True))
+        print("PGS abbreviated reference files: " + json.dumps(abbreviations["files"], sort_keys=True))
         print("PGS fresh tracked-reference inventory: " + json.dumps(summary, sort_keys=True))
         previous = json.loads((ROOT / "docs/PGS_REMAINING_REFERENCES.json").read_text(encoding="utf-8"))
         differences = snapshot_differences(previous, result)

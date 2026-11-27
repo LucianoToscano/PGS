@@ -65,7 +65,7 @@ void *fake_object_get_class(void *obj) {
 void *fake_object_unbox(void *obj) { return &static_cast<FakeLatLng *>(obj)->lat; }
 
 // Hooks the capture path can drive mid-call (lease expiry / epoch change / disable).
-const PgrMapTapApi *g_api = nullptr;
+const PgsMapTapApi *g_api = nullptr;
 uint64_t g_owner = 0;
 bool g_invoke_bumps_epoch = false;
 bool g_invoke_disables = false;
@@ -132,10 +132,10 @@ __attribute__((noinline)) uint8_t target_position(void *self, TestFloat2 pos, vo
 
 uint64_t this_tid() { return static_cast<uint64_t>(static_cast<pid_t>(::gettid())); }
 
-PgrMapTapConfig make_config() {
-  PgrMapTapConfig c{};
+PgsMapTapConfig make_config() {
+  PgsMapTapConfig c{};
   c.version = 1;
-  c.size = sizeof(PgrMapTapConfig);
+  c.size = sizeof(PgsMapTapConfig);
   c.gchandle_new = reinterpret_cast<void *>(&fake_gchandle_new);
   c.gchandle_get_target = reinterpret_cast<void *>(&fake_gchandle_get_target);
   c.gchandle_free = reinterpret_cast<void *>(&fake_gchandle_free);
@@ -151,19 +151,19 @@ PgrMapTapConfig make_config() {
   return c;
 }
 
-PgrMapTapSample take_sample(const PgrMapTapApi *api) {
-  PgrMapTapSample s{};
-  assert(api->sample(&s) == PGR_MAP_TAP_OK);
-  assert(s.version == 1 && s.size == sizeof(PgrMapTapSample));
+PgsMapTapSample take_sample(const PgsMapTapApi *api) {
+  PgsMapTapSample s{};
+  assert(api->sample(&s) == PGS_MAP_TAP_OK);
+  assert(s.version == 1 && s.size == sizeof(PgsMapTapSample));
   return s;
 }
 
-int drain_all(const PgrMapTapApi *api, PgrMapTapEvent *out, int max) {
+int drain_all(const PgsMapTapApi *api, PgsMapTapEvent *out, int max) {
   int n = 0;
-  PgrMapTapEvent ev{};
-  while (n < max && api->drain(&ev) == PGR_MAP_TAP_OK) out[n++] = ev;
+  PgsMapTapEvent ev{};
+  while (n < max && api->drain(&ev) == PGS_MAP_TAP_OK) out[n++] = ev;
   // No further events remain.
-  assert(api->drain(&ev) == PGR_MAP_TAP_EMPTY);
+  assert(api->drain(&ev) == PGS_MAP_TAP_EMPTY);
   return n;
 }
 
@@ -185,37 +185,37 @@ int main(int argc, char **argv) {
   const auto *core = static_cast<const pgs_native_api_v2 *>(getter(2));
   assert(core && core->size == 48);
   assert(core->query_feature(13, 99) == nullptr);  // exact version only
-  const auto *api = static_cast<const PgrMapTapApi *>(core->query_feature(13, 1));
-  assert(api != nullptr && api->version == 1 && api->size == sizeof(PgrMapTapApi));
+  const auto *api = static_cast<const PgsMapTapApi *>(core->query_feature(13, 1));
+  assert(api != nullptr && api->version == 1 && api->size == sizeof(PgsMapTapApi));
   g_api = api;
 
   const uint64_t tid = this_tid();
   g_owner = tid;
-  PgrMapTapConfig cfg = make_config();
+  PgsMapTapConfig cfg = make_config();
 
   // Validation before install.
-  assert(api->install(nullptr) == PGR_MAP_TAP_ERR_INVALID_ARG);
-  PgrMapTapConfig bad = cfg;
+  assert(api->install(nullptr) == PGS_MAP_TAP_ERR_INVALID_ARG);
+  PgsMapTapConfig bad = cfg;
   bad.version = 2;
-  assert(api->install(&bad) == PGR_MAP_TAP_ERR_BAD_VERSION);
-  bad = cfg; bad.size = sizeof(PgrMapTapConfig) - 1;
-  assert(api->install(&bad) == PGR_MAP_TAP_ERR_BAD_SIZE);
+  assert(api->install(&bad) == PGS_MAP_TAP_ERR_BAD_VERSION);
+  bad = cfg; bad.size = sizeof(PgsMapTapConfig) - 1;
+  assert(api->install(&bad) == PGS_MAP_TAP_ERR_BAD_SIZE);
   bad = cfg; bad.map_class = nullptr;
-  assert(api->install(&bad) == PGR_MAP_TAP_ERR_MISSING_PTR);
+  assert(api->install(&bad) == PGS_MAP_TAP_ERR_MISSING_PTR);
   bad = cfg; bad.position_address = bad.tap_address;
-  assert(api->install(&bad) == PGR_MAP_TAP_ERR_DUPLICATE_TARGET);
+  assert(api->install(&bad) == PGS_MAP_TAP_ERR_DUPLICATE_TARGET);
 
   // Not installed yet.
-  PgrMapTapEvent ev{};
-  assert(api->update(1, 1000, tid, 1, 1) == PGR_MAP_TAP_ERR_NOT_INSTALLED);
-  assert(api->drain(&ev) == PGR_MAP_TAP_ERR_NOT_INSTALLED);
-  assert(api->disable() == PGR_MAP_TAP_ERR_NOT_INSTALLED);
+  PgsMapTapEvent ev{};
+  assert(api->update(1, 1000, tid, 1, 1) == PGS_MAP_TAP_ERR_NOT_INSTALLED);
+  assert(api->drain(&ev) == PGS_MAP_TAP_ERR_NOT_INSTALLED);
+  assert(api->disable() == PGS_MAP_TAP_ERR_NOT_INSTALLED);
 
   // Install, idempotent re-install, refused rebinds.
-  assert(api->install(&cfg) == PGR_MAP_TAP_OK);
-  assert(api->install(&cfg) == PGR_MAP_TAP_OK);
+  assert(api->install(&cfg) == PGS_MAP_TAP_OK);
+  assert(api->install(&cfg) == PGS_MAP_TAP_OK);
   bad = cfg; bad.latlng_class = &g_cls_other;
-  assert(api->install(&bad) == PGR_MAP_TAP_ERR_RECONFIG_ADDRESS_MISMATCH);
+  assert(api->install(&bad) == PGS_MAP_TAP_ERR_RECONFIG_ADDRESS_MISMATCH);
 
   FakeGround ground{&g_cls_ground};
   FakeMap map{&g_cls_map};
@@ -223,12 +223,12 @@ int main(int argc, char **argv) {
   g_drive_out = g_out_source;
 
   // 1. Mode out of range is rejected without arming.
-  assert(api->update(1, 1000, tid, 1, 9) == PGR_MAP_TAP_ERR_BAD_MODE);
-  assert(api->update(1, 1000, tid, 1, -1) == PGR_MAP_TAP_ERR_BAD_MODE);
+  assert(api->update(1, 1000, tid, 1, 9) == PGS_MAP_TAP_ERR_BAD_MODE);
+  assert(api->update(1, 1000, tid, 1, -1) == PGS_MAP_TAP_ERR_BAD_MODE);
 
   // 2. ABI forwarding: a bare OnTap (not driving position) chains verbatim; a bare
   //    position outside any OnTap scope chains verbatim and emits nothing.
-  assert(api->update(1, 2000, tid, 1, 2) == PGR_MAP_TAP_OK);
+  assert(api->update(1, 2000, tid, 1, 2) == PGS_MAP_TAP_OK);
   g_tap_drives_position = 0;
   call_tap(&ground, &dummy_sender, &dummy_ea, &dummy_method);
   assert(g_tap_log.count == 1 && g_tap_log.self == &ground && g_tap_log.sender == &dummy_sender &&
@@ -245,10 +245,10 @@ int main(int argc, char **argv) {
   g_tap_drives_position = 1;
   call_tap(&ground, &dummy_sender, &dummy_ea, &dummy_method);
   assert(g_pos_log.x == g_drive_pos.x && g_pos_log.y == g_drive_pos.y);  // by-value Vector2 forwarded
-  PgrMapTapSample s = take_sample(api);
+  PgsMapTapSample s = take_sample(api);
   assert(s.captured_serial == 1 && s.queued_count == 1 && s.owned_root_count == 0);
-  PgrMapTapEvent got[PGR_MAP_TAP_QUEUE_CAPACITY];
-  int n = drain_all(api, got, PGR_MAP_TAP_QUEUE_CAPACITY);
+  PgsMapTapEvent got[PGS_MAP_TAP_QUEUE_CAPACITY];
+  int n = drain_all(api, got, PGS_MAP_TAP_QUEUE_CAPACITY);
   assert(n == 1 && got[0].mode == 2 && got[0].epoch == 1);
   assert(std::fabs(got[0].latitude - 37.5) < 1e-9 && std::fabs(got[0].longitude + 122.3) < 1e-9);
   assert(got[0].tid == tid && g_live.empty());
@@ -261,7 +261,7 @@ int main(int argc, char **argv) {
   g_box_latlng.lat = 20.0; g_tap_drives_position = 1;
   call_tap(&ground, &dummy_sender, &dummy_ea, &dummy_method);
   assert(take_sample(api).queued_count == 2);
-  n = drain_all(api, got, PGR_MAP_TAP_QUEUE_CAPACITY);
+  n = drain_all(api, got, PGS_MAP_TAP_QUEUE_CAPACITY);
   assert(n == 2 && std::fabs(got[0].latitude - 10.0) < 1e-9 && std::fabs(got[1].latitude - 20.0) < 1e-9);
   assert(got[0].boottime_ms > 0 && got[1].boottime_ms >= got[0].boottime_ms + 40);
   g_box_latlng.lat = 37.5;
@@ -282,7 +282,7 @@ int main(int argc, char **argv) {
   int dropped_before = take_sample(api).dropped_serial;
   call_tap(&ground, &dummy_sender, &dummy_ea, &dummy_method);
   s = take_sample(api);
-  assert(s.dropped_serial == dropped_before + 1 && s.last_error_code == PGR_MAP_TAP_RUNTIME_POSITION_NONFINITE);
+  assert(s.dropped_serial == dropped_before + 1 && s.last_error_code == PGS_MAP_TAP_RUNTIME_POSITION_NONFINITE);
   assert(s.captured_serial == 3 && g_live.empty());
   std::memcpy(g_out_source, saved_src, sizeof(saved_src));
 
@@ -292,11 +292,11 @@ int main(int argc, char **argv) {
   dropped_before = take_sample(api).dropped_serial;
   call_tap(&ground, &dummy_sender, &dummy_ea, &dummy_method);
   s = take_sample(api);
-  assert(s.dropped_serial == dropped_before + 1 && s.last_error_code == PGR_MAP_TAP_RUNTIME_LOCATION_BOUNDS);
+  assert(s.dropped_serial == dropped_before + 1 && s.last_error_code == PGS_MAP_TAP_RUNTIME_LOCATION_BOUNDS);
   g_box_latlng.lat = 37.5;
 
   // 8. Lease expires while the ORIGINAL runs: the re-validation revokes the event.
-  assert(api->update(1, 5, tid, 1, 1) == PGR_MAP_TAP_OK);
+  assert(api->update(1, 5, tid, 1, 1) == PGS_MAP_TAP_OK);
   g_slow_position = true; g_tap_drives_position = 1;
   int captured_before = take_sample(api).captured_serial;
   call_tap(&ground, &dummy_sender, &dummy_ea, &dummy_method);
@@ -304,48 +304,48 @@ int main(int argc, char **argv) {
   g_slow_position = false;
 
   // 9. Epoch change DURING the GetWorldLocation invoke drops the event.
-  assert(api->update(1, 2000, tid, 5, 1) == PGR_MAP_TAP_OK);
+  assert(api->update(1, 2000, tid, 5, 1) == PGS_MAP_TAP_OK);
   g_invoke_epoch = 5; g_invoke_mode = 1; g_invoke_bumps_epoch = true;
   g_tap_drives_position = 1; captured_before = take_sample(api).captured_serial;
   call_tap(&ground, &dummy_sender, &dummy_ea, &dummy_method);
   assert(take_sample(api).captured_serial == captured_before && g_live.empty());
 
   // 10. Disable DURING the invoke drops the event too.
-  assert(api->update(1, 2000, tid, 6, 1) == PGR_MAP_TAP_OK);
+  assert(api->update(1, 2000, tid, 6, 1) == PGS_MAP_TAP_OK);
   g_invoke_disables = true; g_tap_drives_position = 1; captured_before = take_sample(api).captured_serial;
   call_tap(&ground, &dummy_sender, &dummy_ea, &dummy_method);
   assert(take_sample(api).captured_serial == captured_before && g_live.empty());
 
   // 11. Managed exception from GetWorldLocation is surfaced and dropped.
-  assert(api->update(1, 2000, tid, 7, 1) == PGR_MAP_TAP_OK);
+  assert(api->update(1, 2000, tid, 7, 1) == PGS_MAP_TAP_OK);
   g_invoke_throws = true; g_tap_drives_position = 1; dropped_before = take_sample(api).dropped_serial;
   call_tap(&ground, &dummy_sender, &dummy_ea, &dummy_method);
   s = take_sample(api);
-  assert(s.dropped_serial == dropped_before + 1 && s.last_error_code == PGR_MAP_TAP_RUNTIME_INVOKE_EXCEPTION);
+  assert(s.dropped_serial == dropped_before + 1 && s.last_error_code == PGS_MAP_TAP_RUNTIME_INVOKE_EXCEPTION);
   assert(g_live.empty());
 
   // 12. Reentrancy: a GetGroundPosition reentered from inside the original must not
   //     double-capture, and all roots stay balanced.
-  assert(api->update(1, 2000, tid, 8, 1) == PGR_MAP_TAP_OK);
+  assert(api->update(1, 2000, tid, 8, 1) == PGS_MAP_TAP_OK);
   g_position_reenters = true; g_tap_drives_position = 1; captured_before = take_sample(api).captured_serial;
   call_tap(&ground, &dummy_sender, &dummy_ea, &dummy_method);
   s = take_sample(api);
   assert(s.captured_serial == captured_before + 1 && g_live.empty());
-  (void)drain_all(api, got, PGR_MAP_TAP_QUEUE_CAPACITY);
+  (void)drain_all(api, got, PGS_MAP_TAP_QUEUE_CAPACITY);
 
   // 13. A foreign thread cannot acquire the owner and performs no GC: its update is
   //     refused and a position call on it chains the original only.
-  assert(api->update(1, 2000, tid, 9, 1) == PGR_MAP_TAP_OK);
+  assert(api->update(1, 2000, tid, 9, 1) == PGS_MAP_TAP_OK);
   std::thread([&]() {
-    assert(api->update(1, 2000, this_tid(), 9, 1) == PGR_MAP_TAP_ERR_INVALID_ARG);
+    assert(api->update(1, 2000, this_tid(), 9, 1) == PGS_MAP_TAP_ERR_INVALID_ARG);
     (void)call_position(&map, g_drive_pos, g_out_source, &dummy_method);  // not owner: chains only
-    PgrMapTapSample fs{};
+    PgsMapTapSample fs{};
     api->sample(&fs);  // pure sample must not free anything
   }).join();
   assert(g_live.empty());
 
   // Root allocation failure must not emit or leak.
-  assert(api->update(1, 2000, tid, 10, 1) == PGR_MAP_TAP_OK);
+  assert(api->update(1, 2000, tid, 10, 1) == PGS_MAP_TAP_OK);
   g_fail_root = true; g_tap_drives_position = 1;
   call_tap(&ground, &dummy_sender, &dummy_ea, &dummy_method);
   g_fail_root = false;
@@ -358,35 +358,35 @@ int main(int argc, char **argv) {
 
   // Disable flushes the queue; drain reports empty.
   g_tap_drives_position = 1;
-  assert(api->update(1, 2000, tid, 10, 1) == PGR_MAP_TAP_OK);
+  assert(api->update(1, 2000, tid, 10, 1) == PGS_MAP_TAP_OK);
   call_tap(&ground, &dummy_sender, &dummy_ea, &dummy_method);
   assert(take_sample(api).queued_count == 1);
-  assert(api->disable() == PGR_MAP_TAP_OK);
-  assert(api->drain(&ev) == PGR_MAP_TAP_EMPTY && take_sample(api).queued_count == 0);
+  assert(api->disable() == PGS_MAP_TAP_OK);
+  assert(api->drain(&ev) == PGS_MAP_TAP_EMPTY && take_sample(api).queued_count == 0);
 
-  assert(api->update(1, 10, tid, 11, 1) == PGR_MAP_TAP_OK);
+  assert(api->update(1, 10, tid, 11, 1) == PGS_MAP_TAP_OK);
   g_tap_drives_position = 1;
   call_tap(&ground, &dummy_sender, &dummy_ea, &dummy_method);
   usleep(20000);
-  assert(api->drain(&ev) == PGR_MAP_TAP_EMPTY && "expired queue must not deliver movement");
-  assert(api->update(1, 2000, tid, 12, 1) == PGR_MAP_TAP_OK);
+  assert(api->drain(&ev) == PGS_MAP_TAP_EMPTY && "expired queue must not deliver movement");
+  assert(api->update(1, 2000, tid, 12, 1) == PGS_MAP_TAP_OK);
   g_invoke_disables=true; g_invoke_reenables=true; g_tap_drives_position=1;
   call_tap(&ground, &dummy_sender, &dummy_ea, &dummy_method);
-  assert(api->drain(&ev)==PGR_MAP_TAP_EMPTY);
+  assert(api->drain(&ev)==PGS_MAP_TAP_EMPTY);
   g_tap_drives_position=1;
   call_tap(&ground, &dummy_sender, &dummy_ea, &dummy_method);
-  assert(api->update(1,2000,tid,12,2)==PGR_MAP_TAP_OK);
-  assert(api->drain(&ev)==PGR_MAP_TAP_EMPTY);
+  assert(api->update(1,2000,tid,12,2)==PGS_MAP_TAP_OK);
+  assert(api->drain(&ev)==PGS_MAP_TAP_EMPTY);
   const uint64_t large_epoch=0x100000002ULL;
-  assert(api->update(1,2000,tid,large_epoch,3)==PGR_MAP_TAP_OK);
+  assert(api->update(1,2000,tid,large_epoch,3)==PGS_MAP_TAP_OK);
   g_tap_drives_position=1;
   call_tap(&ground, &dummy_sender, &dummy_ea, &dummy_method);
-  assert(api->drain(&ev)==PGR_MAP_TAP_OK && ev.epoch==large_epoch && ev.mode==3);
-  for(int i=0;i<PGR_MAP_TAP_QUEUE_CAPACITY+1;++i){
+  assert(api->drain(&ev)==PGS_MAP_TAP_OK && ev.epoch==large_epoch && ev.mode==3);
+  for(int i=0;i<PGS_MAP_TAP_QUEUE_CAPACITY+1;++i){
     g_tap_drives_position=1;
     call_tap(&ground, &dummy_sender, &dummy_ea, &dummy_method);
   }
-  assert(take_sample(api).fault==1 && api->drain(&ev)==PGR_MAP_TAP_EMPTY);
+  assert(take_sample(api).fault==1 && api->drain(&ev)==PGS_MAP_TAP_EMPTY);
   assert(g_live.empty() && take_sample(api).owned_root_count==0);
 
   std::printf("map_tap_test passed: ABI forward, outside-scope no emit, valid tap, two taps retained, "

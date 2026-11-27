@@ -25,7 +25,7 @@
 // candidate, so the number of live roots is bounded independent of the point count -- the 294928-byte output
 // is the caller's buffer (never a stack object) and holds only copied scalars + copied UTF16, never a managed
 // pointer or a GC handle. The owner is latched from a genuine on-thread call (tid nonzero AND == the current
-// OS tid BEFORE the latch; a later foreign tid refuses). The residual lease is clamped to PGR_MP_MAX_LEASE_MS
+// OS tid BEFORE the latch; a later foreign tid refuses). The residual lease is clamped to PGS_MP_MAX_LEASE_MS
 // (CLOCK_BOOTTIME), re-checked between managed calls and once more AFTER every root is released and before the
 // output is published. An atomic busy guard spans ALL temporary-root cleanup; reentry refuses. Managed
 // exceptions surface through runtime_invoke's exception out-param: a throw on the main path (find / alive /
@@ -38,54 +38,54 @@ extern "C" {
 
 static_assert(sizeof(void *) == 8, "MapPoi native ABI requires LP64");
 
-enum PgrMapPoiInfo {
-  PGR_MP_FEATURE_ID      = 42,
-  PGR_MP_API_VERSION     = 1,
-  PGR_MP_CONFIG_VERSION  = 1,
-  PGR_MP_REQUEST_VERSION = 1,
-  PGR_MP_OUTPUT_VERSION  = 1,
-  PGR_MP_MAX_LEASE_MS    = 2500,          // residual foreground lease ceiling (JS allowedUntil/deadline gate)
-  PGR_MP_MAX_POINTS      = 512,           // total snapshot ceiling across both classes (JS points.length<512)
-  PGR_MP_MAX_ARRAY       = 2048,          // per-class FindObjectsOfType element ceiling (JS 'map-count' guard)
-  PGR_MP_MAX_ID          = 256,           // UTF16 id length ceiling (JS id length 1..256)
-  PGR_MP_ARRAY_DATA_OFF  = 32             // raw LP64 managed array data start (element[i] @ base + 32 + i*8)
+enum PgsMapPoiInfo {
+  PGS_MP_FEATURE_ID      = 42,
+  PGS_MP_API_VERSION     = 1,
+  PGS_MP_CONFIG_VERSION  = 1,
+  PGS_MP_REQUEST_VERSION = 1,
+  PGS_MP_OUTPUT_VERSION  = 1,
+  PGS_MP_MAX_LEASE_MS    = 2500,          // residual foreground lease ceiling (JS allowedUntil/deadline gate)
+  PGS_MP_MAX_POINTS      = 512,           // total snapshot ceiling across both classes (JS points.length<512)
+  PGS_MP_MAX_ARRAY       = 2048,          // per-class FindObjectsOfType element ceiling (JS 'map-count' guard)
+  PGS_MP_MAX_ID          = 256,           // UTF16 id length ceiling (JS id length 1..256)
+  PGS_MP_ARRAY_DATA_OFF  = 32             // raw LP64 managed array data start (element[i] @ base + 32 + i*8)
 };
 
 // scan() return == out.status: 1 SNAPSHOT (count points published) / 0 REFUSED (benign gate/lease; count 0) /
 // negative FAULT (count 0). install() returns 0 on success; negatives are faults.
-enum PgrMapPoiStatus {
-  PGR_MP_OK                = 1,   // snapshot published (count may be 0)
-  PGR_MP_SKIP              = 0,   // benign refuse: owner mismatch / unattached thread / closed/expired lease
-  PGR_MP_ERR_NULL_ARG      = -1,
-  PGR_MP_ERR_BAD_VERSION   = -2,
-  PGR_MP_ERR_BAD_SIZE      = -3,
-  PGR_MP_ERR_MISSING_PTR   = -4,  // install(): a mandatory config pointer was null
-  PGR_MP_ERR_BAD_CONFIG    = -5,  // install(): a partially-populated optional pointer group
-  PGR_MP_ERR_NOT_INSTALLED = -6,
-  PGR_MP_ERR_RECONFIG      = -9,  // install(): a different config at an already-installed table
-  PGR_MP_ERR_CLOCK         = -10,
-  PGR_MP_ERR_BUSY          = -11, // reentrant managed call refused (defensive)
-  PGR_MP_ERR_GCHANDLE      = -12, // a temporary root could not be allocated / an expected value was null
-  PGR_MP_ERR_MANAGED       = -13, // a main-path managed call threw
-  PGR_MP_ERR_METADATA      = -14, // a resolved object had the wrong class
-  PGR_MP_ERR_BAD_COUNT     = -16, // a per-class FindObjectsOfType array exceeded PGR_MP_MAX_ARRAY
-  PGR_MP_ERR_ALLOCATION    = -17  // scalar snapshot staging allocation failed
+enum PgsMapPoiStatus {
+  PGS_MP_OK                = 1,   // snapshot published (count may be 0)
+  PGS_MP_SKIP              = 0,   // benign refuse: owner mismatch / unattached thread / closed/expired lease
+  PGS_MP_ERR_NULL_ARG      = -1,
+  PGS_MP_ERR_BAD_VERSION   = -2,
+  PGS_MP_ERR_BAD_SIZE      = -3,
+  PGS_MP_ERR_MISSING_PTR   = -4,  // install(): a mandatory config pointer was null
+  PGS_MP_ERR_BAD_CONFIG    = -5,  // install(): a partially-populated optional pointer group
+  PGS_MP_ERR_NOT_INSTALLED = -6,
+  PGS_MP_ERR_RECONFIG      = -9,  // install(): a different config at an already-installed table
+  PGS_MP_ERR_CLOCK         = -10,
+  PGS_MP_ERR_BUSY          = -11, // reentrant managed call refused (defensive)
+  PGS_MP_ERR_GCHANDLE      = -12, // a temporary root could not be allocated / an expected value was null
+  PGS_MP_ERR_MANAGED       = -13, // a main-path managed call threw
+  PGS_MP_ERR_METADATA      = -14, // a resolved object had the wrong class
+  PGS_MP_ERR_BAD_COUNT     = -16, // a per-class FindObjectsOfType array exceeded PGS_MP_MAX_ARRAY
+  PGS_MP_ERR_ALLOCATION    = -17  // scalar snapshot staging allocation failed
 };
 
 // Point.kind: the enumerated POI class.
-enum PgrMapPoiKind {
-  PGR_MP_KIND_STOP = 0,
-  PGR_MP_KIND_GYM  = 1
+enum PgsMapPoiKind {
+  PGS_MP_KIND_STOP = 0,
+  PGS_MP_KIND_GYM  = 1
 };
 
 // Point.flags: which optional fields carry a value. Missing optional field -> bit clear + 0 value.
-enum PgrMapPoiFlags {
-  PGR_MP_FLAG_TEAM  = 1,   // team_id valid
-  PGR_MP_FLAG_SLOTS = 2,   // slots valid (0..6)
-  PGR_MP_FLAG_LEVEL = 4,   // level valid (raw signed enum)
-  PGR_MP_FLAG_BOSS  = 8,   // boss valid (1..99999)
-  PGR_MP_FLAG_EGG   = 16,  // active raid is an unhatched egg (battle_ms > wall)
-  PGR_MP_FLAG_INCIDENT = 32 // stop: active incident (incident valid; its end ms in raid_end)
+enum PgsMapPoiFlags {
+  PGS_MP_FLAG_TEAM  = 1,   // team_id valid
+  PGS_MP_FLAG_SLOTS = 2,   // slots valid (0..6)
+  PGS_MP_FLAG_LEVEL = 4,   // level valid (raw signed enum)
+  PGS_MP_FLAG_BOSS  = 8,   // boss valid (1..99999)
+  PGS_MP_FLAG_EGG   = 16,  // active raid is an unhatched egg (battle_ms > wall)
+  PGS_MP_FLAG_INCIDENT = 32 // stop: active incident (incident valid; its end ms in raid_end)
 };
 
 // Fixed LP64 config (328 bytes): 8-byte header + 40 pointers in the EXACT slot order below. Slots 0..30 are
@@ -94,12 +94,12 @@ enum PgrMapPoiFlags {
 //   slots = {f_gymDisplay(33), class_gymDisplay(34), f_slots(35)}
 //   boss  = {f_boss(37), class_boss(38), f_bossId(39)}
 //   level = f_level(36)   (independent)
-// A partially-populated group is rejected (PGR_MP_ERR_BAD_CONFIG); an all-null group simply disables that
+// A partially-populated group is rejected (PGS_MP_ERR_BAD_CONFIG); an all-null group simply disables that
 // optional field. Every pointer is an already-validated il2cpp export / Il2CppClass* / MethodInfo* /
 // Il2CppFieldInfo* packed by the host. No hook address. Reordering is forbidden.
-struct PgrMapPoiConfig {
-  uint32_t version;  // == PGR_MP_CONFIG_VERSION
-  uint32_t size;     // == sizeof(PgrMapPoiConfig)
+struct PgsMapPoiConfig {
+  uint32_t version;  // == PGS_MP_CONFIG_VERSION
+  uint32_t size;     // == sizeof(PgsMapPoiConfig)
 
   // il2cpp runtime exports (slots 0-13).
   void *runtime_invoke;            // 0  void*     (MethodInfo*, void* obj, void** params, void** exc)
@@ -165,26 +165,26 @@ struct PgrMapPoiConfig {
                           //    false once the player beat it (the game's own local completion), like the map
 };
 
-static_assert(sizeof(PgrMapPoiConfig) == 408, "PgrMapPoiConfig must remain 408 bytes on LP64");
+static_assert(sizeof(PgsMapPoiConfig) == 408, "PgsMapPoiConfig must remain 408 bytes on LP64");
 
 // Fixed LP64 request (32 bytes). tid is the proven owner tid (nonzero and == the current OS tid). remaining_ms
-// is the residual lease (clamped to PGR_MP_MAX_LEASE_MS; 0 refuses). wall_ms is the host wall clock in ms
+// is the residual lease (clamped to PGS_MP_MAX_LEASE_MS; 0 refuses). wall_ms is the host wall clock in ms
 // (Date.now()) used only for the active-raid window comparison -- never for the lease.
-struct PgrMapPoiRequest {
-  uint32_t version;      // off 0  == PGR_MP_REQUEST_VERSION
-  uint32_t size;         // off 4  == sizeof(PgrMapPoiRequest)
+struct PgsMapPoiRequest {
+  uint32_t version;      // off 0  == PGS_MP_REQUEST_VERSION
+  uint32_t size;         // off 4  == sizeof(PgsMapPoiRequest)
   uint64_t tid;          // off 8  proven owner tid
   uint64_t remaining_ms; // off 16 residual lease; clamped, 0 refuses
   uint64_t wall_ms;      // off 24 host wall clock ms for the raid window (Date.now())
 };
 
-static_assert(sizeof(PgrMapPoiRequest) == 32, "PgrMapPoiRequest must remain 32 bytes on LP64");
+static_assert(sizeof(PgsMapPoiRequest) == 32, "PgsMapPoiRequest must remain 32 bytes on LP64");
 
 // Fixed LP64 point (576 bytes). Scalar only: the id is copied UTF16 (NOT NUL terminated; use id_length). A
 // stop carries only kind/id/lat/lon; a gym may additionally carry the optional fields flagged in `flags`.
-struct PgrMapPoiPoint {
-  uint32_t kind;       // off 0  PgrMapPoiKind
-  uint32_t flags;      // off 4  PgrMapPoiFlags bitset
+struct PgsMapPoiPoint {
+  uint32_t kind;       // off 0  PgsMapPoiKind
+  uint32_t flags;      // off 4  PgsMapPoiFlags bitset
   uint32_t id_length;  // off 8  UTF16 units in id (1..256)
   uint32_t incident;   // off 12 stop: raw IncidentDisplayType of its active incident (FLAG_INCIDENT), else 0
   double lat;          // off 16 latitude (|lat| <= 90)
@@ -195,37 +195,37 @@ struct PgrMapPoiPoint {
   int32_t slots;       // off 52 occupied gym slots 0..6 (FLAG_SLOTS)
   int32_t level;       // off 56 raw raid level enum (FLAG_LEVEL)
   int32_t boss;        // off 60 raid boss species id 1..99999 (FLAG_BOSS)
-  uint16_t id[PGR_MP_MAX_ID]; // off 64 copied UTF16 fort id
+  uint16_t id[PGS_MP_MAX_ID]; // off 64 copied UTF16 fort id
 };
 
-static_assert(sizeof(PgrMapPoiPoint) == 576, "PgrMapPoiPoint must remain 576 bytes on LP64");
+static_assert(sizeof(PgsMapPoiPoint) == 576, "PgsMapPoiPoint must remain 576 bytes on LP64");
 
 // Fixed LP64 output (294928 bytes). Always fully zeroed on entry (header re-stamped). status mirrors the
 // return. On a positive return the first `count` points are valid; the rest stay zero. On a 0 refuse / a
 // negative fault count stays 0.
-struct PgrMapPoiOutput {
-  uint32_t version;  // off 0  == PGR_MP_OUTPUT_VERSION
-  uint32_t size;     // off 4  == sizeof(PgrMapPoiOutput)
+struct PgsMapPoiOutput {
+  uint32_t version;  // off 0  == PGS_MP_OUTPUT_VERSION
+  uint32_t size;     // off 4  == sizeof(PgsMapPoiOutput)
   int32_t status;    // off 8  == the scan() return
-  uint32_t count;    // off 12 number of valid points (<= PGR_MP_MAX_POINTS)
-  PgrMapPoiPoint points[PGR_MP_MAX_POINTS]; // off 16
+  uint32_t count;    // off 12 number of valid points (<= PGS_MP_MAX_POINTS)
+  PgsMapPoiPoint points[PGS_MP_MAX_POINTS]; // off 16
 };
 
-static_assert(sizeof(PgrMapPoiOutput) == 294928, "PgrMapPoiOutput must remain 294928 bytes on LP64");
+static_assert(sizeof(PgsMapPoiOutput) == 294928, "PgsMapPoiOutput must remain 294928 bytes on LP64");
 
 // Fixed LP64 table: 8-byte header + 2 function pointers = 24 bytes.
-struct PgrMapPoiApi {
-  uint32_t version;  // == PGR_MP_API_VERSION
-  uint32_t size;     // == sizeof(PgrMapPoiApi)
+struct PgsMapPoiApi {
+  uint32_t version;  // == PGS_MP_API_VERSION
+  uint32_t size;     // == sizeof(PgsMapPoiApi)
   // Verify + publish the immutable config once for the process lifetime. Idempotent for an identical config;
-  // a different config returns PGR_MP_ERR_RECONFIG. A null mandatory pointer, a bad header or a partial
+  // a different config returns PGS_MP_ERR_RECONFIG. A null mandatory pointer, a bad header or a partial
   // optional group is rejected (fail closed). No hook is installed.
-  int (*install)(const PgrMapPoiConfig *config);
+  int (*install)(const PgsMapPoiConfig *config);
   // Owner-thread read-only snapshot. See the file header for the full contract. 1 / 0 / negative.
-  int (*scan)(const PgrMapPoiRequest *request, PgrMapPoiOutput *out);
+  int (*scan)(const PgsMapPoiRequest *request, PgsMapPoiOutput *out);
 };
 
-static_assert(sizeof(PgrMapPoiApi) == 24, "PgrMapPoiApi must remain a 24-byte version-1 table");
+static_assert(sizeof(PgsMapPoiApi) == 24, "PgsMapPoiApi must remain a 24-byte version-1 table");
 
 // Hidden getter. NOT exported by the version script; the coordinator registers it in query_feature under
 // feature id 42 and answers only on an exact version match.

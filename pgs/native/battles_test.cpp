@@ -84,7 +84,7 @@ void *obj_class(void *o) { return o ? O(o)->klass : nullptr; }
 void *object_unbox(void *o) { return &static_cast<Box *>(o)->v; }
 
 // ---- scenario knobs / observations -------------------------------------------------
-const pgr_battle_api_v1 *g_api = nullptr;
+const pgs_battle_api_v1 *g_api = nullptr;
 Box  g_box;
 void *g_act_method = nullptr, *g_act_obj = nullptr, *g_act_p0 = nullptr, *g_act_p1 = nullptr;
 bool g_act_params_null = false;
@@ -100,7 +100,7 @@ int orb_probe(void*,void *method){
   ++g_orb_calls;
   if(g_orb_reenter==1)g_api->tick(gettid(),1);
   if(g_orb_reenter==2)g_api->update(0,0,0,gettid());
-  if(g_orb_reenter==3)g_api->observe(PGR_BATTLE_OBS_SCOPE_EXIT,g_reenter_scope,2,gettid());
+  if(g_orb_reenter==3)g_api->observe(PGS_BATTLE_OBS_SCOPE_EXIT,g_reenter_scope,2,gettid());
   if(g_orb_reenter==4)usleep(30000);
   return g_orb_direction;
 }
@@ -137,7 +137,7 @@ void *runtime_invoke(void *method, void *obj, void **params, void **exc) {
   *exc = nullptr;
   if (method == &m_alive)        return box_bool(params && params[0] && !O(params[0])->dead);
   if (method == &m_active) {
-    if (g_reenter == 1) { g_reenter = 0; g_api->observe(PGR_BATTLE_OBS_SCOPE_EXIT, g_reenter_scope,
+    if (g_reenter == 1) { g_reenter = 0; g_api->observe(PGS_BATTLE_OBS_SCOPE_EXIT, g_reenter_scope,
                                                         0, static_cast<uint64_t>(gettid())); }
     if(g_reenter==2) { g_reenter=0; g_api->update(0,0,0,gettid()); g_api->update(g_test_mask,2500,0,gettid()); }
     if(g_reenter==3) { g_reenter=0; g_api->tick(gettid(),1); }
@@ -155,9 +155,9 @@ void *runtime_invoke(void *method, void *obj, void **params, void **exc) {
   return nullptr;
 }
 
-pgr_battle_config_v1 make_config() {
-  pgr_battle_config_v1 c{};
-  c.version = PGR_BATTLE_API_VERSION; c.size = sizeof(c);
+pgs_battle_config_v1 make_config() {
+  pgs_battle_config_v1 c{};
+  c.version = PGS_BATTLE_API_VERSION; c.size = sizeof(c);
   c.gchandle_new = (void *)&gc_new; c.gchandle_get_target = (void *)&gc_target; c.gchandle_free = (void *)&gc_free;
   c.object_get_class = (void *)&obj_class; c.object_unbox = (void *)&object_unbox;
   c.runtime_invoke = (void *)&runtime_invoke; c.field_get_value = (void *)&field_get;
@@ -183,9 +183,9 @@ pgr_battle_config_v1 make_config() {
   return c;
 }
 
-pgr_battle_sample_v1 snap() { pgr_battle_sample_v1 s{}; g_api->sample(&s); return s; }
+pgs_battle_sample_v1 snap() { pgs_battle_sample_v1 s{}; g_api->sample(&s); return s; }
 void arm(uint32_t mask, uint64_t tid, uint32_t rocket = 0) { g_api->update(mask, 2500, rocket, tid); }
-void drain_all() { pgr_battle_event_v1 e{}; while (g_api->next_event(&e) == 1) {} }
+void drain_all() { pgs_battle_event_v1 e{}; while (g_api->next_event(&e) == 1) {} }
 
 // Wire a non-legacy gesture to a live Active battle director (so the status gate admits it).
 void wire_active(Obj *gesture, Obj *director, Obj *state) {
@@ -196,10 +196,10 @@ void wire_active(Obj *gesture, Obj *director, Obj *state) {
 
 int scenario(int which) {
   const uint64_t tid = static_cast<uint64_t>(gettid());
-  pgr_battle_config_v1 cfg = make_config();
+  pgs_battle_config_v1 cfg = make_config();
   if(which>=27)cfg.max_orb_direction=orb_probe;
   if(which==39)cfg.size=512; // old callers cannot accidentally enable the extension
-  if (g_api->install(&cfg) != PGR_BATTLE_OK) return 90;
+  if (g_api->install(&cfg) != PGS_BATTLE_OK) return 90;
   g_api->tick(tid, 0);  // latch the Unity owner identity before any observation
 
   Obj director{}, state{};
@@ -208,40 +208,40 @@ int scenario(int which) {
   case 0: {  // raid quick: no-args ABI, cadence blocks the second same-instant tick
     Obj scope{&c_scope0}, g{&c_raid_gesture}, tap{};
     wire_active(&g, &director, &state); g.vnext_tap = &tap; g.vnext_enabled = 1;
-    g_api->observe(PGR_BATTLE_OBS_SCOPE_ENTER, &scope, 0, tid);
-    g_api->observe(PGR_BATTLE_OBS_GESTURE, &g, 0, tid);
+    g_api->observe(PGS_BATTLE_OBS_SCOPE_ENTER, &scope, 0, tid);
+    g_api->observe(PGS_BATTLE_OBS_GESTURE, &g, 0, tid);
     arm(1u << 0, tid);                              // raid quick bit
     g_act_method = nullptr; g_api->tick(tid, 0);
     if (g_act_method != &m_raid_fast || !g_act_params_null) return 1;  // raid: params NULL
     uint64_t s1 = snap().action_serial;
     g_api->tick(tid, 0);                            // same CLOCK_BOOTTIME instant -> now < next
     if (snap().action_serial != s1) return 2;
-    g_api->observe(PGR_BATTLE_OBS_SCOPE_EXIT, &scope, 0, tid);
+    g_api->observe(PGS_BATTLE_OBS_SCOPE_EXIT, &scope, 0, tid);
     if (g_live_roots != 0) return 3;
     return 0;
   }
   case 1: {  // gym quick: legacy ABI (sender=tap, EventArgs=null); legacy skips the status gate
     Obj scope{&c_scope1}, g{&c_legacy_gesture}, tap{};
     g.legacy_tap = &tap;
-    g_api->observe(PGR_BATTLE_OBS_SCOPE_ENTER, &scope, 1, tid);
-    g_api->observe(PGR_BATTLE_OBS_GESTURE, &g, 1, tid);   // legacy=1
+    g_api->observe(PGS_BATTLE_OBS_SCOPE_ENTER, &scope, 1, tid);
+    g_api->observe(PGS_BATTLE_OBS_GESTURE, &g, 1, tid);   // legacy=1
     arm(1u << 2, tid);                              // gym mode: policy bit (1*2+0)=2
     g_act_method = nullptr; g_api->tick(tid, 0);
     if (g_act_method != &m_legacy_fast || g_act_params_null) return 1;
     if (g_act_p0 != &tap || g_act_p1 != nullptr) return 2;
-    g_api->observe(PGR_BATTLE_OBS_SCOPE_EXIT, &scope, 1, tid);
+    g_api->observe(PGS_BATTLE_OBS_SCOPE_EXIT, &scope, 1, tid);
     if (g_live_roots != 0) return 3;
     return 0;
   }
   case 2: {  // Max quick: sender+null ABI
     Obj scope{&c_scope2}, g{&c_max_gesture}, tap{};
     wire_active(&g, &director, &state); g.vnext_tap = &tap;
-    g_api->observe(PGR_BATTLE_OBS_SCOPE_ENTER, &scope, 2, tid);
-    g_api->observe(PGR_BATTLE_OBS_GESTURE, &g, 0, tid);
+    g_api->observe(PGS_BATTLE_OBS_SCOPE_ENTER, &scope, 2, tid);
+    g_api->observe(PGS_BATTLE_OBS_GESTURE, &g, 0, tid);
     arm(1u << 4, tid);                              // Max mode: policy bit (2*2+0)=4
     g_act_method = nullptr; g_api->tick(tid, 0);
     if (g_act_method != &m_max_fast || g_act_p0 != &tap || g_act_p1 != nullptr) return 1;
-    g_api->observe(PGR_BATTLE_OBS_SCOPE_EXIT, &scope, 2, tid);
+    g_api->observe(PGS_BATTLE_OBS_SCOPE_EXIT, &scope, 2, tid);
     if (g_live_roots != 0) return 2;
     return 0;
   }
@@ -249,28 +249,28 @@ int scenario(int which) {
     Obj scope{&c_scope0}, g{&c_raid_gesture}, charge{&c_rvcharge}, button{};
     wire_active(&g, &director, &state);
     charge.charged = true; charge.visible = true; charge.vnext_button = &button;
-    g_api->observe(PGR_BATTLE_OBS_SCOPE_ENTER, &scope, 0, tid);
-    g_api->observe(PGR_BATTLE_OBS_GESTURE, &g, 0, tid);
-    g_api->observe(PGR_BATTLE_OBS_CHARGE, &charge, 0, tid);   // vNext RVCHARGE
+    g_api->observe(PGS_BATTLE_OBS_SCOPE_ENTER, &scope, 0, tid);
+    g_api->observe(PGS_BATTLE_OBS_GESTURE, &g, 0, tid);
+    g_api->observe(PGS_BATTLE_OBS_CHARGE, &charge, 0, tid);   // vNext RVCHARGE
     arm(1u << 1, tid);                              // raid charged bit (policy bit 1)
     g_act_method = nullptr; g_api->tick(tid, 0);
     if (g_act_method != &m_vnext_charge || g_act_obj != &charge) return 1;
     charge.charged = false; g_act_method = nullptr; g_api->tick(tid, 0);  // not charged -> no action
     if (g_act_method != nullptr) return 2;
-    g_api->observe(PGR_BATTLE_OBS_SCOPE_EXIT, &scope, 0, tid);
+    g_api->observe(PGS_BATTLE_OBS_SCOPE_EXIT, &scope, 0, tid);
     if (g_live_roots != 0) return 3;
     return 0;
   }
   case 4: {  // charged legacy (gym): Init-captured, no visibility requirement
     Obj scope{&c_scope1}, g{&c_legacy_gesture}, charge{&c_legacy_charge}, button{}, tap{};
     g.legacy_tap = &tap; charge.charged = true; charge.legacy_button = &button;
-    g_api->observe(PGR_BATTLE_OBS_SCOPE_ENTER, &scope, 1, tid);
-    g_api->observe(PGR_BATTLE_OBS_GESTURE, &g, 1, tid);
-    g_api->observe(PGR_BATTLE_OBS_CHARGE, &charge, 1, tid);   // legacy Init
+    g_api->observe(PGS_BATTLE_OBS_SCOPE_ENTER, &scope, 1, tid);
+    g_api->observe(PGS_BATTLE_OBS_GESTURE, &g, 1, tid);
+    g_api->observe(PGS_BATTLE_OBS_CHARGE, &charge, 1, tid);   // legacy Init
     arm(1u << 3, tid);                              // gym charged (policy bit 1*2+1=3)
     g_act_method = nullptr; g_api->tick(tid, 0);
     if (g_act_method != &m_legacy_charge || g_act_obj != &charge) return 1;
-    g_api->observe(PGR_BATTLE_OBS_SCOPE_EXIT, &scope, 1, tid);
+    g_api->observe(PGS_BATTLE_OBS_SCOPE_EXIT, &scope, 1, tid);
     if (g_live_roots != 0) return 2;
     return 0;
   }
@@ -278,37 +278,37 @@ int scenario(int which) {
     Obj scope{&c_scope2}, g{&c_max_gesture}, widget{&c_max_widget}, button{};
     wire_active(&g, &director, &state);
     widget.max_type = 5; widget.max_button = &button;  // 5 == max_attack
-    g_api->observe(PGR_BATTLE_OBS_SCOPE_ENTER, &scope, 2, tid);
-    g_api->observe(PGR_BATTLE_OBS_GESTURE, &g, 0, tid);
-    g_api->observe(PGR_BATTLE_OBS_MAX_REFRESH, &widget, 0, tid);
+    g_api->observe(PGS_BATTLE_OBS_SCOPE_ENTER, &scope, 2, tid);
+    g_api->observe(PGS_BATTLE_OBS_GESTURE, &g, 0, tid);
+    g_api->observe(PGS_BATTLE_OBS_MAX_REFRESH, &widget, 0, tid);
     arm(1u << 6, tid);                              // Max attack bit (policy bit 2*2+2=6)
     g_act_method = nullptr; g_api->tick(tid, 0);
     if (g_act_method != &m_press || g_act_obj != &button) return 1;
     widget.max_type = 4; g_act_method = nullptr; g_api->tick(tid, 0);  // not BreadAttack
     if (g_act_method != nullptr) return 2;
-    g_api->observe(PGR_BATTLE_OBS_SCOPE_EXIT, &scope, 2, tid);
+    g_api->observe(PGS_BATTLE_OBS_SCOPE_EXIT, &scope, 2, tid);
     if (g_live_roots != 0) return 3;
     return 0;
   }
   case 6: {  // Rocket exclusion suppresses all actions
     Obj scope{&c_scope0}, g{&c_raid_gesture}, tap{};
     wire_active(&g, &director, &state); g.vnext_tap = &tap;
-    g_api->observe(PGR_BATTLE_OBS_SCOPE_ENTER, &scope, 0, tid);
-    g_api->observe(PGR_BATTLE_OBS_GESTURE, &g, 0, tid);
+    g_api->observe(PGS_BATTLE_OBS_SCOPE_ENTER, &scope, 0, tid);
+    g_api->observe(PGS_BATTLE_OBS_GESTURE, &g, 0, tid);
     arm(1u << 0, tid, 1);                           // rocket_active = 1
     g_act_method = nullptr; g_api->tick(tid, 0);
     if (g_act_method != nullptr) return 1;
     arm(1u << 0, tid, 0);                           // clear rocket -> action resumes
     g_api->tick(tid, 0);
     if (g_act_method != &m_raid_fast) return 2;
-    g_api->observe(PGR_BATTLE_OBS_SCOPE_EXIT, &scope, 0, tid);
+    g_api->observe(PGS_BATTLE_OBS_SCOPE_EXIT, &scope, 0, tid);
     return 0;
   }
   case 7: {  // BattleStatus gate: Unset no-op (no clear), terminal -> battle-ended + clear
     Obj scope{&c_scope0}, g{&c_raid_gesture}, tap{};
     wire_active(&g, &director, &state); g.vnext_tap = &tap;
-    g_api->observe(PGR_BATTLE_OBS_SCOPE_ENTER, &scope, 0, tid);
-    g_api->observe(PGR_BATTLE_OBS_GESTURE, &g, 0, tid);
+    g_api->observe(PGS_BATTLE_OBS_SCOPE_ENTER, &scope, 0, tid);
+    g_api->observe(PGS_BATTLE_OBS_GESTURE, &g, 0, tid);
     arm(1u << 0, tid);
     state.battle_status = 0;                        // Unset
     g_act_method = nullptr; g_api->tick(tid, 0);
@@ -323,73 +323,73 @@ int scenario(int which) {
   case 8: {  // dodge: modern Left value ABI, then post-dodge clears the window
     Obj scope{&c_scope0}, g{&c_raid_gesture}, warn{&c_raid_warning}, tap{};
     wire_active(&g, &director, &state); g.vnext_tap = &tap; g.vnext_enabled = 1;
-    g_api->observe(PGR_BATTLE_OBS_SCOPE_ENTER, &scope, 0, tid);
-    g_api->observe(PGR_BATTLE_OBS_GESTURE, &g, 0, tid);
+    g_api->observe(PGS_BATTLE_OBS_SCOPE_ENTER, &scope, 0, tid);
+    g_api->observe(PGS_BATTLE_OBS_GESTURE, &g, 0, tid);
     arm((1u << 0) | (128u << 0), tid);              // quick + dodge bits
-    g_api->observe(PGR_BATTLE_OBS_WARNING, &warn, 0, tid);  // raid warning cue
+    g_api->observe(PGS_BATTLE_OBS_WARNING, &warn, 0, tid);  // raid warning cue
     g_act_method = nullptr; g_api->tick(tid, 0);
     if (g_act_method != &m_dodge || g_act_dir != 7) return 1;  // modern Direction.Left == 7
     g_act_method = nullptr; g_api->tick(tid, 0);    // window consumed -> next tick is not a dodge
     if (g_act_method == &m_dodge) return 2;
-    g_api->observe(PGR_BATTLE_OBS_SCOPE_EXIT, &scope, 0, tid);
+    g_api->observe(PGS_BATTLE_OBS_SCOPE_EXIT, &scope, 0, tid);
     return 0;
   }
   case 9: {  // dodge: legacy flick+null ABI driven by the gym warning begin/end
     Obj scope{&c_scope1}, g{&c_legacy_gesture}, iter{&c_gym_iterator}, flick{}, tap{};
     g.legacy_tap = &tap; g.legacy_flick = &flick;
-    g_api->observe(PGR_BATTLE_OBS_SCOPE_ENTER, &scope, 1, tid);
-    g_api->observe(PGR_BATTLE_OBS_GESTURE, &g, 1, tid);
+    g_api->observe(PGS_BATTLE_OBS_SCOPE_ENTER, &scope, 1, tid);
+    g_api->observe(PGS_BATTLE_OBS_GESTURE, &g, 1, tid);
     arm((1u << 2) | (128u << 1), tid);              // gym quick + gym dodge
     iter.gym_state = 0;
     uint64_t tok = g_api->gym_begin(&iter, tid);
     if (tok == 0) return 1;
-    if (g_api->gym_end(tok, 1, tid) != PGR_BATTLE_OK) return 2;  // ret false -> cue armed
+    if (g_api->gym_end(tok, 1, tid) != PGS_BATTLE_OK) return 2;  // ret false -> cue armed
     g_act_method = nullptr; g_api->tick(tid, 0);
     if (g_act_method != &m_legacy_dodge || g_act_p0 != &flick || g_act_p1 != nullptr) return 3;
-    g_api->observe(PGR_BATTLE_OBS_SCOPE_EXIT, &scope, 1, tid);
+    g_api->observe(PGS_BATTLE_OBS_SCOPE_EXIT, &scope, 1, tid);
     return 0;
   }
   case 10: {  // manual picker blocks all actions; scope exit releases the picker root
     Obj scope{&c_scope0}, g{&c_raid_gesture}, picker{&c_swap1}, tap{};
     wire_active(&g, &director, &state); g.vnext_tap = &tap; picker.open = true;
-    g_api->observe(PGR_BATTLE_OBS_SCOPE_ENTER, &scope, 0, tid);
-    g_api->observe(PGR_BATTLE_OBS_GESTURE, &g, 0, tid);
+    g_api->observe(PGS_BATTLE_OBS_SCOPE_ENTER, &scope, 0, tid);
+    g_api->observe(PGS_BATTLE_OBS_GESTURE, &g, 0, tid);
     arm(1u << 0, tid);
-    g_api->observe(PGR_BATTLE_OBS_SWAP_OPEN, &picker, 1, tid);  // raid picker descriptor index 1
+    g_api->observe(PGS_BATTLE_OBS_SWAP_OPEN, &picker, 1, tid);  // raid picker descriptor index 1
     if (snap().swap_blocked != 1) return 1;
     g_act_method = nullptr; g_api->tick(tid, 0);
     if (g_act_method != nullptr) return 2;          // picker open blocks the quick attack
-    g_api->observe(PGR_BATTLE_OBS_SWAP_CLOSE, &picker, 1, tid);  // close by identity, still in grace
+    g_api->observe(PGS_BATTLE_OBS_SWAP_CLOSE, &picker, 1, tid);  // close by identity, still in grace
     g_api->tick(tid, 0);
     if (g_act_method != nullptr) return 3;
-    g_api->observe(PGR_BATTLE_OBS_SCOPE_EXIT, &scope, 0, tid);
+    g_api->observe(PGS_BATTLE_OBS_SCOPE_EXIT, &scope, 0, tid);
     if (g_live_roots != 0) return 4;                // picker + scope + gesture roots all freed
     return 0;
   }
   case 11: {  // Dynamax scope-owned gesture recovery (no SetChargeAttackButtons callback)
     Obj scope{&c_scope2}, g{&c_max_gesture}, tap{};
     wire_active(&g, &director, &state); g.vnext_tap = &tap; scope.max_gesture = &g;
-    g_api->observe(PGR_BATTLE_OBS_SCOPE_ENTER, &scope, 2, tid);  // NO gesture observe
+    g_api->observe(PGS_BATTLE_OBS_SCOPE_ENTER, &scope, 2, tid);  // NO gesture observe
     arm(1u << 4, tid);
     g_act_method = nullptr; g_api->tick(tid, 0);    // recovery adopts the scope-owned gesture
     if (g_act_method != &m_max_fast) return 1;
-    g_api->observe(PGR_BATTLE_OBS_SCOPE_EXIT, &scope, 2, tid);
+    g_api->observe(PGS_BATTLE_OBS_SCOPE_EXIT, &scope, 2, tid);
     if (g_live_roots != 0) return 2;
     // Inactive scope-owned handler yields (no recovery, no action).
     Obj scope2{&c_scope2}, g2{&c_max_gesture};
     wire_active(&g2, &director, &state); g2.active = false; scope2.max_gesture = &g2;
-    g_api->observe(PGR_BATTLE_OBS_SCOPE_ENTER, &scope2, 2, tid);
+    g_api->observe(PGS_BATTLE_OBS_SCOPE_ENTER, &scope2, 2, tid);
     arm(1u << 4, tid); g_act_method = nullptr; g_api->tick(tid, 0);
     if (g_act_method != nullptr) return 3;
-    g_api->observe(PGR_BATTLE_OBS_SCOPE_EXIT, &scope2, 2, tid);
+    g_api->observe(PGS_BATTLE_OBS_SCOPE_EXIT, &scope2, 2, tid);
     return 0;
   }
   case 12: {  // STOP clears the battle; roots balance to zero
     Obj scope{&c_scope0}, g{&c_raid_gesture}, charge{&c_rvcharge}, tap{};
     wire_active(&g, &director, &state); g.vnext_tap = &tap; charge.vnext_button = &g;
-    g_api->observe(PGR_BATTLE_OBS_SCOPE_ENTER, &scope, 0, tid);
-    g_api->observe(PGR_BATTLE_OBS_GESTURE, &g, 0, tid);
-    g_api->observe(PGR_BATTLE_OBS_CHARGE, &charge, 0, tid);
+    g_api->observe(PGS_BATTLE_OBS_SCOPE_ENTER, &scope, 0, tid);
+    g_api->observe(PGS_BATTLE_OBS_GESTURE, &g, 0, tid);
+    g_api->observe(PGS_BATTLE_OBS_CHARGE, &charge, 0, tid);
     arm(1u << 0, tid);
     g_api->tick(tid, 1);                            // stopping -> clear
     if (snap().scope_active != 0 || g_live_roots != 0) return 1;
@@ -398,37 +398,37 @@ int scenario(int which) {
   case 13: {  // wrong thread: a foreign proven_tid cannot drive observations
     Obj scope{&c_scope0}, g{&c_raid_gesture}, tap{};
     wire_active(&g, &director, &state); g.vnext_tap = &tap;
-    g_api->observe(PGR_BATTLE_OBS_SCOPE_ENTER, &scope, 0, tid + 1);  // foreign tid -> inert
+    g_api->observe(PGS_BATTLE_OBS_SCOPE_ENTER, &scope, 0, tid + 1);  // foreign tid -> inert
     if (snap().scope_active != 0) return 1;
-    g_api->observe(PGR_BATTLE_OBS_SCOPE_ENTER, &scope, 0, tid);
-    g_api->observe(PGR_BATTLE_OBS_GESTURE, &g, 0, tid);
+    g_api->observe(PGS_BATTLE_OBS_SCOPE_ENTER, &scope, 0, tid);
+    g_api->observe(PGS_BATTLE_OBS_GESTURE, &g, 0, tid);
     arm(1u << 0, tid + 1);                          // foreign update only disarms
     g_act_method = nullptr; g_api->tick(tid, 0);
     if (g_act_method != nullptr) return 2;          // disarmed mask -> no action
-    g_api->observe(PGR_BATTLE_OBS_SCOPE_EXIT, &scope, 0, tid);
+    g_api->observe(PGS_BATTLE_OBS_SCOPE_EXIT, &scope, 0, tid);
     return 0;
   }
   case 14: {  // gesture disable then re-arm
     Obj scope{&c_scope0}, g{&c_raid_gesture}, tap{};
     wire_active(&g, &director, &state); g.vnext_tap = &tap;
-    g_api->observe(PGR_BATTLE_OBS_SCOPE_ENTER, &scope, 0, tid);
-    g_api->observe(PGR_BATTLE_OBS_GESTURE, &g, 0, tid);
-    g_api->observe(PGR_BATTLE_OBS_GESTURE_DROP, &g, 0, tid);  // OnDisable
+    g_api->observe(PGS_BATTLE_OBS_SCOPE_ENTER, &scope, 0, tid);
+    g_api->observe(PGS_BATTLE_OBS_GESTURE, &g, 0, tid);
+    g_api->observe(PGS_BATTLE_OBS_GESTURE_DROP, &g, 0, tid);  // OnDisable
     arm(1u << 0, tid);
     g_act_method = nullptr; g_api->tick(tid, 0);
     if (g_act_method != nullptr) return 1;          // no gesture -> no action
-    g_api->observe(PGR_BATTLE_OBS_GESTURE, &g, 0, tid);       // re-enable
+    g_api->observe(PGS_BATTLE_OBS_GESTURE, &g, 0, tid);       // re-enable
     g_api->tick(tid, 0);
     if (g_act_method != &m_raid_fast) return 2;
-    g_api->observe(PGR_BATTLE_OBS_SCOPE_EXIT, &scope, 0, tid);
+    g_api->observe(PGS_BATTLE_OBS_SCOPE_EXIT, &scope, 0, tid);
     if (g_live_roots != 0) return 3;
     return 0;
   }
   case 15: {  // reentrant scope-exit fired INSIDE a managed getter cancels the stale action
     Obj scope{&c_scope0}, g{&c_raid_gesture}, tap{};
     wire_active(&g, &director, &state); g.vnext_tap = &tap;
-    g_api->observe(PGR_BATTLE_OBS_SCOPE_ENTER, &scope, 0, tid);
-    g_api->observe(PGR_BATTLE_OBS_GESTURE, &g, 0, tid);
+    g_api->observe(PGS_BATTLE_OBS_SCOPE_ENTER, &scope, 0, tid);
+    g_api->observe(PGS_BATTLE_OBS_GESTURE, &g, 0, tid);
     arm(1u << 0, tid);
     g_reenter = 1; g_reenter_scope = &scope;        // m_active will fire observe(SCOPE_EXIT)
     g_act_method = nullptr; g_api->tick(tid, 0);
@@ -438,49 +438,49 @@ int scenario(int which) {
   }
   case 16: {  // stale / replayed / ineligible gym token
     Obj scope{&c_scope1}, iter{&c_gym_iterator};
-    g_api->observe(PGR_BATTLE_OBS_SCOPE_ENTER, &scope, 1, tid);
+    g_api->observe(PGS_BATTLE_OBS_SCOPE_ENTER, &scope, 1, tid);
     arm((1u << 2) | (128u << 1), tid);
     iter.gym_state = 2;                             // ineligible state -> token 0
     if (g_api->gym_begin(&iter, tid) != 0) return 1;
     iter.gym_state = 1;
     uint64_t tok = g_api->gym_begin(&iter, tid);
     if (tok == 0) return 2;
-    if (g_api->gym_end(tok + 1, 1, tid) != PGR_BATTLE_ERR_BAD_TOKEN) return 3;  // wrong token
-    if (g_api->gym_end(tok, 1, tid) != PGR_BATTLE_OK) return 4;                 // consume once
-    if (g_api->gym_end(tok, 1, tid) != PGR_BATTLE_ERR_BAD_TOKEN) return 5;      // replay rejected
-    g_api->observe(PGR_BATTLE_OBS_SCOPE_EXIT, &scope, 1, tid);
+    if (g_api->gym_end(tok + 1, 1, tid) != PGS_BATTLE_ERR_BAD_TOKEN) return 3;  // wrong token
+    if (g_api->gym_end(tok, 1, tid) != PGS_BATTLE_OK) return 4;                 // consume once
+    if (g_api->gym_end(tok, 1, tid) != PGS_BATTLE_ERR_BAD_TOKEN) return 5;      // replay rejected
+    g_api->observe(PGS_BATTLE_OBS_SCOPE_EXIT, &scope, 1, tid);
     return 0;
   }
   case 17: {  // a moving rooted gesture is refreshed at use
     Obj scope{&c_scope0}, g{&c_raid_gesture}, relocated{}, tap{};
     wire_active(&g, &director, &state); g.vnext_tap = &tap;
-    g_api->observe(PGR_BATTLE_OBS_SCOPE_ENTER, &scope, 0, tid);
-    g_api->observe(PGR_BATTLE_OBS_GESTURE, &g, 0, tid);
+    g_api->observe(PGS_BATTLE_OBS_SCOPE_ENTER, &scope, 0, tid);
+    g_api->observe(PGS_BATTLE_OBS_GESTURE, &g, 0, tid);
     relocated = g;                                  // same wired fields at the new location
     gc_move(&g, &relocated);                        // GC relocates the gesture
     arm(1u << 0, tid);
     g_act_method = nullptr; g_api->tick(tid, 0);
     if (g_act_method != &m_raid_fast || g_act_obj != &relocated) return 1;
-    g_api->observe(PGR_BATTLE_OBS_SCOPE_EXIT, &scope, 0, tid);
+    g_api->observe(PGS_BATTLE_OBS_SCOPE_EXIT, &scope, 0, tid);
     return 0;
   }
   case 18: {  // bounded-FIFO overflow blocks actions until the queue drains
     Obj scope{&c_scope0}, g{&c_raid_gesture}, tap{};
     wire_active(&g, &director, &state); g.vnext_tap = &tap;
     for (int i = 0; i < 200; ++i) {                 // flood the FIFO past its cap with scope events
-      Obj sc{&c_scope0}; g_api->observe(PGR_BATTLE_OBS_SCOPE_ENTER, &sc, 0, tid);
-      g_api->observe(PGR_BATTLE_OBS_SCOPE_EXIT, &sc, 0, tid);
+      Obj sc{&c_scope0}; g_api->observe(PGS_BATTLE_OBS_SCOPE_ENTER, &sc, 0, tid);
+      g_api->observe(PGS_BATTLE_OBS_SCOPE_EXIT, &sc, 0, tid);
     }
     if (snap().dropped_events == 0) return 1;       // overflow observed
-    g_api->observe(PGR_BATTLE_OBS_SCOPE_ENTER, &scope, 0, tid);
-    g_api->observe(PGR_BATTLE_OBS_GESTURE, &g, 0, tid);
+    g_api->observe(PGS_BATTLE_OBS_SCOPE_ENTER, &scope, 0, tid);
+    g_api->observe(PGS_BATTLE_OBS_GESTURE, &g, 0, tid);
     arm(1u << 0, tid);
     g_act_method = nullptr; g_api->tick(tid, 0);
     if (g_act_method != nullptr) return 2;          // fail-closed: locked actions
     drain_all();                                    // telemetry caught up -> unlock
     g_api->tick(tid, 0);
     if (g_act_method != &m_raid_fast) return 3;
-    g_api->observe(PGR_BATTLE_OBS_SCOPE_EXIT, &scope, 0, tid);
+    g_api->observe(PGS_BATTLE_OBS_SCOPE_EXIT, &scope, 0, tid);
     if (g_live_roots != 0) return 4;
     return 0;
   }
@@ -488,8 +488,8 @@ int scenario(int which) {
     // Revoke/re-enable, nested STOP, actual expiry, or removal of the selected action bit.
     Obj scope{&c_scope0}, g{&c_raid_gesture}, tap{};
     wire_active(&g,&director,&state); g.vnext_tap=&tap;
-    g_api->observe(PGR_BATTLE_OBS_SCOPE_ENTER,&scope,0,tid);
-    g_api->observe(PGR_BATTLE_OBS_GESTURE,&g,0,tid);
+    g_api->observe(PGS_BATTLE_OBS_SCOPE_ENTER,&scope,0,tid);
+    g_api->observe(PGS_BATTLE_OBS_GESTURE,&g,0,tid);
     g_api->update(1,which==21?10:2500,0,tid);
     g_reenter=which-17;
     g_api->tick(tid,0);
@@ -503,10 +503,10 @@ int scenario(int which) {
     // A foreign OS thread cannot act by supplying the proven Unity thread id.
     Obj scope{&c_scope0}, g{&c_raid_gesture}, tap{};
     wire_active(&g,&director,&state); g.vnext_tap=&tap;
-    g_api->observe(PGR_BATTLE_OBS_SCOPE_ENTER,&scope,0,tid);
-    g_api->observe(PGR_BATTLE_OBS_GESTURE,&g,0,tid); arm(1,tid);
+    g_api->observe(PGS_BATTLE_OBS_SCOPE_ENTER,&scope,0,tid);
+    g_api->observe(PGS_BATTLE_OBS_GESTURE,&g,0,tid); arm(1,tid);
     std::thread t([&](){g_api->tick(tid,0); g_api->tick(gettid(),0);
-      g_api->observe(PGR_BATTLE_OBS_SCOPE_EXIT,&scope,0,gettid());}); t.join();
+      g_api->observe(PGS_BATTLE_OBS_SCOPE_EXIT,&scope,0,gettid());}); t.join();
     if(g_act_method || !snap().scope_active) return 1;
     g_api->tick(tid,0); if(g_act_method!=&m_raid_fast) return 2;
     g_api->tick(tid,1); return g_live_roots?3:0;
@@ -514,25 +514,25 @@ int scenario(int which) {
   case 24: case 25: case 26: {
     Obj scope{&c_scope0}, replacement{&c_scope0}, g{&c_raid_gesture}, tap{};
     wire_active(&g,&director,&state);g.vnext_tap=&tap;
-    g_api->observe(PGR_BATTLE_OBS_SCOPE_ENTER,&scope,0,tid);
-    g_api->observe(PGR_BATTLE_OBS_GESTURE,&g,0,tid);
+    g_api->observe(PGS_BATTLE_OBS_SCOPE_ENTER,&scope,0,tid);
+    g_api->observe(PGS_BATTLE_OBS_GESTURE,&g,0,tid);
     g_reenter_scope=&replacement;
-    auto replace=[](){g_api->observe(PGR_BATTLE_OBS_SCOPE_ENTER,g_reenter_scope,0,gettid());};
-    if(which==26){g_on_new=replace;g_api->observe(PGR_BATTLE_OBS_SCOPE_ENTER,&scope,0,tid);}
-    else {g_on_free=replace;if(which==24)g_api->observe(PGR_BATTLE_OBS_SCOPE_EXIT,&scope,0,tid);else g_api->tick(tid,1);}
+    auto replace=[](){g_api->observe(PGS_BATTLE_OBS_SCOPE_ENTER,g_reenter_scope,0,gettid());};
+    if(which==26){g_on_new=replace;g_api->observe(PGS_BATTLE_OBS_SCOPE_ENTER,&scope,0,tid);}
+    else {g_on_free=replace;if(which==24)g_api->observe(PGS_BATTLE_OBS_SCOPE_EXIT,&scope,0,tid);else g_api->tick(tid,1);}
     if(which==25){if(snap().scope_active||g_live_roots)return 1;}
     else {if(!snap().scope_active||g_live_roots!=1)return 2;
-      g_api->observe(PGR_BATTLE_OBS_SCOPE_EXIT,&replacement,0,tid);if(g_live_roots)return 3;}
+      g_api->observe(PGS_BATTLE_OBS_SCOPE_EXIT,&replacement,0,tid);if(g_live_roots)return 3;}
     return 0;
   }
   case 27: case 28: case 29: case 30: case 31: case 32: case 33:
   case 34: case 35: case 36: case 37: case 38: case 39: case 40: {
     Obj scope{&c_scope2}, g{&c_max_gesture}, tap{},picker{&c_swap2};
     wire_active(&g,&director,&state);g.vnext_tap=&tap;scope.max_gesture=&g;
-    g_api->observe(PGR_BATTLE_OBS_SCOPE_ENTER,&scope,2,tid);
+    g_api->observe(PGS_BATTLE_OBS_SCOPE_ENTER,&scope,2,tid);
     arm(0,tid); // collection works with ALL attack/dodge switches off
     g_orb_direction=which==28?7:9;
-    if(which==29){picker.open=true;g_api->observe(PGR_BATTLE_OBS_SWAP_OPEN,&picker,2,tid);}
+    if(which==29){picker.open=true;g_api->observe(PGS_BATTLE_OBS_SWAP_OPEN,&picker,2,tid);}
     if(which==30)arm(0,tid,1);
     if(which==31)g_api->update(0,0,0,tid);
     if(which==32)state.battle_status=0;
@@ -547,8 +547,8 @@ int scenario(int which) {
     if(which==27||which==28||which==40){
       if(g_act_method!=&m_dodge||g_act_dir!=g_orb_direction)return 2;
       const auto serial=snap().action_serial;g_api->tick(tid,0);if(snap().action_serial!=serial)return 3;
-      bool found=false;pgr_battle_event_v1 event{};while(g_api->next_event(&event)==1)
-        if(event.code==PGR_BATTLE_EVT_ACTION&&event.aux==PGR_BATTLE_ACT_MAX_ORB)found=true;
+      bool found=false;pgs_battle_event_v1 event{};while(g_api->next_event(&event)==1)
+        if(event.code==PGS_BATTLE_EVT_ACTION&&event.aux==PGS_BATTLE_ACT_MAX_ORB)found=true;
       if(!found)return 4;
     }else if(which==38){if(g_act_method!=&m_max_fast)return 5;}
     else if(g_act_method)return 6;
@@ -556,8 +556,8 @@ int scenario(int which) {
   }
   case 41: { // a probe must never run in raid/gym scopes
     Obj scope{&c_scope0},g{&c_raid_gesture},tap{};wire_active(&g,&director,&state);g.vnext_tap=&tap;
-    g_api->observe(PGR_BATTLE_OBS_SCOPE_ENTER,&scope,0,tid);
-    g_api->observe(PGR_BATTLE_OBS_GESTURE,&g,0,tid);arm(1,tid);g_orb_direction=9;
+    g_api->observe(PGS_BATTLE_OBS_SCOPE_ENTER,&scope,0,tid);
+    g_api->observe(PGS_BATTLE_OBS_GESTURE,&g,0,tid);arm(1,tid);g_orb_direction=9;
     g_api->tick(tid,0);if(g_orb_calls||g_act_method!=&m_raid_fast)return 1;
     g_api->tick(tid,1);return g_live_roots?2:0;
   }
@@ -575,23 +575,23 @@ int main(int argc,char **argv) {
   loaded_core=get?static_cast<const pgs_native_api_v2 *>(get(2)):nullptr;
   if(!loaded_core)return 82;
 #endif
-  g_api = static_cast<const pgr_battle_api_v1 *>(pgs_battles_api(1));
-  if (!g_api || g_api->size != sizeof(pgr_battle_api_v1)) { std::puts("FAIL table"); return 2; }
+  g_api = static_cast<const pgs_battle_api_v1 *>(pgs_battles_api(1));
+  if (!g_api || g_api->size != sizeof(pgs_battle_api_v1)) { std::puts("FAIL table"); return 2; }
   if (pgs_battles_api(99) != nullptr) { std::puts("FAIL exact-version"); return 2; }
 
   // Config validation (parent process; no hooks are ever installed).
-  pgr_battle_config_v1 c = make_config(), bad;
-  if (g_api->install(nullptr) != PGR_BATTLE_ERR_NULL_ARG) { std::puts("FAIL null"); return 3; }
+  pgs_battle_config_v1 c = make_config(), bad;
+  if (g_api->install(nullptr) != PGS_BATTLE_ERR_NULL_ARG) { std::puts("FAIL null"); return 3; }
   bad = c; bad.version = 2;
-  if (g_api->install(&bad) != PGR_BATTLE_ERR_BAD_CONFIG) { std::puts("FAIL version"); return 3; }
+  if (g_api->install(&bad) != PGS_BATTLE_ERR_BAD_CONFIG) { std::puts("FAIL version"); return 3; }
   bad = c; bad.m_press = nullptr;
-  if (g_api->install(&bad) != PGR_BATTLE_ERR_BAD_CONFIG) { std::puts("FAIL missing-ptr"); return 3; }
+  if (g_api->install(&bad) != PGS_BATTLE_ERR_BAD_CONFIG) { std::puts("FAIL missing-ptr"); return 3; }
   bad = c; bad.swaps[2].show = nullptr;
-  if (g_api->install(&bad) != PGR_BATTLE_ERR_BAD_CONFIG) { std::puts("FAIL missing-show"); return 3; }
+  if (g_api->install(&bad) != PGS_BATTLE_ERR_BAD_CONFIG) { std::puts("FAIL missing-show"); return 3; }
   bad = c; bad.scopes[0].mode = 5;
-  if (g_api->install(&bad) != PGR_BATTLE_ERR_BAD_CONFIG) { std::puts("FAIL bad-mode"); return 3; }
+  if (g_api->install(&bad) != PGS_BATTLE_ERR_BAD_CONFIG) { std::puts("FAIL bad-mode"); return 3; }
   bad = c; bad.reserved0 = 1;
-  if (g_api->install(&bad) != PGR_BATTLE_ERR_BAD_CONFIG) { std::puts("FAIL reserved"); return 3; }
+  if (g_api->install(&bad) != PGS_BATTLE_ERR_BAD_CONFIG) { std::puts("FAIL reserved"); return 3; }
 
   const int cases = 42;
   for (int i = 0; i < cases; ++i) {

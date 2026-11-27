@@ -555,7 +555,7 @@ template<class F>void install_hook(void *k,const char *name,int params,const cha
  q.expected_code=static_cast<const char*>(boot.module_base)+rva;q.prologue=prologue;q.prologue_len=24;
  PgrMetaMethodResult r{};require(api->validate_method(&q,&r)==0&&r.code,name);
  if(method_out)*method_out=method(k,name,params);
- void *o=nullptr;require(pgrazor_hook(const_cast<void*>(r.code),reinterpret_cast<void*>(hook),&o)==0&&o,name);
+ void *o=nullptr;require(pgs_hook(const_cast<void*>(r.code),reinterpret_cast<void*>(hook),&o)==0&&o,name);
  slot.store(reinterpret_cast<F>(o),std::memory_order_release);
 }
 void install(){

@@ -4,7 +4,7 @@
 extern "C" const void *pgrazor_runtime_bootstrap_api(uint32_t){return nullptr;}
 extern "C" const void *pgrazor_runtime_metadata_api(uint32_t){return nullptr;}
 extern "C" const void *pgrazor_runtime_transport_api(uint32_t){return nullptr;}
-int pgrazor_hook(void*,void*,void**){return -1;}
+int pgs_hook(void*,void*,void**){return -1;}
 namespace {
 bool state=false,fail=false,reject=false;
 bool top=true,visible=true,opened_state=true,fail_root=false;

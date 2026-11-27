@@ -572,14 +572,14 @@ int api_install(const PgrMapTapConfig *config) {
   // partial failure retain already-published trampolines (another thread may already be
   // using one) and latch the failure until process restart -- never a Gum fallback.
   void *orig_tap = nullptr;
-  if (pgrazor_hook(resolved.tap_address, reinterpret_cast<void *>(&hook_tap), &orig_tap) != 0 ||
+  if (pgs_hook(resolved.tap_address, reinterpret_cast<void *>(&hook_tap), &orig_tap) != 0 ||
       orig_tap == nullptr) {
     return g_install_error = PGR_MAP_TAP_ERR_HOOK_TAP;
   }
   g_orig_tap.store(reinterpret_cast<TapHookFn>(orig_tap), std::memory_order_release);
 
   void *orig_position = nullptr;
-  if (pgrazor_hook(resolved.position_address, reinterpret_cast<void *>(&hook_position),
+  if (pgs_hook(resolved.position_address, reinterpret_cast<void *>(&hook_position),
                    &orig_position) != 0 ||
       orig_position == nullptr) {
     return g_install_error = PGR_MAP_TAP_ERR_HOOK_POSITION;

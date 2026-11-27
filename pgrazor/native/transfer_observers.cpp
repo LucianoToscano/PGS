@@ -66,7 +66,7 @@ int install(const PgrTransferObserversConfig *c){
  Callback replacements[]={result,error};
  for(unsigned i=0;i<2;i++){
   void *trampoline=nullptr;
-  const int rc=pgrazor_hook(addresses[i],reinterpret_cast<void *>(replacements[i]),&trampoline);
+  const int rc=pgs_hook(addresses[i],reinterpret_cast<void *>(replacements[i]),&trampoline);
   if(trampoline)originals[i].store(reinterpret_cast<Callback>(trampoline),std::memory_order_release);
   if(rc||!trampoline){failed=true;return -3;}
  }

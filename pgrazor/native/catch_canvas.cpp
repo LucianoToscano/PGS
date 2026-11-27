@@ -338,7 +338,7 @@ int install_alpha(const PgrCatchCanvasAlphaConfig *config){
  std::lock_guard<std::mutex> lock(g_alpha_mutex);
  if(g_alpha_original.load())return std::memcmp(config,&g_alpha,sizeof(g_alpha))?PGR_CANVAS_ERR_RECONFIG:0;
  g_alpha=*config;void *original=nullptr;
- const int rc=pgrazor_hook(config->address,reinterpret_cast<void*>(hook_alpha),&original);
+ const int rc=pgs_hook(config->address,reinterpret_cast<void*>(hook_alpha),&original);
  if(rc||!original)return -10;
  g_alpha_original.store(reinterpret_cast<AlphaSetter>(original),std::memory_order_release);return 0;
 }
@@ -386,9 +386,9 @@ int api_install(const PgrCatchCanvasConfig *config) {
   // Patch the single setter. The original is published (under g_install_mutex) before the bound address
   // is live; original_canvas() blocks on this mutex if it observes a null during that window.
   void *orig = nullptr;
-  const int hook_rc = pgrazor_hook(g_cfg.canvas_address, reinterpret_cast<void *>(&hook_set_canvas), &orig);
+  const int hook_rc = pgs_hook(g_cfg.canvas_address, reinterpret_cast<void *>(&hook_set_canvas), &orig);
   if (hook_rc != 0 || orig == nullptr) {
-    if (hook_rc == 0) pgrazor_unhook(g_cfg.canvas_address);
+    if (hook_rc == 0) pgs_unhook(g_cfg.canvas_address);
     g_fault.store(1, std::memory_order_relaxed);
     return g_install_error = PGR_CANVAS_ERR_HOOK_FAILED;
   }

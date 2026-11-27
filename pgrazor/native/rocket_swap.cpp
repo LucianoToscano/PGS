@@ -140,7 +140,7 @@ void install(){
  q.expected_code=static_cast<const char*>(boot.module_base)+PGR_GAME_ROCKET_SWAP_CPP_SHOW_PROMPT_RVA;q.prologue=prologue;q.prologue_len=sizeof(prologue);
  PgrMetaMethodResult r{};const int rc=api->validate_method(&q,&r);
  require(rc==0&&r.code,"ShowPromptWidget signature");
- void *o=nullptr;require(pgrazor_hook(const_cast<void*>(r.code),reinterpret_cast<void*>(hook_show),&o)==0&&o,"ShowPromptWidget hook");
+ void *o=nullptr;require(pgs_hook(const_cast<void*>(r.code),reinterpret_cast<void*>(hook_show),&o)==0&&o,"ShowPromptWidget hook");
  original.store(reinterpret_cast<Show>(o),std::memory_order_release);
  installed.store(true,std::memory_order_release);
  status("ready","Rocket auto swap ready");

@@ -24,8 +24,8 @@
 // 0-parameter Update/OnConfirm/OnDecline methods have a determinable il2cpp ABI,
 // void(void* this, void* methodInfo), and are hooked with a full chained replacement.
 //
-// Mutations go through the central engine wrappers (hook_engine.h): pgrazor_hook /
-// pgrazor_unhook for the chained replacements and pgrazor_instrument for the entry
+// Mutations go through the central engine wrappers (hook_engine.h): pgs_hook /
+// pgs_unhook for the chained replacements and pgs_instrument for the entry
 // instruments, so every target in the process shares one serialized trampoline
 // registry. The register-context field read by the instrument (general.regs.x0 /
 // general.regs.rdi) is present in the pinned Dobby register-context header for both
@@ -353,27 +353,27 @@ int api_install(const pgrazor_advsync_config_v1 *config) {
     g_config = *config; // publish before any callback can read it (still under lock)
 
     member_fn u = nullptr, c = nullptr, d = nullptr;
-    int rc_u = pgrazor_hook(g_config.code_update,
+    int rc_u = pgs_hook(g_config.code_update,
                             reinterpret_cast<void *>(&update_replacement),
                             reinterpret_cast<void **>(&u));
-    int rc_c = pgrazor_hook(g_config.code_on_confirm,
+    int rc_c = pgs_hook(g_config.code_on_confirm,
                             reinterpret_cast<void *>(&on_confirm_replacement),
                             reinterpret_cast<void **>(&c));
-    int rc_d = pgrazor_hook(g_config.code_on_decline,
+    int rc_d = pgs_hook(g_config.code_on_decline,
                             reinterpret_cast<void *>(&on_decline_replacement),
                             reinterpret_cast<void **>(&d));
     // Entry instruments: signature-agnostic, read the `this` controller only.
-    int rc_i0 = pgrazor_instrument(g_config.code_init_initial, &instrument_initial);
-    int rc_i1 = pgrazor_instrument(g_config.code_init_instruction, &instrument_instruction);
-    int rc_i2 = pgrazor_instrument(g_config.code_init_result, &instrument_result);
+    int rc_i0 = pgs_instrument(g_config.code_init_initial, &instrument_initial);
+    int rc_i1 = pgs_instrument(g_config.code_init_instruction, &instrument_instruction);
+    int rc_i2 = pgs_instrument(g_config.code_init_result, &instrument_result);
 
     // A reported success with a null trampoline would make our replacement swallow the
     // game's own method (the `if (orig)` chain becomes a no-op), silently skipping the
     // original Update/OnConfirm/OnDecline. That must never happen: undo exactly that
     // target so the original runs unmodified, and treat the install as failed.
-    if (rc_u == 0 && u == nullptr) { pgrazor_unhook(g_config.code_update);     rc_u = PGRAZOR_ADVSYNC_ERR_HOOK_FAILED; }
-    if (rc_c == 0 && c == nullptr) { pgrazor_unhook(g_config.code_on_confirm); rc_c = PGRAZOR_ADVSYNC_ERR_HOOK_FAILED; }
-    if (rc_d == 0 && d == nullptr) { pgrazor_unhook(g_config.code_on_decline); rc_d = PGRAZOR_ADVSYNC_ERR_HOOK_FAILED; }
+    if (rc_u == 0 && u == nullptr) { pgs_unhook(g_config.code_update);     rc_u = PGRAZOR_ADVSYNC_ERR_HOOK_FAILED; }
+    if (rc_c == 0 && c == nullptr) { pgs_unhook(g_config.code_on_confirm); rc_c = PGRAZOR_ADVSYNC_ERR_HOOK_FAILED; }
+    if (rc_d == 0 && d == nullptr) { pgs_unhook(g_config.code_on_decline); rc_d = PGRAZOR_ADVSYNC_ERR_HOOK_FAILED; }
 
     if (rc_u != 0 || rc_c != 0 || rc_d != 0 || rc_i0 != 0 || rc_i1 != 0 || rc_i2 != 0) {
         // A failed partial patch is permanent and inert: targets that patched cleanly

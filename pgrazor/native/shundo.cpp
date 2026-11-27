@@ -408,7 +408,7 @@ bool pin(void *owner,const char *name,unsigned params,uint64_t rva,const uint8_t
  PgrMetaMethodQuery q{};q.version=1;q.size=sizeof(q);q.owner=owner;q.name=name;q.return_type="System.Void";q.return_match=PGR_MD_MATCH_EXACT;
  q.param_count=params;q.expected_code=static_cast<const char*>(boot.module_base)+rva;q.prologue=prologue;q.prologue_len=24;
  PgrMetaMethodResult r{};if(api->validate_method(&q,&r)!=0||!r.code)return false;
- void *o=nullptr;if(pgrazor_hook(const_cast<void*>(r.code),replacement,&o)!=0||!o)return false;
+ void *o=nullptr;if(pgs_hook(const_cast<void*>(r.code),replacement,&o)!=0||!o)return false;
  original.store(o,std::memory_order_release);return true;
 }
 void install_block(){

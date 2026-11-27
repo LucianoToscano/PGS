@@ -216,16 +216,16 @@ bool validate_config(const PgrRoutesServicesConfig *c, int *rc) {
 // the failure so the pilot stays fail-closed. Never patches the same address with a second engine.
 int install_hooks() {
   void *req_orig = nullptr;
-  if (pgrazor_hook(g_cfg.addr_request_nearby, reinterpret_cast<void *>(&hook_request_nearby), &req_orig) != 0 ||
+  if (pgs_hook(g_cfg.addr_request_nearby, reinterpret_cast<void *>(&hook_request_nearby), &req_orig) != 0 ||
       req_orig == nullptr) {
     return PGR_RS_ERR_HOOK;
   }
   // Publish the trampoline before placing the second hook so a call racing the first patch still chains.
   g_orig_request_nearby.store(reinterpret_cast<RequestNearbyFn>(req_orig), std::memory_order_release);
   void *ir_orig = nullptr;
-  if (pgrazor_hook(g_cfg.addr_in_range_of_end, reinterpret_cast<void *>(&hook_in_range_of_end), &ir_orig) != 0 ||
+  if (pgs_hook(g_cfg.addr_in_range_of_end, reinterpret_cast<void *>(&hook_in_range_of_end), &ir_orig) != 0 ||
       ir_orig == nullptr) {
-    pgrazor_unhook(g_cfg.addr_request_nearby);  // roll back the one we placed (no stale original)
+    pgs_unhook(g_cfg.addr_request_nearby);  // roll back the one we placed (no stale original)
     return PGR_RS_ERR_HOOK;
   }
   g_orig_in_range.store(reinterpret_cast<InRangeFn>(ir_orig), std::memory_order_release);

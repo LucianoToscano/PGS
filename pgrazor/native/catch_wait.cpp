@@ -169,7 +169,7 @@ int install(const PgrCatchWaitConfig *test){
  std::memset(classes,0,sizeof(classes));std::memset(fields,0,sizeof(fields));
  PgrBootBinding resolved{};void *target=nullptr;const int rc=prepare(test,resolved,&target);if(rc)return rc;
  binding=resolved;void *trampoline=nullptr;
- const int hook=pgrazor_hook(target,reinterpret_cast<void *>(replacement),&trampoline);
+ const int hook=pgs_hook(target,reinterpret_cast<void *>(replacement),&trampoline);
  if(trampoline)original.store(reinterpret_cast<Move>(trampoline),std::memory_order_release);
  if(hook||!trampoline){poisoned=true;return -12;}
  active.store(true);ready.store(true,std::memory_order_release);return 0;

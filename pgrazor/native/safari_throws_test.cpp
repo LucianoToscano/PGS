@@ -1,9 +1,9 @@
 #include <cassert>
 #include <cstdio>
 #include "throws.cpp"
-int pgrazor_hook(void*,void*,void**){return -1;}
-int pgrazor_unhook(void*){return -1;}
-int pgrazor_instrument(void*,dobby_instrument_callback_t){return -1;}
+int pgs_hook(void*,void*,void**){return -1;}
+int pgs_unhook(void*){return -1;}
+int pgs_instrument(void*,dobby_instrument_callback_t){return -1;}
 int main(){
  PgrThrowValue input{7,0.9f,0,0,0,0x7b};
  auto unchanged=transform(input,3,1,ROUTE_SUBMIT,1000);assert(unchanged.radius==0.9f&&unchanged.spinning==0);

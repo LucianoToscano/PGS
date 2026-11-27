@@ -138,15 +138,15 @@ bool validate_config(const PgrRoutesTrackingConfig *c, int *rc) {
 // replacement/trampoline. g_installed gates ALL observer effects until all3 pass.
 int install_hooks() {
   void *o0=nullptr;
-  const int r0=pgrazor_hook(g_cfg.addr_tracking,reinterpret_cast<void *>(&hook_tracking),&o0);
+  const int r0=pgs_hook(g_cfg.addr_tracking,reinterpret_cast<void *>(&hook_tracking),&o0);
   if(o0)g_orig_tracking.store(reinterpret_cast<TrackingFn>(o0),std::memory_order_release);
   if(r0||!o0)return PGR_RT_ERR_HOOK;
   void *o1=nullptr;
-  const int r1=pgrazor_hook(g_cfg.addr_waypoint,reinterpret_cast<void *>(&hook_waypoint),&o1);
+  const int r1=pgs_hook(g_cfg.addr_waypoint,reinterpret_cast<void *>(&hook_waypoint),&o1);
   if(o1)g_orig_waypoint.store(reinterpret_cast<WaypointFn>(o1),std::memory_order_release);
   if(r1||!o1)return PGR_RT_ERR_HOOK;
   void *o2=nullptr;
-  const int r2=pgrazor_hook(g_cfg.addr_location_icall,reinterpret_cast<void *>(&hook_location),&o2);
+  const int r2=pgs_hook(g_cfg.addr_location_icall,reinterpret_cast<void *>(&hook_location),&o2);
   if(o2)g_orig_location.store(reinterpret_cast<LocationFn>(o2),std::memory_order_release);
   if(r2||!o2)return PGR_RT_ERR_HOOK;
   return 0;

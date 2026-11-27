@@ -529,18 +529,18 @@ int api_install(const PgrObsConfig *config) {
     g_config = *config; // publish before any callback can read it (still under lock)
 
     BtxuFn b = nullptr; CompletionFn c = nullptr, e = nullptr;
-    int rc_b = pgrazor_hook(g_config.code_btxu,    reinterpret_cast<void *>(&btxu_replacement),    reinterpret_cast<void **>(&b));
-    int rc_c = pgrazor_hook(g_config.code_caught,  reinterpret_cast<void *>(&caught_replacement),  reinterpret_cast<void **>(&c));
-    int rc_e = pgrazor_hook(g_config.code_escaped, reinterpret_cast<void *>(&escaped_replacement), reinterpret_cast<void **>(&e));
+    int rc_b = pgs_hook(g_config.code_btxu,    reinterpret_cast<void *>(&btxu_replacement),    reinterpret_cast<void **>(&b));
+    int rc_c = pgs_hook(g_config.code_caught,  reinterpret_cast<void *>(&caught_replacement),  reinterpret_cast<void **>(&c));
+    int rc_e = pgs_hook(g_config.code_escaped, reinterpret_cast<void *>(&escaped_replacement), reinterpret_cast<void **>(&e));
     // A reported success with a NULL trampoline is the one state that MUST be undone: the
     // replacement is physically installed but has no original to chain to, so any later call
     // would run a null original. Unhooking ONLY that broken target removes our patch so the
     // game's own method runs; targets that hooked cleanly (valid trampoline) are never unhooked
     // (no unsafe unhook of a live sibling) -- they stay installed and simply pass through because
     // the policy can never arm once this install is marked failed.
-    if (rc_b == 0 && b == nullptr) { pgrazor_unhook(g_config.code_btxu);    rc_b = PGR_OBS_ERR_HOOK; }
-    if (rc_c == 0 && c == nullptr) { pgrazor_unhook(g_config.code_caught);  rc_c = PGR_OBS_ERR_HOOK; }
-    if (rc_e == 0 && e == nullptr) { pgrazor_unhook(g_config.code_escaped); rc_e = PGR_OBS_ERR_HOOK; }
+    if (rc_b == 0 && b == nullptr) { pgs_unhook(g_config.code_btxu);    rc_b = PGR_OBS_ERR_HOOK; }
+    if (rc_c == 0 && c == nullptr) { pgs_unhook(g_config.code_caught);  rc_c = PGR_OBS_ERR_HOOK; }
+    if (rc_e == 0 && e == nullptr) { pgs_unhook(g_config.code_escaped); rc_e = PGR_OBS_ERR_HOOK; }
 
     if (rc_b != 0 || rc_c != 0 || rc_e != 0) {
         // Permanent inert partial patch: publish EVERY original we obtained so each still-live

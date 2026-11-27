@@ -778,7 +778,7 @@ bool install_hook_group(const HookEntry *entries, size_t count) {
     for (size_t i=0;i<count;++i) {
         const HookEntry &e=entries[i];
         if(g_originals[e.slot].load(std::memory_order_acquire))continue;
-        void *orig=nullptr;const int rc=pgrazor_hook(e.target,e.replacement,&orig);
+        void *orig=nullptr;const int rc=pgs_hook(e.target,e.replacement,&orig);
         // A nonnull trampoline is process-lifetime even when the engine reports
         // failure. Never remove a published target or clear another thread's original.
         if(orig){g_originals[e.slot].store(orig,std::memory_order_release);

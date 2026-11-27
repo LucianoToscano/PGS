@@ -671,7 +671,7 @@ bool api_init_impl(const pgrazor_accounts_config_v1_t* cfg) noexcept {
     }
     if (!g_state.hook_installed.load(std::memory_order_relaxed)) {
       void* orig_fn = nullptr;
-      const int rc = pgrazor_hook(
+      const int rc = pgs_hook(
           g_state.cfg.auth_logout_target_fn,
           reinterpret_cast<void*>(&hook_auth_logout),
           &orig_fn);

@@ -2,7 +2,7 @@
 #include "auto_throw.h"
 #include "map_auto_throw.h"
 #include "vgp_controller.h"
-extern int pgrazor_hook(void*,void*,void**);
+extern int pgs_hook(void*,void*,void**);
 #include "auto_throw_values.h"
 #include "catch_chance.h"
 #include "safari_ball_policy.h"

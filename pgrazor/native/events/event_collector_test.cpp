@@ -4,7 +4,7 @@
 #include <stdexcept>
 extern "C" const void *pgrazor_runtime_bootstrap_api(uint32_t){return nullptr;}
 extern "C" const void *pgrazor_runtime_metadata_api(uint32_t){return nullptr;}
-int pgrazor_hook(void*,void*,void**){return -1;}
+int pgs_hook(void*,void*,void**){return -1;}
 namespace {
 struct Obj {alignas(16) unsigned char b[2048]{};};
 template<class T>void put(Obj&o,size_t at,T value){std::memcpy(o.b+at,&value,sizeof(value));}

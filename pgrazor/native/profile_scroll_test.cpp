@@ -3,7 +3,7 @@
 #include "profile_scroll.cpp"
 extern "C" const void *pgrazor_runtime_bootstrap_api(uint32_t){return nullptr;}
 extern "C" const void *pgrazor_runtime_metadata_api(uint32_t){return nullptr;}
-int pgrazor_hook(void*,void*,void**){return -1;}
+int pgs_hook(void*,void*,void**){return -1;}
 namespace {
 int scroll_a,scroll_b,field_stub;
 int forwarded=0,updated=0;

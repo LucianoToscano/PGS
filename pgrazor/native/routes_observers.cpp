@@ -351,15 +351,15 @@ bool validate_config(const PgrRoutesObserversConfig *c, int *rc) {
 // Install the three hooks. On a partial failure, roll back whatever was patched and latch the failure.
 int install_hooks() {
   void *o0 = nullptr;
-  int rc=pgrazor_hook(g_cfg.addr_reward_init, reinterpret_cast<void *>(&hook_reward_init), &o0);
+  int rc=pgs_hook(g_cfg.addr_reward_init, reinterpret_cast<void *>(&hook_reward_init), &o0);
   g_orig_reward.store(reinterpret_cast<InitFn>(o0), std::memory_order_release);
   if(rc!=0||!o0)return PGR_RO_ERR_HOOK;
   void *o1 = nullptr;
-  rc=pgrazor_hook(g_cfg.addr_rating_init, reinterpret_cast<void *>(&hook_rating_init), &o1);
+  rc=pgs_hook(g_cfg.addr_rating_init, reinterpret_cast<void *>(&hook_rating_init), &o1);
   g_orig_rating.store(reinterpret_cast<InitFn>(o1), std::memory_order_release);
   if(rc!=0||!o1)return PGR_RO_ERR_HOOK;
   void *o2 = nullptr;
-  rc=pgrazor_hook(g_cfg.addr_completion_resp, reinterpret_cast<void *>(&hook_bjan), &o2);
+  rc=pgs_hook(g_cfg.addr_completion_resp, reinterpret_cast<void *>(&hook_bjan), &o2);
   g_orig_bjan.store(reinterpret_cast<BjanFn>(o2), std::memory_order_release);
   if(rc!=0||!o2)return PGR_RO_ERR_HOOK;
   return 0;

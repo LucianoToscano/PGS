@@ -23,7 +23,6 @@ jobs:
       PGRAZOR_BUILD_TOOLS: '36.0.0'
       PGRAZOR_ANDROID_PLATFORM: android-36
       PGRAZOR_VERSION: v0.3.8-pgs.1
-      PGRAZOR_KEYSTORE: ${{ runner.temp }}/pgs-community-signing.jks
       PGS_SOURCE_SHA: a2fa1a698b73436798ad84bf33b0e78a7e012f69
       PGS_EXPECTED_CERT_SHA256: d95c6bdfcbd91dc5c9cde698487c88e4994771a475e4efde4567b8d5f44e96cf
     steps:
@@ -40,6 +39,8 @@ jobs:
           java-version: '17'
       # Fetch immediately: a newly sealed signed URL is valid for only a short time.
       # No decrypted URL, password or private key is written to GITHUB_ENV or a log.
+      - name: Set runner-local signing path
+        run: printf 'PGRAZOR_KEYSTORE=%s/pgs-community-signing.jks\n' "$RUNNER_TEMP" >> "$GITHUB_ENV"
       - name: Recover and verify private game input
         timeout-minutes: 10
         env:

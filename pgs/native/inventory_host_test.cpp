@@ -58,7 +58,7 @@ __attribute__((noinline)) void feed_result(void*,void*,void*){PAD;++original_cal
 }
 int inventory_run(int argc,char **argv){
  assert(argc==2);void *lib=dlopen(argv[1],RTLD_NOW|RTLD_LOCAL);if(!lib)puts(dlerror());assert(lib);auto get=reinterpret_cast<const void*(*)(uint32_t)>(dlsym(lib,"pgrazor_native_api"));assert(get);
- auto core=static_cast<const pgrazor_native_api_v2*>(get(2));auto api=static_cast<const PgrInventoryHostApi*>(core->query_feature(65,1));assert(api&&api->size==96&&!core->query_feature(65,3));
+ auto core=static_cast<const pgs_native_api_v2*>(get(2));auto api=static_cast<const PgrInventoryHostApi*>(core->query_feature(65,1));assert(api&&api->size==96&&!core->query_feature(65,3));
  auto cleanup=static_cast<const PgrInventoryCleanupApi*>(core->query_feature(65,2));
  assert(cleanup&&cleanup->version==2&&cleanup->size==sizeof(*cleanup));
  assert(cleanup->request()==0&&!cleanup->pending(1));
@@ -197,7 +197,7 @@ void initialize(){
  ref(open_gui,H_GF_F_OPEN_DETAILS,details);ref(details,H_GF_F_SENDER,text);ref(open_gui,H_GF_F_OPEN_BTN,button);ref(sequence,H_GF_F_SEQ_GUI,open_gui);ref(sequence,H_GF_F_SEQ_RESP,response);scalar(sequence,H_GF_F_SEQ_STATE,0);scalar(response,H_GF_F_OPEN_RESULT,5);
 }
 int run(const char *library){
- void *lib=dlopen(library,RTLD_NOW|RTLD_LOCAL);assert(lib);auto get=reinterpret_cast<const void*(*)(uint32_t)>(dlsym(lib,"pgrazor_native_api"));assert(get);auto core=static_cast<const pgrazor_native_api_v2*>(get(2));host=static_cast<const PgrInventoryHostApi*>(core->query_feature(65,1));assert(host);
+ void *lib=dlopen(library,RTLD_NOW|RTLD_LOCAL);assert(lib);auto get=reinterpret_cast<const void*(*)(uint32_t)>(dlsym(lib,"pgrazor_native_api"));assert(get);auto core=static_cast<const pgs_native_api_v2*>(get(2));host=static_cast<const PgrInventoryHostApi*>(core->query_feature(65,1));assert(host);
  initialize();PgrSharedMetadataOutput md{};md.version=2;md.size=sizeof(md);for(unsigned i=0;i<kClassCount;++i)md.classes[i]=&classes[i];for(unsigned i=0;i<kOptClassCount;++i)md.opt_classes[i]=k(i);for(unsigned i=0;i<PGR_OPT_HANDLE_COUNT;++i)md.opt_handles[i]=h(i);md.fields[1]=&current_state_token;md.methods[5]=&alive_token;md.optional[OPT_GIFTS]=1;
  md.opt_ints[I_GIFT_OPEN_SUCCESS]=5;md.opt_ints[I_GIFT_SEND_SUCCESS]=1;md.opt_ints[I_GIFT_CHECK_SUCCESS]=7;
  md.opt_handles[H_GF_M_PROF_OPEN_CODE]=reinterpret_cast<void*>(prof_open);md.opt_handles[H_GF_M_PROF_CLOSE_CODE]=reinterpret_cast<void*>(prof_close);md.opt_handles[H_GF_M_OPEN_READY_CODE]=reinterpret_cast<void*>(ready);md.opt_handles[H_GF_M_OPEN_CODE]=reinterpret_cast<void*>(manual_open);md.opt_handles[H_GF_M_OPEN_CLOSE_CODE]=reinterpret_cast<void*>(close);md.opt_handles[H_GF_M_SEQ_CODE]=reinterpret_cast<void*>(seq);md.opt_handles[H_GF_M_RPC_RESULT_CODE]=reinterpret_cast<void*>(result);md.opt_handles[H_GF_M_RPC_FINALLY_CODE]=reinterpret_cast<void*>(final);md.opt_handles[H_GF_M_CHOOSE_CODE]=reinterpret_cast<void*>(choose);

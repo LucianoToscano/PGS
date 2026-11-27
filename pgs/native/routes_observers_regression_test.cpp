@@ -123,7 +123,7 @@ void queue_both(){reward_call(at(reward),at(arg),&method_init);rating_call(at(ra
 void load(const char *path){
   void *library=dlopen(path,RTLD_NOW|RTLD_LOCAL);assert(library);
   auto get=reinterpret_cast<const void *(*)(uint32_t)>(dlsym(library,"pgrazor_native_api"));assert(get);
-  auto *core=static_cast<const pgrazor_native_api_v2 *>(get(2));assert(core&&core->query_feature);
+  auto *core=static_cast<const pgs_native_api_v2 *>(get(2));assert(core&&core->query_feature);
   api=static_cast<const PgrRoutesObserversApi *>(core->query_feature(46,1));assert(api&&api->size==sizeof(*api));
   PgrRoutesObserversConfig c{};c.version=1;c.size=sizeof(c);
   c.runtime_invoke=reinterpret_cast<void *>(runtime_invoke);c.object_get_class=reinterpret_cast<void *>(object_class);

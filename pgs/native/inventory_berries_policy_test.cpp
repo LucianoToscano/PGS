@@ -11,25 +11,25 @@
 namespace {
 int32_t observed_berry = -1;
 uint64_t observed_lease = 0;
-pgrazor_items_rules_v1 observed_rules{};
-int install_items(const pgrazor_items_config_v1 *) { return 0; }
-int tick_items(const pgrazor_items_rules_v1 *rules, uint32_t, uint64_t, uint64_t) {
+pgs_items_rules_v1 observed_rules{};
+int install_items(const pgs_items_config_v1 *) { return 0; }
+int tick_items(const pgs_items_rules_v1 *rules, uint32_t, uint64_t, uint64_t) {
     observed_rules = *rules; return 0;
 }
 int clear_items(uint64_t) { return 0; }
-int sample_items(pgrazor_items_sample_v1 *sample) { *sample = {}; return 0; }
-int catalog_items(pgrazor_item_row *, uint32_t, uint32_t *written) { *written = 0; return 0; }
-int drain_items(pgrazor_item_event *, uint32_t, uint32_t *written) { *written = 0; return 0; }
+int sample_items(pgs_items_sample_v1 *sample) { *sample = {}; return 0; }
+int catalog_items(pgs_item_row *, uint32_t, uint32_t *written) { *written = 0; return 0; }
+int drain_items(pgs_item_event *, uint32_t, uint32_t *written) { *written = 0; return 0; }
 void *no_service() { return nullptr; }
-const pgrazor_items_api_v1 item_api{1, sizeof(pgrazor_items_api_v1), install_items,
+const pgs_items_api_v1 item_api{1, sizeof(pgs_items_api_v1), install_items,
     tick_items, clear_items, sample_items, catalog_items, no_service, drain_items, no_service};
-int install_buddy(const pgrazor_buddy_config_v1 *) { return 0; }
+int install_buddy(const pgs_buddy_config_v1 *) { return 0; }
 int tick_buddy(int32_t berry, uint64_t lease, uint64_t) {
     observed_berry = berry; observed_lease = lease; return 0;
 }
 int clear_buddy(uint64_t) { return 0; }
-int sample_buddy(pgrazor_buddy_sample_v1 *sample) { *sample = {}; return 0; }
-const pgrazor_buddy_api_v1 buddy_api{1, sizeof(pgrazor_buddy_api_v1), install_buddy,
+int sample_buddy(pgs_buddy_sample_v1 *sample) { *sample = {}; return 0; }
+const pgs_buddy_api_v1 buddy_api{1, sizeof(pgs_buddy_api_v1), install_buddy,
     tick_buddy, clear_buddy, sample_buddy};
 void *attached_thread() { static int token; return &token; }
 }

@@ -31,42 +31,42 @@
 #include <unistd.h>
 
 static_assert(sizeof(void *) == 8, "items native ABI requires LP64");
-static_assert(sizeof(pgrazor_items_config_v1) == 432, "config must be 432 bytes");
-static_assert(sizeof(pgrazor_items_sample_v1) == 56,  "sample must be 56 bytes");
-static_assert(sizeof(pgrazor_items_api_v1)    == 72,  "table must be 72 bytes");
-static_assert(sizeof(pgrazor_item_row)        == 8,   "row must be 8 bytes");
-static_assert(sizeof(pgrazor_item_cap)        == 8,   "cap must be 8 bytes");
-static_assert(sizeof(pgrazor_item_event)      == 16,  "event must be 16 bytes");
-static_assert(sizeof(pgrazor_items_rules_v1)  == 32 + PGRAZOR_ITEMS_MAX_RULES * 8,
+static_assert(sizeof(pgs_items_config_v1) == 432, "config must be 432 bytes");
+static_assert(sizeof(pgs_items_sample_v1) == 56,  "sample must be 56 bytes");
+static_assert(sizeof(pgs_items_api_v1)    == 72,  "table must be 72 bytes");
+static_assert(sizeof(pgs_item_row)        == 8,   "row must be 8 bytes");
+static_assert(sizeof(pgs_item_cap)        == 8,   "cap must be 8 bytes");
+static_assert(sizeof(pgs_item_event)      == 16,  "event must be 16 bytes");
+static_assert(sizeof(pgs_items_rules_v1)  == 32 + PGS_ITEMS_MAX_RULES * 8,
               "rules snapshot must be 4128 bytes");
-static_assert(offsetof(pgrazor_items_config_v1, has_lookup)     == 8,   "layout");
-static_assert(offsetof(pgrazor_items_config_v1, runtime_invoke) == 16,  "layout (first core ptr)");
-static_assert(offsetof(pgrazor_items_config_v1, f_status)       == 272, "layout (last core ptr)");
-static_assert(offsetof(pgrazor_items_config_v1, class_get_type) == 280, "layout (first lookup ptr)");
-static_assert(offsetof(pgrazor_items_config_v1, func_type)      == 416, "layout (last lookup ptr)");
-static_assert(offsetof(pgrazor_items_config_v1, success)        == 424, "layout");
-static_assert(offsetof(pgrazor_items_rules_v1, generation)      == 16,  "layout");
-static_assert(offsetof(pgrazor_items_rules_v1, entries)         == 32,  "layout");
-static_assert(offsetof(pgrazor_items_sample_v1, bag_ready_serial) == 8,  "layout");
-static_assert(offsetof(pgrazor_items_sample_v1, events_lost)      == 32, "layout");
-static_assert(offsetof(pgrazor_items_sample_v1, has_candidate)    == 40, "layout");
-static_assert(offsetof(pgrazor_items_sample_v1, owned_roots)      == 44, "layout");
-static_assert(offsetof(pgrazor_item_event, aux)                   == 12, "layout");
+static_assert(offsetof(pgs_items_config_v1, has_lookup)     == 8,   "layout");
+static_assert(offsetof(pgs_items_config_v1, runtime_invoke) == 16,  "layout (first core ptr)");
+static_assert(offsetof(pgs_items_config_v1, f_status)       == 272, "layout (last core ptr)");
+static_assert(offsetof(pgs_items_config_v1, class_get_type) == 280, "layout (first lookup ptr)");
+static_assert(offsetof(pgs_items_config_v1, func_type)      == 416, "layout (last lookup ptr)");
+static_assert(offsetof(pgs_items_config_v1, success)        == 424, "layout");
+static_assert(offsetof(pgs_items_rules_v1, generation)      == 16,  "layout");
+static_assert(offsetof(pgs_items_rules_v1, entries)         == 32,  "layout");
+static_assert(offsetof(pgs_items_sample_v1, bag_ready_serial) == 8,  "layout");
+static_assert(offsetof(pgs_items_sample_v1, events_lost)      == 32, "layout");
+static_assert(offsetof(pgs_items_sample_v1, has_candidate)    == 40, "layout");
+static_assert(offsetof(pgs_items_sample_v1, owned_roots)      == 44, "layout");
+static_assert(offsetof(pgs_item_event, aux)                   == 12, "layout");
 
 namespace {
 
-constexpr uint32_t kMaxList    = PGRAZOR_ITEMS_MAX_LIST;
-constexpr uint32_t kMaxRows    = PGRAZOR_ITEMS_MAX_ROWS;
-constexpr uint32_t kMaxRules   = PGRAZOR_ITEMS_MAX_RULES;
-constexpr int      kMaxBlocked = static_cast<int>(PGRAZOR_ITEMS_MAX_BLOCKED);
-constexpr int      kMaxQuar    = static_cast<int>(PGRAZOR_ITEMS_MAX_QUAR);
-constexpr uint32_t kMaxEvents  = PGRAZOR_ITEMS_MAX_EVENTS;
-constexpr int32_t  kMaxQty     = PGRAZOR_ITEMS_MAX_QTY;
-constexpr uint64_t kPollMs     = PGRAZOR_ITEMS_POLL_MS;
-constexpr uint64_t kBackoffMs  = PGRAZOR_ITEMS_BACKOFF_MS;
-constexpr uint64_t kConfirmMs  = PGRAZOR_ITEMS_CONFIRM_MS;
-constexpr uint64_t kSettleMs   = PGRAZOR_ITEMS_SETTLE_MS;
-constexpr uint64_t kMaxLeaseMs = PGRAZOR_ITEMS_MAX_LEASE_MS;
+constexpr uint32_t kMaxList    = PGS_ITEMS_MAX_LIST;
+constexpr uint32_t kMaxRows    = PGS_ITEMS_MAX_ROWS;
+constexpr uint32_t kMaxRules   = PGS_ITEMS_MAX_RULES;
+constexpr int      kMaxBlocked = static_cast<int>(PGS_ITEMS_MAX_BLOCKED);
+constexpr int      kMaxQuar    = static_cast<int>(PGS_ITEMS_MAX_QUAR);
+constexpr uint32_t kMaxEvents  = PGS_ITEMS_MAX_EVENTS;
+constexpr int32_t  kMaxQty     = PGS_ITEMS_MAX_QTY;
+constexpr uint64_t kPollMs     = PGS_ITEMS_POLL_MS;
+constexpr uint64_t kBackoffMs  = PGS_ITEMS_BACKOFF_MS;
+constexpr uint64_t kConfirmMs  = PGS_ITEMS_CONFIRM_MS;
+constexpr uint64_t kSettleMs   = PGS_ITEMS_SETTLE_MS;
+constexpr uint64_t kMaxLeaseMs = PGS_ITEMS_MAX_LEASE_MS;
 
 // Hook signatures (exact game ABI; the trailing void* is the il2cpp MethodInfo*). The bool
 // filter arg to the list method arrives in an integer register as int32.
@@ -78,7 +78,7 @@ using ErrorFn   = void  (*)(void *self, void *str, void *method);
 
 // --- lifetime / publication -------------------------------------------------------
 std::mutex                 g_install_mutex;
-pgrazor_items_config_v1    g_cfg{};
+pgs_items_config_v1    g_cfg{};
 std::atomic<bool>          g_installed{false};
 bool                       g_install_attempted = false;  // install-mutex guarded; failure latches
 int                        g_install_error = PGR_ITEMS_ERR_NOT_INSTALLED;
@@ -104,7 +104,7 @@ std::atomic<void *>   g_service_atomic{nullptr};
 // never a managed call, never a GC free -- so it honours the "no mutex across managed/original"
 // invariant. Overflow fails closed: the newest event is dropped, events_lost and fault both bump.
 std::mutex          g_event_mutex;
-pgrazor_item_event  g_events[kMaxEvents];
+pgs_item_event  g_events[kMaxEvents];
 uint32_t            g_ev_head = 0;   // event-mutex guarded
 uint32_t            g_ev_tail = 0;   // event-mutex guarded
 uint32_t            g_ev_size = 0;   // event-mutex guarded
@@ -158,14 +158,14 @@ struct State {
 
 // Persistent catalog (owner-thread). Mirrors the JS rows Map: counts are zeroed then updated
 // each poll (depleted items persist at 0), published to a mutex-guarded copy for catalog().
-pgrazor_item_row g_rows[kMaxRows];
+pgs_item_row g_rows[kMaxRows];
 uint32_t         g_rows_n = 0;
 std::mutex       g_catalog_mutex;
-pgrazor_item_row g_pub_rows[kMaxRows];
+pgs_item_row g_pub_rows[kMaxRows];
 uint32_t         g_pub_n = 0;
 
 // Rules snapshot copied once per pass (owner-thread). The immutable install config is separate.
-pgrazor_items_rules_v1 g_snapshot{};
+pgs_items_rules_v1 g_snapshot{};
 
 uint64_t boottime_ms() {
     struct timespec ts;
@@ -273,7 +273,7 @@ void push_event(uint32_t kind, int32_t id, int32_t amount, int32_t aux) {
         g_fault_serial.fetch_add(1, std::memory_order_release);
         return;
     }
-    g_events[g_ev_tail] = pgrazor_item_event{kind, id, amount, aux};
+    g_events[g_ev_tail] = pgs_item_event{kind, id, amount, aux};
     g_ev_tail = (g_ev_tail + 1) % kMaxEvents;
     ++g_ev_size;
 }
@@ -384,8 +384,8 @@ void publish_catalog() {
     std::lock_guard<std::mutex> lock(g_catalog_mutex);
     uint32_t n = g_rows_n; if (n > kMaxRows) n = kMaxRows;
     if (g_catalog_serial.load(std::memory_order_relaxed) != 0 && g_pub_n == n &&
-        std::memcmp(g_pub_rows, g_rows, static_cast<size_t>(n) * sizeof(pgrazor_item_row)) == 0) return;
-    std::memcpy(g_pub_rows, g_rows, static_cast<size_t>(n) * sizeof(pgrazor_item_row));
+        std::memcmp(g_pub_rows, g_rows, static_cast<size_t>(n) * sizeof(pgs_item_row)) == 0) return;
+    std::memcpy(g_pub_rows, g_rows, static_cast<size_t>(n) * sizeof(pgs_item_row));
     g_pub_n = n;
     g_catalog_serial.fetch_add(1, std::memory_order_release);
 }
@@ -983,7 +983,7 @@ void hook_error(void *self, void *str, void *method) {
 }
 
 // --- C API table functions --------------------------------------------------------
-bool core_ok(const pgrazor_items_config_v1 *c) {
+bool core_ok(const pgs_items_config_v1 *c) {
     const void *const ptrs[] = {
         c->runtime_invoke, c->gchandle_new, c->gchandle_get_target, c->gchandle_free,
         c->object_get_class, c->object_unbox, c->field_get_value, c->m_list, c->m_count,
@@ -995,7 +995,7 @@ bool core_ok(const pgrazor_items_config_v1 *c) {
     for (const void *p : ptrs) if (p == nullptr) return false;
     return true;
 }
-bool lookup_ok(const pgrazor_items_config_v1 *c) {
+bool lookup_ok(const pgs_items_config_v1 *c) {
     const void *const ptrs[] = {
         c->class_get_type, c->type_get_object, c->field_static_get_value, c->runtime_class_init,
         c->method_get_object, c->m_find, c->m_container, c->m_resolve, c->m_create_delegate,
@@ -1005,18 +1005,18 @@ bool lookup_ok(const pgrazor_items_config_v1 *c) {
     return true;
 }
 
-bool hooks_distinct(const pgrazor_items_config_v1 *c) {
+bool hooks_distinct(const pgs_items_config_v1 *c) {
     const void *const a[] = { c->init_address, c->list_address, c->recycle_address,
                               c->result_address, c->error_address };
     for (int i = 0; i < 5; ++i) for (int j = i + 1; j < 5; ++j) if (a[i] == a[j]) return false;
     return true;
 }
 
-int api_install(const pgrazor_items_config_v1 *config) {
+int api_install(const pgs_items_config_v1 *config) {
     if (config == nullptr) return PGR_ITEMS_ERR_NULL_ARG;
     std::lock_guard<std::mutex> lock(g_install_mutex);
-    if (config->version != PGRAZOR_ITEMS_API_VERSION ||
-        config->size != sizeof(pgrazor_items_config_v1) || !core_ok(config))
+    if (config->version != PGS_ITEMS_API_VERSION ||
+        config->size != sizeof(pgs_items_config_v1) || !core_ok(config))
         return PGR_ITEMS_ERR_BAD_CONFIG;
     if (config->has_lookup && !lookup_ok(config)) return PGR_ITEMS_ERR_BAD_CONFIG;
     if (!hooks_distinct(config)) return PGR_ITEMS_ERR_DUP_HOOK;
@@ -1057,20 +1057,20 @@ int api_install(const pgrazor_items_config_v1 *config) {
     return g_install_error = PGR_ITEMS_OK;
 }
 
-int api_tick(const pgrazor_items_rules_v1 *rules, uint32_t force_poll,
+int api_tick(const pgs_items_rules_v1 *rules, uint32_t force_poll,
              uint64_t remaining_lease_ms, uint64_t proven_tid) {
     if (!g_installed.load(std::memory_order_acquire)) return PGR_ITEMS_ERR_NOT_INSTALLED;
 
     // Validate + snapshot the rules before any thread gate (a bad snapshot is a hard error).
-    pgrazor_items_rules_v1 snap;
+    pgs_items_rules_v1 snap;
     if (rules != nullptr) {
-        if (rules->version != PGRAZOR_ITEMS_API_VERSION ||
-            rules->size != sizeof(pgrazor_items_rules_v1) || rules->count > kMaxRules)
+        if (rules->version != PGS_ITEMS_API_VERSION ||
+            rules->size != sizeof(pgs_items_rules_v1) || rules->count > kMaxRules)
             return PGR_ITEMS_ERR_BAD_RULES;
         snap = *rules;
     } else {
         std::memset(&snap, 0, sizeof(snap));
-        snap.version = PGRAZOR_ITEMS_API_VERSION;
+        snap.version = PGS_ITEMS_API_VERSION;
         snap.size = sizeof(snap);
     }
 
@@ -1120,10 +1120,10 @@ int api_clear(uint64_t proven_tid) {
     return PGR_ITEMS_OK;
 }
 
-int api_sample(pgrazor_items_sample_v1 *out) {
+int api_sample(pgs_items_sample_v1 *out) {
     if (out == nullptr) return PGR_ITEMS_ERR_NULL_ARG;
-    out->version = PGRAZOR_ITEMS_API_VERSION;
-    out->size = sizeof(pgrazor_items_sample_v1);
+    out->version = PGS_ITEMS_API_VERSION;
+    out->size = sizeof(pgs_items_sample_v1);
     out->bag_ready_serial = g_bag_ready_serial.load(std::memory_order_acquire);
     out->catalog_serial = g_catalog_serial.load(std::memory_order_acquire);
     out->fault_serial = g_fault_serial.load(std::memory_order_acquire);
@@ -1139,17 +1139,17 @@ int api_sample(pgrazor_items_sample_v1 *out) {
     return PGR_ITEMS_OK;
 }
 
-int api_catalog(pgrazor_item_row *out, uint32_t max, uint32_t *written) {
+int api_catalog(pgs_item_row *out, uint32_t max, uint32_t *written) {
     if (!g_installed.load(std::memory_order_acquire)) return PGR_ITEMS_ERR_NOT_INSTALLED;
     if (out == nullptr || written == nullptr) return PGR_ITEMS_ERR_NULL_ARG;
     std::lock_guard<std::mutex> lock(g_catalog_mutex);
     uint32_t n = g_pub_n < max ? g_pub_n : max;
-    std::memcpy(out, g_pub_rows, static_cast<size_t>(n) * sizeof(pgrazor_item_row));
+    std::memcpy(out, g_pub_rows, static_cast<size_t>(n) * sizeof(pgs_item_row));
     *written = n;
     return PGR_ITEMS_OK;
 }
 
-int api_drain(pgrazor_item_event *out, uint32_t max, uint32_t *written) {
+int api_drain(pgs_item_event *out, uint32_t max, uint32_t *written) {
     if (!g_installed.load(std::memory_order_acquire)) return PGR_ITEMS_ERR_NOT_INSTALLED;
     if (out == nullptr || written == nullptr) return PGR_ITEMS_ERR_NULL_ARG;
     std::lock_guard<std::mutex> lock(g_event_mutex);
@@ -1183,9 +1183,9 @@ void *api_service_acquire(void) {
     return owned; // caller owns + frees independently
 }
 
-const pgrazor_items_api_v1 g_api = {
-    PGRAZOR_ITEMS_API_VERSION,
-    static_cast<uint32_t>(sizeof(pgrazor_items_api_v1)),
+const pgs_items_api_v1 g_api = {
+    PGS_ITEMS_API_VERSION,
+    static_cast<uint32_t>(sizeof(pgs_items_api_v1)),
     &api_install,
     &api_tick,
     &api_clear,
@@ -1199,7 +1199,7 @@ const pgrazor_items_api_v1 g_api = {
 } // namespace
 
 const void *pgrazor_items_api(uint32_t version) {
-    if (version != PGRAZOR_ITEMS_API_VERSION) return nullptr;
+    if (version != PGS_ITEMS_API_VERSION) return nullptr;
     return &g_api;
 }
 

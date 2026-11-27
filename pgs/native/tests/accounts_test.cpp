@@ -13,10 +13,10 @@
 #include "../accounts.h"
 
 static_assert(sizeof(void*) == 8, "LP64 test target required");
-static_assert(sizeof(pgrazor_accounts_config_v1_t) == 328, "LP64 config size");
-static_assert(sizeof(pgrazor_account_event_v1_t) == 1056, "LP64 event size");
-static_assert(sizeof(pgrazor_account_snapshot_v1_t) == 1080, "LP64 snapshot size");
-static_assert(sizeof(pgrazor_accounts_api_v1_t) == 56, "LP64 api table size");
+static_assert(sizeof(pgs_accounts_config_v1_t) == 328, "LP64 config size");
+static_assert(sizeof(pgs_account_event_v1_t) == 1056, "LP64 event size");
+static_assert(sizeof(pgs_account_snapshot_v1_t) == 1080, "LP64 snapshot size");
+static_assert(sizeof(pgs_accounts_api_v1_t) == 56, "LP64 api table size");
 
 namespace {
 void* g_hook_target = nullptr;
@@ -349,8 +349,8 @@ Il2CppObject* fake_runtime_invoke(const MethodInfo* method, void* obj, void** pa
   return nullptr;
 }
 
-pgrazor_accounts_config_v1_t make_valid_config() {
-  pgrazor_accounts_config_v1_t c{};
+pgs_accounts_config_v1_t make_valid_config() {
+  pgs_accounts_config_v1_t c{};
   c.runtime_invoke = &fake_runtime_invoke;
   c.gchandle_new = &fake_gchandle_new;
   c.gchandle_get_target = &fake_gchandle_get_target;
@@ -417,11 +417,11 @@ bool run_isolated(const char* name, void (*fn)()) {
 
 void test_monotonic_tokens_and_init() {
   const auto* api = pgrazor_accounts_api(PGR_ACCOUNTS_API_VERSION);
-  assert(api && api->version == 1 && api->size == sizeof(pgrazor_accounts_api_v1_t));
+  assert(api && api->version == 1 && api->size == sizeof(pgs_accounts_api_v1_t));
   auto cfg = make_valid_config();
   assert(api->api_init(&cfg));
 
-  pgrazor_account_event_v1_t ev[8]{};
+  pgs_account_event_v1_t ev[8]{};
   assert(api->api_drain(ev, 8) == 1 && ev[0].kind == PGR_ACC_EVT_READY && ev[0].available == 1);
 
   const int32_t tid = current_os_tid();
@@ -429,7 +429,7 @@ void test_monotonic_tokens_and_init() {
   api->api_tick(0, tid);
   assert(g_rt.prefs_save_calls == 1);
 
-  pgrazor_account_snapshot_v1_t snap{};
+  pgs_account_snapshot_v1_t snap{};
   api->api_sample(&snap);
   assert(snap.last_accepted_token == 10 && snap.last_consumed_token == 10);
 
@@ -469,7 +469,7 @@ void test_wrong_thread_cannot_steal_owner() {
   const int32_t main_tid = current_os_tid();
   // Forged tid from main thread must be rejected.
   api->api_tick(0, main_tid + 123);
-  pgrazor_account_snapshot_v1_t snap{};
+  pgs_account_snapshot_v1_t snap{};
   api->api_sample(&snap);
   assert(snap.owner_tid == 0);
 
@@ -496,7 +496,7 @@ void test_save_session_once() {
   const auto* api = pgrazor_accounts_api(PGR_ACCOUNTS_API_VERSION);
   auto cfg = make_valid_config();
   assert(api->api_init(&cfg));
-  pgrazor_account_event_v1_t ev[8]{};
+  pgs_account_event_v1_t ev[8]{};
   api->api_drain(ev, 8);
 
   const int32_t tid = current_os_tid();
@@ -513,7 +513,7 @@ void test_reset_login_exact_keys() {
   const auto* api = pgrazor_accounts_api(PGR_ACCOUNTS_API_VERSION);
   auto cfg = make_valid_config();
   assert(api->api_init(&cfg));
-  pgrazor_account_event_v1_t ev[8]{};
+  pgs_account_event_v1_t ev[8]{};
   api->api_drain(ev, 8);
 
   const int32_t tid = current_os_tid();
@@ -536,7 +536,7 @@ void test_revocation_and_reenable_during_getter_stops_stale_mutation() {
   const auto* api = pgrazor_accounts_api(PGR_ACCOUNTS_API_VERSION);
   auto cfg = make_valid_config();
   assert(api->api_init(&cfg));
-  pgrazor_account_event_v1_t ev[8]{};
+  pgs_account_event_v1_t ev[8]{};
   api->api_drain(ev, 8);
 
   g_rt.on_get_player_name = []() {
@@ -563,7 +563,7 @@ void test_reentrant_clear_and_nested_tick_protect_active_roots() {
 
   g_rt.on_wrapper_logout = []() {
     const auto* a = pgrazor_accounts_api(PGR_ACCOUNTS_API_VERSION);
-    pgrazor_account_snapshot_v1_t mid{};
+    pgs_account_snapshot_v1_t mid{};
     a->api_sample(&mid);
     assert(mid.active_depth == 1);
     assert(mid.active_gc_roots > 0);
@@ -580,7 +580,7 @@ void test_reentrant_clear_and_nested_tick_protect_active_roots() {
   assert(api->api_update(true, 2000, PGR_ACC_CMD_LOGOUT, 1));
   api->api_tick(0, tid);
 
-  pgrazor_account_snapshot_v1_t post{};
+  pgs_account_snapshot_v1_t post{};
   api->api_sample(&post);
   assert(post.active_depth == 0);
   assert(post.active_gc_roots == 0);
@@ -596,7 +596,7 @@ void test_no_root_leak_after_clear() {
   assert(api->api_update(true, 2000, PGR_ACC_CMD_LOGOUT, 1));
   api->api_tick(0, tid);
 
-  pgrazor_account_snapshot_v1_t snap{};
+  pgs_account_snapshot_v1_t snap{};
   api->api_sample(&snap);
   assert(snap.logging_out == 1);
   assert(snap.active_depth == 0);
@@ -615,14 +615,14 @@ void test_identity_snapshots_and_session_ended() {
   const auto* api = pgrazor_accounts_api(PGR_ACCOUNTS_API_VERSION);
   auto cfg = make_valid_config();
   assert(api->api_init(&cfg));
-  pgrazor_account_event_v1_t ev[8]{};
+  pgs_account_event_v1_t ev[8]{};
   api->api_drain(ev, 8);
 
   const int32_t tid = current_os_tid();
   assert(api->api_update(true, 2000, PGR_ACC_CMD_NONE, 0));
   api->api_tick(0, tid);
 
-  pgrazor_account_snapshot_v1_t snap{};
+  pgs_account_snapshot_v1_t snap{};
   api->api_sample(&snap);
   assert(snap.has_identity == 1);
   assert(std::u16string(reinterpret_cast<const char16_t*>(snap.id), snap.id_len) == u"player-42");
@@ -648,7 +648,7 @@ void test_uncertainty_stops_replay_on_new_token_after_invoked_logout_fails() {
   const auto* api = pgrazor_accounts_api(PGR_ACCOUNTS_API_VERSION);
   auto cfg = make_valid_config();
   assert(api->api_init(&cfg));
-  pgrazor_account_event_v1_t ev[8]{};
+  pgs_account_event_v1_t ev[8]{};
   api->api_drain(ev, 8);
 
   g_rt.wrapper_throws = true;
@@ -702,13 +702,13 @@ void test_bounded_queue_overflow_fails_closed() {
                                  reinterpret_cast<const MethodInfo*>(&kMthAuthLogout));
   }
 
-  pgrazor_account_snapshot_v1_t snap{};
+  pgs_account_snapshot_v1_t snap{};
   api->api_sample(&snap);
   assert(snap.queue_overflow_latched == 1);
   assert(!api->api_update(true, 2000, PGR_ACC_CMD_SAVE_SESSION, 99));
   assert(!api->api_init(&cfg));
 
-  pgrazor_account_event_v1_t events[PGR_ACCOUNTS_EVENT_QUEUE_CAP + 4]{};
+  pgs_account_event_v1_t events[PGR_ACCOUNTS_EVENT_QUEUE_CAP + 4]{};
   size_t drained = api->api_drain(events, PGR_ACCOUNTS_EVENT_QUEUE_CAP + 4);
   assert(drained == PGR_ACCOUNTS_EVENT_QUEUE_CAP);
   for (size_t i = 0; i < drained; ++i) {

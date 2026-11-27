@@ -567,7 +567,7 @@ int main(int argc, char **argv) {
   void *library = dlopen(argv[1], RTLD_NOW | RTLD_LOCAL);
   if (!library) { std::puts(dlerror()); return 2; }
   auto get = reinterpret_cast<const void *(*)(uint32_t)>(dlsym(library, "pgrazor_native_api"));
-  auto core = get ? static_cast<const pgrazor_native_api_v2 *>(get(2)) : nullptr;
+  auto core = get ? static_cast<const pgs_native_api_v2 *>(get(2)) : nullptr;
   assert(core && core->query_feature(44, 99) == nullptr);  // exact-version only
   api = static_cast<const PgrRoutesDiscoveryApi *>(core->query_feature(44, 1));
   assert(api && api->size == sizeof(PgrRoutesDiscoveryApi) && api->version == PGR_RD_API_VERSION);

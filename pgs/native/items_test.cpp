@@ -68,7 +68,7 @@ static int     g_quantity_action = 0;   // 0 none, 1 reentrant clear, 2 reentran
 static int g_bag_allocations = 0, g_cancel_bag_allocation = 0;
 static bool g_cancel_service_allocation = false;
 static int     g_result_action = 0;     // 0 none, 1 clear() from inside the original result callback
-static const pgrazor_items_api_v1 *g_api = nullptr;
+static const pgs_items_api_v1 *g_api = nullptr;
 
 // Drained-event tallies (pumped out of the module's FIFO queue).
 static int     ev_req = 0, ev_con = 0, ev_err = 0;
@@ -104,7 +104,7 @@ static void *gc_new(void *o, int) {
 }
 static void *gc_target(void *h) { return h; }
 static void gc_free(void *h) {
-    if (h) { pgrazor_items_sample_v1 v{}; g_api->sample(&v); if (!v.owned_roots) g_bad_free = true; --g_roots; }
+    if (h) { pgs_items_sample_v1 v{}; g_api->sample(&v); if (!v.owned_roots) g_bad_free = true; --g_roots; }
 }
 static void *object_unbox(void *o) { return &static_cast<Box *>(o)->v; }
 static void *class_get_type(void *k) { return k; }
@@ -214,10 +214,10 @@ static void *runtime_invoke(void *method, void *obj, void **params, void **exc) 
         if (g_quantity_action) {
             int a = g_quantity_action; g_quantity_action = 0;
             if (a == 1) g_api->clear(static_cast<uint64_t>(gettid()));
-            else if (a == 2) { pgrazor_items_rules_v1 off{}; off.version = PGRAZOR_ITEMS_API_VERSION;
+            else if (a == 2) { pgs_items_rules_v1 off{}; off.version = PGS_ITEMS_API_VERSION;
                    off.size = sizeof(off); g_api->tick(&off, 0, 2500, static_cast<uint64_t>(gettid())); }
             else { // a == 3: nested tick, STILL enabled but a new epoch -> must revoke selection
-                   pgrazor_items_rules_v1 nr{}; nr.version = PGRAZOR_ITEMS_API_VERSION;
+                   pgs_items_rules_v1 nr{}; nr.version = PGS_ITEMS_API_VERSION;
                    nr.size = sizeof(nr); nr.enabled = 1u; nr.generation = 1; nr.epoch = 999;
                    nr.count = 1; nr.entries[0].id = 101; nr.entries[0].cap = 10;
                    g_api->tick(&nr, 0, 2500, static_cast<uint64_t>(gettid())); }
@@ -239,9 +239,9 @@ static void *runtime_invoke(void *method, void *obj, void **params, void **exc) 
 }
 
 // ---- config + rules helpers ------------------------------------------------------
-static pgrazor_items_config_v1 make_config(bool lookup) {
-    pgrazor_items_config_v1 c{};
-    c.version = PGRAZOR_ITEMS_API_VERSION; c.size = sizeof(c); c.has_lookup = lookup ? 1u : 0u;
+static pgs_items_config_v1 make_config(bool lookup) {
+    pgs_items_config_v1 c{};
+    c.version = PGS_ITEMS_API_VERSION; c.size = sizeof(c); c.has_lookup = lookup ? 1u : 0u;
     c.runtime_invoke = (void *)&runtime_invoke; c.gchandle_new = (void *)&gc_new;
     c.gchandle_get_target = (void *)&gc_target; c.gchandle_free = (void *)&gc_free;
     c.object_get_class = (void *)&obj_class; c.object_unbox = (void *)&object_unbox;
@@ -270,44 +270,44 @@ static pgrazor_items_config_v1 make_config(bool lookup) {
     return c;
 }
 
-static pgrazor_items_rules_v1 make_rules(bool enabled, uint64_t gen) {
-    pgrazor_items_rules_v1 r{};
-    r.version = PGRAZOR_ITEMS_API_VERSION; r.size = sizeof(r);
+static pgs_items_rules_v1 make_rules(bool enabled, uint64_t gen) {
+    pgs_items_rules_v1 r{};
+    r.version = PGS_ITEMS_API_VERSION; r.size = sizeof(r);
     r.enabled = enabled ? 1u : 0u; r.generation = gen; r.epoch = 1;
     r.count = 1; r.entries[0].id = 101; r.entries[0].cap = 10;  // keep 10 of item 101
     return r;
 }
 
-static pgrazor_items_sample_v1 snap() { pgrazor_items_sample_v1 s{}; g_api->sample(&s); return s; }
+static pgs_items_sample_v1 snap() { pgs_items_sample_v1 s{}; g_api->sample(&s); return s; }
 
 // Drain the module's FIFO event queue into the per-kind tallies.
 static void pump_events() {
-    pgrazor_item_event buf[PGRAZOR_ITEMS_MAX_EVENTS]; uint32_t w = 0;
-    while (g_api->drain(buf, PGRAZOR_ITEMS_MAX_EVENTS, &w) == PGR_ITEMS_OK && w > 0) {
+    pgs_item_event buf[PGS_ITEMS_MAX_EVENTS]; uint32_t w = 0;
+    while (g_api->drain(buf, PGS_ITEMS_MAX_EVENTS, &w) == PGR_ITEMS_OK && w > 0) {
         for (uint32_t i = 0; i < w; ++i) {
-            const pgrazor_item_event &e = buf[i];
+            const pgs_item_event &e = buf[i];
             if (e.kind == PGR_ITEMS_EV_REQUEST) { ++ev_req; last_req_id = e.id; last_req_amount = e.amount; last_req_keep = e.aux; }
             else if (e.kind == PGR_ITEMS_EV_CONFIRM) { ++ev_con; last_con_id = e.id; last_con_amount = e.amount; }
             else if (e.kind == PGR_ITEMS_EV_ERROR) { ++ev_err; last_err_id = e.id; last_err_reason = e.aux; }
         }
-        if (w < PGRAZOR_ITEMS_MAX_EVENTS) break;
+        if (w < PGS_ITEMS_MAX_EVENTS) break;
     }
 }
 
 // ---- scenarios -------------------------------------------------------------------
 static int scenario(int which) {
     const uint64_t tid = static_cast<uint64_t>(gettid());
-    pgrazor_items_config_v1 cfg = make_config(true);
+    pgs_items_config_v1 cfg = make_config(true);
     if (g_api->install(&cfg) != PGR_ITEMS_OK) return 90;
 
     switch (which) {
     case 0: { // over-cap + synchronous success result consumed once; roots balanced to 3
         g_sync_result = true; g_result_status = 1; g_current = 50;
-        pgrazor_items_rules_v1 r = make_rules(true, 1);
+        pgs_items_rules_v1 r = make_rules(true, 1);
         g_api->tick(&r, 0, 2500, tid); pump_events();      // lookup + enumerate + recycle + sync result
         if (ev_req != 1 || g_recycle_calls != 1) return 1;
         if (ev_con != 1 || last_con_id != 101 || last_con_amount != 40) return 2;
-        pgrazor_items_sample_v1 s = snap();
+        pgs_items_sample_v1 s = snap();
         if (s.catalog_serial == 0 || s.catalog_count != 2) return 3;
         if (s.owned_roots != 3 || g_roots != 3) return 4;  // service + two filter delegates
         g_api->clear(tid);
@@ -316,26 +316,26 @@ static int scenario(int which) {
     }
     case 1: { // live-quantity recheck: list says 50 but the bag already has <= cap -> no recycle
         g_sync_result = true; g_current = 8;               // GetItemCount(101) == 8 <= cap 10
-        pgrazor_items_rules_v1 r = make_rules(true, 1);
+        pgs_items_rules_v1 r = make_rules(true, 1);
         g_api->tick(&r, 2, 2500, tid); pump_events();
         if (ev_req != 0 || g_recycle_calls != 0) return 1;
-        pgrazor_items_sample_v1 s = snap();
+        pgs_items_sample_v1 s = snap();
         if (s.has_candidate != 1) return 2;                // candidate found, but recycle declined
         if (s.catalog_count != 2) return 3;
         return 0;
     }
     case 2: { // explicit UI catalog while auto-recycle is disabled
-        pgrazor_items_rules_v1 r = make_rules(false, 1);
+        pgs_items_rules_v1 r = make_rules(false, 1);
         g_api->tick(&r, 2, 2500, tid); pump_events();
         if (ev_req != 0 || g_recycle_calls != 0) return 1;
-        pgrazor_items_sample_v1 s = snap();
+        pgs_items_sample_v1 s = snap();
         if (s.catalog_serial == 0 || s.catalog_count != 2) return 2;
         if (s.has_candidate != 0) return 3;
         return 0;
     }
     case 3: { // in-flight async request is never auto-duplicated; the pending bag is a counted root
         g_sync_result = false; g_current = 50;
-        pgrazor_items_rules_v1 r = make_rules(true, 1);
+        pgs_items_rules_v1 r = make_rules(true, 1);
         g_api->tick(&r, 0, 2500, tid); pump_events();
         if (ev_req != 1 || g_recycle_calls != 1) return 1;
         if (snap().owned_roots != 4 || g_roots != 4) return 2; // service + 2 filters + pending bag
@@ -347,7 +347,7 @@ static int scenario(int which) {
     }
     case 4: { // manual recycle while pending -> ambiguous: no attribution, uncertain quarantine
         g_sync_result = false; g_current = 50;
-        pgrazor_items_rules_v1 r = make_rules(true, 1);
+        pgs_items_rules_v1 r = make_rules(true, 1);
         g_api->tick(&r, 0, 2500, tid); pump_events();      // our async recycle
         if (ev_req != 1) return 1;
         call_recycle(&g_bag, &g_inv[0], 1, &g_expiry, &m_recycle);     // the player's own manual recycle
@@ -357,28 +357,28 @@ static int scenario(int which) {
         g_api->tick(&r, 1, 2500, tid); pump_events();
         if (ev_req != 1 || g_recycle_calls != 2) return 3; // (1 ours + 1 manual) no resubmit
         // The uncertain quarantine survives a config generation change (unlike a definite block).
-        pgrazor_items_rules_v1 r2 = make_rules(true, 2);
+        pgs_items_rules_v1 r2 = make_rules(true, 2);
         g_api->tick(&r2, 1, 2500, tid); pump_events();
         if (ev_req != 1 || g_recycle_calls != 2) return 4;
         return 0;
     }
     case 5: { // result failure -> error (REJECTED) + blocked; the block clears on a generation change
         g_sync_result = true; g_result_status = 7; g_current = 50;  // not success(1)
-        pgrazor_items_rules_v1 r = make_rules(true, 1);
+        pgs_items_rules_v1 r = make_rules(true, 1);
         g_api->tick(&r, 0, 2500, tid); pump_events();
         if (ev_err != 1 || last_err_reason != PGR_ITEMS_REASON_REJECTED) return 1;
         if (ev_con != 0) return 2;
         g_api->tick(&r, 1, 2500, tid); pump_events();      // blocked id -> no retry (same generation)
         if (ev_req != 1 || g_recycle_calls != 1) return 3;
         g_result_status = 1;                               // now succeeds
-        pgrazor_items_rules_v1 r2 = make_rules(true, 2);   // a new generation clears the block
+        pgs_items_rules_v1 r2 = make_rules(true, 2);   // a new generation clears the block
         g_api->tick(&r2, 1, 2500, tid); pump_events();
         if (ev_req != 2 || g_recycle_calls != 2 || ev_con != 1) return 4;
         return 0;
     }
     case 6: { // reentrant clear during a managed call: no recycle, roots freed, no bad free
         g_sync_result = false; g_current = 50; g_quantity_action = 1;
-        pgrazor_items_rules_v1 r = make_rules(true, 1);
+        pgs_items_rules_v1 r = make_rules(true, 1);
         g_api->tick(&r, 0, 2500, tid); pump_events();
         if (ev_req != 0 || g_recycle_calls != 0) return 1;
         if (g_roots != 0 || snap().owned_roots != 0 || g_bad_free) return 2; // deferred clear freed roots
@@ -386,19 +386,19 @@ static int scenario(int which) {
     }
     case 7: { // reentrant disable during a managed call: revoke -> no recycle
         g_sync_result = false; g_current = 50; g_quantity_action = 2;
-        pgrazor_items_rules_v1 r = make_rules(true, 1);
+        pgs_items_rules_v1 r = make_rules(true, 1);
         g_api->tick(&r, 0, 2500, tid); pump_events();
         if (ev_req != 0 || g_recycle_calls != 0) return 1;
         g_api->clear(tid); if (g_roots != 0 || g_bad_free) return 2;
         return 0;
     }
     case 8: { // foreign thread cannot steal ownership or latch the Unity identity
-        pgrazor_items_rules_v1 r = make_rules(false, 1);
+        pgs_items_rules_v1 r = make_rules(false, 1);
         g_api->tick(&r, 0, 2500, tid);                     // main latches Unity + builds roots
         const int before = g_roots; if (before != 3) return 1;
         pthread_t th;
         if (pthread_create(&th, nullptr, [](void *) -> void * {
-            pgrazor_items_rules_v1 rr = make_rules(true, 1);
+            pgs_items_rules_v1 rr = make_rules(true, 1);
             g_api->tick(&rr, 0, 2500, static_cast<uint64_t>(gettid()));  // foreign tid
             g_api->clear(static_cast<uint64_t>(gettid()));
             return nullptr; }, nullptr) != 0) return 2;
@@ -408,14 +408,14 @@ static int scenario(int which) {
         return 0;
     }
     case 9: { // immutable-config rebind refusal + idempotent re-install
-        pgrazor_items_config_v1 changed = make_config(true); changed.success = 7;
+        pgs_items_config_v1 changed = make_config(true); changed.success = 7;
         if (g_api->install(&changed) != PGR_ITEMS_ERR_ALREADY_BOUND) return 1;
         if (g_api->install(&cfg) != PGR_ITEMS_OK) return 2;  // identical config is idempotent
         return 0;
     }
     case 10: { // nested tick, STILL enabled but a new epoch, revokes the in-flight selection
         g_sync_result = false; g_current = 50; g_quantity_action = 3;
-        pgrazor_items_rules_v1 r = make_rules(true, 1);    // in-progress epoch == 1
+        pgs_items_rules_v1 r = make_rules(true, 1);    // in-progress epoch == 1
         g_api->tick(&r, 0, 2500, tid); pump_events();
         if (ev_req != 0 || g_recycle_calls != 0) return 1; // new cap/epoch during the pass -> revoked
         g_api->clear(tid); if (g_roots != 0 || g_bad_free) return 2;
@@ -423,7 +423,7 @@ static int scenario(int which) {
     }
     case 11: { // result identity mismatch does not confirm; a matching one does
         g_sync_result = false; g_current = 50;
-        pgrazor_items_rules_v1 r = make_rules(true, 1);
+        pgs_items_rules_v1 r = make_rules(true, 1);
         g_api->tick(&r, 0, 2500, tid); pump_events();      // async pending for id 101
         if (ev_req != 1) return 1;
         g_itemproto.item = 999; g_response.status = 1;
@@ -439,7 +439,7 @@ static int scenario(int which) {
     }
     case 12: { // a stop delivered INSIDE the original result callback must not confirm
         g_sync_result = true; g_result_status = 1; g_current = 50; g_result_action = 1;
-        pgrazor_items_rules_v1 r = make_rules(true, 1);
+        pgs_items_rules_v1 r = make_rules(true, 1);
         g_api->tick(&r, 0, 2500, tid); pump_events();
         if (ev_con != 0) return 1;                         // stop during callback -> not confirmed
         if (ev_req != 1) return 2;                         // the request event still emitted
@@ -447,7 +447,7 @@ static int scenario(int which) {
         return 0;
     }
     case 13: { // scoped service_acquire(): an independently-owned handle; foreign thread refused
-        pgrazor_items_rules_v1 r = make_rules(false, 1);
+        pgs_items_rules_v1 r = make_rules(false, 1);
         g_api->tick(&r, 0, 2500, tid); pump_events();
         if (g_roots != 3) return 1;
         void *h = g_api->service_acquire();
@@ -466,7 +466,7 @@ static int scenario(int which) {
     }
     case 14: { // confirmation-deadline timeout (SLOW: a real >15s wait) -> error + no duplicate
         g_sync_result = false; g_current = 50;
-        pgrazor_items_rules_v1 r = make_rules(true, 1);
+        pgs_items_rules_v1 r = make_rules(true, 1);
         g_api->tick(&r, 0, 2500, tid); pump_events();
         if (ev_req != 1) return 1;
         timespec t{16, 0}; nanosleep(&t, nullptr);         // past the 15s confirmation deadline
@@ -688,7 +688,7 @@ static int scenario(int which) {
         g_inv[0] = {&c_data,707,37,1}; g_inv[1] = {&c_data,708,11,1};
         auto r = make_rules(false,1);
         g_api->tick(&r,3,2500,tid);
-        pgrazor_item_row rows[16]{}; uint32_t written=0;
+        pgs_item_row rows[16]{}; uint32_t written=0;
         if(g_api->catalog(rows,16,&written) || written!=2) return 1;
         auto quantity=[&](int32_t id){for(uint32_t i=0;i<written;++i)if(rows[i].id==id)return rows[i].count;return -1;};
         if(quantity(707)!=37 || quantity(708)!=11) return 2;
@@ -709,21 +709,21 @@ int main(int argc, char **argv) {
     (void)argc; (void)argv;
     const bool slow = true; // deterministic time also exercises confirmation expiry
     if (pgrazor_items_api(99) != nullptr) { std::puts("FAIL exact-version"); return 3; }
-    g_api = static_cast<const pgrazor_items_api_v1 *>(pgrazor_items_api(1));
+    g_api = static_cast<const pgs_items_api_v1 *>(pgrazor_items_api(1));
 #else
     if (argc < 2) return 1;
     const bool slow = (argc >= 3 && std::strcmp(argv[2], "slow") == 0);
     void *lib = dlopen(argv[1], RTLD_NOW | RTLD_LOCAL);
     if (!lib) { std::puts(dlerror()); return 2; }
     auto getter = reinterpret_cast<const void *(*)(uint32_t)>(dlsym(lib, "pgrazor_native_api"));
-    auto core = getter ? static_cast<const pgrazor_native_api_v2 *>(getter(2)) : nullptr;
+    auto core = getter ? static_cast<const pgs_native_api_v2 *>(getter(2)) : nullptr;
     if (!core || core->query_feature(14, 99) != nullptr) { std::puts("FAIL exact-version"); return 3; }
-    g_api = static_cast<const pgrazor_items_api_v1 *>(core->query_feature(14, 1));
+    g_api = static_cast<const pgs_items_api_v1 *>(core->query_feature(14, 1));
 #endif
     if (!g_api || g_api->size != 72) { std::puts("FAIL feature 14 not wired"); return 3; }
 
     // Config validation (parent process; all fail before any hook is attempted).
-    pgrazor_items_config_v1 c = make_config(true), bad;
+    pgs_items_config_v1 c = make_config(true), bad;
     if (g_api->install(nullptr) != PGR_ITEMS_ERR_NULL_ARG) { std::puts("FAIL null"); return 5; }
     bad = c; bad.version = 2;
     if (g_api->install(&bad) != PGR_ITEMS_ERR_BAD_CONFIG) { std::puts("FAIL version"); return 5; }

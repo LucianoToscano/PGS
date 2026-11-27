@@ -180,7 +180,7 @@ int main(int argc, char **argv) {
 
     auto getter = reinterpret_cast<GetHookApiFn>(::dlsym(lib, "pgrazor_native_api"));
     assert(getter);
-    const auto *core = static_cast<const pgrazor_native_api_v2 *>(getter(2));
+    const auto *core = static_cast<const pgs_native_api_v2 *>(getter(2));
     assert(core && core->size == 48);
     assert(core->query_feature(10, 99) == nullptr);
     const auto *api = static_cast<const PgrSpinCameraApi *>(core->query_feature(10, 1));

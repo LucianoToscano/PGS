@@ -506,7 +506,7 @@ int main(int argc, char **argv) {
   assert(library);
   auto get = reinterpret_cast<const void *(*)(uint32_t)>(dlsym(library, "pgrazor_native_api"));
   assert(get);
-  auto *core = static_cast<const pgrazor_native_api_v2 *>(get(2));
+  auto *core = static_cast<const pgs_native_api_v2 *>(get(2));
   assert(core && core->query_feature);
   assert(core->query_feature(47, 1) != nullptr);
   assert(!core->query_feature(59, 0) && !core->query_feature(59, 2));

@@ -18,37 +18,37 @@
 #include <mutex>
 #include <unistd.h>
 
-static_assert(sizeof(pgrazor_incubation_config_v1) == 360, "config must be 360 bytes");
-static_assert(sizeof(pgrazor_incubation_sample_v1) == 48,  "sample must be 48 bytes");
-static_assert(sizeof(pgrazor_incubation_api_v1)    == 40,  "table must be 40 bytes");
-static_assert(offsetof(pgrazor_incubation_config_v1, runtime_invoke) == 8,  "layout");
-static_assert(offsetof(pgrazor_incubation_config_v1, field_get_value) == 96, "layout");
-static_assert(offsetof(pgrazor_incubation_config_v1, m_find)    == 104, "layout");
-static_assert(offsetof(pgrazor_incubation_config_v1, m_dispose) == 176, "layout");
-static_assert(offsetof(pgrazor_incubation_config_v1, class_map) == 184, "layout");
-static_assert(offsetof(pgrazor_incubation_config_v1, class_service) == 248, "layout");
-static_assert(offsetof(pgrazor_incubation_config_v1, f_inc_item) == 256, "layout");
-static_assert(offsetof(pgrazor_incubation_config_v1, f_egg_start) == 328, "layout");
-static_assert(offsetof(pgrazor_incubation_config_v1, unlimited) == 336, "layout");
-static_assert(offsetof(pgrazor_incubation_config_v1, special)   == 340, "layout");
-static_assert(offsetof(pgrazor_incubation_config_v1, class_boolean) == 344, "layout");
-static_assert(offsetof(pgrazor_incubation_config_v1, class_string)  == 352, "layout");
-static_assert(offsetof(pgrazor_incubation_sample_v1, owned_roots) == 40, "layout");
+static_assert(sizeof(pgs_incubation_config_v1) == 360, "config must be 360 bytes");
+static_assert(sizeof(pgs_incubation_sample_v1) == 48,  "sample must be 48 bytes");
+static_assert(sizeof(pgs_incubation_api_v1)    == 40,  "table must be 40 bytes");
+static_assert(offsetof(pgs_incubation_config_v1, runtime_invoke) == 8,  "layout");
+static_assert(offsetof(pgs_incubation_config_v1, field_get_value) == 96, "layout");
+static_assert(offsetof(pgs_incubation_config_v1, m_find)    == 104, "layout");
+static_assert(offsetof(pgs_incubation_config_v1, m_dispose) == 176, "layout");
+static_assert(offsetof(pgs_incubation_config_v1, class_map) == 184, "layout");
+static_assert(offsetof(pgs_incubation_config_v1, class_service) == 248, "layout");
+static_assert(offsetof(pgs_incubation_config_v1, f_inc_item) == 256, "layout");
+static_assert(offsetof(pgs_incubation_config_v1, f_egg_start) == 328, "layout");
+static_assert(offsetof(pgs_incubation_config_v1, unlimited) == 336, "layout");
+static_assert(offsetof(pgs_incubation_config_v1, special)   == 340, "layout");
+static_assert(offsetof(pgs_incubation_config_v1, class_boolean) == 344, "layout");
+static_assert(offsetof(pgs_incubation_config_v1, class_string)  == 352, "layout");
+static_assert(offsetof(pgs_incubation_sample_v1, owned_roots) == 40, "layout");
 
 namespace {
 
-constexpr unsigned kMaxInc    = PGRAZOR_INCUBATION_MAX_INCUBATORS;
-constexpr unsigned kMaxEggs   = PGRAZOR_INCUBATION_MAX_EGGS;
-constexpr unsigned kMaxStr    = PGRAZOR_INCUBATION_MAX_STRLEN;
-constexpr uint64_t kPollMs    = PGRAZOR_INCUBATION_POLL_MS;
-constexpr uint64_t kNoEggsMs  = PGRAZOR_INCUBATION_NO_EGGS_MS;
-constexpr uint64_t kDeadlineMs= PGRAZOR_INCUBATION_DEADLINE_MS;
-constexpr uint64_t kMaxLeaseMs= PGRAZOR_INCUBATION_MAX_LEASE_MS;
+constexpr unsigned kMaxInc    = PGS_INCUBATION_MAX_INCUBATORS;
+constexpr unsigned kMaxEggs   = PGS_INCUBATION_MAX_EGGS;
+constexpr unsigned kMaxStr    = PGS_INCUBATION_MAX_STRLEN;
+constexpr uint64_t kPollMs    = PGS_INCUBATION_POLL_MS;
+constexpr uint64_t kNoEggsMs  = PGS_INCUBATION_NO_EGGS_MS;
+constexpr uint64_t kDeadlineMs= PGS_INCUBATION_DEADLINE_MS;
+constexpr uint64_t kMaxLeaseMs= PGS_INCUBATION_MAX_LEASE_MS;
 
 
 // --- lifetime / publication -------------------------------------------------------
 std::mutex                       g_install_mutex;
-pgrazor_incubation_config_v1     g_config{};
+pgs_incubation_config_v1     g_config{};
 std::atomic<bool>                g_installed{false};
 
 // --- telemetry (pull-only; any thread) --------------------------------------------
@@ -74,7 +74,7 @@ bool g_teardown_defer  = false;   // owner-thread only: free owned roots at pass
 
 // --- Unity-thread-only state ------------------------------------------------------
 // Touched only by the current owner (after the owner guard), so no lock is needed.
-struct IncId { uint16_t data[PGRAZOR_INCUBATION_MAX_STRLEN]; int len = 0; };
+struct IncId { uint16_t data[PGS_INCUBATION_MAX_STRLEN]; int len = 0; };
 inline bool incid_eq(const IncId &a, const IncId &b) {
     return a.len == b.len && std::memcmp(a.data, b.data, a.len * 2) == 0;
 }
@@ -507,7 +507,7 @@ fail:
 }
 
 // --- C API table functions --------------------------------------------------------
-bool config_ok(const pgrazor_incubation_config_v1 *c) {
+bool config_ok(const pgs_incubation_config_v1 *c) {
     const void *const ptrs[] = {
         c->runtime_invoke, c->gchandle_new, c->gchandle_get_target, c->gchandle_free,
         c->object_get_class, c->object_unbox, c->string_length, c->string_chars,
@@ -523,11 +523,11 @@ bool config_ok(const pgrazor_incubation_config_v1 *c) {
     return true;
 }
 
-int api_install(const pgrazor_incubation_config_v1 *config) {
+int api_install(const pgs_incubation_config_v1 *config) {
     if (config == nullptr) return PGRAZOR_INC_ERR_NULL_ARG;
     std::lock_guard<std::mutex> lock(g_install_mutex);
-    if (config->version != PGRAZOR_INCUBATION_API_VERSION ||
-        config->size != sizeof(pgrazor_incubation_config_v1) || !config_ok(config))
+    if (config->version != PGS_INCUBATION_API_VERSION ||
+        config->size != sizeof(pgs_incubation_config_v1) || !config_ok(config))
         return PGRAZOR_INC_ERR_BAD_CONFIG;
     if (g_installed.load(std::memory_order_acquire))
         return (std::memcmp(&g_config, config, sizeof(g_config)) == 0)
@@ -613,10 +613,10 @@ int api_clear(uint64_t proven_tid) {
     return PGRAZOR_INC_OK;
 }
 
-int api_sample(pgrazor_incubation_sample_v1 *out) {
+int api_sample(pgs_incubation_sample_v1 *out) {
     if (out == nullptr) return PGRAZOR_INC_ERR_NULL_ARG;
-    out->version = PGRAZOR_INCUBATION_API_VERSION;
-    out->size = sizeof(pgrazor_incubation_sample_v1);
+    out->version = PGS_INCUBATION_API_VERSION;
+    out->size = sizeof(pgs_incubation_sample_v1);
     out->status = g_status.load(std::memory_order_acquire);
     out->status_serial = g_status_serial.load(std::memory_order_acquire);
     out->request_serial = g_request_serial.load(std::memory_order_acquire);
@@ -629,9 +629,9 @@ int api_sample(pgrazor_incubation_sample_v1 *out) {
     return PGRAZOR_INC_OK;
 }
 
-const pgrazor_incubation_api_v1 g_api = {
-    PGRAZOR_INCUBATION_API_VERSION,
-    static_cast<uint32_t>(sizeof(pgrazor_incubation_api_v1)),
+const pgs_incubation_api_v1 g_api = {
+    PGS_INCUBATION_API_VERSION,
+    static_cast<uint32_t>(sizeof(pgs_incubation_api_v1)),
     &api_install,
     &api_tick,
     &api_clear,
@@ -641,6 +641,6 @@ const pgrazor_incubation_api_v1 g_api = {
 } // namespace
 
 const void *pgrazor_incubation_api(uint32_t version) {
-    if (version != PGRAZOR_INCUBATION_API_VERSION) return nullptr;
+    if (version != PGS_INCUBATION_API_VERSION) return nullptr;
     return &g_api;
 }

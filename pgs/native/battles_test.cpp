@@ -26,7 +26,7 @@
 #ifndef PGR_BATTLE_DIRECT_TEST
 #include "pgs_native_api.h"
 #include <dlfcn.h>
-static const pgrazor_native_api_v2 *loaded_core=nullptr;
+static const pgs_native_api_v2 *loaded_core=nullptr;
 extern "C" const void *pgrazor_battles_api(uint32_t version){return loaded_core?loaded_core->query_feature(19,version):nullptr;}
 #endif
 
@@ -572,7 +572,7 @@ int main(int argc,char **argv) {
   if(argc!=2)return 80;
   void *lib=dlopen(argv[1],RTLD_NOW);if(!lib)return 81;
   auto get=reinterpret_cast<const void *(*)(uint32_t)>(dlsym(lib,"pgrazor_native_api"));
-  loaded_core=get?static_cast<const pgrazor_native_api_v2 *>(get(2)):nullptr;
+  loaded_core=get?static_cast<const pgs_native_api_v2 *>(get(2)):nullptr;
   if(!loaded_core)return 82;
 #endif
   g_api = static_cast<const pgr_battle_api_v1 *>(pgrazor_battles_api(1));

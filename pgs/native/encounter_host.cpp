@@ -667,8 +667,8 @@ static void *proxy_items_service_acquire(void) {
     void *h = inv->acquire_item_service();
     if (h) return h;
   }
-  const auto *it = static_cast<const pgrazor_items_api_v1 *>(
-      pgrazor_items_api(PGRAZOR_ITEMS_API_VERSION));
+  const auto *it = static_cast<const pgs_items_api_v1 *>(
+      pgrazor_items_api(PGS_ITEMS_API_VERSION));
   if (it && it->service_acquire) {
     return it->service_acquire();
   }
@@ -676,15 +676,15 @@ static void *proxy_items_service_acquire(void) {
 }
 
 static void *proxy_items_service_handle(void) {
-  const auto *it = static_cast<const pgrazor_items_api_v1 *>(
-      pgrazor_items_api(PGRAZOR_ITEMS_API_VERSION));
+  const auto *it = static_cast<const pgs_items_api_v1 *>(
+      pgrazor_items_api(PGS_ITEMS_API_VERSION));
   if (it && it->service_handle) {
     return it->service_handle();
   }
   return nullptr;
 }
 
-static pgrazor_items_api_v1 kProxyItemsApi = {};
+static pgs_items_api_v1 kProxyItemsApi = {};
 
 // ============================================================================
 // Metadata Derivation Helpers (matching vgp.js / native-vgp-*.js)
@@ -1756,8 +1756,8 @@ static int install_transfer_leaves() {
 }
 
 static int install_vgp_leaves(bool *out_has_marker) {
-  const auto *items=static_cast<const pgrazor_items_api_v1*>(pgrazor_items_api(PGRAZOR_ITEMS_API_VERSION));
-  if(!items || items->version!=PGRAZOR_ITEMS_API_VERSION || items->size!=sizeof(*items))return PGR_EH_ERR_LEAF;
+  const auto *items=static_cast<const pgs_items_api_v1*>(pgrazor_items_api(PGS_ITEMS_API_VERSION));
+  if(!items || items->version!=PGS_ITEMS_API_VERSION || items->size!=sizeof(*items))return PGR_EH_ERR_LEAF;
   kProxyItemsApi=*items;kProxyItemsApi.service_handle=&proxy_items_service_handle;kProxyItemsApi.service_acquire=&proxy_items_service_acquire;
   if (out_has_marker) *out_has_marker = false;
   if (g_md.optional[OPT_VGP] != PGR_SHARED_OPT_AVAILABLE ||
@@ -2061,7 +2061,7 @@ static int install_vgp_leaves(bool *out_has_marker) {
   vgc_cfg.discovery_table = const_cast<PgrVgpDiscoveryApi *>(vd);
   vgc_cfg.maintenance_table = const_cast<PgrVgpMaintenanceApi *>(vm);
   vgc_cfg.marker_table = const_cast<PgrVgpMarkerApi *>(vmk);
-  vgc_cfg.items_table = const_cast<pgrazor_items_api_v1 *>(&kProxyItemsApi);
+  vgc_cfg.items_table = const_cast<pgs_items_api_v1 *>(&kProxyItemsApi);
   vgc_cfg.aux_table = const_cast<PgrVgpAuxApi *>(vx);
   vgc_cfg.gc_new = reinterpret_cast<void *>(g_exp.gchandle_new);
   vgc_cfg.gc_get = reinterpret_cast<void *>(g_exp.gchandle_get_target);

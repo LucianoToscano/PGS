@@ -155,13 +155,13 @@ int mrk_project(void *, uint64_t, uint64_t, PgrVgpMarkerResult *out) {
   memset(out, 0, sizeof(*out)); out->version = 1; out->size = sizeof(*out); return g_markerRc;
 }
 
-int itm_install(const pgrazor_items_config_v1 *) { return 0; }
-int itm_tick(const pgrazor_items_rules_v1 *, uint32_t, uint64_t, uint64_t) { return 0; }
+int itm_install(const pgs_items_config_v1 *) { return 0; }
+int itm_tick(const pgs_items_rules_v1 *, uint32_t, uint64_t, uint64_t) { return 0; }
 int itm_clear(uint64_t) { return 0; }
-int itm_sample(pgrazor_items_sample_v1 *) { return 0; }
-int itm_catalog(pgrazor_item_row *, uint32_t, uint32_t *) { return 0; }
+int itm_sample(pgs_items_sample_v1 *) { return 0; }
+int itm_catalog(pgs_item_row *, uint32_t, uint32_t *) { return 0; }
 void *itm_serviceHandle() { return nullptr; }
-int itm_drain(pgrazor_item_event *, uint32_t, uint32_t *) { return 0; }
+int itm_drain(pgs_item_event *, uint32_t, uint32_t *) { return 0; }
 void *itm_serviceAcquire() { return g_serviceReady ? reinterpret_cast<void *>(gcNew(svcObj.p(), 0)) : nullptr; }
 
 int aux_install(const void *) { return 0; }
@@ -189,7 +189,7 @@ PgrVgpDiscoveryApi DSC{PGR_VD_API_VERSION, sizeof(PgrVgpDiscoveryApi), dsc_insta
                        dsc_enumerate, dsc_at};
 PgrVgpMaintenanceApi MNT{PGR_VM_API_VERSION, sizeof(PgrVgpMaintenanceApi), mnt_install, mnt_balls, mnt_cooldown};
 PgrVgpMarkerApi MRK{1, sizeof(PgrVgpMarkerApi), mrk_install, mrk_project};
-pgrazor_items_api_v1 ITM{PGRAZOR_ITEMS_API_VERSION, sizeof(pgrazor_items_api_v1), itm_install, itm_tick,
+pgs_items_api_v1 ITM{PGS_ITEMS_API_VERSION, sizeof(pgs_items_api_v1), itm_install, itm_tick,
                          itm_clear, itm_sample, itm_catalog, itm_serviceHandle, itm_drain, itm_serviceAcquire};
 AuxApi AUX{1, sizeof(AuxApi), aux_install, aux_spin, aux_transfer};
 
@@ -233,7 +233,7 @@ int main(int argc, char **argv) {
   if (!lib) { std::puts(dlerror()); return 2; }
   auto load = reinterpret_cast<const void *(*)(uint32_t)>(dlsym(lib, "pgrazor_native_api"));
   assert(load);
-  auto *core = static_cast<const pgrazor_native_api_v2 *>(load(2));
+  auto *core = static_cast<const pgs_native_api_v2 *>(load(2));
   assert(core);
   assert(!core->query_feature(33, 2));
   api = static_cast<const PgrVgpControllerApi *>(core->query_feature(33, 1));

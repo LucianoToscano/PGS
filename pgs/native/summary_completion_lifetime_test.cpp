@@ -120,7 +120,7 @@ PgrSummaryCompletionConfig config(){
 int main(int argc,char **argv){
  assert(argc==2);void *lib=dlopen(argv[1],RTLD_NOW|RTLD_LOCAL);assert(lib);
  auto get=reinterpret_cast<const void*(*)(uint32_t)>(dlsym(lib,"pgrazor_native_api"));assert(get);
- auto *core=static_cast<const pgrazor_native_api_v2*>(get(2));assert(core);
+ auto *core=static_cast<const pgs_native_api_v2*>(get(2));assert(core);
  api=static_cast<const PgrSummaryCompletionApi*>(core->query_feature(36,1));assert(api&&api->size==64);
  assert(sizeof(PgrSummaryCompletionConfig)==168&&sizeof(PgrSummaryCompletionRequest)==72);
  assert(offsetof(PgrSummaryCompletionConfig,gc_new)==136&&offsetof(PgrSummaryCompletionConfig,success_literal)==160);

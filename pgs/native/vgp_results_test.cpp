@@ -98,7 +98,7 @@ int main(int argc, char **argv) {
   assert(lib);
   auto load = reinterpret_cast<const void *(*)(uint32_t)>(dlsym(lib, "pgrazor_native_api"));
   assert(load);
-  auto *core = static_cast<const pgrazor_native_api_v2 *>(load(2));
+  auto *core = static_cast<const pgs_native_api_v2 *>(load(2));
   assert(core);
   assert(!core->query_feature(30, 2));
   auto *api = static_cast<const PgrVgpResultsApi *>(core->query_feature(30, 1));

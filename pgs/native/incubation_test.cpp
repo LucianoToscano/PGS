@@ -56,7 +56,7 @@ static uint64_t g_put_egg = 0;
 static void *g_put_inc = nullptr;
 static int   g_roots = 0;        // live GC handles (must balance to 0 outside pending)
 static int   g_disposed = 0;     // Dispose invocations observed
-static const pgrazor_incubation_api_v1 *g_api = nullptr;
+static const pgs_incubation_api_v1 *g_api = nullptr;
 
 static Inc  *g_inc_rows[8];
 static Egg  *g_egg_rows[16];
@@ -147,9 +147,9 @@ static void *runtime_invoke(void *method, void *obj, void **params, void **exc) 
 }
 
 // ---- config + helpers ------------------------------------------------------------
-static int install(const pgrazor_incubation_api_v1 *api) {
-    pgrazor_incubation_config_v1 c{};
-    c.version = PGRAZOR_INCUBATION_API_VERSION;
+static int install(const pgs_incubation_api_v1 *api) {
+    pgs_incubation_config_v1 c{};
+    c.version = PGS_INCUBATION_API_VERSION;
     c.size = sizeof(c);
     c.runtime_invoke = (void *)&runtime_invoke;
     c.gchandle_new = (void *)&gc_new;
@@ -182,8 +182,8 @@ static Str *mkstr(const uint16_t *lit, int len) {
     static Str pool[8]; static int n = 0;
     Str *s = &pool[n++ % 8]; s->klass = &c_string; s->chars = lit; s->len = len; return s;
 }
-static uint32_t sample_status(const pgrazor_incubation_api_v1 *api) {
-    pgrazor_incubation_sample_v1 s{}; api->sample(&s); return s.status;
+static uint32_t sample_status(const pgs_incubation_api_v1 *api) {
+    pgs_incubation_sample_v1 s{}; api->sample(&s); return s.status;
 }
 
 // Drive one fresh orchestration pass: toggle off then on so next_ms resets to 0.
@@ -211,7 +211,7 @@ static int scenario(int which) {
         g_api->tick(1, 0, 2500, tid);
         if (g_put_calls != 1 || g_put_egg != 11) return 1;      // shortest, first of the tie
         if (sample_status(g_api) != PGRAZOR_INC_STATUS_STARTING) return 2;
-        pgrazor_incubation_sample_v1 s{}; g_api->sample(&s);
+        pgs_incubation_sample_v1 s{}; g_api->sample(&s);
         if (s.request_serial != 1 || s.owned_roots == 0 || s.distance != 2) return 3;
         if (g_roots != s.owned_roots) return 4;                 // only durable roots remain
         return 0;
@@ -247,7 +247,7 @@ static int scenario(int which) {
         repoll(tid); g_api->tick(1, 0, 2500, tid);
         if (g_put_calls != 1) return 2;                         // never resubmit
         if (sample_status(g_api) != PGRAZOR_INC_STATUS_EGG_INCUBATING) return 3;
-        pgrazor_incubation_sample_v1 s{}; g_api->sample(&s);
+        pgs_incubation_sample_v1 s{}; g_api->sample(&s);
         if (s.owned_roots != 0 || g_roots != 0) return 4;       // confirmed -> roots dropped
         return 0;
     }
@@ -267,7 +267,7 @@ static int scenario(int which) {
         g_api->tick(1, 0, 2500, tid);
         if (g_put_calls != 1) return 1;
         g_api->clear(tid);                                      // stop
-        pgrazor_incubation_sample_v1 s{}; g_api->sample(&s);
+        pgs_incubation_sample_v1 s{}; g_api->sample(&s);
         if (s.owned_roots != 0 || g_roots != 0) return 2;       // roots released on stop
         repoll(tid); g_api->tick(1, 0, 2500, tid);              // restart
         if (g_put_calls != 1) return 3;                         // pending preserved -> no resubmit
@@ -279,7 +279,7 @@ static int scenario(int which) {
         g_egg_rows[0] = &a; g_egg_coll.count = 1;
         g_throw_method = &m_put;
         g_api->tick(1, 0, 2500, tid);
-        pgrazor_incubation_sample_v1 s{}; g_api->sample(&s);
+        pgs_incubation_sample_v1 s{}; g_api->sample(&s);
         if (s.request_serial != 1) return 1;                    // issued once, even though it threw
         if (s.status != PGRAZOR_INC_STATUS_UNCONFIRMED) return 2;
         if (s.fault_serial == 0 || s.owned_roots == 0) return 3; // fault noted, roots retained
@@ -311,7 +311,7 @@ static int scenario(int which) {
         g_reenter_clear = true;
         g_api->tick(1, 0, 2500, tid);
         if (g_put_calls != 0) return 1;                         // submission revoked
-        pgrazor_incubation_sample_v1 s{}; g_api->sample(&s);
+        pgs_incubation_sample_v1 s{}; g_api->sample(&s);
         if (s.owned_roots != 0 || g_roots != 0) return 2;       // deferred free completed
         return 0;
     }
@@ -370,14 +370,14 @@ static int scenario(int which) {
         g_egg_rows[0] = &a; g_egg_coll.count = 1;
         g_api->tick(1, 0, 2500, tid);
         if (g_put_calls != 1 || g_put_egg != 11 || g_put_inc != &inc_unl) return 1;
-        pgrazor_incubation_sample_v1 s{}; g_api->sample(&s);
+        pgs_incubation_sample_v1 s{}; g_api->sample(&s);
         if (s.fault_serial != 0 || s.status != PGRAZOR_INC_STATUS_STARTING) return 2;
         return 0;
     }
     case 16: { // one more incubator than the cap: fail closed, no Put, reason names the limit
-        const int n = PGRAZOR_INCUBATION_MAX_INCUBATORS + 1;
-        static Inc used[PGRAZOR_INCUBATION_MAX_INCUBATORS + 1];
-        static void *rows[PGRAZOR_INCUBATION_MAX_INCUBATORS + 1];
+        const int n = PGS_INCUBATION_MAX_INCUBATORS + 1;
+        static Inc used[PGS_INCUBATION_MAX_INCUBATORS + 1];
+        static void *rows[PGS_INCUBATION_MAX_INCUBATORS + 1];
         static const uint16_t L[] = {'L'};
         Str *id = mkstr(L, 1);
         for (int i = 0; i < n; ++i) { used[i] = Inc{&c_inc, 902, id, 0, 0}; rows[i] = &used[i]; }
@@ -387,7 +387,7 @@ static int scenario(int which) {
         g_egg_rows[0] = &a; g_egg_coll.count = 1;
         g_api->tick(1, 0, 2500, tid);
         if (g_put_calls != 0 || g_roots != 0) return 1;
-        pgrazor_incubation_sample_v1 s{}; g_api->sample(&s);
+        pgs_incubation_sample_v1 s{}; g_api->sample(&s);
         if (s.status != PGRAZOR_INC_STATUS_ERROR_RETRY || s.fault_serial != 1) return 2;
         if (s.fault_step != PGRAZOR_INC_FAULT_INCUBATOR_LIMIT) return 3;
         return 0;
@@ -397,7 +397,7 @@ static int scenario(int which) {
         g_egg_rows[0] = &a; g_egg_coll.count = 1;
         g_throw_method = &m_incubators;
         g_api->tick(1, 0, 2500, tid);
-        pgrazor_incubation_sample_v1 s{}; g_api->sample(&s);
+        pgs_incubation_sample_v1 s{}; g_api->sample(&s);
         if (g_put_calls != 0 || s.fault_step != PGRAZOR_INC_FAULT_INCUBATORS) return 1;
         return 0;
     }
@@ -410,8 +410,8 @@ int main(int argc, char **argv) {
     void *lib = dlopen(argv[1], RTLD_NOW | RTLD_LOCAL);
     if (!lib) { std::puts(dlerror()); return 2; }
     auto getter = reinterpret_cast<const void *(*)(uint32_t)>(dlsym(lib, "pgrazor_native_api"));
-    auto core = getter ? static_cast<const pgrazor_native_api_v2 *>(getter(2)) : nullptr;
-    g_api = core ? static_cast<const pgrazor_incubation_api_v1 *>(core->query_feature(9, 1)) : nullptr;
+    auto core = getter ? static_cast<const pgs_native_api_v2 *>(getter(2)) : nullptr;
+    g_api = core ? static_cast<const pgs_incubation_api_v1 *>(core->query_feature(9, 1)) : nullptr;
     if (!g_api || g_api->size != 40) return 3;   // feature 9 must be wired into query_feature
 
     const int cases = 18;

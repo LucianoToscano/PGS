@@ -62,10 +62,10 @@ namespace {
 #error "Adventure Sync native instrument supports arm64 and x86_64 register contexts only."
 #endif
 
-constexpr uint64_t kMaxLeaseMs = PGRAZOR_ADVSYNC_MAX_LEASE_MS;
-constexpr uint64_t kDelayNs    = static_cast<uint64_t>(PGRAZOR_ADVSYNC_DELAY_MS) * 1000000ull;
-constexpr uint64_t kExpiryNs   = static_cast<uint64_t>(PGRAZOR_ADVSYNC_EXPIRY_MS) * 1000000ull;
-constexpr unsigned kQueueMax   = PGRAZOR_ADVSYNC_QUEUE_MAX;
+constexpr uint64_t kMaxLeaseMs = PGS_ADVSYNC_MAX_LEASE_MS;
+constexpr uint64_t kDelayNs    = static_cast<uint64_t>(PGS_ADVSYNC_DELAY_MS) * 1000000ull;
+constexpr uint64_t kExpiryNs   = static_cast<uint64_t>(PGS_ADVSYNC_EXPIRY_MS) * 1000000ull;
+constexpr unsigned kQueueMax   = PGS_ADVSYNC_QUEUE_MAX;
 
 // ---------------------------------------------------------------------------
 // Pure policy (shared by the live path and the host-independent self-check).
@@ -100,7 +100,7 @@ inline void logw(const char *msg) {
 // ---------------------------------------------------------------------------
 
 std::mutex g_install_mutex;          // serialises install() against itself
-pgrazor_advsync_config_v1 g_config{}; // validated copy, published under install mutex
+pgs_advsync_config_v1 g_config{}; // validated copy, published under install mutex
 std::atomic<bool> g_installed{false}; // true only after a fully successful install
 bool g_install_failed = false;        // sticky; protected by install mutex
 
@@ -313,7 +313,7 @@ void instrument_result(void *, DobbyRegisterContext *ctx) {
 // ---------------------------------------------------------------------------
 // Config validation.
 // ---------------------------------------------------------------------------
-bool config_pointers_ok(const pgrazor_advsync_config_v1 *c) {
+bool config_pointers_ok(const pgs_advsync_config_v1 *c) {
     const void *const ptrs[] = {
         c->runtime_invoke, c->gchandle_new, c->gchandle_get_target, c->gchandle_free,
         c->object_get_class, c->method_on_confirm, c->method_on_decline, c->code_update,
@@ -330,14 +330,14 @@ bool config_pointers_ok(const pgrazor_advsync_config_v1 *c) {
 // ---------------------------------------------------------------------------
 // C API table functions.
 // ---------------------------------------------------------------------------
-int api_install(const pgrazor_advsync_config_v1 *config) {
+int api_install(const pgs_advsync_config_v1 *config) {
     if (config == nullptr) return PGRAZOR_ADVSYNC_ERR_NULL_ARG;
 
     std::lock_guard<std::mutex> lock(g_install_mutex);
     if (g_install_failed) return PGRAZOR_ADVSYNC_ERR_HOOK_FAILED;
 
-    if (config->version != PGRAZOR_ADVSYNC_API_VERSION ||
-        config->size != sizeof(pgrazor_advsync_config_v1) ||
+    if (config->version != PGS_ADVSYNC_API_VERSION ||
+        config->size != sizeof(pgs_advsync_config_v1) ||
         !config_pointers_ok(config)) {
         return PGRAZOR_ADVSYNC_ERR_BAD_CONFIG;
     }
@@ -441,9 +441,9 @@ int api_selftest() {
 }
 
 // Ordered, read-only table (never reordered; see adventure_sync.h).
-const pgrazor_advsync_api_v1 g_api = {
-    PGRAZOR_ADVSYNC_API_VERSION,
-    static_cast<uint32_t>(sizeof(pgrazor_advsync_api_v1)),
+const pgs_advsync_api_v1 g_api = {
+    PGS_ADVSYNC_API_VERSION,
+    static_cast<uint32_t>(sizeof(pgs_advsync_api_v1)),
     &api_install,
     &api_update,
     &api_retire,
@@ -457,7 +457,7 @@ const pgrazor_advsync_api_v1 g_api = {
 // the core getter registry, which answers only on an exact version match.
 // ---------------------------------------------------------------------------
 const void *pgrazor_adventure_sync_api(uint32_t version) {
-    if (version != PGRAZOR_ADVSYNC_API_VERSION) return nullptr;
+    if (version != PGS_ADVSYNC_API_VERSION) return nullptr;
     return &g_api;
 }
 

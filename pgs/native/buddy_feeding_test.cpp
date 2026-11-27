@@ -51,7 +51,7 @@ static bool g_clear_rpc_root=false, g_fail_promise=false, g_bad_free=false;
 static int32_t g_count = 5, g_result_val = 1;
 static float   g_remaining = 0.0f, g_fullness = 0.1f;
 static int     g_roots = 0, g_feed_target_calls = 0, g_result_target_calls = 0;
-static const pgrazor_buddy_api_v1 *g_api = nullptr;
+static const pgs_buddy_api_v1 *g_api = nullptr;
 
 static Obj      g_map{&c_map}, g_container{&c_ctx}, g_pokesvc{&c_pokesvc}, g_bag{&c_bag};
 static Rpc      g_rpc{&c_rpc, &g_bag};
@@ -73,7 +73,7 @@ static void *gc_new(void *o, int) {
 }
 static void *gc_target(void *h) { return h; }
 static void gc_free(void *h) {
-    if(h) {pgrazor_buddy_sample_v1 v{}; g_api->sample(&v); if(!v.owned_roots) g_bad_free=true; --g_roots;}
+    if(h) {pgs_buddy_sample_v1 v{}; g_api->sample(&v); if(!v.owned_roots) g_bad_free=true; --g_roots;}
 }
 static void *object_unbox(void *o) { return &static_cast<Box *>(o)->v; }
 static void *class_get_type(void *k) { return k; }
@@ -168,9 +168,9 @@ static void *runtime_invoke(void *method, void *obj, void **params, void **exc) 
 }
 
 // ---- config + helpers ------------------------------------------------------------
-static pgrazor_buddy_config_v1 make_config() {
-    pgrazor_buddy_config_v1 c{};
-    c.version = PGRAZOR_BUDDY_API_VERSION;
+static pgs_buddy_config_v1 make_config() {
+    pgs_buddy_config_v1 c{};
+    c.version = PGS_BUDDY_API_VERSION;
     c.size = sizeof(c);
     c.runtime_invoke = (void *)&runtime_invoke;
     c.gchandle_new = (void *)&gc_new;
@@ -197,8 +197,8 @@ static pgrazor_buddy_config_v1 make_config() {
     return c;
 }
 
-static pgrazor_buddy_sample_v1 snap() {
-    pgrazor_buddy_sample_v1 s{}; g_api->sample(&s); return s;
+static pgs_buddy_sample_v1 snap() {
+    pgs_buddy_sample_v1 s{}; g_api->sample(&s); return s;
 }
 
 // Force a fresh poll cycle when no request is pending: toggling the berry off/on clears
@@ -209,14 +209,14 @@ static void repoll(uint64_t tid) { g_api->tick(0, 2500, tid); }
 // ---- scenarios -------------------------------------------------------------------
 static int scenario(int which) {
     const uint64_t tid = static_cast<uint64_t>(gettid());
-    pgrazor_buddy_config_v1 cfg = make_config();
+    pgs_buddy_config_v1 cfg = make_config();
     if (g_api->install(&cfg) != PGR_BUDDY_OK) return 90;
 
     switch (which) {
     case 0: { // happy sync result -> BERRY_FED, result consumed once, roots balanced
         g_remaining = 0; g_fullness = 0.1f; g_count = 5; g_sync_result = true; g_result_val = 1;
         g_api->tick(701, 2500, tid);                       // issue + synchronous capture
-        pgrazor_buddy_sample_v1 s = snap();
+        pgs_buddy_sample_v1 s = snap();
         if (s.feed_request_serial != 1 || g_feed_target_calls != 1) return 1;
         g_api->tick(701, 2500, tid);                       // section-1 consume (no repoll needed)
         s = snap();
@@ -240,7 +240,7 @@ static int scenario(int which) {
     case 2: { // stock 0 -> no feed, OUT_OF_STOCK, only the durable service root
         g_remaining = 0; g_count = 0;
         g_api->tick(701, 2500, tid);
-        pgrazor_buddy_sample_v1 s = snap();
+        pgs_buddy_sample_v1 s = snap();
         if (s.feed_request_serial != 0 || g_feed_target_calls != 0) return 1;
         if (s.status != PGR_BUDDY_STATUS_OUT_OF_STOCK) return 2;
         if (s.owned_roots != 1 || g_roots != 1) return 3;
@@ -261,7 +261,7 @@ static int scenario(int which) {
         g_remaining = 0; g_count = 5; g_sync_result = true; g_result_val = 7; // not success(1)
         g_api->tick(701, 2500, tid);
         g_api->tick(701, 2500, tid);                       // consume the failure
-        pgrazor_buddy_sample_v1 s = snap();
+        pgs_buddy_sample_v1 s = snap();
         if (s.status != PGR_BUDDY_STATUS_FEED_FAILED || s.detail != 7) return 1;
         const uint64_t issued = s.feed_request_serial;
         g_api->tick(701, 2500, tid);                       // poll-gated / blocked -> no retry
@@ -272,7 +272,7 @@ static int scenario(int which) {
     case 5: { // lease expires inside a getter -> no feed, roots balance to the service only
         g_remaining = 0; g_count = 5; g_slow_quantity = true;
         g_api->tick(701, 1, tid);                          // 1 ms residual lease
-        pgrazor_buddy_sample_v1 s = snap();
+        pgs_buddy_sample_v1 s = snap();
         if (s.feed_request_serial != 0 || g_feed_target_calls != 0) return 1;
         if (s.owned_roots != 1 || g_roots != 1) return 2;  // pending dropped before the Feed
         return 0;
@@ -404,21 +404,21 @@ int main(int argc, char **argv) {
 #ifdef PGR_BUDDY_HOST_TEST
     (void)argc; (void)argv;
     if (pgrazor_buddy_feeding_api(99) != nullptr) { std::puts("FAIL exact-version"); return 3; }
-    g_api = static_cast<const pgrazor_buddy_api_v1 *>(pgrazor_buddy_feeding_api(1));
+    g_api = static_cast<const pgs_buddy_api_v1 *>(pgrazor_buddy_feeding_api(1));
 #else
     if (argc != 2) return 1;
     void *lib = dlopen(argv[1], RTLD_NOW | RTLD_LOCAL);
     if (!lib) { std::puts(dlerror()); return 2; }
     auto getter = reinterpret_cast<const void *(*)(uint32_t)>(dlsym(lib, "pgrazor_native_api"));
-    auto core = getter ? static_cast<const pgrazor_native_api_v2 *>(getter(2)) : nullptr;
+    auto core = getter ? static_cast<const pgs_native_api_v2 *>(getter(2)) : nullptr;
     if (!core || core->query_feature(12, 99) != nullptr) { std::puts("FAIL exact-version"); return 3; }
-    g_api = static_cast<const pgrazor_buddy_api_v1 *>(core->query_feature(12, 1));
+    g_api = static_cast<const pgs_buddy_api_v1 *>(core->query_feature(12, 1));
 #endif
     if (!g_api || g_api->size != 40) { std::puts("FAIL feature 12 not wired"); return 3; }
 
     // Config validation (parent process; these all fail before any hook is attempted).
-    pgrazor_buddy_config_v1 c = make_config();
-    pgrazor_buddy_config_v1 bad;
+    pgs_buddy_config_v1 c = make_config();
+    pgs_buddy_config_v1 bad;
     if (g_api->install(nullptr) != PGR_BUDDY_ERR_NULL_ARG) { std::puts("FAIL null"); return 5; }
     bad = c; bad.version = 2;
     if (g_api->install(&bad) != PGR_BUDDY_ERR_BAD_CONFIG) { std::puts("FAIL version"); return 5; }

@@ -788,7 +788,7 @@ int main(int argc, char **argv) {
 
   auto get_core = reinterpret_cast<const void *(*)(uint32_t)>(dlsym(library, "pgrazor_native_api"));
   assert(get_core);
-  const auto *core = static_cast<const pgrazor_native_api_v2 *>(get_core(2));
+  const auto *core = static_cast<const pgs_native_api_v2 *>(get_core(2));
   assert(core && core->query_feature);
   assert(core->query_feature(60, 0) == nullptr);
   assert(core->query_feature(60, 2) == nullptr);

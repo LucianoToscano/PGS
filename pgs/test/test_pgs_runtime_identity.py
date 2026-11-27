@@ -47,8 +47,8 @@ class PgsRuntimeIdentityTests(unittest.TestCase):
         self.assertIn('"pgs/classes.dex"', loader)
         self.assertIn('"pgs/payload.zip"', loader)
         self.assertIn('"dev.pgs.RootedEntry"', loader)
-        self.assertEqual(rooted.MODULE_ID, "pgrazor")
-        self.assertEqual(rooted.INJECTION_OFF_FLAG, "pgrazor/injection-off")
+        self.assertEqual(rooted.MODULE_ID, "pgs")
+        self.assertEqual(rooted.INJECTION_OFF_FLAG, "pgs/injection-off")
 
     def test_standalone_preview_package_is_pgs(self):
         import xml.etree.ElementTree as ET
@@ -60,9 +60,10 @@ class PgsRuntimeIdentityTests(unittest.TestCase):
         self.assertIn("'dev.pgs.preview/dev.pgs.PreviewActivity'", source)
         self.assertIn("'am','force-stop','dev.pgs.preview'", source)
         self.assertNotIn("dev.pgrazor.preview", source)
-        # Keep recognizing old build receipts without installing the old preview.
+        # Clean install: only the current PGS preview package is recognised.
         cleanup = (PROJECT / "cleanup.ps1").read_text(encoding="utf-8-sig")
-        self.assertIn("'dev.pgs.preview', 'dev.pgrazor.preview'", cleanup)
+        self.assertIn("'dev.pgs.preview'", cleanup)
+        self.assertNotIn("dev.pgrazor.preview", cleanup)
         with self.assertRaisesRegex(RuntimeError, "restricted to our standalone preview"):
             nonroot.probe({"package": "dev.pgrazor.preview", "outputs": [{}]}, PROJECT, None)
 
@@ -71,18 +72,18 @@ class PgsRuntimeIdentityTests(unittest.TestCase):
         self.assertIn('new File(new File(dataDir, "code_cache"), "pgs-root")', runtime)
         self.assertNotIn('new File(new File(dataDir, "code_cache"), "pgrazor-root")', runtime)
         # The fixed installed module identity and user-selected Off flag are separate contracts.
-        self.assertEqual(rooted.MODULE_ID, "pgrazor")
-        self.assertEqual(rooted.INJECTION_OFF_FLAG, "pgrazor/injection-off")
+        self.assertEqual(rooted.MODULE_ID, "pgs")
+        self.assertEqual(rooted.INJECTION_OFF_FLAG, "pgs/injection-off")
 
     def test_reject_both_legacy_and_new_patched_input(self):
-        for asset in ("assets/pgrazor/mode.json", "assets/pgs/mode.json"):
+        for asset in ("assets/pgs/mode.json",):
             with self.subTest(asset=asset), tempfile.TemporaryDirectory() as folder:
                 source = Path(folder) / "synthetic.apk"
                 with zipfile.ZipFile(source, "w") as archive:
                     archive.writestr(asset, b"{}")
                 with self.assertRaisesRegex(ValueError, "already has PGS assets"):
                     nonroot.rewrite_apk(source, Path(folder) / "output.apk", base=True)
-        for marker in (b"Ldev/pgrazor/Control;", b"Ldev/pgs/Control;"):
+        for marker in (b"Ldev/pgs/Control;",):
             with self.subTest(marker=marker), tempfile.TemporaryDirectory() as folder:
                 source = Path(folder) / "synthetic.apk"
                 with zipfile.ZipFile(source, "w") as archive:
@@ -93,14 +94,14 @@ class PgsRuntimeIdentityTests(unittest.TestCase):
     def test_dex_bridge_uses_pgs_prefix_and_rejects_legacy_input(self):
         bridge = (ROOT / "tools/dex_bridge/BridgeRewriter.java").read_text(encoding="utf-8")
         self.assertIn('PREFIX="$pgs$original$"', bridge)
-        self.assertIn('LEGACY_PREFIX="$pgrazor$original$"', bridge)
-        self.assertIn('!m.getName().startsWith(PREFIX)&&!m.getName().startsWith(LEGACY_PREFIX)', bridge)
+        self.assertNotIn('pgrazor', bridge)
+        self.assertIn('!m.getName().startsWith(PREFIX)', bridge)
 
     def test_installed_identity_and_historical_repack_are_preserved(self):
         self.assertEqual(pgs_update.GAME_PACKAGE, "com.nianticlabs.pokemongo")
         self.assertEqual(pgs_update.PGS_SIGNER, "d95c6bdfcbd91dc5c9cde698487c88e4994771a475e4efde4567b8d5f44e96cf")
-        self.assertEqual(pgs_rebrand.MARKER, b"Ldev/pgrazor/Control;")
-        self.assertEqual(pgs_rebrand.MODE, "assets/pgrazor/mode.json")
+        self.assertEqual(pgs_rebrand.MARKER, b"Ldev/pgs/Control;")
+        self.assertEqual(pgs_rebrand.MODE, "assets/pgs/mode.json")
         self.assertEqual(pgs_rebrand.TARGET_VERSION_CODE, 2026111605)
         for name in ("pgs-v0.0.1-release.yml", "pgs-v0.0.2-release.yml", "pgs-same-package-update.yml"):
             flow = (ROOT / ".github/workflows" / name).read_text(encoding="utf-8")

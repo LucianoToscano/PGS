@@ -25,7 +25,7 @@ class RootedPackagingTests(unittest.TestCase):
             self.assertEqual(rooted.version_code(version), code)
             manifest = ET.fromstring(rooted_installer._manifest(version))
             self.assertEqual(manifest.attrib['{http://schemas.android.com/apk/res/android}versionCode'], str(code))
-            self.assertEqual(manifest.attrib['package'], 'dev.pgrazor.root')
+            self.assertEqual(manifest.attrib['package'], 'dev.pgs.root')
 
     def test_reject_ambiguous_overflow_and_injection(self):
         for version in ['0.0.0', '1.1000.0', '1.0.1000', '9999.0.0', '1.2.3-x\nupdateJson=evil', '1.2.3-"x', '1.2.3-', 'v1.2']:
@@ -36,9 +36,9 @@ class RootedPackagingTests(unittest.TestCase):
 class ToggleCapabilityTests(unittest.TestCase):
     """The launch-time PGS: On / Off switch: capability marker, preservation script, loader."""
 
-    def test_capability_marker_is_an_empty_file_under_pgrazor(self):
+    def test_capability_marker_is_an_empty_file_under_pgs(self):
         entries = rooted.capability_module_entries()
-        self.assertEqual(rooted.TOGGLE_CAPABILITY, 'pgrazor/toggle-v1')
+        self.assertEqual(rooted.TOGGLE_CAPABILITY, 'pgs/toggle-v1')
         self.assertIn(rooted.TOGGLE_CAPABILITY, entries)
         # An empty capability marker -- presence, not contents, is the signal.
         self.assertEqual(entries[rooted.TOGGLE_CAPABILITY], b'')
@@ -52,7 +52,7 @@ class ToggleCapabilityTests(unittest.TestCase):
     def test_injection_off_is_never_shipped_by_default(self):
         # A fresh install must default to On: the off flag is not a packaged entry, and the
         # installer clears stale staged Off only when the live choice is On.
-        self.assertEqual(rooted.INJECTION_OFF_FLAG, 'pgrazor/injection-off')
+        self.assertEqual(rooted.INJECTION_OFF_FLAG, 'pgs/injection-off')
         self.assertNotIn(rooted.INJECTION_OFF_FLAG, rooted.capability_module_entries())
         script = rooted.CUSTOMIZE_SH
         self.assertIn('rm -f "${STAGED_FLAG}"', script)
@@ -64,12 +64,12 @@ class ToggleCapabilityTests(unittest.TestCase):
             candidate = Path(os.environ.get('ProgramFiles', 'C:/Program Files')) / 'Git/bin/bash.exe'
             if candidate.exists(): bash = str(candidate)
         if not bash: self.skipTest('POSIX shell unavailable')
-        script = rooted.CUSTOMIZE_SH.replace('/data/adb/modules/pgrazor/', './live/')
+        script = rooted.CUSTOMIZE_SH.replace('/data/adb/modules/pgs/', './live/')
         prefix = 'MODPATH=./staged; ui_print(){ :; }; abort(){ echo "$1"; exit 1; }; '
         with tempfile.TemporaryDirectory(prefix='pgs-toggle-install-') as tmp:
             work = Path(tmp)
-            live = work / 'live/pgrazor/injection-off'
-            staged = work / 'staged/pgrazor/injection-off'
+            live = work / 'live/pgs/injection-off'
+            staged = work / 'staged/pgs/injection-off'
             live.parent.mkdir(parents=True); staged.parent.mkdir(parents=True)
             def run():
                 return subprocess.run([bash, '-c', prefix + script], cwd=tmp,
@@ -89,7 +89,7 @@ class ToggleCapabilityTests(unittest.TestCase):
 
     def test_loader_checks_injection_off_before_reading_the_dex(self):
         source = (rooted.ROOT / 'zygisk/loader.cpp').read_text(encoding='utf-8')
-        check = source.find('faccessat(dir, "pgrazor/injection-off", F_OK, 0) == 0')
+        check = source.find('faccessat(dir, "pgs/injection-off", F_OK, 0) == 0')
         dex = source.find('read_at(dir, "pgs/classes.dex"')
         self.assertNotEqual(check, -1, 'loader must gate on the injection-off flag')
         self.assertNotEqual(dex, -1)

@@ -41,35 +41,20 @@ class ReleaseBundleTests(unittest.TestCase):
 
     def test_canonical_version_metadata(self):
         with zipfile.ZipFile(self.folder / verify_release.DOWNLOADS[0], 'w') as apk:
-            apk.writestr('assets/pgs/mode.json', json.dumps({'version': '17.24.2', 'pgsVersion': self.tag, 'pgrazorVersion': self.tag}))
+            apk.writestr('assets/pgs/mode.json', json.dumps({'version': '17.24.2', 'pgsVersion': self.tag}))
         self.receipts()
         self.assertEqual(set(verify_release.verify(self.folder, self.tag)), set(verify_release.DOWNLOADS))
         with zipfile.ZipFile(self.folder / verify_release.DOWNLOADS[0], 'w') as apk:
-            apk.writestr('assets/pgs/mode.json', json.dumps({'pgsVersion': self.tag, 'pgrazorVersion': 'v0.2.5'}))
+            apk.writestr('assets/pgs/mode.json', json.dumps({'pgsVersion': 'v0.2.5'}))
         self.receipts()
-        with self.assertRaisesRegex(ValueError, 'Non-rooted build version'):
-            verify_release.verify(self.folder, self.tag)
-
-    def test_archived_bundle_requires_explicit_legacy_selection(self):
-        for current, legacy in zip(verify_release.DOWNLOADS, verify_release.LEGACY_DOWNLOADS):
-            (self.folder / current).rename(self.folder / legacy)
-        with zipfile.ZipFile(self.folder / verify_release.LEGACY_DOWNLOADS[0], 'w') as apk:
-            apk.writestr('assets/pgrazor/mode.json', json.dumps({'pgrazorVersion': self.tag}))
-        self.receipts(verify_release.LEGACY_DOWNLOADS)
-        with self.assertRaisesRegex(ValueError, 'unexpected release artifact names'):
-            verify_release.verify(self.folder, self.tag)
-        self.assertEqual(set(verify_release.verify(self.folder, self.tag, legacy_names=True)), set(verify_release.LEGACY_DOWNLOADS))
-
-    def test_mixed_artifact_names_rejected(self):
-        (self.folder / verify_release.LEGACY_DOWNLOADS[0]).write_bytes(b'old')
-        with self.assertRaisesRegex(ValueError, 'Mixed'):
+        with self.assertRaisesRegex(ValueError, 'Non-rooted PGS build version'):
             verify_release.verify(self.folder, self.tag)
 
     def test_current_bundle_rejects_old_mode_path(self):
         with zipfile.ZipFile(self.folder / verify_release.DOWNLOADS[0], 'w') as apk:
-            apk.writestr('assets/pgrazor/mode.json', json.dumps({'pgrazorVersion': self.tag}))
+            apk.writestr('assets/pgs/mode.json', json.dumps({'pgrazorVersion': self.tag}))
         self.receipts()
-        with self.assertRaisesRegex(ValueError, 'canonical mode asset'):
+        with self.assertRaisesRegex(ValueError, 'Non-rooted PGS build version'):
             verify_release.verify(self.folder, self.tag)
 
     def test_missing_download_blocks_publication(self):

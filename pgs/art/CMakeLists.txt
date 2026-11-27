@@ -120,10 +120,6 @@ target_link_options(pgs_art PRIVATE
   "-Wl,--version-script=${CMAKE_CURRENT_SOURCE_DIR}/pgs-art.map"
   "-Wl,--exclude-libs,ALL" "-Wl,-z,defs" "-Wl,-Map,${CMAKE_BINARY_DIR}/pgs-art.link.map")
 set_property(TARGET pgs_art APPEND PROPERTY LINK_DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/pgs-art.map")
-# New PGS switch; preserve old CMake command-line flag for build compatibility.
-if(DEFINED PGRAZOR_ART_CHAIN_TEST AND NOT DEFINED PGS_ART_CHAIN_TEST)
-  set(PGS_ART_CHAIN_TEST "${PGRAZOR_ART_CHAIN_TEST}" CACHE BOOL "ART chain compatibility" FORCE)
-endif()
 option(PGS_ART_CHAIN_TEST "Build standalone ARM64 hook chaining regression" OFF)
 if(PGS_ART_CHAIN_TEST)
   if(NOT ANDROID_ABI STREQUAL "arm64-v8a")

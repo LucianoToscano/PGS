@@ -1,9 +1,8 @@
-/* Export primary PGS factory and unchanged legacy alias; hide all others. */
+/* Export primary PGS factory; hide all others. */
 {
   global:
     JNI_OnLoad;
     pgs_native_api;
-    pgrazor_native_api;
   local:
     *;
 };

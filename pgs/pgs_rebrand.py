@@ -30,9 +30,9 @@ TARGET_VERSION_CODE = 2026111605
 GAME_VERSION_NAME = "0.439.0"
 PGS_VERSION = "v0.0.2"
 TARGET_NAME = "PGS v0.0.2.apk"
-MODE = "assets/pgrazor/mode.json"
-MARKER = b"Ldev/pgrazor/Control;"
-UPDATER = b"Ldev/pgrazor/Updater;"
+MODE = "assets/pgs/mode.json"
+MARKER = b"Ldev/pgs/Control;"
+UPDATER = b"Ldev/pgs/Updater;"
 
 
 def digest(path: Path) -> str:
@@ -65,11 +65,9 @@ def module_dex_entry(archive: zipfile.ZipFile) -> str:
 
 def updated_mode(old: bytes) -> bytes:
     mode = json.loads(old)
-    before = mode.get("pgrazorVersion")
-    if not (isinstance(before, str) and before == "v0.0.1"
-            and mode.get("compiledGameplay") is True):
+    if mode.get("pgsVersion") != "v0.0.1" or mode.get("compiledGameplay") is not True:
         raise ValueError("Source APK is not the expected compiled PGS candidate")
-    mode["pgrazorVersion"] = PGS_VERSION
+    mode["pgsVersion"] = PGS_VERSION
     return json.dumps(mode, separators=(",", ":"), ensure_ascii=False).encode("utf-8")
 
 
@@ -145,7 +143,7 @@ def candidate(source: Path, controls: Path, output: Path) -> dict:
                 or after["versionName"] != GAME_VERSION_NAME):
             output.unlink(missing_ok=True)
             raise RuntimeError("Repacked APK identity or archive integrity changed")
-        assert json.loads(new.read(MODE))["pgrazorVersion"] == PGS_VERSION
+        assert json.loads(new.read(MODE))["pgsVersion"] == PGS_VERSION
         assert new.read(dex_name) == new_dex
         # A whole-archive digest comparison guarantees the original game, assets
         # and compiled native libraries were NOT changed by this targeted update.
@@ -176,7 +174,7 @@ def candidate(source: Path, controls: Path, output: Path) -> dict:
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--source", type=Path, required=True)
-    parser.add_argument("--controls", type=Path, default=build.BUILD / "pgrazor.dex")
+    parser.add_argument("--controls", type=Path, default=build.BUILD / "pgs.dex")
     parser.add_argument("--output", type=Path, default=Path("dist/PGS") / TARGET_NAME)
     args = parser.parse_args()
     report = candidate(args.source, args.controls, args.output)

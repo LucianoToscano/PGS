@@ -84,10 +84,10 @@ class NativePrerequisiteTests(unittest.TestCase):
         portable.mkdir(parents=True)
         self.assertEqual(art_build.dependency_paths(self.root, environ={})['lsplant'].parent, portable)
         selected = self.base / 'cache'
-        self.assertEqual(art_build.dependency_paths(self.root, environ={'PGRAZOR_NATIVE_DEPS': str(selected)})['lsplant'].parent, selected)
+        self.assertEqual(art_build.dependency_paths(self.root, environ={'PGS_NATIVE_DEPS': str(selected)})['lsplant'].parent, selected)
         explicit = self.base / 'explicit'
         self.assertEqual(art_build.dependency_paths(self.root, explicit,
-            {'PGRAZOR_NATIVE_DEPS': str(selected)})['lsplant'].parent, explicit)
+            {'PGS_NATIVE_DEPS': str(selected)})['lsplant'].parent, explicit)
 
     def test_modified_dependency_refused_without_reset(self):
         path, commit = self.repository()

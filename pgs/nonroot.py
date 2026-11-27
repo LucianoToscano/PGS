@@ -109,7 +109,7 @@ def rewrite_apk(source,destination,*,base=False,dex=None,assets=None,preview=Fal
         names=original.namelist()
         # Bundled map-icon art may already ride along in our own preview input; any other pre-existing
         # PGS asset means the input was already instrumented and must be refused.
-        if any(name.startswith(('assets/pgs/', 'assets/pgrazor/')) and not (preview and name.startswith(('assets/pgs/map-icons/','assets/pgs/feed-icons/pokemon/'))) for name in names): raise ValueError('Input already has PGS assets')
+        if any(name.startswith('assets/pgs/') and not (preview and name.startswith(('assets/pgs/map-icons/','assets/pgs/feed-icons/pokemon/'))) for name in names): raise ValueError('Input already has PGS assets')
         if base:
             indices=[int(match.group(1) or '1') for name in names if (match:=re.fullmatch(r'classes(\d*)\.dex',name))]
             nextdex='classes'+str(max(indices,default=0)+1)+'.dex'
@@ -118,7 +118,7 @@ def rewrite_apk(source,destination,*,base=False,dex=None,assets=None,preview=Fal
                 for name in names:
                     if re.fullmatch(r'classes\d*\.dex',name):
                         data=original.read(name)
-                        if any(marker in data for marker in (b'Ldev/pgs/Control;', b'Ldev/pgrazor/Control;')):
+                        if any(marker in data for marker in (b'Ldev/pgs/Control;',)):
                             raise ValueError('Input already contains PGS classes')
         for item in original.infolist():
             if signature_entry(item.filename): continue
@@ -147,9 +147,9 @@ def validate_survey_options(enabled, panel_only, abi, flag='--il2cpp-survey'):
 
 
 def runtime_flag(name, environ=None):
-    """Use PGS runtime option names, while accepting existing opt-in aliases."""
+    """Read a PGS runtime option from the environment."""
     env = os.environ if environ is None else environ
-    return env.get('PGS_'+name) == '1' or env.get('PGRAZOR_'+name) == '1'
+    return env.get('PGS_'+name) == '1'
 
 
 @contextlib.contextmanager
@@ -180,9 +180,9 @@ def assert_no_research_payload(names):
         lowered=name.lower()
         if lowered.endswith('libfrida-gadget.so'):
             raise RuntimeError('Compiled production build must not ship the Frida Gadget: '+name)
-        if lowered.startswith(('assets/pgs/', 'assets/pgrazor/')) and lowered.endswith(('.js','.mjs','.cjs','.js.map')):
+        if lowered.startswith('assets/pgs/') and lowered.endswith(('.js','.mjs','.cjs','.js.map')):
             raise RuntimeError('Compiled production build must not ship PGS JavaScript: '+name)
-        if lowered in ('assets/pgs/java-bridge.js', 'assets/pgrazor/java-bridge.js') or lowered.startswith(('assets/pgs/bridge-notices/', 'assets/pgrazor/bridge-notices/')):
+        if lowered in ('assets/pgs/java-bridge.js',) or lowered.startswith(('assets/pgs/bridge-notices/',)):
             raise RuntimeError('Compiled production build must not ship Frida bridge assets: '+name)
 
 

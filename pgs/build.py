@@ -12,15 +12,15 @@ import json
 
 ROOT = Path(__file__).resolve().parent
 
-def build_setting(primary, legacy, default=None, environ=None):
-    """Prefer a PGS build setting while retaining the previous environment alias.
+def build_setting(primary, default=None, environ=None):
+    """Read a PGS build setting from the environment without side effects.
 
     Values are selected without modifying the process environment, so existing
     GitHub Actions secrets and SDK configurations are not rewritten. Empty
     values behave as unset. These are NON-SECRET build options only.
     """
     env = os.environ if environ is None else environ
-    return env.get(primary) or env.get(legacy) or default
+    return env.get(primary) or default
 
 
 def source_fingerprints(root):
@@ -28,7 +28,7 @@ def source_fingerprints(root):
     return {p.relative_to(root).as_posix(): hashlib.sha256(p.read_bytes()).hexdigest() for p in paths}
 
 def release_version(root):
-    version = build_setting('PGS_VERSION', 'PGRAZOR_VERSION', (root/'VERSION').read_text(encoding='utf-8').strip())
+    version = build_setting('PGS_VERSION', (root/'VERSION').read_text(encoding='utf-8').strip())
     if not re.fullmatch(r'v?[0-9]+\.[0-9]+\.[0-9]+(?:-[A-Za-z0-9.-]+)?', version):
         raise ValueError('Invalid PGS version')
     return 'v' + version.removeprefix('v')
@@ -69,8 +69,8 @@ def feed_icon_assets():
     return icons
 
 SDK = Path(os.environ.get('ANDROID_HOME', str(Path(os.environ.get('LOCALAPPDATA', str(Path.home()))) / 'Android/Sdk')))
-TOOLS = SDK / 'build-tools' / build_setting('PGS_BUILD_TOOLS', 'PGRAZOR_BUILD_TOOLS', '36.1.0')
-ANDROID = SDK / 'platforms' / build_setting('PGS_ANDROID_PLATFORM', 'PGRAZOR_ANDROID_PLATFORM', 'android-36.1') / 'android.jar'
+TOOLS = SDK / 'build-tools' / build_setting('PGS_BUILD_TOOLS', '36.1.0')
+ANDROID = SDK / 'platforms' / build_setting('PGS_ANDROID_PLATFORM', 'android-36.1') / 'android.jar'
 BUILD = ROOT / 'build'
 
 def android_tool(name):
@@ -85,13 +85,13 @@ def run(*args):
     subprocess.run([str(a) for a in args], cwd=ROOT, check=True)
 
 def signing_setting(name, default=None, environ=None):
-    """Use PGS signing variables first; retain the existing external alias."""
+    """Read a PGS signing variable from the environment without side effects."""
     env = os.environ if environ is None else environ
-    return env.get('PGS_' + name) or env.get('PGRAZOR_' + name) or default
+    return env.get('PGS_' + name) or default
 
 
 def signing_args():
-    configured = any(name in os.environ for name in ('PGS_KEYSTORE', 'PGRAZOR_KEYSTORE'))
+    configured = any(name in os.environ for name in ('PGS_KEYSTORE',))
     selected = signing_setting('KEYSTORE')
     if configured:
         if not selected:

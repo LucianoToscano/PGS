@@ -159,17 +159,16 @@ class ZipSafetyTests(unittest.TestCase):
 
 class ExportGuardTests(unittest.TestCase):
     def test_exact_set_passes(self):
-        nb.assert_exports({'JNI_OnLoad', 'pgs_native_api', 'pgrazor_native_api'})
+        nb.assert_exports({'JNI_OnLoad', 'pgs_native_api'})
 
     def test_missing_export_fails(self):
         with self.assertRaises(RuntimeError) as ctx:
             nb.assert_exports({'JNI_OnLoad'})
         self.assertIn('pgs_native_api', str(ctx.exception))
-        self.assertIn('pgrazor_native_api', str(ctx.exception))
 
     def test_extra_export_fails(self):
         with self.assertRaises(RuntimeError) as ctx:
-            nb.assert_exports({'JNI_OnLoad', 'pgs_native_api', 'pgrazor_native_api', 'leaked_symbol'})
+            nb.assert_exports({'JNI_OnLoad', 'pgs_native_api', 'leaked_symbol'})
         self.assertIn('leaked_symbol', str(ctx.exception))
 
     def test_parse_exports_ignores_undefined_and_local(self):

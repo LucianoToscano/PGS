@@ -5,13 +5,13 @@
   "changed_files": null,
   "added_files": null,
   "previous_occurrences": null,
-  "remaining_files": 92,
-  "remaining_occurrences": 608,
+  "remaining_files": 93,
+  "remaining_occurrences": 609,
   "remaining_by_category": {
     "documentation": 207,
     "legal": 3,
     "native": 8,
-    "other": 65,
+    "other": 66,
     "release_history": 103,
     "tests": 217,
     "workflows": 5
@@ -231,6 +231,11 @@
       "path": "pgs/build.py",
       "category": "other",
       "occurrences": 5
+    },
+    {
+      "path": "pgs/cleanup.ps1",
+      "category": "other",
+      "occurrences": 1
     },
     {
       "path": "pgs/native/pgs.map",

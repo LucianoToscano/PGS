@@ -28,7 +28,7 @@ XZ_URL = 'https://github.com/tukaani-project/xz-embedded.git'
 def dependency_paths(root, cache=None, environ=None):
     env = os.environ if environ is None else environ
     root = Path(root).resolve()
-    chosen = cache or env.get('PGS_NATIVE_DEPS') or env.get('PGRAZOR_NATIVE_DEPS')
+    chosen = cache or env.get('PGS_NATIVE_DEPS')
     if chosen:
         cache = Path(chosen).expanduser().resolve()
     else:
@@ -70,8 +70,7 @@ def resolve_pinned_ndk(root, revision, explicit_env, fallback_name, environ=None
 
 def resolve_art_ndk(root, environ=None):
     env = os.environ if environ is None else environ
-    key = ('PGS_ART_NDK' if env.get('PGS_ART_NDK') or not env.get('PGRAZOR_ART_NDK')
-           else 'PGRAZOR_ART_NDK')
+    key = 'PGS_ART_NDK'
     return resolve_pinned_ndk(root, NDK_VERSION, key, 'android-ndk-r29', env)
 
 

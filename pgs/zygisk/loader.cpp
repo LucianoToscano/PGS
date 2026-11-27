@@ -8,7 +8,7 @@
 // no hooks itself and keeps no state after postAppSpecialize returns.
 //
 // Launch-time switch: PGS can be turned off without disabling the module.
-// When the module directory holds the empty flag pgrazor/injection-off, the
+// When the module directory holds the empty flag pgs/injection-off, the
 // loader logs and skips injection for this launch (the module stays enabled).
 // The flag is read once per process start, so flipping it only takes effect at
 // the game's next cold start -- no reboot and no module toggle in the manager.
@@ -102,7 +102,7 @@ public:
             return;
         }
         int dir = api_->getModuleDir();
-        if (dir >= 0 && faccessat(dir, "pgrazor/injection-off", F_OK, 0) == 0) {
+        if (dir >= 0 && faccessat(dir, "pgs/injection-off", F_OK, 0) == 0) {
             LOGI("PGS switched off (injection-off marker present); skipping injection for this launch");
             target_ = false;
             return;

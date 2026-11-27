@@ -40,10 +40,11 @@ class PgsProjectLayoutTests(unittest.TestCase):
     def test_legacy_local_inputs_and_vendor_attributes(self):
         ignore = (ROOT / ".gitignore").read_text(encoding="utf-8")
         attributes = (ROOT / ".gitattributes").read_text(encoding="utf-8")
-        for path in ("/pgrazor/", "/pgs/build-retention.json", "/pgs/branding/discord/",
+        for path in ("/pgs/build-retention.json", "/pgs/branding/discord/",
                      "**/input/", "**/build/"):
             self.assertIn(path, ignore)
         self.assertIn("pgs/vendor/frida-java-bridge*.js -text", attributes)
+        self.assertNotIn("/pgrazor/", ignore)
         self.assertIn("pgs/vendor/COPYING.frida-tools -text", attributes)
 
 if __name__ == "__main__":

@@ -20,7 +20,6 @@ public final class BridgeRewriter {
     static final String ACTIVITY="Landroid/app/Activity;";
     static final String PERMISSION="Lcom/nianticlabs/platform/niaadvsynccore/permission/PermissionStatus;";
     static final String PREFIX="$pgs$original$";
-    static final String LEGACY_PREFIX="$pgrazor$original$";
     static final Map<String,Spec> SPECS=new LinkedHashMap<>();
     static final class Spec {
         final String owner,name,ret,kind; final List<String> args; final boolean statik;
@@ -188,7 +187,7 @@ public final class BridgeRewriter {
                 for(Method input:cls.getMethods()){
                     Method m=rewriteLocations(input,entry,locations,locationCounts);
                     if(m!=input)dirty=classDirty=true;
-                    require(!m.getName().startsWith(PREFIX)&&!m.getName().startsWith(LEGACY_PREFIX),"input already patched");
+                    require(!m.getName().startsWith(PREFIX),"input already patched");
                     String key=cls.getType()+"->"+m.getName();Spec s=SPECS.get(key);
                     if(s==null){methods.add(m);continue;}
                     require(seen.add(key),"duplicate/overloaded target "+key);

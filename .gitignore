@@ -44,7 +44,6 @@ Thumbs.db
 !/pgs/research/README.txt
 /user-reports
 
-# Keep pre-migration local build/input and other untracked files private.
-/pgrazor/
+# Keep local build/input and other untracked files private.
 /**/input/
 /**/build/

@@ -26,7 +26,7 @@ The browser checks use the production preview server. Generated output, installe
 
 The `Website` workflow builds and checks pull requests. Changes to `website/` or the workflow on `main` also deploy to GitHub Pages. Repository Pages must use **GitHub Actions** as its source. Only the deployment job receives Pages write and OIDC permissions. It cannot publish APK releases or send release announcements.
 
-The Vite base path is `/PGS/`. Keep image links base-aware when adding screenshots. Download buttons point to the dedicated PGS v0.0.1 workflow, which contains the complete signed candidate in its latest successful main-branch artifact. The GitHub Release is a draft until device validation; switch the buttons to `/releases/latest` after publishing the release.
+The Vite base path is `/PGS/`. Keep image links base-aware when adding screenshots. Download buttons point to the dedicated PGS v0.0.2 workflow, which contains the complete signed candidate in its latest successful main-branch artifact. The GitHub Release is a draft until device validation; switch the buttons to `/releases/latest` after publishing the release.
 
 ## Feature guides and routing
 

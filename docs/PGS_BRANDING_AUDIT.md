@@ -30,3 +30,7 @@ Esses identificadores técnicos não são *nomes do aplicativo instalado* e reno
 Rodar `python -B tools/pgs_branding_audit.py` ou `python -B tools/check.py`. O gate CI bloqueia novos textos antigos em superfícies públicas, links de APK upstream e regressão de versão/certificado.
 
 A PR não publica APK automaticamente. A próxima nova build completa deverá ser `v0.0.2`, com `versionCode >= 2026111605`, o mesmo certificado PGS e testes físicos pendentes.
+
+## Preparação da v0.0.2
+
+O arquivo `.github/FUNDING.yml` deixou de apontar para o Ko-fi do projeto original (não há conta de doação PGS cadastrada). O gate CI agora reprova o reaparecimento desse destino. A candidata `v0.0.2` usa o APK completo assinado de `v0.0.1` como entrada, recompila os controles Java com os nomes PGS, mantém DEX do jogo e bibliotecas nativas inalterados e exige `versionCode=2026111605` e o mesmo certificado. Instalação/login sobre o PGS anterior ainda dependem de teste físico. Nenhum identificador `dev.pgrazor`, recurso `assets/pgrazor` ou logo/joystick interno foi renomeado.

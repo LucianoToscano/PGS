@@ -37,7 +37,7 @@ export default function GetStarted() {
       <p className="cta__release">
         <span className="cta__badge">Candidate</span>
         The verified{' '}
-        <a href={links.releasesCurrent}>PGS v0.0.1 build</a> is a complete signed APK candidate. Installation and login testing on a phone are pending.
+        <a href={links.releasesCurrent}>PGS v0.0.2 build</a> is a complete signed APK candidate. Installation and login testing on a phone are pending.
       </p>
 
       <div className="faq">

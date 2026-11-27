@@ -56,7 +56,7 @@ python -B pgrazor/nonroot.py --apk pgrazor/input/game.apkm
 python -B pgrazor/release_apk.py --run pgrazor/build/nonroot/RUN-ID --output pgrazor/build/release
 ```
 
-Use the run directory printed by the first command. The second command merges the library-only ARM64 configuration split, removes split-install requirements, labels the installed application Pokémon GO (the in-game menu is branded PGS), aligns and signs **PGS.apk**, and writes checksums. It rejects resource/code splits rather than silently dropping them. No command installs anything on a phone.
+Use the run directory printed by the first command. The second command merges the library-only ARM64 configuration split, removes split-install requirements, labels the installed application Pokémon GO (the in-game menu remains PGRazor), aligns and signs **PGRazor.apk**, and writes checksums. It rejects resource/code splits rather than silently dropping them. No command installs anything on a phone.
 
 Single-APK packaging is new and still needs a disconnected-phone install/launch check. Existing split builds remain available in the run directory as a rollback option. Preserve a tested installation until the new candidate has been checked.
 
@@ -82,45 +82,43 @@ Local development creates an ignored `build/pgrazor-development.jks` key with al
 
 For explicit signing, set `PGRAZOR_KEYSTORE`, `PGRAZOR_KEY_ALIAS`, `PGRAZOR_STORE_PASSWORD`, and `PGRAZOR_KEY_PASSWORD`. Passwords are passed to Android signing tools through environment variable references, not command-line values. A missing configured key or password fails the build. Keep the same certificate across updates.
 
-The `build.py` output named `pgs-preview.apk` is a controls preview, **not the game**. Do not publish it as a working PGRazor release.
+The `build.py` output named `pgrazor-preview.apk` is a controls preview, **not the game**. Do not publish it as a working PGRazor release.
 
 ## GitHub Actions: non-root and rooted releases
 
-Write concise release notes using [the release-note rules](releases/README.md) and [template](releases/TEMPLATE.md). GitHub and Discord share the same notes. Include version-specific download and GitHub release links; the shared footer adds project and upstream attribution. Omit verification sections and website-only changes from public notes and the changelog.
+Write concise release notes using [the release-note rules](releases/README.md) and [template](releases/TEMPLATE.md). GitHub and Discord share the same notes. Include version-specific download and GitHub release links; the shared footer adds Ko-fi and repository links. Omit verification sections and website-only changes from public notes and the changelog.
 
-Configure these PGS repository Actions secrets. The workflow maps them to the inherited internal build environment; local environment names have not yet changed:
+Configure these Actions secrets:
 
 | Secret | Value |
 | --- | --- |
-| `PGS_INPUT_URL` | HTTPS URL to the supported original APKM, or a GitHub release-asset API URL in this repository |
-| `PGS_KEYSTORE_BASE64` | Base64-encoded release keystore |
-| `PGS_KEY_ALIAS` | Signing alias, e.g. `pgs` for PGS |
-| `PGS_STORE_PASSWORD` | Keystore password |
-| `PGS_KEY_PASSWORD` | Private-key password |
-
-The release workflow checks that all five secrets exist and that the versioned notes file is present before installing the Android SDK. It logs only missing secret names, never their values. Leave `PGS_PUBLISH_ENABLED` unset or `false` until authorized publication is appropriate.
+| `PGRAZOR_INPUT_URL` | HTTPS URL to the supported original APKM, or a GitHub release-asset API URL in this repository |
+| `PGRAZOR_KEYSTORE_BASE64` | Base64-encoded release keystore |
+| `PGRAZOR_KEY_ALIAS` | Signing alias, e.g. `pgrazor` for PGRazor |
+| `PGRAZOR_STORE_PASSWORD` | Keystore password |
+| `PGRAZOR_KEY_PASSWORD` | Private-key password |
 
 For a private GitHub input asset, use its `https://api.github.com/repos/OWNER/REPO/releases/assets/ID` URL. The workflow supplies its scoped token; authorization is removed when GitHub redirects to the signed download host.
 
-Run **Actions → PGS Android release (non-root and rooted) → Run workflow**, enter a version tag such as `v0.00.01`, and leave `publish` off for a candidate. Download **PGS-android** from the completed run. It contains **PGS.apk** (non-root), **PGS-Root.apk** (root installer), and **PGS-Root-module.zip** (manual root module). Repository read access is required to download private [workflow artifacts](https://docs.github.com/en/actions/how-tos/manage-workflow-runs/download-workflow-artifacts).
+Run **Actions → Android release (non-root and rooted) → Run workflow**, enter a version tag such as `v0.1.0`, and leave `publish` off for a candidate. Download **PGRazor-android** from the completed run. It contains **PGRazor.apk** (non-root), **PGRazor-Root.apk** (root installer), and **PGRazor-Root-module.zip** (manual root module). Repository read access is required to download private [workflow artifacts](https://docs.github.com/en/actions/how-tos/manage-workflow-runs/download-workflow-artifacts).
 
-After device testing, explicitly set the repository Actions variable `PGS_PUBLISH_ENABLED` to `true` and run on `main` with `publish` enabled to create one release containing all three downloads, checksums, and both build receipts. An existing tag/release is not overwritten. The workflow installs the pinned NDKs/build tools and prepares native dependencies before checks and packaging. Its PowerShell setup writes paths to `GITHUB_ENV` so later steps inherit the same compilers and cache. The workflow is manually triggered, does not run on pull requests, and requires a versioned release-notes file at `docs/releases/TAG.md`. The shared `docs/releases/footer.md` is appended automatically with project and upstream attribution. No secrets or game files are uploaded by source CI.
+After device testing, run with `publish` enabled to create one release containing all three downloads, checksums, and both build receipts. An existing tag/release is not overwritten. The workflow installs the pinned NDKs/build tools and prepares native dependencies before checks and packaging. Its PowerShell setup writes paths to `GITHUB_ENV` so later steps inherit the same compilers and cache. The workflow is manually triggered, does not run on pull requests, and requires a versioned release-notes file at `docs/releases/TAG.md`. The shared `docs/releases/footer.md` is appended automatically, including the optional Ko-fi support link. No secrets or game files are uploaded by source CI.
 
 Both upload and publication verify all three downloads against their checksums and build receipts, check that the game/release versions match, and confirm that the Root APK embeds the exact published module ZIP. Source CI also compiles the Root installer without game input or signing secrets. The signing key remains an Actions secret; keep it unchanged across releases.
 
 ## Discord release announcements
 
-Create an incoming webhook in a PGS-owned Discord channel under **Edit Channel → Integrations → Webhooks**. Save its URL as the repository Actions secret **PGS_DISCORD_RELEASE_WEBHOOK**, its numeric channel ID as variable `PGS_DISCORD_CHANNEL_ID`, and explicitly set `PGS_DISCORD_ENABLED` to `true` only when ready. Leave it unset or `false` otherwise. Do not commit the URL.
+Create an incoming webhook in Discord channel `1562582290536726598` under **Edit Channel → Integrations → Webhooks**. Save its URL as the repository Actions secret **DISCORD_RELEASE_WEBHOOK**. Do not commit the URL.
 
-The **PGS Discord release announcement** workflow posts published releases (including labeled prereleases) with release notes, a GitHub link, links to the non-root APK, Root installer APK, and module ZIP when present. It verifies the webhook's channel before sending. Drafts are not announced. The APK release workflow calls it directly because releases created with `GITHUB_TOKEN` do not trigger another release-event workflow.
+The **Discord release announcement** workflow posts published releases (including labeled prereleases) with release notes, a GitHub link, links to the non-root APK, Root installer APK, and module ZIP when present, and the optional Ko-fi support link. It verifies the webhook's channel before sending. Drafts are not announced. The APK release workflow calls it directly because releases created with `GITHUB_TOKEN` do not trigger another release-event workflow.
 
-To ping a release subscriber role, set the repository Actions **variable** `PGS_DISCORD_RELEASE_ROLE_ID` to its numeric role ID (Discord Developer Mode → right-click the role → Copy Role ID). Ensure Discord allows the webhook to mention that role. Only this role is allowed to ping; other roles, users, and everyone mentions remain disabled. Leave the variable unset to send without a ping. This also applies to prereleases and manual announcements.
+To ping a release subscriber role, set the repository Actions **variable** `DISCORD_RELEASE_ROLE_ID` to its numeric role ID (Discord Developer Mode → right-click the role → Copy Role ID). Ensure Discord allows the webhook to mention that role. Only this role is allowed to ping; other roles, users, and everyone mentions remain disabled. Leave the variable unset to send without a ping. This also applies to prereleases and manual announcements.
 
-Without the secret, the announcement step logs a warning and sends nothing. To announce an existing release after setup, manually run **PGS Discord release announcement** with its tag. Manual runs and reruns can post another announcement, so check the channel before retrying. This posts a channel message; it does not crosspost to channel followers.
+Without the secret, the announcement step logs a warning and sends nothing. To announce an existing release after setup, manually run **Discord release announcement** with its tag. Manual runs and reruns can post another announcement, so check the channel before retrying. This posts a channel message; it does not crosspost to channel followers.
 
 ## Installation and updates
 
-Install the single APK with Android's package installer, or use `adb install -r PGS.apk` from a computer. Never uninstall a working build just to bypass a signing error; use a build signed with its existing key. An official-store game cannot be replaced in place by a differently signed build. Local application data may be lost if you choose to uninstall it.
+Install the single APK with Android's package installer, or use `adb install -r PGRazor.apk` from a computer. Never uninstall a working PGRazor build just to bypass a signing error; use a build signed with its existing key. An official-store game cannot be replaced in place by a differently signed build. Local application data may be lost if you choose to uninstall it.
 
 The minimum SDK is Android 9 (API 28), but native gameplay hooks are supported only on the pinned ARM64 game build. No emulator, future-version, or all-device compatibility is implied.
 
@@ -130,9 +128,9 @@ The minimum SDK is Android 9 (API 28), but native gameplay hooks are supported o
 
 ### Hosted game input
 
-The release workflow reads the repository secret `PGS_INPUT_URL` and maps it to `PGRAZOR_INPUT_URL`; `tools/private_input.py` verifies its checksum against the selected profile in `pgrazor/native/schema/game/` before packaging. The current input is stored as an asset of the **unpublished** `build-inputs` draft release. Keep that release in draft status; original game packages must not be published as release assets.
+The release workflow reads `PGRAZOR_INPUT_URL`; `tools/private_input.py` verifies its checksum against the selected profile in `pgrazor/native/schema/game/` before packaging. The current input is stored as an asset of the **unpublished** `build-inputs` draft release. Keep that release in draft status; original game packages must not be published as release assets.
 
-For a game update, upload the new original package under a versioned filename, verify its downloaded SHA-256, and update `PGS_INPUT_URL` to its GitHub API asset URL. The workflow authenticates that download with its repository token. GitHub restricts draft assets to push-capable callers, so the manually dispatched build job has `contents: write`; checkout does not persist that token in Git credentials. Update the pinned checksum and native compatibility bindings together before running the release workflow.
+For a game update, upload the new original package under a versioned filename, verify its downloaded SHA-256, and update `PGRAZOR_INPUT_URL` to its GitHub API asset URL. The workflow authenticates that download with its repository token. GitHub restricts draft assets to push-capable callers, so the manually dispatched build job has `contents: write`; checkout does not persist that token in Git credentials. Update the pinned checksum and native compatibility bindings together before running the release workflow.
 
 ## Game-version updates
 

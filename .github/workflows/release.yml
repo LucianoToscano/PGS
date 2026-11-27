@@ -1,9 +1,9 @@
-name: PGS Android release (non-root and rooted)
+name: Android release (non-root and rooted)
 on:
   workflow_dispatch:
     inputs:
       tag:
-        description: Release tag (for example v0.00.01)
+        description: Release tag (for example v0.1.0)
         required: true
         type: string
       publish:
@@ -25,33 +25,13 @@ jobs:
     env:
       PGRAZOR_BUILD_TOOLS: 36.0.0
       PGRAZOR_ANDROID_PLATFORM: android-36
-      PGRAZOR_KEY_ALIAS: ${{ secrets.PGS_KEY_ALIAS }}
-      PGRAZOR_STORE_PASSWORD: ${{ secrets.PGS_STORE_PASSWORD }}
-      PGRAZOR_KEY_PASSWORD: ${{ secrets.PGS_KEY_PASSWORD }}
+      PGRAZOR_KEY_ALIAS: ${{ secrets.PGRAZOR_KEY_ALIAS }}
+      PGRAZOR_STORE_PASSWORD: ${{ secrets.PGRAZOR_STORE_PASSWORD }}
+      PGRAZOR_KEY_PASSWORD: ${{ secrets.PGRAZOR_KEY_PASSWORD }}
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
         with:
           persist-credentials: false
-      - name: Validate PGS release configuration
-        env:
-          RELEASE_TAG: ${{ inputs.tag }}
-          PGS_INPUT_URL: ${{ secrets.PGS_INPUT_URL }}
-          PGS_KEYSTORE_BASE64: ${{ secrets.PGS_KEYSTORE_BASE64 }}
-          PGS_KEY_ALIAS: ${{ secrets.PGS_KEY_ALIAS }}
-          PGS_KEY_PASSWORD: ${{ secrets.PGS_KEY_PASSWORD }}
-          PGS_STORE_PASSWORD: ${{ secrets.PGS_STORE_PASSWORD }}
-          PGS_PUBLISH_REQUESTED: ${{ inputs.publish }}
-          PGS_PUBLISH_ENABLED: ${{ vars.PGS_PUBLISH_ENABLED }}
-        run: |
-          $missing = @()
-          foreach ($name in @('PGS_INPUT_URL','PGS_KEYSTORE_BASE64','PGS_KEY_ALIAS','PGS_KEY_PASSWORD','PGS_STORE_PASSWORD')) {
-            if ([string]::IsNullOrWhiteSpace([Environment]::GetEnvironmentVariable($name))) { $missing += $name }
-          }
-          if ($missing.Count -gt 0) { throw ('Missing repository secrets: ' + ($missing -join ', ')) }
-          if ($env:RELEASE_TAG -notmatch '^v[0-9]+\.[0-9]+\.[0-9]+(?:-[A-Za-z0-9.-]+)?$') { throw 'Use a version tag such as v0.00.01' }
-          if (!(Test-Path -LiteralPath "docs/releases/$env:RELEASE_TAG.md")) { throw 'Release notes are missing for this tag' }
-          if ($env:PGS_PUBLISH_REQUESTED -eq 'true' -and ($env:PGS_PUBLISH_ENABLED -ne 'true' -or $env:GITHUB_REF -ne 'refs/heads/main')) { throw 'Publication requires main and PGS_PUBLISH_ENABLED=true' }
-          Write-Output 'PGS configuration present; no secret values displayed.'
       - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5
         with:
           python-version: '3.12'
@@ -93,6 +73,13 @@ jobs:
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
           python -B pgrazor/art_build.py --check
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+      - name: Validate release tag
+        shell: pwsh
+        env:
+          RELEASE_TAG: ${{ inputs.tag }}
+        run: |
+          if ($env:RELEASE_TAG -notmatch '^v[0-9]+\.[0-9]+\.[0-9]+(?:-[A-Za-z0-9.-]+)?$') { throw 'Use a version tag such as v0.1.0' }
+          if (!(Test-Path -LiteralPath "docs/releases/$env:RELEASE_TAG.md")) { throw "Add release notes in docs/releases/$env:RELEASE_TAG.md" }
       - name: Prepare pinned DEX test dependencies
         run: python -c "import sys; sys.path.insert(0, 'pgrazor'); import dex_bridges; dex_bridges.dependencies(download=True)"
       - run: python -B tools/check.py
@@ -102,8 +89,8 @@ jobs:
       - name: Prepare pinned input and signing key
         env:
           GITHUB_TOKEN: ${{ github.token }}
-          PGRAZOR_INPUT_URL: ${{ secrets.PGS_INPUT_URL }}
-          PGRAZOR_KEYSTORE_BASE64: ${{ secrets.PGS_KEYSTORE_BASE64 }}
+          PGRAZOR_INPUT_URL: ${{ secrets.PGRAZOR_INPUT_URL }}
+          PGRAZOR_KEYSTORE_BASE64: ${{ secrets.PGRAZOR_KEYSTORE_BASE64 }}
         run: python -B tools/private_input.py
       - name: Build playable package
         env:
@@ -130,11 +117,11 @@ jobs:
         run: python -B tools/verify_release.py dist/release --tag $env:RELEASE_TAG
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
-          name: PGS-android
+          name: PGRazor-android
           path: |
-            dist/release/PGS.apk
-            dist/release/PGS-Root.apk
-            dist/release/PGS-Root-module.zip
+            dist/release/PGRazor.apk
+            dist/release/PGRazor-Root.apk
+            dist/release/PGRazor-Root-module.zip
             dist/release/root-build-info.json
             dist/release/SHA256SUMS.txt
             dist/release/build-info.json
@@ -151,7 +138,7 @@ jobs:
           if (Test-Path -LiteralPath $keyPath) { Remove-Item -LiteralPath $keyPath }
   release:
     needs: build
-    if: inputs.publish == true && vars.PGS_PUBLISH_ENABLED == 'true' && github.ref == 'refs/heads/main'
+    if: inputs.publish == true
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -159,7 +146,7 @@ jobs:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
       - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
         with:
-          name: PGS-android
+          name: PGRazor-android
           path: release
       - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5
         with:
@@ -176,18 +163,17 @@ jobs:
           RELEASE_COMMIT: ${{ github.sha }}
         run: |
           cat "docs/releases/$RELEASE_TAG.md" docs/releases/footer.md > "$RUNNER_TEMP/release-notes.md"
-          assets=(release/PGS.apk release/PGS-Root.apk release/PGS-Root-module.zip release/SHA256SUMS.txt release/build-info.json release/root-build-info.json)
+          assets=(release/PGRazor.apk release/PGRazor-Root.apk release/PGRazor-Root-module.zip release/SHA256SUMS.txt release/build-info.json release/root-build-info.json)
           highlight="docs/releases/$RELEASE_TAG-quick-menu.png"
           if [ -f "$highlight" ]; then
             cp "$highlight" release/release-highlight.png
             assets+=(release/release-highlight.png)
           fi
-          gh release create "$RELEASE_TAG" "${assets[@]}" --target "$RELEASE_COMMIT" --title "PGS $RELEASE_TAG" --latest --notes-file "$RUNNER_TEMP/release-notes.md"
+          gh release create "$RELEASE_TAG" "${assets[@]}" --target "$RELEASE_COMMIT" --title "PGRazor $RELEASE_TAG" --latest --notes-file "$RUNNER_TEMP/release-notes.md"
   discord:
-    if: vars.PGS_DISCORD_ENABLED == 'true'
     needs: release
     uses: ./.github/workflows/discord-release.yml
     with:
       tag: ${{ inputs.tag }}
     secrets:
-      PGS_DISCORD_RELEASE_WEBHOOK: ${{ secrets.PGS_DISCORD_RELEASE_WEBHOOK }}
+      DISCORD_RELEASE_WEBHOOK: ${{ secrets.DISCORD_RELEASE_WEBHOOK }}

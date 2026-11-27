@@ -224,7 +224,7 @@ def package(source, download=False, installer=True):
     }
     module.update(capability_module_entries())
     for abi in ABIS: module[f'zygisk/{abi}.so'] = build_loader(abi, folder / f'loader-{abi}.so')
-    module_zip = write_zip(folder / f'PGS-Root-module-{version}.zip', module)
+    module_zip = write_zip(folder / f'PGRazor-Root-module-{version}.zip', module)
 
     report = {'version': version, 'target': target, 'module': str(module_zip), 'module_sha256': runtime_assets.sha256(module_zip),
               'dex_sha256': runtime_assets.sha256(dex), 'payload_sha256': runtime_assets.sha256(payload),
@@ -259,15 +259,15 @@ def main(argv=None):
     report, _ = package(args.source, download=args.download, installer=not args.module_only)
     if args.output:
         args.output.mkdir(parents=True, exist_ok=True)
-        shutil.copyfile(report['installer'], args.output / 'PGS-Root.apk')
-        shutil.copyfile(report['module'], args.output / 'PGS-Root-module.zip')
+        shutil.copyfile(report['installer'], args.output / 'PGRazor-Root.apk')
+        shutil.copyfile(report['module'], args.output / 'PGRazor-Root-module.zip')
         public = {key: report[key] for key in ('version', 'target', 'module_sha256', 'installer_sha256', 'abis')}
         (args.output / 'root-build-info.json').write_text(json.dumps(public, indent=2) + '\n', encoding='utf-8')
         sums = args.output / 'SHA256SUMS.txt'
         lines = sums.read_text(encoding='utf-8').splitlines() if sums.exists() else []
-        lines = [line for line in lines if not line.endswith(('  PGS-Root.apk', '  PGS-Root-module.zip'))]
-        lines.append(report['installer_sha256'] + '  PGS-Root.apk')
-        lines.append(report['module_sha256'] + '  PGS-Root-module.zip')
+        lines = [line for line in lines if not line.endswith(('  PGRazor-Root.apk', '  PGRazor-Root-module.zip'))]
+        lines.append(report['installer_sha256'] + '  PGRazor-Root.apk')
+        lines.append(report['module_sha256'] + '  PGRazor-Root-module.zip')
         sums.write_text('\n'.join(lines) + '\n', encoding='utf-8')
 
 

@@ -7,10 +7,10 @@ export default function GetStarted() {
       <div className="section__head">
         <p className="section__num">03 / Get started</p>
         <h2 id="get-started-heading" className="section__title">
-          Upstream installation reference
+          Three steps to your first session.
         </h2>
         <p className="section__lead">
-          These steps describe the upstream PGRazor release. PGS is still in development and has no validated APK.
+          Every release ships with a changelog, a SHA-256 checksum, and build information.
         </p>
       </div>
 
@@ -26,17 +26,17 @@ export default function GetStarted() {
 
       <div className="cta">
         <a className="btn btn--primary" href={links.releasesLatest}>
-          View PGS release status
+          Get the latest release
           <ArrowIcon />
         </a>
         <a className="btn btn--ghost" href={links.discord}>
-          Upstream Discord
+          Join the Discord
         </a>
       </div>
 
       <p className="cta__release">
-        <span className="cta__badge">Upstream reference</span>
-        The upstream{' '}
+        <span className="cta__badge">Stable</span>
+        The published{' '}
         <a href={links.releasesCurrent}>v0.3.0 release</a> adds Auto Throw with catch on map,
         Auto-Raid and the experimental PGRazor Root installer.
       </p>

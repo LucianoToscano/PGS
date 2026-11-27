@@ -36,38 +36,13 @@ jobs:
       - run: python -B tools/check.py
       - name: Compile Android controls (not a playable game build)
         run: python -B pgrazor/build.py
-      - name: Verify standalone preview package
-        shell: pwsh
-        run: |
-          $apk = 'pgrazor/build/pgs-preview.apk'
-          $sdk = $env:ANDROID_SDK_ROOT
-          if (!$sdk) { $sdk = $env:ANDROID_HOME }
-          $tools = Join-Path $sdk 'build-tools/36.0.0'
-          & (Join-Path $tools 'apksigner.bat') verify $apk
-          if ($LASTEXITCODE -ne 0) { throw 'Preview signature verification failed' }
-          $badging = & (Join-Path $tools 'aapt.exe') dump badging $apk
-          if ($LASTEXITCODE -ne 0 -or !($badging -match "^package: name='dev\.pgs\.preview' ")) { throw 'Unexpected preview package' }
-          New-Item -ItemType Directory -Force dist/preview | Out-Null
-          Copy-Item -LiteralPath $apk -Destination dist/preview/pgs-preview.apk
-          $hash = (Get-FileHash -Algorithm SHA256 dist/preview/pgs-preview.apk).Hash.ToLowerInvariant()
-          Set-Content -LiteralPath dist/preview/SHA256SUMS.txt -Encoding ascii -Value "$hash  pgs-preview.apk"
-          Set-Content -LiteralPath dist/preview/SOURCE_COMMIT.txt -Encoding ascii -Value $env:GITHUB_SHA
-          Add-Content -LiteralPath $env:GITHUB_STEP_SUMMARY -Value "Standalone PGS preview verified (not the game). SHA-256: $hash"
-      - name: Upload preview for explicit manual test
-        if: github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main' && vars.PGS_PREVIEW_ARTIFACT_ENABLED == 'true'
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
-        with:
-          name: PGS-preview-test
-          path: dist/preview/
-          if-no-files-found: error
-          retention-days: 3
       - name: Compile Root installer (no game input or signing secrets)
         run: python -B pgrazor/rooted_installer.py --check
       - name: Package source and tools only
         run: python -B tools/source_bundle.py
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
-          name: PGS-source-tools
-          path: dist/PGS-source-tools.zip
+          name: PGRazor-source-tools
+          path: dist/PGRazor-source-tools.zip
           if-no-files-found: error
           retention-days: 14

@@ -47,7 +47,7 @@ export default function Header({ theme, onToggleTheme, onGuide = false }) {
       <div className="site-header__inner">
         <a className="brand" href={brandHref}>
           <img className="brand__mark" src={asset('logo.svg')} alt="" width="28" height="28" />
-          <span className="brand__name">PGS</span>
+          <span className="brand__name">PGRazor</span>
         </a>
 
         <nav

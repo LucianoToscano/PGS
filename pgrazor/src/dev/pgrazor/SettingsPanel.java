@@ -205,7 +205,7 @@ final class SettingsPanel {
     /** A clean close affix: a small X drawn inside a 48dp hitbox. */
     private final class CloseIcon extends View {
         private final Paint paint=new Paint(Paint.ANTI_ALIAS_FLAG);
-        CloseIcon(Context c){super(c);setContentDescription("Close PGS settings");setFocusable(true);setClickable(true);
+        CloseIcon(Context c){super(c);setContentDescription("Close PGRazor settings");setFocusable(true);setClickable(true);
             setBackground(new android.graphics.drawable.RippleDrawable(android.content.res.ColorStateList.valueOf(0x3345e1ba),null,rounded(0xffffffff,24)));}
         protected void onDraw(Canvas c){super.onDraw(c);float cx=getWidth()/2f,cy=getHeight()/2f,r=dp(8);paint.setStyle(Paint.Style.STROKE);paint.setStrokeCap(Paint.Cap.ROUND);paint.setStrokeWidth(dp(2));paint.setColor(muted());c.drawLine(cx-r,cy-r,cx+r,cy+r,paint);c.drawLine(cx-r,cy+r,cx+r,cy-r,paint);}
     }
@@ -275,7 +275,7 @@ final class SettingsPanel {
         LinearLayout header = new LinearLayout(activity); header.setOrientation(LinearLayout.HORIZONTAL); header.setGravity(Gravity.CENTER_VERTICAL);
         backIcon = new BackIcon(activity); backIcon.setVisibility(View.GONE); header.addView(backIcon, new LinearLayout.LayoutParams(dp(48), dp(48)));
         backIcon.setOnClickListener(v -> open(-1));
-        title = text("PGS", 20, ink()); title.setTypeface(SettingsUi.medium()); title.setPadding(dp(4), 0, 0, 0);
+        title = text("PGRazor", 20, ink()); title.setTypeface(SettingsUi.medium()); title.setPadding(dp(4), 0, 0, 0);
         title.setSingleLine(true); title.setEllipsize(android.text.TextUtils.TruncateAt.END); title.setGravity(Gravity.CENTER_VERTICAL);
         header.addView(title, new LinearLayout.LayoutParams(0, dp(48), 1f));
         themeIcon = new ThemeIcon(activity); header.addView(themeIcon,new LinearLayout.LayoutParams(dp(44),dp(48)));
@@ -284,7 +284,7 @@ final class SettingsPanel {
         versionLabel.setTypeface(SettingsUi.mono());
         versionLabel.setSingleLine(true); versionLabel.setGravity(Gravity.CENTER_VERTICAL);
         versionLabel.setPadding(dp(4), 0, dp(6), 0);
-        versionLabel.setContentDescription("PGS version " + BuildVersion.NAME);
+        versionLabel.setContentDescription("PGRazor version " + BuildVersion.NAME);
         captions.add(versionLabel);
         header.addView(versionLabel, new LinearLayout.LayoutParams(-2, dp(48)));
         closeIcon = new CloseIcon(activity); header.addView(closeIcon, new LinearLayout.LayoutParams(dp(48), dp(48)));
@@ -321,7 +321,7 @@ final class SettingsPanel {
 
         discord = text("Join our Discord", 12, accent());
         discord.setGravity(Gravity.CENTER); discord.setMinimumHeight(dp(44));
-        discord.setContentDescription("Join the upstream PGRazor Discord community");
+        discord.setContentDescription("Join the PGRazor Discord community");
         discord.setClickable(true); discord.setFocusable(true);
         discord.setBackground(SettingsUi.pressable(activity));
         content.addView(discord, new LinearLayout.LayoutParams(-1,dp(44)));
@@ -439,7 +439,7 @@ final class SettingsPanel {
         encounterCounterSwitch.setOnCheckedChangeListener((v,checked) -> { if(checked==Control.encounterCounter())return; Control.setEncounterCounter(encounterCounterSwitch.isChecked()); host.refresh(); });
         encounterOverlaySwitch = switchRow(encounters, "Show the count on the map"); encounterOverlaySwitch.setChecked(Control.encounterOverlay());
         encounterOverlaySwitch.setOnCheckedChangeListener((v,checked) -> { if(checked==Control.encounterOverlay())return; Control.setEncounterOverlay(encounterOverlaySwitch.isChecked()); host.refresh(); });
-        caption(encounters, "Wild Pokémon this account has encountered in the last 24 hours on this device while PGS was running, shown next to the PGS title. Encounters made elsewhere, and lure, incense, raid and research encounters, are not counted.");
+        caption(encounters, "Wild Pokémon this account has encountered in the last 24 hours on this device while PGRazor was running, shown next to the PGRazor title. Encounters made elsewhere, and lure, incense, raid and research encounters, are not counted.");
     }
 
     private void buildCatchingPage() {
@@ -706,7 +706,7 @@ final class SettingsPanel {
         battleChoice(maxC,5,"Auto charged attack");
         battleChoice(maxC,6,"Auto Max attack");
         battleChoice(maxC,9,"Auto dodge");
-        caption(maxC,"Automatically moves toward nearby Max energy orbs during battle while PGS is active.");
+        caption(maxC,"Automatically moves toward nearby Max energy orbs during battle while PGRazor is active.");
         battleStatus = caption(battleC, "");
     }
 

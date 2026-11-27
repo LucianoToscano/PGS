@@ -1,7 +1,7 @@
 # PGRazor Root installer (`dev.pgrazor.root`)
 
 Standalone Android installer APK that carries the PGRazor Root Zygisk module in its assets and
-installs it with the phone's root manager. It is the rooted counterpart of the patched `PGS.apk`;
+installs it with the phone's root manager. It is the rooted counterpart of the patched `PGRazor.apk`;
 users who are not rooted keep using the patched APK.
 
 ## What it does

@@ -55,7 +55,7 @@ def main(argv=None):
     args=parser.parse_args(argv)
     try: files=select_files(ROOT,args.include_working_tree)
     except ValueError as error: parser.exit(1,str(error)+'\n')
-    output=ROOT/'dist/PGS-source-tools.zip';output.parent.mkdir(exist_ok=True)
+    output=ROOT/'dist/PGRazor-source-tools.zip';output.parent.mkdir(exist_ok=True)
     with zipfile.ZipFile(output,'w',zipfile.ZIP_DEFLATED) as archive:
         for full,name in files: archive.write(full,name)
     print('Source/tools archive:',output)

@@ -36,7 +36,7 @@ export default function GuideIndex() {
           Feature guides
         </h1>
         <p className="section__lead">
-          Upstream PGRazor reference guides for catching, location, automation, and
+          Step-by-step how-tos for PGRazor’s catching, location, automation, and
           personalisation features. Open any guide for where to find the option and how to use it.
         </p>
       </div>

@@ -38,19 +38,19 @@ import org.json.JSONObject;
  * settings home; tapping it downloads this build's release file and checks it against the release's
  * SHA256SUMS.txt before anything is installed.
  *
- * Each build takes its own file. The patched app downloads PGS.apk and hands it to the system
+ * Each build takes its own file. The patched app downloads PGRazor.apk and hands it to the system
  * installer itself; Android asks the player to confirm unless it allows this app to update itself
  * silently (Android 12+, once an earlier update was installed this way). PGRazor Root runs inside the
  * official game, which Android does not let install packages, so it has the system download manager
- * fetch PGS-Root.apk, checks it the same way, and leaves the install to the download notification;
+ * fetch PGRazor-Root.apk, checks it the same way, and leaves the install to the download notification;
  * the player then opens the installer and taps Install as for a first setup. A patched build made
- * before the install permission was packaged updates the same way with PGS.apk.
+ * before the install permission was packaged updates the same way with PGRazor.apk.
  */
 final class Updater {
     private Updater() {}
 
-    private static final String LATEST = "https://api.github.com/repos/LucianoToscano/PGS/releases/latest";
-    private static final String RELEASES = "https://github.com/LucianoToscano/PGS/releases/latest";
+    private static final String LATEST = "https://api.github.com/repos/jpitty03/PGRazor/releases/latest";
+    private static final String RELEASES = "https://github.com/jpitty03/PGRazor/releases/latest";
     private static final String STATUS_ACTION = "dev.pgrazor.UPDATE_STATUS";
     private static final String INSTALL_PERMISSION = "android.permission.REQUEST_INSTALL_PACKAGES";
 
@@ -138,7 +138,7 @@ final class Updater {
                     else if (name.equals("SHA256SUMS.txt")) sums = url;
                 }
                 String page = release.optString("html_url", "");
-                if (!page.startsWith("https://github.com/LucianoToscano/PGS/")) page = RELEASES;
+                if (!page.startsWith("https://github.com/jpitty03/PGRazor/")) page = RELEASES;
                 // A release still uploading its files is offered on a later check.
                 if (apk.isEmpty()) return;
                 tag = latest; pageUrl = page; apkUrl = apk; sumsUrl = sums; size = bytes; note = ""; asset = wanted;

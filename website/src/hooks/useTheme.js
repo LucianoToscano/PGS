@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
 
-const STORAGE_KEY = 'pgs-theme';
+const STORAGE_KEY = 'pgrazor-theme';
 
 // The inline script in index.html sets data-theme before paint (default dark),
 // so we read it back here to keep React in sync without causing a flash.

@@ -2,10 +2,10 @@
 // edits (wording, new settings, extra screenshots) never touch layout code.
 
 export const links = {
-  releasesLatest: 'https://github.com/LucianoToscano/PGS/releases',
+  releasesLatest: 'https://github.com/jpitty03/PGRazor/releases/latest',
   releasesCurrent:
     'https://github.com/jpitty03/PGRazor/releases/tag/v0.3.0',
-  github: 'https://github.com/LucianoToscano/PGS',
+  github: 'https://github.com/jpitty03/PGRazor',
   discord: 'https://discord.gg/9QqfkDSQX3',
   kofi: 'https://ko-fi.com/pgrazor',
 };
@@ -109,7 +109,7 @@ export const steps = [
   {
     n: '01',
     title: 'Download',
-    body: 'For upstream reference only, open a PGRazor release and download PGRazor.apk — not a source archive, and not the Root files unless your device is rooted.',
+    body: 'Open the latest release and download PGRazor.apk — not a source archive, and not the Root files unless your device is rooted.',
   },
   {
     n: '02',

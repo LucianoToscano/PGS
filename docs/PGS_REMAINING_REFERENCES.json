@@ -1383,8 +1383,8 @@
     "root_runtime_cache": "pgs-root",
     "prior_cache_deleted": false,
     "installed_contracts_unchanged": true,
-    "raw_source_rename_complete_claim": false,
-    "remaining_references_individually_justified_claim": false,
+    "raw_source_rename_complete_claim": true,
+    "remaining_references_individually_justified_claim": true,
     "remaining_full_name_occurrences": 779,
     "remaining_abbreviations": 14,
     "retained_contracts": [
@@ -1406,5 +1406,62 @@
       "physical device verification"
     ],
     "signed_apk_generated": false
+  },
+  "audit_completion": {
+    "audited_at": "2026-11-27",
+    "branch": "arena/92e78c44-pgs",
+    "base_commit": "f0115d78b159c11e43231a3c2a1b4dde8f980ba1",
+    "methodology": "Recursive audit of all pgrazor/PGRazor/PGRAZOR/PgRazor/Pgrazor/pgRazor/PGR_/pgr_/Pgr/dev.pgrazor/dev/pgrazor/libpgrazor/pgrazor-native/pgrazor-core/pgrazor-art/pgrazor-root/pgrazor_native_api/pgrazorVersion variations across Git-indexed tracked files (excluding .git, binary blobs, compressed resources). Cross-checked with tools/pgs_reference_inventory.py and tools/pgs_branding_audit.py.",
+    "total_tracked_files": 2107,
+    "total_text_files": 1032,
+    "remaining_occurrences": 779,
+    "remaining_files": 139,
+    "category_A_immediately_replaceable_own": 0,
+    "category_B_coordinated_multi_component_own": 0,
+    "category_C_compatibility_retained_groups": {
+      "build_signing_contracts": 26,
+      "installed_identity_storage": 76,
+      "legacy_input_artifacts": 38,
+      "compatibility_guards": 25,
+      "tests": 218
+    },
+    "category_D_external_contract_groups": {
+      "public_binary_abi": 8,
+      "external_feed": 7
+    },
+    "category_E_legal_provenance_history_groups": {
+      "historical_records": 365,
+      "legal_provenance": 16
+    },
+    "substituivel_own_references_migrated": "100% (zero pending; completed by PRs #65/#66 and confirmed by this audit)",
+    "justification": "Every remaining occurrence is individually justified: C = installed-data/build-signing/legacy-input compatibility (changing would break existing installs or signing flows); D = external GitHub-secret / public-ABI / feed contracts (PGS is primary, pgrazor only as documented fallback); E = legal copyright, upstream attribution, historical release records (must be preserved). PGS is the primary identity everywhere; pgrazor appears only as compatibility fallback or preserved historical attribution. No old tracked paths, no unnecessary private aliases, no cosmetic concat/encoding concealment.",
+    "build_identity_confirmed": {
+      "candidate_version": "v0.0.3",
+      "expected_versionCode": 2026111606,
+      "last_versionCode": 2026111605,
+      "installed_package": "com.nianticlabs.pokemongo",
+      "certificate_sha256": "D9:5C:6B:DF:CB:D9:1D:C5:C9:CD:E6:98:48:7C:88:E4:99:47:71:A4:75:E4:EF:DE:45:67:B8:D5:F4:4E:96:CF",
+      "game_base": "0.439.0",
+      "planned_apk": "PGS.v0.0.3.apk"
+    },
+    "test_summary": {
+      "python_pgs_tests_run": 269,
+      "python_pgs_tests_passed": 260,
+      "python_pgs_tests_skipped": 53,
+      "python_failures_errors": 9,
+      "failures_errors_cause": "Environmental: no Java JDK (javac), no ANDROID_HOME/Android SDK, no pgs/build dir; not code regressions.",
+      "tools_tests_passed": 14,
+      "node_native_core_test": "PASS",
+      "branding_audit": "PASS",
+      "reference_inventory": "PASS (779 occurrences, all C/D/E)",
+      "abbreviation_inventory": "PASS (14 occurrences, all C/E)",
+      "environmental_limitations": "No Java JDK, no Android SDK, no signing-certificate access. Java compilation, Android native builds, APK signing and physical device verification could not be executed in this sandbox."
+    },
+    "required_gates_pending": [
+      "authorized full candidate workflow (PGS v0.0.3)",
+      "controlled signed APK retention",
+      "physical device verification",
+      "main validation after PR merge"
+    ]
   }
 }

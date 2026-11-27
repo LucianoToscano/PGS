@@ -29,6 +29,10 @@ jobs:
       PGRAZOR_STORE_PASSWORD: ${{ secrets.PGRAZOR_STORE_PASSWORD }}
       PGRAZOR_KEY_PASSWORD: ${{ secrets.PGRAZOR_KEY_PASSWORD }}
     steps:
+      - name: Reject upstream PGRazor release workflow in PGS
+        if: github.repository == 'LucianoToscano/PGS'
+        run: |
+          throw 'PGS requires a dedicated full release workflow with PGS signing and PGS.apk verification.'
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
         with:
           persist-credentials: false

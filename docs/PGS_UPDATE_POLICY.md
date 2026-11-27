@@ -27,3 +27,11 @@ O último código instalado conhecido é registrado em [`pgrazor/PGS_LAST_VERSIO
 4. Confirme instalação e login em dispositivo real. Uma compilação aprovada **não** comprova funcionamento do jogo.
 
 A versão v0.3.8-pgs.3 foi gerada e assinada em [GitHub Actions #45963966748](https://github.com/LucianoToscano/PGS/actions/runs/45963966748), com SHA-256 `1e42c50f84afe5edf9570dfa808ba5e4be99b64d3ae28199b7316981c7414d4c`. É uma versão inicial limpa para quem já desinstalou a antiga. Não foi testada no aparelho do usuário.
+
+## Proteção do caminho de release completo
+
+O código `pgrazor/release_apk.py` agora distingue o PGS pelo seu ledger `PGS_LAST_VERSION_CODE`: exige a variável `PGRAZOR_KEYSTORE` apontando para a chave existente, gera `PGS.apk` e rejeita o binário se o SHA-256 do certificado não for o definido para PGS. O fluxo original continua usando `PGRazor.apk` quando o ledger não existe.
+
+O workflow herdado `Android release (non-root and rooted)` está **explicitamente bloqueado no repositório PGS**, porque ainda é específico do PGRazor e não deve publicar pacotes com nomes ou segredos de assinatura misturados. O build de versão completa do PGS deverá ter seu próprio workflow validado antes de uma publicação. O bloqueio não modifica nem elimina o instalador v0.3.8-pgs.3 já assinado.
+
+Os testes automatizados cobrem a recusa de chaves ausentes, de `versionCode` inválido e de certificados divergentes. **Eles não substituem a validação de uma build completa e sua instalação física.**

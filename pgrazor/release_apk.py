@@ -98,6 +98,30 @@ def merge(apks, output, *, pgs_previous_version_code=None):
         if 'lib/arm64-v8a/libil2cpp.so' not in seen: raise ValueError('Game runtime missing')
 
 
+def release_identity(ledger):
+    """PGS releases require the existing keystore and keep the PGS filename."""
+    ledger = Path(ledger)
+    if not ledger.is_file():
+        return 'PGRazor.apk', None
+    if not os.environ.get('PGRAZOR_KEYSTORE'):
+        raise RuntimeError('Existing PGS release keystore is required; development signing is forbidden')
+    from pgs_update import MAX_VERSION_CODE
+    previous_code = int(ledger.read_text(encoding='utf-8').strip())
+    if not 1 <= previous_code < MAX_VERSION_CODE:
+        raise ValueError('Invalid recorded PGS versionCode')
+    return 'PGS.apk', previous_code
+
+
+def verify_pgs_release_signer(apk, is_pgs):
+    """Fail closed if a complete PGS build has another signing certificate."""
+    if not is_pgs:
+        return
+    from pgs_update import PGS_SIGNER, cert_digests
+    if cert_digests(apk) != [PGS_SIGNER]:
+        Path(apk).unlink(missing_ok=True)
+        raise RuntimeError('Signed PGS APK certificate mismatch; release blocked')
+
+
 def release(run, destination):
     run = Path(run).resolve(); destination = Path(destination).resolve()
     report = json.loads((run/'report.json').read_text(encoding='utf8'))
@@ -112,22 +136,23 @@ def release(run, destination):
     game_code = identity.get('versionCode')
     if not isinstance(game_version, str) or not game_version or not isinstance(game_code, int):
         raise ValueError('Base game must declare versionName and numeric versionCode')
-    destination.mkdir(parents=True, exist_ok=True)
-    unsigned, aligned, signed = (destination/name for name in ('unsigned.apk', 'aligned.apk', 'PGRazor.apk'))
-    # A PGS-only version ledger is intentionally absent in upstream PGRazor.
-    # Future PGS releases always exceed the last PGS Android versionCode.
+    # Upstream PGRazor has no PGS ledger; the original release name is unchanged there.
+    # PGS must retain its own version ledger, output filename and signing identity.
     ledger = Path(__file__).resolve().parent / 'PGS_LAST_VERSION_CODE'
-    previous_pgs_version = None
-    if ledger.is_file():
-        previous_pgs_version = int(ledger.read_text(encoding='utf-8').strip())
+    output_name, previous_pgs_version = release_identity(ledger)
+    destination.mkdir(parents=True, exist_ok=True)
+    unsigned = destination / 'unsigned.apk'
+    aligned = destination / 'aligned.apk'
+    signed = destination / output_name
     merge(apks, unsigned, pgs_previous_version_code=previous_pgs_version)
     with zipfile.ZipFile(unsigned) as preview:
         apk_version_code = axml.inspect_manifest(preview.read('AndroidManifest.xml'))['versionCode']
     nonroot.command(build.android_tool('zipalign'), '-f', '-P', '16', '4', unsigned, aligned)
     nonroot.command(build.android_tool('apksigner'), 'sign', *build.signing_args(), '--out', signed, aligned)
     nonroot.command(build.android_tool('apksigner'), 'verify', signed)
+    verify_pgs_release_signer(signed, previous_pgs_version is not None)
     nonroot.command(build.android_tool('zipalign'), '-c', '-P', '16', '4', signed)
-    (destination/'SHA256SUMS.txt').write_text(runtime_assets.sha256(signed)+'  PGRazor.apk\n', encoding='utf8')
+    (destination/'SHA256SUMS.txt').write_text(runtime_assets.sha256(signed)+'  '+signed.name+'\n', encoding='utf8')
     (destination/'build-info.json').write_text(json.dumps({'game_version':game_version,'game_version_code':game_code,'apk_version_code':apk_version_code,'architecture':'arm64-v8a','hook_runtime_architectures':report.get('runtime_abis',[report.get('runtime_abi','arm64-v8a')]),'input_sha256':report['input_sha256'],'apk_sha256':runtime_assets.sha256(signed),'source_commit':os.environ.get('GITHUB_SHA'),'device_tested':False},indent=2)+'\n',encoding='utf8')
     unsigned.unlink(); aligned.unlink()
     print('Release candidate:', signed)

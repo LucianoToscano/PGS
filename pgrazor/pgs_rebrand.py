@@ -138,7 +138,7 @@ def candidate(source: Path, controls: Path, output: Path) -> dict:
     with zipfile.ZipFile(source) as old, zipfile.ZipFile(output) as new:
         after = axml.inspect_manifest(new.read("AndroidManifest.xml"))
         old_names = {n for n in old.namelist() if not nonroot.signature_entry(n)}
-        new_names = set(new.namelist())
+        new_names = {n for n in new.namelist() if not nonroot.signature_entry(n)}
         if (new.testzip() is not None or new_names != old_names
                 or after["package"] != before["package"]
                 or after["versionCode"] != TARGET_VERSION_CODE
@@ -179,7 +179,7 @@ def main():
     parser.add_argument("--output", type=Path, default=Path("dist/PGS") / TARGET_NAME)
     args = parser.parse_args()
     report = candidate(args.source, args.controls, args.output)
-    args.output.with_suffix(".json").write_text(
+    (args.output.parent / "PGS.json").write_text(
         json.dumps(report, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
     (args.output.parent / "SHA256SUMS.txt").write_text(
         report["sha256"] + "  " + args.output.name + "\n", encoding="utf-8")

@@ -1,0 +1,19 @@
+{
+  "name": "pgs-hundo-feed",
+  "main": "worker.mjs",
+  "compatibility_date": "2026-11-01",
+  "workers_dev": true,
+  "triggers": {
+    "crons": [
+      "*/5 * * * *"
+    ]
+  },
+  "kv_namespaces": [
+    {
+      "binding": "FEED"
+    }
+  ],
+  "observability": {
+    "enabled": false
+  }
+}

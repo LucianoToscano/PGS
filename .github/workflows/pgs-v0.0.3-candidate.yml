@@ -35,11 +35,11 @@ jobs:
           python -B -c "import sys; sys.path.insert(0, 'tools'); from game_update import current_profile; p=current_profile(); assert p['game_version']=='0.439.0' and p['version_code']==2026111602"
       - name: Check required private configuration before installing tools
         env:
-          PGS_INPUT_URL: ${{ secrets.PGS_INPUT_URL || secrets.PGRAZOR_INPUT_URL }}
-          PGS_KEYSTORE_BASE64: ${{ secrets.PGS_KEYSTORE_BASE64 || secrets.PGRAZOR_KEYSTORE_BASE64 }}
-          PGS_KEY_ALIAS: ${{ secrets.PGS_KEY_ALIAS || secrets.PGRAZOR_KEY_ALIAS }}
-          PGS_STORE_PASSWORD: ${{ secrets.PGS_STORE_PASSWORD || secrets.PGRAZOR_STORE_PASSWORD }}
-          PGS_KEY_PASSWORD: ${{ secrets.PGS_KEY_PASSWORD || secrets.PGRAZOR_KEY_PASSWORD }}
+          PGS_INPUT_URL: ${{ secrets.PGS_INPUT_URL || secrets.PGS_INPUT_URL }}
+          PGS_KEYSTORE_BASE64: ${{ secrets.PGS_KEYSTORE_BASE64 || secrets.PGS_KEYSTORE_BASE64 }}
+          PGS_KEY_ALIAS: ${{ secrets.PGS_KEY_ALIAS || secrets.PGS_KEY_ALIAS }}
+          PGS_STORE_PASSWORD: ${{ secrets.PGS_STORE_PASSWORD || secrets.PGS_STORE_PASSWORD }}
+          PGS_KEY_PASSWORD: ${{ secrets.PGS_KEY_PASSWORD || secrets.PGS_KEY_PASSWORD }}
         shell: bash
         run: |
           set -euo pipefail

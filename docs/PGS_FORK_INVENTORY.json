@@ -1,6 +1,6 @@
 {
   "reviewed_on": "2026-11-27",
-  "upstream": "jpitty03/PGRazor",
+  "upstream": "jpitty03/PGS",
   "base_commit": "1106592aa045759f55f594ff6968f783ff636fe9",
   "scope": "History comparison of all 78 visible branches; source review of selected divergent changes. This is not a line-by-line security review of every fork.",
   "counts": {
@@ -16,7 +16,7 @@
   },
   "repositories": [
     {
-      "repo": "ReneeAraujo/PGRazor",
+      "repo": "ReneeAraujo/PGS",
       "refs": [
         {
           "name": "main",
@@ -27,7 +27,7 @@
       ]
     },
     {
-      "repo": "celestialeye/PGRazor",
+      "repo": "celestialeye/PGS",
       "refs": [
         {
           "name": "main",
@@ -38,7 +38,7 @@
       ]
     },
     {
-      "repo": "JxstMichie/PGRazor",
+      "repo": "JxstMichie/PGS",
       "refs": [
         {
           "name": "main",
@@ -49,7 +49,7 @@
       ]
     },
     {
-      "repo": "vantrox/PGRazor",
+      "repo": "vantrox/PGS",
       "refs": [
         {
           "name": "main",
@@ -60,7 +60,7 @@
       ]
     },
     {
-      "repo": "Axe2230/PGRazor",
+      "repo": "Axe2230/PGS",
       "refs": [
         {
           "name": "main",
@@ -71,7 +71,7 @@
       ]
     },
     {
-      "repo": "arisuryohei911-dot/PGRazor",
+      "repo": "arisuryohei911-dot/PGS",
       "refs": [
         {
           "name": "main",
@@ -82,7 +82,7 @@
       ]
     },
     {
-      "repo": "kunal2801/PGRazor",
+      "repo": "kunal2801/PGS",
       "refs": [
         {
           "name": "main",
@@ -93,7 +93,7 @@
       ]
     },
     {
-      "repo": "belalsalah74/PGRazor",
+      "repo": "belalsalah74/PGS",
       "refs": [
         {
           "name": "feature/auto-max-battle-and-apk-build",
@@ -110,7 +110,7 @@
       ]
     },
     {
-      "repo": "DevPGSV/PGRazor",
+      "repo": "DevPGSV/PGS",
       "refs": [
         {
           "name": "dev",
@@ -175,7 +175,7 @@
       ]
     },
     {
-      "repo": "yaboi-zombies/PGRazor",
+      "repo": "yaboi-zombies/PGS",
       "refs": [
         {
           "name": "feature/device-regression",
@@ -222,7 +222,7 @@
       ]
     },
     {
-      "repo": "randrew87/PGRazorX",
+      "repo": "randrew87/PGSX",
       "refs": [
         {
           "name": "contrib/mejoras-adicionales",
@@ -245,7 +245,7 @@
       ]
     },
     {
-      "repo": "Petit-Prince-dev/PGRazor",
+      "repo": "Petit-Prince-dev/PGS",
       "refs": [
         {
           "name": "feat/ecran-eteint-et-francais",
@@ -298,7 +298,7 @@
       ]
     },
     {
-      "repo": "dhanush-c-c/PGRazor",
+      "repo": "dhanush-c-c/PGS",
       "refs": [
         {
           "name": "feature/interface-redesign",
@@ -321,7 +321,7 @@
       ]
     },
     {
-      "repo": "gloiae/PGRazor",
+      "repo": "gloiae/PGS",
       "refs": [
         {
           "name": "main",
@@ -332,7 +332,7 @@
       ]
     },
     {
-      "repo": "ToxSylph/PGRazor",
+      "repo": "ToxSylph/PGS",
       "refs": [
         {
           "name": "feature/native-runtime-migration",
@@ -355,7 +355,7 @@
       ]
     },
     {
-      "repo": "Benjaminlooi/PGRazor",
+      "repo": "Benjaminlooi/PGS",
       "refs": [
         {
           "name": "codex/fix-vector-art-hook-chain",
@@ -408,7 +408,7 @@
       ]
     },
     {
-      "repo": "gv2598/PGRazor",
+      "repo": "gv2598/PGS",
       "refs": [
         {
           "name": "main",
@@ -419,7 +419,7 @@
       ]
     },
     {
-      "repo": "foxartic/PGRazor",
+      "repo": "foxartic/PGS",
       "refs": [
         {
           "name": "main",
@@ -430,7 +430,7 @@
       ]
     },
     {
-      "repo": "ar5hil/PGRazor",
+      "repo": "ar5hil/PGS",
       "refs": [
         {
           "name": "Rasiel",
@@ -447,7 +447,7 @@
       ]
     },
     {
-      "repo": "privacyportalUK/pgrazor",
+      "repo": "privacyportalUK/pgs",
       "refs": [
         {
           "name": "main",
@@ -458,7 +458,7 @@
       ]
     },
     {
-      "repo": "Fixuuu/PGRazor",
+      "repo": "Fixuuu/PGS",
       "refs": [
         {
           "name": "feature/device-regression",
@@ -523,7 +523,7 @@
       ]
     },
     {
-      "repo": "7sarus/PGRazor",
+      "repo": "7sarus/PGS",
       "refs": [
         {
           "name": "feature/joystick-lock",
@@ -558,7 +558,7 @@
       ]
     },
     {
-      "repo": "Archit-barge/PGRazortrial",
+      "repo": "Archit-barge/PGStrial",
       "refs": [
         {
           "name": "main",
@@ -569,7 +569,7 @@
       ]
     },
     {
-      "repo": "dojistarman/PGRazor-Savant",
+      "repo": "dojistarman/PGS-Savant",
       "refs": [
         {
           "name": "codex/pvp-root-integration",
@@ -586,7 +586,7 @@
       ]
     },
     {
-      "repo": "NPSummers/PGRazor-Aureal",
+      "repo": "NPSummers/PGS-Aureal",
       "refs": [
         {
           "name": "main",
@@ -597,7 +597,7 @@
       ]
     },
     {
-      "repo": "hugoalves6/PGRazor_Pokematrix",
+      "repo": "hugoalves6/PGS_Pokematrix",
       "refs": [
         {
           "name": "main",
@@ -608,7 +608,7 @@
       ]
     },
     {
-      "repo": "sreenushenoy07/PGRazor-Rooted",
+      "repo": "sreenushenoy07/PGS-Rooted",
       "refs": {
         "content": [
           {
@@ -640,7 +640,7 @@
       ]
     },
     {
-      "repo": "sreenushenoy/PGRazor-root",
+      "repo": "sreenushenoy/PGS-root",
       "refs": {
         "content": [
           {

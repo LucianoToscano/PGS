@@ -11,11 +11,11 @@ class PgsLicenseTests(unittest.TestCase):
         text = (ROOT / "LICENSE").read_text(encoding="utf-8")
         self.assertTrue(text.startswith("MIT License\n"))
         self.assertIn("Copyright (c) 2026 PGS contributors\n", text)
-        self.assertIn("Copyright (c) 2026 PGRazor contributors\n", text)
+        self.assertNotIn("PGRazor", text)
         self.assertIn("The above copyright notice and this permission notice shall be included in all", text)
         self.assertIn('THE SOFTWARE IS PROVIDED "AS IS"', text)
         notice = (ROOT / "NOTICE").read_text(encoding="utf-8")
-        self.assertIn("https://github.com/jpitty03/PGRazor", notice)
+        self.assertNotIn("PGRazor", notice)
         self.assertIn("https://github.com/LucianoToscano/PGS", notice)
 
     def test_license_index_links_and_artwork_exclusions(self):

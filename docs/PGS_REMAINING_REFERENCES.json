@@ -5,216 +5,17 @@
   "changed_files": null,
   "added_files": null,
   "previous_occurrences": null,
-  "remaining_files": 74,
-  "remaining_occurrences": 499,
+  "remaining_files": 35,
+  "remaining_occurrences": 184,
   "remaining_by_category": {
-    "documentation": 207,
-    "legal": 3,
-    "other": 16,
-    "release_history": 103,
-    "tests": 165,
-    "workflows": 5
+    "other": 14,
+    "tests": 170
   },
   "files": [
-    {
-      "path": ".github/workflows/pgs-v0.0.3-candidate.yml",
-      "category": "workflows",
-      "occurrences": 5
-    },
     {
       "path": ".gitignore",
       "category": "other",
       "occurrences": 1
-    },
-    {
-      "path": "LICENSE",
-      "category": "legal",
-      "occurrences": 1
-    },
-    {
-      "path": "NOTICE",
-      "category": "legal",
-      "occurrences": 2
-    },
-    {
-      "path": "docs/NATIVE_MIGRATION.md",
-      "category": "documentation",
-      "occurrences": 11
-    },
-    {
-      "path": "docs/PGS_COMMUNITY_REVIEW.md",
-      "category": "documentation",
-      "occurrences": 42
-    },
-    {
-      "path": "docs/PGS_FORK_INVENTORY.json",
-      "category": "documentation",
-      "occurrences": 29
-    },
-    {
-      "path": "docs/PGS_NATIVE_ALIAS_INVENTORY.json",
-      "category": "documentation",
-      "occurrences": 125
-    },
-    {
-      "path": "docs/releases/footer.md",
-      "category": "release_history",
-      "occurrences": 1
-    },
-    {
-      "path": "docs/releases/v0.0.1.md",
-      "category": "release_history",
-      "occurrences": 4
-    },
-    {
-      "path": "docs/releases/v0.1.0-alpha.3.md",
-      "category": "release_history",
-      "occurrences": 5
-    },
-    {
-      "path": "docs/releases/v0.1.0-alpha.4.md",
-      "category": "release_history",
-      "occurrences": 4
-    },
-    {
-      "path": "docs/releases/v0.1.0.md",
-      "category": "release_history",
-      "occurrences": 4
-    },
-    {
-      "path": "docs/releases/v0.1.1.md",
-      "category": "release_history",
-      "occurrences": 4
-    },
-    {
-      "path": "docs/releases/v0.1.10.md",
-      "category": "release_history",
-      "occurrences": 2
-    },
-    {
-      "path": "docs/releases/v0.1.2.md",
-      "category": "release_history",
-      "occurrences": 5
-    },
-    {
-      "path": "docs/releases/v0.1.3.md",
-      "category": "release_history",
-      "occurrences": 5
-    },
-    {
-      "path": "docs/releases/v0.1.4.md",
-      "category": "release_history",
-      "occurrences": 5
-    },
-    {
-      "path": "docs/releases/v0.1.5.md",
-      "category": "release_history",
-      "occurrences": 4
-    },
-    {
-      "path": "docs/releases/v0.1.6.md",
-      "category": "release_history",
-      "occurrences": 5
-    },
-    {
-      "path": "docs/releases/v0.1.7-experimental.1.md",
-      "category": "release_history",
-      "occurrences": 4
-    },
-    {
-      "path": "docs/releases/v0.1.7-experimental.2.md",
-      "category": "release_history",
-      "occurrences": 3
-    },
-    {
-      "path": "docs/releases/v0.1.7-experimental.3.md",
-      "category": "release_history",
-      "occurrences": 3
-    },
-    {
-      "path": "docs/releases/v0.1.7.md",
-      "category": "release_history",
-      "occurrences": 3
-    },
-    {
-      "path": "docs/releases/v0.1.8.md",
-      "category": "release_history",
-      "occurrences": 3
-    },
-    {
-      "path": "docs/releases/v0.1.9.md",
-      "category": "release_history",
-      "occurrences": 2
-    },
-    {
-      "path": "docs/releases/v0.2.0.md",
-      "category": "release_history",
-      "occurrences": 3
-    },
-    {
-      "path": "docs/releases/v0.2.1.md",
-      "category": "release_history",
-      "occurrences": 2
-    },
-    {
-      "path": "docs/releases/v0.2.2.md",
-      "category": "release_history",
-      "occurrences": 3
-    },
-    {
-      "path": "docs/releases/v0.2.3.md",
-      "category": "release_history",
-      "occurrences": 2
-    },
-    {
-      "path": "docs/releases/v0.2.4.md",
-      "category": "release_history",
-      "occurrences": 2
-    },
-    {
-      "path": "docs/releases/v0.2.5.md",
-      "category": "release_history",
-      "occurrences": 2
-    },
-    {
-      "path": "docs/releases/v0.3.0.md",
-      "category": "release_history",
-      "occurrences": 5
-    },
-    {
-      "path": "docs/releases/v0.3.2.md",
-      "category": "release_history",
-      "occurrences": 2
-    },
-    {
-      "path": "docs/releases/v0.3.3.md",
-      "category": "release_history",
-      "occurrences": 4
-    },
-    {
-      "path": "docs/releases/v0.3.4.md",
-      "category": "release_history",
-      "occurrences": 2
-    },
-    {
-      "path": "docs/releases/v0.3.5.md",
-      "category": "release_history",
-      "occurrences": 3
-    },
-    {
-      "path": "docs/releases/v0.3.6.md",
-      "category": "release_history",
-      "occurrences": 2
-    },
-    {
-      "path": "docs/releases/v0.3.7.md",
-      "category": "release_history",
-      "occurrences": 3
-    },
-    {
-      "path": "docs/releases/v0.3.8.md",
-      "category": "release_history",
-      "occurrences": 2
     },
     {
       "path": "pgs/test/AccountProfileDataTest.java",
@@ -324,7 +125,7 @@
     {
       "path": "pgs/test/test_pgs_native_aliases_native.py",
       "category": "tests",
-      "occurrences": 2
+      "occurrences": 7
     },
     {
       "path": "pgs/test/test_pgs_native_identity.py",
@@ -379,7 +180,7 @@
     {
       "path": "tools/pgs_branding_audit.py",
       "category": "other",
-      "occurrences": 14
+      "occurrences": 12
     },
     {
       "path": "tools/pgs_reference_inventory.py",

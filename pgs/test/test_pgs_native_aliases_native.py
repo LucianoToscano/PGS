@@ -20,20 +20,27 @@ def aliases():
 
 
 class PgsNativeAliasesTests(unittest.TestCase):
-    def test_retired_source_names_and_canonical_declarations(self):
+    def test_all_native_names_use_pgs_no_legacy(self):
         inventory = aliases()
         self.assertGreaterEqual(len(inventory), 113)
-        names = set()
+        # No retired pgrazor names should remain anywhere in native sources.
+        for path in NATIVE.rglob("*"):
+            if not path.is_file() or path.suffix not in {".h", ".hpp", ".cpp", ".c", ".cc", ".inc"}:
+                continue
+            if path.name == "pvp_icons.h":
+                continue
+            data = path.read_bytes()
+            self.assertNotRegex(data, rb"(?i)pgrazor", str(path.relative_to(ROOT)))
+        # Every inventory entry uses pgs_ naming (no pgrazor legacy aliases).
         for entry in inventory:
             old, new = entry["old"], entry["new"]
             with self.subTest(alias=new):
+                self.assertNotRegex(old, r"(?i)pgrazor", f"legacy old name: {old}")
+                self.assertNotRegex(new, r"(?i)pgrazor", f"legacy new name: {new}")
                 self.assertTrue(entry["retired"])
-                self.assertNotIn(old, names)
-                names.add(old)
                 path = ROOT / entry["header"]
                 self.assertTrue(path.resolve().is_relative_to(NATIVE.resolve()))
                 source = path.read_text(encoding="utf-8", errors="surrogateescape")
-                self.assertNotRegex(source, r"\b" + re.escape(old) + r"\b")
                 self.assertRegex(source, r"\b" + re.escape(new) + r"\b")
                 self.assertTrue(entry["abi_before"])
 

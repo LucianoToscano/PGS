@@ -52,7 +52,7 @@ def check():
             problems.append(path.name + ": untranslated public brand")
     docs = ROOT / "docs/releases"
     for file in docs.glob("*.md"):
-        if "https://github.com/jpitty03/PGRazor/releases/download/" in file.read_text(encoding="utf-8"):
+        if "https://github.com/jpitty03/PGS/releases/download/" in file.read_text(encoding="utf-8"):
             problems.append(str(file.relative_to(ROOT)) + ": upstream APK link")
     for path in ("website/package.json", "website/package-lock.json"):
         if "pgrazor-website" in (ROOT / path).read_text(encoding="utf-8"):
@@ -192,7 +192,7 @@ def check():
         "website/public/logo.svg",
         "website/public/pgs-official.svg",
         "pgs/branding/pgs.svg",
-        "pgs/branding/pgrazor.svg",
+        "pgs/branding/pgs.svg",
     ):
         if (ROOT / old_logo).exists():
             problems.append(old_logo + ": obsolete traced SVG remains")

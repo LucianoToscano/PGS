@@ -242,6 +242,8 @@ jobs:
                             "active_abbreviation_scope_remaining": active}, indent=2))
           
           PY
+          # Workflow modifications will be applied separately using the authorized repository connection.
+          git restore --source=HEAD --staged --worktree -- .github/workflows/pgs-same-package-update.yml .github/workflows/pgs-v0.0.1-release.yml .github/workflows/pgs-v0.0.2-release.yml .github/workflows/pgs-v0.0.3-candidate.yml .github/workflows/release.yml
           git diff --cached --check
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'

@@ -6,11 +6,11 @@
   "added_files": 1,
   "previous_occurrences": 1041,
   "remaining_files": 174,
-  "remaining_occurrences": 1042,
+  "remaining_occurrences": 1045,
   "remaining_by_category": {
     "workflows": 71,
-    "other": 113,
-    "documentation": 269,
+    "other": 115,
+    "documentation": 270,
     "release_history": 103,
     "legal": 3,
     "native": 171,
@@ -833,12 +833,12 @@
     {
       "path": "tools/hundo-feed/ORACLE_CLOUD.md",
       "category": "other",
-      "occurrences": 1
+      "occurrences": 2
     },
     {
       "path": "tools/hundo-feed/README.md",
       "category": "documentation",
-      "occurrences": 3
+      "occurrences": 4
     },
     {
       "path": "tools/hundo-feed/cloudflare/wrangler.json",
@@ -848,7 +848,7 @@
     {
       "path": "tools/hundo-feed/hundo-feed.env.example",
       "category": "other",
-      "occurrences": 2
+      "occurrences": 3
     },
     {
       "path": "tools/hundo-feed/hundo_feed.py",

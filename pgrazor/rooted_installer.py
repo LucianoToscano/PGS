@@ -1,4 +1,4 @@
-"""Builds the standalone PGRazor Root installer APK (package dev.pgrazor.root).
+"""Builds the standalone PGS Root installer APK (package dev.pgrazor.root).
 
 The installer carries the Zygisk module zip in its assets and installs it with the phone's root
 manager (Magisk 27+, KernelSU or APatch). It is the rooted counterpart of the patched APK that
@@ -28,23 +28,23 @@ EXPECTED_CLASSES = ('InstallerActivity', 'RestartActivity', 'RootShell', 'RootSt
 
 
 def installer_version_code(version):
-    """versionCode for the installer APK, derived from the PGRazor version (vMAJOR.MINOR.PATCH).
+    """versionCode for the installer APK, derived from the PGS version (vMAJOR.MINOR.PATCH).
 
     Kept local rather than imported from rooted.py so the build helper has no import dependency on
     the packager that calls it; the formula matches rooted.version_code.
     """
     match = re.fullmatch(r'v?([0-9]+)\.([0-9]+)\.([0-9]+)(?:-[A-Za-z0-9]+(?:[.-][A-Za-z0-9]+)*)?', str(version))
     if not match:
-        raise ValueError('Invalid PGRazor version ' + str(version))
+        raise ValueError('Invalid PGS version ' + str(version))
     major, minor, patch = map(int, match.groups())
     code = major * 1000000 + minor * 1000 + patch
     if minor >= 1000 or patch >= 1000 or not 0 < code <= 2100000000:
-        raise ValueError('PGRazor version is outside Android versionCode limits')
+        raise ValueError('PGS version is outside Android versionCode limits')
     return code
 
 
 def _config_source(target, version, module_asset):
-    """Generates InstallerConfig.java: the game target, PGRazor version and the trusted certificate.
+    """Generates InstallerConfig.java: the game target, PGS version and the trusted certificate.
 
     The official game certificate digest is reused from nonroot.NIANTIC_CERT_SHA256 so the installer
     validates the installed game against the same baseline the packager enforces.
@@ -95,12 +95,12 @@ def compile_sources(target, version, folder, module_name):
 
 
 def build_installer(module_zip, target, version, folder):
-    """Compiles, packages and signs the PGRazor Root installer APK; returns the signed APK Path.
+    """Compiles, packages and signs the PGS Root installer APK; returns the signed APK Path.
 
     Parameters mirror what rooted.package() already has in scope:
       module_zip  the module zip Path (rooted.write_zip output) embedded under assets/<name>
       target      {'package','versionCode','versionName'} of the supported game (rooted's target)
-      version     PGRazor version string (build.release_version output, e.g. 'v0.2.2')
+      version     PGS version string (build.release_version output, e.g. 'v0.2.2')
       folder      the rooted build run folder; all intermediates and the APK are written here
 
     Integration call to add to rooted.package(), right after module_zip is written:
@@ -141,7 +141,7 @@ def build_installer(module_zip, target, version, folder):
 
     aligned = folder / 'installer-aligned.apk'
     build.run(build.android_tool('zipalign'), '-f', '4', unsigned, aligned)
-    apk = folder / ('PGRazor-Root-' + version + '.apk')
+    apk = folder / ('PGS-Root-' + version + '.apk')
     build.run(build.android_tool('apksigner'), 'sign', *build.signing_args(), '--out', apk, aligned)
     build.run(build.android_tool('apksigner'), 'verify', apk)
     print('Installer APK:', apk, flush=True)
@@ -163,7 +163,7 @@ def main(argv=None):
         target = {'package': 'com.nianticlabs.pokemongo', 'versionCode': profile['version_code'],
                   'versionName': profile['game_version']}
         with tempfile.TemporaryDirectory(prefix='pgrazor-installer-check-') as folder:
-            compile_sources(target, build.release_version(ROOT), folder, 'PGRazor-Root-module.zip')
+            compile_sources(target, build.release_version(ROOT), folder, 'PGS-Root-module.zip')
         return
     if not args.report:
         parser.error('report is required unless --check is supplied')

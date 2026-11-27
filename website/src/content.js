@@ -2,9 +2,9 @@
 // edits (wording, new settings, extra screenshots) never touch layout code.
 
 export const links = {
-  releasesLatest: 'https://github.com/LucianoToscano/PGS/actions/workflows/pgs-v0.0.1-release.yml',
+  releasesLatest: 'https://github.com/LucianoToscano/PGS/actions/workflows/pgs-v0.0.2-release.yml',
   releasesCurrent:
-    'https://github.com/LucianoToscano/PGS/actions/workflows/pgs-v0.0.1-release.yml',
+    'https://github.com/LucianoToscano/PGS/actions/workflows/pgs-v0.0.2-release.yml',
   github: 'https://github.com/LucianoToscano/PGS',
   discord: 'https://discord.gg/SdwU4VnfW',
 };
@@ -108,7 +108,7 @@ export const steps = [
   {
     n: '01',
     title: 'Download',
-    body: 'Open the verified PGS v0.0.1 build, download its artifact and extract PGS v0.0.1.apk. Do not install a source archive or a preview package.',
+    body: 'Open the verified PGS v0.0.2 build, download its artifact and extract PGS v0.0.2.apk. Do not install a source archive or a preview package.',
   },
   {
     n: '02',
@@ -133,7 +133,7 @@ export const faqs = [
   },
   {
     q: 'Is a PGS Root build available?',
-    a: 'Not yet. The PGS v0.0.1 work targets the non-root APK. The original Root variant belongs to the upstream project, not a PGS update.',
+    a: 'Not yet. The PGS v0.0.2 work targets the non-root APK. The original Root variant belongs to the upstream project, not a PGS update.',
   },
   {
     q: 'Is LivePokeMap included?',

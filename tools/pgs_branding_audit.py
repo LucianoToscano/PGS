@@ -53,6 +53,9 @@ def check():
     for path in ("website/package.json", "website/package-lock.json"):
         if "pgrazor-website" in (ROOT / path).read_text(encoding="utf-8"):
             problems.append(path + ": old package name")
+    funding = (ROOT / ".github/FUNDING.yml").read_text(encoding="utf-8")
+    if re.search(r"(?im)^\s*ko_fi\s*:\s*pgrazor\b", funding):
+        problems.append("FUNDING.yml: donations still point to upstream account")
     if "PGRazor.apk" in (ROOT / "pgrazor/release_apk.py").read_text(encoding="utf-8"):
         problems.append("release_apk.py: can still emit an upstream-named APK")
     release = (ROOT / "tools/discord_release.py").read_text(encoding="utf-8")
@@ -65,7 +68,7 @@ def check():
     if "com.nianticlabs.pokemongo" not in from_code or PGS_CERT not in from_code.lower():
         problems.append("PGS package or permanent certificate source changed")
     version = (ROOT / "pgrazor/PGS_LAST_VERSION_CODE").read_text(encoding="utf-8").strip()
-    if not version.isdigit() or int(version) < 2026111604:
+    if not version.isdigit() or int(version) < 2026111605:
         problems.append("PGS versionCode ledger regressed")
     if problems:
         raise SystemExit("PGS branding audit failed:\n" + "\n".join(" - " + p for p in problems))

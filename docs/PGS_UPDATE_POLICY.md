@@ -15,6 +15,7 @@ Este certificado deve permanecer constante. Os segredos de assinatura estão no 
 | v0.3.8-pgs.2 | Pokémon GO 0.439.0 | 2026111602 |
 | **v0.3.8-pgs.3** | Pokémon GO 0.439.0 | **2026111603** |
 | **v0.0.1** | Pokémon GO 0.439.0 | **2026111604** |
+| **v0.0.2 (candidata)** | Pokémon GO 0.439.0 | **2026111605** |
 
 O último código de build PGS verificado é registrado em [`pgrazor/PGS_LAST_VERSION_CODE`](../pgrazor/PGS_LAST_VERSION_CODE). Para cada novo release completo, `pgrazor/release_apk.py` usa `max(codigo_do_jogo, ultimo_pgs+1)` antes de assinar o APK não-root, mantendo o `game_version_code` original para verificar a compatibilidade do módulo Root. O valor realmente assinado é acrescentado ao `build-info.json` em `apk_version_code`.
 
@@ -54,3 +55,11 @@ O arquivo no artefato Actions tem o nome solicitado `PGS v0.0.1.apk`. Ao anexar 
 A candidata PGS v0.0.1 foi verificada com o certificado definitivo e o Android `versionCode=2026111604`. O ledger de continuidade registra esse código para que a próxima build use **2026111605 ou maior**. A versão pública seguinte deverá ser `v0.0.2`, mediante nova compilação e testes; o registro do ledger não significa que a instalação física já foi testada.
 
 O release v0.0.1 permanece em **draft** até confirmação real de instalação e login. As verificações automatizadas comparam as entradas originais do APK e preservam integralmente as bibliotecas nativas e outros DEX do jogo, exceto o controle Java PGS atualizado e o `versionCode`.
+
+## Candidata v0.0.2 — rebranding incorporado ao APK
+
+A reconstrução da `v0.0.2` usa **somente** o APK completo e assinado `v0.0.1`, confirmado com SHA-256 `23c0c4e9f9e87676038856e76b16613c91bf4bbd04a5c8cc9eb4f317d6926ef4` (Actions #45973576985). Atualiza o DEX PGS e o campo interno da versão, mantendo o restante dos arquivos do jogo integralmente igual, verificado por hashes de cada entrada. Nenhum download do APKMirror é efetuado. O novo `versionCode=2026111605` impede regressão; a próxima geração deverá usar código **2026111606 ou maior**.
+
+O novo workflow `.github/workflows/pgs-v0.0.2-release.yml` produz `PGS v0.0.2.apk` e os recibos verificáveis, exigindo o certificado PGS permanente, package `com.nianticlabs.pokemongo` e jogo-base `0.439.0`. O fluxo antigo de `v0.0.1` fica arquivado e não pode recompilar automaticamente a versão antiga. O GitHub Release de `v0.0.2` é criado **somente como rascunho** até testes em aparelho real.
+
+O símbolo interno e o joystick são mantidos exatamente como na base anterior. A conta Ko-fi do projeto original foi removida das opções de patrocínio PGS, sem configurar uma conta substituta não autorizada.

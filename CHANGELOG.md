@@ -1,5 +1,11 @@
 # Changelog
 
+## PGS v0.0.2 (candidata — testes físicos pendentes)
+
+- Identidade PGS aplicada aos controles Java, notificações, feeds e catálogos traduzidos sem alterar dados salvos ou a logo e joystick do jogo.
+- Ferramenta de anúncios Discord isolada dos canais e credenciais PGRazor; não há doações PGS direcionadas ao projeto original.
+- Atualização incremental do APK completo com assinatura permanente, package `com.nianticlabs.pokemongo` e `versionCode=2026111605`; histórico do projeto-base preservado.
+
 ## Unreleased — PGS
 
 ### New features

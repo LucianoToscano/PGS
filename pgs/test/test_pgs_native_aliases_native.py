@@ -38,6 +38,11 @@ class PgsNativeAliasesTests(unittest.TestCase):
                     self.assertTrue(old.startswith("PGRAZOR_"))
                     self.assertEqual(new, "PGS_" + old[8:])
                     pattern = r"(?m)^[ \t]*#[ \t]*define[ \t]+" + re.escape(old) + r"[ \t]+" + re.escape(new) + r"[ \t]*$"
+                elif entry["kind"] == "enumerator":
+                    self.assertTrue(old.startswith("PGRAZOR_"))
+                    self.assertEqual(new, "PGS_" + old[8:])
+                    pattern = r"\b" + re.escape(old) + r"\s*=\s*" + re.escape(new) + r"\s*,"
+                    self.assertNotRegex(source, r"(?m)^\s*#\s*define\s+" + re.escape(old) + r"\b")
                 else:
                     self.assertEqual(entry["kind"], "type")
                     self.assertTrue(old.startswith("pgrazor_"))
@@ -61,6 +66,9 @@ class PgsNativeAliasesTests(unittest.TestCase):
                         code.append("static_assert(std::is_same_v<" + old + ", " + new + ">);")
                     else:
                         code.append("static_assert((" + old + ") == (" + new + "));")
+                        if entry["kind"] == "enumerator":
+                            code.append("static_assert(std::is_same_v<decltype(" + old + "), decltype(" + new + ")>);")
+                            code.extend(["#ifdef " + old, "#error legacy enumerator became a macro", "#endif"])
                 result = subprocess.run(
                     [COMPILER, "-std=c++17", "-fsyntax-only", "-x", "c++",
                      "-I" + str(NATIVE), "-"],

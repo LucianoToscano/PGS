@@ -152,7 +152,7 @@ static const PgrObsApi *resolve_catch_observers_api() {
     return nullptr;
 }
 
-static int call_pgrazor_hook(void *target, void *replacement, void **original) {
+static int call_pgs_hook(void *target, void *replacement, void **original) {
     if (pgrazor_hook != nullptr) {
         return pgrazor_hook(target, replacement, original);
     }
@@ -166,7 +166,7 @@ static int call_pgrazor_hook(void *target, void *replacement, void **original) {
     return -1;
 }
 
-static int call_pgrazor_unhook(void *target) {
+static int call_pgs_unhook(void *target) {
     if (pgrazor_unhook != nullptr) {
         return pgrazor_unhook(target);
     }
@@ -1765,7 +1765,7 @@ static int start_observation_locked() {
         }
         g_direct_codes[t]=ts.code;
         int hrc =
-            call_pgrazor_hook(reinterpret_cast<void *>(ts.code), kHookReplacements[t], &g_direct_originals[t]);
+            call_pgs_hook(reinterpret_cast<void *>(ts.code), kHookReplacements[t], &g_direct_originals[t]);
         if(g_direct_originals[t])g_direct_installed|=bit;
         if (hrc != 0 || !g_direct_originals[t]) {
             g_direct_failed|=bit;

@@ -1,7 +1,7 @@
 #pragma once
 #include <stdint.h>
 
-// PGRazor native migration: buddy auto-feeding (feature id 12).
+// PGS native module: buddy auto-feeding (feature id 12).
 //
 // Full native port of runtime/features/buddy.js. The JS factory resolves the single
 // BuddyStatsService through the game's own Map/DiContainer, confirms a chosen buddy and
@@ -96,8 +96,8 @@ enum {
 // pointer is an already-validated il2cpp export, MethodInfo*, hook address, class pointer
 // or FieldInfo*; the native layer re-checks the header and rejects any null before use.
 typedef struct pgrazor_buddy_config_v1 {
-    uint32_t version;              /* == PGRAZOR_BUDDY_API_VERSION */
-    uint32_t size;                 /* == sizeof(pgrazor_buddy_config_v1) */
+    uint32_t version;              /* == PGS_BUDDY_API_VERSION */
+    uint32_t size;                 /* == sizeof(pgs_buddy_config_v1) */
 
     /* il2cpp runtime exports (pointer-sized GC-handle ABI). */
     void *runtime_invoke;          /* void* (MethodInfo*, void* obj, void** params, void** exc) */
@@ -164,8 +164,8 @@ typedef pgrazor_buddy_config_v1 pgs_buddy_config_v1;
 // is the number of durable GC roots held (service + pending rpc + pending promise) so the
 // coordinator can gate a finish/teardown on this layer having released them.
 typedef struct pgrazor_buddy_sample_v1 {
-    uint32_t version;              /* == PGRAZOR_BUDDY_API_VERSION */
-    uint32_t size;                 /* == sizeof(pgrazor_buddy_sample_v1) */
+    uint32_t version;              /* == PGS_BUDDY_API_VERSION */
+    uint32_t size;                 /* == sizeof(pgs_buddy_sample_v1) */
     uint32_t status;               /* one of PGR_BUDDY_STATUS_* */
     uint32_t status_serial;        /* bumped on each status change */
     int32_t  detail;               /* minutes (FED) or result value (FEED_FAILED) */
@@ -186,6 +186,7 @@ typedef pgrazor_buddy_sample_v1 pgs_buddy_sample_v1;
  * attempt latches for the process lifetime and never unhooks a published trampoline).
  */
 typedef int (*pgrazor_buddy_install_fn)(const pgs_buddy_config_v1 *config);
+typedef pgrazor_buddy_install_fn pgs_buddy_install_fn;
 
 /*
  * tick(berry, remaining_lease_ms, proven_tid): one orchestration pass. Runs the full feed
@@ -193,12 +194,13 @@ typedef int (*pgrazor_buddy_install_fn)(const pgs_buddy_config_v1 *config);
  * the Unity thread) AND no other caller owns a pass (a non-blocking owner guard; a nested
  * tick or a foreign-thread call is a no-op). berry is the selected berry ItemId (0 == Off,
  * mirrors s.buddyBerry); a changed berry resets the per-cycle state. remaining_lease_ms is
- * the residual (buddyLease - now) window, clamped here to PGRAZOR_BUDDY_MAX_LEASE_MS and
+ * the residual (buddyLease - now) window, clamped here to PGS_BUDDY_MAX_LEASE_MS and
  * turned into an absolute CLOCK_BOOTTIME deadline re-checked immediately before the single
  * Feed (0/expired -> no managed feed). Returns OK or NOT_INSTALLED.
  */
 typedef int (*pgrazor_buddy_tick_fn)(int32_t berry, uint64_t remaining_lease_ms,
                                      uint64_t proven_tid);
+typedef pgrazor_buddy_tick_fn pgs_buddy_tick_fn;
 
 /*
  * clear(proven_tid): Unity-thread-only teardown for stop/detach. RELEASES the durable GC
@@ -209,18 +211,20 @@ typedef int (*pgrazor_buddy_tick_fn)(int32_t berry, uint64_t remaining_lease_ms,
  * NOT_INSTALLED.
  */
 typedef int (*pgrazor_buddy_clear_fn)(uint64_t proven_tid);
+typedef pgrazor_buddy_clear_fn pgs_buddy_clear_fn;
 
 /* sample(out): copy the latest telemetry snapshot. Safe from any thread; never frees. */
 typedef int (*pgrazor_buddy_sample_fn)(pgs_buddy_sample_v1 *out);
+typedef pgrazor_buddy_sample_fn pgs_buddy_sample_fn;
 
 // Ordered, read-only table advertised by the getter (40 bytes: header + 4 pointers).
 typedef struct pgrazor_buddy_api_v1 {
-    uint32_t version;              /* == PGRAZOR_BUDDY_API_VERSION */
-    uint32_t size;                 /* == sizeof(pgrazor_buddy_api_v1) */
-    pgrazor_buddy_install_fn install;
-    pgrazor_buddy_tick_fn    tick;
-    pgrazor_buddy_clear_fn   clear;
-    pgrazor_buddy_sample_fn  sample;
+    uint32_t version;              /* == PGS_BUDDY_API_VERSION */
+    uint32_t size;                 /* == sizeof(pgs_buddy_api_v1) */
+    pgs_buddy_install_fn install;
+    pgs_buddy_tick_fn    tick;
+    pgs_buddy_clear_fn   clear;
+    pgs_buddy_sample_fn  sample;
 } pgrazor_buddy_api_v1;
 typedef pgrazor_buddy_api_v1 pgs_buddy_api_v1;
 

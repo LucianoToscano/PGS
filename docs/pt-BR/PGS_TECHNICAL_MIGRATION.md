@@ -1,5 +1,7 @@
 # PGS — migração dos nomes internos: Etapa 1
 
+**Estado atual (etapa 15):** a etapa 12 já migrou Java/JNI, nomes das bibliotecas nativas e layout dos assets nas fontes. As seções anteriores são registros históricos, não o layout atual de compilação. Ainda não foram verificados um APK completo assinado e a atualização em dispositivo físico.
+
 Estado: migração do código iniciada na branch `refactor/pgs-native-build-names-phase1`. Esta etapa **não** publica um novo APK assinado.
 
 [🇺🇸 English](../en/PGS_TECHNICAL_MIGRATION.md) · [🇧🇷 Português (Brasil)](PGS_TECHNICAL_MIGRATION.md)
@@ -103,3 +105,20 @@ As contribuições do PGS passam a ter aviso próprio de copyright sob MIT, junt
 ## Etapa 14 — nomes ativos restantes e inventário integral
 
 Nomes PGS passam a ser usados em threads Java, tags de diagnóstico, caches descartáveis, descrições de interface e consumidores de tipos/macros nativos com aliases existentes. A limpeza de diretórios temporários aceita as duas grafias. As opções de compilação não confidenciais aceitam os nomes PGS e mantêm os aliases de ativação anteriores. Não há mudanças nos identificadores de armazenamento persistente, package IDs, configuração de assinatura ou exports da ABI. O [inventário de textos rastreados](../PGS_REMAINING_REFERENCES.json) registra as referências restantes ao nome original por arquivo e categoria; é um retrato para revisão, não uma declaração de que toda ocorrência restante seja necessária. Conteúdo binário e arquivos temporários de migração são excluídos. Créditos legais e registros históricos permanecem intactos. Exige-se a validação geral de fontes e ABI antes da integração.
+
+
+## Etapa 15 — aliases nativos e auditoria reproduzível
+
+Os aliases de fonte para valores de enumeração e tipos de ponteiros de função equivalentes preservam o tipo da enumeração, valores numéricos, assinaturas de ponteiros, tags de estruturas, layout, exports da ABI e strings de resolução dinâmica. A regressão C++17 existente passa a verificar também a identidade do tipo das enumerações e que os enumeradores legados não viraram macros. Auxiliares privados e referências ativas equivalentes usam a grafia PGS. Nenhum comportamento de recurso nativo ou política de proteção é alterado.
+
+Execute `python -B tools/pgs_reference_inventory.py --summary` em um checkout Git para uma nova varredura somente de leitura. Sem `--summary`, são exibidas as contagens por arquivo. O CI geral executa o teste de inventário; o retrato versionado é um delta exato do inventário anterior, ainda não uma varredura independente. A regra de texto UTF-8/NUL é explícita; diferenças de escopo devem ser reconciliadas antes de comparar retratos.
+
+### Classificação do trabalho restante
+
+- Substituível agora: constantes e tipos de fonte com equivalência verificada, auxiliares privados e rótulos de interface ou diagnóstico que não sejam contratos.
+- Migração coordenada: getters nativos ocultos e resoluções weak/dinâmicas, nomes de bridges JS, prefixos de métodos do reescritor DEX e nomes de objetos em execução. Revisar todos os produtores, consumidores e testes antes de modificar.
+- Compatibilidade: identificadores físicos de contas e preferências, AndroidKeyStore, canais de notificação, IDs dos aplicativos/módulos Root e Preview, marcadores de rejeição de entradas antigas, configuração de assinatura e alternativas de ambiente. Preservar até haver migração compatível explícita.
+- Atribuição/licença e histórico: preservar avisos originais e registros anteriores de releases/builds.
+- Testes de compatibilidade: preservar asserções dos nomes antigos quando comprovarem fallback, identidade da ABI, rejeição de entrada ou continuidade dos dados. Consumidores comuns podem usar nomes PGS equivalentes verificados.
+
+As contagens restantes não comprovam que todas as ocorrências sejam necessárias. Release completo assinado, insumo autorizado e teste em dispositivo físico são etapas separadas. Este lote não altera APK nem registro de emissão.

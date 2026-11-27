@@ -1,24 +1,21 @@
 {
-  "scope": "Git-tracked text snapshot after phase 14; case-insensitive original-name search. Binary content, temporary migration files and the inventory itself excluded. Counts include historical records, tests and compatibility aliases; not all entries are proven necessary.",
-  "tracked_files": 2104,
-  "text_files": 1030,
-  "changed_files": 40,
-  "replacement_counts": {
-    "existing_native_alias_uses": 13,
-    "java_labels": 30,
-    "net_removed_in_followup": 10
-  },
-  "remaining_files": 538,
-  "remaining_occurrences": 2549,
+  "scope": "Phase 15: exact per-file deltas from phase 14 tracked-text snapshot. Binary content, temporary migration files and this inventory excluded; independent UTF-8/NUL tracked scan runs in source CI.",
+  "tracked_files": 2106,
+  "text_files": 1032,
+  "changed_files": 14,
+  "added_files": 2,
+  "previous_occurrences": 2549,
+  "remaining_files": 540,
+  "remaining_occurrences": 2477,
   "remaining_by_category": {
     "workflows": 71,
-    "other": 118,
-    "documentation": 216,
+    "other": 119,
+    "documentation": 274,
     "release_history": 103,
     "legal": 3,
-    "native": 1083,
+    "native": 959,
     "javascript": 98,
-    "tests": 772,
+    "tests": 765,
     "java": 79,
     "vendor": 6
   },
@@ -106,7 +103,7 @@
     {
       "path": "docs/PGS_NATIVE_ALIAS_INVENTORY.json",
       "category": "documentation",
-      "occurrences": 55
+      "occurrences": 113
     },
     {
       "path": "docs/PGS_UPDATE_POLICY.md",
@@ -411,12 +408,12 @@
     {
       "path": "pgs/native/adventure_sync.cpp",
       "category": "native",
-      "occurrences": 29
+      "occurrences": 6
     },
     {
       "path": "pgs/native/adventure_sync.h",
       "category": "native",
-      "occurrences": 44
+      "occurrences": 36
     },
     {
       "path": "pgs/native/always_hit_test.cpp",
@@ -561,7 +558,7 @@
     {
       "path": "pgs/native/buddy_feeding.h",
       "category": "native",
-      "occurrences": 34
+      "occurrences": 26
     },
     {
       "path": "pgs/native/camera_host_test.cpp",
@@ -956,17 +953,17 @@
     {
       "path": "pgs/native/incubation_test.cpp",
       "category": "tests",
-      "occurrences": 14
+      "occurrences": 2
     },
     {
       "path": "pgs/native/incubation.cpp",
       "category": "native",
-      "occurrences": 43
+      "occurrences": 3
     },
     {
       "path": "pgs/native/incubation.h",
       "category": "native",
-      "occurrences": 64
+      "occurrences": 55
     },
     {
       "path": "pgs/native/interaction_host_test.cpp",
@@ -976,7 +973,7 @@
     {
       "path": "pgs/native/interaction_host.cpp",
       "category": "native",
-      "occurrences": 43
+      "occurrences": 40
     },
     {
       "path": "pgs/native/interaction_host.h",
@@ -1021,7 +1018,7 @@
     {
       "path": "pgs/native/items.h",
       "category": "native",
-      "occurrences": 65
+      "occurrences": 53
     },
     {
       "path": "pgs/native/iv_display_test.cpp",
@@ -1136,12 +1133,12 @@
     {
       "path": "pgs/native/pgs_native_api.h",
       "category": "native",
-      "occurrences": 54
+      "occurrences": 34
     },
     {
       "path": "pgs/native/pgs_native.cpp",
       "category": "native",
-      "occurrences": 73
+      "occurrences": 72
     },
     {
       "path": "pgs/native/pgs.map",
@@ -2481,7 +2478,7 @@
     {
       "path": "pgs/test/test_pgs_native_aliases_native.py",
       "category": "tests",
-      "occurrences": 2
+      "occurrences": 3
     },
     {
       "path": "pgs/test/test_pgs_native_identity.py",
@@ -2502,6 +2499,11 @@
       "path": "pgs/test/test_pgs_rebrand.py",
       "category": "tests",
       "occurrences": 8
+    },
+    {
+      "path": "pgs/test/test_pgs_reference_inventory.py",
+      "category": "tests",
+      "occurrences": 4
     },
     {
       "path": "pgs/test/test_pgs_release_policy.py",
@@ -2682,6 +2684,11 @@
       "path": "tools/pgs_branding_audit.py",
       "category": "other",
       "occurrences": 18
+    },
+    {
+      "path": "tools/pgs_reference_inventory.py",
+      "category": "other",
+      "occurrences": 1
     },
     {
       "path": "tools/prepare_native.py",

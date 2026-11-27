@@ -1,5 +1,5 @@
 /*
- * PGRazor native migration: Adventure Sync popup suppression.
+ * PGS native module: Adventure Sync popup suppression.
  *
  * Feature id 2 of the native pilot. The gameplay runtime resolves this feature's
  * table through the coordinator-owned loader (root.PGRazorNativeFeature(2, version,
@@ -10,7 +10,7 @@
  *
  * This header is the C ABI contract between runtime/features/adventureSync.js and
  * adventure_sync.cpp. Fields are append-only; a new ABI version bumps
- * PGRAZOR_ADVSYNC_API_VERSION and never reorders or removes an existing field.
+ * PGS_ADVSYNC_API_VERSION and never reorders or removes an existing field.
  *
  * The module mirrors the behaviour of the pre-migration JS
  * (runtime/features/adventureSync.js): on the Adventure Sync DialogController it
@@ -56,15 +56,24 @@ extern "C" {
 
 /* Status codes. 0 == success. Shared spirit with pgs_native_api.h. */
 enum {
-    PGRAZOR_ADVSYNC_OK = 0,
-    PGRAZOR_ADVSYNC_ERR_NULL_ARG = 1,       /* required pointer argument was null */
-    PGRAZOR_ADVSYNC_ERR_BAD_CONFIG = 2,     /* config header, size, pointer or offset invalid */
-    PGRAZOR_ADVSYNC_ERR_ALREADY_BOUND = 3,  /* install() called again with a different config */
-    PGRAZOR_ADVSYNC_ERR_HOOK_FAILED = 4,    /* Dobby could not install/instrument a target */
-    PGRAZOR_ADVSYNC_ERR_BAD_LEASE = 5,      /* lease was 0 or exceeded the max */
-    PGRAZOR_ADVSYNC_ERR_NO_CLOCK = 6,       /* CLOCK_BOOTTIME was unavailable */
-    PGRAZOR_ADVSYNC_ERR_NOT_INSTALLED = 7,  /* operation needs a successful install() */
-    PGRAZOR_ADVSYNC_ERR_SELFTEST = 8        /* a self-check assertion failed */
+    PGS_ADVSYNC_OK = 0,
+    PGS_ADVSYNC_ERR_NULL_ARG = 1,       /* required pointer argument was null */
+    PGS_ADVSYNC_ERR_BAD_CONFIG = 2,     /* config header, size, pointer or offset invalid */
+    PGS_ADVSYNC_ERR_ALREADY_BOUND = 3,  /* install() called again with a different config */
+    PGS_ADVSYNC_ERR_HOOK_FAILED = 4,    /* Dobby could not install/instrument a target */
+    PGS_ADVSYNC_ERR_BAD_LEASE = 5,      /* lease was 0 or exceeded the max */
+    PGS_ADVSYNC_ERR_NO_CLOCK = 6,       /* CLOCK_BOOTTIME was unavailable */
+    PGS_ADVSYNC_ERR_NOT_INSTALLED = 7,  /* operation needs a successful install() */
+    PGRAZOR_ADVSYNC_ERR_SELFTEST = 8,        /* a self-check assertion failed */
+    // Legacy aliases retain the same enum type and numeric values.
+    PGRAZOR_ADVSYNC_OK = PGS_ADVSYNC_OK,
+    PGRAZOR_ADVSYNC_ERR_NULL_ARG = PGS_ADVSYNC_ERR_NULL_ARG,
+    PGRAZOR_ADVSYNC_ERR_BAD_CONFIG = PGS_ADVSYNC_ERR_BAD_CONFIG,
+    PGRAZOR_ADVSYNC_ERR_ALREADY_BOUND = PGS_ADVSYNC_ERR_ALREADY_BOUND,
+    PGRAZOR_ADVSYNC_ERR_HOOK_FAILED = PGS_ADVSYNC_ERR_HOOK_FAILED,
+    PGRAZOR_ADVSYNC_ERR_BAD_LEASE = PGS_ADVSYNC_ERR_BAD_LEASE,
+    PGRAZOR_ADVSYNC_ERR_NO_CLOCK = PGS_ADVSYNC_ERR_NO_CLOCK,
+    PGRAZOR_ADVSYNC_ERR_NOT_INSTALLED = PGS_ADVSYNC_ERR_NOT_INSTALLED,
 };
 
 /*
@@ -74,11 +83,11 @@ enum {
  * class pointer; every offset is the metadata-verified field offset. The native
  * layer re-checks the header and rejects any null pointer or zero offset before it
  * touches the process image. Layout is fixed (LP64, 8-byte fields); JS must write it
- * byte-for-byte and set size == sizeof(pgrazor_advsync_config_v1).
+ * byte-for-byte and set size == sizeof(pgs_advsync_config_v1).
  */
 typedef struct pgrazor_advsync_config_v1 {
-    uint32_t version;              /* == PGRAZOR_ADVSYNC_API_VERSION */
-    uint32_t size;                 /* == sizeof(pgrazor_advsync_config_v1) */
+    uint32_t version;              /* == PGS_ADVSYNC_API_VERSION */
+    uint32_t size;                 /* == sizeof(pgs_advsync_config_v1) */
 
     /* il2cpp runtime function pointers (pointer-sized GC handle ABI; not uint32). */
     void *runtime_invoke;          /* void* (MethodInfo*, void* obj, void** params, void** exc) */
@@ -118,6 +127,7 @@ typedef pgrazor_advsync_config_v1 pgs_advsync_config_v1;
  * engine on these targets.
  */
 typedef int (*pgrazor_advsync_install_fn)(const pgs_advsync_config_v1 *config);
+typedef pgrazor_advsync_install_fn pgs_advsync_install_fn;
 
 /*
  * update(allowed, lease_ms, unity_tid): arm or clear the dismissal window and record
@@ -125,7 +135,7 @@ typedef int (*pgrazor_advsync_install_fn)(const pgs_advsync_config_v1 *config);
  *   allowed == 0            -> clear immediately; captured dialogs are left for the
  *                              next Unity-thread retire()/Update to drop. No UI is
  *                              driven and no GC handle is freed off the Unity thread.
- *   allowed != 0            -> require 0 < lease_ms <= PGRAZOR_ADVSYNC_MAX_LEASE_MS and
+ *   allowed != 0            -> require 0 < lease_ms <= PGS_ADVSYNC_MAX_LEASE_MS and
  *                              a usable CLOCK_BOOTTIME; set a monotonic deadline.
  *   unity_tid               -> the thread id proven to be the Unity thread by the
  *                              host's existing validated tick; stored (when non-zero)
@@ -134,6 +144,7 @@ typedef int (*pgrazor_advsync_install_fn)(const pgs_advsync_config_v1 *config);
  * This call only mutates atomics; it is safe to call from any thread.
  */
 typedef int (*pgrazor_advsync_update_fn)(int allowed, uint64_t lease_ms, uint64_t unity_tid);
+typedef pgrazor_advsync_update_fn pgs_advsync_update_fn;
 
 /*
  * retire(unity_tid): Unity-thread-only maintenance, called from the host heartbeat
@@ -143,6 +154,7 @@ typedef int (*pgrazor_advsync_update_fn)(int allowed, uint64_t lease_ms, uint64_
  * no-op. Returns OK or NOT_INSTALLED.
  */
 typedef int (*pgrazor_advsync_retire_fn)(uint64_t unity_tid);
+typedef pgrazor_advsync_retire_fn pgs_advsync_retire_fn;
 
 /*
  * selftest(): explicit-only self-check of the pure pending policy (lease bounds, the
@@ -150,15 +162,16 @@ typedef int (*pgrazor_advsync_retire_fn)(uint64_t unity_tid);
  * process mutation. NEVER run automatically in production.
  */
 typedef int (*pgrazor_advsync_selftest_fn)(void);
+typedef pgrazor_advsync_selftest_fn pgs_advsync_selftest_fn;
 
 /* Ordered, read-only table advertised by the getter. Header first, then pointers. */
 typedef struct pgrazor_advsync_api_v1 {
-    uint32_t version;                    /* == PGRAZOR_ADVSYNC_API_VERSION */
-    uint32_t size;                       /* == sizeof(pgrazor_advsync_api_v1) */
-    pgrazor_advsync_install_fn  install;
-    pgrazor_advsync_update_fn   update;
-    pgrazor_advsync_retire_fn   retire;
-    pgrazor_advsync_selftest_fn selftest;
+    uint32_t version;                    /* == PGS_ADVSYNC_API_VERSION */
+    uint32_t size;                       /* == sizeof(pgs_advsync_api_v1) */
+    pgs_advsync_install_fn  install;
+    pgs_advsync_update_fn   update;
+    pgs_advsync_retire_fn   retire;
+    pgs_advsync_selftest_fn selftest;
 } pgrazor_advsync_api_v1;
 typedef pgrazor_advsync_api_v1 pgs_advsync_api_v1;
 

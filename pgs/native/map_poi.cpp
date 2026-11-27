@@ -19,31 +19,31 @@
 // managed exceptions surface through runtime_invoke's exc out-param, never a C++ throw. No mutex is held
 // across a managed call.
 
-static_assert(sizeof(PgrMapPoiConfig) == 408, "config 408");
-static_assert(offsetof(PgrMapPoiConfig, f_incDone) == 392, "config incident end");     // 8 + 48*8
-static_assert(sizeof(PgrMapPoiRequest) == 32, "request 32");
-static_assert(sizeof(PgrMapPoiPoint) == 576, "point 576");
-static_assert(sizeof(PgrMapPoiOutput) == 294928, "output 294928");
-static_assert(sizeof(PgrMapPoiApi) == 24, "table 24");
-static_assert(offsetof(PgrMapPoiConfig, runtime_invoke) == 8, "config body start");
-static_assert(offsetof(PgrMapPoiConfig, class_stop) == 120, "config classes");   // 8 + 14*8
-static_assert(offsetof(PgrMapPoiConfig, f_fortId) == 192, "config mandatory fields"); // 8 + 23*8
-static_assert(offsetof(PgrMapPoiConfig, m_team) == 256, "config optional start");     // 8 + 31*8
-static_assert(offsetof(PgrMapPoiConfig, f_bossId) == 320, "config optional end");     // 8 + 39*8
-static_assert(offsetof(PgrMapPoiRequest, tid) == 8, "request tid");
-static_assert(offsetof(PgrMapPoiRequest, remaining_ms) == 16, "request remaining");
-static_assert(offsetof(PgrMapPoiRequest, wall_ms) == 24, "request wall");
-static_assert(offsetof(PgrMapPoiPoint, lat) == 16, "point lat");
-static_assert(offsetof(PgrMapPoiPoint, raid_end) == 32, "point raid_end");
-static_assert(offsetof(PgrMapPoiPoint, team_id) == 48, "point team_id");
-static_assert(offsetof(PgrMapPoiPoint, id) == 64, "point id");
-static_assert(offsetof(PgrMapPoiOutput, status) == 8, "output status");
-static_assert(offsetof(PgrMapPoiOutput, count) == 12, "output count");
-static_assert(offsetof(PgrMapPoiOutput, points) == 16, "output points");
+static_assert(sizeof(PgsMapPoiConfig) == 408, "config 408");
+static_assert(offsetof(PgsMapPoiConfig, f_incDone) == 392, "config incident end");     // 8 + 48*8
+static_assert(sizeof(PgsMapPoiRequest) == 32, "request 32");
+static_assert(sizeof(PgsMapPoiPoint) == 576, "point 576");
+static_assert(sizeof(PgsMapPoiOutput) == 294928, "output 294928");
+static_assert(sizeof(PgsMapPoiApi) == 24, "table 24");
+static_assert(offsetof(PgsMapPoiConfig, runtime_invoke) == 8, "config body start");
+static_assert(offsetof(PgsMapPoiConfig, class_stop) == 120, "config classes");   // 8 + 14*8
+static_assert(offsetof(PgsMapPoiConfig, f_fortId) == 192, "config mandatory fields"); // 8 + 23*8
+static_assert(offsetof(PgsMapPoiConfig, m_team) == 256, "config optional start");     // 8 + 31*8
+static_assert(offsetof(PgsMapPoiConfig, f_bossId) == 320, "config optional end");     // 8 + 39*8
+static_assert(offsetof(PgsMapPoiRequest, tid) == 8, "request tid");
+static_assert(offsetof(PgsMapPoiRequest, remaining_ms) == 16, "request remaining");
+static_assert(offsetof(PgsMapPoiRequest, wall_ms) == 24, "request wall");
+static_assert(offsetof(PgsMapPoiPoint, lat) == 16, "point lat");
+static_assert(offsetof(PgsMapPoiPoint, raid_end) == 32, "point raid_end");
+static_assert(offsetof(PgsMapPoiPoint, team_id) == 48, "point team_id");
+static_assert(offsetof(PgsMapPoiPoint, id) == 64, "point id");
+static_assert(offsetof(PgsMapPoiOutput, status) == 8, "output status");
+static_assert(offsetof(PgsMapPoiOutput, count) == 12, "output count");
+static_assert(offsetof(PgsMapPoiOutput, points) == 16, "output points");
 
 namespace {
 
-constexpr uint64_t kMaxLeaseMs = PGR_MP_MAX_LEASE_MS;
+constexpr uint64_t kMaxLeaseMs = PGS_MP_MAX_LEASE_MS;
 constexpr int kMandatoryPtrCount = 31;        // slots 0..30, all non-null
 constexpr int kTotalPtrCount = 50;            // slots 0..49
 constexpr double kMaxSafeInteger = 9007199254740991.0;  // 2^53 - 1 (JS Number.MAX_SAFE_INTEGER)
@@ -65,7 +65,7 @@ using ThreadCur  = void *(*)();
 
 std::mutex g_install_mutex;
 std::mutex g_state_mutex;
-PgrMapPoiConfig g_cfg{};
+PgsMapPoiConfig g_cfg{};
 std::atomic<bool> g_installed{false};
 
 // Which optional groups the installed config enables (computed once at install).
@@ -178,10 +178,10 @@ bool unbox_copy(const Root &box, void *out, size_t n) {
 // further managed call.
 bool type_object(void *klass, Root &out, int *err) {
   void *type = reinterpret_cast<ClassType>(g_cfg.class_get_type)(klass);
-  if (!type) { *err = PGR_MP_ERR_METADATA; return false; }
+  if (!type) { *err = PGS_MP_ERR_METADATA; return false; }
   void *obj = reinterpret_cast<TypeObject>(g_cfg.type_get_object)(type);
-  if (!obj) { *err = PGR_MP_ERR_METADATA; return false; }
-  if (!out.set(obj)) { *err = PGR_MP_ERR_GCHANDLE; return false; }
+  if (!obj) { *err = PGS_MP_ERR_METADATA; return false; }
+  if (!out.set(obj)) { *err = PGS_MP_ERR_GCHANDLE; return false; }
   return true;
 }
 
@@ -189,9 +189,9 @@ bool type_object(void *klass, Root &out, int *err) {
 // benign SKIP (expired / detached) or a CLOCK fault and returns false; true keeps the window open.
 bool within_window(uint64_t deadline, int *status) {
   uint64_t now = 0;
-  if (!read_boottime_ms(&now)) { *status = PGR_MP_ERR_CLOCK; return false; }
-  if (now >= deadline) { *status = PGR_MP_SKIP; return false; }
-  if (!reinterpret_cast<ThreadCur>(g_cfg.thread_current)()) { *status = PGR_MP_SKIP; return false; }
+  if (!read_boottime_ms(&now)) { *status = PGS_MP_ERR_CLOCK; return false; }
+  if (now >= deadline) { *status = PGS_MP_SKIP; return false; }
+  if (!reinterpret_cast<ThreadCur>(g_cfg.thread_current)()) { *status = PGS_MP_SKIP; return false; }
   return true;
 }
 
@@ -199,14 +199,14 @@ bool is_safe_ms(uint64_t v) { return static_cast<double>(v) <= kMaxSafeInteger; 
 
 // A caught UTF16 id staged before commit, so dedup can compare against the already-emitted points.
 struct Id {
-  uint16_t chars[PGR_MP_MAX_ID];
+  uint16_t chars[PGS_MP_MAX_ID];
   int32_t length = 0;
 };
 
 // True if `id` already appears among the first `count` emitted points (dedup across stop/gym, like legacy).
-bool already_seen(const PgrMapPoiOutput *out, uint32_t count, const Id &id) {
+bool already_seen(const PgsMapPoiOutput *out, uint32_t count, const Id &id) {
   for (uint32_t i = 0; i < count; ++i) {
-    const PgrMapPoiPoint &p = out->points[i];
+    const PgsMapPoiPoint &p = out->points[i];
     if (static_cast<int32_t>(p.id_length) != id.length) continue;
     if (std::memcmp(p.id, id.chars, static_cast<size_t>(id.length) * sizeof(uint16_t)) == 0) return true;
   }
@@ -217,19 +217,19 @@ bool already_seen(const PgrMapPoiOutput *out, uint32_t count, const Id &id) {
 // incident from PokestopDisplays (else the legacy PokestopDisplay) sets FLAG_INCIDENT, its raw
 // IncidentDisplayType in `incident` and its end in raid_end. Each read is isolated: anything unexpected
 // only omits the incident. Pure field reads (no managed call).
-bool read_display(void *display, uint64_t wall, PgrMapPoiPoint *pt) {
+bool read_display(void *display, uint64_t wall, PgsMapPoiPoint *pt) {
   if (!is_exact(display, g_cfg.class_display)) return false;
   auto get = reinterpret_cast<FieldGet>(g_cfg.field_get_value);
   int32_t type = 0; int64_t end = 0; uint8_t hide = 0, done = 0;
   get(display, g_cfg.f_incType, &type); get(display, g_cfg.f_incEnd, &end);
   get(display, g_cfg.f_incHide, &hide); get(display, g_cfg.f_incDone, &done);
   if (type <= 0 || hide || done || end <= 0 || static_cast<uint64_t>(end) <= wall || !is_safe_ms(static_cast<uint64_t>(end))) return false;
-  pt->flags |= PGR_MP_FLAG_INCIDENT;
+  pt->flags |= PGS_MP_FLAG_INCIDENT;
   pt->incident = static_cast<uint32_t>(type);
   pt->raid_end = static_cast<double>(end);
   return true;
 }
-void read_optional_incident_data(const Root &fort, PgrMapPoiPoint *pt, uint64_t wall) {
+void read_optional_incident_data(const Root &fort, PgsMapPoiPoint *pt, uint64_t wall) {
   void *list = nullptr;
   if (field_ptr(fort, g_cfg.f_displays, &list) && list) {
     void *array = nullptr; int32_t count = 0;
@@ -248,24 +248,24 @@ void read_optional_incident_data(const Root &fort, PgrMapPoiPoint *pt, uint64_t 
 }
 // The stop's own IsIncidentActive() then drops an incident the player already beat (the fort data
 // keeps it until the server refreshes; the stop marks it complete locally, as the game map shows).
-int read_optional_incident(const Root &obj, const Root &fort, PgrMapPoiPoint *pt, uint64_t wall, uint64_t deadline) {
-  if (!g_has_incident) return PGR_MP_OK;
+int read_optional_incident(const Root &obj, const Root &fort, PgsMapPoiPoint *pt, uint64_t wall, uint64_t deadline) {
+  if (!g_has_incident) return PGS_MP_OK;
   read_optional_incident_data(fort, pt, wall);
-  if (!(pt->flags & PGR_MP_FLAG_INCIDENT)) return PGR_MP_OK;
-  int err = PGR_MP_OK;
+  if (!(pt->flags & PGS_MP_FLAG_INCIDENT)) return PGS_MP_OK;
+  int err = PGS_MP_OK;
   if (!within_window(deadline, &err)) return err;
   Root box; bool active = false;
   if (call(g_cfg.m_incActive, &obj, nullptr, box, /*allowNull=*/true) == CALL_OK && is_exact(box.get(), g_cfg.class_bool)) {
     uint8_t v = 0; active = unbox_copy(box, &v, 1) && v != 0;
   }
-  if (!active) { pt->flags &= ~uint32_t(PGR_MP_FLAG_INCIDENT); pt->incident = 0; pt->raid_end = 0; }
-  return PGR_MP_OK;
+  if (!active) { pt->flags &= ~uint32_t(PGS_MP_FLAG_INCIDENT); pt->incident = 0; pt->raid_end = 0; }
+  return PGS_MP_OK;
 }
 
 // Optional gym fields. Each read is isolated: a throw / bad class / out-of-range value only omits the field.
 // `raid` is already rooted and proven; `obj` is the rooted candidate (team is invoked on it).
-int read_optional_gym(const Root &obj, const Root &fort, PgrMapPoiPoint *pt, uint64_t wall, uint64_t deadline) {
-  int err = PGR_MP_OK;
+int read_optional_gym(const Root &obj, const Root &fort, PgsMapPoiPoint *pt, uint64_t wall, uint64_t deadline) {
+  int err = PGS_MP_OK;
   if (!within_window(deadline, &err)) return err;
   // team: non-virtual instance invoke on the candidate -> boxed enum (exact class_teamBox, value size 4).
   if (g_has_team) {
@@ -273,7 +273,7 @@ int read_optional_gym(const Root &obj, const Root &fort, PgrMapPoiPoint *pt, uin
     if (call(g_cfg.m_team, &obj, nullptr, box, /*allowNull=*/true) == CALL_OK &&
         is_exact(box.get(), g_cfg.class_teamBox)) {
       int32_t team = 0;
-      if (unbox_copy(box, &team, sizeof(team))) { pt->team_id = team; pt->flags |= PGR_MP_FLAG_TEAM; }
+      if (unbox_copy(box, &team, sizeof(team))) { pt->team_id = team; pt->flags |= PGS_MP_FLAG_TEAM; }
     }
   }
 
@@ -287,7 +287,7 @@ int read_optional_gym(const Root &obj, const Root &fort, PgrMapPoiPoint *pt, uin
       if (!within_window(deadline, &err)) return err;
       int32_t slots = 0;
       if (field_i32(gd, g_cfg.f_slots, &slots) && slots >= 0 && slots <= 6) {
-        pt->slots = slots; pt->flags |= PGR_MP_FLAG_SLOTS;
+        pt->slots = slots; pt->flags |= PGS_MP_FLAG_SLOTS;
       }
     }
   }
@@ -295,30 +295,30 @@ int read_optional_gym(const Root &obj, const Root &fort, PgrMapPoiPoint *pt, uin
   // active raid: fort -> raid info (exact). Active == !hidden && spawn<=wall && end>wall, all timestamps safe.
   if (!within_window(deadline, &err)) return err;
   void *raidRaw = nullptr;
-  if (!field_ptr(fort, g_cfg.f_raidInfo, &raidRaw) || !raidRaw) return PGR_MP_OK;
+  if (!field_ptr(fort, g_cfg.f_raidInfo, &raidRaw) || !raidRaw) return PGS_MP_OK;
   Root raid;
-  if (!raid.set(raidRaw) || !is_exact(raid.get(), g_cfg.class_raid)) return PGR_MP_OK;
+  if (!raid.set(raidRaw) || !is_exact(raid.get(), g_cfg.class_raid)) return PGS_MP_OK;
   if (!within_window(deadline, &err)) return err;
 
   uint8_t hidden = 0;
   uint64_t spawn = 0, end = 0, battle = 0;
-  if (!field_u8(raid, g_cfg.f_hidden, &hidden)) return PGR_MP_OK;
-  if (!field_u64(raid, g_cfg.f_spawn, &spawn)) return PGR_MP_OK;
-  if (!field_u64(raid, g_cfg.f_end, &end)) return PGR_MP_OK;
-  if (!field_u64(raid, g_cfg.f_battle, &battle)) return PGR_MP_OK;
-  if (hidden) return PGR_MP_OK;
-  if (!is_safe_ms(spawn) || !is_safe_ms(end) || !is_safe_ms(battle)) return PGR_MP_OK;
-  if (!(spawn <= wall && end > wall)) return PGR_MP_OK;
+  if (!field_u8(raid, g_cfg.f_hidden, &hidden)) return PGS_MP_OK;
+  if (!field_u64(raid, g_cfg.f_spawn, &spawn)) return PGS_MP_OK;
+  if (!field_u64(raid, g_cfg.f_end, &end)) return PGS_MP_OK;
+  if (!field_u64(raid, g_cfg.f_battle, &battle)) return PGS_MP_OK;
+  if (hidden) return PGS_MP_OK;
+  if (!is_safe_ms(spawn) || !is_safe_ms(end) || !is_safe_ms(battle)) return PGS_MP_OK;
+  if (!(spawn <= wall && end > wall)) return PGS_MP_OK;
 
   const bool egg = battle > wall;
   pt->raid_end = static_cast<double>(end);
   pt->raid_start = static_cast<double>(battle);
-  if (egg) pt->flags |= PGR_MP_FLAG_EGG;
+  if (egg) pt->flags |= PGS_MP_FLAG_EGG;
 
   // level: raw signed enum, independent optional (mapped to a name in JS).
   if (g_has_level) {
     int32_t level = 0;
-    if (field_i32(raid, g_cfg.f_level, &level)) { pt->level = level; pt->flags |= PGR_MP_FLAG_LEVEL; }
+    if (field_i32(raid, g_cfg.f_level, &level)) { pt->level = level; pt->flags |= PGS_MP_FLAG_LEVEL; }
   }
 
   // boss: only once hatched. raid -> boss pokemon (exact) -> int32 species id (1..99999).
@@ -331,18 +331,18 @@ int read_optional_gym(const Root &obj, const Root &fort, PgrMapPoiPoint *pt, uin
       if (!within_window(deadline, &err)) return err;
       int32_t boss = 0;
       if (field_i32(pkm, g_cfg.f_bossId, &boss) && boss >= 1 && boss <= 99999) {
-        pt->boss = boss; pt->flags |= PGR_MP_FLAG_BOSS;
+        pt->boss = boss; pt->flags |= PGS_MP_FLAG_BOSS;
       }
     }
   }
-  return within_window(deadline, &err) ? PGR_MP_OK : err;
+  return within_window(deadline, &err) ? PGS_MP_OK : err;
 }
 
 // Walk one POI class, appending accepted points to out->points starting at *count. Returns a scan status:
-// PGR_MP_OK keeps walking, PGR_MP_SKIP is a benign expiry (abort empty), negative is a fault (abort empty).
-int scan_class(void *klass, uint32_t kind, const PgrMapPoiRequest *request, uint64_t deadline,
-               PgrMapPoiOutput *out, uint32_t *count) {
-  int err = PGR_MP_OK;
+// PGS_MP_OK keeps walking, PGS_MP_SKIP is a benign expiry (abort empty), negative is a fault (abort empty).
+int scan_class(void *klass, uint32_t kind, const PgsMapPoiRequest *request, uint64_t deadline,
+               PgsMapPoiOutput *out, uint32_t *count) {
+  int err = PGS_MP_OK;
   if (!within_window(deadline, &err)) return err;
 
   // Root the System.Type BEFORE FindObjectsOfType (it is the method's reference argument), then invoke and
@@ -354,35 +354,35 @@ int scan_class(void *klass, uint32_t kind, const PgrMapPoiRequest *request, uint
   Root arrayObj;
   {
     void *type = klassType.get();
-    if (!type) return PGR_MP_ERR_GCHANDLE;
+    if (!type) return PGS_MP_ERR_GCHANDLE;
     void *args[] = {type};
     switch (call(g_cfg.m_find, nullptr, args, arrayObj, /*allowNull=*/true)) {
-      case CALL_THROW:    return PGR_MP_ERR_MANAGED;
-      case CALL_GCHANDLE: return PGR_MP_ERR_GCHANDLE;
-      case CALL_DEAD:     return PGR_MP_ERR_GCHANDLE;
+      case CALL_THROW:    return PGS_MP_ERR_MANAGED;
+      case CALL_GCHANDLE: return PGS_MP_ERR_GCHANDLE;
+      case CALL_DEAD:     return PGS_MP_ERR_GCHANDLE;
       case CALL_OK:       break;
     }
   }
-  if (!arrayObj.get()) return PGR_MP_OK;  // no array yet for this class: nothing to add
+  if (!arrayObj.get()) return PGS_MP_OK;  // no array yet for this class: nothing to add
   if (!within_window(deadline, &err)) return err;
 
   const uintptr_t n = reinterpret_cast<ArrayLen>(g_cfg.array_length)(arrayObj.get());
-  if (n > static_cast<uintptr_t>(PGR_MP_MAX_ARRAY)) return PGR_MP_ERR_BAD_COUNT;
+  if (n > static_cast<uintptr_t>(PGS_MP_MAX_ARRAY)) return PGS_MP_ERR_BAD_COUNT;
 
-  for (uintptr_t i = 0; i < n && *count < static_cast<uint32_t>(PGR_MP_MAX_POINTS); ++i) {
+  for (uintptr_t i = 0; i < n && *count < static_cast<uint32_t>(PGS_MP_MAX_POINTS); ++i) {
     if (!within_window(deadline, &err)) return err;  // lease re-checked every iteration
 
     // Small per-record RAII scope: live roots are bounded independent of the point count.
     void *base = arrayObj.get();  // re-resolve the (possibly relocated) array base on every indexing
-    if (!base) return PGR_MP_ERR_GCHANDLE;
+    if (!base) return PGS_MP_ERR_GCHANDLE;
     void *element = nullptr;
     std::memcpy(&element,
-                static_cast<char *>(base) + PGR_MP_ARRAY_DATA_OFF + static_cast<size_t>(i) * sizeof(void *),
+                static_cast<char *>(base) + PGS_MP_ARRAY_DATA_OFF + static_cast<size_t>(i) * sizeof(void *),
                 sizeof(void *));
     if (!element) continue;  // null element: skip
 
     Root obj;
-    if (!obj.set(element)) return PGR_MP_ERR_GCHANDLE;  // root candidate BEFORE any other allocation
+    if (!obj.set(element)) return PGS_MP_ERR_GCHANDLE;  // root candidate BEFORE any other allocation
     if (!within_window(deadline, &err)) return err;
     if (!is_exact(obj.get(), klass)) continue;          // wrong class: skip
 
@@ -391,15 +391,15 @@ int scan_class(void *klass, uint32_t kind, const PgrMapPoiRequest *request, uint
       Root aliveBox;
       void *args[] = {obj.get()};
       switch (call(g_cfg.m_alive, nullptr, args, aliveBox, /*allowNull=*/false)) {
-        case CALL_THROW:    return PGR_MP_ERR_MANAGED;
-        case CALL_GCHANDLE: return PGR_MP_ERR_GCHANDLE;
-        case CALL_DEAD:     return PGR_MP_ERR_GCHANDLE;
+        case CALL_THROW:    return PGS_MP_ERR_MANAGED;
+        case CALL_GCHANDLE: return PGS_MP_ERR_GCHANDLE;
+        case CALL_DEAD:     return PGS_MP_ERR_GCHANDLE;
         case CALL_OK:       break;
       }
-      if (!is_exact(aliveBox.get(), g_cfg.class_bool)) return PGR_MP_ERR_METADATA;
+      if (!is_exact(aliveBox.get(), g_cfg.class_bool)) return PGS_MP_ERR_METADATA;
       uint8_t alive = 0;
-      if (!unbox_copy(aliveBox, &alive, sizeof(alive))) return PGR_MP_ERR_GCHANDLE;
-      if (alive > 1) return PGR_MP_ERR_METADATA;
+      if (!unbox_copy(aliveBox, &alive, sizeof(alive))) return PGS_MP_ERR_GCHANDLE;
+      if (alive > 1) return PGS_MP_ERR_METADATA;
       if (!alive) continue;  // dead object: skip
     }
 
@@ -408,14 +408,14 @@ int scan_class(void *klass, uint32_t kind, const PgrMapPoiRequest *request, uint
     Root fort;
     {
       void *self = obj.get();
-      if (!self) return PGR_MP_ERR_GCHANDLE;
+      if (!self) return PGS_MP_ERR_GCHANDLE;
       void *vm = reinterpret_cast<VirtMethod>(g_cfg.object_get_virtual_method)(self, g_cfg.m_fort);
-      if (!vm) return PGR_MP_ERR_METADATA;
+      if (!vm) return PGS_MP_ERR_METADATA;
       if (!within_window(deadline, &err)) return err;
       switch (call(vm, &obj, nullptr, fort, /*allowNull=*/true)) {
-        case CALL_THROW:    return PGR_MP_ERR_MANAGED;
-        case CALL_GCHANDLE: return PGR_MP_ERR_GCHANDLE;
-        case CALL_DEAD:     return PGR_MP_ERR_GCHANDLE;
+        case CALL_THROW:    return PGS_MP_ERR_MANAGED;
+        case CALL_GCHANDLE: return PGS_MP_ERR_GCHANDLE;
+        case CALL_DEAD:     return PGS_MP_ERR_GCHANDLE;
         case CALL_OK:       break;
       }
     }
@@ -426,15 +426,15 @@ int scan_class(void *klass, uint32_t kind, const PgrMapPoiRequest *request, uint
     void *idRaw = nullptr;
     if (!field_ptr(fort, g_cfg.f_fortId, &idRaw) || !idRaw) continue;
     Root idStr;
-    if (!idStr.set(idRaw)) return PGR_MP_ERR_GCHANDLE;
+    if (!idStr.set(idRaw)) return PGS_MP_ERR_GCHANDLE;
     if (!within_window(deadline, &err)) return err;
     if (!is_exact(idStr.get(), g_cfg.class_string)) continue;
     Id id;
     {
       void *s = idStr.get();
-      if (!s) return PGR_MP_ERR_GCHANDLE;
+      if (!s) return PGS_MP_ERR_GCHANDLE;
       id.length = reinterpret_cast<StrLen>(g_cfg.string_length)(s);
-      if (id.length < 1 || id.length > PGR_MP_MAX_ID) continue;
+      if (id.length < 1 || id.length > PGS_MP_MAX_ID) continue;
       uint16_t *chars = reinterpret_cast<StrChars>(g_cfg.string_chars)(s);
       if (!chars) continue;
       std::memcpy(id.chars, chars, static_cast<size_t>(id.length) * sizeof(uint16_t));
@@ -443,35 +443,35 @@ int scan_class(void *klass, uint32_t kind, const PgrMapPoiRequest *request, uint
 
     // lat / lon: finite and in range.
     double lat = 0, lon = 0;
-    if (!field_f64(fort, g_cfg.f_lat, &lat) || !field_f64(fort, g_cfg.f_lon, &lon)) return PGR_MP_ERR_GCHANDLE;
+    if (!field_f64(fort, g_cfg.f_lat, &lat) || !field_f64(fort, g_cfg.f_lon, &lon)) return PGS_MP_ERR_GCHANDLE;
     if (!std::isfinite(lat) || !std::isfinite(lon) || std::fabs(lat) > 90.0 || std::fabs(lon) > 180.0) continue;
 
     // Commit the point into the caller's buffer (provisional: *count is stamped into out->count only on the
     // final success gate, so an expiry/fault after this still publishes nothing).
-    PgrMapPoiPoint *pt = &out->points[*count];
+    PgsMapPoiPoint *pt = &out->points[*count];
     std::memset(pt, 0, sizeof(*pt));
     pt->kind = kind;
     pt->id_length = static_cast<uint32_t>(id.length);
     std::memcpy(pt->id, id.chars, static_cast<size_t>(id.length) * sizeof(uint16_t));
     pt->lat = lat;
     pt->lon = lon;
-    if (kind == PGR_MP_KIND_GYM) {
+    if (kind == PGS_MP_KIND_GYM) {
       err = read_optional_gym(obj, fort, pt, request->wall_ms, deadline);
-      if (err != PGR_MP_OK) return err;
+      if (err != PGS_MP_OK) return err;
     } else {
       err = read_optional_incident(obj, fort, pt, request->wall_ms, deadline);
-      if (err != PGR_MP_OK) return err;
+      if (err != PGS_MP_OK) return err;
     }
 
     ++(*count);
   }
-  return PGR_MP_OK;
+  return PGS_MP_OK;
 }
 
-void init_output(PgrMapPoiOutput *out) {
+void init_output(PgsMapPoiOutput *out) {
   std::memset(out, 0, sizeof(*out));
-  out->version = PGR_MP_OUTPUT_VERSION;
-  out->size = sizeof(PgrMapPoiOutput);
+  out->version = PGS_MP_OUTPUT_VERSION;
+  out->size = sizeof(PgsMapPoiOutput);
 }
 
 // Supplied tid must be nonzero AND equal the current OS tid BEFORE the owner is latched; a later foreign tid
@@ -485,13 +485,13 @@ bool owner_ready(uint64_t tid) {
   return g_owner_tid.load(std::memory_order_acquire) == tid;
 }
 
-bool check_request(const PgrMapPoiRequest *request, int *rc) {
-  if (!g_installed.load(std::memory_order_acquire)) { *rc = PGR_MP_ERR_NOT_INSTALLED; return false; }
-  if (request == nullptr) { *rc = PGR_MP_ERR_NULL_ARG; return false; }
-  if (request->version != PGR_MP_REQUEST_VERSION) { *rc = PGR_MP_ERR_BAD_VERSION; return false; }
-  if (request->size != sizeof(PgrMapPoiRequest)) { *rc = PGR_MP_ERR_BAD_SIZE; return false; }
-  if (!is_safe_ms(request->wall_ms)) { *rc = PGR_MP_ERR_BAD_CONFIG; return false; }
-  *rc = PGR_MP_OK;
+bool check_request(const PgsMapPoiRequest *request, int *rc) {
+  if (!g_installed.load(std::memory_order_acquire)) { *rc = PGS_MP_ERR_NOT_INSTALLED; return false; }
+  if (request == nullptr) { *rc = PGS_MP_ERR_NULL_ARG; return false; }
+  if (request->version != PGS_MP_REQUEST_VERSION) { *rc = PGS_MP_ERR_BAD_VERSION; return false; }
+  if (request->size != sizeof(PgsMapPoiRequest)) { *rc = PGS_MP_ERR_BAD_SIZE; return false; }
+  if (!is_safe_ms(request->wall_ms)) { *rc = PGS_MP_ERR_BAD_CONFIG; return false; }
+  *rc = PGS_MP_OK;
   return true;
 }
 
@@ -505,17 +505,17 @@ bool group_ok(void *const *ptrs, const int *slots, int n, bool *enabled) {
   return true;
 }
 
-bool validate_config(const PgrMapPoiConfig *c, int *rc, bool *team, bool *slots, bool *level, bool *boss,
+bool validate_config(const PgsMapPoiConfig *c, int *rc, bool *team, bool *slots, bool *level, bool *boss,
                      bool *incident) {
-  if (c == nullptr) { *rc = PGR_MP_ERR_NULL_ARG; return false; }
-  if (c->version != PGR_MP_CONFIG_VERSION) { *rc = PGR_MP_ERR_BAD_VERSION; return false; }
-  if (c->size != sizeof(PgrMapPoiConfig)) { *rc = PGR_MP_ERR_BAD_SIZE; return false; }
+  if (c == nullptr) { *rc = PGS_MP_ERR_NULL_ARG; return false; }
+  if (c->version != PGS_MP_CONFIG_VERSION) { *rc = PGS_MP_ERR_BAD_VERSION; return false; }
+  if (c->size != sizeof(PgsMapPoiConfig)) { *rc = PGS_MP_ERR_BAD_SIZE; return false; }
 
   void *ptrs[kTotalPtrCount];
-  std::memcpy(ptrs, reinterpret_cast<const unsigned char *>(c) + offsetof(PgrMapPoiConfig, runtime_invoke),
+  std::memcpy(ptrs, reinterpret_cast<const unsigned char *>(c) + offsetof(PgsMapPoiConfig, runtime_invoke),
               sizeof(ptrs));
   for (int i = 0; i < kMandatoryPtrCount; ++i)
-    if (ptrs[i] == nullptr) { *rc = PGR_MP_ERR_MISSING_PTR; return false; }
+    if (ptrs[i] == nullptr) { *rc = PGS_MP_ERR_MISSING_PTR; return false; }
 
   const int team_slots[] = {31, 32};
   const int slot_slots[] = {33, 34, 35};
@@ -523,25 +523,25 @@ bool validate_config(const PgrMapPoiConfig *c, int *rc, bool *team, bool *slots,
   const int incident_slots[] = {40, 41, 42, 43, 44, 45, 46, 47, 48, 49};
   if (!group_ok(ptrs, team_slots, 2, team) || !group_ok(ptrs, slot_slots, 3, slots) ||
       !group_ok(ptrs, boss_slots, 3, boss) || !group_ok(ptrs, incident_slots, 10, incident)) {
-    *rc = PGR_MP_ERR_BAD_CONFIG;
+    *rc = PGS_MP_ERR_BAD_CONFIG;
     return false;
   }
   *level = ptrs[36] != nullptr;  // independent optional
-  *rc = PGR_MP_OK;
+  *rc = PGS_MP_OK;
   return true;
 }
 
-int api_install(const PgrMapPoiConfig *config) {
-  int rc = PGR_MP_OK;
+int api_install(const PgsMapPoiConfig *config) {
+  int rc = PGS_MP_OK;
   bool team = false, slots = false, level = false, boss = false, incident = false;
   if (!validate_config(config, &rc, &team, &slots, &level, &boss, &incident)) return rc;
   uint64_t probe = 0;
-  if (!read_boottime_ms(&probe)) return PGR_MP_ERR_CLOCK;
+  if (!read_boottime_ms(&probe)) return PGS_MP_ERR_CLOCK;
 
   std::lock_guard<std::mutex> install_lock(g_install_mutex);
   if (g_installed.load(std::memory_order_acquire)) {
     std::lock_guard<std::mutex> state_lock(g_state_mutex);
-    return std::memcmp(&g_cfg, config, sizeof(*config)) == 0 ? 0 : PGR_MP_ERR_RECONFIG;
+    return std::memcmp(&g_cfg, config, sizeof(*config)) == 0 ? 0 : PGS_MP_ERR_RECONFIG;
   }
   {
     std::lock_guard<std::mutex> state_lock(g_state_mutex);
@@ -557,59 +557,59 @@ int api_install(const PgrMapPoiConfig *config) {
   return 0;
 }
 
-int api_scan(const PgrMapPoiRequest *request, PgrMapPoiOutput *out) {
-  if (out == nullptr) return PGR_MP_ERR_NULL_ARG;  // cannot report
+int api_scan(const PgsMapPoiRequest *request, PgsMapPoiOutput *out) {
+  if (out == nullptr) return PGS_MP_ERR_NULL_ARG;  // cannot report
   init_output(out);
-  int rc = PGR_MP_OK;
+  int rc = PGS_MP_OK;
   if (!check_request(request, &rc)) { out->status = rc; return rc; }
 
   // Owner latch + attached-thread gate (benign SKIP on failure, no managed work).
   if (!owner_ready(request->tid) || !reinterpret_cast<ThreadCur>(g_cfg.thread_current)()) {
-    out->status = PGR_MP_SKIP;
-    return PGR_MP_SKIP;
+    out->status = PGS_MP_SKIP;
+    return PGS_MP_SKIP;
   }
   const uint64_t remaining = request->remaining_ms > kMaxLeaseMs ? kMaxLeaseMs : request->remaining_ms;
-  if (remaining == 0) { out->status = PGR_MP_SKIP; return PGR_MP_SKIP; }
+  if (remaining == 0) { out->status = PGS_MP_SKIP; return PGS_MP_SKIP; }
   uint64_t now = 0;
-  if (!read_boottime_ms(&now)) { out->status = PGR_MP_ERR_CLOCK; return PGR_MP_ERR_CLOCK; }
+  if (!read_boottime_ms(&now)) { out->status = PGS_MP_ERR_CLOCK; return PGS_MP_ERR_CLOCK; }
   const uint64_t deadline = now + remaining;
 
-  { std::lock_guard<std::mutex> lock(g_state_mutex); if (g_busy) { out->status = PGR_MP_ERR_BUSY; return PGR_MP_ERR_BUSY; } g_busy = true; }
+  { std::lock_guard<std::mutex> lock(g_state_mutex); if (g_busy) { out->status = PGS_MP_ERR_BUSY; return PGS_MP_ERR_BUSY; } g_busy = true; }
   BusyExit busy_exit;
   // Reentrant managed calls may reuse the caller's output buffer. Keep provisional
   // rows private until every managed root has been released and the lease rechecked.
-  std::unique_ptr<PgrMapPoiOutput> staged(new (std::nothrow) PgrMapPoiOutput{});
-  if (!staged) { out->status = PGR_MP_ERR_ALLOCATION; return out->status; }
+  std::unique_ptr<PgsMapPoiOutput> staged(new (std::nothrow) PgsMapPoiOutput{});
+  if (!staged) { out->status = PGS_MP_ERR_ALLOCATION; return out->status; }
 
   // All managed work (and its roots) lives in this block; every Root is destroyed before the final gate.
   uint32_t count = 0;
-  int status = PGR_MP_OK;
+  int status = PGS_MP_OK;
   {
     const void *classes[2] = {g_cfg.class_stop, g_cfg.class_gym};
-    const uint32_t kinds[2] = {PGR_MP_KIND_STOP, PGR_MP_KIND_GYM};
-    for (int k = 0; k < 2 && status == PGR_MP_OK; ++k)
+    const uint32_t kinds[2] = {PGS_MP_KIND_STOP, PGS_MP_KIND_GYM};
+    for (int k = 0; k < 2 && status == PGS_MP_OK; ++k)
       status = scan_class(const_cast<void *>(classes[k]), kinds[k], request, deadline, staged.get(), &count);
   }
   init_output(out);
-  if (status != PGR_MP_OK) { out->status = status; return status; }  // fault / expiry: publish nothing
+  if (status != PGS_MP_OK) { out->status = status; return status; }  // fault / expiry: publish nothing
 
   // Fresh pre-publication gate, AFTER every root is released (the block above has closed).
   if (!within_window(deadline, &status)) { out->status = status; return status; }
 
   out->count = count;
-  std::memcpy(out->points, staged->points, count * sizeof(PgrMapPoiPoint));
-  out->status = PGR_MP_OK;
-  return PGR_MP_OK;
+  std::memcpy(out->points, staged->points, count * sizeof(PgsMapPoiPoint));
+  out->status = PGS_MP_OK;
+  return PGS_MP_OK;
 }
 
-const PgrMapPoiApi kApiTable = {
-    PGR_MP_API_VERSION, static_cast<uint32_t>(sizeof(PgrMapPoiApi)),
+const PgsMapPoiApi kApiTable = {
+    PGS_MP_API_VERSION, static_cast<uint32_t>(sizeof(PgsMapPoiApi)),
     &api_install, &api_scan,
 };
 
 }  // namespace
 
 extern "C" const void *pgs_map_poi_api(uint32_t version) {
-  if (version != PGR_MP_API_VERSION) return nullptr;
+  if (version != PGS_MP_API_VERSION) return nullptr;
   return &kApiTable;
 }

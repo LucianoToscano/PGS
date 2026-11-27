@@ -23,24 +23,24 @@
 // deadline, and re-check that deadline AFTER the managed work -- so an op whose work outran the foreground
 // lease is refused without transferring any handle. No mutex is ever held across a managed call.
 
-static_assert(sizeof(PgrVgpAuxConfig) == 232, "config must be 232 bytes");
-static_assert(sizeof(PgrVgpAuxSpin) == 32, "spin result must be 32 bytes");
-static_assert(sizeof(PgrVgpAuxTransfer) == 32, "transfer result must be 32 bytes");
-static_assert(sizeof(PgrVgpAuxApi) == 32, "table must be 32 bytes");
-static_assert(offsetof(PgrVgpAuxConfig, gc_new) == 8, "layout (first ptr)");
-static_assert(offsetof(PgrVgpAuxConfig, class_rpc) == 8 + 16 * 8, "layout (first class)");
-static_assert(offsetof(PgrVgpAuxConfig, f_rpc) == 8 + 23 * 8, "layout (f_rpc)");
-static_assert(offsetof(PgrVgpAuxConfig, m_get_pokemon) == 8 + 27 * 8, "layout (last ptr)");
-static_assert(offsetof(PgrVgpAuxSpin, rpc_handle) == 8, "layout");
-static_assert(offsetof(PgrVgpAuxSpin, reflection_handle) == 16, "layout");
-static_assert(offsetof(PgrVgpAuxSpin, closed_method) == 24, "layout");
-static_assert(offsetof(PgrVgpAuxTransfer, caught_id) == 8, "layout");
-static_assert(offsetof(PgrVgpAuxTransfer, pokemon_handle) == 16, "layout");
-static_assert(offsetof(PgrVgpAuxTransfer, gm_handle) == 24, "layout");
+static_assert(sizeof(PgsVgpAuxConfig) == 232, "config must be 232 bytes");
+static_assert(sizeof(PgsVgpAuxSpin) == 32, "spin result must be 32 bytes");
+static_assert(sizeof(PgsVgpAuxTransfer) == 32, "transfer result must be 32 bytes");
+static_assert(sizeof(PgsVgpAuxApi) == 32, "table must be 32 bytes");
+static_assert(offsetof(PgsVgpAuxConfig, gc_new) == 8, "layout (first ptr)");
+static_assert(offsetof(PgsVgpAuxConfig, class_rpc) == 8 + 16 * 8, "layout (first class)");
+static_assert(offsetof(PgsVgpAuxConfig, f_rpc) == 8 + 23 * 8, "layout (f_rpc)");
+static_assert(offsetof(PgsVgpAuxConfig, m_get_pokemon) == 8 + 27 * 8, "layout (last ptr)");
+static_assert(offsetof(PgsVgpAuxSpin, rpc_handle) == 8, "layout");
+static_assert(offsetof(PgsVgpAuxSpin, reflection_handle) == 16, "layout");
+static_assert(offsetof(PgsVgpAuxSpin, closed_method) == 24, "layout");
+static_assert(offsetof(PgsVgpAuxTransfer, caught_id) == 8, "layout");
+static_assert(offsetof(PgsVgpAuxTransfer, pokemon_handle) == 16, "layout");
+static_assert(offsetof(PgsVgpAuxTransfer, gm_handle) == 24, "layout");
 
 namespace {
 
-constexpr uint64_t kMaxLeaseMs = PGR_VX_MAX_LEASE_MS;
+constexpr uint64_t kMaxLeaseMs = PGS_VX_MAX_LEASE_MS;
 
 // --- il2cpp runtime ABI typedefs ---------------------------------------------------
 using GcNew          = uintptr_t (*)(void *obj, int pinned);
@@ -61,10 +61,10 @@ using MethodFromRefl = const void *(*)(void *reflection);
 
 // --- lifetime / publication --------------------------------------------------------
 std::mutex g_install_mutex;
-PgrVgpAuxConfig g_cfg{};
+PgsVgpAuxConfig g_cfg{};
 std::atomic<bool> g_installed{false};
 bool g_install_attempted = false;
-int g_install_error = PGR_VX_ERR_NOT_INSTALLED;
+int g_install_error = PGS_VX_ERR_NOT_INSTALLED;
 
 // One in-flight op at a time (stateless, but a managed call may re-enter the owner thread).
 std::atomic<bool> g_busy{false};
@@ -146,7 +146,7 @@ void *type_object(void *klass) {
 }
 void wbarrier(void *array_obj, uint32_t element, void *value) {
   void **slot = reinterpret_cast<void **>(static_cast<char *>(array_obj) +
-                                          PGR_VX_ARRAY_DATA_OFF + element * sizeof(void *));
+                                          PGS_VX_ARRAY_DATA_OFF + element * sizeof(void *));
   reinterpret_cast<WBarrierSet>(g_cfg.gc_wbarrier_set_field)(array_obj, slot, value);
 }
 const void *unreflect(void *reflection) {
@@ -154,48 +154,48 @@ const void *unreflect(void *reflection) {
 }
 
 // --- spin: resolve the closed SendRpc off the item bag -----------------------------
-int do_spin(void *item_bag, uint64_t deadline, PgrVgpAuxSpin *out) {
+int do_spin(void *item_bag, uint64_t deadline, PgsVgpAuxSpin *out) {
   uintptr_t bag_root = 0, rpc_root = 0, refl_root = 0, types_root = 0, closed_root = 0;
   const void *closed_method = nullptr;
-  int rc = PGR_VX_OK;
+  int rc = PGS_VX_OK;
 
   bag_root = hold(item_bag);
-  if (bag_root == 0) { rc = PGR_VX_ERR_GCHANDLE; goto done; }
-  if (!is_exact(gc_get(bag_root), g_cfg.class_item_bag)) { rc = PGR_VX_ERR_IDENTITY; goto done; }
+  if (bag_root == 0) { rc = PGS_VX_ERR_GCHANDLE; goto done; }
+  if (!is_exact(gc_get(bag_root), g_cfg.class_item_bag)) { rc = PGS_VX_ERR_IDENTITY; goto done; }
 
   {
     // Read the rpc service off the item bag's validated cynr field; root it, require the exact rpc class.
     void *rpc = field_ptr(gc_get(bag_root), g_cfg.f_rpc);
-    if (!is_exact(rpc, g_cfg.class_rpc)) { rc = PGR_VX_ERR_IDENTITY; goto done; }
+    if (!is_exact(rpc, g_cfg.class_rpc)) { rc = PGS_VX_ERR_IDENTITY; goto done; }
     rpc_root = hold(rpc);
-    if (rpc_root == 0) { rc = PGR_VX_ERR_GCHANDLE; goto done; }
+    if (rpc_root == 0) { rc = PGS_VX_ERR_GCHANDLE; goto done; }
   }
 
   {
     // Resolve the open generic SendRpc on the rpc class and reflect it. Validate generic + arity 5.
-    const void *generic = class_method(g_cfg.class_rpc, kSendRpc, PGR_VX_SENDRPC_ARITY);
-    if (!method_is_generic(generic) || method_param_count(generic) != PGR_VX_SENDRPC_ARITY) {
-      rc = PGR_VX_ERR_REFLECT;
+    const void *generic = class_method(g_cfg.class_rpc, kSendRpc, PGS_VX_SENDRPC_ARITY);
+    if (!method_is_generic(generic) || method_param_count(generic) != PGS_VX_SENDRPC_ARITY) {
+      rc = PGS_VX_ERR_REFLECT;
       goto done;
     }
     void *reflection = reflect_method(generic, g_cfg.class_rpc);
-    if (reflection == nullptr) { rc = PGR_VX_ERR_REFLECT; goto done; }
+    if (reflection == nullptr) { rc = PGS_VX_ERR_REFLECT; goto done; }
     refl_root = hold(reflection);
-    if (refl_root == 0) { rc = PGR_VX_ERR_GCHANDLE; goto done; }
+    if (refl_root == 0) { rc = PGS_VX_ERR_GCHANDLE; goto done; }
   }
 
   {
     // Build the 2-element System.Type[] {request, spin-result}. Root the array, then write each Type via
     // the write barrier, re-resolving the array from its handle after each (allocating) type_object().
-    void *types = array_new(g_cfg.class_type, PGR_VX_TYPE_ARGS);
+    void *types = array_new(g_cfg.class_type, PGS_VX_TYPE_ARGS);
     types_root = hold(types);
-    if (types_root == 0) { rc = PGR_VX_ERR_GCHANDLE; goto done; }
+    if (types_root == 0) { rc = PGS_VX_ERR_GCHANDLE; goto done; }
 
-    void *const generic_args[PGR_VX_TYPE_ARGS] = {g_cfg.class_request, g_cfg.class_spin};
-    for (uint32_t i = 0; i < PGR_VX_TYPE_ARGS; ++i) {
+    void *const generic_args[PGS_VX_TYPE_ARGS] = {g_cfg.class_request, g_cfg.class_spin};
+    for (uint32_t i = 0; i < PGS_VX_TYPE_ARGS; ++i) {
       void *type_obj = type_object(generic_args[i]);
       uintptr_t type_root = hold(type_obj);  // root before the next managed call can move it
-      if (type_root == 0) { rc = PGR_VX_ERR_REFLECT; goto done; }
+      if (type_root == 0) { rc = PGS_VX_ERR_REFLECT; goto done; }
       wbarrier(gc_get(types_root), i, gc_get(type_root));
       drop(&type_root);
     }
@@ -204,18 +204,18 @@ int do_spin(void *item_bag, uint64_t deadline, PgrVgpAuxSpin *out) {
   {
     // Invoke MakeGenericMethod(Type[]) on the reflected method; unreflect to the inflated MethodInfo*.
     const void *make = class_method(obj_class_fn()(gc_get(refl_root)), kMakeGenericMethod, 1);
-    if (make == nullptr) { rc = PGR_VX_ERR_REFLECT; goto done; }
+    if (make == nullptr) { rc = PGS_VX_ERR_REFLECT; goto done; }
     void *params[1] = {gc_get(types_root)};  // reference-type array argument passed directly
     void *exc = nullptr;
     void *closed = managed_invoke(make, gc_get(refl_root), params, &exc);
-    if (exc != nullptr) { rc = PGR_VX_ERR_MANAGED; goto done; }
-    if (closed == nullptr) { rc = PGR_VX_ERR_REFLECT; goto done; }
+    if (exc != nullptr) { rc = PGS_VX_ERR_MANAGED; goto done; }
+    if (closed == nullptr) { rc = PGS_VX_ERR_REFLECT; goto done; }
     closed_root = hold(closed);
-    if (closed_root == 0) { rc = PGR_VX_ERR_GCHANDLE; goto done; }
+    if (closed_root == 0) { rc = PGS_VX_ERR_GCHANDLE; goto done; }
 
     closed_method = unreflect(gc_get(closed_root));
-    if (!method_is_inflated(closed_method) || method_param_count(closed_method) != PGR_VX_SENDRPC_ARITY) {
-      rc = PGR_VX_ERR_REFLECT;
+    if (!method_is_inflated(closed_method) || method_param_count(closed_method) != PGS_VX_SENDRPC_ARITY) {
+      rc = PGS_VX_ERR_REFLECT;
       goto done;
     }
   }
@@ -223,18 +223,18 @@ int do_spin(void *item_bag, uint64_t deadline, PgrVgpAuxSpin *out) {
   {
     // Fresh deadline: refuse (retry later) if the foreground lease was spent during the managed work.
     uint64_t end = 0;
-    if (!read_boottime_ms(&end)) { rc = PGR_VX_ERR_CLOCK_FAILURE; goto done; }
-    if (end >= deadline) { rc = PGR_VX_OK; goto done; }
+    if (!read_boottime_ms(&end)) { rc = PGS_VX_ERR_CLOCK_FAILURE; goto done; }
+    if (end >= deadline) { rc = PGS_VX_OK; goto done; }
 
     // Transfer OWN rpc + closed reflection to the caller; closed_method lives with reflection_handle.
-    out->version = PGR_VX_OUT_VERSION;
-    out->size = sizeof(PgrVgpAuxSpin);
+    out->version = PGS_VX_OUT_VERSION;
+    out->size = sizeof(PgsVgpAuxSpin);
     out->rpc_handle = static_cast<uint64_t>(rpc_root);
     out->reflection_handle = static_cast<uint64_t>(closed_root);
     out->closed_method = const_cast<void *>(closed_method);
     rpc_root = 0;
     closed_root = 0;
-    rc = PGR_VX_SUCCESS;
+    rc = PGS_VX_SUCCESS;
   }
 
 done:
@@ -247,19 +247,19 @@ done:
 }
 
 // --- transfer: look up the caught pokemon + bag GameMaster -------------------------
-int do_transfer(void *response, void *pokemon_bag, uint64_t deadline, PgrVgpAuxTransfer *out) {
+int do_transfer(void *response, void *pokemon_bag, uint64_t deadline, PgsVgpAuxTransfer *out) {
   uintptr_t resp_root = 0, bag_root = 0, pk_root = 0, gm_root = 0;
   uint64_t id = 0;
-  int rc = PGR_VX_OK;
+  int rc = PGS_VX_OK;
 
   resp_root = hold(response);
-  if (resp_root == 0) { rc = PGR_VX_ERR_GCHANDLE; goto done; }
+  if (resp_root == 0) { rc = PGS_VX_ERR_GCHANDLE; goto done; }
   bag_root = hold(pokemon_bag);
-  if (bag_root == 0) { rc = PGR_VX_ERR_GCHANDLE; goto done; }
+  if (bag_root == 0) { rc = PGS_VX_ERR_GCHANDLE; goto done; }
 
-  if (!is_exact(gc_get(resp_root), g_cfg.class_response)) { rc = PGR_VX_ERR_IDENTITY; goto done; }
+  if (!is_exact(gc_get(resp_root), g_cfg.class_response)) { rc = PGS_VX_ERR_IDENTITY; goto done; }
   id = field_u64(gc_get(resp_root), g_cfg.f_caught_id);
-  if (id == 0) { rc = PGR_VX_SKIP; goto done; }  // missing captured id -> drop
+  if (id == 0) { rc = PGS_VX_SKIP; goto done; }  // missing captured id -> drop
 
   {
     // bag.GetPokemon(id). A null result means the inventory has not caught up yet (not ready: retry).
@@ -267,40 +267,40 @@ int do_transfer(void *response, void *pokemon_bag, uint64_t deadline, PgrVgpAuxT
     void *params[1] = {&id_arg};
     void *exc = nullptr;
     void *pokemon = managed_invoke(g_cfg.m_get_pokemon, gc_get(bag_root), params, &exc);
-    if (exc != nullptr) { rc = PGR_VX_ERR_MANAGED; goto done; }
-    if (pokemon == nullptr) { rc = PGR_VX_OK; goto done; }  // inventory not ready
+    if (exc != nullptr) { rc = PGS_VX_ERR_MANAGED; goto done; }
+    if (pokemon == nullptr) { rc = PGS_VX_OK; goto done; }  // inventory not ready
     pk_root = hold(pokemon);
-    if (pk_root == 0) { rc = PGR_VX_ERR_GCHANDLE; goto done; }
+    if (pk_root == 0) { rc = PGS_VX_ERR_GCHANDLE; goto done; }
   }
 
   // Prove the resolved pokemon is the exact Pokemon class AND carries the captured id; else skip.
   if (!is_exact(gc_get(pk_root), g_cfg.class_pokemon) ||
       field_u64(gc_get(pk_root), g_cfg.f_pokemon_id) != id) {
-    rc = PGR_VX_SKIP;
+    rc = PGS_VX_SKIP;
     goto done;
   }
 
   {
     // Read + root the bag's GameMaster handle; it must be present for the caught transfer check.
     void *gm = field_ptr(gc_get(bag_root), g_cfg.f_bag_gm);
-    if (gm == nullptr) { rc = PGR_VX_ERR_IDENTITY; goto done; }
+    if (gm == nullptr) { rc = PGS_VX_ERR_IDENTITY; goto done; }
     gm_root = hold(gm);
-    if (gm_root == 0) { rc = PGR_VX_ERR_GCHANDLE; goto done; }
+    if (gm_root == 0) { rc = PGS_VX_ERR_GCHANDLE; goto done; }
   }
 
   {
     uint64_t end = 0;
-    if (!read_boottime_ms(&end)) { rc = PGR_VX_ERR_CLOCK_FAILURE; goto done; }
-    if (end >= deadline) { rc = PGR_VX_OK; goto done; }
+    if (!read_boottime_ms(&end)) { rc = PGS_VX_ERR_CLOCK_FAILURE; goto done; }
+    if (end >= deadline) { rc = PGS_VX_OK; goto done; }
 
-    out->version = PGR_VX_OUT_VERSION;
-    out->size = sizeof(PgrVgpAuxTransfer);
+    out->version = PGS_VX_OUT_VERSION;
+    out->size = sizeof(PgsVgpAuxTransfer);
     out->caught_id = id;
     out->pokemon_handle = static_cast<uint64_t>(pk_root);
     out->gm_handle = static_cast<uint64_t>(gm_root);
     pk_root = 0;
     gm_root = 0;
-    rc = PGR_VX_SUCCESS;
+    rc = PGS_VX_SUCCESS;
   }
 
 done:
@@ -313,56 +313,56 @@ done:
 
 // --- gate wrapper ------------------------------------------------------------------
 // Returns true (and sets *deadline) when the op may proceed. Returns false with *rc already holding the
-// refusal/error code otherwise. A reentrant op (busy) is refused with PGR_VX_OK.
+// refusal/error code otherwise. A reentrant op (busy) is refused with PGS_VX_OK.
 bool enter_op(uint64_t owner_tid, uint64_t lease_ms, uint64_t *deadline, int *rc) {
-  if (owner_tid == 0 || current_tid() != owner_tid) { *rc = PGR_VX_OK; return false; }
-  if (lease_ms == 0) { *rc = PGR_VX_OK; return false; }
+  if (owner_tid == 0 || current_tid() != owner_tid) { *rc = PGS_VX_OK; return false; }
+  if (lease_ms == 0) { *rc = PGS_VX_OK; return false; }
   uint64_t lease = lease_ms > kMaxLeaseMs ? kMaxLeaseMs : lease_ms;
   uint64_t now = 0;
-  if (!read_boottime_ms(&now)) { *rc = PGR_VX_ERR_CLOCK_FAILURE; return false; }
-  if (g_busy.exchange(true)) { *rc = PGR_VX_OK; return false; }  // reentrant -> refused
+  if (!read_boottime_ms(&now)) { *rc = PGS_VX_ERR_CLOCK_FAILURE; return false; }
+  if (g_busy.exchange(true)) { *rc = PGS_VX_OK; return false; }  // reentrant -> refused
   *deadline = now + lease;
   return true;
 }
 
 // --- public API --------------------------------------------------------------------
-bool validate_config(const PgrVgpAuxConfig *c, int *rc) {
-  if (c == nullptr) { *rc = PGR_VX_ERR_NULL_ARG; return false; }
-  if (c->version != PGR_VX_CONFIG_VERSION) { *rc = PGR_VX_ERR_BAD_VERSION; return false; }
-  if (c->size != sizeof(PgrVgpAuxConfig)) { *rc = PGR_VX_ERR_BAD_SIZE; return false; }
+bool validate_config(const PgsVgpAuxConfig *c, int *rc) {
+  if (c == nullptr) { *rc = PGS_VX_ERR_NULL_ARG; return false; }
+  if (c->version != PGS_VX_CONFIG_VERSION) { *rc = PGS_VX_ERR_BAD_VERSION; return false; }
+  if (c->size != sizeof(PgsVgpAuxConfig)) { *rc = PGS_VX_ERR_BAD_SIZE; return false; }
   void *const *ptrs = reinterpret_cast<void *const *>(&c->gc_new);
   for (int i = 0; i < 28; ++i) {
-    if (ptrs[i] == nullptr) { *rc = PGR_VX_ERR_MISSING_PTR; return false; }
+    if (ptrs[i] == nullptr) { *rc = PGS_VX_ERR_MISSING_PTR; return false; }
   }
-  *rc = PGR_VX_OK;
+  *rc = PGS_VX_OK;
   return true;
 }
 
-int api_install(const PgrVgpAuxConfig *config) {
-  int rc = PGR_VX_OK;
+int api_install(const PgsVgpAuxConfig *config) {
+  int rc = PGS_VX_OK;
   if (!validate_config(config, &rc)) return rc;
   uint64_t probe = 0;
-  if (!read_boottime_ms(&probe)) return PGR_VX_ERR_CLOCK_FAILURE;
+  if (!read_boottime_ms(&probe)) return PGS_VX_ERR_CLOCK_FAILURE;
 
   std::lock_guard<std::mutex> install_lock(g_install_mutex);
   if (g_installed.load(std::memory_order_acquire)) {
-    return std::memcmp(&g_cfg, config, sizeof(*config)) == 0 ? PGR_VX_OK : PGR_VX_ERR_RECONFIG;
+    return std::memcmp(&g_cfg, config, sizeof(*config)) == 0 ? PGS_VX_OK : PGS_VX_ERR_RECONFIG;
   }
   if (g_install_attempted) return g_install_error;
   g_install_attempted = true;
   g_cfg = *config;
   g_busy.store(false);
   g_installed.store(true, std::memory_order_release);
-  return g_install_error = PGR_VX_OK;
+  return g_install_error = PGS_VX_OK;
 }
 
-int api_spin(void *item_bag, uint64_t owner_tid, uint64_t lease_ms, PgrVgpAuxSpin *out) {
+int api_spin(void *item_bag, uint64_t owner_tid, uint64_t lease_ms, PgsVgpAuxSpin *out) {
   if (out != nullptr) std::memset(out, 0, sizeof(*out));  // always initialize the output
-  if (!g_installed.load(std::memory_order_acquire)) return PGR_VX_ERR_NOT_INSTALLED;
-  if (item_bag == nullptr || out == nullptr) return PGR_VX_ERR_NULL_ARG;
+  if (!g_installed.load(std::memory_order_acquire)) return PGS_VX_ERR_NOT_INSTALLED;
+  if (item_bag == nullptr || out == nullptr) return PGS_VX_ERR_NULL_ARG;
 
   uint64_t deadline = 0;
-  int rc = PGR_VX_OK;
+  int rc = PGS_VX_OK;
   if (!enter_op(owner_tid, lease_ms, &deadline, &rc)) return rc;
   rc = do_spin(item_bag, deadline, out);
   g_busy.store(false);
@@ -370,27 +370,27 @@ int api_spin(void *item_bag, uint64_t owner_tid, uint64_t lease_ms, PgrVgpAuxSpi
 }
 
 int api_transfer(void *response, void *pokemon_bag, uint64_t owner_tid, uint64_t lease_ms,
-                 PgrVgpAuxTransfer *out) {
+                 PgsVgpAuxTransfer *out) {
   if (out != nullptr) std::memset(out, 0, sizeof(*out));  // always initialize the output
-  if (!g_installed.load(std::memory_order_acquire)) return PGR_VX_ERR_NOT_INSTALLED;
-  if (response == nullptr || pokemon_bag == nullptr || out == nullptr) return PGR_VX_ERR_NULL_ARG;
+  if (!g_installed.load(std::memory_order_acquire)) return PGS_VX_ERR_NOT_INSTALLED;
+  if (response == nullptr || pokemon_bag == nullptr || out == nullptr) return PGS_VX_ERR_NULL_ARG;
 
   uint64_t deadline = 0;
-  int rc = PGR_VX_OK;
+  int rc = PGS_VX_OK;
   if (!enter_op(owner_tid, lease_ms, &deadline, &rc)) return rc;
   rc = do_transfer(response, pokemon_bag, deadline, out);
   g_busy.store(false);
   return rc;
 }
 
-const PgrVgpAuxApi kApiTable = {
-    PGR_VX_API_VERSION, static_cast<uint32_t>(sizeof(PgrVgpAuxApi)),
+const PgsVgpAuxApi kApiTable = {
+    PGS_VX_API_VERSION, static_cast<uint32_t>(sizeof(PgsVgpAuxApi)),
     &api_install, &api_spin, &api_transfer,
 };
 
 }  // namespace
 
 extern "C" const void *pgs_vgp_aux_api(uint32_t version) {
-  if (version != PGR_VX_API_VERSION) return nullptr;
+  if (version != PGS_VX_API_VERSION) return nullptr;
   return &kApiTable;
 }

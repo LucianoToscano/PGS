@@ -164,8 +164,8 @@ void *fake_runtime_invoke(const void *method, void *, void **params, void **exc)
   return nullptr;
 }
 
-PgrVgpAuxConfig make_config() {
-  PgrVgpAuxConfig c{};
+PgsVgpAuxConfig make_config() {
+  PgsVgpAuxConfig c{};
   c.version = 1;
   c.size = sizeof(c);
   c.gc_new = reinterpret_cast<void *>(&fake_gc_new);
@@ -201,7 +201,7 @@ PgrVgpAuxConfig make_config() {
 
 uint64_t this_tid() { return static_cast<uint64_t>(static_cast<pid_t>(::gettid())); }
 
-const PgrVgpAuxApi *g_api = nullptr;
+const PgsVgpAuxApi *g_api = nullptr;
 
 void reset_flags() {
   g_gcnew_fail_index = 0; g_gcnew_calls = 0;
@@ -223,46 +223,46 @@ int main(int argc, char **argv) {
   const auto *core = static_cast<const pgs_native_api_v2 *>(getter(2));
   assert(core && core->size == 48);
   assert(core->query_feature(34, 99) == nullptr);
-  const auto *api = static_cast<const PgrVgpAuxApi *>(core->query_feature(34, 1));
-  assert(api != nullptr && api->version == 1 && api->size == sizeof(PgrVgpAuxApi));
+  const auto *api = static_cast<const PgsVgpAuxApi *>(core->query_feature(34, 1));
+  assert(api != nullptr && api->version == 1 && api->size == sizeof(PgsVgpAuxApi));
   g_api = api;
 
   std::printf("ABI sizes: config=%zu spin=%zu transfer=%zu table=%zu\n",
-              sizeof(PgrVgpAuxConfig), sizeof(PgrVgpAuxSpin), sizeof(PgrVgpAuxTransfer),
-              sizeof(PgrVgpAuxApi));
-  assert(sizeof(PgrVgpAuxConfig) == 232 && sizeof(PgrVgpAuxSpin) == 32 &&
-         sizeof(PgrVgpAuxTransfer) == 32 && sizeof(PgrVgpAuxApi) == 32);
+              sizeof(PgsVgpAuxConfig), sizeof(PgsVgpAuxSpin), sizeof(PgsVgpAuxTransfer),
+              sizeof(PgsVgpAuxApi));
+  assert(sizeof(PgsVgpAuxConfig) == 232 && sizeof(PgsVgpAuxSpin) == 32 &&
+         sizeof(PgsVgpAuxTransfer) == 32 && sizeof(PgsVgpAuxApi) == 32);
 
   const uint64_t tid = this_tid();
-  PgrVgpAuxConfig cfg = make_config();
+  PgsVgpAuxConfig cfg = make_config();
 
   FakeBag bag{&cls_ibag, &g_rpc};
   FakePokeBag pbag{&cls_other, &g_gm, nullptr};
   FakePokemon pk{&cls_pokemon, 0};
   FakeResponse resp{&cls_response, 0};
-  PgrVgpAuxSpin sp{};
-  PgrVgpAuxTransfer tr{};
+  PgsVgpAuxSpin sp{};
+  PgsVgpAuxTransfer tr{};
 
   // 1. Validation + not-installed + idempotence + reconfig.
-  assert(api->install(nullptr) == PGR_VX_ERR_NULL_ARG);
-  PgrVgpAuxConfig bad = cfg; bad.version = 2;
-  assert(api->install(&bad) == PGR_VX_ERR_BAD_VERSION);
+  assert(api->install(nullptr) == PGS_VX_ERR_NULL_ARG);
+  PgsVgpAuxConfig bad = cfg; bad.version = 2;
+  assert(api->install(&bad) == PGS_VX_ERR_BAD_VERSION);
   bad = cfg; bad.size = sizeof(cfg) - 1;
-  assert(api->install(&bad) == PGR_VX_ERR_BAD_SIZE);
+  assert(api->install(&bad) == PGS_VX_ERR_BAD_SIZE);
   bad = cfg; bad.m_get_pokemon = nullptr;
-  assert(api->install(&bad) == PGR_VX_ERR_MISSING_PTR);
-  assert(api->spin(&bag, tid, 2000, &sp) == PGR_VX_ERR_NOT_INSTALLED);
-  assert(api->transfer(&resp, &pbag, tid, 2000, &tr) == PGR_VX_ERR_NOT_INSTALLED);
+  assert(api->install(&bad) == PGS_VX_ERR_MISSING_PTR);
+  assert(api->spin(&bag, tid, 2000, &sp) == PGS_VX_ERR_NOT_INSTALLED);
+  assert(api->transfer(&resp, &pbag, tid, 2000, &tr) == PGS_VX_ERR_NOT_INSTALLED);
 
-  assert(api->install(&cfg) == PGR_VX_OK);
-  assert(api->install(&cfg) == PGR_VX_OK);  // idempotent
+  assert(api->install(&cfg) == PGS_VX_OK);
+  assert(api->install(&cfg) == PGS_VX_OK);  // idempotent
   bad = cfg; bad.class_rpc = &cls_other;
-  assert(api->install(&bad) == PGR_VX_ERR_RECONFIG);
+  assert(api->install(&bad) == PGS_VX_ERR_RECONFIG);
 
   // 2. spin SUCCESS: reflection resolves, 2 Type[] writes, closed inflated method, OWN handles, no leak.
   { reset_flags();
     std::memset(&sp, 0xee, sizeof(sp));
-    assert(api->spin(&bag, tid, 2000, &sp) == PGR_VX_SUCCESS);
+    assert(api->spin(&bag, tid, 2000, &sp) == PGS_VX_SUCCESS);
     assert(sp.version == 1 && sp.size == sizeof(sp));
     assert(sp.rpc_handle != 0 && fake_gc_get(sp.rpc_handle) == &g_rpc);
     assert(sp.reflection_handle != 0 && fake_gc_get(sp.reflection_handle) == &g_closed_reflection);
@@ -283,7 +283,7 @@ int main(int argc, char **argv) {
       // Repoint the one live array handle at a fresh object (simulate a relocating collector).
       for (auto &kv : g_handles) if (kv.second == g_array) { kv.second = moved; break; }
     };
-    assert(api->spin(&bag, tid, 2000, &sp) == PGR_VX_SUCCESS);
+    assert(api->spin(&bag, tid, 2000, &sp) == PGS_VX_SUCCESS);
     assert(g_barrier_target == moved && moved->data[0] != nullptr && moved->data[1] != nullptr);
     fake_gc_free(sp.rpc_handle); fake_gc_free(sp.reflection_handle);
     assert(g_handles.empty());
@@ -293,37 +293,37 @@ int main(int argc, char **argv) {
   // 4. spin reflection/identity/throw/root failures: reported, temporaries freed, OWN handle 0.
   { reset_flags();
     FakeBag wrong{&cls_other, &g_rpc};
-    assert(api->spin(&wrong, tid, 2000, &sp) == PGR_VX_ERR_IDENTITY && sp.rpc_handle == 0);
+    assert(api->spin(&wrong, tid, 2000, &sp) == PGS_VX_ERR_IDENTITY && sp.rpc_handle == 0);
     assert(g_handles.empty());
 
     reset_flags();  // rpc field not the exact rpc class
     FakeBag bad_rpc{&cls_ibag, &g_closed_reflection};
-    assert(api->spin(&bad_rpc, tid, 2000, &sp) == PGR_VX_ERR_IDENTITY && g_handles.empty());
+    assert(api->spin(&bad_rpc, tid, 2000, &sp) == PGS_VX_ERR_IDENTITY && g_handles.empty());
 
     reset_flags(); g_generic_null = true;
-    assert(api->spin(&bag, tid, 2000, &sp) == PGR_VX_ERR_REFLECT && g_handles.empty());
+    assert(api->spin(&bag, tid, 2000, &sp) == PGS_VX_ERR_REFLECT && g_handles.empty());
     reset_flags(); g_generic_not_generic = true;
-    assert(api->spin(&bag, tid, 2000, &sp) == PGR_VX_ERR_REFLECT && g_handles.empty());
+    assert(api->spin(&bag, tid, 2000, &sp) == PGS_VX_ERR_REFLECT && g_handles.empty());
     reset_flags(); g_generic_arity = 4;
-    assert(api->spin(&bag, tid, 2000, &sp) == PGR_VX_ERR_REFLECT && g_handles.empty());
+    assert(api->spin(&bag, tid, 2000, &sp) == PGS_VX_ERR_REFLECT && g_handles.empty());
     reset_flags(); g_make_null = true;
-    assert(api->spin(&bag, tid, 2000, &sp) == PGR_VX_ERR_REFLECT && g_handles.empty());
+    assert(api->spin(&bag, tid, 2000, &sp) == PGS_VX_ERR_REFLECT && g_handles.empty());
     reset_flags(); g_throw_on_make = true;
-    assert(api->spin(&bag, tid, 2000, &sp) == PGR_VX_ERR_MANAGED && g_make_calls == 1 && g_handles.empty());
+    assert(api->spin(&bag, tid, 2000, &sp) == PGS_VX_ERR_MANAGED && g_make_calls == 1 && g_handles.empty());
     reset_flags(); g_null_on_make = true;
-    assert(api->spin(&bag, tid, 2000, &sp) == PGR_VX_ERR_REFLECT && g_handles.empty());
+    assert(api->spin(&bag, tid, 2000, &sp) == PGS_VX_ERR_REFLECT && g_handles.empty());
 
     // Closed-method validation: unreflect null / not-inflated / wrong arity.
     reset_flags(); g_closed_null = true;
-    assert(api->spin(&bag, tid, 2000, &sp) == PGR_VX_ERR_REFLECT && g_handles.empty());
+    assert(api->spin(&bag, tid, 2000, &sp) == PGS_VX_ERR_REFLECT && g_handles.empty());
     reset_flags(); g_closed_not_inflated = true;
-    assert(api->spin(&bag, tid, 2000, &sp) == PGR_VX_ERR_REFLECT && g_handles.empty());
+    assert(api->spin(&bag, tid, 2000, &sp) == PGS_VX_ERR_REFLECT && g_handles.empty());
     reset_flags(); g_closed_arity = 6;
-    assert(api->spin(&bag, tid, 2000, &sp) == PGR_VX_ERR_REFLECT && g_handles.empty());
+    assert(api->spin(&bag, tid, 2000, &sp) == PGS_VX_ERR_REFLECT && g_handles.empty());
 
     // Partial-root failure: the bag root (1st gc_new) fails -> fail closed before any reflection.
     reset_flags(); g_gcnew_fail_index = 1;
-    assert(api->spin(&bag, tid, 2000, &sp) == PGR_VX_ERR_GCHANDLE && g_make_calls == 0 && g_handles.empty());
+    assert(api->spin(&bag, tid, 2000, &sp) == PGS_VX_ERR_GCHANDLE && g_make_calls == 0 && g_handles.empty());
   }
 
   // 5. transfer SUCCESS: full 64-bit id, GetPokemon identity, bag GameMaster, OWN handles, no leak.
@@ -331,7 +331,7 @@ int main(int argc, char **argv) {
     const uint64_t big = 0xABCDEF0123456789ULL;  // exercises the full 64 bits
     resp.caught_id = big; pk.id = big; pbag.current = &pk; g_bag_current = &pk;
     std::memset(&tr, 0xee, sizeof(tr));
-    assert(api->transfer(&resp, &pbag, tid, 2000, &tr) == PGR_VX_SUCCESS);
+    assert(api->transfer(&resp, &pbag, tid, 2000, &tr) == PGS_VX_SUCCESS);
     assert(tr.version == 1 && tr.size == sizeof(tr) && tr.caught_id == big);
     assert(g_last_get_id == big && g_get_calls == 1);
     assert(tr.pokemon_handle != 0 && fake_gc_get(tr.pokemon_handle) == &pk);
@@ -345,44 +345,44 @@ int main(int argc, char **argv) {
   { reset_flags();
     // No inventory yet: GetPokemon returns null -> 0 (retry later).
     resp.caught_id = 42; pbag.current = nullptr; g_bag_current = nullptr;
-    assert(api->transfer(&resp, &pbag, tid, 2000, &tr) == PGR_VX_OK && tr.pokemon_handle == 0);
+    assert(api->transfer(&resp, &pbag, tid, 2000, &tr) == PGS_VX_OK && tr.pokemon_handle == 0);
     assert(g_handles.empty());
 
     // Captured id 0 -> SKIP, GetPokemon never called.
     reset_flags(); resp.caught_id = 0;
-    assert(api->transfer(&resp, &pbag, tid, 2000, &tr) == PGR_VX_SKIP && g_get_calls == 0 && g_handles.empty());
+    assert(api->transfer(&resp, &pbag, tid, 2000, &tr) == PGS_VX_SKIP && g_get_calls == 0 && g_handles.empty());
 
     // Identity mismatch: pokemon id != captured id -> SKIP.
     reset_flags(); resp.caught_id = 100; pk.id = 101; pbag.current = &pk; g_bag_current = &pk;
-    assert(api->transfer(&resp, &pbag, tid, 2000, &tr) == PGR_VX_SKIP && g_handles.empty());
+    assert(api->transfer(&resp, &pbag, tid, 2000, &tr) == PGS_VX_SKIP && g_handles.empty());
 
     // Wrong pokemon class -> SKIP.
     reset_flags(); FakePokemon imposter{&cls_other, 100}; resp.caught_id = 100; g_bag_current = &imposter;
-    assert(api->transfer(&resp, &pbag, tid, 2000, &tr) == PGR_VX_SKIP && g_handles.empty());
+    assert(api->transfer(&resp, &pbag, tid, 2000, &tr) == PGS_VX_SKIP && g_handles.empty());
 
     // Wrong response class -> IDENTITY error.
     reset_flags(); FakeResponse bad_resp{&cls_other, 7};
-    assert(api->transfer(&bad_resp, &pbag, tid, 2000, &tr) == PGR_VX_ERR_IDENTITY && g_handles.empty());
+    assert(api->transfer(&bad_resp, &pbag, tid, 2000, &tr) == PGS_VX_ERR_IDENTITY && g_handles.empty());
 
     // GetPokemon throws -> MANAGED error.
     reset_flags(); resp.caught_id = 55; pk.id = 55; g_bag_current = &pk; g_throw_on_get = true;
-    assert(api->transfer(&resp, &pbag, tid, 2000, &tr) == PGR_VX_ERR_MANAGED && g_handles.empty());
+    assert(api->transfer(&resp, &pbag, tid, 2000, &tr) == PGS_VX_ERR_MANAGED && g_handles.empty());
 
     // Null bag GameMaster after a valid identity -> IDENTITY error.
     reset_flags(); resp.caught_id = 77; pk.id = 77; g_bag_current = &pk;
     FakePokeBag no_gm{&cls_other, nullptr, &pk};
-    assert(api->transfer(&resp, &no_gm, tid, 2000, &tr) == PGR_VX_ERR_IDENTITY && g_handles.empty());
+    assert(api->transfer(&resp, &no_gm, tid, 2000, &tr) == PGS_VX_ERR_IDENTITY && g_handles.empty());
   }
 
   // 7. Gate: wrong thread / zero owner / zero lease refuse without any managed work.
   { reset_flags();
     resp.caught_id = 9; pk.id = 9; pbag.current = &pk; g_bag_current = &pk; pbag.gm = &g_gm;
-    assert(api->spin(&bag, tid, 0, &sp) == PGR_VX_OK && g_make_calls == 0);          // zero lease
-    assert(api->spin(&bag, 0, 2000, &sp) == PGR_VX_OK && g_make_calls == 0);         // zero owner
-    assert(api->transfer(&resp, &pbag, tid + 1, 2000, &tr) == PGR_VX_OK && g_get_calls == 0);  // wrong tid
+    assert(api->spin(&bag, tid, 0, &sp) == PGS_VX_OK && g_make_calls == 0);          // zero lease
+    assert(api->spin(&bag, 0, 2000, &sp) == PGS_VX_OK && g_make_calls == 0);         // zero owner
+    assert(api->transfer(&resp, &pbag, tid + 1, 2000, &tr) == PGS_VX_OK && g_get_calls == 0);  // wrong tid
     std::thread([&]() {
-      PgrVgpAuxSpin s2{};
-      assert(g_api->spin(&bag, this_tid() + 1, 2000, &s2) == PGR_VX_OK);  // owner mismatch off-thread
+      PgsVgpAuxSpin s2{};
+      assert(g_api->spin(&bag, this_tid() + 1, 2000, &s2) == PGS_VX_OK);  // owner mismatch off-thread
     }).join();
     assert(g_handles.empty());
   }
@@ -391,7 +391,7 @@ int main(int argc, char **argv) {
   { reset_flags();
     resp.caught_id = 123; pk.id = 123; g_bag_current = &pk; pbag.gm = &g_gm;
     g_get_oneshot = [&]() { ::usleep(4000); };  // outlast the 1 ms lease
-    assert(api->transfer(&resp, &pbag, tid, 1, &tr) == PGR_VX_OK && tr.pokemon_handle == 0);
+    assert(api->transfer(&resp, &pbag, tid, 1, &tr) == PGS_VX_OK && tr.pokemon_handle == 0);
     assert(g_handles.empty());
   }
 
@@ -400,12 +400,12 @@ int main(int argc, char **argv) {
     resp.caught_id = 321; pk.id = 321; g_bag_current = &pk; pbag.gm = &g_gm;
     int nested_rc = -99;
     g_get_oneshot = [&]() {
-      PgrVgpAuxSpin s2{};
+      PgsVgpAuxSpin s2{};
       nested_rc = g_api->spin(&bag, this_tid(), 2000, &s2);  // busy -> refused
       assert(s2.rpc_handle == 0);
     };
-    assert(api->transfer(&resp, &pbag, tid, 2000, &tr) == PGR_VX_SUCCESS);
-    assert(nested_rc == PGR_VX_OK && g_make_calls == 0);  // nested refused, no reflection issued
+    assert(api->transfer(&resp, &pbag, tid, 2000, &tr) == PGS_VX_SUCCESS);
+    assert(nested_rc == PGS_VX_OK && g_make_calls == 0);  // nested refused, no reflection issued
     fake_gc_free(tr.pokemon_handle); fake_gc_free(tr.gm_handle);
     assert(g_handles.empty());
   }

@@ -34,44 +34,44 @@ extern "C" {
 
 static_assert(sizeof(void *) == 8, "VgpAux native ABI requires LP64");
 
-enum PgrVgpAuxInfo {
-  PGR_VX_FEATURE_ID     = 34,
-  PGR_VX_API_VERSION    = 1,
-  PGR_VX_CONFIG_VERSION = 1,
-  PGR_VX_OUT_VERSION    = 1,
-  PGR_VX_MAX_LEASE_MS   = 2500,  // residual foreground lease ceiling (JS vgpLease gate)
-  PGR_VX_SENDRPC_ARITY  = 5,     // SendRpc<Request,Result>(rpcId, request, 0, 10000, 0) param count
-  PGR_VX_TYPE_ARGS      = 2,     // SendRpc generic arity (request + spin-result)
-  PGR_VX_ARRAY_DATA_OFF = 32     // Il2CppArray<T> first element byte offset on LP64
+enum PgsVgpAuxInfo {
+  PGS_VX_FEATURE_ID     = 34,
+  PGS_VX_API_VERSION    = 1,
+  PGS_VX_CONFIG_VERSION = 1,
+  PGS_VX_OUT_VERSION    = 1,
+  PGS_VX_MAX_LEASE_MS   = 2500,  // residual foreground lease ceiling (JS vgpLease gate)
+  PGS_VX_SENDRPC_ARITY  = 5,     // SendRpc<Request,Result>(rpcId, request, 0, 10000, 0) param count
+  PGS_VX_TYPE_ARGS      = 2,     // SendRpc generic arity (request + spin-result)
+  PGS_VX_ARRAY_DATA_OFF = 32     // Il2CppArray<T> first element byte offset on LP64
 };
 
 // spin()/transfer() return 1 SUCCESS (*out fully written, OWN handles transferred), 0 NOT-READY/REFUSED
 // (gate/busy/thread/expired or GetPokemon null, *out zeroed, nothing invoked that must be retried), 2 SKIP
 // (transfer only: captured id 0 or a pokemon identity mismatch -- drop this transfer, not an error), or a
-// negative error. install() returns PGR_VX_OK (0) or a negative error.
-enum PgrVgpAuxStatus {
-  PGR_VX_SUCCESS           = 1,   // op succeeded; *out written; OWN handles belong to the caller
-  PGR_VX_OK                = 0,   // install OK / op refused (gate/busy/thread/expired/not-ready)
-  PGR_VX_SKIP              = 2,   // transfer: captured id 0 or pokemon identity mismatch (drop, no error)
-  PGR_VX_ERR_NULL_ARG      = -1,
-  PGR_VX_ERR_BAD_VERSION   = -2,
-  PGR_VX_ERR_BAD_SIZE      = -3,
-  PGR_VX_ERR_MISSING_PTR   = -4,
-  PGR_VX_ERR_NOT_INSTALLED = -6,
-  PGR_VX_ERR_RECONFIG      = -9,
-  PGR_VX_ERR_CLOCK_FAILURE = -10,
-  PGR_VX_ERR_IDENTITY      = -11,  // item-bag/rpc/response class mismatch, or a required object was null
-  PGR_VX_ERR_GCHANDLE      = -12,  // a GC root / Type[] allocation failed (fail closed)
-  PGR_VX_ERR_MANAGED       = -13,  // a managed invoke (MakeGenericMethod / GetPokemon) threw
-  PGR_VX_ERR_REFLECT       = -14   // SendRpc / MakeGenericMethod / closed-method resolution/validation failed
+// negative error. install() returns PGS_VX_OK (0) or a negative error.
+enum PgsVgpAuxStatus {
+  PGS_VX_SUCCESS           = 1,   // op succeeded; *out written; OWN handles belong to the caller
+  PGS_VX_OK                = 0,   // install OK / op refused (gate/busy/thread/expired/not-ready)
+  PGS_VX_SKIP              = 2,   // transfer: captured id 0 or pokemon identity mismatch (drop, no error)
+  PGS_VX_ERR_NULL_ARG      = -1,
+  PGS_VX_ERR_BAD_VERSION   = -2,
+  PGS_VX_ERR_BAD_SIZE      = -3,
+  PGS_VX_ERR_MISSING_PTR   = -4,
+  PGS_VX_ERR_NOT_INSTALLED = -6,
+  PGS_VX_ERR_RECONFIG      = -9,
+  PGS_VX_ERR_CLOCK_FAILURE = -10,
+  PGS_VX_ERR_IDENTITY      = -11,  // item-bag/rpc/response class mismatch, or a required object was null
+  PGS_VX_ERR_GCHANDLE      = -12,  // a GC root / Type[] allocation failed (fail closed)
+  PGS_VX_ERR_MANAGED       = -13,  // a managed invoke (MakeGenericMethod / GetPokemon) threw
+  PGS_VX_ERR_REFLECT       = -14   // SendRpc / MakeGenericMethod / closed-method resolution/validation failed
 };
 
 // Fixed LP64 config (232 bytes): 8-byte header + 28 validated il2cpp pointers. Every pointer is already
 // validated by the JS adapter straight off the host metadata; the native layer re-checks the header and
 // rejects any null. No hook address. The indices below match runtime/native-vgp-aux.js exactly.
-struct PgrVgpAuxConfig {
-  uint32_t version;  // == PGR_VX_CONFIG_VERSION
-  uint32_t size;     // == sizeof(PgrVgpAuxConfig)
+struct PgsVgpAuxConfig {
+  uint32_t version;  // == PGS_VX_CONFIG_VERSION
+  uint32_t size;     // == sizeof(PgsVgpAuxConfig)
 
   // --- il2cpp runtime exports (indices 0..15) ---------------------------------------
   void *gc_new;                     // 0  uintptr_t (void* obj, int pinned)
@@ -108,55 +108,55 @@ struct PgrVgpAuxConfig {
   void *m_get_pokemon;    // 27 bag.GetPokemon(UInt64) -> Pokemon (p.transfer.methods.get.method)
 };
 
-static_assert(sizeof(PgrVgpAuxConfig) == 232, "PgrVgpAuxConfig must remain 232 bytes on LP64");
+static_assert(sizeof(PgsVgpAuxConfig) == 232, "PgsVgpAuxConfig must remain 232 bytes on LP64");
 
 // Fixed LP64 spin result (32 bytes). OWN: the caller adopts rpc_handle + reflection_handle (both il2cpp GC
 // handles) and frees them with il2cpp_gchandle_free. closed_method is the inflated SendRpc MethodInfo*; it
 // is a raw pointer that stays valid ONLY while reflection_handle keeps the closed reflection object rooted,
 // so the caller MUST hold reflection_handle until the spin's promise completes. Written only on SUCCESS.
-struct PgrVgpAuxSpin {
-  uint32_t version;         // == PGR_VX_OUT_VERSION
-  uint32_t size;            // == sizeof(PgrVgpAuxSpin)
+struct PgsVgpAuxSpin {
+  uint32_t version;         // == PGS_VX_OUT_VERSION
+  uint32_t size;            // == sizeof(PgsVgpAuxSpin)
   uint64_t rpc_handle;      // OWN GC handle rooting the rpc service read off the item bag
   uint64_t reflection_handle; // OWN GC handle rooting the closed SendRpc Reflection.MethodInfo
   void    *closed_method;   // inflated SendRpc MethodInfo* (borrowed; lives with reflection_handle)
 };
 
-static_assert(sizeof(PgrVgpAuxSpin) == 32, "PgrVgpAuxSpin must remain 32 bytes on LP64");
+static_assert(sizeof(PgsVgpAuxSpin) == 32, "PgsVgpAuxSpin must remain 32 bytes on LP64");
 
 // Fixed LP64 transfer result (32 bytes). OWN: the caller adopts pokemon_handle + gm_handle (il2cpp GC
 // handles) and frees them with il2cpp_gchandle_free. caught_id is the full 64-bit captured id. Written
 // only on SUCCESS (code 1); SKIP (code 2) and REFUSED (code 0) leave it zeroed.
-struct PgrVgpAuxTransfer {
-  uint32_t version;        // == PGR_VX_OUT_VERSION
-  uint32_t size;           // == sizeof(PgrVgpAuxTransfer)
+struct PgsVgpAuxTransfer {
+  uint32_t version;        // == PGS_VX_OUT_VERSION
+  uint32_t size;           // == sizeof(PgsVgpAuxTransfer)
   uint64_t caught_id;      // full 64-bit RESP captured id (== pokemon id)
   uint64_t pokemon_handle; // OWN GC handle rooting the resolved Pokemon
   uint64_t gm_handle;      // OWN GC handle rooting the bag GameMaster handle
 };
 
-static_assert(sizeof(PgrVgpAuxTransfer) == 32, "PgrVgpAuxTransfer must remain 32 bytes on LP64");
+static_assert(sizeof(PgsVgpAuxTransfer) == 32, "PgsVgpAuxTransfer must remain 32 bytes on LP64");
 
 // Fixed LP64 table: 8-byte header + 3 function pointers = 32 bytes.
-struct PgrVgpAuxApi {
-  uint32_t version;  // == PGR_VX_API_VERSION
-  uint32_t size;     // == sizeof(PgrVgpAuxApi)
+struct PgsVgpAuxApi {
+  uint32_t version;  // == PGS_VX_API_VERSION
+  uint32_t size;     // == sizeof(PgsVgpAuxApi)
   // Validate + publish the immutable config once for the process lifetime. A repeat of the identical
-  // config is PGR_VX_OK; a different one is PGR_VX_ERR_RECONFIG. No managed work.
-  int (*install)(const PgrVgpAuxConfig *config);
+  // config is PGS_VX_OK; a different one is PGS_VX_ERR_RECONFIG. No managed work.
+  int (*install)(const PgsVgpAuxConfig *config);
   // Resolve the closed SendRpc for a spin off `item_bag`. Requires current tid == owner_tid and a residual
-  // lease (clamped to 2500 ms, re-checked after the managed work). Returns PGR_VX_SUCCESS (*out written,
-  // OWN handles transferred), PGR_VX_OK (refused: gate/busy/thread/expired), or a negative error. Owner
+  // lease (clamped to 2500 ms, re-checked after the managed work). Returns PGS_VX_SUCCESS (*out written,
+  // OWN handles transferred), PGS_VX_OK (refused: gate/busy/thread/expired), or a negative error. Owner
   // thread only; a reentrant call is refused.
-  int (*spin)(void *item_bag, uint64_t owner_tid, uint64_t lease_ms, PgrVgpAuxSpin *out);
-  // Look up the caught pokemon for a transfer from `response` + `pokemon_bag`. Returns PGR_VX_SUCCESS
-  // (*out written), PGR_VX_OK (refused, or GetPokemon returned null -> inventory not ready, retry later),
-  // PGR_VX_SKIP (captured id 0 or identity mismatch -> drop), or a negative error. Owner thread only.
+  int (*spin)(void *item_bag, uint64_t owner_tid, uint64_t lease_ms, PgsVgpAuxSpin *out);
+  // Look up the caught pokemon for a transfer from `response` + `pokemon_bag`. Returns PGS_VX_SUCCESS
+  // (*out written), PGS_VX_OK (refused, or GetPokemon returned null -> inventory not ready, retry later),
+  // PGS_VX_SKIP (captured id 0 or identity mismatch -> drop), or a negative error. Owner thread only.
   int (*transfer)(void *response, void *pokemon_bag, uint64_t owner_tid, uint64_t lease_ms,
-                  PgrVgpAuxTransfer *out);
+                  PgsVgpAuxTransfer *out);
 };
 
-static_assert(sizeof(PgrVgpAuxApi) == 32, "PgrVgpAuxApi must remain a 32-byte version-1 table");
+static_assert(sizeof(PgsVgpAuxApi) == 32, "PgsVgpAuxApi must remain a 32-byte version-1 table");
 
 // Hidden getter. NOT exported by the version script; the coordinator registers it in query_feature under
 // feature id 34 and answers only on an exact version match.

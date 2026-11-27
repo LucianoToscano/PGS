@@ -200,6 +200,19 @@ class PgsNativeRenameTests(unittest.TestCase):
                 self.assertIsNone(legacy.search(content))
                 self.assertIsNotNone(primary.search(content))
 
+    def test_primary_account_abbreviations(self):
+        header = (NATIVE / "accounts.h").read_text(encoding="utf-8")
+        compat = (NATIVE / "account_source_compat.h").read_text(encoding="utf-8")
+        self.assertIn("#ifndef PGS_ACCOUNTS_H_", header)
+        self.assertIn("#define PGS_FEATURE_ACCOUNTS 16u", header)
+        self.assertIn("PGS_ACC_CMD_NONE = 0", header)
+        self.assertIn("PGS_ACCOUNTS_API_TABLE_SIZE 56u", header)
+        self.assertNotIn("#define PGR_FEATURE_ACCOUNTS", header)
+        self.assertNotIn("PGR_ACC_CMD_NONE = ", header)
+        self.assertIn('#include "account_source_compat.h"', header)
+        self.assertIn("#define PGR_ACC_CMD_NONE PGS_ACC_CMD_NONE", compat)
+        self.assertEqual(len(re.findall(r"^#define PGR_[A-Z0-9_]+ PGS_[A-Z0-9_]+$", compat, re.M)), 16)
+
     def test_primary_native_factory_consumers(self):
         camera = (NATIVE / "camera_host.cpp").read_text(encoding="utf-8")
         spawn = (NATIVE / "spawn_host.cpp").read_text(encoding="utf-8")

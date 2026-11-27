@@ -16,8 +16,8 @@ struct MovingHeap {
 };
 MovingHeap heaps[256];int heapIndex=0,relocations=0,fortCalls=0,aliveCalls=0,managedCalls=0;
 std::map<uintptr_t,void*> roots;uintptr_t nextRoot=100;size_t peakRoots=0;
-const PgrMapPoiApi *testedApi=nullptr;PgrMapPoiOutput *activeOutput=nullptr;
-PgrMapPoiRequest activeRequest{};
+const PgsMapPoiApi *testedApi=nullptr;PgsMapPoiOutput *activeOutput=nullptr;
+PgsMapPoiRequest activeRequest{};
 bool reenterOnStopCleanup=false,expireCandidate=false,expireAliveCleanup=false,expired=false;
 int reentryStatus=0;bool reentered=false;
 MovingHeap &h(){return heaps[heapIndex];}
@@ -50,7 +50,7 @@ void movingFree(uintptr_t handle){
   reenterOnStopCleanup=false;reentered=true;const int before=managedCalls;
   // Same output buffer, while the outer stop snapshot is provisional.
   reentryStatus=testedApi->scan(&activeRequest,activeOutput);
-  assert(reentryStatus==PGR_MP_ERR_BUSY&&managedCalls==before);
+  assert(reentryStatus==PGS_MP_ERR_BUSY&&managedCalls==before);
  }
  moveHeap();
 }
@@ -89,22 +89,22 @@ int runIndependent(const char *scenario){
  c.object_get_virtual_method=reinterpret_cast<void*>(&movingVirtual);c.string_length=reinterpret_cast<void*>(&movingStrLength);c.string_chars=reinterpret_cast<void*>(&movingChars);
  assert(testedApi->install(&c)==0);
  activeRequest.version=1;activeRequest.size=sizeof(activeRequest);activeRequest.tid=static_cast<uint64_t>(gettid());activeRequest.remaining_ms=2500;activeRequest.wall_ms=2000;
- auto output=std::unique_ptr<PgrMapPoiOutput>(new PgrMapPoiOutput{});activeOutput=output.get();
+ auto output=std::unique_ptr<PgsMapPoiOutput>(new PgsMapPoiOutput{});activeOutput=output.get();
  const bool candidate=std::strcmp(scenario,"expire-candidate")==0,alive=std::strcmp(scenario,"expire-alive-cleanup")==0,invalid=std::strcmp(scenario,"invalid-bool")==0;
  if(candidate||alive){activeRequest.remaining_ms=50;expireCandidate=candidate;expireAliveCleanup=alive;}
  if(invalid)h().stop.alive=2;
  if(std::strcmp(scenario,"same-output-reentry")==0)reenterOnStopCleanup=true;
  const int status=testedApi->scan(&activeRequest,output.get());assert(output->status==status&&roots.empty()&&peakRoots<16);
- if(candidate||alive){assert(expired&&status==PGR_MP_SKIP&&output->count==0&&fortCalls==0);if(candidate)assert(aliveCalls==0);}
- else if(invalid){assert(status==PGR_MP_ERR_METADATA&&output->count==0&&fortCalls==0);}
+ if(candidate||alive){assert(expired&&status==PGS_MP_SKIP&&output->count==0&&fortCalls==0);if(candidate)assert(aliveCalls==0);}
+ else if(invalid){assert(status==PGS_MP_ERR_METADATA&&output->count==0&&fortCalls==0);}
  else {
-  assert(status==PGR_MP_OK&&output->count==2&&relocations>15);
+  assert(status==PGS_MP_OK&&output->count==2&&relocations>15);
   const auto &stop=output->points[0],&gym=output->points[1];
   assert(stop.id_length==8&&stop.id[0]=='s'&&stop.lat==1&&stop.lon==2);
   assert(gym.id_length==7&&gym.id[0]=='g'&&gym.lat==3&&gym.lon==4);
-  assert(gym.flags==(PGR_MP_FLAG_TEAM|PGR_MP_FLAG_SLOTS|PGR_MP_FLAG_LEVEL|PGR_MP_FLAG_BOSS));
+  assert(gym.flags==(PGS_MP_FLAG_TEAM|PGS_MP_FLAG_SLOTS|PGS_MP_FLAG_LEVEL|PGS_MP_FLAG_BOSS));
   assert(gym.team_id==2&&gym.slots==3&&gym.level==5&&gym.boss==25&&gym.raid_end==3000&&gym.raid_start==1500);
-  if(std::strcmp(scenario,"same-output-reentry")==0)assert(reentered&&reentryStatus==PGR_MP_ERR_BUSY);
+  if(std::strcmp(scenario,"same-output-reentry")==0)assert(reentered&&reentryStatus==PGS_MP_ERR_BUSY);
  }
  std::printf("PASS independent map POI %s\n",scenario);return 0;
 }
@@ -124,6 +124,6 @@ int main(int argc,char **argv){
  void *library=dlopen(argv[1],RTLD_NOW|RTLD_LOCAL);if(!library){std::puts(dlerror());return 2;}
  auto get=reinterpret_cast<const void*(*)(uint32_t)>(dlsym(library,"pgs_native_api"));
  auto core=get?static_cast<const pgs_native_api_v2*>(get(2)):nullptr;assert(core&&core->query_feature(42,99)==nullptr);
- testedApi=static_cast<const PgrMapPoiApi*>(core->query_feature(42,1));assert(testedApi&&testedApi->size==24);
+ testedApi=static_cast<const PgsMapPoiApi*>(core->query_feature(42,1));assert(testedApi&&testedApi->size==24);
  return runIndependent(argc==3?argv[2]:"moving");
 }

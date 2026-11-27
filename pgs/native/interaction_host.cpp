@@ -124,15 +124,15 @@ static const PgrSharedHostApi *resolve_shared_host_api() {
     return nullptr;
 }
 
-static const PgrSpinHostApi *resolve_spin_host_api() {
+static const PgsSpinHostApi *resolve_spin_host_api() {
     if (pgs_spin_host_api != nullptr) {
-        return static_cast<const PgrSpinHostApi *>(pgs_spin_host_api(1));
+        return static_cast<const PgsSpinHostApi *>(pgs_spin_host_api(1));
     }
 #if !defined(_WIN32) && defined(PGR_INTERACTION_HOST_STANDALONE_TEST)
     using Fn = const void *(*)(uint32_t);
     auto fn = reinterpret_cast<Fn>(dlsym(RTLD_DEFAULT, "pgs_spin_host_api"));
     if (fn != nullptr) {
-        return static_cast<const PgrSpinHostApi *>(fn(1));
+        return static_cast<const PgsSpinHostApi *>(fn(1));
     }
 #endif
     return nullptr;
@@ -1665,16 +1665,16 @@ static uint32_t compute_effective_owned_mask_locked() {
                 mask |= PGR_IH_SHARED_MASK_61;
             }
         }
-        const PgrSpinHostApi *sp = resolve_spin_host_api();
+        const PgsSpinHostApi *sp = resolve_spin_host_api();
         if (sp != nullptr && sp->sample != nullptr) {
-            PgrSpinHostSample sp_s {};
+            PgsSpinHostSample sp_s {};
             sp_s.version = 1;
             sp_s.size = sizeof(sp_s);
-            if (sp->sample(&sp_s) == PGR_SPH_OK && sp_s.configured != 0) {
-                if ((sp_s.capabilities & PGR_SPH_CAMERA) != 0) {
+            if (sp->sample(&sp_s) == PGS_SPH_OK && sp_s.configured != 0) {
+                if ((sp_s.capabilities & PGS_SPH_CAMERA) != 0) {
                     mask |= PGR_IH_SHARED_MASK_67_CAMERA;
                 }
-                if ((sp_s.capabilities & PGR_SPH_QUICK) != 0) {
+                if ((sp_s.capabilities & PGS_SPH_QUICK) != 0) {
                     mask |= PGR_IH_SHARED_MASK_67_QUICK;
                 }
             }

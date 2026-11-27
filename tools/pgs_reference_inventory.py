@@ -16,6 +16,23 @@ ROOT = Path(__file__).resolve().parents[1]
 SNAPSHOT = "docs/PGS_REMAINING_REFERENCES.json"
 LEGACY = re.compile(r"pgrazor", re.IGNORECASE)
 
+ABBREVIATIONS = re.compile(r"\b(?:PGR_[A-Z0-9_]+|pgr_[A-Za-z0-9_]+|Pgr[A-Z][A-Za-z0-9_]*)\b")
+
+
+def abbreviation_counts(data):
+    """Count abbreviated source spellings separately from the original inventory."""
+    if b"\0" in data:
+        return None
+    try:
+        source = data.decode("utf-8")
+    except UnicodeDecodeError:
+        return None
+    counts = Counter()
+    for match in ABBREVIATIONS.findall(source):
+        form = "uppercase" if match.startswith("PGR_") else ("lowercase" if match.startswith("pgr_") else "camelcase")
+        counts[form] += 1
+    return dict(sorted(counts.items()))
+
 
 def text_count(data):
     if b"\0" in data:
@@ -78,6 +95,8 @@ def scan(root=ROOT, *, worktree=False):
     categories = {row["path"]: row["category"] for row in previous["files"]}
     rows = []
     counts = Counter()
+    abbreviation_totals = Counter()
+    abbreviation_rows = []
     text_files = 0
     blobs = worktree_blobs(root, tracked) if worktree else index_blobs(root, tracked)
     for path, data in blobs:
@@ -85,6 +104,10 @@ def scan(root=ROOT, *, worktree=False):
         if n is None:
             continue
         text_files += 1
+        abbreviated = abbreviation_counts(data)
+        if abbreviated:
+            abbreviation_totals.update(abbreviated)
+            abbreviation_rows.append({"path": path, "occurrences": sum(abbreviated.values()), "by_form": abbreviated})
         if n:
             category = categories.get(path)
             if category is None:
@@ -110,6 +133,13 @@ def scan(root=ROOT, *, worktree=False):
         "remaining_by_category": dict(sorted(counts.items())),
         "tracked_name_matches": [p for p in sorted(tracked) if LEGACY.search(p)],
         "files": rows,
+        "abbreviations": {
+            "remaining_files": len(abbreviation_rows),
+            "remaining_occurrences": sum(abbreviation_totals.values()),
+            "by_form": dict(sorted(abbreviation_totals.items())),
+            "tracked_name_matches": [p for p in sorted(tracked) if ABBREVIATIONS.search(p)],
+            "files": abbreviation_rows,
+        },
     }
 
 
@@ -136,6 +166,7 @@ def main():
         result["snapshot_differences"] = snapshot_differences(previous, result)
     if args.summary:
         result.pop("files")
+        result["abbreviations"].pop("files")
     print(json.dumps(result, indent=2, ensure_ascii=True))
 
 

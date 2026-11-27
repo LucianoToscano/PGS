@@ -911,7 +911,7 @@ int main(int argc, char **argv) {
     opts.command_token = bt;
     assert(host->set_options(&opts) == PGR_ACH_OK);
     assert(host->sample(&sample) == PGR_ACH_OK);
-    assert(sample.last_cmd_kind == PGR_ACC_CMD_NONE && sample.last_cmd_token == 0);
+    assert(sample.last_cmd_kind == PGS_ACC_CMD_NONE && sample.last_cmd_token == 0);
   }
   assert(g_prefs_save_calls == 0);
 
@@ -922,7 +922,7 @@ int main(int argc, char **argv) {
   opts.command_token = "9007199254740993";
   assert(host->set_options(&opts) == PGR_ACH_OK);
   assert(host->sample(&sample) == PGR_ACH_OK);
-  assert(sample.last_cmd_kind == PGR_ACC_CMD_SAVE_SESSION);
+  assert(sample.last_cmd_kind == PGS_ACC_CMD_SAVE_SESSION);
   assert(sample.last_cmd_token == 9007199254740993ULL);
   assert(parse_token_exact64("9223372036854775807")==UINT64_C(9223372036854775807));
   assert(host->tick(self_tid()) == PGR_ACH_OK);
@@ -1025,7 +1025,7 @@ int main(int argc, char **argv) {
   assert(host->set_adventure_sync_allowed(1) == PGR_ACH_ERR_STOPPED);
   // Simulate a previously-entered setter reaching its pure publication after stop.
   const auto *acc=pgs_accounts_api(1);pgs_account_snapshot_v1_t before{},after{};acc->api_sample(&before);
-  publish_accounts(true,2000,PGR_ACC_CMD_LOGOUT,UINT64_C(9223372036854775807));
+  publish_accounts(true,2000,PGS_ACC_CMD_LOGOUT,UINT64_C(9223372036854775807));
   publish_advsync(true,2500);acc->api_sample(&after);
   assert(before.last_accepted_token==after.last_accepted_token&&after.active_gc_roots==0);
 

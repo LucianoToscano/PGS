@@ -6,7 +6,7 @@
 //   * Truthful capability reporting (`0x1F`: Rocket Minigame 6 + Rocket Actions 20 +
 //     Rocket Combat 21 + Battles 19 + Shared `H_RK_VN_OBSERVE_CODE` site)
 //   * Shared Site (`ChargeAttackDisplayVNext.ObserveBattleState`): single Dobby hook
-//     fanning out to BOTH Rocket Combat (`PGR_RC_OBS_CHARGE`) and Battles (`PGR_BATTLE_OBS_CHARGE`)
+//     fanning out to BOTH Rocket Combat (`PGR_RC_OBS_CHARGE`) and Battles (`PGS_BATTLE_OBS_CHARGE`)
 //   * Raid Battle (mode 0): scope enter/exit, vNext gesture, Raid warning dodge cue,
 //     Raid fast attack (transport subprocess), and manual swap picker blocking
 //   * Gym Battle (mode 1): scope enter/exit, legacy gesture, legacy charge (`Vector3` by value),

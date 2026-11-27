@@ -181,11 +181,11 @@ int map_real_poll_capture(void* promise,uint64_t tid,Root& response,int& status)
 int map_real_transfer(void* raw_response,uint64_t tid){
     Root response(raw_response);require(bool(response),"catch response missing");
     Root bag=resolve_di_service("Niantic.Holoholo","IPokemonBag");require(bool(bag),"Pokemon storage unavailable");
-    auto aux=static_cast<const PgrVgpAuxApi*>(pgs_vgp_aux_api(1));require(aux&&aux->transfer,"transfer lookup unavailable");
-    PgrVgpAuxTransfer out{};out.version=1;out.size=sizeof(out);
+    auto aux=static_cast<const PgsVgpAuxApi*>(pgs_vgp_aux_api(1));require(aux&&aux->transfer,"transfer lookup unavailable");
+    PgsVgpAuxTransfer out{};out.version=1;out.size=sizeof(out);
     const int rc=aux->transfer(response.get(),bag.get(),tid,2500,&out);
-    if(rc==PGR_VX_OK)return 0;
-    if(rc!=PGR_VX_SUCCESS)return -1;
+    if(rc==PGS_VX_OK)return 0;
+    if(rc!=PGS_VX_SUCCESS)return -1;
     auto tr=transport();int keep_all=0;if(!tr||tr->get_bool(35,&keep_all)!=0)keep_all=1;
     if(pgr_research_transfer_caught(out.caught_id,response.h,bag.h,out.pokemon_handle,out.gm_handle,tid,keep_all==1?1:0)){
         response.h=0;bag.h=0;return 1;

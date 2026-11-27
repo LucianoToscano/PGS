@@ -41,7 +41,7 @@ const PgrObsApi *obs(){return static_cast<const PgrObsApi*>(pgs_catch_observers_
 const PgrThrowApi *throws(){return static_cast<const PgrThrowApi*>(pgs_throws_api(1));}
 const PgrAlwaysHitApi *hit(){return static_cast<const PgrAlwaysHitApi*>(pgs_always_hit_api(1));}
 const PgrArThrowApi *ar(){return static_cast<const PgrArThrowApi*>(pgs_ar_throw_api(1));}
-const PgrMapTapApi *map(){return static_cast<const PgrMapTapApi*>(pgs_map_tap_api(1));}
+const PgsMapTapApi *map(){return static_cast<const PgsMapTapApi*>(pgs_map_tap_api(1));}
 const PgrIvDisplayApi *iv(){return static_cast<const PgrIvDisplayApi*>(pgs_iv_display_api(1));}
 const PgrRuntimeTransportApi *transport(){return static_cast<const PgrRuntimeTransportApi*>(pgs_runtime_transport_api(1));}
 bool now(uint64_t *v){timespec t{};if(clock_gettime(CLOCK_BOOTTIME,&t)||t.tv_sec<0)return false;*v=uint64_t(t.tv_sec)*1000+uint64_t(t.tv_nsec)/1000000;return true;}
@@ -259,7 +259,7 @@ int install_leaves(){
   rc=ar()->install(&c);if(rc)optional_failure(PGR_QBH_AR,"ar-throw-unavailable",rc);else capabilities.fetch_or(PGR_QBH_AR);
  }
  if(group(GROUP_MAPTAP)){
-  PgrMapTapConfig c{1,sizeof(c),rt.gchandle_new,rt.gchandle_get_target,rt.gchandle_free,rt.object_get_class,rt.runtime_invoke,
+  PgsMapTapConfig c{1,sizeof(c),rt.gchandle_new,rt.gchandle_get_target,rt.gchandle_free,rt.object_get_class,rt.runtime_invoke,
    rt.object_unbox,code(23),code(24),method(25),klass(C_GROUND),klass(C_MAPVIEW),klass(C_LATLNG)};
   rc=map()->install(&c);if(rc)optional_failure(PGR_QBH_MAP,"map-tap-unavailable",rc);else capabilities.fetch_or(PGR_QBH_MAP);
  }
@@ -413,8 +413,8 @@ void drain_iv(){
 }
 void drain_map(const PgrQuickballHostOptions &p,uint64_t deadline){
  if(optional_faults.load()&PGR_QBH_MAP)return;
- PgrMapTapSample s{};int status=map()->sample(&s);if(status||s.fault){optional_failure(PGR_QBH_MAP,"map-tap-unavailable",status?status:int(s.fault));return;}
- for(unsigned i=0;i<16;++i){PgrMapTapEvent e{};int rc=map()->drain(&e);if(rc==PGR_MAP_TAP_EMPTY)break;if(rc){optional_failure(PGR_QBH_MAP,"map-tap-unavailable",rc);return;}
+ PgsMapTapSample s{};int status=map()->sample(&s);if(status||s.fault){optional_failure(PGR_QBH_MAP,"map-tap-unavailable",status?status:int(s.fault));return;}
+ for(unsigned i=0;i<16;++i){PgsMapTapEvent e{};int rc=map()->drain(&e);if(rc==PGS_MAP_TAP_EMPTY)break;if(rc){optional_failure(PGR_QBH_MAP,"map-tap-unavailable",rc);return;}
   uint64_t t=0;if(stopping.load()||!p.map_allowed||!now(&t)||t>=deadline||e.mode!=int32_t(p.map_mode)||e.epoch!=p.map_epoch)continue;
   event("map-tap","\"mode\":"+std::to_string(e.mode)+",\"epoch\":"+std::to_string(e.epoch)+",\"latitude\":"+std::to_string(e.latitude)+",\"longitude\":"+std::to_string(e.longitude),e.boottime_ms);
   int64_t args[]={double_bits(e.latitude),double_bits(e.longitude),e.mode,int64_t(e.epoch),double_bits(double(e.boottime_ms))};emit_action(10,args,5,nullptr,0);
@@ -428,7 +428,7 @@ void drain_counters(){
   hit_cursor=s.applied;hit_normal_cursor=s.normalized;hit_error_cursor=s.errors;event("always-hit-applied","\"applied\":"+quote(std::to_string(s.applied).c_str())+",\"normalized\":"+quote(std::to_string(s.normalized).c_str())+",\"errors\":"+quote(std::to_string(s.errors).c_str()));}}
 }
 void update_owned(){
- uint32_t count=0;PgrSpeedSample a{};PgrObsSample b{};PgrMapTapSample c{};PgrIvDisplaySample d{};
+ uint32_t count=0;PgrSpeedSample a{};PgrObsSample b{};PgsMapTapSample c{};PgrIvDisplaySample d{};
  if(has(PGR_QBH_SPEED)){if(speed()->sample(&a))++count;else count+=a.owned;}
  if(has(PGR_QBH_OBSERVERS)){if(obs()->sample(&b))++count;else count+=b.seen_count;}
  if(has(PGR_QBH_MAP)){if(map()->sample(&c))++count;else count+=c.owned_root_count;}

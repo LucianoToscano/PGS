@@ -328,12 +328,12 @@ void throw_ball(){
 // Hands a caught Pokemon to the VGP transfer path once the bag lists it; Keep All is honored.
 void transfer_caught(uint64_t tid){
  if(!st.pokemon_bag)st.pokemon_bag=resolve("Niantic.Holoholo","IPokemonBag");
- auto aux=static_cast<const PgrVgpAuxApi*>(pgs_vgp_aux_api(1));
+ auto aux=static_cast<const PgsVgpAuxApi*>(pgs_vgp_aux_api(1));
  if(!aux||!st.pokemon_bag){enc_done("Caught; transfer unavailable",true);return;}
- PgrVgpAuxTransfer out{};out.version=1;out.size=sizeof(out);
+ PgsVgpAuxTransfer out{};out.version=1;out.size=sizeof(out);
  const int rc=aux->transfer(st.catch_response.get(),st.pokemon_bag.get(),tid,2500,&out);
- if(rc==PGR_VX_OK){if(clock_ms()-st.since>=kTransferMs)enc_done("Caught; transfer inventory update timed out",true);return;}
- if(rc!=PGR_VX_SUCCESS){enc_done("Caught; transfer skipped",true);return;}
+ if(rc==PGS_VX_OK){if(clock_ms()-st.since>=kTransferMs)enc_done("Caught; transfer inventory update timed out",true);return;}
+ if(rc!=PGS_VX_SUCCESS){enc_done("Caught; transfer skipped",true);return;}
  Root response(st.catch_response.get()),bag(st.pokemon_bag.get());
  if(pgr_research_transfer_caught(out.caught_id,response.h,bag.h,out.pokemon_handle,out.gm_handle,tid,keep_all()?1:0)){
   response.h=0;bag.h=0;enc_done("Caught research encounter; checking transfer rules",true);return;}

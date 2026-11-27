@@ -16,12 +16,10 @@ import tempfile
 
 from game_update import current_profile
 from pgs_pinned_input import github_env, REPOSITORY
+from pgs_build_request import authorize, load_request
 
 ROOT = Path(__file__).resolve().parents[1]
-TAG = "v0.0.4"
-PREVIOUS_CODE = 2026111606
-ASSET = "PGS." + TAG + ".apk"
-NAMES = (ASSET, "PGS.json", "build-info.json", "SHA256SUMS.txt")
+SIGNER = "d95c6bdfcbd91dc5c9cde698487c88e4994771a475e4efde4567b8d5f44e96cf"
 
 
 def digest(path):
@@ -29,13 +27,13 @@ def digest(path):
         return hashlib.file_digest(source, "sha256").hexdigest()
 
 
-def authorized_commit(env):
-    if (env.get("PGS_RETAIN_AUTHORIZED") != "true"
-            or env.get("GITHUB_REPOSITORY") != REPOSITORY
-            or env.get("GITHUB_EVENT_NAME") != "workflow_dispatch"
-            or env.get("GITHUB_REF") != "refs/heads/main"
-            or not re.fullmatch(r"[0-9a-f]{40}", env.get("GITHUB_SHA", ""))):
-        raise ValueError("Candidate retention requires explicit authorization on PGS main")
+def authorized_commit(env, request, require_retention=True):
+    retain = authorize(request, env)
+    if (env.get("PGS_VERSION") != request.tag
+            or env.get("PGS_EXPECTED_VERSION_CODE") != str(request.expected_code)
+            or env.get("PGS_RETAIN_AUTHORIZED") != str(retain).lower()
+            or (require_retention and not retain)):
+        raise ValueError("Candidate request does not match the authorized build gate")
     return env["GITHUB_SHA"]
 
 
@@ -68,14 +66,47 @@ def releases(cli, env):
     return rows
 
 
-def require_unused_target(cli, env):
-    if any(row.get("tag_name") == TAG for row in releases(cli, env)):
+def require_unused_target(cli, env, request):
+    if any(row.get("tag_name") == request.tag for row in releases(cli, env)):
         raise ValueError("Candidate release already exists; never overwrite a previous candidate")
-    refs = parse_json(run_gh(cli, env, ["api", f"repos/{REPOSITORY}/git/matching-refs/tags/{TAG}"]))
+    refs = parse_json(run_gh(cli, env, ["api", f"repos/{REPOSITORY}/git/matching-refs/tags/{request.tag}"]))
     if not isinstance(refs, list) or any(not isinstance(row, dict) for row in refs):
         raise ValueError("Unexpected tag metadata")
-    if any(row.get("ref") == "refs/tags/" + TAG for row in refs):
+    if any(row.get("ref") == "refs/tags/" + request.tag for row in refs):
         raise ValueError("Candidate tag already exists; never reuse an existing tag")
+
+
+def require_previous_candidate(cli, env, request):
+    """Bind the next allocation to the previous verified signed candidate."""
+    matches = [row for row in releases(cli, env) if row.get("tag_name") == request.previous_tag]
+    if len(matches) != 1:
+        raise ValueError("Previous candidate release is missing or ambiguous")
+    assets = matches[0].get("assets")
+    if not isinstance(assets, list):
+        raise ValueError("Previous candidate assets are missing")
+    def asset(name):
+        rows = [a for a in assets if isinstance(a, dict) and a.get("name") == name]
+        if (len(rows) != 1 or rows[0].get("state") != "uploaded"
+                or type(rows[0].get("id")) is not int or rows[0]["id"] <= 0):
+            raise ValueError("Previous candidate asset is missing or incomplete")
+        return rows[0]
+    apk = asset("PGS." + request.previous_tag + ".apk")
+    receipt_asset = asset("PGS.json")
+    if (apk.get("digest") != "sha256:" + request.previous_apk_sha256
+            or type(apk.get("size")) is not int or apk["size"] <= 100_000_000
+            or type(receipt_asset.get("size")) is not int
+            or not 0 < receipt_asset["size"] <= 65536):
+        raise ValueError("Previous verified APK metadata differs from request")
+    receipt = parse_json(run_gh(cli, env, ["api", "-H", "Accept: application/octet-stream",
+                         f"repos/{REPOSITORY}/releases/assets/{receipt_asset['id']}"]))
+    if (not isinstance(receipt, dict)
+            or receipt.get("pgs_version") != request.previous_tag
+            or receipt.get("release_asset") != apk["name"]
+            or receipt.get("version_code") != request.previous_code
+            or receipt.get("sha256") != request.previous_apk_sha256
+            or receipt.get("bytes") != apk["size"]
+            or receipt.get("signing_certificate_sha256") != SIGNER):
+        raise ValueError("Previous candidate receipt is inconsistent with ledger, APK or signer")
 
 
 def safe_file(folder, name):
@@ -85,16 +116,17 @@ def safe_file(folder, name):
     return path
 
 
-def stage_bundle(source, target, profile, commit, verifier):
+def stage_bundle(source, target, profile, commit, verifier, request):
     apk = safe_file(source, "PGS.apk")
     receipt_path = safe_file(source, "PGS.json")
     info_path = safe_file(source, "build-info.json")
     sums_path = safe_file(source, "SHA256SUMS.txt")
     receipt = json.loads(receipt_path.read_text(encoding="utf-8"))
     info = json.loads(info_path.read_text(encoding="utf-8"))
-    verified = verifier(apk, tag=TAG, game_version=profile["game_version"],
-                        game_version_code=profile["version_code"], previous_version_code=PREVIOUS_CODE)
-    if receipt != verified or receipt.get("release_asset") != ASSET:
+    verified = verifier(apk, tag=request.tag, game_version=profile["game_version"],
+                        game_version_code=profile["version_code"], previous_version_code=request.previous_code)
+    if (receipt != verified or receipt.get("release_asset") != request.asset
+            or receipt.get("version_code") != request.expected_code):
         raise ValueError("Candidate receipt differs from independent APK verification")
     if (receipt.get("status") != "STATIC_CANDIDATE_CHECKS_PASSED"
             or any(receipt.get(key) is not False for key in
@@ -110,16 +142,16 @@ def stage_bundle(source, target, profile, commit, verifier):
     if (sha != receipt["sha256"] or apk.stat().st_size != receipt["bytes"]
             or sums_path.read_text(encoding="utf-8").split() != [sha, "PGS.apk"]):
         raise ValueError("Candidate checksum or size differs from its receipts")
-    shutil.copyfile(apk, target / ASSET)
+    shutil.copyfile(apk, target / request.asset)
     shutil.copyfile(receipt_path, target / "PGS.json")
     shutil.copyfile(info_path, target / "build-info.json")
-    (target / "SHA256SUMS.txt").write_text(sha + "  " + ASSET + "\n", encoding="utf-8")
+    (target / "SHA256SUMS.txt").write_text(sha + "  " + request.asset + "\n", encoding="utf-8")
     return {name: {"size": (target / name).stat().st_size,
-                   "digest": "sha256:" + digest(target / name)} for name in NAMES}
+                   "digest": "sha256:" + digest(target / name)} for name in request.names}
 
 
-def verify_retained(rows, expected, commit):
-    matches = [row for row in rows if row.get("tag_name") == TAG]
+def verify_retained(rows, expected, commit, request):
+    matches = [row for row in rows if row.get("tag_name") == request.tag]
     if len(matches) != 1 or matches[0].get("draft") is not True:
         raise ValueError("Retained candidate must be exactly one unpublished draft")
     row = matches[0]
@@ -140,17 +172,17 @@ def verify_retained(rows, expected, commit):
         raise ValueError("Retained draft asset digests differ from verified local files")
 
 
-def retain(cli, env, source, profile, commit, verifier):
-    require_unused_target(cli, env)
+def retain(cli, env, source, profile, commit, verifier, request):
+    require_unused_target(cli, env, request)
     with tempfile.TemporaryDirectory(prefix="pgs-candidate-draft-", dir=source.parent) as directory:
         target = Path(directory)
-        expected = stage_bundle(source, target, profile, commit, verifier)
-        require_unused_target(cli, env)
-        run_gh(cli, env, ["release", "create", TAG, "--repo", REPOSITORY,
-               "--draft", "--target", commit, "--title", "PGS " + TAG + " - device test candidate",
+        expected = stage_bundle(source, target, profile, commit, verifier, request)
+        require_unused_target(cli, env, request)
+        run_gh(cli, env, ["release", "create", request.tag, "--repo", REPOSITORY,
+               "--draft", "--target", commit, "--title", "PGS " + request.tag + " - device test candidate",
                "--notes", "UNPUBLISHED candidate. Static checks passed. Device test and in-place update test pending. Not approved for distribution. Source: " + commit,
-               *[str(target / name) for name in NAMES]], timeout=600)
-        verify_retained(releases(cli, env), expected, commit)
+               *[str(target / name) for name in request.names]], timeout=600)
+        verify_retained(releases(cli, env), expected, commit, request)
 
 
 def main():
@@ -158,20 +190,20 @@ def main():
     parser.add_argument("--preflight", action="store_true")
     args = parser.parse_args()
     try:
-        commit = authorized_commit(os.environ)
+        request = load_request()
+        commit = authorized_commit(os.environ, request, require_retention=not args.preflight)
         cli, env = github_env()
         if args.preflight:
-            require_unused_target(cli, env)
-            print("Candidate draft target is unused")
+            require_previous_candidate(cli, env, request)
+            require_unused_target(cli, env, request)
+            print("Previous signed candidate verified; requested draft target is unused")
             return
         profile = current_profile()
-        if (ROOT / "pgs/PGS_LAST_VERSION_CODE").read_text(encoding="utf-8").strip() != str(PREVIOUS_CODE):
-            raise ValueError("Release ledger changed; prepare a new candidate version")
         sys.path.insert(0, str(ROOT / "pgs"))
         import pgs_candidate
-        source = Path(os.environ["RUNNER_TEMP"]) / "pgs-v004-validation"
-        retain(cli, env, source, profile, commit, pgs_candidate.verify)
-        print("Verified candidate retained in unpublished draft:", TAG)
+        source = Path(os.environ["RUNNER_TEMP"]) / "pgs-candidate-validation"
+        retain(cli, env, source, profile, commit, pgs_candidate.verify, request)
+        print("Verified candidate retained in unpublished draft:", request.tag)
     except (ValueError, OSError, KeyError, TypeError):
         # No remote response bodies, token values, or authenticated URLs in logs.
         raise SystemExit("Candidate retention failed; check authorization, draft uniqueness, and receipt/asset integrity. Do not publish or overwrite a partial draft.") from None

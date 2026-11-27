@@ -1,5 +1,8 @@
-name: PGS v0.0.4 - Full candidate validation
+name: PGS AUTO BUILD - Signed candidate
 on:
+  push:
+    branches: [main]
+    paths: [build-request.json]
   workflow_dispatch:
     inputs:
       authorized_input:
@@ -15,33 +18,56 @@ on:
 permissions:
   contents: read
 concurrency:
-  group: pgs-v0.0.4-validation
+  group: pgs-signed-candidate
   cancel-in-progress: false
 jobs:
+  request:
+    name: Validate explicit build request (no signing)
+    if: github.repository == 'LucianoToscano/PGS' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: read
+    outputs:
+      enabled: ${{ steps.request.outputs.enabled }}
+      version: ${{ steps.request.outputs.version }}
+      expected_code: ${{ steps.request.outputs.expected_code }}
+      retain: ${{ steps.request.outputs.retain }}
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
+          fetch-depth: 0
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5
+        with:
+          python-version: '3.12'
+      - name: Validate committed request
+        id: request
+        env:
+          PGS_MANUAL_AUTHORIZED: ${{ inputs.authorized_input }}
+          PGS_MANUAL_RETAIN: ${{ inputs.retain_authorized_candidate }}
+        run: python -B tools/pgs_build_request.py --gate
   validate:
     name: Validate a full candidate without publishing an APK
-    if: github.repository == 'LucianoToscano/PGS' && github.ref == 'refs/heads/main' && inputs.authorized_input == true
+    needs: request
+    if: needs.request.outputs.enabled == 'true' && github.repository == 'LucianoToscano/PGS' && github.ref == 'refs/heads/main'
     runs-on: ubuntu-24.04
     timeout-minutes: 60
     # GitHub requires repository push access to read draft release assets.
-    # Only this manually authorized main-branch job has elevated contents access.
+    # Only a validated explicit request on main has elevated contents access.
     permissions:
       contents: write
     env:
-      PGS_VERSION: v0.0.4
+      PGS_VERSION: ${{ needs.request.outputs.version }}
+      PGS_EXPECTED_VERSION_CODE: ${{ needs.request.outputs.expected_code }}
+      PGS_RETAIN_AUTHORIZED: ${{ needs.request.outputs.retain }}
+      PGS_MANUAL_AUTHORIZED: ${{ inputs.authorized_input }}
+      PGS_MANUAL_RETAIN: ${{ inputs.retain_authorized_candidate }}
       PGS_BUILD_TOOLS: '36.0.0'
       PGS_ANDROID_PLATFORM: android-36
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
         with:
           persist-credentials: false
-      - name: Check release ledger and authorized profile identity
-        shell: bash
-        run: |
-          set -euo pipefail
-          test "$(cat pgs/PGS_LAST_VERSION_CODE)" = 2026111606
-          test "$(cat pgs/VERSION)" = 0.0.3
-          python -B -c "import sys; sys.path.insert(0, 'tools'); from game_update import current_profile; p=current_profile(); assert p['game_version']=='0.439.0' and p['version_code']==2026111602"
       - name: Check required private configuration before installing tools
         env:
           PGS_KEYSTORE_BASE64: ${{ secrets.PGS_KEYSTORE_BASE64 || secrets.PGRAZOR_KEYSTORE_BASE64 }}
@@ -66,11 +92,9 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: python -B tools/pgs_pinned_input.py --preflight
-      - name: Check optional candidate draft target before installing tools
-        if: inputs.retain_authorized_candidate == true
+      - name: Check previous signed candidate and unused draft target before installing tools
         env:
           GH_TOKEN: ${{ github.token }}
-          PGS_RETAIN_AUTHORIZED: ${{ inputs.retain_authorized_candidate }}
         run: python -B tools/pgs_candidate_draft.py --preflight
       - uses: actions/setup-java@cf277c60eb25467037889841efdb72551f06f6c3 # v4
         with:
@@ -102,7 +126,7 @@ jobs:
           python -B tools/check.py
       - name: Configure existing signer path
         shell: bash
-        run: echo "PGS_KEYSTORE=$RUNNER_TEMP/pgs-v004-validation.jks" >> "$GITHUB_ENV"
+        run: echo "PGS_KEYSTORE=$RUNNER_TEMP/pgs-candidate-validation.jks" >> "$GITHUB_ENV"
       - name: Retrieve and verify authorized original from unpublished draft
         env:
           GH_TOKEN: ${{ github.token }}
@@ -135,22 +159,21 @@ jobs:
           python -B pgs/nonroot.py --apk pgs/input/game.apkm
           mapfile -t reports < <(find pgs/build/nonroot -mindepth 2 -maxdepth 2 -name report.json -type f)
           test "${#reports[@]}" = 1
-          python -B pgs/release_apk.py --run "$(dirname "${reports[0]}")" --output "$RUNNER_TEMP/pgs-v004-validation"
-          python -B -c "import json, pathlib, os; d=json.loads((pathlib.Path(os.environ['RUNNER_TEMP'])/'pgs-v004-validation/PGS.json').read_text()); assert d['pgs_version']=='v0.0.4' and d['version_code']==2026111607 and d['publish_ready'] is False and d['device_tested'] is False"
+          python -B pgs/release_apk.py --run "$(dirname "${reports[0]}")" --output "$RUNNER_TEMP/pgs-candidate-validation"
+          python -B -c "import json, pathlib, os; d=json.loads((pathlib.Path(os.environ['RUNNER_TEMP'])/'pgs-candidate-validation/PGS.json').read_text()); assert d['pgs_version']==os.environ['PGS_VERSION'] and d['version_code']==int(os.environ['PGS_EXPECTED_VERSION_CODE']) and d['publish_ready'] is False and d['device_tested'] is False"
       - name: Upload verification receipts only
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
-          name: PGS-v0.0.4-validation-receipts
+          name: PGS-${{ needs.request.outputs.version }}-validation-receipts
           path: |
-            ${{ runner.temp }}/pgs-v004-validation/PGS.json
-            ${{ runner.temp }}/pgs-v004-validation/build-info.json
+            ${{ runner.temp }}/pgs-candidate-validation/PGS.json
+            ${{ runner.temp }}/pgs-candidate-validation/build-info.json
           if-no-files-found: error
           retention-days: 3
       - name: Retain authorized signed candidate in an unpublished draft
-        if: inputs.retain_authorized_candidate == true
+        if: needs.request.outputs.retain == 'true'
         env:
           GH_TOKEN: ${{ github.token }}
-          PGS_RETAIN_AUTHORIZED: ${{ inputs.retain_authorized_candidate }}
         shell: bash
         run: |
           set -euo pipefail
@@ -162,4 +185,4 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          rm -f -- "$RUNNER_TEMP/pgs-v004-validation.jks" "$RUNNER_TEMP/pgs-v004-validation/PGS.apk" "$RUNNER_TEMP/pgs-v004-validation/unsigned.apk" "$RUNNER_TEMP/pgs-v004-validation/aligned.apk" pgs/input/game.apkm
+          rm -f -- "$RUNNER_TEMP/pgs-candidate-validation.jks" "$RUNNER_TEMP/pgs-candidate-validation/PGS.apk" "$RUNNER_TEMP/pgs-candidate-validation/unsigned.apk" "$RUNNER_TEMP/pgs-candidate-validation/aligned.apk" pgs/input/game.apkm

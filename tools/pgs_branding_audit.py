@@ -238,7 +238,7 @@ def check():
     ):
         if not (ROOT / source_file).is_file():
             problems.append(source_file + ": bilingual website module missing")
-    if not (ROOT / ".github/workflows/pgs-v0.0.4-candidate.yml").is_file():
+    if not (ROOT / ".github/workflows/pgs-build.yml").is_file():
         problems.append("Current full candidate validation workflow missing")
     if problems:
         raise SystemExit("PGS branding audit failed:\n" + "\n".join(" - " + p for p in problems))

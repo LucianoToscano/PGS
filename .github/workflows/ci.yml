@@ -49,9 +49,13 @@ jobs:
         run: python -c "import sys; sys.path.insert(0, 'pgs'); import dex_bridges; dex_bridges.dependencies(download=True)"
       - name: Verify standalone PGS release test discovery (no signing)
         run: python -B -m unittest discover -s pgs/test -p 'test_pgs_*.py' -v
+      - name: Resolve candidate version for source checks
+        shell: pwsh
+        run: |
+          $version = python -B tools/pgs_build_request.py --ci-version
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          "PGS_VERSION=$version" >> $env:GITHUB_ENV
       - name: General source checks with candidate version override
-        env:
-          PGS_VERSION: v0.0.4
         run: python -B tools/check.py
       - name: Compile Android controls (not a playable game build)
         run: python -B pgs/build.py

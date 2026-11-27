@@ -1,7 +1,7 @@
 {
   "scope": "Git-indexed regular UTF-8 text, excluding NUL-containing files and the snapshot itself",
-  "tracked_files": 2112,
-  "text_files": 1037,
+  "tracked_files": 2115,
+  "text_files": 1040,
   "changed_files": 37,
   "added_files": 1,
   "previous_occurrences": 1041,
@@ -21,7 +21,7 @@
   },
   "files": [
     {
-      "path": ".github/workflows/pgs-v0.0.4-candidate.yml",
+      "path": ".github/workflows/pgs-build.yml",
       "category": "workflows",
       "occurrences": 8
     },
@@ -857,7 +857,7 @@
           ".github/workflows/pgs-same-package-update.yml",
           ".github/workflows/pgs-v0.0.1-release.yml",
           ".github/workflows/pgs-v0.0.2-release.yml",
-          ".github/workflows/pgs-v0.0.4-candidate.yml",
+          ".github/workflows/pgs-build.yml",
           ".github/workflows/release.yml",
           "CONTRIBUTING.md",
           "CONTRIBUTING.pt-BR.md",
@@ -1203,7 +1203,7 @@
         "reason": "PGS-first build and signing configuration, old configuration aliases and historical guarded rebuilds. No new signing key.",
         "occurrences": 29,
         "paths": [
-          ".github/workflows/pgs-v0.0.4-candidate.yml",
+          ".github/workflows/pgs-build.yml",
           "CONTRIBUTING.md",
           "CONTRIBUTING.pt-BR.md",
           "pgs/art/CMakeLists.txt",

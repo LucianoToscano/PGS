@@ -79,13 +79,15 @@ public class RetiredAuthTest {
             subprocess.run([str(java), "-cp", str(work), "RetiredAuthTest"],
                            check=True, capture_output=True, timeout=15)
 
-    def test_manual_candidate_workflow_only_uploads_receipts(self):
-        flow = (ROOT / ".github/workflows/pgs-v0.0.4-candidate.yml").read_text(encoding="utf-8")
+    def test_request_scoped_candidate_workflow_only_uploads_receipts(self):
+        flow = (ROOT / ".github/workflows/pgs-build.yml").read_text(encoding="utf-8")
         self.assertIn("  workflow_dispatch:", flow)
-        self.assertNotIn("\n  push:", flow)
+        self.assertIn("  push:\n    branches: [main]\n    paths: [build-request.json]", flow)
         self.assertNotIn("\n  pull_request:", flow)
         self.assertIn("default: false", flow)
-        self.assertIn("inputs.authorized_input == true", flow)
+        self.assertIn("python -B tools/pgs_build_request.py --gate", flow)
+        self.assertIn("    needs: request", flow)
+        self.assertIn("needs.request.outputs.enabled == 'true'", flow)
         self.assertIn("github.ref == 'refs/heads/main'", flow)
         self.assertIn("contents: read", flow)
         self.assertEqual(flow.count("contents: write"), 1)
@@ -115,8 +117,9 @@ public class RetiredAuthTest {
         key_load = flow.split("name: Load existing signer only after input verification", 1)[1].split("      - name:", 1)[0]
         self.assertIn("tools/pgs_pinned_input.py --load-key", key_load)
         self.assertNotIn("GH_TOKEN:", key_load)
-        self.assertIn("= 2026111606", flow)
-        self.assertIn("d['version_code']==2026111607", flow)
+        self.assertIn("d['version_code']==int(os.environ['PGS_EXPECTED_VERSION_CODE'])", flow)
+        self.assertIn("d['pgs_version']==os.environ['PGS_VERSION']", flow)
+        self.assertIn("Check previous signed candidate and unused draft target", flow)
         upload = flow.split("name: Upload verification receipts only", 1)[1].split("      - name:", 1)[0]
         self.assertIn("/PGS.json", upload)
         self.assertIn("/build-info.json", upload)
@@ -126,10 +129,9 @@ public class RetiredAuthTest {
         self.assertIn("retain_authorized_candidate:", flow)
         retention_input = flow.split("      retain_authorized_candidate:", 1)[1].split("permissions:", 1)[0]
         self.assertIn("default: false", retention_input)
-        for step in ("Check optional candidate draft target", "Retain authorized signed candidate"):
-            block = flow.split("name: " + step, 1)[1].split("      - name:", 1)[0].split("      - uses:", 1)[0]
-            self.assertIn("if: inputs.retain_authorized_candidate == true", block)
-            self.assertIn("PGS_RETAIN_AUTHORIZED: ${{ inputs.retain_authorized_candidate }}", block)
+        self.assertIn("PGS_MANUAL_AUTHORIZED: ${{ inputs.authorized_input }}", flow)
+        self.assertIn("PGS_RETAIN_AUTHORIZED: ${{ needs.request.outputs.retain }}", flow)
+        self.assertIn("if: needs.request.outputs.retain == 'true'", flow)
         retained = flow.split("name: Retain authorized signed candidate", 1)[1].split("      - name:", 1)[0]
         self.assertIn('rm -f -- "$PGS_KEYSTORE"', retained)
         self.assertIn("python -B tools/pgs_candidate_draft.py", retained)

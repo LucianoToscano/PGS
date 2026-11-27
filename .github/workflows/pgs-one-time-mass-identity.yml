@@ -1,0 +1,182 @@
+name: PGS one-time mass source identity migration
+on:
+  push:
+    branches: [refactor/pgs-mass-identity-20261127]
+permissions:
+  contents: read
+jobs:
+  migrate:
+    if: github.repository == 'LucianoToscano/PGS' && github.ref == 'refs/heads/refactor/pgs-mass-identity-20261127'
+    permissions:
+      contents: write
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          fetch-depth: 2
+      - name: Migrate verified source identifiers in one batch
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$GITHUB_REPOSITORY" = "LucianoToscano/PGS"
+          test "$GITHUB_REF" = "refs/heads/refactor/pgs-mass-identity-20261127"
+          test "$(git rev-parse HEAD^)" = "cbbd5606a26fbec1806b8e92de7b1a218a58d56b"
+          test -z "$(git status --porcelain)"
+          python3 - <<'PY'
+          import collections
+          import hashlib
+          import json
+          import pathlib
+          import re
+          import subprocess
+
+          base = "cbbd5606a26fbec1806b8e92de7b1a218a58d56b"
+          root = pathlib.Path.cwd()
+          old = re.compile(rb"\b(?:PGR_[A-Z0-9_]+|pgr_[A-Za-z0-9_]+|Pgr[A-Z][A-Za-z0-9_]*)\b")
+          new = re.compile(rb"\b(?:PGS_[A-Z0-9_]+|pgs_[A-Za-z0-9_]+|Pgs[A-Z][A-Za-z0-9_]*)\b")
+          quoted = re.compile(rb'"(?:\\[^\n]|[^"\\\n])*"|\'(?:\\[^\n]|[^\'\\\n])*\'')
+          generators = {
+              "tools/native_gift_schema.py", "tools/native_routes_schema.py", "tools/pvp_data.py"
+          }
+          approved_generator_tokens = {
+              b"pgr_shared_gift", b"pgr_routes_schema", b"pgr_pvp_data", b"pgr_pvp_icons"
+          }
+          protected = {
+              "pgs/native/account_host.cpp", "pgs/native/account_source_compat.h",
+              "pgs/test/test_pgs_native_identity.py", "pgs/test/test_pgs_reference_inventory.py",
+              "tools/pgs_reference_inventory.py", "docs/PGS_REMAINING_REFERENCES.json",
+          }
+          suffixes = {".h", ".hpp", ".c", ".cc", ".cpp", ".inc", ".js", ".cjs", ".mjs", ".java", ".py"}
+          def eligible(path):
+              if path in protected:
+                  return False
+              if path in generators:
+                  return True
+              return path.startswith(("pgs/native/", "pgs/art/", "pgs/runtime/",
+                                      "pgs/src/dev/pgs/", "pgs/test/")) and \
+                  pathlib.PurePosixPath(path).suffix in suffixes
+
+          def replacement(token):
+              if token.startswith(b"PGR_"):
+                  return b"PGS_" + token[4:]
+              if token.startswith(b"pgr_"):
+                  return b"pgs_" + token[4:]
+              return b"Pgs" + token[3:]
+
+          paths = []
+          tree = subprocess.check_output(["git", "ls-tree", "-r", "-l", "-z", base])
+          for item in tree.split(b"\0"):
+              if not item:
+                  continue
+              header, path = item.split(b"\t", 1)
+              mode, kind, sha, size = header.split()
+              if kind != b"blob" or mode not in (b"100644", b"100755"):
+                  continue
+              paths.append((path.decode("utf-8"), sha, int(size)))
+
+          candidates = {}
+          blocked = collections.defaultdict(set)
+          canonical = set()
+          original = {}
+          omitted = []
+          with subprocess.Popen(["git", "cat-file", "--batch"], stdin=subprocess.PIPE,
+                                stdout=subprocess.PIPE) as git:
+              for path, sha, size in paths:
+                  # Large art, binary assets and vendor snapshots are not source migration targets.
+                  if size > 16_000_000 and not eligible(path):
+                      omitted.append(path)
+                      continue
+                  git.stdin.write(sha + b"\n")
+                  git.stdin.flush()
+                  header = git.stdout.readline().split()
+                  assert header == [sha, b"blob", str(size).encode()], path
+                  data = git.stdout.read(size)
+                  assert len(data) == size and git.stdout.read(1) == b"\n", path
+                  matches = set(old.findall(data))
+                  canonical.update(new.findall(data))
+                  try:
+                      data.decode("utf-8")
+                      is_text = b"\0" not in data
+                  except UnicodeDecodeError:
+                      is_text = False
+                  if not eligible(path) or not is_text:
+                      for token in matches:
+                          blocked[token].add("outside-source-scope-or-protected")
+                      continue
+                  if not matches:
+                      continue
+                  if (root / path).read_bytes() != data:
+                      for token in matches:
+                          blocked[token].add("checkout-bytes-differ")
+                      continue
+                  original[path] = data
+                  for token in matches:
+                      candidates[token] = replacement(token)
+                      if token.startswith(b"PGR_GAME_"):
+                          blocked[token].add("generated-game-bindings-retained")
+                  for literal in quoted.finditer(data):
+                      for token in old.findall(literal.group()):
+                          if path not in generators or token not in approved_generator_tokens:
+                              blocked[token].add("quoted-contract-or-fixture")
+              git.stdin.close()
+              assert git.wait() == 0
+
+          for token, target in candidates.items():
+              if target in canonical:
+                  blocked[token].add("canonical-name-already-exists")
+          mapping = {a: b for a, b in candidates.items() if not blocked[a]}
+          # Reject unexpected many-to-one mappings, even if they differ only by source style.
+          assert len(set(mapping.values())) == len(mapping)
+          rows = []
+          for path, data in original.items():
+              used = collections.Counter()
+              def rename(match):
+                  token = match.group()
+                  target = mapping.get(token)
+                  if target is None:
+                      return token
+                  used[token] += 1
+                  return target
+              result = old.sub(rename, data)
+              if result == data:
+                  continue
+              reverse = {mapping[token]: token for token in used}
+              inverse = re.compile(rb"\b(?:" + b"|".join(re.escape(v) for v in sorted(reverse)) + rb")\b")
+              assert inverse.sub(lambda match: reverse[match.group()], result) == data, path
+              assert len(re.findall(rb"(?i)pgrazor", result)) == len(re.findall(rb"(?i)pgrazor", data)), path
+              (root / path).write_bytes(result)
+              rows.append({"path": path, "occurrences": sum(used.values()), "distinct_names": len(used),
+                           "before_sha256": hashlib.sha256(data).hexdigest(),
+                           "after_sha256": hashlib.sha256(result).hexdigest()})
+
+          report = {
+              "base_commit": base, "changed_files": len(rows),
+              "renamed_occurrences": sum(row["occurrences"] for row in rows),
+              "renamed_distinct_names": len(mapping),
+              "retained_distinct_names": sum(bool(blocked[token]) for token in candidates),
+              "retained_reasons": dict(collections.Counter(reason for token in candidates for reason in blocked[token])),
+              "skipped_large_non_source_files": omitted,
+              "files": rows,
+              "mapping": {a.decode("ascii"): b.decode("ascii") for a, b in sorted(mapping.items())},
+              "retained": {a.decode("ascii"): sorted(blocked[a]) for a in sorted(candidates) if blocked[a]},
+          }
+          pathlib.Path("pgs-mass-identity-report.json").write_text(json.dumps(report, indent=2) + "\n", encoding="utf-8")
+          print(json.dumps({k: v for k, v in report.items() if k not in ("files", "mapping", "retained", "skipped_large_non_source_files")}, indent=2))
+          assert rows, "No changes to commit"
+          PY
+          git diff --check
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add -u
+          git diff --cached --stat
+          git commit -m "PGS: coordinated mass source identifier migration"
+          git push origin HEAD:refs/heads/refactor/pgs-mass-identity-20261127
+      - name: Upload exact migration report
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: PGS-mass-identity-report
+          path: pgs-mass-identity-report.json
+          if-no-files-found: warn
+          retention-days: 14

@@ -243,11 +243,14 @@ async function collect(source, now, metrics) {
   const iflow=source.kind==="iflow" && url.hostname==="pokecoords.iflowgo.com" &&
     source.category==="pokemon" && url.pathname==="/iflowgopokecoords/api/v1/pokemon-search";
   const gocoords=source.kind==="gocoords" && url.href==="https://gocoords.com/api/spawns";
+  const poke100=source.kind==="poke100iv" && url.href==="https://poke100iv.com/api/pokemon";
   const compact=(!source.kind || source.kind==="compact") && url.pathname.endsWith("/hundos.json");
   if (url.protocol !== "https:" || url.username || url.password || url.search || url.hash ||
-      !hundoOnly(source) || (!moonani && !iflow && !city && !compact && !gocoords)) throw Error("source_url");
+      !hundoOnly(source) || (!moonani && !iflow && !city && !compact && !gocoords && !poke100)) throw Error("source_url");
   // iFlowGo officially answers the provider's IV index when min_iv=100 is set;
   // each page is still verified row-by-row before persistence.
+  if (poke100) url.search=new URLSearchParams({minLevel:"0",limit:"101",latMin:"40.6",latMax:"40.9",
+    lonMin:"-74.1",lonMax:"-73.8",ivFilters:"15-15-15"});
   if (iflow) url.search=new URLSearchParams({page:"1",min_iv:"100"}).toString();
   // The city query contract expects unix seconds in `time`; the server meta
   // block reports seconds as well. mons covers species 1..1025 with minIV=100.
@@ -307,6 +310,13 @@ async function collect(source, now, metrics) {
     return {partialError,...result,received:items.length,discarded:Math.max(0,items.length-result.validated),contentType:first.contentType};
   }
   const {body,contentType}=await page(url,init);
+  if (poke100) {
+    if (body?.success!==true || !Array.isArray(body.data) || body.data.length>101) throw Error("invalid_feed");
+    const spawns=body.data.filter(p=>p && num(p.iv)===100 && (p.coordinate_precision??"exact")==="exact")
+      .map(p=>({attack:p.atk,defence:p.def,stamina:p.sta,pokemon_id:p.pokemon_id,lat:p.latitude,
+        lng:p.longitude,despawn:Date.parse(p.expires_at)/1000,cp:p.cp,level:p.level,form:p.form}));
+    return {...await spotsFromSpawns(spawns,body.data.length,now),contentType};
+  }
   if (gocoords) return {...await gocoordsRows(body,now),contentType};
   if (moonani) return {...await moonaniRows(body,now),contentType};
   if (city) return {...await cityRows(body,now),contentType};
@@ -337,13 +347,13 @@ function stateOf(entry) {
 async function refresh(env) {
   const now=Date.now(), configs=configuredSources(env);
   if (!configs.length) return;
-  if (configs.length>9 || configs.some(s=>!s || !/^[a-z][a-z0-9-]{0,39}$/.test(s.name) ||
+  if (configs.length>10 || configs.some(s=>!s || !/^[a-z][a-z0-9-]{0,39}$/.test(s.name) ||
       !Number.isSafeInteger(s.interval_s) || s.interval_s<interval) ||
       new Set(configs.map(s=>s.name)).size!==configs.length) throw Error("invalid_config");
   const previous=hundoState(await env.FEED.get(stateKey,"json") || {},configs,now);
-  const budget=Number(env.MAX_UPSTREAM_REQUESTS ?? 15);
+  const budget=Number(env.MAX_UPSTREAM_REQUESTS ?? 16);
   const required=configs.reduce((n,s)=>n+(s.kind==="iflow"?maxIflowPages:s.kind==="moonani"?MAX_MOONANI_PAGES:1),0);
-  if (!Number.isSafeInteger(budget)||budget>15||required>budget) throw Error("invalid_config");
+  if (!Number.isSafeInteger(budget)||budget>16||required>budget) throw Error("invalid_config");
   async function poll(source) {
     const old=previous.entries?.find(x=>x.name===source.name && x.url===source.url);
     const recover=old?.adapter_v!==ADAPTER_VERSION && old?.status==="offline" &&

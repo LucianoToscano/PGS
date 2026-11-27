@@ -65,4 +65,4 @@ Em 27/11/2026 às 14h15 de Fortaleza, a coleta confirmou 156 registros únicos d
 
 **Enrichment / Enriquecimento.** PoGoAPI, PokéAPI, DittoBase, Leek Duck and PvPoke are candidates for metadata and event enrichment. OpenStreetMap and Overpass supply geographic context. Shungo, iPogo, Pokemod, MAD, RealDeviceMap, Fletchling and Koji are research or architecture references here. None is counted as a live instance by the PGS collector.
 
-O coletor limita cada ciclo a 15 consultas (MAX_UPSTREAM_REQUESTS), em lotes de quatro fontes. iFlowGo consulta até cinco páginas e Moonani até três. Uma falha durante a paginação preserva os registros válidos e o prazo de nova tentativa.
+O coletor limita cada ciclo a 16 consultas (MAX_UPSTREAM_REQUESTS), em lotes de quatro fontes. iFlowGo consulta até cinco páginas e Moonani até três. Uma falha durante a paginação preserva os registros válidos e o prazo de nova tentativa.

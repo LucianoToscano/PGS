@@ -103,12 +103,13 @@ jobs:
             ["vanpokemap","https://vanpokemap.com/query2.php"],
             ["iflowgo-pokemon","https://pokecoords.iflowgo.com/iflowgopokecoords/api/v1/pokemon-search"],
             ["moonani","https://moonani.com/PokeList/ajax.php"],
-            ["gocoords","https://gocoords.com/api/spawns"]
+            ["gocoords","https://gocoords.com/api/spawns"],
+            ["poke100iv","https://poke100iv.com/api/pokemon"]
           ]);
           assert.equal(sources.length,approved.size);
           assert.equal(new Set(sources.map(s=>s.name)).size,approved.size);
           for (const source of sources) assert.equal(source.url,approved.get(source.name));
-          assert.ok(sources.reduce((sum,s)=>sum+(s.kind==="iflow"?5:s.kind==="moonani"?3:1),0)<=15);
+          assert.ok(sources.reduce((sum,s)=>sum+(s.kind==="iflow"?5:s.kind==="moonani"?3:1),0)<=16);
           // Use real upstream requests only once, within the existing candidate's
           // budget. No credentials, no bypass, no retry loop, no production writes.
           const db=new Map();

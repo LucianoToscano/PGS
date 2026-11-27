@@ -203,3 +203,25 @@ Uma execução com KV temporário consultou nove fontes. O resultado continha 74
 A página pública GhostDex expôs IVs, coordenadas e expiração UTC na apresentação. O HTML mediu 1.154.609 bytes, acima do orçamento por resposta do Worker. A vinculação de cada expiração à espécie e a uma coordenada exata precisa ser validada antes da ativação. GOCoords oferece até dez linhas na interface gratuita.
 
 A configuração candidata prevê até 15 consultas externas por ciclo e quatro conexões simultâneas. Com 288 ciclos diários, o coletor usa até 576 escritas KV e 288 leituras agendadas. As leituras públicas somam-se às agendadas. A CPU e o consumo total da conta precisam ser medidos na Cloudflare. A produção ainda requer verificação do namespace existente e da versão para rollback antes da implantação.
+
+### Candidato com Poke100IV
+ 2026-11-27T21:49:52.694Z
+
+O mapa Poke100IV usa /api/pokemon com limites geográficos, limit=101 e ivFilters=15-15-15. A janela de Nova York foi testada. A fonte fornece IVs individuais, espécie, coordenadas e expires_at. O ID interno não é usado como encounter ID. O teto passa a 16 consultas, sem alteração no número de escritas KV.
+
+| Fonte | Recebidos | Validados | Descartados | Ativos | Únicos | Páginas |
+|---|---:|---:|---:|---:|---:|---:|
+| faustusfoundry | 70 | 70 | 0 | 70 | 70 | 1 |
+| nycpokemap | 1 | 1 | 0 | 1 | 0 | 1 |
+| sgpokemap | 2 | 2 | 0 | 2 | 0 | 1 |
+| londonpogomap | 0 | 0 | 0 | 0 | 0 | 1 |
+| sydneypogomap | 1 | 1 | 0 | 1 | 0 | 1 |
+| vanpokemap | 0 | 0 | 0 | 0 | 0 | 1 |
+| iflowgo | 98 | 89 | 9 | 89 | 54 | 4 |
+| moonani | 177 | 161 | 16 | 159 | 154 | 2 |
+| gocoords | 10 | 10 | 0 | 10 | 10 | 1 |
+| poke100iv | 6 | 6 | 0 | 6 | 5 | 1 |
+
+Feed com 76 encontros e 217 spots, todos futuros. Wrangler informou ausência de autenticação administrativa.
+
+PogoTrades divulga trocas no domínio pogotrades.com. TWPkInfo mantém um portal em twpkinfo.com. Nenhum contrato gratuito de spawns foi comprovado nesses dois serviços. Coords GO continua sem canal oficial e feed selvagem confirmados. Pokedex100 publica uma prévia com links criptografados. PoGO Alerts Network informa que o plano gratuito não inclui a camada Pokémon. PokeXperience divulga um feed, mas a interface de integração gratuita permanece sem validação. PoGoCoordinates e LivePokéMap continuam classificados como dependentes de autenticação no catálogo de produção. RocketMap exige identificar uma instância concreta disponível ao projeto.

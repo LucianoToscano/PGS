@@ -1,6 +1,26 @@
-// PGS Hundo Feed. SOURCES is an operator-configured JSON array of authorized compact feeds.
+// PGS Hundo Feed: only authorized, exact-coordinate wild 100% IV spawns.
 const interval = 300;
 const stateKey = "pgs-feed-v1";
+const publicPaths=new Set(["/hundos.json","/sources.json","/status.json"]);
+const providerName=s=>s.name==="iflowgo-pokemon"?"iflowgo":s.name;
+const sourceKey=s=>s.name+" "+s.url;
+// Filter legacy category configuration as well as persisted KV snapshots. A removed
+// raid source must not be queried even if dashboard variables still contain it.
+const hundoOnly=s=>s && s.name!=="iflowgo-raids" && [undefined,"hundos","pokemon"].includes(s.category);
+function configuredSources(env) {
+  const configs=JSON.parse(env.SOURCES || "[]");
+  if (!Array.isArray(configs)) throw Error("invalid_config");
+  return configs.filter(hundoOnly);
+}
+function hundoState(state,configs) {
+  const active=new Set(configs.map(sourceKey)), names=new Set(configs.map(s=>s.name));
+  const entries=(state?.entries || []).filter(s=>hundoOnly(s) && active.has(sourceKey(s))).map(s=>{
+    const {records,...entry}=s; // Never retain the legacy arbitrary-IV/raid catalogue.
+    return entry;
+  });
+  const history=(state?.history || []).map(h=>({...h,online:(h.online || []).filter(name=>names.has(name))}));
+  return {...state,entries,history};
+}
 
 function encounter(value) {
   if (typeof value !== "string" && !Number.isSafeInteger(value)) return null;
@@ -24,7 +44,7 @@ export function rows(body, now) {
       const key = spot ? (typeof raw === "string" && /^s[0-9a-f]{16}$/.test(raw) && raw) : encounter(raw);
       if (!key || (!spot && approximate.has(key)) || ![dex,form,end,cp].every(Number.isSafeInteger) ||
           dex<=0 || form<0 || cp<0 || ![lat,lon,level].every(Number.isFinite) ||
-          Math.abs(lat)>90 || Math.abs(lon)>180 || end<now+60000 || level<0 || level>55) continue;
+          Math.abs(lat)>90 || Math.abs(lon)>180 || (lat===0 && lon===0) || end<now+60000 || level<0 || level>55) continue;
       if (!result.has(key)) result.set(key,[key,...row.slice(1)]);
     }
     return [...result.values()];
@@ -48,28 +68,27 @@ async function cityRows(body,now) {
   return rows({v:1,fetched_ms:now,hundos:[],spots},now);
 }
 
-function iflowRows(body,category,now) {
-  const raid=category==="raids", list=raid?body.raids:body.items;
-  if (!Array.isArray(list)) throw Error("iflow_schema");
-  const records=new Map(), spots=[];
-  for (const p of list) {
-    const end=Date.parse(raid?p?.raid_end_at:p?.expires_at);
+export function iflowRows(body,now) {
+  if (!Array.isArray(body?.items)) throw Error("iflow_schema");
+  const spots=[];
+  for (const p of body.items) {
+    if (!p || ![p.attack_iv,p.defense_iv,p.stamina_iv].every(v=>v===15) ||
+        (p.percent_iv!=null && p.percent_iv!==100)) continue;
+    const end=Date.parse(p.expires_at);
     if (!Number.isFinite(end) || end<now+60000 || typeof p.id!=="string" || !/^\d{1,20}$/.test(p.id) ||
-        !Number.isFinite(p.lat) || Math.abs(p.lat)>90 || !Number.isFinite(p.lon) || Math.abs(p.lon)>180) continue;
-    if (!raid && !(Number.isSafeInteger(p.pokemon_id) && p.pokemon_id>0)) continue;
-    const record={id:p.id,source:"iflowgo",lat:p.lat,lon:p.lon,expires_ms:end};
-    if (raid) {record.boss=p.raid_pokemon_id; record.level=p.raid_level;}
-    else {
-      record.dex=p.pokemon_id;
-      for (const [field,max] of Object.entries({attack_iv:15,defense_iv:15,stamina_iv:15,percent_iv:100,cp:10000,level:55,gender:3,form:65535})) {
-        if (Number.isFinite(p[field]) && p[field]>=0 && p[field]<=max) record[field]=p[field];
-      }
-      if ([p.attack_iv,p.defense_iv,p.stamina_iv].every(v=>v===15) && BigInt(p.id)<(1n<<64n))
-        spots.push(["s"+BigInt(p.id).toString(16).padStart(16,"0"),p.pokemon_id,0,p.lat,p.lon,end,p.cp,p.level]);
-    }
-    records.set(p.id,record);
+        !Number.isSafeInteger(p.pokemon_id) || p.pokemon_id<=0 ||
+        !Number.isFinite(p.lat) || Math.abs(p.lat)>90 || !Number.isFinite(p.lon) || Math.abs(p.lon)>180 ||
+        (p.lat===0 && p.lon===0)) continue;
+    const id=BigInt(p.id);
+    if (id===0n || id>=(1n<<64n)) continue;
+    // The provider ID is not asserted to be a game encounter ID. Keep the
+    // existing spot representation and use zero only for unknown optional fields.
+    const form=Number.isSafeInteger(p.form) && p.form>=0?p.form:0;
+    const cp=Number.isSafeInteger(p.cp) && p.cp>=0?p.cp:0;
+    const level=Number.isFinite(p.level) && p.level>=0 && p.level<=55?p.level:0;
+    spots.push(["s"+id.toString(16).padStart(16,"0"),p.pokemon_id,form,p.lat,p.lon,end,cp,level]);
   }
-  return {...rows({v:1,fetched_ms:now,hundos:[],spots},now),category,records:[...records.values()]};
+  return rows({v:1,fetched_ms:now,hundos:[],spots},now);
 }
 
 async function moonaniRows(body,now) {
@@ -97,11 +116,13 @@ async function collect(source, now) {
   const city=source.kind==="city" && cityHosts.has(url.hostname) && url.pathname==="/query2.php";
   const moonani=source.kind==="moonani" && url.href==="https://moonani.com/PokeList/ajax.php";
   const iflow=source.kind==="iflow" && url.hostname==="pokecoords.iflowgo.com" &&
-    ["pokemon","raids"].includes(source.category) && url.pathname==="/iflowgopokecoords/api/v1/"+(source.category==="raids"?"nearby":"pokemon-search");
+    source.category==="pokemon" && url.pathname==="/iflowgopokecoords/api/v1/pokemon-search";
+  const compact=(!source.kind || source.kind==="compact") && url.pathname.endsWith("/hundos.json");
   if (url.protocol !== "https:" || url.username || url.password || url.search || url.hash ||
-      (!moonani && !iflow && !city && !url.pathname.endsWith("/hundos.json"))) throw Error("source_url");
-  if (iflow) url.search=new URLSearchParams(source.category==="raids"
-    ? {lat:"40.758",lon:"-73.9855",radius_km:"2",layers:"raids",limit:"200"} : {page:"1"});
+      !hundoOnly(source) || (!moonani && !iflow && !city && !compact)) throw Error("source_url");
+  // No provider-side IV filter is assumed without a verified contract. Filter
+  // this bounded Pokémon page immediately and never persist other IV values.
+  if (iflow) url.search=new URLSearchParams({page:"1"});
   if (city) url.search=new URLSearchParams({mons:Array.from({length:1025},(_,i)=>i+1).join(","),minIV:"100",since:"0",time:String(now)});
   if (moonani) url.search="page=pokemon&action=load";
   const controller=new AbortController();
@@ -128,18 +149,18 @@ async function collect(source, now) {
   }
   const body=JSON.parse(data+decoder.decode());
   if (moonani) return moonaniRows(body,now);
-  if (iflow) return iflowRows(body,source.category,now);
+  if (iflow) return iflowRows(body,now);
   return city ? cityRows(body,now) : rows(body,now);
   } finally {clearTimeout(timer);}
 }
 
 async function refresh(env) {
-  const now=Date.now(), configs=JSON.parse(env.SOURCES || "[]");
+  const now=Date.now(), configs=configuredSources(env);
   if (!configs.length) return;
   if (configs.length>9 || configs.some(s=>!s || !/^[a-z][a-z0-9-]{0,39}$/.test(s.name) ||
       !Number.isSafeInteger(s.interval_s) || s.interval_s<interval) ||
       new Set(configs.map(s=>s.name)).size!==configs.length) throw Error("invalid_config");
-  const previous=await env.FEED.get(stateKey,"json") || {};
+  const previous=hundoState(await env.FEED.get(stateKey,"json") || {},configs);
   const entries=await Promise.all(configs.map(async source=>{
     const old=previous.entries?.find(x=>x.name===source.name && x.url===source.url);
     if (old?.next>now) return old;
@@ -162,13 +183,18 @@ async function refresh(env) {
 export function feed(state,now) {
   const hundos=new Map(), spots=[], nearby=new Map(), sources=Object.create(null);
   const radians=Math.PI/180;
+  // Revalidate cached compact rows too; older snapshots must not bypass expiry,
+  // coordinate or category checks. Preserve the real last-success timestamp.
+  const entries=(state.entries || []).filter(hundoOnly).map(s=>{
+    const clean=rows({v:1,fetched_ms:now,hundos:s.hundos || [],spots:s.spots || []},now);
+    return {...s,...clean};
+  });
   function register(row) {
     const group=nearby.get(row[1]) || [];
     group.push(row); nearby.set(row[1],group);
   }
-  for (const s of state.entries) {
-    if (s.category==="raids") continue;
-    const name=s.category==="pokemon"?"iflowgo":s.name;
+  for (const s of entries) {
+    const name=providerName(s);
     const count=sources[name]={active:0,unique:0,status:s.status,http_status:s.httpStatus || null};
     for (const row of s.hundos || []) {
       if (row[5]<now+60000) continue;
@@ -176,33 +202,30 @@ export function feed(state,now) {
       if (!hundos.has(row[0])) { hundos.set(row[0],row); register(row); count.unique++; }
     }
   }
-  for (const s of state.entries) for (const row of s.spots || []) {
+  for (const s of entries) for (const row of s.spots || []) {
     if (row[5]<now+60000) continue;
-    sources[s.category==="pokemon"?"iflowgo":s.name].active++;
+    sources[providerName(s)].active++;
     const duplicate=(nearby.get(row[1]) || []).some(other=>{
       if (Math.abs(other[5]-row[5])>180000) return false;
       const a=Math.sin((row[3]-other[3])*radians/2)**2 +
         Math.cos(row[3]*radians)*Math.cos(other[3]*radians)*Math.sin((row[4]-other[4])*radians/2)**2;
       return a<=Math.sin(50/12742000)**2;
     });
-    if (!duplicate) { register(row); spots.push(row); sources[s.category==="pokemon"?"iflowgo":s.name].unique++; }
+    if (!duplicate) { register(row); spots.push(row); sources[providerName(s)].unique++; }
   }
-  return {v:1,fetched_ms:Math.max(...state.entries.map(s=>s.updated || 0)),interval_s:interval,
+  return {v:1,fetched_ms:Math.max(0,...entries.map(s=>s.updated || 0)),interval_s:interval,
     coordinate_precision:"exact",hundos:[...hundos.values()],spots,sources};
 }
 
 export default {
   async scheduled(event,env) {
-    const now=event.scheduledTime;
-    const row=["18446744073709551615",25,0,0,0,now+900000,10,1];
-    const sample=rows({v:1,fetched_ms:now,hundos:[row,row]},now);
-    await env.FEED.put("pgs-simulation-v1",JSON.stringify({time:now,entries:[
-      {name:"simulation",updated:now,status:"online",...sample}
-    ]}));
+    // Synthetic snapshots are exercised offline only. Save KV quota for production.
     await refresh(env);
   },
   async fetch(request,env,ctx) {
     const path=new URL(request.url).pathname;
+    // Reject removed routes before consulting a possibly stale edge cache.
+    if (path!=="/admin" && !publicPaths.has(path)) return new Response(null,{status:404});
     if (env.PUBLIC_LIMIT && !(await env.PUBLIC_LIMIT.limit({key:path==="/admin"?"admin":"public"})).success)
       return new Response(null,{status:429,headers:{"Retry-After":"60","Cache-Control":"no-store"}});
     if (path==="/admin") return admin(request,env);
@@ -217,24 +240,21 @@ export default {
 
 async function readFeed(request,env) {
     const path=new URL(request.url).pathname;
-    const simulation=path==="/simulation/hundos.json";
     const catalog=path==="/sources.json";
     const health=path==="/status.json";
-    const category=({"/pokemon.json":"pokemon","/raids.json":"raids"})[path];
-    if (!catalog && !health && !category && !simulation && path!=="/hundos.json") return new Response(null,{status:404});
+    if (!publicPaths.has(path)) return new Response(null,{status:404});
     if (!["GET","HEAD"].includes(request.method)) return new Response(null,{status:405,headers:{Allow:"GET, HEAD"}});
-    const active=new Set(JSON.parse(env.SOURCES || "[]").map(s=>s.name+" "+s.url));
-    const state=await env.FEED.get(simulation?"pgs-simulation-v1":stateKey,"json") || (!simulation && await env.FEED.get("pgs-feed-backup-v1","json"));
-    if (!simulation && state?.entries) state.entries=state.entries.filter(s=>active.has(s.name+" "+s.url));
+    const configs=configuredSources(env);
+    const state=hundoState(await env.FEED.get(stateKey,"json") || await env.FEED.get("pgs-feed-backup-v1","json") || {},configs);
     if (catalog) {
       const byProvider=new Map();
       for (const s of state?.entries || []) {
-        const provider=s.name.startsWith("iflowgo-")?"iflowgo":s.name;
+        const provider=providerName(s);
         const item=byProvider.get(provider) || {provider,status:"IMPLEMENTADA",categories:[]};
-        const data=[...(s.records || []),...(s.hundos || []),...(s.spots || [])];
-        if (s.status==="online" && data.some(r=>(r.expires_ms ?? r[5])>Date.now())) item.status="OPERACIONAL CONFIRMADA";
+        const data=[...(s.hundos || []),...(s.spots || [])];
+        if (s.status==="online" && data.some(r=>r[5]>Date.now())) item.status="OPERACIONAL CONFIRMADA";
         else if ([401,403].includes(s.httpStatus) && item.status!=="OPERACIONAL CONFIRMADA") item.status="ACESSO RECUSADO";
-        item.categories.push(s.category || "hundos"); byProvider.set(provider,item);
+        item.categories.push("hundos"); byProvider.set(provider,item);
       }
       for (const provider of ["pogocoordinates","livepokemap"]) byProvider.set(provider,{provider,status:"REQUER AUTENTICAÇÃO"});
       for (const provider of ["pgsharp-free-100iv","pgsharp-standard","rocketmap-instance"]) byProvider.set(provider,{provider,status:"AGUARDANDO CONTRATO"});
@@ -243,19 +263,12 @@ async function readFeed(request,env) {
     }
     if (health) {
       const status={time:state?.time || null,history:state?.history || [],connections:(state?.entries || []).map(e=>({
-        provider:e.name.startsWith("iflowgo-")?"iflowgo":e.name,category:e.category || "hundos",
+        provider:providerName(e),category:"hundos",
         status:e.status,last_success:e.updated || null,http_status:e.httpStatus || null,reason:e.reason || null}))};
       return new Response(request.method==="HEAD"?null:JSON.stringify(status),{headers:{"Content-Type":"application/json","Cache-Control":"public, max-age=15"}});
     }
     if (!state?.entries?.some(s=>s.updated)) return new Response(null,{status:503,headers:{"Retry-After":"300","Cache-Control":"no-store"}});
-    let body;
-    if (category) {
-      const entry=state.entries.find(s=>s.category===category);
-      const records=(entry?.records || []).filter(r=>r.expires_ms>Date.now());
-      if (!records.length) return new Response(null,{status:404,headers:{"Cache-Control":"no-store"}});
-      body={v:1,category,source:"iflowgo",fetched_ms:entry.updated,coverage:category==="raids"?"Times Square, 2 km":"global, page 1",records};
-    } else body=feed(state,Date.now());
-    if (simulation) body.simulated=true;
+    const body=feed(state,Date.now());
     return new Response(request.method==="HEAD"?null:JSON.stringify(body),{headers:{
       "Content-Type":"application/json; charset=utf-8","Cache-Control":"public, max-age=15"}});
 }
@@ -269,10 +282,8 @@ async function admin(request,env) {
   const expected="Basic "+btoa("admin:"+env.ADMIN_PASSWORD);
   const [a,b]=await Promise.all([digest(request.headers.get("Authorization") || ""),digest(expected)]);
   if (!crypto.subtle.timingSafeEqual(a,b)) return new Response(null,{status:401,headers:{...headers,"WWW-Authenticate":'Basic realm="PGS Hundo Feed"'}});
-  const state=await env.FEED.get(stateKey,"json");
-  const sources=new Set(JSON.parse(env.SOURCES || "[]").map(s=>s.name+" "+s.url));
-  const entries=(state?.entries || []).filter(s=>sources.has(s.name+" "+s.url));
-  const summary=feed({entries},Date.now());
+  const state=hundoState(await env.FEED.get(stateKey,"json") || {},configuredSources(env));
+  const summary=feed(state,Date.now());
   const report={updated:state?.time || null,hundos:summary.hundos.length,spots:summary.spots.length,
     by_source:summary.sources,history:state?.history || []};
   return new Response(JSON.stringify(report,null,2),{headers:{...headers,"Content-Type":"application/json; charset=utf-8"}});

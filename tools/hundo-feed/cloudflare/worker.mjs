@@ -123,7 +123,9 @@ export default {
     const simulation=path==="/simulation/hundos.json";
     if (!simulation && path!=="/hundos.json") return new Response(null,{status:404});
     if (!["GET","HEAD"].includes(request.method)) return new Response(null,{status:405,headers:{Allow:"GET, HEAD"}});
+    const active=new Set(JSON.parse(env.SOURCES || "[]").map(s=>s.name+" "+s.url));
     const state=await env.FEED.get(simulation?"pgs-simulation-v1":stateKey,"json");
+    if (!simulation && state?.entries) state.entries=state.entries.filter(s=>active.has(s.name+" "+s.url));
     if (!state?.entries?.some(s=>s.updated)) return new Response(null,{status:503,headers:{"Retry-After":"300","Cache-Control":"no-store"}});
     const body=feed(state,Date.now());
     if (simulation) body.simulated=true;

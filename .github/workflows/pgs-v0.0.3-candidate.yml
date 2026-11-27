@@ -7,6 +7,11 @@ on:
         required: true
         type: boolean
         default: false
+      retain_authorized_candidate:
+        description: Confirm authorization to retain the signed candidate in an unpublished PGS draft for device testing
+        required: true
+        type: boolean
+        default: false
 permissions:
   contents: read
 concurrency:
@@ -61,6 +66,12 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: python -B tools/pgs_pinned_input.py --preflight
+      - name: Check optional candidate draft target before installing tools
+        if: inputs.retain_authorized_candidate == true
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PGS_RETAIN_AUTHORIZED: ${{ inputs.retain_authorized_candidate }}
+        run: python -B tools/pgs_candidate_draft.py --preflight
       - uses: actions/setup-java@cf277c60eb25467037889841efdb72551f06f6c3 # v4
         with:
           distribution: temurin
@@ -135,6 +146,17 @@ jobs:
             ${{ runner.temp }}/pgs-v003-validation/build-info.json
           if-no-files-found: error
           retention-days: 3
+      - name: Retain authorized signed candidate in an unpublished draft
+        if: inputs.retain_authorized_candidate == true
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PGS_RETAIN_AUTHORIZED: ${{ inputs.retain_authorized_candidate }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          umask 077
+          rm -f -- "$PGS_KEYSTORE"
+          python -B tools/pgs_candidate_draft.py
       - name: Remove temporary signing key and candidate
         if: always()
         shell: bash

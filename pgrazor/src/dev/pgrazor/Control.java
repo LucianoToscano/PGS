@@ -665,7 +665,7 @@ public final class Control {
     public static void setAutoThrowOnMap(boolean on){autoThrowOnMap=on;if(!on){mapThrowOutcome.invalidate();mapCatchStatus.clear();}saveSettings();event("auto-throw-map",on?"ON":"OFF");}
     /**
      * "C5|show|autoBall|target|berry|safari|autoThrow|cooldownMs|onMap|preview". The first six fields keep their C2
-     * meaning: berry is the one PGRazor's berry picker will feed on the next throw (0 when the picker is
+     * meaning: berry is the one PGS's berry picker will feed on the next throw (0 when the picker is
      * off); the game only sees it at release, so the chance needs it from here. While the overlay is
      * hidden the chance line is off; auto ball keeps running. The safari flag (0/1) is the Go Wild
      * November 2026 "Use Safari Balls in Auto Ball" toggle; it applies only to Mighty Pokemon and the
@@ -1023,7 +1023,7 @@ public final class Control {
             if (!dir.isDirectory() && !dir.mkdirs()) throw new IOException("Cannot create log folder");
             logFile = new File(dir, new SimpleDateFormat("yyyyMMdd-HHmmss-SSS", Locale.US).format(new Date()) + ".txt");
             log = new PrintWriter(new FileOutputStream(logFile), true);
-        } catch (IOException error) { Log.e("PGRazor", "File logging unavailable", error); }
+        } catch (IOException error) { Log.e("PGS", "File logging unavailable", error); }
         // Recover recent run tails after a crash without changing or deleting private originals.
         new Thread(() -> recoverRunLogs(app),"pgrazor-log-recovery").start();
         event("session-start", connection);
@@ -1457,7 +1457,7 @@ public final class Control {
             if(incoming.containsKey("transferProtect")&&!incoming.containsKey("transferProtectShadow"))merged.remove("transferProtectShadow");
             if(incoming.containsKey("transferProtect")&&!incoming.containsKey("transferProtectMax"))merged.remove("transferProtectMax");
             FileOutputStream out=null;
-            try{out=settingsFile.startWrite();merged.store(out,"PGRazor settings");settingsFile.finishWrite(out);out=null;}
+            try{out=settingsFile.startWrite();merged.store(out,"PGS settings");settingsFile.finishWrite(out);out=null;}
             finally{if(out!=null)settingsFile.failWrite(out);}
             if(language!=null&&!language.equals(pgsLanguage)){
                 try{writePgsLanguage(language);pgsLanguage=language;}
@@ -1529,7 +1529,7 @@ public final class Control {
     /** Writer sink: serializes to the captured AtomicFile off-thread, rolling back on failure. Never takes stateLock. */
     private static void writeSettings(AtomicFile file,Properties snapshot) throws IOException {
         FileOutputStream out=null;
-        try { out=file.startWrite(); snapshot.store(out,"PGRazor settings"); file.finishWrite(out); out=null; }
+        try { out=file.startWrite(); snapshot.store(out,"PGS settings"); file.finishWrite(out); out=null; }
         finally { if(out!=null)file.failWrite(out); }
     }
     /**
@@ -1676,7 +1676,7 @@ public final class Control {
             if(retainLogContext(kind))logContext.put(kind,line.substring(0,Math.min(line.length(),2048)));
             String eggKey=eggLogContextKey(kind,detail);
             if(eggKey!=null)logContext.put(eggKey,line.substring(0,Math.min(line.length(),2048)));
-            Log.i("PGRazor", line);
+            Log.i("PGS", line);
             if (log != null && !interactionMetadataRow(kind,detail)) {
                 try {
                     if(logBytes+encoded.length>1048576L){
@@ -1691,7 +1691,7 @@ public final class Control {
                     }
                     log.println(line);logBytes+=encoded.length;
                     if(log.checkError()){log.close();throw new IOException("File logging write failed");}
-                }catch(IOException error){log=null;Log.e("PGRazor","File logging unavailable",error);}
+                }catch(IOException error){log=null;Log.e("PGS","File logging unavailable",error);}
             }
         }
     }
@@ -1706,7 +1706,7 @@ public final class Control {
         if(files==null)return;
         java.util.Arrays.sort(files,(a,b)->b.getName().compareTo(a.getName()));
         int retained=active==null?0:1;
-        for(File f:files){if(f.equals(active))continue;if(retained++>=keep&&!f.delete())Log.w("PGRazor","Unable to prune log "+f.getName());}
+        for(File f:files){if(f.equals(active))continue;if(retained++>=keep&&!f.delete())Log.w("PGS","Unable to prune log "+f.getName());}
     }
     private static void recoverRunLogs(Application app) {
       synchronized(logLock) {

@@ -18,7 +18,7 @@ import java.io.RandomAccessFile;
 import java.nio.charset.StandardCharsets;
 
 /**
- * PGRazor Root run log, shown as an in-game dialog on the game's own activity. The patched APK uses
+ * PGS Root run log, shown as an in-game dialog on the game's own activity. The patched APK uses
  * {@link LogActivity}, a private activity it declares in its manifest; the untouched game APK has no
  * such entry, so the same run log is surfaced here with {@link MapTheme} styling instead.
  *
@@ -72,7 +72,7 @@ final class RootedLogDialog {
         refresh.setOnClickListener(v -> reload.run());
 
         AlertDialog dialog = new AlertDialog.Builder(ui)
-                .setTitle(I18n.t("PGRazor · current run"))
+                .setTitle(I18n.t("PGS · current run"))
                 .setView(body)
                 .setPositiveButton(I18n.t("Close"), null)
                 .create();

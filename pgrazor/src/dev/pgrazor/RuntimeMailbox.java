@@ -380,7 +380,7 @@ public final class RuntimeMailbox {
         if(stopped||started)return;started=true;
         try{
             executor=Executors.newSingleThreadScheduledExecutor(task->{
-                Thread thread=new Thread(task,"PGRazor-RuntimeMailbox");thread.setDaemon(true);return thread;
+                Thread thread=new Thread(task,"PGS-RuntimeMailbox");thread.setDaemon(true);return thread;
             });
             scheduled=executor.scheduleWithFixedDelay(this::tick,0,50,TimeUnit.MILLISECONDS);
         }catch(Exception error){fail();}

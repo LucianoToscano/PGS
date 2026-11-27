@@ -12,7 +12,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * PGRazor Root's replacement for the patched APK's DEX rewrites (tools/dex_bridge/BridgeRewriter):
+ * PGS Root's replacement for the patched APK's DEX rewrites (tools/dex_bridge/BridgeRewriter):
  * the same game methods and the same GameBridgeDispatch calls, installed as ART hooks on the
  * unmodified game instead of rewritten method bodies.
  *
@@ -41,7 +41,7 @@ final class RootedHooks {
         {"renderLoop", "com.unity3d.player.W", "handleMessage", "android.os.Message"},
     };
 
-    /** Installs every bridge hook; false if any could not be installed (PGRazor then stays off). */
+    /** Installs every bridge hook; false if any could not be installed (PGS then stays off). */
     static boolean install(Context context, ClassLoader game) {
         Method callback;
         try { callback = Hook.class.getMethod("invoke", Object[].class); }

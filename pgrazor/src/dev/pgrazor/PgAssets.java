@@ -7,9 +7,9 @@ import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 
 /**
- * PGRazor's bundled files. The patched APK reads them from its own assets; PGRazor Root reads the
+ * PGS's bundled files. The patched APK reads them from its own assets; PGS Root reads the
  * same names (for example {@code pgrazor/mode.json}) from the module payload, because the game's
- * APK is untouched and has no PGRazor assets.
+ * APK is untouched and has no PGS assets.
  */
 public final class PgAssets {
     private static volatile ZipFile payload;
@@ -24,7 +24,7 @@ public final class PgAssets {
         payload = new ZipFile(archive);
     }
 
-    /** True when running as PGRazor Root (module payload), false in the patched APK. */
+    /** True when running as PGS Root (module payload), false in the patched APK. */
     public static boolean rooted() { return payload != null; }
 
     public static InputStream open(Context context, String name) throws IOException {

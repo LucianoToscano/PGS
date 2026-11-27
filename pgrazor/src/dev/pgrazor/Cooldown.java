@@ -37,7 +37,7 @@ public final class Cooldown {
     private static Button button(Context c,String text){Button b=new Button(c);b.setText(text);b.setAllCaps(false);b.setTextSize(12);return b;}
     private static void country(TextView label,CooldownState.Entry e){String key=String.format(Locale.US,"%.2f,%.2f",e.lat,e.lon);String cached=countries.get(key);if(cached!=null){label.setText(cached);return;}label.setText("??");geo.execute(()->{String value="??";try{if(Geocoder.isPresent()){List<Address> found=new Geocoder(context,Locale.US).getFromLocation(e.lat,e.lon,1);if(found!=null&&!found.isEmpty()){String code=found.get(0).getCountryCode();if(code!=null&&code.matches("[A-Z]{2}"))value=new String(Character.toChars(0x1f1e6+code.charAt(0)-'A'))+new String(Character.toChars(0x1f1e6+code.charAt(1)-'A'));}}}catch(Exception ignored){}countries.put(key,value);final String result=value;main.post(()->label.setText(result));});}
     public static void show(Activity a){
-        final Context ui=MapTheme.wrap(a); // full-screen, matching the PGRazor dark/light theme
+        final Context ui=MapTheme.wrap(a); // full-screen, matching the PGS dark/light theme
         int unit=(int)(48*a.getResources().getDisplayMetrics().density);
         LinearLayout root=new LinearLayout(ui);root.setOrientation(1);root.setPadding(16,12,16,12);
         TextView note=new TextView(ui);note.setText(I18n.t("Estimated from recorded actions and current location. Teleporting and walking do not reset it. Automatic: wild encounter throws, encounter berries, spins and gym attacks. Use Add action for gym placement/feeding, accessories or an action performed outside this app. Quest catches are excluded. Deleting history changes only this estimate."));note.setTextSize(12);root.addView(note);

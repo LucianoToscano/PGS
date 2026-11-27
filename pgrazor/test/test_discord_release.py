@@ -1,57 +1,68 @@
+"""PGS Discord releases must never link or announce upstream APK assets."""
 import sys
 from pathlib import Path
 import unittest
 
-sys.path.insert(0, str(Path(__file__).resolve().parents[2] / 'tools'))
+sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "tools"))
 import discord_release
 
 
+TAG = "v0.0.1"
+RELEASE = "https://github.com/LucianoToscano/PGS/releases/"
+BASE = RELEASE + "download/" + TAG + "/"
+APK = {"name": "PGS.v0.0.1.apk", "size": 185_000_000,
+       "browser_download_url": BASE + "PGS.v0.0.1.apk"}
+SUMS = {"name": "SHA256SUMS.txt",
+        "browser_download_url": BASE + "SHA256SUMS.txt"}
+HIGHLIGHT = {"name": "release-highlight.png",
+             "browser_download_url": BASE + "release-highlight.png"}
+
+
 def release(assets, **extra):
-    base = {'tag_name': 'v0.1.6', 'name': 'PGRazor v0.1.6',
-            'html_url': 'https://github.com/example/pgrazor/releases/tag/v0.1.6',
-            'body': 'Quick menu improvements.', 'assets': assets}
-    base.update(extra)
-    return base
-
-
-APK = {'name': 'PGRazor.apk',
-       'browser_download_url': 'https://example.com/PGRazor.apk'}
-HIGHLIGHT = {'name': 'release-highlight.png',
-             'browser_download_url': 'https://example.com/release-highlight.png'}
+    r = {"tag_name": TAG, "name": "PGS v0.0.1",
+         "html_url": RELEASE + "tag/" + TAG,
+         "body": "Independent PGS release.", "assets": assets}
+    r.update(extra)
+    return r
 
 
 class DiscordReleaseTests(unittest.TestCase):
-    def test_both_root_downloads_are_linked_alongside_normal_apk(self):
-        roots = [{'name': name, 'browser_download_url': 'https://example.com/' + name}
-                 for name in ('PGRazor-Root.apk', 'PGRazor-Root-module.zip')]
-        fields = discord_release.message(release([APK, *roots]))['embeds'][0]['fields']
-        for asset in [APK, *roots]:
-            self.assertTrue(any(asset['browser_download_url'] in field['value'] for field in fields))
+    def test_complete_pgs_release_only(self):
+        payload = discord_release.message(release([APK, SUMS]))
+        self.assertEqual(payload["username"], "PGS Releases")
+        self.assertEqual(payload["embeds"][0]["footer"]["text"], "PGS | Release")
+        self.assertTrue(any(APK["browser_download_url"] in f["value"]
+                            for f in payload["embeds"][0]["fields"]))
+        self.assertNotIn("PGRazor", str(payload))
+        self.assertNotIn("ko-fi.com/pgrazor", str(payload))
 
-    def test_highlight_image_present_sets_embed_image(self):
-        payload = discord_release.message(release([APK, HIGHLIGHT]))
-        embed = payload['embeds'][0]
-        self.assertEqual(embed['image']['url'], HIGHLIGHT['browser_download_url'])
-        # APK download link is preserved alongside the screenshot.
-        self.assertTrue(any(f['value'] == '[Install PGRazor.apk](' + APK['browser_download_url'] + ')'
-                            for f in embed['fields']))
+    def test_optional_highlight(self):
+        payload = discord_release.message(release([APK, SUMS, HIGHLIGHT]))
+        self.assertEqual(payload["embeds"][0]["image"]["url"], HIGHLIGHT["browser_download_url"])
+        self.assertNotIn("image", discord_release.message(release([APK, SUMS]))["embeds"][0])
 
-    def test_no_highlight_asset_omits_embed_image(self):
-        payload = discord_release.message(release([APK]))
-        embed = payload['embeds'][0]
-        self.assertNotIn('image', embed)
-        self.assertTrue(any(f['name'] == 'Download' for f in embed['fields']))
+    def test_role_ping_is_opt_in(self):
+        role = "123456789012345678"
+        self.assertNotIn("content", discord_release.message(release([APK, SUMS])))
+        payload = discord_release.message(release([APK, SUMS]), role)
+        self.assertEqual(payload["content"], "<@&" + role + "> A new PGS release is available!")
+        self.assertEqual(payload["allowed_mentions"]["roles"], [role])
+        self.assertEqual(payload["allowed_mentions"]["parse"], [])
 
-    def test_role_ping_preserved_with_image(self):
-        role = '123456789012345678'
-        # Without a role id there is no ping content at all.
-        self.assertNotIn('content', discord_release.message(release([APK, HIGHLIGHT])))
-        payload = discord_release.message(release([APK, HIGHLIGHT]), role)
-        self.assertEqual(payload['content'], '<@&' + role + '> A new PGRazor release is available!')
-        self.assertEqual(payload['allowed_mentions']['roles'], [role])
-        self.assertEqual(payload['allowed_mentions']['parse'], [])
-        self.assertEqual(payload['embeds'][0]['image']['url'], HIGHLIGHT['browser_download_url'])
+    def test_reject_incomplete_or_foreign_release(self):
+        cases = [
+            release([APK]), release([SUMS]),
+            release([dict(APK, size=200_000), SUMS]),
+            release([dict(APK, name="PGRazor.apk"), SUMS]),
+            release([dict(APK, browser_download_url="https://example.com/PGS.v0.0.1.apk"), SUMS]),
+            release([APK, SUMS], draft=True),
+            release([APK, SUMS], tag_name="v0.3.8-pgs.3"),
+            release([APK, SUMS], html_url="https://github.com/jpitty03/PGRazor/releases/tag/v0.0.1"),
+        ]
+        for case in cases:
+            with self.subTest(case=case), self.assertRaises(ValueError):
+                discord_release.message(case)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     unittest.main()

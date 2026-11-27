@@ -27,7 +27,7 @@ public final class LogExport {
             JSONObject settings=new JSONObject();
             for(String key:new TreeSet<>(preferences.stringPropertyNames()))settings.put(key,preferences.getProperty(key));
             JSONObject root=new JSONObject();
-            root.put("format","PGRazor diagnostic settings");root.put("version",1);
+            root.put("format","PGS diagnostic settings");root.put("version",1);
             root.put("capturedAtEpochMs",System.currentTimeMillis());
             root.put("speedKmh",speedKmh);root.put("settings",settings);
             root.put("preferences",groups);
@@ -100,7 +100,7 @@ public final class LogExport {
     }
 
     /**
-     * PGRazor Root has no document picker (the run log is shown as a dialog, not a private activity),
+     * PGS Root has no document picker (the run log is shown as a dialog, not a private activity),
      * so save a verified copy into the game's own app-visible external files directory instead. The
      * same two-pass digest check guards the written file; the destination path is returned so the
      * dialog can tell the user where to find it. No new storage permission is required.

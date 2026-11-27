@@ -183,7 +183,7 @@ final class SettingsSearch {
         put(DESCRIPTIONS, "Cooldown history", "Review recent cooldown actions and locations.");
         put(DESCRIPTIONS, "Show local time", "Show the wall-clock time at the spoofed coordinates.");
         put(DESCRIPTIONS, "Count encounters", "Count wild encounters for this account in a rolling 24 hours.");
-        put(DESCRIPTIONS, "Show the count on the map", "Show the encounter count next to the PGRazor title.");
+        put(DESCRIPTIONS, "Show the count on the map", "Show the encounter count next to the PGS title.");
         put(DESCRIPTIONS, "Quick catch", "Speed up or skip the catch summary after a throw.");
         put(DESCRIPTIONS, "Faster catch summary", "Speed up or skip the catch summary after a throw.");
         put(DESCRIPTIONS, "Throw rating", "Set the throw quality used for automatic throws.");

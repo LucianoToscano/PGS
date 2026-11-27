@@ -15,6 +15,9 @@ public class SettingsBackupRulesTest {
     }
     public static void main(String[] args)throws Exception{
         SettingsBackupRules.validate(valid());
+        SettingsBackupRules.validate(valid().put("format","PGS settings"));
+        rejects(valid().put("format","unrecognized"));
+        // Old exported backups continue to import without changing preferences or losing data.
         JSONObject oldLanguage=valid();SettingsBackupRules.validate(oldLanguage);
         if(oldLanguage.getJSONObject("settings").has(LanguagePrefs.KEY))throw new AssertionError("Old backup was mutated");
         for(String code:LanguagePrefs.codes()){

@@ -12,7 +12,7 @@ public final class LogActivity extends Activity {
     private TextView text;
     private SettingsBackup settingsBackup;
     /**
-     * Opens the run log. The patched APK starts this private activity; PGRazor Root has no manifest
+     * Opens the run log. The patched APK starts this private activity; PGS Root has no manifest
      * entry for it in the untouched game APK, so it shows the same content as an in-game dialog.
      */
     public static void open(Activity activity){
@@ -31,7 +31,7 @@ public final class LogActivity extends Activity {
             settingsBackup=new SettingsBackup(this);settingsBackup.show();return;
         }
         LinearLayout layout = new LinearLayout(this); layout.setOrientation(LinearLayout.VERTICAL); layout.setPadding(20,48,20,20);
-        TextView heading = new TextView(this); heading.setText(I18n.t("PGRazor · current run")); heading.setTextSize(22); layout.addView(heading);
+        TextView heading = new TextView(this); heading.setText(I18n.t("PGS · current run")); heading.setTextSize(22); layout.addView(heading);
         ScrollView scroll = new ScrollView(this); text = new TextView(this); text.setTextIsSelectable(true); scroll.addView(text); layout.addView(scroll,new LinearLayout.LayoutParams(-1,0,1));
         Button refresh = new Button(this); refresh.setText(I18n.t("Refresh log")); refresh.setOnClickListener(v -> refresh()); layout.addView(refresh);
         TextView detail=new TextView(this);detail.setText(I18n.t("ZIP includes the log and a single-line settings.json snapshot of feature preferences. Login tokens, account data and saved locations are excluded."));layout.addView(detail);

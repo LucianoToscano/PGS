@@ -61,17 +61,21 @@ public final class I18n {
         /** Exact keys only: never rewrite arbitrary substrings or user-supplied arguments. */
         public String text(String english) {
             if (english == null) return "";
-            String translated = messages.get(english);
+            // Accept old immutable UI source labels while the compiled callers migrate.
+            // Saved preferences, arbitrary arguments and game data are never rewritten.
+            String canonical = english.replace("PGRazor", "PGS");
+            String translated = messages.get(canonical);
             return translated == null || translated.isEmpty() ? english : translated;
         }
 
         public String row(String english) {
             if (english == null) return "";
-            String translated = messages.get(english);
+            String canonical = english.replace("PGRazor", "PGS");
+            String translated = messages.get(canonical);
             if (translated != null && !translated.isEmpty()) return translated;
-            int split = english.indexOf(": ");
+            int split = canonical.indexOf(": ");
             if (split > 0) {
-                String label = messages.get(english.substring(0, split));
+                String label = messages.get(canonical.substring(0, split));
                 if (label != null && !label.isEmpty()) return label + ": " + english.substring(split + 2);
             }
             return english;

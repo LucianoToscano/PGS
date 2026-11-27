@@ -1,6 +1,6 @@
-# PGRazor interface design
+# PGS interface design
 
-PGRazor is a utility that runs on top of a game. It is opened for seconds at a time, often while the
+PGS is a utility that runs on top of a game. It is opened for seconds at a time, often while the
 player is walking, often one-handed, and always over a live map. The interface should feel like a
 good field instrument: legible in sunlight, calm at night, quick to scan, and completely out of the
 way when it is not needed.
@@ -14,13 +14,13 @@ architecture that keeps all surfaces consistent.
 ## 1. Concept: the field instrument
 
 The old interface borrowed the game's visual language: lime-to-mint gradients, glossy cards, a
-sharp italic wordmark, spaced uppercase headings. It looked like a game screen, but PGRazor is not a
+sharp italic wordmark, spaced uppercase headings. It looked like a game screen, but PGS is not a
 game screen. It is a tool, and it competed with the map behind it.
 
 The redesign takes the opposite direction.
 
 - **Quiet surfaces.** One page color, one card color, one hairline. No gradients, glow, bevels or
-  drop shadows. The map and the game stay the visually interesting layers; PGRazor is the
+  drop shadows. The map and the game stay the visually interesting layers; PGS is the
   instrument panel on top.
 - **One accent.** A single mint tone marks state: a switch that is on, the current value of a
   setting, a live status dot, the primary action. Nothing else is colored.
@@ -116,7 +116,7 @@ the system monospace. No font asset is loaded, so text rendering has zero startu
 
 ```
 ┌──────────────────────────────────────────────┐
-│  PGRazor · 0 / 24 h     theme  v0.1.8   ×    │  header
+│  PGS · 0 / 24 h     theme  v0.1.8   ×    │  header
 ├──────────────────────────────────────────────┤
 │  ⌕  Search settings                     ×    │  home search field
 ├──────────────────────────────────────────────┤
@@ -152,7 +152,7 @@ the system monospace. No font asset is loaded, so text rendering has zero startu
 
 | Component | Behavior |
 | --- | --- |
-| **Header** | PGRazor title with the encounter counter appended when enabled, theme action, version in mono, close. A category page adds a back arrow and replaces the title with the category name. |
+| **Header** | PGS title with the encounter counter appended when enabled, theme action, version in mono, close. A category page adds a back arrow and replaces the title with the category name. |
 | **Search field** | 48 dp tall, raised fill, magnifier glyph, single-line input, clear button that appears only with text. Fixed at the top of the home screen; category pages show back + title instead. |
 | **Telemetry card** | Status dot, one-line state, synthetic coordinate readout in mono. Refreshed on the existing 100 ms tick with change-guarded text setters. |
 | **Group card** | `LinearLayout` with a hairline divider between flat `RowButton`s. Whole card is one surface. |
@@ -161,7 +161,7 @@ the system monospace. No font asset is loaded, so text rendering has zero startu
 | **Action row** | Same as a row button but performs navigation or an action; trailing chevron drawn at 16 dp. |
 | **Pill** | Small floating status readout (cooldown, VGP, berry, counters): surface + border + mono text, 10–12 dp radius. |
 | **Quick menu** | Vertical card of icon + label rows, 48 dp each, same surfaces and radius as settings. |
-| **Launcher** | 50 dp disc with the PGRazor mark and a status dot. Drag to reposition, tap to open. |
+| **Launcher** | 50 dp disc with the PGS mark and a status dot. Drag to reposition, tap to open. |
 | **Joystick** | Translucent instrument disc with a center dot and crosshair; 78% opacity idle, full opacity while held. |
 | **Dialog** | Surface card, 20 sp title, 14 sp body, secondary pill + primary accent fill actions. |
 | **Empty / no-results** | Card with a short explanation and a hint about what to try; never a bare blank page. |

@@ -175,7 +175,7 @@ public final class ShinyScanner {
         if (context == null || !mayNotify(context)) return;
         try {
             android.app.NotificationManager manager = (android.app.NotificationManager) context.getSystemService(Context.NOTIFICATION_SERVICE);
-            manager.createNotificationChannel(new android.app.NotificationChannel("pgrazor-shiny", I18n.t("PGRazor shiny found"), android.app.NotificationManager.IMPORTANCE_HIGH));
+            manager.createNotificationChannel(new android.app.NotificationChannel("pgrazor-shiny", I18n.t("PGS shiny found"), android.app.NotificationManager.IMPORTANCE_HIGH));
             manager.notify(7302, new android.app.Notification.Builder(context, "pgrazor-shiny").setSmallIcon(android.R.drawable.star_on)
                 .setContentTitle(I18n.t("✨ Shiny found")).setContentText(text).setAutoCancel(true).build());
         } catch (RuntimeException error) { Control.event("shiny-scan-notification-error", error.toString()); }

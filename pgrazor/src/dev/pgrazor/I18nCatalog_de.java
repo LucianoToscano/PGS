@@ -119,7 +119,7 @@ final class I18nCatalog_de {
         values.put("After battles & periodically", "Nach Kämpfen & regelmäßig");
         values.put("After you start a gym battle, automatically starts the next full round from the same gym screen until defeated. Uses your attack settings and waits for Smart healing when set to After battle or Both. Turn off or leave manually to stop.", "Wenn du einen Arenakampf startest, wird auf demselben Arenabildschirm automatisch die nächste vollständige Runde begonnen, bis die Arena besiegt ist. Nutzt deine Angriffseinstellungen und wartet auf intelligentes Heilen, wenn „Nach dem Kampf“ oder „Beides“ gewählt ist. Zum Stoppen ausschalten oder den Bildschirm manuell verlassen.");
         values.put("All", "Alle");
-        values.put("All PGRazor buttons, status bars, messages and in-game IV text will be hidden so the game looks stock. To show them again, tap the screen with three fingers at once.", "Alle PGRazor-Schaltflächen, Statusleisten, Meldungen und IV-Texte im Spiel werden ausgeblendet, sodass das Spiel unverändert aussieht. Tippe mit drei Fingern gleichzeitig auf den Bildschirm, um sie wieder anzuzeigen.");
+        values.put("All PGS buttons, status bars, messages and in-game IV text will be hidden so the game looks stock. To show them again, tap the screen with three fingers at once.", "Alle PGS-Schaltflächen, Statusleisten, Meldungen und IV-Texte im Spiel werden ausgeblendet, sodass das Spiel unverändert aussieht. Tippe mit drei Fingern gleichzeitig auf den Bildschirm, um sie wieder anzuzeigen.");
         values.put("All Pokemon", "Alle Pokémon");
         values.put("All battles", "Alle Kämpfe");
         values.put("All off", "Alles aus");
@@ -185,7 +185,7 @@ final class I18nCatalog_de {
         values.put("Auto-walk", "Automatisch gehen");
         values.put("Auto-walk stopped.", "Automatisches Gehen gestoppt.");
         values.put("Auto-walking %1$s%2$s%3$s", "Automatisch unterwegs: %1$s%2$s%3$s");
-        values.put("Automatically moves toward nearby Max energy orbs during battle while PGRazor is active.", "Bewegt sich im Kampf automatisch zu nahen Dyna-Energiekugeln, während PGRazor aktiv ist.");
+        values.put("Automatically moves toward nearby Max energy orbs during battle while PGS is active.", "Bewegt sich im Kampf automatisch zu nahen Dyna-Energiekugeln, während PGS aktiv ist.");
         values.put("Automation", "Automatisierung");
         values.put("Autowalk", "Automatisch gehen");
         values.put("Back to all settings", "Zurück zu allen Einstellungen");
@@ -296,7 +296,7 @@ final class I18nCatalog_de {
         values.put("Clear search", "Suche leeren");
         values.put("Clear shown", "Angezeigte leeren");
         values.put("Close", "Schließen");
-        values.put("Close PGRazor settings", "PGRazor-Einstellungen schließen");
+        values.put("Close PGS settings", "PGS-Einstellungen schließen");
         values.put("Cloudy", "Bewölkt");
         values.put("Collecting…", "Wird gesammelt…");
         values.put("Completing the Route", "Route wird abgeschlossen");
@@ -567,7 +567,7 @@ final class I18nCatalog_de {
         values.put("Items: Always heal fully", "Items: immer vollständig heilen");
         values.put("Items: Smart (saves big potions)", "Items: intelligent (spart große Tränke)");
         values.put("Join our Discord", "Unserem Discord beitreten");
-        values.put("Join the PGRazor Discord community", "Der PGRazor-Discord-Community beitreten");
+        values.put("Join the PGS Discord community", "Der PGS-Discord-Community beitreten");
         values.put("Joystick", "Joystick");
         values.put("Joystick and coordinate controls, drawn with the same tokens as the in-game panel.\nThis preview does not change device GPS or connect to Pokémon GO. Movement pauses when you leave the app.", "Joystick- und Koordinatensteuerung im selben Design wie das Spielmenü.\nDiese Vorschau verändert weder das Geräte-GPS noch verbindet sie sich mit Pokémon GO. Die Bewegung pausiert, wenn du die App verlässt.");
         values.put("Joystick follows the camera", "Joystick folgt der Kamera");
@@ -725,7 +725,7 @@ final class I18nCatalog_de {
         values.put("No favorites yet. Add places from the World map or the Teleport dialog.", "Noch keine Favoriten. Füge Orte über die Weltkarte oder den Teleportdialog hinzu.");
         values.put("No favorites yet. Add the selected map destination to find it again later.", "Noch keine Favoriten. Füge das ausgewählte Kartenziel hinzu, um es später wiederzufinden.");
         values.put("No feeding", "Kein Füttern");
-        values.put("No field research seen yet. Tasks appear here as the game gives them to you while PGRazor runs.", "Noch keine Feldforschung erkannt. Aufgaben erscheinen hier, sobald das Spiel sie dir gibt, während PGRazor läuft.");
+        values.put("No field research seen yet. Tasks appear here as the game gives them to you while PGS runs.", "Noch keine Feldforschung erkannt. Aufgaben erscheinen hier, sobald das Spiel sie dir gibt, während PGS läuft.");
         values.put("No file picker is available.", "Keine Dateiauswahl verfügbar.");
         values.put("No limit", "Kein Limit");
         values.put("No limit\nGo to the nearest Rocket stop wherever it is", "Kein Limit\nGehe zum nächsten Rocket-PokéStop, unabhängig von der Entfernung");
@@ -764,8 +764,8 @@ final class I18nCatalog_de {
         values.put("Off (manual)", "Aus (manuell)");
         values.put("One-shot tasks", "Einmalige Aufgaben");
         values.put("Only %1$s of %2$s requested stops are loaded; starting with %3$s.", "Nur %1$s von %2$s angeforderten Stopps geladen; Start mit %3$s.");
-        values.put("Open PGRazor quick menu. Drag to reposition.", "PGRazor-Schnellmenü öffnen. Ziehen zum Verschieben.");
-        values.put("Open PGRazor settings. Drag to reposition.", "PGRazor-Einstellungen öffnen. Ziehen zum Verschieben.");
+        values.put("Open PGS quick menu. Drag to reposition.", "PGS-Schnellmenü öffnen. Ziehen zum Verschieben.");
+        values.put("Open PGS settings. Drag to reposition.", "PGS-Einstellungen öffnen. Ziehen zum Verschieben.");
         values.put("Open and send friend gifts in one batch.", "Freundesgeschenke in einem Durchlauf öffnen und senden.");
         values.put("Open boxes and skip encounters", "Kisten öffnen und Begegnungen überspringen");
         values.put("Open even when item bag is full", "Auch bei vollem Item-Beutel öffnen");
@@ -781,13 +781,13 @@ final class I18nCatalog_de {
         values.put("Overlay scale", "Einblendungsgröße");
         values.put("P", "P");
         values.put("PASS · ", "BESTANDEN · ");
-        values.put("PGRazor VGP", "PGRazor VGP");
-        values.put("PGRazor feed", "PGRazor-Feed");
-        values.put("PGRazor overlay shown", "PGRazor-Einblendungen angezeigt");
-        values.put("PGRazor shiny found", "PGRazor: Shiny gefunden");
-        values.put("PGRazor version %1$s", "PGRazor-Version %1$s");
-        values.put("PGRazor · current run", "PGRazor · aktueller Lauf");
+        values.put("PGS VGP", "PGS VGP");
+        values.put("PGS feed", "PGS-Feed");
         values.put("PGS language", "PGS-Sprache");
+        values.put("PGS overlay shown", "PGS-Einblendungen angezeigt");
+        values.put("PGS shiny found", "PGS: Shiny gefunden");
+        values.put("PGS version %1$s", "PGS-Version %1$s");
+        values.put("PGS · current run", "PGS · aktueller Lauf");
         values.put("Partly Cloudy", "Teilweise bewölkt");
         values.put("Password", "Passwort");
         values.put("Pause Virtual Go Plus during the estimated cooldown.", "Virtual Go Plus während der geschätzten Abklingzeit pausieren.");
@@ -1044,7 +1044,7 @@ final class I18nCatalog_de {
         values.put("Show the buddy excitement status overlay.", "Einblendung zum Begeisterungsstatus des Kumpels anzeigen.");
         values.put("Show the catch chance during an encounter.", "Fangchance während einer Begegnung anzeigen.");
         values.put("Show the count on the map", "Zähler auf der Karte anzeigen");
-        values.put("Show the encounter count next to the PGRazor title.", "Begegnungszähler neben dem PGRazor-Titel anzeigen.");
+        values.put("Show the encounter count next to the PGS title.", "Begegnungszähler neben dem PGS-Titel anzeigen.");
         values.put("Show the estimated catch cooldown timer on the map.", "Geschätzten Fang-Abklingzeitzähler auf der Karte anzeigen.");
         values.put("Show the on-screen movement joystick.", "Bildschirm-Joystick zur Bewegung anzeigen.");
         values.put("Show the wall-clock time at the spoofed coordinates.", "Ortszeit an den simulierten Koordinaten anzeigen.");
@@ -1162,8 +1162,8 @@ final class I18nCatalog_de {
         values.put("Tap to download", "Zum Herunterladen tippen");
         values.put("Tap to download and install", "Zum Herunterladen und Installieren tippen");
         values.put("Tap to download the Root installer", "Zum Herunterladen des Root-Installers tippen");
-        values.put("Tap to open PGRazor %1$s in Downloads and install it", "Tippe, um PGRazor %1$s in Downloads zu öffnen und zu installieren");
-        values.put("Tap to open PGRazor %1$s in Downloads: update the installer, open it, tap Install Module, then reboot", "Tippe, um PGRazor %1$s in Downloads zu öffnen: aktualisiere den Installer, öffne ihn, tippe auf Install Module und starte dann neu");
+        values.put("Tap to open PGS %1$s in Downloads and install it", "Tippe, um PGS %1$s in Downloads zu öffnen und zu installieren");
+        values.put("Tap to open PGS %1$s in Downloads: update the installer, open it, tap Install Module, then reboot", "Tippe, um PGS %1$s in Downloads zu öffnen: aktualisiere den Installer, öffne ihn, tippe auf Install Module und starte dann neu");
         values.put("Task (none = any)", "Aufgabe (keine Auswahl = beliebig)");
         values.put("Team GO Rocket", "Team GO Rocket");
         values.put("Team Rocket", "Team Rocket");
@@ -1319,7 +1319,7 @@ final class I18nCatalog_de {
         values.put("When species are selected, VGP+ catches only those and leaves every other Pokémon on the map, shiny or not. With \"Catch only shinies\" on as well, it catches only shinies of those species.", "Wenn Arten ausgewählt sind, fängt VGP+ nur diese und lässt alle anderen Pokémon auf der Karte – Shiny oder nicht. Ist zusätzlich „Nur Shinys fangen“ aktiv, werden nur Shinys dieser Arten gefangen.");
         values.put("While VGP is running on the map, spin nearby Gym discs of any team within 80 m when the item bag has room.", "Dreht während VGP auf der Karte läuft die Scheiben naher Arenen aller Teams im Umkreis von 80 m, sofern im Item-Beutel Platz ist.");
         values.put("While any of these is on, the next Pokémon is picked automatically when one faints.", "Solange eine dieser Optionen aktiv ist, wird bei einem besiegten Pokémon automatisch das nächste gewählt.");
-        values.put("Wild Pokémon this account has encountered in the last 24 hours on this device while PGRazor was running, shown next to the PGRazor title. Encounters made elsewhere, and lure, incense, raid and research encounters, are not counted.", "Wilde Pokémon, denen dieses Konto in den letzten 24 Stunden auf diesem Gerät bei laufendem PGRazor begegnet ist. Wird neben dem PGRazor-Titel angezeigt. Begegnungen anderswo sowie Lockmodul-, Rauch-, Raid- und Forschungsbegegnungen zählen nicht.");
+        values.put("Wild Pokémon this account has encountered in the last 24 hours on this device while PGS was running, shown next to the PGS title. Encounters made elsewhere, and lure, incense, raid and research encounters, are not counted.", "Wilde Pokémon, denen dieses Konto in den letzten 24 Stunden auf diesem Gerät bei laufendem PGS begegnet ist. Wird neben dem PGS-Titel angezeigt. Begegnungen anderswo sowie Lockmodul-, Rauch-, Raid- und Forschungsbegegnungen zählen nicht.");
     }
     private static void fill10(Map<String, String> values) {
         values.put("Wild encounters. Combines with throw rating and curveball.", "Wilde Begegnungen. Kombinierbar mit Wurfqualität und Curveball.");

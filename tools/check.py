@@ -21,6 +21,7 @@ def main():
     run(sys.executable, '-B', ROOT / 'tools/native_gift_schema.py', '--check')
     run(sys.executable, '-B', ROOT / 'tools/pvp_data.py', 'check')
     run(sys.executable, '-B', ROOT / 'tools/i18n_catalog.py', '--check')
+    run(sys.executable, '-B', ROOT / 'tools/pgs_branding_audit.py')
     run(sys.executable, '-B', '-m', 'unittest', 'discover', '-s', ROOT / 'tools', '-p', 'test_*.py')
     run(sys.executable, '-B', PROJECT / 'build.py', '--test-only')
     run(sys.executable, '-B', '-m', 'unittest', 'discover', '-s', PROJECT / 'test', '-p', 'test_*.py')

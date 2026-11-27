@@ -97,7 +97,7 @@ public final class ResearchSettings {
         EditText search = new EditText(ui); search.setHint(I18n.t("Search tasks or rewards")); search.setSingleLine(true);
         body.addView(search);
         TextView empty = new TextView(ui);
-        empty.setText(I18n.t("No field research seen yet. Tasks appear here as the game gives them to you while PGRazor runs."));
+        empty.setText(I18n.t("No field research seen yet. Tasks appear here as the game gives them to you while PGS runs."));
         body.addView(empty);
         LinearLayout list = new LinearLayout(ui); list.setOrientation(LinearLayout.VERTICAL); body.addView(list);
         TextView status = new TextView(ui); status.setText(status()); body.addView(status);

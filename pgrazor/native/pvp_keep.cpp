@@ -75,7 +75,7 @@ int resolve(const PgrMetaApi *md, const char *ns, const char *name, void **out) 
 
 int fail(const char *what) {
   g_state = -1;
-  __android_log_print(ANDROID_LOG_WARN, "PGRazorPvp", "PvP keep unavailable (%s)", what);
+  __android_log_print(ANDROID_LOG_WARN, "PGSPvp", "PvP keep unavailable (%s)", what);
   return -1;
 }
 
@@ -146,7 +146,7 @@ int bind(uint64_t owner) {
   g_get = reinterpret_cast<void (*)(void *, void *, void *)>(rt.field_get_value);
   g_owner = owner;
   g_state = 1;
-  __android_log_print(ANDROID_LOG_INFO, "PGRazorPvp", "PvP keep ready (%u of %d forms matched)", matched,
+  __android_log_print(ANDROID_LOG_INFO, "PGSPvp", "PvP keep ready (%u of %d forms matched)", matched,
                       pgr_pvp::species_count());
   return 1;
 }

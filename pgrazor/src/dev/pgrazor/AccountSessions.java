@@ -25,7 +25,7 @@ final class AccountSessions {
         File lockFile=new File(context.getNoBackupFilesDir(),"pgrazor-account-switch.lock");
         try(RandomAccessFile lock=new RandomAccessFile(lockFile,"rw");FileLock held=acquire(lock)){
             boolean journal=new File(context.getNoBackupFilesDir(),"pgrazor-account-sessions-v1/switch-journal.bin").exists();
-            // Patched APK: a restart with no journal has nothing to finish. PGRazor Root has no
+            // Patched APK: a restart with no journal has nothing to finish. PGS Root has no
             // separate restart process, so a switch recorded before the cold restart is applied here,
             // in this fresh pre-Unity process, exactly where the restart helper would have applied it.
             if(action==0&&!journal&&!PgAssets.rooted())return true;
@@ -38,7 +38,7 @@ final class AccountSessions {
             });
             if(action==1)transaction.switchPending();else if(action==2)transaction.cancel();else {
                 try{
-                    // A leftover journal is a crash mid-swap to replay. Without one on PGRazor Root,
+                    // A leftover journal is a crash mid-swap to replay. Without one on PGS Root,
                     // switchPending() applies a pending switch (and is a no-op when none is queued).
                     if(journal)transaction.recover();else transaction.switchPending();
                 }

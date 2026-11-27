@@ -1,12 +1,14 @@
-# PGRazor vVERSION
+# PGS vVERSION
 
-## New features
+Esta página é o modelo de **novos releases PGS**, não um release upstream. O pacote instalado é `com.nianticlabs.pokemongo`, com a assinatura definitiva PGS. A versão do APK precisa ter `versionCode` maior que o anterior. Não publicar um arquivo de 2 MB como jogo completo.
 
-- **Feature name:** One or two short sentences explaining what it does.
+## Notas
 
-## Improvements & fixes
+- Mudanças verificadas:
+- Jogo base:
+- Android `versionCode`:
+- SHA-256 do APK:
+- Assinatura SHA-256: `D9:5C:6B:DF:CB:D9:1D:C5:C9:CD:E6:98:48:7C:88:E4:99:47:71:A4:75:E4:EF:DE:45:67:B8:D5:F4:4E:96:CF`
+- Instalação e login físico: pendentes até comprovação
 
-- Brief description of a fix or improvement.
-- Various UI improvements and minor fixes.
-
-[Non-root APK](https://github.com/jpitty03/PGRazor/releases/download/vVERSION/PGRazor.apk) · [Root installer APK](https://github.com/jpitty03/PGRazor/releases/download/vVERSION/PGRazor-Root.apk) · [Root module ZIP](https://github.com/jpitty03/PGRazor/releases/download/vVERSION/PGRazor-Root-module.zip) · [GitHub release](https://github.com/jpitty03/PGRazor/releases/tag/vVERSION)
+[Builds verificadas PGS](https://github.com/LucianoToscano/PGS/actions/workflows/pgs-v0.0.1-release.yml) · [Discord PGS](https://discord.gg/SdwU4VnfW)

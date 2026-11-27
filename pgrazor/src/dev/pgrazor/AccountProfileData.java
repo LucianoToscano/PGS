@@ -7,7 +7,7 @@ import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 
-/** Removes only an inactive profile's PGRazor data, never game or shared feed credentials. */
+/** Removes only an inactive profile's PGS data, never game or shared feed credentials. */
 final class AccountProfileData {
     private static final String[] FILES={"pgrazor-location-state-v1.txt","pgrazor-settings-v1.properties","cooldown-history.txt","pgrazor-gpx-routes-v1"};
     private static final String[] PREFS={"pgrazor-map","pgrazor-overlays","pgrazor-saved-places-v1","pgrazor-livefeed"};

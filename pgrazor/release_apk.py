@@ -1,4 +1,4 @@
-"""Create a single installable PGRazor APK from a validated ARM64 package run.
+"""Create a signed full PGS APK from a validated ARM64 package run.
 Only library-only configuration splits can be merged; resource/code splits fail closed.
 """
 import argparse
@@ -102,7 +102,7 @@ def release_identity(ledger):
     """PGS releases require the existing keystore and keep the PGS filename."""
     ledger = Path(ledger)
     if not ledger.is_file():
-        return 'PGRazor.apk', None
+        raise RuntimeError('PGS version ledger is missing; refusing legacy upstream APK naming')
     if not os.environ.get('PGRAZOR_KEYSTORE'):
         raise RuntimeError('Existing PGS release keystore is required; development signing is forbidden')
     from pgs_update import MAX_VERSION_CODE
@@ -136,8 +136,7 @@ def release(run, destination):
     game_code = identity.get('versionCode')
     if not isinstance(game_version, str) or not game_version or not isinstance(game_code, int):
         raise ValueError('Base game must declare versionName and numeric versionCode')
-    # Upstream PGRazor has no PGS ledger; the original release name is unchanged there.
-    # PGS must retain its own version ledger, output filename and signing identity.
+    # PGS always requires its own version ledger, output filename and signing identity.
     ledger = Path(__file__).resolve().parent / 'PGS_LAST_VERSION_CODE'
     output_name, previous_pgs_version = release_identity(ledger)
     destination.mkdir(parents=True, exist_ok=True)

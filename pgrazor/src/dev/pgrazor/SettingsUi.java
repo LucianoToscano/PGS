@@ -24,7 +24,7 @@ import android.widget.Switch;
 import android.widget.TextView;
 
 /**
- * Shared PGRazor design language. One home for the palette, shape, type and spacing tokens plus the
+ * Shared PGS design language. One home for the palette, shape, type and spacing tokens plus the
  * recursive {@code styleTree} so {@link Pad} (overlays/launcher/joystick), {@link SettingsPanel} (the
  * settings body), {@link QuickMenu} and the dialogs that opt in all draw from the same system.
  *

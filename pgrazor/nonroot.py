@@ -107,8 +107,8 @@ def rewrite_apk(source,destination,*,base=False,dex=None,assets=None,preview=Fal
     with zipfile.ZipFile(source) as original,zipfile.ZipFile(destination,'w') as output:
         names=original.namelist()
         # Bundled map-icon art may already ride along in our own preview input; any other pre-existing
-        # PGRazor asset means the input was already instrumented and must be refused.
-        if any(name.startswith('assets/pgrazor/') and not (preview and name.startswith(('assets/pgrazor/map-icons/','assets/pgrazor/feed-icons/pokemon/'))) for name in names): raise ValueError('Input already has PGRazor assets')
+        # PGS asset means the input was already instrumented and must be refused.
+        if any(name.startswith('assets/pgrazor/') and not (preview and name.startswith(('assets/pgrazor/map-icons/','assets/pgrazor/feed-icons/pokemon/'))) for name in names): raise ValueError('Input already has PGS assets')
         if base:
             indices=[int(match.group(1) or '1') for name in names if (match:=re.fullmatch(r'classes(\d*)\.dex',name))]
             nextdex='classes'+str(max(indices,default=0)+1)+'.dex'
@@ -116,7 +116,7 @@ def rewrite_apk(source,destination,*,base=False,dex=None,assets=None,preview=Fal
             if not preview:
                 for name in names:
                     if re.fullmatch(r'classes\d*\.dex',name) and b'Ldev/pgrazor/Control;' in original.read(name):
-                        raise ValueError('Input already contains PGRazor classes')
+                        raise ValueError('Input already contains PGS classes')
         for item in original.infolist():
             if signature_entry(item.filename): continue
             if base and dex_replacements and item.filename in dex_replacements:
@@ -129,7 +129,7 @@ def rewrite_apk(source,destination,*,base=False,dex=None,assets=None,preview=Fal
                 # Cold-process account switches need the isolated restart helper in every base build;
                 # an exactly-matching definition (our preview manifest) is accepted and left unchanged.
                 manifest=axml.add_account_restart_activity(manifest)
-                # The in-app updater installs a downloaded PGRazor APK through the system installer.
+                # The in-app updater installs a downloaded PGS APK through the system installer.
                 manifest=axml.add_install_permissions(manifest)
                 output.writestr(copy.copy(item),manifest); continue
             with original.open(item) as reader,output.open(copy.copy(item),'w') as writer: shutil.copyfileobj(reader,writer)
@@ -163,9 +163,9 @@ def scoped_env(**values):
 
 
 def assert_no_research_payload(names):
-    """Package-time guard: a compiled production APK must carry no Frida or PGRazor JS.
+    """Package-time guard: a compiled production APK must carry no Frida or PGS JS.
 
-    Scans ZIP/asset names and refuses the Frida Gadget, any PGRazor JavaScript asset,
+    Scans ZIP/asset names and refuses the Frida Gadget, any PGS JavaScript asset,
     the Frida Java bridge and its notices. Research-only assets must never reach production.
     """
     for name in names:
@@ -173,7 +173,7 @@ def assert_no_research_payload(names):
         if lowered.endswith('libfrida-gadget.so'):
             raise RuntimeError('Compiled production build must not ship the Frida Gadget: '+name)
         if lowered.startswith('assets/pgrazor/') and lowered.endswith(('.js','.mjs','.cjs','.js.map')):
-            raise RuntimeError('Compiled production build must not ship PGRazor JavaScript: '+name)
+            raise RuntimeError('Compiled production build must not ship PGS JavaScript: '+name)
         if lowered=='assets/pgrazor/java-bridge.js' or lowered.startswith('assets/pgrazor/bridge-notices/'):
             raise RuntimeError('Compiled production build must not ship Frida bridge assets: '+name)
 
@@ -391,12 +391,12 @@ def probe(report,folder,android,seconds=0):
         report['device'][key]=android.shell('getprop',prop).strip()
     (folder/'report.json').write_text(json.dumps(report,indent=2),encoding='utf-8')
     android.call('install','-r',report['outputs'][0]['file'])
-    report['installation']='Installed PGRazor Preview on '+android.serial+'; game installation unchanged.'
+    report['installation']='Installed PGS Preview on '+android.serial+'; game installation unchanged.'
     (folder/'report.json').write_text(json.dumps(report,indent=2),encoding='utf-8')
     # Fresh process is required to test the ContentProvider and native loader.
     android.shell('am','force-stop','dev.pgrazor.preview')
     log=folder/'device-test.txt'
-    stream=subprocess.Popen(android.command('logcat','-v','threadtime','-T','1','PGRazor:I','AndroidRuntime:E','libc:F','DEBUG:F','crash_dump64:E','*:S'),stdout=subprocess.PIPE,stderr=subprocess.STDOUT,text=True,encoding='utf-8',errors='replace')
+    stream=subprocess.Popen(android.command('logcat','-v','threadtime','-T','1','PGS:I','AndroidRuntime:E','libc:F','DEBUG:F','crash_dump64:E','*:S'),stdout=subprocess.PIPE,stderr=subprocess.STDOUT,text=True,encoding='utf-8',errors='replace')
     timeout=threading.Timer(seconds,stream.terminate) if seconds else None
     if timeout: timeout.start()
     try:
@@ -492,7 +492,7 @@ def main(argv=None):
     report,folder=package(source,panel_only=args.panel_only,download=args.download_runtime,preview=preview,probe_abi=abi,**options)
     cleanup_generated_builds()
     if args.probe: probe(report,folder,android,args.seconds)
-    elif args.build_probe: print('Phone test APK:',report['outputs'][0]['file'],'\nInstall on a '+abi+' device and open PGRazor Preview. No device was changed.')
+    elif args.build_probe: print('Phone test APK:',report['outputs'][0]['file'],'\nInstall on a '+abi+' device and open PGS Preview. No device was changed.')
     else: print('Keep the current game installed. Review report.json before deciding where to test this differently signed build.')
 
 if __name__=='__main__':

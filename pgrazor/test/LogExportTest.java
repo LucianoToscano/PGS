@@ -15,6 +15,7 @@ public final class LogExportTest {
         String line=new String(json,StandardCharsets.UTF_8);
         if(line.contains("\n")||line.contains("\r"))throw new AssertionError("Not single line");
         JSONObject parsed=new JSONObject(line);
+        if(!"PGS diagnostic settings".equals(parsed.getString("format")))throw new AssertionError("PGS export format");
         if(!parsed.getJSONObject("settings").getString("escaped").equals(settings.getProperty("escaped")))throw new AssertionError("JSON escaping");
         if(parsed.getDouble("speedKmh")!=9.5)throw new AssertionError("Speed");
         byte[] log=new byte[25000];new Random(42).nextBytes(log);

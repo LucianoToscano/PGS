@@ -43,7 +43,7 @@ public final class LiveFeedFilters {
     private final boolean showPvpGreat, showPvpUltra, showPvpLittle;
     private final int pvpMaxRank;
     private final boolean showMyShinies, shinyOnly, showMyBackgrounds, backgroundOnly;
-    /** PGRazor-only (never sent): list just Pokémon ranked within pvpMaxRank in a ticked league. */
+    /** PGS-only (never sent): list just Pokémon ranked within pvpMaxRank in a ticked league. */
     private boolean pvpOnly;
 
     /** Broad/off defaults: nothing filtered out, every "always show" and feature toggle disabled. */
@@ -159,14 +159,14 @@ public final class LiveFeedFilters {
     /** True when "PvP only" is on and at least one league is ticked. */
     public boolean pvpOnlyActive() { return pvpOnly && (showPvpGreat || showPvpUltra || showPvpLittle); }
 
-    /** The settings as saved and edited: the 21 service keys plus PGRazor's own "pvp_only". */
+    /** The settings as saved and edited: the 21 service keys plus PGS's own "pvp_only". */
     public JSONObject toStoredJson() throws JSONException {
         return toViewportJson().put("pvp_only", pvpOnly);
     }
 
     /**
      * The 21-key request body. With "PvP only" on, the IV and level range are opened up so the service
-     * doesn't drop ranked Pokémon before PGRazor filters on rank.
+     * doesn't drop ranked Pokémon before PGS filters on rank.
      */
     public JSONObject toRequestJson() throws JSONException {
         JSONObject f = toViewportJson();

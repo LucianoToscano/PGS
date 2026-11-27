@@ -14,7 +14,7 @@ on:
         required: true
         type: string
     secrets:
-      DISCORD_RELEASE_WEBHOOK:
+      PGS_DISCORD_RELEASE_WEBHOOK:
         required: false
 permissions:
   contents: read
@@ -30,7 +30,7 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ github.token }}
           RELEASE_TAG: ${{ inputs.tag || github.event.release.tag_name }}
-          DISCORD_RELEASE_WEBHOOK: ${{ secrets.DISCORD_RELEASE_WEBHOOK }}
-          DISCORD_CHANNEL_ID: '1562582290536726598'
-          DISCORD_RELEASE_ROLE_ID: ${{ vars.DISCORD_RELEASE_ROLE_ID }}
+          PGS_DISCORD_RELEASE_WEBHOOK: ${{ secrets.PGS_DISCORD_RELEASE_WEBHOOK }}
+          PGS_DISCORD_CHANNEL_ID: ${{ vars.PGS_DISCORD_CHANNEL_ID }}
+          PGS_DISCORD_RELEASE_ROLE_ID: ${{ vars.PGS_DISCORD_RELEASE_ROLE_ID }}
         run: python3 -B tools/discord_release.py

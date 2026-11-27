@@ -119,7 +119,7 @@ final class I18nCatalog_zh_Hant {
         values.put("After battles & periodically", "對戰後及定期");
         values.put("After you start a gym battle, automatically starts the next full round from the same gym screen until defeated. Uses your attack settings and waits for Smart healing when set to After battle or Both. Turn off or leave manually to stop.", "開始道館對戰後，會在同一道館畫面自動開始下一輪完整對戰，直到攻下道館。沿用你的攻擊設定；智慧治療設為「對戰後」或「兩者」時會等待治療。關閉功能或手動離開即可停止。");
         values.put("All", "全部");
-        values.put("All PGRazor buttons, status bars, messages and in-game IV text will be hidden so the game looks stock. To show them again, tap the screen with three fingers at once.", "隱藏所有 PGRazor 按鈕、狀態列、訊息及遊戲內 IV 文字，讓畫面看起來像原版遊戲。要再次顯示，請用三根手指同時點按螢幕。");
+        values.put("All PGS buttons, status bars, messages and in-game IV text will be hidden so the game looks stock. To show them again, tap the screen with three fingers at once.", "隱藏所有 PGS 按鈕、狀態列、訊息及遊戲內 IV 文字，讓畫面看起來像原版遊戲。要再次顯示，請用三根手指同時點按螢幕。");
         values.put("All Pokemon", "所有寶可夢");
         values.put("All battles", "所有對戰");
         values.put("All off", "全部關閉");
@@ -185,7 +185,7 @@ final class I18nCatalog_zh_Hant {
         values.put("Auto-walk", "自動行走");
         values.put("Auto-walk stopped.", "自動行走已停止。");
         values.put("Auto-walking %1$s%2$s%3$s", "自動行走 %1$s%2$s%3$s");
-        values.put("Automatically moves toward nearby Max energy orbs during battle while PGRazor is active.", "PGRazor 運作期間，在對戰中自動移向附近的極巨能量球。");
+        values.put("Automatically moves toward nearby Max energy orbs during battle while PGS is active.", "PGS 運作期間，在對戰中自動移向附近的極巨能量球。");
         values.put("Automation", "自動化");
         values.put("Autowalk", "自動行走");
         values.put("Back to all settings", "返回所有設定");
@@ -296,7 +296,7 @@ final class I18nCatalog_zh_Hant {
         values.put("Clear search", "清除搜尋");
         values.put("Clear shown", "取消選取顯示項目");
         values.put("Close", "關閉");
-        values.put("Close PGRazor settings", "關閉 PGRazor 設定");
+        values.put("Close PGS settings", "關閉 PGS 設定");
         values.put("Cloudy", "多雲");
         values.put("Collecting…", "收集中…");
         values.put("Completing the Route", "正在完成路線");
@@ -567,7 +567,7 @@ final class I18nCatalog_zh_Hant {
         values.put("Items: Always heal fully", "道具：一律完全治療");
         values.put("Items: Smart (saves big potions)", "道具：智慧選擇（節省大瓶傷藥）");
         values.put("Join our Discord", "加入我們的 Discord");
-        values.put("Join the PGRazor Discord community", "加入 PGRazor Discord 社群");
+        values.put("Join the PGS Discord community", "加入 PGS Discord 社群");
         values.put("Joystick", "搖桿");
         values.put("Joystick and coordinate controls, drawn with the same tokens as the in-game panel.\nThis preview does not change device GPS or connect to Pokémon GO. Movement pauses when you leave the app.", "搖桿與座標控制介面，採用與遊戲內面板相同的視覺樣式。\n此預覽不會變更裝置 GPS 或連線至 Pokémon GO。離開應用程式時會暫停移動。");
         values.put("Joystick follows the camera", "搖桿跟隨相機方向");
@@ -725,7 +725,7 @@ final class I18nCatalog_zh_Hant {
         values.put("No favorites yet. Add places from the World map or the Teleport dialog.", "尚無我的最愛。可從世界地圖或瞬移對話框新增地點。");
         values.put("No favorites yet. Add the selected map destination to find it again later.", "尚無我的最愛。加入所選地圖目的地，方便日後尋找。");
         values.put("No feeding", "不餵食");
-        values.put("No field research seen yet. Tasks appear here as the game gives them to you while PGRazor runs.", "尚未看到田野調查。PGRazor 運作期間，遊戲發放的課題會顯示於此。");
+        values.put("No field research seen yet. Tasks appear here as the game gives them to you while PGS runs.", "尚未看到田野調查。PGS 運作期間，遊戲發放的課題會顯示於此。");
         values.put("No file picker is available.", "沒有可用的檔案選取器。");
         values.put("No limit", "不限");
         values.put("No limit\nGo to the nearest Rocket stop wherever it is", "不限\n前往最近的火箭隊補給站，不限距離");
@@ -764,8 +764,8 @@ final class I18nCatalog_zh_Hant {
         values.put("Off (manual)", "關閉（手動）");
         values.put("One-shot tasks", "單次任務");
         values.put("Only %1$s of %2$s requested stops are loaded; starting with %3$s.", "要求的 %1$s／%2$s 個停靠點已載入；將以 %3$s 個開始。");
-        values.put("Open PGRazor quick menu. Drag to reposition.", "開啟 PGRazor 快速選單。拖曳可重新定位。");
-        values.put("Open PGRazor settings. Drag to reposition.", "開啟 PGRazor 設定。拖曳可重新定位。");
+        values.put("Open PGS quick menu. Drag to reposition.", "開啟 PGS 快速選單。拖曳可重新定位。");
+        values.put("Open PGS settings. Drag to reposition.", "開啟 PGS 設定。拖曳可重新定位。");
         values.put("Open and send friend gifts in one batch.", "以單一批次開啟並傳送朋友禮物。");
         values.put("Open boxes and skip encounters", "開啟箱子並略過遭遇");
         values.put("Open even when item bag is full", "即使道具背包已滿也開啟");
@@ -781,13 +781,13 @@ final class I18nCatalog_zh_Hant {
         values.put("Overlay scale", "浮層縮放");
         values.put("P", "P");
         values.put("PASS · ", "通過 · ");
-        values.put("PGRazor VGP", "PGRazor VGP");
-        values.put("PGRazor feed", "PGRazor 情報");
-        values.put("PGRazor overlay shown", "PGRazor 浮層已顯示");
-        values.put("PGRazor shiny found", "PGRazor 發現異色");
-        values.put("PGRazor version %1$s", "PGRazor 版本 %1$s");
-        values.put("PGRazor · current run", "PGRazor · 本次執行");
+        values.put("PGS VGP", "PGS VGP");
+        values.put("PGS feed", "PGS 情報");
         values.put("PGS language", "PGS 語言");
+        values.put("PGS overlay shown", "PGS 浮層已顯示");
+        values.put("PGS shiny found", "PGS 發現異色");
+        values.put("PGS version %1$s", "PGS 版本 %1$s");
+        values.put("PGS · current run", "PGS · 本次執行");
         values.put("Partly Cloudy", "晴時多雲");
         values.put("Password", "密碼");
         values.put("Pause Virtual Go Plus during the estimated cooldown.", "估計冷卻時間期間暫停 Virtual Go Plus。");
@@ -1044,7 +1044,7 @@ final class I18nCatalog_zh_Hant {
         values.put("Show the buddy excitement status overlay.", "顯示夥伴興奮狀態浮層。");
         values.put("Show the catch chance during an encounter.", "遭遇時顯示捕捉機率。");
         values.put("Show the count on the map", "在地圖上顯示計數");
-        values.put("Show the encounter count next to the PGRazor title.", "在 PGRazor 標題旁顯示遭遇次數。");
+        values.put("Show the encounter count next to the PGS title.", "在 PGS 標題旁顯示遭遇次數。");
         values.put("Show the estimated catch cooldown timer on the map.", "在地圖上顯示預估捕捉冷卻時間。");
         values.put("Show the on-screen movement joystick.", "顯示螢幕上的移動搖桿。");
         values.put("Show the wall-clock time at the spoofed coordinates.", "顯示模擬座標的當地時間。");
@@ -1162,8 +1162,8 @@ final class I18nCatalog_zh_Hant {
         values.put("Tap to download", "點選下載");
         values.put("Tap to download and install", "點選下載並安裝");
         values.put("Tap to download the Root installer", "點選下載 Root 安裝程式");
-        values.put("Tap to open PGRazor %1$s in Downloads and install it", "點選開啟下載資料夾中的 PGRazor %1$s 並安裝");
-        values.put("Tap to open PGRazor %1$s in Downloads: update the installer, open it, tap Install Module, then reboot", "點選開啟下載資料夾中的 PGRazor %1$s：更新安裝程式後開啟，點選安裝模組，再重新啟動裝置");
+        values.put("Tap to open PGS %1$s in Downloads and install it", "點選開啟下載資料夾中的 PGS %1$s 並安裝");
+        values.put("Tap to open PGS %1$s in Downloads: update the installer, open it, tap Install Module, then reboot", "點選開啟下載資料夾中的 PGS %1$s：更新安裝程式後開啟，點選安裝模組，再重新啟動裝置");
         values.put("Task (none = any)", "任務（未選取＝不限）");
         values.put("Team GO Rocket", "GO 火箭隊");
         values.put("Team Rocket", "火箭隊");
@@ -1319,7 +1319,7 @@ final class I18nCatalog_zh_Hant {
         values.put("When species are selected, VGP+ catches only those and leaves every other Pokémon on the map, shiny or not. With \"Catch only shinies\" on as well, it catches only shinies of those species.", "選取種類後，VGP+ 只會捕捉那些種類；其他寶可夢無論是否異色都留在地圖上。若同時開啟「只捕捉異色」，則只捕捉選取種類的異色寶可夢。");
         values.put("While VGP is running on the map, spin nearby Gym discs of any team within 80 m when the item bag has room.", "VGP 在地圖上執行且道具背包有空間時，旋轉 80 公尺內所有隊伍道館的轉盤。");
         values.put("While any of these is on, the next Pokémon is picked automatically when one faints.", "開啟其中任一項時，寶可夢瀕死後會自動選擇下一隻。");
-        values.put("Wild Pokémon this account has encountered in the last 24 hours on this device while PGRazor was running, shown next to the PGRazor title. Encounters made elsewhere, and lure, incense, raid and research encounters, are not counted.", "顯示此帳號在最近 24 小時內，於本裝置執行 PGRazor 時遭遇的野生寶可夢數量，位於 PGRazor 標題旁。其他地方的遭遇，以及誘餌、薰香、團體戰與調查遭遇不列入計算。");
+        values.put("Wild Pokémon this account has encountered in the last 24 hours on this device while PGS was running, shown next to the PGS title. Encounters made elsewhere, and lure, incense, raid and research encounters, are not counted.", "顯示此帳號在最近 24 小時內，於本裝置執行 PGS 時遭遇的野生寶可夢數量，位於 PGS 標題旁。其他地方的遭遇，以及誘餌、薰香、團體戰與調查遭遇不列入計算。");
     }
     private static void fill10(Map<String, String> values) {
         values.put("Wild encounters. Combines with throw rating and curveball.", "野生寶可夢遭遇。可搭配投球評價與曲球。");

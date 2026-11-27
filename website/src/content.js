@@ -133,7 +133,7 @@ export const faqs = [
   },
   {
     q: 'Is a PGS Root build available?',
-    a: 'Not yet. The PGS v0.0.1 work targets the non-root APK. PGRazor Root is a separate upstream project and is not a PGS update.',
+    a: 'Not yet. The PGS v0.0.1 work targets the non-root APK. The original Root variant belongs to the upstream project, not a PGS update.',
   },
   {
     q: 'Is LivePokeMap included?',

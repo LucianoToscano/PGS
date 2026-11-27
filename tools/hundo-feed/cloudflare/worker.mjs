@@ -127,7 +127,9 @@ async function refresh(env) {
         next:Math.max(base.next,now+interval*1000*2**failures,Number.isFinite(error.retryAt)?error.retryAt:0)};
     }
   }));
-  await env.FEED.put(stateKey,JSON.stringify({entries,time:now}));
+  const history=[...(previous.history || []),{time:now,online:entries.filter(e=>e.status==="online").map(e=>e.name)}].slice(-288);
+  if (previous.entries?.some(e=>e.updated)) await env.FEED.put("pgs-feed-backup-v1",JSON.stringify(previous));
+  await env.FEED.put(stateKey,JSON.stringify({entries,time:now,history}));
 }
 
 export function feed(state,now) {
@@ -175,12 +177,19 @@ export default {
   async fetch(request,env) {
     const path=new URL(request.url).pathname;
     const simulation=path==="/simulation/hundos.json";
+    const health=path==="/status.json";
     const category=({"/pokemon.json":"pokemon","/raids.json":"raids"})[path];
-    if (!category && !simulation && path!=="/hundos.json") return new Response(null,{status:404});
+    if (!health && !category && !simulation && path!=="/hundos.json") return new Response(null,{status:404});
     if (!["GET","HEAD"].includes(request.method)) return new Response(null,{status:405,headers:{Allow:"GET, HEAD"}});
     const active=new Set(JSON.parse(env.SOURCES || "[]").map(s=>s.name+" "+s.url));
-    const state=await env.FEED.get(simulation?"pgs-simulation-v1":stateKey,"json");
+    const state=await env.FEED.get(simulation?"pgs-simulation-v1":stateKey,"json") || (!simulation && await env.FEED.get("pgs-feed-backup-v1","json"));
     if (!simulation && state?.entries) state.entries=state.entries.filter(s=>active.has(s.name+" "+s.url));
+    if (health) {
+      const status={time:state?.time || null,history:state?.history || [],connections:(state?.entries || []).map(e=>({
+        provider:e.name.startsWith("iflowgo-")?"iflowgo":e.name,category:e.category || "hundos",
+        status:e.status,last_success:e.updated || null,http_status:e.httpStatus || null,reason:e.reason || null}))};
+      return new Response(request.method==="HEAD"?null:JSON.stringify(status),{headers:{"Content-Type":"application/json","Cache-Control":"public, max-age=15"}});
+    }
     if (!state?.entries?.some(s=>s.updated)) return new Response(null,{status:503,headers:{"Retry-After":"300","Cache-Control":"no-store"}});
     let body;
     if (category) {

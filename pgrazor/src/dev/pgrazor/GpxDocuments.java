@@ -14,7 +14,7 @@ import android.os.Bundle;
  *
  * <p>SAF needs no permissions: {@link Intent#ACTION_OPEN_DOCUMENT} returns a readable content URI
  * for import and {@link Intent#ACTION_CREATE_DOCUMENT} a writable one for export. The picker is a
- * separate Activity, so opening it pauses the host (and any PGRazor dialog bound to it dismisses);
+ * separate Activity, so opening it pauses the host (and any PGS dialog bound to it dismisses);
  * this fragment lives on the Activity rather than on a dialog, so it survives that round-trip and
  * still delivers the chosen URI when the host resumes. Reading or writing the stream is the
  * caller's job and belongs off the main thread.</p>

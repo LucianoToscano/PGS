@@ -100,7 +100,7 @@ public final class GpxCodec {
         if (route == null) throw new IOException("No route to write.");
         StringBuilder xml = new StringBuilder();
         xml.append("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n");
-        xml.append("<gpx version=\"1.1\" creator=\"PGRazor\" xmlns=\"http://www.topografix.com/GPX/1/1\">\n");
+        xml.append("<gpx version=\"1.1\" creator=\"PGS\" xmlns=\"http://www.topografix.com/GPX/1/1\">\n");
         xml.append("<rte><name>").append(escape(route.name)).append("</name>\n");
         for (double[] point : route.points())
             xml.append("<rtept lat=\"").append(coord(point[0])).append("\" lon=\"").append(coord(point[1])).append("\"></rtept>\n");

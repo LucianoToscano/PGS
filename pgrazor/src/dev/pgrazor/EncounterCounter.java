@@ -6,7 +6,7 @@ import java.util.Locale;
 
 /**
  * Encounter counter: how many Pokémon this account has encountered in the last 24 hours on this device while
- * PGRazor was running. The native scanner reports every wild Pokémon the game has opened (by the player, VGP+,
+ * PGS was running. The native scanner reports every wild Pokémon the game has opened (by the player, VGP+,
  * Shundo Sniper or the Shiny Scanner); checks the Shiny Scanner sent are counted even when they got no answer.
  * Kept per account in its own preferences file, outside the settings backup.
  */
@@ -70,8 +70,8 @@ public final class EncounterCounter {
     static String label() {
         return Control.encounterCounter() ? String.format(Locale.US, "%,d encounters / 24 h", total()) : "";
     }
-    /** The settings title: "PGRazor · 1,240 / 24 h". */
+    /** The settings title: "PGS · 1,240 / 24 h". */
     static String title() {
-        return Control.encounterCounter() ? String.format(Locale.US, "PGRazor · %,d / 24 h", total()) : "PGRazor";
+        return Control.encounterCounter() ? String.format(Locale.US, "PGS · %,d / 24 h", total()) : "PGS";
     }
 }

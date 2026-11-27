@@ -24,7 +24,7 @@ import android.widget.Switch;
 import android.widget.TextView;
 
 /**
- * The single design system for every PGRazor surface (settings panel, quick menu, overlays and
+ * The single design system for every PGS surface (settings panel, quick menu, overlays and
  * every dialog). The light theme follows the game's own settings screen: a lime-to-mint gradient
  * page, white rounded cards with hairline dividers, slate-teal bold text, grey chevrons, teal
  * values and toggles, gradient pill buttons and a round teal close button. The dark theme is a
@@ -136,7 +136,7 @@ final class FeedTheme {
     /** Cooldown running and other warnings. */
     static int warn()       { return SettingsUi.warn(); }
 
-    // Dialog palette: the same surfaces and ink as every other PGRazor card.
+    // Dialog palette: the same surfaces and ink as every other PGS card.
     static int dlgCard()     { return SettingsUi.surface(); }
     static int dlgInk()      { return SettingsUi.ink(); }
     static int dlgMuted()    { return SettingsUi.muted(); }
@@ -154,7 +154,7 @@ final class FeedTheme {
     static int dlgFieldOff() { return SettingsUi.raised(); }
 
     static Typeface medium() { return SettingsUi.medium(); }
-    /** Kept for older call sites: PGRazor uses one medium weight instead of a second bold face. */
+    /** Kept for older call sites: PGS uses one medium weight instead of a second bold face. */
     static Typeface bold()   { return SettingsUi.medium(); }
 
     static int dp(Context c, float value) { return Math.round(value * c.getResources().getDisplayMetrics().density); }

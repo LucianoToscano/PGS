@@ -212,7 +212,7 @@ public final class LiveFeedDialog {
                 String u = username.getText().toString().trim();
                 String p = password.getText().toString();
                 // Clear the password field immediately; it stays only in the local that is handed to
-                // the worker, never logged or saved by PGRazor.
+                // the worker, never logged or saved by PGS.
                 password.setText("");
                 if (u.isEmpty() || p.isEmpty()) { status.setText(I18n.t("Enter your username and password.")); return; }
                 if (loginInFlight) return;

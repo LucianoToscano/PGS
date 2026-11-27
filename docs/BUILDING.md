@@ -88,15 +88,15 @@ The `build.py` output named `pgrazor-preview.apk` is a controls preview, **not t
 
 Write concise release notes using [the release-note rules](releases/README.md) and [template](releases/TEMPLATE.md). GitHub and Discord share the same notes. Include version-specific download and GitHub release links; the shared footer adds Ko-fi and repository links. Omit verification sections and website-only changes from public notes and the changelog.
 
-Configure these Actions secrets:
+Configure these PGS repository Actions secrets (mapped to the original internal build environment):
 
 | Secret | Value |
 | --- | --- |
-| `PGRAZOR_INPUT_URL` | HTTPS URL to the supported original APKM, or a GitHub release-asset API URL in this repository |
-| `PGRAZOR_KEYSTORE_BASE64` | Base64-encoded release keystore |
-| `PGRAZOR_KEY_ALIAS` | Signing alias, e.g. `pgrazor` for PGRazor |
-| `PGRAZOR_STORE_PASSWORD` | Keystore password |
-| `PGRAZOR_KEY_PASSWORD` | Private-key password |
+| `PGS_INPUT_URL` | HTTPS URL to the supported original APKM, or a GitHub release-asset API URL in this repository |
+| `PGS_KEYSTORE_BASE64` | Base64-encoded release keystore |
+| `PGS_KEY_ALIAS` | Signing alias, e.g. `pgs` |
+| `PGS_STORE_PASSWORD` | Keystore password |
+| `PGS_KEY_PASSWORD` | Private-key password |
 
 For a private GitHub input asset, use its `https://api.github.com/repos/OWNER/REPO/releases/assets/ID` URL. The workflow supplies its scoped token; authorization is removed when GitHub redirects to the signed download host.
 

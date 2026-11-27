@@ -2,12 +2,11 @@
 // edits (wording, new settings, extra screenshots) never touch layout code.
 
 export const links = {
-  releasesLatest: 'https://github.com/LucianoToscano/PGS/actions/runs/45963966748',
+  releasesLatest: 'https://github.com/LucianoToscano/PGS/actions/workflows/pgs-v0.0.1-release.yml',
   releasesCurrent:
-    'https://github.com/LucianoToscano/PGS/actions/runs/45963966748',
+    'https://github.com/LucianoToscano/PGS/actions/workflows/pgs-v0.0.1-release.yml',
   github: 'https://github.com/LucianoToscano/PGS',
   discord: 'https://discord.gg/SdwU4VnfW',
-  kofi: 'https://ko-fi.com/pgrazor',
 };
 
 export const nav = [
@@ -109,7 +108,7 @@ export const steps = [
   {
     n: '01',
     title: 'Download',
-    body: 'Open the verified PGS build, download its artifact and extract PGS.apk. Do not install a source archive or a preview package.',
+    body: 'Open the verified PGS v0.0.1 build, download its artifact and extract PGS v0.0.1.apk. Do not install a source archive or a preview package.',
   },
   {
     n: '02',

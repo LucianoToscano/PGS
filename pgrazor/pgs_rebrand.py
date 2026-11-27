@@ -159,7 +159,8 @@ def candidate(source: Path, controls: Path, output: Path) -> dict:
         raise RuntimeError("Refusing incomplete game package")
     return {
         "status": "SIGNED_COMPLETE_APK_VERIFIED",
-        "apk": output.name, "bytes": output.stat().st_size,
+        "apk": output.name, "release_asset": "PGS.v0.0.1.apk",
+        "bytes": output.stat().st_size,
         "sha256": digest(output), "source_apk_sha256": SOURCE_SHA256,
         "source_controls_dex": dex_name, "controls_dex_sha256": digest(controls),
         "pgs_version": PGS_VERSION, "game_version": GAME_VERSION_NAME,

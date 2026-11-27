@@ -5,8 +5,8 @@
   "changed_files": 37,
   "added_files": 1,
   "previous_occurrences": 1041,
-  "remaining_files": 168,
-  "remaining_occurrences": 991,
+  "remaining_files": 167,
+  "remaining_occurrences": 990,
   "remaining_by_category": {
     "documentation": 266,
     "java": 69,
@@ -15,7 +15,7 @@
     "native": 171,
     "other": 96,
     "release_history": 103,
-    "tests": 238,
+    "tests": 237,
     "vendor": 6,
     "workflows": 38
   },
@@ -729,11 +729,6 @@
       "path": "pgs/test/test_pgs_native_identity.py",
       "category": "tests",
       "occurrences": 36
-    },
-    {
-      "path": "pgs/test/test_pgs_oauth_retirement.py",
-      "category": "tests",
-      "occurrences": 1
     },
     {
       "path": "pgs/test/test_pgs_project_layout.py",

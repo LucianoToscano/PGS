@@ -1,5 +1,6 @@
 """Verify future full PGS releases inherit the monotonic Android code policy."""
 import sys
+import struct
 from pathlib import Path
 import tempfile
 import unittest
@@ -16,8 +17,22 @@ from test_pgs_update import manifest_with_version
 def game_manifest():
     fixture = manifest_with_version()
     _, chunks, pool, _, _ = axml._parse(fixture)
-    pool.strings[pool.strings.index("dev.example.test")] = "com.nianticlabs.pokemongo"
-    return chunk(3, pool.build() + b"".join(raw for _, raw in chunks[1:]))
+    replacement = pool.add("com.nianticlabs.pokemongo")
+    new_nodes = []
+    for kind, data in chunks[1:]:
+        if kind == 0x102:
+            raw = bytearray(data)
+            h = axml._u16(raw, 2)
+            if pool.string(axml._u32(raw, h + 4)) == "manifest":
+                start, size, count = struct.unpack_from("<HHH", raw, h + 8)
+                for i in range(count):
+                    at = h + start + i * size
+                    if pool.string(axml._u32(raw, at + 4)) == "package":
+                        struct.pack_into("<I", raw, at + 8, replacement)
+                        struct.pack_into("<I", raw, at + 16, replacement)
+                data = bytes(raw)
+        new_nodes.append(data)
+    return chunk(3, pool.build() + b"".join(new_nodes))
 
 
 class PgsReleasePolicyTests(unittest.TestCase):

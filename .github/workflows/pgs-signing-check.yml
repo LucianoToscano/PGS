@@ -1,0 +1,42 @@
+name: Verify PGS signing identity
+on:
+  push:
+    branches: ["build/pgs-signing-check"]
+    paths: [".github/workflows/pgs-signing-check.yml"]
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  certificate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/setup-java@cf277c60eb25467037889841efdb72551f06f6c3
+        with:
+          distribution: temurin
+          java-version: '17'
+      - name: Print public certificate fingerprint only
+        env:
+          SIGNING_KEYSTORE: ${{ secrets.PGS_KEYSTORE_BASE64 || secrets.PGRAZOR_KEYSTORE_BASE64 }}
+          SIGNING_ALIAS: ${{ secrets.PGS_KEY_ALIAS || secrets.PGRAZOR_KEY_ALIAS }}
+          SIGNING_STORE_PASSWORD: ${{ secrets.PGS_STORE_PASSWORD || secrets.PGRAZOR_STORE_PASSWORD }}
+        shell: python
+        run: |
+          import base64, hashlib, os, pathlib, subprocess, tempfile
+          for name in ("SIGNING_KEYSTORE", "SIGNING_ALIAS", "SIGNING_STORE_PASSWORD"):
+              if not os.environ.get(name):
+                  raise RuntimeError("Missing signing setting: " + name)
+          with tempfile.TemporaryDirectory(dir=os.environ["RUNNER_TEMP"]) as folder:
+              key = pathlib.Path(folder) / "signing.jks"
+              cert = pathlib.Path(folder) / "public.der"
+              key.write_bytes(base64.b64decode("".join(os.environ["SIGNING_KEYSTORE"].split()), validate=True))
+              key.chmod(0o600)
+              result = subprocess.run(["keytool", "-exportcert", "-keystore", str(key),
+                  "-storepass:env", "SIGNING_STORE_PASSWORD", "-alias", os.environ["SIGNING_ALIAS"],
+                  "-file", str(cert)], capture_output=True)
+              if result.returncode:
+                  raise RuntimeError("Configured signing certificate could not be exported")
+              digest = hashlib.sha256(cert.read_bytes()).hexdigest()
+              print("PGS signing certificate SHA-256: " + digest)
+              with open(os.environ["GITHUB_STEP_SUMMARY"], "a", encoding="utf-8") as report:
+                  report.write("Public certificate SHA-256: `" + digest + "`\n")

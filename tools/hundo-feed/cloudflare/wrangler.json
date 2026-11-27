@@ -17,6 +17,7 @@
     "enabled": false
   },
   "vars": {
-    "SOURCES": "[{\"name\":\"faustusfoundry\",\"url\":\"https://feed.faustusfoundry.com/pgrazor/hundos.json\",\"interval_s\":300}]"
+    "SOURCES": "[]",
+    "PGS_CANDIDATE_URL": "https://feed.faustusfoundry.com/pgrazor/hundos.json"
   }
 }

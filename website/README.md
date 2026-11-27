@@ -48,7 +48,7 @@ Release-specific availability and validation details belong in the release notes
 - `public/pgs-full.png`: original 4096 × 4096 complete official PGS logo; used by the repository README and social preview.
 - `public/pgs-wordmark.png`: original 4096 × 1704 horizontal PGS logo; used by the website hero.
 - Each PNG is byte-for-byte identical to the Drive original. The PGS branding source copies are stored in `pgrazor/branding/`. The in-game menu icon is intentionally preserved independently for Android compatibility.
-- `public/images/main-menu.png`: canonical app settings screenshot (the v0.3.5 Settings home on MuMu), also referenced by the repository README.
+- A captura antiga do menu foi retirada: mostrava o cabeçalho de outro projeto e não corresponde à interface PGS atual. Não divulgar capturas antigas como prova da versão atual.
 - `public/images/encounter.png`: real encounter capture showing the IV/level, transfer and berry overlays.
 - `public/images/world-map.png`: November 2026 MuMu capture of the app's world map (v0.3.5 interface). OpenStreetMap attribution is visible in the capture.
 
@@ -60,6 +60,6 @@ The Cooldown section uses original text and two compact tables with all 30 estim
 
 ## Guide screenshots
 
-Feature pages use `src/guideScreenshots.js` and the shared `Gallery` component. The 13 WebP images under `public/images/guides/` are real research-MuMu captures, losslessly cropped to the relevant panel: hotspots, hotspot actions, teleport cooldown and event boxes from the experimental.3 APK on 2026-10-31 (those screens did not change in the redesign), and the rest from the v0.3.5 interface on 2026-11-18, including settings search and Mateo gift exchange. No controls or results were synthesized. Captions identify example settings rather than defaults or proof of successful gameplay; the map example selects Pier 39 without moving the character. OpenStreetMap attribution remains visible.
+Feature pages use `src/guideScreenshots.js` and the shared `Gallery` component. The 13 WebP images under `public/images/guides/` are archived research captures, not evidence of the current PGS release, cropped to the relevant panel: hotspots, hotspot actions, teleport cooldown and event boxes from the experimental.3 APK on 2026-10-31 (those screens did not change in the redesign), and the rest from the v0.3.5 interface on 2026-11-18, including settings search and Mateo gift exchange. No controls or results were synthesized. Captions identify example settings rather than defaults or proof of successful gameplay; the map example selects Pier 39 without moving the character. OpenStreetMap attribution remains visible.
 
 Keep captures free of account names, saved places, private coordinates and unrelated overlays. Original captures and crop receipts remain in local diagnostic artifacts; publish only the reviewed panel images. The image catalog records dimensions for stable layout. Guide galleries support keyboard opening, Escape, a close button and focus restoration.

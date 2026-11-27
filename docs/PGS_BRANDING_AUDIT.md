@@ -1,6 +1,6 @@
 # Auditoria da identidade PGS — 27/11/2026
 
-O PGS é o aplicativo Android **Pokémon GO** com package `com.nianticlabs.pokemongo` e certificado SHA-256 **D9:5C:6B:DF:CB:D9:1D:C5:C9:CD:E6:98:48:7C:88:E4:99:47:71:A4:75:E4:EF:DE:45:67:B8:D5:F4:4E:96:CF**. O pacote PGBR, PGSharp e o aplicativo PGRazor separado não devem ser modificados.
+O PGS é o aplicativo Android **Pokémon GO** com package `com.nianticlabs.pokemongo` e certificado SHA-256 **D9:5C:6B:DF:CB:D9:1D:C5:C9:CD:E6:98:48:7C:88:E4:99:47:71:A4:75:E4:EF:DE:45:67:B8:D5:F4:4E:96:CF**. Outros aplicativos independentes instalados no dispositivo não devem ser modificados.
 
 ## Migrado na PR #33
 
@@ -9,8 +9,8 @@ O PGS é o aplicativo Android **Pokémon GO** com package `com.nianticlabs.pokem
 - Web/README, nomes de pacote web, títulos visíveis e manifesto de preview de testes
 - Script de anúncio de release Discord restrito ao arquivo `PGS.vX.Y.Z.apk` do repositório PGS e presença de `SHA256SUMS.txt`
 - Sem reutilização do webhook, canal ou cargo Discord antigo: configurar `PGS_DISCORD_RELEASE_WEBHOOK` e `PGS_DISCORD_CHANNEL_ID` separadamente
-- Backups novos com formato `PGS settings`; backups antigos `PGRazor settings` ainda aceitos sem reescrever dados
-- Política de release falha se o ledger de `versionCode` PGS desaparecer, em vez de criar `PGRazor.apk`
+- Backups novos com formato `PGS settings`; backups de versões antigas ainda aceitos sem reescrever dados
+- Política de release falha se o ledger de `versionCode` PGS desaparecer, em vez de produzir um instalador com identificação externa
 - Arquivo histórico das releases upstream explicitamente identificado para que o usuário não instale o binário errado
 
 ## Referências legadas intencionalmente preservadas
@@ -20,7 +20,7 @@ Não é seguro fazer substituição global nas chaves ou símbolos de protocolo.
 - Diretório de fonte `pgrazor/`, classes Java `dev.pgrazor`, componentes DEX e paths `assets/pgrazor/`
 - Bibliotecas `libpgrazor-*.so`, símbolos nativos JNI, interfaces JavaScript internas `PGRazorNative*`, variáveis de build `PGRAZOR_*`
 - Preferências salvas como `pgrazor-map`, `pgrazor-overlays`, IDs e nomes internos de módulo Root, e chaves antigas de backup
-- Identificadores de testes, o tema salvo `pgrazor-theme` e a logo **dentro do jogo** com o botão original, mais a lógica do joystick
+- Identificadores de testes, o tema antigo do site (já migrado) e a logo **dentro do jogo** com o botão original, mais a lógica do joystick
 - Histórico de contribuição, licenças e referências precisas ao projeto-base e forks terceiros, para preservar atribuição
 
 Esses identificadores técnicos não são *nomes do aplicativo instalado* e renomeá-los sem migração, JNI e testes de atualização pode impedir o PGS de abrir ou apagar configurações. O Root não é publicado como APK PGS.

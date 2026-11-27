@@ -93,15 +93,6 @@ export const screenshots = [
     width: 1080,
     height: 2404,
   },
-  {
-    id: 'main-menu',
-    src: 'images/main-menu.png',
-    title: 'Settings menu',
-    caption:
-      'The full-screen Settings home in dark theme, with Search settings at the top and pages grouped under Play, Automation, and App, with a Discord link in the footer.',
-    width: 1080,
-    height: 1920,
-  },
 ];
 
 export const steps = [

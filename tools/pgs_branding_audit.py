@@ -139,6 +139,16 @@ def check():
     ):
         if (ROOT / old_logo).exists():
             problems.append(old_logo + ": obsolete traced SVG remains")
+    # The legacy screenshot identified another project, and must not be reused
+    # as evidence of the current PGS home menu.
+    obsolete_menu = ROOT / "website/public/images/main-menu.png"
+    if obsolete_menu.exists():
+        problems.append("Old main-menu.png screenshot remains published")
+    for source in ("README.md", "website/src/content.js", "website/README.md"):
+        if "images/main-menu.png" in (ROOT / source).read_text(encoding="utf-8"):
+            problems.append(source + ": still advertises the obsolete menu screenshot")
+    if "PGSharp" in (ROOT / "README.md").read_text(encoding="utf-8"):
+        problems.append("README.md: names another product in PGS public installation guidance")
     public_references = {
         "README.md": "website/public/pgs-full.png",
         "website/index.html": "%BASE_URL%pgs-shield.png",

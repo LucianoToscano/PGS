@@ -30,7 +30,7 @@ NIANTIC_CERT_SHA256='944bda466eaf64be1c93896d5c8e9a454a07c8d8fcbc4adeeefb3545b33
 
 def require_clean_game_certificate(digests):
     if digests != [NIANTIC_CERT_SHA256]:
-        raise ValueError('Game input is not signed with the verified Niantic certificate. Use a clean original APK/APKM; modified PGSharp/debug-signed builds are not a valid baseline.')
+        raise ValueError('Game input is not signed with the verified Niantic certificate. Use a clean original APK/APKM; modified or debug-signed builds are not a valid baseline.')
 
 def command(*args, capture=False):
     return subprocess.run([str(a) for a in args],check=True,text=True,encoding='utf-8',errors='replace',capture_output=capture)

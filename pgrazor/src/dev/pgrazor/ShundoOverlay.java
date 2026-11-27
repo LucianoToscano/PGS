@@ -11,7 +11,7 @@ import android.widget.TextView;
 
 /**
  * Shundo Sniper's on-map card: what it is doing now, how many teleports and checks it has made, and a
- * Start/Stop button, and while it runs a Dark button that blacks out the game behind PGRazor's overlays to
+ * Start/Stop button, and while it runs a Dark button that blacks out the game behind PGS's overlays to
  * save battery (a tap on the black screen brings the game back). Pad owns its OverlayDrag, visibility and lifecycle and calls {@link #refresh} on each
  * heartbeat. It appears once the sniper has been started; the close button stops the sniper and hides it.
  */

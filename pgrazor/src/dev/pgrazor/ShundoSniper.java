@@ -45,7 +45,7 @@ public final class ShundoSniper {
     // The shortest time between two teleports, chosen by the user (seconds; 0 = right away).
     static final int[] GAPS = {0, 30, 60, 90};
     static final String[] GAP_LABELS = {"Right away", "30 seconds", "60 seconds", "90 seconds"};
-    // The PGRazor feed: one server polls LivePokeMap's whole-map 100% IV list and publishes it as a compact
+    // The PGS feed: one server polls LivePokeMap's whole-map 100% IV list and publishes it as a compact
     // file, {"v":1,"fetched_ms":..,"interval_s":..,"hundos":[[encounter_id,dex,form,lat,lon,despawn_ms,cp,level],..]},
     // so no sign-in is needed. About 130 KB gzipped; ShundoPacing decides how often it is read.
     static final String FEED_URL = "https://feed.faustusfoundry.com/pgrazor/hundos.json";
@@ -78,7 +78,7 @@ public final class ShundoSniper {
     // Where the player was when this run found the map, and when its first teleport may happen.
     private static double startLat = Double.NaN, startLon = Double.NaN;
     private static long startAt;
-    // The PGRazor feed is the server's file plus moonani's list, which each phone reads itself (moonani
+    // The PGS feed is the server's file plus moonani's list, which each phone reads itself (moonani
     // blocks server addresses); both are counted and shown as one feed.
     private static volatile String feedNote = "";
     private static volatile int serverSeen, moonaniSeen;
@@ -218,7 +218,7 @@ public final class ShundoSniper {
         synchronized (LOCK) { return I18n.format("Species: %1$s", species.isEmpty() ? I18n.t("All") : I18n.format("%1$s selected", species.size())); }
     }
     public static boolean active() { return enabled; }
-    /** The card's black screen: it covers the game (PGRazor's overlays stay on top) while the sniper runs. */
+    /** The card's black screen: it covers the game (PGS's overlays stay on top) while the sniper runs. */
     private static volatile boolean dark;
     static boolean dark() { return dark && enabled; }
     static void setDark(boolean on) {
@@ -452,7 +452,7 @@ public final class ShundoSniper {
             nextMoonani = now + MoonaniFeed.POLL_MS;
             try {
                 int added = 0;
-                for (MoonaniFeed.Spot s : MoonaniFeed.fetch(now)) added += addSpot(s.key, s.dex, "PGRazor feed", s.lat, s.lon, s.expiresAt);
+                for (MoonaniFeed.Spot s : MoonaniFeed.fetch(now)) added += addSpot(s.key, s.dex, "PGS feed", s.lat, s.lon, s.expiresAt);
                 moonaniSeen = added; moonaniDown = false;
             } catch (MoonaniFeed.Blocked e) {
                 moonaniDown = true; nextMoonani = now + e.retryMs;
@@ -492,18 +492,18 @@ public final class ShundoSniper {
         String name = names == null || dex <= 0 ? "" : names.optString(Integer.toString(dex), "");
         return name.isEmpty() ? fallback : name;
     }
-    // One status line for the PGRazor feed, the server file and moonani together.
+    // One status line for the PGS feed, the server file and moonani together.
     private static String feedLine() {
         int server = Math.max(0, serverSeen), seen = server + (moonaniDown ? 0 : moonaniSeen);
-        if (serverSeen < 0 && moonaniDown) return "PGRazor feed: unavailable";
-        return "PGRazor feed: " + seen + " seen" + (serverSeen < 0 || moonaniDown ? " (part unavailable)" : "");
+        if (serverSeen < 0 && moonaniDown) return "PGS feed: unavailable";
+        return "PGS feed: " + seen + " seen" + (serverSeen < 0 || moonaniDown ? " (part unavailable)" : "");
     }
-    /** Reads the PGRazor feed and adds its rows; returns how many were taken. Worker thread only. */
+    /** Reads the PGS feed and adds its rows; returns how many were taken. Worker thread only. */
     private static int readFeed(long now) throws Exception {
         java.net.HttpURLConnection http = (java.net.HttpURLConnection) new java.net.URL(FEED_URL).openConnection();
         http.setConnectTimeout(15_000); http.setReadTimeout(20_000);
         http.setRequestProperty("Accept", "application/json");
-        http.setRequestProperty("User-Agent", "PGRazor-ShundoSniper");
+        http.setRequestProperty("User-Agent", "PGS-ShundoSniper");
         try {
             if (http.getResponseCode() != 200) throw new java.io.IOException("HTTP " + http.getResponseCode());
             java.io.ByteArrayOutputStream bytes = new java.io.ByteArrayOutputStream();
@@ -521,7 +521,7 @@ public final class ShundoSniper {
                 long despawn = r.optLong(5, 0);
                 if (despawn > 0 && despawn <= now) continue;
                 int dex = r.optInt(1, 0);
-                added += add("pokemon:" + r.optString(0, ""), dex, speciesName(dex, dex > 0 ? "#" + dex : "Pokémon"), "PGRazor feed",
+                added += add("pokemon:" + r.optString(0, ""), dex, speciesName(dex, dex > 0 ? "#" + dex : "Pokémon"), "PGS feed",
                     r.optDouble(3, Double.NaN), r.optDouble(4, Double.NaN), despawn, null);
             }
             // Spawns without an encounter id (the city maps), found by species and place.
@@ -529,7 +529,7 @@ public final class ShundoSniper {
             for (int i = 0; spots != null && i < spots.length(); i++) {
                 JSONArray r = spots.optJSONArray(i);
                 if (r == null || r.length() < 6) continue;
-                added += addSpot(r.optString(0, ""), r.optInt(1, 0), "PGRazor feed", r.optDouble(3, Double.NaN), r.optDouble(4, Double.NaN), r.optLong(5, 0));
+                added += addSpot(r.optString(0, ""), r.optInt(1, 0), "PGS feed", r.optDouble(3, Double.NaN), r.optDouble(4, Double.NaN), r.optLong(5, 0));
             }
             return added;
         } finally { http.disconnect(); }
@@ -743,7 +743,7 @@ public final class ShundoSniper {
         TextView help = new TextView(ui);
         help.setText(I18n.t("Teleports to 100% IV Pokémon and checks each for shiny. A shiny is held in its encounter until your cooldown ends, then caught. VGP+ pauses while this runs."));
         body.addView(help);
-        CheckBox feedBox = new CheckBox(ui); feedBox.setText(I18n.t("PGRazor feed"));
+        CheckBox feedBox = new CheckBox(ui); feedBox.setText(I18n.t("PGS feed"));
         CheckBox liveBox = new CheckBox(ui); liveBox.setText(I18n.t("LivePokeMap (sign-in)"));
         CheckBox pogoBox = new CheckBox(ui); pogoBox.setText(I18n.t("PoGoCoordinates (slow)"));
         synchronized (LOCK) { feedBox.setChecked(useFeed); liveBox.setChecked(useLive); pogoBox.setChecked(usePogo); }

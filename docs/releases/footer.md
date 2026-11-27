@@ -2,8 +2,8 @@
 
 ---
 
-Enjoying PGRazor? You can support development on [Ko-fi](https://ko-fi.com/pgrazor). Donations are optional.
+PGS — Pokémon GO Spoofers. Based on the MIT-licensed PGRazor project; original authors retain their credits and licenses.
 
-[GitHub](https://github.com/jpitty03/PGRazor)
+[PGS GitHub](https://github.com/LucianoToscano/PGS)
 
-[Join the Discord community](https://discord.gg/9QqfkDSQX3)
+[PGS Discord](https://discord.gg/SdwU4VnfW)

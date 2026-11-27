@@ -26,8 +26,16 @@ public final class I18n {
     }
 
     public static String language() { return active.language(); }
-    public static String t(String english) { return active.text(english); }
-    public static String format(String english, Object... arguments) { return active.format(english, arguments); }
+    /** Display-only branding: preserve catalog keys, serialized preferences and opaque arguments. */
+    private static String brand(String text) { return text == null ? "" : text.replace("PGRazor", "PGS"); }
+    public static String t(String english) { return brand(active.text(english)); }
+    public static String format(String english, Object... arguments) {
+        try {
+            return String.format(Locale.ROOT, brand(active.text(english)), arguments);
+        } catch (IllegalFormatException invalidTranslation) {
+            return String.format(Locale.ROOT, brand(english), arguments);
+        }
+    }
 
     /** Only call for fixed UI choices; account names, route names and game data stay untouched. */
     public static String[] options(String[] english) {
@@ -37,7 +45,7 @@ public final class I18n {
     }
 
     /** A settings label followed by an opaque value. Never translates the value itself. */
-    public static String row(String english) { return active.row(english); }
+    public static String row(String english) { return brand(active.row(english)); }
 
     public static final class Translator {
         private final String language;

@@ -23,7 +23,7 @@ export default function Hero() {
           </p>
           <div className="hero__actions">
             <a className="btn btn--primary" href={links.releasesLatest}>
-              Download latest release
+              Download verified APK
               <ArrowIcon />
             </a>
             <a className="btn btn--ghost" href={links.github}>
@@ -43,7 +43,7 @@ export default function Hero() {
         <figure className="hero__shot">
           <img
             src={asset('images/encounter.png')}
-            alt="PGRazor overlays during a Pokémon GO encounter: a CP, level and IV read-out above the Pokémon, a berry count, a transfer shield, and the VGP status indicator."
+            alt="PGS overlays during a Pokémon GO encounter: a CP, level and IV read-out above the Pokémon, a berry count, a transfer shield, and the VGP status indicator."
             width="1080"
             height="2404"
             loading="eager"

@@ -49,8 +49,8 @@ import org.json.JSONObject;
 final class Updater {
     private Updater() {}
 
-    private static final String LATEST = "https://api.github.com/repos/jpitty03/PGRazor/releases/latest";
-    private static final String RELEASES = "https://github.com/jpitty03/PGRazor/releases/latest";
+    private static final String LATEST = "https://api.github.com/repos/LucianoToscano/PGS/releases/latest";
+    private static final String RELEASES = "https://github.com/LucianoToscano/PGS/releases/latest";
     private static final String STATUS_ACTION = "dev.pgrazor.UPDATE_STATUS";
     private static final String INSTALL_PERMISSION = "android.permission.REQUEST_INSTALL_PACKAGES";
 
@@ -61,7 +61,7 @@ final class Updater {
     private static volatile int state = NONE;
     private static volatile String tag = "", pageUrl = "", apkUrl = "", sumsUrl = "", note = "";
     // The release file this build updates from.
-    private static volatile String asset = UpdateRules.assetName(false);
+    private static volatile String asset = UpdateRules.assetName(false, BuildVersion.NAME);
     private static volatile long size, received;
     // Whether this build can install the update itself; set by the first check.
     private static volatile boolean installsHere;
@@ -91,8 +91,8 @@ final class Updater {
             case INSTALLING: return note.isEmpty() ? I18n.t("Waiting for Android to install it") : I18n.t(note);
             case FAILED: return I18n.format("%1$s · tap to try again", note);
             case DOWNLOADED:
-                // Downloads lists the file under its download title, "PGRazor <tag>".
-                return PgAssets.rooted() ? I18n.format("Tap to open PGRazor %1$s in Downloads: update the installer, open it, tap Install Module, then reboot", tag)
+                // Downloads lists the file under its download title, "PGS <tag>".
+                return PgAssets.rooted() ? I18n.format("Tap to open PGS %1$s in Downloads: update the installer, open it, tap Install Module, then reboot", tag)
                     : I18n.format("Tap to open PGRazor %1$s in Downloads and install it", tag);
             default:
                 String megabytes = UpdateRules.megabytes(size);
@@ -127,7 +127,7 @@ final class Updater {
                 String latest = release.optString("tag_name", "");
                 synchronized (LOCK) { nextCheck = System.currentTimeMillis() + UpdateRules.CHECK_MS; }
                 if (release.optBoolean("draft") || release.optBoolean("prerelease") || !UpdateRules.newer(latest, BuildVersion.NAME)) return;
-                String wanted = UpdateRules.assetName(PgAssets.rooted()), apk = "", sums = ""; long bytes = 0;
+                String wanted = UpdateRules.assetName(PgAssets.rooted(), latest), apk = "", sums = ""; long bytes = 0;
                 JSONArray assets = release.optJSONArray("assets");
                 for (int i = 0; assets != null && i < assets.length(); i++) {
                     JSONObject entry = assets.optJSONObject(i);
@@ -138,7 +138,7 @@ final class Updater {
                     else if (name.equals("SHA256SUMS.txt")) sums = url;
                 }
                 String page = release.optString("html_url", "");
-                if (!page.startsWith("https://github.com/jpitty03/PGRazor/")) page = RELEASES;
+                if (!page.startsWith("https://github.com/LucianoToscano/PGS/")) page = RELEASES;
                 // A release still uploading its files is offered on a later check.
                 if (apk.isEmpty()) return;
                 tag = latest; pageUrl = page; apkUrl = apk; sumsUrl = sums; size = bytes; note = ""; asset = wanted;
@@ -258,10 +258,10 @@ final class Updater {
         DownloadManager manager = (DownloadManager) app.getSystemService(Context.DOWNLOAD_SERVICE);
         if (manager == null) throw new IOException("Downloads are not available on this device");
         DownloadManager.Request request = new DownloadManager.Request(Uri.parse(url))
-            .setTitle("PGRazor " + version).setDescription(name)
+            .setTitle("PGS " + version).setDescription(name)
             .setMimeType("application/vnd.android.package-archive")
             .setNotificationVisibility(DownloadManager.Request.VISIBILITY_VISIBLE_NOTIFY_COMPLETED)
-            .setDestinationInExternalPublicDir(Environment.DIRECTORY_DOWNLOADS, name.replace(".apk", "-" + version + ".apk"));
+            .setDestinationInExternalPublicDir(Environment.DIRECTORY_DOWNLOADS, name);
         long id = manager.enqueue(request);
         boolean kept = false;
         try {
@@ -360,7 +360,7 @@ final class Updater {
         HttpURLConnection http = (HttpURLConnection) new URL(url).openConnection();
         http.setConnectTimeout(15_000); http.setReadTimeout(30_000);
         http.setInstanceFollowRedirects(true);
-        http.setRequestProperty("User-Agent", "PGRazor-Updater");
+        http.setRequestProperty("User-Agent", "PGS-Updater");
         http.setRequestProperty("Accept", url.startsWith("https://api.github.com/") ? "application/vnd.github+json" : "*/*");
         return http;
     }

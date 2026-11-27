@@ -26,7 +26,7 @@ export default function GetStarted() {
 
       <div className="cta">
         <a className="btn btn--primary" href={links.releasesLatest}>
-          Get the latest release
+          Download verified candidate
           <ArrowIcon />
         </a>
         <a className="btn btn--ghost" href={links.discord}>
@@ -35,10 +35,9 @@ export default function GetStarted() {
       </div>
 
       <p className="cta__release">
-        <span className="cta__badge">Stable</span>
+        <span className="cta__badge">Candidate</span>
         The published{' '}
-        <a href={links.releasesCurrent}>v0.3.0 release</a> adds Auto Throw with catch on map,
-        Auto-Raid and the experimental PGRazor Root installer.
+        <a href={links.releasesCurrent}>PGS v0.3.8-pgs.3 build</a> is the last signed APK candidate; PGS v0.0.1 is being prepared. Device testing is pending.
       </p>
 
       <div className="faq">

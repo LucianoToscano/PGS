@@ -80,6 +80,11 @@ public final class I18nTest {
             I18n.init("fr", Locale.US);
             equal("fr", I18n.language());
             equal("Fermer", I18n.t("Close"));
+            if (I18n.t("PGRazor version %1$s").contains("PGRazor"))
+                throw new AssertionError("PGS display brand did not replace legacy name");
+            String brandedArgument = "PGRazor saved user text";
+            if (!I18n.format("Saved %1$s", brandedArgument).contains(brandedArgument))
+                throw new AssertionError("User-supplied arguments must not be renamed");
             String[] source = {"Close", "Unknown key"};
             String[] translated = I18n.options(source);
             if (source == translated) throw new AssertionError("Option array aliases the input");

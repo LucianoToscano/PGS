@@ -41,8 +41,11 @@ final class UpdateRules {
         return installed.indexOf('-') >= 0 && latest.indexOf('-') < 0;
     }
 
-    /** The release file this build updates from: the full APK, or for PGRazor Root its installer. */
-    static String assetName(boolean rooted) { return rooted ? "PGRazor-Root.apk" : "PGRazor.apk"; }
+    /** PGS releases use a versioned filename for the full APK; the Android package never changes. */
+    static String assetName(boolean rooted, String tag) {
+        if (rooted) return "PGS-Root.apk";
+        return parse(tag) == null ? "" : "PGS " + tag + ".apk";
+    }
 
     /**
      * The SHA-256 of {@code file} from a checksum list ("<64 hex>  <name>" per line, a leading '*' on the
@@ -67,7 +70,7 @@ final class UpdateRules {
 
     /** Only release files served by GitHub over HTTPS are downloaded. */
     static boolean trustedUrl(String url) {
-        return url != null && url.startsWith("https://github.com/jpitty03/PGRazor/releases/download/");
+        return url != null && url.startsWith("https://github.com/LucianoToscano/PGS/releases/download/");
     }
 
     static boolean sizeAllowed(long bytes) { return bytes > 0 && bytes <= MAX_BYTES; }

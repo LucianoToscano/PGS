@@ -35,3 +35,13 @@ O código `pgrazor/release_apk.py` agora distingue o PGS pelo seu ledger `PGS_LA
 O workflow herdado `Android release (non-root and rooted)` está **explicitamente bloqueado no repositório PGS**, porque ainda é específico do PGRazor e não deve publicar pacotes com nomes ou segredos de assinatura misturados. O build de versão completa do PGS deverá ter seu próprio workflow validado antes de uma publicação. O bloqueio não modifica nem elimina o instalador v0.3.8-pgs.3 já assinado.
 
 Os testes automatizados cobrem a recusa de chaves ausentes, de `versionCode` inválido e de certificados divergentes. **Eles não substituem a validação de uma build completa e sua instalação física.**
+
+## Nova linha pública de versões PGS
+
+A primeira versão pública independente é `v0.0.1`. O nome de distribuição solicitado é `PGS v0.0.1.apk`; a geração interna segura continua usando `PGS.apk` antes de renomear a cópia verificada para o release. O Android identifica o app pelo pacote `com.nianticlabs.pokemongo`, não pelo nome do arquivo.
+
+O APK `v0.3.8-pgs.3` tem `versionCode=2026111603`. O primeiro release completo `v0.0.1` deve usar `versionCode >= 2026111604`, mantendo o mesmo certificado. A versão visível do PGS (`v0.0.1`) não equivale à versão do jogo-base (`0.439.0`) e não substitui o `versionCode` Android.
+
+A partir de `v0.0.1`, o atualizador consulta **somente** os releases do repositório `LucianoToscano/PGS`, valida a entrada de arquivo versionada e exige o SHA-256 correspondente antes de encaminhar ao instalador Android. O antigo APK não recebe essa configuração retroativamente: o primeiro upgrade desta linha requer a instalação manual do novo APK por cima da instalação PGS compatível.
+
+Sem evidência de teste físico, uma build só pode ser marcada como **candidata ou draft**, nunca como instalação e gameplay confirmados.

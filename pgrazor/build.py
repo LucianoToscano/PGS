@@ -127,7 +127,7 @@ def main():
         for name,path in map_icon_assets().items(): out.write(path,'assets/pgrazor/map-icons/'+name)
         for name,path in feed_icon_assets().items(): out.write(path,'assets/pgrazor/feed-icons/pokemon/'+name)
     run(TOOLS/'zipalign.exe','-f','4',unsigned,BUILD/'preview-aligned.apk')
-    apk=BUILD/'pgrazor-preview.apk'
+    apk=BUILD/'pgs-preview.apk'
     run(TOOLS/'apksigner.bat','sign',*signing_args(),'--out',apk,BUILD/'preview-aligned.apk')
     run(TOOLS/'apksigner.bat','verify',apk)
     shutil.copyfile(BUILD/'dex/classes.dex',BUILD/'pgrazor.dex')

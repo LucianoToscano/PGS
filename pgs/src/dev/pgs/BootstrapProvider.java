@@ -20,7 +20,7 @@ public final class BootstrapProvider extends ContentProvider {
         Runnable start = rootedNativeStart;
         rootedNativeStart = null;
         Control.event("rooted-native-state", "stage=loading reason=unity-render-observed");
-        new Thread(start, "pgrazor-loader").start();
+        new Thread(start, "pgs-loader").start();
     }
     public boolean onCreate() { return start(getContext()); }
     /**
@@ -73,7 +73,7 @@ public final class BootstrapProvider extends ContentProvider {
             Control.event("rooted-native-deferred", "Waiting for Unity render before loading gameplay libraries");
             Control.event("rooted-native-state", "stage=waiting reason=unity-render-not-observed");
         } else {
-            new Thread(() -> load(context),"pgrazor-loader").start();
+            new Thread(() -> load(context),"pgs-loader").start();
         }
         return true;
     }
@@ -281,7 +281,7 @@ public final class BootstrapProvider extends ContentProvider {
                         System.load(translatedLibrary.getAbsolutePath());
                         Control.event("game-gadget-loaded","Translated ARM runtime loaded; awaiting native hooks");
                     } catch(Throwable error) { Control.event("game-gadget-error",error.toString()); }
-                },"pgrazor-game-loader").start(),1500);
+                },"pgs-game-loader").start(),1500);
             }
         } catch(Throwable error) {
             if(nativeTransport!=null){nativeTransport.stop();nativeTransport=null;}
@@ -343,9 +343,9 @@ public final class BootstrapProvider extends ContentProvider {
      */
     private static File runtimeDirectory(Context context) throws IOException {
         File parent=context.getCodeCacheDir();
-        File[] stale=parent.listFiles((dir,name)->name.matches("pgrazor-[0-9]+-[0-9]+"));
+        File[] stale=parent.listFiles((dir,name)->name.matches("(?:pgs|pgrazor)-[0-9]+-[0-9]+"));
         if(stale!=null)for(File old:stale)deleteTree(old);
-        File directory=new File(parent,"pgrazor-"+android.os.Process.myPid()+"-"+System.currentTimeMillis());
+        File directory=new File(parent,"pgs-"+android.os.Process.myPid()+"-"+System.currentTimeMillis());
         if(!directory.mkdirs()) throw new IOException("Cannot create private runtime directory");
         return directory;
     }

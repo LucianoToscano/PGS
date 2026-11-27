@@ -117,7 +117,7 @@ typedef pgrazor_advsync_config_v1 pgs_advsync_config_v1;
  * permanently and returns HOOK_FAILED: the JS adapter must NOT fall back to a second
  * engine on these targets.
  */
-typedef int (*pgrazor_advsync_install_fn)(const pgrazor_advsync_config_v1 *config);
+typedef int (*pgrazor_advsync_install_fn)(const pgs_advsync_config_v1 *config);
 
 /*
  * update(allowed, lease_ms, unity_tid): arm or clear the dismissal window and record

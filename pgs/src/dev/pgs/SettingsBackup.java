@@ -80,7 +80,7 @@ final class SettingsBackup {
                 }
             }catch(Exception e){message=I18n.format("Backup failed: %1$s",e.getMessage()==null?I18n.t("Invalid file or storage unavailable"):e.getMessage());}
             final String text=message;activity.runOnUiThread(()->{busy=false;if(activity.isFinishing()||activity.isDestroyed())return;status.setText(text);export.setEnabled(true);restore.setEnabled(true);back.setEnabled(true);});
-        },"pgrazor-settings-backup").start();
+        },"pgs-settings-backup").start();
     }
     boolean isBusy(){return busy;}
     private static synchronized JSONObject snapshot(Context context)throws Exception{

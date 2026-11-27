@@ -141,7 +141,7 @@ public final class AccountRestartActivity extends Activity {
                         processing=false;sessionApplied=true;if(!isDestroyed())launchGame();
                     });}
                     catch(Exception error){handler.post(()->{processing=false;if(!isDestroyed())showManualLaunch();});}
-                },"pgrazor-session-switch").start();
+                },"pgs-session-switch").start();
                 return;
             }
             Intent launch = getPackageManager().getLaunchIntentForPackage(getPackageName());
@@ -171,7 +171,7 @@ public final class AccountRestartActivity extends Activity {
                     new Thread(()->{
                         try{AccountSessions.cancelSwitch(getApplicationContext());handler.post(()->{processing=false;sessionApplied=true;if(!isDestroyed())launchGame();});}
                         catch(Exception error){handler.post(()->{processing=false;if(!isDestroyed())status.setText(I18n.t("Couldn't restore the previous account. Saved sessions have been kept."));});}
-                    },"pgrazor-session-return").start();
+                    },"pgs-session-return").start();
                 });layout.addView(back);
             }
         }

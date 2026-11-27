@@ -185,7 +185,7 @@ typedef pgrazor_buddy_sample_v1 pgs_buddy_sample_v1;
  * duplicate hook address DUP_HOOK; on a Dobby failure HOOK_FEED/HOOK_RESULT (the failed
  * attempt latches for the process lifetime and never unhooks a published trampoline).
  */
-typedef int (*pgrazor_buddy_install_fn)(const pgrazor_buddy_config_v1 *config);
+typedef int (*pgrazor_buddy_install_fn)(const pgs_buddy_config_v1 *config);
 
 /*
  * tick(berry, remaining_lease_ms, proven_tid): one orchestration pass. Runs the full feed
@@ -211,7 +211,7 @@ typedef int (*pgrazor_buddy_tick_fn)(int32_t berry, uint64_t remaining_lease_ms,
 typedef int (*pgrazor_buddy_clear_fn)(uint64_t proven_tid);
 
 /* sample(out): copy the latest telemetry snapshot. Safe from any thread; never frees. */
-typedef int (*pgrazor_buddy_sample_fn)(pgrazor_buddy_sample_v1 *out);
+typedef int (*pgrazor_buddy_sample_fn)(pgs_buddy_sample_v1 *out);
 
 // Ordered, read-only table advertised by the getter (40 bytes: header + 4 pointers).
 typedef struct pgrazor_buddy_api_v1 {

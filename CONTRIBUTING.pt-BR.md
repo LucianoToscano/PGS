@@ -38,7 +38,7 @@ Não envie APKs ou recursos privados do jogo, chaves de assinatura, logs privado
 
 Alterações nativas devem preservar leases, gerenciamento de memória, cancelamento, tratamento de erros e a integridade do mapa. Automações destrutivas devem manter regras de proteção e não atuar em inventários reais durante testes.
 
-Use **PGS** nos nomes exibidos. O namespace Java atual `dev.pgrazor` continua preservado por compatibilidade binária até uma migração testada. Preserve a API pública `Control` e as chaves de preferências. Compatibilidade com uma nova versão do jogo precisa de contratos atualizados e testes explícitos no dispositivo.
+Use **PGS** nos nomes exibidos. O código e as novas compilações usam o namespace Java `dev.pgs`; preserve os contratos legados de ABI e armazenamento explicitamente documentados. Preserve a API pública `Control` e as chaves de preferências. Compatibilidade com uma nova versão do jogo precisa de contratos atualizados e testes explícitos no dispositivo.
 
 A publicação de APK é uma operação do mantenedor, não de PR. Consulte [docs/pt-BR/BUILDING.md](docs/pt-BR/BUILDING.md).
 
@@ -55,7 +55,7 @@ Mantenha os dois READMEs atualizados na mesma PR. Revise descrições e guias do
 
 Para atualizações do jogo, siga [docs/GAME_UPDATES.md](docs/GAME_UPDATES.md). Atualize o perfil da versão e regenere os cabeçalhos cobertos, revisando também bindings mantidos manualmente; um match de assinatura sozinho não prova compatibilidade.
 
-O CI ainda define os aliases `PGRAZOR_BUILD_TOOLS=36.0.0` e `PGRAZOR_ANDROID_PLATFORM=android-36`. Para novas compilações locais, prefira `PGS_BUILD_TOOLS=36.0.0` e `PGS_ANDROID_PLATFORM=android-36`; as variáveis antigas continuam aceitas. A versão usa `PGS_VERSION` (ou o alias `PGRAZOR_VERSION`), com prioridade para o nome PGS. Essas opções NÃO alteram as variáveis de assinatura: não recrie chaves nem mude o identificador Android.
+O CI usa os nomes de ambiente PGS. Para novas compilações locais, use `PGS_BUILD_TOOLS=36.0.0` e `PGS_ANDROID_PLATFORM=android-36`; as variáveis antigas continuam aceitas. A versão usa `PGS_VERSION` (ou o alias `PGRAZOR_VERSION`), com prioridade para o nome PGS. Essas opções NÃO alteram as variáveis de assinatura: não recrie chaves nem mude o identificador Android.
 
 ## Idiomas da documentação
 

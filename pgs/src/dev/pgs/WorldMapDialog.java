@@ -474,7 +474,7 @@ public final class WorldMapDialog {
             tiles = new MapTileSource(new MapTileSource.Host() {
                 public int zoom() { return zoom; }
                 public void onTilesChanged() { invalidate(); }
-            }, status, new File(activity.getCacheDir(), "pgrazor-map-tiles-v1"));
+            }, status, new File(activity.getCacheDir(), "pgs-map-tiles-v1"));
             poiLayer = new MapPoiLayer(activity, MapTheme.wrap(activity), new MapPoiLayer.Projector() {
                 public float screenX(double lon) { return projectX(lon); }
                 public float screenY(double lat) { return projectY(lat); }

@@ -146,12 +146,18 @@ def validate_survey_options(enabled, panel_only, abi, flag='--il2cpp-survey'):
         raise ValueError(flag+' requires the research runtime on the native arm64-v8a process; panel-only and non-ARM64 builds are unsupported')
 
 
+def runtime_flag(name, environ=None):
+    """Use PGS runtime option names, while accepting existing opt-in aliases."""
+    env = os.environ if environ is None else environ
+    return env.get('PGS_'+name) == '1' or env.get('PGRAZOR_'+name) == '1'
+
+
 @contextlib.contextmanager
 def scoped_env(**values):
     """Set env vars for the duration of a build step, then restore prior values.
 
     Compiled production must guarantee the native pilot build (native_build.build_all is
-    opt-in via PGRAZOR_NATIVE_PILOT=1) without leaving process-global PGRAZOR_* state
+    opt-in via PGS_NATIVE_PILOT=1) without leaving process-global PGS_* state
     behind for later callers or tests. Effective production config stays local to package().
     """
     saved={key:os.environ.get(key) for key in values}
@@ -193,8 +199,8 @@ def package(source, *,research_runtime=False,panel_only=False,download=False,pre
             raise ValueError('Compiled gameplay does not support research survey, scene or passive camera diagnostics; use --research-runtime')
         quick_close = quick_ball = camera_steering = True
     quick_summary = compiled_gameplay
-    compiled_location = compiled_gameplay or (research_runtime and os.environ.get('PGRAZOR_COMPILED_LOCATION') == '1')
-    if compiled_location and not compiled_gameplay and (preview or os.environ.get('PGRAZOR_NATIVE_PILOT') != '1' or os.environ.get('PGRAZOR_COMPILED_JAVA_BRIDGES') != '1'):
+    compiled_location = compiled_gameplay or (research_runtime and runtime_flag('COMPILED_LOCATION'))
+    if compiled_location and not compiled_gameplay and (preview or not runtime_flag('NATIVE_PILOT') or not runtime_flag('COMPILED_JAVA_BRIDGES')):
         raise ValueError('Compiled Location requires a native pilot and compiled Java bridges')
     scene_probe=bool(scene_probe or scene_observe)
     if camera_sample and camera_steering: raise ValueError('--camera-steering and --camera-sample cannot be combined')
@@ -226,12 +232,12 @@ def package(source, *,research_runtime=False,panel_only=False,download=False,pre
     # Compiled-only gameplay carries no Gadget runtime; bootstrap takes the compiled production path.
     if compiled_gameplay: mode['gadget']=False; mode['compiledGameplay']=True
     if research_runtime: mode['researchRuntime']=True
-    native_pilot = compiled_gameplay or (research_runtime and os.environ.get('PGRAZOR_NATIVE_PILOT') == '1')
+    native_pilot = compiled_gameplay or (research_runtime and runtime_flag('NATIVE_PILOT'))
     if native_pilot: mode['nativePilot'] = True
-    if compiled_gameplay or (research_runtime and os.environ.get('PGRAZOR_COMPILED_NATIVE_TRANSPORT')=='1'):
+    if compiled_gameplay or (research_runtime and runtime_flag('COMPILED_NATIVE_TRANSPORT')):
         if not native_pilot or preview: raise ValueError('Compiled native transport requires a production native pilot')
         mode['compiledNativeTransport']=True
-    compiled_java_bridges = compiled_gameplay or (native_pilot and not preview and os.environ.get('PGRAZOR_COMPILED_JAVA_BRIDGES') == '1')
+    compiled_java_bridges = compiled_gameplay or (native_pilot and not preview and runtime_flag('COMPILED_JAVA_BRIDGES'))
     compiled_catch_wait = compiled_java_bridges and quick_close
     if compiled_catch_wait: mode['compiledCatchWait']=True
     if compiled_location: mode['compiledLocationGetters']=True
@@ -240,7 +246,7 @@ def package(source, *,research_runtime=False,panel_only=False,download=False,pre
         import dex_bridges
         dex_replacements,dex_bridge_receipt=dex_bridges.rewrite(base,folder/'java-bridges',download=download)
         mode['compiledJavaBridges']=True
-    if native_pilot and os.environ.get('PGRAZOR_NATIVE_SELFTEST') == '1': mode['nativeSelftest'] = True
+    if native_pilot and runtime_flag('NATIVE_SELFTEST'): mode['nativeSelftest'] = True
     if il2cpp_survey: mode['il2cppSurvey']=True
     if camera_probe: mode['cameraProbe']=True
     if camera_sample: mode['cameraSample']=True
@@ -254,7 +260,7 @@ def package(source, *,research_runtime=False,panel_only=False,download=False,pre
     assets={'assets/pgs/mode.json':json.dumps(mode).encode()}
     if native_pilot:
         import native_build
-        with scoped_env(PGRAZOR_NATIVE_PILOT='1'):
+        with scoped_env(PGS_NATIVE_PILOT='1'):
             native_outputs = native_build.build_all(ROOT, abis, download=download)
         for abi, binary in native_outputs.items():
             assets[f'assets/pgs/{abi}/libpgs-core.so'] = binary

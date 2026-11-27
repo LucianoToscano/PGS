@@ -200,7 +200,7 @@ typedef pgrazor_incubation_sample_v1 pgs_incubation_sample_v1;
  * ALREADY_BOUND. On any header/size/pointer/literal problem returns BAD_CONFIG. No
  * process image is mutated and no managed call is made here.
  */
-typedef int (*pgrazor_incubation_install_fn)(const pgrazor_incubation_config_v1 *config);
+typedef int (*pgrazor_incubation_install_fn)(const pgs_incubation_config_v1 *config);
 
 /*
  * tick(enabled, longest, remaining_lease_ms, proven_tid): one orchestration pass. Runs
@@ -229,7 +229,7 @@ typedef int (*pgrazor_incubation_tick_fn)(int enabled, int longest,
 typedef int (*pgrazor_incubation_clear_fn)(uint64_t proven_tid);
 
 /* sample(out): copy the latest telemetry snapshot. Safe from any thread. */
-typedef int (*pgrazor_incubation_sample_fn)(pgrazor_incubation_sample_v1 *out);
+typedef int (*pgrazor_incubation_sample_fn)(pgs_incubation_sample_v1 *out);
 
 // Ordered, read-only table advertised by the getter (40 bytes: header + 4 pointers).
 typedef struct pgrazor_incubation_api_v1 {

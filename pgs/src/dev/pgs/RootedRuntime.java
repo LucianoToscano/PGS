@@ -63,7 +63,7 @@ public final class RootedRuntime {
     }
 
     /** Runs before the game's Application.onCreate on the main thread. Never throws into the game. */
-    private static void startPgrazor(Application app) {
+    private static void startPgs(Application app) {
         try {
             gameLoader.accept(app.getClassLoader());
             JSONObject target = new JSONObject(readText(app, "pgs/rooted/target.json"));
@@ -149,7 +149,7 @@ public final class RootedRuntime {
             boolean first;
             synchronized (this) { original = backup; first = !ran; ran = true; }
             if (original == null) throw new IllegalStateException("Application backup not published");
-            if (first && args.length == 2 && args[1] instanceof Application) startPgrazor((Application) args[1]);
+            if (first && args.length == 2 && args[1] instanceof Application) startPgs((Application) args[1]);
             try { return original.invoke(args[0], args[1]); }
             catch (InvocationTargetException error) { throw error.getCause(); }
         }

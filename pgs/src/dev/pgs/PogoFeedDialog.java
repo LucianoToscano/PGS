@@ -48,7 +48,7 @@ import java.util.concurrent.Executors;
 public final class PogoFeedDialog {
     private PogoFeedDialog() {}
 
-    /** PGRazorX: the site's search modes, shown as the top row; Filters follows the selected one. */
+    /** UI: the site's search modes, shown as the top row; Filters follows the selected one. */
     private static final PogoFeedModes.Mode[] MODES = PogoFeedModes.Mode.values();
     /** Results of the other modes (Raids, Quests, ...), kept per mode for the process lifetime. */
     private static final java.util.EnumMap<PogoFeedModes.Mode, List<PogoFeedData.Entry>> MODE_STORE =
@@ -61,7 +61,7 @@ public final class PogoFeedDialog {
     /** Auto-refresh choices picked from the Auto refresh list; 0 = "Off" (manual, Refresh button only). */
     private static final int[] REFRESH_INTERVALS_SEC = {30, 60, 300, 900, 1800, 0};
     private static final String[] REFRESH_LABELS = {"30s", "1m", "5m", "15m", "30m", "Off"};
-    /** PGRazorX: the same choices, spelled out for the Auto refresh picker. */
+    /** UI: the same choices, spelled out for the Auto refresh picker. */
     private static final String[] REFRESH_NAMES = {"30 seconds", "1 minute", "5 minutes", "15 minutes", "30 minutes", "Off (manual)"};
     private static final int DEFAULT_REFRESH_SECONDS = 300;
     /** A 429 always backs off at least this long regardless of a shorter server Retry-After. */
@@ -70,7 +70,7 @@ public final class PogoFeedDialog {
     private static final long SEARCH_GAP_MS = 10_000L;
     /** Found-Pokémon list shared by every opening of the feed (main thread only). */
     private static final List<PogoFeedData.Entry> STORE = new ArrayList<>();
-    /** PGRazorX: Pokémon first found by the latest refresh (its IV/GL/UL searches); cleared when the next one starts. */
+    /** UI: Pokémon first found by the latest refresh (its IV/GL/UL searches); cleared when the next one starts. */
     private static final java.util.Set<String> NEW_IDS = new java.util.HashSet<>();
     private static boolean storeLoaded;
     private static final String STORE_KEY = "found_pokemon_v1";
@@ -134,7 +134,7 @@ public final class PogoFeedDialog {
          *  only Log out (or each Pokémon's despawn) removes rows. */
         private List<PogoFeedData.Entry> entries = STORE;
         private final List<PogoFeedData.Entry> visible = new ArrayList<>();
-        /** PGRazorX: section title shown above visible[i] when a section starts there (Pokémon mode), else null. */
+        /** UI: section title shown above visible[i] when a section starts there (Pokémon mode), else null. */
         private final List<String> sections = new ArrayList<>();
         private HashMap<PogoFeedData.Entry, Double> distCache = new HashMap<>();
         private final FeedAdapter adapter = new FeedAdapter();
@@ -580,7 +580,7 @@ public final class PogoFeedDialog {
             filtersRow.setOnClickListener(v -> openFilters());
             intervalRow = FeedUi.button(ui, I18n.t("Auto refresh"));
             intervalRow.setOnClickListener(v -> {
-                // PGRazorX: pick the interval from a list; the current one carries a tick.
+                // UI: pick the interval from a list; the current one carries a tick.
                 String[] names = new String[REFRESH_LABELS.length];
                 for (int i = 0; i < names.length; i++)
                     names[i] = REFRESH_NAMES[i] + (i == refreshIntervalIndex ? "   \u2713" : "");
@@ -622,7 +622,7 @@ public final class PogoFeedDialog {
             list.setVerticalScrollBarEnabled(false);
             list.setClipToPadding(false);
             list.setPadding(dp(2), 0, dp(2), dp(4));
-            // PGRazorX: let the cards' soft shadow draw past their own bounds, so the empty-results card's rounded
+            // UI: let the cards' soft shadow draw past their own bounds, so the empty-results card's rounded
             // corners are not left with square, see-through patches where its shadow was cut off.
             list.setClipChildren(false);
             list.addHeaderView(top, null, false);
@@ -938,7 +938,7 @@ public final class PogoFeedDialog {
             fetchInFlight = true;
             lastFetchStartedElapsed = nowE;
             final int g = generation;
-            // PGRazorX: a radius search is centred on the current location (the spoofed one while the spoof is on,
+            // UI: a radius search is centred on the current location (the spoofed one while the spoof is on,
             // otherwise the real one the game sees), never on a stale spoof point.
             final double lat = Control.currentLatitude(), lon = Control.currentLongitude();
             final double radiusKm = this.radiusKm > 0 ? this.radiusKm : Double.POSITIVE_INFINITY; // ∞ → Global
@@ -1168,7 +1168,7 @@ public final class PogoFeedDialog {
 
         private void rebuildVisible() {
             long now = System.currentTimeMillis();
-            // PGRazorX: distances from the current location (the last spoof point only while it is unknown).
+            // UI: distances from the current location (the last spoof point only while it is unknown).
             final double clat = Control.currentLatitude(), clon = Control.currentLongitude(), here = Double.isFinite(clat) && Double.isFinite(clon) ? 1 : 0;
             final double elat = here > 0 ? clat : Control.engine.latitude, elon = here > 0 ? clon : Control.engine.longitude;
             final HashMap<PogoFeedData.Entry, Double> dist = new HashMap<>();
@@ -1188,7 +1188,7 @@ public final class PogoFeedDialog {
             }
             sections.clear();
             if (entries == STORE) {
-                // PGRazorX: NEWS (found by the latest refresh), UNSEEN (still without coordinates), then
+                // UI: NEWS (found by the latest refresh), UNSEEN (still without coordinates), then
                 // SEEN by distance. Rows are kept in found order, so a later index is a newer find.
                 final HashMap<PogoFeedData.Entry, Integer> found = new HashMap<>();
                 for (int i = 0; i < STORE.size(); i++) found.put(STORE.get(i), i);
@@ -1242,7 +1242,7 @@ public final class PogoFeedDialog {
                 String description = iconDescription(e, now);
                 holder.icon.setContentDescription(description);
                 holder.fallback.setContentDescription(description);
-                // PGRazorX: country flag from the place, NEW tag for the latest refresh's finds.
+                // UI: country flag from the place, NEW tag for the latest refresh's finds.
                 String flag = PogoFeedData.countryFlag(e.details);
                 android.text.SpannableStringBuilder title = new android.text.SpannableStringBuilder(flag.isEmpty() ? "" : flag + " ");
                 title.append(displayName(e));
@@ -1297,7 +1297,7 @@ public final class PogoFeedDialog {
             h.subtitle = new TextView(context); h.subtitle.setTextSize(12.5f); h.subtitle.setTextColor(FeedTheme.muted());
             text.addView(h.title); text.addView(h.subtitle);
             row.addView(text, new LinearLayout.LayoutParams(0, -2, 1));
-            // PGRazorX: a section title (NEWS / UNSEEN / SEEN) above the first row of each group.
+            // UI: a section title (NEWS / UNSEEN / SEEN) above the first row of each group.
             LinearLayout outer = new LinearLayout(context);
             outer.setOrientation(LinearLayout.VERTICAL);
             h.section = new TextView(context);
@@ -1331,7 +1331,7 @@ public final class PogoFeedDialog {
             View view; ImageView icon; TextView fallback, title, subtitle, section; GradientDrawable fallbackShape;
         }
 
-        /** PGRazorX: small orange pill with white bold text, drawn inline after a row's title. */
+        /** UI: small orange pill with white bold text, drawn inline after a row's title. */
         private static final class NewTag extends android.text.style.ReplacementSpan {
             private final int pad, radius;
             NewTag(int pad, int radius) { this.pad = pad; this.radius = radius; }
@@ -1513,7 +1513,7 @@ public final class PogoFeedDialog {
 
         // ------------------------------------------------------------------ child dialog tracking + teardown
 
-        /** PGRazorX: the Auto refresh list's tick in the theme accent, bold. */
+        /** UI: the Auto refresh list's tick in the theme accent, bold. */
         private void tintTick(View v) {
             if (v instanceof TextView) {
                 CharSequence t = ((TextView) v).getText(); int at = t == null ? -1 : t.toString().lastIndexOf('\u2713');

@@ -115,7 +115,7 @@ extern "C" int __wrap_nanosleep(const timespec *delay, timespec *) {
     host_clock_ns += static_cast<uint64_t>(delay->tv_sec) * 1000000000 + delay->tv_nsec;
     return 0;
 }
-int pgrazor_hook(void *address, void *replacement, void **original) {
+int pgs_hook(void *address, void *replacement, void **original) {
     if (address == reinterpret_cast<void *>(&target_feed)) {
         *original = reinterpret_cast<void *>(&target_feed);
         call_feed = reinterpret_cast<decltype(call_feed)>(replacement);

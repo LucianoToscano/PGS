@@ -647,13 +647,13 @@ int api_install(const pgrazor_buddy_config_v1 *config) {
     // Install the two hooks, publishing each original before the next. On a partial failure
     // retain any published trampoline (another thread may already use it) and latch.
     void *orig_feed = nullptr;
-    if (pgrazor_hook(g_cfg.feed_address, reinterpret_cast<void *>(&hook_feed), &orig_feed) != 0 ||
+    if (pgs_hook(g_cfg.feed_address, reinterpret_cast<void *>(&hook_feed), &orig_feed) != 0 ||
         orig_feed == nullptr)
         return g_install_error = PGR_BUDDY_ERR_HOOK_FEED;
     g_orig_feed.store(reinterpret_cast<FeedFn>(orig_feed), std::memory_order_release);
 
     void *orig_result = nullptr;
-    if (pgrazor_hook(g_cfg.result_address, reinterpret_cast<void *>(&hook_result), &orig_result) != 0 ||
+    if (pgs_hook(g_cfg.result_address, reinterpret_cast<void *>(&hook_result), &orig_result) != 0 ||
         orig_result == nullptr)
         return g_install_error = PGR_BUDDY_ERR_HOOK_RESULT;
     g_orig_result.store(reinterpret_cast<ResultFn>(orig_result), std::memory_order_release);

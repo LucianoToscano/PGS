@@ -1033,23 +1033,23 @@ int api_install(const pgrazor_items_config_v1 *config) {
     // Install the five hooks, publishing each original before the next. On a partial failure
     // retain any published trampoline (another thread may already use it) and latch.
     void *o = nullptr;
-    if (pgrazor_hook(g_cfg.init_address, reinterpret_cast<void *>(&hook_init), &o) != 0 || !o)
+    if (pgs_hook(g_cfg.init_address, reinterpret_cast<void *>(&hook_init), &o) != 0 || !o)
         return g_install_error = PGR_ITEMS_ERR_HOOK;
     g_orig_init.store(reinterpret_cast<InitFn>(o), std::memory_order_release);
     o = nullptr;
-    if (pgrazor_hook(g_cfg.list_address, reinterpret_cast<void *>(&hook_list), &o) != 0 || !o)
+    if (pgs_hook(g_cfg.list_address, reinterpret_cast<void *>(&hook_list), &o) != 0 || !o)
         return g_install_error = PGR_ITEMS_ERR_HOOK;
     g_orig_list.store(reinterpret_cast<ListFn>(o), std::memory_order_release);
     o = nullptr;
-    if (pgrazor_hook(g_cfg.recycle_address, reinterpret_cast<void *>(&hook_recycle), &o) != 0 || !o)
+    if (pgs_hook(g_cfg.recycle_address, reinterpret_cast<void *>(&hook_recycle), &o) != 0 || !o)
         return g_install_error = PGR_ITEMS_ERR_HOOK;
     g_orig_recycle.store(reinterpret_cast<RecycleFn>(o), std::memory_order_release);
     o = nullptr;
-    if (pgrazor_hook(g_cfg.result_address, reinterpret_cast<void *>(&hook_result), &o) != 0 || !o)
+    if (pgs_hook(g_cfg.result_address, reinterpret_cast<void *>(&hook_result), &o) != 0 || !o)
         return g_install_error = PGR_ITEMS_ERR_HOOK;
     g_orig_result.store(reinterpret_cast<ResultFn>(o), std::memory_order_release);
     o = nullptr;
-    if (pgrazor_hook(g_cfg.error_address, reinterpret_cast<void *>(&hook_error), &o) != 0 || !o)
+    if (pgs_hook(g_cfg.error_address, reinterpret_cast<void *>(&hook_error), &o) != 0 || !o)
         return g_install_error = PGR_ITEMS_ERR_HOOK;
     g_orig_error.store(reinterpret_cast<ErrorFn>(o), std::memory_order_release);
 

@@ -28,8 +28,8 @@ bool transport_enabled=false,readiness_sent=false;
 std::atomic<bool> revoked_readiness{false};
 uint32_t fast_serial=0,camera_error_serial=0,request_serial=0,closed_serial=0,error_serial=0,cooldown_serial=0;
 PgrSpinHostEvent events[32]{};unsigned head=0,count=0;
-const PgrSpinCameraApi *camera(){return static_cast<const PgrSpinCameraApi*>(pgrazor_spin_camera_api(1));}
-const PgrQuickSpinApi *quick(){return static_cast<const PgrQuickSpinApi*>(pgrazor_quick_spin_api(1));}
+const PgrSpinCameraApi *camera(){return static_cast<const PgrSpinCameraApi*>(pgs_spin_camera_api(1));}
+const PgrQuickSpinApi *quick(){return static_cast<const PgrQuickSpinApi*>(pgs_quick_spin_api(1));}
 const PgrRuntimeTransportApi *transport(){return static_cast<const PgrRuntimeTransportApi*>(pgrazor_runtime_transport_api(1));}
 uint64_t now(){timespec t{};return clock_gettime(CLOCK_BOOTTIME,&t)||t.tv_sec<0?0:uint64_t(t.tv_sec)*1000+uint64_t(t.tv_nsec)/1000000;}
 bool owner(uint64_t tid){return tid&&tid==uint64_t(gettid())&&tid==config.owner_tid&&config.thread_current&&config.thread_current();}
@@ -147,4 +147,4 @@ void pulse(void*,const PgrUnityPulse *p){if(!p||p->reserved||p->tid<=0)return;au
 }
 const PgrSpinHostApi api{1,sizeof(PgrSpinHostApi),configure,update,tick,stop,sample,next_event,pulse};
 }
-extern "C" const void *pgrazor_spin_host_api(uint32_t version){return version==1?&api:nullptr;}
+extern "C" const void *pgs_spin_host_api(uint32_t version){return version==1?&api:nullptr;}

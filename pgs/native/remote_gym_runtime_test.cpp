@@ -36,7 +36,7 @@ void cleared(){assert(!session.active&&!session.promise&&!session.reflection&&te
 void pgr_gym_remote_hold(bool value){hold=value;}
 pgr_gym::History *pgr_gym_remote_history(const std::string &account){assert(account=="account-a");return &shared_history;}
 extern "C" const void *pgrazor_runtime_transport_api(uint32_t v){assert(v==1);return &transport;}
-extern "C" const void *pgrazor_vgp_results_api(uint32_t v){assert(v==1);return &results;}
+extern "C" const void *pgs_vgp_results_api(uint32_t v){assert(v==1);return &results;}
 extern "C" const void *pgrazor_runtime_bootstrap_api(uint32_t v){assert(v==1);return &bootstrap_api;}
 extern "C" const void *pgrazor_runtime_metadata_api(uint32_t){assert(false&&"poll fixtures must not resolve managed metadata");return nullptr;}
 int main(){

@@ -159,7 +159,7 @@ int api_install(const PgrRoutesTrackingConfig *config) {
   // feature 46 must be present (version match). Its static table is returned regardless of its own
   // install state; the lite entries we forward to gate themselves until feature 46 is installed + leased.
   const PgrRoutesObserversApi *obs =
-      static_cast<const PgrRoutesObserversApi *>(pgrazor_routes_observers_api(PGR_RO_API_VERSION));
+      static_cast<const PgrRoutesObserversApi *>(pgs_routes_observers_api(PGR_RO_API_VERSION));
   if (!obs || obs->version != PGR_RO_API_VERSION || obs->size != sizeof(PgrRoutesObserversApi) ||
       !obs->tracking_enter || !obs->tracking_leave || !obs->location_gate || !obs->waypoint_observed)
     return PGR_RT_ERR_NO_OBSERVERS;
@@ -186,7 +186,7 @@ const PgrRoutesTrackingApi kApiTable = {
 
 }  // namespace
 
-extern "C" const void *pgrazor_routes_tracking_api(uint32_t version) {
+extern "C" const void *pgs_routes_tracking_api(uint32_t version) {
   if (version != PGR_RT_API_VERSION) return nullptr;
   return &kApiTable;
 }

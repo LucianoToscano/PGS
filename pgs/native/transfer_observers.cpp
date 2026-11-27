@@ -59,7 +59,7 @@ int install(const PgrTransferObserversConfig *c){
  std::lock_guard<std::mutex> guard(lock);
  if(failed)return -3;
  if(ready.load())return std::memcmp(c,&cfg,sizeof(cfg))==0?0:-4;
- execution=static_cast<const PgrTransferExecApi *>(pgrazor_transfer_execution_api(1));
+ execution=static_cast<const PgrTransferExecApi *>(pgs_transfer_execution_api(1));
  if(!execution||execution->size!=sizeof(PgrTransferExecApi))return -5;
  cfg=*c;
  void *addresses[]={c->result_address,c->error_address};
@@ -75,4 +75,4 @@ int install(const PgrTransferObserversConfig *c){
 int installed(){return ready.load(std::memory_order_acquire)?1:0;}
 const PgrTransferObserversApi api{1,sizeof(PgrTransferObserversApi),install,installed};
 }
-extern "C" const void *pgrazor_transfer_observers_api(uint32_t version){return version==1?&api:nullptr;}
+extern "C" const void *pgs_transfer_observers_api(uint32_t version){return version==1?&api:nullptr;}

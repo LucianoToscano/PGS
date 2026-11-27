@@ -17,4 +17,4 @@ struct PgrTransferObserversApi {
 };
 static_assert(sizeof(PgrTransferObserversConfig)==56,"Transfer observers config");
 static_assert(sizeof(PgrTransferObserversApi)==24,"Transfer observers API");
-extern "C" const void *pgrazor_transfer_observers_api(uint32_t);
+extern "C" const void *pgs_transfer_observers_api(uint32_t);

@@ -353,7 +353,7 @@ int api_install(const pgr_rocket_combat_config_v1 *config) {
   if (g_install_attempted) return g_install_error;
   g_install_attempted = true;
   const pgr_rocket_actions_api_v1 *pol =
-      static_cast<const pgr_rocket_actions_api_v1 *>(pgrazor_rocket_actions_api(1));
+      static_cast<const pgr_rocket_actions_api_v1 *>(pgs_rocket_actions_api(1));
   if (pol == nullptr || pol->size != sizeof(pgr_rocket_actions_api_v1))
     return g_install_error = PGR_RC_ERR_NO_POLICY;
   if (boottime_ms() == 0) return g_install_error = PGR_RC_ERR_NO_CLOCK;
@@ -792,7 +792,7 @@ const pgr_rocket_combat_api_v1 g_api = {
 
 }  // namespace
 
-const void *pgrazor_rocket_combat_api(uint32_t version) {
+const void *pgs_rocket_combat_api(uint32_t version) {
   if (version != PGR_RC_API_VERSION) return nullptr;
   return &g_api;
 }

@@ -146,8 +146,8 @@ bool safe_to_release(Root &p){
 }
 bool classify(Root &p,const Permission &settings,PgrTransferInput &input,std::vector<int32_t> &kept){
  if(!authorized(settings)||!safe_to_release(p))return false;
- auto facts=static_cast<const PgrTransferFactsApi*>(pgrazor_transfer_facts_api(1));
- auto policy=static_cast<const PgrTransferApi*>(pgrazor_transfer_policy_api(1));require(facts&&policy,"Transfer protections unavailable");
+ auto facts=static_cast<const PgrTransferFactsApi*>(pgs_transfer_facts_api(1));
+ auto policy=static_cast<const PgrTransferApi*>(pgs_transfer_policy_api(1));require(facts&&policy,"Transfer protections unavailable");
  PgrTransferFactsRequest req{1,sizeof(req),owner,2500,job.id,p.get(),job.gm.get(),settings.protect,0};PgrTransferFactsOut out{};
  if(facts->inspect(&req,&out)!=1)return false;
  kept.assign(settings.keep.begin(),settings.keep.end());
@@ -231,7 +231,7 @@ void poll(){
   if(matches&&costs){job.id=job.result_id;++job.completed;job.evolved_species.insert(job.sending.target);job.await_inventory=false;status("Evolution confirmed; rechecking transfer rules");return;}
   require(clock_ms()-job.since<15000,"Evolution inventory update unconfirmed; Pokemon kept");return;
  }
- auto vr=static_cast<const PgrVgpResultsApi*>(pgrazor_vgp_results_api(1));require(vr,"Evolution promise observer unavailable");
+ auto vr=static_cast<const PgrVgpResultsApi*>(pgs_vgp_results_api(1));require(vr,"Evolution promise observer unavailable");
  PgrVgpResultsResult out{};int rc=vr->poll(job.promise.get(),1,owner,&out);Root response;response.h=out.value_handle;
  if(!rc){require(clock_ms()-job.since<15000,"Evolution response timed out; Pokemon kept");return;}
  job.promise.reset();require(rc==PGR_VR_DONE&&response,"Evolution request failed; Pokemon kept");

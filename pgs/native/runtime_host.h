@@ -34,4 +34,4 @@ static_assert(sizeof(PgrRuntimeHostConfig)==16,"runtime manager config");
 static_assert(sizeof(PgrRuntimeHostStatus)==24,"runtime manager host status");
 static_assert(sizeof(PgrRuntimeHostSample)==344,"runtime manager sample");
 static_assert(sizeof(PgrRuntimeHostApi)==32,"runtime manager API");
-extern "C" const void *pgrazor_runtime_host_api(uint32_t version);
+extern "C" const void *pgs_runtime_host_api(uint32_t version);

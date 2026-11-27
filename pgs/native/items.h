@@ -361,7 +361,7 @@ typedef pgrazor_items_api_v1 pgs_items_api_v1;
  * getter registry under feature id 14; the loader hands the adapter the table on an exact
  * version match, else NULL. The table lives for the process lifetime.
  */
-const void *pgrazor_items_api(uint32_t version);
+const void *pgs_items_api(uint32_t version);
 
 // Internal host seam: advances only after a successful full pass with no recyclable
 // candidate and no pending RPC. Unlike catalog_serial, empty unchanged polls count.

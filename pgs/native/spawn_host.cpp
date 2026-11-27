@@ -86,4 +86,4 @@ int next(PgrSpawnHostEvent *e){if(!e)return PGR_SPAH_BAD_CONFIG;std::lock_guard<
 void pulse(void*,const PgrUnityPulse *p){if(!p||p->reserved||p->tid<=0)return;auto a=static_cast<const PgrUnitySchedulerApi*>(pgrazor_unity_scheduler_api(2));if(a&&a->valid(p->generation)==1)tick(p->tid);}
 const PgrSpawnHostApi api{1,sizeof(api),configure,update,tick,stop,sample,next,pulse};
 }
-extern "C" const void *pgrazor_spawn_host_api(uint32_t version){return version==1?&api:nullptr;}
+extern "C" const void *pgs_spawn_host_api(uint32_t version){return version==1?&api:nullptr;}

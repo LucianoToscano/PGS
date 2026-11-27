@@ -273,7 +273,7 @@ bool encounter_open(){
 }
 bool battle_open(){return bool(live(cls("Niantic.Holoholo.Combat.UI","CombatVNextGuiController")));}
 bool vgp_busy(){
- auto api=static_cast<const PgrVgpControllerApi*>(pgrazor_vgp_controller_api(1));
+ auto api=static_cast<const PgrVgpControllerApi*>(pgs_vgp_controller_api(1));
  if(!api||!api->sample)return false;
  PgrVgpControllerSample sample{};sample.version=1;sample.size=sizeof(sample);
  return api->sample(&sample)==0&&sample.phase!=PGR_VGC_PH_NONE;

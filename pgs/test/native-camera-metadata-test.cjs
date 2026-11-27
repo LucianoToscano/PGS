@@ -113,9 +113,9 @@ function fixture(options={}){
  });
 
  const context={
-  PGRazorNativeCorePath:options.absent?'':'libpgrazor.so',
+  PGSNativeCorePath:options.absent?'':'libpgs.so',
   Uint8Array,
-  PGRazorNativeFeature:options.noLoader?undefined:function(id,version,size){
+  PGSNativeFeature:options.noLoader?undefined:function(id,version,size){
    assert.deepEqual([id,version,size],[59,1,24]);
    return options.noTable?null:table;
   }
@@ -152,7 +152,7 @@ function fixture(options={}){
    if(options.notExecutable)throw Error('code-not-rx');
   }
  };
- return {calls,fakeApi,run:()=>context.PGRazorNativeCameraMetadata.discover({host})};
+ return {calls,fakeApi,run:()=>context.PGSNativeCameraMetadata.discover({host})};
 }
 
 // 1) Continuous mode (sampleCamera=true, continuous=true) full success shape.
@@ -289,8 +289,8 @@ function runCameraProbeIntegration({nativeResult,nativeThrow,missingAdapter}){
   toString:()=>'0x'+n.toString(16)
  });
  const ctx={
-  PGRazorNativeCorePath:'libpgrazor.so',
-  PGRazorNativeCameraMetadata:missingAdapter?undefined:{
+  PGSNativeCorePath:'libpgs.so',
+  PGSNativeCameraMetadata:missingAdapter?undefined:{
    discover({host}){
     discoverCalled++;
     assert.equal(typeof host.executable,'function');
@@ -339,7 +339,7 @@ function runCameraProbeIntegration({nativeResult,nativeThrow,missingAdapter}){
   if(idx===15)return ()=>{detached++;}; // thread_detach
   return ()=>ptr0;
  };
- ctx.PGRazorCameraProbe.start({enabled:true,sampleCamera:false,continuous:false,onEvent:e=>events.push(e)});
+ ctx.PGSCameraProbe.start({enabled:true,sampleCamera:false,continuous:false,onEvent:e=>events.push(e)});
  let steps=0;
  while(timers.length&&steps<6){
   steps++;
@@ -347,7 +347,7 @@ function runCameraProbeIntegration({nativeResult,nativeThrow,missingAdapter}){
   fn();
   if(events.some(e=>e.kind==='ready'||e.kind==='finished'))break;
  }
- if(events.some(e=>e.kind==='ready'))ctx.PGRazorCameraProbe.stop();
+ if(events.some(e=>e.kind==='ready'))ctx.PGSCameraProbe.stop();
  while(timers.length&&!events.some(e=>e.kind==='finished')){
   const fn=timers.shift();
   fn();
@@ -390,7 +390,7 @@ assert.ok(errFin);
 assert.equal(errFin.status,'error');
 assert.match(errFin.message,/native-camera-metadata-resolve:-35/);
 
-// 7d) Missing PGRazorNativeCameraMetadata when PGRazorNativeCorePath is active -> throws with no fallback.
+// 7d) Missing PGSNativeCameraMetadata when PGSNativeCorePath is active -> throws with no fallback.
 const missingProbe=runCameraProbeIntegration({missingAdapter:true});
 assert.equal(missingProbe.discoverCalled,0);
 assert.equal(missingProbe.jsAssembliesCalled,0);

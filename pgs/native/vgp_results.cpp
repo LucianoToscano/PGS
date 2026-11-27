@@ -232,6 +232,6 @@ int sample(PgrVgpResultsSample *out) {
 const PgrVgpResultsApi api = {PGR_VR_API_VERSION, sizeof(PgrVgpResultsApi), install, poll, sample};
 }  // namespace
 
-extern "C" const void *pgrazor_vgp_results_api(uint32_t version) {
+extern "C" const void *pgs_vgp_results_api(uint32_t version) {
   return version == PGR_VR_API_VERSION ? &api : nullptr;
 }

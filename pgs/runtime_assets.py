@@ -27,7 +27,7 @@ class RuntimeRedirect(urllib.request.HTTPRedirectHandler):
         return redirected
 
 def get(url):
-    headers={'User-Agent':'PGRazorLocalBuild/0.1','Accept':'application/vnd.github+json'}
+    headers={'User-Agent':'PGSLocalBuild/0.1','Accept':'application/vnd.github+json'}
     if urllib.parse.urlsplit(url).netloc == 'api.github.com':
         token=os.environ.get('GITHUB_TOKEN')
         if token: headers['Authorization']='Bearer '+token

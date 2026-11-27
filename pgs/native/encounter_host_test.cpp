@@ -16,9 +16,9 @@
 #include <sys/wait.h>
 #include <unistd.h>
 #include <dlfcn.h>
-#define pgrazor_encounter_host_api fixture_encounter_host_api
+#define pgs_encounter_host_api fixture_encounter_host_api
 #include "encounter_host.cpp"
-#undef pgrazor_encounter_host_api
+#undef pgs_encounter_host_api
 #define PGR_BERRY_DIRECT_TEST 1
 #define main berry_universe_unused_main
 namespace berry_universe {
@@ -36,31 +36,31 @@ namespace vgp_universe {
 }
 #undef main
 static const pgs_native_api_v2 *core;
-extern "C" const void *pgrazor_combat_host_api(uint32_t v){return core?core->query_feature(66,v):nullptr;}
-extern "C" const void *pgrazor_rocket_actions_api(uint32_t v){return core?core->query_feature(20,v):nullptr;}
-extern "C" const void *pgrazor_encounter_berries_api(uint32_t v){return core?core->query_feature(18,v):nullptr;}
-extern "C" const void *pgrazor_inventory_host_api(uint32_t v){return core?core->query_feature(65,v):nullptr;}
-extern "C" const void *pgrazor_items_api(uint32_t v){return core?core->query_feature(14,v):nullptr;}
-extern "C" const void *pgrazor_map_poi_api(uint32_t v){return core?core->query_feature(42,v):nullptr;}
+extern "C" const void *pgs_combat_host_api(uint32_t v){return core?core->query_feature(66,v):nullptr;}
+extern "C" const void *pgs_rocket_actions_api(uint32_t v){return core?core->query_feature(20,v):nullptr;}
+extern "C" const void *pgs_encounter_berries_api(uint32_t v){return core?core->query_feature(18,v):nullptr;}
+extern "C" const void *pgs_inventory_host_api(uint32_t v){return core?core->query_feature(65,v):nullptr;}
+extern "C" const void *pgs_items_api(uint32_t v){return core?core->query_feature(14,v):nullptr;}
+extern "C" const void *pgs_map_poi_api(uint32_t v){return core?core->query_feature(42,v):nullptr;}
 extern "C" const void *pgrazor_runtime_bootstrap_api(uint32_t v){return core?core->query_feature(54,v):nullptr;}
 extern "C" const void *pgrazor_runtime_metadata_api(uint32_t v){return core?core->query_feature(47,v):nullptr;}
 extern "C" const void *pgrazor_runtime_transport_api(uint32_t v){return core?core->query_feature(52,v):nullptr;}
 extern "C" const void *pgrazor_shared_host_api(uint32_t v){return core?core->query_feature(61,v):nullptr;}
-extern "C" const void *pgrazor_shared_metadata_api(uint32_t v){return core?core->query_feature(56,v):nullptr;}
-extern "C" const void *pgrazor_transfer_facts_api(uint32_t v){return core?core->query_feature(35,v):nullptr;}
-const void *pgrazor_transfer_policy_api(uint32_t v){return core?core->query_feature(4,v):nullptr;}
-extern "C" const void *pgrazor_vgp_actions_api(uint32_t v){return core?core->query_feature(26,v):nullptr;}
-extern "C" const void *pgrazor_vgp_aux_api(uint32_t v){return core?core->query_feature(34,v):nullptr;}
-extern "C" const void *pgrazor_vgp_candidates_api(uint32_t v){return core?core->query_feature(29,v):nullptr;}
+extern "C" const void *pgs_shared_metadata_api(uint32_t v){return core?core->query_feature(56,v):nullptr;}
+extern "C" const void *pgs_transfer_facts_api(uint32_t v){return core?core->query_feature(35,v):nullptr;}
+const void *pgs_transfer_policy_api(uint32_t v){return core?core->query_feature(4,v):nullptr;}
+extern "C" const void *pgs_vgp_actions_api(uint32_t v){return core?core->query_feature(26,v):nullptr;}
+extern "C" const void *pgs_vgp_aux_api(uint32_t v){return core?core->query_feature(34,v):nullptr;}
+extern "C" const void *pgs_vgp_candidates_api(uint32_t v){return core?core->query_feature(29,v):nullptr;}
 // Link the production controller so its hidden smart-escape setter and API use
 // the same state. Other feature tables still come from the dlopened core.
 // Discovery is linked with smart-catch binding for its hidden method setter.
-extern "C" const void *pgrazor_vgp_maintenance_api(uint32_t v){return core?core->query_feature(32,v):nullptr;}
-extern "C" const void *pgrazor_vgp_marker_api(uint32_t v){return core?core->query_feature(28,v):nullptr;}
-extern "C" const void *pgrazor_vgp_policy_api(uint32_t v){return core?core->query_feature(25,v):nullptr;}
-extern "C" const void *pgrazor_vgp_results_api(uint32_t v){return core?core->query_feature(30,v):nullptr;}
-extern "C" const void *pgrazor_incoming_gifts_api(uint32_t v){return core?core->query_feature(17,v):nullptr;}
-extern "C" const void *pgrazor_outgoing_gifts_api(uint32_t v){return core?core->query_feature(22,v):nullptr;}
+extern "C" const void *pgs_vgp_maintenance_api(uint32_t v){return core?core->query_feature(32,v):nullptr;}
+extern "C" const void *pgs_vgp_marker_api(uint32_t v){return core?core->query_feature(28,v):nullptr;}
+extern "C" const void *pgs_vgp_policy_api(uint32_t v){return core?core->query_feature(25,v):nullptr;}
+extern "C" const void *pgs_vgp_results_api(uint32_t v){return core?core->query_feature(30,v):nullptr;}
+extern "C" const void *pgs_incoming_gifts_api(uint32_t v){return core?core->query_feature(17,v):nullptr;}
+extern "C" const void *pgs_outgoing_gifts_api(uint32_t v){return core?core->query_feature(22,v):nullptr;}
 
 using namespace berry_universe;
 static int enter_calls,exit_calls,result_calls,error_calls,submit_calls,peek_calls,rewrite_calls;
@@ -97,14 +97,14 @@ __attribute__((noinline,aligned(16))) static void target_error(void*,void*,void 
 __attribute__((noinline,aligned(16))) static void target_submit(void *ball,uint64_t a,uint64_t b,void *info){PAD;++submit_calls;last_ball=ball;last_first=a;last_second=b;last_info=info;if(foreign_stop){std::thread t([]{assert(host->stop(gettid())==PGR_EH_RETRY);});t.join();}if(original_throws)throw std::runtime_error("original");}
 __attribute__((noinline,aligned(16))) static void *target_peek(void *ball,void *info){PAD;void *h=gc_new(ball,0);int held=registered_filter?registered_filter(gc_target(h),gettid()):0;gc_free(h);if(held)return nullptr;++peek_calls;last_info=info;return &result_obj;}
 __attribute__((noinline,aligned(16))) static void target_nameplate(void *self,void *pokemon,int32_t weather,void *info){PAD;++nameplate_calls;last_plate=self;last_map_pokemon=pokemon;last_weather=weather;last_info=info;if(original_throws)throw std::runtime_error("nameplate original");}
-extern "C" const void *pgrazor_catch_observers_api(uint32_t v){
+extern "C" const void *pgs_catch_observers_api(uint32_t v){
  static BerryFilterApi f{2,sizeof(BerryFilterApi),+[](int(*cb)(void*,uint64_t),uint64_t owner)->int{assert(owner==uint64_t(gettid()));registered_filter=cb;return 0;},+[]()->int{return registered_filter?1:0;}};
  return v==2?&f:nullptr;
 }
 static int rewrite(void *ball,PgrThrowValue *v){++rewrite_calls;assert(g_live_roots>0);last_ball=ball;v->bullseye=1;v->radius=.75f;return 0;}
 static uint32_t shared_mask;
 static int shared(uint32_t mask){shared_mask|=mask;return 0;}
-extern "C" const void *pgrazor_quickball_host_api(uint32_t version){
+extern "C" const void *pgs_quickball_host_api(uint32_t version){
  static PgrQuickballHostApi api{};api.version=1;api.size=sizeof(api);api.shared_sites=&shared;api.rewrite_submit=&rewrite;api.sample=+[](PgrQuickballHostSample *o)->int{o->ready=1;o->stopping=0;return 0;};
  api.begin_catch=+[](void *plate,void *pokemon,uint64_t,void **refreshed)->uint64_t{assert(g_live_roots>=2);++iv_begin_calls;assert(refreshed);refreshed[0]=refreshed_plate?refreshed_plate:plate;refreshed[1]=refreshed_pokemon?refreshed_pokemon:pokemon;return 71;};
  api.end_catch=+[](uint64_t token,uint64_t)->int{assert(token==71&&g_live_roots>=2);++iv_end_calls;return 0;};return version==1?&api:nullptr;
@@ -159,7 +159,7 @@ static int vgp_case(){
  auto pc=PgrVgpPolicyConfig{};pc.version=1;pc.size=sizeof(pc);pc.scan_interval_ms=2500;pc.catch_seen_ms=30000;pc.spin_seen_ms=300000;pc.reject_delay_ms=30000;pc.terminal_delay_ms=3600000;pc.retry_delay_ms=5000;pc.default_delay_ms=30000;pc.max_keys=2048;
  for(int i=0;i<4;++i)pc.status_terminal[i]=pc.status_retry[i]=-1;pc.status_terminal[0]=100;
  auto policy=static_cast<const PgrVgpPolicyApi*>(core->query_feature(25,1));assert(policy&&policy->install(&pc)==0);
- u::api=static_cast<const PgrVgpControllerApi*>(pgrazor_vgp_controller_api(1));u::tid=gettid();auto vc=u::makeConfig();vc.policy_table=const_cast<PgrVgpPolicyApi*>(policy);assert(u::api->install(&vc)==0);u::resetScenario();
+ u::api=static_cast<const PgrVgpControllerApi*>(pgs_vgp_controller_api(1));u::tid=gettid();auto vc=u::makeConfig();vc.policy_table=const_cast<PgrVgpPolicyApi*>(policy);assert(u::api->install(&vc)==0);u::resetScenario();
  auto c=config();c.extra_exports=&extra;extra.gchandle_new=vc.gc_new;extra.gchandle_get_target=vc.gc_get;extra.gchandle_free=vc.gc_free;c.runtime_invoke=vc.runtime_invoke;c.object_get_class=vc.object_class;c.object_unbox=vc.object_unbox;
  assert(host->configure(&c)==0);g_vgc=u::api;g_active_caps=PGR_EH_CAP_VGP;g_installed=true;install_wire();
  PgrEncounterHostOptions o{1,sizeof(o)};o.vgp_allowed=1;o.vgp_enabled=1;o.vgp_catch_allowed=1;o.vgp_spin_allowed=1;o.lease_remaining_ms=2500;o.lat=10;o.lon=20;
@@ -211,7 +211,7 @@ static int nameplate_case(){
 }
 int main(int argc,char **argv){
  assert(argc>=2);void *lib=dlopen(argv[1],RTLD_NOW|RTLD_LOCAL);assert(lib);
- auto get=reinterpret_cast<const pgs_native_api_v2*(*)(uint32_t)>(dlsym(lib,"pgrazor_native_api"));assert(get);core=get(2);assert(core&&core->query_feature(63,1));
+ auto get=reinterpret_cast<const pgs_native_api_v2*(*)(uint32_t)>(dlsym(lib,"pgs_native_api"));assert(get);core=get(2);assert(core&&core->query_feature(63,1));
  host=static_cast<const PgrEncounterHostApi*>(fixture_encounter_host_api(1));g_api=static_cast<const pgr_berry_api_v1*>(core->query_feature(18,1));assert(g_api);
  pid_t child=fork();assert(child>=0);if(child==0)_exit(map_case());int status=0;assert(waitpid(child,&status,0)==child&&WIFEXITED(status)&&WEXITSTATUS(status)==0);
  child=fork();assert(child>=0);if(child==0)_exit(vgp_case());assert(waitpid(child,&status,0)==child&&WIFEXITED(status)&&WEXITSTATUS(status)==0);

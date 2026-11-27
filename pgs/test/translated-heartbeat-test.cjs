@@ -20,7 +20,7 @@ test('research transport waits for a fresh snapshot and schedules research only 
  const control={renewLease:()=>calls.push('lease'),event:()=>calls.push('ready')};
  const bridge={control,tick:()=>fresh};
  const c={bootParameters:{compiledNativeTransport:true},javaControl:null,
-  PGRazorNativeTransport:{create:()=>bridge},setInterval:f=>(tick=f,1),Date:{now:()=>now},
+  PGSNativeTransport:{create:()=>bridge},setInterval:f=>(tick=f,1),Date:{now:()=>now},
   scheduleDiagnostic:()=>calls.push('camera'),scheduleInteraction:()=>calls.push('interaction'),
   heartbeat:()=>calls.push('heartbeat'),bootLog:e=>{throw Error(e);}};
  vm.runInNewContext(actual('startGameplayTransport'),c);c.startGameplayTransport();
@@ -30,5 +30,5 @@ test('research transport waits for a fresh snapshot and schedules research only 
  fresh=true;tick();assert.deepEqual(calls,['ready','camera','interaction','heartbeat','heartbeat']);
 });
 test('retired gameplay cannot be loaded or scheduled by the research agent',()=>{
- assert.doesNotMatch(agent,/quickSummary|quickBall|quickCatchWait|PGRazorNativeCatchWait|syncTransferPolicy|syncBerryPolicy/);
+ assert.doesNotMatch(agent,/quickSummary|quickBall|quickCatchWait|PGSNativeCatchWait|syncTransferPolicy|syncBerryPolicy/);
 });

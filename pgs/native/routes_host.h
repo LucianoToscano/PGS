@@ -248,7 +248,7 @@ struct PgrRoutesHostApi {
 
 static_assert(sizeof(PgrRoutesHostApi) == 64, "PgrRoutesHostApi must remain a 64-byte version-1 table");
 
-const void *pgrazor_routes_host_api(uint32_t version);
+const void *pgs_routes_host_api(uint32_t version);
 
 #ifdef __cplusplus
 }

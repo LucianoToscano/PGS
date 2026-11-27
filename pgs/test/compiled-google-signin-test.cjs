@@ -26,7 +26,7 @@ function build(opts={}){
   [COMPANION]:signInMethod};
  const Java={use(n){accessed.push(n);if(opts.throwOnUse===n)throw Error('use-missing:'+n+':tok_y');if(!(n in classes))throw Error('missing:'+n);return classes[n];}};
  const ctx={};vm.createContext(ctx);vm.runInContext(code,ctx);
- const adapter=ctx.PGRazorCompiledGoogleSignIn.create({Java,isDisposed:()=>state.disposed,bootLog:m=>bootLogs.push(m)});
+ const adapter=ctx.PGSCompiledGoogleSignIn.create({Java,isDisposed:()=>state.disposed,bootLog:m=>bootLogs.push(m)});
  return {adapter,state,bootLogs,accessed,helper,signInMethod,m:signInMethod.m};
 }
 

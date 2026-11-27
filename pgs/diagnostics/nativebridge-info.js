@@ -1,5 +1,5 @@
 // Read-only native x64 diagnostics. Evaluate, then explicitly call
-// PGRazorNativeBridgeInfo.run(). No library loading or interception occurs.
+// PGSNativeBridgeInfo.run(). No library loading or interception occurs.
 (function (root) {
     'use strict';
     const QUERY_NAMES = ['default', 'system', 'classloader-namespace', 'classloader-namespace-shared', 'sphal', 'vndk'];
@@ -9,7 +9,7 @@
     function run() {
         const result = { kind: 'nativebridge-info', arch: Process.arch, pointerSize: Process.pointerSize,
             time: new Date().toISOString(), status: 'initializing', exports: {}, namespaces: [], nativeLoaderExports: [] };
-        function finish() { console.log('[pgrazor-nativebridge] ' + JSON.stringify(result)); return result; }
+        function finish() { console.log('[pgs-nativebridge] ' + JSON.stringify(result)); return result; }
         if (Process.arch !== 'x64' || Process.pointerSize !== 8) {
             result.status = 'skipped'; result.reason = 'native-x64-required'; return finish();
         }
@@ -49,6 +49,6 @@
         } catch (error) { result.status = 'error'; result.error = String(error); }
         return finish();
     }
-    root.PGRazorNativeBridgeInfo = Object.freeze({ run: run });
+    root.PGSNativeBridgeInfo = Object.freeze({ run: run });
 })(globalThis);
-globalThis.PGRazorNativeBridgeInfo;
+globalThis.PGSNativeBridgeInfo;

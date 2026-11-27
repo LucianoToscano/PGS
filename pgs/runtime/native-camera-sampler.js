@@ -1,4 +1,4 @@
-// PGRazor native migration: CONTINUOUS CAMERA SAMPLER controller (feature id 41).
+// PGS native migration: CONTINUOUS CAMERA SAMPLER controller (feature id 41).
 //
 // Thin adapter for pgs/native/camera_sampler.{h,cpp}. It owns exactly the continuous branch of
 // diagnostics/camera-probe.js sample() (~303-448): the per-getter managed reads (Camera.get_main match,
@@ -9,7 +9,7 @@
 // residual lease (already clamped by the host; the native layer re-clamps to 2500 ms). No hook is installed
 // and NO managed call is made from JS here: rig/camera cross as raw pointers and only scalars come back.
 //
-// ABI: PGRazorNativeFeature(41,1,24) -- a version-1, 24-byte table (8-byte header + install/sample).
+// ABI: PGSNativeFeature(41,1,24) -- a version-1, 24-byte table (8-byte header + install/sample).
 // install(config)->0 publishes the immutable 216-byte config (8-byte header + 25 pointers + expected_layer
 // (13)/reserved0(0)). sample(request,out) reads the 40-byte request (version/size, tid, remaining_ms, raw
 // rig, raw camera) and writes the 72-byte output (status, reason, camera_id, mask, layer, reserved, x/y/z,
@@ -25,9 +25,9 @@
 // sampler). A present pilot with a missing loader/table throws, and missing/inert metadata or a non-zero
 // install throws -- the coordinator disables the native path rather than mixing a partial install with it.
 (function(root){
- root.PGRazorNativeCameraSampler={create({state,found,module,Memory,NativeFunction,ptr}){
-  if(typeof root.PGRazorNativeFeature!=='function'){if(root.PGRazorNativeCorePath)throw Error('native-camera-sampler-loader');return null;}
-  const table=root.PGRazorNativeFeature(41,1,24);if(!table||table.isNull()){if(root.PGRazorNativeCorePath)throw Error('native-camera-sampler-table');return null;}
+ root.PGSNativeCameraSampler={create({state,found,module,Memory,NativeFunction,ptr}){
+  if(typeof root.PGSNativeFeature!=='function'){if(root.PGSNativeCorePath)throw Error('native-camera-sampler-loader');return null;}
+  const table=root.PGSNativeFeature(41,1,24);if(!table||table.isNull()){if(root.PGSNativeCorePath)throw Error('native-camera-sampler-table');return null;}
 
   const nn=x=>!!x&&(typeof x.isNull!=='function'||!x.isNull());
   const s=found&&found.sample;

@@ -285,7 +285,7 @@ static_assert(sizeof(PgrInteractionHostSample) == 456, "PgrInteractionHostSample
 static_assert(sizeof(PgrInteractionHostApi) == 104, "PgrInteractionHostApi size");
 #endif
 
-const void *pgrazor_interaction_host_api(uint32_t version);
+const void *pgs_interaction_host_api(uint32_t version);
 // API2 is the immutable observer surface for existing compiled hook owners.
 // wants_target is allocation-free and requires an already-attached caller.
 // abort consumes only native counters/reservations; it performs no GC work.

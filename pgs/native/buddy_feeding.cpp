@@ -729,7 +729,7 @@ const pgs_buddy_api_v1 g_api = {
 
 } // namespace
 
-const void *pgrazor_buddy_feeding_api(uint32_t version) {
+const void *pgs_buddy_feeding_api(uint32_t version) {
     if (version != PGS_BUDDY_API_VERSION) return nullptr;
     return &g_api;
 }

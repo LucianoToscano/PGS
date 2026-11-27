@@ -192,7 +192,7 @@ static_assert(sizeof(PgrCameraSamplerApi) == 24,
 
 // Hidden getter. NOT exported by the version script; the coordinator registers it in query_feature under
 // feature id 41 and answers only on an exact version match.
-const void *pgrazor_camera_sampler_api(uint32_t version);
+const void *pgs_camera_sampler_api(uint32_t version);
 
 #ifdef __cplusplus
 }

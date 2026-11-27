@@ -98,4 +98,4 @@ int resolve(const PgrRoutesMetadataConfig *input,PgrRoutesMetadataOutput *out){
 }
 const PgrRoutesMetadataApi api={1,sizeof(PgrRoutesMetadataApi),sizeof(PgrRoutesMetadataConfig),sizeof(PgrRoutesMetadataOutput),resolve};
 }
-extern "C" const void *pgrazor_routes_metadata_api(uint32_t version){return version==1?&api:nullptr;}
+extern "C" const void *pgs_routes_metadata_api(uint32_t version){return version==1?&api:nullptr;}

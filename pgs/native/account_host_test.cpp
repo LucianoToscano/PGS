@@ -726,7 +726,7 @@ int main(int argc, char **argv) {
   if (!lib) std::puts(dlerror());
   assert(lib);
 
-  auto get_api = reinterpret_cast<const void *(*)(uint32_t)>(dlsym(lib, "pgrazor_native_api"));
+  auto get_api = reinterpret_cast<const void *(*)(uint32_t)>(dlsym(lib, "pgs_native_api"));
   assert(get_api);
   g_core = static_cast<const pgs_native_api_v2 *>(get_api(2));
   assert(g_core && g_core->query_feature);

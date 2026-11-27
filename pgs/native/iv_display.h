@@ -32,7 +32,7 @@
 // snapshot/apply/restore is owned-panel only and fails locally (it never faults the rest).
 //
 // Loader contract (matches the other native features):
-//   root.PGRazorNativeFeature(15, 1, 64) -> query_feature(15,1) -> pgrazor_iv_display_api(1).
+//   root.PGSNativeFeature(15, 1, 64) -> query_feature(15,1) -> pgs_iv_display_api(1).
 // A null return means the pilot/metadata is absent (the feature stays dormant, never a
 // second Gum/JS fallback). Any install/update error after selection fails closed.
 //
@@ -327,7 +327,7 @@ static_assert(sizeof(PgrIvDisplayApi) == 64,
 
 // Standard feature getter. Returns the static const 64-byte table when `version` == 1,
 // else NULL. The coordinator registers it in query_feature as case 15.
-const void *pgrazor_iv_display_api(uint32_t version);
+const void *pgs_iv_display_api(uint32_t version);
 
 #ifdef __cplusplus
 }

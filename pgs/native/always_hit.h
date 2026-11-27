@@ -94,4 +94,4 @@ struct PgrAlwaysHitApi {     // 40 bytes: ordered, read-only table
 
 // Hidden getter. NOT exported by the version script; the coordinator registers it in the
 // core getter registry under feature id 7, answering only on an exact version match.
-const void *pgrazor_always_hit_api(uint32_t version);
+const void *pgs_always_hit_api(uint32_t version);

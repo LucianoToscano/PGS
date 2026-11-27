@@ -13,7 +13,7 @@ struct PgrTransferApi {
     uint32_t version, size;
     int (*decide)(const PgrTransferInput *);
 };
-const void *pgrazor_transfer_policy_api(uint32_t version);
+const void *pgs_transfer_policy_api(uint32_t version);
 
 enum : uint32_t { PGR_TRANSFER_KEEP_IV_SET = 0x100u, PGR_TRANSFER_KEEP_IV_DEFAULT = 90u };
 

@@ -386,7 +386,7 @@ int api_restore() {
 
 } // namespace
 
-extern "C" const void *pgrazor_rocket_minigame_api(uint32_t version) {
+extern "C" const void *pgs_rocket_minigame_api(uint32_t version) {
     static const PgrRocketMiniApi api = {
         1, (uint32_t)sizeof(PgrRocketMiniApi),
         api_install, api_update, api_tick, api_restore

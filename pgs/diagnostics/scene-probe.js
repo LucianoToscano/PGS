@@ -1,6 +1,6 @@
 // Metadata by default; observeRuntime:true adds bounded passive getter hooks.
 // Never invokes game methods, replaces returns, or retains object pointers.
-// Explicit opt-in: PGRazorSceneProbe.start({enabled:true,onEvent}).
+// Explicit opt-in: PGSSceneProbe.start({enabled:true,onEvent}).
 (function(root) {
     'use strict';
     const LIMITS=Object.freeze({attempts:20,retryMs:1000,durationMs:20000,scanMs:3000,
@@ -117,7 +117,7 @@
     }
     function emit(state,kind,fields) {
         const event=Object.assign({time:new Date().toISOString(),kind},fields||{});
-        try{console.log('[pgrazor-scene-probe] '+JSON.stringify(event));}catch(_){}
+        try{console.log('[pgs-scene-probe] '+JSON.stringify(event));}catch(_){}
         if(typeof state.onEvent==='function')try{state.onEvent(event);}catch(_){}
     }
     // Exact shipped ARM64 implementation, Unity 6000.3.22f1; evidence:
@@ -249,6 +249,6 @@
             state.timer=setTimeout(attempt,0);
         });
     }
-    root.PGRazorSceneProbe=Object.freeze({start,stop(){if(running)running.finish({status:'cancelled'});},limits:LIMITS});
+    root.PGSSceneProbe=Object.freeze({start,stop(){if(running)running.finish({status:'cancelled'});},limits:LIMITS});
 })(globalThis);
-globalThis.PGRazorSceneProbe;
+globalThis.PGSSceneProbe;

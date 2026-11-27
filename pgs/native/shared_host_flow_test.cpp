@@ -62,24 +62,24 @@ int fixture_hook(void *address,void *replacement,void **original){return DobbyHo
 // The optional shadow / Max transfer facts live in transfer_facts.cpp, which this fixture replaces.
 extern "C" void pgr_transfer_facts_set_shadow(void*,int32_t){}
 extern "C" void pgr_transfer_facts_set_max(void*,int32_t,int32_t,int32_t,int32_t){}
-#define pgrazor_shared_catch_api fixture_shared_api
-#define pgrazor_summary_completion_api fixture_summary_api
-#define pgrazor_details_completion_api fixture_details_api
-#define pgrazor_details_recovery_api fixture_recovery_api
-#define pgrazor_catch_discovery_api fixture_discovery_api
-#define pgrazor_catch_canvas_api fixture_canvas_api
-#define pgrazor_catch_completion_api fixture_completion_api
-#define pgrazor_catch_presentation_api fixture_presentation_api
-#define pgrazor_transfer_execution_api fixture_transfer_api
-#define pgrazor_transfer_facts_api fixture_facts_api
-#define pgrazor_transfer_observers_api fixture_observers_api
+#define pgs_shared_catch_api fixture_shared_api
+#define pgs_summary_completion_api fixture_summary_api
+#define pgs_details_completion_api fixture_details_api
+#define pgs_details_recovery_api fixture_recovery_api
+#define pgs_catch_discovery_api fixture_discovery_api
+#define pgs_catch_canvas_api fixture_canvas_api
+#define pgs_catch_completion_api fixture_completion_api
+#define pgs_catch_presentation_api fixture_presentation_api
+#define pgs_transfer_execution_api fixture_transfer_api
+#define pgs_transfer_facts_api fixture_facts_api
+#define pgs_transfer_observers_api fixture_observers_api
 #define pgrazor_unity_scheduler_api fixture_scheduler_api
-#define pgrazor_shared_metadata_api fixture_metadata_api
+#define pgs_shared_metadata_api fixture_metadata_api
 #define pgrazor_runtime_transport_api fixture_transport_api
-#define pgrazor_transfer_policy_api fixture_transfer_policy_api
+#define pgs_transfer_policy_api fixture_transfer_policy_api
 #define pgrazor_runtime_bootstrap_api fixture_boot_api
 #define pgrazor_runtime_metadata_api fixture_meta_api
-#define pgrazor_interaction_host_api fixture_interaction_api
+#define pgs_interaction_host_api fixture_interaction_api
 #define pgrazor_shared_host_api fixture_host_api
 #define pgs_hook fixture_hook
 #include "shared_host.cpp"
@@ -230,7 +230,7 @@ void wire_exchange(const std::vector<uint8_t>&frame={}){std::vector<uint8_t> out
 void wire_snapshot(bool dismiss,bool transfer,const std::string &keep_list="",bool keep_all=false,int protect=63){static uint64_t sequence=0;++sequence;std::vector<uint8_t> bytes(PGR_TRANSPORT_SNAPSHOT_FIXED+PGR_TRANSPORT_STRINGS*4+keep_list.size(),0);wire_put(bytes,0,PGR_TRANSPORT_SNAPSHOT_MAGIC);wire_put(bytes,4,PGR_TRANSPORT_FRAME_VERSION);wire_put(bytes,8,bytes.size());std::memcpy(bytes.data()+16,&sequence,8);bytes[32+25]=dismiss;bytes[32+5]=transfer;bytes[32+35]=keep_all;wire_put(bytes,72+8*4,uint32_t(protect));size_t at=PGR_TRANSPORT_OFF_STRINGS;for(unsigned i=0;i<PGR_TRANSPORT_STRINGS;++i){uint32_t n=i==4?keep_list.size():0;wire_put(bytes,at,n);at+=4;if(n){std::memcpy(bytes.data()+at,keep_list.data(),n);at+=n;}}wire_exchange(bytes);}
 bool wire_has(uint32_t opcode,const char *text=nullptr){for(auto &e:wire_events)if(e.opcode==opcode&&(!text||(!e.strings.empty()&&e.strings[0]==text)))return true;return false;}
 }
-int main(int argc,char **argv){assert(argc==2||argc==3);void *lib=dlopen(argv[1],RTLD_NOW|RTLD_LOCAL);assert(lib);auto get=reinterpret_cast<const void *(*)(uint32_t)>(dlsym(lib,"pgrazor_native_api"));assert(get);auto core=static_cast<const pgs_native_api_v2*>(get(2));assert(core);
+int main(int argc,char **argv){assert(argc==2||argc==3);void *lib=dlopen(argv[1],RTLD_NOW|RTLD_LOCAL);assert(lib);auto get=reinterpret_cast<const void *(*)(uint32_t)>(dlsym(lib,"pgs_native_api"));assert(get);auto core=static_cast<const pgs_native_api_v2*>(get(2));assert(core);
 #define LOAD(VAR,TYPE,ID,VER) {auto value=static_cast<const TYPE*>(core->query_feature(ID,VER));assert(value);VAR=*value;}
  LOAD(fixture_sh,PgrSharedCatchApi,51,1) LOAD(fixture_sc,PgrSummaryCompletionApi,36,1) LOAD(fixture_dc,PgrDetailsCompletionApi,37,1)
  LOAD(fixture_dr,PgrDetailsRecoveryApi,38,1) LOAD(fixture_cd,PgrCatchDiscoveryApi,40,1) LOAD(fixture_cv,PgrCatchCanvasApi,39,1)

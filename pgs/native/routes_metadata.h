@@ -25,4 +25,4 @@ struct PgrRoutesMetadataApi {
 };
 static_assert(sizeof(PgrRoutesMetadataConfig)==88,"LP64 config");
 static_assert(sizeof(PgrRoutesMetadataApi)==24,"LP64 API");
-extern "C" const void *pgrazor_routes_metadata_api(uint32_t version);
+extern "C" const void *pgs_routes_metadata_api(uint32_t version);

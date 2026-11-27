@@ -33,17 +33,17 @@ namespace {
 template<class T> const T *as(const void *p){return static_cast<const T*>(p);}
 const auto scheduler=as<PgrUnitySchedulerApi>(pgrazor_unity_scheduler_api(2));
 const auto shared=as<PgrSharedHostApi>(pgrazor_shared_host_api(1));
-const auto quick=as<PgrQuickballHostApi>(pgrazor_quickball_host_api(1));
-const auto routes=as<PgrRoutesHostApi>(pgrazor_routes_host_api(1));
-const auto inventory=as<PgrInventoryHostApi>(pgrazor_inventory_host_api(1));
-const auto spin=as<PgrSpinHostApi>(pgrazor_spin_host_api(1));
-const auto wait_host=as<PgrCatchWaitApi>(pgrazor_catch_wait_api(1));
-const auto spawn=as<PgrSpawnHostApi>(pgrazor_spawn_host_api(1));
-const auto camera=as<PgrCameraHostApi>(pgrazor_camera_host_api(1));
-const auto combat=as<PgrCombatHostApi>(pgrazor_combat_host_api(1));
+const auto quick=as<PgrQuickballHostApi>(pgs_quickball_host_api(1));
+const auto routes=as<PgrRoutesHostApi>(pgs_routes_host_api(1));
+const auto inventory=as<PgrInventoryHostApi>(pgs_inventory_host_api(1));
+const auto spin=as<PgrSpinHostApi>(pgs_spin_host_api(1));
+const auto wait_host=as<PgrCatchWaitApi>(pgs_catch_wait_api(1));
+const auto spawn=as<PgrSpawnHostApi>(pgs_spawn_host_api(1));
+const auto camera=as<PgrCameraHostApi>(pgs_camera_host_api(1));
+const auto combat=as<PgrCombatHostApi>(pgs_combat_host_api(1));
 const auto account=as<PgrAccountHostApi>(pgrazor_account_host_api(1));
-const auto interaction=as<PgrInteractionHostApi>(pgrazor_interaction_host_api(1));
-const auto encounter=as<PgrEncounterHostApi>(pgrazor_encounter_host_api(1));
+const auto interaction=as<PgrInteractionHostApi>(pgs_interaction_host_api(1));
+const auto encounter=as<PgrEncounterHostApi>(pgs_encounter_host_api(1));
 constexpr uint32_t pending_mask=0;
 struct Slot {std::atomic<uint32_t> state{PGR_RTH_WAITING},caps{0},owned{0};std::atomic<int32_t> error{0};std::atomic<bool> configured{false};uint64_t retry=0;uint32_t attempts=0;bool retry_pending=false;};
 Slot slots[12];
@@ -357,4 +357,4 @@ int sample(PgrRuntimeHostSample *out){if(!out)return -1;*out={};out->version=1;o
  for(unsigned i=0;i<12;++i){const auto state=pending_mask&(1u<<i)?PGR_RTH_PENDING:slots[i].state.load();out->hosts[i]={i<10?60+i:i==10?58u:71u,state,slots[i].error.load(),slots[i].caps.load(),slots[i].owned.load(),0};if(state==PGR_RTH_READY)out->ready_mask|=1u<<i;}return 0;}
 const PgrRuntimeHostApi api{1,sizeof(api),configure,stop,sample};
 }
-extern "C" const void *pgrazor_runtime_host_api(uint32_t version){return version==1?&api:nullptr;}
+extern "C" const void *pgs_runtime_host_api(uint32_t version){return version==1?&api:nullptr;}

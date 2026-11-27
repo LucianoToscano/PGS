@@ -1832,7 +1832,7 @@ void pgr_iv_display_set_panel_hooks(const PgrIvPanelHooks *hooks) {
   g_panel_hooks.store(hooks, std::memory_order_release);
 }
 
-extern "C" const void *pgrazor_iv_display_api(uint32_t version) {
+extern "C" const void *pgs_iv_display_api(uint32_t version) {
   if (version != PGR_IV_API_VERSION) return nullptr;
   return &kApiTable;
 }

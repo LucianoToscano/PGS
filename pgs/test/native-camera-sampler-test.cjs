@@ -61,13 +61,13 @@ function harness(){
  table.writeU32(1);table.add(4).writeU32(24);
  table.add(8).writePointer(c=>{configMem=c;return installRc;});
  table.add(16).writePointer((reqPtr,outPtr)=>{calls.push({reqPtr,outPtr});if(flags.throwSample)throw new Error('boom');return writeOut(outPtr,ctl);});
- const sandbox={Memory:{alloc:()=>new Mem()},NativeFunction:function(f){return f;},PGRazorNativeFeature:()=>table,ptr:()=>NULLPTR};
+ const sandbox={Memory:{alloc:()=>new Mem()},NativeFunction:function(f){return f;},PGSNativeFeature:()=>table,ptr:()=>NULLPTR};
  vm.runInNewContext(fs.readFileSync(__dirname+'/../runtime/native-camera-sampler.js','utf8'),sandbox);
  return {sandbox,calls,configMem:()=>configMem,setInstallRc(v){installRc=v;},setCtl(o){Object.assign(ctl,o);},flags};
 }
 
 function create(h,found,module){
- return h.sandbox.PGRazorNativeCameraSampler.create({
+ return h.sandbox.PGSNativeCameraSampler.create({
   state:{clock:()=>123},found:found||makeFound(),module:module||makeModule(),
   Memory:h.sandbox.Memory,NativeFunction:h.sandbox.NativeFunction,ptr:h.sandbox.ptr});
 }
@@ -172,20 +172,20 @@ function create(h,found,module){
  assert.throws(()=>create(harness(),{}),/metadata/,'absent found.sample throws');
 
  // pilot absent (no CorePath, no feature query) -> null.
- const sandbox={Memory:{alloc:()=>new Mem()},NativeFunction:function(f){return f;},PGRazorNativeFeature:undefined,ptr:()=>NULLPTR};
+ const sandbox={Memory:{alloc:()=>new Mem()},NativeFunction:function(f){return f;},PGSNativeFeature:undefined,ptr:()=>NULLPTR};
  vm.runInNewContext(fs.readFileSync(__dirname+'/../runtime/native-camera-sampler.js','utf8'),sandbox);
- assert.equal(sandbox.PGRazorNativeCameraSampler.create({state:{},found:makeFound(),module:makeModule(),
+ assert.equal(sandbox.PGSNativeCameraSampler.create({state:{},found:makeFound(),module:makeModule(),
   Memory:sandbox.Memory,NativeFunction:sandbox.NativeFunction,ptr:sandbox.ptr}),null,'pilot absent -> null');
  console.log('PASS camera-sampler adapter: fail-closed install/metadata, pilot-absent null');
 }
 
 // --- 7. selected pilot cannot silently omit the native loader/table ------------------------------------
 {
- const h=harness();h.sandbox.PGRazorNativeFeature=undefined;
+ const h=harness();h.sandbox.PGSNativeFeature=undefined;
  assert.equal(create(h),null,'feature query absent (no CorePath) -> null');
- h.sandbox.PGRazorNativeCorePath='selected';
+ h.sandbox.PGSNativeCorePath='selected';
  assert.throws(()=>create(h),/native-camera-sampler-loader/,'selected pilot + no loader throws');
- const h2=harness();h2.sandbox.PGRazorNativeFeature=()=>null;h2.sandbox.PGRazorNativeCorePath='selected';
+ const h2=harness();h2.sandbox.PGSNativeFeature=()=>null;h2.sandbox.PGSNativeCorePath='selected';
  assert.throws(()=>create(h2),/native-camera-sampler-table/,'selected pilot + missing table throws');
  console.log('PASS camera-sampler adapter: selected pilot requires loader + table');
 }

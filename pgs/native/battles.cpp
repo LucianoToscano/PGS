@@ -900,7 +900,7 @@ const pgr_battle_api_v1 g_api = {
 
 }  // namespace
 
-const void *pgrazor_battles_api(uint32_t version) {
+const void *pgs_battles_api(uint32_t version) {
   if (version != PGR_BATTLE_API_VERSION) return nullptr;
   return &g_api;
 }

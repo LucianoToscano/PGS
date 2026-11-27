@@ -24,9 +24,9 @@ function finishGoogleSignIn(status, email, token) {
 function installGoogleBrowserLogin() {
     if(bootParameters.compiledJavaBridges){bootLog('google-signin-dex-owned');return;}
     if (bootParameters.googleBrowserLogin !== true) return;
-    if (globalThis.PGRazorNativeCorePath) {
-        if (!globalThis.PGRazorCompiledGoogleSignIn) throw Error('compiled-google-signin-adapter-missing');
-        const adapter = PGRazorCompiledGoogleSignIn.create({Java, isDisposed: () => disposed, bootLog});
+    if (globalThis.PGSNativeCorePath) {
+        if (!globalThis.PGSCompiledGoogleSignIn) throw Error('compiled-google-signin-adapter-missing');
+        const adapter = PGSCompiledGoogleSignIn.create({Java, isDisposed: () => disposed, bootLog});
         if (!adapter) throw Error('compiled-google-signin-adapter-unavailable');
         compiledGoogleSignIn = adapter;
         adapter.install();
@@ -113,7 +113,7 @@ function runDiagnostic() {
                 control.cameraDiagnostic('Checking camera thread...');
             });
             if (diagnostic === null)
-                diagnostic = Script.evaluate('/pgrazor-' + kind + '.js', File.readAllText(path));
+                diagnostic = Script.evaluate('/pgs-' + kind + '.js', File.readAllText(path));
             const result = diagnostic.start({ enabled: true,
                 observeRuntime: bootParameters.sceneObserve === true,
                 sampleCamera: bootParameters.cameraSample === true || bootParameters.cameraSteering === true,
@@ -202,7 +202,7 @@ function runInteraction(observe) {
             control.setInteractionDiagnosticRunning(true);
             control.interactionDiagnostic(observe ? 'Preparing catch/spin capture...' : 'Checking catch/spin metadata...');
         });
-        if (interaction === null) interaction=Script.evaluate('/pgrazor-interaction-probe.js',File.readAllText(bootParameters.interactionProbePath));
+        if (interaction === null) interaction=Script.evaluate('/pgs-interaction-probe.js',File.readAllText(bootParameters.interactionProbePath));
         const result=interaction.start({enabled:true,observeRuntime:observe,readResults:observe,onEvent(event) {
             if (disposed) return;
             Java.performNow(() => {
@@ -246,7 +246,7 @@ function heartbeat() {
     });
 }
 function startGameplayTransport() {
-        translatedBridge=bootParameters.compiledNativeTransport ? PGRazorNativeTransport.create() : PGRazorTranslated.client({io:PGRazorTranslated.files(bootParameters.mailboxPath),session:bootParameters.mailboxSession});
+        translatedBridge=bootParameters.compiledNativeTransport ? PGSNativeTransport.create() : PGSTranslated.client({io:PGSTranslated.files(bootParameters.mailboxPath),session:bootParameters.mailboxSession});
         control=translatedBridge.control;
         // Same-ABI Android retains Java lifecycle ownership. Gameplay readers,
         // pulses and events exclusively use the compiled snapshot/queue.
@@ -272,7 +272,7 @@ function startGameplayTransport() {
 function start() {
     if (disposed) return;
     if(bootParameters.translatedRole==='native') {
-        PGRazorTranslated.installCodeValidation();
+        PGSTranslated.installCodeValidation();
         // ARM has the game libraries; ART lives in the x86-64 host runtime.
         // Only Control messages cross this boundary, never Java object handles.
         globalThis.Java={performNow:fn=>fn(),scheduleOnMainThread:fn=>fn()};
@@ -281,7 +281,7 @@ function start() {
     }
     try {
         const source = File.readAllText(bootParameters.bridgePath);
-        globalThis.Java = Script.evaluate('/pgrazor-java-bridge.js', source + '\nbridge;');
+        globalThis.Java = Script.evaluate('/pgs-java-bridge.js', source + '\nbridge;');
         bootLog('java-bridge-loaded');
         // init() has already returned. Waiting for the application class loader
         // here cannot hold the dynamic linker constructor open.
@@ -291,7 +291,7 @@ function start() {
                 control = javaControl = Java.use('dev.pgs.Control');
                 const locationControl=javaControl;
                 if(!bootParameters.compiledJavaBridges){
-                    locationAdapter = PGRazorLocation.create({Java, control, isDisposed: () => disposed, bootLog});
+                    locationAdapter = PGSLocation.create({Java, control, isDisposed: () => disposed, bootLog});
                     locationAdapter.installPermissions();
                 }else bootLog('location-dex-owned');
                 try { installGoogleBrowserLogin(); } catch (_) { control.event('google-browser', 'Browser sign-in unavailable'); }
@@ -316,13 +316,13 @@ function start() {
                 if(bootParameters.translatedRole==='host') {
                     if(bootParameters.compiledNativeTransport) {
                         control.event('translated-host-ready','Compiled JNI transport v1; Java owns cadence');
-                    } else if(globalThis.PGRazorNativeCorePath) {
+                    } else if(globalThis.PGSNativeCorePath) {
                         translatedBridge=Java.use('dev.pgs.RuntimeMailbox').create(
                             bootParameters.mailboxPath,bootParameters.mailboxSession);
                         translatedBridge.start();
                         control.event('translated-host-ready','Compiled Java mailbox v1');
                     } else {
-                        translatedBridge=PGRazorTranslated.host({io:PGRazorTranslated.files(bootParameters.mailboxPath),control,session:bootParameters.mailboxSession});
+                        translatedBridge=PGSTranslated.host({io:PGSTranslated.files(bootParameters.mailboxPath),control,session:bootParameters.mailboxSession});
                         translatedBridge.tick();
                         translatedTimer=setInterval(()=>Java.performNow(()=>translatedBridge.tick()),50);
                     }
@@ -360,9 +360,9 @@ function start() {
 rpc.exports = {
     init(stage, parameters) {
         bootParameters = parameters || {};
-        globalThis.PGRazorNativeCorePath = bootParameters.nativeCorePath || '';
-        globalThis.PGRazorNativeCoreTest = bootParameters.nativeCoreTest === true;
-        globalThis.PGRazorNativeDiagnostic = bootParameters.nativeCoreTest === true ? bootLog : () => {};
+        globalThis.PGSNativeCorePath = bootParameters.nativeCorePath || '';
+        globalThis.PGSNativeCoreTest = bootParameters.nativeCoreTest === true;
+        globalThis.PGSNativeDiagnostic = bootParameters.nativeCoreTest === true ? bootLog : () => {};
         setImmediate(start);
     },
     dispose() {

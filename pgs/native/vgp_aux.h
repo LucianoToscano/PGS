@@ -160,7 +160,7 @@ static_assert(sizeof(PgrVgpAuxApi) == 32, "PgrVgpAuxApi must remain a 32-byte ve
 
 // Hidden getter. NOT exported by the version script; the coordinator registers it in query_feature under
 // feature id 34 and answers only on an exact version match.
-const void *pgrazor_vgp_aux_api(uint32_t version);
+const void *pgs_vgp_aux_api(uint32_t version);
 
 #ifdef __cplusplus
 }

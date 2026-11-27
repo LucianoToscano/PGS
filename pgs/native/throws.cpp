@@ -318,7 +318,7 @@ static_assert(sizeof(PgrThrowApi) == 40, "throw API ABI");
 
 }  // namespace
 
-const void *pgrazor_throws_api(uint32_t version) {
+const void *pgs_throws_api(uint32_t version) {
     static const PgrMapThrowApi map_api{2,sizeof(PgrMapThrowApi),pgr_map_throw_value};
     return version==1?static_cast<const void*>(&g_api):version==2?static_cast<const void*>(&map_api):nullptr;
 }

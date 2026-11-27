@@ -33,18 +33,18 @@
 namespace {
 using namespace pgr_shared_meta;
 template<class T>const T *table(const void *p){return static_cast<const T*>(p);}
-const auto sh=table<PgrSharedCatchApi>(pgrazor_shared_catch_api(1));
-const auto sc=table<PgrSummaryCompletionApi>(pgrazor_summary_completion_api(1));
-const auto dc=table<PgrDetailsCompletionApi>(pgrazor_details_completion_api(1));
-const auto dr=table<PgrDetailsRecoveryApi>(pgrazor_details_recovery_api(1));
-const auto cd=table<PgrCatchDiscoveryApi>(pgrazor_catch_discovery_api(1));
-const auto cv=table<PgrCatchCanvasApi>(pgrazor_catch_canvas_api(1));
-const auto tx=table<PgrTransferExecApi>(pgrazor_transfer_execution_api(1));
-const auto tf=table<PgrTransferFactsApi>(pgrazor_transfer_facts_api(1));
-const auto cc=table<PgrCatchCompletionApi>(pgrazor_catch_completion_api(1));
-const auto bridge=table<PgrCatchApi>(pgrazor_catch_presentation_api(1));
+const auto sh=table<PgrSharedCatchApi>(pgs_shared_catch_api(1));
+const auto sc=table<PgrSummaryCompletionApi>(pgs_summary_completion_api(1));
+const auto dc=table<PgrDetailsCompletionApi>(pgs_details_completion_api(1));
+const auto dr=table<PgrDetailsRecoveryApi>(pgs_details_recovery_api(1));
+const auto cd=table<PgrCatchDiscoveryApi>(pgs_catch_discovery_api(1));
+const auto cv=table<PgrCatchCanvasApi>(pgs_catch_canvas_api(1));
+const auto tx=table<PgrTransferExecApi>(pgs_transfer_execution_api(1));
+const auto tf=table<PgrTransferFactsApi>(pgs_transfer_facts_api(1));
+const auto cc=table<PgrCatchCompletionApi>(pgs_catch_completion_api(1));
+const auto bridge=table<PgrCatchApi>(pgs_catch_presentation_api(1));
 const auto transport=table<PgrRuntimeTransportApi>(pgrazor_runtime_transport_api(1));
-const auto transfer_policy=table<PgrTransferApi>(pgrazor_transfer_policy_api(1));
+const auto transfer_policy=table<PgrTransferApi>(pgs_transfer_policy_api(1));
 PgrSharedHostConfig cfg{},accepted_config{};
 PgrMetaExports exports{};
 PgrSharedMetaExtraExports extra{};
@@ -295,7 +295,7 @@ int install_leaves(){
    PgrTransferExecConfig transfer{};pointers(transfer,std::array<void*,16>{extra.gchandle_new,extra.gchandle_get_target,extra.gchandle_free,cfg.object_get_class,cfg.runtime_invoke,cfg.field_get_value,h(H_TR_GET_M),h(H_TR_RELEASE_M),k(OC_BAG),k(OC_PK),h(H_TR_CB_CLASS),k(OC_RELEASE),h(H_DET_ID),h(H_TR_CB_POKEMON),h(H_TR_CB_BAG),h(H_TR_RESULT_STATUS)});transfer.success_literal=md.opt_ints[I_TR_RESULT_SUCCESS];
    if((rc=tx->install(&transfer)))return rc;
    PgrTransferObserversConfig observers{1,sizeof(observers),h(H_TR_RESULT_CODE),h(H_TR_ERROR_CODE),cfg.metadata.thread_current,extra.gchandle_new,extra.gchandle_get_target,extra.gchandle_free};
-   if((rc=table<PgrTransferObserversApi>(pgrazor_transfer_observers_api(1))->install(&observers)))return rc;capabilities.fetch_or(PGR_SHH_TRANSFER);
+   if((rc=table<PgrTransferObserversApi>(pgs_transfer_observers_api(1))->install(&observers)))return rc;capabilities.fetch_or(PGR_SHH_TRANSFER);
   }
   if(md.optional[OPT_DIRECT_PRESENTATION]==PGR_SHARED_OPT_AVAILABLE){
    PgrCatchCompletionConfig completion{};pointers(completion,std::array<void*,14>{cfg.object_get_class,cfg.field_get_value,cfg.runtime_invoke,k(OC_VIEW),c(3),k(OC_PK),k(OC_ACTION),h(H_DP_ACTIVE),h(H_DET_DELEGATE_TARGET),h(H_DET_VIEW_RESP),f(5),f(0),h(H_DET_ID),h(H_DP_CALLBACK)});completion.success_literal=md.success;
@@ -619,7 +619,7 @@ int install_summary_alpha(){
  auto resolve=reinterpret_cast<void*(*)(const char*)>(dlsym(binding.handle,"il2cpp_resolve_icall"));if(!resolve)return -5;
  void *address=resolve("UnityEngine.CanvasGroup::set_alpha_Injected(System.IntPtr,System.Single)");if(!address)return -6;
  PgrCatchCanvasAlphaConfig alpha{1,sizeof(alpha),address,const_cast<void*>(root.field),const_cast<void*>(native.field),const_cast<void*>(group)};
- return table<PgrCatchCanvasApi3>(pgrazor_catch_canvas_api(3))->install_alpha(&alpha);
+ return table<PgrCatchCanvasApi3>(pgs_catch_canvas_api(3))->install_alpha(&alpha);
 }
 int configure_default(){
  if(default_busy.test_and_set(std::memory_order_acquire))return 1;
@@ -658,7 +658,7 @@ int configure(const PgrSharedHostConfig *input){
  if(input->metadata.owner_tid!=tid())return -2;
  std::lock_guard<std::mutex> lock(setup_mutex);if(failed)return -3;if(ready)return std::memcmp(input,&accepted_config,sizeof(*input))==0?0:-4;
  cfg=*input;exports=*input->metadata.binding.exports;extra=*input->metadata.extra;cfg.metadata.binding.exports=&exports;cfg.metadata.extra=&extra;
- int rc=table<PgrSharedMetadataApi>(pgrazor_shared_metadata_api(2))->resolve(&cfg.metadata,&md);if(rc)return rc;
+ int rc=table<PgrSharedMetadataApi>(pgs_shared_metadata_api(2))->resolve(&cfg.metadata,&md);if(rc)return rc;
  owner=tid();rc=install_leaves();if(rc){failed=true;return rc;}rc=install_hooks();if(rc){failed=true;return rc;}installed=true;accepted_config=*input;ready=true;emit(9);return 0;
 }
 int update(const PgrSharedHostOptions *input){if(!input||input->version!=1||input->size!=sizeof(*input)||input->flags&~15u||input->protect&~2047u||pgr_transfer_keep_iv_percent(input->keep_iv)<0||input->keep_count>keep.size()||(input->keep_count&&!input->keep_ids)||!input->epoch)return -1;

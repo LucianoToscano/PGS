@@ -460,7 +460,7 @@ void tickSmartWait(const PgrVgpControllerTick *in,PgrVgpControllerOut *o,uint64_
     smartEvent(0,decision.berry,pend.attempts+1);
     pend.phase=PGR_VGC_PH_SMART_BERRY;pend.deadline=nowMs()+20000;setStatus(o,PGR_VGC_ST_SMART_BERRY);return;
   }
-  const auto *selected=static_cast<const PgrVgpSmartActionsApi*>(pgrazor_vgp_actions_api(2));
+  const auto *selected=static_cast<const PgrVgpSmartActionsApi*>(pgs_vgp_actions_api(2));
   if(!selected){pauseError(o,-40);return;}
   PgrVgpActionsTarget req{PGR_VA_TARGET_VERSION,sizeof(req),in->epoch,in->owner,rootGet(pend.target)};
   uintptr_t promise=0;
@@ -1106,7 +1106,7 @@ const PgrVgpControllerApi api = {PGR_VGC_API_VERSION, sizeof(PgrVgpControllerApi
 
 }  // namespace
 
-extern "C" const void *pgrazor_vgp_controller_api(uint32_t version) {
+extern "C" const void *pgs_vgp_controller_api(uint32_t version) {
   return version == PGR_VGC_API_VERSION ? &api : nullptr;
 }
 extern "C" void pgr_vgp_smart_escape_status(int32_t status){smartEscapeStatus=status;}

@@ -21,9 +21,9 @@ void leave(uint64_t token,void *result){
 void abort_call(uint64_t token){assert(token&&roots>0);++aborts;}
 const pgr_interaction_owner::Api observer{2,40,wants,enter,leave,abort_call};
 }
-extern "C" const void *pgrazor_interaction_host_api(uint32_t v){return v==2?&observer:nullptr;}
+extern "C" const void *pgs_interaction_host_api(uint32_t v){return v==2?&observer:nullptr;}
 int main(){
-    auto api=static_cast<const PgrObsApi*>(pgrazor_catch_observers_api(1));
+    auto api=static_cast<const PgrObsApi*>(pgs_catch_observers_api(1));
     PgrObsConfig cfg{};cfg.version=1;cfg.size=sizeof(cfg);
     cfg.object_get_class=(void*)&obj_class;cfg.field_get_value=(void*)&field_get;
     cfg.gchandle_new=(void*)&gc_new;cfg.gchandle_get_target=(void*)&gc_target;cfg.gchandle_free=(void*)&gc_free;

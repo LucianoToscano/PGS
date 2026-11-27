@@ -178,7 +178,7 @@ static_assert(sizeof(PgrCatchCompletionApi) == 64,
 
 // Hidden getter. NOT exported by the version script; the coordinator registers it in query_feature
 // under feature id 24 and answers only on an exact version match.
-const void *pgrazor_catch_completion_api(uint32_t version);
+const void *pgs_catch_completion_api(uint32_t version);
 
 #ifdef __cplusplus
 }

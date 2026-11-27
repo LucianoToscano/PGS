@@ -21,7 +21,7 @@ int quick_install(const PgrQuickSpinConfig *p){quick_config=*p;++quick_installs;
 int camera_update(int a,uint64_t l,uint64_t tid,uint64_t){assert(tid==uint64_t(gettid()));camera_allowed=a;camera_lease=l;return 0;}
 int quick_update(int a,uint64_t l,uint64_t,uint64_t){quick_allowed=a;quick_lease=l;return 0;}
 int camera_tick(uint64_t){return 0;}
-int quick_tick(uint64_t tid,uint64_t seq,uint64_t opener){quick_sequence=seq;quick_opener=opener;if(reenter){reenter=false;auto a=static_cast<const PgrSpinHostApi*>(pgrazor_spin_host_api(1));assert(a->tick(tid,seq,opener)==PGR_SPH_BUSY);}return 0;}
+int quick_tick(uint64_t tid,uint64_t seq,uint64_t opener){quick_sequence=seq;quick_opener=opener;if(reenter){reenter=false;auto a=static_cast<const PgrSpinHostApi*>(pgs_spin_host_api(1));assert(a->tick(tid,seq,opener)==PGR_SPH_BUSY);}return 0;}
 int camera_read(PgrSpinCameraSample *p){*p=camera_sample;return 0;}
 int quick_read(PgrQuickSpinSample *p){*p=quick_sample;return 0;}
 int clear(){++clear_count;return 0;}
@@ -47,7 +47,7 @@ void scenario(unsigned mode){
  if(mode==3)install_quick_error=-7;
  PgrSharedMetaExtraExports ex{};ex.gchandle_new=pointer(2100);ex.gchandle_get_target=pointer(2101);ex.gchandle_free=pointer(2102);
  PgrSpinHostConfig c{1,sizeof(c),mode==4?1u:0u,1,&md,&ex,pointer(2110),pointer(2111),pointer(2112),pointer(2113),thread,uint64_t(gettid())};
- const auto a=static_cast<const PgrSpinHostApi*>(pgrazor_spin_host_api(1));assert(a&&a->size==64&&!pgrazor_spin_host_api(2));
+ const auto a=static_cast<const PgrSpinHostApi*>(pgs_spin_host_api(1));assert(a&&a->size==64&&!pgs_spin_host_api(2));
  auto bad=c;bad.exclusive_owner=0;assert(a->configure(&bad)==PGR_SPH_BAD_CONFIG);
  assert(a->configure(&c)==0&&a->configure(&c)==0);bad=c;bad.object_unbox=pointer(2114);assert(a->configure(&bad)==PGR_SPH_REBIND);
  PgrSpinHostSample s{};assert(a->sample(&s)==0);assert(s.capabilities==((mode==1?0:1)|(mode==2||mode==3?0:2)));
@@ -81,8 +81,8 @@ void scenario(unsigned mode){
  assert(a->sample(&s)==0&&s.stopping);if(mode==3)assert(s.quick_error==-7&&s.capabilities==1);
 }
 }
-extern "C" const void *pgrazor_spin_camera_api(uint32_t v){return v==1?&spin_fixture::camera_table:nullptr;}
-extern "C" const void *pgrazor_quick_spin_api(uint32_t v){return v==1?&spin_fixture::quick_table:nullptr;}
+extern "C" const void *pgs_spin_camera_api(uint32_t v){return v==1?&spin_fixture::camera_table:nullptr;}
+extern "C" const void *pgs_quick_spin_api(uint32_t v){return v==1?&spin_fixture::quick_table:nullptr;}
 const void *pgrazor_runtime_transport_api(uint32_t v){return v==1?&spin_fixture::transport_table:nullptr;}
 extern "C" const void *pgrazor_unity_scheduler_api(uint32_t v){return v==2?&spin_fixture::scheduler_table:nullptr;}
 extern "C" const void *pgrazor_shared_host_api(uint32_t v){return v==1?&spin_fixture::shared_table:nullptr;}

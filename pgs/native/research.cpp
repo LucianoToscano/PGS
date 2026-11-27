@@ -252,7 +252,7 @@ void finish(bool ok,const std::string &message){
  st.next_action=clock_ms()+kGapMs;st.next_scan=0;
 }
 void poll(uint64_t tid){
- auto api=static_cast<const PgrVgpResultsApi*>(pgrazor_vgp_results_api(1));require(api,"Promise observer unavailable");
+ auto api=static_cast<const PgrVgpResultsApi*>(pgs_vgp_results_api(1));require(api,"Promise observer unavailable");
  PgrVgpResultsResult out{};const int rc=api->poll(st.promise.get(),1,tid,&out);Root result;result.h=out.value_handle;
  const bool claim=st.pending==pgr_research::CLAIM;
  if(!rc){if(clock_ms()-st.since>=kTimeoutMs)finish(false,"Request outcome unknown; not retried");return;}
@@ -328,7 +328,7 @@ void throw_ball(){
 // Hands a caught Pokemon to the VGP transfer path once the bag lists it; Keep All is honored.
 void transfer_caught(uint64_t tid){
  if(!st.pokemon_bag)st.pokemon_bag=resolve("Niantic.Holoholo","IPokemonBag");
- auto aux=static_cast<const PgrVgpAuxApi*>(pgrazor_vgp_aux_api(1));
+ auto aux=static_cast<const PgrVgpAuxApi*>(pgs_vgp_aux_api(1));
  if(!aux||!st.pokemon_bag){enc_done("Caught; transfer unavailable",true);return;}
  PgrVgpAuxTransfer out{};out.version=1;out.size=sizeof(out);
  const int rc=aux->transfer(st.catch_response.get(),st.pokemon_bag.get(),tid,2500,&out);
@@ -342,7 +342,7 @@ void transfer_caught(uint64_t tid){
 }
 void poll_encounter(uint64_t tid){
  if(st.enc==E_TRANSFER){transfer_caught(tid);return;}
- auto api=static_cast<const PgrVgpResultsApi*>(pgrazor_vgp_results_api(1));require(api,"Promise observer unavailable");
+ auto api=static_cast<const PgrVgpResultsApi*>(pgs_vgp_results_api(1));require(api,"Promise observer unavailable");
  PgrVgpResultsResult out{};const int rc=api->poll(st.promise.get(),1,tid,&out);Root result;result.h=out.value_handle;
  if(!rc){if(clock_ms()-st.since>=kTimeoutMs)enc_done("Encounter outcome unknown; not retried",false);return;}
  if(rc!=PGR_VR_DONE||!result){enc_done(st.enc==E_BEGIN?"Encounter failed; not retried":"Catch failed; not retried",false);return;}

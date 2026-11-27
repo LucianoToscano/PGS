@@ -233,7 +233,7 @@ typedef pgrazor_buddy_api_v1 pgs_buddy_api_v1;
  * core getter registry under feature id 12; the loader hands the adapter the table on an
  * exact version match, else NULL. The table lives for the process lifetime.
  */
-const void *pgrazor_buddy_feeding_api(uint32_t version);
+const void *pgs_buddy_feeding_api(uint32_t version);
 
 #ifdef __cplusplus
 } /* extern "C" */

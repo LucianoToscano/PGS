@@ -390,7 +390,7 @@ const PgrVgpAuxApi kApiTable = {
 
 }  // namespace
 
-extern "C" const void *pgrazor_vgp_aux_api(uint32_t version) {
+extern "C" const void *pgs_vgp_aux_api(uint32_t version) {
   if (version != PGR_VX_API_VERSION) return nullptr;
   return &kApiTable;
 }

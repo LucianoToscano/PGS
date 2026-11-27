@@ -1,19 +1,19 @@
 // Transitional adapter: native gameplay stays in the ARM runtime on MuMu.
 // Metadata validation and the existing host/guest settings bridge remain intact.
 (function(root){
- if(root.PGRazorNativeCore&&root.PGRazorNativeFeature)return;
+ if(root.PGSNativeCore&&root.PGSNativeFeature)return;
  let cached=null;
  let loaded=null;
  function load(){
   if(loaded)return loaded;
-  if(!root.PGRazorNativeCorePath)return null;
-  const trace=root.PGRazorNativeDiagnostic||(()=>{});
+  if(!root.PGSNativeCorePath)return null;
+  const trace=root.PGSNativeDiagnostic||(()=>{});
   trace('native-core: load begin');
   // Use the guest linker's handle directly. Frida's Module wrapper introspection
   // can stall under MuMu after a new ARM library has loaded.
   const open=new NativeFunction(Module.getGlobalExportByName('dlopen'),'pointer',['pointer','int']);
   const symbol=new NativeFunction(Module.getGlobalExportByName('dlsym'),'pointer',['pointer','pointer']);
-  const library=open(Memory.allocUtf8String(root.PGRazorNativeCorePath),2);
+  const library=open(Memory.allocUtf8String(root.PGSNativeCorePath),2);
   if(library.isNull())throw Error('Native core dlopen failed');
   trace('native-core: load complete');
   // Prefer the PGS ABI factory. Existing native clients retain the old export.
@@ -30,13 +30,13 @@
    throw Error('Native core ABI mismatch');
   return api;
  }
- root.PGRazorNativeFeature=function(id,version,size){
+ root.PGSNativeFeature=function(id,version,size){
   const state=load();if(!state)return null;
   const api=checked(state.get(2),2,48);
   const query=new NativeFunction(api.add(40).readPointer(),'pointer',['uint','uint'],{exceptions:'propagate'});
   return checked(query(id,version),version,size);
  };
- root.PGRazorNativeCore=function(){
+ root.PGSNativeCore=function(){
   if(cached)return cached;
   const state=load();if(!state)return null;
   const {library,get,trace}=state;
@@ -47,7 +47,7 @@
   const fn=(index,result,args)=>new NativeFunction(api.add(8+index*8).readPointer(),result,args,{exceptions:'propagate'});
   const install=fn(0,'int',['pointer']),update=fn(1,'int',['int','int','uint64']);
   const sample=fn(2,'int',['pointer']),selftest=fn(3,'int',[]);
-  if(root.PGRazorNativeCoreTest===true){
+  if(root.PGSNativeCoreTest===true){
    trace('native-core: hook selftest begin');
    const result=selftest();
    trace('native-core: hook selftest result '+result);

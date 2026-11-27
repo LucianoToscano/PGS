@@ -143,7 +143,7 @@ static_assert(sizeof(PgrVgpPolicyApi) == 112, "PgrVgpPolicyApi must remain a 112
 
 // Hidden getter. NOT exported by the version script; the coordinator registers it in query_feature
 // under feature id 25 and answers only on an exact version match.
-const void *pgrazor_vgp_policy_api(uint32_t version);
+const void *pgs_vgp_policy_api(uint32_t version);
 
 #ifdef __cplusplus
 }

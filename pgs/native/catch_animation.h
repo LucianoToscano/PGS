@@ -121,4 +121,4 @@ struct PgrSpeedApi2 {            // 16 bytes: ordered, read-only table (V2, Max 
 // Hidden getter. NOT exported by the version script; the coordinator registers it in
 // the core getter registry under feature id 8. Answers version 1 with PgrSpeedApi and
 // version 2 with PgrSpeedApi2 on an exact match; any other version returns nullptr.
-const void *pgrazor_catch_animation_api(uint32_t version);
+const void *pgs_catch_animation_api(uint32_t version);

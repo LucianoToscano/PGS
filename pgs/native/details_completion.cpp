@@ -500,7 +500,7 @@ const PgrDetailsCompletionApi kApiTable = {
 
 }  // namespace
 
-extern "C" const void *pgrazor_details_completion_api(uint32_t version) {
+extern "C" const void *pgs_details_completion_api(uint32_t version) {
   if (version != PGR_DC_API_VERSION) return nullptr;
   return &kApiTable;
 }

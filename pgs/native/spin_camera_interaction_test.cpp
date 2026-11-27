@@ -17,9 +17,9 @@ void leave(uint64_t token,void *result){assert(token&&!result&&!g_live_handles.e
 void abort_call(uint64_t token){assert(token&&!g_live_handles.empty());++aborts;}
 const pgr_interaction_owner::Api observer{2,40,wants,enter,leave,abort_call};
 }
-extern "C" const void *pgrazor_interaction_host_api(uint32_t v){return v==2?&observer:nullptr;}
+extern "C" const void *pgs_interaction_host_api(uint32_t v){return v==2?&observer:nullptr;}
 int main(){
-    auto api=static_cast<const PgrSpinCameraApi*>(pgrazor_spin_camera_api(1));auto cfg=make_valid_config();assert(api->install(&cfg)==0);
+    auto api=static_cast<const PgrSpinCameraApi*>(pgs_spin_camera_api(1));auto cfg=make_valid_config();assert(api->install(&cfg)==0);
     FakeObject original{},moved{};original.klass=moved.klass=&g_sentinel_out_class;from=&original;to=&moved;
     call_out_enter(&original,nullptr);assert(entries==0&&g_live_handles.empty()&&g_log_out_enter.last_self==&original);
     observing=true;call_out_enter(&original,nullptr);assert(last_id==8&&leaves==1&&g_log_out_enter.last_self==&moved&&g_live_handles.empty());

@@ -8,7 +8,7 @@
 // compiler-generated spline camera coroutine iterator MoveNext.
 //
 // Loader contract:
-// Resolved via root.PGRazorNativeFeature(10, 1, 40) -> pgrazor_spin_camera_api(1).
+// Resolved via root.PGSNativeFeature(10, 1, 40) -> pgs_spin_camera_api(1).
 // Null return means pilot absent; any install/update error after selection fails
 // closed without falling back to Gum hooks.
 
@@ -91,7 +91,7 @@ static_assert(sizeof(PgrSpinCameraApi) == 40,
 #ifdef __cplusplus
 extern "C" {
 #endif
-const void *pgrazor_spin_camera_api(uint32_t version);
+const void *pgs_spin_camera_api(uint32_t version);
 #ifdef __cplusplus
 }
 #endif

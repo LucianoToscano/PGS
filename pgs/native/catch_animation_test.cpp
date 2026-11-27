@@ -11,7 +11,7 @@
 // the fakes in rocket_minigame_test.cpp.
 //
 // The API is pulled through the core getter registry (dlsym only exposes
-// pgs_native_api; pgrazor_catch_animation_api is hidden by the version script and
+// pgs_native_api; pgs_catch_animation_api is hidden by the version script and
 // answered under feature id 8).
 //
 // A restore/apply/root fault LATCHES for the process lifetime (g_fault is sticky), so

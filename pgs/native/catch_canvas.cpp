@@ -633,7 +633,7 @@ const PgrCatchCanvasApi2 kApi2{2,sizeof(PgrCatchCanvasApi2),api_subscribe};
 
 }  // namespace
 
-extern "C" const void *pgrazor_catch_canvas_api(uint32_t version) {
+extern "C" const void *pgs_catch_canvas_api(uint32_t version) {
   if(version==3)return &kApi3;
   if(version==2)return &kApi2;
   if (version != PGR_CANVAS_API_VERSION) return nullptr;

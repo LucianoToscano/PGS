@@ -59,19 +59,19 @@ TABLE(flow_encounter_api,flow_encounter) TABLE(flow_interaction_api,flow_interac
 #define pgrazor_runtime_transport_api flow_transport_api
 #define pgrazor_runtime_bootstrap_api flow_boot_api
 #define pgrazor_runtime_metadata_api flow_metadata_api
-#define pgrazor_catch_wait_api flow_wait_api
+#define pgs_catch_wait_api flow_wait_api
 #define pgrazor_shared_host_api flow_shared_api
-#define pgrazor_quickball_host_api flow_quick_api
-#define pgrazor_routes_host_api flow_routes_api
-#define pgrazor_inventory_host_api flow_inventory_api
-#define pgrazor_spin_host_api flow_spin_api
-#define pgrazor_spawn_host_api flow_spawn_api
-#define pgrazor_camera_host_api flow_camera_api
-#define pgrazor_combat_host_api flow_combat_api
+#define pgs_quickball_host_api flow_quick_api
+#define pgs_routes_host_api flow_routes_api
+#define pgs_inventory_host_api flow_inventory_api
+#define pgs_spin_host_api flow_spin_api
+#define pgs_spawn_host_api flow_spawn_api
+#define pgs_camera_host_api flow_camera_api
+#define pgs_combat_host_api flow_combat_api
 #define pgrazor_account_host_api flow_account_api
-#define pgrazor_encounter_host_api flow_encounter_api
-#define pgrazor_interaction_host_api flow_interaction_api
-#define pgrazor_runtime_host_api flow_manager_api
+#define pgs_encounter_host_api flow_encounter_api
+#define pgs_interaction_host_api flow_interaction_api
+#define pgs_runtime_host_api flow_manager_api
 #include "runtime_host.cpp"
 
 // Collector is another gameplay boundary spy. The real transport still supplies
@@ -200,7 +200,7 @@ int main(int argc,char **argv){
  s.update_calls=100;s.owner_updates=80;s.scan_calls=50;collector_status_key(s,false,next,sizeof(next));assert(!strcmp(first,next));
  s.completed=1;collector_status_key(s,false,next,sizeof(next));assert(strcmp(first,next));
  s.completed=0;s.ready=true;collector_status_key(s,false,next,sizeof(next));assert(strcmp(first,next));}
-using namespace test70;assert(argc==2);void *lib=dlopen(argv[1],RTLD_NOW|RTLD_LOCAL);assert(lib);auto get=reinterpret_cast<const void *(*)(uint32_t)>(dlsym(lib,"pgrazor_native_api"));assert(get);core=static_cast<const pgs_native_api_v2*>(get(2));assert(core&&core->query_feature(70,1));owner_tid=gettid();
+using namespace test70;assert(argc==2);void *lib=dlopen(argv[1],RTLD_NOW|RTLD_LOCAL);assert(lib);auto get=reinterpret_cast<const void *(*)(uint32_t)>(dlsym(lib,"pgs_native_api"));assert(get);core=static_cast<const pgs_native_api_v2*>(get(2));assert(core&&core->query_feature(70,1));owner_tid=gettid();
 #define LOAD(VAR,TYPE,ID,VER) VAR=*static_cast<const TYPE*>(core->query_feature(ID,VER));
  LOAD(flow_scheduler,PgrUnitySchedulerApi,48,2) LOAD(flow_transport,PgrRuntimeTransportApi,52,1) LOAD(flow_boot,PgrBootApi,54,1) LOAD(flow_metadata,PgrMetaApi,47,1)
 #undef LOAD

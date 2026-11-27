@@ -41,4 +41,4 @@ const PgrTransferApi api{1,sizeof(PgrTransferApi),decide};
 static_assert(sizeof(PgrTransferInput)==56,"transfer input ABI");
 static_assert(sizeof(PgrTransferApi)==16,"transfer API ABI");
 }
-const void *pgrazor_transfer_policy_api(uint32_t version){return version==1?&api:nullptr;}
+const void *pgs_transfer_policy_api(uint32_t version){return version==1?&api:nullptr;}

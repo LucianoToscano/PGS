@@ -7,10 +7,10 @@ const code=source.slice(start,end);
 function run({selected=true,role='host',fail=false}={}) {
  const calls=[],helper={start(){calls.push('start');if(fail)throw Error('factory-start-failed');}};
  const c={bootParameters:{translatedRole:role,mailboxPath:'/private/mailbox',mailboxSession:'session'},
-  PGRazorNativeCorePath:selected?'core':'',translatedBridge:null,translatedTimer:null,
+  PGSNativeCorePath:selected?'core':'',translatedBridge:null,translatedTimer:null,
   Java:{use(name){calls.push(name);return {create(path,id){assert.equal(path,'/private/mailbox');assert.equal(id,'session');return helper;}}},performNow(f){f();}},
   control:{event(name,detail){calls.push(name);assert.equal(detail,'Compiled Java mailbox v1');}},
-  PGRazorTranslated:{files(){calls.push('legacy-files');return {};},host(){calls.push('legacy-host');return {tick(){calls.push('legacy-tick');}};}},
+  PGSTranslated:{files(){calls.push('legacy-files');return {};},host(){calls.push('legacy-host');return {tick(){calls.push('legacy-tick');}};}},
   setInterval(){calls.push('legacy-timer');return 1;}};
  return {calls,c,execute(){vm.runInNewContext(code,c);}};
 }

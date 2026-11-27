@@ -125,15 +125,15 @@ void sleep_ms(unsigned ms){timespec ts{long(ms/1000),long(ms%1000)*1000000};nano
 
 // Only55's resolver is substituted. Every gameplay leaf below is the production
 // implementation in core.so; Dobby patches the fixture's real NOP-padded methods.
-const void *pgrazor_quickball_metadata_api(uint32_t v){return v==2?&fixture::metadata_api:nullptr;}
+const void *pgs_quickball_metadata_api(uint32_t v){return v==2?&fixture::metadata_api:nullptr;}
 #define QFORWARD(NAME,ID) const void *NAME(uint32_t v){return fixture::core?fixture::core->query_feature(ID,v):nullptr;}
-QFORWARD(pgrazor_catch_animation_api,8)
-QFORWARD(pgrazor_catch_observers_api,49)
-QFORWARD(pgrazor_throws_api,1)
-QFORWARD(pgrazor_always_hit_api,7)
-QFORWARD(pgrazor_ar_throw_api,5)
-QFORWARD(pgrazor_map_tap_api,13)
-QFORWARD(pgrazor_iv_display_api,15)
+QFORWARD(pgs_catch_animation_api,8)
+QFORWARD(pgs_catch_observers_api,49)
+QFORWARD(pgs_throws_api,1)
+QFORWARD(pgs_always_hit_api,7)
+QFORWARD(pgs_ar_throw_api,5)
+QFORWARD(pgs_map_tap_api,13)
+QFORWARD(pgs_iv_display_api,15)
 QFORWARD(pgrazor_runtime_transport_api,52)
 QFORWARD(pgrazor_runtime_bootstrap_api,54)
 QFORWARD(pgrazor_unity_scheduler_api,48)
@@ -142,9 +142,9 @@ QFORWARD(pgrazor_unity_scheduler_api,48)
 int main(int argc,char **argv){
  using namespace fixture;
  assert(argc==2);void *lib=dlopen(argv[1],RTLD_NOW|RTLD_LOCAL);if(!lib)std::puts(dlerror());assert(lib);
- auto get=reinterpret_cast<const void*(*)(uint32_t)>(dlsym(lib,"pgrazor_native_api"));assert(get);
+ auto get=reinterpret_cast<const void*(*)(uint32_t)>(dlsym(lib,"pgs_native_api"));assert(get);
  core=static_cast<const pgs_native_api_v2*>(get(2));assert(core&&core->query_feature(62,1)&&!core->query_feature(62,2));
- host=static_cast<const PgrQuickballHostApi*>(pgrazor_quickball_host_api(1));assert(host&&host->size==96);
+ host=static_cast<const PgrQuickballHostApi*>(pgs_quickball_host_api(1));assert(host&&host->size==96);
  initialize();wrapped_btxu();assert(learned_caller);
  PgrMetaExports meta_exports{};meta_exports.class_get_type=reinterpret_cast<void*>(type_object);
  meta_exports.class_get_field_from_name=reinterpret_cast<void*>(max_field_by_name);

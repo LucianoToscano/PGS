@@ -63,4 +63,4 @@ int stop(uint64_t){
 }
 const pgr_rocket_actions_api_v1 api={1,sizeof(api),update,observe,begin,claim,stop};
 }
-const void *pgrazor_rocket_actions_api(uint32_t version){return version==1?&api:nullptr;}
+const void *pgs_rocket_actions_api(uint32_t version){return version==1?&api:nullptr;}

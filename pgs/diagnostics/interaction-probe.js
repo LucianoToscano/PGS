@@ -183,7 +183,7 @@
     }
     function emit(state,kind,fields) {
         const event=Object.assign({time:new Date().toISOString(),kind},fields||{});
-        try{console.log('[pgrazor-interaction-probe] '+JSON.stringify(event));}catch(_){}
+        try{console.log('[pgs-interaction-probe] '+JSON.stringify(event));}catch(_){}
         if(typeof state.onEvent==='function')try{state.onEvent(event);}catch(_){}
     }
     function createClock() {
@@ -472,6 +472,6 @@
         });
     }
     function stop(){if(!running)return Promise.resolve({status:'idle'});running.finish({status:'cancelled'});return Promise.resolve({status:'cancelled'});}
-    root.PGRazorInteractionProbe=Object.freeze({start,stop,limits:LIMITS});
+    root.PGSInteractionProbe=Object.freeze({start,stop,limits:LIMITS});
 })(globalThis);
-globalThis.PGRazorInteractionProbe;
+globalThis.PGSInteractionProbe;

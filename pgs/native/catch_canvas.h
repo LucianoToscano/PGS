@@ -179,7 +179,7 @@ static_assert(sizeof(PgrCatchCanvasApi3)==16,"alpha table ABI");
 
 // Hidden getter. NOT exported by the version script; the coordinator registers it in query_feature
 // under feature id 39 and answers only on an exact version match.
-const void *pgrazor_catch_canvas_api(uint32_t version);
+const void *pgs_catch_canvas_api(uint32_t version);
 
 #ifdef __cplusplus
 }

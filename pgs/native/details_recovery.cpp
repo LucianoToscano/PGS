@@ -254,7 +254,7 @@ int api_install(const PgrDetailsRecoveryConfig *config) {
   // Guarantee the prerequisite validator: resolve feature 37's table and install it with the SAME
   // config (idempotent). Without it recover() has nothing to prove the final snapshot against.
   const auto *validator =
-      static_cast<const PgrDetailsCompletionApi *>(pgrazor_details_completion_api(PGR_DC_API_VERSION));
+      static_cast<const PgrDetailsCompletionApi *>(pgs_details_completion_api(PGR_DC_API_VERSION));
   if (validator == nullptr || validator->version != PGR_DC_API_VERSION ||
       validator->size != sizeof(PgrDetailsCompletionApi) || validator->install == nullptr ||
       validator->validate == nullptr)
@@ -349,7 +349,7 @@ const PgrDetailsRecoveryApi kApiTable = {
 
 }  // namespace
 
-extern "C" const void *pgrazor_details_recovery_api(uint32_t version) {
+extern "C" const void *pgs_details_recovery_api(uint32_t version) {
   if (version != PGR_DR_API_VERSION) return nullptr;
   return &kApiTable;
 }

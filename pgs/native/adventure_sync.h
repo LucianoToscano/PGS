@@ -2,7 +2,7 @@
  * PGS native module: Adventure Sync popup suppression.
  *
  * Feature id 2 of the native pilot. The gameplay runtime resolves this feature's
- * table through the coordinator-owned loader (root.PGRazorNativeFeature(2, version,
+ * table through the coordinator-owned loader (root.PGSNativeFeature(2, version,
  * tableByteSize) in JS, backed by the hidden getter pgrazor_adventure_sync_api()
  * registered in the core getter registry). Nothing here is exported directly; the
  * linker version script (coordinator-owned) keeps the getter local, and the core's

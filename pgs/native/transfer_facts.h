@@ -212,7 +212,7 @@ static_assert(sizeof(PgrTransferFactsApi) == 24,
 
 // Hidden getter. NOT exported by the version script; the coordinator registers it in query_feature under
 // feature id 35 and answers only on an exact version match.
-const void *pgrazor_transfer_facts_api(uint32_t version);
+const void *pgs_transfer_facts_api(uint32_t version);
 
 #ifdef __cplusplus
 }

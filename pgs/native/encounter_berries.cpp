@@ -921,7 +921,7 @@ const pgr_berry_api_v1 g_api = {
 
 }  // namespace
 
-const void *pgrazor_encounter_berries_api(uint32_t version) {
+const void *pgs_encounter_berries_api(uint32_t version) {
   if (version != PGR_BERRY_API_VERSION) return nullptr;
   return &g_api;
 }

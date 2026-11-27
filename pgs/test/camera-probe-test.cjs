@@ -149,8 +149,8 @@ function fixture(options={}) {
         NativeCallback:function(callback){return callback;},
         CModule:function(code,symbols){
             if(options.filterCompileFails)throw Error('Synthetic CModule compile failure');
-            assert.equal(symbols.pgrazor_clock_gettime.value,'clock_gettime','Bind the public libc clock export explicitly');
-            assert(code.includes('pgrazor_clock_gettime(7,&time)'),'Continuous timestamp includes device suspend');
+            assert.equal(symbols.pgs_clock_gettime.value,'clock_gettime','Bind the public libc clock export explicitly');
+            assert(code.includes('pgs_clock_gettime(7,&time)'),'Continuous timestamp includes device suspend');
             assert(!code.includes('g_get_monotonic_time'),'Do not assume a curated GLib clock builtin');
             return {monotonic_ms:new P('monotonic_ms'),
                 on_enter:function(args){this.accepted=args[0].equals(symbols.execute_method.readPointer())?symbols.enter_match(this.threadId):0;},

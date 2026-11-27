@@ -413,7 +413,7 @@ extern "C" const void* pgrazor_runtime_bootstrap_api(uint32_t v) {
 extern "C" const void* pgrazor_runtime_metadata_api(uint32_t v) {
     return v == 1 ? &g_meta_api : nullptr;
 }
-extern "C" const void* pgrazor_vgp_results_api(uint32_t v) {
+extern "C" const void* pgs_vgp_results_api(uint32_t v) {
     return v == 1 ? &g_results_api : nullptr;
 }
 
@@ -968,10 +968,10 @@ int main() {
 
 void pgr_catch_chance_enter(void*) {}
 
-const void* pgrazor_throws_api(uint32_t) {return nullptr;}
+const void* pgs_throws_api(uint32_t) {return nullptr;}
 
-const void* pgrazor_vgp_controller_api(uint32_t){return nullptr;}
-extern "C" const void* pgrazor_vgp_aux_api(uint32_t){return nullptr;}
+const void* pgs_vgp_controller_api(uint32_t){return nullptr;}
+extern "C" const void* pgs_vgp_aux_api(uint32_t){return nullptr;}
 extern "C" int pgr_research_transfer_caught(uint64_t,uint64_t,uint64_t,uint64_t,uint64_t,uint64_t,int){return 0;}
 bool pgr_map_throw_value(PgrThrowValue*){return false;}
 bool pgr_catch_chance_base(void*,double*){return false;}

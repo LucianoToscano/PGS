@@ -300,7 +300,7 @@ typedef struct pgr_battle_api_v1 {
 /* Hidden getter. NOT exported by the version script. The coordinator registers it in query_feature
  * under feature id 19; it answers only on an exact version match. The returned table lives for the
  * process lifetime. */
-const void *pgrazor_battles_api(uint32_t version);
+const void *pgs_battles_api(uint32_t version);
 
 #ifdef __cplusplus
 } /* extern "C" */

@@ -387,7 +387,7 @@ const PgrCameraSamplerApi kApiTable = {
 
 }  // namespace
 
-extern "C" const void *pgrazor_camera_sampler_api(uint32_t version) {
+extern "C" const void *pgs_camera_sampler_api(uint32_t version) {
   if (version != PGR_CS_API_VERSION) return nullptr;
   return &kApiTable;
 }

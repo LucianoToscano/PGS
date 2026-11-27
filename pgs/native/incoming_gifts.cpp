@@ -844,7 +844,7 @@ const PgrIncomingGiftsApi kApiTable = {
 
 }  // namespace
 
-extern "C" const void *pgrazor_incoming_gifts_api(uint32_t version) {
+extern "C" const void *pgs_incoming_gifts_api(uint32_t version) {
   if (version != PGR_GIFT_API_VERSION) return nullptr;
   return &kApiTable;
 }

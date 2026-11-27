@@ -1,7 +1,7 @@
 #pragma once
 #include <stdint.h>
 
-#include "transfer_policy.h"  // PgrTransferInput + pgrazor_transfer_policy_api(1)->decide (feature 4)
+#include "transfer_policy.h"  // PgrTransferInput + pgs_transfer_policy_api(1)->decide (feature 4)
 
 // Feature 23 (API 1). Native request LIFECYCLE for Pokemon auto-transfer: a focused C++ port of the
 // issue/callback-bookkeeping machinery in diagnostics/quick-close.js transferCatch (~1676-1752) and
@@ -203,7 +203,7 @@ static_assert(sizeof(PgrTransferExecApi) == 72,
 
 // Hidden getter. NOT exported by the version script; the coordinator registers it in query_feature
 // under feature id 23 and answers only on an exact version match.
-const void *pgrazor_transfer_execution_api(uint32_t version);
+const void *pgs_transfer_execution_api(uint32_t version);
 
 #ifdef __cplusplus
 }

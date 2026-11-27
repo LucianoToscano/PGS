@@ -242,7 +242,7 @@ static_assert(sizeof(PgrCameraMetaOutput) == 368, "LP64 output");
 static_assert(sizeof(PgrCameraMetaApi) == 24, "LP64 API");
 #endif
 
-const void *pgrazor_camera_metadata_api(uint32_t version);
+const void *pgs_camera_metadata_api(uint32_t version);
 
 #ifdef __cplusplus
 }

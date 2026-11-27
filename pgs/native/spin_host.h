@@ -35,4 +35,4 @@ static_assert(sizeof(PgrSpinHostOptions)==24,"Spin host options");
 static_assert(sizeof(PgrSpinHostSample)==48,"Spin host sample");
 static_assert(sizeof(PgrSpinHostEvent)==696,"Spin host event");
 static_assert(sizeof(PgrSpinHostApi)==64,"Spin host API");
-extern "C" const void *pgrazor_spin_host_api(uint32_t version);
+extern "C" const void *pgs_spin_host_api(uint32_t version);

@@ -569,8 +569,8 @@ constexpr int kScenarios = 27;
 int main(int argc, char **argv) {
 #ifdef PGR_RC_DIRECT_TEST
   (void)argc; (void)argv;
-  api = static_cast<const pgr_rocket_combat_api_v1 *>(pgrazor_rocket_combat_api(1));
-  if (!api || pgrazor_rocket_combat_api(99) != nullptr) { std::puts("FAIL exact-version"); return 2; }
+  api = static_cast<const pgr_rocket_combat_api_v1 *>(pgs_rocket_combat_api(1));
+  if (!api || pgs_rocket_combat_api(99) != nullptr) { std::puts("FAIL exact-version"); return 2; }
 #else
   if (argc != 2) return 80;
   void *lib = dlopen(argv[1], RTLD_NOW); if (!lib) return 81;

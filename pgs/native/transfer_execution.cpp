@@ -491,7 +491,7 @@ int api_install(const PgrTransferExecConfig *config) {
   if (!validate_config(config, &rc)) return rc;
   uint64_t probe = 0;
   if (!read_boottime_ms(&probe)) return PGR_TX_ERR_CLOCK_FAILURE;
-  const PgrTransferApi *policy = static_cast<const PgrTransferApi *>(pgrazor_transfer_policy_api(1));
+  const PgrTransferApi *policy = static_cast<const PgrTransferApi *>(pgs_transfer_policy_api(1));
   if (policy == nullptr || policy->decide == nullptr) return PGR_TX_ERR_NO_POLICY;
 
   std::lock_guard<std::mutex> install_lock(g_install_mutex);
@@ -665,7 +665,7 @@ const PgrTransferExecApi kApiTable = {
 
 }  // namespace
 
-extern "C" const void *pgrazor_transfer_execution_api(uint32_t version) {
+extern "C" const void *pgs_transfer_execution_api(uint32_t version) {
   if (version != PGR_TX_API_VERSION) return nullptr;
   return &kApiTable;
 }

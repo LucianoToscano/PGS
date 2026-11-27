@@ -23,7 +23,7 @@
 // method and the Ground/MapView/LatLng classes are supplied by the validated adapter.
 //
 // Loader contract (matches the other native features):
-//   root.PGRazorNativeFeature(13, 1, 48) -> query_feature(13,1) -> pgrazor_map_tap_api(1).
+//   root.PGSNativeFeature(13, 1, 48) -> query_feature(13,1) -> pgs_map_tap_api(1).
 // A null return means the pilot/optional metadata is absent (the feature stays dormant,
 // never a second Gum-hook fallback). Any install/update error after selection fails
 // closed and is surfaced to the caller; it is not retried against Gum.
@@ -173,7 +173,7 @@ static_assert(sizeof(PgrMapTapApi) == 48,
 
 // Standard feature getter. Returns a pointer to the static const 48-byte table when
 // `version` == 1, otherwise NULL. Registered by the dispatcher as case 13.
-const void *pgrazor_map_tap_api(uint32_t version);
+const void *pgs_map_tap_api(uint32_t version);
 
 #ifdef __cplusplus
 }

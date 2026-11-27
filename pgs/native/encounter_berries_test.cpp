@@ -1,6 +1,6 @@
 // Standalone focused test of the native encounter-berry controller (feature 18). Unlike the
 // hook-installing siblings, this module installs NO Dobby/Gum hooks, so the harness links the
-// module translation unit directly and calls pgrazor_encounter_berries_api(1) -- no dlopen, no
+// module translation unit directly and calls pgs_encounter_berries_api(1) -- no dlopen, no
 // registry wiring (which is coordinator-owned integration), no NOP-padded targets. It drives a
 // compact fake IL2CPP (object_new, runtime_invoke over the berry methods, field get/set, boxed
 // value returns) through a proper handle table (so a "GC move" relocates an object while its
@@ -31,7 +31,7 @@
 #include "pgs_native_api.h"
 #include <dlfcn.h>
 static const pgs_native_api_v2 *loaded_core = nullptr;
-extern "C" const void *pgrazor_encounter_berries_api(uint32_t version) {
+extern "C" const void *pgs_encounter_berries_api(uint32_t version) {
   return loaded_core ? loaded_core->query_feature(18, version) : nullptr;
 }
 #endif
@@ -548,9 +548,9 @@ int main(int argc, char **argv) {
   loaded_core=get?static_cast<const pgs_native_api_v2 *>(get(2)):nullptr;
   if(!loaded_core||loaded_core->version!=2||loaded_core->size!=sizeof(*loaded_core)||!loaded_core->query_feature)return 2;
 #endif
-  g_api = static_cast<const pgr_berry_api_v1 *>(pgrazor_encounter_berries_api(1));
+  g_api = static_cast<const pgr_berry_api_v1 *>(pgs_encounter_berries_api(1));
   if (!g_api || g_api->size != sizeof(pgr_berry_api_v1)) { std::puts("FAIL table"); return 2; }
-  if (pgrazor_encounter_berries_api(99) != nullptr) { std::puts("FAIL exact-version"); return 2; }
+  if (pgs_encounter_berries_api(99) != nullptr) { std::puts("FAIL exact-version"); return 2; }
 
   // Config validation (parent process; no hooks are ever installed).
   pgr_berry_config_v1 c = make_config(), bad;

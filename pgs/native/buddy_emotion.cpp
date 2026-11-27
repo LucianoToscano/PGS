@@ -182,7 +182,7 @@ void begin(int phase,const Permission &p){
 void poll(const Permission &p){
  if(!p.allowed||p.config!=pending.config||account!=pending.account||history.buddy!=pending.buddy)pending.canceled=true;
  uint64_t now=clock_ms();if(now-pending.since>15000){bool canceled=pending.canceled;paused=!canceled;clear();feed_burst=0;publish(canceled?"Canceled request expired; refreshing buddy":"Paused: request timed out; toggle off to resume",true);return;}
- auto api=static_cast<const PgrVgpResultsApi*>(pgrazor_vgp_results_api(1));require(api,"promise reader");PgrVgpResultsResult out{};int rc=api->poll(pending.promise.get(),1,owner,&out);if(!rc)return;
+ auto api=static_cast<const PgrVgpResultsApi*>(pgs_vgp_results_api(1));require(api,"promise reader");PgrVgpResultsResult out{};int rc=api->poll(pending.promise.get(),1,owner,&out);if(!rc)return;
  if(rc!=PGR_VR_DONE){bool canceled=pending.canceled;clear();feed_burst=0;paused=!canceled;publish(canceled?"Canceled request ended; refreshing buddy":"Paused: buddy request rejected; toggle off to resume",true);return;}
  Root response;response.h=out.value_handle;if(pending.canceled){clear();feed_burst=0;next_action=now+5000;return;}
  if(pending.phase==6){

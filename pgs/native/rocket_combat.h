@@ -22,7 +22,7 @@
 //     sample() facade (scope_active / failed).
 //   * It does NOT re-implement the Rocket action authorization/cadence policy. That lives in
 //     feature 20 (rocket_actions.cpp). This module reuses it INTERNALLY through
-//     pgrazor_rocket_actions_api(1): it forwards scope/prompt/shield-used observations into
+//     pgs_rocket_actions_api(1): it forwards scope/prompt/shield-used observations into
 //     feature 20, and every game-method call is gated by a feature 20 begin()/claim() ticket.
 //     No feature 20 JS controller runs while feature 21 is selected.
 //
@@ -80,7 +80,7 @@ enum PgrRocketCombatStatus {
   PGR_RC_ERR_ALREADY_BOUND = 3,
   PGR_RC_ERR_NOT_INSTALLED = 4,
   PGR_RC_ERR_NO_CLOCK     = 5,
-  PGR_RC_ERR_NO_POLICY    = 6   // feature 20 action table (pgrazor_rocket_actions_api) unavailable
+  PGR_RC_ERR_NO_POLICY    = 6   // feature 20 action table (pgs_rocket_actions_api) unavailable
 };
 
 // Bounded-FIFO event codes drained by next_event(). Carry only action / source / reason; never
@@ -219,7 +219,7 @@ typedef struct pgr_rocket_combat_event_v1 {
 } pgr_rocket_combat_event_v1;
 
 /* install(config): validate + publish the config once; also resolve the feature-20 action table
- * (pgrazor_rocket_actions_api(1)). A repeat of the identical config is OK; a different one returns
+ * (pgs_rocket_actions_api(1)). A repeat of the identical config is OK; a different one returns
  * ALREADY_BOUND. BAD_CONFIG on header/size/pointer/literal problems; NO_CLOCK if CLOCK_BOOTTIME is
  * unavailable; NO_POLICY if feature 20 is not linked in. Installs NO hooks. */
 typedef int (*pgr_rocket_combat_install_fn)(const pgr_rocket_combat_config_v1 *config);
@@ -279,7 +279,7 @@ typedef struct pgr_rocket_combat_api_v1 {
 /* Hidden getter. NOT exported by the version script. The coordinator registers it in query_feature
  * under feature id 21; it answers only on an exact version match. The returned table lives for the
  * process lifetime. */
-const void *pgrazor_rocket_combat_api(uint32_t version);
+const void *pgs_rocket_combat_api(uint32_t version);
 
 #ifdef __cplusplus
 } /* extern "C" */

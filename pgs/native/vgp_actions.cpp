@@ -459,7 +459,7 @@ const PgrVgpActionsApi kApiTable = {
 
 }  // namespace
 
-extern "C" const void *pgrazor_vgp_actions_api(uint32_t version) {
+extern "C" const void *pgs_vgp_actions_api(uint32_t version) {
   static const PgrVgpSmartActionsApi smart{2,sizeof(PgrVgpSmartActionsApi),pgr_vgp_capture_selected};
   if(version==2)return &smart;
   if (version != PGR_VA_API_VERSION) return nullptr;

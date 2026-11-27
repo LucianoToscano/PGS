@@ -236,7 +236,7 @@ void poll_request(){
   if(matches&&costs){batch.await_inventory=false;uncertain.erase(batch.sending.id);uncertain.erase(batch.result_id);++batch.completed;batch.xp+=batch.pending_xp;remove_confirmed_tag();return;}
   require(clock_ms()<batch.since+15000,"inventory update not confirmed; inspect before retrying");return;
  }
- auto vr=static_cast<const PgrVgpResultsApi*>(pgrazor_vgp_results_api(1));require(vr,"promise polling unavailable");PgrVgpResultsResult out{};int rc=vr->poll(batch.promise.get(),1,owner,&out);if(!rc){require(clock_ms()<batch.since+15000,"evolution response timed out; inspect before retrying");return;}
+ auto vr=static_cast<const PgrVgpResultsApi*>(pgs_vgp_results_api(1));require(vr,"promise polling unavailable");PgrVgpResultsResult out{};int rc=vr->poll(batch.promise.get(),1,owner,&out);if(!rc){require(clock_ms()<batch.since+15000,"evolution response timed out; inspect before retrying");return;}
  Root response;response.h=out.value_handle;batch.promise.reset();require(rc==PGR_VR_DONE&&response,"evolution request failed; inspect before retrying");require(klass(response.get())==cls("Holoholo.Rpc","EvolvePokemonOutProto"),"unexpected evolution response");
  if(!success(response.get())){uncertain.erase(batch.sending.id);++batch.skipped;publish("error","Evolution declined (result "+std::to_string(result_value(response.get()))+"); batch stopped");return;}
  Root evolved(field<void*>(response.get(),"EvolvedPokemon","Holoholo.Rpc.PokemonProto"));

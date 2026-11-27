@@ -21,7 +21,7 @@ extern "C" {
 //
 // Consumes canonical Feature 56 (`PgrSharedMetadataOutput`, 67304B) resolved from
 // explicit `cfg->metadata`, `pgrazor_shared_host_api(1)->metadata()`, or
-// `pgrazor_shared_metadata_api(2)->prepare(&cfg->metadata_config, ...)`.
+// `pgs_shared_metadata_api(2)->prepare(&cfg->metadata_config, ...)`.
 //
 // Owns all synchronous Dobby observer hooks for Rocket Combat (10 dedicated +
 // 1 shared) and Battles (31 dedicated + 1 shared) with a single compiled owner
@@ -209,7 +209,7 @@ static_assert(sizeof(PgrCombatHostEvent) == 64, "PgrCombatHostEvent size mismatc
 static_assert(sizeof(PgrCombatHostApi) == 72, "PgrCombatHostApi LP64 size mismatch");
 #endif
 
-const void *pgrazor_combat_host_api(uint32_t version);
+const void *pgs_combat_host_api(uint32_t version);
 
 #ifdef __cplusplus
 }

@@ -28,7 +28,7 @@ Root submit_auto_throw(Root& state, Root& pokemon, const PgrThrowValue& requeste
 }
 
 int poll_auto_throw(Root& promise,uint64_t tid,Root& value,int& status) {
-    const auto* api=static_cast<const PgrVgpResultsApi*>(pgrazor_vgp_results_api(1));
+    const auto* api=static_cast<const PgrVgpResultsApi*>(pgs_vgp_results_api(1));
     require(api && api->poll,"Capture promise observer unavailable");
     PgrVgpResultsResult result{};
     const int rc=api->poll(promise.get(),PGR_VR_PHASE_CATCH,tid,&result);

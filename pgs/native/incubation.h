@@ -279,7 +279,7 @@ typedef pgrazor_incubation_api_v1 pgs_incubation_api_v1;
  * the core getter registry under feature id 9; the loader hands the adapter the table
  * on an exact version match, else NULL. The table lives for the process lifetime.
  */
-const void *pgrazor_incubation_api(uint32_t version);
+const void *pgs_incubation_api(uint32_t version);
 
 #ifdef __cplusplus
 } /* extern "C" */

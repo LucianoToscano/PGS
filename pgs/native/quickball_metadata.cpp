@@ -691,6 +691,6 @@ const PgrQuickballMetaApi g_api = {PGR_QB_API_VERSION, sizeof(PgrQuickballMetaAp
                                    sizeof(PgrQuickballMetaOutput), resolve};
 }  // namespace
 
-extern "C" const void *pgrazor_quickball_metadata_api(uint32_t version) {
+extern "C" const void *pgs_quickball_metadata_api(uint32_t version) {
   return version == PGR_QB_API_VERSION ? &g_api : nullptr;
 }

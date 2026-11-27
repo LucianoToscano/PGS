@@ -22,7 +22,7 @@ void resetPolicyFixture(){assert(g_handles.empty());reset_flags();g_size_val=12;
 
 int main(int argc,char **argv){
   assert(argc==2);void *lib=dlopen(argv[1],RTLD_NOW|RTLD_LOCAL);assert(lib);
-  const auto get=reinterpret_cast<GetApiFn>(dlsym(lib,"pgrazor_native_api"));assert(get);
+  const auto get=reinterpret_cast<GetApiFn>(dlsym(lib,"pgs_native_api"));assert(get);
   const auto *core=static_cast<const pgs_native_api_v2*>(get(2));assert(core);
   g_api=static_cast<const PgrTransferFactsApi*>(core->query_feature(35,1));
   const auto *policy=static_cast<const PgrTransferApi*>(core->query_feature(4,1));

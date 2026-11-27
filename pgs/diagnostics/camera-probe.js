@@ -33,10 +33,10 @@
 extern gpointer execute_method;
 extern int enter_match(unsigned int tid);
 extern void leave_match(unsigned int tid);
-extern int pgrazor_clock_gettime(int clock_id, void *result);
+extern int pgs_clock_gettime(int clock_id, void *result);
 /* Android ARM64 uses two signed 64-bit longs for struct timespec. */
-typedef struct { long seconds; long nanoseconds; } PGRazorTimespec;
-typedef char PGRazorTimespecSizeCheck[(sizeof(long)==8 && sizeof(PGRazorTimespec)==16)?1:-1];
+typedef struct { long seconds; long nanoseconds; } PGSTimespec;
+typedef char PGSTimespecSizeCheck[(sizeof(long)==8 && sizeof(PGSTimespec)==16)?1:-1];
 typedef struct { int accepted; } Match;
 void on_enter(GumInvocationContext *ic) {
     Match *m=GUM_IC_GET_INVOCATION_DATA(ic,Match);
@@ -49,9 +49,9 @@ void on_leave(GumInvocationContext *ic) {
     if(m->accepted)leave_match(gum_invocation_context_get_thread_id(ic));
 }
 double monotonic_ms(void) {
-    PGRazorTimespec time;
+    PGSTimespec time;
     /* CLOCK_BOOTTIME includes suspend, matching Android elapsedRealtime(). */
-    if(pgrazor_clock_gettime(7,&time)!=0 || time.seconds<0 || time.nanoseconds<0 || time.nanoseconds>=1000000000)
+    if(pgs_clock_gettime(7,&time)!=0 || time.seconds<0 || time.nanoseconds<0 || time.nanoseconds>=1000000000)
         return -1;
     return (double)time.seconds*1000.0+(double)time.nanoseconds/1000000.0;
 }
@@ -84,7 +84,7 @@ double monotonic_ms(void) {
         function readableCode(address,length) {
             if(address.compare(module.base)<0 || address.add(length).compare(module.base.add(module.size))>0)return false;
             const range=Process.findRangeByAddress(address);
-            return range!==null && range.protection.includes('r') && (range.protection.includes('x')||(typeof PGRazorGuestCode==='function'&&PGRazorGuestCode(module,address,length,range))) &&
+            return range!==null && range.protection.includes('r') && (range.protection.includes('x')||(typeof PGSGuestCode==='function'&&PGSGuestCode(module,address,length,range))) &&
                 address.add(length).compare(range.base.add(range.size))<=0;
         }
         function words(address,expected) {
@@ -112,13 +112,13 @@ double monotonic_ms(void) {
     function emit(state,kind,fields) {
         const event=Object.assign({time:new Date().toISOString(),kind},fields||{});
         if(!(state.continuous && kind==='camera-sample'))
-            try{console.log('[pgrazor-camera-probe] '+JSON.stringify(event));}catch(_){}
+            try{console.log('[pgs-camera-probe] '+JSON.stringify(event));}catch(_){}
         if(typeof state.onEvent==='function')try{state.onEvent(event);}catch(_){}
     }
     function executable(module,address,size) {
         if(!address || address.isNull() || !address.and(3).isNull() || address.compare(module.base)<0 || address.add(size).compare(module.base.add(module.size))>0)throw Error('invalid-code-range');
         const range=Process.findRangeByAddress(address);
-        if(!range || range.protection.indexOf('r')<0 || !(range.protection.includes('x')||(typeof PGRazorGuestCode==='function'&&PGRazorGuestCode(module,address,size,range))) || address.add(size).compare(range.base.add(range.size))<=0===false)throw Error('code-not-rx');
+        if(!range || range.protection.indexOf('r')<0 || !(range.protection.includes('x')||(typeof PGSGuestCode==='function'&&PGSGuestCode(module,address,size,range))) || address.add(size).compare(range.base.add(range.size))<=0===false)throw Error('code-not-rx');
     }
     function discover(module,api,domain,sampleCamera,continuous) {
         let owned=null;
@@ -127,10 +127,10 @@ double monotonic_ms(void) {
                 owned=api.thread_attach(domain);
                 if(owned.isNull())throw Error('IL2CPP thread attachment returned null');
             }
-            if(root.PGRazorNativeCorePath) {
-                if(!root.PGRazorNativeCameraMetadata || typeof root.PGRazorNativeCameraMetadata.discover!=='function')
+            if(root.PGSNativeCorePath) {
+                if(!root.PGSNativeCameraMetadata || typeof root.PGSNativeCameraMetadata.discover!=='function')
                     throw Error('native-camera-metadata-missing');
-                return root.PGRazorNativeCameraMetadata.discover({host:{Memory,NativeFunction,Process,module,api,domain,sampleCamera,continuous,ptr,executable}});
+                return root.PGSNativeCameraMetadata.discover({host:{Memory,NativeFunction,Process,module,api,domain,sampleCamera,continuous,ptr,executable}});
             }
             const count=Memory.alloc(8);count.writeU64(0);
             const assemblies=api.domain_get_assemblies(domain,count),total=count.readU64();
@@ -226,7 +226,7 @@ double monotonic_ms(void) {
                     function executable(address,length) {
                         if(address.isNull() || address.compare(module.base)<0 || address.add(length).compare(module.base.add(module.size))>0)return false;
                         const range=Process.findRangeByAddress(address);
-                        return !!range && range.protection.includes('r') && (range.protection.includes('x')||(typeof PGRazorGuestCode==='function'&&PGRazorGuestCode(module,address,length,range))) && address.add(length).compare(range.base.add(range.size))<=0;
+                        return !!range && range.protection.includes('r') && (range.protection.includes('x')||(typeof PGSGuestCode==='function'&&PGSGuestCode(module,address,length,range))) && address.add(length).compare(range.base.add(range.size))<=0;
                     }
                     if(!executable(sample.debugAddress,80) || DEBUG_INFO_WORDS.some((word,i)=>sample.debugAddress.add(i*4).readU32()!==word))
                         return {unavailable:'map-debug-info-abi-unverified'};
@@ -302,10 +302,10 @@ double monotonic_ms(void) {
             };
             function observe(module,found) {
                 state.nativeSampler=null;
-                if(state.continuous&&root.PGRazorNativeCorePath){
+                if(state.continuous&&root.PGSNativeCorePath){
                     try{
-                        if(!root.PGRazorNativeCameraSampler)throw Error('native-camera-sampler-missing');
-                        state.nativeSampler=root.PGRazorNativeCameraSampler.create({state,found,module,Memory,NativeFunction,ptr});
+                        if(!root.PGSNativeCameraSampler)throw Error('native-camera-sampler-missing');
+                        state.nativeSampler=root.PGSNativeCameraSampler.create({state,found,module,Memory,NativeFunction,ptr});
                         if(!state.nativeSampler)throw Error('native-camera-sampler-unavailable');
                         emit(state,'native-camera-sampler-ready',{backend:'native'});
                     }catch(error){state.finish({status:'unavailable',reason:'native-camera-sampler-install:'+String(error)});return;}
@@ -496,7 +496,7 @@ double monotonic_ms(void) {
                     const slot=Memory.alloc(Process.pointerSize);slot.writePointer(found.execute);
                     const enter=new NativeCallback(tid=>{state.calls++;return enterMatch(tid);},'int',['uint32']);
                     const leave=new NativeCallback(leaveMatch,'void',['uint32']);
-                    filter=new CModule(FILTER_SOURCE,{execute_method:slot,enter_match:enter,leave_match:leave,pgrazor_clock_gettime:clockAddress});
+                    filter=new CModule(FILTER_SOURCE,{execute_method:slot,enter_match:enter,leave_match:leave,pgs_clock_gettime:clockAddress});
                     nativeFilters.push({filter,slot,enter,leave});
                     // This bounded libc clock read cannot re-enter JavaScript.
                     // Keep its tiny read/update section atomic against stop/poll.
@@ -507,16 +507,16 @@ double monotonic_ms(void) {
                     if(addresses.has(address.toString()))continue;addresses.add(address.toString());
                     const callbacks=filter?{onEnter:filter.on_enter,onLeave:filter.on_leave}:{
                         onEnter(args) {
-                            this.pgrazorMatch=false;
+                            this.pgsMatch=false;
                             if(!state.active || state.stopping || state.overflow || state.sampleError)return;
                             if(state.sampling){if(args[0].equals(found.execute) && this.threadId!==state.sampleTid)state.sampleError='multiple-matching-threads';return;}
                             if(++state.calls>LIMITS.calls){state.overflow=true;return;}
                             if(!args[0].equals(found.execute))return;
-                            this.pgrazorTid=this.threadId;this.pgrazorMatch=enterMatch(this.threadId)===1;
+                            this.pgsTid=this.threadId;this.pgsMatch=enterMatch(this.threadId)===1;
                         },
                         onLeave() {
-                            if(!state.active || !this.pgrazorMatch)return;
-                            leaveMatch(this.pgrazorTid);
+                            if(!state.active || !this.pgsMatch)return;
+                            leaveMatch(this.pgsTid);
                         }
                     };
                     state.listeners.push(Interceptor.attach(address,callbacks));exports.push(name);
@@ -524,18 +524,18 @@ double monotonic_ms(void) {
                 if(!state.listeners.length){state.finish({status:'unavailable',reason:'invocation-exports-missing'});return;}
                 if(state.continuous)state.listeners.push(Interceptor.attach(found.sample.getMainCameraAddress,{
                     onEnter(args) {
-                        this.pgrazorRig=null;
+                        this.pgsRig=null;
                         if(!state.active || state.stopping || state.sampling || state.sampleError || state.overflow ||
                             state.getterDepth || state.depth.size || state.matches<3 || state.threads.size!==1 || !state.threads.has(this.threadId))return;
                         // Receiver lives only in this verified leaf getter invocation.
-                        state.getterDepth++;this.pgrazorRig=args[0];this.pgrazorTid=this.threadId;
+                        state.getterDepth++;this.pgsRig=args[0];this.pgsTid=this.threadId;
                     },
                     onLeave(value) {
-                        const receiver=this.pgrazorRig;this.pgrazorRig=null;
+                        const receiver=this.pgsRig;this.pgsRig=null;
                         if(receiver===null)return;
                         state.getterDepth--;
                         if(!state.active || state.stopping || state.sampling || state.sampleError || state.depth.size)return;
-                        sample(this.pgrazorTid,receiver,value);
+                        sample(this.pgsTid,receiver,value);
                     }
                 }));
                 state.observedAt=Date.now();
@@ -608,11 +608,11 @@ double monotonic_ms(void) {
         if(running)running.completion=completion;
         return completion;
     }
-    root.PGRazorCameraProbe=Object.freeze({start,stop(){
+    root.PGSCameraProbe=Object.freeze({start,stop(){
         if(!running)return Promise.resolve();
         const completion=running.completion;
         running.finish({status:'cancelled'});
         return completion;
     },limits:LIMITS});
 })(globalThis);
-globalThis.PGRazorCameraProbe;
+globalThis.PGSCameraProbe;

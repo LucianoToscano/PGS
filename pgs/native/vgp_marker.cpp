@@ -87,4 +87,4 @@ int project(void *target,uint64_t lease,uint64_t owner,PgrVgpMarkerResult *out){
 }
 const PgrVgpMarkerApi api={1,sizeof(PgrVgpMarkerApi),install,project};
 }
-extern "C" const void *pgrazor_vgp_marker_api(uint32_t version){return version==1?&api:nullptr;}
+extern "C" const void *pgs_vgp_marker_api(uint32_t version){return version==1?&api:nullptr;}

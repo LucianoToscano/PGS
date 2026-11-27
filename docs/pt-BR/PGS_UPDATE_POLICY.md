@@ -19,7 +19,7 @@ Este certificado deve permanecer constante. Os segredos de assinatura estão no 
 | **v0.0.1** | Pokémon GO 0.439.0 | **2026111604** |
 | **v0.0.2 (candidata)** | Pokémon GO 0.439.0 | **2026111605** |
 
-O último código de build PGS verificado é registrado em [`pgrazor/PGS_LAST_VERSION_CODE`](../pgrazor/PGS_LAST_VERSION_CODE). Para cada novo release completo, `pgrazor/release_apk.py` usa `max(codigo_do_jogo, ultimo_pgs+1)` antes de assinar o APK não-root, mantendo o `game_version_code` original para verificar a compatibilidade do módulo Root. O valor realmente assinado é acrescentado ao `build-info.json` em `apk_version_code`.
+O último código de build PGS verificado é registrado em [`pgrazor/PGS_LAST_VERSION_CODE`](../../pgrazor/PGS_LAST_VERSION_CODE). Para cada novo release completo, `pgrazor/release_apk.py` usa `max(codigo_do_jogo, ultimo_pgs+1)` antes de assinar o APK não-root, mantendo o `game_version_code` original para verificar a compatibilidade do módulo Root. O valor realmente assinado é acrescentado ao `build-info.json` em `apk_version_code`.
 
 **Após concluir e verificar cada novo APK assinado**, atualize `PGS_LAST_VERSION_CODE` com o `apk_version_code` do release anterior *antes* de compilar a seguinte. A geração de updates pontuais também pode usar `pgrazor/pgs_update.py`, que valida APK fonte, assinatura, package, alteração única no manifesto e assinatura de saída.
 

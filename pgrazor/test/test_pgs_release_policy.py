@@ -67,8 +67,8 @@ class PgsReleasePolicyTests(unittest.TestCase):
     def test_full_pgs_release_requires_preexisting_key_and_pgs_filename(self):
         with tempfile.TemporaryDirectory() as tmp:
             ledger = Path(tmp) / "PGS_LAST_VERSION_CODE"
-            self.assertEqual(release_apk.release_identity(ledger),
-                             ("PGRazor.apk", None))
+            with self.assertRaisesRegex(RuntimeError, "PGS version ledger"):
+                release_apk.release_identity(ledger)
             ledger.write_text("2026111603\n", encoding="utf-8")
             with patch.dict(os.environ, {"PGRAZOR_KEYSTORE": ""}):
                 with self.assertRaises(RuntimeError):

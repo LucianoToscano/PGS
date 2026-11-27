@@ -24,6 +24,38 @@ public class Activity extends android.content.Context {
  public boolean finishing, destroyed;
  public boolean isFinishing(){return finishing;} public boolean isDestroyed(){return destroyed;}
 }''',
+    'com/google/android/gms/auth/api/signin/internal/SignInHubActivity.java': 'package com.google.android.gms.auth.api.signin.internal; public class SignInHubActivity extends android.app.Activity {}',
+    'com/facebook/FacebookActivity.java': 'package com.facebook; public class FacebookActivity extends android.app.Activity {}',
+    'com/facebook/unity/FBUnityLoginActivity.java': 'package com.facebook.unity; public class FBUnityLoginActivity extends android.app.Activity {}',
+    'dev/pgs/ControlAuthUiTest.java': '''package dev.pgs;
+public final class ControlAuthUiTest {
+    public static void main(String[] args) throws Exception {
+        java.lang.reflect.Field pad = Control.class.getDeclaredField("pad");
+        pad.setAccessible(true);
+        java.lang.reflect.Field foreground = Control.class.getDeclaredField("foreground");
+        foreground.setAccessible(true);
+        if (Control.isProviderAuthenticationUi("com.nianticproject.holoholo.libholoholo.unity.UnityMainActivity")
+                || Control.isProviderAuthenticationUi("dev.pgs.PreviewActivity")
+                || Control.isProviderAuthenticationUi(null)) {
+            throw new AssertionError("Normal host activity incorrectly excluded");
+        }
+        for (android.app.Activity activity : new android.app.Activity[]{
+                new com.google.android.gms.auth.api.signin.internal.SignInHubActivity(),
+                new com.facebook.FacebookActivity(),
+                new com.facebook.unity.FBUnityLoginActivity()}) {
+            if (!Control.isProviderAuthenticationUi(activity.getClass().getName())) {
+                throw new AssertionError("Provider activity not recognized");
+            }
+            pad.set(null, null);
+            foreground.setBoolean(null, false);
+            Control.attach(activity);
+            if (pad.get(null) != null || foreground.getBoolean(null)) {
+                throw new AssertionError("Provider activity attached panel or restored foreground");
+            }
+        }
+        System.out.println("PASS: authentication UI isolation");
+    }
+}''',
     'android/app/Application.java': '''package android.app;
 public class Application {
  public java.io.File getFilesDir(){throw new UnsupportedOperationException("Files not exercised");}
@@ -273,6 +305,10 @@ class ControlJavaTests(unittest.TestCase):
             compiled = subprocess.run([str(compiler), '-encoding', 'UTF-8', '-d', str(classes),
                                        *map(str, sources)], capture_output=True, text=True, timeout=30)
             self.assertEqual(compiled.returncode, 0, compiled.stdout + compiled.stderr)
+            auth = subprocess.run([str(runtime), '-cp', str(classes), 'dev.pgs.ControlAuthUiTest'],
+                                  capture_output=True, text=True, timeout=15)
+            self.assertEqual(auth.returncode, 0, auth.stdout + auth.stderr)
+            self.assertIn('PASS: authentication UI isolation', auth.stdout)
             language = subprocess.run([str(runtime), '-cp', str(classes), 'dev.pgs.LanguagePrefsTest'],
                                       capture_output=True, text=True, timeout=15)
             self.assertEqual(language.returncode, 0, language.stdout + language.stderr)

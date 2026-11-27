@@ -1046,8 +1046,23 @@ public final class Control {
             public void onActivitySaveInstanceState(Activity a, Bundle b) {}
         });
     }
+    /** Provider-owned authentication UI must never receive the PGS panel. */
+    static boolean isProviderAuthenticationUi(String activityName) {
+        return activityName != null && (activityName.startsWith("com.google.android.gms.auth.")
+                || activityName.startsWith("com.facebook."));
+    }
     public static void attach(Activity activity) {
-        if (activity instanceof LogActivity || activity instanceof GoogleAuthActivity) return;
+        if (activity == null || activity instanceof LogActivity || activity instanceof GoogleAuthActivity) return;
+        if (isProviderAuthenticationUi(activity.getClass().getName())) {
+            if (pad != null) {
+                pad.close();
+                pad = null;
+            } else if (foreground) {
+                suspendForBackground();
+            }
+            event("auth-ui-isolated", "Provider activity excluded from PGS panel");
+            return;
+        }
         if (activity.isFinishing() || activity.isDestroyed()) return;
         if (pad != null && pad.activity == activity) return;
         if (pad != null) pad.close();

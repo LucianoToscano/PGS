@@ -57,9 +57,9 @@ async function cityRows(body,now) {
   if (!Array.isArray(body?.pokemons)) throw Error("city_schema");
   const spots=[];
   for (const p of body.pokemons) {
-    if (!p || ![p.attack,p.defence,p.stamina].every(v=>v===15) ||
+    if (!p || ![p.attack,p.defence,p.stamina].every(v=>v===15 || v==="15") ||
         [p.lat,p.lng,p.despawn,p.pokemon_id].some(v=>v==null || String(v).trim()==="")) continue;
-    const lat=Number(p.lat), lon=Number(p.lng), dex=Number(p.pokemon_id), end=Number(p.despawn)*1000;
+    const lat=Number(p.lat), lon=Number(p.lng), dex=Number(p.pokemon_id), end=Math.round(Number(p.despawn)*1000);
     const seed=[dex,lat.toFixed(5),lon.toFixed(5),Math.floor(end/60000)].join(":");
     const hash=new Uint8Array(await crypto.subtle.digest("SHA-1",new TextEncoder().encode(seed)));
     const key="s"+Array.from(hash.slice(0,8),v=>v.toString(16).padStart(2,"0")).join("");
@@ -111,15 +111,42 @@ async function moonaniRows(body,now) {
   return cityRows({pokemons},now);
 }
 
+// Public GOCoords v2 response observed on 2026-11-25; opt-in only after
+// operator confirms current data, precision and redistribution permission.
+// Do not follow cursors or exceed the public ten-row limit.
+export async function gocoordsRows(body,now) {
+  const fetched=typeof body?.generated_at==="string" && /^\d{4}-\d\d-\d\dT\d\d:\d\d:\d\d(?:\.\d+)?Z$/.test(body.generated_at)?Date.parse(body.generated_at):NaN;
+  if (body?.schema_version!==2 || !Number.isFinite(fetched) || fetched<now-600000 || fetched>now+60000 ||
+      !Array.isArray(body.rows) || body.rows.length>10 || body.count!==body.rows.length) throw Error("gocoords_schema");
+  const pokemons=[];
+  for (const p of body.rows) {
+    if (!p || p.iv!==100 || ![p.atk_iv,p.def_iv,p.sta_iv].every(v=>v===15) ||
+        !Number.isSafeInteger(p.pokemon_id) || p.pokemon_id<=0 ||
+        !Number.isFinite(p.lat) || !Number.isFinite(p.lon) || Math.abs(p.lat)>90 || Math.abs(p.lon)>180 ||
+        (p.lat===0 && p.lon===0) ||
+        (p.coordinate_precision!=null && p.coordinate_precision!=="exact") ||
+        (p.form!=null && !Number.isSafeInteger(p.form))) continue;
+    const end=typeof p.expires_at_utc==="string" && p.expires_at_utc.endsWith("Z")?Date.parse(p.expires_at_utc):NaN;
+    if (!Number.isFinite(end) || end<now+60000 || end>now+7200000) continue;
+    // Conservative coordinate spot; do not assert a provider ID is a verified game encounter.
+    pokemons.push({attack:15,defence:15,stamina:15,pokemon_id:p.pokemon_id,form:p.form??0,
+      lat:p.lat,lng:p.lon,despawn:end/1000,
+      cp:Number.isSafeInteger(p.cp) && p.cp>=0?p.cp:0,
+      level:Number.isFinite(p.lvl) && p.lvl>=0 && p.lvl<=55?p.lvl:0});
+  }
+  return cityRows({pokemons},now);
+}
+
 async function collect(source, now) {
   const url = new URL(source.url);
   const city=source.kind==="city" && cityHosts.has(url.hostname) && url.pathname==="/query2.php";
   const moonani=source.kind==="moonani" && url.href==="https://moonani.com/PokeList/ajax.php";
   const iflow=source.kind==="iflow" && url.hostname==="pokecoords.iflowgo.com" &&
     source.category==="pokemon" && url.pathname==="/iflowgopokecoords/api/v1/pokemon-search";
+  const gocoords=source.kind==="gocoords" && source.approved===true && url.href==="https://gocoords.com/api/spawns";
   const compact=(!source.kind || source.kind==="compact") && url.pathname.endsWith("/hundos.json");
   if (url.protocol !== "https:" || url.username || url.password || url.search || url.hash ||
-      !hundoOnly(source) || (!moonani && !iflow && !city && !compact)) throw Error("source_url");
+      !hundoOnly(source) || (!moonani && !iflow && !city && !compact && !gocoords)) throw Error("source_url");
   // No provider-side IV filter is assumed without a verified contract. Filter
   // this bounded Pokémon page immediately and never persist other IV values.
   if (iflow) url.search=new URLSearchParams({page:"1"});
@@ -127,10 +154,17 @@ async function collect(source, now) {
   if (moonani) url.search="page=pokemon&action=load";
   const controller=new AbortController();
   const timer=setTimeout(()=>controller.abort(),12000);
+  let httpStatus=null, contentType=null;
   try {
   const response = await fetch(url,{redirect:"manual",signal:controller.signal,
     method:moonani?"POST":"GET",body:moonani?"draw=1&start=0&length=100&pokemons=&iv=100&pvp=0":undefined,
-    headers:{Accept:"application/json","User-Agent":"PGS-Hundo-Feed/1",...(moonani?{"Content-Type":"application/x-www-form-urlencoded"}:{})}});
+    // Request JSON via ordinary content negotiation, not a fabricated browser
+    // session, origin, cookie or user identity. Refusals must remain refusals.
+    headers:{Accept:city?"application/json, text/javascript;q=0.9":"application/json","User-Agent":"PGS-Hundo-Feed/1 (+https://github.com/LucianoToscano/PGS)",
+      ...(city?{"X-Requested-With":"XMLHttpRequest"}:{}),...(moonani?{"Content-Type":"application/x-www-form-urlencoded"}:{})}});
+  httpStatus=response.status;
+  const type=(response.headers.get("Content-Type") || "").split(";")[0].trim().toLowerCase();
+  contentType=/^[a-z0-9.+_-]+\/[a-z0-9.+_-]+$/.test(type)?type:null;
   if (!response.ok) {
     const error = Error("upstream_http");
     error.httpStatus=response.status;
@@ -148,9 +182,15 @@ async function collect(source, now) {
     data+=decoder.decode(value,{stream:true});
   }
   const body=JSON.parse(data+decoder.decode());
-  if (moonani) return moonaniRows(body,now);
-  if (iflow) return iflowRows(body,now);
-  return city ? cityRows(body,now) : rows(body,now);
+  const result=moonani?await moonaniRows(body,now):iflow?iflowRows(body,now):
+    city?await cityRows(body,now):gocoords?await gocoordsRows(body,now):rows(body,now);
+  const received=moonani?body.data.length:iflow?body.items.length:city?body.pokemons.length:
+    gocoords?body.rows.length:body.hundos.length+(body.spots??[]).length;
+  const validated=result.hundos.length+result.spots.length;
+  return {...result,httpStatus,contentType,received,validated,discarded:received-validated};
+  } catch(error) {
+    if (error instanceof Error) {error.httpStatus=httpStatus;error.contentType=contentType;}
+    throw error;
   } finally {clearTimeout(timer);}
 }
 
@@ -164,13 +204,13 @@ async function refresh(env) {
   const entries=await Promise.all(configs.map(async source=>{
     const old=previous.entries?.find(x=>x.name===source.name && x.url===source.url);
     if (old?.next>now) return old;
-    const base={name:source.name,url:source.url,next:now+source.interval_s*1000};
+    const base={name:source.name,url:source.url,next:now+source.interval_s*1000,lastAttempt:now};
     try { return {...base,...await collect(source,now),updated:now,status:"online",failures:0}; }
     catch(error) {
       console.warn("PGS upstream unavailable",source.name);
       const failures=Math.min((old?.failures||0)+1,8);
-      return {...old,...base,status:"offline",httpStatus:error.httpStatus || null,
-        reason:["invalid_feed","source_url","city_schema","iflow_schema","upstream_http","size"].includes(error.message)
+      return {...old,...base,status:"offline",httpStatus:error.httpStatus || null,contentType:error.contentType || null,
+        reason:["invalid_feed","source_url","city_schema","iflow_schema","moonani_schema","gocoords_schema","upstream_http","size"].includes(error.message)
           ? error.message : (error.name==="SyntaxError"?"invalid_json":error.name==="AbortError"?"timeout":"runtime_"+String(error.name).slice(0,24)),failures,
         next:Math.max(base.next,now+interval*1000*2**failures,Number.isFinite(error.retryAt)?error.retryAt:0)};
     }
@@ -238,6 +278,18 @@ export default {
   }
 };
 
+function detailStatus(entry,active) {
+  if (!entry) return "pending";
+  if (entry.status==="online") return active>0?"online_with_results":"online_zero_hundos";
+  if (entry.httpStatus===429) return "rate_limited";
+  if ([401,403].includes(entry.httpStatus)) return "access_denied";
+  if (entry.httpStatus>=300 && entry.httpStatus<400) return "redirected";
+  if (["invalid_json","invalid_feed","city_schema","iflow_schema","moonani_schema","gocoords_schema","size"].includes(entry.reason)) return "invalid_response";
+  if (entry.reason==="source_url") return "invalid_configuration";
+  if (entry.reason==="timeout" || !entry.httpStatus) return "offline_connection";
+  return "offline_upstream";
+}
+
 async function readFeed(request,env) {
     const path=new URL(request.url).pathname;
     const catalog=path==="/sources.json";
@@ -262,9 +314,16 @@ async function readFeed(request,env) {
       return new Response(request.method==="HEAD"?null:JSON.stringify(data),{headers:{"Content-Type":"application/json","Cache-Control":"public, max-age=15"}});
     }
     if (health) {
-      const status={time:state?.time || null,history:state?.history || [],connections:(state?.entries || []).map(e=>({
-        provider:providerName(e),category:"hundos",
-        status:e.status,last_success:e.updated || null,http_status:e.httpStatus || null,reason:e.reason || null}))};
+      const now=Date.now(), counts=feed(state,now).sources;
+      const status={time:state?.time || null,history:state?.history || [],connections:configs.map(source=>{
+        const e=(state.entries || []).find(entry=>sourceKey(entry)===sourceKey(source));
+        const active=counts[providerName(source)]?.active || 0;
+        return {provider:providerName(source),category:"hundos",status:e?.status || "pending",
+          detail_status:detailStatus(e,active),last_attempt:e?.lastAttempt || null,last_success:e?.updated || null,
+          next_attempt:e?.next || null,failures:e?.failures || 0,http_status:e?.httpStatus || null,
+          content_type:e?.contentType || null,reason:e?.reason || null,active,
+          received:e?.received ?? null,validated:e?.validated ?? null,discarded:e?.discarded ?? null};
+      })};
       return new Response(request.method==="HEAD"?null:JSON.stringify(status),{headers:{"Content-Type":"application/json","Cache-Control":"public, max-age=15"}});
     }
     if (!state?.entries?.some(s=>s.updated)) return new Response(null,{status:503,headers:{"Retry-After":"300","Cache-Control":"no-store"}});

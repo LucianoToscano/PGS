@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import worker,{rows,feed,iflowRows} from "./worker.mjs";
+import worker,{rows,feed,iflowRows,gocoordsRows} from "./worker.mjs";
 const now=Date.now();
 const row=["18446744073709551615",25,0,-3.1234567,38.7654321,now+300000,10,1];
 const spot=["s0123456789abcdef",...row.slice(1)];
@@ -102,4 +102,64 @@ test("legacy non-hundo categories and invalid cached coordinates cannot enter fe
   assert.deepEqual(result.hundos,[row]);
   assert.equal(result.sources.bad.active,0);
   assert.equal("iflowgo-raids" in result.sources,false);
+});
+
+test("GOCoords v2 accepts only explicit perfect IV, fresh exact spots and bounded public rows",async()=>{
+  const p={pokemon_id:25,iv:100,atk_iv:15,def_iv:15,sta_iv:15,lat:12.3456789,lon:23.4567891,
+    cp:250,lvl:20,form:null,expires_at_utc:new Date(now+600000).toISOString()};
+  const envelope=list=>({schema_version:2,generated_at:new Date(now).toISOString(),count:list.length,rows:list});
+  const result=await gocoordsRows(envelope([p,p,{...p,atk_iv:null},{...p,iv:99},
+    {...p,coordinate_precision:"approximate"},{...p,expires_at_utc:new Date(now-1).toISOString()}]),now);
+  assert.equal(result.hundos.length,0);
+  assert.equal(result.spots.length,1);
+  assert.deepEqual(result.spots[0].slice(1),[25,0,p.lat,p.lon,now+600000,250,20]);
+  await assert.rejects(()=>gocoordsRows({...envelope([p]),generated_at:new Date(now-600001).toISOString()},now),/gocoords_schema/);
+  await assert.rejects(()=>gocoordsRows(envelope(Array(11).fill(p)),now),/gocoords_schema/);
+});
+test("city content negotiation and diagnostics preserve real refusals and distinguish empty JSON",async t=>{
+  const names=["nycpokemap","sgpokemap","londonpogomap","sydneypogomap","vanpokemap"];
+  const cfg=names.map(name=>({name,kind:"city",url:"https://"+name+".com/query2.php",interval_s:600}));
+  // Synthetic fixture: never used as real provider evidence.
+  const good={attack:"15",defence:15,stamina:15,pokemon_id:25,lat:12.3456789,lng:23.4567891,
+    despawn:Math.floor((now+600000)/1000),cp:100,level:10};
+  t.mock.method(globalThis,"fetch",async (url,options)=>{
+    assert.equal(options.headers["X-Requested-With"],"XMLHttpRequest");
+    assert.match(options.headers["User-Agent"],/^PGS-Hundo-Feed/);
+    assert.equal(options.headers.Referer,undefined);
+    assert.equal(options.redirect,"manual");
+    switch(url.hostname) {
+      case "nycpokemap.com":return Response.json({pokemons:[good,{...good,attack:14}]});
+      case "sgpokemap.com":return Response.json({pokemons:[]});
+      case "londonpogomap.com":return new Response("<html>Not JSON</html>",{headers:{"Content-Type":"text/html"}});
+      case "sydneypogomap.com":return new Response(null,{status:403});
+      case "vanpokemap.com":return new Response(null,{status:429,headers:{"Retry-After":"7200"}});
+    }
+    throw Error("unexpected host");
+  });
+  const db=new Map(), env={SOURCES:JSON.stringify(cfg),FEED:{put:(k,v)=>db.set(k,v),get:k=>JSON.parse(db.get(k)||"null")}};
+  await worker.scheduled({},env);
+  const result=await (await worker.fetch(new Request("https://example.org/status.json"),env)).json();
+  const by=Object.fromEntries(result.connections.map(e=>[e.provider,e]));
+  assert.equal(by.nycpokemap.detail_status,"online_with_results");
+  assert.equal(by.nycpokemap.received,2);assert.equal(by.nycpokemap.validated,1);assert.equal(by.nycpokemap.discarded,1);
+  assert.equal(by.sgpokemap.detail_status,"online_zero_hundos");
+  assert.equal(by.londonpogomap.detail_status,"invalid_response");
+  assert.equal(by.londonpogomap.reason,"invalid_json");assert.equal(by.londonpogomap.http_status,200);
+  assert.equal(by.londonpogomap.content_type,"text/html");
+  assert.equal(by.sydneypogomap.detail_status,"access_denied");assert.equal(by.sydneypogomap.http_status,403);
+  assert.equal(by.vanpokemap.detail_status,"rate_limited");assert.equal(by.vanpokemap.http_status,429);
+  assert.ok(by.vanpokemap.next_attempt>=by.vanpokemap.last_attempt+7200000);
+  const feedResult=await (await worker.fetch(new Request("https://example.org/hundos.json"),env)).json();
+  assert.equal(feedResult.spots.length,1);
+  assert.equal(feedResult.sources.londonpogomap.status,"offline");
+});
+test("unapproved GOCoords source is not queried; pending config appears in status",async t=>{
+  const candidate={name:"gocoords",kind:"gocoords",url:"https://gocoords.com/api/spawns",interval_s:300};
+  let calls=0;t.mock.method(globalThis,"fetch",async()=>{calls++;throw Error("must not query");});
+  const db=new Map(),env={SOURCES:JSON.stringify([candidate]),FEED:{put:(k,v)=>db.set(k,v),get:k=>JSON.parse(db.get(k)||"null")}};
+  const read=()=>worker.fetch(new Request("https://example.org/status.json"),env);
+  assert.equal((await (await read()).json()).connections[0].detail_status,"pending");
+  await worker.scheduled({},env);
+  assert.equal(calls,0);
+  assert.equal((await (await read()).json()).connections[0].detail_status,"invalid_configuration");
 });

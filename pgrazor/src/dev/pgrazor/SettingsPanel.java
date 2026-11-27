@@ -278,7 +278,7 @@ final class SettingsPanel {
         LinearLayout header = new LinearLayout(activity); header.setOrientation(LinearLayout.HORIZONTAL); header.setGravity(Gravity.CENTER_VERTICAL);
         backIcon = new BackIcon(activity); backIcon.setVisibility(View.GONE); header.addView(backIcon, new LinearLayout.LayoutParams(dp(48), dp(48)));
         backIcon.setOnClickListener(v -> open(-1));
-        title = text("PGRazor", 20, ink()); title.setTypeface(SettingsUi.medium()); title.setPadding(dp(4), 0, 0, 0);
+        title = text("PGS", 20, ink()); title.setTypeface(SettingsUi.medium()); title.setPadding(dp(4), 0, 0, 0);
         title.setSingleLine(true); title.setEllipsize(android.text.TextUtils.TruncateAt.END); title.setGravity(Gravity.CENTER_VERTICAL);
         header.addView(title, new LinearLayout.LayoutParams(0, dp(48), 1f));
         themeIcon = new ThemeIcon(activity); header.addView(themeIcon,new LinearLayout.LayoutParams(dp(44),dp(48)));
@@ -329,7 +329,7 @@ final class SettingsPanel {
         discord.setBackground(SettingsUi.pressable(activity));
         content.addView(discord, new LinearLayout.LayoutParams(-1,dp(44)));
         discord.setOnClickListener(v -> {
-            try { activity.startActivity(new Intent(Intent.ACTION_VIEW, android.net.Uri.parse("https://discord.gg/9QqfkDSQX3"))); }
+            try { activity.startActivity(new Intent(Intent.ACTION_VIEW, android.net.Uri.parse("https://discord.gg/SdwU4VnfW"))); }
             catch (android.content.ActivityNotFoundException unavailable) {
                 android.widget.Toast.makeText(activity, I18n.t("No app available to open Discord links"), android.widget.Toast.LENGTH_SHORT).show();
             }

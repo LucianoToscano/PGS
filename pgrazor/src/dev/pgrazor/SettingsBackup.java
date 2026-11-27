@@ -41,7 +41,7 @@ final class SettingsBackup {
             dialog.setCancelable(false);dialog.show();
         }else activity.setContentView(scroll);
     }
-    private File rootedFile(){File dir=activity.getExternalFilesDir(null);return dir==null?null:new File(dir,"PGRazor-settings.json");}
+    private File rootedFile(){File dir=activity.getExternalFilesDir(null);return dir==null?null:new File(dir,"PGS-settings.json");}
     private void pick(int code){
         if(PgAssets.rooted()){
             File file=rootedFile();
@@ -52,7 +52,7 @@ final class SettingsBackup {
             return;
         }
         Intent i=new Intent(code==EXPORT?Intent.ACTION_CREATE_DOCUMENT:Intent.ACTION_OPEN_DOCUMENT).addCategory(Intent.CATEGORY_OPENABLE).setType("application/json");
-        if(code==EXPORT)i.putExtra(Intent.EXTRA_TITLE,"PGRazor-settings.json");
+        if(code==EXPORT)i.putExtra(Intent.EXTRA_TITLE,"PGS-settings.json");
         try{activity.startActivityForResult(i,code);}catch(android.content.ActivityNotFoundException e){status.setText(I18n.t("No file picker is available."));}
     }
     void result(int request,int result,Intent data){

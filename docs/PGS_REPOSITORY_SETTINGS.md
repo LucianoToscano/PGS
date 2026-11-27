@@ -8,9 +8,9 @@ No momento da auditoria, a descrição pública do repositório ainda continha u
 
 1. Abra https://github.com/LucianoToscano/PGS
 2. No painel **About**, clique no ícone **engrenagem** ou **Editar** (no navegador, use a opção "Site para computador" se necessário).
-3. Substitua a descrição por:
+3. Use a descrição internacional em inglês:
 
-> PGS — Pokémon GO Spoofers. Projeto independente para Android, com controles de localização, joystick, mapas e ferramentas auxiliares para Pokémon GO.
+> PGS — Pokémon GO Spoofers. Independent Android project with location controls, joystick, maps, and companion tools for Pokémon GO.
 
 4. Se desejar, preencha **Website** com `https://lucianotoscano.github.io/PGS/`, mas só depois de ativar o Pages.
 5. Salve a alteração. Isso não reescreve commits, código, histórico nem o certificado do APK.

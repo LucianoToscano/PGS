@@ -1,0 +1,28 @@
+# PGS — Registro de alterações
+
+**Idiomas:** [🇺🇸 English](CHANGELOG.md) · 🇧🇷 Português (Brasil)
+
+Este registro acompanha **somente** as versões do PGS. Os documentos históricos da base original permanecem disponíveis pelo histórico Git e pelos avisos legais, mas não são releases do PGS.
+
+## Em desenvolvimento
+
+- Identidade pública PGS consolidada no README, site, arte oficial, contribuição e documentação.
+- Preservação das interfaces JNI, caminhos de runtime e preferências existentes até migração compatível e testada.
+- Testes automáticos para impedir regressão de identidade, versão ou links de instalação.
+
+## v0.0.2 — Candidata completa
+
+- Pokémon GO `0.439.0`; pacote `com.nianticlabs.pokemongo`; `versionCode=2026111605`.
+- Reorganização de identidade PGS, traduções e links públicos sem alterar a assinatura existente.
+- APK completo e assinado: https://github.com/LucianoToscano/PGS/actions/runs/45980315394
+- SHA-256 do APK: `91865f6242519091a771617f962f17620405624a4a56addec0909d2cdf6b68c1`.
+- Release privado em rascunho. **Ainda não há confirmação de instalação e login em aparelho real.**
+
+## v0.0.1 — Primeira candidata PGS
+
+- APK completo, assinatura PGS definitiva e `versionCode=2026111604`.
+- Atualizador exclusivo do PGS, novo Discord, estatísticas e interface PGS.
+- Melhorias de joystick, mapas, IVs, Buddy e ferramentas comunitárias.
+- Compilação: https://github.com/LucianoToscano/PGS/actions/runs/45973576985
+
+Consulte [LICENSE](LICENSE) e [THIRD_PARTY.md](THIRD_PARTY.md) para os avisos e condições legais.

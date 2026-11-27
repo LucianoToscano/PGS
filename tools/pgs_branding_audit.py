@@ -16,6 +16,8 @@ ACTIVE_TEXT = (
     "website/src/components/GuideIndex.jsx",
     "website/src/components/Cooldown.jsx",
     "website/src/content.js",
+    "website/src/content.en.js",
+    "website/src/content.pt-BR.js",
     "pgrazor/AndroidManifest.xml",
     "pgrazor/root-installer/AndroidManifest.xml",
     "pgrazor/src/dev/pgrazor/EncounterCounter.java",
@@ -82,20 +84,43 @@ def check():
         + "Pokémon GO and its assets are not covered by this license. "
         + "PGRazor is an independent project and is not affiliated with the game publisher."
     )
-    readme = (ROOT / "README.md").read_text(encoding="utf-8").rstrip()
-    if not readme.endswith(required_license):
-        problems.append("README.md: mandatory exact final License notice absent")
-    elif "pgrazor" in readme[:-len(required_license)].lower():
-        problems.append("README.md: legacy brand occurs before License")
+    for readme_file in ("README.md", "README.pt-BR.md"):
+        readme = (ROOT / readme_file).read_text(encoding="utf-8").rstrip()
+        if not readme.endswith(required_license):
+            problems.append(readme_file + ": mandatory exact final License notice absent")
+        elif "pgrazor" in readme[:-len(required_license)].lower():
+            problems.append(readme_file + ": legacy brand occurs before License")
+    required_pairs = (
+        ("README.md", "README.pt-BR.md"),
+        ("CHANGELOG.md", "CHANGELOG.pt-BR.md"),
+        ("CONTRIBUTING.md", "CONTRIBUTING.pt-BR.md"),
+    )
+    for english, portuguese in required_pairs:
+        en_text = (ROOT / english).read_text(encoding="utf-8")
+        pt_text = (ROOT / portuguese).read_text(encoding="utf-8")
+        if portuguese not in en_text or english not in pt_text:
+            problems.append(english + " / " + portuguese + ": bilingual links missing")
+        if "v0.0.2" not in en_text or "v0.0.2" not in pt_text:
+            if english != "CONTRIBUTING.md":
+                problems.append(english + " / " + portuguese + ": release version mismatch")
+    for guide in ("BUILDING.md", "PGS_UPDATE_POLICY.md", "PGS_LANGUAGES.md"):
+        for language in ("en", "pt-BR"):
+            path = ROOT / "docs" / language / guide
+            if not path.is_file():
+                problems.append(str(path.relative_to(ROOT)) + ": translated guide missing")
     for public_file in (
         "CONTRIBUTING.md",
         "CHANGELOG.md",
+        "CHANGELOG.pt-BR.md",
+        "CONTRIBUTING.pt-BR.md",
         "docs/BUILDING.md",
         "docs/ROOTED.md",
         "docs/ARCHITECTURE.md",
         "docs/releases/v0.0.2.md",
         "website/README.md",
         "website/src/content.js",
+        "website/src/content.en.js",
+        "website/src/content.pt-BR.js",
         "website/src/components/Footer.jsx",
         "website/index.html",
         "website/src/hooks/useTheme.js",
@@ -163,10 +188,22 @@ def check():
         content = (ROOT / public_file).read_text(encoding="utf-8")
         if "'pgs-theme'" not in content or "'pgrazor-theme'" in content:
             problems.append(public_file + ": website theme identity not PGS")
-    for public_file in ("website/src/content.js", "website/index.html", "website/tests/site.spec.js"):
+    # The English catalog owns the canonical download URL; Portuguese shares
+    # exactly the same link object and never points at a separate APK.
+    for public_file in ("website/src/content.en.js", "website/index.html", "website/tests/site.spec.js"):
         content = (ROOT / public_file).read_text(encoding="utf-8")
         if "pgs-v0.0.2-release.yml" not in content:
             problems.append(public_file + ": does not point to the actual PGS build workflow")
+    if "export const links = en.links;" not in (ROOT / "website/src/content.pt-BR.js").read_text(encoding="utf-8"):
+        problems.append("Brazilian Portuguese catalog must share canonical PGS release links")
+    for source_file in (
+        "website/src/locale.js",
+        "website/src/uiText.js",
+        "website/src/featureGuides.i18n.js",
+        "website/src/guideScreenshots.i18n.js",
+    ):
+        if not (ROOT / source_file).is_file():
+            problems.append(source_file + ": bilingual website module missing")
     if not (ROOT / ".github/workflows/pgs-v0.0.2-release.yml").is_file():
         problems.append("Approved v0.0.2 workflow missing")
     if problems:

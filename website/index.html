@@ -12,6 +12,8 @@
     <meta name="color-scheme" content="dark light" />
     <meta name="theme-color" content="#141b25" />
     <link rel="canonical" href="https://lucianotoscano.github.io/PGS/" />
+    <link rel="alternate" hreflang="en" href="https://lucianotoscano.github.io/PGS/" />
+    <link rel="alternate" hreflang="pt-BR" href="https://lucianotoscano.github.io/PGS/?lang=pt-BR" />
     <meta property="og:title" content="PGS" />
     <meta
       property="og:description"
@@ -30,6 +32,13 @@
           document.documentElement.dataset.theme = 'dark';
         }
         document.querySelector('meta[name="theme-color"]').content = document.documentElement.dataset.theme === 'light' ? '#f9fbfd' : '#141b25';
+        try {
+          var requested = new URLSearchParams(window.location.search).get('lang');
+          var storedLanguage = localStorage.getItem('pgs-website-language');
+          document.documentElement.lang = requested === 'pt-BR' || (!requested && storedLanguage === 'pt-BR') ? 'pt-BR' : 'en';
+        } catch (error) {
+          document.documentElement.lang = 'en';
+        }
       })();
     </script>
   </head>

@@ -26,6 +26,49 @@ test('official PGS originals load as high-resolution PNGs', async ({ page }) => 
   await expect(page.locator('link[rel="icon"]')).toHaveAttribute('href', /pgs-shield\.png$/);
 });
 
+
+test('switches to Brazilian Portuguese, persists the choice and preserves guide deep links', async ({ page }) => {
+  await page.goto('./');
+  await expect(page.locator('html')).toHaveAttribute('lang', 'en');
+  await expect(page.getByRole('combobox', { name: 'Website language' })).toHaveValue('en');
+
+  await page.getByRole('combobox', { name: 'Website language' }).selectOption('pt-BR');
+  await expect(page).toHaveURL(/lang=pt-BR/);
+  await expect(page.locator('html')).toHaveAttribute('lang', 'pt-BR');
+  await expect(page.getByRole('heading', { level: 1 })).toContainText('Sessões mais práticas');
+  await expect(page.getByRole('link', { name: 'Ver todos os guias de recursos' })).toHaveAttribute('href', /guide=all&lang=pt-BR/);
+
+  await page.reload();
+  await expect(page.locator('html')).toHaveAttribute('lang', 'pt-BR');
+  await page.goto('./');
+  await expect(page.locator('html')).toHaveAttribute('lang', 'pt-BR');
+
+  await page.goto('./?guide=world-map&lang=pt-BR');
+  await expect(page.getByRole('heading', { level: 1, name: 'Mapa mundial' })).toBeVisible();
+  await expect(page.locator('main').getByText('Abra o Menu rápido e toque em Mapa.')).toBeVisible();
+
+  await page.getByRole('combobox', { name: 'Idioma do site' }).selectOption('en');
+  await expect(page).toHaveURL(/\?guide=world-map$/);
+  await expect(page.locator('html')).toHaveAttribute('lang', 'en');
+  await expect(page.getByRole('heading', { level: 1, name: 'World map' })).toBeVisible();
+});
+
+test('Portuguese navigation, guide search, and mobile layout work', async ({ page }) => {
+  await page.setViewportSize({ width: 320, height: 740 });
+  await page.goto('./?guide=all&lang=pt-BR');
+  await expect(page.locator('html')).toHaveAttribute('lang', 'pt-BR');
+  await expect(page.getByRole('heading', { level: 1, name: 'Guias de recursos' })).toBeVisible();
+  const search = page.getByRole('searchbox', { name: 'Buscar guias' });
+  await search.fill('evolução');
+  await expect(page.locator('.guide-card').first()).toBeVisible();
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBeTruthy();
+  const menu = page.getByRole('button', { name: 'Abrir menu' });
+  if (await menu.isVisible()) {
+    await menu.click();
+    await expect(page.getByRole('navigation', { name: 'Navegação principal' })).toBeVisible();
+  }
+});
+
 test('production page loads its assets and stays within the viewport', async ({ page }) => {
   const errors = [];
   page.on('pageerror', error => errors.push(error.message));

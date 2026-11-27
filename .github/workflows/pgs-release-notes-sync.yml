@@ -1,0 +1,62 @@
+name: PGS — Sync English release notes to verified draft
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - docs/releases/v0.0.2.md
+      - docs/releases/footer.md
+      - docs/pt-BR/releases/v0.0.2.md
+      - .github/workflows/pgs-release-notes-sync.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  sync:
+    name: Update draft release text only
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
+      - name: Sync English notes only while v0.0.2 is a draft
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+        run: |
+          set -euo pipefail
+          # This workflow does not build, upload, sign or replace APKs.
+          state="$(gh api "repos/$GH_REPO/releases?per_page=100" --jq '.[] | select(.tag_name == "v0.0.2") | .draft' | head -n 1)"
+          if [ "$state" = "false" ]; then
+            echo 'v0.0.2 has already been published; leaving notes untouched.'
+            exit 0
+          fi
+          if [ "$state" != "true" ]; then
+            echo 'No existing v0.0.2 draft found; cannot safely edit an absent release.'
+            exit 1
+          fi
+          test -s docs/releases/v0.0.2.md
+          test -s docs/pt-BR/releases/v0.0.2.md
+          test -s docs/releases/footer.md
+          grep -q '^# PGS v0.0.2' docs/releases/v0.0.2.md
+          grep -q 'versionCode' docs/releases/v0.0.2.md
+          grep -q '2026111605' docs/releases/v0.0.2.md
+          grep -q 'com.nianticlabs.pokemongo' docs/releases/v0.0.2.md
+          grep -q '🇧🇷 Português (Brasil)' docs/releases/v0.0.2.md
+          if grep -q '^## Alterações desta versão' docs/releases/v0.0.2.md; then
+            echo 'Release notes are still in Portuguese; refusing to publish as English.'
+            exit 1
+          fi
+          cat docs/releases/v0.0.2.md docs/releases/footer.md > "$RUNNER_TEMP/pgs-v0.0.2-english-notes.md"
+          gh release edit v0.0.2 \
+            --repo "$GH_REPO" \
+            --notes-file "$RUNNER_TEMP/pgs-v0.0.2-english-notes.md"
+          post_state="$(gh api "repos/$GH_REPO/releases?per_page=100" --jq '.[] | select(.tag_name == "v0.0.2") | .draft' | head -n 1)"
+          test "$post_state" = "true"
+          echo 'Updated English notes and Portuguese link; v0.0.2 remains draft.'

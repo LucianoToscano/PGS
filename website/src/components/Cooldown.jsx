@@ -1,4 +1,5 @@
 import { cooldown } from '../content.js';
+import { ui } from '../uiText.js';
 
 // Community cooldown guidance: a short explainer, two expandable action lists,
 // and a compact distance/wait tables. All values are framed as estimates.
@@ -6,9 +7,9 @@ export default function Cooldown() {
   return (
     <section className="section" id="cooldown" aria-labelledby="cooldown-heading">
       <div className="section__head">
-        <p className="section__num">02 / Cooldown</p>
+        <p className="section__num">{ui.cooldown.number}</p>
         <h2 id="cooldown-heading" className="section__title">
-          Cooldown between locations.
+          {ui.cooldown.title}
         </h2>
         <p className="section__lead">{cooldown.intro}</p>
       </div>
@@ -16,7 +17,7 @@ export default function Cooldown() {
       <div className="cooldown__groups">
         <details className="cooldown__group" open>
           <summary>
-            <span>Starts the cooldown</span>
+            <span>{ui.cooldown.triggers}</span>
             <span className="faq__mark" aria-hidden="true" />
           </summary>
           <ul className="cooldown__list cooldown__list--trigger">
@@ -28,7 +29,7 @@ export default function Cooldown() {
 
         <details className="cooldown__group">
           <summary>
-            <span>Does not start it</span>
+            <span>{ui.cooldown.safe}</span>
             <span className="faq__mark" aria-hidden="true" />
           </summary>
           <ul className="cooldown__list cooldown__list--safe">
@@ -41,14 +42,14 @@ export default function Cooldown() {
 
       <figure className="cooldown__chart">
         <figcaption className="cooldown__chart-cap">
-          Distance between actions and estimated wait. Read down each column.
+          {ui.cooldown.chartCaption}
         </figcaption>
         <div className="cooldown__tables">
           {[cooldown.chart.slice(0, 15), cooldown.chart.slice(15)].map((rows, index) => (
             <div className="cooldown__table-wrap" key={index}>
               <table className="cooldown__table">
-                <caption className="visually-hidden">Distance and estimated wait, part {index + 1} of 2. Read each table from top to bottom.</caption>
-                <thead><tr><th scope="col">Distance (km)</th><th scope="col">Wait (est.)</th></tr></thead>
+                <caption className="visually-hidden">{ui.cooldown.tableCaption(index + 1)}</caption>
+                <thead><tr><th scope="col">{ui.cooldown.distance}</th><th scope="col">{ui.cooldown.wait}</th></tr></thead>
                 <tbody>{rows.map(row => (
                   <tr key={row.km}><th scope="row">{row.km}</th><td>{row.wait}</td></tr>
                 ))}</tbody>
@@ -59,8 +60,7 @@ export default function Cooldown() {
       </figure>
 
       <p className="cooldown__note">
-        PGS's timer is a local estimate, not a server countdown. Waiting does not
-        guarantee that an action will succeed.
+        {ui.cooldown.note}
       </p>
     </section>
   );

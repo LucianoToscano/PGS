@@ -1,14 +1,22 @@
-# PGS vVERSION
+# PGS vVERSION — release candidate
 
-Esta página é o modelo de **novos releases PGS**, não um release upstream. O pacote instalado é `com.nianticlabs.pokemongo`, com a assinatura definitiva PGS. A versão do APK precisa ter `versionCode` maior que o anterior. Não publicar um arquivo de 2 MB como jogo completo.
+[🇺🇸 English](https://github.com/LucianoToscano/PGS/blob/main/docs/releases/vVERSION.md) · [🇧🇷 Português (Brasil)](https://github.com/LucianoToscano/PGS/blob/main/docs/pt-BR/releases/vVERSION.md)
 
-## Notas
+This is a **PGS release**, not an upstream distribution. The installed package remains `com.nianticlabs.pokemongo` and uses the permanent PGS signing certificate. The next Android `versionCode` must be strictly higher than the previous verified APK.
 
-- Mudanças verificadas:
-- Jogo base:
+## What's changed
+
+- Verified changes:
+
+## Build and integrity
+
+- Base game version:
 - Android `versionCode`:
-- SHA-256 do APK:
-- Assinatura SHA-256: `D9:5C:6B:DF:CB:D9:1D:C5:C9:CD:E6:98:48:7C:88:E4:99:47:71:A4:75:E4:EF:DE:45:67:B8:D5:F4:4E:96:CF`
-- Instalação e login físico: pendentes até comprovação
+- Full APK filename:
+- APK SHA-256:
+- Permanent signing certificate SHA-256: `D9:5C:6B:DF:CB:D9:1D:C5:C9:CD:E6:98:48:7C:88:E4:99:47:71:A4:75:E4:EF:DE:45:67:B8:D5:F4:4E:96:CF`
+- Real-device installation and sign-in: **not confirmed until documented evidence exists**.
 
-[Builds verificadas PGS](https://github.com/LucianoToscano/PGS/actions/workflows/pgs-v0.0.1-release.yml) · [Discord PGS](https://discord.gg/SdwU4VnfW)
+[PGS verified builds](https://github.com/LucianoToscano/PGS/actions) · [PGS Discord](https://discord.gg/SdwU4VnfW)
+
+Do **not** present a 2 MB preview as a complete game installer. Keep this release a draft until on-device validation passes.

@@ -67,12 +67,23 @@ def query():
         return latest_version(body.decode("utf-8", errors="replace"))
 
 
+def new_version(latest, known):
+    """Return a newer stable catalog version, or an empty string."""
+    if not known:
+        return ""
+    return latest if version_key(latest) > version_key(known) else ""
+
+
 def self_test():
     example = """<h5><a>Pokémon GO 0.439.0</a></h5>
     <h5>Pokémon GO 0.99.0</h5><h5>Pokémon GO 9.0.0 beta</h5>
     <h5>Other app 99.0.0</h5>"""
     assert latest_version(example) == "0.439.0"
     assert version_key("0.439.0") > version_key("0.99.0")
+    assert new_version("0.440.0", "0.439.0") == "0.440.0"
+    assert new_version("0.439.0", "0.439.0") == ""
+    assert new_version("0.438.0", "0.439.0") == ""
+    assert new_version("0.439.0", "") == ""
     try:
         latest_version("<html>Access denied</html>")
     except ValueError:
@@ -93,9 +104,10 @@ def main():
     if known:
         version_key(known)
     latest = query()
+    newer = new_version(latest, known)
     status = ("No reviewed version configured" if not known else
               "New catalog version; compatibility not established"
-              if version_key(latest) > version_key(known) else
+              if newer else
               "No newer catalog version than reviewed version")
     summary = (f"## PGS version monitor\n\n"
                f"- Catalog: {SOURCE}\n"
@@ -104,6 +116,10 @@ def main():
                f"- Status: {status}\n"
                "- Metadata only. No APK downloaded, no build or release triggered.\n")
     print(summary)
+    output = os.environ.get("GITHUB_OUTPUT")
+    if output:
+        with open(output, "a", encoding="utf-8") as stream:
+            stream.write(f"new_version={newer}\n")
     path = os.environ.get("GITHUB_STEP_SUMMARY")
     if path:
         with open(path, "a", encoding="utf-8") as stream:

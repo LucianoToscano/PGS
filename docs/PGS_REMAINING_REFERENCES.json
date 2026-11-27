@@ -2,13 +2,13 @@
   "scope": "Git-indexed regular UTF-8 text, excluding NUL-containing files and the snapshot itself",
   "tracked_files": 2107,
   "text_files": 1032,
-  "remaining_files": 959,
-  "remaining_occurrences": 30823,
+  "remaining_files": 960,
+  "remaining_occurrences": 30977,
   "remaining_by_category": {
     "documentation": 1557,
     "native": 25448,
-    "other": 2620,
-    "tests": 1063,
+    "other": 2641,
+    "tests": 1196,
     "workflows": 135
   },
   "tracked_name_matches": [],
@@ -76,7 +76,7 @@
     {
       "path": ".gitignore",
       "category": "other",
-      "occurrences": 3
+      "occurrences": 4
     },
     {
       "path": "CHANGELOG.md",
@@ -3666,12 +3666,12 @@
     {
       "path": "pgs/test/AccountProfileDataTest.java",
       "category": "tests",
-      "occurrences": 1
+      "occurrences": 9
     },
     {
       "path": "pgs/test/AccountProfileStoreTest.java",
       "category": "tests",
-      "occurrences": 32
+      "occurrences": 52
     },
     {
       "path": "pgs/test/AccountSessionTransactionTest.java",
@@ -3746,7 +3746,7 @@
     {
       "path": "pgs/test/ControlLanguageTest.java",
       "category": "tests",
-      "occurrences": 22
+      "occurrences": 23
     },
     {
       "path": "pgs/test/ControlLogRetentionTest.java",
@@ -3771,12 +3771,12 @@
     {
       "path": "pgs/test/ControlSettingsReloadTest.java",
       "category": "tests",
-      "occurrences": 1
+      "occurrences": 2
     },
     {
       "path": "pgs/test/ControlSettingsTest.java",
       "category": "tests",
-      "occurrences": 1
+      "occurrences": 2
     },
     {
       "path": "pgs/test/ControlWildEventTest.java",
@@ -3866,7 +3866,7 @@
     {
       "path": "pgs/test/I18nTest.java",
       "category": "tests",
-      "occurrences": 5
+      "occurrences": 9
     },
     {
       "path": "pgs/test/IdleWalkTest.java",
@@ -3941,7 +3941,7 @@
     {
       "path": "pgs/test/PogoFeedDataTest.java",
       "category": "tests",
-      "occurrences": 1
+      "occurrences": 2
     },
     {
       "path": "pgs/test/PogoFeedFiltersTest.java",
@@ -4001,7 +4001,7 @@
     {
       "path": "pgs/test/SettingsBackupRulesTest.java",
       "category": "tests",
-      "occurrences": 14
+      "occurrences": 32
     },
     {
       "path": "pgs/test/SettingsSearchTest.java",
@@ -4036,7 +4036,7 @@
     {
       "path": "pgs/test/UpdateRulesTest.java",
       "category": "tests",
-      "occurrences": 20
+      "occurrences": 22
     },
     {
       "path": "pgs/test/VgpControllerTest.java",
@@ -4156,7 +4156,7 @@
     {
       "path": "pgs/test/native-core-test.cjs",
       "category": "tests",
-      "occurrences": 17
+      "occurrences": 21
     },
     {
       "path": "pgs/test/native-transport-host-test.cjs",
@@ -4181,7 +4181,7 @@
     {
       "path": "pgs/test/test_account_restart_lifecycle.py",
       "category": "tests",
-      "occurrences": 15
+      "occurrences": 16
     },
     {
       "path": "pgs/test/test_account_restart_manifest.py",
@@ -4206,7 +4206,7 @@
     {
       "path": "pgs/test/test_axml.py",
       "category": "tests",
-      "occurrences": 5
+      "occurrences": 7
     },
     {
       "path": "pgs/test/test_buddy_emotion_preferences_java.py",
@@ -4226,7 +4226,7 @@
     {
       "path": "pgs/test/test_compiled_gameplay.py",
       "category": "tests",
-      "occurrences": 27
+      "occurrences": 34
     },
     {
       "path": "pgs/test/test_control_java.py",
@@ -4246,7 +4246,7 @@
     {
       "path": "pgs/test/test_discord_release.py",
       "category": "tests",
-      "occurrences": 12
+      "occurrences": 15
     },
     {
       "path": "pgs/test/test_encounter_window_java.py",
@@ -4256,7 +4256,7 @@
     {
       "path": "pgs/test/test_event_settings_java.py",
       "category": "tests",
-      "occurrences": 4
+      "occurrences": 5
     },
     {
       "path": "pgs/test/test_game_bridge_dispatch_java.py",
@@ -4356,17 +4356,17 @@
     {
       "path": "pgs/test/test_log_export_java.py",
       "category": "tests",
-      "occurrences": 4
+      "occurrences": 5
     },
     {
       "path": "pgs/test/test_native_build.py",
       "category": "tests",
-      "occurrences": 10
+      "occurrences": 15
     },
     {
       "path": "pgs/test/test_native_prerequisites.py",
       "category": "tests",
-      "occurrences": 10
+      "occurrences": 11
     },
     {
       "path": "pgs/test/test_native_runtime_bootstrap_java.py",
@@ -4391,7 +4391,7 @@
     {
       "path": "pgs/test/test_packaging.py",
       "category": "tests",
-      "occurrences": 14
+      "occurrences": 18
     },
     {
       "path": "pgs/test/test_pgs_build_options.py",
@@ -4406,17 +4406,17 @@
     {
       "path": "pgs/test/test_pgs_license.py",
       "category": "tests",
-      "occurrences": 9
+      "occurrences": 13
     },
     {
       "path": "pgs/test/test_pgs_native_aliases_native.py",
       "category": "tests",
-      "occurrences": 9
+      "occurrences": 20
     },
     {
       "path": "pgs/test/test_pgs_native_identity.py",
       "category": "tests",
-      "occurrences": 83
+      "occurrences": 85
     },
     {
       "path": "pgs/test/test_pgs_oauth_retirement.py",
@@ -4431,22 +4431,22 @@
     {
       "path": "pgs/test/test_pgs_rebrand.py",
       "category": "tests",
-      "occurrences": 22
+      "occurrences": 30
     },
     {
       "path": "pgs/test/test_pgs_reference_inventory.py",
       "category": "tests",
-      "occurrences": 16
+      "occurrences": 22
     },
     {
       "path": "pgs/test/test_pgs_release_policy.py",
       "category": "tests",
-      "occurrences": 18
+      "occurrences": 19
     },
     {
       "path": "pgs/test/test_pgs_runtime_identity.py",
       "category": "tests",
-      "occurrences": 50
+      "occurrences": 51
     },
     {
       "path": "pgs/test/test_pgs_update.py",
@@ -4471,7 +4471,7 @@
     {
       "path": "pgs/test/test_release_bundle.py",
       "category": "tests",
-      "occurrences": 20
+      "occurrences": 21
     },
     {
       "path": "pgs/test/test_research_preferences_java.py",
@@ -4484,9 +4484,14 @@
       "occurrences": 3
     },
     {
+      "path": "pgs/test/test_rooted_cleanup.py",
+      "category": "tests",
+      "occurrences": 4
+    },
+    {
       "path": "pgs/test/test_rooted_installer_shell.py",
       "category": "tests",
-      "occurrences": 9
+      "occurrences": 19
     },
     {
       "path": "pgs/test/test_rooted_packaging.py",
@@ -4646,12 +4651,12 @@
     {
       "path": "tools/pgs_branding_audit.py",
       "category": "other",
-      "occurrences": 83
+      "occurrences": 95
     },
     {
       "path": "tools/pgs_reference_inventory.py",
       "category": "other",
-      "occurrences": 3
+      "occurrences": 11
     },
     {
       "path": "tools/pgs_version_monitor.py",
@@ -4810,12 +4815,12 @@
     }
   ],
   "abbreviations": {
-    "remaining_files": 509,
-    "remaining_occurrences": 26162,
+    "remaining_files": 510,
+    "remaining_occurrences": 26188,
     "by_form": {
       "camelcase": 6634,
-      "lowercase": 3849,
-      "uppercase": 15679
+      "lowercase": 3858,
+      "uppercase": 15696
     },
     "tracked_name_matches": [
       "docs/PGS_BRANDING_AUDIT.md",
@@ -4876,6 +4881,13 @@
         "by_form": {
           "lowercase": 1,
           "uppercase": 50
+        }
+      },
+      {
+        "path": ".gitignore",
+        "occurrences": 1,
+        "by_form": {
+          "uppercase": 1
         }
       },
       {
@@ -8773,9 +8785,9 @@
       },
       {
         "path": "pgs/test/native-core-test.cjs",
-        "occurrences": 5,
+        "occurrences": 9,
         "by_form": {
-          "lowercase": 5
+          "lowercase": 9
         }
       },
       {
@@ -8794,17 +8806,17 @@
       },
       {
         "path": "pgs/test/test_axml.py",
-        "occurrences": 3,
+        "occurrences": 5,
         "by_form": {
           "lowercase": 1,
-          "uppercase": 2
+          "uppercase": 4
         }
       },
       {
         "path": "pgs/test/test_compiled_gameplay.py",
-        "occurrences": 3,
+        "occurrences": 10,
         "by_form": {
-          "uppercase": 3
+          "uppercase": 10
         }
       },
       {
@@ -8831,23 +8843,23 @@
       },
       {
         "path": "pgs/test/test_log_export_java.py",
-        "occurrences": 1,
+        "occurrences": 2,
         "by_form": {
-          "uppercase": 1
+          "uppercase": 2
         }
       },
       {
         "path": "pgs/test/test_native_build.py",
-        "occurrences": 8,
+        "occurrences": 12,
         "by_form": {
-          "lowercase": 8
+          "lowercase": 12
         }
       },
       {
         "path": "pgs/test/test_native_prerequisites.py",
-        "occurrences": 4,
+        "occurrences": 5,
         "by_form": {
-          "uppercase": 4
+          "uppercase": 5
         }
       },
       {
@@ -8859,9 +8871,9 @@
       },
       {
         "path": "pgs/test/test_packaging.py",
-        "occurrences": 4,
+        "occurrences": 8,
         "by_form": {
-          "uppercase": 4
+          "uppercase": 8
         }
       },
       {
@@ -8899,10 +8911,10 @@
       },
       {
         "path": "pgs/test/test_pgs_native_identity.py",
-        "occurrences": 63,
+        "occurrences": 64,
         "by_form": {
           "camelcase": 3,
-          "lowercase": 43,
+          "lowercase": 44,
           "uppercase": 17
         }
       },
@@ -8943,11 +8955,11 @@
       },
       {
         "path": "pgs/test/test_pgs_release_policy.py",
-        "occurrences": 7,
+        "occurrences": 8,
         "by_form": {
           "camelcase": 1,
           "lowercase": 3,
-          "uppercase": 3
+          "uppercase": 4
         }
       },
       {

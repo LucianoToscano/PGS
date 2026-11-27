@@ -1,0 +1,87 @@
+name: PGS - APK completo espelhado v0.3.8
+
+on:
+  push:
+    branches: ['entrega/pgs-espelho-v0.3.8']
+    paths: ['.github/workflows/pgs-espelho-entrega.yml']
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: pgs-delivery-v038
+  cancel-in-progress: false
+
+jobs:
+  mirror:
+    if: github.repository == 'LucianoToscano/PGS' && github.ref == 'refs/heads/entrega/pgs-espelho-v0.3.8'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Download the original full v0.3.8 release
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p output
+          curl --fail --location --proto '=https' --proto-redir '=https' --max-time 300 \
+            'https://github.com/jpitty03/PGRazor/releases/download/v0.3.8/PGRazor.apk' \
+            --output output/PGS.apk
+      - name: Verify byte-identical original APK and record provenance
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import hashlib
+          import os
+          from pathlib import Path
+          import zipfile
+
+          apk = Path('output/PGS.apk')
+          expected_size = 185499601
+          expected_sha256 = 'a7b8c3075eaa67a6b1667b9736b5d7dd4c442137e733d4f76120f8e9fe1edba4'
+          if apk.stat().st_size != expected_size:
+              raise SystemExit('Unexpected APK size; refusing to deliver')
+          with apk.open('rb') as stream:
+              actual = hashlib.file_digest(stream, 'sha256').hexdigest()
+          if actual != expected_sha256:
+              raise SystemExit('Original release SHA-256 mismatch; refusing to deliver')
+          with zipfile.ZipFile(apk) as archive:
+              names = set(archive.namelist())
+              if not {'AndroidManifest.xml', 'classes.dex'}.issubset(names):
+                  raise SystemExit('Not an Android application package')
+              if archive.testzip() is not None:
+                  raise SystemExit('Corrupt APK archive')
+          Path('output/SHA256SUMS.txt').write_text(actual + '  PGS.apk\n', encoding='ascii')
+          Path('output/ORIGEM.txt').write_text(
+              'PGS.apk = copia binaria integral de PGRazor.apk v0.3.8.\n'
+              'Somente o nome externo do arquivo foi alterado.\n'
+              'Nao e uma recompilacao e nao usa a chave de assinatura PGS.\n'
+              'A assinatura, interface, idioma e funcionalidades originais permanecem intactos.\n'
+              'Origem: https://github.com/jpitty03/PGRazor/releases/tag/v0.3.8\n'
+              'Codigo-fonte: https://github.com/jpitty03/PGRazor/tree/1106592aa045759f55f594ff6968f783ff636fe9\n'
+              'Espelho: https://github.com/LucianoToscano/PGS/tree/main\n'
+              'Licenca e creditos originais preservados no repositorio.\n'
+              'Tamanho: 185499601 bytes\n'
+              'SHA256: ' + actual + '\n', encoding='utf-8')
+          summary = (
+              '## PGS.apk - espelho do APK completo v0.3.8\n\n'
+              'Copia binaria verificada do APK publicado pelo autor original. '
+              'Nao e previa nem recompilacao com chave PGS.\n\n'
+              f'Tamanho: {expected_size} bytes.\n\nSHA-256: `{actual}`\n'
+          )
+          with open(os.environ['GITHUB_STEP_SUMMARY'], 'a', encoding='utf-8') as stream:
+              stream.write(summary)
+          print('Original full APK verified; only its filename differs.')
+          PY
+      - name: Deliver the full APK with its checksum and origin
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: PGS-v0.3.8-completo
+          path: |
+            output/PGS.apk
+            output/SHA256SUMS.txt
+            output/ORIGEM.txt
+          if-no-files-found: error
+          compression-level: 0
+          retention-days: 7

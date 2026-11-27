@@ -5,8 +5,8 @@
   "changed_files": 5,
   "added_files": 1,
   "previous_occurrences": 1041,
-  "remaining_files": 175,
-  "remaining_occurrences": 1043,
+  "remaining_files": 174,
+  "remaining_occurrences": 1042,
   "remaining_by_category": {
     "workflows": 71,
     "other": 113,
@@ -15,7 +15,7 @@
     "legal": 3,
     "native": 171,
     "tests": 237,
-    "java": 69,
+    "java": 68,
     "javascript": 1,
     "vendor": 6
   },
@@ -619,11 +619,6 @@
       "path": "pgs/src/dev/pgs/ShinyScanner.java",
       "category": "java",
       "occurrences": 2
-    },
-    {
-      "path": "pgs/src/dev/pgs/ShundoSniper.java",
-      "category": "java",
-      "occurrences": 1
     },
     {
       "path": "pgs/src/dev/pgs/VgpController.java",

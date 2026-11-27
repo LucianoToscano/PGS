@@ -16,10 +16,11 @@
 | #3 | Versão 0.00.01 e canal próprio de releases | Integrada |
 | #4 | Nomes dos artefatos PGS | Integrada |
 | #5 | Isolamento de anúncios Discord | Integrada em `fa525bd638a037cfab58708395e7545527f0e422` |
-
 | #6 | Preflight de configuração e MESTRE.md | Integrada em `3f18312872b92f83300b30e4ba19c9807974b303` |
-
 | #7 | Inventário técnico | Integrada em `d5c39c4db149784b1644eaf2d9da72b5a99314c6` |
+
+| #8 | AUTO SYNC inicial | Integrada em `1863a9d66c1339143c0db29665cfbb9c1d696c42` |
+| #9 | Identidade da prévia Android | Integrada em `646aae7b2e5acc706a8a4925d78fdd38ac801e0e` |
 
 ## Inventário confirmado
 
@@ -29,11 +30,13 @@ CI [45913909515](https://github.com/LucianoToscano/PGS/actions/runs/45913909515)
 
 - [x] Validar e integrar preflight de configuração.
 - [x] Inventário inicial validado pelo CI. Execute `python -B tools/pgs_identity_inventory.py --json` para relatório por arquivo.
-- [ ] Validar migração do ID do aplicativo de prévia para `dev.pgs.preview` e nome `pgs-preview.apk`. Classes Java, runtime e identificadores de produção permanecem inalterados.
+- [x] Migração da identidade da prévia integrada e validada pelo CI; teste físico pendente. Classes Java, runtime e identificadores de produção permanecem inalterados.
 - [ ] Migrar os demais identificadores técnicos em lotes coordenados; preservar contratos de compatibilidade.
 - [ ] Configurar credenciais próprias de assinatura e entrada autorizada; não copiar valores secretos para o Git ou chat.
 - [ ] Validar CI e preparar testes de compatibilidade autorizados.
-- [ ] Planejar monitoramento de versões e upstream sem baixar ou publicar conteúdo não autorizado; automação desativada até aprovação.
+- [x] AUTO SYNC inicial integrado; execução real e agendamento ainda não confirmados.
+- [ ] Monitoramento de versões do jogo separado, sem download ou publicação não autorizados.
+- [ ] Validar workflow de presença dos Secrets e notas da versão inicial.
 - [ ] Revisar melhorias legadas individualmente, com evidência e testes.
 
 ## Regras

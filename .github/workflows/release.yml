@@ -25,9 +25,9 @@ jobs:
     env:
       PGRAZOR_BUILD_TOOLS: 36.0.0
       PGRAZOR_ANDROID_PLATFORM: android-36
-      PGRAZOR_KEY_ALIAS: ${{ secrets.PGRAZOR_KEY_ALIAS }}
-      PGRAZOR_STORE_PASSWORD: ${{ secrets.PGRAZOR_STORE_PASSWORD }}
-      PGRAZOR_KEY_PASSWORD: ${{ secrets.PGRAZOR_KEY_PASSWORD }}
+      PGRAZOR_KEY_ALIAS: ${{ secrets.PGS_KEY_ALIAS }}
+      PGRAZOR_STORE_PASSWORD: ${{ secrets.PGS_STORE_PASSWORD }}
+      PGRAZOR_KEY_PASSWORD: ${{ secrets.PGS_KEY_PASSWORD }}
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
         with:
@@ -89,8 +89,8 @@ jobs:
       - name: Prepare pinned input and signing key
         env:
           GITHUB_TOKEN: ${{ github.token }}
-          PGRAZOR_INPUT_URL: ${{ secrets.PGRAZOR_INPUT_URL }}
-          PGRAZOR_KEYSTORE_BASE64: ${{ secrets.PGRAZOR_KEYSTORE_BASE64 }}
+          PGRAZOR_INPUT_URL: ${{ secrets.PGS_INPUT_URL }}
+          PGRAZOR_KEYSTORE_BASE64: ${{ secrets.PGS_KEYSTORE_BASE64 }}
         run: python -B tools/private_input.py
       - name: Build playable package
         env:

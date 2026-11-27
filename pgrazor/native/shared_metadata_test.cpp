@@ -4,7 +4,7 @@
 // permissions are synthetic: this is NOT a /proc/Houdini test and proves nothing about live resolution.
 #include "shared_metadata.h"
 #include "managed_handle_abi.h"
-#include "pgrazor_native_api.h"
+#include "pgs_native_api.h"
 #include <cassert>
 #include <cstdio>
 #include <cstdlib>

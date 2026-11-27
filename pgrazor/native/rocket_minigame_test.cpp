@@ -9,7 +9,7 @@
 // gchandle exports -- is modelled by in-process fakes so a single thread can drive the
 // whole collect/restore state machine deterministically.
 #include "rocket_minigame.h"
-#include "pgrazor_native_api.h"
+#include "pgs_native_api.h"
 #include <dlfcn.h>
 #include <unistd.h>
 #include <cstdio>

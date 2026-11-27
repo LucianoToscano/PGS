@@ -1,5 +1,5 @@
 #include "vgp_results.h"
-#include "pgrazor_native_api.h"
+#include "pgs_native_api.h"
 #include <cassert>
 #include <cstdio>
 #include <cstring>

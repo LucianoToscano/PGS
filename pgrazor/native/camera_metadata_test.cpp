@@ -4,7 +4,7 @@
 // + body fingerprint bytes, and CameraStack.get_MainCamera pinned RVA instructions. Injected
 // segment permissions are synthetic -- NOT a /proc/Houdini test and NO live-game claim.
 #include "camera_metadata.h"
-#include "pgrazor_native_api.h"
+#include "pgs_native_api.h"
 #include <cassert>
 #include <cstdint>
 #include <cstdio>

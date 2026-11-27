@@ -9,7 +9,7 @@
 #include "camera_host.h"
 #include "camera_sampler.h"
 #include "runtime_transport.h"
-#include "pgrazor_native_api.h"
+#include "pgs_native_api.h"
 #include <dlfcn.h>
 #include <sys/syscall.h>
 #include <sys/wait.h>

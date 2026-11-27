@@ -1,5 +1,5 @@
 // Standalone Android integration test. Never linked into the app library.
-#include "pgrazor_native_api.h"
+#include "pgs_native_api.h"
 #include <dlfcn.h>
 #include <cstdio>
 #include <cmath>

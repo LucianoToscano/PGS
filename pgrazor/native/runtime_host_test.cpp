@@ -1,6 +1,6 @@
 #include "runtime_host.h"
 #include "unity_scheduler.h"
-#include "pgrazor_native_api.h"
+#include "pgs_native_api.h"
 #include <cassert>
 #include <cstdio>
 #include <dlfcn.h>

@@ -21,7 +21,7 @@
 // driven here -- it cannot be reached without advancing CLOCK_BOOTTIME 8 s, and it shares
 // restore() with the lease-expiry case which IS driven.
 #include "catch_animation.h"
-#include "pgrazor_native_api.h"
+#include "pgs_native_api.h"
 #include <dlfcn.h>
 #include <unistd.h>
 #include <sys/types.h>

@@ -43,7 +43,7 @@ class IvOwnedRefreshNativeTests(unittest.TestCase):
             shim = folder / 'registry.cpp'
             shim.write_text('''
 #include "iv_display.h"
-#include "pgrazor_native_api.h"
+#include "pgs_native_api.h"
 extern "C" int fixture_hook_dispatch(void *, void *, void **);
 int pgrazor_hook(void *address, void *replacement, void **original) {
     return fixture_hook_dispatch(address, replacement, original);

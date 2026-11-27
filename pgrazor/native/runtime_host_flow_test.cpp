@@ -18,7 +18,7 @@
 #include "interaction_host.h"
 #include "catch_wait.h"
 #include "catch_wait_schema.h"
-#include "pgrazor_native_api.h"
+#include "pgs_native_api.h"
 #include <atomic>
 #include <algorithm>
 #include <cassert>

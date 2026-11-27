@@ -15,7 +15,7 @@
 #include <vector>
 
 #include "routes_observers.h"
-#include "pgrazor_native_api.h"
+#include "pgs_native_api.h"
 #include <dlfcn.h>
 
 static_assert(sizeof(PgrRoutesObserversConfig) == 184, "config 184");

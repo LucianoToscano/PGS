@@ -2,7 +2,7 @@
 // from dlopen production library; Dobby patches real fixture originals. No copied
 // observer implementation, fake hook engine, or wrapper-only result assertions.
 #include "routes_observers.h"
-#include "pgrazor_native_api.h"
+#include "pgs_native_api.h"
 #include <cassert>
 #include <cstdint>
 #include <cstdio>

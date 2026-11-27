@@ -12,7 +12,7 @@
 // coverage map, the two documented DIVERGENCE flags, and the fixture assumptions.
 
 #include "routes_discovery.h"
-#include "pgrazor_native_api.h"
+#include "pgs_native_api.h"
 
 #include <cassert>
 #include <cmath>

@@ -28,7 +28,7 @@
 #include <unistd.h>
 #include <thread>
 #ifndef PGR_BERRY_DIRECT_TEST
-#include "pgrazor_native_api.h"
+#include "pgs_native_api.h"
 #include <dlfcn.h>
 static const pgrazor_native_api_v2 *loaded_core = nullptr;
 extern "C" const void *pgrazor_encounter_berries_api(uint32_t version) {

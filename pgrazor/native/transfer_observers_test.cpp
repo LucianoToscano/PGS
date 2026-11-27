@@ -1,7 +1,7 @@
 // Actual query57/Dobby forwarding fixture. Feature23 deliberately remains uninstalled:
 // this verifies callback ABI/root lifetime, NOT transfer correlation or settlement.
 #include "transfer_observers.h"
-#include "pgrazor_native_api.h"
+#include "pgs_native_api.h"
 #include <cassert>
 #include <cstdio>
 #include <cstring>

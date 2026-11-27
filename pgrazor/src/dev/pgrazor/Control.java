@@ -425,6 +425,9 @@ public final class Control {
     private static final Object stateLock = new Object();
     private static final Object logLock = new Object();
     private static AtomicFile stateFile, settingsFile;
+    // App-wide interface preference: deliberately outside AccountProfiles and profile snapshots.
+    private static AtomicFile pgsLanguageFile;
+    private static volatile String pgsLanguage=LanguagePrefs.SYSTEM;
     private static String lastSaved;
     private static long lastCheckpoint;
     private static boolean stateWriteFailed;
@@ -1192,6 +1195,22 @@ public final class Control {
     private static volatile int uiScalePercent=100;
     public static int uiScalePercent(){return uiScalePercent;}
     public static void setUiScalePercent(int value){if(value!=25&&value!=50&&value!=75&&value!=100)return;uiScalePercent=value;saveSettings();}
+    /** Saved selector choice, including a pending change that takes effect after restart. */
+    public static String pgsLanguage(){return pgsLanguage;}
+    /** Read the global choice without starting runtime features or loading an account profile. */
+    public static String readPgsLanguage(Application app){
+        synchronized(stateLock){loadPgsLanguage(app);return pgsLanguage;}
+    }
+    /** A rare, small atomic write; a failed save keeps both the previous choice and active UI. */
+    public static boolean setPgsLanguage(String code){
+        if(!LanguagePrefs.isValid(code))return false;
+        synchronized(stateLock){
+            if(pgsLanguageFile==null)return false;
+            if(code.equals(pgsLanguage))return true;
+            try{writePgsLanguage(code);pgsLanguage=code;return true;}
+            catch(IOException|RuntimeException error){event("pgs-language-save-error",error.toString());return false;}
+        }
+    }
     public static boolean darkTheme(){return darkTheme;}
     private static volatile boolean idleWalking;
     public static boolean idleWalking(){return idleWalking;}
@@ -1223,6 +1242,7 @@ public final class Control {
         GiftBatchSettings.reset();
         BatchEvolutionSettings.reset();
         synchronized(stateLock) {
+            loadPgsLanguage(app);
             if(settingsFile==null) {
                 // Create the destination and its writer once so the sink can close over a stable
                 // target; only retargetSettings (deleting the main account) changes it within a process.
@@ -1370,6 +1390,28 @@ public final class Control {
             finally { StrictMode.setThreadPolicy(policy); }
         }
     }
+    /** Read once per process, independently of whichever account owns gameplay settings. */
+    private static void loadPgsLanguage(Application app){
+        if(pgsLanguageFile!=null)return;
+        pgsLanguageFile=new AtomicFile(new File(app.getFilesDir(),"pgs-language-v1.properties"));
+        pgsLanguage=LanguagePrefs.SYSTEM;
+        StrictMode.ThreadPolicy policy=StrictMode.allowThreadDiskReads();
+        try(FileInputStream in=pgsLanguageFile.openRead()){
+            Properties saved=new Properties();saved.load(in);
+            pgsLanguage=LanguagePrefs.normalize(saved.getProperty(LanguagePrefs.KEY));
+        }catch(FileNotFoundException missing){
+            // Older installations have no global language choice and follow the system.
+        }catch(IOException|RuntimeException error){event("pgs-language-load-error",error.toString());}
+        finally{StrictMode.setThreadPolicy(policy);}
+    }
+    private static void writePgsLanguage(String code)throws IOException{
+        if(pgsLanguageFile==null)throw new IOException("PGS language settings are not ready");
+        Properties saved=new Properties();saved.setProperty(LanguagePrefs.KEY,code);
+        FileOutputStream out=null;
+        StrictMode.ThreadPolicy policy=StrictMode.allowThreadDiskWrites();
+        try{out=pgsLanguageFile.startWrite();saved.store(out,"PGS interface language");pgsLanguageFile.finishWrite(out);out=null;}
+        finally{try{if(out!=null)pgsLanguageFile.failWrite(out);}finally{StrictMode.setThreadPolicy(policy);}}
+    }
     private static int boundedSetting(Properties p,String key,int max) {
         try { int n=Integer.parseInt(p.getProperty(key,"0")); return n>=0&&n<=max?n:0; }
         catch(NumberFormatException invalid) { return 0; }
@@ -1393,14 +1435,22 @@ public final class Control {
             settingsWriter.flush(SETTINGS_FLUSH_MS);
             Properties p=new Properties();
             try(FileInputStream in=settingsFile.openRead()){p.load(in);}
+            // Explicit backups include the app-wide choice, without copying it into account files.
+            p.setProperty(LanguagePrefs.KEY,pgsLanguage);
             return p;
         }
     }
     static void importSettings(Application app,Properties incoming,double speed) throws IOException {
         synchronized(stateLock) {
+            boolean hasLanguage=incoming.containsKey(LanguagePrefs.KEY);
+            String language=hasLanguage?incoming.getProperty(LanguagePrefs.KEY):null;
+            if(hasLanguage&&!LanguagePrefs.isValid(language))
+                throw new IOException("Invalid PGS language");
             // exportSettings drained every queued write; holding stateLock blocks new submissions, so the
             // atomic replacement below cannot race the background writer for this destination.
-            Properties merged=exportSettings();merged.putAll(incoming);
+            Properties previous=exportSettings();previous.remove(LanguagePrefs.KEY);
+            Properties merged=new Properties();merged.putAll(previous);merged.putAll(incoming);
+            merged.remove(LanguagePrefs.KEY); // Only the separate global file may own this preference.
             if(incoming.containsKey("autoBerry")&&!incoming.containsKey("berryPriority"))merged.remove("berryPriority");
             // A backup from before costume had its own option carries it inside "event / costume".
             if(incoming.containsKey("transferProtect")&&!incoming.containsKey("transferProtectSplit"))merged.remove("transferProtectSplit");
@@ -1409,6 +1459,14 @@ public final class Control {
             FileOutputStream out=null;
             try{out=settingsFile.startWrite();merged.store(out,"PGRazor settings");settingsFile.finishWrite(out);out=null;}
             finally{if(out!=null)settingsFile.failWrite(out);}
+            if(language!=null&&!language.equals(pgsLanguage)){
+                try{writePgsLanguage(language);pgsLanguage=language;}
+                catch(IOException|RuntimeException error){
+                    // If the separate global write fails, leave the account's import unapplied too.
+                    try{writeSettings(settingsFile,previous);}catch(IOException|RuntimeException rollback){error.addSuppressed(rollback);}
+                    throw error;
+                }
+            }
             loadSettings(app); // Restores preferences and explicitly leaves VGP off.
             engine.stop();engine.speed(speed);mapTapEpoch++;restoreRuntime("settings-import");saveState(); // Keep current coordinates; never resume a route.
         }
@@ -1420,7 +1478,7 @@ public final class Control {
             settingsWriter.submit(settingsSnapshot());
         }
     }
-    /** Snapshot of every persisted preference; must be built while holding stateLock. */
+    /** Account-owned preferences only; the global interface language is exported separately. */
     private static Properties settingsSnapshot() {
         Properties p=new Properties();
         SmartCatchSettings.write(p);

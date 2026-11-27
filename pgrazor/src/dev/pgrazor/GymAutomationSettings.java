@@ -22,26 +22,26 @@ public final class GymAutomationSettings {
     /** Short, stable label for Pad's status pill beneath the icon. */
     public static String overlayStatus(){
         stopForCooldown();
-        if(!guardReason.isEmpty())return guardReason.contains("cooldown")?"Cooldown":"Choose an action";
-        if(!preferences.running())return "Off";
+        if(!guardReason.isEmpty())return guardReason.contains("cooldown")?I18n.t("Cooldown"):I18n.t("Choose an action");
+        if(!preferences.running())return I18n.t("Off");
         String raw=status.toLowerCase(java.util.Locale.US);
-        if(raw.contains("paused")||raw.contains("failure"))return "Paused";
-        if(raw.contains("bag full")||raw.contains("item bag full"))return "Bag full";
-        if(raw.contains("deploying"))return "Deploying defender";
-        if(raw.contains("deployed"))return "Defender deployed";
-        if(raw.contains("feeding"))return "Feeding berries";
-        if(raw.contains("berry accepted"))return "Berry accepted";
-        if(raw.contains("berry declined"))return "Berry declined";
-        if(raw.contains("selecting"))return "Selecting defender";
-        if(raw.contains("reserve"))return "Berry reserves reached";
-        if(raw.contains("map readiness"))return "Waiting for map";
-        if(raw.contains("inventory update"))return "Waiting for inventory";
+        if(raw.contains("paused")||raw.contains("failure"))return I18n.t("Paused");
+        if(raw.contains("bag full")||raw.contains("item bag full"))return I18n.t("Bag full");
+        if(raw.contains("deploying"))return I18n.t("Deploying defender");
+        if(raw.contains("deployed"))return I18n.t("Defender deployed");
+        if(raw.contains("feeding"))return I18n.t("Feeding berries");
+        if(raw.contains("berry accepted"))return I18n.t("Berry accepted");
+        if(raw.contains("berry declined"))return I18n.t("Berry declined");
+        if(raw.contains("selecting"))return I18n.t("Selecting defender");
+        if(raw.contains("reserve"))return I18n.t("Berry reserves reached");
+        if(raw.contains("map readiness"))return I18n.t("Waiting for map");
+        if(raw.contains("inventory update"))return I18n.t("Waiting for inventory");
         if(raw.contains("waiting")||raw.contains("nearby")||raw.contains("nearest")
-            ||raw.contains("eligible"))return "Waiting for gym";
-        if(raw.contains("gym full"))return "Gym full";
-        if(raw.contains("deployment declined"))return "Deploy declined";
-        if(raw.contains("rejected")||raw.contains("declined"))return "Action declined";
-        return "Starting";
+            ||raw.contains("eligible"))return I18n.t("Waiting for gym");
+        if(raw.contains("gym full"))return I18n.t("Gym full");
+        if(raw.contains("deployment declined"))return I18n.t("Deploy declined");
+        if(raw.contains("rejected")||raw.contains("declined"))return I18n.t("Action declined");
+        return I18n.t("Starting");
     }
     public static void init(Context context) {}
     public static void read(Properties p){synchronized(lock){preferences.read(p);guardReason="";backendStatus="";status="Gym automation off";}}
@@ -102,18 +102,18 @@ public final class GymAutomationSettings {
         int pad=MapTheme.dp(ui,16);body.setPadding(pad,pad,pad,pad);
         TextView description=new TextView(ui);
         TextView progress=new TextView(ui);progress.setText(status());body.addView(progress);
-        description.setText("Acts only within 80 m of a Gym while the game is on the map screen. It slots eligible #Gym-tagged Pokémon first; the lowest-CP fallback is used only when enabled and no eligible #Gym defender is available, and it never picks favorite, buddy, or protected Pokémon. Feeding uses Nanab before Razz and only above the reserves you set. It obeys the game's own server limits, so some actions may be declined. No dust or coin payout is promised.");body.addView(description);
-        CheckBox master=new CheckBox(ui);master.setText("Run Gym Slotter & Berry Feeder");body.addView(master);
-        CheckBox deploy=new CheckBox(ui);deploy.setText("Auto-deploy to open Gym slots");deploy.setChecked(preferences.deploy());body.addView(deploy);
+        description.setText(I18n.t("Acts only within 80 m of a Gym while the game is on the map screen. It slots eligible #Gym-tagged Pokémon first; the lowest-CP fallback is used only when enabled and no eligible #Gym defender is available, and it never picks favorite, buddy, or protected Pokémon. Feeding uses Nanab before Razz and only above the reserves you set. It obeys the game's own server limits, so some actions may be declined. No dust or coin payout is promised."));body.addView(description);
+        CheckBox master=new CheckBox(ui);master.setText(I18n.t("Run Gym Slotter & Berry Feeder"));body.addView(master);
+        CheckBox deploy=new CheckBox(ui);deploy.setText(I18n.t("Auto-deploy to open Gym slots"));deploy.setChecked(preferences.deploy());body.addView(deploy);
 
-        CheckBox feed=new CheckBox(ui);feed.setText("Auto-feed berries to your Gym defenders");feed.setChecked(preferences.feed());body.addView(feed);
-        CheckBox overlay=new CheckBox(ui);overlay.setText("Show gym automation overlay");overlay.setChecked(preferences.overlay());body.addView(overlay);
+        CheckBox feed=new CheckBox(ui);feed.setText(I18n.t("Auto-feed berries to your Gym defenders"));feed.setChecked(preferences.feed());body.addView(feed);
+        CheckBox overlay=new CheckBox(ui);overlay.setText(I18n.t("Show gym automation overlay"));overlay.setChecked(preferences.overlay());body.addView(overlay);
 
-        CheckBox fallback=new CheckBox(ui);fallback.setText("Allow lowest-CP fallback when no eligible #Gym defenders");fallback.setChecked(preferences.fallback());body.addView(fallback);
+        CheckBox fallback=new CheckBox(ui);fallback.setText(I18n.t("Allow lowest-CP fallback when no eligible #Gym defenders"));fallback.setChecked(preferences.fallback());body.addView(fallback);
         fallback.setOnCheckedChangeListener((v,on)->{set("Fallback",on);});
         LinearLayout reserves=new LinearLayout(ui);reserves.setOrientation(LinearLayout.VERTICAL);body.addView(reserves);
-        input(activity,reserves,"Nanab Berry reserve (0–1000)",String.valueOf(preferences.nanabReserve()),value->{int n=bounded(value,1000);set("NanabReserve",n);});
-        input(activity,reserves,"Razz Berry reserve (0–1000)",String.valueOf(preferences.razzReserve()),value->{int n=bounded(value,1000);set("RazzReserve",n);});
+        input(activity,reserves,I18n.t("Nanab Berry reserve (0–1000)"),String.valueOf(preferences.nanabReserve()),value->{int n=bounded(value,1000);set("NanabReserve",n);});
+        input(activity,reserves,I18n.t("Razz Berry reserve (0–1000)"),String.valueOf(preferences.razzReserve()),value->{int n=bounded(value,1000);set("RazzReserve",n);});
         final boolean[] refreshing={false};
         Runnable update=()->{
             refreshing[0]=true;master.setChecked(running());deploy.setChecked(preferences.deploy());
@@ -129,7 +129,7 @@ public final class GymAutomationSettings {
         body.removeView(overlay);body.addView(overlay,body.indexOfChild(feed)+1);
         update.run();
         ScrollView scroll=new ScrollView(ui);scroll.addView(body);
-        AlertDialog dialog=new AlertDialog.Builder(ui).setTitle("Gym Slotter & Berry Feeder").setView(scroll).setPositiveButton("Done",null).create();
+        AlertDialog dialog=new AlertDialog.Builder(ui).setTitle(I18n.t("Gym Slotter & Berry Feeder")).setView(scroll).setPositiveButton(I18n.t("Done"),null).create();
         android.os.Handler handler=new android.os.Handler(android.os.Looper.getMainLooper());
         Runnable refresh=new Runnable(){public void run(){if(dialog.isShowing()){update.run();handler.postDelayed(this,1000);}}};
         DialogLifecycle.bind(activity,dialog,()->handler.removeCallbacks(refresh));
@@ -148,7 +148,7 @@ public final class GymAutomationSettings {
         button.setOnClickListener(v->{
             Context ui=MapTheme.wrap(a);EditText edit=new EditText(ui);edit.setSingleLine(true);edit.setText(current[0]);
             edit.setInputType(InputType.TYPE_CLASS_NUMBER);
-            AlertDialog d=new AlertDialog.Builder(ui).setTitle(title).setView(edit).setPositiveButton("Save",null).setNegativeButton("Cancel",null).create();
+            AlertDialog d=new AlertDialog.Builder(ui).setTitle(title).setView(edit).setPositiveButton(I18n.t("Save"),null).setNegativeButton(I18n.t("Cancel"),null).create();
             DialogLifecycle.bind(a,d,null);d.setOnShowListener(x->{MapTheme.style(edit);MapTheme.styleButtons(d);d.getButton(AlertDialog.BUTTON_POSITIVE).setOnClickListener(w->{
                 try{String value=edit.getText().toString();save.set(value);current[0]=value.trim();button.setText(title+": "+current[0]);d.dismiss();}
                 catch(IllegalArgumentException e){edit.setError(e.getMessage());}

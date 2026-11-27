@@ -16,31 +16,36 @@ import java.util.regex.Pattern;
  *
  * <p>Every entry keeps one pre-normalised haystack (name, description, category, group and
  * synonyms), so a keystroke is a substring scan over a small list rather than a view walk. Matching
- * is case-insensitive, accent-insensitive ({@code pokemon} finds {@code Pokémon}) and requires every
- * query word to appear, which keeps multi-word searches precise.
+ * is case-insensitive and ignores Latin accents ({@code pokemon} finds {@code Pokémon}), while
+ * preserving marks that distinguish Thai, Cyrillic and other scripts. Every query word must appear.
  */
 final class SettingsSearch {
     static final class Entry {
         final int id;
         final String name, description, category, group;
         final int page;
-        private final String normalizedName, normalizedDescription, haystack;
+        private final String normalizedName, normalizedDescription, sourceName, sourceDescription, haystack;
 
         private Entry(int id, String name, String description, String category, String group, int page) {
-            this.id = id; this.name = name; this.description = description;
-            this.category = category; this.group = group; this.page = page;
-            this.normalizedName = normalize(name);
-            this.normalizedDescription = normalize(description);
+            this.id = id; this.name = I18n.t(name);
+            this.description = localizedDescription(name, description, group, category);
+            this.category = I18n.t(category); this.group = I18n.t(group); this.page = page;
+            this.normalizedName = normalize(this.name);
+            this.normalizedDescription = normalize(this.description);
+            this.sourceName = normalize(name);
+            this.sourceDescription = normalize(description);
             this.haystack = this.normalizedName + ' ' + this.normalizedDescription + ' '
-                + normalize(category) + ' ' + normalize(group) + ' ' + normalize(synonyms(name));
+                + normalize(this.category) + ' ' + normalize(this.group) + ' '
+                + sourceName + ' ' + sourceDescription + ' ' + normalize(category) + ' '
+                + normalize(group) + ' ' + normalize(synonyms(name));
         }
     }
 
     private final List<Entry> entries = new ArrayList<>();
-    private static final Pattern MARKS = Pattern.compile("\\p{M}+");
-    private static final Pattern SPACES = Pattern.compile("\\s+");
+    private static final Pattern SPACES = Pattern.compile("[\\s\\p{Z}]+");
     private static final Pattern COUNT = Pattern.compile("\\s*\\(\\d+\\)$");
 
+    /** Register canonical English labels; translation affects display/search, never identity or page. */
     int add(String name, String group, String category, int page) {
         int id = entries.size();
         entries.add(new Entry(id, name, describe(name, group, category), category, group, page));
@@ -77,20 +82,42 @@ final class SettingsSearch {
     }
 
     private static int rank(Entry entry, String query) {
-        if (entry.normalizedName.equals(query)) return 0;
-        if (entry.normalizedName.startsWith(query)) return 1;
-        if (entry.normalizedName.contains(query)) return 2;
-        if (entry.normalizedDescription.startsWith(query)) return 3;
-        if (entry.normalizedDescription.contains(query)) return 4;
+        return Math.min(rank(entry.normalizedName, entry.normalizedDescription, query),
+            rank(entry.sourceName, entry.sourceDescription, query));
+    }
+
+    private static int rank(String name, String description, String query) {
+        if (name.equals(query)) return 0;
+        if (name.startsWith(query)) return 1;
+        if (name.contains(query)) return 2;
+        if (description.startsWith(query)) return 3;
+        if (description.contains(query)) return 4;
         return 5;
     }
 
-    /** Lowercase, strip accents and collapse spaces; {@code Pokémon} and {@code pokemon} compare equal. */
+    /** Fold Latin accents only; keep Thai vowels/tones, Cyrillic letters and Unicode shaping marks. */
     static String normalize(String value) {
         if (value == null || value.isEmpty()) return "";
         String lower = value.toLowerCase(Locale.ROOT).trim();
-        String folded = Normalizer.normalize(lower, Normalizer.Form.NFD);
-        return SPACES.matcher(MARKS.matcher(folded).replaceAll("")).replaceAll(" ");
+        String decomposed = Normalizer.normalize(lower, Normalizer.Form.NFD);
+        StringBuilder folded = new StringBuilder(decomposed.length());
+        boolean latinBase = false;
+        for (int offset = 0; offset < decomposed.length();) {
+            int point = decomposed.codePointAt(offset);
+            offset += Character.charCount(point);
+            int type = Character.getType(point);
+            boolean mark = type == Character.NON_SPACING_MARK || type == Character.COMBINING_SPACING_MARK
+                || type == Character.ENCLOSING_MARK;
+            if (mark) {
+                if (!latinBase) folded.appendCodePoint(point);
+            } else {
+                latinBase = Character.UnicodeScript.of(point) == Character.UnicodeScript.LATIN;
+                folded.appendCodePoint(point);
+            }
+        }
+        // Recompose non-Latin scripts: e.g. й and decomposed и + breve remain the same letter.
+        String composed = Normalizer.normalize(folded, Normalizer.Form.NFC);
+        return SPACES.matcher(composed).replaceAll(" ").trim();
     }
 
     /** The setting name without its current value: {@code "Throw rating: Great"} becomes {@code "Throw rating"}. */
@@ -110,6 +137,15 @@ final class SettingsSearch {
         if ("quick menu entries".equals(normalize(group))) return "Show " + name + " in the quick menu.";
         if (group != null && !group.isEmpty()) return group + " option.";
         return category;
+    }
+
+    private static String localizedDescription(String name, String description, String group, String category) {
+        if (DESCRIPTIONS.containsKey(normalize(name))) return I18n.t(description);
+        if ("quick menu entries".equals(normalize(group))) {
+            return I18n.format("Show %s in the quick menu.", I18n.t(name));
+        }
+        if (group != null && !group.isEmpty()) return I18n.format("%s option.", I18n.t(group));
+        return I18n.t(category);
     }
 
     private static String synonyms(String name) {

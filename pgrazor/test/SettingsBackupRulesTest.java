@@ -1,6 +1,7 @@
 import dev.pgrazor.SettingsBackupRules;
 import dev.pgrazor.BerryPriority;
 import dev.pgrazor.MapTapSequence;
+import dev.pgrazor.LanguagePrefs;
 import org.json.*;
 
 public class SettingsBackupRulesTest {
@@ -14,6 +15,16 @@ public class SettingsBackupRulesTest {
     }
     public static void main(String[] args)throws Exception{
         SettingsBackupRules.validate(valid());
+        JSONObject oldLanguage=valid();SettingsBackupRules.validate(oldLanguage);
+        if(oldLanguage.getJSONObject("settings").has(LanguagePrefs.KEY))throw new AssertionError("Old backup was mutated");
+        for(String code:LanguagePrefs.codes()){
+            JSONObject language=valid();language.getJSONObject("settings").put(LanguagePrefs.KEY,code);
+            SettingsBackupRules.validate(language);
+            if(!language.getJSONObject("settings").getString(LanguagePrefs.KEY).equals(code))throw new AssertionError("Language validation changed selection");
+        }
+        for(Object invalid:new Object[]{"","ja","pt","pt_br","PT-BR","zh-CN","en-US"," system",7,true,JSONObject.NULL}){
+            JSONObject language=valid();language.getJSONObject("settings").put(LanguagePrefs.KEY,invalid);rejects(language);
+        }
         JSONObject protect=valid();protect.getJSONObject("settings").put("transferProtect","255").put("transferProtectSplit","1");
         SettingsBackupRules.validate(protect);
         protect.getJSONObject("settings").put("transferProtect","2047").put("transferProtectShadow","1").put("transferProtectMax","1");

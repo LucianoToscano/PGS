@@ -32,9 +32,9 @@ final class BerryPriorityPicker {
     static String summary(){
         StringBuilder names=new StringBuilder();
         for(int id:BerryPriority.parse(Control.berryPriority()))for(int i=1;i<IDS.length;i++)if(IDS[i]==id){
-            if(names.length()>0)names.append(" \u2192 ");names.append(NAMES[i]);break;
+            if(names.length()>0)names.append(" \u2192 ");names.append(I18n.t(NAMES[i]));break;
         }
-        return names.length()==0?"Off":names.toString();
+        return names.length()==0?I18n.t("Off"):names.toString();
     }
     void show(){
         if(picker!=null||activity.isFinishing()||activity.isDestroyed())return;
@@ -44,7 +44,7 @@ final class BerryPriorityPicker {
         density.densityDpi=Math.max(1,Math.round(activity.getResources().getDisplayMetrics().densityDpi*scale));
         ui.applyOverrideConfiguration(density);pickerContext=ui;
         LinearLayout body=new LinearLayout(ui);body.setOrientation(LinearLayout.VERTICAL);body.setPadding(pickerDp(12),pickerDp(4),pickerDp(12),pickerDp(4));
-        TextView help=new TextView(ui);help.setText("Choose up to 3. The next choice starts a new list.");help.setTextSize(12);help.setTextColor(MapTheme.ink());help.setPadding(pickerDp(6),0,pickerDp(6),pickerDp(8));body.addView(help);
+        TextView help=new TextView(ui);help.setText(I18n.t("Choose up to 3. The next choice starts a new list."));help.setTextSize(12);help.setTextColor(MapTheme.ink());help.setPadding(pickerDp(6),0,pickerDp(6),pickerDp(8));body.addView(help);
         rows=new LinearLayout[IDS.length];labels=new TextView[IDS.length];ranks=new TextView[IDS.length];
         for(int i=0;i<IDS.length;i++){
             final int id=IDS[i];LinearLayout row=new LinearLayout(ui);row.setGravity(Gravity.CENTER_VERTICAL);row.setPadding(pickerDp(8),pickerDp(3),pickerDp(8),pickerDp(3));rows[i]=row;
@@ -56,7 +56,7 @@ final class BerryPriorityPicker {
             row.setOnClickListener(v->{Control.selectBerryPriority(id);refresh();changed.run();});
         }
         ScrollView scroll=new ScrollView(ui);scroll.addView(body);
-        picker=new AlertDialog.Builder(ui).setTitle("Berry priority").setView(scroll).setPositiveButton("Done",null).create();
+        picker=new AlertDialog.Builder(ui).setTitle(I18n.t("Berry priority")).setView(scroll).setPositiveButton(I18n.t("Done"),null).create();
         picker.setOnDismissListener(d->{picker=null;rows=null;labels=null;ranks=null;pickerContext=null;});
         picker.show();
         int baseWidth=Math.min(dp(400),activity.getResources().getDisplayMetrics().widthPixels-dp(48));
@@ -69,11 +69,11 @@ final class BerryPriorityPicker {
         for(int i=0;i<IDS.length;i++){
             int rank=0;for(int j=0;j<priority.length;j++)if(priority[j]==IDS[i])rank=j+1;
             boolean selected=rank>0||(IDS[i]==0&&priority.length==0);
-            labels[i].setText(NAMES[i]+(IDS[i]==0?"":" ("+Math.max(0,Control.berryCount(IDS[i]))+")"));
+            labels[i].setText(I18n.t(NAMES[i])+(IDS[i]==0?"":" ("+Math.max(0,Control.berryCount(IDS[i]))+")"));
             labels[i].setTextColor(MapTheme.ink());ranks[i].setText(rank==0?"":String.valueOf(rank));ranks[i].setTextColor(MapTheme.accent());
             GradientDrawable bg=new GradientDrawable();bg.setCornerRadius(pickerDp(10));bg.setColor(MapTheme.surface());if(selected)bg.setStroke(Math.max(1,pickerDp(1)),MapTheme.accent());rows[i].setBackground(bg);
             // No stock gating: priorities are retained and become usable when inventory replenishes.
-            rows[i].setContentDescription(NAMES[i]+(rank==0?"":", priority "+rank));
+            rows[i].setContentDescription(rank==0?I18n.t(NAMES[i]):I18n.format("%1$s, priority %2$s",I18n.t(NAMES[i]),rank));
         }
     }
 }

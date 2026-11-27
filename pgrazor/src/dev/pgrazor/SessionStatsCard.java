@@ -81,7 +81,7 @@ final class SessionStatsCard {
         LinearLayout header = new LinearLayout(activity); header.setGravity(Gravity.CENTER_VERTICAL);
         header.setPadding(dp(14), dp(12), dp(12), dp(12));
         header.setBackground(SettingsUi.pressable(activity)); header.setClickable(true);
-        title = text("Session stats", 14, SettingsUi.ink()); title.setTypeface(SettingsUi.medium());
+        title = text(I18n.t("Session stats"), 14, SettingsUi.ink()); title.setTypeface(SettingsUi.medium());
         header.addView(title);
         summary = text("", 12, SettingsUi.muted()); summary.setSingleLine(true); summary.setGravity(Gravity.END);
         summary.setEllipsize(android.text.TextUtils.TruncateAt.END);
@@ -186,10 +186,9 @@ final class SessionStatsCard {
         refreshedAt = elapsed;
         SessionStatsHistory.Change hour = SessionStats.change(SessionStatsHistory.HOUR_MS);
         if (hour == null) {
-            summary.setText("Collecting…");
+            summary.setText(I18n.t("Collecting…"));
         } else {
-            summary.setText(String.format(Locale.US, "+%,d XP · +%,d dust · last hour",
-                (long) hour.get(SessionStatsHistory.XP), (long) hour.get(SessionStatsHistory.DUST)));
+            summary.setText(I18n.format("+%,d XP · +%,d dust · last hour", (long) hour.get(SessionStatsHistory.XP), (long) hour.get(SessionStatsHistory.DUST)));
         }
         if (!expanded && !now) return;
         for (int p = 0; p < 2; p++) fill(pages[p], p == 0 ? hour : SessionStats.change(WINDOWS[p]), WINDOWS[p]);
@@ -197,7 +196,7 @@ final class SessionStatsCard {
     private void fill(Page p, SessionStatsHistory.Change c, long window) {
         if (c == null) {
             for (TextView v : p.values) v.setText("–");
-            p.note.setText("Waiting for the game");
+            p.note.setText(I18n.t("Waiting for the game"));
             return;
         }
         double xp = c.get(SessionStatsHistory.XP), caught = c.get(SessionStatsHistory.CAUGHT), seen = c.get(SessionStatsHistory.SEEN);
@@ -205,18 +204,18 @@ final class SessionStatsCard {
         p.values[1].setText(String.format(Locale.US, "+%,d", (long) c.get(SessionStatsHistory.DUST)));
         p.values[2].setText(String.format(Locale.US, "%,d", (long) caught));
         p.values[3].setText(String.format(Locale.US, "%,d", (long) seen));
-        p.labels[3].setText(seen >= 1 ? String.format(Locale.US, "seen · %d%% caught", Math.round(Math.min(1, caught / seen) * 100)) : "seen");
+        p.labels[3].setText(seen >= 1 ? I18n.format("seen · %d%% caught", Math.round(Math.min(1, caught / seen) * 100)) : I18n.t("seen"));
         p.values[4].setText(String.format(Locale.US, "%,d", (long) c.get(SessionStatsHistory.STOPS)));
-        p.values[5].setText(String.format(Locale.US, "%.1f km", c.get(SessionStatsHistory.KM)));
+        p.values[5].setText(I18n.format("%.1f km", c.get(SessionStatsHistory.KM)));
         p.values[6].setText(String.format(Locale.US, "%,d", (long) c.get(SessionStatsHistory.HATCHED)));
         // A history shorter than the window says since when it counts.
         if (c.coveredMs + 120_000 < window) {
             Date since = new Date(c.updatedAt - c.coveredMs);
-            p.note.setText("since " + DateFormat.getTimeFormat(activity).format(since));
+            p.note.setText(I18n.format("since %1$s", String.valueOf((Object)(DateFormat.getTimeFormat(activity).format(since)))));
         } else if (window == SessionStatsHistory.DAY_MS && xp > 0) {
-            p.note.setText(String.format(Locale.US, "%,d XP / h", Math.round(xp / 24)));
+            p.note.setText(I18n.format("%,d XP / h", Math.round(xp / 24)));
         } else {
-            p.note.setText("rolling");
+            p.note.setText(I18n.t("rolling"));
         }
     }
 

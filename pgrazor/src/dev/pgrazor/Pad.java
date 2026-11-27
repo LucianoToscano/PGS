@@ -97,7 +97,7 @@ public final class Pad {
     }
     private final class RazorIcon extends View {
         private final Paint paint=new Paint(Paint.ANTI_ALIAS_FLAG);
-        RazorIcon(Context c){super(c);setContentDescription("Open PGRazor settings. Drag to reposition.");setFocusable(true);setClickable(true);}
+        RazorIcon(Context c){super(c);setContentDescription(I18n.t("Open PGRazor settings. Drag to reposition."));setFocusable(true);setClickable(true);}
         protected void onDraw(Canvas c){super.onDraw(c);float scale=Math.min(getWidth(),getHeight())/48f;c.save();c.scale(scale,scale);
             paint.setStyle(Paint.Style.FILL);paint.setColor(surface());c.drawCircle(24,24,22.5f,paint);
             paint.setStyle(Paint.Style.STROKE);paint.setStrokeWidth(1.3f);paint.setColor(SettingsUi.border());c.drawCircle(24,24,22.1f,paint);
@@ -113,6 +113,7 @@ public final class Pad {
     private boolean closed, lastEnabled, launcherSpoofing;
     private AlertDialog stopRouteDialog;
     public Pad(Activity host) {
+        I18nAndroid.init(host.getApplication());
         activity = host;
         parent = (FrameLayout)host.getWindow().getDecorView();
         // Build the settings body first (not yet attached); it calls back through the narrow host
@@ -135,7 +136,7 @@ public final class Pad {
         parent.addView(settings.view(), new FrameLayout.LayoutParams(-1, -1));
         overlays=new FrameLayout(host);parent.addView(overlays,new FrameLayout.LayoutParams(-1,-1));
         blackScreen=new FrameLayout(host);blackScreen.setBackgroundColor(Color.BLACK);blackScreen.setVisibility(View.GONE);
-        blackHint=text("Black screen saves battery while Shundo Sniper runs.\nTap anywhere to show the game.",13,Color.rgb(140,140,140));blackHint.setGravity(Gravity.CENTER);
+        blackHint=text(I18n.t("Black screen saves battery while Shundo Sniper runs.\nTap anywhere to show the game."),13,Color.rgb(140,140,140));blackHint.setGravity(Gravity.CENTER);
         blackScreen.addView(blackHint,new FrameLayout.LayoutParams(-1,-2,Gravity.CENTER));
         blackScreen.setOnClickListener(v->{ShundoSniper.setDark(false);refresh();});
         parent.addView(blackScreen,parent.indexOfChild(overlays),new FrameLayout.LayoutParams(-1,-1));
@@ -146,7 +147,7 @@ public final class Pad {
         encounterBerry=new BerryOverlay(activity,this::refresh);
         FrameLayout.LayoutParams berryLayout=new FrameLayout.LayoutParams(dp(90),dp(50),Gravity.RIGHT|Gravity.CENTER_VERTICAL);berryLayout.rightMargin=dp(10);overlays.addView(encounterBerry,berryLayout);encounterBerry.setVisibility(View.GONE);
 
-        cooldownTimer=button("History  --:--");cooldownTimer.setTextSize(13);cooldownTimer.setTypeface(SettingsUi.mono());cooldownTimer.setTextColor(accent());FrameLayout.LayoutParams timerLayout=new FrameLayout.LayoutParams(dp(168),dp(44),Gravity.TOP|Gravity.RIGHT);timerLayout.topMargin=dp(44);timerLayout.rightMargin=dp(12);overlays.addView(cooldownTimer,timerLayout);cooldownTimer.setOnClickListener(v->Cooldown.show(activity));cooldownDrag=OverlayDrag.attach(overlays,cooldownTimer,"cooldown");
+        cooldownTimer=button(I18n.t("History  --:--"));cooldownTimer.setTextSize(13);cooldownTimer.setTypeface(SettingsUi.mono());cooldownTimer.setTextColor(accent());FrameLayout.LayoutParams timerLayout=new FrameLayout.LayoutParams(dp(168),dp(44),Gravity.TOP|Gravity.RIGHT);timerLayout.topMargin=dp(44);timerLayout.rightMargin=dp(12);overlays.addView(cooldownTimer,timerLayout);cooldownTimer.setOnClickListener(v->Cooldown.show(activity));cooldownDrag=OverlayDrag.attach(overlays,cooldownTimer,"cooldown");
 
         // Small local-time overlay: the wall-clock time at the spoofed coordinates, formatted offline by the view.
         localTime=new LocalTimeOverlay(host);FrameLayout.LayoutParams localTimeLayout=new FrameLayout.LayoutParams(FrameLayout.LayoutParams.WRAP_CONTENT,dp(32),Gravity.TOP|Gravity.RIGHT);localTimeLayout.rightMargin=dp(12);localTimeLayout.topMargin=dp(94);overlays.addView(localTime,localTimeLayout);localTime.setVisibility(View.GONE);localTimeDrag=OverlayDrag.attach(overlays,localTime,"local-time");
@@ -157,13 +158,13 @@ public final class Pad {
         panelView.requestApplyInsets();
 
         vgpToggle=new VgpToggle(host);FrameLayout.LayoutParams vgpButtonLayout=new FrameLayout.LayoutParams(dp(54),dp(54),Gravity.TOP|Gravity.LEFT);vgpButtonLayout.leftMargin=dp(12);vgpButtonLayout.topMargin=dp(156);overlays.addView(vgpToggle,vgpButtonLayout);vgpToggle.setOnClickListener(v->{Control.setVgpEnabled(!Control.vgpEnabled());refresh();});
-        vgpActivity=text("VGP",12,ink());vgpActivity.setPadding(dp(10),dp(6),dp(10),dp(6));vgpActivity.setMaxLines(2);vgpActivity.setEllipsize(android.text.TextUtils.TruncateAt.END);
+        vgpActivity=text(I18n.t("VGP"),12,ink());vgpActivity.setPadding(dp(10),dp(6),dp(10),dp(6));vgpActivity.setMaxLines(2);vgpActivity.setEllipsize(android.text.TextUtils.TruncateAt.END);
         FrameLayout.LayoutParams vgpLayout=new FrameLayout.LayoutParams(dp(220),-2,Gravity.TOP|Gravity.LEFT);vgpLayout.leftMargin=dp(12);vgpLayout.topMargin=dp(216);overlays.addView(vgpActivity,vgpLayout);vgpActivity.setVisibility(View.GONE);
-        buddyEmotionStatus=text("EP: waiting",12,ink());buddyEmotionStatus.setPadding(dp(10),dp(6),dp(10),dp(6));buddyEmotionStatus.setMaxLines(3);
+        buddyEmotionStatus=text(I18n.t("EP: waiting"),12,ink());buddyEmotionStatus.setPadding(dp(10),dp(6),dp(10),dp(6));buddyEmotionStatus.setMaxLines(3);
         FrameLayout.LayoutParams buddyEpLayout=new FrameLayout.LayoutParams(dp(240),-2,Gravity.TOP|Gravity.LEFT);buddyEpLayout.leftMargin=dp(12);buddyEpLayout.topMargin=dp(265);overlays.addView(buddyEmotionStatus,buddyEpLayout);buddyEmotionStatus.setVisibility(View.GONE);
         buddyEmotionStatus.setOnClickListener(v->BuddyEmotionSettings.show(activity));buddyEmotionDrag=OverlayDrag.attach(overlays,buddyEmotionStatus,"buddy-emotion");
         gymFeedOverlay=new GymFeedOverlay(activity);FrameLayout.LayoutParams gymFeedLayout=new FrameLayout.LayoutParams(dp(54),dp(54),Gravity.TOP|Gravity.LEFT);gymFeedLayout.leftMargin=dp(12);gymFeedLayout.topMargin=dp(375);overlays.addView(gymFeedOverlay,gymFeedLayout);
-        gymAutomationStatus=text("Off",11,ink());gymAutomationStatus.setPadding(dp(6),dp(3),dp(6),dp(3));gymAutomationStatus.setMaxLines(1);gymAutomationStatus.setMaxWidth(dp(165));gymAutomationStatus.setEllipsize(android.text.TextUtils.TruncateAt.END);
+        gymAutomationStatus=text(I18n.t("Off"),11,ink());gymAutomationStatus.setPadding(dp(6),dp(3),dp(6),dp(3));gymAutomationStatus.setMaxLines(1);gymAutomationStatus.setMaxWidth(dp(165));gymAutomationStatus.setEllipsize(android.text.TextUtils.TruncateAt.END);
         overlays.addView(gymAutomationStatus,new FrameLayout.LayoutParams(-2,-2,Gravity.TOP|Gravity.LEFT));
         gymFeedDrag=OverlayDrag.attach(overlays,gymFeedOverlay,gymAutomationStatus,"gym-feed");
         automationStatus=text("",11,ink());automationStatus.setPadding(dp(8),dp(5),dp(8),dp(5));automationStatus.setMaxLines(3);
@@ -186,7 +187,7 @@ public final class Pad {
         FrameLayout.LayoutParams encounterLayout=new FrameLayout.LayoutParams(-2,-2,Gravity.TOP|Gravity.RIGHT);encounterLayout.rightMargin=dp(12);encounterLayout.topMargin=dp(186);
         overlays.addView(encounterBadge,encounterLayout);encounterBadge.setVisibility(View.GONE);encounterDrag=OverlayDrag.attach(overlays,encounterBadge,"encounters");
         shinyMark=text("✨",19,Color.WHITE);shinyMark.setGravity(Gravity.CENTER);shinyMark.setShadowLayer(dp(4),0,0,Color.BLACK);shinyMark.setClickable(false);shinyMark.setFocusable(false);
-        shinyMark.setContentDescription("Shiny Pokémon here");overlays.addView(shinyMark,new FrameLayout.LayoutParams(dp(32),dp(32)));shinyMark.setVisibility(View.GONE);
+        shinyMark.setContentDescription(I18n.t("Shiny Pokémon here"));overlays.addView(shinyMark,new FrameLayout.LayoutParams(dp(32),dp(32)));shinyMark.setVisibility(View.GONE);
         ShinyScanner.prepare(activity);shinyBadge=text("",13,ink());shinyBadge.setPadding(dp(12),dp(8),dp(12),dp(8));shinyBadge.setMaxLines(2);shinyBadge.setBackground(rounded(surface(),10));
         FrameLayout.LayoutParams shinyLayout=new FrameLayout.LayoutParams(dp(250),-2,Gravity.TOP|Gravity.CENTER_HORIZONTAL);shinyLayout.topMargin=dp(150);
         overlays.addView(shinyBadge,shinyLayout);shinyBadge.setVisibility(View.GONE);shinyBadge.setOnClickListener(v->{ShinyScanner.showFound();refresh();});shinyDrag=OverlayDrag.attach(overlays,shinyBadge,"shiny");
@@ -197,7 +198,7 @@ public final class Pad {
         routesLayout.rightMargin=dp(14);routesLayout.topMargin=dp(100);overlays.addView(gameRoutesOverlay,routesLayout);
         gameRoutesOverlay.setVisibility(View.GONE);gameRoutesDrag=OverlayDrag.attach(overlays,gameRoutesOverlay,"game-routes");
         launcher=new RazorIcon(host);FrameLayout.LayoutParams iconLayout=new FrameLayout.LayoutParams(dp(48),dp(48),Gravity.TOP|Gravity.LEFT);iconLayout.leftMargin=dp(12);iconLayout.topMargin=dp(100);overlays.addView(launcher,iconLayout);
-        launcher.setContentDescription("Open PGRazor quick menu. Drag to reposition.");
+        launcher.setContentDescription(I18n.t("Open PGRazor quick menu. Drag to reposition."));
         // The R launcher now toggles the compact quick menu; Settings there opens this panel full screen.
         quickMenu=new QuickMenu(host,parent,launcher,new QuickMenu.Listener(){
             public void onMap(){openWorldMap();}
@@ -242,7 +243,10 @@ public final class Pad {
             Bitmap icon=on?connected:disconnected;
             if(icon!=null&&icon.getWidth()>0&&icon.getHeight()>0){float box=30f,ratio=Math.min(box/icon.getWidth(),box/icon.getHeight()),w=icon.getWidth()*ratio,h=icon.getHeight()*ratio;dst.set(27-w/2f,20-h/2f,27+w/2f,20+h/2f);canvas.drawBitmap(icon,null,dst,art);}
             else{paint.setColor(on?SettingsUi.success():SettingsUi.faint());canvas.drawCircle(27,19,12,paint);paint.setColor(surface());paint.setStyle(Paint.Style.STROKE);paint.setStrokeWidth(2.5f);canvas.drawArc(19,11,35,27,-55,290,false,paint);canvas.drawLine(27,7,27,19,paint);}
-            paint.setStyle(Paint.Style.FILL);paint.setColor(on?accent():SettingsUi.faint());paint.setTextSize(9.5f);paint.setTypeface(SettingsUi.mono());paint.setTextAlign(Paint.Align.CENTER);canvas.drawText(on?"ON":"OFF",27,49,paint);
+            paint.setStyle(Paint.Style.FILL);paint.setColor(on?accent():SettingsUi.faint());paint.setTextSize(9.5f);paint.setTypeface(SettingsUi.mono());paint.setTextAlign(Paint.Align.CENTER);
+            String label=on?I18n.t("ON"):I18n.t("OFF");float labelWidth=paint.measureText(label);
+            if(labelWidth>44)paint.setTextSize(9.5f*44/labelWidth);
+            canvas.drawText(label,27,49,paint);
             canvas.restore();}
     }
     private final class VgpMarker extends View {
@@ -280,13 +284,15 @@ public final class Pad {
             else if(master){canvas.drawLine(19,24,33,24,paint);Path a=new Path();a.moveTo(29,19);a.lineTo(35,24);a.lineTo(29,29);canvas.drawPath(a,paint);} // transfer-out arrow
             else{canvas.drawLine(21,24,33,24,paint);} // dash: master off
             paint.setStyle(Paint.Style.FILL);paint.setColor(tint);paint.setTextSize(9);paint.setTypeface(SettingsUi.mono());paint.setTextAlign(Paint.Align.CENTER);
-            canvas.drawText(keep?"KEEP":(master?"XFER":"OFF"),27,51,paint);
+            String label=keep?I18n.t("KEEP"):(master?I18n.t("XFER"):I18n.t("OFF"));float labelWidth=paint.measureText(label);
+            if(labelWidth>44)paint.setTextSize(9f*44/labelWidth);
+            canvas.drawText(label,27,51,paint);
             canvas.restore();}
     }
     private String transferToggleDescription(){
         boolean keep=Control.transferKeepAll(),master=Control.autoTransferEnabled();
-        String state=keep?"Keep All on; manual catches are kept":(master?"Normal transfer rules apply":"Auto transfer is off");
-        return "Manual encounter transfer: "+state+". Tap to "+(keep?"use normal transfer rules":"keep manual catches")+". Drag to reposition.";
+        String state=keep?I18n.t("Keep All on; manual catches are kept"):(master?I18n.t("Normal transfer rules apply"):I18n.t("Auto transfer is off"));
+        return I18n.format("Manual encounter transfer: %1$s. Tap to %2$s. Drag to reposition.",state,keep?I18n.t("use normal transfer rules"):I18n.t("keep manual catches"));
     }
 
     private void applyMapScale(){
@@ -344,22 +350,22 @@ public final class Pad {
             if(shinyPopup!=null&&shinyPopup.isShowing())shinyPopup.dismiss();
             AlertDialog.Builder popup=new AlertDialog.Builder(MapTheme.wrap(activity)).setTitle(found[0]).setMessage(found[1]);
             // A found shiny: Catch it throws for you, Dismiss lets it go, Close keeps it (the badge reopens this).
-            if("found".equals(found[2]))popup.setPositiveButton("Catch it",(d,w)->{ShinyScanner.requestCatch();refresh();}).setNeutralButton("Dismiss",(d,w)->{ShinyScanner.dismissFound();refresh();}).setNegativeButton("Close",null);
-            else popup.setPositiveButton("OK",null);
+            if("found".equals(found[2]))popup.setPositiveButton(I18n.t("Catch it"),(d,w)->{ShinyScanner.requestCatch();refresh();}).setNeutralButton(I18n.t("Dismiss"),(d,w)->{ShinyScanner.dismissFound();refresh();}).setNegativeButton(I18n.t("Close"),null);
+            else popup.setPositiveButton(I18n.t("OK"),null);
             shinyPopup=popup.create();
             final AlertDialog shown=shinyPopup;shown.setCanceledOnTouchOutside(false);DialogLifecycle.bind(activity,shown,null);shown.setOnShowListener(d->MapTheme.styleButtons(shown));shown.show();}}
         if(shinyBadge!=null){String found=settings.isVisible()||(quickMenu!=null&&quickMenu.isShowing())?"":ShinyScanner.foundLabel();
             shinyBadge.setVisibility(found.isEmpty()?View.GONE:View.VISIBLE);
-            if(!found.isEmpty()){setTextIfChanged(shinyBadge,found);shinyBadge.setContentDescription(found+". Tap for options.");if(shinyDrag!=null)shinyDrag.refreshBounds();}}
+            if(!found.isEmpty()){setTextIfChanged(shinyBadge,found);shinyBadge.setContentDescription(I18n.format("%1$s. Tap for options.",found));if(shinyDrag!=null)shinyDrag.refreshBounds();}}
         if(shundoOverlay!=null){shundoOverlay.refresh(!settings.isVisible()&&!(quickMenu!=null&&quickMenu.isShowing()));if(shundoDrag!=null)shundoDrag.refreshBounds();}
         if(gymAutomationStatus!=null){gymAutomationStatus.setVisibility(gymFeedOverlay.getVisibility());setTextIfChanged(gymAutomationStatus,GymAutomationSettings.overlayStatus());gymFeedDrag.refreshBounds();}
-        if(vgpToggle!=null){vgpToggle.setVisibility(Control.vgpOverlayVisible()&&!settings.isVisible()&&!(quickMenu!=null&&quickMenu.isShowing())?View.VISIBLE:View.GONE);vgpToggle.setContentDescription("Virtual Go Plus "+(Control.vgpEnabled()?"on; tap to turn off":"off; tap to turn on")+". "+Control.vgpStatus());vgpToggle.invalidate();}
+        if(vgpToggle!=null){vgpToggle.setVisibility(Control.vgpOverlayVisible()&&!settings.isVisible()&&!(quickMenu!=null&&quickMenu.isShowing())?View.VISIBLE:View.GONE);vgpToggle.setContentDescription(I18n.format("Virtual Go Plus %1$s. %2$s",Control.vgpEnabled()?I18n.t("on; tap to turn off"):I18n.t("off; tap to turn on"),Control.vgpStatus()));vgpToggle.invalidate();}
 
         // Pair the status line with the toggle so the cooldown shutoff reason is visible even when VGP is off.
         if(buddyEmotionStatus!=null){buddyEmotionStatus.setVisibility(BuddyEmotionSettings.overlayEnabled()&&!settings.isVisible()&&!(quickMenu!=null&&quickMenu.isShowing())?View.VISIBLE:View.GONE);setTextIfChanged(buddyEmotionStatus,BuddyEmotionSettings.status());}
         if(catchChance!=null){catchChance.setVisibility(CatchChance.visible()&&!settings.isVisible()&&!(quickMenu!=null&&quickMenu.isShowing())?View.VISIBLE:View.GONE);setTextIfChanged(catchChance,CatchChance.text());}
-        if(automationStatus!=null){automationStatus.setVisibility((OneShotAutomation.overlayVisible()||AutoRaid.running()||AutoRocket.running())&&!settings.isVisible()&&!(quickMenu!=null&&quickMenu.isShowing())?View.VISIBLE:View.GONE);setTextIfChanged(automationStatus,AutoRaid.running()?"Auto-Raid | "+AutoRaid.status():AutoRocket.running()?"Auto Rocket | "+AutoRocket.status():OneShotAutomation.overlayStatus());automationDrag.refreshBounds();}
-        if(vgpActivity!=null){vgpActivity.setVisibility(Control.vgpOverlayVisible()&&!settings.isVisible()&&!(quickMenu!=null&&quickMenu.isShowing())?View.VISIBLE:View.GONE);setTextIfChanged(vgpActivity,"VGP  |  "+Control.vgpStatus());}
+        if(automationStatus!=null){automationStatus.setVisibility((OneShotAutomation.overlayVisible()||AutoRaid.running()||AutoRocket.running())&&!settings.isVisible()&&!(quickMenu!=null&&quickMenu.isShowing())?View.VISIBLE:View.GONE);setTextIfChanged(automationStatus,AutoRaid.running()?I18n.t("Auto-Raid")+" | "+AutoRaid.status():AutoRocket.running()?I18n.t("Auto Rocket")+" | "+AutoRocket.status():OneShotAutomation.overlayStatus());automationDrag.refreshBounds();}
+        if(vgpActivity!=null){vgpActivity.setVisibility(Control.vgpOverlayVisible()&&!settings.isVisible()&&!(quickMenu!=null&&quickMenu.isShowing())?View.VISIBLE:View.GONE);setTextIfChanged(vgpActivity,I18n.format("VGP  |  %1$s",Control.vgpStatus()));}
         if(mapCatchBadge!=null)mapCatchBadge.refresh(!settings.isVisible()&&!(quickMenu!=null&&quickMenu.isShowing())&&!Control.catchScreenVisible());
         if(vgpMarker!=null){boolean show=Control.vgpTargetVisible()&&!settings.isVisible();vgpMarker.setVisibility(show?View.VISIBLE:View.GONE);if(show){vgpMarker.setX(Control.vgpTargetX()*parent.getWidth()-dp(19)*vgpMarker.getScaleX());vgpMarker.setY(Control.vgpTargetY()*parent.getHeight()-dp(36)-dp(46)*vgpMarker.getScaleY());vgpMarker.invalidate();}}
         if(transferToggle!=null){transferToggle.setVisibility(Control.transferOverlayVisible()&&!settings.isVisible()&&!(quickMenu!=null&&quickMenu.isShowing())?View.VISIBLE:View.GONE);transferToggle.setContentDescription(transferToggleDescription());transferToggle.invalidate();}
@@ -423,11 +429,11 @@ public final class Pad {
         if (Control.engine.walking) Control.event("walk-cancelled", "Coordinates editor opened");
         stick.release(); refresh();
         LinearLayout form = new LinearLayout(activity); form.setOrientation(LinearLayout.VERTICAL); form.setPadding(dp(24),dp(8),dp(24),dp(8));
-        EditText lat = input(Double.toString(Control.engine.latitude), "Latitude (-90 to 90)");
-        EditText lon = input(Double.toString(Control.engine.longitude), "Longitude (-180 to 180)");
-        EditText speed = input(Double.toString(Control.engine.speedKmh), "Speed (0.5–30 km/h)");
+        EditText lat = input(Double.toString(Control.engine.latitude), I18n.t("Latitude (-90 to 90)"));
+        EditText lon = input(Double.toString(Control.engine.longitude), I18n.t("Longitude (-180 to 180)"));
+        EditText speed = input(Double.toString(Control.engine.speedKmh), I18n.t("Speed (0.5–30 km/h)"));
         for (EditText field : new EditText[]{lat, lon, speed}) form.addView(field);
-        AlertDialog dialog = new AlertDialog.Builder(dialogContext()).setTitle("Coordinates & speed").setView(form).setNegativeButton("Cancel",null).setPositiveButton("Apply",null).create();
+        AlertDialog dialog = new AlertDialog.Builder(dialogContext()).setTitle(I18n.t("Coordinates & speed")).setView(form).setNegativeButton(I18n.t("Cancel"),null).setPositiveButton(I18n.t("Apply"),null).create();
         final AlertDialog[] confirmation = {null};
         DialogLifecycle.bind(activity,dialog,()->{if(confirmation[0]!=null)confirmation[0].dismiss();});
         dialog.setOnShowListener(d -> dialog.getButton(-1).setOnClickListener(v -> {
@@ -440,17 +446,17 @@ public final class Pad {
                     Control.event("coordinates-set", latitude + "," + longitude + " speed=" + check.speedKmh);
                     refresh(); dialog.dismiss(); return true;
                 });
-            } catch (IllegalArgumentException error) { speed.setError("Enter valid coordinates and speed (0.5–30)."); }
+            } catch (IllegalArgumentException error) { speed.setError(I18n.t("Enter valid coordinates and speed (0.5–30).")); }
         })); dialog.show();styleTree(form);
     }
     /** "Hide overlay": confirm first, naming the three-finger tap that shows the overlays again. */
     void confirmHideOverlays() {
         if(closed||overlaysHidden||activity.isFinishing()||activity.isDestroyed()||hideOverlaysDialog!=null)return;
         AlertDialog dialog=new AlertDialog.Builder(dialogContext())
-            .setTitle("Hide overlay?")
-            .setMessage("All PGRazor buttons, status bars, messages and in-game IV text will be hidden so the game looks stock. To show them again, tap the screen with three fingers at once.")
-            .setNegativeButton("Cancel",null)
-            .setPositiveButton("Hide",(d,w)->setOverlaysHidden(true)).create();
+            .setTitle(I18n.t("Hide overlay?"))
+            .setMessage(I18n.t("All PGRazor buttons, status bars, messages and in-game IV text will be hidden so the game looks stock. To show them again, tap the screen with three fingers at once."))
+            .setNegativeButton(I18n.t("Cancel"),null)
+            .setPositiveButton(I18n.t("Hide"),(d,w)->setOverlaysHidden(true)).create();
         hideOverlaysDialog=dialog;
         DialogLifecycle.bind(activity,dialog,()->{if(hideOverlaysDialog==dialog)hideOverlaysDialog=null;});
         dialog.setOnShowListener(d->MapTheme.styleButtons(dialog));
@@ -462,7 +468,7 @@ public final class Pad {
         if(hidden){stick.release(true);if(quickMenu!=null&&quickMenu.isShowing())quickMenu.hide();}
         overlays.setVisibility(hidden?View.GONE:View.VISIBLE);
         Control.event("overlays",hidden?"hidden":"shown");
-        if(!hidden){Toast.makeText(activity,"PGRazor overlay shown",Toast.LENGTH_SHORT).show();refresh();}
+        if(!hidden){Toast.makeText(activity,I18n.t("PGRazor overlay shown"),Toast.LENGTH_SHORT).show();refresh();}
     }
     /**
      * Sees every finger that touches down anywhere on screen and never takes the touch, so the game
@@ -497,10 +503,10 @@ public final class Pad {
         if(closed||activity.isFinishing()||activity.isDestroyed()||stopRouteDialog!=null)return;
         final long token=Control.engine.activeRouteToken();if(token==0)return;
         AlertDialog dialog=new AlertDialog.Builder(dialogContext())
-            .setTitle("Stop route?")
-            .setMessage("A route or Autowalk is running. Do you want to stop it?")
-            .setNegativeButton("Keep walking",null)
-            .setPositiveButton("Stop route",(d,w)->{
+            .setTitle(I18n.t("Stop route?"))
+            .setMessage(I18n.t("A route or Autowalk is running. Do you want to stop it?"))
+            .setNegativeButton(I18n.t("Keep walking"),null)
+            .setPositiveButton(I18n.t("Stop route"),(d,w)->{
                 if(!closed&&Control.engine.stopRoute(token)){
                     Control.saveState();Control.event("route-stopped","Confirmed after map tap");refresh();
                 }
@@ -517,28 +523,28 @@ public final class Pad {
         stick.release(true);
         Control.event("map-open", "Browsing does not apply a destination; current walk=" + Control.engine.walking);
         WorldMapDialog.show(activity, Control.engine.latitude, Control.engine.longitude, (lat, lon) -> {
-            if (!Control.canEnable()) { Toast.makeText(activity,"Location adapter is not ready",Toast.LENGTH_SHORT).show(); return false; }
+            if (!Control.canEnable()) { Toast.makeText(activity,I18n.t("Location adapter is not ready"),Toast.LENGTH_SHORT).show(); return false; }
             try {
                 stick.release(); Control.teleport(lat, lon);
                 Control.event("map-teleport", String.format(Locale.US,"lat=%.7f lon=%.7f",lat,lon));
                 refresh(); return true;
-            } catch (IllegalArgumentException error) { Toast.makeText(activity,"Select valid coordinates",Toast.LENGTH_SHORT).show(); return false; }
+            } catch (IllegalArgumentException error) { Toast.makeText(activity,I18n.t("Select valid coordinates"),Toast.LENGTH_SHORT).show(); return false; }
         }, (lat, lon) -> {
-            if (!Control.canEnable()) { Toast.makeText(activity,"Location adapter is not ready",Toast.LENGTH_SHORT).show(); return false; }
+            if (!Control.canEnable()) { Toast.makeText(activity,I18n.t("Location adapter is not ready"),Toast.LENGTH_SHORT).show(); return false; }
             try {
                 stick.release(); Control.walkTo(lat, lon);
                 Control.event("walk-started", String.format(Locale.US,"targetLat=%.7f targetLon=%.7f speedKmh=%.2f",lat,lon,Control.engine.speedKmh));
                 if (!Control.engine.walking) Control.event("walk-arrived", "Already at selected destination");
                 refresh(); return true;
-            } catch (IllegalArgumentException error) { Toast.makeText(activity,"Select valid coordinates",Toast.LENGTH_SHORT).show(); return false; }
+            } catch (IllegalArgumentException error) { Toast.makeText(activity,I18n.t("Select valid coordinates"),Toast.LENGTH_SHORT).show(); return false; }
         }, (waypoints, loop) -> {
-            if (!Control.canEnable()) { Toast.makeText(activity,"Location adapter is not ready",Toast.LENGTH_SHORT).show(); return false; }
+            if (!Control.canEnable()) { Toast.makeText(activity,I18n.t("Location adapter is not ready"),Toast.LENGTH_SHORT).show(); return false; }
             try {
                 stick.release(true); Control.walkRoute(waypoints, loop);
                 MotionEngine.RouteProgress progress=Control.engine.routeProgress();
                 Control.event("route-started", String.format(Locale.US,"stops=%d visited=%d remainingMeters=%.2f speedKmh=%.2f loop=%s",progress.total,progress.visited,progress.remainingMeters,Control.engine.speedKmh,loop));
                 refresh(); return true;
-            } catch (IllegalArgumentException error) { Toast.makeText(activity,error.getMessage(),Toast.LENGTH_SHORT).show(); return false; }
+            } catch (IllegalArgumentException error) { Toast.makeText(activity,I18n.t(error.getMessage()),Toast.LENGTH_SHORT).show(); return false; }
         });
     }
     /** Opens the existing settings panel full screen; the game runtime is left untouched. */
@@ -551,29 +557,29 @@ public final class Pad {
     }
     /** Shared quick teleport for the Favorites and Teleport modals; validates readiness. */
     private boolean quickTeleport(double latitude, double longitude) {
-        if (!Control.canEnable()) { Toast.makeText(activity,"Location adapter is not ready",Toast.LENGTH_SHORT).show(); return false; }
+        if (!Control.canEnable()) { Toast.makeText(activity,I18n.t("Location adapter is not ready"),Toast.LENGTH_SHORT).show(); return false; }
         try {
             stick.release(); Control.teleport(latitude, longitude);
             Control.event("quick-teleport", String.format(Locale.US,"lat=%.7f lon=%.7f",latitude,longitude));
             refresh(); return true;
-        } catch (IllegalArgumentException error) { Toast.makeText(activity,"Enter valid coordinates",Toast.LENGTH_SHORT).show(); return false; }
+        } catch (IllegalArgumentException error) { Toast.makeText(activity,I18n.t("Enter valid coordinates"),Toast.LENGTH_SHORT).show(); return false; }
     }
     void confirmMapTeleport(double latitude,double longitude,int mode,int epoch) {
         TeleportDialog.confirm(activity,latitude,longitude,(lat,lon)->{
             if(closed||!Control.mapTapAllowed()||mode!=Control.mapTapMode()||epoch!=Control.mapTapEpoch()||Control.engine.activeRouteToken()!=0) {
-                Toast.makeText(activity,"Map-tap settings changed; tap the map again.",Toast.LENGTH_SHORT).show();return true;
+                Toast.makeText(activity,I18n.t("Map-tap settings changed; tap the map again."),Toast.LENGTH_SHORT).show();return true;
             }
             if(!quickTeleport(lat,lon))return false;
             Control.event("map-tap-applied",String.format(Locale.US,"mode=%d lat=%.7f lon=%.7f",mode,lat,lon));return true;
         });
     }
     private boolean quickWalk(double latitude,double longitude) {
-        if(!Control.canEnable()){Toast.makeText(activity,"Location adapter is not ready",Toast.LENGTH_SHORT).show();return false;}
+        if(!Control.canEnable()){Toast.makeText(activity,I18n.t("Location adapter is not ready"),Toast.LENGTH_SHORT).show();return false;}
         try {
             stick.release();Control.walkTo(latitude,longitude);
             Control.event("quick-walk",String.format(Locale.US,"lat=%.7f lon=%.7f",latitude,longitude));
             refresh();return true;
-        } catch(IllegalArgumentException error){Toast.makeText(activity,"Select valid coordinates",Toast.LENGTH_SHORT).show();return false;}
+        } catch(IllegalArgumentException error){Toast.makeText(activity,I18n.t("Select valid coordinates"),Toast.LENGTH_SHORT).show();return false;}
     }
     public void close() {
         if (closed) return;
@@ -610,7 +616,7 @@ public final class Pad {
             if (!joystickAllowed()) { release(true); return; }
             if (lockState.onCenterTimerFired()) {
                 performHapticFeedback(HapticFeedbackConstants.LONG_PRESS);
-                Toast.makeText(activity, "Drag and release to lock direction", Toast.LENGTH_SHORT).show();
+                Toast.makeText(activity, I18n.t("Drag and release to lock direction"), Toast.LENGTH_SHORT).show();
                 invalidate();
             }
         };
@@ -619,7 +625,7 @@ public final class Pad {
                 release(false);
                 performHapticFeedback(HapticFeedbackConstants.LONG_PRESS);
                 Control.event("joystick-unlocked", "Padlock long press");
-                Toast.makeText(activity, "Joystick unlocked", Toast.LENGTH_SHORT).show();
+                Toast.makeText(activity, I18n.t("Joystick unlocked"), Toast.LENGTH_SHORT).show();
             }
         };
 
@@ -632,7 +638,7 @@ public final class Pad {
         boolean isHeld() { return lockState.isHeld(); }
 
         private void updateDescription() {
-            setContentDescription(lockState.isLocked ? "Location joystick: locked, long-press lock icon to unlock" : "Location joystick: drag to move, release to stop. Hold the centre, then drag and release to lock direction.");
+            setContentDescription(lockState.isLocked ? I18n.t("Location joystick: locked, long-press lock icon to unlock") : I18n.t("Location joystick: drag to move, release to stop. Hold the centre, then drag and release to lock direction."));
         }
 
         void release() { release(false); }
@@ -660,7 +666,7 @@ public final class Pad {
             applyMotion(SystemClock.elapsedRealtime());
             if (!lockState.isLocked) return;
             Control.event("joystick-locked", String.format(Locale.US, "Locked at %.1f deg", Math.toDegrees(angle)));
-            Toast.makeText(activity, "Joystick locked; hold the lock icon to stop", Toast.LENGTH_SHORT).show();
+            Toast.makeText(activity, I18n.t("Joystick locked; hold the lock icon to stop"), Toast.LENGTH_SHORT).show();
             invalidate();
         }
 

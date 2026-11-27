@@ -64,7 +64,7 @@ public final class LiveFeedDialog {
         AlertDialog dialog = new AlertDialog.Builder(ui)
             .setTitle("LivePokeMap")
             .setView(root)
-            .setNegativeButton("Close", null)
+            .setNegativeButton(I18n.t("Close"), null)
             .create();
         Controller controller = new Controller(activity, ui, dialog, root);
         DialogLifecycle.bind(activity, dialog, controller::close, ()->controller.showingLogin,
@@ -173,11 +173,11 @@ public final class LiveFeedDialog {
             form.setFocusableInTouchMode(true);
             scroll.addView(form, new android.widget.ScrollView.LayoutParams(-1, -2));
             root.addView(scroll, new LinearLayout.LayoutParams(-1, 0, 1));
-            TextView intro = label("Sign in with your LivePokeMap account.", 14);
+            TextView intro = label(I18n.t("Sign in with your LivePokeMap account."), 14);
             intro.setPadding(0, 0, 0, dp(20));
             form.addView(intro);
             final EditText username = new EditText(ui);
-            username.setHint("Username");
+            username.setHint(I18n.t("Username"));
             username.setSingleLine(true);
             username.setInputType(InputType.TYPE_CLASS_TEXT);
             username.setId(View.generateViewId());
@@ -186,7 +186,7 @@ public final class LiveFeedDialog {
             username.setImeOptions(android.view.inputmethod.EditorInfo.IME_ACTION_NEXT);
             addLoginField(form, username);
             final EditText password = new EditText(ui);
-            password.setHint("Password");
+            password.setHint(I18n.t("Password"));
             password.setSingleLine(true);
             // Let the user's password manager fill credentials; the app stores only its session.
             password.setInputType(InputType.TYPE_CLASS_TEXT | InputType.TYPE_TEXT_VARIATION_PASSWORD);
@@ -196,7 +196,7 @@ public final class LiveFeedDialog {
             password.setAutofillHints(View.AUTOFILL_HINT_PASSWORD);
             password.setImportantForAutofill(View.IMPORTANT_FOR_AUTOFILL_YES);
             addLoginField(form, password);
-            final Button login = button("Log in");
+            final Button login = button(I18n.t("Log in"));
             login.setPadding(0, 0, 0, 0);
             form.addView(login, new LinearLayout.LayoutParams(-1, dp(48)));
             final TextView status = label("", 13);
@@ -214,11 +214,11 @@ public final class LiveFeedDialog {
                 // Clear the password field immediately; it stays only in the local that is handed to
                 // the worker, never logged or saved by PGRazor.
                 password.setText("");
-                if (u.isEmpty() || p.isEmpty()) { status.setText("Enter your username and password."); return; }
+                if (u.isEmpty() || p.isEmpty()) { status.setText(I18n.t("Enter your username and password.")); return; }
                 if (loginInFlight) return;
                 loginInFlight = true;
                 login.setEnabled(false);
-                status.setText("Signing in…");
+                status.setText(I18n.t("Signing in…"));
                 submitLogin(u, p, login, username, status);
             });
         }
@@ -267,7 +267,7 @@ public final class LiveFeedDialog {
                         loginInFlight = false;
                         if (closed || g != generation) { return; }
                         login.setEnabled(true);
-                        status.setText("Couldn't reach LivePokeMap. Check your connection and try again.");
+                        status.setText(I18n.t("Couldn't reach LivePokeMap. Check your connection and try again."));
                     });
                 }
             });
@@ -279,7 +279,7 @@ public final class LiveFeedDialog {
 
             LinearLayout toolbar = new LinearLayout(ui);
             toolbar.setOrientation(LinearLayout.HORIZONTAL);
-            Button logout = button("Log out"), refresh = button("Refresh"), filterBtn = button("Filters");
+            Button logout = button(I18n.t("Log out")), refresh = button(I18n.t("Refresh")), filterBtn = button(I18n.t("Filters"));
             toolbar.addView(logout, new LinearLayout.LayoutParams(0, dp(44), 1));
             toolbar.addView(refresh, new LinearLayout.LayoutParams(0, dp(44), 1));
             toolbar.addView(filterBtn, new LinearLayout.LayoutParams(0, dp(44), 1));
@@ -289,7 +289,7 @@ public final class LiveFeedDialog {
             filterBtn.setOnClickListener(v -> openFilters());
 
             {
-                TextView around = label("Around current location", 13);
+                TextView around = label(I18n.t("Around current location"), 13);
                 around.setPadding(0, dp(6), 0, dp(2));
                 root.addView(around);
 
@@ -312,7 +312,7 @@ public final class LiveFeedDialog {
                 LinearLayout radiusRow = new LinearLayout(ui);
                 radiusRow.setOrientation(LinearLayout.HORIZONTAL);
                 radiusRow.setGravity(Gravity.CENTER_VERTICAL);
-                radiusRow.addView(label("Radius", 13), new LinearLayout.LayoutParams(dp(58), -2));
+                radiusRow.addView(label(I18n.t("Radius"), 13), new LinearLayout.LayoutParams(dp(58), -2));
                 radiusButtons = new Button[RADII.length];
                 for (int i = 0; i < RADII.length; i++) {
                     final int index = i;
@@ -334,7 +334,7 @@ public final class LiveFeedDialog {
             list.setOnItemClickListener((parent, view, pos, id) -> {
                 if (pos >= 0 && pos < visible.size()) openDetails(visible.get(pos));
             });
-            TextView empty = label("No live results in range.", 14);
+            TextView empty = label(I18n.t("No live results in range."), 14);
             empty.setGravity(Gravity.CENTER);
             empty.setPadding(0, dp(24), 0, 0);
             listHolder.addView(list, new FrameLayout.LayoutParams(-1, -1));
@@ -371,7 +371,7 @@ public final class LiveFeedDialog {
             org.json.JSONObject working;
             try {
                 working = filters.toStoredJson(); // a fresh, mutable copy the modal edits in place
-            } catch (org.json.JSONException e) { toast("Couldn't open the filters."); return; }
+            } catch (org.json.JSONException e) { toast(I18n.t("Couldn't open the filters.")); return; }
             LiveFeedFilterDialog.show(activity, ui, working, speciesNames, prefs,
                 this::trackOwn, this::applyFilters);
         }
@@ -488,7 +488,7 @@ public final class LiveFeedDialog {
                 // The client clears the session on a 401; drop back to the login form.
                 showingLogin = true; lastError = null; entries.clear(); visible.clear();
                 render();
-                toast("Your LivePokeMap session ended. Please sign in again.");
+                toast(I18n.t("Your LivePokeMap session ended. Please sign in again."));
                 return;
             }
             lastError = message;
@@ -522,7 +522,7 @@ public final class LiveFeedDialog {
             long nowE = SystemClock.elapsedRealtime();
             if (nowE < backoffUntilElapsed) {
                 long s = (backoffUntilElapsed - nowE + 999) / 1000;
-                feedStatus.setText("Rate limited by LivePokeMap. " + (isGlobalRadius() ? "Try again in " : "Retrying in ") + s + "s.");
+                feedStatus.setText(I18n.format("Rate limited by LivePokeMap. %1$s%2$ss.", String.valueOf((Object)((isGlobalRadius() ? I18n.t("Try again in ") : I18n.t("Retrying in ")))), String.valueOf((Object)(s))));
                 return;
             }
             StringBuilder sb = new StringBuilder();
@@ -656,9 +656,9 @@ public final class LiveFeedDialog {
 
         /** Meaningful, text-independent accessibility label for a row's leading icon. */
         private String iconDescription(LiveFeedData.Entry e, long now) {
-            if (e == null || e.kind == null) return "Result";
+            if (e == null || e.kind == null) return I18n.t("Result");
             if (e.kind == LiveFeedData.Kind.RAID)
-                return e.raidHatchAt > now ? "Raid egg" : "Raid";
+                return e.raidHatchAt > now ? I18n.t("Raid egg") : I18n.t("Raid");
             return kindLabel(e.kind) + " " + displayName(e);
         }
 
@@ -667,7 +667,7 @@ public final class LiveFeedDialog {
         private void openDetails(LiveFeedData.Entry e) {
             if (closed) return;
             long now = System.currentTimeMillis();
-            if (e.expired(now)) { toast("That result just expired."); rebuildVisible(); adapter.notifyDataSetChanged(); return; }
+            if (e.expired(now)) { toast(I18n.t("That result just expired.")); rebuildVisible(); adapter.notifyDataSetChanged(); return; }
             LinearLayout body = new LinearLayout(ui);
             body.setOrientation(LinearLayout.VERTICAL);
             int pad = dp(18);
@@ -677,7 +677,7 @@ public final class LiveFeedDialog {
             LinearLayout actions = new LinearLayout(ui);
             actions.setOrientation(LinearLayout.HORIZONTAL);
             actions.setPadding(0, dp(14), 0, 0);
-            Button map = button("Map"), walk = button("Walk here"), teleport = button("Teleport");
+            Button map = button(I18n.t("Map")), walk = button(I18n.t("Walk here")), teleport = button(I18n.t("Teleport"));
             actions.addView(map, new LinearLayout.LayoutParams(0, dp(48), 1));
             actions.addView(walk, new LinearLayout.LayoutParams(0, dp(48), 1));
             actions.addView(teleport, new LinearLayout.LayoutParams(0, dp(48), 1));
@@ -685,7 +685,7 @@ public final class LiveFeedDialog {
             AlertDialog detail = new AlertDialog.Builder(ui)
                 .setTitle(displayName(e))
                 .setView(body)
-                .setNegativeButton("Close", null)
+                .setNegativeButton(I18n.t("Close"), null)
                 .create();
             trackOwn(detail);
             detail.setOnShowListener(d -> {
@@ -694,8 +694,8 @@ public final class LiveFeedDialog {
                 walk.setOnClickListener(v -> applyMove(e, false, detail));
                 teleport.setOnClickListener(v -> {
                     if(closed)return;
-                    if(e.expired(System.currentTimeMillis())){toast("That result just expired.");return;}
-                    if(!CooldownState.valid(e.lat,e.lon)){toast("That result has no valid location.");return;}
+                    if(e.expired(System.currentTimeMillis())){toast(I18n.t("That result just expired."));return;}
+                    if(!CooldownState.valid(e.lat,e.lon)){toast(I18n.t("That result has no valid location."));return;}
                     AlertDialog confirmation=TeleportDialog.confirm(activity,e.lat,e.lon,(lat,lon)->{
                         applyMove(e,true,detail);return true;
                     });
@@ -709,29 +709,29 @@ public final class LiveFeedDialog {
         private void applyMove(LiveFeedData.Entry e, boolean teleport, AlertDialog detail) {
             if (closed) return;
             long now = System.currentTimeMillis();
-            if (e.expired(now)) { toast("That result just expired."); detail.dismiss(); rebuildVisible(); adapter.notifyDataSetChanged(); return; }
-            if (!Control.canEnable()) { toast("Location adapter is not ready."); return; }
+            if (e.expired(now)) { toast(I18n.t("That result just expired.")); detail.dismiss(); rebuildVisible(); adapter.notifyDataSetChanged(); return; }
+            if (!Control.canEnable()) { toast(I18n.t("Location adapter is not ready.")); return; }
             // Avoid hasWindowFocus() here: with this detail child open the game activity does not hold
             // window focus, so rely on it still being a live, non-finishing foreground activity.
             if (activity.isFinishing() || activity.isDestroyed()) return;
-            if (!Double.isFinite(e.lat) || !Double.isFinite(e.lon)) { toast("That result has no valid location."); return; }
+            if (!Double.isFinite(e.lat) || !Double.isFinite(e.lon)) { toast(I18n.t("That result has no valid location.")); return; }
             if (teleport) Control.teleport(e.lat, e.lon); else Control.walkTo(e.lat, e.lon);
-            toast(teleport ? "Teleported to the selected result." : "Walking to the selected result.");
+            toast(teleport ? I18n.t("Teleported to the selected result.") : I18n.t("Walking to the selected result."));
             detail.dismiss();   // child
             dialog.dismiss();   // parent, after a confirmed action
         }
 
         private void openMap(LiveFeedData.Entry e, AlertDialog detail) {
-            if (!Double.isFinite(e.lat) || !Double.isFinite(e.lon)) { toast("That result has no valid location."); return; }
+            if (!Double.isFinite(e.lat) || !Double.isFinite(e.lon)) { toast(I18n.t("That result has no valid location.")); return; }
             try {
                 // Centred on the selected result, with both Teleport and Walk callbacks. We never push
                 // this live data into Control.mapPoiSnapshot; the map loads its own game POIs.
                 AlertDialog map = WorldMapDialog.show(activity, e.lat, e.lon,
-                    (lat, lon) -> { if (!Control.canEnable()) { toast("Location adapter is not ready."); return false; } Control.teleport(lat, lon); return true; },
-                    (lat, lon) -> { if (!Control.canEnable()) { toast("Location adapter is not ready."); return false; } Control.walkTo(lat, lon); return true; });
+                    (lat, lon) -> { if (!Control.canEnable()) { toast(I18n.t("Location adapter is not ready.")); return false; } Control.teleport(lat, lon); return true; },
+                    (lat, lon) -> { if (!Control.canEnable()) { toast(I18n.t("Location adapter is not ready.")); return false; } Control.walkTo(lat, lon); return true; });
                 if (map != null) children.add(map); // dismissed with this dialog on close()
             } catch (RuntimeException ex) {
-                toast("Couldn't open the map for that result.");
+                toast(I18n.t("Couldn't open the map for that result."));
                 return;
             }
             detail.dismiss();
@@ -856,19 +856,19 @@ public final class LiveFeedDialog {
     }
 
     private static String kindLabel(LiveFeedData.Kind kind) {
-        if (kind == null) return "Result";
+        if (kind == null) return I18n.t("Result");
         switch (kind) {
-            case POKEMON: return "Pokémon";
-            case STOP: return "PokéStop";
-            case GYM: return "Gym";
-            case RAID: return "Raid";
-            case STATION: return "Power Spot";
-            default: return "Result";
+            case POKEMON: return I18n.t("Pokémon");
+            case STOP: return I18n.t("PokéStop");
+            case GYM: return I18n.t("Gym");
+            case RAID: return I18n.t("Raid");
+            case STATION: return I18n.t("Power Spot");
+            default: return I18n.t("Result");
         }
     }
 
     private static String loginError(LiveFeedClient.FeedException fe) {
-        if (fe.status == 401) return "Incorrect username or password.";
+        if (fe.status == 401) return I18n.t("Incorrect username or password.");
         if (fe.status == 429) {
             long s = Math.max(fe.retryAfterMs, MIN_BACKOFF_MS) / 1000;
             return "Too many attempts. Wait " + s + "s and try again.";

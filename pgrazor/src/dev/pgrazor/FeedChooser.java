@@ -10,8 +10,8 @@ final class FeedChooser {
     static void show(Activity activity) {
         String[] labels = {"LivePokeMap\nNearby Pokémon, stops, gyms, raids and power spots",
                            "PoGoCoordinates\nPokémon search by IV, PvP rank and more; sign in with Discord"};
-        AlertDialog choose = ChoiceList.attach(new AlertDialog.Builder(MapTheme.wrap(activity)).setTitle("Feeds")
-            .setNegativeButton("Cancel", null).create(), labels, which -> {
+        AlertDialog choose = ChoiceList.attach(new AlertDialog.Builder(MapTheme.wrap(activity)).setTitle(I18n.t("Feeds"))
+            .setNegativeButton(I18n.t("Cancel"), null).create(), labels, which -> {
                 if (which == 0) LiveFeedDialog.show(activity); else PogoFeedDialog.show(activity);
             });
         DialogLifecycle.bind(activity, choose, null);

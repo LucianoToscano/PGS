@@ -9,14 +9,14 @@ public final class TransferKeepDialog {
     private TransferKeepDialog() {}
 
     public static void show(Activity activity, Runnable onSaved) {
-        PokemonSpeciesDialog.show(activity, "Custom keep list", "species", 2000,
+        PokemonSpeciesDialog.show(activity, I18n.t("Custom keep list"), I18n.t("species"), 2000,
             Control::transferKeepSpecies, Control::setTransferKeepSpecies, onSaved,
-            "No extra species protected", null);
+            I18n.t("No extra species protected"), null);
     }
 
     public static void show(Activity activity, String title, String countNoun,
                             Supplier<String> seed, Consumer<String> commit, Runnable onSaved) {
-        PokemonSpeciesDialog.show(activity, title, "species", 2000, seed, commit, onSaved,
-            "No species selected", null);
+        PokemonSpeciesDialog.show(activity, title, I18n.t("species"), 2000, seed, commit, onSaved,
+            I18n.t("No species selected"), null);
     }
 }

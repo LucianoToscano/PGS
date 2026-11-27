@@ -12,13 +12,13 @@ final class AccountsDialog {
         LinearLayout body=new LinearLayout(ui);body.setOrientation(1);int pad=MapTheme.dp(activity,16);body.setPadding(pad,pad,pad,pad);
         TextView status=new TextView(ui);status.setText(AccountProfiles.status());status.setTextSize(16);body.addView(status);
         TextView explanation=new TextView(ui);
-        explanation.setText("Each account keeps its settings, location and saved sign-in. Switching restarts the game. Sign in once per account; expired sessions may require sign-in again.");
+        explanation.setText(I18n.t("Each account keeps its settings, location and saved sign-in. Switching restarts the game. Sign in once per account; expired sessions may require sign-in again."));
         explanation.setPadding(0,pad,0,pad);body.addView(explanation);
         // Global settings: every account uses the main account's settings; each keeps its own for later.
         LinearLayout globalRow=new LinearLayout(ui);globalRow.setOrientation(0);globalRow.setGravity(Gravity.CENTER_VERTICAL);
-        TextView globalLabel=new TextView(ui);globalLabel.setText("Global settings");globalLabel.setTextSize(16);globalRow.addView(globalLabel,new LinearLayout.LayoutParams(0,-2,1));
-        Switch global=new Switch(ui);global.setContentDescription("Global settings");global.setChecked(AccountProfiles.globalSettings());globalRow.addView(global);body.addView(globalRow);
-        TextView globalNote=new TextView(ui);globalNote.setText("Every account uses the main account's settings. Each account's own settings come back when this is off.");
+        TextView globalLabel=new TextView(ui);globalLabel.setText(I18n.t("Global settings"));globalLabel.setTextSize(16);globalRow.addView(globalLabel,new LinearLayout.LayoutParams(0,-2,1));
+        Switch global=new Switch(ui);global.setContentDescription(I18n.t("Global settings"));global.setChecked(AccountProfiles.globalSettings());globalRow.addView(global);body.addView(globalRow);
+        TextView globalNote=new TextView(ui);globalNote.setText(I18n.t("Every account uses the main account's settings. Each account's own settings come back when this is off."));
         globalNote.setPadding(0,0,0,pad/2);body.addView(globalNote);
         ScrollView scroll=new ScrollView(ui);LinearLayout rows=new LinearLayout(ui);rows.setOrientation(1);scroll.addView(rows);body.addView(scroll,new LinearLayout.LayoutParams(-1,0,1));
         AccountProfileStore store=AccountProfiles.store();
@@ -38,30 +38,29 @@ final class AccountsDialog {
                 TextView coords=new TextView(ui);coords.setText(String.format(Locale.US,"%.5f, %.5f",location.latitude,location.longitude));row.addView(coords);
             }catch(Exception ignored){}
             LinearLayout actions=new LinearLayout(ui);actions.setGravity(Gravity.END);row.addView(actions);
-            Button rename=new Button(ui);rename.setText("Rename");actions.addView(rename);
-            rename.setOnClickListener(v->{EditText name=new EditText(ui);name.setSingleLine(true);name.setText(names.get(profile.id));new AlertDialog.Builder(ui).setTitle("Account name").setView(name).setNegativeButton("Cancel",null).setPositiveButton("Save",(d,w)->{String value=name.getText().toString();AccountProfiles.rename(profile.id,value,()->{names.put(profile.id,value);label.setText(title(profile.id,value));});}).show();});
-            Button makeMain=new Button(ui);makeMain.setText("Make main");actions.addView(makeMain);mains.put(profile.id,makeMain);
+            Button rename=new Button(ui);rename.setText(I18n.t("Rename"));actions.addView(rename);
+            rename.setOnClickListener(v->{EditText name=new EditText(ui);name.setSingleLine(true);name.setText(names.get(profile.id));new AlertDialog.Builder(ui).setTitle(I18n.t("Account name")).setView(name).setNegativeButton(I18n.t("Cancel"),null).setPositiveButton(I18n.t("Save"),(d,w)->{String value=name.getText().toString();AccountProfiles.rename(profile.id,value,()->{names.put(profile.id,value);label.setText(title(profile.id,value));});}).show();});
+            Button makeMain=new Button(ui);makeMain.setText(I18n.t("Make main"));actions.addView(makeMain);mains.put(profile.id,makeMain);
             makeMain.setVisibility(profile.id.equals(AccountProfiles.mainId())?android.view.View.GONE:android.view.View.VISIBLE);
             makeMain.setOnClickListener(v->apply(activity,AccountProfiles.globalSettings(),profile.id,names.get(profile.id),marks,null));
-            Button change=new Button(ui);change.setText("Switch");change.setEnabled(AccountProfiles.canSwitch()&&!profile.id.equals(AccountProfiles.currentId()));actions.addView(change);
+            Button change=new Button(ui);change.setText(I18n.t("Switch"));change.setEnabled(AccountProfiles.canSwitch()&&!profile.id.equals(AccountProfiles.currentId()));actions.addView(change);
             if(!profile.id.equals(AccountProfiles.currentId()))switches.add(change);
             change.setOnClickListener(v->confirm(activity,profile));rows.addView(row);
-            Button delete=new Button(ui);delete.setText("Delete");delete.setEnabled(AccountProfiles.canDelete(profile.id));actions.addView(delete);deletions.put(delete,profile.id);
-            delete.setContentDescription(profile.id.equals(AccountProfiles.currentId())?"Switch accounts before deleting the current account":"Delete saved account");
-            delete.setOnClickListener(v->new AlertDialog.Builder(ui).setTitle("Delete "+profile.label+"?")
-                .setMessage("Remove this saved sign-in, settings, location, favorites and routes from this device? Your Pokémon GO account will not be deleted."
-                    +(AccountProfiles.deleteTakesSettings(profile.id)?"\n\n"+names.get(AccountProfiles.currentId())+" becomes the main account and keeps the global settings in use now, replacing its own saved settings.":""))
-                .setNegativeButton("Cancel",null).setPositiveButton("Delete",(d,w)->AccountProfiles.delete(activity,profile.id,()->{switches.remove(change);deletions.remove(delete);rows.removeView(row);labels.remove(profile.id);mains.remove(profile.id);marks.run();})).show());
+            Button delete=new Button(ui);delete.setText(I18n.t("Delete"));delete.setEnabled(AccountProfiles.canDelete(profile.id));actions.addView(delete);deletions.put(delete,profile.id);
+            delete.setContentDescription(profile.id.equals(AccountProfiles.currentId())?I18n.t("Switch accounts before deleting the current account"):I18n.t("Delete saved account"));
+            delete.setOnClickListener(v->new AlertDialog.Builder(ui).setTitle(I18n.format("Delete %1$s?", String.valueOf((Object)(profile.label))))
+                .setMessage(I18n.format("Remove this saved sign-in, settings, location, favorites and routes from this device? Your Pokémon GO account will not be deleted.%1$s", String.valueOf((Object)((AccountProfiles.deleteTakesSettings(profile.id)?"\n\n"+names.get(AccountProfiles.currentId())+" becomes the main account and keeps the global settings in use now, replacing its own saved settings.":"")))))
+                .setNegativeButton(I18n.t("Cancel"),null).setPositiveButton(I18n.t("Delete"),(d,w)->AccountProfiles.delete(activity,profile.id,()->{switches.remove(change);deletions.remove(delete);rows.removeView(row);labels.remove(profile.id);mains.remove(profile.id);marks.run();})).show());
         }
         global.setOnCheckedChangeListener((v,checked)->{if(checked==AccountProfiles.globalSettings())return;
             String main=AccountProfiles.mainId();apply(activity,checked,main,names.get(main),marks,()->global.setChecked(!checked));});
-        Button add=new Button(ui);add.setText("Add account");add.setEnabled(AccountProfiles.canSwitch());body.addView(add);
-        Button reset=new Button(ui);reset.setText("Reset sign-in choices");body.addView(reset);
-        reset.setOnClickListener(v->new AlertDialog.Builder(ui).setTitle("Reset sign-in choices?")
-            .setMessage("The game will restart and ask for your date of birth again. Enter your own date of birth to see the sign-in methods available to you.")
-            .setNegativeButton("Cancel",null).setPositiveButton("Reset",(d,w)->AccountProfiles.resetSignIn()).show());
-        add.setOnClickListener(v->{EditText label=new EditText(ui);label.setSingleLine(true);label.setHint("Account name");new AlertDialog.Builder(ui).setTitle("Add account").setMessage("Create a separate profile, then sign in with Google or PTC.").setView(label).setNegativeButton("Cancel",null).setPositiveButton("Continue",(d,w)->{try{String name=label.getText().toString().trim();AccountProfiles.add(activity,name.isEmpty()?"New account":name);}catch(Exception error){Toast.makeText(activity,"Could not add account",Toast.LENGTH_SHORT).show();}}).show();});
-        AlertDialog dialog=new AlertDialog.Builder(ui).setTitle("Accounts").setView(body).setPositiveButton("Close",null).create();
+        Button add=new Button(ui);add.setText(I18n.t("Add account"));add.setEnabled(AccountProfiles.canSwitch());body.addView(add);
+        Button reset=new Button(ui);reset.setText(I18n.t("Reset sign-in choices"));body.addView(reset);
+        reset.setOnClickListener(v->new AlertDialog.Builder(ui).setTitle(I18n.t("Reset sign-in choices?"))
+            .setMessage(I18n.t("The game will restart and ask for your date of birth again. Enter your own date of birth to see the sign-in methods available to you."))
+            .setNegativeButton(I18n.t("Cancel"),null).setPositiveButton(I18n.t("Reset"),(d,w)->AccountProfiles.resetSignIn()).show());
+        add.setOnClickListener(v->{EditText label=new EditText(ui);label.setSingleLine(true);label.setHint(I18n.t("Account name"));new AlertDialog.Builder(ui).setTitle(I18n.t("Add account")).setMessage(I18n.t("Create a separate profile, then sign in with Google or PTC.")).setView(label).setNegativeButton(I18n.t("Cancel"),null).setPositiveButton(I18n.t("Continue"),(d,w)->{try{String name=label.getText().toString().trim();AccountProfiles.add(activity,name.isEmpty()?"New account":name);}catch(Exception error){Toast.makeText(activity,I18n.t("Could not add account"),Toast.LENGTH_SHORT).show();}}).show();});
+        AlertDialog dialog=new AlertDialog.Builder(ui).setTitle(I18n.t("Accounts")).setView(body).setPositiveButton(I18n.t("Close"),null).create();
         android.os.Handler handler=new android.os.Handler(android.os.Looper.getMainLooper());
         Runnable refresh=new Runnable(){public void run(){
             if(!dialog.isShowing())return;
@@ -83,15 +82,15 @@ final class AccountsDialog {
     private static void apply(Activity activity,boolean on,String main,String mainName,Runnable saved,Runnable cancelled){
         if(!AccountProfiles.settingsChangeNeedsRestart(on,main)){AccountProfiles.setGlobalSettings(on,main,saved);return;}
         String message=on?"The game restarts and this account uses "+mainName+"'s settings. This account's own settings are kept for when global settings are off."
-            :"The game restarts with this account's own settings.";
-        new AlertDialog.Builder(MapTheme.wrap(activity)).setTitle("Restart to load settings?").setMessage(message)
-            .setNegativeButton("Cancel",(d,w)->{if(cancelled!=null)cancelled.run();})
+            :I18n.t("The game restarts with this account's own settings.");
+        new AlertDialog.Builder(MapTheme.wrap(activity)).setTitle(I18n.t("Restart to load settings?")).setMessage(message)
+            .setNegativeButton(I18n.t("Cancel"),(d,w)->{if(cancelled!=null)cancelled.run();})
             .setOnCancelListener(d->{if(cancelled!=null)cancelled.run();})
-            .setPositiveButton("Restart",(d,w)->AccountProfiles.setGlobalSettings(on,main,saved)).show();
+            .setPositiveButton(I18n.t("Restart"),(d,w)->AccountProfiles.setGlobalSettings(on,main,saved)).show();
     }
     private static void confirm(Activity activity,AccountProfileStore.Profile profile){
-        new AlertDialog.Builder(MapTheme.wrap(activity)).setTitle("Switch to "+profile.label+"?")
-            .setMessage("Movement and automation will stop. The game will restart with this account's saved sign-in and location. Sign in if this account hasn't been saved yet.")
-            .setNegativeButton("Cancel",null).setPositiveButton("Switch",(d,w)->AccountProfiles.switchTo(activity,profile.id)).show();
+        new AlertDialog.Builder(MapTheme.wrap(activity)).setTitle(I18n.format("Switch to %1$s?", String.valueOf((Object)(profile.label))))
+            .setMessage(I18n.t("Movement and automation will stop. The game will restart with this account's saved sign-in and location. Sign in if this account hasn't been saved yet."))
+            .setNegativeButton(I18n.t("Cancel"),null).setPositiveButton(I18n.t("Switch"),(d,w)->AccountProfiles.switchTo(activity,profile.id)).show();
     }
 }

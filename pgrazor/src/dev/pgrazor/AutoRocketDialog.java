@@ -32,10 +32,10 @@ public final class AutoRocketDialog {
         final AutoRocketPreferences draft = AutoRocket.preferences();
 
         TextView description = new TextView(ui);
-        description.setText("Goes to the nearest Team GO Rocket stop the game has loaded, battles, catches the shadow Pokémon "
+        description.setText(I18n.t("Goes to the nearest Team GO Rocket stop the game has loaded, battles, catches the shadow Pokémon "
             + "with its Premier Balls, then moves on to the next. Battles use the Rocket auto attack and shield, Smart battling "
             + "and Smart healing if they are on. Stops at the battle limit or after two losses in a row; Stop ends the session "
-            + "after the current battle.");
+            + "after the current battle."));
         body.addView(description);
 
         TextView status = new TextView(ui); body.addView(status);
@@ -46,49 +46,48 @@ public final class AutoRocketDialog {
         final TextView distance = button(body, "");
         final TextView catches = button(body, "");
         TextView note = new TextView(ui);
-        note.setText("Leaders need an equipped Rocket Radar. Giovanni is never battled automatically.");
+        note.setText(I18n.t("Leaders need an equipped Rocket Radar. Giovanni is never battled automatically."));
         body.addView(note);
 
-        final Button start = new Button(ui); start.setAllCaps(false); start.setText("Start"); body.addView(start);
-        final Button stop = new Button(ui); stop.setAllCaps(false); stop.setText("Stop"); body.addView(stop);
+        final Button start = new Button(ui); start.setAllCaps(false); start.setText(I18n.t("Start")); body.addView(start);
+        final Button stop = new Button(ui); stop.setAllCaps(false); stop.setText(I18n.t("Stop")); body.addView(stop);
 
         final View[] config = {targets, maxBattles, travel, distance, catches};
         final Runnable update = () -> {
             boolean running = AutoRocket.running();
             status.setText(AutoRocket.status());
-            targets.setText("Battle: " + AutoRocketPreferences.TARGET_LABELS[draft.targets]);
-            maxBattles.setText("Maximum battles: " + draft.maxBattles);
-            travel.setText("Travel to stops: " + (draft.walk ? "Walk" : "Teleport"));
-            distance.setText("Stay within: " + AutoRocketPreferences.distanceSummary(draft.maxDistanceKm));
-            catches.setText("Caught Pokémon: " + (draft.useTransferRules ? "Use my transfer rules" : "Keep all"));
+            targets.setText(I18n.format("Battle: %1$s", I18n.t(AutoRocketPreferences.TARGET_LABELS[draft.targets])));
+            maxBattles.setText(I18n.format("Maximum battles: %1$s", String.valueOf((Object)(draft.maxBattles))));
+            travel.setText(I18n.format("Travel to stops: %1$s", String.valueOf((Object)((draft.walk ? I18n.t("Walk") : I18n.t("Teleport"))))));
+            distance.setText(I18n.format("Stay within: %1$s", I18n.t(AutoRocketPreferences.distanceSummary(draft.maxDistanceKm))));
+            catches.setText(I18n.format("Caught Pokémon: %1$s", String.valueOf((Object)((draft.useTransferRules ? I18n.t("Use my transfer rules") : I18n.t("Keep all"))))));
             for (View v : config) SettingsUi.enabled(v, !running);
             start.setEnabled(!running);
             stop.setEnabled(running);
         };
 
-        targets.setOnClickListener(v -> choose(activity, "Battle", new String[]{
-            "Grunts only\nRegular grunts at invaded PokéStops",
-            "Grunts and leaders\nAlso Arlo, Cliff and Sierra when a Rocket Radar is equipped"
+        targets.setOnClickListener(v -> choose(activity, I18n.t("Battle"), new String[]{
+            I18n.t("Grunts only\nRegular grunts at invaded PokéStops"),
+            I18n.t("Grunts and leaders\nAlso Arlo, Cliff and Sierra when a Rocket Radar is equipped")
         }, i -> { draft.targets = i; apply(activity, draft, update); }));
-        maxBattles.setOnClickListener(v -> intInput(activity, draft, update, "Maximum battles ("
-            + AutoRocketPreferences.MAX_BATTLES_MIN + "-" + AutoRocketPreferences.MAX_BATTLES_MAX + ")",
+        maxBattles.setOnClickListener(v -> intInput(activity, draft, update, I18n.format("Maximum battles (%1$s-%2$s)", String.valueOf((Object)(AutoRocketPreferences.MAX_BATTLES_MIN)), String.valueOf((Object)(AutoRocketPreferences.MAX_BATTLES_MAX))),
             AutoRocketPreferences.MAX_BATTLES_MIN, AutoRocketPreferences.MAX_BATTLES_MAX, draft.maxBattles));
-        travel.setOnClickListener(v -> choose(activity, "Travel to stops", new String[]{
-            "Walk\nMove there at walking speed",
-            "Teleport\nJump straight to the stop (waits for cooldown before battling)"
+        travel.setOnClickListener(v -> choose(activity, I18n.t("Travel to stops"), new String[]{
+            I18n.t("Walk\nMove there at walking speed"),
+            I18n.t("Teleport\nJump straight to the stop (waits for cooldown before battling)")
         }, i -> { draft.walk = i == 0; apply(activity, draft, update); }));
         distance.setOnClickListener(v -> {
             final int[] choices = AutoRocketPreferences.DISTANCE_CHOICES_KM;
             String[] labels = new String[choices.length];
             for (int i = 0; i < choices.length; i++)
-                labels[i] = choices[i] == 0 ? "No limit\nGo to the nearest Rocket stop wherever it is"
-                    : choices[i] + " km\nOnly stops within " + choices[i] + " km of where you press Start";
-            choose(activity, "Stay within", labels, i -> { draft.maxDistanceKm = choices[i]; apply(activity, draft, update); });
+                labels[i] = choices[i] == 0 ? I18n.t("No limit\nGo to the nearest Rocket stop wherever it is")
+                    : I18n.format("%1$s km\nOnly stops within %1$s km of where you press Start",choices[i]);
+            choose(activity, I18n.t("Stay within"), labels, i -> { draft.maxDistanceKm = choices[i]; apply(activity, draft, update); });
         });
-        catches.setOnClickListener(v -> choose(activity, "Caught Pokémon", new String[]{
-            "Keep all\nEvery shadow Pokémon caught is kept",
-            "Use my transfer rules\nEach catch goes through your Auto transfer rules (Auto transfer must be on). "
-                + "With Keep shadow Pokémon on in those rules, shadows are always kept"
+        catches.setOnClickListener(v -> choose(activity, I18n.t("Caught Pokémon"), new String[]{
+            I18n.t("Keep all\nEvery shadow Pokémon caught is kept"),
+            I18n.t("Use my transfer rules\nEach catch goes through your Auto transfer rules (Auto transfer must be on). "
+                + "With Keep shadow Pokémon on in those rules, shadows are always kept")
         }, i -> { draft.useTransferRules = i == 1; apply(activity, draft, update); }));
 
         start.setOnClickListener(v -> {
@@ -100,8 +99,8 @@ public final class AutoRocketDialog {
 
         update.run();
         ScrollView scroll = new ScrollView(ui); scroll.addView(body);
-        AlertDialog dialog = new AlertDialog.Builder(ui).setTitle("Auto Rocket").setView(scroll)
-            .setPositiveButton("Done", null).create();
+        AlertDialog dialog = new AlertDialog.Builder(ui).setTitle(I18n.t("Auto Rocket")).setView(scroll)
+            .setPositiveButton(I18n.t("Done"), null).create();
         Handler handler = new Handler(Looper.getMainLooper());
         Runnable refresh = new Runnable() {
             public void run() { if (dialog.isShowing()) { update.run(); handler.postDelayed(this, 1000); } }
@@ -130,7 +129,7 @@ public final class AutoRocketDialog {
 
     private static void choose(Activity a, String title, String[] labels, Chosen chosen) {
         Context ui = MapTheme.wrap(a);
-        AlertDialog d = new AlertDialog.Builder(ui).setTitle(title).setNegativeButton("Cancel", null).create();
+        AlertDialog d = new AlertDialog.Builder(ui).setTitle(title).setNegativeButton(I18n.t("Cancel"), null).create();
         ChoiceList.attach(d, labels, chosen::pick);
         DialogLifecycle.bind(a, d, null);
         d.setOnShowListener(x -> { MapTheme.styleButtons(d);
@@ -144,7 +143,7 @@ public final class AutoRocketDialog {
         EditText edit = new EditText(ui); edit.setSingleLine(true); edit.setText(String.valueOf(current));
         edit.setInputType(InputType.TYPE_CLASS_NUMBER);
         AlertDialog d = new AlertDialog.Builder(ui).setTitle(title).setView(edit)
-            .setPositiveButton("Save", null).setNegativeButton("Cancel", null).create();
+            .setPositiveButton(I18n.t("Save"), null).setNegativeButton(I18n.t("Cancel"), null).create();
         DialogLifecycle.bind(a, d, null);
         d.setOnShowListener(x -> { MapTheme.style(edit); MapTheme.styleButtons(d);
             d.getButton(AlertDialog.BUTTON_POSITIVE).setOnClickListener(w -> {
@@ -152,7 +151,7 @@ public final class AutoRocketDialog {
                     int n = Integer.parseInt(edit.getText().toString().trim());
                     if (n < min || n > max) throw new NumberFormatException();
                     draft.maxBattles = n; apply(a, draft, update); d.dismiss();
-                } catch (NumberFormatException e) { edit.setError("Enter a whole number from " + min + " to " + max + "."); }
+                } catch (NumberFormatException e) { edit.setError(I18n.format("Enter a whole number from %1$s to %2$s.", String.valueOf((Object)(min)), String.valueOf((Object)(max)))); }
             });
         });
         d.show();
@@ -163,7 +162,7 @@ public final class AutoRocketDialog {
     }
 
     private static void toast(Activity activity, String message) {
-        Toast.makeText(activity, message == null || message.isEmpty() ? "Could not update Auto Rocket." : message,
+        Toast.makeText(activity, message == null || message.isEmpty() ? I18n.t("Could not update Auto Rocket.") : message,
             Toast.LENGTH_SHORT).show();
     }
 }

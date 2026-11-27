@@ -18,10 +18,10 @@ public final class HotspotsDialog {
         Context ui=MapTheme.wrap(activity);
         LinearLayout root=new LinearLayout(ui);root.setOrientation(LinearLayout.VERTICAL);
         int pad=MapTheme.dp(ui,12);root.setPadding(pad,pad,pad,pad);
-        TextView note=new TextView(ui);note.setText("Choose a hotspot. Each shows its local date and time.");note.setTextSize(12);root.addView(note);
+        TextView note=new TextView(ui);note.setText(I18n.t("Choose a hotspot. Each shows its local date and time."));note.setTextSize(12);root.addView(note);
         ScrollView scroll=new ScrollView(ui);LinearLayout rows=new LinearLayout(ui);rows.setOrientation(LinearLayout.VERTICAL);scroll.addView(rows);
         root.addView(scroll,new LinearLayout.LayoutParams(-1,0,1));
-        AlertDialog dialog=new AlertDialog.Builder(ui).setTitle("Hotspots").setView(root).setNegativeButton("Close",null).create();
+        AlertDialog dialog=new AlertDialog.Builder(ui).setTitle(I18n.t("Hotspots")).setView(root).setNegativeButton(I18n.t("Close"),null).create();
         java.util.List<TextView> labels=new java.util.ArrayList<>();
         for(Hotspots.Spot spot:Hotspots.ALL) {
             TextView row=new TextView(ui);row.setTextSize(15);row.setPadding(pad,pad,pad,pad);
@@ -47,7 +47,7 @@ public final class HotspotsDialog {
         show(activity,spot->{
             AlertDialog actions=new AlertDialog.Builder(MapTheme.wrap(activity)).setTitle(spot.name)
                 .setMessage(spot.city+", "+spot.country+String.format(Locale.US,"\n%.6f, %.6f",spot.latitude,spot.longitude))
-                .setNegativeButton("Cancel",null).setNeutralButton("Walk",null).setPositiveButton("Teleport",null).create();
+                .setNegativeButton(I18n.t("Cancel"),null).setNeutralButton(I18n.t("Walk"),null).setPositiveButton(I18n.t("Teleport"),null).create();
             DialogLifecycle.bind(activity,actions,null);
             actions.setOnShowListener(d->{
                 MapTheme.styleButtons(actions);

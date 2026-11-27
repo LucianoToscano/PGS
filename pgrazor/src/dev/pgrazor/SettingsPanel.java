@@ -68,7 +68,7 @@ final class SettingsPanel {
     private int current=-1, homeScroll;
     private Switch incubatorSwitch;
     private Button incubatorPriority;
-    private Button uiScale;
+    private Button uiScale, languageChoice;
     private TextView incubatorStatus;
     // Primary action and cycle/dialog rows.
     private Button mapTap, throwGrade, throwVariety, storageIv, ivCatchMode, ivOwnedMode, itemSettings, cameraSample, interactionCapture, transferKeepList;
@@ -119,13 +119,15 @@ final class SettingsPanel {
     private GradientDrawable rounded(int color,int radius){return SettingsUi.rounded(activity,color,radius);}
     private void styleTree(View view){SettingsUi.styleTree(activity,view);}
     private Context dialogContext(){return SettingsUi.dialogContext(activity);}
-    private TextView text(String label,int size,int color){return SettingsUi.text(activity,label,size,color);}
-    private Button button(String label){return SettingsUi.button(activity,label);}
+    private TextView text(String label,int size,int color){return SettingsUi.text(activity,I18n.t(label),size,color);}
+    private Button button(String label){Button view=SettingsUi.button(activity,I18n.row(label));if(label!=null&&!label.isEmpty())view.setTag(SettingsUi.TAG_SEARCH_ROW,label);return view;}
+    private static void label(TextView view,String canonical){view.setTag(SettingsUi.TAG_SEARCH_ROW,canonical);view.setText(I18n.t(canonical));}
 
-    /** Compares before setting, so a 100 ms refresh tick does no text work and allocates nothing. */
+    /** Compares before setting, so a 100 ms refresh tick avoids resetting unchanged TextViews. */
     private static void set(TextView view,String value){
         if(view==null)return;
-        String text=value==null?"":value;
+        String text=I18n.row(value);
+        if(view instanceof Button&&view.getTag(SettingsUi.TAG_SEARCH_ROW)==null&&value!=null&&!value.isEmpty())view.setTag(SettingsUi.TAG_SEARCH_ROW,value);
         if(!text.contentEquals(view.getText()))view.setText(text);
     }
     /** A status caption disappears when there is nothing to report instead of leaving a blank strip. */
@@ -178,7 +180,8 @@ final class SettingsPanel {
     private Switch switchRow(LinearLayout owner,String label){
         LinearLayout r=new LinearLayout(activity);r.setOrientation(LinearLayout.HORIZONTAL);r.setGravity(Gravity.CENTER_VERTICAL);r.setMinimumHeight(dp(52));r.setPadding(dp(10),dp(2),dp(6),dp(2));
         TextView t=text(label,14,ink());t.setPadding(0,0,dp(8),0);r.addView(t,new LinearLayout.LayoutParams(0,-2,1f));
-        Switch sw=new Switch(activity);sw.setContentDescription(label);sw.setClickable(true);r.addView(sw,new LinearLayout.LayoutParams(-2,-2));
+        r.setTag(SettingsUi.TAG_SEARCH_ROW,label);
+        Switch sw=new Switch(activity);sw.setContentDescription(I18n.t(label));sw.setClickable(true);r.addView(sw,new LinearLayout.LayoutParams(-2,-2));
         owner.addView(r);return sw;
     }
     private TextView caption(LinearLayout owner,String s){
@@ -205,7 +208,7 @@ final class SettingsPanel {
     /** A clean close affix: a small X drawn inside a 48dp hitbox. */
     private final class CloseIcon extends View {
         private final Paint paint=new Paint(Paint.ANTI_ALIAS_FLAG);
-        CloseIcon(Context c){super(c);setContentDescription("Close PGRazor settings");setFocusable(true);setClickable(true);
+        CloseIcon(Context c){super(c);setContentDescription(I18n.t("Close PGRazor settings"));setFocusable(true);setClickable(true);
             setBackground(new android.graphics.drawable.RippleDrawable(android.content.res.ColorStateList.valueOf(0x3345e1ba),null,rounded(0xffffffff,24)));}
         protected void onDraw(Canvas c){super.onDraw(c);float cx=getWidth()/2f,cy=getHeight()/2f,r=dp(8);paint.setStyle(Paint.Style.STROKE);paint.setStrokeCap(Paint.Cap.ROUND);paint.setStrokeWidth(dp(2));paint.setColor(muted());c.drawLine(cx-r,cy-r,cx+r,cy+r,paint);c.drawLine(cx-r,cy+r,cx+r,cy-r,paint);}
     }
@@ -213,7 +216,7 @@ final class SettingsPanel {
     /** A drawn back chevron inside a 48dp hitbox; shown only while a category page is open. */
     private final class BackIcon extends View {
         private final Paint paint=new Paint(Paint.ANTI_ALIAS_FLAG);
-        BackIcon(Context c){super(c);setContentDescription("Back to all settings");setFocusable(true);setClickable(true);
+        BackIcon(Context c){super(c);setContentDescription(I18n.t("Back to all settings"));setFocusable(true);setClickable(true);
             setBackground(new android.graphics.drawable.RippleDrawable(android.content.res.ColorStateList.valueOf(0x3345e1ba),null,rounded(0xffffffff,24)));}
         protected void onDraw(Canvas c){super.onDraw(c);float cx=getWidth()/2f,cy=getHeight()/2f,r=dp(7);paint.setStyle(Paint.Style.STROKE);paint.setStrokeCap(Paint.Cap.ROUND);paint.setStrokeJoin(Paint.Join.ROUND);paint.setStrokeWidth(dp(2));paint.setColor(accent());
             Path p=new Path();p.moveTo(cx+r/2,cy-r);p.lineTo(cx-r/2,cy);p.lineTo(cx+r/2,cy+r);c.drawPath(p,paint);}
@@ -284,7 +287,7 @@ final class SettingsPanel {
         versionLabel.setTypeface(SettingsUi.mono());
         versionLabel.setSingleLine(true); versionLabel.setGravity(Gravity.CENTER_VERTICAL);
         versionLabel.setPadding(dp(4), 0, dp(6), 0);
-        versionLabel.setContentDescription("PGRazor version " + BuildVersion.NAME);
+        versionLabel.setContentDescription(I18n.format("PGRazor version %1$s",BuildVersion.NAME));
         captions.add(versionLabel);
         header.addView(versionLabel, new LinearLayout.LayoutParams(-2, dp(48)));
         closeIcon = new CloseIcon(activity); header.addView(closeIcon, new LinearLayout.LayoutParams(dp(48), dp(48)));
@@ -299,10 +302,10 @@ final class SettingsPanel {
         searchField.setTag(SettingsUi.TAG_PLAIN_FIELD,Boolean.TRUE);
         searchField.setBackground(null);
         searchField.setTextSize(14); searchField.setTextColor(ink()); searchField.setHintTextColor(SettingsUi.faint());
-        searchField.setHint("Search settings"); searchField.setSingleLine(true); searchField.setPadding(0,0,0,0);
+        searchField.setHint(I18n.t("Search settings")); searchField.setSingleLine(true); searchField.setPadding(0,0,0,0);
         searchField.setInputType(InputType.TYPE_CLASS_TEXT);
         searchField.setImeOptions(android.view.inputmethod.EditorInfo.IME_ACTION_SEARCH);
-        searchField.setContentDescription("Search settings by name, description or category");
+        searchField.setContentDescription(I18n.t("Search settings by name, description or category"));
         searchBar.addView(searchField,new LinearLayout.LayoutParams(0,dp(48),1f));
         clearSearch = new SettingsUi.ClearGlyph(activity); clearSearch.setVisibility(View.GONE);
         searchBar.addView(clearSearch,new LinearLayout.LayoutParams(dp(40),dp(48)));
@@ -321,14 +324,14 @@ final class SettingsPanel {
 
         discord = text("Join our Discord", 12, accent());
         discord.setGravity(Gravity.CENTER); discord.setMinimumHeight(dp(44));
-        discord.setContentDescription("Join the PGRazor Discord community");
+        discord.setContentDescription(I18n.t("Join the PGRazor Discord community"));
         discord.setClickable(true); discord.setFocusable(true);
         discord.setBackground(SettingsUi.pressable(activity));
         content.addView(discord, new LinearLayout.LayoutParams(-1,dp(44)));
         discord.setOnClickListener(v -> {
             try { activity.startActivity(new Intent(Intent.ACTION_VIEW, android.net.Uri.parse("https://discord.gg/9QqfkDSQX3"))); }
             catch (android.content.ActivityNotFoundException unavailable) {
-                android.widget.Toast.makeText(activity, "No app available to open Discord links", android.widget.Toast.LENGTH_SHORT).show();
+                android.widget.Toast.makeText(activity, I18n.t("No app available to open Discord links"), android.widget.Toast.LENGTH_SHORT).show();
             }
         });
 
@@ -450,14 +453,14 @@ final class SettingsPanel {
         LinearLayout quick = group(page, "Quick catch"); summaryGated.add((View)quick.getParent());
         LinearLayout sumRow = new LinearLayout(activity); sumRow.setOrientation(LinearLayout.HORIZONTAL); sumRow.setGravity(Gravity.CENTER_VERTICAL); sumRow.setMinimumHeight(dp(44));
         quickSummaryLabel = new TextView(activity); quickSummaryLabel.setTextSize(14); sumRow.addView(quickSummaryLabel, new LinearLayout.LayoutParams(0,-2,1f));
-        quickSummarySwitch = new Switch(activity); quickSummarySwitch.setContentDescription("Quick catch"); sumRow.addView(quickSummarySwitch, new LinearLayout.LayoutParams(-2,-2)); quick.addView(sumRow);
+        sumRow.setTag(SettingsUi.TAG_SEARCH_ROW,"Quick catch");quickSummarySwitch = new Switch(activity); quickSummarySwitch.setContentDescription(I18n.t("Quick catch")); sumRow.addView(quickSummarySwitch, new LinearLayout.LayoutParams(-2,-2)); quick.addView(sumRow);
         quickSummarySwitch.setChecked(Control.quickSummaryEnabled());
         quickSummarySwitch.setOnCheckedChangeListener((v,checked) -> { if(checked==Control.quickSummaryEnabled())return; Control.setQuickSummaryEnabled(quickSummarySwitch.isChecked()); host.refresh(); });
         quickSummaryStatus = caption(quick, "");
         // Same row layout as Quick catch: a sibling setting, not a child of it.
         LinearLayout previewRow = new LinearLayout(activity); previewRow.setOrientation(LinearLayout.HORIZONTAL); previewRow.setGravity(Gravity.CENTER_VERTICAL); previewRow.setMinimumHeight(dp(44));
-        TextView previewLabel = new TextView(activity); previewLabel.setTextSize(14); previewLabel.setText("Catch preview"); previewRow.addView(previewLabel, new LinearLayout.LayoutParams(0,-2,1f));
-        catchPreviewSwitch = new Switch(activity); catchPreviewSwitch.setContentDescription("Catch preview"); previewRow.addView(catchPreviewSwitch, new LinearLayout.LayoutParams(-2,-2)); quick.addView(previewRow);
+        TextView previewLabel = new TextView(activity); previewLabel.setTextSize(14); previewLabel.setText(I18n.t("Catch preview"));previewRow.setTag(SettingsUi.TAG_SEARCH_ROW,"Catch preview"); previewRow.addView(previewLabel, new LinearLayout.LayoutParams(0,-2,1f));
+        catchPreviewSwitch = new Switch(activity); catchPreviewSwitch.setContentDescription(I18n.t("Catch preview")); previewRow.addView(catchPreviewSwitch, new LinearLayout.LayoutParams(-2,-2)); quick.addView(previewRow);
         catchPreviewSwitch.setChecked(Control.catchPreview());
         catchPreviewSwitch.setOnCheckedChangeListener((v,checked) -> { if(checked==Control.catchPreview())return; Control.setCatchPreview(checked); host.refresh(); });
 
@@ -516,11 +519,11 @@ final class SettingsPanel {
         TextView label=text("Keep IV at or above",14,ink());line.addView(label,new LinearLayout.LayoutParams(0,-2,1f));
         EditText field=new EditText(activity);field.setInputType(InputType.TYPE_CLASS_NUMBER);field.setSingleLine(true);field.setGravity(Gravity.CENTER);
         field.setFilters(new android.text.InputFilter[]{new android.text.InputFilter.LengthFilter(3)});field.setImeOptions(android.view.inputmethod.EditorInfo.IME_ACTION_DONE);
-        field.setContentDescription("Keep IV at or above, percent");field.setSelectAllOnFocus(true);
+        field.setContentDescription(I18n.t("Keep IV at or above, percent"));field.setSelectAllOnFocus(true);
         line.addView(field,new LinearLayout.LayoutParams(dp(72),dp(44)));
         TextView unit=text("%",14,muted());unit.setPadding(dp(6),0,dp(4),0);line.addView(unit,new LinearLayout.LayoutParams(-2,-2));
         row.addView(line);
-        SeekBar slider=new SeekBar(activity);slider.setMax(100);slider.setContentDescription("Keep IV at or above");
+        SeekBar slider=new SeekBar(activity);slider.setMax(100);slider.setContentDescription(I18n.t("Keep IV at or above"));
         LinearLayout.LayoutParams sliderParams=new LinearLayout.LayoutParams(-1,dp(40));sliderParams.topMargin=dp(2);row.addView(slider,sliderParams);
         transferKeepIvRow=row;transferKeepIvSlider=slider;transferKeepIvField=field;
         slider.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener(){
@@ -576,7 +579,7 @@ final class SettingsPanel {
         LinearLayout keepC = group(transfer, "Always keep");
         // Indexed by protection bit; costume (7), shadow (8), Dynamax (9) and Gigantamax (10) are listed next to event.
         String[] protections={"Keep legendary / mythical / Ultra Beasts","Keep shiny Pokemon","Keep event Pokemon","Keep background Pokemon","Keep XXS","Keep XXL","Keep 0% IV (0/0/0)","Keep costume Pokemon","Keep shadow Pokemon","Keep Dynamax Pokemon","Keep Gigantamax Pokemon"};
-        for(int i:new int[]{0,1,2,7,8,9,10,3,4,5,6}){final int bit=1<<i;CheckBox box=new CheckBox(activity);box.setText(protections[i]);box.setChecked((Control.transferProtect()&bit)!=0);transferProtection[i]=box;keepC.addView(box);
+        for(int i:new int[]{0,1,2,7,8,9,10,3,4,5,6}){final int bit=1<<i;CheckBox box=new CheckBox(activity);label(box,protections[i]);box.setChecked((Control.transferProtect()&bit)!=0);transferProtection[i]=box;keepC.addView(box);
             box.setOnClickListener(v->Control.setTransferProtect(box.isChecked()?Control.transferProtect()|bit:Control.transferProtect()&~bit));}
         transferKeepList = button("Custom keep list"); keepC.addView(transferKeepList);
         transferKeepList.setOnClickListener(v -> TransferKeepDialog.show(activity, host::refresh));
@@ -588,9 +591,9 @@ final class SettingsPanel {
         // One row per league: its switch, then the rank it keeps (tap to cycle).
         for(int i=0;i<3;i++){final int league=i;
             LinearLayout row=new LinearLayout(activity);row.setOrientation(LinearLayout.HORIZONTAL);row.setGravity(Gravity.CENTER_VERTICAL);row.setMinimumHeight(dp(44));
-            TextView label=new TextView(activity);label.setText("Keep "+Control.PVP_LEAGUES[i]+" PvP IVs");label.setTextSize(14);row.addView(label,new LinearLayout.LayoutParams(0,-2,1f));
+            TextView label=new TextView(activity);String canonical="Keep "+Control.PVP_LEAGUES[i]+" PvP IVs";row.setTag(SettingsUi.TAG_SEARCH_ROW,canonical);label.setText(I18n.t(canonical));label.setTextSize(14);row.addView(label,new LinearLayout.LayoutParams(0,-2,1f));
             Button rank=button("Top "+Control.pvpRank(i));pvpRank[i]=rank;row.addView(rank,new LinearLayout.LayoutParams(-2,-2));
-            Switch sw=new Switch(activity);sw.setContentDescription("Keep "+Control.PVP_LEAGUES[i]+" PvP IVs");sw.setChecked(Control.pvpKeep(i));pvpKeep[i]=sw;
+            Switch sw=new Switch(activity);sw.setContentDescription(I18n.t(canonical));sw.setChecked(Control.pvpKeep(i));pvpKeep[i]=sw;
             LinearLayout.LayoutParams swParams=new LinearLayout.LayoutParams(-2,-2);swParams.leftMargin=dp(8);row.addView(sw,swParams);
             sw.setOnCheckedChangeListener((v,checked)->{if(checked==Control.pvpKeep(league))return;Control.setPvpKeep(league,checked);host.refresh();});
             rank.setOnClickListener(v->{
@@ -615,11 +618,11 @@ final class SettingsPanel {
         // ----- IV display: the encounter, Pokemon details and storage list IV overlays -----
         LinearLayout iv = group(page, "IV display");
         // One button per screen; each tap moves to the next format, with Off between the last and first.
-        ivCatchMode = button(""); iv.addView(ivCatchMode);
+        ivCatchMode = button("Encounter IV display"); iv.addView(ivCatchMode);
         ivCatchMode.setOnClickListener(v -> { Control.setIvCatchMode(Control.nextIvMode(Control.ivCatchMode())); host.refresh(); });
-        ivOwnedMode = button(""); iv.addView(ivOwnedMode);
+        ivOwnedMode = button("Pokémon stats IV display"); iv.addView(ivOwnedMode);
         ivOwnedMode.setOnClickListener(v -> { Control.setIvOwnedMode(Control.nextIvMode(Control.ivOwnedMode())); host.refresh(); });
-        storageIv = button(""); iv.addView(storageIv);
+        storageIv = button("Storage list IV display"); iv.addView(storageIv);
         storageIv.setOnClickListener(v -> { Control.setStorageIvMode(Control.nextIvMode(Control.storageIvMode())); host.refresh(); });
         ivStatus = caption(iv, "");
 
@@ -635,12 +638,12 @@ final class SettingsPanel {
         vgpSwitch=switchRow(vgpC,"VGP overlay");vgpSwitch.setChecked(Control.vgpOverlay());
         vgpSwitch.setOnCheckedChangeListener((b,checked)->{if(checked!=Control.vgpOverlay())Control.setVgpOverlay(checked);host.refresh();});
         String[] vgpLabels={"Nearby Pokémon","Nearby PokéStops","Push notifications"};
-        for(int i=0;i<3;i++){final int bit=1<<i;CheckBox box=new CheckBox(activity);box.setText(vgpLabels[i]);box.setChecked((Control.vgpOptions()&bit)!=0);vgpChoices[i]=box;vgpC.addView(box);
+        for(int i=0;i<3;i++){final int bit=1<<i;CheckBox box=new CheckBox(activity);label(box,vgpLabels[i]);box.setChecked((Control.vgpOptions()&bit)!=0);vgpChoices[i]=box;vgpC.addView(box);
             box.setOnClickListener(v->{Control.setVgpOptions(box.isChecked()?Control.vgpOptions()|bit:Control.vgpOptions()&~bit);
                 if(bit==4&&box.isChecked()&&Build.VERSION.SDK_INT>=33&&activity.checkSelfPermission("android.permission.POST_NOTIFICATIONS")!=android.content.pm.PackageManager.PERMISSION_GRANTED)activity.requestPermissions(new String[]{"android.permission.POST_NOTIFICATIONS"},7301);
             });
         }
-        vgpCooldownStop=new CheckBox(activity);vgpCooldownStop.setText("Stop on cooldown (estimated)");vgpCooldownStop.setContentDescription("Stop Virtual Go Plus during the estimated action cooldown");vgpCooldownStop.setChecked(Control.vgpStopOnCooldown());vgpC.addView(vgpCooldownStop);
+        vgpCooldownStop=new CheckBox(activity);label(vgpCooldownStop,"Stop on cooldown (estimated)");vgpCooldownStop.setContentDescription(I18n.t("Stop Virtual Go Plus during the estimated action cooldown"));vgpCooldownStop.setChecked(Control.vgpStopOnCooldown());vgpC.addView(vgpCooldownStop);
         vgpCooldownStop.setOnClickListener(v->{if(vgpCooldownStop.isChecked()!=Control.vgpStopOnCooldown())Control.setVgpStopOnCooldown(vgpCooldownStop.isChecked());host.refresh();});
         vgpStatus=caption(vgpC,Control.vgpStatus());
         smartRefresh=SmartCatchSettings.populate(activity,vgpC);
@@ -679,7 +682,7 @@ final class SettingsPanel {
         // ----- Team Rocket -----
         LinearLayout rocketC = group(battleC, "Team Rocket");
         String[] rocketLabels={"Auto quick attack","Auto charged attack","Auto shield"};
-        for(int i=0;i<3;i++){final int bit=1<<i;CheckBox box=new CheckBox(activity);box.setText(rocketLabels[i]);box.setChecked((Control.rocketOptionsSetting()&bit)!=0);rocketChoices[i]=box;rocketC.addView(box);
+        for(int i=0;i<3;i++){final int bit=1<<i;CheckBox box=new CheckBox(activity);label(box,rocketLabels[i]);box.setChecked((Control.rocketOptionsSetting()&bit)!=0);rocketChoices[i]=box;rocketC.addView(box);
             box.setOnClickListener(v->Control.setRocketOptions(box.isChecked()?Control.rocketOptionsSetting()|bit:Control.rocketOptionsSetting()&~bit));}
         caption(rocketC, "While any of these is on, the next Pokémon is picked automatically when one faints.");
         rocketStatus = caption(rocketC, "");
@@ -727,11 +730,11 @@ final class SettingsPanel {
     private void buildHealing(LinearLayout owner) {
         healSwitch = switchRow(owner, "Smart healing"); healSwitch.setChecked(Control.healEnabled());
         healSwitch.setOnCheckedChangeListener((v,checked) -> { if(checked==Control.healEnabled())return; Control.setHealEnabled(checked); refreshHealing(); });
-        healWhen = button(""); owner.addView(healWhen);
+        healWhen = button("Heal timing"); owner.addView(healWhen);
         healWhen.setOnClickListener(v -> { Control.setHealWhen((Control.healWhen()+1)%3); refreshHealing(); });
-        healThreshold = button(""); owner.addView(healThreshold);
+        healThreshold = button("Heal threshold"); owner.addView(healThreshold);
         healThreshold.setOnClickListener(v -> { Control.cycleHealThreshold(); refreshHealing(); });
-        healItems = button(""); owner.addView(healItems);
+        healItems = button("Healing items"); owner.addView(healItems);
         healItems.setOnClickListener(v -> { Control.setHealFull(!Control.healFull()); refreshHealing(); });
         healReviveSwitch = switchRow(owner, "Revive fainted Pokémon"); healReviveSwitch.setChecked(Control.healRevive());
         healReviveSwitch.setOnCheckedChangeListener((v,checked) -> { if(checked==Control.healRevive())return; Control.setHealRevive(checked); });
@@ -742,8 +745,8 @@ final class SettingsPanel {
     private void refreshHealing() {
         if(healSwitch==null)return;
         healSwitch.setChecked(Control.healEnabled()); healReviveSwitch.setChecked(Control.healRevive());
-        set(healWhen,"Heal: "+Control.HEAL_WHEN_LABELS[Control.healWhen()]);
-        set(healThreshold,Control.healThreshold()>=100?"Heal when: Any HP missing":"Heal when: Below "+Control.healThreshold()+"% HP");
+        set(healWhen,I18n.format("Heal: %1$s",I18n.t(Control.HEAL_WHEN_LABELS[Control.healWhen()])));
+        set(healThreshold,Control.healThreshold()>=100?I18n.t("Heal when: Any HP missing"):I18n.format("Heal when: Below %1$s%% HP",Control.healThreshold()));
         set(healItems,Control.healFull()?"Items: Always heal fully":"Items: Smart (saves big potions)");
         boolean on=Control.healEnabled();
         SettingsUi.enabled(healWhen,on); SettingsUi.enabled(healThreshold,on); SettingsUi.enabled(healItems,on); SettingsUi.enabled(healReviveSwitch,on);
@@ -753,7 +756,7 @@ final class SettingsPanel {
     private void battleChoice(LinearLayout owner,int index,String label) {
         // Keep the persisted/native option bits unchanged when moving controls between groups.
         final int bit=1<<index;
-        CheckBox box=new CheckBox(activity);box.setText(label);
+        CheckBox box=new CheckBox(activity);label(box,label);
         box.setChecked((Control.battleOptions()&bit)!=0);battleChoices[index]=box;owner.addView(box);
         box.setOnClickListener(v->Control.setBattleOptions(box.isChecked()?Control.battleOptions()|bit:Control.battleOptions()&~bit));
     }
@@ -779,7 +782,7 @@ final class SettingsPanel {
 
         LinearLayout giftC = group(page, "Friend gifts"); summaryGated.add((View)giftC.getParent());
         String[] giftLabels={"Auto open gifts","Auto send gifts","Add an owned sticker"};
-        for(int i=0;i<3;i++){final int bit=1<<i;CheckBox box=new CheckBox(activity);box.setText(giftLabels[i]);box.setChecked((Control.giftOptions()&bit)!=0);giftChoices[i]=box;giftC.addView(box);box.setOnClickListener(v->Control.setGiftOptions(box.isChecked()?Control.giftOptions()|bit:Control.giftOptions()&~bit));}
+        for(int i=0;i<3;i++){final int bit=1<<i;CheckBox box=new CheckBox(activity);label(box,giftLabels[i]);box.setChecked((Control.giftOptions()&bit)!=0);giftChoices[i]=box;giftC.addView(box);box.setOnClickListener(v->Control.setGiftOptions(box.isChecked()?Control.giftOptions()|bit:Control.giftOptions()&~bit));}
         giftStatus = caption(giftC, "");
         launch(giftC, "Send & Open Gifts", () -> GiftBatchDialog.show(activity));
     }
@@ -811,12 +814,17 @@ final class SettingsPanel {
 
     private void buildDisplayPage() {
         LinearLayout page = page(MenuIcon.SETTINGS, "Display & Performance");
+        LinearLayout language = group(page, "Language");
+        languageChoice=button("PGS language");language.addView(languageChoice);
+        languageChoice.setOnClickListener(v->chooseLanguage());
+        caption(language,"Takes effect after restarting the game.");
+        refreshLanguageChoice();
         LinearLayout look = group(page, "Interface");
         darkSwitch = switchRow(look, "Dark theme"); darkSwitch.setChecked(Control.darkTheme());
         darkSwitch.setOnCheckedChangeListener((v,checked) -> { if(checked==Control.darkTheme())return; Control.setDarkTheme(checked); host.applyTheme(); });
         uiScale=button("UI scale: "+Control.uiScalePercent()+"%");look.addView(uiScale);
         uiScale.setOnClickListener(v->{final int[] values={100,75,50,25};String[] labels={"100%","75%","50%","25%"};int selected=0;for(int i=0;i<values.length;i++)if(values[i]==Control.uiScalePercent())selected=i;
-            new AlertDialog.Builder(dialogContext()).setTitle("Overlay scale").setSingleChoiceItems(labels,selected,(dialog,which)->{host.releaseJoystick(true);Control.setUiScalePercent(values[which]);host.refresh();dialog.dismiss();}).setNegativeButton("Cancel",null).show();});
+            new AlertDialog.Builder(dialogContext()).setTitle(I18n.t("Overlay scale")).setSingleChoiceItems(labels,selected,(dialog,which)->{host.releaseJoystick(true);Control.setUiScalePercent(values[which]);host.refresh();dialog.dismiss();}).setNegativeButton(I18n.t("Cancel"),null).show();});
         skipCutscenesSwitch = switchRow(look, "Skip cutscenes"); skipCutscenesSwitch.setChecked(Control.skipCutscenes());
         skipCutscenesSwitch.setOnCheckedChangeListener((v,checked) -> { if(checked==Control.skipCutscenes())return; Control.setSkipCutscenes(checked); });
         cutsceneStatus = caption(look, "");  // shown only when the native module reports an error
@@ -836,10 +844,35 @@ final class SettingsPanel {
         caption(menu,"Choose which entries appear. This does not turn features on or off. Settings stays visible.");
         for(int i=0;i<QuickMenu.CUSTOMIZABLE.length;i++){
             final int bit=1<<i;
-            CheckBox box=new CheckBox(activity);box.setText(QuickMenu.CUSTOMIZABLE[i]);
+            CheckBox box=new CheckBox(activity);label(box,QuickMenu.CUSTOMIZABLE[i]);
             box.setChecked(Control.quickMenuVisible(bit));quickMenuChoices[i]=box;menu.addView(box);
             box.setOnClickListener(v->{Control.setQuickMenuVisible(bit,box.isChecked());host.refresh();});
         }
+    }
+
+    private void refreshLanguageChoice(){
+        if(languageChoice==null)return;
+        String code=Control.pgsLanguage();
+        String name=LanguagePrefs.SYSTEM.equals(code)?I18n.t("System"):LanguagePrefs.nativeName(code);
+        set(languageChoice,I18n.t("PGS language")+": "+name);
+    }
+
+    private void chooseLanguage(){
+        String[] codes=LanguagePrefs.codes(),names=new String[codes.length];int selected=0;
+        for(int i=0;i<codes.length;i++){
+            names[i]=LanguagePrefs.SYSTEM.equals(codes[i])?I18n.t("System"):LanguagePrefs.nativeName(codes[i]);
+            if(codes[i].equals(Control.pgsLanguage()))selected=i;
+        }
+        AlertDialog dialog=new AlertDialog.Builder(dialogContext()).setTitle(I18n.t("PGS language"))
+            .setSingleChoiceItems(names,selected,(choice,index)->{
+                if(!Control.setPgsLanguage(codes[index])){
+                    for(int i=0;i<codes.length;i++)if(codes[i].equals(Control.pgsLanguage()))((AlertDialog)choice).getListView().setItemChecked(i,true);
+                    Toast.makeText(activity,I18n.t("Could not save the language. Please try again."),Toast.LENGTH_LONG).show();return;
+                }
+                refreshLanguageChoice();choice.dismiss();
+                Toast.makeText(activity,I18n.t("Language saved. Restart the game to apply."),Toast.LENGTH_LONG).show();
+            }).setNegativeButton(I18n.t("Cancel"),null).create();
+        DialogLifecycle.bind(activity,dialog,null);dialog.show();
     }
 
     private void buildAccountsPage() {
@@ -875,10 +908,10 @@ final class SettingsPanel {
     /** Home-row summary: the features that are on, or a plain "All off". Arguments alternate name, state. */
     private static String active(Object... pairs){
         StringBuilder out=new StringBuilder();
-        for(int i=0;i+1<pairs.length;i+=2)if(Boolean.TRUE.equals(pairs[i+1])){if(out.length()>0)out.append(" · ");out.append(pairs[i]);}
-        return out.length()==0?"All off":out.toString();
+        for(int i=0;i+1<pairs.length;i+=2)if(Boolean.TRUE.equals(pairs[i+1])){if(out.length()>0)out.append(" · ");out.append(I18n.t(String.valueOf(pairs[i])));}
+        return out.length()==0?I18n.t("All off"):out.toString();
     }
-    private void summary(int index,String value){TextView view=pageSummaries.get(index);if(!value.contentEquals(view.getText()))view.setText(value);}
+    private void summary(int index,String value){TextView view=pageSummaries.get(index);String translated=I18n.t(value);if(!translated.contentEquals(view.getText()))view.setText(translated);}
     /** First on the home screen and hidden until a newer release is found: one tap downloads and installs it. */
     private void buildUpdateRow(){
         updateRow=new LinearLayout(activity);updateRow.setOrientation(LinearLayout.VERTICAL);updateRow.setMinimumHeight(dp(64));
@@ -910,7 +943,7 @@ final class SettingsPanel {
         summary(5,active("Buddy engine",BuddyEmotionSettings.enabled(),"Auto incubate",Control.autoIncubate(),"Open gifts",(Control.giftOptions()&1)!=0,"Send gifts",(Control.giftOptions()&2)!=0));
         summary(6,AutoRaid.running()?"Auto-Raid running":AutoRocket.running()?"Auto Rocket running":ShundoSniper.active()?"Shundo Sniper running":ShinyScanner.enabled()?"Shiny Scanner on":"Shundo, shiny scan, raids, Rocket, incense, gym feeding, gifts, evolve, research");
         summary(7,"Halloween · Go Wild");
-        summary(8,"UI "+Control.uiScalePercent()+"% · "+(Control.darkTheme()?"Dark":"Light")+" theme"+(Control.skipCutscenes()?" · Skip cutscenes":""));
+        summary(8,I18n.format("UI %1$s%% · %2$s theme%3$s",Control.uiScalePercent(),I18n.t(Control.darkTheme()?"Dark":"Light"),Control.skipCutscenes()?I18n.t(" · Skip cutscenes"):""));
         summary(9,"Accounts, export / import, run log, diagnostics");
     }
 
@@ -1037,7 +1070,7 @@ final class SettingsPanel {
             results.addView(card);
             return;
         }
-        TextView count=text(hits.size()==1?"1 setting":hits.size()<=60?hits.size()+" settings":hits.size()+" settings · first 60",11,SettingsUi.faint());
+        TextView count=text(hits.size()==1?I18n.t("1 setting"):hits.size()<=60?I18n.format("%1$s settings",hits.size()):I18n.format("%1$s settings · first 60",hits.size()),11,SettingsUi.faint());
         count.setTypeface(SettingsUi.mono());
         results.addView(count);
         int limit=Math.min(hits.size(),60);
@@ -1129,7 +1162,7 @@ final class SettingsPanel {
         for(MenuIcon icon:homeIcons)icon.invalidate();
         if(backIcon!=null)backIcon.invalidate();
         if(closeIcon!=null)closeIcon.invalidate();
-        if(themeIcon!=null){themeIcon.setContentDescription(Control.darkTheme()?"Switch to light theme":"Switch to dark theme");themeIcon.invalidate();}
+        if(themeIcon!=null){themeIcon.setContentDescription(I18n.t(Control.darkTheme()?"Switch to light theme":"Switch to dark theme"));themeIcon.invalidate();}
     }
 
     private static int telemetryColor(){
@@ -1140,31 +1173,32 @@ final class SettingsPanel {
     private void showItemSettings(){
         Control.requestItemCatalog();
         LinearLayout form=new LinearLayout(activity);form.setOrientation(LinearLayout.VERTICAL);form.setPadding(dp(16),dp(8),dp(16),dp(8));
-        CheckBox enabled=new CheckBox(activity);enabled.setText("Enable automatic item transfer");enabled.setChecked(Control.itemTransferEnabled());form.addView(enabled);
-        TextView explanation=new TextView(activity);explanation.setText("Check items to trim and set the maximum to keep. Saving applies to your current bag and future items. A limit of 0 removes all of that item. Unchecked items are kept.");form.addView(explanation);
+        CheckBox enabled=new CheckBox(activity);enabled.setText(I18n.t("Enable automatic item transfer"));enabled.setChecked(Control.itemTransferEnabled());form.addView(enabled);
+        TextView explanation=new TextView(activity);explanation.setText(I18n.t("Check items to trim and set the maximum to keep. Saving applies to your current bag and future items. A limit of 0 removes all of that item. Unchecked items are kept."));form.addView(explanation);
         java.util.Map<Integer,Integer> limits=new java.util.HashMap<>();java.util.Set<Integer> selected=new java.util.HashSet<>();
         for(String row:Control.itemLimits().split(";"))try{String[] b=row.split(":");limits.put(Integer.parseInt(b[0]),Integer.parseInt(b[1]));}catch(RuntimeException ignored){}
         for(String row:Control.itemRules().split(";"))try{String[] b=row.split(":");int id=Integer.parseInt(b[0]);selected.add(id);limits.put(id,Integer.parseInt(b[1]));}catch(RuntimeException ignored){}
         LinearLayout rows=new LinearLayout(activity);rows.setOrientation(LinearLayout.VERTICAL);ScrollView scroll=new ScrollView(activity);scroll.addView(rows);form.addView(scroll,new LinearLayout.LayoutParams(-1,dp(380)));
         java.util.Map<Integer,CheckBox> boxes=new java.util.LinkedHashMap<>();java.util.Map<Integer,EditText> inputs=new java.util.LinkedHashMap<>();
-        Runnable populate=()->{for(String row:Control.itemCatalog().split("\n")){String[] b=row.split("\\|",-1);if(b.length!=3)continue;int id;try{id=Integer.parseInt(b[0]);}catch(NumberFormatException invalid){continue;}if(boxes.containsKey(id)){boxes.get(id).setText(b[1]+" ("+b[2]+" in bag)");continue;}
+        Runnable populate=()->{for(String row:Control.itemCatalog().split("\n")){String[] b=row.split("\\|",-1);if(b.length!=3)continue;int id;try{id=Integer.parseInt(b[0]);}catch(NumberFormatException invalid){continue;}if(boxes.containsKey(id)){boxes.get(id).setText(I18n.format("%1$s (%2$s in bag)",b[1],b[2]));continue;}
             LinearLayout line=new LinearLayout(activity);line.setOrientation(LinearLayout.HORIZONTAL);line.setGravity(Gravity.CENTER_VERTICAL);
-            CheckBox box=new CheckBox(activity);box.setText(b[1]+" ("+b[2]+" in bag)");box.setChecked(selected.contains(id));line.addView(box,new LinearLayout.LayoutParams(0,-2,1));
-            EditText cap=new EditText(dialogContext());cap.setInputType(InputType.TYPE_CLASS_NUMBER);cap.setSingleLine(true);cap.setHint("Max");cap.setText(String.valueOf(limits.containsKey(id)?limits.get(id):100));cap.setContentDescription("Maximum "+b[1]+" to keep");SettingsUi.enabled(cap,enabled.isChecked()&&box.isChecked());box.setOnCheckedChangeListener((button,checked)->SettingsUi.enabled(cap,enabled.isChecked()&&checked));line.addView(cap,new LinearLayout.LayoutParams(dp(80),-2));rows.addView(line);styleTree(line);boxes.put(id,box);inputs.put(id,cap);
+            CheckBox box=new CheckBox(activity);box.setText(I18n.format("%1$s (%2$s in bag)",b[1],b[2]));box.setChecked(selected.contains(id));line.addView(box,new LinearLayout.LayoutParams(0,-2,1));
+            EditText cap=new EditText(dialogContext());cap.setInputType(InputType.TYPE_CLASS_NUMBER);cap.setSingleLine(true);cap.setHint(I18n.t("Max"));cap.setText(String.valueOf(limits.containsKey(id)?limits.get(id):100));cap.setContentDescription(I18n.format("Maximum %1$s to keep",b[1]));SettingsUi.enabled(cap,enabled.isChecked()&&box.isChecked());box.setOnCheckedChangeListener((button,checked)->SettingsUi.enabled(cap,enabled.isChecked()&&checked));line.addView(cap,new LinearLayout.LayoutParams(dp(80),-2));rows.addView(line);styleTree(line);boxes.put(id,box);inputs.put(id,cap);
         }};populate.run();
         Runnable dependencies=()->{for(java.util.Map.Entry<Integer,CheckBox> entry:boxes.entrySet()){SettingsUi.enabled(entry.getValue(),enabled.isChecked());SettingsUi.enabled(inputs.get(entry.getKey()),enabled.isChecked()&&entry.getValue().isChecked());}};
         enabled.setOnCheckedChangeListener((v,on)->dependencies.run());dependencies.run();
         TextView status=new TextView(activity);status.setText(Control.itemStatus());form.addView(status);
-        AlertDialog dialog=new AlertDialog.Builder(dialogContext()).setTitle("Auto-transfer inventory items").setView(form).setNegativeButton("Cancel",null).setPositiveButton("Save & apply",null).create();
+        AlertDialog dialog=new AlertDialog.Builder(dialogContext()).setTitle(I18n.t("Auto-transfer inventory items")).setView(form).setNegativeButton(I18n.t("Cancel"),null).setPositiveButton(I18n.t("Save & apply"),null).create();
         final Runnable[] poll=new Runnable[1];poll[0]=()->{if(!dialog.isShowing())return;Control.requestItemCatalog();populate.run();dependencies.run();status.setText(Control.itemStatus());handler.postDelayed(poll[0],1000);};
         itemDialogs.add(dialog);
         dialog.setOnDismissListener(d->{handler.removeCallbacks(poll[0]);itemDialogs.remove(dialog);});dialog.show();styleTree(form);handler.post(poll[0]);
-        dialog.getButton(AlertDialog.BUTTON_POSITIVE).setOnClickListener(v->{StringBuilder rules=new StringBuilder(),all=new StringBuilder();for(java.util.Map.Entry<Integer,EditText> e:inputs.entrySet()){int cap;try{cap=Integer.parseInt(e.getValue().getText().toString().trim());if(cap<0||cap>100000)throw new NumberFormatException();}catch(NumberFormatException invalid){e.getValue().setError("Enter 0 to 100000");return;}String rule=e.getKey()+":"+cap+";";all.append(rule);if(boxes.get(e.getKey()).isChecked())rules.append(rule);}
+        dialog.getButton(AlertDialog.BUTTON_POSITIVE).setOnClickListener(v->{StringBuilder rules=new StringBuilder(),all=new StringBuilder();for(java.util.Map.Entry<Integer,EditText> e:inputs.entrySet()){int cap;try{cap=Integer.parseInt(e.getValue().getText().toString().trim());if(cap<0||cap>100000)throw new NumberFormatException();}catch(NumberFormatException invalid){e.getValue().setError(I18n.t("Enter 0 to 100000"));return;}String rule=e.getKey()+":"+cap+";";all.append(rule);if(boxes.get(e.getKey()).isChecked())rules.append(rule);}
             Control.saveItemRules(enabled.isChecked(),rules.toString(),all.toString());dialog.dismiss();host.refresh();});
     }
 
     void refresh() {
         Updater.check(activity);
+        refreshLanguageChoice();
         refreshHome();
         darkSwitch.setChecked(Control.darkTheme());
         refreshLocationStatus();
@@ -1212,18 +1246,18 @@ final class SettingsPanel {
     }
 
     private void refreshLocationStatus() {
-        if(uiScale!=null)set(uiScale,"UI scale: "+Control.uiScalePercent()+"%");
+        if(uiScale!=null)set(uiScale,I18n.format("UI scale: %1$s%%",Control.uiScalePercent()));
         set(coords,String.format(Locale.US,"%.6f, %.6f",Control.engine.latitude,Control.engine.longitude));
         set(speedReadout,String.format(Locale.US,"%.1f km/h",Control.engine.speedKmh));
         if(statsCard!=null)statsCard.refresh(false);
         MotionEngine.RouteProgress route=Control.engine.routeProgress();
         locationSwitch.setChecked(Control.desiredEnabled());
-        String movement=!Control.desiredEnabled()?"DEVICE LOCATION":Control.engine.enabled ? (Control.engine.walking ? "WALKING" : "ON") : "WAITING FOR ADAPTER";
-        if (route.total>1 && route.active) movement=String.format(Locale.US,"ROUTE %d/%d  ·  %.0f m left",route.visited+1,route.total,route.remainingMeters);
+        String movement=!Control.desiredEnabled()?"DEVICE LOCATION":Control.engine.enabled ? (Control.engine.walking ? "Walking" : "ON") : "WAITING FOR ADAPTER";
+        if (route.total>1 && route.active) movement=I18n.format("ROUTE %d/%d  ·  %.0f m left",route.visited+1,route.total,route.remainingMeters);
         else if (route.total>1 && route.visited==route.total) movement="ON  ·  route complete";
         set(homeStatus,!Control.desiredEnabled()?"Device location":movement);
         if(homeDot!=null)homeDot.setColor(telemetryColor());
-        set(state,Control.connection + "\n" + movement + "  ·  coordinate reads " + Control.latitudeReads + "/" + Control.longitudeReads);
+        set(state,I18n.format("%1$s\n%2$s  ·  coordinate reads %3$s/%4$s",Control.connection,I18n.t(movement),Control.latitudeReads,Control.longitudeReads));
         set(steeringStatus,Control.cameraSteeringConfigured() ? Control.cameraSteeringStatus() : "Joystick follows the camera");
     }
 
@@ -1251,13 +1285,13 @@ final class SettingsPanel {
         autoTransferSwitch.setChecked(Control.autoTransferEnabled());
         showKeepIv(false);
         for(int i=0;i<transferProtection.length;i++)transferProtection[i].setChecked((Control.transferProtect()&(1<<i))!=0);
-        for(int i=0;i<3;i++){pvpKeep[i].setChecked(Control.pvpKeep(i));set(pvpRank[i],"Top "+Control.pvpRank(i));pvpRank[i].setEnabled(Control.pvpKeep(i));}
-        if(transferKeepList!=null){String kept=Control.transferKeepSpecies();int n=kept.isEmpty()?0:kept.split(",").length;set(transferKeepList,n>0?"Custom keep list ("+n+")":"Custom keep list");}
+        for(int i=0;i<3;i++){pvpKeep[i].setChecked(Control.pvpKeep(i));set(pvpRank[i],I18n.format("Top %1$s",Control.pvpRank(i)));pvpRank[i].setEnabled(Control.pvpKeep(i));}
+        if(transferKeepList!=null){String kept=Control.transferKeepSpecies();int n=kept.isEmpty()?0:kept.split(",").length;set(transferKeepList,n>0?I18n.format("Custom keep list (%1$s)",n):I18n.t("Custom keep list"));}
         if(transferOverlaySwitch!=null){transferOverlaySwitch.setChecked(Control.transferOverlayEnabled());transferOverlaySwitch.setEnabled(Control.autoTransferEnabled());transferOverlaySwitch.setAlpha(1f);}
         if(evolveTransferSwitch!=null)evolveTransferSwitch.setChecked(Control.evolveTransferEnabled());
-        set(evolveTransferStages,"Evolve: "+(Control.evolveTransferStages()==2?"all available stages":"once"));
-        set(evolveTransferMode,"Applies to: "+(Control.evolveTransferMode()==1?"selected species only":"current transfer rules"));
-        if(evolveTransferList!=null){String sel=Control.evolveTransferSpecies();int n=sel.isEmpty()?0:sel.split(",").length;set(evolveTransferList,n>0?"Selected species ("+n+")":"Selected species");}
+        set(evolveTransferStages,I18n.format("Evolve: %1$s",I18n.t(Control.evolveTransferStages()==2?"all available stages":"once")));
+        set(evolveTransferMode,I18n.format("Applies to: %1$s",I18n.t(Control.evolveTransferMode()==1?"selected species only":"current transfer rules")));
+        if(evolveTransferList!=null){String sel=Control.evolveTransferSpecies();int n=sel.isEmpty()?0:sel.split(",").length;set(evolveTransferList,n>0?I18n.format("Selected species (%1$s)",n):I18n.t("Selected species"));}
         status(transferStatus,Control.transferStatus());
     }
 
@@ -1268,7 +1302,7 @@ final class SettingsPanel {
     private void refreshIncubation() {
         incubatorSwitch.setChecked(Control.autoIncubate());
         incubatorSwitch.setEnabled(Control.incubatorAvailable());
-        set(incubatorPriority,"Priority: " + (Control.incubateLongest() ? "longest" : "shortest") + " distance");
+        set(incubatorPriority,I18n.format("Priority: %1$s distance",I18n.t(Control.incubateLongest()?"longest":"shortest")));
         status(incubatorStatus,Control.autoIncubate() ? Control.incubatorStatus() : "Off");
     }
 
@@ -1293,12 +1327,12 @@ final class SettingsPanel {
     }
 
     private void refreshItems() {
-        set(itemSettings,"Auto-transfer items: "+(Control.itemTransferEnabled()?"ON":"OFF"));status(itemStatus,Control.itemStatus());
+        set(itemSettings,I18n.format("Auto-transfer items: %1$s",I18n.t(Control.itemTransferEnabled()?"ON":"OFF")));status(itemStatus,Control.itemStatus());
     }
 
     private void refreshQuickCatch() {
         berrySwitch.setChecked(Control.encounterBerryEnabled());
-        set(berryPriority,"Berry priority: "+BerryPriorityPicker.summary());
+        set(berryPriority,I18n.format("Berry priority: %1$s",BerryPriorityPicker.summary()));
         berryPicker.refresh();
         quickSpinSwitch.setChecked(Control.quickSpinEnabled());status(quickSpinStatus,Control.quickSpinStatus());
         luckyEggSwitch.setChecked(Control.autoLuckyEgg());starPieceSwitch.setChecked(Control.autoStarPiece());
@@ -1313,7 +1347,7 @@ final class SettingsPanel {
     private void refreshLocationOptions() {
         for(int i=0;i<quickMenuChoices.length;i++)quickMenuChoices[i].setChecked(Control.quickMenuVisible(1<<i));
         idleWalkSwitch.setChecked(Control.idleWalking());idleWalkSwitch.setEnabled(Control.desiredEnabled());idleWalkSwitch.setAlpha(Control.desiredEnabled()?1f:.45f);
-        set(mapTap,"Game map tap: "+new String[]{"Do nothing","Walk","Teleport","Walk / double tap teleport"}[Control.mapTapMode()]);
+        set(mapTap,I18n.format("Game map tap: %1$s",I18n.t(new String[]{"Do nothing","Walk","Teleport","Walk / double tap teleport"}[Control.mapTapMode()])));
         mapTap.setEnabled(Control.quickBallConfigured());
         spawnSwitch.setChecked(Control.spawnBooster());spawnSwitch.setEnabled(Control.spawnAllowed());status(spawnStatus,Control.spawnStatus());
         localTimeSwitch.setChecked(Control.localTimeOverlay());
@@ -1327,21 +1361,21 @@ final class SettingsPanel {
     private static final String[] IV_MODES={"Off","Lv · 15/14/12","Lv · IV","Lv · IV · 15/14/12","Lv · IV · 15/14/12 · PvP"};
 
     private void refreshThrows() {
-        set(throwGrade,"Throw rating: "+new String[]{"OFF","Nice","Great","Excellent"}[Control.throwRating()]);
+        set(throwGrade,I18n.format("Throw rating: %1$s",I18n.t(new String[]{"OFF","Nice","Great","Excellent"}[Control.throwRating()])));
         throwGrade.setEnabled(Control.quickBallConfigured()&&Control.throwVariety()==0);
-        set(throwVariety,"Throw variety: "+Control.THROW_VARIETY_LABELS[Control.throwVariety()]);
+        set(throwVariety,I18n.format("Throw variety: %1$s",I18n.t(Control.THROW_VARIETY_LABELS[Control.throwVariety()])));
         throwVariety.setEnabled(Control.quickBallConfigured());
         curveSwitch.setChecked(Control.throwCurve());curveSwitch.setEnabled(Control.quickBallConfigured());
         alwaysHitSwitch.setChecked(Control.throwAlwaysHit());alwaysHitSwitch.setEnabled(Control.throwAlwaysHitReady() || Control.throwAlwaysHit());
         arSwitch.setChecked(Control.throwAr());arSwitch.setEnabled(Control.throwArReady());
         catchChanceSwitch.setChecked(Control.catchChanceShown());autoBallSwitch.setChecked(Control.autoBall());
-        set(autoBallTarget,"Auto ball target: "+Control.autoBallTarget()+"%");autoBallTarget.setEnabled(Control.autoBall());
+        set(autoBallTarget,I18n.format("Auto ball target: %1$s%%",Control.autoBallTarget()));autoBallTarget.setEnabled(Control.autoBall());
         autoThrowSwitch.setChecked(Control.autoThrow());
         autoThrowMapSwitch.setChecked(Control.autoThrowOnMap());
         autoThrowMapSwitch.setEnabled(Control.autoThrow());
-        set(ivCatchMode,"Encounter: "+IV_MODES[Control.ivCatchMode()]);ivCatchMode.setEnabled(Control.quickBallConfigured());
-        set(ivOwnedMode,"Pokémon stats screen: "+IV_MODES[Control.ivOwnedMode()]);ivOwnedMode.setEnabled(Control.quickBallConfigured());
-        set(storageIv,"Pokémon storage list: "+IV_MODES[Control.storageIvMode()]);
+        set(ivCatchMode,I18n.format("Encounter: %1$s",I18n.t(IV_MODES[Control.ivCatchMode()])));ivCatchMode.setEnabled(Control.quickBallConfigured());
+        set(ivOwnedMode,I18n.format("Pokémon stats screen: %1$s",I18n.t(IV_MODES[Control.ivOwnedMode()])));ivOwnedMode.setEnabled(Control.quickBallConfigured());
+        set(storageIv,I18n.format("Pokémon storage list: %1$s",I18n.t(IV_MODES[Control.storageIvMode()])));
         String ivText=Control.ivDisplayStatus(), storageText=Control.storageIvStatus();
         status(ivStatus,ivText.isEmpty()?storageText:storageText.isEmpty()?ivText:ivText+"\n"+storageText);
     }

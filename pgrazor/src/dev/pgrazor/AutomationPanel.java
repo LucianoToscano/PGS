@@ -32,20 +32,20 @@ public final class AutomationPanel {
         LinearLayout body = new LinearLayout(ui); body.setOrientation(LinearLayout.VERTICAL);
         int pad = MapTheme.dp(ui, 16); body.setPadding(pad, pad, pad, pad);
         TextView intro = new TextView(ui);
-        intro.setText("Each task runs when you start it.");
+        intro.setText(I18n.t("Each task runs when you start it."));
         body.addView(intro);
         final AlertDialog[] holder = new AlertDialog[1];
-        entry(ui, body, "Shundo Sniper (Experimental)", () -> { if (holder[0] != null) holder[0].dismiss(); ShundoSniper.show(activity); });
-        entry(ui, body, "Shiny Scanner (Experimental)", () -> { if (holder[0] != null) holder[0].dismiss(); ShinyScanner.show(activity); });
-        entry(ui, body, "Auto-Raid", () -> { if (holder[0] != null) holder[0].dismiss(); AutoRaidDialog.show(activity); });
-        entry(ui, body, "Auto Rocket", () -> { if (holder[0] != null) holder[0].dismiss(); AutoRocketDialog.show(activity); });
-        entry(ui, body, "Daily Incense Session", () -> { if (holder[0] != null) holder[0].dismiss(); showIncense(activity); });
-        entry(ui, body, "Remote Gym Feeding", () -> { if (holder[0] != null) holder[0].dismiss(); showRemoteFeed(activity); });
-        entry(ui, body, "Send & Open Gifts", () -> { if (holder[0] != null) holder[0].dismiss(); GiftBatchDialog.show(activity); });
-        entry(ui, body, "Mass Evolve", () -> { if (holder[0] != null) holder[0].dismiss(); BatchEvolutionSettings.show(activity); });
+        entry(ui, body, I18n.t("Shundo Sniper (Experimental)"), () -> { if (holder[0] != null) holder[0].dismiss(); ShundoSniper.show(activity); });
+        entry(ui, body, I18n.t("Shiny Scanner (Experimental)"), () -> { if (holder[0] != null) holder[0].dismiss(); ShinyScanner.show(activity); });
+        entry(ui, body, I18n.t("Auto-Raid"), () -> { if (holder[0] != null) holder[0].dismiss(); AutoRaidDialog.show(activity); });
+        entry(ui, body, I18n.t("Auto Rocket"), () -> { if (holder[0] != null) holder[0].dismiss(); AutoRocketDialog.show(activity); });
+        entry(ui, body, I18n.t("Daily Incense Session"), () -> { if (holder[0] != null) holder[0].dismiss(); showIncense(activity); });
+        entry(ui, body, I18n.t("Remote Gym Feeding"), () -> { if (holder[0] != null) holder[0].dismiss(); showRemoteFeed(activity); });
+        entry(ui, body, I18n.t("Send & Open Gifts"), () -> { if (holder[0] != null) holder[0].dismiss(); GiftBatchDialog.show(activity); });
+        entry(ui, body, I18n.t("Mass Evolve"), () -> { if (holder[0] != null) holder[0].dismiss(); BatchEvolutionSettings.show(activity); });
         ScrollView scroll = new ScrollView(ui); scroll.addView(body);
-        AlertDialog dialog = new AlertDialog.Builder(ui).setTitle("Automation").setView(scroll)
-            .setPositiveButton("Close", null).create();
+        AlertDialog dialog = new AlertDialog.Builder(ui).setTitle(I18n.t("Automation")).setView(scroll)
+            .setPositiveButton(I18n.t("Close"), null).create();
         holder[0] = dialog;
         DialogLifecycle.bind(activity, dialog, null);
         dialog.setOnShowListener(d -> {
@@ -62,20 +62,20 @@ public final class AutomationPanel {
         LinearLayout body = new LinearLayout(ui); body.setOrientation(LinearLayout.VERTICAL);
         int pad = MapTheme.dp(ui, 16); body.setPadding(pad, pad, pad, pad);
         TextView description = new TextView(ui);
-        description.setText("Activate Daily Adventure Incense in the game first. This steers a straight line at 10.5 km/h "
+        description.setText(I18n.t("Activate Daily Adventure Incense in the game first. This steers a straight line at 10.5 km/h "
             + "for up to 15 minutes. Stop any time. "
-            + "Galarian birds open automatically for you to handle. Walking and VGP stop. Move the joystick to resume idle walking.");
+            + "Galarian birds open automatically for you to handle. Walking and VGP stop. Move the joystick to resume idle walking."));
         body.addView(description);
-        TextView headingLabel = new TextView(ui); headingLabel.setText("Heading (0–359°)"); body.addView(headingLabel);
+        TextView headingLabel = new TextView(ui); headingLabel.setText(I18n.t("Heading (0–359°)")); body.addView(headingLabel);
         EditText headingInput = new EditText(ui); headingInput.setSingleLine(true);
         headingInput.setInputType(InputType.TYPE_CLASS_NUMBER); headingInput.setText(defaultHeading());
         body.addView(headingInput);
         TextView status = new TextView(ui); status.setText(OneShotAutomation.incenseStatus()); body.addView(status);
-        Button start = new Button(ui); start.setAllCaps(false); start.setText("Start session"); body.addView(start);
-        Button stop = new Button(ui); stop.setAllCaps(false); stop.setText("Stop session"); body.addView(stop);
+        Button start = new Button(ui); start.setAllCaps(false); start.setText(I18n.t("Start session")); body.addView(start);
+        Button stop = new Button(ui); stop.setAllCaps(false); stop.setText(I18n.t("Stop session")); body.addView(stop);
         ScrollView scroll = new ScrollView(ui); scroll.addView(body);
-        AlertDialog dialog = new AlertDialog.Builder(ui).setTitle("Daily Incense Session").setView(scroll)
-            .setPositiveButton("Close", null).create();
+        AlertDialog dialog = new AlertDialog.Builder(ui).setTitle(I18n.t("Daily Incense Session")).setView(scroll)
+            .setPositiveButton(I18n.t("Close"), null).create();
         Handler handler = new Handler(Looper.getMainLooper());
         Runnable update = () -> {
             boolean running = OneShotAutomation.incenseRunning();
@@ -109,24 +109,24 @@ public final class AutomationPanel {
         LinearLayout body = new LinearLayout(ui); body.setOrientation(LinearLayout.VERTICAL);
         int pad = MapTheme.dp(ui, 16); body.setPadding(pad, pad, pad, pad);
         TextView description = new TextView(ui);
-        description.setText("Feeds the gyms you currently defend once, using surplus berries. Nanab is fed down to its "
+        description.setText(I18n.t("Feeds the gyms you currently defend once, using surplus berries. Nanab is fed down to its "
             + "reserve, then surplus Razz. Pinap is optional and off by default. A single batch runs now — there is no "
             + "recurring schedule. The game's own server limits still apply, so some feeds may be declined. No dust or "
-            + "candy payout is promised.");
+            + "candy payout is promised."));
         body.addView(description);
         EditText nanab = numberField(ui, "0");
-        TextView nanabLabel = new TextView(ui); nanabLabel.setText("Nanab Berry reserve (0–1000)"); body.addView(nanabLabel); body.addView(nanab);
+        TextView nanabLabel = new TextView(ui); nanabLabel.setText(I18n.t("Nanab Berry reserve (0–1000)")); body.addView(nanabLabel); body.addView(nanab);
         EditText razz = numberField(ui, "20");
-        TextView razzLabel = new TextView(ui); razzLabel.setText("Razz Berry reserve (0–1000)"); body.addView(razzLabel); body.addView(razz);
-        CheckBox pinap = new CheckBox(ui); pinap.setText("Also feed surplus Pinap berries"); pinap.setChecked(false); body.addView(pinap);
+        TextView razzLabel = new TextView(ui); razzLabel.setText(I18n.t("Razz Berry reserve (0–1000)")); body.addView(razzLabel); body.addView(razz);
+        CheckBox pinap = new CheckBox(ui); pinap.setText(I18n.t("Also feed surplus Pinap berries")); pinap.setChecked(false); body.addView(pinap);
         EditText pinapReserve = numberField(ui, "50");
-        TextView pinapLabel = new TextView(ui); pinapLabel.setText("Pinap Berry reserve (0–1000)"); body.addView(pinapLabel); body.addView(pinapReserve);
+        TextView pinapLabel = new TextView(ui); pinapLabel.setText(I18n.t("Pinap Berry reserve (0–1000)")); body.addView(pinapLabel); body.addView(pinapReserve);
         TextView status = new TextView(ui); status.setText(OneShotAutomation.remoteFeedStatus()); body.addView(status);
-        Button start = new Button(ui); start.setAllCaps(false); start.setText("Start feed"); body.addView(start);
-        Button stop = new Button(ui); stop.setAllCaps(false); stop.setText("Stop feed"); body.addView(stop);
+        Button start = new Button(ui); start.setAllCaps(false); start.setText(I18n.t("Start feed")); body.addView(start);
+        Button stop = new Button(ui); stop.setAllCaps(false); stop.setText(I18n.t("Stop feed")); body.addView(stop);
         ScrollView scroll = new ScrollView(ui); scroll.addView(body);
-        AlertDialog dialog = new AlertDialog.Builder(ui).setTitle("Remote Gym Feeding").setView(scroll)
-            .setPositiveButton("Close", null).create();
+        AlertDialog dialog = new AlertDialog.Builder(ui).setTitle(I18n.t("Remote Gym Feeding")).setView(scroll)
+            .setPositiveButton(I18n.t("Close"), null).create();
         Handler handler = new Handler(Looper.getMainLooper());
         Runnable update = () -> {
             boolean running = OneShotAutomation.remoteFeedRunning();
@@ -202,6 +202,6 @@ public final class AutomationPanel {
     }
 
     private static void toast(Activity activity, String message) {
-        Toast.makeText(activity, message == null || message.isEmpty() ? "Could not start." : message, Toast.LENGTH_SHORT).show();
+        Toast.makeText(activity, message == null || message.isEmpty() ? I18n.t("Could not start.") : message, Toast.LENGTH_SHORT).show();
     }
 }

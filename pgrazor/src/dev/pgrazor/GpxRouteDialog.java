@@ -64,7 +64,7 @@ public final class GpxRouteDialog {
     public static void saveRoute(Activity activity, Source source) {
         if (!alive(activity)) return;
         GpxRoute current = source == null ? null : source.route();
-        if (current == null) { note(activity, "Build a route with at least one stop before saving."); return; }
+        if (current == null) { note(activity, I18n.t("Build a route with at least one stop before saving.")); return; }
         promptSave(activity, current);
     }
 
@@ -72,7 +72,7 @@ public final class GpxRouteDialog {
     public static void exportRoute(Activity activity, Source source) {
         if (!alive(activity)) return;
         final GpxRoute current = source == null ? null : source.route();
-        if (current == null) { note(activity, "Build a route with at least one stop before exporting."); return; }
+        if (current == null) { note(activity, I18n.t("Build a route with at least one stop before exporting.")); return; }
         GpxDocuments.create(activity, fileName(current.name), new GpxDocuments.Callback() {
             public void onPicked(Uri uri) { writeExport(activity, uri, current); }
             public void onCancelled() { }
@@ -83,8 +83,8 @@ public final class GpxRouteDialog {
     public static void menu(Activity activity, Source source, Selection selection) {
         if (!alive(activity)) return;
         String[] items = {"Save route", "Import GPX", "Saved routes", "Export route"};
-        AlertDialog dialog = ChoiceList.attach(new AlertDialog.Builder(MapTheme.wrap(activity)).setTitle("GPX routes")
-            .setNegativeButton("Close", null).create(), items, which -> {
+        AlertDialog dialog = ChoiceList.attach(new AlertDialog.Builder(MapTheme.wrap(activity)).setTitle(I18n.t("GPX routes"))
+            .setNegativeButton(I18n.t("Close"), null).create(), items, which -> {
                 switch (which) {
                     case 0: saveRoute(activity, source); break;
                     case 1: importGpx(activity, "the route builder", selection); break;
@@ -108,13 +108,13 @@ public final class GpxRouteDialog {
                 if (in == null) throw new IOException("Could not open the selected file.");
                 try { routes = GpxCodec.read(in, fallback); }
                 finally { in.close(); }
-            } catch (IOException | RuntimeException e) { error = message(e, "Could not read that GPX file."); }
+            } catch (IOException | RuntimeException e) { error = message(e, I18n.t("Could not read that GPX file.")); }
             final List<GpxRoute> result = routes;
             final String err = error;
             MAIN.post(() -> {
                 if (!alive(activity)) return;
                 if (result == null) { note(activity, err); return; }
-                if (result.isEmpty()) { note(activity, "No routes were found in that GPX file."); return; }
+                if (result.isEmpty()) { note(activity, I18n.t("No routes were found in that GPX file.")); return; }
                 if (result.size() == 1) deliverImported(activity, result.get(0), where, selection);
                 else chooseImported(activity, result, where, selection);
             });
@@ -127,16 +127,15 @@ public final class GpxRouteDialog {
             GpxRoute r = routes.get(i);
             names[i] = String.format(Locale.US, "%s\n%d stops", title(r.name, i), r.points().length);
         }
-        AlertDialog dialog = ChoiceList.attach(new AlertDialog.Builder(MapTheme.wrap(activity)).setTitle("Choose a route (" + routes.size() + ")")
-            .setNegativeButton("Cancel", null).create(), names, which -> deliverImported(activity, routes.get(which), where, selection));
+        AlertDialog dialog = ChoiceList.attach(new AlertDialog.Builder(MapTheme.wrap(activity)).setTitle(I18n.format("Choose a route (%1$s)", String.valueOf((Object)(routes.size()))))
+            .setNegativeButton(I18n.t("Cancel"), null).create(), names, which -> deliverImported(activity, routes.get(which), where, selection));
         present(activity, dialog);
     }
 
     private static void deliverImported(Activity activity, GpxRoute route, String where, Selection selection) {
         int count = route.points().length;
         selection.onRoute(route); // never auto-starts; only hands the route to the caller
-        note(activity, String.format(Locale.US, "Imported “%s” (%d %s). Ready in %s.",
-            route.name, count, count == 1 ? "stop" : "stops", where));
+        note(activity, I18n.format("Imported “%s” (%d %s). Ready in %s.", route.name, count, count == 1 ? I18n.t("stop") : I18n.t("stops"), where));
     }
 
     // ---- export --------------------------------------------------------------------------
@@ -150,7 +149,7 @@ public final class GpxRouteDialog {
                 if (out == null) throw new IOException("Could not open the destination file.");
                 try { GpxCodec.write(out, route); }
                 finally { out.close(); }
-            } catch (IOException | RuntimeException e) { error = message(e, "Could not export that route."); }
+            } catch (IOException | RuntimeException e) { error = message(e, I18n.t("Could not export that route.")); }
             final String err = error;
             MAIN.post(() -> { if (alive(activity)) note(activity, err == null ? "Exported “" + route.name + "”." : err); });
         });
@@ -163,7 +162,7 @@ public final class GpxRouteDialog {
             List<GpxStore.Entry> entries = null;
             String error = null;
             try { entries = new GpxStore(activity).list(); }
-            catch (IOException | RuntimeException e) { error = message(e, "Could not open saved routes."); }
+            catch (IOException | RuntimeException e) { error = message(e, I18n.t("Could not open saved routes.")); }
             final List<GpxStore.Entry> result = entries;
             final String err = error;
             MAIN.post(() -> {
@@ -176,8 +175,8 @@ public final class GpxRouteDialog {
 
     private static void showList(Activity activity, List<GpxStore.Entry> entries, Selection selection) {
         AlertDialog.Builder builder = new AlertDialog.Builder(MapTheme.wrap(activity))
-            .setTitle("Saved routes (" + entries.size() + ")").setNegativeButton("Close", null);
-        if (entries.isEmpty()) { builder.setMessage("No saved routes yet. Import a GPX file, or save a route you build on the map."); present(activity, builder.create()); return; }
+            .setTitle(I18n.format("Saved routes (%1$s)", String.valueOf((Object)(entries.size())))).setNegativeButton(I18n.t("Close"), null);
+        if (entries.isEmpty()) { builder.setMessage(I18n.t("No saved routes yet. Import a GPX file, or save a route you build on the map.")); present(activity, builder.create()); return; }
         String[] rows = new String[entries.size()];
         for (int i = 0; i < rows.length; i++) {
             GpxStore.Entry e = entries.get(i);
@@ -188,10 +187,10 @@ public final class GpxRouteDialog {
 
     private static void showEntry(Activity activity, GpxStore.Entry entry, Selection selection) {
         AlertDialog dialog = new AlertDialog.Builder(MapTheme.wrap(activity)).setTitle(entry.name)
-            .setMessage(String.format(Locale.US, "%d stops.\n\nUse this route loads it as a draft; Start it yourself afterwards.", entry.count))
-            .setNegativeButton("Cancel", null)
-            .setPositiveButton("Use this route", null)
-            .setNeutralButton("Delete", null).create();
+            .setMessage(I18n.format("%d stops.\n\nUse this route loads it as a draft; Start it yourself afterwards.", entry.count))
+            .setNegativeButton(I18n.t("Cancel"), null)
+            .setPositiveButton(I18n.t("Use this route"), null)
+            .setNeutralButton(I18n.t("Delete"), null).create();
         dialog.setOnShowListener(d -> {
             dialog.getButton(AlertDialog.BUTTON_POSITIVE).setOnClickListener(v -> loadRoute(activity, entry, selection, dialog));
             dialog.getButton(AlertDialog.BUTTON_NEUTRAL).setOnClickListener(v -> confirmDelete(activity, entry, dialog, selection));
@@ -205,7 +204,7 @@ public final class GpxRouteDialog {
             GpxRoute route = null;
             String error = null;
             try { route = new GpxStore(activity).load(entry.id); }
-            catch (IOException | RuntimeException e) { error = message(e, "Could not open that route."); }
+            catch (IOException | RuntimeException e) { error = message(e, I18n.t("Could not open that route.")); }
             final GpxRoute result = route;
             final String err = error;
             MAIN.post(() -> {
@@ -217,21 +216,21 @@ public final class GpxRouteDialog {
                 }
                 selection.onRoute(result);
                 if (detail.isShowing()) detail.dismiss();
-                note(activity, String.format(Locale.US, "Selected “%s” (%d stops).", result.name, result.points().length));
+                note(activity, I18n.format("Selected “%s” (%d stops).", result.name, result.points().length));
             });
         });
     }
 
     private static void confirmDelete(Activity activity, GpxStore.Entry entry, AlertDialog detail, Selection selection) {
-        AlertDialog confirm = new AlertDialog.Builder(MapTheme.wrap(activity)).setTitle("Delete saved route?")
-            .setMessage("“" + entry.name + "” will be removed. Any active walk is unaffected.")
-            .setNegativeButton("Cancel", null).setPositiveButton("Delete", null).create();
+        AlertDialog confirm = new AlertDialog.Builder(MapTheme.wrap(activity)).setTitle(I18n.t("Delete saved route?"))
+            .setMessage(I18n.format("“%1$s” will be removed. Any active walk is unaffected.", String.valueOf((Object)(entry.name))))
+            .setNegativeButton(I18n.t("Cancel"), null).setPositiveButton(I18n.t("Delete"), null).create();
         confirm.setOnShowListener(d -> confirm.getButton(AlertDialog.BUTTON_POSITIVE).setOnClickListener(v -> {
             confirm.getButton(AlertDialog.BUTTON_POSITIVE).setEnabled(false);
             run(() -> {
                 String error = null;
                 try { new GpxStore(activity).delete(entry.id); }
-                catch (IOException | RuntimeException e) { error = message(e, "Could not delete that route."); }
+                catch (IOException | RuntimeException e) { error = message(e, I18n.t("Could not delete that route.")); }
                 final String err = error;
                 MAIN.post(() -> {
                     if (!alive(activity)) return;
@@ -242,7 +241,7 @@ public final class GpxRouteDialog {
                     }
                     if (confirm.isShowing()) confirm.dismiss();
                     if (detail.isShowing()) detail.dismiss();
-                    note(activity, "Deleted “" + entry.name + "”.");
+                    note(activity, I18n.format("Deleted “%1$s”.", String.valueOf((Object)(entry.name))));
                     loadList(activity, selection); // reopen the refreshed list
                 });
             });
@@ -259,25 +258,25 @@ public final class GpxRouteDialog {
         int pad = MapTheme.dp(ui, 20);
         form.setPadding(pad, 0, pad, 0);
         int count = current.points().length;
-        form.addView(label(ui, count + (count == 1 ? " stop" : " stops") + " will be saved.", 14));
+        form.addView(label(ui, I18n.format("%1$s will be saved.", String.valueOf((Object)(count + (count == 1 ? I18n.t(" stop") : I18n.t(" stops"))))), 14));
         EditText name = new EditText(ui);
-        name.setHint("Route name");
+        name.setHint(I18n.t("Route name"));
         name.setSingleLine(true);
         name.setInputType(InputType.TYPE_CLASS_TEXT | InputType.TYPE_TEXT_FLAG_CAP_SENTENCES);
         name.setFilters(new InputFilter[]{new InputFilter.LengthFilter(NAME_LIMIT)});
         name.setText(current.name);
         form.addView(name);
-        AlertDialog dialog = new AlertDialog.Builder(ui).setTitle("Save route").setView(form)
-            .setNegativeButton("Cancel", null).setPositiveButton("Save", null).create();
+        AlertDialog dialog = new AlertDialog.Builder(ui).setTitle(I18n.t("Save route")).setView(form)
+            .setNegativeButton(I18n.t("Cancel"), null).setPositiveButton(I18n.t("Save"), null).create();
         dialog.setOnShowListener(d -> dialog.getButton(AlertDialog.BUTTON_POSITIVE).setOnClickListener(v -> {
             final GpxRoute toSave;
             try { toSave = new GpxRoute(name.getText().toString(), current.points()); }
-            catch (IllegalArgumentException e) { name.setError(message(e, "Enter a route name.")); return; }
+            catch (IllegalArgumentException e) { name.setError(message(e, I18n.t("Enter a route name."))); return; }
             dialog.getButton(AlertDialog.BUTTON_POSITIVE).setEnabled(false);
             run(() -> {
                 String error = null;
                 try { new GpxStore(activity).save(toSave); }
-                catch (IOException | RuntimeException e) { error = message(e, "Could not save the route."); }
+                catch (IOException | RuntimeException e) { error = message(e, I18n.t("Could not save the route.")); }
                 final String err = error;
                 MAIN.post(() -> {
                     if (!alive(activity)) return;
@@ -287,7 +286,7 @@ public final class GpxRouteDialog {
                         return;
                     }
                     if (dialog.isShowing()) dialog.dismiss();
-                    note(activity, "Saved “" + toSave.name + "”.");
+                    note(activity, I18n.format("Saved “%1$s”.", String.valueOf((Object)(toSave.name))));
                 });
             });
         }));
@@ -331,13 +330,13 @@ public final class GpxRouteDialog {
         } catch (RuntimeException ignored) {
         } finally { if (cursor != null) cursor.close(); }
         if (name == null) name = uri.getLastPathSegment();
-        if (name == null) return "Imported route";
+        if (name == null) return I18n.t("Imported route");
         int slash = name.lastIndexOf('/');
         if (slash >= 0) name = name.substring(slash + 1);
         int dot = name.lastIndexOf('.');
         if (dot > 0) name = name.substring(0, dot);
         name = name.trim();
-        return name.isEmpty() ? "Imported route" : name;
+        return name.isEmpty() ? I18n.t("Imported route") : name;
     }
 
     /** A safe, bounded {@code .gpx} file name suggestion for the create picker. */

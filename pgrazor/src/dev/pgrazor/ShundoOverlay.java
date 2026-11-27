@@ -34,7 +34,7 @@ public final class ShundoOverlay extends LinearLayout {
         top.setOrientation(HORIZONTAL);
         top.setGravity(Gravity.CENTER_VERTICAL);
         TextView title = new TextView(activity);
-        title.setText("Shundo Sniper");
+        title.setText(I18n.t("Shundo Sniper"));
         title.setTextSize(13);
         title.setTypeface(Typeface.DEFAULT_BOLD);
         top.addView(title, new LayoutParams(0, LayoutParams.WRAP_CONTENT, 1f));
@@ -45,8 +45,8 @@ public final class ShundoOverlay extends LinearLayout {
         LayoutParams badgeLayout = new LayoutParams(LayoutParams.WRAP_CONTENT, LayoutParams.WRAP_CONTENT);
         badgeLayout.rightMargin = SettingsUi.dp(activity, 6);
         top.addView(badge, badgeLayout);
-        dark = button(activity, "Dark");
-        dark.setContentDescription("Black out the screen to save battery while the sniper runs. Tap the black screen to bring the game back.");
+        dark = button(activity, I18n.t("Dark"));
+        dark.setContentDescription(I18n.t("Black out the screen to save battery while the sniper runs. Tap the black screen to bring the game back."));
         dark.setOnClickListener(v -> ShundoSniper.setDark(true));
         LayoutParams darkLayout = new LayoutParams(LayoutParams.WRAP_CONTENT, SettingsUi.dp(activity, 30));
         darkLayout.rightMargin = SettingsUi.dp(activity, 6);
@@ -58,7 +58,7 @@ public final class ShundoOverlay extends LinearLayout {
         close.setText("×");
         close.setTextSize(18);
         close.setGravity(Gravity.CENTER);
-        close.setContentDescription("Stop Shundo Sniper and hide this card");
+        close.setContentDescription(I18n.t("Stop Shundo Sniper and hide this card"));
         close.setOnClickListener(v -> { ShundoSniper.closeOverlay(activity); refresh(true); });
         LayoutParams closeLayout = new LayoutParams(SettingsUi.dp(activity, 28), SettingsUi.dp(activity, 30));
         closeLayout.leftMargin = SettingsUi.dp(activity, 2);
@@ -102,13 +102,13 @@ public final class ShundoOverlay extends LinearLayout {
         setBackground(SettingsUi.rounded(activity, MapTheme.surface(), SettingsUi.dp(activity, 14)));
         if (lastRunning == null || running != lastRunning) {
             lastRunning = running;
-            badge.setText(running ? "RUNNING" : "STOPPED");
+            badge.setText(running ? I18n.t("RUNNING") : I18n.t("STOPPED"));
             badge.setTextColor(running ? Color.WHITE : MapTheme.muted());
             badge.setBackground(SettingsUi.rounded(activity, running ? Color.rgb(56, 181, 112) : 0x22808080, SettingsUi.dp(activity, 9)));
-            toggle.setText(running ? "Stop" : "Start");
+            toggle.setText(running ? I18n.t("Stop") : I18n.t("Start"));
             dark.setVisibility(running ? VISIBLE : GONE);
             toggle.setTextColor(running ? MapTheme.ink() : MapTheme.accent());
-            setContentDescription("Shundo Sniper " + (running ? "running" : "stopped") + ". Drag to reposition.");
+            setContentDescription(I18n.format("Shundo Sniper %1$s. Drag to reposition.", String.valueOf((Object)((running ? I18n.t("running") : I18n.t("stopped"))))));
         }
         for (TextView t : new TextView[]{(TextView) ((LinearLayout) getChildAt(0)).getChildAt(0), step}) t.setTextColor(MapTheme.ink());
         stats.setTextColor(MapTheme.muted());

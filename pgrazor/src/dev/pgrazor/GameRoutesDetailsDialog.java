@@ -34,7 +34,7 @@ public final class GameRoutesDetailsDialog {
         int pad = MapTheme.dp(ctx, 18);
         layout.setPadding(pad, MapTheme.dp(ctx, 8), pad, 0);
 
-        TextView name = label(ctx, "Route run", 18);
+        TextView name = label(ctx, I18n.t("Route run"), 18);
         layout.addView(name);
         TextView meta = label(ctx, "", 13);
         meta.setPadding(0, MapTheme.dp(ctx, 6), 0, MapTheme.dp(ctx, 10));
@@ -49,10 +49,10 @@ public final class GameRoutesDetailsDialog {
         layout.addView(note);
 
         AlertDialog dialog = new AlertDialog.Builder(ctx)
-            .setTitle("Route run")
+            .setTitle(I18n.t("Route run"))
             .setView(layout)
-            .setNegativeButton("Close", null)
-            .setNeutralButton("Stop", null)
+            .setNegativeButton(I18n.t("Close"), null)
+            .setNeutralButton(I18n.t("Stop"), null)
             .create();
 
         Controller controller = new Controller(activity, dialog, name, meta, path, note);
@@ -93,7 +93,7 @@ public final class GameRoutesDetailsDialog {
                 JSONObject o = new JSONObject(json == null ? "{}" : json);
                 running = o.optBoolean("running");
                 String routeName = o.optString("name", "");
-                name.setText(routeName.isEmpty() ? (running ? "Route run" : "No Route running") : routeName);
+                name.setText(routeName.isEmpty() ? (running ? I18n.t("Route run") : I18n.t("No Route running")) : routeName);
 
                 StringBuilder sb = new StringBuilder();
                 sb.append(phaseText(o.optString("phase", "IDLE")));
@@ -110,10 +110,10 @@ public final class GameRoutesDetailsDialog {
                 meta.setText(sb.toString());
 
                 path.setData(parsePolyline(o.optJSONArray("points")), parsePoint(o.optJSONArray("currentPosition")));
-                note.setText("Green: start / Red: finish / Ring: you");
+                note.setText(I18n.t("Green: start / Red: finish / Ring: you"));
             } catch (JSONException bad) {
-                name.setText("Route run");
-                meta.setText("Route details are unavailable right now.");
+                name.setText(I18n.t("Route run"));
+                meta.setText(I18n.t("Route details are unavailable right now."));
                 path.setData(null, null);
             }
             Button stop = dialog.getButton(AlertDialog.BUTTON_NEUTRAL);
@@ -123,7 +123,7 @@ public final class GameRoutesDetailsDialog {
         private void stop() {
             if (closed) return;
             Control.stopGameRoutes();
-            Toast.makeText(activity, "Route automation stopped.", Toast.LENGTH_SHORT).show();
+            Toast.makeText(activity, I18n.t("Route automation stopped."), Toast.LENGTH_SHORT).show();
             poll();
         }
 
@@ -136,12 +136,12 @@ public final class GameRoutesDetailsDialog {
 
     private static String phaseText(String phase) {
         switch (phase) {
-            case "WALK_TO_START":  return "Walking to the start";
-            case "AWAIT_START":    return "Starting the Route";
-            case "TRAVERSE":       return "Walking the Route";
-            case "AWAIT_ELIGIBLE": return "Reaching the end";
-            case "AWAIT_COMPLETE": return "Completing the Route";
-            default:               return "Idle";
+            case "WALK_TO_START":  return I18n.t("Walking to the start");
+            case "AWAIT_START":    return I18n.t("Starting the Route");
+            case "TRAVERSE":       return I18n.t("Walking the Route");
+            case "AWAIT_ELIGIBLE": return I18n.t("Reaching the end");
+            case "AWAIT_COMPLETE": return I18n.t("Completing the Route");
+            default:               return I18n.t("Idle");
         }
     }
 

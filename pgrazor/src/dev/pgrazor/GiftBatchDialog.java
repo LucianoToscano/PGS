@@ -29,26 +29,26 @@ public final class GiftBatchDialog {
         int pad = MapTheme.dp(ui, 16); body.setPadding(pad, pad, pad, pad);
 
         TextView description = new TextView(ui);
-        description.setText("Sends your available gifts to eligible friends, then opens the gifts you have received. "
+        description.setText(I18n.t("Sends your available gifts to eligible friends, then opens the gifts you have received. "
             + "Each friend is handled once. The game's own daily limits for sending and opening still apply, so some "
-            + "may be skipped. A single pass runs now — there is no recurring schedule.");
+            + "may be skipped. A single pass runs now — there is no recurring schedule."));
         body.addView(description);
 
         CheckBox fullBag = new CheckBox(ui);
-        fullBag.setText("Open even when item bag is full");
+        fullBag.setText(I18n.t("Open even when item bag is full"));
         fullBag.setChecked(GiftBatchSettings.fullBagDefault());
         body.addView(fullBag);
         TextView fullBagCaption = new TextView(ui);
-        fullBagCaption.setText("Uses the game's full-bag reward setting. Full-bag opening may award fewer rewards.");
+        fullBagCaption.setText(I18n.t("Uses the game's full-bag reward setting. Full-bag opening may award fewer rewards."));
         body.addView(fullBagCaption);
 
         TextView status = new TextView(ui); status.setText(GiftBatchSettings.status()); body.addView(status);
-        Button start = new Button(ui); start.setAllCaps(false); start.setText("Start"); body.addView(start);
-        Button stop = new Button(ui); stop.setAllCaps(false); stop.setText("Stop"); body.addView(stop);
+        Button start = new Button(ui); start.setAllCaps(false); start.setText(I18n.t("Start")); body.addView(start);
+        Button stop = new Button(ui); stop.setAllCaps(false); stop.setText(I18n.t("Stop")); body.addView(stop);
 
         ScrollView scroll = new ScrollView(ui); scroll.addView(body);
-        AlertDialog dialog = new AlertDialog.Builder(ui).setTitle("Send & Open Gifts").setView(scroll)
-            .setPositiveButton("Close", null).create();
+        AlertDialog dialog = new AlertDialog.Builder(ui).setTitle(I18n.t("Send & Open Gifts")).setView(scroll)
+            .setPositiveButton(I18n.t("Close"), null).create();
         Handler handler = new Handler(Looper.getMainLooper());
         Runnable update = () -> {
             boolean busy = GiftBatchSettings.running();
@@ -76,7 +76,7 @@ public final class GiftBatchDialog {
     }
 
     private static void toast(Activity activity, String message) {
-        Toast.makeText(activity, message == null || message.isEmpty() ? "Could not start." : message,
+        Toast.makeText(activity, message == null || message.isEmpty() ? I18n.t("Could not start.") : message,
             Toast.LENGTH_SHORT).show();
     }
 }

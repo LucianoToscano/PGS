@@ -6,12 +6,14 @@ import java.util.List;
 public final class SettingsSearchTest {
     public static void main(String[] args) {
         normalization();
+        nonLatinNormalization();
         cleanNames();
         ranking();
         matching();
         synonyms();
         emptyQueries();
-        System.out.println("SettingsSearch: normalization, cleaning, ranking, synonyms, multi-token, category and empty states pass");
+        localizedIndex();
+        System.out.println("SettingsSearch: Latin/non-Latin normalization, bilingual labels, stable IDs, ranking, synonyms and empty states pass");
     }
 
     private static void normalization() {
@@ -20,6 +22,28 @@ public final class SettingsSearchTest {
         eq("favorites", SettingsSearch.normalize("Favorites"));
         eq("", SettingsSearch.normalize(null));
         eq("", SettingsSearch.normalize("   "));
+        eq("cafe", SettingsSearch.normalize("cafe\u0301"));
+        eq("pokemon go", SettingsSearch.normalize("\u3000Pokémon\u00a0GO\u3000"));
+    }
+
+    private static void nonLatinNormalization() {
+        eq("น้ำ", SettingsSearch.normalize("น้ำ"));
+        eq("ก่า", SettingsSearch.normalize("ก่า"));
+        different(SettingsSearch.normalize("กา"), SettingsSearch.normalize("ก่า"));
+        eq("ёлка й", SettingsSearch.normalize("ЁЛКА Й"));
+        different(SettingsSearch.normalize("и"), SettingsSearch.normalize("й"));
+        different(SettingsSearch.normalize("е"), SettingsSearch.normalize("ё"));
+        eq("й", SettingsSearch.normalize("и\u0306"));
+        eq("繁體中文", SettingsSearch.normalize("繁體中文"));
+        eq("한국어", SettingsSearch.normalize("한국어"));
+        eq("pokemon น้ำ й 한국어", SettingsSearch.normalize("Pokémon น้ำ Й 한국어"));
+
+        SettingsSearch catalogue = new SettingsSearch();
+        catalogue.add("กา", "", "", 0);
+        catalogue.add("ก่า", "", "", 1);
+        catalogue.add("Й", "", "", 2);
+        eq("ก่า", single(catalogue.find("ก่า")));
+        eq("Й", single(catalogue.find("и\u0306")));
     }
 
     private static void cleanNames() {
@@ -102,6 +126,47 @@ public final class SettingsSearchTest {
         eq("1", Integer.toString(search.find("ball").size()));
     }
 
+    private static void localizedIndex() {
+        I18n.fixtureLanguage("pt");
+        try {
+            SettingsSearch search = new SettingsSearch();
+            int dark = search.add("Dark theme", "Interface", "Display & Performance", 4);
+            int location = search.add("Location spoofing", "Location & movement", "Location & Map", 0);
+            search.add("Favorite filters", "Quick menu entries", "Interface", 5);
+            search.add("Unknown setting", "Interface", "Interface", 6);
+
+            SettingsSearch.Entry translated = search.find("tema escuro").get(0);
+            eq("Tema escuro", translated.name);
+            eq("Exibição e desempenho", translated.category);
+            eq("Alterne toda a interface entre as paletas escura e clara.", translated.description);
+            eq(Integer.toString(dark), Integer.toString(translated.id));
+            eq("4", Integer.toString(translated.page));
+            eq("Tema escuro", single(search.find("DARK")));
+            eq("Tema escuro", single(search.find("light mode")));
+            eq("Tema escuro", single(search.find("exibicao")));
+            eq("Tema escuro", single(search.find("tema performance")));
+
+            SettingsSearch.Entry gps = search.find("simulada movimento").get(0);
+            eq("Localização simulada", gps.name);
+            eq("Localização e movimento", gps.group);
+            eq(Integer.toString(location), Integer.toString(gps.id));
+            eq("0", Integer.toString(gps.page));
+            eq("Localização simulada", single(search.find("fake gps")));
+            eq("Mostrar Filtros favoritos no menu rápido.", search.find("favorite filters").get(0).description);
+            eq("Opção de Interface.", search.find("unknown setting").get(0).description);
+            eq("Unknown setting", single(search.find("unknown setting")));
+
+            // The built index is a language snapshot, matching the restart-only language policy.
+            I18n.fixtureLanguage("en");
+            eq("Tema escuro", single(search.find("tema escuro")));
+            SettingsSearch nextSession = new SettingsSearch();
+            nextSession.add("Dark theme", "Interface", "Display & Performance", 4);
+            eq("Dark theme", single(nextSession.find("DARK")));
+        } finally {
+            I18n.fixtureLanguage("en");
+        }
+    }
+
     private static String single(List<SettingsSearch.Entry> hits) {
         eq("1", Integer.toString(hits.size()));
         return hits.get(0).name;
@@ -109,5 +174,9 @@ public final class SettingsSearchTest {
 
     private static void eq(String expected, String actual) {
         if (!expected.equals(actual)) throw new AssertionError("expected <" + expected + "> but was <" + actual + ">");
+    }
+
+    private static void different(String left, String right) {
+        if (left.equals(right)) throw new AssertionError("Distinct scripts/marks collapsed to <" + left + ">");
     }
 }

@@ -59,16 +59,16 @@ public final class AutoWalkDialog {
         int pad = dp(activity, 18);
         layout.setPadding(pad, dp(activity, 8), pad, 0);
 
-        TextView descr = label(ctx, "Visit nearby PokéStops and Gyms, nearest first.", 13);
+        TextView descr = label(ctx, I18n.t("Visit nearby PokéStops and Gyms, nearest first."), 13);
         layout.addView(descr);
 
         LinearLayout gpxRow = new LinearLayout(ctx);
         gpxRow.setOrientation(LinearLayout.HORIZONTAL);
         gpxRow.setPadding(0, dp(activity, 8), 0, 0);
-        Button importBtn = button(ctx, "Import GPX");
-        Button savedBtn = button(ctx, "Saved routes");
-        Button nearbyBtn = button(ctx, "Nearby"); nearbyBtn.setVisibility(View.GONE);
-        nearbyBtn.setContentDescription("Return to nearby PoI planning");
+        Button importBtn = button(ctx, I18n.t("Import GPX"));
+        Button savedBtn = button(ctx, I18n.t("Saved routes"));
+        Button nearbyBtn = button(ctx, I18n.t("Nearby")); nearbyBtn.setVisibility(View.GONE);
+        nearbyBtn.setContentDescription(I18n.t("Return to nearby PoI planning"));
         gpxRow.addView(importBtn, new LinearLayout.LayoutParams(0, dp(activity, 46), 1));
         gpxRow.addView(savedBtn, new LinearLayout.LayoutParams(0, dp(activity, 46), 1));
         gpxRow.addView(nearbyBtn, new LinearLayout.LayoutParams(0, dp(activity, 46), 1));
@@ -78,43 +78,43 @@ public final class AutoWalkDialog {
         countRow.setOrientation(LinearLayout.HORIZONTAL);
         countRow.setGravity(Gravity.CENTER_VERTICAL);
         countRow.setPadding(0, dp(activity, 10), 0, 0);
-        TextView countLabel = label(ctx, "Stops (loading):", 15);
+        TextView countLabel = label(ctx, I18n.t("Stops (loading):"), 15);
         countRow.addView(countLabel,
             new LinearLayout.LayoutParams(0, -2, 1));
         EditText countField = new EditText(ctx);
         countField.setInputType(InputType.TYPE_CLASS_NUMBER);
         countField.setFilters(new InputFilter[]{new InputFilter.LengthFilter(String.valueOf(NEARBY_LIMIT).length())});
-        countField.setHint("All");
+        countField.setHint(I18n.t("All"));
         countField.setText("50");
         countField.setSingleLine(true);
-        countField.setContentDescription("Number of stops to visit; leave blank for all nearby locations");
+        countField.setContentDescription(I18n.t("Number of stops to visit; leave blank for all nearby locations"));
         countRow.addView(countField, new LinearLayout.LayoutParams(dp(activity, 72), -2));
         layout.addView(countRow);
 
         CheckBox loop = new CheckBox(ctx);
-        loop.setText("Loop route");
+        loop.setText(I18n.t("Loop route"));
         loop.setTextSize(14);
         loop.setChecked(false);
         layout.addView(loop);
 
-        TextView status = label(ctx, "Waiting for nearby game locations…", 13);
+        TextView status = label(ctx, I18n.t("Waiting for nearby game locations…"), 13);
         status.setPadding(0, dp(activity, 10), 0, 0);
         layout.addView(status);
         TextView gpxInfo = label(ctx, "", 13);
         gpxInfo.setPadding(0, dp(activity, 10), 0, 0);
         gpxInfo.setVisibility(View.GONE);
         layout.addView(gpxInfo);
-        Button saveGpx = new Button(ctx);saveGpx.setText("Save GPX");saveGpx.setAllCaps(false);saveGpx.setVisibility(View.GONE);layout.addView(saveGpx);
+        Button saveGpx = new Button(ctx);saveGpx.setText(I18n.t("Save GPX"));saveGpx.setAllCaps(false);saveGpx.setVisibility(View.GONE);layout.addView(saveGpx);
         TextView running = label(ctx, "", 13);
         running.setPadding(0, dp(activity, 4), 0, dp(activity, 4));
         layout.addView(running);
 
         AlertDialog dialog = new AlertDialog.Builder(ctx)
-            .setTitle("Auto-walk")
+            .setTitle(I18n.t("Auto-walk"))
             .setView(layout)
-            .setNegativeButton("Close", null)
-            .setNeutralButton("Stop auto-walk", null)
-            .setPositiveButton("Start", null)
+            .setNegativeButton(I18n.t("Close"), null)
+            .setNeutralButton(I18n.t("Stop auto-walk"), null)
+            .setPositiveButton(I18n.t("Start"), null)
             .create();
 
         Controller controller = new Controller(activity, dialog, descr, countLabel, countRow, countField, loop,
@@ -185,8 +185,8 @@ public final class AutoWalkDialog {
             boolean gpx = selectedGpx != null;
             saveGpx.setVisibility(gpx ? View.VISIBLE : View.GONE);
             if(gpx)Control.setAutoWalkPlanning(false);
-            descr.setText(gpx ? "Follow the selected GPX route in its saved order."
-                : "Visit nearby PokéStops and Gyms, nearest first.");
+            descr.setText(gpx ? I18n.t("Follow the selected GPX route in its saved order.")
+                : I18n.t("Visit nearby PokéStops and Gyms, nearest first."));
             countRow.setVisibility(gpx ? View.GONE : View.VISIBLE);
             status.setVisibility(gpx ? View.GONE : View.VISIBLE);
             gpxInfo.setVisibility(gpx ? View.VISIBLE : View.GONE);
@@ -213,27 +213,26 @@ public final class AutoWalkDialog {
             Button start = dialog.getButton(AlertDialog.BUTTON_POSITIVE);
             if (start == null) return;
             if (selectedGpx != null) {
-                gpxInfo.setText(String.format(Locale.US, "GPX route: %s (%d %s). Start walks it in order.",
-                    selectedGpx.name, selectedCount, selectedCount == 1 ? "stop" : "stops"));
+                gpxInfo.setText(I18n.format("GPX route: %s (%d %s). Start walks it in order.", selectedGpx.name, selectedCount, selectedCount == 1 ? I18n.t("stop") : I18n.t("stops")));
                 start.setEnabled(true);
                 return;
             }
             String snapshot = Control.mapPoiSnapshot();
             boolean canStart = false;
-            countLabel.setText("Stops (loading):");
+            countLabel.setText(I18n.t("Stops (loading):"));
             String message;
             if (snapshot.isEmpty()) {
-                message = "Waiting for nearby game locations…";
+                message = I18n.t("Waiting for nearby game locations…");
             } else {
                 double[][] points = parse(snapshot);
                 if (points == null) {
-                    message = "Nearby locations are unavailable right now.";
+                    message = I18n.t("Nearby locations are unavailable right now.");
                 } else {
                     int unique = AutoWalkPlanner.filter(points).length;
                     int maximum = Math.min(unique, NEARBY_LIMIT);
-                    countLabel.setText(maximum == 0 ? "Stops (none nearby):" : "Stops (1–" + maximum + "; blank = all):");
+                    countLabel.setText(maximum == 0 ? I18n.t("Stops (none nearby):") : "Stops (1–" + maximum + "; blank = all):");
                     if (unique == 0) {
-                        message = "No nearby locations loaded yet. Move around in-game to load some.";
+                        message = I18n.t("No nearby locations loaded yet. Move around in-game to load some.");
                     } else {
                         int requested=maximum;
                         try{requested=Integer.parseInt(countField.getText().toString().trim());}catch(NumberFormatException ignored){}
@@ -249,32 +248,32 @@ public final class AutoWalkDialog {
 
         private void updateRunning() {
             MotionEngine.RouteProgress progress = Control.engine.routeProgress();
-            running.setText(Control.engine.speedKmh==0 ? "Speed is 0 km/h. Use the walking icon to resume travel." : progress.active
-                ? String.format(Locale.US, "A route is running: %d of %d stops done.", progress.visited, progress.total)
+            running.setText(Control.engine.speedKmh==0 ? I18n.t("Speed is 0 km/h. Use the walking icon to resume travel.") : progress.active
+                ? I18n.format("A route is running: %d of %d stops done.", progress.visited, progress.total)
                 : "");
             dialog.getButton(AlertDialog.BUTTON_NEUTRAL).setEnabled(progress.active);
         }
 
         private void start() {
             if (closed) return;
-            if (!Control.canEnable()) { toast("Location adapter is not ready."); return; }
+            if (!Control.canEnable()) { toast(I18n.t("Location adapter is not ready.")); return; }
             if (selectedGpx != null) { startGpx(); return; }
             String snapshot = Control.mapPoiSnapshot();
             double[][] points = snapshot.isEmpty() ? null : parse(snapshot);
-            if (points == null) { toast("Nearby locations are unavailable right now."); return; }
+            if (points == null) { toast(I18n.t("Nearby locations are unavailable right now.")); return; }
             int maximum = Math.min(AutoWalkPlanner.filter(points).length, NEARBY_LIMIT);
-            if (maximum == 0) { toast("No nearby locations are loaded yet. Move around in-game, then try again."); return; }
+            if (maximum == 0) { toast(I18n.t("No nearby locations are loaded yet. Move around in-game, then try again.")); return; }
             int count;
             String text = countField.getText().toString().trim();
             if (text.isEmpty()) count = maximum;
             else try { count = Integer.parseInt(text); }
-            catch (NumberFormatException e) { countField.setError("Enter 1–" + maximum + ", or leave blank for all"); return; }
-            if (count < 1 || count > maximum) { countField.setError("Enter 1–" + maximum + ", or leave blank for all"); return; }
+            catch (NumberFormatException e) { countField.setError(I18n.format("Enter 1–%1$s, or leave blank for all", String.valueOf((Object)(maximum)))); return; }
+            if (count < 1 || count > maximum) { countField.setError(I18n.format("Enter 1–%1$s, or leave blank for all", String.valueOf((Object)(maximum)))); return; }
 
             AutoWalkPlanner.Plan plan;
             try { plan = AutoWalkPlanner.plan(Control.engine.latitude, Control.engine.longitude, points, count); }
             catch (IllegalArgumentException e) { toast(e.getMessage()); return; }
-            if (plan.empty()) { toast("No nearby locations are loaded yet. Move around in-game, then try again."); return; }
+            if (plan.empty()) { toast(I18n.t("No nearby locations are loaded yet. Move around in-game, then try again.")); return; }
 
             boolean looping = loop.isChecked();
             try { Control.startAutoWalk(plan.route, looping); }
@@ -282,9 +281,9 @@ public final class AutoWalkDialog {
             Control.event("autowalk-started", String.format(Locale.US,
                 "requested=%d selected=%d available=%d loop=%s", plan.requested, plan.selected(), plan.available, looping));
             if (plan.fewerThanRequested())
-                toast("Only " + plan.selected() + " of " + plan.requested + " requested stops are loaded; starting with " + plan.selected() + ".");
+                toast(I18n.format("Only %1$s of %2$s requested stops are loaded; starting with %3$s.", String.valueOf((Object)(plan.selected())), String.valueOf((Object)(plan.requested)), String.valueOf((Object)(plan.selected()))));
             else
-                toast("Auto-walking " + plan.selected() + (plan.selected() == 1 ? " stop" : " stops") + (looping ? " on a loop." : "."));
+                toast(I18n.format("Auto-walking %1$s%2$s%3$s", String.valueOf((Object)(plan.selected())), String.valueOf((Object)((plan.selected() == 1 ? I18n.t(" stop") : I18n.t(" stops")))), String.valueOf((Object)((looping ? I18n.t(" on a loop.") : ".")))));
             dialog.dismiss();
         }
 
@@ -320,8 +319,8 @@ public final class AutoWalkDialog {
                 walkGpx(route, points, looping, 0);
                 return true;
             }));
-            AlertDialog choose = ChoiceList.attach(new AlertDialog.Builder(MapTheme.wrap(activity)).setTitle("Start “" + route.name + "”")
-                .setNegativeButton("Cancel", null).create(), labels.toArray(new String[0]), which -> actions.get(which).run());
+            AlertDialog choose = ChoiceList.attach(new AlertDialog.Builder(MapTheme.wrap(activity)).setTitle(I18n.format("Start “%1$s”", String.valueOf((Object)(route.name))))
+                .setNegativeButton(I18n.t("Cancel"), null).create(), labels.toArray(new String[0]), which -> actions.get(which).run());
             DialogLifecycle.bind(activity, choose, null);
             choose.setOnShowListener(d -> MapTheme.styleButtons(choose));
             choose.show();
@@ -334,8 +333,7 @@ public final class AutoWalkDialog {
             catch (IllegalArgumentException e) { toast(e.getMessage()); return; }
             Control.event("autowalk-gpx-started", String.format(Locale.US, "name=%s stops=%d from=%d loop=%s",
                 route.name, route.points().length, first + 1, looping));
-            toast("Walking “" + route.name + "”" + (first > 0 ? " from stop " + (first + 1) : "") + ": "
-                + points.length + (points.length == 1 ? " stop" : " stops") + (looping ? ", looping." : "."));
+            toast(I18n.format("Walking “%1$s”%2$s: %3$s%4$s%5$s", String.valueOf((Object)(route.name)), String.valueOf((Object)((first > 0 ? " from stop " + (first + 1) : ""))), String.valueOf((Object)(points.length)), String.valueOf((Object)((points.length == 1 ? I18n.t(" stop") : I18n.t(" stops")))), String.valueOf((Object)((looping ? I18n.t(", looping.") : ".")))));
             pendingGpx = null; // consumed
             dialog.dismiss();
         }
@@ -347,7 +345,7 @@ public final class AutoWalkDialog {
             Control.saveState();
             Control.event("autowalk-stopped", "User stopped the active route from Auto-walk");
             updateRunning();
-            toast("Auto-walk stopped.");
+            toast(I18n.t("Auto-walk stopped."));
         }
 
         private void toast(String message) {

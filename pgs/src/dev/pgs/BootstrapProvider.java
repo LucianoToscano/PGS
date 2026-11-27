@@ -56,7 +56,8 @@ public final class BootstrapProvider extends ContentProvider {
         try {
             JSONObject startupMode=new JSONObject(readAsset(context,"pgs/mode.json"));
             if(startupMode.optBoolean("compiledJavaBridges",false)) {
-                GameBridgeDispatch.configureBrowserSignIn(startupMode.optBoolean("googleBrowserLogin",false));
+                // Retired prototype: older saved mode flags must never re-enable it.
+                GameBridgeDispatch.configureBrowserSignIn(false);
                 try { GameBridgeDispatch.prepareDelivery(); }
                 catch(Throwable failure) { Control.event("location-delivery-error","Compiled bridge preparation failed: "+failure.getClass().getSimpleName()); }
                 Control.event("compiled-java-bridges-ready","DEX authentication, permissions and service lifecycle dispatch enabled");
@@ -153,7 +154,7 @@ public final class BootstrapProvider extends ContentProvider {
             File library=compiledHost&&translated?null:copyAsset(context,"pgs/"+abi+"/libfrida-gadget.so",directory,"libfrida-gadget.so");
             File bridge=compiledHost?null:copyAsset(context,"pgs/java-bridge.js",directory,"java-bridge.js");
             File script=copyAsset(context,"pgs/embedded-agent.js",directory,"embedded-agent.js");
-            JSONObject parameters=new JSONObject().put("googleBrowserLogin",mode.optBoolean("googleBrowserLogin",false)).put("startupLog",new File(directory,"gadget-startup.txt").getAbsolutePath());
+            JSONObject parameters=new JSONObject().put("googleBrowserLogin",false).put("startupLog",new File(directory,"gadget-startup.txt").getAbsolutePath());
             if(bridge!=null)parameters.put("bridgePath",bridge.getAbsolutePath());
             parameters.put("compiledJavaBridges",mode.optBoolean("compiledJavaBridges",false));
             if(mode.optBoolean("compiledLocationGetters",false)) {

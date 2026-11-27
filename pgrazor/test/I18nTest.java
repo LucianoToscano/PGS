@@ -80,6 +80,7 @@ public final class I18nTest {
             I18n.init("fr", Locale.US);
             equal("fr", I18n.language());
             equal("Fermer", I18n.t("Close"));
+            equal(french.text("PGS VGP"), french.text("PGRazor VGP"));
             if (I18n.t("PGRazor version %1$s").contains("PGRazor"))
                 throw new AssertionError("PGS display brand did not replace legacy name");
             String brandedArgument = "PGRazor saved user text";

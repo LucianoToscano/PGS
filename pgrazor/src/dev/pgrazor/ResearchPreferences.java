@@ -11,7 +11,7 @@ import java.util.TreeSet;
 /**
  * Pure Java field research preferences and native wire serialization. Tasks are identified by the
  * game's exact quest template key; the catalog lists the field research tasks the game has handed
- * out while PGRazor was running, with the game's own task text and reward.
+ * out while PGS was running, with the game's own task text and reward.
  */
 public final class ResearchPreferences {
     static final int MAX_TEMPLATES = 300, MAX_TEMPLATE = 96, MAX_TEXT = 160;

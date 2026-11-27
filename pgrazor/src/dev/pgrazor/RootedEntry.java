@@ -8,7 +8,7 @@ import java.util.function.Consumer;
  * process after specialization, before ActivityThread.main, through a throwaway loader whose parent
  * is the system loader.
  *
- * <p>This class must reference only JDK and Android classes. It creates the real PGRazor class
+ * <p>This class must reference only JDK and Android classes. It creates the real PGS class
  * loader, whose parent resolves framework classes normally and game classes through the game's own
  * class loader once that exists, then hands control to {@code RootedRuntime} inside it.
  */
@@ -23,7 +23,7 @@ public final class RootedEntry {
             .invoke(null, payload, dataDir, parent);
     }
 
-    /** Parent of the PGRazor loader: framework classes first, then the game's loader once published. */
+    /** Parent of the PGS loader: framework classes first, then the game's loader once published. */
     static final class GameDelegate extends ClassLoader implements Consumer<ClassLoader> {
         private volatile ClassLoader game;
 
@@ -36,7 +36,7 @@ public final class RootedEntry {
 
         @Override protected Class<?> findClass(String name) throws ClassNotFoundException {
             ClassLoader target = game;
-            // PGRazor classes always come from PGRazor's own dex, never from the game.
+            // PGS classes always come from PGS's own dex, never from the game.
             if (target == null || name.startsWith("dev.pgrazor.")) throw new ClassNotFoundException(name);
             return target.loadClass(name);
         }

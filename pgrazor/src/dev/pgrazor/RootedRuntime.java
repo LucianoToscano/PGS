@@ -19,7 +19,7 @@ import java.util.zip.ZipFile;
 import org.json.JSONObject;
 
 /**
- * Stage 1 of PGRazor Root, running inside PGRazor's own class loader.
+ * Stage 1 of PGS Root, running inside PGS's own class loader.
  *
  * <p>Extracts the payload into the game's private storage, loads the host-ABI ART hook library and
  * hooks {@link Instrumentation#callApplicationOnCreate}. That runs right after the game's content
@@ -28,7 +28,7 @@ import org.json.JSONObject;
  * the shared startup ({@link BootstrapProvider#start}). Any failure leaves the game unmodified.
  */
 public final class RootedRuntime {
-    static final String TAG = "PGRazor-root";
+    static final String TAG = "PGS-root";
     private static Consumer<ClassLoader> gameLoader;
 
     private RootedRuntime() {}
@@ -69,25 +69,25 @@ public final class RootedRuntime {
             JSONObject target = new JSONObject(readText(app, "pgrazor/rooted/target.json"));
             PackageInfo installedPackage = app.getPackageManager().getPackageInfo(app.getPackageName(), PackageManager.GET_SIGNING_CERTIFICATES);
             if (!app.getPackageName().equals(target.getString("package")) || !trustedCertificate(installedPackage, target.getString("certificateSha256"))) {
-                Log.e(TAG, "PGRazor Root requires the official game signature; PGRazor stays off");
+                Log.e(TAG, "PGS Root requires the official game signature; PGS stays off");
                 return;
             }
             long supported = target.getLong("versionCode");
             long installed = installedPackage.getLongVersionCode();
             if (installed != supported) {
-                String message = "PGRazor Root supports Pokémon GO " + target.optString("versionName") + ". This game version isn't supported yet, so PGRazor is off.";
+                String message = "PGS Root supports Pokémon GO " + target.optString("versionName") + ". This game version isn't supported yet, so PGS is off.";
                 Log.w(TAG, message + " installed=" + installed);
                 new Handler(Looper.getMainLooper()).postDelayed(() -> Toast.makeText(app, message, Toast.LENGTH_LONG).show(), 4000);
                 return;
             }
             if (!RootedHooks.install(app, app.getClassLoader())) {
-                Log.e(TAG, "bridge hooks incomplete; PGRazor stays off");
+                Log.e(TAG, "bridge hooks incomplete; PGS stays off");
                 return;
             }
-            if (!BootstrapProvider.start(app)) Log.e(TAG, "PGRazor startup declined");
-            else Log.i(TAG, "PGRazor started for " + target.optString("versionName"));
+            if (!BootstrapProvider.start(app)) Log.e(TAG, "PGS startup declined");
+            else Log.i(TAG, "PGS started for " + target.optString("versionName"));
         } catch (Throwable failure) {
-            Log.e(TAG, "PGRazor startup failed; game continues unmodified", failure);
+            Log.e(TAG, "PGS startup failed; game continues unmodified", failure);
         }
     }
 
@@ -139,7 +139,7 @@ public final class RootedRuntime {
         return destination;
     }
 
-    /** Hook on Instrumentation.callApplicationOnCreate: start PGRazor once, then run the original. */
+    /** Hook on Instrumentation.callApplicationOnCreate: start PGS once, then run the original. */
     public static final class AppCreate {
         private Method backup;
         private boolean ran;

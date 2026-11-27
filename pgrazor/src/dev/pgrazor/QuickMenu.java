@@ -30,7 +30,7 @@ public final class QuickMenu {
         void onAccounts();
         void onGifts();
         void onSettings();
-        /** Asks to hide every PGRazor overlay (three fingers on screen show them again). */
+        /** Asks to hide every PGS overlay (three fingers on screen show them again). */
         void onHideOverlays();
     }
 

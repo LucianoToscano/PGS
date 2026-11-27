@@ -1,155 +1,69 @@
-> **PGS:** este documento inclui comandos de compilação herdados. O release PGS assinado deve ser gerado pelo [workflow próprio do PGS](https://github.com/LucianoToscano/PGS/actions/workflows/pgs-v0.0.1-release.yml) usando a chave PGS existente; não executar o workflow legado de distribuição upstream. O modo Root ainda não é publicado pelo PGS.
+# Compilação, assinatura e instalação do PGS
 
-# Building PGRazor
+Este guia cobre apenas os instaladores **PGS — Pokémon GO Spoofers**. O código usa algumas interfaces técnicas de compatibilidade, mas a identidade pública e os releases pertencem ao repositório https://github.com/LucianoToscano/PGS.
 
-Local builds read the Settings header version from `pgrazor/VERSION`. Release builds override it with `PGRAZOR_VERSION` from the workflow release tag. This is the PGRazor version, independent of the base game version.
+## Candidata atual
 
-For the separate Zygisk module and root installer APK, see [PGRazor Root](ROOTED.md). Both products share the Java controls and native gameplay core.
+| Campo | Valor |
+|---|---|
+| PGS | **v0.0.2** (candidata) |
+| Jogo-base | Pokémon GO `0.439.0` (ARM64) |
+| Nome instalado | **Pokémon GO** |
+| Package | `com.nianticlabs.pokemongo` |
+| Android `versionCode` | `2026111605` |
+| Certificado SHA-256 | `D9:5C:6B:DF:CB:D9:1D:C5:C9:CD:E6:98:48:7C:88:E4:99:47:71:A4:75:E4:EF:DE:45:67:B8:D5:F4:4E:96:CF` |
+| APK de distribuição | `PGS v0.0.2.apk` |
+| Asset do release | `PGS.v0.0.2.apk` |
+| SHA-256 do APK | `91865f6242519091a771617f962f17620405624a4a56addec0909d2cdf6b68c1` |
 
-## Requirements
+**Workflow da versão:** https://github.com/LucianoToscano/PGS/actions/workflows/pgs-v0.0.2-release.yml
 
-The APK packaging toolchain supports Windows and Linux. Install Python 3.12+, Node.js 22+, JDK 17+, and the Android SDK. The Python build scripts use the standard library; native compilation also requires Git, CMake 4.4.4 and Ninja 1.13.2. SDK executables are selected for the host; do not rename Linux tools to `.exe` or `.bat`.
+**Build completa verificada:** https://github.com/LucianoToscano/PGS/actions/runs/45980315394
 
-Default SDK packages are `platforms;android-36.1` and `build-tools;36.1.0`. CI uses API 36 / Build Tools 36.0.0. The gameplay core requires NDK `27.3.13750724`; the ART bridge requires NDK `29.0.14206865`. Install both: they serve different compiler requirements.
+Não confunda um ZIP de código ou APK de prévia com o jogo completo.
 
-## Fresh checkout setup
+## Testes do código-fonte
 
-From the repository root, with Python 3.12 selected as `python` and `sdkmanager` on PATH:
+Execute no ambiente de desenvolvimento configurado:
 
-```powershell
-$env:ANDROID_SDK_ROOT = 'C:\Android\Sdk'
-$env:ANDROID_HOME = $env:ANDROID_SDK_ROOT
-$env:PGRAZOR_ANDROID_PLATFORM = 'android-36'
-$env:PGRAZOR_BUILD_TOOLS = '36.0.0'
-python -m pip install "cmake==4.4.4" "ninja==1.13.2"
-sdkmanager "platforms;android-36" "build-tools;36.0.0" "ndk;27.3.13750724" "ndk;29.0.14206865"
-$env:ANDROID_NDK_HOME = Join-Path $env:ANDROID_SDK_ROOT 'ndk/27.3.13750724'
-$env:PGRAZOR_ART_NDK = Join-Path $env:ANDROID_SDK_ROOT 'ndk/29.0.14206865'
-$env:PGRAZOR_NATIVE_DEPS = Join-Path (Get-Location) 'pgrazor/build/native/deps'
-python -B tools/prepare_native.py --download
-```
-
-On Linux, use the equivalent environment setup (replace `/path/to/android-sdk` with the installed SDK):
-
-```bash
-export ANDROID_HOME=/path/to/android-sdk
-export ANDROID_SDK_ROOT="$ANDROID_HOME"
-export PGRAZOR_ANDROID_PLATFORM=android-36
-export PGRAZOR_BUILD_TOOLS=36.0.0
-export ANDROID_NDK_HOME="$ANDROID_HOME/ndk/27.3.13750724"
-export PGRAZOR_ART_NDK="$ANDROID_HOME/ndk/29.0.14206865"
-export PGRAZOR_NATIVE_DEPS="$PWD/pgrazor/build/native/deps"
-python -m pip install "cmake==4.4.4" "ninja==1.13.2"
-sdkmanager "platforms;android-36" "sources;android-36" "build-tools;36.0.0" "ndk;27.3.13750724" "ndk;29.0.14206865"
-python -B tools/prepare_native.py --download
-```
-
-Run each command successfully before continuing. On Windows with several Python versions, use `py -3.12` in place of `python` consistently. The explicit `--download` permits fetching the pinned LSPlant, DexBuilder, parallel_hashmap, xz-embedded and SHA-verified Dobby sources. Only the required Git submodules are initialized. Existing modified or incorrectly pinned dependency trees are rejected; setup never resets them.
-
-Keep these environment variables for subsequent builds. `PGRAZOR_NATIVE_DEPS` selects the dependency cache; `--cache PATH` is also accepted by setup and `art_build.py`. Without an override, a fresh checkout uses `pgrazor/build/native/deps`; existing development checkouts can reuse their verified `.artifacts/native-migration` cache. ART NDK discovery also supports `ANDROID_SDK_ROOT`/`ANDROID_HOME` and the existing local fallback, while gameplay builds use `ANDROID_NDK_HOME`.
-
-For subsequent offline prerequisite verification, without fetching or compiling:
-
-```powershell
-python -B tools/prepare_native.py
-python -B pgrazor/art_build.py --check
+```sh
 python -B tools/check.py
 ```
 
-The first two commands verify dependency commits/gitlinks, source cleanliness, pinned NDK revisions and build tools. `tools/check.py` runs the repository checks. ART builds retain their CMake objects, static archives, link maps, unstripped libraries and provenance receipts under `pgrazor/build/art`; preserve those outputs and the recorded dependency sources for relinking.
+O CI também executa testes nativos em Linux e compila os controles Android no ambiente do GitHub Actions. Os catálogos de idioma, regras de atualização, política de assinatura e regressões de comportamento fazem parte dos testes.
 
-## Local playable build
+## Compilação dos controles
 
-Supply your own unmodified, Niantic-signed ARM64 game APK/APKM/APKS. The supported input is Pokémon GO 0.439.0, version code 2026111602. The release workflow additionally pins its SHA-256:
+O projeto continua usando um diretório técnico de origem compatível com o runtime já instalado. A compilação de controles pode ser acionada por:
 
-```text
-c6d3c04c38ca2f2446957633b4fee8c93dcc9cebdbbaddc9cb9651722ef8f54f
+```sh
+python -B pgrazor/build.py
 ```
 
-Keep the original under the ignored `pgrazor/input/` directory. From the repository root:
+Este comando depende de JDK e Android SDK compatíveis. O arquivo de preview gerado **não** é um instalador completo nem substitui o jogo. O arquivo completo deve ser produzido pelo workflow dedicado da versão, combinando os controles compilados com o APK-base autorizado e executando a verificação de todas as entradas.
 
-```powershell
-python -B pgrazor/nonroot.py --apk pgrazor/input/game.apkm
-python -B pgrazor/release_apk.py --run pgrazor/build/nonroot/RUN-ID --output pgrazor/build/release
-```
+## Assinatura obrigatória
 
-Use the run directory printed by the first command. The second command merges the library-only ARM64 configuration split, removes split-install requirements, labels the installed application Pokémon GO (the in-game menu remains PGRazor), aligns and signs **PGRazor.apk**, and writes checksums. It rejects resource/code splits rather than silently dropping them. No command installs anything on a phone.
+A assinatura usa exclusivamente a **chave PGS existente**. Nunca crie outra chave para um APK distribuído e nunca publique valores dos Secrets, senhas ou chaves privadas.
 
-Single-APK packaging is new and still needs a disconnected-phone install/launch check. Existing split builds remain available in the run directory as a rollback option. Preserve a tested installation until the new candidate has been checked.
+O workflow exige os segredos de assinatura PGS já configurados, verifica a assinatura final, o mesmo package e o crescimento de `versionCode`. Uma compilação de prévia assinada por chave de desenvolvimento não deve ser distribuída como versão funcional.
 
-## Runtime selection on phones and MuMu
+A política completa está em [PGS_UPDATE_POLICY.md](PGS_UPDATE_POLICY.md). O próximo APK após `v0.0.2` deve usar `versionCode` de pelo menos `2026111606`.
 
-The default game build selects compiled production gameplay, including the standard feature hosts. It packages compiled core and ART libraries, Java controls/bridges and rewritten DEX calls. Production asset audits reject Frida and PGRazor JavaScript. The game libraries remain ARM64; MuMu translates those libraries while its Android Java process runs as x86-64.
+## Publicação segura
 
-Compiled Java/ART bridges own location and lifecycle integration. Typed native transport52 exchanges settings and events, including between host and translated guest namespaces on MuMu. The verified render boundary drives native Unity scheduling and host orchestration. Stale snapshots revoke feature leases; no root daemon or external controller is required.
+1. Faça a alteração em branch e execute testes automatizados.
+2. Use o workflow dedicado PGS para compilar o **APK completo**.
+3. Confirme `PGS.json`, `SHA256SUMS.txt`, tamanho do APK, assinatura, package e versão do jogo.
+4. Prepare um **GitHub Release em rascunho**; só publique depois de confirmar instalação e login no celular.
+5. Teste a atualização **por cima** do PGS anterior, sem desinstalar, para verificar a preservação dos dados.
 
-Translated executable code is checked against ARM ELF executable segments and instruction fingerprints. Hook placement, managed-root lifetimes and ART publication have dedicated native fixtures. Current compiled-only live checks are on research MuMu; earlier phone checks of legacy runtimes do not validate this cutover on physical Android. Consult the latest migration receipt for exact gameplay coverage.
+O atualizador do aplicativo consulta exclusivamente os releases do repositório PGS e procura o asset GitHub com o nome normalizado `PGS.vX.Y.Z.apk`, conferindo o SHA-256 antes da instalação.
 
-Frida is available only through explicit `--research-runtime` selection for supported survey, scene, interaction and camera probes. Retained research scripts, the pinned bridge and Gadget provisioning support those builds; they are excluded from normal production APKs. Check `nonroot.py --help` for compatible research flags. The release build information records bundled native architectures separately from the game's ARM64 architecture.
+## Compatibilidade
 
-## Source/tools archives
+O package Android permanece `com.nianticlabs.pokemongo`, o nome instalado permanece **Pokémon GO**, e o certificado continua o mesmo. Bibliotecas nativas, símbolos de ligação Java/JNI e preferências existentes só podem ser renomeados em uma migração específica com testes de atualização e backup.
 
-`python -B tools/source_bundle.py` archives tracked working-tree source, omitting tracked files deleted from the working tree. It fails clearly if allowlisted new project source would otherwise be omitted. Review those files before staging them or explicitly use `python -B tools/source_bundle.py --include-working-tree` for a local archive.
+O menu interno e o joystick são preservados nesta fase. Outras instalações e projetos no aparelho não devem ser tocados.
 
-The explicit option adds only nonignored source beneath `pgrazor/native`, `pgrazor/art`, `pgrazor/src`, `pgrazor/test`, `tools/dex_bridge`, and named native/ART/schema build modules. It does not collect arbitrary untracked notes or handoffs. Both modes reject selected credential/generated paths and symlinks/junctions, including linked parent directories. The option does not stage or commit files; review the archive before distributing it. Inputs, signing keys, device evidence and retention history remain local.
-
-## Signing
-
-Local development creates an ignored `build/pgrazor-development.jks` key with alias `pgrazor`. This key uses a development password; configure a dedicated strong-password keystore for releases. Pre-release builds do not migrate previous pre-release settings or identifiers.
-
-For explicit signing, set `PGRAZOR_KEYSTORE`, `PGRAZOR_KEY_ALIAS`, `PGRAZOR_STORE_PASSWORD`, and `PGRAZOR_KEY_PASSWORD`. Passwords are passed to Android signing tools through environment variable references, not command-line values. A missing configured key or password fails the build. Keep the same certificate across updates.
-
-The `build.py` output named `pgrazor-preview.apk` is a controls preview, **not the game**. Do not publish it as a working PGRazor release.
-
-## GitHub Actions: non-root and rooted releases
-
-Write concise release notes using [the release-note rules](releases/README.md) and [template](releases/TEMPLATE.md). GitHub and Discord share the same notes. Include version-specific download and GitHub release links; the shared footer adds Ko-fi and repository links. Omit verification sections and website-only changes from public notes and the changelog.
-
-Configure these Actions secrets:
-
-| Secret | Value |
-| --- | --- |
-| `PGRAZOR_INPUT_URL` | HTTPS URL to the supported original APKM, or a GitHub release-asset API URL in this repository |
-| `PGRAZOR_KEYSTORE_BASE64` | Base64-encoded release keystore |
-| `PGRAZOR_KEY_ALIAS` | Signing alias, e.g. `pgrazor` for PGRazor |
-| `PGRAZOR_STORE_PASSWORD` | Keystore password |
-| `PGRAZOR_KEY_PASSWORD` | Private-key password |
-
-For a private GitHub input asset, use its `https://api.github.com/repos/OWNER/REPO/releases/assets/ID` URL. The workflow supplies its scoped token; authorization is removed when GitHub redirects to the signed download host.
-
-Run **Actions → Android release (non-root and rooted) → Run workflow**, enter a version tag such as `v0.1.0`, and leave `publish` off for a candidate. Download **PGRazor-android** from the completed run. It contains **PGRazor.apk** (non-root), **PGRazor-Root.apk** (root installer), and **PGRazor-Root-module.zip** (manual root module). Repository read access is required to download private [workflow artifacts](https://docs.github.com/en/actions/how-tos/manage-workflow-runs/download-workflow-artifacts).
-
-After device testing, run with `publish` enabled to create one release containing all three downloads, checksums, and both build receipts. An existing tag/release is not overwritten. The workflow installs the pinned NDKs/build tools and prepares native dependencies before checks and packaging. Its PowerShell setup writes paths to `GITHUB_ENV` so later steps inherit the same compilers and cache. The workflow is manually triggered, does not run on pull requests, and requires a versioned release-notes file at `docs/releases/TAG.md`. The shared `docs/releases/footer.md` is appended automatically, including the optional Ko-fi support link. No secrets or game files are uploaded by source CI.
-
-Both upload and publication verify all three downloads against their checksums and build receipts, check that the game/release versions match, and confirm that the Root APK embeds the exact published module ZIP. Source CI also compiles the Root installer without game input or signing secrets. The signing key remains an Actions secret; keep it unchanged across releases.
-
-## Discord release announcements
-
-Create an incoming webhook in Discord channel `1562582290536726598` under **Edit Channel → Integrations → Webhooks**. Save its URL as the repository Actions secret **DISCORD_RELEASE_WEBHOOK**. Do not commit the URL.
-
-The **Discord release announcement** workflow posts published releases (including labeled prereleases) with release notes, a GitHub link, links to the non-root APK, Root installer APK, and module ZIP when present, and the optional Ko-fi support link. It verifies the webhook's channel before sending. Drafts are not announced. The APK release workflow calls it directly because releases created with `GITHUB_TOKEN` do not trigger another release-event workflow.
-
-To ping a release subscriber role, set the repository Actions **variable** `DISCORD_RELEASE_ROLE_ID` to its numeric role ID (Discord Developer Mode → right-click the role → Copy Role ID). Ensure Discord allows the webhook to mention that role. Only this role is allowed to ping; other roles, users, and everyone mentions remain disabled. Leave the variable unset to send without a ping. This also applies to prereleases and manual announcements.
-
-Without the secret, the announcement step logs a warning and sends nothing. To announce an existing release after setup, manually run **Discord release announcement** with its tag. Manual runs and reruns can post another announcement, so check the channel before retrying. This posts a channel message; it does not crosspost to channel followers.
-
-## Installation and updates
-
-Install the single APK with Android's package installer, or use `adb install -r PGRazor.apk` from a computer. Never uninstall a working PGRazor build just to bypass a signing error; use a build signed with its existing key. An official-store game cannot be replaced in place by a differently signed build. Local application data may be lost if you choose to uninstall it.
-
-The minimum SDK is Android 9 (API 28), but native gameplay hooks are supported only on the pinned ARM64 game build. No emulator, future-version, or all-device compatibility is implied.
-
-## Retention
-
-`cleanup.ps1` removes recognized obsolete generated APK files after packaging. It preserves diagnostic records, keys, inputs, and runtime dependencies. Copy `build-retention.example.json` to the ignored `build-retention.json` on a new checkout; packaging also initializes it if missing and pins the first completed candidate (not a tested rollback). Pin deployed builds and a tested rollback before replacing them. Never commit device-specific retention history.
-
-### Hosted game input
-
-The release workflow reads `PGRAZOR_INPUT_URL`; `tools/private_input.py` verifies its checksum against the selected profile in `pgrazor/native/schema/game/` before packaging. The current input is stored as an asset of the **unpublished** `build-inputs` draft release. Keep that release in draft status; original game packages must not be published as release assets.
-
-For a game update, upload the new original package under a versioned filename, verify its downloaded SHA-256, and update `PGRAZOR_INPUT_URL` to its GitHub API asset URL. The workflow authenticates that download with its repository token. GitHub restricts draft assets to push-capable callers, so the manually dispatched build job has `contents: write`; checkout does not persist that token in Git credentials. Update the pinned checksum and native compatibility bindings together before running the release workflow.
-
-## Game-version updates
-
-See [GAME_UPDATES.md](GAME_UPDATES.md) for the version profile, generated binding
-checks and old/new signature comparison workflow.
+Um APK compilado e assinado **não comprova** automaticamente instalação, login nem funcionamento físico.

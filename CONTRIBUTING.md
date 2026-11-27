@@ -30,7 +30,7 @@ Do not submit game APKs/assets, signing keys, private logs, account details, or 
 
 Native changes must validate metadata and preserve foreground/map leases, GC ownership, cancellation, and error handling. Destructive inventory automation must keep uncertain data and honor selected protection rules. Never use an automated test to spend balls, transfer live Pokémon, or change a user's inventory.
 
-Use PGRazor for display names and `dev.pgrazor` for Java packages. Preserve the public `Control` bridge API and existing saved-setting keys when moving code into smaller classes. Changes to the supported game version need updated contracts and explicit device testing.
+Use PGS for every public display name. The existing `dev.pgrazor` Java namespace is retained exclusively for binary compatibility until a tested migration is available. Preserve the public `Control` bridge API and existing saved-setting keys when moving code into smaller classes. Changes to the supported game version need updated contracts and explicit device testing.
 
 APK publishing is a maintainer operation, not a pull-request workflow. See [BUILDING.md](docs/BUILDING.md).
 

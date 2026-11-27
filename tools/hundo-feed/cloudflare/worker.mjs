@@ -69,21 +69,44 @@ function iflowRows(body,category,now) {
   return {...rows({v:1,fetched_ms:now,hundos:[],spots},now),category,records:[...records.values()]};
 }
 
+async function moonaniRows(body,now) {
+  if (!Array.isArray(body?.data)) throw Error("moonani_schema");
+  const wall=value=>typeof value==="string" && /^\d{4}-\d\d-\d\d \d\d:\d\d:\d\d$/.test(value)? Date.parse(value.replace(" ","T")+"Z"):NaN;
+  const starts=body.data.map(p=>wall(p?.["Start Time"])).filter(Number.isFinite);
+  if (!starts.length && body.data.length) throw Error("moonani_schema");
+  const newest=Math.max(...starts), hour=3600000;
+  const offset=Math.round((newest-now)/hour)*hour, age=now-newest+offset;
+  if (starts.length && (offset < -12*hour || offset>14*hour || age < -120000 || age>hour)) throw Error("invalid_feed");
+  const pokemons=[];
+  for (const p of body.data) {
+    if (!p || !["Attack","Defense","HP"].every(k=>String(p[k])==="15")) continue;
+    const point=String(p.Coords).match(/(-?\d+(?:\.\d+)?)\s*,\s*(-?\d+(?:\.\d+)?)/);
+    const end=wall(p["End Time"])-offset;
+    if (!point || !Number.isFinite(end) || end>now+2*hour || (+point[1]===0 && +point[2]===0)) continue;
+    pokemons.push({attack:15,defence:15,stamina:15,pokemon_id:p.Number,lat:point[1],lng:point[2],
+      despawn:end/1000,cp:p.CP,level:p.Level});
+  }
+  return cityRows({pokemons},now);
+}
+
 async function collect(source, now) {
   const url = new URL(source.url);
   const city=source.kind==="city" && cityHosts.has(url.hostname) && url.pathname==="/query2.php";
+  const moonani=source.kind==="moonani" && url.href==="https://moonani.com/PokeList/ajax.php";
   const iflow=source.kind==="iflow" && url.hostname==="pokecoords.iflowgo.com" &&
     ["pokemon","raids"].includes(source.category) && url.pathname==="/iflowgopokecoords/api/v1/"+(source.category==="raids"?"nearby":"pokemon-search");
   if (url.protocol !== "https:" || url.username || url.password || url.search || url.hash ||
-      (!iflow && !city && !url.pathname.endsWith("/hundos.json"))) throw Error("source_url");
+      (!moonani && !iflow && !city && !url.pathname.endsWith("/hundos.json"))) throw Error("source_url");
   if (iflow) url.search=new URLSearchParams(source.category==="raids"
     ? {lat:"40.758",lon:"-73.9855",radius_km:"2",layers:"raids",limit:"200"} : {page:"1"});
   if (city) url.search=new URLSearchParams({mons:Array.from({length:1025},(_,i)=>i+1).join(","),minIV:"100",since:"0",time:String(now)});
+  if (moonani) url.search="page=pokemon&action=load";
   const controller=new AbortController();
   const timer=setTimeout(()=>controller.abort(),12000);
   try {
   const response = await fetch(url,{redirect:"manual",signal:controller.signal,
-    headers:{Accept:"application/json","User-Agent":"PGS-Hundo-Feed/1"}});
+    method:moonani?"POST":"GET",body:moonani?"draw=1&start=0&length=100&pokemons=&iv=100&pvp=0":undefined,
+    headers:{Accept:"application/json","User-Agent":"PGS-Hundo-Feed/1",...(moonani?{"Content-Type":"application/x-www-form-urlencoded"}:{})}});
   if (!response.ok) {
     const error = Error("upstream_http");
     error.httpStatus=response.status;
@@ -101,6 +124,7 @@ async function collect(source, now) {
     data+=decoder.decode(value,{stream:true});
   }
   const body=JSON.parse(data+decoder.decode());
+  if (moonani) return moonaniRows(body,now);
   if (iflow) return iflowRows(body,source.category,now);
   return city ? cityRows(body,now) : rows(body,now);
   } finally {clearTimeout(timer);}
@@ -109,7 +133,7 @@ async function collect(source, now) {
 async function refresh(env) {
   const now=Date.now(), configs=JSON.parse(env.SOURCES || "[]");
   if (!configs.length) return;
-  if (configs.length>8 || configs.some(s=>!s || !/^[a-z][a-z0-9-]{0,39}$/.test(s.name) ||
+  if (configs.length>9 || configs.some(s=>!s || !/^[a-z][a-z0-9-]{0,39}$/.test(s.name) ||
       !Number.isSafeInteger(s.interval_s) || s.interval_s<interval) ||
       new Set(configs.map(s=>s.name)).size!==configs.length) throw Error("invalid_config");
   const previous=await env.FEED.get(stateKey,"json") || {};

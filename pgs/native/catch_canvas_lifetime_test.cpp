@@ -89,7 +89,7 @@ void drained(){assert(sample().owned==0&&handles.size()==1);}
 int main(int argc,char **argv){
  if(argc!=2)return 1;
  void *lib=dlopen(argv[1],RTLD_NOW|RTLD_LOCAL);if(!lib){std::puts(dlerror());return 2;}
- auto get=reinterpret_cast<const void*(*)(uint32_t)>(dlsym(lib,"pgrazor_native_api"));
+ auto get=reinterpret_cast<const void*(*)(uint32_t)>(dlsym(lib,"pgs_native_api"));
  auto core=get?static_cast<const pgs_native_api_v2*>(get(2)):nullptr;
  assert(core&&core->query_feature(39,99)==nullptr);
  api=static_cast<const PgrCatchCanvasApi*>(core->query_feature(39,1));

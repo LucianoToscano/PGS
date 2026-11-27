@@ -11,7 +11,7 @@
 #include <unistd.h>
 
 // Real-API harness for feature 25 (native VGP scheduling / retry policy). It resolves the table
-// through the exported pgrazor_native_api v2 registry (query_feature(25,1)) and drives the bounded
+// through the exported pgs_native_api v2 registry (query_feature(25,1)) and drives the bounded
 // quarantine state machine directly: scan cadence (arm/due), catch/spin alternation (order), the
 // seen-key quarantine with monotonic expiry and capacity ceiling (seen/touch/sweep), the catch-delay
 // table, and the uncertain-response latch (block/clear_block) which preserves the quarantine across a
@@ -69,7 +69,7 @@ int main(int argc, char **argv) {
   const char *so_path = argc > 1 ? argv[1] : "./libpgrazor.so";
   void *lib = ::dlopen(so_path, RTLD_NOW | RTLD_LOCAL);
   if (!lib) { std::fprintf(stderr, "dlopen(%s) failed: %s\n", so_path, ::dlerror()); return 1; }
-  auto getter = reinterpret_cast<GetApiFn>(::dlsym(lib, "pgrazor_native_api"));
+  auto getter = reinterpret_cast<GetApiFn>(::dlsym(lib, "pgs_native_api"));
   assert(getter);
   const auto *core = static_cast<const pgs_native_api_v2 *>(getter(2));
   assert(core && core->size == 48);

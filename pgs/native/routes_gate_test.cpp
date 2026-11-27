@@ -10,7 +10,7 @@
 int main(int argc,char **argv){
   assert(argc==2);
   void *lib=dlopen(argv[1],RTLD_NOW|RTLD_LOCAL);assert(lib);
-  auto get=reinterpret_cast<const void *(*)(uint32_t)>(dlsym(lib,"pgrazor_native_api"));assert(get);
+  auto get=reinterpret_cast<const void *(*)(uint32_t)>(dlsym(lib,"pgs_native_api"));assert(get);
   const auto *core=static_cast<const pgs_native_api_v2 *>(get(2));assert(core&&core->query_feature);
   assert(!core->query_feature(27,2));
   const auto *a=static_cast<const PgrRoutesGateApi *>(core->query_feature(27,1));

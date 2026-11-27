@@ -231,7 +231,7 @@ int main(int argc, char **argv) {
   assert(argc == 2);
   void *lib = dlopen(argv[1], RTLD_NOW | RTLD_LOCAL);
   if (!lib) { std::puts(dlerror()); return 2; }
-  auto load = reinterpret_cast<const void *(*)(uint32_t)>(dlsym(lib, "pgrazor_native_api"));
+  auto load = reinterpret_cast<const void *(*)(uint32_t)>(dlsym(lib, "pgs_native_api"));
   assert(load);
   auto *core = static_cast<const pgs_native_api_v2 *>(load(2));
   assert(core);

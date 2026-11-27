@@ -122,7 +122,7 @@ int main(int argc, char **argv) {
   assert(argc == 2);
   void *library = dlopen(argv[1], RTLD_NOW | RTLD_LOCAL);
   if (!library) { std::puts(dlerror()); return 2; }
-  auto get = reinterpret_cast<const void *(*)(uint32_t)>(dlsym(library, "pgrazor_native_api"));
+  auto get = reinterpret_cast<const void *(*)(uint32_t)>(dlsym(library, "pgs_native_api"));
   auto core = get ? static_cast<const pgs_native_api_v2 *>(get(2)) : nullptr;
   assert(core && core->query_feature(45, 99) == nullptr);
   loaded = static_cast<const PgrRoutesServicesApi *>(core->query_feature(45, 1));

@@ -1,7 +1,7 @@
 // Standalone Android (x86_64 host) test of the real native items module. Modelled on
 // buddy_feeding_test.cpp (real Dobby hooks against NOP-padded targets) and incubation_test.cpp
 // (fork-per-scenario for clean process-lifetime state). It dlopen()s the built core, pulls the
-// pgrazor_native_api v2 table and asks query_feature(14, 1) for the items API (it invents no
+// pgs_native_api v2 table and asks query_feature(14, 1) for the items API (it invents no
 // getter), installs against real init/list/recycle/result/error targets, and drives a compact
 // fake IL2CPP that models FindObjectOfType / get_Container / DiContainer.Resolve (service +
 // gui), the singleton static field, CreateDelegate, the service -> bag field, the ItemData list
@@ -715,7 +715,7 @@ int main(int argc, char **argv) {
     const bool slow = (argc >= 3 && std::strcmp(argv[2], "slow") == 0);
     void *lib = dlopen(argv[1], RTLD_NOW | RTLD_LOCAL);
     if (!lib) { std::puts(dlerror()); return 2; }
-    auto getter = reinterpret_cast<const void *(*)(uint32_t)>(dlsym(lib, "pgrazor_native_api"));
+    auto getter = reinterpret_cast<const void *(*)(uint32_t)>(dlsym(lib, "pgs_native_api"));
     auto core = getter ? static_cast<const pgs_native_api_v2 *>(getter(2)) : nullptr;
     if (!core || core->query_feature(14, 99) != nullptr) { std::puts("FAIL exact-version"); return 3; }
     g_api = static_cast<const pgs_items_api_v1 *>(core->query_feature(14, 1));

@@ -122,7 +122,7 @@ int main(int argc,char **argv){
   std::puts("PASS independent map POI all five scenarios");return 0;
  }
  void *library=dlopen(argv[1],RTLD_NOW|RTLD_LOCAL);if(!library){std::puts(dlerror());return 2;}
- auto get=reinterpret_cast<const void*(*)(uint32_t)>(dlsym(library,"pgrazor_native_api"));
+ auto get=reinterpret_cast<const void*(*)(uint32_t)>(dlsym(library,"pgs_native_api"));
  auto core=get?static_cast<const pgs_native_api_v2*>(get(2)):nullptr;assert(core&&core->query_feature(42,99)==nullptr);
  testedApi=static_cast<const PgrMapPoiApi*>(core->query_feature(42,1));assert(testedApi&&testedApi->size==24);
  return runIndependent(argc==3?argv[2]:"moving");

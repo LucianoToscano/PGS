@@ -1,7 +1,7 @@
 // Standalone Android (x86_64 host) test of the real native buddy-feeding module. Modelled
 // on quick_spin_test.cpp (real Dobby hooks against NOP-padded targets) and incubation_test.cpp
 // (fork-per-scenario for clean process-lifetime state). It dlopen()s the built core, pulls the
-// pgrazor_native_api v2 table and asks query_feature(12, 1) for the buddy API (it invents no
+// pgs_native_api v2 table and asks query_feature(12, 1) for the buddy API (it invents no
 // getter), installs against real feed/result targets, and drives a compact fake IL2CPP that
 // models FindObjectOfType / DiContainer.Resolve, the BuddyStatsService -> rpc/pokemon fields,
 // get_HasBuddy / get_BuddyPokemon / get_BuddyStats, the static hunger getters, GetItemCount,
@@ -409,7 +409,7 @@ int main(int argc, char **argv) {
     if (argc != 2) return 1;
     void *lib = dlopen(argv[1], RTLD_NOW | RTLD_LOCAL);
     if (!lib) { std::puts(dlerror()); return 2; }
-    auto getter = reinterpret_cast<const void *(*)(uint32_t)>(dlsym(lib, "pgrazor_native_api"));
+    auto getter = reinterpret_cast<const void *(*)(uint32_t)>(dlsym(lib, "pgs_native_api"));
     auto core = getter ? static_cast<const pgs_native_api_v2 *>(getter(2)) : nullptr;
     if (!core || core->query_feature(12, 99) != nullptr) { std::puts("FAIL exact-version"); return 3; }
     g_api = static_cast<const pgs_buddy_api_v1 *>(core->query_feature(12, 1));

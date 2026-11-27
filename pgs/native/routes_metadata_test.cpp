@@ -179,7 +179,7 @@ void failure(int expected,const PgrRoutesMetadataConfig *c=nullptr){
 }
 int main(int argc,char **argv){
  assert(argc==2);void *library=dlopen(argv[1],RTLD_NOW|RTLD_LOCAL);assert(library);
- auto get=reinterpret_cast<const void *(*)(uint32_t)>(dlsym(library,"pgrazor_native_api"));assert(get);
+ auto get=reinterpret_cast<const void *(*)(uint32_t)>(dlsym(library,"pgs_native_api"));assert(get);
  auto *core=static_cast<const pgs_native_api_v2 *>(get(2));assert(core&&core->query_feature&&!core->query_feature(53,2));
  api=static_cast<const PgrRoutesMetadataApi *>(core->query_feature(53,1));
  assert(api&&api->version==1&&api->size==24&&api->config_size==88&&api->output_size==504);

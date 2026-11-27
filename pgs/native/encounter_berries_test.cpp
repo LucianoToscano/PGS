@@ -544,7 +544,7 @@ int main(int argc, char **argv) {
   void *library=dlopen(argv[1],RTLD_NOW|RTLD_LOCAL);
   if(!library){std::puts(dlerror());return 2;}
   using GetApi=const void *(*)(uint32_t);
-  auto get=reinterpret_cast<GetApi>(dlsym(library,"pgrazor_native_api"));
+  auto get=reinterpret_cast<GetApi>(dlsym(library,"pgs_native_api"));
   loaded_core=get?static_cast<const pgs_native_api_v2 *>(get(2)):nullptr;
   if(!loaded_core||loaded_core->version!=2||loaded_core->size!=sizeof(*loaded_core)||!loaded_core->query_feature)return 2;
 #endif

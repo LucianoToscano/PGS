@@ -84,11 +84,25 @@ def scan(root=ROOT):
     }
 
 
+def snapshot_differences(previous, current):
+    """Return path/count differences only, without matching source lines."""
+    old = {row["path"]: row["occurrences"] for row in previous["files"]}
+    new = {row["path"]: row["occurrences"] for row in current["files"]}
+    return [{"path": path, "snapshot": old.get(path, 0), "actual": new.get(path, 0)}
+            for path in sorted(old.keys() | new.keys())
+            if old.get(path, 0) != new.get(path, 0)]
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--summary", action="store_true", help="Omit per-file rows")
+    parser.add_argument("--compare-snapshot", action="store_true",
+                        help="Include per-file count differences against the checked-in snapshot")
     args = parser.parse_args()
     result = scan()
+    if args.compare_snapshot:
+        previous = json.loads((ROOT / SNAPSHOT).read_text(encoding="utf-8"))
+        result["snapshot_differences"] = snapshot_differences(previous, result)
     if args.summary:
         result.pop("files")
     print(json.dumps(result, indent=2, ensure_ascii=True))

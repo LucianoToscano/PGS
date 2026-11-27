@@ -56,7 +56,7 @@ void relocateCandidate(){
 int main(int argc,char **argv){
   assert(argc==2);void *lib=dlopen(argv[1],RTLD_NOW|RTLD_LOCAL);assert(lib);
   using GetApiFn=const void *(*)(uint32_t);
-  auto get=reinterpret_cast<GetApiFn>(dlsym(lib,"pgrazor_native_api"));assert(get);
+  auto get=reinterpret_cast<GetApiFn>(dlsym(lib,"pgs_native_api"));assert(get);
   const auto *core=static_cast<const pgs_native_api_v2*>(get(2));assert(core);
   api=static_cast<const PgrVgpControllerApi*>(core->query_feature(33,1));assert(api&&api->size==72);
   tid=static_cast<uint64_t>(gettid());

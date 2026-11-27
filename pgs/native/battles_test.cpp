@@ -571,7 +571,7 @@ int main(int argc,char **argv) {
 #ifndef PGR_BATTLE_DIRECT_TEST
   if(argc!=2)return 80;
   void *lib=dlopen(argv[1],RTLD_NOW);if(!lib)return 81;
-  auto get=reinterpret_cast<const void *(*)(uint32_t)>(dlsym(lib,"pgrazor_native_api"));
+  auto get=reinterpret_cast<const void *(*)(uint32_t)>(dlsym(lib,"pgs_native_api"));
   loaded_core=get?static_cast<const pgs_native_api_v2 *>(get(2)):nullptr;
   if(!loaded_core)return 82;
 #endif

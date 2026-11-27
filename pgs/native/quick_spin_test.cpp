@@ -11,7 +11,7 @@
 #include <unordered_map>
 
 // Real-API fake-IL2CPP harness for feature 11 (quick-spin). It resolves the table
-// through the exported pgrazor_native_api v2 registry (query_feature(11,1)), installs
+// through the exported pgs_native_api v2 registry (query_feature(11,1)), installs
 // against four real NOP-padded "methods" (so Dobby has room), and drives the native
 // request/dismiss flow with a fake managed heap. No test claims are made here; the
 // coordinator builds and runs this against libpgrazor.so.
@@ -202,7 +202,7 @@ int main(int argc, char **argv) {
     return 1;
   }
 
-  auto getter = reinterpret_cast<GetHookApiFn>(::dlsym(lib, "pgrazor_native_api"));
+  auto getter = reinterpret_cast<GetHookApiFn>(::dlsym(lib, "pgs_native_api"));
   assert(getter);
   const auto *core = static_cast<const pgs_native_api_v2 *>(getter(2));
   assert(core && core->size == 48);

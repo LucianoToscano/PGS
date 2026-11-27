@@ -13,7 +13,7 @@
 #include <unistd.h>
 
 // Real-API fake-IL2CPP harness for feature 26 (native VGP request actions). It resolves the table
-// through the exported pgrazor_native_api v2 registry (query_feature(26,1)) and drives the three actions
+// through the exported pgs_native_api v2 registry (query_feature(26,1)) and drives the three actions
 // against a fake managed heap: a wild target, a fort, an rpc service and a FortSearch request built by
 // object_new. gchandle_new/get/free back a handle table so handle adoption + leak accounting are exact.
 // runtime_invoke captures the PokeballThrow payload and the SendRpc params, and can throw / return null /
@@ -207,7 +207,7 @@ int main(int argc, char **argv) {
   const char *so_path = argc > 1 ? argv[1] : "./libpgrazor.so";
   void *lib = ::dlopen(so_path, RTLD_NOW | RTLD_LOCAL);
   if (!lib) { std::fprintf(stderr, "dlopen(%s) failed: %s\n", so_path, ::dlerror()); return 1; }
-  auto getter = reinterpret_cast<GetApiFn>(::dlsym(lib, "pgrazor_native_api"));
+  auto getter = reinterpret_cast<GetApiFn>(::dlsym(lib, "pgs_native_api"));
   assert(getter);
   const auto *core = static_cast<const pgs_native_api_v2 *>(getter(2));
   assert(core && core->size == 48);

@@ -62,7 +62,7 @@ class NativePrerequisiteTests(unittest.TestCase):
         sdk = self.base / 'sdk'
         art = self.ndk(sdk / 'ndk' / art_build.NDK_VERSION, art_build.NDK_VERSION)
         self.assertEqual(art_build.resolve_art_ndk(self.root, {'ANDROID_HOME': str(sdk)})[0], art)
-        self.assertEqual(art_build.resolve_art_ndk(self.root, {'PGRAZOR_ART_NDK': str(art)})[0], art)
+        self.assertEqual(art_build.resolve_art_ndk(self.root, {'PGS_ART_NDK': str(art)})[0], art)
 
     def test_existing_workspace_artifact_fallback(self):
         art = self.ndk(self.root.parent / '.artifacts/native-migration/android-ndk-r29', art_build.NDK_VERSION)
@@ -84,10 +84,10 @@ class NativePrerequisiteTests(unittest.TestCase):
         portable.mkdir(parents=True)
         self.assertEqual(art_build.dependency_paths(self.root, environ={})['lsplant'].parent, portable)
         selected = self.base / 'cache'
-        self.assertEqual(art_build.dependency_paths(self.root, environ={'PGRAZOR_NATIVE_DEPS': str(selected)})['lsplant'].parent, selected)
+        self.assertEqual(art_build.dependency_paths(self.root, environ={'PGS_NATIVE_DEPS': str(selected)})['lsplant'].parent, selected)
         explicit = self.base / 'explicit'
         self.assertEqual(art_build.dependency_paths(self.root, explicit,
-            {'PGRAZOR_NATIVE_DEPS': str(selected)})['lsplant'].parent, explicit)
+            {'PGS_NATIVE_DEPS': str(selected)})['lsplant'].parent, explicit)
 
     def test_modified_dependency_refused_without_reset(self):
         path, commit = self.repository()

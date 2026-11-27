@@ -70,19 +70,17 @@ class PgsNativeRenameTests(unittest.TestCase):
             self.assertNotIn("pgrazor_art_publication_" + suffix, cmake)
             self.assertNotIn("pgrazor_art_publication_" + suffix, hooks)
         self.assertIn("PGS_ART_CHAIN_TEST", cmake)
-        self.assertIn("PGRAZOR_ART_CHAIN_TEST", cmake)
+        self.assertNotIn("PGRAZOR_ART_CHAIN_TEST", cmake)
         self.assertEqual(art_build.SONAME, "libpgs-art.so")
 
-    def test_new_build_options_accept_preexisting_environment_aliases(self):
+    def test_native_build_options_require_canonical_pgs_names(self):
         self.assertEqual(native_build._PILOT_ENV, "PGS_NATIVE_PILOT")
         self.assertEqual(native_build._DOWNLOAD_ENV, "PGS_NATIVE_DOWNLOAD")
-        self.assertFalse(native_build._enabled("PGS_NATIVE_PILOT", "PGRAZOR_NATIVE_PILOT", {}))
-        self.assertTrue(native_build._enabled("PGS_NATIVE_PILOT", "PGRAZOR_NATIVE_PILOT",
-                                              {"PGS_NATIVE_PILOT": "1"}))
-        self.assertTrue(native_build._enabled("PGS_NATIVE_PILOT", "PGRAZOR_NATIVE_PILOT",
-                                              {"PGRAZOR_NATIVE_PILOT": "1"}))
-        self.assertFalse(native_build._enabled("PGS_NATIVE_PILOT", "PGRAZOR_NATIVE_PILOT",
-                                               {"PGS_NATIVE_PILOT": "0", "PGRAZOR_NATIVE_PILOT": "0"}))
+        self.assertFalse(native_build._enabled("PGS_NATIVE_PILOT", {}))
+        self.assertTrue(native_build._enabled("PGS_NATIVE_PILOT", {"PGS_NATIVE_PILOT": "1"}))
+        self.assertFalse(native_build._enabled("PGS_NATIVE_PILOT", {"PGRAZOR_NATIVE_PILOT": "1"}))
+        self.assertFalse(native_build._enabled("PGS_NATIVE_PILOT",
+                                               {"PGS_NATIVE_PILOT": "0", "PGRAZOR_NATIVE_PILOT": "1"}))
 
     def test_first_party_native_sources_no_longer_include_old_api_header(self):
         old = b'#include "pgrazor_native_api.h"'
@@ -231,7 +229,7 @@ class PgsNativeRenameTests(unittest.TestCase):
         primary = (ROOT / "pgs.cmd").read_text(encoding="utf-8")
         legacy = (ROOT / "nonroot.cmd").read_text(encoding="utf-8")
         self.assertIn("PGS_PYTHON", primary)
-        self.assertIn("PGRAZOR_PYTHON", primary)
+        self.assertNotIn("PGRAZOR_PYTHON", primary)
         self.assertIn("pgs.cmd", legacy)
         self.assertIn("nonroot.py", primary)
 

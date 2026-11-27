@@ -5,16 +5,16 @@
   "changed_files": 37,
   "added_files": 1,
   "previous_occurrences": 1041,
-  "remaining_files": 125,
-  "remaining_occurrences": 745,
+  "remaining_files": 121,
+  "remaining_occurrences": 728,
   "remaining_by_category": {
     "documentation": 274,
     "java": 62,
     "legal": 3,
-    "native": 6,
-    "other": 80,
+    "native": 4,
+    "other": 72,
     "release_history": 103,
-    "tests": 203,
+    "tests": 196,
     "vendor": 6,
     "workflows": 8
   },
@@ -250,16 +250,6 @@
       "occurrences": 2
     },
     {
-      "path": "pgs/art/CMakeLists.txt",
-      "category": "native",
-      "occurrences": 2
-    },
-    {
-      "path": "pgs/art_build.py",
-      "category": "other",
-      "occurrences": 3
-    },
-    {
       "path": "pgs/axml.py",
       "category": "other",
       "occurrences": 2
@@ -292,17 +282,12 @@
     {
       "path": "pgs/native_build.py",
       "category": "other",
-      "occurrences": 3
+      "occurrences": 1
     },
     {
       "path": "pgs/nonroot.py",
       "category": "other",
-      "occurrences": 6
-    },
-    {
-      "path": "pgs/pgs.cmd",
-      "category": "other",
-      "occurrences": 2
+      "occurrences": 5
     },
     {
       "path": "pgs/pgs_candidate.py",
@@ -495,11 +480,6 @@
       "occurrences": 4
     },
     {
-      "path": "pgs/test/test_native_prerequisites.py",
-      "category": "tests",
-      "occurrences": 3
-    },
-    {
       "path": "pgs/test/test_packaging.py",
       "category": "tests",
       "occurrences": 3
@@ -527,7 +507,7 @@
     {
       "path": "pgs/test/test_pgs_native_identity.py",
       "category": "tests",
-      "occurrences": 33
+      "occurrences": 29
     },
     {
       "path": "pgs/test/test_pgs_project_layout.py",
@@ -1076,7 +1056,7 @@
     "limitations": "Counts are exact deltas from the verified indexed baseline; full CI must independently reconcile the snapshot. Older backup readers do not support version 2."
   },
   "current_retention_review": {
-    "base_commit": "2793326dfaf9abfbabf39f6382cf203f376a6831",
+    "base_commit": "9883dc2843f5a86f9711ee692c7cd47c23a9d840",
     "scope": "Current per-file triage; all matching indexed text paths classified exactly once, not a claim of necessity of each individual occurrence.",
     "groups": {
       "historical_records": {
@@ -1145,14 +1125,11 @@
       "build_signing_contracts": {
         "status": "retain_compatibility",
         "reason": "PGS-first build and signing configuration, old configuration aliases and historical guarded rebuilds. No new signing key.",
-        "occurrences": 23,
+        "occurrences": 14,
         "paths": [
           ".github/workflows/pgs-build.yml",
-          "pgs/art/CMakeLists.txt",
-          "pgs/art_build.py",
           "pgs/build.py",
           "pgs/native_build.py",
-          "pgs/pgs.cmd",
           "tools/private_input.py"
         ]
       },
@@ -1184,7 +1161,7 @@
       "legacy_input_artifacts": {
         "status": "retain_compatibility",
         "reason": "Legacy input recognition/rejection, archived verification and cleanup rules. Some files have mixed responsibilities.",
-        "occurrences": 34,
+        "occurrences": 33,
         "paths": [
           "pgs/axml.py",
           "pgs/cleanup-rooted.ps1",
@@ -1227,7 +1204,7 @@
       "tests": {
         "status": "retain_or_review",
         "reason": "Tests of legacy input, data continuity, ABI, build options, attribution and forbidden-name detection. Ordinary fixture use may be reviewed individually.",
-        "occurrences": 203,
+        "occurrences": 196,
         "paths": [
           "pgs/test/AccountProfileDataTest.java",
           "pgs/test/AccountProfileStoreTest.java",
@@ -1246,7 +1223,6 @@
           "pgs/test/test_event_settings_java.py",
           "pgs/test/test_log_export_java.py",
           "pgs/test/test_native_build.py",
-          "pgs/test/test_native_prerequisites.py",
           "pgs/test/test_packaging.py",
           "pgs/test/test_pgs_build_options.py",
           "pgs/test/test_pgs_candidate.py",
@@ -1381,5 +1357,16 @@
     "dependency_pins_unchanged": true,
     "game_input_or_signing_changed": false,
     "live_retry_validated": false
+  },
+  "identity_followup": {
+    "base_commit": "6d72266192a7f01c5bd74d091a5d9a2ea68d398b",
+    "scope": "PGS launcher, canonical public native ABI, Windows/ART/nonsecret options; legal, account/storage, secret migration and historical evidence retained",
+    "old_occurrences": 777,
+    "new_occurrences": 728,
+    "full_ci": "pending",
+    "device_tested": false,
+    "authentication_fixed": false,
+    "signer_changed": false,
+    "auto_build_preserved": true
   }
 }

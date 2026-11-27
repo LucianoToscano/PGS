@@ -147,9 +147,9 @@ def validate_survey_options(enabled, panel_only, abi, flag='--il2cpp-survey'):
 
 
 def runtime_flag(name, environ=None):
-    """Use PGS runtime option names, while accepting existing opt-in aliases."""
+    """Use only canonical PGS runtime opt-in names."""
     env = os.environ if environ is None else environ
-    return env.get('PGS_'+name) == '1' or env.get('PGRAZOR_'+name) == '1'
+    return env.get('PGS_'+name) == '1'
 
 
 @contextlib.contextmanager

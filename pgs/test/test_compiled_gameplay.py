@@ -34,8 +34,8 @@ class CompiledGameplayRejectionTests(unittest.TestCase):
                 self.assertFalse(nonroot.runtime_flag(name, {}))
                 self.assertFalse(nonroot.runtime_flag(name, {'PGS_'+name: '0'}))
                 self.assertTrue(nonroot.runtime_flag(name, {'PGS_'+name: '1'}))
-                self.assertTrue(nonroot.runtime_flag(name, {'PGRAZOR_'+name: '1'}))
-                self.assertTrue(nonroot.runtime_flag(name, {'PGS_'+name: '0', 'PGRAZOR_'+name: '1'}))
+                self.assertFalse(nonroot.runtime_flag(name, {'PGRAZOR_'+name: '1'}))
+                self.assertFalse(nonroot.runtime_flag(name, {'PGS_'+name: '0', 'PGRAZOR_'+name: '1'}))
 
     def test_production_rejects_research_modes_before_build(self):
         for name in ('il2cpp_survey','scene_probe','scene_observe','camera_sample'):

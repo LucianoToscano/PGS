@@ -41,10 +41,10 @@ final class UpdateRules {
         return installed.indexOf('-') >= 0 && latest.indexOf('-') < 0;
     }
 
-    /** PGS releases use a versioned filename for the full APK; the Android package never changes. */
+    /** GitHub Release assets normalize spaces to dots; Android package stays unchanged. */
     static String assetName(boolean rooted, String tag) {
         if (rooted) return "PGS-Root.apk";
-        return parse(tag) == null ? "" : "PGS " + tag + ".apk";
+        return parse(tag) == null ? "" : "PGS." + tag + ".apk";
     }
 
     /**

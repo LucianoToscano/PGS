@@ -14,10 +14,11 @@ Este certificado deve permanecer constante. Os segredos de assinatura estão no 
 | --- | --- | ---: |
 | v0.3.8-pgs.2 | Pokémon GO 0.439.0 | 2026111602 |
 | **v0.3.8-pgs.3** | Pokémon GO 0.439.0 | **2026111603** |
+| **v0.0.1** | Pokémon GO 0.439.0 | **2026111604** |
 
-O último código instalado conhecido é registrado em [`pgrazor/PGS_LAST_VERSION_CODE`](../pgrazor/PGS_LAST_VERSION_CODE). Para cada novo release completo, `pgrazor/release_apk.py` usa `max(codigo_do_jogo, ultimo_pgs+1)` antes de assinar o APK não-root, mantendo o `game_version_code` original para verificar a compatibilidade do módulo Root. O valor realmente assinado é acrescentado ao `build-info.json` em `apk_version_code`.
+O último código de build PGS verificado é registrado em [`pgrazor/PGS_LAST_VERSION_CODE`](../pgrazor/PGS_LAST_VERSION_CODE). Para cada novo release completo, `pgrazor/release_apk.py` usa `max(codigo_do_jogo, ultimo_pgs+1)` antes de assinar o APK não-root, mantendo o `game_version_code` original para verificar a compatibilidade do módulo Root. O valor realmente assinado é acrescentado ao `build-info.json` em `apk_version_code`.
 
-**Após publicar cada nova versão**, atualize `PGS_LAST_VERSION_CODE` com o `apk_version_code` do release anterior *antes* de compilar a seguinte. A geração de updates pontuais também pode usar `pgrazor/pgs_update.py`, que valida APK fonte, assinatura, package, alteração única no manifesto e assinatura de saída.
+**Após concluir e verificar cada novo APK assinado**, atualize `PGS_LAST_VERSION_CODE` com o `apk_version_code` do release anterior *antes* de compilar a seguinte. A geração de updates pontuais também pode usar `pgrazor/pgs_update.py`, que valida APK fonte, assinatura, package, alteração única no manifesto e assinatura de saída.
 
 ## Verificação antes de distribuir
 
@@ -32,7 +33,7 @@ A versão v0.3.8-pgs.3 foi gerada e assinada em [GitHub Actions #45963966748](ht
 
 O código `pgrazor/release_apk.py` agora distingue o PGS pelo seu ledger `PGS_LAST_VERSION_CODE`: exige a variável `PGRAZOR_KEYSTORE` apontando para a chave existente, gera `PGS.apk` e rejeita o binário se o SHA-256 do certificado não for o definido para PGS. O fluxo original continua usando `PGRazor.apk` quando o ledger não existe.
 
-O workflow herdado `Android release (non-root and rooted)` está **explicitamente bloqueado no repositório PGS**, porque ainda é específico do PGRazor e não deve publicar pacotes com nomes ou segredos de assinatura misturados. O build de versão completa do PGS deverá ter seu próprio workflow validado antes de uma publicação. O bloqueio não modifica nem elimina o instalador v0.3.8-pgs.3 já assinado.
+O workflow herdado `Android release (non-root and rooted)` está **explicitamente bloqueado no repositório PGS**, porque ainda é específico do PGRazor e não deve publicar pacotes com nomes ou segredos de assinatura misturados. O PGS usa agora o workflow próprio `.github/workflows/pgs-v0.0.1-release.yml`, validado para gerar APK completo com os controles Java recompilados, mantendo os demais arquivos do APK anterior por hash. O bloqueio não modifica nem elimina o instalador v0.3.8-pgs.3 já assinado.
 
 Os testes automatizados cobrem a recusa de chaves ausentes, de `versionCode` inválido e de certificados divergentes. **Eles não substituem a validação de uma build completa e sua instalação física.**
 
@@ -45,3 +46,11 @@ O APK `v0.3.8-pgs.3` tem `versionCode=2026111603`. O primeiro release completo `
 A partir de `v0.0.1`, o atualizador consulta **somente** os releases do repositório `LucianoToscano/PGS`, valida a entrada de arquivo versionada e exige o SHA-256 correspondente antes de encaminhar ao instalador Android. O antigo APK não recebe essa configuração retroativamente: o primeiro upgrade desta linha requer a instalação manual do novo APK por cima da instalação PGS compatível.
 
 Sem evidência de teste físico, uma build só pode ser marcada como **candidata ou draft**, nunca como instalação e gameplay confirmados.
+
+## Nomes de arquivos do GitHub e continuidade futura
+
+O arquivo no artefato Actions tem o nome solicitado `PGS v0.0.1.apk`. Ao anexar um APK ao GitHub Release, o próprio GitHub normaliza espaços em nomes de assets para pontos: `PGS.v0.0.1.apk`. O atualizador PGS verifica esse **nome real de release**, a URL do repositório `LucianoToscano/PGS` e o checksum SHA-256 da lista de release antes da instalação. Os nomes externos não alteram o package Android nem a chave.
+
+A candidata PGS v0.0.1 foi verificada com o certificado definitivo e o Android `versionCode=2026111604`. O ledger de continuidade registra esse código para que a próxima build use **2026111605 ou maior**. A versão pública seguinte deverá ser `v0.0.2`, mediante nova compilação e testes; o registro do ledger não significa que a instalação física já foi testada.
+
+O release v0.0.1 permanece em **draft** até confirmação real de instalação e login. As verificações automatizadas comparam as entradas originais do APK e preservam integralmente as bibliotecas nativas e outros DEX do jogo, exceto o controle Java PGS atualizado e o `versionCode`.

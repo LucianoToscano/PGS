@@ -106,6 +106,7 @@ jobs:
           from pathlib import Path
           result = json.loads(Path('PGS.json').read_text(encoding='utf-8'))
           assert result['apk'] == 'PGS v0.0.1.apk'
+          assert result['release_asset'] == 'PGS.v0.0.1.apk'
           assert result['package'] == 'com.nianticlabs.pokemongo'
           assert result['version_code'] == 2026111604
           assert result['signing_certificate_sha256'] == 'd95c6bdfcbd91dc5c9cde698487c88e4994771a475e4efde4567b8d5f44e96cf'
@@ -158,8 +159,16 @@ jobs:
           assert data['source_commit'] == os.environ['GITHUB_SHA']
           assert data['package'] == 'com.nianticlabs.pokemongo'
           assert data['version_code'] == 2026111604
+          assert data['release_asset'] == 'PGS.v0.0.1.apk'
           assert data['device_tested'] is False
           PY
+          # GitHub Release normalizes spaces in asset names to dots. Keep
+          # the requested space-containing filename in Actions artifacts;
+          # use the actual canonical release name for in-app updates and sums.
+          mv 'PGS v0.0.1.apk' PGS.v0.0.1.apk
+          current_sha="$(cut -d ' ' -f1 SHA256SUMS.txt)"
+          printf '%s  PGS.v0.0.1.apk\n' "$current_sha" > SHA256SUMS.txt
+          sha256sum -c SHA256SUMS.txt
       - name: Assemble draft v0.0.1 with verified full APK
         shell: bash
         env:
@@ -167,12 +176,20 @@ jobs:
           GH_REPO: ${{ github.repository }}
         run: |
           set -euo pipefail
-          if gh release view v0.0.1 --repo "$GH_REPO" >/dev/null 2>&1; then
-            echo "Existing draft/release found. Refusing to overwrite its APK."
-            exit 0
+          release_state="$(gh api "repos/$GH_REPO/releases?per_page=100" --jq '.[] | select(.tag_name == "v0.0.1") | .draft' | head -n 1)"
+          if [ "$release_state" = "false" ]; then
+            echo 'The v0.0.1 release is published. Refusing to replace publicly distributed assets.'
+            exit 1
           fi
-          cat docs/releases/v0.0.1.md docs/releases/footer.md > "$RUNNER_TEMP/pgs-notes.md"
-          gh release create v0.0.1 \
-            'release/PGS v0.0.1.apk' release/PGS.json release/SHA256SUMS.txt \
-            --repo "$GH_REPO" --target "$GITHUB_SHA" --title 'PGS v0.0.1' \
-            --draft --notes-file "$RUNNER_TEMP/pgs-notes.md"
+          if [ "$release_state" = "true" ]; then
+            echo 'Updating the existing v0.0.1 draft with the verified corrected PGS APK.'
+            gh release upload v0.0.1 \
+              release/PGS.v0.0.1.apk release/PGS.json release/SHA256SUMS.txt \
+              --clobber --repo "$GH_REPO"
+          else
+            cat docs/releases/v0.0.1.md docs/releases/footer.md > "$RUNNER_TEMP/pgs-notes.md"
+            gh release create v0.0.1 \
+              release/PGS.v0.0.1.apk release/PGS.json release/SHA256SUMS.txt \
+              --repo "$GH_REPO" --target "$GITHUB_SHA" --title 'PGS v0.0.1' \
+              --draft --notes-file "$RUNNER_TEMP/pgs-notes.md"
+          fi

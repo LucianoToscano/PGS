@@ -55,7 +55,7 @@ jobs:
         run: python -B tools/source_bundle.py
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
-          name: PGRazor-source-tools
-          path: dist/PGRazor-source-tools.zip
+          name: PGS-source-tools
+          path: dist/PGS-source-tools.zip
           if-no-files-found: error
           retention-days: 14

@@ -1,0 +1,74 @@
+name: Hundo feed production read-only probe
+on:
+  pull_request:
+    paths:
+      - '.github/workflows/hundo-feed-live-probe.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+    steps:
+      - name: Inspect the existing public Worker without modifying it
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          import concurrent.futures
+          import datetime
+          import json
+          import time
+          import urllib.error
+          import urllib.request
+          base = "https://pgs-hundo-feed.lucianotoscano.workers.dev"
+          paths = ["/status.json", "/hundos.json", "/sources.json"]
+          class NoRedirect(urllib.request.HTTPRedirectHandler):
+              def redirect_request(self, req, fp, code, msg, headers, newurl):
+                  return None
+          def inspect(path):
+              out = {"path": path, "observed_at_utc": datetime.datetime.now(datetime.timezone.utc).isoformat()}
+              try:
+                  opener = urllib.request.build_opener(NoRedirect())
+                  req = urllib.request.Request(base + path, headers={"Accept": "application/json", "User-Agent": "PGS-Hundo-Feed-QA/1 (+https://github.com/LucianoToscano/PGS)"})
+                  with opener.open(req, timeout=12) as response:
+                      out["http_status"] = response.status
+                      out["content_type"] = response.headers.get_content_type()
+                      raw = response.read(1048577)
+                  if len(raw) > 1048576:
+                      raise ValueError("response too large")
+                  body = json.loads(raw.decode("utf-8-sig"))
+                  if not isinstance(body, dict):
+                      raise ValueError("unexpected JSON envelope")
+                  now = int(time.time() * 1000)
+                  if path == "/status.json":
+                      out["snapshot_time"] = body.get("time")
+                      keys = ("provider", "status", "state", "detail_status", "state_label", "reason", "http_status", "content_type", "active", "received", "validated", "discarded", "last_success", "last_attempt", "next_attempt", "next_retry", "failures")
+                      out["connections"] = [{k:c.get(k) for k in keys if k in c} for c in body.get("connections", []) if isinstance(c, dict)]
+                  elif path == "/hundos.json":
+                      out["version"] = body.get("v")
+                      out["fetched_ms"] = body.get("fetched_ms")
+                      out["age_seconds"] = round((now - body["fetched_ms"]) / 1000) if isinstance(body.get("fetched_ms"), int) else None
+                      out["coordinate_precision"] = body.get("coordinate_precision")
+                      for key in ("hundos", "spots"):
+                          rows = body.get(key)
+                          if not isinstance(rows, list):
+                              raise ValueError("missing compact array")
+                          out[key + "_count"] = len(rows)
+                          out[key + "_unexpired_count"] = sum(isinstance(r, list) and len(r) == 8 and isinstance(r[5], (int,float)) and r[5] > now for r in rows)
+                      out["source_counts"] = {name:{k:v[k] for k in ("active", "unique", "status", "http_status") if k in v} for name,v in body.get("sources", {}).items() if isinstance(v, dict)}
+                  else:
+                      out["providers"] = [{k:p[k] for k in ("provider", "status", "categories") if k in p} for p in body.get("providers", []) if isinstance(p, dict)]
+                  out["result"] = "observed"
+              except urllib.error.HTTPError as error:
+                  out.update(result="http_error", http_status=error.code)
+              except Exception as error:
+                  out.update(result="unavailable", error_type=type(error).__name__)
+              return out
+          with concurrent.futures.ThreadPoolExecutor(max_workers=3) as pool:
+              report = list(pool.map(inspect, paths))
+          for result in report:
+              print(json.dumps(result, ensure_ascii=True, sort_keys=True))
+          if any(result["result"] != "observed" for result in report):
+              print("::warning::Live probe incomplete; no availability conclusion for failed requests.")
+          PY

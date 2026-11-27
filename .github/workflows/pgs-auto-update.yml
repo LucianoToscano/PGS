@@ -1,0 +1,27 @@
+name: PGS AUTO UPDATE - Version monitor
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '23 */6 * * *'
+  pull_request:
+    paths:
+      - 'tools/pgs_version_monitor.py'
+      - '.github/workflows/pgs-auto-update.yml'
+permissions:
+  contents: read
+jobs:
+  monitor:
+    if: github.event_name != 'schedule' || vars.PGS_AUTO_UPDATE_ENABLED == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
+      - name: Offline tests
+        run: python3 -B tools/pgs_version_monitor.py --self-test
+      - name: Check public version catalog
+        if: github.event_name != 'pull_request'
+        env:
+          PGS_GAME_REVIEWED_VERSION: ${{ vars.PGS_GAME_REVIEWED_VERSION }}
+        run: python3 -B tools/pgs_version_monitor.py

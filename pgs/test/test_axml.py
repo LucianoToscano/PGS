@@ -8,7 +8,7 @@ import unittest
 import zipfile
 
 ROOT = Path(__file__).resolve().parents[1]
-spec = importlib.util.spec_from_file_location('pgrazor_axml', ROOT / 'axml.py')
+spec = importlib.util.spec_from_file_location('pgs_axml', ROOT / 'axml.py')
 axml = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(axml)
 

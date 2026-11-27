@@ -22,7 +22,7 @@ int pgr_smart_auto_ball(const double base[4], const int stock[4], int min_ball, 
                         bool curve, int target);
 
 // Smart Background Catcher native helper (FEATURE_PROPOSALS module2). This is an INTERNAL C++ helper
-// surface (NOT an exported pgrazor_native_api feature table): the VGP controller (feature 25/26) and the
+// surface (NOT an exported pgs_native_api feature table): the VGP controller (feature 25/26) and the
 // existing VGP actions/aux modules link these functions directly and drive them from the ALREADY-PROVEN
 // Unity owner thread. The coordinator integrates the controller plumbing and the Java transport; this
 // module only:

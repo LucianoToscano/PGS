@@ -2,7 +2,7 @@
 #include <cstdint>
 #include "throws.h"   // PgrThrowValue (the verified 12-byte PokeballThrow by-value)
 
-// PGRazor native migration: AR+ catch metadata injection (feature id 5).
+// PGS native module: AR+ catch metadata injection (feature id 5).
 //
 // This layer does NOT grant a catch bonus. It replaces the ARPlusEncounterValuesProto
 // argument handed to the game's TryCapture with a freshly allocated instance whose

@@ -164,7 +164,7 @@ def main():
             for name, path in replacements.items():
                 out.write(path, name)
         if args.serial:
-            remote = '/data/local/tmp/pgrazor-dex-bridge-' + stamp + '.jar'
+            remote = '/data/local/tmp/pgs-dex-bridge-' + stamp + '.jar'
             adb = [args.adb, '-s', args.serial]
             run(adb + ['push', patched, remote])
             output = run(adb + ['shell', 'env', 'CLASSPATH=' + remote, 'app_process', '/system/bin', 'BridgeFixture'])

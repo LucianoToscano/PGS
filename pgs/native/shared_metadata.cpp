@@ -1466,7 +1466,7 @@ int resolve(const PgrSharedMetadataConfig *input, PgrSharedMetadataOutput *out) 
   // One line per unavailable subfeature, so a game update that breaks one is diagnosable from logcat.
   for (size_t i = 0; i < kOptionalCount; ++i)
     if (out->optional[i] != PGR_SHARED_OPT_AVAILABLE)
-      __android_log_print(ANDROID_LOG_WARN, "PGRazorMetadata", "optional %s unavailable: %d %s",
+      __android_log_print(ANDROID_LOG_WARN, "PGSMetadata", "optional %s unavailable: %d %s",
                           kOptional[i].key, out->optional_error[i], out->optional_reason[i]);
 #endif
   return (final_rc = PGR_MD_OK);

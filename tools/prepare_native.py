@@ -2,9 +2,9 @@
 
 Requires Python 3.11+. Install NDKs with sdkmanager "ndk;27.3.13750724" "ndk;29.0.14206865" and
 install cmake/ninja on PATH (Python wheels also work). Set ANDROID_NDK_HOME
-to the gameplay NDK27 directory and optionally PGRAZOR_ART_NDK to NDK29.
+to the gameplay NDK27 directory and optionally PGS_ART_NDK to NDK29.
 Run with --download once to fetch pinned sources, then omit it for offline checks.
-Use --cache or PGRAZOR_NATIVE_DEPS for a shared dependency cache; retain the
+Use --cache or PGS_NATIVE_DEPS for a shared dependency cache; retain the
 same setting for later art_build/nonroot commands and retain build receipts.
 """
 import argparse
@@ -80,8 +80,8 @@ def main(argv=None):
         checked = art_build.preflight(ROOT, args.cache)
         checked['gameplay_ndk'] = str(gameplay)
         checked['gameplay_build_environment'] = {'ANDROID_NDK_HOME': str(gameplay)}
-        checked['art_build_environment'] = {'PGRAZOR_ART_NDK': str(checked['ndk']),
-            'PGRAZOR_NATIVE_DEPS': str(checked['paths']['lsplant'].parent)}
+        checked['art_build_environment'] = {'PGS_ART_NDK': str(checked['ndk']),
+            'PGS_NATIVE_DEPS': str(checked['paths']['lsplant'].parent)}
         print(json.dumps(checked, default=str, indent=2))
         return 0
     except (OSError, RuntimeError, subprocess.CalledProcessError) as error:

@@ -24,7 +24,7 @@ O seletor **EN / PT-BR** do site é independente dos idiomas disponíveis no apl
 
 ## Por que ainda aparecem nomes antigos na busca?
 
-A árvore de código `pgrazor/`, o pacote Java `dev.pgs`, os caminhos de execução `assets/pgrazor`, interfaces nativas e algumas preferências antigas são **contratos de compatibilidade técnica**. O histórico Git e branches de backup também foram preservados. Renomear esses elementos sem migração testada pode impedir que o APK PGS abra ou recupere dados salvos.
+Os caminhos atuais do código, Java e execução são `pgs/`, `dev.pgs` e `assets/pgs/`. IDs de aplicativos instalados, caminhos físicos do módulo root, chaves de backup persistidas, identidade de assinatura e aliases preservados da ABI são **contratos de compatibilidade técnica**. Mantenha a detecção de entradas antigas, os créditos originais, o histórico Git e as branches de backup.
 
 A identidade pública e os links de atualização devem usar PGS. O texto exato de atribuição legal permanece. A migração dos identificadores internos está registrada na [issue #38](https://github.com/LucianoToscano/PGS/issues/38) e exige testes, package/certificado inalterados, APK completo assinado e atualização física sem perda de dados. Não apague backups ou testes históricos só para reduzir resultados na busca.
 

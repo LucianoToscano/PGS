@@ -29,7 +29,7 @@ class PgsCandidateTests(unittest.TestCase):
                            "authorities": pgs_update.GAME_PACKAGE + ".pgs.bootstrap"}],
             "activities": [],
         }
-        self.mode = {"pgrazorVersion": "v0.0.3", "compiledGameplay": True,
+        self.mode = {"pgsVersion": "v0.0.3", "compiledGameplay": True,
                      "gadget": False, "runtimeAbis": ["arm64-v8a", "x86_64"]}
         self.members = {
             "AndroidManifest.xml": b"synthetic manifest",
@@ -91,6 +91,18 @@ class PgsCandidateTests(unittest.TestCase):
         self.assertFalse(report["in_place_update_tested"])
         self.assertFalse(report["publish_ready"])
         self.assertEqual(self.apk.read_bytes(), before)
+
+    def test_reject_legacy_only_version_metadata(self):
+        self.mode["pgrazorVersion"] = self.mode.pop("pgsVersion")
+        self.write()
+        with self.assertRaisesRegex(ValueError, "mode version"):
+            self.verify()
+
+    def test_reject_conflicting_legacy_version_metadata(self):
+        self.mode["pgrazorVersion"] = "v0.0.2"
+        self.write()
+        with self.assertRaisesRegex(ValueError, "mode version"):
+            self.verify()
 
     def test_reject_small_preview(self):
         self.write()

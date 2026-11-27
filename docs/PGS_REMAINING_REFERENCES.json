@@ -1,22 +1,22 @@
 {
-  "scope": "Phase 19 provisional indexed regular UTF-8 source snapshot; exact deltas against validated phase 18; full CI pending.",
+  "scope": "Consolidated phase 19 indexed UTF-8 inventory; exact deltas against earlier PR head and validated main; final CI pending.",
   "tracked_files": 2106,
   "text_files": 1031,
-  "changed_files": 91,
+  "changed_files": 119,
   "added_files": 0,
   "previous_occurrences": 1463,
-  "remaining_files": 233,
-  "remaining_occurrences": 1149,
+  "remaining_files": 213,
+  "remaining_occurrences": 1115,
   "remaining_by_category": {
     "workflows": 71,
-    "other": 116,
-    "documentation": 273,
+    "other": 114,
+    "documentation": 269,
     "release_history": 103,
     "legal": 3,
-    "native": 201,
-    "tests": 304,
+    "native": 184,
+    "tests": 295,
     "java": 69,
-    "javascript": 3,
+    "javascript": 1,
     "vendor": 6
   },
   "files": [
@@ -66,11 +66,6 @@
       "occurrences": 1
     },
     {
-      "path": "docs/en/PGS_REPOSITORY_SETTINGS.md",
-      "category": "documentation",
-      "occurrences": 2
-    },
-    {
       "path": "docs/en/PGS_TECHNICAL_MIGRATION.md",
       "category": "documentation",
       "occurrences": 26
@@ -109,11 +104,6 @@
       "path": "docs/PGS_UPDATE_POLICY.md",
       "category": "documentation",
       "occurrences": 1
-    },
-    {
-      "path": "docs/pt-BR/PGS_REPOSITORY_SETTINGS.md",
-      "category": "documentation",
-      "occurrences": 2
     },
     {
       "path": "docs/pt-BR/PGS_TECHNICAL_MIGRATION.md",
@@ -366,27 +356,12 @@
       "occurrences": 20
     },
     {
-      "path": "pgs/native/always_hit.h",
-      "category": "native",
-      "occurrences": 1
-    },
-    {
-      "path": "pgs/native/ar_throw.h",
-      "category": "native",
-      "occurrences": 1
-    },
-    {
       "path": "pgs/native/auto_raid.h",
       "category": "native",
       "occurrences": 1
     },
     {
       "path": "pgs/native/battery.h",
-      "category": "native",
-      "occurrences": 1
-    },
-    {
-      "path": "pgs/native/battles.h",
       "category": "native",
       "occurrences": 1
     },
@@ -406,18 +381,8 @@
       "occurrences": 3
     },
     {
-      "path": "pgs/native/camera_host.h",
-      "category": "native",
-      "occurrences": 3
-    },
-    {
       "path": "pgs/native/camera_sampler_test.cpp",
       "category": "tests",
-      "occurrences": 1
-    },
-    {
-      "path": "pgs/native/catch_animation.h",
-      "category": "native",
       "occurrences": 1
     },
     {
@@ -436,11 +401,6 @@
       "occurrences": 1
     },
     {
-      "path": "pgs/native/catch_observers.h",
-      "category": "native",
-      "occurrences": 1
-    },
-    {
       "path": "pgs/native/CMakeLists.txt",
       "category": "native",
       "occurrences": 1
@@ -456,24 +416,14 @@
       "occurrences": 2
     },
     {
-      "path": "pgs/native/encounter_berries.h",
-      "category": "native",
-      "occurrences": 1
-    },
-    {
       "path": "pgs/native/gift_batch_test.cpp",
       "category": "tests",
       "occurrences": 1
     },
     {
-      "path": "pgs/native/gym_runtime.cpp",
-      "category": "native",
-      "occurrences": 2
-    },
-    {
       "path": "pgs/native/hook_engine_diag.h",
       "category": "native",
-      "occurrences": 2
+      "occurrences": 1
     },
     {
       "path": "pgs/native/hook_engine_near_test.cpp",
@@ -494,11 +444,6 @@
       "path": "pgs/native/incoming_gifts_test.cpp",
       "category": "tests",
       "occurrences": 2
-    },
-    {
-      "path": "pgs/native/incubation.cpp",
-      "category": "native",
-      "occurrences": 1
     },
     {
       "path": "pgs/native/incubation.h",
@@ -571,11 +516,6 @@
       "occurrences": 2
     },
     {
-      "path": "pgs/native/rocket_combat.h",
-      "category": "native",
-      "occurrences": 1
-    },
-    {
       "path": "pgs/native/routes_actions_test.cpp",
       "category": "tests",
       "occurrences": 1
@@ -641,16 +581,6 @@
       "occurrences": 1
     },
     {
-      "path": "pgs/native/shared_metadata.cpp",
-      "category": "native",
-      "occurrences": 1
-    },
-    {
-      "path": "pgs/native/smart_catch.h",
-      "category": "native",
-      "occurrences": 1
-    },
-    {
       "path": "pgs/native/spin_camera_test.cpp",
       "category": "tests",
       "occurrences": 1
@@ -674,11 +604,6 @@
       "path": "pgs/native/tests/accounts_test.cpp",
       "category": "tests",
       "occurrences": 2
-    },
-    {
-      "path": "pgs/native/throws.h",
-      "category": "native",
-      "occurrences": 1
     },
     {
       "path": "pgs/native/transfer_execution_test.cpp",
@@ -743,12 +668,12 @@
     {
       "path": "pgs/nonroot.py",
       "category": "other",
-      "occurrences": 11
+      "occurrences": 10
     },
     {
       "path": "pgs/pgs_candidate.py",
       "category": "other",
-      "occurrences": 5
+      "occurrences": 6
     },
     {
       "path": "pgs/pgs_rebrand.py",
@@ -812,16 +737,6 @@
     },
     {
       "path": "pgs/runtime/native-core.js",
-      "category": "javascript",
-      "occurrences": 1
-    },
-    {
-      "path": "pgs/runtime/native-transport.js",
-      "category": "javascript",
-      "occurrences": 1
-    },
-    {
-      "path": "pgs/runtime/translated.js",
       "category": "javascript",
       "occurrences": 1
     },
@@ -916,11 +831,6 @@
       "occurrences": 1
     },
     {
-      "path": "pgs/test/dex_bridge_fixture.py",
-      "category": "tests",
-      "occurrences": 1
-    },
-    {
       "path": "pgs/test/I18nTest.java",
       "category": "tests",
       "occurrences": 4
@@ -929,11 +839,6 @@
       "path": "pgs/test/native-core-test.cjs",
       "category": "tests",
       "occurrences": 4
-    },
-    {
-      "path": "pgs/test/native-transport-test.cjs",
-      "category": "tests",
-      "occurrences": 2
     },
     {
       "path": "pgs/test/PogoFeedDataTest.java",
@@ -958,12 +863,12 @@
     {
       "path": "pgs/test/test_axml.py",
       "category": "tests",
-      "occurrences": 3
+      "occurrences": 2
     },
     {
       "path": "pgs/test/test_compiled_gameplay.py",
       "category": "tests",
-      "occurrences": 11
+      "occurrences": 9
     },
     {
       "path": "pgs/test/test_discord_release.py",
@@ -998,7 +903,7 @@
     {
       "path": "pgs/test/test_native_prerequisites.py",
       "category": "tests",
-      "occurrences": 6
+      "occurrences": 3
     },
     {
       "path": "pgs/test/test_packaging.py",
@@ -1013,7 +918,7 @@
     {
       "path": "pgs/test/test_pgs_candidate.py",
       "category": "tests",
-      "occurrences": 3
+      "occurrences": 4
     },
     {
       "path": "pgs/test/test_pgs_license.py",
@@ -1078,7 +983,7 @@
     {
       "path": "pgs/test/test_rooted_packaging.py",
       "category": "tests",
-      "occurrences": 9
+      "occurrences": 8
     },
     {
       "path": "pgs/test/test_source_bundle.py",
@@ -1156,11 +1061,6 @@
       "occurrences": 1
     },
     {
-      "path": "tools/prepare_native.py",
-      "category": "other",
-      "occurrences": 4
-    },
-    {
       "path": "tools/private_input.py",
       "category": "other",
       "occurrences": 3
@@ -1173,7 +1073,7 @@
     {
       "path": "tools/verify_release.py",
       "category": "other",
-      "occurrences": 6
+      "occurrences": 8
     },
     {
       "path": "website/src/App.jsx",
@@ -1202,6 +1102,15 @@
     "source_alias_direction": "canonical PGS definitions, legacy typedef aliases",
     "validation": "pending full source CI",
     "excluded_original_blob": "pgs/native/account_host.cpp",
-    "modified_files_including_inventory": 92
+    "modified_files_including_inventory": 120,
+    "additional_cleanup": {
+      "modified_files_including_inventory": 33,
+      "previous_head": "ec447ff9fbccb17c2193379145b01149afa4983c",
+      "previous_provisional_occurrences": 1149,
+      "remaining_provisional_occurrences": 1115,
+      "previous_head_ci": 46028317356,
+      "validation": "pending exact new head CI",
+      "protected_references": "Legal attribution, historical records, legacy input rejection, persistent keys, signing contracts and explicit ABI compatibility remain; unresolved residuals are not asserted to be necessary."
+    }
   }
 }

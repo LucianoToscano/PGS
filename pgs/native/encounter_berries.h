@@ -1,7 +1,7 @@
 #pragma once
 #include <stdint.h>
 
-// PGRazor native migration: encounter berry priority / request / lifetime controller
+// PGS native module: encounter berry priority / request / lifetime controller
 // (feature id 18). A native port of the state machine in runtime/features/berries.js
 // (berryState / berryTick, with berryResume / berryClear), PLUS the submit/peek decision
 // logic and the result/error done-latch that the inline Gum replacement and observers host.

@@ -1,7 +1,7 @@
 #pragma once
 #include <cstdint>
 
-// PGRazor native migration: catch animation speed ownership (feature id 8).
+// PGS native module: catch animation speed ownership (feature id 8).
 //
 // Historically ported the per-instance Animator-speed block of the legacy
 // diagnostics/quick-ball.js adapter: the btxu leave path that, after a confirmed

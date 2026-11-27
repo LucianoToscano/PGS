@@ -1,7 +1,7 @@
 #pragma once
 #include <stdint.h>
 
-// PGRazor native migration: Team GO Rocket combat controller (feature id 21, API 1).
+// PGS native module: Team GO Rocket combat controller (feature id 21, API 1).
 //
 // A native port of runtime/features/rocket.js (rocketState + rocketTick / rocketVNextTick,
 // with rocketClear / rocketDrop / rocketBool / rocketGate) PLUS the managed-object rooting

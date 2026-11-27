@@ -1,7 +1,7 @@
 #pragma once
 #include <stdint.h>
 
-// PGRazor native migration: raid / gym / Dynamax attack & dodge controller (feature id 19).
+// PGS native module: raid / gym / Dynamax attack & dodge controller (feature id 19).
 // A native port of the battle state machine in runtime/features/battles.js (battleState +
 // battleTick, with battleClear / battleDropGesture / battleCapture / battleSwapBlocked /
 // battleDodgeCue), plus the scope / gesture / warning / swap / charge / max-widget observations

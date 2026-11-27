@@ -5,36 +5,21 @@
   "changed_files": 37,
   "added_files": 1,
   "previous_occurrences": 1041,
-  "remaining_files": 145,
-  "remaining_occurrences": 798,
+  "remaining_files": 140,
+  "remaining_occurrences": 779,
   "remaining_by_category": {
-    "workflows": 21,
+    "workflows": 5,
     "other": 92,
     "documentation": 277,
     "legal": 3,
     "release_history": 103,
     "native": 14,
-    "tests": 217,
+    "tests": 214,
     "java": 64,
     "javascript": 1,
     "vendor": 6
   },
   "files": [
-    {
-      "path": ".github/workflows/pgs-same-package-update.yml",
-      "category": "workflows",
-      "occurrences": 4
-    },
-    {
-      "path": ".github/workflows/pgs-v0.0.1-release.yml",
-      "category": "workflows",
-      "occurrences": 6
-    },
-    {
-      "path": ".github/workflows/pgs-v0.0.2-release.yml",
-      "category": "workflows",
-      "occurrences": 6
-    },
     {
       "path": ".github/workflows/pgs-v0.0.3-candidate.yml",
       "category": "workflows",
@@ -331,11 +316,6 @@
       "occurrences": 1
     },
     {
-      "path": "pgs/native/iv_display_test.cpp",
-      "category": "tests",
-      "occurrences": 2
-    },
-    {
       "path": "pgs/native/pgs.map",
       "category": "native",
       "occurrences": 1
@@ -567,11 +547,6 @@
     },
     {
       "path": "pgs/test/test_event_settings_java.py",
-      "category": "tests",
-      "occurrences": 1
-    },
-    {
-      "path": "pgs/test/test_iv_owned_refresh_native.py",
       "category": "tests",
       "occurrences": 1
     },
@@ -1177,7 +1152,7 @@
     "limitations": "Counts are exact deltas from the verified indexed baseline; full CI must independently reconcile the snapshot. Older backup readers do not support version 2."
   },
   "current_retention_review": {
-    "base_commit": "89748d5be4ae5eb59e3ee3a223bfa3448bbba261",
+    "base_commit": "5824214bdba54178b968d5239537dfc93f1fe114",
     "scope": "Current per-file triage; all matching indexed text paths classified exactly once, not a claim of necessity of each individual occurrence.",
     "groups": {
       "historical_records": {
@@ -1246,11 +1221,8 @@
       "build_signing_contracts": {
         "status": "retain_compatibility",
         "reason": "PGS-first build and signing configuration, old configuration aliases and historical guarded rebuilds. No new signing key.",
-        "occurrences": 42,
+        "occurrences": 26,
         "paths": [
-          ".github/workflows/pgs-same-package-update.yml",
-          ".github/workflows/pgs-v0.0.1-release.yml",
-          ".github/workflows/pgs-v0.0.2-release.yml",
           ".github/workflows/pgs-v0.0.3-candidate.yml",
           "CONTRIBUTING.md",
           "CONTRIBUTING.pt-BR.md",
@@ -1345,10 +1317,9 @@
       "tests": {
         "status": "retain_or_review",
         "reason": "Tests of legacy input, data continuity, ABI, build options, attribution and forbidden-name detection. Ordinary fixture use may be reviewed individually.",
-        "occurrences": 218,
+        "occurrences": 215,
         "paths": [
           "pgs/native/adventure_sync_test.cpp",
-          "pgs/native/iv_display_test.cpp",
           "pgs/native/test_runner.cpp",
           "pgs/test/AccountProfileDataTest.java",
           "pgs/test/AccountProfileStoreTest.java",
@@ -1365,7 +1336,6 @@
           "pgs/test/test_compiled_gameplay.py",
           "pgs/test/test_discord_release.py",
           "pgs/test/test_event_settings_java.py",
-          "pgs/test/test_iv_owned_refresh_native.py",
           "pgs/test/test_log_export_java.py",
           "pgs/test/test_native_build.py",
           "pgs/test/test_native_prerequisites.py",
@@ -1405,5 +1375,13 @@
     "remaining_full_name_occurrences": 798,
     "remaining_abbreviations": 14,
     "validation": "Counts calculated by exact changed-file deltas against the preceding indexed inventory. Full CI reconciliation required."
+  },
+  "current_release_path_cleanup": {
+    "base_commit": "5824214bdba54178b968d5239537dfc93f1fe114",
+    "historical_rebuild_workflows_disabled": 3,
+    "website_verified_run": 45980315394,
+    "ordinary_iv_test_requires_canonical_factory": true,
+    "remaining_occurrences": 779,
+    "validation": "Exact changed-file count deltas against previous verified index; independent CI required."
   }
 }

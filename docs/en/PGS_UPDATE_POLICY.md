@@ -38,7 +38,7 @@ PGS `v0.3.8-pgs.3` was built and signed in [Actions #45963966748](https://github
 
 The PGS ledger `PGS_LAST_VERSION_CODE` distinguishes PGS output from a legacy build. `pgs/release_apk.py` requires `PGS_KEYSTORE` to reference **the existing PGS key**, names its internal output `PGS.apk`, and rejects output unless its certificate fingerprint matches the permanent PGS certificate. The build is blocked if the ledger is missing.
 
-The inherited `Android release (non-root and rooted)` workflow is **explicitly disabled for PGS** because it still follows an old distribution path and must not publish packages with mixed signing configuration. The current candidate uses `.github/workflows/pgs-v0.0.2-release.yml`. This compiles the current PGS Java controls and preserves the other contents of the previous complete APK, verified by hashing every archive member. The disabled legacy workflow does not modify existing signed builds.
+The upstream publication workflow and historical PGS rebuild workflows are now explicitly disabled on current sources. Their original implementations and build records remain in Git history. The previously signed packages are not modified.
 
 Tests cover missing signing keys, invalid `versionCode`, and unrecognized signing certificates. **They do not replace full-APK verification or physical installation.**
 
@@ -64,10 +64,10 @@ The releases remain **drafts** until actual sign-in and installation checks pass
 
 The `v0.0.2` rebuild uses only the fully signed `v0.0.1` APK with verified source SHA-256 `23c0c4e9f9e87676038856e76b16613c91bf4bbd04a5c8cc9eb4f317d6926ef4` ([Actions #45973576985](https://github.com/LucianoToscano/PGS/actions/runs/45973576985)). It updates the PGS control DEX and internal displayed version, but compares the hashes of all other game entries. No automatic APKMirror download is involved.
 
-The dedicated `.github/workflows/pgs-v0.0.2-release.yml` creates `PGS v0.0.2.apk` and verification receipts, enforcing the permanent PGS signer, `com.nianticlabs.pokemongo`, and base game `0.439.0`. The old `v0.0.1` workflow is archived and cannot automatically rebuild the old version. The `v0.0.2` release is created **as a draft only** until real-device verification.
+The historical v0.0.2 build produced a complete signed APK and verification receipts with the permanent PGS signer, package `com.nianticlabs.pokemongo`, and game version `0.439.0`. The existing release remains a draft. Its verified run is https://github.com/LucianoToscano/PGS/actions/runs/45980315394; the Actions artifact is subject to expiration.
 
 The original in-game icon and joystick are untouched. The previous project's Ko-fi sponsorship link was removed without substituting an unauthorized account.
 
 ## Current full-candidate path
 
-The former upstream release workflow is an inert, read-only refusal; its original implementation remains in Git history. The controls-only v0.0.2 workflow is historical and deliberately refuses migrated Java namespaces. Use `.github/workflows/pgs-v0.0.3-candidate.yml` for an explicitly authorized full candidate validation. It uploads receipts, not an APK or a public release. The bundle verifier now expects PGS artifact names by default; archived bundles require explicit `--legacy-names` and mixed sets are rejected. The installed package, signer and version ledger are unchanged.
+All four historical publication/rebuild workflows are inert, read-only refusals. To validate the next full candidate, use [PGS v0.0.3 candidate validation](https://github.com/LucianoToscano/PGS/actions/workflows/pgs-v0.0.3-candidate.yml), select `main`, and confirm `authorized_input` only if you are authorized to use the configured hash-pinned game input and existing signer. The run uploads receipts only, not a downloadable APK or a public release. The bundle verifier expects PGS artifact names by default; archived bundles require explicit `--legacy-names`. The installed package, signer and release ledger are unchanged.

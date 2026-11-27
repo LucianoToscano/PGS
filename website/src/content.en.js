@@ -2,9 +2,9 @@
 // edits (wording, new settings, extra screenshots) never touch layout code.
 
 export const links = {
-  releasesLatest: 'https://github.com/LucianoToscano/PGS/actions/workflows/pgs-v0.0.2-release.yml',
+  releasesLatest: 'https://github.com/LucianoToscano/PGS/actions/runs/45980315394',
   releasesCurrent:
-    'https://github.com/LucianoToscano/PGS/actions/workflows/pgs-v0.0.2-release.yml',
+    'https://github.com/LucianoToscano/PGS/actions/runs/45980315394',
   github: 'https://github.com/LucianoToscano/PGS',
   discord: 'https://discord.gg/SdwU4VnfW',
 };

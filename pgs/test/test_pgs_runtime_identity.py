@@ -78,7 +78,7 @@ class PgsRuntimeIdentityTests(unittest.TestCase):
         self.assertEqual(pgs_rebrand.MARKER, b"Ldev/pgrazor/Control;")
         self.assertEqual(pgs_rebrand.MODE, "assets/pgrazor/mode.json")
         self.assertEqual(pgs_rebrand.TARGET_VERSION_CODE, 2026111605)
-        for name in ("pgs-v0.0.1-release.yml", "pgs-v0.0.2-release.yml"):
+        for name in ("pgs-v0.0.1-release.yml", "pgs-v0.0.2-release.yml", "pgs-same-package-update.yml"):
             flow = (ROOT / ".github/workflows" / name).read_text(encoding="utf-8")
             self.assertIn("Refuse historical controls-only rebuild on migrated sources", flow)
 

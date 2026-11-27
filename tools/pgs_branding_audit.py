@@ -224,8 +224,10 @@ def check():
     # exactly the same link object and never points at a separate APK.
     for public_file in ("website/src/content.en.js", "website/index.html", "website/tests/site.spec.js"):
         content = (ROOT / public_file).read_text(encoding="utf-8")
-        if "pgs-v0.0.2-release.yml" not in content:
-            problems.append(public_file + ": does not point to the actual PGS build workflow")
+        if "/actions/runs/45980315394" not in content:
+            problems.append(public_file + ": does not point to the verified PGS v0.0.2 build run")
+        if "/actions/workflows/pgs-v0.0.2-release.yml" in content:
+            problems.append(public_file + ": download points to a retired rebuild workflow")
     if "export const links = en.links;" not in (ROOT / "website/src/content.pt-BR.js").read_text(encoding="utf-8"):
         problems.append("Brazilian Portuguese catalog must share canonical PGS release links")
     for source_file in (
@@ -236,8 +238,8 @@ def check():
     ):
         if not (ROOT / source_file).is_file():
             problems.append(source_file + ": bilingual website module missing")
-    if not (ROOT / ".github/workflows/pgs-v0.0.2-release.yml").is_file():
-        problems.append("Approved v0.0.2 workflow missing")
+    if not (ROOT / ".github/workflows/pgs-v0.0.3-candidate.yml").is_file():
+        problems.append("Current full candidate validation workflow missing")
     if problems:
         raise SystemExit("PGS branding audit failed:\n" + "\n".join(" - " + p for p in problems))
     print("PGS branding audit PASS: active UI, URLs, 11 catalogs, release identity and Android continuity")

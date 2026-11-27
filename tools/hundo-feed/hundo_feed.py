@@ -7,6 +7,8 @@ environment (see hundo-feed.env.example):
 
   HUNDO_SOURCES               several sources merged, e.g. pogocoordinates,citymaps (overrides HUNDO_PROVIDER)
   CITYMAP_HOSTS, CITYMAP_INTERVAL  the city PokeMaps citymaps reads (default all five) and seconds between reads
+  PGS_UPSTREAM_FEED_URL        authorized HTTPS v:1 feed, required when HUNDO_SOURCES includes published
+  PGS_UPSTREAM_FEED_INTERVAL   seconds between polls (default 60, minimum 30)
   LPM_USERNAME, LPM_PASSWORD   the LivePokeMap account
   HUNDO_PROVIDER              livepokemap (default) or pogocoordinates
   POGO_TOKEN                  PoGoCoordinates bearer token (no Bearer prefix)
@@ -581,9 +583,10 @@ def merge(sources, now_ms):
     for row in rows.values():
         near.setdefault((round(row[3], 2), round(row[4], 2)), []).append(row)
     for source in sources:
-        if not getattr(source.collector, "spots", False):
+        spot_rows = source.rows if getattr(source.collector, "spots", False) else getattr(source.collector, "spot_rows", [])
+        if not getattr(source.collector, "spots", False) and not hasattr(source.collector, "spot_rows"):
             continue
-        active = [row for row in source.rows if valid_spot(row, now_ms)]
+        active = [row for row in spot_rows if valid_spot(row, now_ms)]
         unique = 0
         for row in active:
             cell = (round(row[3], 2), round(row[4], 2))
@@ -594,7 +597,9 @@ def merge(sources, now_ms):
             spots.append(row)
             near.setdefault(cell, []).append(row)
             unique += 1
-        counts[source.name] = {"active": len(active), "unique": unique, "status": source.status}
+        count = counts.setdefault(source.name, {"active": 0, "unique": 0, "status": source.status})
+        count["active"] += len(active)
+        count["unique"] += unique
     return list(rows.values()), spots, counts
 
 
@@ -651,6 +656,78 @@ class CityMapSource:
         except (json.JSONDecodeError, UnicodeDecodeError):
             raise FeedError("non-JSON reply from %s" % self.host)
         return city_rows(body, int(time.time() * 1000)), None
+
+
+
+MAX_PUBLISHED_FEED_BYTES = 8 * 1024 * 1024
+MAX_PUBLISHED_FEED_AGE_MS = 10 * 60 * 1000
+
+
+def published_rows(body, now_ms):
+    """Import only compact exact-coordinate v:1 rows. Never copy arbitrary upstream metadata."""
+    if (not isinstance(body, dict) or type(body.get("v")) is not int or body["v"] != 1
+            or type(body.get("fetched_ms")) is not int
+            or not now_ms - MAX_PUBLISHED_FEED_AGE_MS <= body["fetched_ms"] <= now_ms + 60_000
+            or body.get("coordinate_precision", "exact") != "exact"
+            or not isinstance(body.get("hundos"), list)
+            or not isinstance(body.get("spots", []), list)
+            or not isinstance(body.get("approximate_encounters", []), list)):
+        raise FeedError("invalid, stale or non-exact published feed")
+    approximate = {unsigned_id(value) for value in body.get("approximate_encounters", [])}
+    rows, spots = {}, {}
+    for is_spot, raw_rows, target in ((False, body["hundos"], rows), (True, body.get("spots", []), spots)):
+        for raw in raw_rows:
+            if not isinstance(raw, list) or len(raw) != 8:
+                continue
+            key = raw[0] if is_spot else unsigned_id(raw[0])
+            if is_spot:
+                if not isinstance(key, str) or not SPOT_KEY.fullmatch(key):
+                    continue
+            elif key is None or key in approximate:
+                continue
+            if (any(type(raw[i]) is not int for i in (1, 2, 5, 6))
+                    or any(type(raw[i]) not in (int, float) for i in (3, 4, 7))
+                    or raw[1] <= 0 or raw[2] < 0 or raw[6] < 0):
+                continue
+            try:
+                row = [key, raw[1], raw[2], float(raw[3]), float(raw[4]), raw[5], raw[6], float(raw[7])]
+            except (ValueError, OverflowError):
+                continue
+            if not 0 <= row[7] <= 55 or not (valid_spot(row, now_ms) if is_spot else valid_row(row, now_ms)):
+                continue
+            target.setdefault(key, row)
+    return list(rows.values()), list(spots.values())
+
+
+class PublishedFeedSource:
+    """Optional, operator-authorized third-party compact feed; no account data or credentials sent."""
+    def __init__(self, url):
+        parsed = urllib.parse.urlsplit(url)
+        if (parsed.scheme != "https" or not parsed.hostname or parsed.username or parsed.password
+                or parsed.query or parsed.fragment or not parsed.path.endswith("/hundos.json")):
+            raise ValueError("PGS_UPSTREAM_FEED_URL must be a plain HTTPS hundos.json URL")
+        self.url = url
+        self.spot_rows = []
+
+    def poll(self, known=None):
+        request = urllib.request.Request(self.url, headers={"Accept": "application/json", "User-Agent": USER_AGENT})
+        try:
+            with urllib.request.urlopen(request, timeout=TIMEOUT_S) as response:
+                raw = response.read(MAX_PUBLISHED_FEED_BYTES + 1)
+            if len(raw) > MAX_PUBLISHED_FEED_BYTES:
+                raise FeedError("published feed too large")
+            body = json.loads(raw.decode("utf-8"))
+        except urllib.error.HTTPError as error:
+            retry = error.headers.get("Retry-After") if error.headers else None
+            raise FeedError("HTTP %d from published feed" % error.code, error.code,
+                            int(retry) if retry and retry.isdigit() else 0)
+        except (urllib.error.URLError, TimeoutError, OSError) as error:
+            raise FeedError("network error on published feed (%s)" % type(error).__name__)
+        except (ValueError, RecursionError):
+            raise FeedError("invalid JSON from published feed")
+        rows, spots = published_rows(body, int(time.time() * 1000))
+        self.spot_rows = spots
+        return rows, None
 
 
 class Scheduled:
@@ -789,6 +866,12 @@ def build_sources(names, interval):
             state = os.environ.get("HUNDO_STATE", "/var/lib/hundo-feed/token")
             sources.append(Scheduled(name, LivePokeMapSource(username, password, state),
                                      env_seconds("LPM_INTERVAL", 30)))
+        elif name == "published":
+            try:
+                collector = PublishedFeedSource(os.environ.get("PGS_UPSTREAM_FEED_URL", "").strip())
+            except ValueError as error:
+                sys.exit(str(error))
+            sources.append(Scheduled(name, collector, env_seconds("PGS_UPSTREAM_FEED_INTERVAL", 60, 30)))
         elif name == "citymaps":
             hosts = [h.strip().lower() for h in os.environ.get("CITYMAP_HOSTS", ",".join(CITY_MAPS)).split(",") if h.strip()]
             if not hosts or any(not re.fullmatch(r"[a-z0-9.-]+\.[a-z]{2,}", h) for h in hosts):

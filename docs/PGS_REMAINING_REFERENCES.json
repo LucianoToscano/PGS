@@ -1202,5 +1202,27 @@
     "original_full_name_count": 1041,
     "original_full_name_remaining": 1041,
     "count_excludes_legacy_alias_additions_and_new_audit_fixtures": true
+  },
+  "mass_abbreviation_migration": {
+    "base_commit": "cbbd5606a26fbec1806b8e92de7b1a218a58d56b",
+    "migration_commit": "2ae0a9765f6e36a14ce51248314abd2eebfdbd59",
+    "verified_previous_run": 46037991814,
+    "previous_abbreviated_occurrences": 21616,
+    "previous_abbreviated_files": 397,
+    "renamed_occurrences": 13569,
+    "renamed_distinct_names": 2141,
+    "modified_source_files": 371,
+    "project_files_retained": 2108,
+    "retained_distinct_candidate_names": 1371,
+    "expected_remaining_abbreviated_occurrences": 8047,
+    "expected_full_name_occurrences": 1041,
+    "retention_reasons_nonexclusive": {
+      "quoted-contract-or-fixture": 182,
+      "outside-source-scope-or-protected": 138,
+      "generated-game-bindings-retained": 1108,
+      "canonical-name-already-exists": 3
+    },
+    "validation": "One-time migration succeeded with reversible byte-exact rename checks and git diff --check. Original protected account host, generated game binding family, conflicting names, quoted contracts, historic and legal records, and existing signer/storage unchanged. Full independent source CI, Android native ABI builds, APK and device validation pending.",
+    "report_workflow_run": 46042079107
   }
 }

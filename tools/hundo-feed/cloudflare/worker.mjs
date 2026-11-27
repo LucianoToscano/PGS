@@ -173,7 +173,7 @@ async function collect(source, now) {
   // Candidate pagination is explicitly configured for existing authorized
   // providers. One deadline and one byte budget cover the entire source.
   if (!Number.isSafeInteger(pages(source)) || pages(source)<1 || pages(source)>maxPages(source)) throw Error("source_url");
-  if (city) url.search=new URLSearchParams({mons:Array.from({length:1025},(_,i)=>i+1).join(","),minIV:"100",since:"0",time:String(now)});
+  if (city) url.search=new URLSearchParams({mons:Array.from({length:1025},(_,i)=>i+1).join(","),minIV:"100",since:"0",time:String(Math.floor(now/1000))});
   if (moonani) url.search="page=pokemon&action=load";
   const controller=new AbortController();
   const timer=setTimeout(()=>controller.abort(),FETCH_TIMEOUT_MS);
@@ -359,6 +359,19 @@ export default {
   }
 };
 
+const stateLabels=Object.freeze({
+  pending:"Aguardando primeira coleta",
+  online_with_results:"Online com resultados",
+  online_zero_hundos:"Online sem Hundos",
+  rate_limited:"Limite de consultas",
+  access_denied:"Acesso recusado",
+  redirected:"Redirecionado",
+  invalid_response:"Resposta inválida",
+  invalid_configuration:"Configuração inválida",
+  offline_connection:"Falha de conexão",
+  offline_upstream:"Falha no provedor"
+});
+
 function detailStatus(entry,active) {
   if (!entry) return "pending";
   if (entry.status==="online") return active>0?"online_with_results":"online_zero_hundos";
@@ -402,16 +415,21 @@ async function readFeed(request,env) {
     }
     if (health) {
       const now=Date.now(), counts=feed(state,now).sources;
-      const status={time:state?.time || null,history:state?.history || [],connections:configs.map(source=>{
+      const connections=configs.map(source=>{
         const e=(state.entries || []).find(entry=>sourceKey(entry)===sourceKey(source));
         const active=counts[providerName(source)]?.active || 0;
+        const detail=detailStatus(e,active);
         return {provider:providerName(source),category:"hundos",status:e?.status || "pending",
-          detail_status:detailStatus(e,active),last_attempt:e?.lastAttempt || null,last_success:e?.updated || null,
+          detail_status:detail,state_label:stateLabels[detail] || "Desconhecido",
+          last_attempt:e?.lastAttempt || null,last_success:e?.updated || null,
           next_attempt:e?.next || null,failures:e?.failures || 0,http_status:e?.httpStatus || null,
           content_type:e?.contentType || null,reason:e?.reason || null,active,
           received:e?.received ?? null,validated:e?.validated ?? null,discarded:e?.discarded ?? null,
           collected_pages:e?.collectedPages ?? null,attempted_pages:e?.attemptedPages ?? null};
-      })};
+      });
+      const summary=Object.create(null);
+      for(const connection of connections) summary[connection.detail_status]=(summary[connection.detail_status] || 0)+1;
+      const status={time:state?.time || null,history:state?.history || [],summary,connections};
       return new Response(request.method==="HEAD"?null:JSON.stringify(status),{headers:{"Content-Type":"application/json","Cache-Control":"public, max-age=15"}});
     }
     if (!state?.entries?.some(s=>s.updated)) return new Response(null,{status:503,headers:{"Retry-After":"300","Cache-Control":"no-store"}});

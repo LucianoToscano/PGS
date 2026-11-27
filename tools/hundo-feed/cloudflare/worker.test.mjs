@@ -243,3 +243,21 @@ test("source validation rejects ambiguous numeric input, approximate coordinates
   const over=envFor(Array.from({length:4},(_,i)=>({...iflow,name:"iflow-"+i,max_pages:5}))).env;
   await assert.rejects(()=>worker.scheduled({},over),/invalid_config/);
 });
+
+
+test("city time uses epoch seconds; diagnostic labels and summary count actual active states",async t=>{
+  const cities=["nycpokemap","sgpokemap"].map(name=>({name,kind:"city",url:"https://"+name+".com/query2.php",interval_s:600}));
+  t.mock.method(globalThis,"fetch",async url=>{
+    assert.ok(Math.abs(Number(url.searchParams.get("time"))-Math.floor(Date.now()/1000))<5);
+    if(url.hostname==="nycpokemap.com")return Response.json({pokemons:[]});
+    return new Response(null,{status:403});
+  });
+  const {env}=envFor(cities);
+  await worker.scheduled({},env);
+  const result=await (await worker.fetch(new Request("https://example.org/status.json"),env)).json();
+  assert.equal(result.connections[0].status,"online");
+  assert.equal(result.connections[0].detail_status,"online_zero_hundos");
+  assert.equal(result.connections[0].state_label,"Online sem Hundos");
+  assert.equal(result.connections[1].state_label,"Acesso recusado");
+  assert.deepEqual(result.summary,{online_zero_hundos:1,access_denied:1});
+});

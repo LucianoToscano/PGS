@@ -312,3 +312,84 @@ test("gocoords is absent from production defaults and from the built-in dormant 
   const dormant=catalog.providers.find(p=>p.provider==="gocoords");
   assert.ok(dormant && dormant.status.startsWith("AGUARDANDO"));
 });
+
+const mkMoonaniRow=(i,now)=>{
+  const fmt=t=>new Date(t).toISOString().slice(0,19).replace("T"," ");
+  return {Number:String(1+(i%150)),Coords:`${(10+i*0.01).toFixed(5)}, ${(20+i*0.01).toFixed(5)}`,
+    Attack:"15",Defense:"15",HP:"15",CP:"500",Level:"20",Form:"",
+    "Start Time":fmt(now-60000),"End Time":fmt(now+600000)};
+};
+
+test("moonani paginates beyond the first 100 rows and validates them",async t=>{
+  const now=Date.now();
+  const calls=[];
+  t.mock.method(globalThis,"fetch",async(url,init)=>{
+    calls.push(init.body);
+    const start=Number(new URLSearchParams(init.body).get("start"));
+    if (start===0) return Response.json({recordsFiltered:105,data:Array.from({length:100},(_,i)=>mkMoonaniRow(i,now))});
+    if (start===100) return Response.json({recordsFiltered:105,data:Array.from({length:5},(_,i)=>mkMoonaniRow(100+i,now))});
+    throw new Error("unexpected page");
+  });
+  const {db,env}=makeEnv([{name:"moonani",kind:"moonani",interval_s:900,url:"https://moonani.com/PokeList/ajax.php"}]);
+  await worker.scheduled({scheduledTime:now},env);
+  assert.deepEqual(calls.map(b=>new URLSearchParams(b).get("start")),["0","100"]);
+  const state=JSON.parse(db.get("pgs-feed-v1"));
+  assert.equal(state.entries[0].status,"online");
+  assert.equal(state.entries[0].spots.length,105);
+  assert.equal(state.entries[0].received,105);
+});
+
+test("moonani keeps zero-hundo page-1-only responses online without extra requests",async t=>{
+  const now=Date.now();
+  const calls=[];
+  t.mock.method(globalThis,"fetch",async(url,init)=>{
+    calls.push(init.body);
+    return Response.json({recordsFiltered:2,data:[mkMoonaniRow(0,now),{...mkMoonaniRow(1,now),Attack:"14"}]});
+  });
+  const {db,env}=makeEnv([{name:"moonani",kind:"moonani",interval_s:900,url:"https://moonani.com/PokeList/ajax.php"}]);
+  await worker.scheduled({scheduledTime:now},env);
+  assert.equal(calls.length,1);
+  const status=await (await worker.fetch(new Request("https://example.org/status.json"),env)).json();
+  assert.equal(status.connections[0].state,"online_with_results");
+  assert.equal(status.connections[0].state_label,"Online com resultados");
+  assert.equal(status.connections[0].validated,1);
+});
+
+test("HTTP 429 without Retry-After waits at least 30 minutes",async t=>{
+  const now=Date.now();
+  t.mock.method(globalThis,"fetch",async()=>new Response("",{status:429,headers:{"content-type":"text/html"}}));
+  const {db,env}=makeEnv([citySource]);
+  await worker.scheduled({scheduledTime:now},env);
+  const status=await (await worker.fetch(new Request("https://example.org/status.json"),env)).json();
+  assert.equal(status.connections[0].state,"rate_limited");
+  assert.ok(status.connections[0].next_retry>=now+1799000);
+});
+
+test("state_label is present and backoff stays at/below 30 minutes",async t=>{
+  const now=Date.now();
+  t.mock.method(globalThis,"fetch",async()=>{ throw new TypeError("network failed"); });
+  const legacy={entries:[{name:"nycpokemap",url:cityUrl,kind:"city",interval_s:600,adapter_v:2,
+    status:"offline",failures:6,next:now-1000}],history:[]};
+  const {db,env}=makeEnv([citySource]);
+  db.set("pgs-feed-v1",JSON.stringify(legacy));
+  await worker.scheduled({scheduledTime:now},env);
+  const status=await (await worker.fetch(new Request("https://example.org/status.json"),env)).json();
+  assert.equal(status.connections[0].state_label,"Offline por falha de conexão");
+  assert.ok(status.connections[0].next_retry<=Date.now()+1800000+1000);
+});
+
+test("adapter version change forces immediate recollection despite legacy next",async t=>{
+  const now=Date.now();
+  const calls=[];
+  t.mock.method(globalThis,"fetch",async()=>{
+    calls.push("hit");
+    return Response.json({pokemons:[],meta:{inserted:1,time:2},weathers:[]});
+  });
+  const legacy={entries:[{name:"nycpokemap",url:cityUrl,kind:"city",interval_s:600,
+    status:"offline",failures:3,next:now+7*24*3600*1000}],history:[]}; // no adapter_v: stale writer
+  const {db,env}=makeEnv([citySource]);
+  db.set("pgs-feed-v1",JSON.stringify(legacy));
+  await worker.scheduled({scheduledTime:now},env);
+  assert.equal(calls.length,1);
+  assert.equal(JSON.parse(db.get("pgs-feed-v1")).entries[0].adapter_v,2);
+});

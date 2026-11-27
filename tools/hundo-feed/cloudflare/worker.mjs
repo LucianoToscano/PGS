@@ -12,6 +12,9 @@ const timeoutMs=12000, maxBodyBytes=262144;
 // reached more than 21 hours, which effectively silenced a source after a
 // transient fault. Retry-After is honoured above this floor.
 const maxFailures=6, backoffCapMs=1800*1000;
+const ADAPTER_VERSION=2;
+const MAX_MOONANI_PAGES=3, MOONANI_PAGE_SIZE=100;
+const RATE_LIMIT_FLOOR_MS=1800*1000;
 // iFlowGo exposes an IV index filter (min_iv=100) and paginates at 25 rows.
 // Fetching every page is bounded here and stays well below provider quotas.
 const maxIflowPages=8;
@@ -240,18 +243,40 @@ async function collect(source, now) {
   // The city query contract expects unix seconds in `time`; the server meta
   // block reports seconds as well. mons covers species 1..1025 with minIV=100.
   if (city) url.search=new URLSearchParams({mons:Array.from({length:1025},(_,i)=>i+1).join(","),minIV:"100",since:"0",time:String(Math.floor(now/1000))}).toString();
-  if (moonani) url.search="page=pokemon&action=load";
+  if (moonani) {
+    // The IV100 table holds roughly 203 15/15/15 rows while the site frontend
+    // pages at 100 rows per XHR. Follow the same contract, bounded to 3 pages.
+    const u = new URL(url.href); u.search="page=pokemon&action=load";
+    const mHeaders={Accept:"application/json","User-Agent":"PGS-Hundo-Feed/1.1 (+https://github.com/LucianoToscano/PGS)",
+      "Content-Type":"application/x-www-form-urlencoded","X-Requested-With":"XMLHttpRequest",Referer:"https://moonani.com/PokeList/"};
+    const postPage=(draw,start)=>fetchJson(u,{method:"POST",
+      body:`draw=${draw}&start=${start}&length=${MOONANI_PAGE_SIZE}&pokemons=&iv=100&pvp=0`,headers:mHeaders},now);
+    const first=await postPage(1,0);
+    if (!Array.isArray(first.body?.data)) throw Object.assign(Error("moonani_schema"),{contentType:first.contentType});
+    const all=[...first.body.data];
+    const total=Number.isSafeInteger(Number(first.body?.recordsFiltered)) ? Number(first.body.recordsFiltered)
+      : (Number.isSafeInteger(Number(first.body?.recordsTotal)) ? Number(first.body.recordsTotal) : null);
+    for (let page=2; page<=MAX_MOONANI_PAGES; page++) {
+      if (all.length < MOONANI_PAGE_SIZE) break;
+      if (total!=null && all.length>=total) break;
+      try {
+        const next=await postPage(page,(page-1)*MOONANI_PAGE_SIZE);
+        if (!Array.isArray(next.body?.data) || !next.body.data.length) break;
+        all.push(...next.body.data);
+        if (next.body.data.length < MOONANI_PAGE_SIZE) break;
+      } catch { console.warn("PGS moonani page "+page+" unavailable; keeping partial data"); break; }
+    }
+    return {...await moonaniRows({data:all},now),contentType:first.contentType};
+  }
   // Honest AJAX-contract headers for the map sites whose own frontend queries these
   // endpoints as XHR JSON. Identity stays truthful (no browser fingerprint, no cookies);
   // the city instances serve their own public map data. If an instance requires more
   // than the contract headers, its status will read invalid_response with content_type.
   const acceptAjax="application/json, text/javascript, */*; q=0.01";
   const headers={"User-Agent":"PGS-Hundo-Feed/1.1 (+https://github.com/LucianoToscano/PGS)",
-    ...(moonani?{Accept:"application/json","Content-Type":"application/x-www-form-urlencoded","X-Requested-With":"XMLHttpRequest",Referer:"https://moonani.com/PokeList/"}
-      :city?{Accept:acceptAjax,"X-Requested-With":"XMLHttpRequest",Referer:`https://${url.hostname}/`}
+    ...(city?{Accept:acceptAjax,"X-Requested-With":"XMLHttpRequest",Referer:`https://${url.hostname}/`}
       :{Accept:"application/json"})};
-  const init={method:moonani?"POST":"GET",headers,
-    body:moonani?"draw=1&start=0&length=100&pokemons=&iv=100&pvp=0":undefined};
+  const init={method:"GET",headers};
   if (iflow) {
     const first=await fetchJson(url,init,now);
     const items=[...(Array.isArray(first.body?.items)?first.body.items:[])];
@@ -281,6 +306,9 @@ async function collect(source, now) {
 }
 
 // Granular outcome for status.json / sources.json. Never throws.
+const STATE_LABELS={online_with_results:"Online com resultados",online_without_hundos:"Online sem Hundos",
+  offline_connection:"Offline por falha de conexão",invalid_response:"Resposta inválida",access_denied:"Acesso recusado",
+  rate_limited:"Limite de consultas",upstream_http:"Erro HTTP do fornecedor",offline_error:"Offline"};
 function stateOf(entry) {
   if (!entry) return "offline_error";
   // Legacy snapshots lack the counters; derive a best-effort count from rows.
@@ -306,8 +334,8 @@ async function refresh(env) {
   const previous=hundoState(await env.FEED.get(stateKey,"json") || {},configs,now);
   const entries=await Promise.all(configs.map(async source=>{
     const old=previous.entries?.find(x=>x.name===source.name && x.url===source.url);
-    if (old?.next>now) return old;
-    const base={name:source.name,url:source.url,next:now+source.interval_s*1000};
+    if (old?.adapter_v===ADAPTER_VERSION && old?.next>now) return old;
+    const base={name:source.name,url:source.url,adapter_v:ADAPTER_VERSION,next:now+source.interval_s*1000};
     try {
       const result=await collect(source,now);
       return {...base,...result,updated:now,status:"online",failures:0,reason:null,httpStatus:null};
@@ -318,7 +346,8 @@ async function refresh(env) {
       const reason=classifyError(error);
       return {...(old||{}),...base,status:"offline",httpStatus:error.httpStatus || null,contentType:error.contentType ?? old?.contentType ?? null,
         reason,failures,
-        next:Math.max(base.next,now+Math.min(backoffCapMs,interval*1000*2**failures),Number.isFinite(error.retryAt)?error.retryAt:0)};
+        next:Math.max(base.next,now+Math.min(backoffCapMs,interval*1000*2**failures),
+          error.httpStatus===429?now+RATE_LIMIT_FLOOR_MS:0,Number.isFinite(error.retryAt)?error.retryAt:0)};
     }
   }));
   const history=[...(previous.history || []),{time:now,online:entries.filter(e=>e.status==="online").map(e=>e.name)}].slice(-288);
@@ -428,7 +457,7 @@ async function readFeed(request,env) {
         const stateName=stateOf(e);
         summary[stateName]=(summary[stateName]||0)+1;
         return {provider:providerName(e),category:"hundos",
-          status:e.status,state:stateName,
+          status:e.status,state:stateName,state_label:STATE_LABELS[stateName]||"Desconhecido",
           last_success:e.updated || null,next_retry:Number.isSafeInteger(e.next)?e.next:null,
           http_status:e.httpStatus || null,reason:e.reason || null,content_type:e.contentType ?? null,
           received:Number.isSafeInteger(e.received)?e.received:null,

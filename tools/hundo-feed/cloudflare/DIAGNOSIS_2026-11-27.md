@@ -160,3 +160,39 @@ Um relatório externo (outro agente) foi apresentado como correção concluída.
 ## IMPLANTAÇÃO
 
 Como antes: `npx wrangler deploy` + observar `/status.json` por 2–3 ciclos. Nenhuma alteração de KV/rotas/custos. Backup do estado anterior em `pgs-feed-backup-v1` permanece válido.
+---
+
+# Addendum 2 — 2026-11-27, terceira rodada (verificação do segundo relatório externo)
+
+## O QUE FOI APROVEITADO DO MATERIAL EXTERNO
+
+| Achado | Ação |
+|---|---|
+| Moonani retorna apenas 100 linhas por XHR embora a tabela IV100 contenha ~203 (`recordsFiltered`) | **Implementado:** o Worker passa a paginar `start=0,100,200` (teto `MAX_MOONANI_PAGES=3` = 300 linhas), tolerando falha em páginas além da 1 (usa dados parciais, avisa via `console.warn`). Estatísticas (`received/validated/discarded`) refletem o agregado. |
+| `ADAPTER_VERSION` força recoleta imediata no primeiro cron pós-deploy | **Implementado** (`ADAPTER_VERSION=2`): entradas legadas de KV sem `adapter_v` são recoletadas imediatamente, independentemente do `next` gravado (o clamp de 30 min continua como segunda barreira). |
+| Piso de espera para HTTP 429 | **Implementado:** sem `Retry-After`, `next_retry >= agora + 30 min`, mesmo com `failures=1`. |
+| `state_label` em PT-BR no `/status.json` | **Implementado:** rótulos como "Online sem Hundos", "Resposta inválida" etc. junto de `state`. |
+| PokéMaps exigem `Referer` da origem (evidência: 200 com corpo vazio sem Referer) | **Já coberto na rodada anterior** (`Referer: https://<host>/` + `X-Requested-With: XMLHttpRequest` + `Accept: application/json, text/javascript, */*; q=0.01`). A validação em produção depende do `content_type`/`reason` pós-deploy — sem egress neste sandbox. |
+
+## O QUE FOI REJEITADO (e por quê)
+
+1. **O `worker.mjs` completo colado no relatório não é executável**: o iFlowGo aponta para `https://https://www.google.com/search?q=pokecoords.iflowgo.com/...` (um redirect do Google — `url.hostname==="www.google.com"` faria a verificação `iflow` falhar sempre → `source_url` → iFlowGo offline para sempre). Vários `**` (operadores) e crases foram apagados pela formatação markdown do paste (`2 Math.min(...)`, template literals sem backticks). Seguir aquele arquivo quebraria o Worker. Nosso `worker.mjs` do branch é a fonte de verdade.
+2. **"12 testes executados, 12 aprovados" / "7 testes passando"** — divergem do branch (23 testes, todos passando). Nenhum dos artefatos citados (`/home/workdir/artifacts/`) existe neste workspace.
+3. **"wrangler.json não precisou de alterações"** — correto apenas para o cenário de 8 fontes; **decidido pelo operador nesta sessão: GOCoords ativada como 9ª fonte** (atestação registrada no Addendum 1).
+4. **iFlowGo "endpoint" do relatório** é o redirect do Google acima; o endpoint real (já usado) é `https://pokecoords.iflowgo.com/iflowgopokecoords/api/v1/pokemon-search` com `min_iv=100` — confirmado de novo pelo próprio relatório (total≈105, total_pages=5, 25/25 itens 15/15/15) como **segunda confirmação independente** da nossa descoberta.
+
+## VERIFICAÇÃO DOS NOVOS CANDIDATOS DE FONTE (nenhum integrado)
+
+| Candidata | Verificação independente | Situação |
+|---|---|---|
+| GhostDex (`ghostdex.io/pokemon-go-coordinates`) | **Existe e está vivo** (atualizado 2026-11-27 21:05 UTC; ~57–60 hundos ao vivo; 13–16 países; CP/Lv/ATK/DEF/HP/coords). Página SSR HTML; sem API JSON pública verificada; ToS/autorização não confirmados. | Não integrada. Pedido de autorização é o caminho. |
+| Poke100IV (`poke100iv.com`) | **Existe e está vivo** (mapa ao vivo; snapshot SSR de 100%-IV; contato público `info@poke100iv.com`, aberto a integrações segundo a página). Sem API pública verificada. | Não integrada. Parceria possível mediante contato. |
+| PogoTrades | A busca retornou apenas o PoGoCoordinates (`pogocoordinates.com`), já agregado via FaustusFoundry; a existência de "PogoTrades" não pôde ser confirmada. | Descartada por falta de evidência. |
+| TWPkInfo / BaoBaoBei (`twpkinfo.com`) | Portal real e antigo (notícias desde 2025/04), mas **nenhuma API/feed 100% IV máquina-legível verificada**; o Moonani apenas usa os ícones de pokémon do site. | Não integrada. |
+| Coords GO | Comunidade PT-BR (Discord/Telegram); feed estruturado para selvagens 100% IV não confirmado. | Não integrada; exige resposta em canal da comunidade. |
+
+**Regra mantida:** nenhuma fonte nova entra em produção sem (a) endpoint máquina-legível verificado, (b) dados reais 100% IV selvagens com coords e expiração, (c) autorização de coleta/redistribuição pelo fornecedor. Nada foi integrado às cegas.
+
+## TESTES
+
+`node worker.test.mjs` → **23/23** (5 novos: paginação Moonani de 2 páginas com `recordsFiltered=105`, Moonani página-1-só/zero hundos online com 1 chamada, piso de 30 min para HTTP 429 sem `Retry-After`, `state_label` presente + backoff ≤30 min, `ADAPTER_VERSION` ausente no KV legado → recoleta imediata). Ensaio offline (fixtures reais capturadas) reproduz 8 fontes online antes da fixture envelhecer — os dados expirados são corretamente descartados.

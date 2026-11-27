@@ -383,5 +383,63 @@ class FeedTests(unittest.TestCase):
             self.assertEqual(set(feed.PogoLookup('test-token', out).cache), {'7'})
 
 
+    def test_published_feed_validation(self):
+        row = ['-1', 215, 0, 41, -71, NOW + 600_000, 1234, 30]
+        spot = [feed.spot_key(1, 10, 20, NOW + 600_000), 1, 0, 10, 20, NOW + 600_000, 0, 0]
+        root = {'v': 1, 'fetched_ms': NOW, 'coordinate_precision': 'exact',
+                'hundos': [row, row, ['5', 215, 0, 41, -71, NOW + 600_000, 0, 0],
+                           ['6', 215, 0, 91, -71, NOW + 600_000, 0, 0],
+                           ['7', 215, 0, 41, -71, NOW + 59_000, 0, 0],
+                           ['8', True, 0, 41, -71, NOW + 600_000, 0, 0],
+                           ['9', 215, 0, 41, -71, NOW + 600_000, 0, float('nan')]],
+                'spots': [spot, spot], 'approximate_encounters': ['5'],
+                'map_candidates': [['99', 215, 0, 41, -71, NOW + 600_000, 0, 0]]}
+        rows, spots = feed.published_rows(root, NOW)
+        self.assertEqual([r[0] for r in rows], ['18446744073709551615'])
+        self.assertEqual(spots, [spot])
+        for change in ({'v': 2}, {'fetched_ms': NOW - feed.MAX_PUBLISHED_FEED_AGE_MS - 1},
+                       {'coordinate_precision': 'approximate'}, {'hundos': None}, {'spots': None}):
+            with self.subTest(change=change), self.assertRaises(feed.FeedError):
+                feed.published_rows(dict(root, **change), NOW)
+
+    @patch.object(feed.time, 'time', return_value=NOW / 1000)
+    def test_published_feed_merges_spots_and_handles_failure(self, clock):
+        url = 'https://feed.faustusfoundry.com/pgs/hundos.json'
+        source = feed.Scheduled('published', feed.PublishedFeedSource(url), 60)
+        row = ['1', 215, 0, 41, -71, NOW + 600_000, 1234, 30]
+        spot = [feed.spot_key(1, 10, 20, NOW + 600_000), 1, 0, 10, 20, NOW + 600_000, 0, 0]
+        response = json.dumps({'v': 1, 'fetched_ms': NOW, 'hundos': [row], 'spots': [spot]}).encode()
+        with patch.object(feed.urllib.request, 'urlopen', return_value=io.BytesIO(response)) as opened:
+            self.assertIsNone(source.run({}))
+            request = opened.call_args.args[0]
+            self.assertEqual(request.full_url, url)
+            self.assertEqual(request.get_method(), 'GET')
+            self.assertIsNone(request.get_header('Authorization'))
+        direct = feed.Scheduled('direct', None, 60)
+        direct.rows = [row]
+        rows, spots, counts = feed.merge([direct, source], NOW)
+        self.assertEqual(rows, [row])
+        self.assertEqual(spots, [spot])
+        self.assertEqual(counts['published'], {'active': 2, 'unique': 1, 'status': 'ok'})
+        failure = urllib.error.HTTPError(url, 429, 'limited', {'Retry-After': '900'}, None)
+        with patch.object(feed.urllib.request, 'urlopen', side_effect=failure):
+            self.assertEqual(source.run({}).status, 429)
+        self.assertEqual(source.next_at, NOW / 1000 + 900)
+        self.assertEqual(feed.merge([source], NOW)[1], [spot])
+        self.assertEqual(feed.merge([source], NOW + 600_000)[:2], ([], []))
+
+    def test_published_source_requires_explicit_https_url(self):
+        for url in ('', 'http://example.com/hundos.json', 'https://user:pw@example.com/hundos.json',
+                    'https://example.com/hundos.json?token=abc', 'https://example.com/other.json'):
+            with self.subTest(url=url), self.assertRaises(ValueError):
+                feed.PublishedFeedSource(url)
+        with patch.dict(feed.os.environ, {'PGS_UPSTREAM_FEED_URL': 'https://feed.faustusfoundry.com/pgs/hundos.json',
+                                         'PGS_UPSTREAM_FEED_INTERVAL': '5'}, clear=True):
+            sources, _ = feed.build_sources(['published'], 300)
+            self.assertEqual(sources[0].interval, 30)
+        with patch.dict(feed.os.environ, {}, clear=True), self.assertRaises(SystemExit):
+            feed.build_sources(['published'], 300)
+
+
 if __name__ == '__main__':
     unittest.main()

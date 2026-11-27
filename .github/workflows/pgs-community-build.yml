@@ -1,0 +1,396 @@
+name: PGS community build v0.3.8-pgs.1
+
+on:
+  push:
+    branches: [build/pgs-community-v0.3.8-pgs.1]
+    paths: [.github/workflows/pgs-community-build.yml]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: pgs-community-build-v0.3.8-pgs.1
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 120
+    defaults:
+      run:
+        shell: bash
+    env:
+      PGRAZOR_BUILD_TOOLS: '36.0.0'
+      PGRAZOR_ANDROID_PLATFORM: android-36
+      PGRAZOR_VERSION: v0.3.8-pgs.1
+      PGRAZOR_KEYSTORE: ${{ runner.temp }}/pgs-community-signing.jks
+      PGS_SOURCE_SHA: a2fa1a698b73436798ad84bf33b0e78a7e012f69
+      PGS_EXPECTED_CERT_SHA256: d95c6bdfcbd91dc5c9cde698487c88e4994771a475e4efde4567b8d5f44e96cf
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          ref: a2fa1a698b73436798ad84bf33b0e78a7e012f69
+          persist-credentials: false
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5
+        with:
+          python-version: '3.12'
+      - uses: actions/setup-java@cf277c60eb25467037889841efdb72551f06f6c3 # v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      # Fetch immediately: a newly sealed signed URL is valid for only a short time.
+      # No decrypted URL, password or private key is written to GITHUB_ENV or a log.
+      - name: Recover and verify private game input
+        timeout-minutes: 10
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          PGRAZOR_INPUT_URL: ${{ secrets.PGS_INPUT_URL || secrets.PGRAZOR_INPUT_URL }}
+          PGRAZOR_KEYSTORE_BASE64: ${{ secrets.PGS_KEYSTORE_BASE64 || secrets.PGRAZOR_KEYSTORE_BASE64 }}
+          PGRAZOR_KEY_ALIAS: ${{ secrets.PGS_KEY_ALIAS || secrets.PGRAZOR_KEY_ALIAS }}
+          PGRAZOR_STORE_PASSWORD: ${{ secrets.PGS_STORE_PASSWORD || secrets.PGRAZOR_STORE_PASSWORD }}
+          PGRAZOR_KEY_PASSWORD: ${{ secrets.PGS_KEY_PASSWORD || secrets.PGRAZOR_KEY_PASSWORD }}
+          PGS_SEALED_INPUT: |
+            format=PGS_BUILD_INPUT_V1
+            rsa_key=B8p1ZJwGNcViaFm46YKjxpkX5kaTbwpAdtRN07yY1jkHKrcEV6cCQJOxt7cnVjGnpL8J5tIrQHKTJ8yox31pNQTLo9oPIngx9mdOJ8ErRdD9FVPSNfJxtds/tLwojrKrclX2Kmltss8bLW14J/4HgmtxeipxtqRGzY4KxjRykXc/H4/YR5k6cpLXpRsY3glfuWHepmZXPrclwrRKyorudbj7Y2w/lRZU7ICCrml6DXnybzFVSY1mHjBDEIJ/b0RppsbfN/qP9OeTS+pXpEDszgNHQdX8TRdEdaa857F12niKc2pGBdiodPOZ9wGjAlwFPGlNeyLm/EZoehq6fGe5Sg==
+            nonce=ellm9yfan1EdTYtq
+            ciphertext=o5OXX52yW2YjM14hSKPRutA46tQ4rYGChU8WDw8k3dE2XvaNFy/NtWAQ4mBy3MFY7gNEo4fcKw2VuXmFbTSXJvlfj3WLlaOgNvLiwfvAm9gYQKMayLmFQwzD2TwPyuuCK/xb37TRM7s8kvbJTyIVJLlYmsxyZwAjKJOa0wGJJuAZQdkh+VsZFNI57M/3fBYnfklzmyfGWhbOH9KTPY1KiXyxllYgjECLlq6GUC4aEa2H55YQlmZU9iaBe2YaSR2NcfeFiZhtqvH8Z7Gt7J9MrjR7A+/ilM250guzSxIhVBLNXApLbykvAhLquZOyNkHHLlNQxBGPX/V3ZVtAKh1Q45yuBa+cSbHMJ71RAVd6FXCqHdWsLTA2j359IDZQNYix/6xY7T10f5XvvQe/B//kHJrOD5o5hr+mkGxtPHsEMeaiYH7DGAXBr0ihVJfPElHs1/+77EzHpjL7XDmD0bIbD+UtQYR0L3yjuNpwJbTT561zmH/gGgya2X2gZ0eyJmB2QNQeQTD/BKoorkNlwrbnhTrmEIjVNdMg0SnkNDDkEpOxPA==
+        run: |
+          set -euo pipefail
+          umask 077
+          test "$(git rev-parse HEAD)" = "$PGS_SOURCE_SHA"
+          cat > "$RUNNER_TEMP/PreparePrivateInput.java" <<'PGS_JAVA'
+          import java.io.StringReader;
+          import java.net.URI;
+          import java.nio.charset.StandardCharsets;
+          import java.nio.file.Files;
+          import java.nio.file.LinkOption;
+          import java.nio.file.Path;
+          import java.nio.file.StandardOpenOption;
+          import java.nio.file.attribute.PosixFilePermissions;
+          import java.security.KeyStore;
+          import java.security.MessageDigest;
+          import java.security.PrivateKey;
+          import java.security.cert.Certificate;
+          import java.security.interfaces.RSAPublicKey;
+          import java.security.spec.MGF1ParameterSpec;
+          import java.util.Arrays;
+          import java.util.Base64;
+          import java.util.HexFormat;
+          import java.util.Map;
+          import java.util.Properties;
+          import java.util.Set;
+          import javax.crypto.Cipher;
+          import javax.crypto.spec.GCMParameterSpec;
+          import javax.crypto.spec.OAEPParameterSpec;
+          import javax.crypto.spec.PSource;
+          import javax.crypto.spec.SecretKeySpec;
+          
+          /** Runner-only input preparation. Never writes or prints the decrypted URL. */
+          public final class PreparePrivateInput {
+              private static final String FORMAT = "PGS_BUILD_INPUT_V1";
+              private static String phase = "configuration";
+          
+              private static String required(String name) {
+                  String value = System.getenv(name);
+                  if (value == null || value.isBlank()) throw new IllegalArgumentException();
+                  return value;
+              }
+          
+              private static byte[] decode(Properties data, String name) {
+                  String value = data.getProperty(name);
+                  if (value == null || value.length() > 65_536) throw new IllegalArgumentException();
+                  return Base64.getDecoder().decode(value);
+              }
+          
+              private static String unseal(PrivateKey key, int rsaBytes) throws Exception {
+                  String sealed = required("PGS_SEALED_INPUT");
+                  if (sealed.length() > 100_000) throw new IllegalArgumentException();
+                  Properties data = new Properties() {
+                      @Override public synchronized Object put(Object key, Object value) {
+                          if (containsKey(key)) throw new IllegalArgumentException();
+                          return super.put(key, value);
+                      }
+                  };
+                  data.load(new StringReader(sealed));
+                  if (!data.stringPropertyNames().equals(Set.of("format", "rsa_key", "nonce", "ciphertext"))
+                          || !FORMAT.equals(data.getProperty("format"))) throw new IllegalArgumentException();
+                  byte[] wrapped = decode(data, "rsa_key");
+                  byte[] nonce = decode(data, "nonce");
+                  byte[] ciphertext = decode(data, "ciphertext");
+                  if (wrapped.length != rsaBytes || nonce.length != 12
+                          || ciphertext.length < 17 || ciphertext.length > 32_768) {
+                      throw new IllegalArgumentException();
+                  }
+                  byte[] aesKey = null;
+                  byte[] plaintext = null;
+                  try {
+                      Cipher rsa = Cipher.getInstance("RSA/ECB/OAEPWithSHA-256AndMGF1Padding");
+                      rsa.init(Cipher.DECRYPT_MODE, key, new OAEPParameterSpec(
+                              "SHA-256", "MGF1", MGF1ParameterSpec.SHA256, PSource.PSpecified.DEFAULT));
+                      aesKey = rsa.doFinal(wrapped);
+                      if (aesKey.length != 32) throw new IllegalArgumentException();
+                      Cipher aes = Cipher.getInstance("AES/GCM/NoPadding");
+                      aes.init(Cipher.DECRYPT_MODE, new SecretKeySpec(aesKey, "AES"),
+                              new GCMParameterSpec(128, nonce));
+                      aes.updateAAD(FORMAT.getBytes(StandardCharsets.UTF_8));
+                      plaintext = aes.doFinal(ciphertext);
+                      return new String(plaintext, StandardCharsets.UTF_8);
+                  } finally {
+                      if (aesKey != null) Arrays.fill(aesKey, (byte) 0);
+                      if (plaintext != null) Arrays.fill(plaintext, (byte) 0);
+                  }
+              }
+          
+              private static void validateUrl(String url) throws Exception {
+                  if (url.length() > 32_000 || url.chars().anyMatch(c -> c <= 32 || c == 127)) {
+                      throw new IllegalArgumentException();
+                  }
+                  URI parsed = new URI(url);
+                  if (!"https".equals(parsed.getScheme()) || parsed.getHost() == null
+                          || parsed.getUserInfo() != null || parsed.getFragment() != null) {
+                      throw new IllegalArgumentException();
+                  }
+              }
+          
+              private static void prepare() throws Exception {
+                  char[] storePassword = required("PGRAZOR_STORE_PASSWORD").toCharArray();
+                  char[] keyPassword = required("PGRAZOR_KEY_PASSWORD").toCharArray();
+                  byte[] encoded = null;
+                  Path signing = null;
+                  boolean signingCreated = false;
+                  boolean success = false;
+                  try {
+                      String expected = required("PGS_EXPECTED_CERT_SHA256");
+                      if (!expected.matches("[a-f0-9]{64}")) throw new IllegalArgumentException();
+                      String alias = required("PGRAZOR_KEY_ALIAS");
+                      String base64 = required("PGRAZOR_KEYSTORE_BASE64");
+                      if (base64.length() > 8_000_000) throw new IllegalArgumentException();
+                      Path temp = Path.of(required("RUNNER_TEMP")).toRealPath();
+                      signing = Path.of(required("PGRAZOR_KEYSTORE")).toAbsolutePath().normalize();
+                      if (!signing.getParent().equals(temp) || Files.exists(signing, LinkOption.NOFOLLOW_LINKS)) {
+                          throw new IllegalArgumentException();
+                      }
+                      encoded = Base64.getDecoder().decode(base64);
+                      Files.createFile(signing, PosixFilePermissions.asFileAttribute(
+                              PosixFilePermissions.fromString("rw-------")));
+                      signingCreated = true;
+                      Files.write(signing, encoded, StandardOpenOption.WRITE);
+                      phase = "signing certificate";
+                      KeyStore store = KeyStore.getInstance(signing.toFile(), storePassword);
+                      Certificate certificate = store.getCertificate(alias);
+                      if (certificate == null || !(certificate.getPublicKey() instanceof RSAPublicKey publicKey)) {
+                          throw new IllegalArgumentException();
+                      }
+                      String actual = HexFormat.of().formatHex(MessageDigest.getInstance("SHA-256")
+                              .digest(certificate.getEncoded()));
+                      if (!MessageDigest.isEqual(expected.getBytes(StandardCharsets.US_ASCII),
+                              actual.getBytes(StandardCharsets.US_ASCII))) throw new IllegalArgumentException();
+                      if (!(store.getKey(alias, keyPassword) instanceof PrivateKey privateKey)) {
+                          throw new IllegalArgumentException();
+                      }
+                      phase = "sealed input";
+                      String url = System.getenv("PGRAZOR_INPUT_URL");
+                      if (url == null || url.isBlank()) {
+                          url = unseal(privateKey, (publicKey.getModulus().bitLength() + 7) / 8);
+                      }
+                      validateUrl(url);
+                      phase = "pinned input download";
+                      ProcessBuilder command = new ProcessBuilder("python", "-B", "tools/private_input.py");
+                      Map<String, String> child = command.environment();
+                      child.put("PGRAZOR_INPUT_URL", url);
+                      child.remove("PGRAZOR_STORE_PASSWORD");
+                      child.remove("PGRAZOR_KEY_PASSWORD");
+                      child.remove("PGRAZOR_KEY_ALIAS");
+                      child.remove("PGS_SEALED_INPUT");
+                      child.remove("PGS_EXPECTED_CERT_SHA256");
+                      // Fail with a fixed message; even future helper exceptions cannot echo the URL.
+                      command.redirectOutput(ProcessBuilder.Redirect.DISCARD);
+                      command.redirectError(ProcessBuilder.Redirect.DISCARD);
+                      Process download = command.start();
+                      child.remove("PGRAZOR_INPUT_URL");
+                      int status = download.waitFor();
+                      if (status != 0) throw new IllegalStateException();
+                      success = true;
+                      System.out.println("Pinned game input verified; temporary signing key is ready.");
+                  } finally {
+                      Arrays.fill(storePassword, '\0');
+                      Arrays.fill(keyPassword, '\0');
+                      if (encoded != null) Arrays.fill(encoded, (byte) 0);
+                      if (!success && signingCreated) Files.deleteIfExists(signing);
+                  }
+              }
+          
+              public static void main(String[] args) {
+                  try {
+                      if (args.length != 0) throw new IllegalArgumentException();
+                      prepare();
+                  } catch (Exception error) {
+                      System.err.println("Private input preparation failed at " + phase
+                              + ". Check the configured signing secrets, sealed input and pinned game profile.");
+                      System.exit(1);
+                  }
+              }
+          }
+          PGS_JAVA
+          java "$RUNNER_TEMP/PreparePrivateInput.java"
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: '22'
+      - uses: android-actions/setup-android@9fc6c4e9069bf8d3d10b2204b1fb8f6ef7065407 # v3
+        with:
+          packages: platform-tools
+          log-accepted-android-sdk-licenses: false
+      - name: Install pinned Android SDKs and native build tools
+        run: |
+          set -euo pipefail
+          sdkmanager "platforms;android-36" "build-tools;36.0.0" "sources;android-36" "ndk;27.3.13750724" "ndk;29.0.14206865"
+          python -m pip install "cmake==4.4.4" "ninja==1.13.2"
+      - name: Configure native prerequisites
+        run: |
+          set -euo pipefail
+          sdk_root="${ANDROID_SDK_ROOT:-${ANDROID_HOME:-}}"
+          test -n "$sdk_root"
+          test -f "$sdk_root/ndk/27.3.13750724/source.properties"
+          test -f "$sdk_root/ndk/29.0.14206865/source.properties"
+          {
+            printf 'ANDROID_SDK_ROOT=%s\n' "$sdk_root"
+            printf 'ANDROID_NDK_HOME=%s\n' "$sdk_root/ndk/27.3.13750724"
+            printf 'PGRAZOR_ART_NDK=%s\n' "$sdk_root/ndk/29.0.14206865"
+            printf 'PGRAZOR_NATIVE_DEPS=%s\n' "$RUNNER_TEMP/pgs-native-deps"
+          } >> "$GITHUB_ENV"
+      - name: Prepare verified native sources and DEX dependencies
+        run: |
+          set -euo pipefail
+          python -B tools/prepare_native.py --download
+          python -B pgrazor/art_build.py --check
+          python -B -c "import sys; sys.path.insert(0, 'pgrazor'); import dex_bridges; dex_bridges.dependencies(download=True)"
+      - name: Compile Android controls
+        env:
+          PGRAZOR_KEY_ALIAS: ${{ secrets.PGS_KEY_ALIAS || secrets.PGRAZOR_KEY_ALIAS }}
+          PGRAZOR_STORE_PASSWORD: ${{ secrets.PGS_STORE_PASSWORD || secrets.PGRAZOR_STORE_PASSWORD }}
+          PGRAZOR_KEY_PASSWORD: ${{ secrets.PGS_KEY_PASSWORD || secrets.PGRAZOR_KEY_PASSWORD }}
+        run: |
+          set -euo pipefail
+          export GITHUB_SHA="$(git rev-parse HEAD)"
+          test "$GITHUB_SHA" = "$PGS_SOURCE_SHA"
+          python -B pgrazor/build.py
+      - name: Check all device-free suites
+        run: env -u PGRAZOR_KEYSTORE python -B tools/check.py
+      - name: Build playable non-root package
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          PGRAZOR_KEY_ALIAS: ${{ secrets.PGS_KEY_ALIAS || secrets.PGRAZOR_KEY_ALIAS }}
+          PGRAZOR_STORE_PASSWORD: ${{ secrets.PGS_STORE_PASSWORD || secrets.PGRAZOR_STORE_PASSWORD }}
+          PGRAZOR_KEY_PASSWORD: ${{ secrets.PGS_KEY_PASSWORD || secrets.PGRAZOR_KEY_PASSWORD }}
+        run: |
+          set -euo pipefail
+          export GITHUB_SHA="$(git rev-parse HEAD)"
+          test "$GITHUB_SHA" = "$PGS_SOURCE_SHA"
+          python -B pgrazor/nonroot.py --apk pgrazor/input/game.apkm --google-browser-login --skip-build --download-runtime
+      - name: Produce signed single APK
+        env:
+          PGRAZOR_KEY_ALIAS: ${{ secrets.PGS_KEY_ALIAS || secrets.PGRAZOR_KEY_ALIAS }}
+          PGRAZOR_STORE_PASSWORD: ${{ secrets.PGS_STORE_PASSWORD || secrets.PGRAZOR_STORE_PASSWORD }}
+          PGRAZOR_KEY_PASSWORD: ${{ secrets.PGS_KEY_PASSWORD || secrets.PGRAZOR_KEY_PASSWORD }}
+        run: |
+          set -euo pipefail
+          export GITHUB_SHA="$(git rev-parse HEAD)"
+          test "$GITHUB_SHA" = "$PGS_SOURCE_SHA"
+          python -B - <<'PY'
+          from pathlib import Path
+          import os
+          import subprocess
+          import sys
+          candidates = [p for p in Path('pgrazor/build/nonroot').iterdir()
+                        if p.is_dir() and (p / 'report.json').is_file()]
+          if not candidates:
+              raise SystemExit('A completed non-root build is required')
+          candidate = max(candidates, key=lambda p: p.name)
+          subprocess.run([sys.executable, '-B', 'pgrazor/release_apk.py',
+                          '--run', str(candidate), '--output', 'dist/release'], check=True)
+          PY
+      - name: Build rooted installer and manual module
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          PGRAZOR_KEY_ALIAS: ${{ secrets.PGS_KEY_ALIAS || secrets.PGRAZOR_KEY_ALIAS }}
+          PGRAZOR_STORE_PASSWORD: ${{ secrets.PGS_STORE_PASSWORD || secrets.PGRAZOR_STORE_PASSWORD }}
+          PGRAZOR_KEY_PASSWORD: ${{ secrets.PGS_KEY_PASSWORD || secrets.PGRAZOR_KEY_PASSWORD }}
+        run: |
+          set -euo pipefail
+          export GITHUB_SHA="$(git rev-parse HEAD)"
+          test "$GITHUB_SHA" = "$PGS_SOURCE_SHA"
+          python -B pgrazor/rooted.py pgrazor/input/game.apkm --skip-build --download --output dist/release
+      - name: Verify all three original release outputs
+        run: python -B tools/verify_release.py dist/release --tag v0.3.8-pgs.1
+      - name: Archive complete source and tools
+        run: python -B tools/source_bundle.py
+      - name: Prepare PGS filenames and recompute checksums
+        shell: python
+        run: |
+          from pathlib import Path
+          import hashlib
+          import json
+          import os
+          import shutil
+          import subprocess
+          source = Path('dist/release')
+          output = Path('dist/PGS')
+          output.mkdir(parents=True, exist_ok=False)
+          expected = os.environ['PGS_SOURCE_SHA']
+          if subprocess.check_output(['git', 'rev-parse', 'HEAD'], text=True).strip() != expected:
+              raise SystemExit('Checkout differs from the requested source commit')
+          receipt = json.loads((source / 'build-info.json').read_text(encoding='utf-8'))
+          if receipt.get('source_commit') != expected:
+              raise SystemExit('Non-root build receipt points to another source commit')
+          if receipt.get('input_sha256') != 'c6d3c04c38ca2f2446957633b4fee8c93dcc9cebdbbaddc9cb9651722ef8f54f':
+              raise SystemExit('Input does not match the pinned official game')
+          if receipt.get('game_version') != '0.439.0' or receipt.get('game_version_code') != 2026111602:
+              raise SystemExit('Unexpected official game version')
+          def sha256(path):
+              with path.open('rb') as stream:
+                  return hashlib.file_digest(stream, 'sha256').hexdigest()
+          files = (
+              (source / 'PGRazor.apk', 'PGS.apk'),
+              (source / 'PGRazor-Root.apk', 'PGS-Root.apk'),
+              (source / 'PGRazor-Root-module.zip', 'PGS-Root-module.zip'),
+              (source / 'build-info.json', 'build-info.json'),
+              (source / 'root-build-info.json', 'root-build-info.json'),
+              (Path('dist/PGRazor-source-tools.zip'), 'PGS-source-tools.zip'),
+          )
+          sums = []
+          for original, name in files:
+              digest = sha256(original)
+              destination = output / name
+              shutil.copyfile(original, destination)
+              if sha256(destination) != digest:
+                  raise SystemExit('Delivery copy failed integrity validation: ' + name)
+              sums.append(digest + '  ' + name)
+              print(name, destination.stat().st_size, digest)
+          (output / 'SHA256SUMS.txt').write_text('\n'.join(sums) + '\n', encoding='utf-8')
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: PGS-v0.3.8-pgs.1
+          path: |
+            dist/PGS/PGS.apk
+            dist/PGS/PGS-Root.apk
+            dist/PGS/PGS-Root-module.zip
+            dist/PGS/build-info.json
+            dist/PGS/root-build-info.json
+            dist/PGS/SHA256SUMS.txt
+            dist/PGS/PGS-source-tools.zip
+          if-no-files-found: error
+          compression-level: 0
+          retention-days: 7
+      - name: Remove private runner files
+        if: always()
+        shell: python
+        run: |
+          from pathlib import Path
+          import os
+          temp = Path(os.environ['RUNNER_TEMP']).resolve()
+          key = Path(os.environ['PGRAZOR_KEYSTORE'])
+          if key.parent.resolve() != temp or key.is_symlink():
+              raise SystemExit('Signing key is outside its runner temporary directory')
+          key.unlink(missing_ok=True)
+          (temp / 'PreparePrivateInput.java').unlink(missing_ok=True)
+          Path('pgrazor/input/game.apkm').unlink(missing_ok=True)

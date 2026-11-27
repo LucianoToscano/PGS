@@ -20,6 +20,7 @@ public final class GameLocationDeliveryTest {
         installFreshness();
         nativePointerZero();
         disabledAndSatelliteForwarding();
+        realLocationObservation();
         eligibleSuppressesOriginal();
         pauseResumeStop();
         shutdownIrreversible();
@@ -123,6 +124,57 @@ public final class GameLocationDeliveryTest {
         check(manager.deliveredProvider.get(0).equals("network"), "synthetic fix uses provider name");
         check(rec.location == 0, "successful synthetic delivery suppresses original");
         delivery.shutdown();
+    }
+
+    static void realLocationObservation() {
+        GameLocationDelivery delivery = begin();
+        Recorder rec = new Recorder();
+        NianticLocationProvider provider = new NianticLocationProvider("gps", rec);
+        NianticLocationManager manager = managerWith(provider);
+        delivery.start(manager);
+        tick();
+        NianticLocationProvider.ProviderListener proxy = provider.getListener();
+        Control.active = false;
+        Control.desired = false;
+        Location fix = new Location("gps");
+        fix.setLatitude(-3.73); fix.setLongitude(-38.52);
+        proxy.onProviderLocation(fix);
+        check(Control.observations == 1 && Control.observedLatitude == -3.73
+            && Control.observedLongitude == -38.52, "real provider fix observed while spoofing is off");
+        check(rec.location == 1 && rec.lastFix == fix, "original callback receives the same unmodified fix");
+
+        Control.desired = true; // Spoof intent stays protected even while its adapter is not ready.
+        proxy.onProviderLocation(fix);
+        check(Control.observations == 1 && rec.location == 2, "spoofed session does not overwrite real coordinates");
+        Control.desired = false;
+        Control.observationThrows = true;
+        proxy.onProviderLocation(fix);
+        check(rec.location == 3, "observation failure cannot drop the original callback");
+        Control.observationThrows = false;
+        proxy.onProviderLocation(new Location("broken") {
+            @Override public double getLatitude() { throw new IllegalStateException("getter failure"); }
+        });
+        check(rec.location == 4 && Control.observations == 1, "bad location getter still forwards the callback");
+        proxy.onProviderLocation(null);
+        check(rec.location == 5 && Control.observations == 1, "absent fix does not create a real location");
+        delivery.pause(manager);
+        proxy.onProviderLocation(fix);
+        check(rec.location == 6 && Control.observations == 1, "paused callback is forwarded without observation");
+        Recorder nextRec = new Recorder();
+        NianticLocationProvider nextProvider = new NianticLocationProvider("fused", nextRec);
+        delivery.start(managerWith(nextProvider));
+        tick();
+        Location nextFix = new Location("fused");
+        nextFix.setLatitude(12.5); nextFix.setLongitude(45.25);
+        nextProvider.getListener().onProviderLocation(nextFix);
+        check(Control.observations == 2 && Control.observedLatitude == 12.5
+            && Control.observedLongitude == 45.25, "replacement manager supplies the new real fix");
+        proxy.onProviderLocation(fix);
+        check(rec.location == 7 && Control.observations == 2 && Control.observedLatitude == 12.5,
+            "old manager callback cannot replace the current manager's coordinates");
+        delivery.shutdown();
+        proxy.onProviderLocation(fix);
+        check(rec.location == 8 && Control.observations == 2, "retired callback cannot overwrite a new session fix");
     }
 
     static void pauseResumeStop() {
@@ -338,6 +390,7 @@ public final class GameLocationDeliveryTest {
     static GameLocationDelivery begin() {
         ContextService.handler.pending.clear();
         Control.active = true;
+        Control.desired = true; Control.observationThrows = false; Control.observations = 0;
         Control.lat = 1.0; Control.lon = 1.0; Control.spd = 0f; Control.brg = 0f;
         Control.events.clear();
         GameLocationDelivery delivery = GameLocationDelivery.create();
@@ -362,8 +415,9 @@ public final class GameLocationDeliveryTest {
 
     static final class Recorder implements NianticLocationProvider.ProviderListener {
         int status, location, satellites;
+        Location lastFix;
         public void onProviderStatus(int value) { status++; }
-        public void onProviderLocation(Location fix) { location++; }
+        public void onProviderLocation(Location fix) { location++; lastFix=fix; }
         public void onProviderSatellites(long time, int count) { satellites++; }
     }
 }

@@ -12,6 +12,7 @@ export const featureGuides = [
       'Under Location & movement, turn on Location spoofing. It can run with Android’s system Location switch off or the app’s location permission denied.',
       'Use Coordinates & speed to set a start point and pick a speed preset: 0, 9.3, 16, or 30 km/h.',
       'Drag the joystick to walk; it steers relative to the game camera, not the screen.',
+      'In PGS candidate builds, hold the centre for 1.5 seconds, drag and release to lock direction. Hold the padlock for half a second to stop. Hiding the joystick, leaving the map or losing its camera releases the lock.',
       'Under Game map, set Game map tap to Do nothing, Walk, Teleport, or Walk / double tap teleport — the combined mode walks on one ground tap and teleports on two quick taps in the same spot.',
     ],
     notes: [
@@ -358,7 +359,7 @@ export const featureGuides = [
     title: 'Send & Open Gifts',
     category: 'Automation',
     summary: 'Send available gifts to eligible friends, then open received gifts in one manually started pass.',
-    where: 'Settings > Automation > One-shot tasks > Send & Open Gifts, Settings > Buddy, Eggs & Friends > Friend gifts > Send & Open Gifts, or Quick Menu > Automation.',
+    where: 'Settings > Automation > One-shot tasks > Send & Open Gifts, Settings > Buddy, Eggs & Friends > Friend gifts > Send & Open Gifts, or Quick Menu > Automation. PGS candidate builds also provide a direct Quick Menu > Send & Open Gifts shortcut.',
     steps: [
       'Choose whether to open even when your item bag is full. This option is on by default, uses the game’s full-bag reward preference, and may provide fewer rewards.',
       'Press Start. The pass sends your available gifts to eligible friends, then opens the gifts you have received, handling each friend once. Watch the confirmed Sent and Opened counts, skipped actions, and current status.',
@@ -407,7 +408,7 @@ export const featureGuides = [
       'Read the warning first: constant teleporting and remote catching raise the risk of an account warning or ban. Use an alt account, not your main.',
       'Open Automation and choose Shundo Sniper (Experimental).',
       'Pick where sightings come from: the PGRazor feed, LivePokeMap with your own sign-in, or PoGoCoordinates, which is slower.',
-      'Optionally limit it with Shundo Sniper species, and set Time between teleports.',
+      'Optionally limit it with Shundo Sniper species, and set Time between teleports. In PGS candidate builds, LivePokeMap refresh offers 30 seconds to 10 minutes, with a five-minute default and timing variation; server refresh limits and Retry-After take precedence, including after settings imports.',
       'Turn on Shundo Sniper. Its card shows progress; tap Dark to black out the screen and save battery, and tap the screen to bring the game back.',
     ],
     notes: [
@@ -685,7 +686,7 @@ export const featureGuides = [
     notes: [
       'LivePokeMap needs a separate, active, paid subscription; it is not included. Its My Shinies tab was removed because LivePokeMap no longer offers it.',
       'The session token is stored encrypted with Android Keystore and the password is never saved; Logout removes the token.',
-      'Refresh stops when the feed closes or the app leaves the foreground. Remote sightings can expire and are separate from locations the game loads.',
+      'Refresh stops when the feed closes or the app leaves the foreground. In PGS candidate builds, automatic refresh also pauses on Global; Refresh and filter/radius changes still fetch when server backoff permits. Remote sightings can expire and are separate from locations the game loads.',
       'Both feeds use each service’s observed web interface, which may change; access depends on your account and their service.',
     ],
   },

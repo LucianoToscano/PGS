@@ -11,8 +11,10 @@ import java.io.InputStream;
 
 /** Shared persistent berry priority editor, available on the map or in an encounter. */
 final class BerryPriorityPicker {
-    static final int[] IDS={0,701,703,705,706,707};
+    static final int[] IDS={0,701,703,705,706,708};
     static final String[] NAMES={"Off","Razz Berry","Nanab Berry","Pinap Berry","Golden Razz Berry","Silver Pinap Berry"};
+    // The bundled Silver Pinap artwork has a historical filename, independent of the game's item ID.
+    static String iconPath(int id){return "pgrazor/map-icons/berry-"+(id==708?707:id)+".png";}
     private final Activity activity;
     private final Runnable changed;
     private final Bitmap[] icons=new Bitmap[IDS.length];
@@ -22,7 +24,7 @@ final class BerryPriorityPicker {
     private Context pickerContext;
     BerryPriorityPicker(Activity activity,Runnable changed){
         this.activity=activity;this.changed=changed;
-        for(int i=1;i<IDS.length;i++)try(InputStream in=PgAssets.open(activity,"pgrazor/map-icons/berry-"+IDS[i]+".png")){icons[i]=BitmapFactory.decodeStream(in);}catch(Exception ignored){}
+        for(int i=1;i<IDS.length;i++)try(InputStream in=PgAssets.open(activity,iconPath(IDS[i]))){icons[i]=BitmapFactory.decodeStream(in);}catch(Exception ignored){}
     }
     private int dp(float n){return MapTheme.dp(activity,n);}
     private int pickerDp(float n){return MapTheme.dp(pickerContext,n);}

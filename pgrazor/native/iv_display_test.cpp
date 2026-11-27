@@ -55,7 +55,7 @@ struct FakeEncounterOut { void *klass; FakeWild *wild; };
 struct FakeTappable { void *klass; FakePokemon *pokemon; };
 struct FakeMap { void *klass; FakeWild *map_wild; FakeEncounterOut *response; FakeTappable *tappable; };
 struct FakePlate { void *klass; FakeText *cp_text; void *gm; };
-struct FakePanel { void *klass; FakeText *cp_text; FakePokemon *displayed; void *gm; };
+struct FakePanel { void *klass; FakeText *cp_text; FakePokemon *displayed; void *gm; bool destroyed = false; };
 
 // Boxed value-return pool + System.String pool (reused; the native unboxes/reads before
 // the next invoke, so a small pool is enough).
@@ -217,6 +217,8 @@ void *fake_runtime_invoke(const void *method, void *obj, void **params, void **e
       g_alive_nested_tick = false;
       g_api->tick(g_owner, 1);  // reentrant stopping tick: guarded no-op while active_depth > 0
     }
+    if (fake_obj_class(params[0]) == &cls_panel)
+      return box_bool(!static_cast<FakePanel *>(params[0])->destroyed);
     FakeText *t = static_cast<FakeText *>(params[0]);  // reference arg: object pointer itself
     return box_bool(t->destroyed == 0);
   }

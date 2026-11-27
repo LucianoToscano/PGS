@@ -259,7 +259,7 @@ public final class Control {
     private static volatile long buddyMapSample;
     private static volatile String buddyStatus="Waiting for buddy support";
     public static int buddyBerry(){return buddyBerry;}
-    public static void setBuddyBerry(int id){if(id!=0&&id!=701&&id!=703&&id!=705&&id!=706&&id!=707)return;buddyBerry=id;saveSettings();}
+    public static void setBuddyBerry(int id){if(id!=0&&!BerryPriority.validId(id))return;buddyBerry=id;saveSettings();}
     public static void setBuddyReady(boolean ready,String status){buddyReady=ready;buddyStatus=status;}
     public static void setBuddyStatus(String status){buddyStatus=status;}
     public static String buddyStatus(){return buddyStatus;}
@@ -880,6 +880,13 @@ public final class Control {
         if(Double.isFinite(realLatitude)&&Double.isFinite(realLongitude))
             realLocation=new double[]{realLatitude,realLongitude};
     }
+    /** A provider callback supplies one complete fix even when framework getter hooks do not run. */
+    public static synchronized void observeRealLocation(double latitude,double longitude) {
+        if(desiredEnabled||!Double.isFinite(latitude)||!Double.isFinite(longitude)
+                ||Math.abs(latitude)>90||Math.abs(longitude)>180)return;
+        realLatitude=latitude;realLongitude=longitude;
+        realLocation=new double[]{latitude,longitude};
+    }
     public static boolean locationKnown(){return desiredEnabled||realLocation!=null;}
     public static double currentLatitude(){double[] fix=realLocation;return desiredEnabled?engine.latitude:fix==null?Double.NaN:fix[0];}
     public static double currentLongitude(){double[] fix=realLocation;return desiredEnabled?engine.longitude:fix==null?Double.NaN:fix[1];}
@@ -1178,7 +1185,7 @@ public final class Control {
     public static int quickMenuHidden(){return quickMenuHidden;}
     public static boolean quickMenuVisible(int bit){return (quickMenuHidden&bit)==0;}
     public static void setQuickMenuVisible(int bit,boolean visible){
-        if(bit<=0||bit>4096||(bit&(bit-1))!=0)return;
+        if(bit<=0||bit>8192||(bit&(bit-1))!=0)return;
         quickMenuHidden=visible?quickMenuHidden&~bit:quickMenuHidden|bit;
         saveSettings();
     }
@@ -1250,7 +1257,7 @@ public final class Control {
                 ShinyScanner.read(p);
                 desiredEnabled=Boolean.parseBoolean(p.getProperty("locationSpoofing","true"));
                 darkTheme=Boolean.parseBoolean(p.getProperty("darkTheme","true"));
-                quickMenuHidden=boundedSetting(p,"quickMenuHidden",8191);
+                quickMenuHidden=boundedSetting(p,"quickMenuHidden",16383);
                 try{uiScalePercent=Integer.parseInt(p.getProperty("uiScalePercent","100"));}catch(NumberFormatException invalid){uiScalePercent=100;}
                 if(uiScalePercent!=25&&uiScalePercent!=50&&uiScalePercent!=75&&uiScalePercent!=100)uiScalePercent=100;
                 joystickVisible=Boolean.parseBoolean(p.getProperty("joystickVisible","true"));
@@ -1271,11 +1278,18 @@ public final class Control {
                 vgpStopOnCooldown=Boolean.parseBoolean(p.getProperty("vgpStopOnCooldown","false"));
                 try{vgpOptions=Integer.parseInt(p.getProperty("vgpOptions","3"))&7;}catch(NumberFormatException ignored){vgpOptions=3;}
                 try{buddyBerry=Integer.parseInt(p.getProperty("buddyBerry","0"));}catch(NumberFormatException ignored){buddyBerry=0;}
-                if(buddyBerry!=701&&buddyBerry!=703&&buddyBerry!=705&&buddyBerry!=706&&buddyBerry!=707)buddyBerry=0;
+                boolean migratedBerries=buddyBerry==707;
+                buddyBerry=BerryPriority.migrateLegacyId(buddyBerry);
+                if(!BerryPriority.validId(buddyBerry))buddyBerry=0;
                 int legacyBerry;try{legacyBerry=Integer.parseInt(p.getProperty("autoBerry","0"));}catch(NumberFormatException ignored){legacyBerry=0;}
+                migratedBerries|=legacyBerry==707;
+                legacyBerry=BerryPriority.migrateLegacyId(legacyBerry);
                 if(!BerryPriority.validId(legacyBerry))legacyBerry=0;
                 berryPriority=p.getProperty("berryPriority",legacyBerry==0?"":String.valueOf(legacyBerry));
-                try{BerryPriority.parse(berryPriority);}catch(IllegalArgumentException invalid){berryPriority="";}
+                try{
+                    String migrated=BerryPriority.migrateLegacy(berryPriority);
+                    migratedBerries|=!migrated.equals(berryPriority);berryPriority=migrated;
+                }catch(IllegalArgumentException invalid){berryPriority="";}
                 // Migration: installs that had an active berry keep the overlay enabled; otherwise it defaults off.
                 encounterBerryEnabled=Boolean.parseBoolean(p.getProperty("encounterBerry",String.valueOf(!berryPriority.isEmpty())));
                 try{battleOptions=Integer.parseInt(p.getProperty("battleOptions","0"));}catch(NumberFormatException ignored){battleOptions=0;}
@@ -1347,6 +1361,8 @@ public final class Control {
                 throwAr=Boolean.parseBoolean(p.getProperty("throwAr","false"));
                 throwGrade=boundedSetting(p,"grade",3); throwVariety=boundedSetting(p,"throwVariety",3); mapTapMode=boundedSetting(p,"mapTap",3);
                 event("settings-restored","dismiss="+quickSummaryEnabled+" fastBall="+quickBallEnabled+" grade="+throwGrade+" variety="+throwVariety+" curve="+throwCurve+" mapTap="+mapTapMode+" cameraRelative=true heal="+healConfig());
+                // Save canonical choices once, using the same atomic writer as ordinary preferences.
+                if(migratedBerries)settingsWriter.submit(settingsSnapshot());
             } catch(FileNotFoundException missing) {
                 // Defaults apply only until the user first saves a choice.
                 event("settings-defaults","No saved settings for this account profile yet");

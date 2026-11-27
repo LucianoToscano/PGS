@@ -408,6 +408,21 @@ public final class GameLocationDelivery {
                 return System.identityHashCode(proxyObject);
             if (argc == 0 && methodName.equals("toString"))
                 return "GameLocationDeliveryProxy@" + Integer.toHexString(System.identityHashCode(proxyObject));
+            // Some Android builds never enter the framework getter hooks. Observe the original
+            // provider fix too, without requiring spoofing readiness or changing its callback.
+            if (methodName.equals("onProviderLocation") && args != null
+                    && valid(owner, epoch, this) && !Control.desiredEnabled()) {
+                try {
+                    for (Object arg : args) if (arg instanceof Location) {
+                        Location fix = (Location) arg;
+                        double latitude = fix.getLatitude(), longitude = fix.getLongitude();
+                        if (valid(owner, epoch, this)) Control.observeRealLocation(latitude, longitude);
+                        break;
+                    }
+                } catch (Throwable ignored) {
+                    // Observation is best effort and must never consume or drop the original fix.
+                }
+            }
             // Satellite callbacks are never synthesized; status/location may be when eligible.
             if (methodName.equals("onProviderStatus") || methodName.equals("onProviderLocation")) {
                 try {

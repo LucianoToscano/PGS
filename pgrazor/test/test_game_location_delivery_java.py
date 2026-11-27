@@ -25,6 +25,8 @@ public class Location {
  public float speed, bearing;
  public long time, elapsedRealtimeNanos;
  public Location(String provider){this.provider=provider;}
+ public double getLatitude(){return latitude;}
+ public double getLongitude(){return longitude;}
  public void setLatitude(double v){latitude=v;}
  public void setLongitude(double v){longitude=v;}
  public void setSpeed(float v){speed=v;}
@@ -59,11 +61,18 @@ public class SystemClock {
     # Control is intentionally excluded so this test isolates GameLocationDelivery's reflection policy.
     'dev/pgrazor/Control.java': '''package dev.pgrazor;
 public final class Control {
- public static volatile boolean active=true;
+ public static volatile boolean active=true, desired=true, observationThrows;
+ public static double observedLatitude, observedLongitude;
+ public static int observations;
  public static volatile double lat=1.0, lon=1.0;
  public static volatile float spd=0f, brg=0f;
  public static final java.util.List<String> events=new java.util.ArrayList<>();
  public static boolean active(){return active;}
+ public static boolean desiredEnabled(){return desired;}
+ public static void observeRealLocation(double latitude,double longitude){
+  if(observationThrows)throw new IllegalStateException("observation failure");
+  observedLatitude=latitude;observedLongitude=longitude;observations++;
+ }
  public static double latitude(){return lat;}
  public static double longitude(){return lon;}
  public static float speed(){return spd;}

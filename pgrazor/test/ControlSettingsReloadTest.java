@@ -35,6 +35,34 @@ public final class ControlSettingsReloadTest {
             throw new AssertionError("Import ordering, legacy berry migration or VGP OFF changed");
         if(!"5".equals(Control.exportSettings().getProperty("battleOptions")))
             throw new AssertionError("A queued snapshot overwrote imported choices");
+        // Only saved legacy choices used 707 for Silver Pinap; live inventory IDs retain their meaning.
+        java.util.Properties oldSilver=new java.util.Properties();
+        oldSilver.setProperty("autoBerry","707");oldSilver.setProperty("buddyBerry","707");oldSilver.setProperty("encounterBerry","true");
+        Control.importSettings(app,oldSilver,9.3);Control.flushSettings(5000);
+        if(Control.autoBerry()!=708||Control.buddyBerry()!=708||!Control.berryPriority().equals("708")||Control.vgpEnabled()||Control.buddyAllowed())
+            throw new AssertionError("Legacy single Silver Pinap migration changed its meaning or bypassed readiness");
+        java.util.Properties migrated=new java.util.Properties();
+        try(java.io.FileInputStream in=new java.io.FileInputStream(new java.io.File(args[0],"pgrazor-settings-v1.properties"))){migrated.load(in);}
+        if(!"708".equals(migrated.getProperty("berryPriority"))||!"708".equals(migrated.getProperty("buddyBerry"))||migrated.containsKey("autoBerry"))
+            throw new AssertionError("Legacy migration was not persisted canonically");
+        Control.selectBerryPriority(705);
+        Control.setItemCatalog("707|Golden Nanab Berry|99\n708|Silver Pinap Berry|0\n705|Pinap Berry|2");
+        if(Control.autoBerry()!=705||Control.berryCount(707)!=99||Control.berryCount(708)!=0)
+            throw new AssertionError("Unstocked Silver Pinap must fall back without relabeling real inventory 707");
+        Control.setItemCatalog("707|Golden Nanab Berry|99\n708|Silver Pinap Berry|4\n705|Pinap Berry|2");
+        if(Control.autoBerry()!=708)throw new AssertionError("Stocked Silver Pinap did not regain priority");
+        Control.setAutoBerry(707);Control.selectBerryPriority(707);Control.setBuddyBerry(703);Control.setBuddyBerry(707);
+        if(!Control.berryPriority().equals("708,705")||Control.buddyBerry()!=703)
+            throw new AssertionError("Runtime setters must reject historical item IDs");
+        oldSilver.remove("autoBerry");oldSilver.setProperty("berryPriority","707,705,701");oldSilver.setProperty("encounterBerry","false");
+        Control.importSettings(app,oldSilver,9.3);Control.flushSettings(5000);load.invoke(null,app);
+        if(!Control.berryPriority().equals("708,705,701")||Control.buddyBerry()!=708||Control.encounterBerryEnabled()||Control.autoBerry()!=0||!Control.effectiveBerryPriority().isEmpty())
+            throw new AssertionError("Ordered legacy migration lost order, persistence or the explicit disabled choice");
+        migrated=Control.exportSettings();
+        if(!"708,705,701".equals(migrated.getProperty("berryPriority"))||!"708".equals(migrated.getProperty("buddyBerry")))
+            throw new AssertionError("Export reintroduced legacy berry IDs");
+        oldSilver.setProperty("berryPriority","707,708");Control.importSettings(app,oldSilver,9.3);Control.flushSettings(5000);
+        if(!Control.berryPriority().isEmpty())throw new AssertionError("Ambiguous duplicate legacy priorities must fail closed");
         // Evolve before transferring: a corrupt persisted mode must fail safe and disable the feature on reload.
         Control.setAutoTransferEnabled(true);
         Control.setEvolveTransferEnabled(true); Control.setEvolveTransferMode(1); Control.setEvolveTransferStages(2); Control.setEvolveTransferSpecies("1,4,25");

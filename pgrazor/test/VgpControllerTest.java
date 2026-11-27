@@ -104,7 +104,20 @@ public final class VgpControllerTest {
         Control.setVgpReady(false,"Unavailable"); check(!Control.vgpAllowed(),"Native readiness blocks permission");
         Control.setVgpReady(true,"Ready");
         java.lang.reflect.Field desired=Control.class.getDeclaredField("desiredEnabled"); desired.setAccessible(true);
-        desired.setBoolean(null,false); check(!Control.vgpAllowed(),"Unknown location blocks permission"); desired.setBoolean(null,true);
+        desired.setBoolean(null,false); check(!Control.vgpAllowed(),"Unknown location blocks permission");
+        Control.observeRealLocation(Double.NaN,0);Control.observeRealLocation(91,0);Control.observeRealLocation(0,181);
+        check(!Control.locationKnown(),"Invalid provider fixes cannot unlock location readiness");
+        double spoofLatitude=Control.engine.latitude,spoofLongitude=Control.engine.longitude;
+        Control.observeRealLocation(-3.73,-38.52);
+        check(Control.locationKnown()&&Control.vgpAllowed(),"A complete provider fix enables VGP without spoofing");
+        check(Control.currentLatitude()==-3.73&&Control.currentLongitude()==-38.52,"Provider coordinates stored together");
+        Control.observeRealLocation(4,Double.NaN);
+        check(Control.currentLatitude()==-3.73&&Control.currentLongitude()==-38.52,"Invalid pair leaves both real coordinates unchanged");
+        desired.setBoolean(null,true);Control.observeRealLocation(4,5);desired.setBoolean(null,false);
+        check(Control.currentLatitude()==-3.73&&Control.currentLongitude()==-38.52,"Provider fix cannot overwrite real location while spoofing is enabled");
+        check(Control.engine.latitude==spoofLatitude&&Control.engine.longitude==spoofLongitude,
+            "Observing real fixes never changes the saved spoofed position");
+        desired.setBoolean(null,true);
         Control.setVgpStopOnCooldown(true); Cooldown.remaining=5000;
         check(!Control.vgpAllowed() && !Control.vgpEnabled(),"Cooldown revokes permission and active state");
 

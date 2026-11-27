@@ -7,9 +7,9 @@ MapTapFn map_original=nullptr;
 void* map_wild_class=nullptr;
 
 bool map_vgp_busy(){
-    auto api=static_cast<const PgrVgpControllerApi*>(pgs_vgp_controller_api(1));
+    auto api=static_cast<const PgsVgpControllerApi*>(pgs_vgp_controller_api(1));
     if(!api||!api->sample)return true;
-    PgrVgpControllerSample sample{};sample.version=1;sample.size=sizeof(sample);
+    PgsVgpControllerSample sample{};sample.version=1;sample.size=sizeof(sample);
     return api->sample(&sample)!=0||sample.phase!=PGS_VGC_PH_NONE;
 }
 bool map_command_free(){
@@ -32,7 +32,7 @@ void map_bind_kind(MapKind& k){
     auto get_field=fn<void*(*)(void*,const char*)>(boot.meta.class_get_field_from_name);
     auto field_type=fn<void*(*)(void*)>(boot.meta.field_get_type);
     if(k.klass==map_wild_class){
-        k.f_response=find_field_by_name_checked(map_wild_class,PGR_GAME_SMART_CATCH_BINDING_CPP_EMBS_NAME,"Holoholo.Rpc.EncounterOutProto");
+        k.f_response=find_field_by_name_checked(map_wild_class,PGS_GAME_SMART_CATCH_BINDING_CPP_EMBS_NAME,"Holoholo.Rpc.EncounterOutProto");
     }else{
         auto fields=fn<void*(*)(void*,void**)>(exp_sym("class_get_fields"));
         auto flags=fn<int(*)(void*)>(boot.meta.field_get_flags);
@@ -98,8 +98,8 @@ Root map_real_encounter(void* raw){
     return Root(invoke_method(kind.m_encounter,target.get()));
 }
 int map_poll_response(void* promise,uint64_t tid,Root& response){
-    Root hold(promise);auto api=static_cast<const PgrVgpResultsApi*>(pgs_vgp_results_api(1));
-    require(api&&api->poll,"Promise observer unavailable");PgrVgpResultsResult out{};
+    Root hold(promise);auto api=static_cast<const PgsVgpResultsApi*>(pgs_vgp_results_api(1));
+    require(api&&api->poll,"Promise observer unavailable");PgsVgpResultsResult out{};
     int rc=api->poll(hold.get(),PGS_VR_PHASE_ENCOUNTER,tid,&out);response.h=out.value_handle;return rc;
 }
 int map_real_poll_encounter(void* promise,uint64_t tid,Root& response){
@@ -229,11 +229,11 @@ void map_install_hook(){
     require_map_method(map_wild_class,"SendEncounterRequest",0,"Niantic.Promises.IPromise<Niantic.Holoholo.Map.PokemonEncounterResponse>");
     require_map_method(map_wild_class,"TryCapture",2,"Niantic.Promises.IPromise<Holoholo.Rpc.CatchPokemonOutProto>","Niantic.Holoholo.Encounter.PokeballThrow","Holoholo.Rpc.ARPlusEncounterValuesProto");
     void* base=resolve_class("Niantic.Holoholo.Map","MapPokemon");
-    g_pgr_vgp_marker_map_pokemon.store(base,std::memory_order_release);
+    g_pgs_vgp_marker_map_pokemon.store(base,std::memory_order_release);
     void* method=require_map_method(base,"OnTap",2,"System.Void","System.Object","System.EventArgs");
     void* code=nullptr;std::memcpy(&code,method,sizeof(code));
-    auto api=static_cast<const PgrMetaApi*>(pgs_runtime_metadata_api(1));
-    PgrMetaCodeQuery query{1,sizeof(query),code,16,nullptr,0,0};require(api&&api->validate_code(&query)==0,"Map tap code validation failed");
+    auto api=static_cast<const PgsMetaApi*>(pgs_runtime_metadata_api(1));
+    PgsMetaCodeQuery query{1,sizeof(query),code,16,nullptr,0,0};require(api&&api->validate_code(&query)==0,"Map tap code validation failed");
     require(pgs_hook(code,reinterpret_cast<void*>(map_tap_hook),reinterpret_cast<void**>(&map_original))==0&&map_original,"Map tap hook unavailable");
     map_hook_ready=true;map_event("ready","Map tap catch hook installed");
 }

@@ -72,7 +72,7 @@ static void *refreshed_plate,*refreshed_pokemon;
 static bool original_throws,foreign_stop;
 static int(*registered_filter)(void*,uint64_t);
 static Obj result_obj{&c_int};
-static const PgrEncounterHostApi *host;
+static const PgsEncounterHostApi *host;
 static int response_class,status_enum,status_field,result_method,error_method;
 static void *attached(){return reinterpret_cast<void*>(1);}
 static void *params(void *m,uint32_t){return m==&result_method?&response_class:nullptr;}
@@ -109,11 +109,11 @@ extern "C" const void *pgs_quickball_host_api(uint32_t version){
  api.begin_catch=+[](void *plate,void *pokemon,uint64_t,void **refreshed)->uint64_t{assert(g_live_roots>=2);++iv_begin_calls;assert(refreshed);refreshed[0]=refreshed_plate?refreshed_plate:plate;refreshed[1]=refreshed_pokemon?refreshed_pokemon:pokemon;return 71;};
  api.end_catch=+[](uint64_t token,uint64_t)->int{assert(token==71&&g_live_roots>=2);++iv_end_calls;return 0;};return version==1?&api:nullptr;
 }
-static PgrSharedMetadataOutput md;
+static PgsSharedMetadataOutput md;
 static PgsSharedMetaExtraExports extra;
-static PgrMetaExports meta;
-static PgrEncounterHostConfig config(){
- md.version=2;md.size=sizeof(md);md.optional[OPT_BERRIES]=PGR_SHARED_OPT_AVAILABLE;md.optional[OPT_ITEMS]=PGR_SHARED_OPT_AVAILABLE;
+static PgsMetaExports meta;
+static PgsEncounterHostConfig config(){
+ md.version=2;md.size=sizeof(md);md.optional[OPT_BERRIES]=PGS_SHARED_OPT_AVAILABLE;md.optional[OPT_ITEMS]=PGS_SHARED_OPT_AVAILABLE;
  md.classes[6]=&c_bool;md.methods[5]=&m_alive;
  md.opt_classes[OC_POKEBALL]=&c_pokeball;md.opt_classes[OC_BERRY]=&c_scope;md.opt_classes[OC_IBAG]=&c_bag;md.opt_classes[OC_INT]=&c_int;md.opt_classes[OC_ITEM]=&c_item;
  auto H=[](int id,void *v){md.opt_handles[id]=v;};
@@ -122,13 +122,13 @@ static PgrEncounterHostConfig config(){
  H(H_BR_M_ENTER_CODE,(void*)&target_enter);H(H_BR_M_EXIT_CODE,(void*)&target_exit);H(H_BR_M_RESULT_CODE,(void*)&target_result);H(H_BR_M_ERROR_CODE,(void*)&target_error);H(H_BR_M_SUBMIT_CODE,(void*)&target_submit);H(H_BR_M_PEEK_CODE,(void*)&target_peek);
  extra.gchandle_new=(void*)&gc_new;extra.gchandle_get_target=(void*)&gc_target;extra.gchandle_free=(void*)&gc_free;extra.class_get_fields=(void*)&fields;
  meta.method_get_param=(void*)&params;meta.method_get_return_type=(void*)&ret_type;meta.class_from_type=(void*)&identity;meta.field_get_offset=(void*)&offset;meta.field_get_flags=(void*)&flags;meta.field_get_type=(void*)&type;meta.class_is_enum=(void*)&enum_type;meta.class_value_size=(void*)&value_size;
- PgrEncounterHostConfig c{};c.version=1;c.size=sizeof(c);c.require_all=1;c.capability_mask=PGS_EH_CAP_BERRIES;c.resolved_metadata=&md;c.extra_exports=&extra;
+ PgsEncounterHostConfig c{};c.version=1;c.size=sizeof(c);c.require_all=1;c.capability_mask=PGS_EH_CAP_BERRIES;c.resolved_metadata=&md;c.extra_exports=&extra;
  c.metadata_config.binding.exports=&meta;c.metadata_config.thread_current=(void*)&attached;
  c.runtime_invoke=(void*)&runtime_invoke;c.object_get_class=(void*)&obj_class;c.object_unbox=(void*)&object_unbox;c.object_new=(void*)&object_new;c.field_get_value=(void*)&field_read;c.field_set_value=(void*)&field_set_value;c.field_set_value_object=(void*)&field_set_value_object;
  return c;
 }
 
-static const PgrRuntimeTransportApi *wire;
+static const PgsRuntimeTransportApi *wire;
 static std::vector<uint8_t> wire_out(1100000);
 static void put32(std::vector<uint8_t>& b,size_t at,uint32_t v){memcpy(b.data()+at,&v,4);}
 static void exchange(const std::vector<uint8_t>& b={}){uint32_t n=0;assert(wire->exchange(b.empty()?nullptr:b.data(),b.size(),wire_out.data(),wire_out.size(),&n)==0);assert(n>=32);}
@@ -136,11 +136,11 @@ static void snapshot_wire(bool active,bool berries,bool map,const char *priority
  static uint64_t seq;std::vector<uint8_t>b(PGS_TRANSPORT_SNAPSHOT_FIXED+PGS_TRANSPORT_STRINGS*4+strlen(priority)+strlen(keep));put32(b,0,PGS_TRANSPORT_SNAPSHOT_MAGIC);put32(b,PGS_TRANSPORT_OFF_VERSION,PGS_TRANSPORT_FRAME_VERSION);put32(b,8,b.size());++seq;memcpy(b.data()+16,&seq,8);b[35]=active;b[39]=berries;b[53]=map;b[37]=1;put32(b,PGS_TRANSPORT_OFF_INTS+8*4,63);size_t at=PGS_TRANSPORT_OFF_STRINGS;
  for(unsigned i=0;i<PGS_TRANSPORT_STRINGS;++i){const char *v=i==2?priority:i==4?keep:"";uint32_t n=strlen(v);put32(b,at,n);at+=4;memcpy(b.data()+at,v,n);at+=n;}exchange(b);
 }
-static void install_wire(){wire=static_cast<const PgrRuntimeTransportApi*>(core->query_feature(52,1));assert(wire);PgsRuntimeTransportConfig c{1,sizeof(c),1000,256,1048576,1048576,0,0};assert(wire->install(&c)==0);}
+static void install_wire(){wire=static_cast<const PgsRuntimeTransportApi*>(core->query_feature(52,1));assert(wire);PgsRuntimeTransportConfig c{1,sizeof(c),1000,256,1048576,1048576,0,0};assert(wire->install(&c)==0);}
 static std::string map_snapshot;
 static int map_case(){
  namespace u=map_universe;
- auto c=config();auto m=u::make_config(false,false,false,false);md={};md.version=2;md.size=sizeof(md);md.optional[OPT_MAP_POI]=md.optional[OPT_VGP]=PGR_SHARED_OPT_AVAILABLE;
+ auto c=config();auto m=u::make_config(false,false,false,false);md={};md.version=2;md.size=sizeof(md);md.optional[OPT_MAP_POI]=md.optional[OPT_VGP]=PGS_SHARED_OPT_AVAILABLE;
  md.classes[6]=m.class_bool;md.methods[5]=m.m_alive;md.opt_classes[OC_VGP_STOP]=m.class_stop;md.opt_classes[OC_VGP_FORT]=m.class_fort;md.opt_classes[OC_STRING]=m.class_string;
  auto H=[](int id,void *v){md.opt_handles[id]=v;};H(H_MP_GYM,m.class_gym);H(H_MP_RAID,m.class_raid);H(H_VGP_M_FIND_ALL,m.m_find);H(H_VGP_M_FORT,m.m_fort);H(H_VGP_F_FORT_ID,m.f_fortId);H(H_VGP_F_FORT_LAT,m.f_lat);H(H_VGP_F_FORT_LON,m.f_lon);H(H_MP_INFO,m.f_raidInfo);H(H_MP_SPAWN,m.f_spawn);H(H_MP_END,m.f_end);H(H_MP_BATTLE,m.f_battle);H(H_MP_HIDDEN,m.f_hidden);
  c.capability_mask=PGS_EH_CAP_MAP_POI;c.runtime_invoke=m.runtime_invoke;c.object_get_class=m.object_get_class;c.field_get_value=m.field_get_value;c.object_unbox=m.object_unbox;c.object_get_virtual_method=m.object_get_virtual_method;c.string_length=m.string_length;c.string_chars=m.string_chars;c.metadata_config.thread_current=m.thread_current;
@@ -156,13 +156,13 @@ static int vgp_case(){
  namespace u=vgp_universe;
  // Native test-only dependency injection: actual33+25, modeled other siblings.
  // This verifies63 tick packing/events/revoke, not full63 metadata-to-leaf configuration.
- auto pc=PgrVgpPolicyConfig{};pc.version=1;pc.size=sizeof(pc);pc.scan_interval_ms=2500;pc.catch_seen_ms=30000;pc.spin_seen_ms=300000;pc.reject_delay_ms=30000;pc.terminal_delay_ms=3600000;pc.retry_delay_ms=5000;pc.default_delay_ms=30000;pc.max_keys=2048;
+ auto pc=PgsVgpPolicyConfig{};pc.version=1;pc.size=sizeof(pc);pc.scan_interval_ms=2500;pc.catch_seen_ms=30000;pc.spin_seen_ms=300000;pc.reject_delay_ms=30000;pc.terminal_delay_ms=3600000;pc.retry_delay_ms=5000;pc.default_delay_ms=30000;pc.max_keys=2048;
  for(int i=0;i<4;++i)pc.status_terminal[i]=pc.status_retry[i]=-1;pc.status_terminal[0]=100;
- auto policy=static_cast<const PgrVgpPolicyApi*>(core->query_feature(25,1));assert(policy&&policy->install(&pc)==0);
- u::api=static_cast<const PgrVgpControllerApi*>(pgs_vgp_controller_api(1));u::tid=gettid();auto vc=u::makeConfig();vc.policy_table=const_cast<PgrVgpPolicyApi*>(policy);assert(u::api->install(&vc)==0);u::resetScenario();
+ auto policy=static_cast<const PgsVgpPolicyApi*>(core->query_feature(25,1));assert(policy&&policy->install(&pc)==0);
+ u::api=static_cast<const PgsVgpControllerApi*>(pgs_vgp_controller_api(1));u::tid=gettid();auto vc=u::makeConfig();vc.policy_table=const_cast<PgsVgpPolicyApi*>(policy);assert(u::api->install(&vc)==0);u::resetScenario();
  auto c=config();c.extra_exports=&extra;extra.gchandle_new=vc.gc_new;extra.gchandle_get_target=vc.gc_get;extra.gchandle_free=vc.gc_free;c.runtime_invoke=vc.runtime_invoke;c.object_get_class=vc.object_class;c.object_unbox=vc.object_unbox;
  assert(host->configure(&c)==0);g_vgc=u::api;g_active_caps=PGS_EH_CAP_VGP;g_installed=true;install_wire();
- PgrEncounterHostOptions o{1,sizeof(o)};o.vgp_allowed=1;o.vgp_enabled=1;o.vgp_catch_allowed=1;o.vgp_spin_allowed=1;o.lease_remaining_ms=2500;o.lat=10;o.lon=20;
+ PgsEncounterHostOptions o{1,sizeof(o)};o.vgp_allowed=1;o.vgp_enabled=1;o.vgp_catch_allowed=1;o.vgp_spin_allowed=1;o.lease_remaining_ms=2500;o.lat=10;o.lon=20;
  assert(host->update_options(&o,gettid())==0);assert(host->tick(gettid())==0);assert(g_last_vgp_status==PGS_VGC_ST_CATCHING);
  u::g_pollRc=PGS_VR_DONE;assert(host->tick(gettid())==0);assert(g_last_vgp_status==PGS_VGC_ST_CATCHING);
  u::g_success=true;u::g_statusKnown=true;u::g_catchStatus=100;assert(host->tick(gettid())==0);assert(g_last_vgp_status==PGS_VGC_ST_CAUGHT);assert(u::roots.empty());
@@ -181,7 +181,7 @@ static int vgp_case(){
  exchange();
  // Broker event boundary:61's independent fixture proves routing;63 owns typed UI publication.
  static int broker_events=2;
- static TransferBroker broker{2,sizeof(TransferBroker),+[]()->int{return 1;},nullptr,+[](PgrTransferExecEvent *e)->int{
+ static TransferBroker broker{2,sizeof(TransferBroker),+[]()->int{return 1;},nullptr,+[](PgsTransferExecEvent *e)->int{
    if(!broker_events)return 0;*e={};e->kind=PGS_TX_EVENT_COMPLETE;e->token=2-broker_events;e->aux=broker_events==2;--broker_events;return 1;}};
  g_broker=&broker;g_active_caps|=PGS_EH_CAP_TRANSFER;pump_transfer_events(gettid(),0);exchange();
  std::string encoded(reinterpret_cast<const char*>(wire_out.data()),wire_out.size());
@@ -212,14 +212,14 @@ static int nameplate_case(){
 int main(int argc,char **argv){
  assert(argc>=2);void *lib=dlopen(argv[1],RTLD_NOW|RTLD_LOCAL);assert(lib);
  auto get=reinterpret_cast<const pgs_native_api_v2*(*)(uint32_t)>(dlsym(lib,"pgs_native_api"));assert(get);core=get(2);assert(core&&core->query_feature(63,1));
- host=static_cast<const PgrEncounterHostApi*>(fixture_encounter_host_api(1));g_api=static_cast<const pgs_berry_api_v1*>(core->query_feature(18,1));assert(g_api);
+ host=static_cast<const PgsEncounterHostApi*>(fixture_encounter_host_api(1));g_api=static_cast<const pgs_berry_api_v1*>(core->query_feature(18,1));assert(g_api);
  pid_t child=fork();assert(child>=0);if(child==0)_exit(map_case());int status=0;assert(waitpid(child,&status,0)==child&&WIFEXITED(status)&&WEXITSTATUS(status)==0);
  child=fork();assert(child>=0);if(child==0)_exit(vgp_case());assert(waitpid(child,&status,0)==child&&WIFEXITED(status)&&WEXITSTATUS(status)==0);
  child=fork();assert(child>=0);if(child==0)_exit(nameplate_case());assert(waitpid(child,&status,0)==child&&WIFEXITED(status)&&WEXITSTATUS(status)==0);
  auto c=config();assert(host->configure(&c)==0);assert(host->install()==0);assert(shared_mask==PGS_QBH_SUBMIT);
  const auto tid=static_cast<uint64_t>(gettid());void *info=reinterpret_cast<void*>(0x1234);
  Obj bag{&c_bag},ball{&c_pokeball};Ui ui{nullptr,2};Scope scope{&c_scope,&bag,&ui};
- PgrEncounterHostOptions o{};o.version=1;o.size=sizeof(o);o.berries_allowed=1;o.berry_priority_count=1;o.berry_priority_ids[0]=701;o.lease_remaining_ms=2500;
+ PgsEncounterHostOptions o{};o.version=1;o.size=sizeof(o);o.berries_allowed=1;o.berry_priority_count=1;o.berry_priority_ids[0]=701;o.lease_remaining_ms=2500;
  assert(host->update_options(&o,tid)==0);g_stock[701]=2;g_sync_result=true;
  call_enter(&scope,info);assert(enter_calls==1&&last_info==info);
  uint64_t a=1,b=0;float radius=.8f;uint32_t bits;memcpy(&bits,&radius,4);a|=uint64_t(bits)<<32;

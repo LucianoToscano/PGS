@@ -25,21 +25,21 @@
 // reads + the op_Implicit alive probe) and the single Dismiss invoke; the postcondition is read after
 // the invoke regardless of whether it threw.
 
-static_assert(sizeof(PgrSummaryCompletionConfig) == 168, "config must be 168 bytes");
-static_assert(sizeof(PgrSummaryCompletionRequest) == 72, "request must be 72 bytes");
-static_assert(sizeof(PgrSummaryCompletionOutput) == 24, "output must be 24 bytes");
-static_assert(sizeof(PgrSummaryCompletionSample) == 72, "sample must be 72 bytes");
-static_assert(sizeof(PgrSummaryCompletionApi) == 64, "table must be 64 bytes");
-static_assert(offsetof(PgrSummaryCompletionConfig, object_get_class) == 8, "layout");
-static_assert(offsetof(PgrSummaryCompletionConfig, class_gui) == 40, "layout");
-static_assert(offsetof(PgrSummaryCompletionConfig, f_dscx) == 72, "layout");
-static_assert(offsetof(PgrSummaryCompletionConfig, m_alive) == 120, "layout");
-static_assert(offsetof(PgrSummaryCompletionConfig, gc_new) == 136, "layout");
-static_assert(offsetof(PgrSummaryCompletionConfig, success_literal) == 160, "layout");
-static_assert(offsetof(PgrSummaryCompletionConfig, state_open) == 164, "layout");
-static_assert(offsetof(PgrSummaryCompletionRequest, expected_key) == 8, "layout");
-static_assert(offsetof(PgrSummaryCompletionRequest, gui) == 32, "layout");
-static_assert(offsetof(PgrSummaryCompletionRequest, dismissed) == 64, "layout");
+static_assert(sizeof(PgsSummaryCompletionConfig) == 168, "config must be 168 bytes");
+static_assert(sizeof(PgsSummaryCompletionRequest) == 72, "request must be 72 bytes");
+static_assert(sizeof(PgsSummaryCompletionOutput) == 24, "output must be 24 bytes");
+static_assert(sizeof(PgsSummaryCompletionSample) == 72, "sample must be 72 bytes");
+static_assert(sizeof(PgsSummaryCompletionApi) == 64, "table must be 64 bytes");
+static_assert(offsetof(PgsSummaryCompletionConfig, object_get_class) == 8, "layout");
+static_assert(offsetof(PgsSummaryCompletionConfig, class_gui) == 40, "layout");
+static_assert(offsetof(PgsSummaryCompletionConfig, f_dscx) == 72, "layout");
+static_assert(offsetof(PgsSummaryCompletionConfig, m_alive) == 120, "layout");
+static_assert(offsetof(PgsSummaryCompletionConfig, gc_new) == 136, "layout");
+static_assert(offsetof(PgsSummaryCompletionConfig, success_literal) == 160, "layout");
+static_assert(offsetof(PgsSummaryCompletionConfig, state_open) == 164, "layout");
+static_assert(offsetof(PgsSummaryCompletionRequest, expected_key) == 8, "layout");
+static_assert(offsetof(PgsSummaryCompletionRequest, gui) == 32, "layout");
+static_assert(offsetof(PgsSummaryCompletionRequest, dismissed) == 64, "layout");
 
 namespace {
 
@@ -57,7 +57,7 @@ enum { ALIVE_FALSE = 0, ALIVE_TRUE = 1, ALIVE_ERR = -1 };
 // --- lifetime / publication --------------------------------------------------------
 std::mutex g_install_mutex;
 std::mutex g_state_mutex;
-PgrSummaryCompletionConfig g_cfg{};
+PgsSummaryCompletionConfig g_cfg{};
 std::atomic<bool> g_installed{false};
 bool g_install_attempted = false;
 int g_install_error = PGS_SC_ERR_NOT_INSTALLED;
@@ -111,7 +111,7 @@ struct Root {
 };
 struct Inputs {
   Root gui,state,proto,response,dismissed;
-  bool load(const PgrSummaryCompletionRequest *r){
+  bool load(const PgsSummaryCompletionRequest *r){
     return gui.duplicate(r->gui)&&(!r->state||state.duplicate(r->state))&&proto.duplicate(r->proto)&&
       response.duplicate(r->response)&&dismissed.duplicate(r->dismissed);
   }
@@ -176,7 +176,7 @@ bool gate_live_locked(uint64_t req_epoch, uint64_t tid, uint64_t now) {
 // with CatchSuccess status and the expected nonzero 8-byte id, response == proto, optional SSTATE with
 // dscx == gui / dscy == proto, currentState == STATE_OPEN or OPENING, and onDismissed non-null == the captured
 // callback. On success *out_before (optional) receives the validated currentState. Returns 1/0.
-int do_validate(const PgrSummaryCompletionRequest *req, const Inputs &in, int32_t *out_before) {
+int do_validate(const PgsSummaryCompletionRequest *req, const Inputs &in, int32_t *out_before) {
   // The expected caught id must be nonzero (8 raw bytes).
   bool any = false;
   for (int i = 0; i < 8; ++i) any = any || (req->expected_key[i] != 0);
@@ -226,9 +226,9 @@ void read_postcondition(const Root &gui, uint32_t *flags, int32_t *after) {
   // ALIVE_ERR: after stays unknown, gone stays clear (matches the JS catch).
 }
 
-void init_output(PgrSummaryCompletionOutput *out) {
+void init_output(PgsSummaryCompletionOutput *out) {
   out->version = PGS_SC_OUTPUT_VERSION;
-  out->size = sizeof(PgrSummaryCompletionOutput);
+  out->size = sizeof(PgsSummaryCompletionOutput);
   out->flags = 0;
   out->status = PGS_SC_OK;
   out->before = 0;
@@ -236,10 +236,10 @@ void init_output(PgrSummaryCompletionOutput *out) {
 }
 
 // --- public API --------------------------------------------------------------------
-bool validate_config(const PgrSummaryCompletionConfig *c, int *rc) {
+bool validate_config(const PgsSummaryCompletionConfig *c, int *rc) {
   if (c == nullptr) { *rc = PGS_SC_ERR_NULL_ARG; return false; }
   if (c->version != PGS_SC_CONFIG_VERSION) { *rc = PGS_SC_ERR_BAD_VERSION; return false; }
-  if (c->size != sizeof(PgrSummaryCompletionConfig)) { *rc = PGS_SC_ERR_BAD_SIZE; return false; }
+  if (c->size != sizeof(PgsSummaryCompletionConfig)) { *rc = PGS_SC_ERR_BAD_SIZE; return false; }
   void *const *ptrs = reinterpret_cast<void *const *>(&c->object_get_class);
   for (int i = 0; i < 19; ++i) {
     if (ptrs[i] == nullptr) { *rc = PGS_SC_ERR_MISSING_PTR; return false; }
@@ -248,7 +248,7 @@ bool validate_config(const PgrSummaryCompletionConfig *c, int *rc) {
   return true;
 }
 
-int api_install(const PgrSummaryCompletionConfig *config) {
+int api_install(const PgsSummaryCompletionConfig *config) {
   int rc = PGS_SC_OK;
   if (!validate_config(config, &rc)) return rc;
   uint64_t probe = 0;
@@ -299,11 +299,11 @@ int api_update(int enabled, uint64_t remaining, uint64_t epoch, uint64_t proven_
   return PGS_SC_OK;
 }
 
-int api_validate(const PgrSummaryCompletionRequest *request) {
+int api_validate(const PgsSummaryCompletionRequest *request) {
   if (!g_installed.load(std::memory_order_acquire)) return PGS_SC_ERR_NOT_INSTALLED;
   if (request == nullptr) return PGS_SC_ERR_NULL_ARG;
   if (request->version != PGS_SC_REQUEST_VERSION) return PGS_SC_ERR_BAD_VERSION;
-  if (request->size != sizeof(PgrSummaryCompletionRequest)) return PGS_SC_ERR_BAD_SIZE;
+  if (request->size != sizeof(PgsSummaryCompletionRequest)) return PGS_SC_ERR_BAD_SIZE;
   const uint64_t tid = current_tid();
   if (request->tid == 0 || tid != request->tid || !owner_ready(tid)) return PGS_SC_OK;  // off-owner: 0
   {std::lock_guard<std::mutex> lock(g_state_mutex);if(g_busy)return PGS_SC_OK;g_busy=true;}
@@ -332,14 +332,14 @@ int api_acquire(uint64_t epoch, uint64_t proven_tid, uint64_t *out_token) {
   return PGS_SC_OK;
 }
 
-int api_complete(const PgrSummaryCompletionRequest *request, uint64_t token,
-                 PgrSummaryCompletionOutput *out) {
+int api_complete(const PgsSummaryCompletionRequest *request, uint64_t token,
+                 PgsSummaryCompletionOutput *out) {
   if (out == nullptr) return PGS_SC_ERR_NULL_ARG;  // cannot report; caller must pass a buffer
   init_output(out);
   if (!g_installed.load(std::memory_order_acquire)) return out->status = PGS_SC_ERR_NOT_INSTALLED;
   if (request == nullptr) return out->status = PGS_SC_ERR_NULL_ARG;
   if (request->version != PGS_SC_REQUEST_VERSION) return out->status = PGS_SC_ERR_BAD_VERSION;
-  if (request->size != sizeof(PgrSummaryCompletionRequest)) return out->status = PGS_SC_ERR_BAD_SIZE;
+  if (request->size != sizeof(PgsSummaryCompletionRequest)) return out->status = PGS_SC_ERR_BAD_SIZE;
   const uint64_t tid = current_tid();
   if (request->tid == 0 || tid != request->tid || !owner_ready(tid)) {
     g_complete_refused.fetch_add(1, std::memory_order_relaxed);
@@ -414,12 +414,12 @@ int api_stop(uint64_t /*proven_tid*/) {
   return PGS_SC_OK;
 }
 
-int api_sample(PgrSummaryCompletionSample *out) {
+int api_sample(PgsSummaryCompletionSample *out) {
   if (out == nullptr) return PGS_SC_ERR_NULL_ARG;
   bool busy;
   { std::lock_guard<std::mutex> lock(g_state_mutex); busy = g_busy; }
   out->version = PGS_SC_SAMPLE_VERSION;
-  out->size = sizeof(PgrSummaryCompletionSample);
+  out->size = sizeof(PgsSummaryCompletionSample);
   out->validate_ok = g_validate_ok.load(std::memory_order_relaxed);
   out->validate_fail = g_validate_fail.load(std::memory_order_relaxed);
   out->complete_ok = g_complete_ok.load(std::memory_order_relaxed);
@@ -432,8 +432,8 @@ int api_sample(PgrSummaryCompletionSample *out) {
   return PGS_SC_OK;
 }
 
-const PgrSummaryCompletionApi kApiTable = {
-    PGS_SC_API_VERSION, static_cast<uint32_t>(sizeof(PgrSummaryCompletionApi)),
+const PgsSummaryCompletionApi kApiTable = {
+    PGS_SC_API_VERSION, static_cast<uint32_t>(sizeof(PgsSummaryCompletionApi)),
     &api_install,  &api_update, &api_validate, &api_acquire,
     &api_complete, &api_stop,   &api_sample,
 };

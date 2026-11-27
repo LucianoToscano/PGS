@@ -22,15 +22,15 @@ double (*volatile call)(void*,void*)=target;
 void put32(std::vector<uint8_t>&b,unsigned off,uint32_t n){std::memcpy(b.data()+off,&n,4);}
 void put64(std::vector<uint8_t>&b,unsigned off,uint64_t n){std::memcpy(b.data()+off,&n,8);}
 uint32_t u32(const std::vector<uint8_t>&b,unsigned off){uint32_t n;std::memcpy(&n,b.data()+off,4);return n;}
-std::vector<unsigned> drain(const PgrRuntimeTransportApi *tr,const std::vector<uint8_t> *snapshot=nullptr){
+std::vector<unsigned> drain(const PgsRuntimeTransportApi *tr,const std::vector<uint8_t> *snapshot=nullptr){
  std::vector<uint8_t> out(65536);uint32_t length=0;assert(tr->exchange(snapshot?snapshot->data():nullptr,snapshot?snapshot->size():0,out.data(),out.size(),&length)==0);assert(length>=32&&u32(out,0)==PGS_TRANSPORT_EVENTS_MAGIC);
  unsigned at=32;std::vector<unsigned> ops;for(unsigned i=0;i<u32(out,12);++i){ops.push_back(u32(out,at));auto n=u32(out,at+4),s=u32(out,at+8);at+=12+n*8;for(unsigned j=0;j<s;++j)at+=4+u32(out,at);}assert(at==length);return ops;
 }
 void scenario(const char *library,unsigned mode){
  auto lib=dlopen(library,RTLD_NOW|RTLD_LOCAL);assert(lib);auto get=reinterpret_cast<const void*(*)(uint32_t)>(dlsym(lib,"pgs_native_api"));assert(get);
  auto core=static_cast<const pgs_native_api_v2*>(get(2));assert(core&&core->query_feature);auto api=static_cast<const PgsSpawnHostApi*>(core->query_feature(71,1));assert(api&&api->version==1&&api->size==64&&!core->query_feature(71,2));
- auto tr=static_cast<const PgrRuntimeTransportApi*>(core->query_feature(52,1));assert(tr);
- PgrSharedMetadataOutput md{};md.version=2;md.size=sizeof(md);md.optional[pgr_shared_meta::OPT_SPAWN]=mode==2?PGS_SHARED_OPT_UNAVAILABLE:PGR_SHARED_OPT_AVAILABLE;md.opt_handles[pgr_shared_meta::H_SP_CODE]=reinterpret_cast<void*>(target);md.opt_handles[pgr_shared_meta::H_SP_METHOD]=&method_token;
+ auto tr=static_cast<const PgsRuntimeTransportApi*>(core->query_feature(52,1));assert(tr);
+ PgsSharedMetadataOutput md{};md.version=2;md.size=sizeof(md);md.optional[pgs_shared_meta::OPT_SPAWN]=mode==2?PGS_SHARED_OPT_UNAVAILABLE:PGS_SHARED_OPT_AVAILABLE;md.opt_handles[pgs_shared_meta::H_SP_CODE]=reinterpret_cast<void*>(target);md.opt_handles[pgs_shared_meta::H_SP_METHOD]=&method_token;
  PgsSpawnHostConfig c{1,sizeof(c),mode==1?1u:0u,1,&md,reinterpret_cast<void*>(thread_current),uint64_t(gettid())};
  if(mode==1){PgsRuntimeTransportConfig tc{1,sizeof(tc),500,128,4096,65536,0,0};assert(tr->install(&tc)==0);}
  auto bad=c;bad.exclusive_owner=0;assert(api->configure(&bad)==PGS_SPAH_BAD_CONFIG);assert(api->configure(&c)==0&&api->configure(&c)==0);

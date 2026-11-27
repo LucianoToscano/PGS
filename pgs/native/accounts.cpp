@@ -19,8 +19,8 @@ void report_identity_gate(const char *reason,uint64_t now){
   char json[192];int n=std::snprintf(json,sizeof(json),"{\"reason\":\"%s\",\"boottimeMs\":%llu}",reason,(unsigned long long)now);
   if(n<=0||size_t(n)>=sizeof(json))return;
   const char channel[]="account-native-gate";
-  PgrRuntimeTransportString strings[]={{channel,sizeof(channel)-1},{json,uint32_t(n)}};
-  const auto *transport=static_cast<const PgrRuntimeTransportApi*>(pgs_runtime_transport_api(1));
+  PgsRuntimeTransportString strings[]={{channel,sizeof(channel)-1},{json,uint32_t(n)}};
+  const auto *transport=static_cast<const PgsRuntimeTransportApi*>(pgs_runtime_transport_api(1));
   if(transport)transport->emit(19,nullptr,0,strings,2);
 }
 

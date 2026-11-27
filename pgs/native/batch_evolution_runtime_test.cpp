@@ -223,7 +223,7 @@ char* type_name(void* type){
     size_t n=strlen(name)+1;char* copy=static_cast<char*>(malloc(n));assert(copy);memcpy(copy,name,n);return copy;
 }
 void type_free(void* p){free(p);}
-int resolve_class(const PgrMetaClassQuery* q,PgrMetaClassResult* out){
+int resolve_class(const PgsMetaClassQuery* q,PgsMetaClassResult* out){
     assert(q&&out);
     if(!strcmp(q->name_space,"Holoholo.Rpc")&&!strcmp(q->name,"EvolvePokemonOutProto"))out->klass=&response_class;
     else if(!strcmp(q->name_space,"Holoholo.Rpc")&&!strcmp(q->name,"PokemonProto"))out->klass=&evolved_class;
@@ -231,7 +231,7 @@ int resolve_class(const PgrMetaClassQuery* q,PgrMetaClassResult* out){
     else return -1;
     out->version=1;out->size=sizeof(*out);return 0;
 }
-int sample(PgrRuntimeTransportSample* out){
+int sample(PgsRuntimeTransportSample* out){
     *out={};out->snapshot_fresh=fresh;out->fault=fault;
     out->snapshot_seq=100+(sequence_change?sample_count:0);++sample_count;return 0;
 }
@@ -246,19 +246,19 @@ int get_string(uint32_t slot,char* out,uint32_t capacity,uint32_t* len){
     *len=static_cast<uint32_t>(config.size());memcpy(out,config.data(),*len);return 0;
 }
 int emit(uint32_t opcode,const int64_t* scalars,uint32_t scalar_count,
-         const PgrRuntimeTransportString* strings,uint32_t count){
+         const PgsRuntimeTransportString* strings,uint32_t count){
     assert(opcode==19&&!scalars&&!scalar_count&&count==2);
     assert(std::string(strings[0].ptr,strings[0].len)=="batch-evolution");
     events.emplace_back(strings[1].ptr,strings[1].len);return 0;
 }
-int poll(void* promise,uint32_t phase,uint64_t tid,PgrVgpResultsResult* out){
+int poll(void* promise,uint32_t phase,uint64_t tid,PgsVgpResultsResult* out){
     assert(promise==&promise_object&&phase==1&&tid==owner);++polls;*out={};
     if(poll_code==PGS_VR_DONE){out->version=1;out->size=sizeof(*out);out->value_handle=root_new(&response_object,0);}
     return poll_code;
 }
-PgrRuntimeTransportApi transport{};
-PgrVgpResultsApi results{1,sizeof(PgrVgpResultsApi),nullptr,poll,nullptr};
-PgrMetaApi metadata{};
+PgsRuntimeTransportApi transport{};
+PgsVgpResultsApi results{1,sizeof(PgsVgpResultsApi),nullptr,poll,nullptr};
+PgsMetaApi metadata{};
 
 void fixture(){
     assert(roots.empty());next_handle=1;allocations=frees=polls=0;events.clear();

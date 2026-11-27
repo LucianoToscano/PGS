@@ -70,9 +70,9 @@ enum PgsCatchDiscoveryStatus {
 // Fixed LP64 config (104 bytes): 8-byte header + 12 validated pointers in the EXACT order below. Every
 // pointer is an already-validated il2cpp export / Il2CppClass* / MethodInfo* packed by the host; the
 // native layer re-checks the header and rejects any null. No hook address. Reordering is forbidden.
-struct PgrCatchDiscoveryConfig {
+struct PgsCatchDiscoveryConfig {
   uint32_t version;  // == PGS_CD_CONFIG_VERSION
-  uint32_t size;     // == sizeof(PgrCatchDiscoveryConfig)
+  uint32_t size;     // == sizeof(PgsCatchDiscoveryConfig)
 
   // il2cpp runtime exports (slots 0-7).
   void *object_get_class;    // 0  void*     (void* obj)
@@ -93,60 +93,60 @@ struct PgrCatchDiscoveryConfig {
   void *m_find;              // 11 p.catchScene.find (static Object[] FindObjectsOfType(Type))
 };
 
-static_assert(sizeof(PgrCatchDiscoveryConfig) == 104,
-              "PgrCatchDiscoveryConfig must remain 104 bytes on LP64");
+static_assert(sizeof(PgsCatchDiscoveryConfig) == 104,
+              "PgsCatchDiscoveryConfig must remain 104 bytes on LP64");
 
 // Fixed LP64 request (32 bytes). tid is the proven owner tid (must be nonzero and equal the current OS
 // tid). remaining_ms is the residual lease (clamped to PGS_CD_MAX_LEASE_MS; 0 refuses). layer is a
 // borrowed GC HANDLE ID (not a managed address) for the GuiLayerService; top() requires it, scene() ignores
 // it. The caller retains the borrowed handle for the duration of the call.
-struct PgrCatchDiscoveryRequest {
+struct PgsCatchDiscoveryRequest {
   uint32_t version;      // off 0  == PGS_CD_REQUEST_VERSION
-  uint32_t size;         // off 4  == sizeof(PgrCatchDiscoveryRequest)
+  uint32_t size;         // off 4  == sizeof(PgsCatchDiscoveryRequest)
   uint64_t tid;          // off 8  proven owner tid
   uint64_t remaining_ms; // off 16 residual lease; clamped, 0 refuses
   void *layer;           // off 24 borrowed GC handle -> GuiLayerService (top only)
 };
 
-static_assert(sizeof(PgrCatchDiscoveryRequest) == 32,
-              "PgrCatchDiscoveryRequest must remain 32 bytes on LP64");
+static_assert(sizeof(PgsCatchDiscoveryRequest) == 32,
+              "PgsCatchDiscoveryRequest must remain 32 bytes on LP64");
 
 // Fixed LP64 output (144 bytes). Always fully zeroed on entry (header/count/reserved re-stamped). On a
 // positive return the first `count` handles are NATIVE-OWNED GC handle IDs (ownership transfers to the
 // caller, which MUST call release()); the remaining slots stay zero. top() publishes at most 1; scene()
 // at most PGS_CD_MAX_CANDIDATES. On a 0 refuse / negative fault every handle stays zero.
-struct PgrCatchDiscoveryOutput {
+struct PgsCatchDiscoveryOutput {
   uint32_t version;  // off 0  == PGS_CD_OUTPUT_VERSION
-  uint32_t size;     // off 4  == sizeof(PgrCatchDiscoveryOutput)
+  uint32_t size;     // off 4  == sizeof(PgsCatchDiscoveryOutput)
   uint32_t count;    // off 8  number of published handles (<= PGS_CD_MAX_CANDIDATES)
   uint32_t reserved; // off 12 0 in v1
   void *handles[PGS_CD_MAX_CANDIDATES]; // off 16 native-owned candidate handles (DetailsGuiController)
 };
 
-static_assert(sizeof(PgrCatchDiscoveryOutput) == 144,
-              "PgrCatchDiscoveryOutput must remain 144 bytes on LP64");
+static_assert(sizeof(PgsCatchDiscoveryOutput) == 144,
+              "PgsCatchDiscoveryOutput must remain 144 bytes on LP64");
 
 // Fixed LP64 table: 8-byte header + 4 function pointers = 40 bytes (no reserved slot).
-struct PgrCatchDiscoveryApi {
+struct PgsCatchDiscoveryApi {
   uint32_t version;  // == PGS_CD_API_VERSION
-  uint32_t size;     // == sizeof(PgrCatchDiscoveryApi)
+  uint32_t size;     // == sizeof(PgsCatchDiscoveryApi)
   // Verify + publish the immutable config once for the process lifetime. Idempotent for an identical
   // config; a different config returns PGS_CD_ERR_RECONFIG. Any null required pointer or a bad header is
   // rejected (fail closed). No hook is installed.
-  int (*install)(const PgrCatchDiscoveryConfig *config);
+  int (*install)(const PgsCatchDiscoveryConfig *config);
   // Owner-thread registry probe. Roots request->layer, invokes TopGui(), and publishes ONE native-owned
   // handle when the result is an exact DetailsGuiController. Null/non-Details -> 0 refuse. Owner only.
-  int (*top)(const PgrCatchDiscoveryRequest *request, PgrCatchDiscoveryOutput *out);
+  int (*top)(const PgsCatchDiscoveryRequest *request, PgsCatchDiscoveryOutput *out);
   // Owner-thread bounded scene walk. FindObjectsOfType(typeof DetailsGuiController), rejects an oversize
   // array, and publishes one native-owned handle per nonnull exact-Details element. Owner only.
-  int (*scene)(const PgrCatchDiscoveryRequest *request, PgrCatchDiscoveryOutput *out);
+  int (*scene)(const PgsCatchDiscoveryRequest *request, PgsCatchDiscoveryOutput *out);
   // Free every nonzero native-owned handle in *out and zero it (idempotent, repeat-safe). Never frees a
   // borrowed input. Any thread.
-  int (*release)(PgrCatchDiscoveryOutput *out);
+  int (*release)(PgsCatchDiscoveryOutput *out);
 };
 
-static_assert(sizeof(PgrCatchDiscoveryApi) == 40,
-              "PgrCatchDiscoveryApi must remain a 40-byte version-1 table");
+static_assert(sizeof(PgsCatchDiscoveryApi) == 40,
+              "PgsCatchDiscoveryApi must remain a 40-byte version-1 table");
 
 // Hidden getter. NOT exported by the version script; the coordinator registers it in query_feature under
 // feature id 40 and answers only on an exact version match.

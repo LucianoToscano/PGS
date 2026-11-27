@@ -67,8 +67,8 @@ bool species_list(const std::string &text,int32_t *ids,uint32_t &count){
  std::sort(ids,ids+count);count=uint32_t(std::unique(ids,ids+count)-ids);return true;
 }
 bool read_config(std::string &text,PgsSmartSettings &settings){
- const auto *t=static_cast<const PgrRuntimeTransportApi*>(pgs_runtime_transport_api(1));
- PgrRuntimeTransportSample sample{};sample.version=1;sample.size=sizeof(sample);
+ const auto *t=static_cast<const PgsRuntimeTransportApi*>(pgs_runtime_transport_api(1));
+ PgsRuntimeTransportSample sample{};sample.version=1;sample.size=sizeof(sample);
  char buf[PGS_SMART_CONFIG_MAX+1];uint32_t len=0;int allowed=0;
  if(!t||t->sample(&sample)!=0||!sample.snapshot_fresh||sample.fault||
     t->get_bool(36,&allowed)!=0||!allowed||t->get_string(7,buf,sizeof(buf),&len)!=0||len>PGS_SMART_CONFIG_MAX)return false;
@@ -249,10 +249,10 @@ extern "C" int pgs_smart_plan(void *target,void *itemBag,uint64_t owner,PgsSmart
   if(pick)out->ball=pick;
  }
  if(settings.mighty_safari){
-  const auto *tr=static_cast<const PgrRuntimeTransportApi*>(pgs_runtime_transport_api(1));
+  const auto *tr=static_cast<const PgsRuntimeTransportApi*>(pgs_runtime_transport_api(1));
   if(tr&&tr->emit){
    char note[320];std::snprintf(note,sizeof(note),"{\"source\":\"vgp-plus\",\"mightyKnown\":%s,\"mighty\":%s,\"offered\":%s,\"stock\":%d,\"ball\":%d,\"reason\":\"%s\"}",mighty_known?"true":"false",mighty?"true":"false",offered?"true":"false",safari_stock,out->ball,safari_reason);
-   PgrRuntimeTransportString text[]={{"wild-safari",11},{note,uint32_t(std::strlen(note))}};tr->emit(19,nullptr,0,text,2);
+   PgsRuntimeTransportString text[]={{"wild-safari",11},{note,uint32_t(std::strlen(note))}};tr->emit(19,nullptr,0,text,2);
   }
  }
  if(!out->ball)return PGS_SMART_NO_BALLS;

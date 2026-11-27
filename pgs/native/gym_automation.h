@@ -4,7 +4,7 @@
 #include <string>
 #include <map>
 #include <vector>
-struct PgrSharedMetadataOutput;
+struct PgsSharedMetadataOutput;
 namespace pgs_gym {
 struct Settings {bool deploy=false,feed=false,fallback=false;int nanab=50,razz=50;bool spin=false;};
 bool parse(const char*,size_t,Settings&);
@@ -34,7 +34,7 @@ struct History {
 };
 }
 // Called only by the existing proven Unity owner; never starts a worker thread.
-void pgs_gym_tick(uint64_t,const PgrSharedMetadataOutput*);
+void pgs_gym_tick(uint64_t,const PgsSharedMetadataOutput*);
 void pgs_gym_stop(uint64_t);
 
 // Unity-owner arbitration and shared attempt ledger for one-shot remote feeding.

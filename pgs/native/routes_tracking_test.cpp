@@ -17,8 +17,8 @@
 #include "pgs_native_api.h"
 #include <dlfcn.h>
 
-static_assert(sizeof(PgrRoutesTrackingConfig) == 64, "config 64");
-static_assert(sizeof(PgrRoutesTrackingApi) == 24, "table 24");
+static_assert(sizeof(PgsRoutesTrackingConfig) == 64, "config 64");
+static_assert(sizeof(PgsRoutesTrackingApi) == 24, "table 24");
 
 namespace {
 
@@ -89,11 +89,11 @@ struct FakeWaypoint { unsigned char b[64]; };
 void set_klass(void *o, void *k) { *reinterpret_cast<void **>(o) = k; }
 void set_f64(void *o, size_t off, double v) { *reinterpret_cast<double *>(reinterpret_cast<unsigned char *>(o) + off) = v; }
 
-const PgrRoutesObserversApi *obs = nullptr;
-const PgrRoutesTrackingApi *trk = nullptr;
+const PgsRoutesObserversApi *obs = nullptr;
+const PgsRoutesTrackingApi *trk = nullptr;
 uint64_t self_tid() { return static_cast<uint64_t>(static_cast<pid_t>(gettid())); }
 
-void make_obs_config(PgrRoutesObserversConfig *c) {
+void make_obs_config(PgsRoutesObserversConfig *c) {
   std::memset(c, 0, sizeof(*c));
   c->version = PGS_RO_CONFIG_VERSION;
   c->size = sizeof(*c);
@@ -121,7 +121,7 @@ void make_obs_config(PgrRoutesObserversConfig *c) {
   c->addr_completion_resp = reinterpret_cast<void *>(&obs_fixture_bjan);
 }
 
-void make_trk_config(PgrRoutesTrackingConfig *c) {
+void make_trk_config(PgsRoutesTrackingConfig *c) {
   std::memset(c, 0, sizeof(*c));
   c->version = PGS_RT_CONFIG_VERSION;
   c->size = sizeof(*c);
@@ -130,11 +130,11 @@ void make_trk_config(PgrRoutesTrackingConfig *c) {
   c->addr_tracking = reinterpret_cast<void *>(&fixture_tracking);
   c->addr_waypoint = reinterpret_cast<void *>(&fixture_waypoint);
   c->addr_location_icall = reinterpret_cast<void *>(&fixture_location);
-  c->lat_offset = PGR_RT_WAYPOINT_LAT_OFFSET;
-  c->lng_offset = PGR_RT_WAYPOINT_LNG_OFFSET;
+  c->lat_offset = PGS_RT_WAYPOINT_LAT_OFFSET;
+  c->lng_offset = PGS_RT_WAYPOINT_LNG_OFFSET;
 }
 
-void make_request(PgrRoutesObserversRequest *r, uint64_t tid, uint64_t residual, uint64_t gen) {
+void make_request(PgsRoutesObserversRequest *r, uint64_t tid, uint64_t residual, uint64_t gen) {
   std::memset(r, 0, sizeof(*r));
   r->version = PGS_RO_REQUEST_VERSION;
   r->size = sizeof(*r);
@@ -143,19 +143,19 @@ void make_request(PgrRoutesObserversRequest *r, uint64_t tid, uint64_t residual,
   r->generation = gen;
 }
 
-const PgrRoutesObserversEvent *find_event(const PgrRoutesObserversOutput &out, uint32_t type) {
+const PgsRoutesObserversEvent *find_event(const PgsRoutesObserversOutput &out, uint32_t type) {
   for (uint32_t i = 0; i < out.event_count; ++i) if (out.events[i].type == type) return &out.events[i];
   return nullptr;
 }
-bool has_event(const PgrRoutesObserversOutput &out, uint32_t type) { return find_event(out, type) != nullptr; }
+bool has_event(const PgsRoutesObserversOutput &out, uint32_t type) { return find_event(out, type) != nullptr; }
 
 // Lease + drain helpers for feature 46.
-void obs_poll(uint64_t tid, uint64_t residual, PgrRoutesObserversOutput *out) {
-  PgrRoutesObserversRequest r; make_request(&r, tid, residual, obs->generation());
+void obs_poll(uint64_t tid, uint64_t residual, PgsRoutesObserversOutput *out) {
+  PgsRoutesObserversRequest r; make_request(&r, tid, residual, obs->generation());
   obs->poll(&r, out);
 }
-void obs_lease(uint64_t tid) { PgrRoutesObserversOutput o; obs_poll(tid, 2500, &o); }
-void obs_drain(uint64_t tid) { PgrRoutesObserversRequest r; make_request(&r, tid, 0, obs->generation()); obs->drain(&r); }
+void obs_lease(uint64_t tid) { PgsRoutesObserversOutput o; obs_poll(tid, 2500, &o); }
+void obs_drain(uint64_t tid) { PgsRoutesObserversRequest r; make_request(&r, tid, 0, obs->generation()); obs->drain(&r); }
 
 }  // namespace
 
@@ -171,30 +171,30 @@ int main(int argc, char **argv) {
   auto get = reinterpret_cast<const void *(*)(uint32_t)>(dlsym(library, "pgs_native_api"));
   auto core = get ? static_cast<const pgs_native_api_v2 *>(get(2)) : nullptr;
   assert(core && core->query_feature(50, 99) == nullptr);
-  obs = static_cast<const PgrRoutesObserversApi *>(core->query_feature(46, 1));
-  trk = static_cast<const PgrRoutesTrackingApi *>(core->query_feature(50, 1));
-  assert(obs && obs->size == sizeof(PgrRoutesObserversApi));
-  assert(trk && trk->size == sizeof(PgrRoutesTrackingApi));
+  obs = static_cast<const PgsRoutesObserversApi *>(core->query_feature(46, 1));
+  trk = static_cast<const PgsRoutesTrackingApi *>(core->query_feature(50, 1));
+  assert(obs && obs->size == sizeof(PgsRoutesObserversApi));
+  assert(trk && trk->size == sizeof(PgsRoutesTrackingApi));
 
   const uint64_t tid = self_tid();
 
   // Install feature 46 first so the forwarded lite state has somewhere to live, then feature 50.
-  { PgrRoutesObserversConfig oc; make_obs_config(&oc); assert(obs->install(&oc) == 0); }
+  { PgsRoutesObserversConfig oc; make_obs_config(&oc); assert(obs->install(&oc) == 0); }
 
   // install(): header validation, idempotent, reconfig, missing pointer, bad offset, dup address.
-  { PgrRoutesTrackingConfig tc; make_trk_config(&tc);
+  { PgsRoutesTrackingConfig tc; make_trk_config(&tc);
     assert(trk->installed() == 0);
     assert(trk->install(&tc) == PGS_RT_OK);
     assert(trk->installed() == 1);
     assert(trk->install(&tc) == PGS_RT_OK);                       // idempotent
-    PgrRoutesTrackingConfig re = tc; re.lat_offset = 0x28; assert(trk->install(&re) == PGS_RT_ERR_RECONFIG);
-    PgrRoutesTrackingConfig miss; make_trk_config(&miss); miss.class_waypoint = nullptr;
+    PgsRoutesTrackingConfig re = tc; re.lat_offset = 0x28; assert(trk->install(&re) == PGS_RT_ERR_RECONFIG);
+    PgsRoutesTrackingConfig miss; make_trk_config(&miss); miss.class_waypoint = nullptr;
     assert(trk->install(&miss) == PGS_RT_ERR_MISSING_PTR);
-    PgrRoutesTrackingConfig badoff; make_trk_config(&badoff); badoff.lng_offset = badoff.lat_offset;
+    PgsRoutesTrackingConfig badoff; make_trk_config(&badoff); badoff.lng_offset = badoff.lat_offset;
     assert(trk->install(&badoff) == PGS_RT_ERR_BAD_OFFSET);
-    PgrRoutesTrackingConfig badoff2; make_trk_config(&badoff2); badoff2.lat_offset = 0x19;  // unaligned
+    PgsRoutesTrackingConfig badoff2; make_trk_config(&badoff2); badoff2.lat_offset = 0x19;  // unaligned
     assert(trk->install(&badoff2) == PGS_RT_ERR_BAD_OFFSET);
-    PgrRoutesTrackingConfig dup; make_trk_config(&dup); dup.addr_waypoint = dup.addr_tracking;
+    PgsRoutesTrackingConfig dup; make_trk_config(&dup); dup.addr_waypoint = dup.addr_tracking;
     assert(trk->install(&dup) == PGS_RT_ERR_DUP_ADDR);
     assert(trk->install(&tc) == PGS_RT_OK); }                     // still the original config
 
@@ -213,7 +213,7 @@ int main(int argc, char **argv) {
     call_waypoint(&wp, &wp, &sentinel);
     assert(g_waypoint_calls.load() == 1);                        // original chained
     assert(g_last_wp_self.load() == &wp && g_last_wp_arg.load() == &wp && g_last_wp_method == &sentinel); }
-  { PgrRoutesObserversOutput o; obs_poll(tid, 0, &o);
+  { PgsRoutesObserversOutput o; obs_poll(tid, 0, &o);
     assert(!has_event(o, PGS_RO_EV_WAYPOINT) && !has_event(o, PGS_RO_EV_TRACKING_STATUS)); }
 
   // --- nested tracking + location override + tracking-status event (feature 46 leased) ----
@@ -225,8 +225,8 @@ int main(int argc, char **argv) {
   assert(g_loc_seen_inside_tracking.load() == 1);
   assert(obs->location_gate(tid) == 0);                          // depth balanced back to zero after leave
   assert(call_location() == 0);                               // outside tracking: original unchanged
-  { PgrRoutesObserversOutput o; obs_poll(tid, 2500, &o);
-    const PgrRoutesObserversEvent *t = find_event(o, PGS_RO_EV_TRACKING_STATUS);
+  { PgsRoutesObserversOutput o; obs_poll(tid, 2500, &o);
+    const PgsRoutesObserversEvent *t = find_event(o, PGS_RO_EV_TRACKING_STATUS);
     assert(t && t->i0 == 5); }
 
   // --- waypoint coordinates proof + 10s throttle ----
@@ -240,10 +240,10 @@ int main(int argc, char **argv) {
     set_f64(&wp, 0x18, 1.0); set_f64(&wp, 0x20, 2.0);
     call_waypoint(&wp, &wp, nullptr);
     assert(g_waypoint_calls.load() == 2);
-    PgrRoutesObserversOutput o; obs_poll(tid, 2500, &o);
-    const PgrRoutesObserversEvent *w = find_event(o, PGS_RO_EV_WAYPOINT);
+    PgsRoutesObserversOutput o; obs_poll(tid, 2500, &o);
+    const PgsRoutesObserversEvent *w = find_event(o, PGS_RO_EV_WAYPOINT);
     assert(w && w->f0 == 12.5 && w->f1 == -45.25);               // first coords, not the throttled second
-    PgrRoutesObserversOutput o2; obs_poll(tid, 2500, &o2);
+    PgsRoutesObserversOutput o2; obs_poll(tid, 2500, &o2);
     assert(!has_event(o2, PGS_RO_EV_WAYPOINT)); }
 
   // --- wrong-class waypoint arg: no event, original still chained with args unchanged ----
@@ -253,7 +253,7 @@ int main(int argc, char **argv) {
     g_waypoint_calls = 0; int sentinel = 0;
     call_waypoint(&wp, &wp, &sentinel);
     assert(g_waypoint_calls.load() == 1 && g_last_wp_arg.load() == &wp && g_last_wp_method == &sentinel);
-    PgrRoutesObserversOutput o; obs_poll(tid, 2500, &o);
+    PgsRoutesObserversOutput o; obs_poll(tid, 2500, &o);
     assert(!has_event(o, PGS_RO_EV_WAYPOINT)); }
 
   // --- off-owner (non-attached thread): feature 46's lite entries gate on thread attachment, so an
@@ -272,7 +272,7 @@ int main(int argc, char **argv) {
     });
     foreign.join();
     // The owner thread sees no tracking/waypoint event from the unattached foreign activity.
-    PgrRoutesObserversOutput o; obs_poll(tid, 2500, &o);
+    PgsRoutesObserversOutput o; obs_poll(tid, 2500, &o);
     assert(!has_event(o, PGS_RO_EV_WAYPOINT)); }
 
   // --- revoke disarms: nested override stops, waypoint stops; originals untouched ----
@@ -286,8 +286,8 @@ int main(int argc, char **argv) {
     set_f64(&wp, 0x18, 3.0); set_f64(&wp, 0x20, 4.0);
     g_waypoint_calls = 0; call_waypoint(&wp, &wp, nullptr);
     assert(g_waypoint_calls.load() == 1);
-    PgrRoutesObserversOutput o;
-    PgrRoutesObserversRequest r; make_request(&r, tid, 2500, obs->generation());  // fresh gen
+    PgsRoutesObserversOutput o;
+    PgsRoutesObserversRequest r; make_request(&r, tid, 2500, obs->generation());  // fresh gen
     obs->poll(&r, &o);
     assert(!has_event(o, PGS_RO_EV_WAYPOINT)); }
 
@@ -301,8 +301,8 @@ int main(int argc, char **argv) {
     set_f64(&wp, 0x18, 5.0); set_f64(&wp, 0x20, 6.0);
     g_waypoint_calls = 0; call_waypoint(&wp, &wp, nullptr);
     assert(g_waypoint_calls.load() == 1);
-    PgrRoutesObserversOutput o;
-    PgrRoutesObserversRequest r; make_request(&r, tid, 2500, obs->generation());
+    PgsRoutesObserversOutput o;
+    PgsRoutesObserversRequest r; make_request(&r, tid, 2500, obs->generation());
     obs->poll(&r, &o);
     assert(!has_event(o, PGS_RO_EV_WAYPOINT)); }
 

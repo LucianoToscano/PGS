@@ -39,7 +39,7 @@ class InventoryBerriesNativeTests(unittest.TestCase):
     def test_real_items_catalog_and_berry_counts(self):
         self.compile_and_run(
             ['items.cpp', 'items_test.cpp'],
-            ['-DPGR_ITEMS_HOST_TEST', '-Wl,--wrap=clock_gettime,--wrap=nanosleep'],
+            ['-DPGS_ITEMS_HOST_TEST', '-Wl,--wrap=clock_gettime,--wrap=nanosleep'],
             'PASS native items:')
 
     def test_real_inventory_host_buddy_policy(self):

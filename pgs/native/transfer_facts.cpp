@@ -24,7 +24,7 @@
 // 2500 ms, turn it into a fresh CLOCK_BOOTTIME deadline, and re-check that deadline AFTER the managed work
 // (and re-prove the id) before writing any facts. No mutex is held across a managed call.
 
-static_assert(sizeof(PgrTransferFactsConfig) == 320, "config must be 320 bytes");
+static_assert(sizeof(PgsTransferFactsConfig) == 320, "config must be 320 bytes");
 static std::atomic<int32_t> g_shadow_value{0};
 static std::atomic<void *> g_shadow_field{nullptr};  // published after the value
 static std::atomic<int32_t> g_max_values[4] = {{-1}, {-1}, {-1}, {-1}};  // Dynamax, then Gigantamax values
@@ -40,20 +40,20 @@ extern "C" void pgs_transfer_facts_set_shadow(void *alignment_field, int32_t sha
   g_shadow_value.store(shadow_value, std::memory_order_relaxed);
   g_shadow_field.store(alignment_field, std::memory_order_release);
 }
-static_assert(sizeof(PgrTransferFactsRequest) == 56, "request must be 56 bytes");
-static_assert(sizeof(PgrTransferFactsOut) == 40, "out must be 40 bytes");
-static_assert(sizeof(PgrTransferFactsApi) == 24, "table must be 24 bytes");
-static_assert(offsetof(PgrTransferFactsConfig, gc_new) == 8, "layout (first ptr)");
-static_assert(offsetof(PgrTransferFactsConfig, class_pokemon) == 8 + 8 * 8, "layout (first class)");
-static_assert(offsetof(PgrTransferFactsConfig, m_size) == 8 + 15 * 8, "layout (first method)");
-static_assert(offsetof(PgrTransferFactsConfig, f_id) == 8 + 19 * 8, "layout (first field)");
-static_assert(offsetof(PgrTransferFactsConfig, f_art_asset) == 8 + 33 * 8, "layout (last ptr)");
-static_assert(offsetof(PgrTransferFactsConfig, xxs) == 280, "layout (xxs)");
-static_assert(offsetof(PgrTransferFactsConfig, sizes) == 300, "layout (sizes)");
-static_assert(offsetof(PgrTransferFactsRequest, pokemon) == 32, "layout (pokemon)");
-static_assert(offsetof(PgrTransferFactsRequest, gm) == 40, "layout (gm)");
-static_assert(offsetof(PgrTransferFactsRequest, protect) == 48, "layout (protect)");
-static_assert(offsetof(PgrTransferFactsOut, caught_id) == 32, "layout (caught_id)");
+static_assert(sizeof(PgsTransferFactsRequest) == 56, "request must be 56 bytes");
+static_assert(sizeof(PgsTransferFactsOut) == 40, "out must be 40 bytes");
+static_assert(sizeof(PgsTransferFactsApi) == 24, "table must be 24 bytes");
+static_assert(offsetof(PgsTransferFactsConfig, gc_new) == 8, "layout (first ptr)");
+static_assert(offsetof(PgsTransferFactsConfig, class_pokemon) == 8 + 8 * 8, "layout (first class)");
+static_assert(offsetof(PgsTransferFactsConfig, m_size) == 8 + 15 * 8, "layout (first method)");
+static_assert(offsetof(PgsTransferFactsConfig, f_id) == 8 + 19 * 8, "layout (first field)");
+static_assert(offsetof(PgsTransferFactsConfig, f_art_asset) == 8 + 33 * 8, "layout (last ptr)");
+static_assert(offsetof(PgsTransferFactsConfig, xxs) == 280, "layout (xxs)");
+static_assert(offsetof(PgsTransferFactsConfig, sizes) == 300, "layout (sizes)");
+static_assert(offsetof(PgsTransferFactsRequest, pokemon) == 32, "layout (pokemon)");
+static_assert(offsetof(PgsTransferFactsRequest, gm) == 40, "layout (gm)");
+static_assert(offsetof(PgsTransferFactsRequest, protect) == 48, "layout (protect)");
+static_assert(offsetof(PgsTransferFactsOut, caught_id) == 32, "layout (caught_id)");
 
 namespace {
 
@@ -71,7 +71,7 @@ using StrLength = int32_t (*)(void *string);
 
 // --- lifetime / publication --------------------------------------------------------
 std::mutex g_install_mutex;
-PgrTransferFactsConfig g_cfg{};
+PgsTransferFactsConfig g_cfg{};
 std::atomic<bool> g_installed{false};
 bool g_install_attempted = false;
 int g_install_error = PGS_TF_ERR_NOT_INSTALLED;
@@ -187,7 +187,7 @@ int invoke_boxed_int(const void *method, void *self, void **params, void *box_cl
 }
 
 // --- the inspection ----------------------------------------------------------------
-int do_inspect(const PgrTransferFactsRequest *req, uint64_t deadline, PgrTransferFactsOut *out) {
+int do_inspect(const PgsTransferFactsRequest *req, uint64_t deadline, PgsTransferFactsOut *out) {
   uintptr_t pk_root = 0, gm_root = 0, display_root = 0, events_root = 0;
   int rc = PGS_TF_OK;
 
@@ -350,7 +350,7 @@ int do_inspect(const PgrTransferFactsRequest *req, uint64_t deadline, PgrTransfe
     if (max_field) flags |= PGS_TF_FLAG_MAX_KNOWN;
 
     out->version = PGS_TF_OUT_VERSION;
-    out->size = sizeof(PgrTransferFactsOut);
+    out->size = sizeof(PgsTransferFactsOut);
     out->attack = attack;
     out->defense = defense;
     out->stamina = stamina;
@@ -384,10 +384,10 @@ bool enter_op(uint64_t owner_tid, uint64_t lease_ms, uint64_t *deadline, int *rc
 }
 
 // --- config validation -------------------------------------------------------------
-bool validate_config(const PgrTransferFactsConfig *c, int *rc) {
+bool validate_config(const PgsTransferFactsConfig *c, int *rc) {
   if (c == nullptr) { *rc = PGS_TF_ERR_NULL_ARG; return false; }
   if (c->version != PGS_TF_CONFIG_VERSION) { *rc = PGS_TF_ERR_BAD_VERSION; return false; }
-  if (c->size != sizeof(PgrTransferFactsConfig)) { *rc = PGS_TF_ERR_BAD_SIZE; return false; }
+  if (c->size != sizeof(PgsTransferFactsConfig)) { *rc = PGS_TF_ERR_BAD_SIZE; return false; }
   void *const *ptrs = reinterpret_cast<void *const *>(&c->gc_new);
   for (int i = 0; i < 34; ++i) {
     if (ptrs[i] == nullptr) { *rc = PGS_TF_ERR_MISSING_PTR; return false; }
@@ -407,7 +407,7 @@ bool validate_config(const PgrTransferFactsConfig *c, int *rc) {
 }
 
 // --- public API --------------------------------------------------------------------
-int api_install(const PgrTransferFactsConfig *config) {
+int api_install(const PgsTransferFactsConfig *config) {
   int rc = PGS_TF_OK;
   if (!validate_config(config, &rc)) return rc;
   uint64_t probe = 0;
@@ -425,16 +425,16 @@ int api_install(const PgrTransferFactsConfig *config) {
   return g_install_error = PGS_TF_OK;
 }
 
-int api_inspect(const PgrTransferFactsRequest *request, PgrTransferFactsOut *out) {
+int api_inspect(const PgsTransferFactsRequest *request, PgsTransferFactsOut *out) {
   if (out != nullptr) {
     std::memset(out, 0, sizeof(*out));  // zeroed + header-initialised on every path
     out->version = PGS_TF_OUT_VERSION;
-    out->size = sizeof(PgrTransferFactsOut);
+    out->size = sizeof(PgsTransferFactsOut);
   }
   if (!g_installed.load(std::memory_order_acquire)) return PGS_TF_ERR_NOT_INSTALLED;
   if (request == nullptr || out == nullptr) return PGS_TF_ERR_NULL_ARG;
   if (request->version != PGS_TF_REQUEST_VERSION) return PGS_TF_ERR_BAD_VERSION;
-  if (request->size != sizeof(PgrTransferFactsRequest)) return PGS_TF_ERR_BAD_SIZE;
+  if (request->size != sizeof(PgsTransferFactsRequest)) return PGS_TF_ERR_BAD_SIZE;
   if (request->pokemon == nullptr) return PGS_TF_ERR_NULL_ARG;
 
   uint64_t deadline = 0;
@@ -446,13 +446,13 @@ int api_inspect(const PgrTransferFactsRequest *request, PgrTransferFactsOut *out
     // Never leak partial facts on a non-success return.
     std::memset(out, 0, sizeof(*out));
     out->version = PGS_TF_OUT_VERSION;
-    out->size = sizeof(PgrTransferFactsOut);
+    out->size = sizeof(PgsTransferFactsOut);
   }
   return rc;
 }
 
-const PgrTransferFactsApi kApiTable = {
-    PGS_TF_API_VERSION, static_cast<uint32_t>(sizeof(PgrTransferFactsApi)),
+const PgsTransferFactsApi kApiTable = {
+    PGS_TF_API_VERSION, static_cast<uint32_t>(sizeof(PgsTransferFactsApi)),
     &api_install, &api_inspect,
 };
 

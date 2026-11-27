@@ -23,8 +23,8 @@ const pgs_interaction_owner::Api observer{2,40,wants,enter,leave,abort_call};
 }
 extern "C" const void *pgs_interaction_host_api(uint32_t v){return v==2?&observer:nullptr;}
 int main(){
-    auto api=static_cast<const PgrObsApi*>(pgs_catch_observers_api(1));
-    PgrObsConfig cfg{};cfg.version=1;cfg.size=sizeof(cfg);
+    auto api=static_cast<const PgsObsApi*>(pgs_catch_observers_api(1));
+    PgsObsConfig cfg{};cfg.version=1;cfg.size=sizeof(cfg);
     cfg.object_get_class=(void*)&obj_class;cfg.field_get_value=(void*)&field_get;
     cfg.gchandle_new=(void*)&gc_new;cfg.gchandle_get_target=(void*)&gc_target;cfg.gchandle_free=(void*)&gc_free;
     cfg.code_btxu=(void*)&btxu_stub;cfg.code_caught=(void*)&caught_stub;cfg.code_escaped=(void*)&escaped_stub;

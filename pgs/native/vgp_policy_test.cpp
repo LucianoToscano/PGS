@@ -26,10 +26,10 @@ using GetApiFn = const void *(*)(uint32_t);
 constexpr int32_t kSuccess = 11, kFlee = 13;             // -> terminal_delay_ms
 constexpr int32_t kEscape = 12, kMissed = 14, kReplace = 16;  // -> retry_delay_ms
 
-PgrVgpPolicyConfig make_config() {
-  PgrVgpPolicyConfig c{};
+PgsVgpPolicyConfig make_config() {
+  PgsVgpPolicyConfig c{};
   c.version = PGS_VP_CONFIG_VERSION;
-  c.size = sizeof(PgrVgpPolicyConfig);
+  c.size = sizeof(PgsVgpPolicyConfig);
   c.scan_interval_ms = 2500;
   c.catch_seen_ms = 30000;
   c.spin_seen_ms = 300000;
@@ -47,12 +47,12 @@ PgrVgpPolicyConfig make_config() {
 
 uint64_t this_tid() { return static_cast<uint64_t>(static_cast<pid_t>(::gettid())); }
 
-const PgrVgpPolicyApi *g_api = nullptr;
+const PgsVgpPolicyApi *g_api = nullptr;
 
-PgrVgpPolicySample take_sample() {
-  PgrVgpPolicySample s{};
+PgsVgpPolicySample take_sample() {
+  PgsVgpPolicySample s{};
   assert(g_api->sample(&s) == PGS_VP_OK);
-  assert(s.version == 1 && s.size == sizeof(PgrVgpPolicySample));
+  assert(s.version == 1 && s.size == sizeof(PgsVgpPolicySample));
   return s;
 }
 
@@ -74,23 +74,23 @@ int main(int argc, char **argv) {
   const auto *core = static_cast<const pgs_native_api_v2 *>(getter(2));
   assert(core && core->size == 48);
   assert(core->query_feature(25, 99) == nullptr);
-  const auto *api = static_cast<const PgrVgpPolicyApi *>(core->query_feature(25, 1));
-  assert(api != nullptr && api->version == 1 && api->size == sizeof(PgrVgpPolicyApi));
+  const auto *api = static_cast<const PgsVgpPolicyApi *>(core->query_feature(25, 1));
+  assert(api != nullptr && api->version == 1 && api->size == sizeof(PgsVgpPolicyApi));
   g_api = api;
 
   std::printf("ABI sizes: config=%zu sample=%zu table=%zu\n",
-              sizeof(PgrVgpPolicyConfig), sizeof(PgrVgpPolicySample), sizeof(PgrVgpPolicyApi));
-  assert(sizeof(PgrVgpPolicyConfig) == 128 && sizeof(PgrVgpPolicySample) == 64 &&
-         sizeof(PgrVgpPolicyApi) == 112);
+              sizeof(PgsVgpPolicyConfig), sizeof(PgsVgpPolicySample), sizeof(PgsVgpPolicyApi));
+  assert(sizeof(PgsVgpPolicyConfig) == 128 && sizeof(PgsVgpPolicySample) == 64 &&
+         sizeof(PgsVgpPolicyApi) == 112);
 
   const uint64_t tid = this_tid();
-  PgrVgpPolicyConfig cfg = make_config();
+  PgsVgpPolicyConfig cfg = make_config();
 
   // 1. Validation + not-installed + idempotence + reconfig.
   assert(api->install(nullptr) == PGS_VP_ERR_NULL_ARG);
-  PgrVgpPolicyConfig bad = cfg; bad.version = 2;
+  PgsVgpPolicyConfig bad = cfg; bad.version = 2;
   assert(api->install(&bad) == PGS_VP_ERR_BAD_VERSION);
-  bad = cfg; bad.size = sizeof(PgrVgpPolicyConfig) - 1;
+  bad = cfg; bad.size = sizeof(PgsVgpPolicyConfig) - 1;
   assert(api->install(&bad) == PGS_VP_ERR_BAD_SIZE);
   bad = cfg; bad.max_keys = PGS_VP_MAX_KEYS + 1;
   assert(api->install(&bad) == PGS_VP_ERR_BAD_CONFIG);
@@ -183,7 +183,7 @@ int main(int argc, char **argv) {
   assert(g_api->touch(tid, "x", PGS_VP_MAX_KEY_LEN + 1, 1000) == PGS_VP_ERR_BAD_KEY);
 
   // 10. Telemetry reflects the drive above (non-zero counters, sane flags).
-  PgrVgpPolicySample sm = take_sample();
+  PgsVgpPolicySample sm = take_sample();
   assert(sm.scans >= 1 && sm.marks >= 1 && sm.evictions >= 1 && sm.blocks >= 1 && sm.drops >= 1);
   assert(sm.full_rejects >= 1 && sm.blocked == 0 && sm.seen_size == 0);
 

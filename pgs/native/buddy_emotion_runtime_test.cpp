@@ -29,7 +29,7 @@ bool test_sequence_change = false;
 unsigned test_samples = 0;
 std::string test_config = "1;1;703;50;0";
 
-int test_sample(PgrRuntimeTransportSample* out) {
+int test_sample(PgsRuntimeTransportSample* out) {
     *out = {};
     out->snapshot_fresh = test_fresh;
     out->snapshot_seq = 100 + (test_sequence_change ? test_samples : 0);
@@ -80,12 +80,12 @@ void* test_forbidden_field(void*, const char*) {
     return nullptr;
 }
 int test_emit(uint32_t opcode, const int64_t* scalars, uint32_t scalar_count,
-              const PgrRuntimeTransportString* strings, uint32_t string_count) {
+              const PgsRuntimeTransportString* strings, uint32_t string_count) {
     assert(opcode == 19 && !scalars && !scalar_count && strings && string_count == 2);
     ++test_events;
     return 0;
 }
-int test_poll(void* promise, uint32_t phase, uint64_t tid, PgrVgpResultsResult* out) {
+int test_poll(void* promise, uint32_t phase, uint64_t tid, PgsVgpResultsResult* out) {
     assert(promise == &test_objects[0] && phase == 1 && tid == owner);
     ++test_polls;
     *out = {};
@@ -96,8 +96,8 @@ int test_poll(void* promise, uint32_t phase, uint64_t tid, PgrVgpResultsResult* 
     }
     return test_result;
 }
-PgrRuntimeTransportApi test_transport{};
-PgrVgpResultsApi test_results{1, sizeof(PgrVgpResultsApi), nullptr, test_poll, nullptr};
+PgsRuntimeTransportApi test_transport{};
+PgsVgpResultsApi test_results{1, sizeof(PgsVgpResultsApi), nullptr, test_poll, nullptr};
 
 void setup_transport() {
     test_transport = {};

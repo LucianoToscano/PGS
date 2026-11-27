@@ -159,7 +159,7 @@ static void fake_gchandle_free(uintptr_t h) {
     }
 }
 
-/* Fake IL2CPP exports matching PgrMetaExports + PgrInteractionExtraExports */
+/* Fake IL2CPP exports matching PgsMetaExports + PgsInteractionExtraExports */
 static void *fx_domain_get() { return g_domain_ptr; }
 static void *fx_domain_get_assemblies(void *domain, size_t *out_count) {
     if (domain == nullptr) {
@@ -377,7 +377,7 @@ static void fx_thread_detach(void *thread) {
     ++g_thread_detach_calls;
 }
 
-static int fx_seg_query(void *, const void *addr, uint64_t size, PgrMetaSegment *out) {
+static int fx_seg_query(void *, const void *addr, uint64_t size, PgsMetaSegment *out) {
     memset(out, 0, sizeof(*out));
     uintptr_t a = reinterpret_cast<uintptr_t>(addr);
     uintptr_t base = reinterpret_cast<uintptr_t>(g_module_base);
@@ -444,7 +444,7 @@ static void *find_installed_replacement(uint32_t target_id) {
     return nullptr;
 }
 
-static PgrMetaExports g_fx_meta_exports;
+static PgsMetaExports g_fx_meta_exports;
 
 static void init_sparse_module_once() {
     if (g_module_base != nullptr) {
@@ -501,7 +501,7 @@ static void init_sparse_module_once() {
         reinterpret_cast<void *>(&fx_class_get_declaring_type);
 }
 
-static void reset_fake_universe(PgrInteractionHostConfig *out_cfg) {
+static void reset_fake_universe(PgsInteractionHostConfig *out_cfg) {
     init_sparse_module_once();
 
     /* Restore ELF64 AArch64 header, kDebugWords, and kBtxuWords */
@@ -636,8 +636,8 @@ static void reset_fake_universe(PgrInteractionHostConfig *out_cfg) {
     memset(g_gc_slots, 0, sizeof(g_gc_slots));
 
     memset(out_cfg, 0, sizeof(*out_cfg));
-    out_cfg->binding.version = PGR_MD_CONFIG_VERSION;
-    out_cfg->binding.size = sizeof(PgrMetaBindConfig);
+    out_cfg->binding.version = PGS_MD_CONFIG_VERSION;
+    out_cfg->binding.size = sizeof(PgsMetaBindConfig);
     out_cfg->binding.exports = &g_fx_meta_exports;
     out_cfg->binding.module_base = g_module_base;
     out_cfg->binding.module_size = g_module_size;
@@ -666,7 +666,7 @@ static void reset_fake_universe(PgrInteractionHostConfig *out_cfg) {
 }
 
 /* Helper to push a Transport 52 settings snapshot frame */
-static void push_transport_snapshot(const PgrRuntimeTransportApi *rt,
+static void push_transport_snapshot(const PgsRuntimeTransportApi *rt,
                                     uint64_t seq,
                                     bool diag_ready,
                                     uint64_t stop_pulse,
@@ -693,10 +693,10 @@ static void push_transport_snapshot(const PgrRuntimeTransportApi *rt,
     uint8_t out_buf[65536];
     uint32_t out_len = 0;
     int rc = rt->exchange(frame, total_size, out_buf, sizeof(out_buf), &out_len);
-    assert(rc == PGR_TRANSPORT_OK);
+    assert(rc == PGS_TRANSPORT_OK);
 }
 
-static void drain_transport_events(const PgrRuntimeTransportApi *rt) {
+static void drain_transport_events(const PgsRuntimeTransportApi *rt) {
     if (rt == nullptr) {
         return;
     }
@@ -704,7 +704,7 @@ static void drain_transport_events(const PgrRuntimeTransportApi *rt) {
     uint32_t out_len = 0;
     while (true) {
         int rc = rt->exchange(nullptr, 0, out_buf, sizeof(out_buf), &out_len);
-        assert(rc == PGR_TRANSPORT_OK);
+        assert(rc == PGS_TRANSPORT_OK);
         uint32_t count = 0;
         memcpy(&count, out_buf + 12, 4);
         if (count == 0) {
@@ -713,16 +713,16 @@ static void drain_transport_events(const PgrRuntimeTransportApi *rt) {
     }
 }
 
-static void test_passive_startup_and_scheduled_metadata_only(const PgrInteractionHostApi *api) {
+static void test_passive_startup_and_scheduled_metadata_only(const PgsInteractionHostApi *api) {
     api->reset_for_tests();
-    PgrInteractionHostConfig cfg {};
+    PgsInteractionHostConfig cfg {};
     reset_fake_universe(&cfg);
 
     /* Detached caller thread must be attached and detached cleanly by ScopedIl2CppThread */
     g_current_thread = nullptr;
     assert(api->configure(&cfg) == PGS_IH_OK);
 
-    PgrInteractionHostSample s {};
+    PgsInteractionHostSample s {};
     assert(api->sample(&s) == PGS_IH_OK);
     assert(s.configured == 1 && s.running == 0 && s.scheduled == 0);
     assert(g_total_hook_calls == 0);
@@ -733,7 +733,7 @@ static void test_passive_startup_and_scheduled_metadata_only(const PgrInteractio
     assert(s.status == PGS_IH_STATUS_SCHEDULED && s.scheduled == 1 && s.running == 0);
     assert(g_total_hook_calls == 0);
 
-    PgrInteractionHostEvent ev {};
+    PgsInteractionHostEvent ev {};
     assert(api->take_event(&ev) == 1);
     assert(ev.type == PGS_IH_EVT_SCHEDULED);
     assert(strcmp(ev.channel, "interaction-probe-scheduled") == 0);
@@ -759,17 +759,17 @@ static void test_passive_startup_and_scheduled_metadata_only(const PgrInteractio
     assert(g_thread_attach_calls == 1 && g_thread_detach_calls == 1);
 }
 
-static void test_elf_and_debug_prologue_and_btxu_validation(const PgrInteractionHostApi *api) {
+static void test_elf_and_debug_prologue_and_btxu_validation(const PgsInteractionHostApi *api) {
     /* 1. ELF64 AArch64 mismatch -> skipped (library-architecture-mismatch) */
     api->reset_for_tests();
-    PgrInteractionHostConfig cfg {};
+    PgsInteractionHostConfig cfg {};
     reset_fake_universe(&cfg);
     assert(api->configure(&cfg) == PGS_IH_OK);
     g_module_base[18] = 62u; /* EM_X86_64 instead of EM_AARCH64 (183) */
 
-    PgrInteractionHostOptions opts {};
+    PgsInteractionHostOptions opts {};
     assert(api->start(&opts) == PGS_IH_OK);
-    PgrInteractionHostSample s {};
+    PgsInteractionHostSample s {};
     assert(api->sample(&s) == PGS_IH_OK);
     assert(s.status == PGS_IH_STATUS_SKIPPED);
     assert(strcmp(s.reason, "library-architecture-mismatch") == 0);
@@ -808,10 +808,10 @@ static void test_elf_and_debug_prologue_and_btxu_validation(const PgrInteraction
     assert((s.resolved_optional_mask & (1u << PGS_IH_TGT_POKEBALL_BTXU)) == 0);
 }
 
-static void test_metadata_limits_and_ambiguity(const PgrInteractionHostApi *api) {
-    PgrInteractionHostConfig cfg {};
-    PgrInteractionHostOptions opts {};
-    PgrInteractionHostSample s {};
+static void test_metadata_limits_and_ambiguity(const PgsInteractionHostApi *api) {
+    PgsInteractionHostConfig cfg {};
+    PgsInteractionHostOptions opts {};
+    PgsInteractionHostSample s {};
 
     /* 1. Assembly limit (256) */
     api->reset_for_tests();
@@ -906,18 +906,18 @@ static void test_metadata_limits_and_ambiguity(const PgrInteractionHostApi *api)
     assert(strcmp(s.reason, "ambiguous-targets") == 0);
 }
 
-static void test_runtime_observation_and_result_readers(const PgrInteractionHostApi *api) {
+static void test_runtime_observation_and_result_readers(const PgsInteractionHostApi *api) {
     api->reset_for_tests();
-    PgrInteractionHostConfig cfg {};
+    PgsInteractionHostConfig cfg {};
     reset_fake_universe(&cfg);
     assert(api->configure(&cfg) == PGS_IH_OK);
 
-    PgrInteractionHostOptions opts {};
+    PgsInteractionHostOptions opts {};
     opts.observe_runtime = 1;
     opts.read_results = 1;
     assert(api->start(&opts) == PGS_IH_OK);
 
-    PgrInteractionHostSample s {};
+    PgsInteractionHostSample s {};
     assert(api->sample(&s) == PGS_IH_OK);
     assert(s.status == PGS_IH_STATUS_OBSERVING && s.running == 1);
     assert(s.argument_readers_available == 1 && s.return_reader_available == 1);
@@ -942,7 +942,7 @@ static void test_runtime_observation_and_result_readers(const PgrInteractionHost
     *reinterpret_cast<int32_t *>(fort_proto + 20) = 1; /* Success */
 
     /* Drain setup events before triggering callbacks */
-    PgrInteractionHostEvent ev {};
+    PgsInteractionHostEvent ev {};
     while (api->take_event(&ev) == 1) {
     }
 
@@ -1039,12 +1039,12 @@ static void test_runtime_observation_and_result_readers(const PgrInteractionHost
     assert(g_hook_count == 0);
 }
 
-static void test_shared_hook_sites_coexistence(const PgrInteractionHostApi *api) {
-    PgrInteractionHostConfig cfg {};
-    PgrInteractionHostOptions opts {};
+static void test_shared_hook_sites_coexistence(const PgsInteractionHostApi *api) {
+    PgsInteractionHostConfig cfg {};
+    PgsInteractionHostOptions opts {};
     opts.observe_runtime = 1;
     opts.read_results = 1;
-    PgrInteractionHostSample s {};
+    PgsInteractionHostSample s {};
 
     /* 1. Unattested required shared site (Feature 49 owns 10, 11, 19; integrated_mask == 0)
           -> NEVER calls pgrazor_hook on 10, 11, 19, fails closed with observer-setup-failed */
@@ -1087,7 +1087,7 @@ static void test_shared_hook_sites_coexistence(const PgrInteractionHostApi *api)
     assert(s.installed_target_mask == PGS_IH_ALL_TARGETS_MASK);
     assert(g_hook_count == 10); /* Only the 10 unowned targets hooked via Dobby */
 
-    PgrInteractionHostEvent ev {};
+    PgsInteractionHostEvent ev {};
     while (api->take_event(&ev) == 1) {
     }
 
@@ -1127,12 +1127,12 @@ static void test_shared_hook_sites_coexistence(const PgrInteractionHostApi *api)
     assert(g_hook_count == 0);
 }
 
-static void test_stop_bounds_and_deferred_inflight_cleanup(const PgrInteractionHostApi *api) {
-    PgrInteractionHostConfig cfg {};
-    PgrInteractionHostOptions opts {};
+static void test_stop_bounds_and_deferred_inflight_cleanup(const PgsInteractionHostApi *api) {
+    PgsInteractionHostConfig cfg {};
+    PgsInteractionHostOptions opts {};
     opts.observe_runtime = 1;
     opts.read_results = 0;
-    PgrInteractionHostSample s {};
+    PgsInteractionHostSample s {};
 
     /* 1. Event limit (512 events = 256 paired enter+leave calls) */
     api->reset_for_tests();
@@ -1246,8 +1246,8 @@ static void test_stop_bounds_and_deferred_inflight_cleanup(const PgrInteractionH
     assert(s.hooked_direct_mask == 0 && g_hook_count == 0);
 }
 
-static void test_transport52_and_scheduler48_integration(const PgrInteractionHostApi *api) {
-    const PgrRuntimeTransportApi *rt = resolve_transport_api();
+static void test_transport52_and_scheduler48_integration(const PgsInteractionHostApi *api) {
+    const PgsRuntimeTransportApi *rt = resolve_transport_api();
     assert(rt != nullptr);
     PgsRuntimeTransportConfig rt_cfg {};
     rt_cfg.version = PGS_TRANSPORT_CONFIG_VERSION;
@@ -1257,11 +1257,11 @@ static void test_transport52_and_scheduler48_integration(const PgrInteractionHos
     rt_cfg.max_string_bytes = 65536;
     rt_cfg.queue_byte_budget = 524288;
     int irc = rt->install(&rt_cfg);
-    assert(irc == PGR_TRANSPORT_OK || irc == PGS_TRANSPORT_ERR_RECONFIG);
+    assert(irc == PGS_TRANSPORT_OK || irc == PGS_TRANSPORT_ERR_RECONFIG);
     drain_transport_events(rt);
 
     api->reset_for_tests();
-    PgrInteractionHostConfig cfg {};
+    PgsInteractionHostConfig cfg {};
     reset_fake_universe(&cfg);
     assert(api->configure(&cfg) == PGS_IH_OK);
 
@@ -1270,14 +1270,14 @@ static void test_transport52_and_scheduler48_integration(const PgrInteractionHos
     assert(api->schedule(1000) == PGS_IH_OK);
     g_fake_now_ms += 1000;
     assert(api->tick(100) == PGS_IH_OK);
-    PgrInteractionHostSample s {};
+    PgsInteractionHostSample s {};
     assert(api->sample(&s) == PGS_IH_OK);
     assert(s.status == PGS_IH_STATUS_SKIPPED && strcmp(s.reason, "not-ready") == 0);
     drain_transport_events(rt);
 
     /* 2. Reader 15 == true + Pulse 2 (trace request) via on_unity_pulse -> starts runtime observation */
     push_transport_snapshot(rt, 2, true, 0, 1);
-    PgrUnityPulse pulse {0, 1, 100, 0};
+    PgsUnityPulse pulse {0, 1, 100, 0};
     /* Note: if scheduler48 is not yet activated, valid(0) == 0 suppresses pulse; tick(100) runs directly */
     assert(api->tick(100) == PGS_IH_OK);
     assert(api->sample(&s) == PGS_IH_OK);
@@ -1292,10 +1292,10 @@ static void test_transport52_and_scheduler48_integration(const PgrInteractionHos
     assert(g_hook_count == 0);
 
     /* Verify Transport 52 received emitted events */
-    PgrRuntimeTransportSample rt_s {};
+    PgsRuntimeTransportSample rt_s {};
     rt_s.version = PGS_TRANSPORT_SAMPLE_VERSION;
     rt_s.size = sizeof(rt_s);
-    assert(rt->sample(&rt_s) == PGR_TRANSPORT_OK);
+    assert(rt->sample(&rt_s) == PGS_TRANSPORT_OK);
     assert(rt_s.events_emitted > 0);
     drain_transport_events(rt);
     (void)pulse;
@@ -1308,7 +1308,7 @@ static void test_transport52_and_scheduler48_integration(const PgrInteractionHos
 // PREPARED metadata, real Dobby trampolines, and actual core52. The older metadata
 // scaffolding above is retained but its old fake-hook scenario suite is not run.
 namespace {
-const PgrRuntimeTransportApi *actual_transport=nullptr;
+const PgsRuntimeTransportApi *actual_transport=nullptr;
 bool throw_original=false;void *original_self=nullptr,*original_arg=nullptr;
 uint32_t original_calls[20]{};
 #define PAD69 asm volatile("nop; nop; nop; nop; nop; nop; nop; nop; nop; nop; nop; nop; nop; nop; nop; nop" ::: "memory")
@@ -1330,14 +1330,14 @@ int main(int argc,char **argv){
     assert(argc==2);void *lib=dlopen(argv[1],RTLD_NOW|RTLD_LOCAL);if(!lib)puts(dlerror());assert(lib);
     auto get=(const void*(*)(uint32_t))dlsym(lib,"pgs_native_api");assert(get);
     auto core=(const pgs_native_api_v2*)get(2);assert(core);
-    auto exported=(const PgrInteractionHostApi*)core->query_feature(69,1);
+    auto exported=(const PgsInteractionHostApi*)core->query_feature(69,1);
     auto exported2=(const PgsInteractionHostApi2*)core->query_feature(69,2);
     assert(exported&&exported->feature_id==69&&exported2&&exported2->size==40&&!exported2->wants_target(0));
-    actual_transport=(const PgrRuntimeTransportApi*)core->query_feature(52,1);assert(actual_transport);
+    actual_transport=(const PgsRuntimeTransportApi*)core->query_feature(52,1);assert(actual_transport);
     PgsRuntimeTransportConfig tc{1,sizeof(tc),2500,2048,65536,1048576,0,0};assert(actual_transport->install(&tc)==0);
-    PgrInteractionHostConfig cfg{};reset_fake_universe(&cfg);g_state.cfg=cfg;g_state.meta_exports=g_fx_meta_exports;g_state.configured=true;
+    PgsInteractionHostConfig cfg{};reset_fake_universe(&cfg);g_state.cfg=cfg;g_state.meta_exports=g_fx_meta_exports;g_state.configured=true;
     g_state.cfg.flags=PGS_IH_CFG_NO_AUTO_SHARED_DETECT;g_owner_tid=gettid();
-    auto api=(const PgrInteractionHostApi*)pgs_interaction_host_api(1);
+    auto api=(const PgsInteractionHostApi*)pgs_interaction_host_api(1);
     auto observer=(const PgsInteractionHostApi2*)pgs_interaction_host_api(2);
     alignas(8) uint64_t self[4]{},arg[4]{},result[4]{},moved[4]{};
     call0(self,nullptr);assert(original_calls[0]==1&&roots()==0);
@@ -1363,9 +1363,9 @@ int main(int argc,char **argv){
     assert(api->start(nullptr)==PGS_IH_ERR_BUSY);observer->observe_abort(token);assert(g_state.in_flight==0&&g_state.reserved_events==0);
     assert(g_total_unhook_calls==0);before=g_gc_new_calls;call0(self,nullptr);assert(g_gc_new_calls==before);
     prepared_run();assert(g_total_hook_calls==20); // immutable original reused, never re-hooked
-    g_fake_now_ms+=60001;PgrUnityPulse forged{1,1,(int32_t)gettid(),0};api->on_unity_pulse(nullptr,&forged);assert(g_state.status==PGS_IH_STATUS_OBSERVING);
-    PgrRuntimeTransportSample tr{};assert(actual_transport->sample(&tr)==0&&tr.events_emitted>10&&tr.events_dropped==0&&!tr.fault);
-    PgrInteractionHostEvent ev{};assert(api->take_event(&ev)==0); // transport mode has no backup ring
+    g_fake_now_ms+=60001;PgsUnityPulse forged{1,1,(int32_t)gettid(),0};api->on_unity_pulse(nullptr,&forged);assert(g_state.status==PGS_IH_STATUS_OBSERVING);
+    PgsRuntimeTransportSample tr{};assert(actual_transport->sample(&tr)==0&&tr.events_emitted>10&&tr.events_dropped==0&&!tr.fault);
+    PgsInteractionHostEvent ev{};assert(api->take_event(&ev)==0); // transport mode has no backup ring
     api->stop("done");assert(roots()==0&&g_total_unhook_calls==0);
     puts("PASS interaction69 real-Dobby direct sites, API2 unwind, deferred-return root, permanent restart, owner/attachment, actual52; metadata prepared fixture only");
 }

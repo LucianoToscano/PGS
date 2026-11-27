@@ -112,8 +112,8 @@ class PgsNativeRenameTests(unittest.TestCase):
         ):
             self.assertIn("int " + legacy, impl)
             self.assertIn("return " + modern, impl)
-        self.assertIn("using PgsHookDiag = PgrHookDiag;", diag)
-        self.assertIn("using PgsPaddingRanges = PgrPaddingRanges;", header)
+        self.assertIn("struct PgsHookDiag {", diag)
+        self.assertIn("struct PgsPaddingRanges {", header)
         self.assertNotIn('"PGRazor"', impl)
         self.assertIn("pgs_hook(", core)
         self.assertIn("pgs_unhook(", core)
@@ -209,9 +209,11 @@ class PgsNativeRenameTests(unittest.TestCase):
         self.assertIn("PGS_ACCOUNTS_API_TABLE_SIZE 56u", header)
         self.assertNotIn("#define PGR_FEATURE_ACCOUNTS", header)
         self.assertNotIn("PGR_ACC_CMD_NONE = ", header)
-        self.assertIn('#include "account_source_compat.h"', header)
-        self.assertIn("#define PGR_ACC_CMD_NONE PGS_ACC_CMD_NONE", compat)
-        self.assertEqual(len(re.findall(r"^#define PGR_[A-Z0-9_]+ PGS_[A-Z0-9_]+$", compat, re.M)), 16)
+        self.assertNotIn('#include "account_source_compat.h"', header)
+        self.assertNotRegex(compat, r"\bPGR_[A-Z0-9_]+")
+        account = (NATIVE / "account_host.cpp").read_bytes()
+        self.assertNotRegex(account, rb"\b(?:PGR_|pgr_|Pgr[A-Z])")
+        self.assertIn(b"PGS_ACC_CMD_NONE", account)
 
     def test_primary_native_factory_consumers(self):
         camera = (NATIVE / "camera_host.cpp").read_text(encoding="utf-8")

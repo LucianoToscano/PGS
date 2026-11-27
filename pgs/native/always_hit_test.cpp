@@ -91,10 +91,10 @@ int main(int argc, char **argv) {
     if (!lib) { std::puts(dlerror()); return 2; }
     auto getter = reinterpret_cast<const void *(*)(uint32_t)>(dlsym(lib, "pgs_native_api"));
     auto core = getter ? static_cast<const pgs_native_api_v2 *>(getter(2)) : nullptr;
-    auto api  = core ? static_cast<const PgrAlwaysHitApi *>(core->query_feature(7, 1)) : nullptr;
+    auto api  = core ? static_cast<const PgsAlwaysHitApi *>(core->query_feature(7, 1)) : nullptr;
     if (!api || api->size != 40) return 3; // 40-byte table incl. tick
 
-    PgrAlwaysHitConfig cfg{
+    PgsAlwaysHitConfig cfg{
         1, sizeof(cfg),
         (void *)&launch, (void *)&release, (void *)&collision, (void *)&trigger, (void *)&make_throw,
         &ball_class, &machine_class, &action_class,
@@ -215,7 +215,7 @@ int main(int argc, char **argv) {
     call_coll(&ball, &arg_obj, &method_obj);
     if (orig_coll != oc + 1 || roots != 0) return 30; // fault stays latched; root already retired
 
-    PgrAlwaysHitSample s{}; api->sample(&s);
+    PgsAlwaysHitSample s{}; api->sample(&s);
     if (s.applied != 4 || s.normalized != 1 || s.errors != 1) return 33;
 
     std::puts("PASS native Always Hit: ABI/forwarding, single-apply dedupe, launch/release rearm, "

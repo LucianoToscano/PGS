@@ -17,13 +17,13 @@
 // discover() or drain()). No mutex is held across a managed call. This module installs NO hook and NEVER
 // calls back into JS.
 
-static_assert(sizeof(PgrRoutesDiscoveryConfig) == 312, "config 312");
-static_assert(sizeof(PgrRoutesDiscoveryRequest) == 48, "request 48");
-static_assert(sizeof(PgrRoutesDiscoveryLookup) == 304, "lookup 304");
-static_assert(sizeof(PgrRoutesDiscoveryRoute) == 832, "route 832");
-static_assert(sizeof(PgrRoutesDiscoveryOutput) == 83216, "output 83216");
-static_assert(sizeof(PgrRoutesDiscoveryPoints) == 80016, "points 80016");
-static_assert(sizeof(PgrRoutesDiscoveryApi) == 64, "table 64");
+static_assert(sizeof(PgsRoutesDiscoveryConfig) == 312, "config 312");
+static_assert(sizeof(PgsRoutesDiscoveryRequest) == 48, "request 48");
+static_assert(sizeof(PgsRoutesDiscoveryLookup) == 304, "lookup 304");
+static_assert(sizeof(PgsRoutesDiscoveryRoute) == 832, "route 832");
+static_assert(sizeof(PgsRoutesDiscoveryOutput) == 83216, "output 83216");
+static_assert(sizeof(PgsRoutesDiscoveryPoints) == 80016, "points 80016");
+static_assert(sizeof(PgsRoutesDiscoveryApi) == 64, "table 64");
 
 namespace {
 
@@ -44,7 +44,7 @@ using StrChars  = uint16_t *(*)(void *string);
 // --- lifetime / publication --------------------------------------------------------
 std::mutex g_install_mutex;
 std::mutex g_state_mutex;
-PgrRoutesDiscoveryConfig g_cfg{};
+PgsRoutesDiscoveryConfig g_cfg{};
 std::atomic<bool> g_installed{false};
 
 // Permanent Unity owner, latched once from a genuine on-thread call.
@@ -71,13 +71,13 @@ struct CacheEntry {
   double start_lat, start_lon, end_lat, end_lon;
   uint16_t id[PGS_RD_ID_MAX];
   uint16_t name[PGS_RD_NAME_MAX];
-  PgrRoutesDiscoveryPoint *points;  // heap, point_count entries (nullptr when point_count == 0)
+  PgsRoutesDiscoveryPoint *points;  // heap, point_count entries (nullptr when point_count == 0)
 };
 struct Cache {
   uintptr_t service_handle;  // owned GC root to the RoutesService the routes came from (0 when empty)
   uint64_t generation;       // generation value current at publication
   uint32_t count;
-  CacheEntry entries[PGR_RD_MAX_ROUTES];
+  CacheEntry entries[PGS_RD_MAX_ROUTES];
 };
 Cache g_cache{};  // ~85 KB BSS; only ever mutated on the owner thread under g_busy
 
@@ -326,7 +326,7 @@ int decode_route(void *protoRaw, uint64_t deadline, uint64_t generation, const C
     }
     if (count < 2 || count > PGS_RD_MAX_POINTS) return 0;  // JS readShared returns null
 
-    PgrRoutesDiscoveryPoint *pts = new (std::nothrow) PgrRoutesDiscoveryPoint[count];
+    PgsRoutesDiscoveryPoint *pts = new (std::nothrow) PgsRoutesDiscoveryPoint[count];
     if (!pts) { *status = PGS_RD_ERR_ALLOCATION; return PGS_RD_ERR_ALLOCATION; }
     uint32_t stored = 0;
     for (int32_t i = 0; i < count; ++i) {
@@ -365,31 +365,31 @@ int decode_route(void *protoRaw, uint64_t deadline, uint64_t generation, const C
   return 1;
 }
 
-void init_output(PgrRoutesDiscoveryOutput *out) {
+void init_output(PgsRoutesDiscoveryOutput *out) {
   std::memset(out, 0, sizeof(*out));
   out->version = PGS_RD_OUTPUT_VERSION;
-  out->size = sizeof(PgrRoutesDiscoveryOutput);
+  out->size = sizeof(PgsRoutesDiscoveryOutput);
 }
-void init_points(PgrRoutesDiscoveryPoints *out) {
+void init_points(PgsRoutesDiscoveryPoints *out) {
   std::memset(out, 0, sizeof(*out));
   out->version = PGS_RD_POINTS_VERSION;
-  out->size = sizeof(PgrRoutesDiscoveryPoints);
+  out->size = sizeof(PgsRoutesDiscoveryPoints);
 }
 
 // --- config validation / install ---------------------------------------------------
-bool validate_config(const PgrRoutesDiscoveryConfig *c, int *rc) {
+bool validate_config(const PgsRoutesDiscoveryConfig *c, int *rc) {
   if (c == nullptr) { *rc = PGS_RD_ERR_NULL_ARG; return false; }
   if (c->version != PGS_RD_CONFIG_VERSION) { *rc = PGS_RD_ERR_BAD_VERSION; return false; }
-  if (c->size != sizeof(PgrRoutesDiscoveryConfig)) { *rc = PGS_RD_ERR_BAD_SIZE; return false; }
+  if (c->size != sizeof(PgsRoutesDiscoveryConfig)) { *rc = PGS_RD_ERR_BAD_SIZE; return false; }
   void *const *ptrs = reinterpret_cast<void *const *>(
-      reinterpret_cast<const unsigned char *>(c) + offsetof(PgrRoutesDiscoveryConfig, runtime_invoke));
+      reinterpret_cast<const unsigned char *>(c) + offsetof(PgsRoutesDiscoveryConfig, runtime_invoke));
   for (int i = 0; i < PGS_RD_PTR_COUNT; ++i)
     if (ptrs[i] == nullptr) { *rc = PGS_RD_ERR_MISSING_PTR; return false; }
   *rc = 0;
   return true;
 }
 
-int api_install(const PgrRoutesDiscoveryConfig *config) {
+int api_install(const PgsRoutesDiscoveryConfig *config) {
   int rc = 0;
   if (!validate_config(config, &rc)) return rc;
   uint64_t probe = 0;
@@ -429,13 +429,13 @@ bool enter_owner(uint64_t tid, uint64_t residual_ms, uint64_t generation, bool n
   return true;
 }
 
-int api_discover(const PgrRoutesDiscoveryRequest *req, PgrRoutesDiscoveryOutput *out) {
+int api_discover(const PgsRoutesDiscoveryRequest *req, PgsRoutesDiscoveryOutput *out) {
   if (!out) return PGS_RD_ERR_NULL_ARG;
   init_output(out);
   if (!req) { out->status = PGS_RD_ERR_NULL_ARG; return out->status; }
   if (req->version != PGS_RD_REQUEST_VERSION) { out->status = PGS_RD_ERR_BAD_VERSION; return out->status; }
   if (req->size != sizeof(*req)) { out->status = PGS_RD_ERR_BAD_SIZE; return out->status; }
-  const PgrRoutesDiscoveryRequest r = *req;
+  const PgsRoutesDiscoveryRequest r = *req;
 
   uint64_t deadline = 0;
   int rc = 0;
@@ -490,9 +490,9 @@ int api_discover(const PgrRoutesDiscoveryRequest *req, PgrRoutesDiscoveryOutput 
       case CALL_GCHANDLE: status = PGS_RD_ERR_GCHANDLE; goto done;
       case CALL_DEAD:     status = PGS_RD_ERR_GCHANDLE; goto done;
     }
-    if (total > PGR_RD_MAX_ROUTES) total = PGR_RD_MAX_ROUTES;  // clamp, matching JS readDiscovery
+    if (total > PGS_RD_MAX_ROUTES) total = PGS_RD_MAX_ROUTES;  // clamp, matching JS readDiscovery
 
-    for (int32_t i = 0; i < total && staging->count < PGR_RD_MAX_ROUTES; ++i) {
+    for (int32_t i = 0; i < total && staging->count < PGS_RD_MAX_ROUTES; ++i) {
       if (!within_window(deadline, generation, &status)) goto done;
       Root item;
       int32_t idx = i;
@@ -530,7 +530,7 @@ publish:
   out->count = g_cache.count;
   for (uint32_t i = 0; i < g_cache.count; ++i) {
     const CacheEntry &e = g_cache.entries[i];
-    PgrRoutesDiscoveryRoute &h = out->routes[i];
+    PgsRoutesDiscoveryRoute &h = out->routes[i];
     h.flags = e.flags;
     h.id_length = e.id_length;
     h.name_length = e.name_length;
@@ -554,13 +554,13 @@ done:
   return status;
 }
 
-int api_points(const PgrRoutesDiscoveryRequest *req, uint32_t index, PgrRoutesDiscoveryPoints *out) {
+int api_points(const PgsRoutesDiscoveryRequest *req, uint32_t index, PgsRoutesDiscoveryPoints *out) {
   if (!out) return PGS_RD_ERR_NULL_ARG;
   init_points(out);
   if (!req) { out->status = PGS_RD_ERR_NULL_ARG; return out->status; }
   if (req->version != PGS_RD_REQUEST_VERSION) { out->status = PGS_RD_ERR_BAD_VERSION; return out->status; }
   if (req->size != sizeof(*req)) { out->status = PGS_RD_ERR_BAD_SIZE; return out->status; }
-  const PgrRoutesDiscoveryRequest r = *req;
+  const PgsRoutesDiscoveryRequest r = *req;
   const uint32_t idx = index ? index : r.index;  // header: index arg takes precedence, else request.index
 
   uint64_t deadline = 0;
@@ -578,20 +578,20 @@ int api_points(const PgrRoutesDiscoveryRequest *req, uint32_t index, PgrRoutesDi
   if (idx >= g_cache.count) { out->status = PGS_RD_ERR_BAD_INDEX; return out->status; }
   const CacheEntry &e = g_cache.entries[idx];
   out->count = e.point_count;
-  if (e.point_count) std::memcpy(out->points, e.points, static_cast<size_t>(e.point_count) * sizeof(PgrRoutesDiscoveryPoint));
+  if (e.point_count) std::memcpy(out->points, e.points, static_cast<size_t>(e.point_count) * sizeof(PgsRoutesDiscoveryPoint));
   if (!within_window(deadline, r.generation, &rc)) { init_points(out); out->status = rc; return rc; }
   out->status = PGS_RD_OK;
   return PGS_RD_OK;
 }
 
-int api_lookup(const PgrRoutesDiscoveryLookup *lk, uint64_t *out_handle) {
+int api_lookup(const PgsRoutesDiscoveryLookup *lk, uint64_t *out_handle) {
   if (out_handle) *out_handle = 0;
   if (!out_handle) return PGS_RD_ERR_NULL_ARG;
   if (!lk) return PGS_RD_ERR_NULL_ARG;
   if (lk->version != PGS_RD_LOOKUP_VERSION) return PGS_RD_ERR_BAD_VERSION;
   if (lk->size != sizeof(*lk)) return PGS_RD_ERR_BAD_SIZE;
   if (lk->id_length < 1 || lk->id_length > PGS_RD_ID_MAX || lk->reserved != 0) return PGS_RD_SKIP;
-  const PgrRoutesDiscoveryLookup l = *lk;
+  const PgsRoutesDiscoveryLookup l = *lk;
 
   uint64_t deadline = 0;
   int rc = 0;
@@ -622,7 +622,7 @@ int api_lookup(const PgrRoutesDiscoveryLookup *lk, uint64_t *out_handle) {
   return PGS_RD_SKIP;  // id not found
 }
 
-int api_drain(const PgrRoutesDiscoveryRequest *req) {
+int api_drain(const PgsRoutesDiscoveryRequest *req) {
   if (!g_installed.load(std::memory_order_acquire)) return PGS_RD_ERR_NOT_INSTALLED;
   if (!req) return PGS_RD_ERR_NULL_ARG;
   if (req->version != PGS_RD_REQUEST_VERSION) return PGS_RD_ERR_BAD_VERSION;
@@ -637,8 +637,8 @@ int api_drain(const PgrRoutesDiscoveryRequest *req) {
   return PGS_RD_OK;
 }
 
-const PgrRoutesDiscoveryApi kApiTable = {
-    PGS_RD_API_VERSION, static_cast<uint32_t>(sizeof(PgrRoutesDiscoveryApi)),
+const PgsRoutesDiscoveryApi kApiTable = {
+    PGS_RD_API_VERSION, static_cast<uint32_t>(sizeof(PgsRoutesDiscoveryApi)),
     &api_install, &api_generation, &api_revoke, &api_discover, &api_points, &api_lookup, &api_drain,
 };
 

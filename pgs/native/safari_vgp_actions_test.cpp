@@ -5,7 +5,7 @@
 #undef main
 #include "vgp_actions.cpp"
 int main(){
- auto *api=static_cast<const PgrVgpActionsApi*>(pgs_vgp_actions_api(1));g_api=api;
+ auto *api=static_cast<const PgsVgpActionsApi*>(pgs_vgp_actions_api(1));g_api=api;
  auto cfg=make_config();assert(api->install(&cfg)==0);
  uint64_t tid=this_tid();g_owner=tid;FakeWild wild{&cls_wild};uintptr_t h=0;
  assert(api->update(PGS_VA_MASK_CATCH,2000,1,tid)==0);

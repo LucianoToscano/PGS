@@ -157,8 +157,8 @@ void *fake_invoke(void *method, void *obj, void **args, void **exc) {
   return nullptr;
 }
 
-PgrVgpDiscoveryConfig make_config() {
-  PgrVgpDiscoveryConfig c{};
+PgsVgpDiscoveryConfig make_config() {
+  PgsVgpDiscoveryConfig c{};
   c.version = PGS_VD_CONFIG_VERSION;
   c.size = sizeof(c);
   c.gchandle_new = reinterpret_cast<void *>(&fake_gc_new);
@@ -232,7 +232,7 @@ void relocate(void *from, void *to) {
   for (auto &e : g_handles) if (e.second == from) e.second = to;
 }
 
-const PgrVgpDiscoveryApi *g_api = nullptr;
+const PgsVgpDiscoveryApi *g_api = nullptr;
 
 }  // namespace
 
@@ -245,39 +245,39 @@ int main(int argc, char **argv) {
   const auto *core = static_cast<const pgs_native_api_v2 *>(getter(2));
   assert(core && core->size == 48);
   assert(core->query_feature(31, 99) == nullptr);
-  const auto *api = static_cast<const PgrVgpDiscoveryApi *>(core->query_feature(31, 1));
-  assert(api && api->version == 1 && api->size == sizeof(PgrVgpDiscoveryApi));
+  const auto *api = static_cast<const PgsVgpDiscoveryApi *>(core->query_feature(31, 1));
+  assert(api && api->version == 1 && api->size == sizeof(PgsVgpDiscoveryApi));
   g_api = api;
 
   // 0. ABI layout: fixed config/output/table sizes and field offsets.
   std::printf("ABI sizes: config=%zu snapshot=%zu enumeration=%zu table=%zu\n",
-              sizeof(PgrVgpDiscoveryConfig), sizeof(PgrVgpDiscoverySnapshot),
-              sizeof(PgrVgpDiscoveryEnumeration), sizeof(PgrVgpDiscoveryApi));
-  assert(sizeof(PgrVgpDiscoveryConfig) == 272 && PGS_VD_CONFIG_VERSION==2 && sizeof(PgrVgpDiscoverySnapshot) == 48 &&
-         sizeof(PgrVgpDiscoveryEnumeration) == 24 && sizeof(PgrVgpDiscoveryApi) == 40);
-  assert(offsetof(PgrVgpDiscoveryConfig,class_is_assignable_from)==264);
-  assert(offsetof(PgrVgpDiscoverySnapshot, pokemon_bag_handle) == 32 &&
-         offsetof(PgrVgpDiscoverySnapshot, item_bag_handle) == 40);
-  assert(offsetof(PgrVgpDiscoveryEnumeration, array_handle) == 16);
+              sizeof(PgsVgpDiscoveryConfig), sizeof(PgsVgpDiscoverySnapshot),
+              sizeof(PgsVgpDiscoveryEnumeration), sizeof(PgsVgpDiscoveryApi));
+  assert(sizeof(PgsVgpDiscoveryConfig) == 272 && PGS_VD_CONFIG_VERSION==2 && sizeof(PgsVgpDiscoverySnapshot) == 48 &&
+         sizeof(PgsVgpDiscoveryEnumeration) == 24 && sizeof(PgsVgpDiscoveryApi) == 40);
+  assert(offsetof(PgsVgpDiscoveryConfig,class_is_assignable_from)==264);
+  assert(offsetof(PgsVgpDiscoverySnapshot, pokemon_bag_handle) == 32 &&
+         offsetof(PgsVgpDiscoverySnapshot, item_bag_handle) == 40);
+  assert(offsetof(PgsVgpDiscoveryEnumeration, array_handle) == 16);
 
   const uint64_t tid = this_tid();
-  PgrVgpDiscoveryConfig cfg = make_config();
-  PgrVgpDiscoverySnapshot snap{};
-  PgrVgpDiscoveryEnumeration en{};
+  PgsVgpDiscoveryConfig cfg = make_config();
+  PgsVgpDiscoverySnapshot snap{};
+  PgsVgpDiscoveryEnumeration en{};
   uintptr_t handle = 0;
 
   // 1. install validation + not-installed + idempotence + reconfig.
   assert(api->install(nullptr) == PGS_VD_ERR_NULL_ARG);
-  { PgrVgpDiscoveryConfig b = cfg; b.version = 1; assert(api->install(&b) == PGS_VD_ERR_BAD_VERSION); }
-  { PgrVgpDiscoveryConfig b = cfg; b.size = sizeof(cfg) - 1; assert(api->install(&b) == PGS_VD_ERR_BAD_SIZE); }
-  { PgrVgpDiscoveryConfig b = cfg; b.f_item_bag = nullptr; assert(api->install(&b) == PGS_VD_ERR_MISSING_PTR); }
-  { PgrVgpDiscoveryConfig b = cfg; b.gchandle_new = nullptr; assert(api->install(&b) == PGS_VD_ERR_MISSING_PTR); }
-  { PgrVgpDiscoveryConfig b=cfg;b.class_is_assignable_from=nullptr;assert(api->install(&b)==PGS_VD_ERR_MISSING_PTR); }
+  { PgsVgpDiscoveryConfig b = cfg; b.version = 1; assert(api->install(&b) == PGS_VD_ERR_BAD_VERSION); }
+  { PgsVgpDiscoveryConfig b = cfg; b.size = sizeof(cfg) - 1; assert(api->install(&b) == PGS_VD_ERR_BAD_SIZE); }
+  { PgsVgpDiscoveryConfig b = cfg; b.f_item_bag = nullptr; assert(api->install(&b) == PGS_VD_ERR_MISSING_PTR); }
+  { PgsVgpDiscoveryConfig b = cfg; b.gchandle_new = nullptr; assert(api->install(&b) == PGS_VD_ERR_MISSING_PTR); }
+  { PgsVgpDiscoveryConfig b=cfg;b.class_is_assignable_from=nullptr;assert(api->install(&b)==PGS_VD_ERR_MISSING_PTR); }
   assert(api->snapshot(&g_service, tid, 2000, &snap) == PGS_VD_ERR_NOT_INSTALLED);
   assert(snap.version == 1 && snap.size == sizeof(snap) && snap.pokemon_bag_handle == 0);
   assert(api->install(&cfg) == 0);
   assert(api->install(&cfg) == 0);  // idempotent
-  { PgrVgpDiscoveryConfig b = cfg; b.class_wild = &cls_stop; assert(api->install(&b) == PGS_VD_ERR_RECONFIG); }
+  { PgsVgpDiscoveryConfig b = cfg; b.class_wild = &cls_stop; assert(api->install(&b) == PGS_VD_ERR_RECONFIG); }
 
   // 2. Owner / lease gate: no managed work, output initialised, no handles.
   reset();
@@ -440,7 +440,7 @@ int main(int argc, char **argv) {
   int nested = 99;
   g_oneshot_on = &m_find;
   g_oneshot = [&]() {
-    PgrVgpDiscoveryEnumeration inner{};
+    PgsVgpDiscoveryEnumeration inner{};
     nested = g_api->enumerate(PGS_VD_KIND_CATCH, this_tid(), 2000, &inner);
   };
   assert(api->snapshot(&g_service, tid, 2000, &snap) == PGS_VD_OK && nested == PGS_VD_ERR_BUSY);

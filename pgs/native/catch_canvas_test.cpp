@@ -54,7 +54,7 @@ Gui &cur() { return g_guis[g_cur]; }
 BoolBox g_bool{&boolClass, 1};
 
 // ----- runtime shims ----------------------------------------------------------------
-const PgrCatchCanvasApi *g_api = nullptr;
+const PgsCatchCanvasApi *g_api = nullptr;
 uint64_t g_owner = 0;
 
 bool g_live = true;          // unboxed Boolean op_Implicit returns
@@ -111,7 +111,7 @@ bool g_observer_move=false;
 int observer_filter(void*,void *obj,uint64_t tid){return tid==g_owner&&fake_obj_class(obj)==&detailsClass?1:0;}
 void observer_enter(void*,void *obj,uint64_t tid){
  assert(tid==g_owner&&obj==&cur());++g_observer_calls;
- PgrCatchCanvasSample s{};assert(g_api->sample(&s)==0&&s.owned==1);
+ PgsCatchCanvasSample s{};assert(g_api->sample(&s)==0&&s.owned==1);
  if(g_observer_move){g_observer_move=false;relocate();}
 }
 
@@ -150,8 +150,8 @@ void *fake_runtime_invoke(const void *method, void *obj, void **params, void **e
   return nullptr;
 }
 
-PgrCatchCanvasConfig make_config() {
-  PgrCatchCanvasConfig c{};
+PgsCatchCanvasConfig make_config() {
+  PgsCatchCanvasConfig c{};
   c.version = 1; c.size = sizeof(c);
   c.object_get_class = reinterpret_cast<void *>(&fake_obj_class);
   c.field_get_value = reinterpret_cast<void *>(&fake_field_get);
@@ -180,8 +180,8 @@ void *build_gui(void *klass = &detailsClass, int32_t state = kStateOpen) {
 
 void arm(uint64_t epoch = 7) { assert(g_api->update(1, 2500, epoch, g_owner) == PGS_CANVAS_OK); }
 
-PgrCatchCanvasSample sample() {
-  PgrCatchCanvasSample s{}; assert(g_api->sample(&s) == PGS_CANVAS_OK);
+PgsCatchCanvasSample sample() {
+  PgsCatchCanvasSample s{}; assert(g_api->sample(&s) == PGS_CANVAS_OK);
   assert(s.version == 1 && s.size == sizeof(s)); return s;
 }
 
@@ -196,24 +196,24 @@ int main(int argc, char **argv) {
   const auto *core = static_cast<const pgs_native_api_v2 *>(getter(2));
   assert(core && core->size == sizeof(pgs_native_api_v2));
   assert(core->query_feature(39, 99) == nullptr);
-  const auto *api = static_cast<const PgrCatchCanvasApi *>(core->query_feature(39, 1));
-  assert(api != nullptr && api->version == 1 && api->size == sizeof(PgrCatchCanvasApi));
+  const auto *api = static_cast<const PgsCatchCanvasApi *>(core->query_feature(39, 1));
+  assert(api != nullptr && api->version == 1 && api->size == sizeof(PgsCatchCanvasApi));
   g_api = api;
 
   std::printf("ABI sizes: config=%zu sample=%zu table=%zu\n",
-              sizeof(PgrCatchCanvasConfig), sizeof(PgrCatchCanvasSample), sizeof(PgrCatchCanvasApi));
-  assert(sizeof(PgrCatchCanvasConfig) == 128 && sizeof(PgrCatchCanvasSample) == 40 &&
-         sizeof(PgrCatchCanvasApi) == 72);
-  assert(offsetof(PgrCatchCanvasConfig, state_open) == 120 &&
-         offsetof(PgrCatchCanvasConfig, reserved0) == 124);
+              sizeof(PgsCatchCanvasConfig), sizeof(PgsCatchCanvasSample), sizeof(PgsCatchCanvasApi));
+  assert(sizeof(PgsCatchCanvasConfig) == 128 && sizeof(PgsCatchCanvasSample) == 40 &&
+         sizeof(PgsCatchCanvasApi) == 72);
+  assert(offsetof(PgsCatchCanvasConfig, state_open) == 120 &&
+         offsetof(PgsCatchCanvasConfig, reserved0) == 124);
 
   const uint64_t tid = this_tid();
   g_owner = tid;
-  PgrCatchCanvasConfig cfg = make_config();
+  PgsCatchCanvasConfig cfg = make_config();
 
   // 1. Config validation, not-installed, idempotence, reconfig.
   assert(api->install(nullptr) == PGS_CANVAS_ERR_NULL_ARG);
-  PgrCatchCanvasConfig bad = cfg; bad.version = 2;
+  PgsCatchCanvasConfig bad = cfg; bad.version = 2;
   assert(api->install(&bad) == PGS_CANVAS_ERR_BAD_VERSION);
   bad = cfg; bad.size = sizeof(cfg) - 1; assert(api->install(&bad) == PGS_CANVAS_ERR_BAD_SIZE);
   bad = cfg; bad.m_canvas = nullptr; assert(api->install(&bad) == PGS_CANVAS_ERR_MISSING_PTR);
@@ -234,7 +234,7 @@ int main(int argc, char **argv) {
     uint64_t t = 0;
     assert(api->hide_opening(h, 7, tid, &t) == PGS_CANVAS_HIDDEN && t != 0);
     assert(g_canvas.count == 1 && g_canvas.last_visible == false && g_canvas.last_self == &cur());
-    PgrCatchCanvasSample s = sample();
+    PgsCatchCanvasSample s = sample();
     assert(s.owned == 1 && s.hide_count == 1 && s.fault == 0);
 
     // 3. Masking: a game set-true on this owned root is forced to false, chaining orig once with the

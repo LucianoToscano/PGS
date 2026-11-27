@@ -85,11 +85,11 @@ int first(const Plan &p){
 // full or nothing worth using is left. Only while the game is active, the account ready and the map
 // showing, so never during a battle or an encounter. Eggs and gym or station defenders are skipped.
 namespace {
-using namespace pgr_shared_meta;
+using namespace pgs_shared_meta;
 using namespace pgs_heal;
 struct Failure {const char *where;};
 void require(bool ok,const char *where){if(!ok)throw Failure{where};}
-PgrBootBinding boot{};const PgrSharedMetadataOutput *md=nullptr;
+PgsBootBinding boot{};const PgsSharedMetadataOutput *md=nullptr;
 bool initialized=false,busy=false,faulted=false;uint64_t owner=0;
 uint64_t clock_ms(){timespec t{};clock_gettime(CLOCK_BOOTTIME,&t);return uint64_t(t.tv_sec)*1000+t.tv_nsec/1000000;}
 template<class F>F fn(const void *p){require(p,"missing runtime export");return reinterpret_cast<F>(const_cast<void*>(p));}
@@ -106,9 +106,9 @@ struct Root {
 };
 void *klass(void *o){require(o,"null object");return fn<void*(*)(void*)>(boot.runtime.object_get_class)(o);}
 void *cls(const char *ns,const char *name){
- const auto *api=static_cast<const PgrMetaApi*>(pgs_runtime_metadata_api(1));require(api,"metadata API");
- PgrMetaClassQuery q{};q.version=1;q.size=sizeof(q);q.name_space=ns;q.name=name;q.canonical_match=PGR_MD_MATCH_EXACT;
- PgrMetaClassResult out{};require(api->resolve_class(&q,&out)==0,name);return const_cast<void*>(out.klass);
+ const auto *api=static_cast<const PgsMetaApi*>(pgs_runtime_metadata_api(1));require(api,"metadata API");
+ PgsMetaClassQuery q{};q.version=1;q.size=sizeof(q);q.name_space=ns;q.name=name;q.canonical_match=PGS_MD_MATCH_EXACT;
+ PgsMetaClassResult out{};require(api->resolve_class(&q,&out)==0,name);return const_cast<void*>(out.klass);
 }
 std::string typename_of(void *type){char *p=fn<char*(*)(void*)>(boot.meta.type_get_name)(type);require(p,"type name");std::string s=p;fn<void(*)(void*)>(boot.meta.mem_free)(p);return s;}
 void *method(void *k,const char *name,int count){void *m=fn<void*(*)(void*,const char*,int)>(boot.meta.class_get_method_from_name)(k,name,count);require(m,name);return m;}
@@ -132,15 +132,15 @@ size_t offset_of(void *k,const char *name,const char *type){
 template<class T>T at(void *o,size_t off){T v{};memcpy(&v,static_cast<char*>(o)+off,sizeof(v));return v;}
 bool has_text(void *o,size_t off){void *s=at<void*>(o,off);return s&&at<int32_t>(s,0x10)>0;}  // System.String length
 
-const PgrRuntimeTransportApi *transport(){return static_cast<const PgrRuntimeTransportApi*>(pgs_runtime_transport_api(1));}
+const PgsRuntimeTransportApi *transport(){return static_cast<const PgsRuntimeTransportApi*>(pgs_runtime_transport_api(1));}
 std::string escape(const std::string &s){std::string out;for(unsigned char c:s){if(c=='"'||c=='\\')out+='\\';if(c>=32)out+=char(c);}return out;}
-void event(const std::string &json){auto tr=transport();if(!tr)return;PgrRuntimeTransportString s[]={{"smart-heal",10},{json.c_str(),uint32_t(json.size())}};tr->emit(19,nullptr,0,s,2);}
+void event(const std::string &json){auto tr=transport();if(!tr)return;PgsRuntimeTransportString s[]={{"smart-heal",10},{json.c_str(),uint32_t(json.size())}};tr->emit(19,nullptr,0,s,2);}
 void status(const char *phase,const std::string &message){event(std::string("{\"phase\":\"")+phase+"\",\"message\":\""+escape(message)+"\"}");}
 
 struct Config {bool on=false;int when=0,threshold=50;bool revive=true,full=false;};  // when: 0 after battle, 1 periodic, 2 both
 // "H2|enabled|when|threshold|revive|full"; anything else (or a stale snapshot) means off.
 Config configured(bool &on_map){
- Config c;on_map=false;auto tr=transport();PgrRuntimeTransportSample a{};char s[64]{};uint32_t n=0;
+ Config c;on_map=false;auto tr=transport();PgsRuntimeTransportSample a{};char s[64]{};uint32_t n=0;
  if(!tr||tr->sample(&a)||!a.snapshot_fresh||a.fault||tr->get_string(18,s,sizeof(s)-1,&n)||n>=sizeof(s))return c;
  s[n]=0;int e=0,w=0,t=0,r=0,f=0;
  if(std::sscanf(s,"H2|%d|%d|%d|%d|%d",&e,&w,&t,&r,&f)!=5||(e!=0&&e!=1)||w<0||w>2||(t!=25&&t!=50&&t!=75&&t!=100)||(r!=0&&r!=1)||(f!=0&&f!=1))return c;
@@ -275,8 +275,8 @@ void finish_use(bool ok,const std::string &why){
 // Waits for the game's answer, then for storage to show the new HP before the next item.
 void poll_use(uint64_t now){
  if(!st.use_done){
-  auto vr=static_cast<const PgrVgpResultsApi*>(pgs_vgp_results_api(1));require(vr,"response polling unavailable");
-  PgrVgpResultsResult out{};const int rc=vr->poll(st.promise.get(),PGS_VR_PHASE_ENCOUNTER,owner,&out);
+  auto vr=static_cast<const PgsVgpResultsApi*>(pgs_vgp_results_api(1));require(vr,"response polling unavailable");
+  PgsVgpResultsResult out{};const int rc=vr->poll(st.promise.get(),PGS_VR_PHASE_ENCOUNTER,owner,&out);
   if(out.value_handle)fn<void(*)(uintptr_t)>(boot.runtime.gchandle_free)(uintptr_t(out.value_handle));
   if(rc==PGS_VR_PENDING&&now-st.use_sent<=kResponseMs)return;
   // Answered (or no answer in time): storage decides. A higher HP means the item was used.
@@ -289,9 +289,9 @@ void poll_use(uint64_t now){
  if(now-st.use_done>kConfirmMs)finish_use(false,st.use_rejected?"declined by the game":"HP did not change");
 }
 // One-time runtime binding, shared by the map tick and the gym calls.
-void ensure_init(const PgrSharedMetadataOutput *metadata,uint64_t tid,uint64_t now){
+void ensure_init(const PgsSharedMetadataOutput *metadata,uint64_t tid,uint64_t now){
  if(initialized)return;
- auto api=static_cast<const PgrBootApi*>(pgs_runtime_bootstrap_api(1));boot.version=1;boot.size=sizeof(boot);
+ auto api=static_cast<const PgsBootApi*>(pgs_runtime_bootstrap_api(1));boot.version=1;boot.size=sizeof(boot);
  require(api&&api->snapshot(&boot)==0,"runtime unavailable");md=metadata;require(md,"shared metadata");owner=tid;initialized=true;
  st.next_sweep=now+kFirstSweepMs;status("ready","Smart healing ready");
 }
@@ -317,7 +317,7 @@ void gym_abort_round(){gym.token=0;gym.healing=false;gym.scans=0;}
 void gym_disarm(){gym=Gym{};}
 }  // namespace
 
-void pgs_heal_tick(uint64_t tid,const PgrSharedMetadataOutput *metadata){
+void pgs_heal_tick(uint64_t tid,const PgsSharedMetadataOutput *metadata){
  if(busy||faulted||!tid||tid!=uint64_t(gettid())||(owner&&owner!=tid))return;
  struct Guard{Guard(){busy=true;}~Guard(){busy=false;}}guard;
  bool on_map=false;const Config c=configured(on_map);const uint64_t now=clock_ms();
@@ -345,7 +345,7 @@ void pgs_heal_stop(uint64_t tid){
 int pgs_heal_busy(){return (initialized&&(st.promise.h!=0||!st.queue.empty()))?1:0;}
 
 // Records the pre-first-round HP baseline and arms the off-map gym session. Read only.
-void pgs_heal_gym_baseline(uint64_t tid,const PgrSharedMetadataOutput *metadata){
+void pgs_heal_gym_baseline(uint64_t tid,const PgsSharedMetadataOutput *metadata){
  if(busy||faulted||!tid||tid!=uint64_t(gettid())||(owner&&owner!=tid))return;
  struct Guard{Guard(){busy=true;}~Guard(){busy=false;}}guard;
  bool on_map=false;const Config c=configured(on_map);const uint64_t now=clock_ms();
@@ -363,7 +363,7 @@ void pgs_heal_gym_baseline(uint64_t tid,const PgrSharedMetadataOutput *metadata)
 }
 
 // Advances the off-map gym heal for one confirmed victorious round. See heal.h for the contract.
-int pgs_heal_gym_tick(uint64_t tid,const PgrSharedMetadataOutput *metadata,uint64_t round_token,bool (*still_ready)()){
+int pgs_heal_gym_tick(uint64_t tid,const PgsSharedMetadataOutput *metadata,uint64_t round_token,bool (*still_ready)()){
  if(busy||faulted||!tid||tid!=uint64_t(gettid())||(owner&&owner!=tid)||!round_token||!still_ready)return -1;
  struct Guard{Guard(){busy=true;}~Guard(){busy=false;}}guard;
  bool on_map=false;const Config c=configured(on_map);const uint64_t now=clock_ms();

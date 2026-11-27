@@ -28,22 +28,22 @@
 
 // Weak: isolated fixtures include this file without linking the hook engine,
 // and then simply report no hook detail.
-int pgrazor_hook_diag(PgrHookDiag *) __attribute__((weak));
+int pgrazor_hook_diag(PgsHookDiag *) __attribute__((weak));
 namespace {
 template<class T> const T *as(const void *p){return static_cast<const T*>(p);}
-const auto scheduler=as<PgrUnitySchedulerApi>(pgs_unity_scheduler_api(2));
-const auto shared=as<PgrSharedHostApi>(pgs_shared_host_api(1));
+const auto scheduler=as<PgsUnitySchedulerApi>(pgs_unity_scheduler_api(2));
+const auto shared=as<PgsSharedHostApi>(pgs_shared_host_api(1));
 const auto quick=as<PgsQuickballHostApi>(pgs_quickball_host_api(1));
-const auto routes=as<PgrRoutesHostApi>(pgs_routes_host_api(1));
+const auto routes=as<PgsRoutesHostApi>(pgs_routes_host_api(1));
 const auto inventory=as<PgsInventoryHostApi>(pgs_inventory_host_api(1));
 const auto spin=as<PgsSpinHostApi>(pgs_spin_host_api(1));
 const auto wait_host=as<PgsCatchWaitApi>(pgs_catch_wait_api(1));
 const auto spawn=as<PgsSpawnHostApi>(pgs_spawn_host_api(1));
-const auto camera=as<PgrCameraHostApi>(pgs_camera_host_api(1));
-const auto combat=as<PgrCombatHostApi>(pgs_combat_host_api(1));
-const auto account=as<PgrAccountHostApi>(pgs_account_host_api(1));
-const auto interaction=as<PgrInteractionHostApi>(pgs_interaction_host_api(1));
-const auto encounter=as<PgrEncounterHostApi>(pgs_encounter_host_api(1));
+const auto camera=as<PgsCameraHostApi>(pgs_camera_host_api(1));
+const auto combat=as<PgsCombatHostApi>(pgs_combat_host_api(1));
+const auto account=as<PgsAccountHostApi>(pgs_account_host_api(1));
+const auto interaction=as<PgsInteractionHostApi>(pgs_interaction_host_api(1));
+const auto encounter=as<PgsEncounterHostApi>(pgs_encounter_host_api(1));
 constexpr uint32_t pending_mask=0;
 struct Slot {std::atomic<uint32_t> state{PGS_RTH_WAITING},caps{0},owned{0};std::atomic<int32_t> error{0};std::atomic<bool> configured{false};uint64_t retry=0;uint32_t attempts=0;bool retry_pending=false;};
 Slot slots[12];
@@ -53,7 +53,7 @@ std::atomic_flag setup_busy=ATOMIC_FLAG_INIT,pulse_busy=ATOMIC_FLAG_INIT;
 std::atomic<bool> installed{false},stopping{false};
 std::atomic<int32_t> fault{0};
 std::atomic<uint64_t> owner{0},generation{0},pulses{0};
-PgrBootBinding binding{};
+PgsBootBinding binding{};
 PgsUnitySchedulerConfig scheduler_config{};
 PgsSharedMetaExtraExports spin_extra{};
 PgsSpinHostConfig spin_config{};
@@ -79,19 +79,19 @@ bool attached(){return owner.load()==uint64_t(gettid())&&binding.runtime.thread_
 // reenter48; independent47 reflection and54 snapshot have no managed gameplay calls.
 int verify(const PgsUnitySchedulerConfig *c){
  if(!c||!attached()||c->exclusive_owner!=1||c->expected_owner_tid!=gettid())return 0;
- PgrBootBinding b{};const auto boot=as<PgrBootApi>(pgs_runtime_bootstrap_api(1));
+ PgsBootBinding b{};const auto boot=as<PgsBootApi>(pgs_runtime_bootstrap_api(1));
  if(boot->snapshot(&b)||b.handle!=binding.handle||b.execute_tasks!=binding.execute_tasks||
  c->execute_tasks!=b.execute_tasks||c->runtime_invoke!=b.runtime.runtime_invoke||
  c->runtime_invoke_convert_args!=b.runtime.runtime_invoke_convert_args||
  reinterpret_cast<void*>(c->thread_current)!=b.runtime.thread_current)return 0;
- const auto md=as<PgrMetaApi>(pgs_runtime_metadata_api(1));
+ const auto md=as<PgsMetaApi>(pgs_runtime_metadata_api(1));
  const void *addresses[]={c->runtime_invoke,c->runtime_invoke_convert_args,b.runtime.thread_current};
- for(const void *address:addresses){PgrMetaCodeQuery q{1,sizeof(q),address,4,nullptr,0,0};if(md->validate_code(&q))return 0;}
- if(b.execute_tasks_code){PgrMetaCodeQuery q{1,sizeof(q),b.execute_tasks_code,4,nullptr,0,0};if(md->validate_code(&q))return 0;}
- PgrMetaClassQuery cq{1,sizeof(cq),"UnityEngine","UnitySynchronizationContext","UnityEngine.UnitySynchronizationContext",PGR_MD_MATCH_EXACT,0};
- PgrMetaClassResult klass{};if(md->resolve_class(&cq,&klass))return 0;
- PgrMetaMethodQuery mq{};mq.version=1;mq.size=sizeof(mq);mq.owner=klass.klass;mq.name="ExecuteTasks";mq.return_type="System.Void";mq.return_match=PGR_MD_MATCH_EXACT;mq.is_static=1;
- PgrMetaMethodResult method{};return md->validate_method(&mq,&method)==0&&method.method==b.execute_tasks;
+ for(const void *address:addresses){PgsMetaCodeQuery q{1,sizeof(q),address,4,nullptr,0,0};if(md->validate_code(&q))return 0;}
+ if(b.execute_tasks_code){PgsMetaCodeQuery q{1,sizeof(q),b.execute_tasks_code,4,nullptr,0,0};if(md->validate_code(&q))return 0;}
+ PgsMetaClassQuery cq{1,sizeof(cq),"UnityEngine","UnitySynchronizationContext","UnityEngine.UnitySynchronizationContext",PGS_MD_MATCH_EXACT,0};
+ PgsMetaClassResult klass{};if(md->resolve_class(&cq,&klass))return 0;
+ PgsMetaMethodQuery mq{};mq.version=1;mq.size=sizeof(mq);mq.owner=klass.klass;mq.name="ExecuteTasks";mq.return_type="System.Void";mq.return_match=PGS_MD_MATCH_EXACT;mq.is_static=1;
+ PgsMetaMethodResult method{};return md->validate_method(&mq,&method)==0&&method.method==b.execute_tasks;
 }
 void stop_host(unsigned i){if(!slots[i].configured.load(std::memory_order_acquire))return;
  switch(i){case 0:routes->stop(uint64_t(gettid()));break;case 1:shared->stop();break;case 2:quick->stop();break;case 3:encounter->stop(uint64_t(gettid()));break;case 4:camera->stop("manager-stop");break;case 5:inventory->stop();break;case 6:combat->stop(uint64_t(gettid()));break;case 7:spin->stop();break;case 8:account->stop();break;case 9:interaction->stop("manager-stop");break;case 10:wait_host->stop();break;case 11:spawn->stop();break;}
@@ -105,8 +105,8 @@ void report_host(unsigned i){
  char json[320];std::snprintf(json,sizeof(json),"{\"feature\":%u,\"name\":\"%s\",\"state\":%u,\"stateName\":\"%s\",\"previousState\":%u,\"error\":%d,\"capabilities\":%u,\"owned\":%u}",
   i<10?60+i:i==10?58u:71u,names[i],state,state<6?states[state]:"unknown",reported_states[i],error,caps,slots[i].owned.load());
  const char channel[]="native-runtime";
- PgrRuntimeTransportString strings[]={{channel,sizeof(channel)-1},{json,uint32_t(std::strlen(json))}};
- if(as<PgrRuntimeTransportApi>(pgs_runtime_transport_api(1))->emit(19,nullptr,0,strings,2)==0){reported_states[i]=state;reported_errors[i]=error;reported_caps[i]=caps;}
+ PgsRuntimeTransportString strings[]={{channel,sizeof(channel)-1},{json,uint32_t(std::strlen(json))}};
+ if(as<PgsRuntimeTransportApi>(pgs_runtime_transport_api(1))->emit(19,nullptr,0,strings,2)==0){reported_states[i]=state;reported_errors[i]=error;reported_caps[i]=caps;}
 }
 void failed(unsigned i,int error){slots[i].error=error;slots[i].state=PGS_RTH_FAILED;stop_host(i);report_host(i);}
 int configure_host(unsigned i){
@@ -122,11 +122,11 @@ int configure_host(unsigned i){
   update_interaction_sites();
   return interaction->schedule(PGS_IH_SCHEDULE_DELAY_MS);}
  case 6:return combat->configure(nullptr);
- case 8:{int rc=account->configure(nullptr);return rc==PGR_ACH_ERR_BUSY?1:rc;}
+ case 8:{int rc=account->configure(nullptr);return rc==PGS_ACH_ERR_BUSY?1:rc;}
  case 4:{int rc=camera->configure(nullptr);if(rc==PGS_CH_RETRY)return 1;if(rc)return rc<0?rc:-10064;
-  PgrCameraHostOptions options{};options.version=1;options.size=sizeof(options);options.enabled=options.sample_camera=options.continuous=1;
+  PgsCameraHostOptions options{};options.version=1;options.size=sizeof(options);options.enabled=options.sample_camera=options.continuous=1;
   rc=camera->start(&options);return rc==PGS_CH_OK||rc==PGS_CH_RETRY?0:rc<0?rc:-10064;}
- case 0:{PgrRoutesHostConfig c{};c.version=1;c.size=sizeof(c);c.flags=PGS_RH_CFG_PREFER_BOOTSTRAP|PGS_RH_CFG_EMIT_TRANSPORT52|PGS_RH_CFG_POLL_TRANSPORT52|PGS_RH_CFG_SKIP_QUEUE;return routes->configure(&c);}
+ case 0:{PgsRoutesHostConfig c{};c.version=1;c.size=sizeof(c);c.flags=PGS_RH_CFG_PREFER_BOOTSTRAP|PGS_RH_CFG_EMIT_TRANSPORT52|PGS_RH_CFG_POLL_TRANSPORT52|PGS_RH_CFG_SKIP_QUEUE;return routes->configure(&c);}
  case 5:if(!shared->metadata())return 1;return inventory->configure(nullptr);
  case 7:{const auto metadata=shared->metadata();if(!metadata)return 1;
   spin_extra={};spin_extra.field_static_get_value=binding.runtime.field_static_get_value;spin_extra.gchandle_new=binding.runtime.gchandle_new;spin_extra.gchandle_get_target=binding.runtime.gchandle_get_target;spin_extra.gchandle_free=binding.runtime.gchandle_free;
@@ -137,18 +137,18 @@ int configure_host(unsigned i){
 }
 void observe(unsigned i){auto &s=slots[i];uint32_t ready=0,cap=0,owned=0;int error=0;bool terminal=false;
  switch(i){
- case 0:{PgrRoutesHostSample v{};if(routes->sample(&v)){failed(i,-10060);return;}ready=v.meta_ready&&v.tracking_ready;cap=(v.meta_ready?1u:0)|(v.tracking_ready?2u:0)|(v.services_ready?4u:0);error=v.last_error;terminal=error<0&&!v.meta_ready;break;}
+ case 0:{PgsRoutesHostSample v{};if(routes->sample(&v)){failed(i,-10060);return;}ready=v.meta_ready&&v.tracking_ready;cap=(v.meta_ready?1u:0)|(v.tracking_ready?2u:0)|(v.services_ready?4u:0);error=v.last_error;terminal=error<0&&!v.meta_ready;break;}
  case 1:{PgsSharedHostSample v{};if(shared->sample(&v)){failed(i,-10061);return;}ready=v.ready&&!v.stopping;cap=v.capabilities;owned=v.roots;terminal=v.fault;error=v.fault?-10061:0;break;}
  case 2:{PgsQuickballHostSample v{};if(quick->sample(&v)){failed(i,-10062);return;}ready=v.ready;cap=v.capabilities;owned=v.owned;error=v.error?v.error:v.metadata_error;terminal=v.stopping&&v.error;break;}
- case 3:{PgrEncounterHostSample v{};v.version=1;v.size=sizeof(v);if(encounter->sample(&v)){failed(i,-10063);return;}ready=v.installed;cap=v.active_capabilities;error=v.last_error;break;}
+ case 3:{PgsEncounterHostSample v{};v.version=1;v.size=sizeof(v);if(encounter->sample(&v)){failed(i,-10063);return;}ready=v.installed;cap=v.active_capabilities;error=v.last_error;break;}
  case 5:{PgsInventoryHostSample v{};if(inventory->sample(&v)){failed(i,-10065);return;}ready=v.ready;cap=v.capabilities;owned=v.roots;error=int32_t(v.error);terminal=v.stopping&&v.error;break;}
  case 7:{PgsSpinHostSample v{};if(spin->sample(&v)){failed(i,-10067);return;}ready=v.capabilities==3&&!v.stopping&&!v.camera_error&&!v.quick_error;cap=v.capabilities;owned=v.owned;error=v.camera_error?v.camera_error:v.quick_error;terminal=v.stopping&&error;break;}
  case 10:{PgsCatchWaitSample v{};if(wait_host->sample(&v)){failed(i,-10058);return;}ready=v.ready;cap=v.ready;error=v.fault;terminal=v.fault!=0;break;}
  case 11:{PgsSpawnHostSample v{};if(spawn->sample(&v)){failed(i,-10071);return;}ready=v.ready;cap=v.installed;error=v.error;terminal=v.stopping&&v.error;break;}
- case 4:{PgrCameraHostSample v{};v.version=1;v.size=sizeof(v);if(camera->sample(&v)){failed(i,-10064);return;}ready=v.ready&&!v.stopping;cap=v.ready;error=v.last_error;terminal=!v.active&&v.last_error!=0;break;}
- case 6:{PgrCombatHostSample v{};if(combat->sample(&v)){failed(i,-10066);return;}ready=v.ready&&!v.stopping;cap=v.capabilities;owned=v.roots;error=v.last_error;terminal=v.failed;break;}
- case 9:{PgrInteractionHostSample v{};if(interaction->sample(&v)){failed(i,-10069);return;}ready=v.configured;cap=v.installed_target_mask;owned=v.in_flight;error=v.status==PGS_IH_STATUS_FAILED?-10069:0;break;}
- case 8:{PgrAccountHostSample v{};if(account->sample(&v)){failed(i,-10068);return;}ready=v.configured&&v.capabilities&&!v.stopping;cap=v.capabilities;owned=v.active_roots;error=v.accounts_error?v.accounts_error:v.advsync_error;terminal=v.stopping&&error;break;}
+ case 4:{PgsCameraHostSample v{};v.version=1;v.size=sizeof(v);if(camera->sample(&v)){failed(i,-10064);return;}ready=v.ready&&!v.stopping;cap=v.ready;error=v.last_error;terminal=!v.active&&v.last_error!=0;break;}
+ case 6:{PgsCombatHostSample v{};if(combat->sample(&v)){failed(i,-10066);return;}ready=v.ready&&!v.stopping;cap=v.capabilities;owned=v.roots;error=v.last_error;terminal=v.failed;break;}
+ case 9:{PgsInteractionHostSample v{};if(interaction->sample(&v)){failed(i,-10069);return;}ready=v.configured;cap=v.installed_target_mask;owned=v.in_flight;error=v.status==PGS_IH_STATUS_FAILED?-10069:0;break;}
+ case 8:{PgsAccountHostSample v{};if(account->sample(&v)){failed(i,-10068);return;}ready=v.configured&&v.capabilities&&!v.stopping;cap=v.capabilities;owned=v.active_roots;error=v.accounts_error?v.accounts_error:v.advsync_error;terminal=v.stopping&&error;break;}
  }
  s.caps=cap;s.owned=owned;
  if(s.state.load()==PGS_RTH_FAILED)return;
@@ -156,8 +156,8 @@ void observe(unsigned i){auto &s=slots[i];uint32_t ready=0,cap=0,owned=0;int err
  s.state=stopping.load()?PGS_RTH_STOPPED:ready?PGS_RTH_READY:PGS_RTH_CONFIGURED;
 }
 void wait_tick(bool cleanup){
- const auto tr=as<PgrRuntimeTransportApi>(pgs_runtime_transport_api(1));
- if(!cleanup){PgrRuntimeTransportSample before{},after{};int allowed=0;
+ const auto tr=as<PgsRuntimeTransportApi>(pgs_runtime_transport_api(1));
+ if(!cleanup){PgsRuntimeTransportSample before{},after{};int allowed=0;
   const bool fresh=!tr->sample(&before)&&before.snapshot_fresh&&!before.fault&&
    !tr->get_bool(25,&allowed)&&!tr->sample(&after)&&after.snapshot_fresh&&!after.fault&&
    before.snapshot_seq==after.snapshot_seq&&before.generation==after.generation;
@@ -168,7 +168,7 @@ void wait_tick(bool cleanup){
   char json[512];int count=std::snprintf(json,sizeof(json),"{\"kind\":\"%s\",\"tid\":%d,\"state\":7,\"resultStatus\":%d,\"originalSeconds\":%.9g,\"branch\":%s,\"boottimeMs\":%llu%s",
    e.kind==1?"wait-observed":"wait-shortened",e.tid,e.status,double(e.original_seconds),e.branch==1?"true":"false",(unsigned long long)e.boottime_ms,e.kind==1?"}":",");
   if(e.kind==2&&count>0&&size_t(count)<sizeof(json))std::snprintf(json+count,sizeof(json)-size_t(count),"\"newSeconds\":%.9g}",double(e.new_seconds));
-  const char channel[]="quick-catch-wait";PgrRuntimeTransportString strings[]={{channel,sizeof(channel)-1},{json,uint32_t(std::strlen(json))}};
+  const char channel[]="quick-catch-wait";PgsRuntimeTransportString strings[]={{channel,sizeof(channel)-1},{json,uint32_t(std::strlen(json))}};
   if(tr->emit(19,nullptr,0,strings,2)){failed(10,-10058);return;}
  }
 }
@@ -179,14 +179,14 @@ void collector_status_key(const PgsEventCollectorState &s,bool stopped,char *jso
     (unsigned long long)s.attempted,(unsigned long long)s.completed,(unsigned long long)s.failed,
     (unsigned long long)s.skipped_encounters,(unsigned long long)s.candy,(unsigned long long)s.rare_candy);
 }
-void pulse(void*,const PgrUnityPulse *p){
+void pulse(void*,const PgsUnityPulse *p){
  if(!p||p->reserved||p->tid!=gettid()||!attached()||p->generation!=generation.load()||scheduler->valid(p->generation)!=1)return;
  if(pulse_busy.test_and_set(std::memory_order_acquire))return;
  struct Clear{~Clear(){pulse_busy.clear(std::memory_order_release);}} clear;
  ++pulses;const uint64_t time=clock_ms();if(!time){fault=-8;stopping=true;}
  {
-  const auto tr=as<PgrRuntimeTransportApi>(pgs_runtime_transport_api(1));
-  PgrRuntimeTransportSample before{},after{};int enabled=0,has_lat=0,has_lng=0;
+  const auto tr=as<PgsRuntimeTransportApi>(pgs_runtime_transport_api(1));
+  PgsRuntimeTransportSample before{},after{};int enabled=0,has_lat=0,has_lng=0;
   double lat=NAN,lng=NAN;
   const bool fresh=!stopping.load()&&!tr->sample(&before)&&before.snapshot_fresh&&!before.fault&&
    !tr->get_bool(39,&enabled)&&!tr->get_double(0,&lat,&has_lat)&&!tr->get_double(1,&lng,&has_lng)&&has_lat&&has_lng&&
@@ -206,7 +206,7 @@ void pulse(void*,const PgrUnityPulse *p){
     (unsigned long long)s.update_calls,(unsigned long long)s.owner_updates,(unsigned long long)s.scan_calls,s.session_active,s.pump_reason,s.list_count,s.matched_box_count,s.visible_count,s.expired_count,s.zero_expiry_count,s.nearest_meters,s.pending_encounters,s.stale_encounters);
    // Java only needs availability changes; unchanged idle snapshots are resent every 30 s, not every 2 s.
    if(std::strcmp(status_key,sent)||time-sent_at>=30000){
-    const char channel[]="event-boxes";PgrRuntimeTransportString strings[]={{channel,sizeof(channel)-1},{json,uint32_t(std::strlen(json))}};
+    const char channel[]="event-boxes";PgsRuntimeTransportString strings[]={{channel,sizeof(channel)-1},{json,uint32_t(std::strlen(json))}};
     if(tr->emit(19,nullptr,0,strings,2)==0){std::snprintf(sent,sizeof(sent),"%s",status_key);sent_at=time;}
    }
   }
@@ -218,14 +218,14 @@ void pulse(void*,const PgrUnityPulse *p){
    s.retry=time+(i==10?1000:2000);++s.attempts;const int rc=configure_host(i);if(rc<0){failed(i,rc);continue;}
    s.retry_pending=rc>0;
    if(rc>0){
-    bool partial=false;if(i==8){PgrAccountHostSample v{};partial=!account->sample(&v)&&v.configured&&v.capabilities;}
+    bool partial=false;if(i==8){PgsAccountHostSample v{};partial=!account->sample(&v)&&v.configured&&v.capabilities;}
     if(!partial){if(i==10&&s.attempts>=20)failed(i,-10058);continue;}
    }
    s.configured.store(true,std::memory_order_release);s.state=PGS_RTH_CONFIGURED;
    if(i==10){PgsCatchWaitSample v{};if(wait_host->sample(&v)){failed(i,-10058);continue;}
     char json[192];std::snprintf(json,sizeof(json),"{\"kind\":\"metadata-ready\",\"backend\":\"native\",\"allowed\":false,\"leaseMs\":2500,\"state\":7,\"successValue\":%d}",v.success_value);
-    const char channel[]="quick-catch-wait";PgrRuntimeTransportString strings[]={{channel,sizeof(channel)-1},{json,uint32_t(std::strlen(json))}};
-    if(as<PgrRuntimeTransportApi>(pgs_runtime_transport_api(1))->emit(19,nullptr,0,strings,2)){failed(i,-10058);continue;}
+    const char channel[]="quick-catch-wait";PgsRuntimeTransportString strings[]={{channel,sizeof(channel)-1},{json,uint32_t(std::strlen(json))}};
+    if(as<PgsRuntimeTransportApi>(pgs_runtime_transport_api(1))->emit(19,nullptr,0,strings,2)){failed(i,-10058);continue;}
    }
   }
   if(!s.configured.load(std::memory_order_acquire))continue;
@@ -250,7 +250,7 @@ void pulse(void*,const PgrUnityPulse *p){
 // characters and returns how many, or 0 when there is nothing to add or it does
 // not fit. The caller closes the JSON object at the returned offset.
 int append_hook_diag(char *out,size_t cap,bool failure){
- PgrHookDiag h{};
+ PgsHookDiag h{};
  if(!pgrazor_hook_diag||pgrazor_hook_diag(&h)!=0||h.version!=1||h.size!=sizeof(h))return 0;
  int m=0;
  if(failure){
@@ -270,15 +270,15 @@ int append_hook_diag(char *out,size_t cap,bool failure){
 // island search are those of the first failure, hookFailures is the running total.
 void report_hook_failures(){
  static uint32_t reported=0;
- PgrHookDiag h{};
+ PgsHookDiag h{};
  if(!pgrazor_hook_diag||pgrazor_hook_diag(&h)!=0||h.version!=1||h.size!=sizeof(h)||h.failures<=reported)return;
  char json[420];size_t t=size_t(std::snprintf(json,sizeof(json),"{\"kind\":\"hook-failure\""));
  t+=size_t(append_hook_diag(json+t,sizeof(json)-t-1,true));
  if(t+2>sizeof(json))return;
  json[t++]='}';json[t]=0;
  const char channel[]="native-hook";
- PgrRuntimeTransportString strings[]={{channel,sizeof(channel)-1},{json,uint32_t(t)}};
- if(as<PgrRuntimeTransportApi>(pgs_runtime_transport_api(1))->emit(19,nullptr,0,strings,2)==0)reported=h.failures;
+ PgsRuntimeTransportString strings[]={{channel,sizeof(channel)-1},{json,uint32_t(t)}};
+ if(as<PgsRuntimeTransportApi>(pgs_runtime_transport_api(1))->emit(19,nullptr,0,strings,2)==0)reported=h.failures;
 }
 void emit_startup_locked(const char *stage,const char *reason,int32_t status,int32_t detail,bool identity){
  const uint64_t now=clock_ms();
@@ -311,8 +311,8 @@ void emit_startup_locked(const char *stage,const char *reason,int32_t status,int
   json[t]='}';json[t+1]=0;
  }
  const char channel[]="native-runtime-start";
- PgrRuntimeTransportString strings[]={{channel,sizeof(channel)-1},{json,uint32_t(std::strlen(json))}};
- as<PgrRuntimeTransportApi>(pgs_runtime_transport_api(1))->emit(19,nullptr,0,strings,2);
+ PgsRuntimeTransportString strings[]={{channel,sizeof(channel)-1},{json,uint32_t(std::strlen(json))}};
+ as<PgsRuntimeTransportApi>(pgs_runtime_transport_api(1))->emit(19,nullptr,0,strings,2);
 }
 void emit_startup(const char *stage,const char *reason,int32_t status,int32_t detail,bool identity){
  std::lock_guard<std::mutex> l(startup_mutex);emit_startup_locked(stage,reason,status,detail,identity);
@@ -335,11 +335,11 @@ int configure(const PgsRuntimeHostConfig *c){
  if(setup_busy.test_and_set(std::memory_order_acquire))return 1;
  struct Clear{~Clear(){setup_busy.clear(std::memory_order_release);}} clear;
  if(installed.load())return attached()?0:-2;
- PgrBootBinding b{};const auto boot=as<PgrBootApi>(pgs_runtime_bootstrap_api(1));const int status=boot->snapshot(&b);
+ PgsBootBinding b{};const auto boot=as<PgsBootApi>(pgs_runtime_bootstrap_api(1));const int status=boot->snapshot(&b);
  if(status){if(status<0)emit_startup("bootstrap",pgs_rtd_boot_reason(status),status,b.detail,false);else emit_startup("bootstrap","not-ready",1,0,false);return status>0?1:status;}
  if(!b.runtime.thread_current||!reinterpret_cast<void*(*)()>(b.runtime.thread_current)()){emit_startup("attach","not-attached",-2,0,false);return -2;}
- PgrRuntimeTransportSample transport{};
- if(as<PgrRuntimeTransportApi>(pgs_runtime_transport_api(1))->sample(&transport)!=0){emit_startup("transport","unavailable",1,0,false);return 1;}
+ PgsRuntimeTransportSample transport{};
+ if(as<PgsRuntimeTransportApi>(pgs_runtime_transport_api(1))->sample(&transport)!=0){emit_startup("transport","unavailable",1,0,false);return 1;}
  if(transport.fault){emit_startup("transport","faulted",-6,0,false);return -6;}
  if(!transport.snapshot_fresh){emit_startup("transport","stale",1,0,false);return 1;}
  binding=b;owner=uint64_t(gettid());scheduler_config={};scheduler_config.version=2;scheduler_config.size=sizeof(scheduler_config);

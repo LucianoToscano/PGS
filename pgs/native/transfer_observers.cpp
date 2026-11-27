@@ -20,7 +20,7 @@ PgsTransferObserversConfig cfg{};
 std::atomic<Callback> originals[2];
 std::atomic<bool> ready{false};
 bool failed=false;
-const PgrTransferExecApi *execution=nullptr;
+const PgsTransferExecApi *execution=nullptr;
 Callback original(unsigned which){
  auto fn=originals[which].load(std::memory_order_acquire);
  if(!fn){std::lock_guard<std::mutex> guard(lock);fn=originals[which].load(std::memory_order_acquire);}
@@ -59,8 +59,8 @@ int install(const PgsTransferObserversConfig *c){
  std::lock_guard<std::mutex> guard(lock);
  if(failed)return -3;
  if(ready.load())return std::memcmp(c,&cfg,sizeof(cfg))==0?0:-4;
- execution=static_cast<const PgrTransferExecApi *>(pgs_transfer_execution_api(1));
- if(!execution||execution->size!=sizeof(PgrTransferExecApi))return -5;
+ execution=static_cast<const PgsTransferExecApi *>(pgs_transfer_execution_api(1));
+ if(!execution||execution->size!=sizeof(PgsTransferExecApi))return -5;
  cfg=*c;
  void *addresses[]={c->result_address,c->error_address};
  Callback replacements[]={result,error};

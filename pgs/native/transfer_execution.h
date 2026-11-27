@@ -78,9 +78,9 @@ enum PgsTransferExecEventKind {
 // Fixed LP64 config (144 bytes): 8-byte header + 16 validated il2cpp pointers + 2 int32. Every pointer
 // is an already-validated export / MethodInfo* / Il2CppClass* / FieldInfo* packed by the host straight
 // off p.transfer; the native layer re-checks the header and rejects any null. No hook address.
-struct PgrTransferExecConfig {
+struct PgsTransferExecConfig {
   uint32_t version;  // == PGS_TX_CONFIG_VERSION
-  uint32_t size;     // == sizeof(PgrTransferExecConfig)
+  uint32_t size;     // == sizeof(PgsTransferExecConfig)
 
   // il2cpp runtime exports.
   void *gchandle_new;         // uintptr_t (void* obj, int pinned)
@@ -111,15 +111,15 @@ struct PgrTransferExecConfig {
   int32_t reserved;         // 0
 };
 
-static_assert(sizeof(PgrTransferExecConfig) == 144,
-              "PgrTransferExecConfig must remain 144 bytes on LP64");
+static_assert(sizeof(PgsTransferExecConfig) == 144,
+              "PgsTransferExecConfig must remain 144 bytes on LP64");
 
 // Fixed LP64 submit request (104 bytes). The caller has ALREADY classified the pokemon and validated
 // its encounter/source in JS immediately before this call; native then protects the window with the
 // epoch/lease generation. bag/pokemon are raw managed pointers rooted by native on entry.
-struct PgrTransferExecRequest {
+struct PgsTransferExecRequest {
   uint32_t version;         // == PGS_TX_REQUEST_VERSION
-  uint32_t size;            // == sizeof(PgrTransferExecRequest)
+  uint32_t size;            // == sizeof(PgsTransferExecRequest)
   uint64_t captured_id;     // proven caught id (must be nonzero and match the pokemon/current id)
   uint64_t epoch;           // caller's current epoch; must equal the armed epoch at the final gate
   uint64_t tid;             // proven owner tid (must equal the current OS tid)
@@ -128,13 +128,13 @@ struct PgrTransferExecRequest {
   PgsTransferInput input;   // the feature-4 classification, re-decided by submit()
 };
 
-static_assert(sizeof(PgrTransferExecRequest) == 104,
-              "PgrTransferExecRequest must remain 104 bytes on LP64");
+static_assert(sizeof(PgsTransferExecRequest) == 104,
+              "PgsTransferExecRequest must remain 104 bytes on LP64");
 
 // Fixed LP64 telemetry gauge (88 bytes). Pull-only; the native layer never calls JS.
-struct PgrTransferExecSample {
+struct PgsTransferExecSample {
   uint32_t version;         // == PGS_TX_SAMPLE_VERSION
-  uint32_t size;            // == sizeof(PgrTransferExecSample)
+  uint32_t size;            // == sizeof(PgsTransferExecSample)
   uint64_t request_serial;  // bumps on each issued release
   uint64_t complete_serial; // bumps on each completed callback (success or error)
   uint64_t timeout_serial;  // bumps on each one-shot 10 s timeout
@@ -151,12 +151,12 @@ struct PgrTransferExecSample {
   uint32_t reserved;        // 0
 };
 
-static_assert(sizeof(PgrTransferExecSample) == 88,
-              "PgrTransferExecSample must remain 88 bytes on LP64");
+static_assert(sizeof(PgsTransferExecSample) == 88,
+              "PgsTransferExecSample must remain 88 bytes on LP64");
 
 // Fixed LP64 drain record (24 bytes). token is the monotonic safe-JS request token; id/aux are
 // codes/ints only, never an id string.
-struct PgrTransferExecEvent {
+struct PgsTransferExecEvent {
   uint32_t kind;      // PgsTransferExecEventKind
   int32_t  id;        // reserved reason code (0 in v1)
   uint64_t token;     // the request token this record belongs to
@@ -164,14 +164,14 @@ struct PgrTransferExecEvent {
   uint32_t reserved;  // 0
 };
 
-static_assert(sizeof(PgrTransferExecEvent) == 24,
-              "PgrTransferExecEvent must remain 24 bytes on LP64");
+static_assert(sizeof(PgsTransferExecEvent) == 24,
+              "PgsTransferExecEvent must remain 24 bytes on LP64");
 
 // Fixed LP64 table: 8-byte header + 8 function pointers = 72 bytes.
-struct PgrTransferExecApi {
+struct PgsTransferExecApi {
   uint32_t version;  // == PGS_TX_API_VERSION
-  uint32_t size;     // == sizeof(PgrTransferExecApi)
-  int (*install)(const PgrTransferExecConfig *config);
+  uint32_t size;     // == sizeof(PgsTransferExecApi)
+  int (*install)(const PgsTransferExecConfig *config);
   // Refresh the policy gate: enabled, a residual lease clamped to 2500 ms, and the caller's current
   // epoch (bumped by the caller whenever keep settings change). Carries proven_tid; once the owner is
   // latched a foreign thread can only revoke (enabled is forced to 0). Any thread.
@@ -179,7 +179,7 @@ struct PgrTransferExecApi {
   // One owner-thread release lifecycle. Returns PGS_TX_ISSUED (1, *out_token set), PGS_TX_OK (0,
   // refused: policy/duplicate/gate/thread), or a negative error. *out_token is written once issued,
   // including when ReleasePokemon throws or returns a null promise (uncertain, retained, no retry).
-  int (*submit)(const PgrTransferExecRequest *request, uint64_t *out_token);
+  int (*submit)(const PgsTransferExecRequest *request, uint64_t *out_token);
   // Latch a release result/error callback match (onEnter). Returns a nonzero one-shot ticket when the
   // callback's class, rooted bag identity and rooted pokemon identity+id match an issued transaction,
   // else 0. is_error != 0 forces failure (the error observer); otherwise success requires an exact
@@ -193,13 +193,13 @@ struct PgrTransferExecApi {
   // every tracked transaction at the outermost owner frame; the seen quarantine persists. No-op off
   // the owner thread (never frees).
   int (*tick)(uint64_t proven_tid, int stopping);
-  int (*sample)(PgrTransferExecSample *out_sample);
+  int (*sample)(PgsTransferExecSample *out_sample);
   // Pop one FIFO record (returns 1), report empty (0), or a negative status. Any thread.
-  int (*next_event)(PgrTransferExecEvent *out);
+  int (*next_event)(PgsTransferExecEvent *out);
 };
 
-static_assert(sizeof(PgrTransferExecApi) == 72,
-              "PgrTransferExecApi must remain a 72-byte version-1 table");
+static_assert(sizeof(PgsTransferExecApi) == 72,
+              "PgsTransferExecApi must remain a 72-byte version-1 table");
 
 // Hidden getter. NOT exported by the version script; the coordinator registers it in query_feature
 // under feature id 23 and answers only on an exact version match.

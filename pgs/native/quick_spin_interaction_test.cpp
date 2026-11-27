@@ -18,7 +18,7 @@ const pgs_interaction_owner::Api observer{2,40,wants,enter,leave,abort_call};
 }
 extern "C" const void *pgs_interaction_host_api(uint32_t v){return v==2?&observer:nullptr;}
 int main(){
-    auto api=static_cast<const PgrQuickSpinApi*>(pgs_quick_spin_api(1));auto cfg=make_config();assert(api->install(&cfg)==0);
+    auto api=static_cast<const PgsQuickSpinApi*>(pgs_quick_spin_api(1));auto cfg=make_config();assert(api->install(&cfg)==0);
     FakeState original{&g_cls_state,nullptr,nullptr},moved=original;FakeResult result{&g_cls_result,1},result_moved=result;
     from=&original;to=&moved;arg_from=&result;arg_to=&result_moved;
     call_enter(&original,nullptr);assert(entries==0&&g_live.empty()&&g_enter_log.last_self==&original);

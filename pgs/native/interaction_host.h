@@ -46,15 +46,15 @@ enum {
     PGS_IH_ARG_RESULT_CALLBACKS = 3,
 
     /* Pinned Pokeball::btxu RVA and prologue word count */
-    PGS_IH_BTXU_RVA = PGR_GAME_INTERACTION_HOST_H_PGR_IH_BTXU_RVA_RVA,
+    PGS_IH_BTXU_RVA = PGS_GAME_INTERACTION_HOST_H_PGS_IH_BTXU_RVA_RVA,
     PGS_IH_BTXU_PROLOGUE_WORDS = 8,
     PGS_IH_BTXU_PROLOGUE_BYTES = 32,
     PGS_IH_DEBUG_PROLOGUE_WORDS = 20,
     PGS_IH_DEBUG_PROLOGUE_BYTES = 80,
 
     /* Feature 57 transfer observer RVAs (zlc / zld) */
-    PGS_IH_TR_RVA_ZLC = PGR_GAME_INTERACTION_HOST_H_PGR_IH_TR_RVA_ZLC_RVA,
-    PGS_IH_TR_RVA_ZLD = PGR_GAME_INTERACTION_HOST_H_PGR_IH_TR_RVA_ZLD_RVA,
+    PGS_IH_TR_RVA_ZLC = PGS_GAME_INTERACTION_HOST_H_PGS_IH_TR_RVA_ZLC_RVA,
+    PGS_IH_TR_RVA_ZLD = PGS_GAME_INTERACTION_HOST_H_PGS_IH_TR_RVA_ZLD_RVA,
 
     /* Transport 52 reader, pulse, and action indices for Feature 69 */
     PGS_IH_RT_BOOL_DIAGNOSTICS_READY = 15,
@@ -160,8 +160,8 @@ enum {
     PGS_IH_RES_DISABLED = 4,
 };
 
-/* Extra reflection/runtime exports outside Feature 47's 31 PgrMetaExports */
-typedef struct PgrInteractionExtraExports {
+/* Extra reflection/runtime exports outside Feature 47's 31 PgsMetaExports */
+typedef struct PgsInteractionExtraExports {
     void *image_get_name;         /* const char *(*)(const void *image) */
     void *class_get_name;         /* const char *(*)(void *klass) */
     void *class_get_namespace;    /* const char *(*)(void *klass) */
@@ -178,27 +178,27 @@ typedef struct PgrInteractionExtraExports {
     void *gchandle_new;           /* uintptr_t (*)(void *obj, int pinned) */
     void *gchandle_get_target;    /* void *(*)(uintptr_t handle) */
     void *gchandle_free;          /* void (*)(uintptr_t handle) */
-} PgrInteractionExtraExports;
+} PgsInteractionExtraExports;
 
-typedef struct PgrInteractionHostConfig {
-    PgrMetaBindConfig binding;        /* 64B: Feature 47 bind config (exports + module_base/size + seg_query) */
-    PgrInteractionExtraExports extra; /* 128B: Extra reflection + thread + GC handle exports */
+typedef struct PgsInteractionHostConfig {
+    PgsMetaBindConfig binding;        /* 64B: Feature 47 bind config (exports + module_base/size + seg_query) */
+    PgsInteractionExtraExports extra; /* 128B: Extra reflection + thread + GC handle exports */
     const void *debug_code_address;   /* Optional override for debug_get_method_info code check in fixture; null -> binding.exports->debug_get_method_info */
     void *now_ms_fn;                  /* int64_t (*)(void); null -> clock_gettime(CLOCK_MONOTONIC) */
     uint32_t flags;                   /* PGS_IH_CFG_* */
     uint32_t shared_owned_mask;       /* Initial owned_mask for 49/57/61/67 */
     uint32_t shared_integrated_mask;  /* Initial integrated_mask for 49/57/61/67 */
     uint32_t reserved0;
-} PgrInteractionHostConfig;
+} PgsInteractionHostConfig;
 
-typedef struct PgrInteractionHostOptions {
+typedef struct PgsInteractionHostOptions {
     uint8_t observe_runtime; /* 0 = metadata-only, 1 = runtime callback capture */
     uint8_t read_results;    /* 0 = timing-only, 1 = decode CatchPokemonOutProto.Status & FortSearchOutProto.Result */
     uint8_t reserved0[2];
     uint32_t flags;          /* PGS_IH_OPT_* */
-} PgrInteractionHostOptions;
+} PgsInteractionHostOptions;
 
-typedef struct PgrInteractionHostEvent {
+typedef struct PgsInteractionHostEvent {
     uint64_t seq;
     int64_t ts_ms;
     int64_t elapsed_ms;
@@ -216,9 +216,9 @@ typedef struct PgrInteractionHostEvent {
     char result_name[64];     /* enum literal name or reason when applicable */
     char channel[32];         /* "interaction-probe" or "interaction-probe-scheduled" */
     char json[768];           /* serialized JSON payload matching diagnostics/interaction-probe.js */
-} PgrInteractionHostEvent;
+} PgsInteractionHostEvent;
 
-typedef struct PgrInteractionHostSample {
+typedef struct PgsInteractionHostSample {
     uint32_t status;                     /* PGS_IH_STATUS_* */
     uint8_t configured;
     uint8_t running;
@@ -257,32 +257,32 @@ typedef struct PgrInteractionHostSample {
     uint32_t target_hits[PGS_IH_TOTAL_TARGETS];
     char reason[96];
     char last_diagnostic[160];
-} PgrInteractionHostSample;
+} PgsInteractionHostSample;
 
-typedef struct PgrInteractionHostApi {
+typedef struct PgsInteractionHostApi {
     uint32_t version;
     uint32_t feature_id;
-    int (*configure)(const PgrInteractionHostConfig *cfg);
+    int (*configure)(const PgsInteractionHostConfig *cfg);
     int (*schedule)(int64_t delay_ms);
-    int (*start)(const PgrInteractionHostOptions *opts);
+    int (*start)(const PgsInteractionHostOptions *opts);
     int (*stop)(const char *reason);
     int (*tick)(int32_t current_tid);
-    void (*on_unity_pulse)(void *ctx, const PgrUnityPulse *pulse);
+    void (*on_unity_pulse)(void *ctx, const PgsUnityPulse *pulse);
     int (*shared_sites)(uint32_t owned_mask, uint32_t integrated_mask);
     uint64_t (*observe_enter)(uint32_t target_id, void *receiver, void *arg0);
     void (*observe_leave)(uint64_t token, void *retval);
-    int (*take_event)(PgrInteractionHostEvent *out_event);
-    int (*sample)(PgrInteractionHostSample *out_sample);
+    int (*take_event)(PgsInteractionHostEvent *out_event);
+    int (*sample)(PgsInteractionHostSample *out_sample);
     void (*reset_for_tests)(void);
-} PgrInteractionHostApi;
+} PgsInteractionHostApi;
 
 #if defined(__cplusplus) && (defined(__LP64__) || defined(_LP64))
-static_assert(sizeof(PgrInteractionExtraExports) == 128, "PgrInteractionExtraExports size");
-static_assert(sizeof(PgrInteractionHostConfig) == 224, "PgrInteractionHostConfig size");
-static_assert(sizeof(PgrInteractionHostOptions) == 8, "PgrInteractionHostOptions size");
-static_assert(sizeof(PgrInteractionHostEvent) == 928, "PgrInteractionHostEvent size");
-static_assert(sizeof(PgrInteractionHostSample) == 456, "PgrInteractionHostSample size");
-static_assert(sizeof(PgrInteractionHostApi) == 104, "PgrInteractionHostApi size");
+static_assert(sizeof(PgsInteractionExtraExports) == 128, "PgsInteractionExtraExports size");
+static_assert(sizeof(PgsInteractionHostConfig) == 224, "PgsInteractionHostConfig size");
+static_assert(sizeof(PgsInteractionHostOptions) == 8, "PgsInteractionHostOptions size");
+static_assert(sizeof(PgsInteractionHostEvent) == 928, "PgsInteractionHostEvent size");
+static_assert(sizeof(PgsInteractionHostSample) == 456, "PgsInteractionHostSample size");
+static_assert(sizeof(PgsInteractionHostApi) == 104, "PgsInteractionHostApi size");
 #endif
 
 const void *pgs_interaction_host_api(uint32_t version);

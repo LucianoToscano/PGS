@@ -20,11 +20,11 @@
 #include <deque>
 #include <set>
 namespace {
-using namespace pgr_shared_meta;
+using namespace pgs_shared_meta;
 using namespace pgs_evolution;
 struct Failure {const char *where;};
 void require(bool ok,const char *where){if(!ok)throw Failure{where};}
-PgrBootBinding boot{};const PgrSharedMetadataOutput *md=nullptr;
+PgsBootBinding boot{};const PgsSharedMetadataOutput *md=nullptr;
 bool initialized=false,busy=false;uint64_t owner=0;
 const char *managed_context="managed call failed";
 struct CallContext {const char *previous=managed_context;~CallContext(){managed_context=previous;}};
@@ -44,9 +44,9 @@ struct Root {
 void *klass(void *o){require(o,"null object");return fn<void*(*)(void*)>(boot.runtime.object_get_class)(o);}
 void *cls(const char *ns,const char *name){
  static std::map<std::string,void*> cache;std::string key=std::string(ns)+"."+name;auto it=cache.find(key);if(it!=cache.end())return it->second;
- const auto *api=static_cast<const PgrMetaApi*>(pgs_runtime_metadata_api(1));require(api,"metadata API");
- PgrMetaClassQuery q{};q.version=1;q.size=sizeof(q);q.name_space=ns;q.name=name;q.canonical_match=PGR_MD_MATCH_EXACT;
- PgrMetaClassResult out{};require(api->resolve_class(&q,&out)==0,name);return cache[key]=const_cast<void*>(out.klass);
+ const auto *api=static_cast<const PgsMetaApi*>(pgs_runtime_metadata_api(1));require(api,"metadata API");
+ PgsMetaClassQuery q{};q.version=1;q.size=sizeof(q);q.name_space=ns;q.name=name;q.canonical_match=PGS_MD_MATCH_EXACT;
+ PgsMetaClassResult out{};require(api->resolve_class(&q,&out)==0,name);return cache[key]=const_cast<void*>(out.klass);
 }
 std::string typename_of(void *type){char *p=fn<char*(*)(void*)>(boot.meta.type_get_name)(type);require(p,"type name");std::string s=p;fn<void(*)(void*)>(boot.meta.mem_free)(p);for(size_t pos=0;(pos=s.find("`1<",pos))!=std::string::npos;)s.erase(pos,2);return s;}
 void *field_info(void *k,const char *name,const char *type){
@@ -95,8 +95,8 @@ struct Permission {
  uint32_t protect=2047,keep_iv=0;std::set<int> keep;std::string pvp;
 };
 Permission permission(){
- Permission p;auto tr=static_cast<const PgrRuntimeTransportApi*>(pgs_runtime_transport_api(1));if(!tr)return p;
- PgrRuntimeTransportSample a{},z{};char text[10001]{};uint32_t n=0;int allowed=0,keep_all=0;int32_t protect=2047;
+ Permission p;auto tr=static_cast<const PgsRuntimeTransportApi*>(pgs_runtime_transport_api(1));if(!tr)return p;
+ PgsRuntimeTransportSample a{},z{};char text[10001]{};uint32_t n=0;int allowed=0,keep_all=0;int32_t protect=2047;
  if(tr->sample(&a)||!a.snapshot_fresh||a.fault||tr->get_string(22,text,sizeof(text),&n)||!pgs_evolve_transfer::parse(text,n,p.config))return p;
  if(tr->get_bool(5,&allowed)||tr->get_bool(35,&keep_all)||tr->get_int(8,&protect)||protect<0||protect>2047)return p;
  if(tr->get_string(4,text,sizeof(text),&n)||!pgs_evolve_transfer::species_list(text,n,p.keep))return p;
@@ -119,14 +119,14 @@ struct Job : Pending {
 Job job;std::deque<Pending> queue;std::set<std::pair<std::string,uint64_t>> seen;
 void status(const std::string &message){
  __android_log_print(ANDROID_LOG_INFO,"PGSEvolveTransfer","%s",message.c_str());
- auto tr=static_cast<const PgrRuntimeTransportApi*>(pgs_runtime_transport_api(1));
- PgrRuntimeTransportString s{message.c_str(),uint32_t(message.size())};if(tr)tr->emit(56,nullptr,0,&s,1);
+ auto tr=static_cast<const PgsRuntimeTransportApi*>(pgs_runtime_transport_api(1));
+ PgsRuntimeTransportString s{message.c_str(),uint32_t(message.size())};if(tr)tr->emit(56,nullptr,0,&s,1);
 }
 void finish(const char *message){status(message);job=Job{};}
-void initialize(const PgrSharedMetadataOutput *metadata=nullptr){
- if(initialized)return;auto api=static_cast<const PgrBootApi*>(pgs_runtime_bootstrap_api(1));
+void initialize(const PgsSharedMetadataOutput *metadata=nullptr){
+ if(initialized)return;auto api=static_cast<const PgsBootApi*>(pgs_runtime_bootstrap_api(1));
  require(api&&api->snapshot(&boot)==0,"Evolution runtime unavailable");
- if(!metadata){auto host=static_cast<const PgrSharedHostApi*>(pgs_shared_host_api(1));metadata=host&&host->metadata?host->metadata():nullptr;}
+ if(!metadata){auto host=static_cast<const PgsSharedHostApi*>(pgs_shared_host_api(1));metadata=host&&host->metadata?host->metadata():nullptr;}
  require(metadata,"Transfer metadata unavailable");md=metadata;owner=gettid();initialized=true;
 }
 Root pokemon(uint64_t id){void *a[]={&id};return Root(call(job.bag.get(),"GetPokemon",1,a));}
@@ -146,9 +146,9 @@ bool safe_to_release(Root &p){
 }
 bool classify(Root &p,const Permission &settings,PgsTransferInput &input,std::vector<int32_t> &kept){
  if(!authorized(settings)||!safe_to_release(p))return false;
- auto facts=static_cast<const PgrTransferFactsApi*>(pgs_transfer_facts_api(1));
+ auto facts=static_cast<const PgsTransferFactsApi*>(pgs_transfer_facts_api(1));
  auto policy=static_cast<const PgsTransferApi*>(pgs_transfer_policy_api(1));require(facts&&policy,"Transfer protections unavailable");
- PgrTransferFactsRequest req{1,sizeof(req),owner,2500,job.id,p.get(),job.gm.get(),settings.protect,0};PgrTransferFactsOut out{};
+ PgsTransferFactsRequest req{1,sizeof(req),owner,2500,job.id,p.get(),job.gm.get(),settings.protect,0};PgsTransferFactsOut out{};
  if(facts->inspect(&req,&out)!=1)return false;
  kept.assign(settings.keep.begin(),settings.keep.end());
  input={1,sizeof(input),out.attack,out.defense,out.stamina,out.species,settings.protect,out.known,out.flags,uint32_t(job.manual&&settings.keep_all),uint32_t(kept.size()),settings.keep_iv,kept.data()};
@@ -186,7 +186,7 @@ void release(Root &current,const Permission &settings){
  PgsTransferInput input{};std::vector<int32_t> keep;
  if(!classify(current,settings,input,keep)||!identity()||!same_rules(settings,permission())){finish("Kept: transfer protections or session changed");return;}
  auto broker=static_cast<const PgsSharedHostTransferApi*>(pgs_shared_host_api(2));require(broker&&broker->ready&&broker->ready(),"Transfer service unavailable");
- PgrTransferExecRequest request{1,sizeof(request),job.id,0,owner,job.bag.get(),current.get(),input};
+ PgsTransferExecRequest request{1,sizeof(request),job.id,0,owner,job.bag.get(),current.get(),input};
  job.since=clock_ms();job.release_done=false;
  // Pass the durable token slot directly: a synchronous release observer may
  // complete while submit() is still running. The shared FIFO routes it here.
@@ -231,8 +231,8 @@ void poll(){
   if(matches&&costs){job.id=job.result_id;++job.completed;job.evolved_species.insert(job.sending.target);job.await_inventory=false;status("Evolution confirmed; rechecking transfer rules");return;}
   require(clock_ms()-job.since<15000,"Evolution inventory update unconfirmed; Pokemon kept");return;
  }
- auto vr=static_cast<const PgrVgpResultsApi*>(pgs_vgp_results_api(1));require(vr,"Evolution promise observer unavailable");
- PgrVgpResultsResult out{};int rc=vr->poll(job.promise.get(),1,owner,&out);Root response;response.h=out.value_handle;
+ auto vr=static_cast<const PgsVgpResultsApi*>(pgs_vgp_results_api(1));require(vr,"Evolution promise observer unavailable");
+ PgsVgpResultsResult out{};int rc=vr->poll(job.promise.get(),1,owner,&out);Root response;response.h=out.value_handle;
  if(!rc){require(clock_ms()-job.since<15000,"Evolution response timed out; Pokemon kept");return;}
  job.promise.reset();require(rc==PGS_VR_DONE&&response,"Evolution request failed; Pokemon kept");
  require(klass(response.get())==cls("Holoholo.Rpc","EvolvePokemonOutProto")&&success(response.get()),"Evolution declined; Pokemon kept");
@@ -246,7 +246,7 @@ void poll(){
 }
 } // namespace
 
-int pgs_evolve_transfer_offer(const PgrTransferExecRequest *request,bool manual){
+int pgs_evolve_transfer_offer(const PgsTransferExecRequest *request,bool manual){
  auto settings=permission();if(settings.valid&&!settings.config.enabled)return 0;
  if(!settings.allowed||!request||request->version!=1||request->size!=sizeof(*request)||request->tid!=uint64_t(gettid())||busy)return 2;
  struct Guard{Guard(){busy=true;}~Guard(){busy=false;}} guard;
@@ -257,7 +257,7 @@ int pgs_evolve_transfer_offer(const PgrTransferExecRequest *request,bool manual)
   require(queue.size()<pgs_evolve_transfer::kQueueLimit&&seen.size()<pgs_evolve_transfer::kSeenLimit,"Evolution queue full; Pokemon kept");
   Pending pending;pending.id=request->captured_id;pending.species=request->input.species;pending.manual=manual;pending.config=settings.config;
   pending.bag=Root(request->bag);require(bool(pending.bag),"Catch inventory unavailable");
-  pending.gm=reference(pending.bag.get(),PGR_GAME_BATCH_EVOLUTION_CPP_ERIK_NAME,"IGameMasterData");
+  pending.gm=reference(pending.bag.get(),PGS_GAME_BATCH_EVOLUTION_CPP_ERIK_NAME,"IGameMasterData");
   void *lookup[]={&pending.id};Root pokemon_root(call(pending.bag.get(),"GetPokemon",1,lookup));
   require(pending.id&&pending.bag&&pending.gm&&pokemon_root,"Incomplete catch identity");
   require(field<uint64_t>(pokemon_root.get(),"id_","System.UInt64")==pending.id&&field<int>(pokemon_root.get(),"pokemonId_","System.Int32")==pending.species,"Changed catch identity");
@@ -268,7 +268,7 @@ int pgs_evolve_transfer_offer(const PgrTransferExecRequest *request,bool manual)
   queue.push_back(std::move(pending));status("Queued to evolve before transfer");return 1;
  }catch(const Failure&e){status(e.where);}catch(...){status("Evolution queue failed; Pokemon kept");}return 2;
 }
-void pgs_evolve_transfer_tick(uint64_t tid,const PgrSharedMetadataOutput *metadata){
+void pgs_evolve_transfer_tick(uint64_t tid,const PgsSharedMetadataOutput *metadata){
  if(busy||!tid||tid!=uint64_t(gettid())||(owner&&owner!=tid))return;
  struct Guard{Guard(){busy=true;}~Guard(){busy=false;}}guard;
  try{
@@ -289,7 +289,7 @@ void pgs_evolve_transfer_tick(uint64_t tid,const PgrSharedMetadataOutput *metada
  }catch(const Failure&e){finish(e.where);}catch(...){finish("Evolution failed; Pokemon kept");}
 }
 void pgs_evolve_transfer_stop(uint64_t tid){if(tid==owner&&tid==uint64_t(gettid())){queue.clear();job=Job{};}}
-bool pgs_evolve_transfer_event(const PgrTransferExecEvent *event){
+bool pgs_evolve_transfer_event(const PgsTransferExecEvent *event){
  if(!event||uint64_t(gettid())!=owner||!job.release_token||job.release_token!=event->token)return false;
  if(event->kind!=PGS_TX_EVENT_REQUEST){job.release_done=true;job.release_success=event->kind==PGS_TX_EVENT_COMPLETE&&(event->aux&1);}
  return true;

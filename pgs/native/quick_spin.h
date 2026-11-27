@@ -54,7 +54,7 @@ enum PgsQuickSpinStatus {
   PGS_QUICK_SPIN_ERR_CLOCK_FAILURE = -12
 };
 
-// Pull-only runtime error codes surfaced through PgrQuickSpinSample.last_error_code.
+// Pull-only runtime error codes surfaced through PgsQuickSpinSample.last_error_code.
 enum PgsQuickSpinRuntimeError {
   PGS_QUICK_SPIN_RUNTIME_NONE = 0,
   PGS_QUICK_SPIN_RUNTIME_RESULT_NON_SUCCESS = 1,
@@ -73,7 +73,7 @@ enum PgsQuickSpinRuntimeError {
 };
 
 // Fixed LP64 layout: 16-byte header + 28 pointers = 240 bytes.
-struct PgrQuickSpinConfig {
+struct PgsQuickSpinConfig {
   uint32_t version;
   uint32_t size;
   int32_t success_value;     // SpinResult.Result literal value for "Success"
@@ -118,11 +118,11 @@ struct PgrQuickSpinConfig {
   void *current_state_field; // SpinGui.currentState (i32)
 };
 
-static_assert(sizeof(PgrQuickSpinConfig) == 240,
-              "PgrQuickSpinConfig must remain 240 bytes on LP64");
+static_assert(sizeof(PgsQuickSpinConfig) == 240,
+              "PgsQuickSpinConfig must remain 240 bytes on LP64");
 
 // Fixed LP64 layout: 64 bytes. Pull-only telemetry; the native layer never calls JS.
-struct PgrQuickSpinSample {
+struct PgsQuickSpinSample {
   uint32_t version;
   uint32_t size;
   uint32_t owned_root_count;  // GC roots this layer currently owns (finish guard)
@@ -138,14 +138,14 @@ struct PgrQuickSpinSample {
   uint64_t active_generation; // non-zero while a record is live
 };
 
-static_assert(sizeof(PgrQuickSpinSample) == 64,
-              "PgrQuickSpinSample must remain 64 bytes on LP64");
+static_assert(sizeof(PgsQuickSpinSample) == 64,
+              "PgsQuickSpinSample must remain 64 bytes on LP64");
 
 // Fixed LP64 layout: 8-byte header + 5 function pointers = 48 bytes.
-struct PgrQuickSpinApi {
+struct PgsQuickSpinApi {
   uint32_t version;
   uint32_t size;
-  int (*install)(const PgrQuickSpinConfig *config);
+  int (*install)(const PgsQuickSpinConfig *config);
   int (*update)(int enabled,
                 uint64_t remaining_lease_ms,
                 uint64_t proven_tid,
@@ -153,12 +153,12 @@ struct PgrQuickSpinApi {
   int (*tick)(uint64_t proven_tid,
               uint64_t tick_number,
               uint64_t opener_depth);
-  int (*sample)(PgrQuickSpinSample *out_sample);
+  int (*sample)(PgsQuickSpinSample *out_sample);
   int (*clear)(void);
 };
 
-static_assert(sizeof(PgrQuickSpinApi) == 48,
-              "PgrQuickSpinApi must remain a 48-byte version-1 table");
+static_assert(sizeof(PgsQuickSpinApi) == 48,
+              "PgsQuickSpinApi must remain a 48-byte version-1 table");
 
 // Standard feature getter. Returns a pointer to the static const 48-byte table when
 // `version` == 1, otherwise NULL. Registered by the dispatcher as case 11.

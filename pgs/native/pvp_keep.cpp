@@ -40,10 +40,10 @@ std::string normalize(const char *name) {
   return out;
 }
 
-int validate(const PgrMetaApi *md, void *owner, const char *name, uint64_t offset, uint32_t kind, uint32_t size,
+int validate(const PgsMetaApi *md, void *owner, const char *name, uint64_t offset, uint32_t kind, uint32_t size,
              const char *type, void **out, void **type_class = nullptr) {
-  PgrMetaFieldQuery q{};
-  q.version = PGR_MD_QUERY_VERSION;
+  PgsMetaFieldQuery q{};
+  q.version = PGS_MD_QUERY_VERSION;
   q.size = sizeof(q);
   q.owner = owner;
   q.name = name;
@@ -51,8 +51,8 @@ int validate(const PgrMetaApi *md, void *owner, const char *name, uint64_t offse
   q.kind = kind;
   q.value_size = size;
   q.type_name = type;
-  q.type_match = type ? PGR_MD_MATCH_EXACT : PGR_MD_MATCH_ANY;
-  PgrMetaFieldResult r{};
+  q.type_match = type ? PGS_MD_MATCH_EXACT : PGS_MD_MATCH_ANY;
+  PgsMetaFieldResult r{};
   const int rc = md->validate_field(&q, &r);
   if (rc) return rc;
   *out = const_cast<void *>(r.field);
@@ -60,14 +60,14 @@ int validate(const PgrMetaApi *md, void *owner, const char *name, uint64_t offse
   return 0;
 }
 
-int resolve(const PgrMetaApi *md, const char *ns, const char *name, void **out) {
-  PgrMetaClassQuery q{};
-  q.version = PGR_MD_QUERY_VERSION;
+int resolve(const PgsMetaApi *md, const char *ns, const char *name, void **out) {
+  PgsMetaClassQuery q{};
+  q.version = PGS_MD_QUERY_VERSION;
   q.size = sizeof(q);
   q.name_space = ns;
   q.name = name;
-  q.canonical_match = PGR_MD_MATCH_EXACT;
-  PgrMetaClassResult r{};
+  q.canonical_match = PGS_MD_MATCH_EXACT;
+  PgsMetaClassResult r{};
   const int rc = md->resolve_class(&q, &r);
   if (!rc) *out = const_cast<void *>(r.klass);
   return rc;
@@ -80,29 +80,29 @@ int fail(const char *what) {
 }
 
 int bind(uint64_t owner) {
-  const auto *boot = static_cast<const PgrBootApi *>(pgs_runtime_bootstrap_api(PGS_BOOT_API_VERSION));
-  const auto *md = static_cast<const PgrMetaApi *>(pgs_runtime_metadata_api(PGS_MD_API_VERSION));
-  if (!boot || !md || boot->size != sizeof(PgrBootApi) || md->size != sizeof(PgrMetaApi)) return 0;
-  PgrBootBinding snap{};
+  const auto *boot = static_cast<const PgsBootApi *>(pgs_runtime_bootstrap_api(PGS_BOOT_API_VERSION));
+  const auto *md = static_cast<const PgsMetaApi *>(pgs_runtime_metadata_api(PGS_MD_API_VERSION));
+  if (!boot || !md || boot->size != sizeof(PgsBootApi) || md->size != sizeof(PgsMetaApi)) return 0;
+  PgsBootBinding snap{};
   snap.version = PGS_BOOT_BINDING_VERSION;
   snap.size = sizeof(snap);
-  if (boot->snapshot(&snap) != PGR_BOOT_OK || !snap.handle) return 0;
+  if (boot->snapshot(&snap) != PGS_BOOT_OK || !snap.handle) return 0;
   const auto &rt = snap.runtime;
   const auto &ex = snap.meta;
   void *alignment_enum = nullptr, *form_enum = nullptr;
   if (resolve(md, "Holoholo.Rpc", "PokemonProto", &g_class_pokemon) ||
       resolve(md, "Holoholo.Rpc", "PokemonDisplayProto", &g_class_display))
     return fail("classes");
-  if (validate(md, g_class_pokemon, PGR_GAME_PVP_KEEP_CPP_POKEMONID__NAME, PGR_GAME_PVP_KEEP_CPP_POKEMONID__OFFSET,
+  if (validate(md, g_class_pokemon, PGS_GAME_PVP_KEEP_CPP_POKEMONID__NAME, PGS_GAME_PVP_KEEP_CPP_POKEMONID__OFFSET,
                PGS_MD_FIELD_VALUE, 4, "System.Int32", &g_species) ||
-      validate(md, g_class_pokemon, PGR_GAME_PVP_KEEP_CPP_POKEMONDISPLAY__NAME, PGR_GAME_PVP_KEEP_CPP_POKEMONDISPLAY__OFFSET,
+      validate(md, g_class_pokemon, PGS_GAME_PVP_KEEP_CPP_POKEMONDISPLAY__NAME, PGS_GAME_PVP_KEEP_CPP_POKEMONDISPLAY__OFFSET,
                PGS_MD_FIELD_REF, 0, "Holoholo.Rpc.PokemonDisplayProto", &g_display) ||
-      validate(md, g_class_pokemon, PGR_GAME_PVP_KEEP_CPP_CPMULTIPLIER__NAME, PGR_GAME_PVP_KEEP_CPP_CPMULTIPLIER__OFFSET,
+      validate(md, g_class_pokemon, PGS_GAME_PVP_KEEP_CPP_CPMULTIPLIER__NAME, PGS_GAME_PVP_KEEP_CPP_CPMULTIPLIER__OFFSET,
                PGS_MD_FIELD_VALUE, 4, "System.Single", &g_cpm) ||
-      validate(md, g_class_pokemon, PGR_GAME_PVP_KEEP_CPP_ADDITIONALCPMULTIPLIER__NAME,
-               PGR_GAME_PVP_KEEP_CPP_ADDITIONALCPMULTIPLIER__OFFSET, PGS_MD_FIELD_VALUE, 4, "System.Single", &g_cpm_extra) ||
-      validate(md, g_class_display, "Form", PGR_GAME_PVP_KEEP_CPP_FORM_OFFSET, PGS_MD_FIELD_ENUM_I32, 4, nullptr, &g_form, &form_enum) ||
-      validate(md, g_class_display, "Alignment", PGR_GAME_PVP_KEEP_CPP_ALIGNMENT_OFFSET, PGS_MD_FIELD_ENUM_I32, 4, nullptr,
+      validate(md, g_class_pokemon, PGS_GAME_PVP_KEEP_CPP_ADDITIONALCPMULTIPLIER__NAME,
+               PGS_GAME_PVP_KEEP_CPP_ADDITIONALCPMULTIPLIER__OFFSET, PGS_MD_FIELD_VALUE, 4, "System.Single", &g_cpm_extra) ||
+      validate(md, g_class_display, "Form", PGS_GAME_PVP_KEEP_CPP_FORM_OFFSET, PGS_MD_FIELD_ENUM_I32, 4, nullptr, &g_form, &form_enum) ||
+      validate(md, g_class_display, "Alignment", PGS_GAME_PVP_KEEP_CPP_ALIGNMENT_OFFSET, PGS_MD_FIELD_ENUM_I32, 4, nullptr,
                &g_alignment, &alignment_enum) ||
       !form_enum || !alignment_enum)
     return fail("fields");
@@ -153,7 +153,7 @@ int bind(uint64_t owner) {
 
 bool settings(pgs_pvp::Settings *out) {
   *out = pgs_pvp::Settings{};
-  const auto *tr = static_cast<const PgrRuntimeTransportApi *>(pgs_runtime_transport_api(1));
+  const auto *tr = static_cast<const PgsRuntimeTransportApi *>(pgs_runtime_transport_api(1));
   char text[41]{};
   uint32_t length = 0;
   return tr && tr->get_string(16, text, sizeof(text), &length) == 0 && pgs_pvp::parse(text, length, out);
@@ -191,7 +191,7 @@ Lookup lookup(void *pokemon, uint64_t owner, Facts *out) {
 
 // The IV format for this screen from "S2|<storage>|<encounter>|<details>".
 bool pvp_format(int screen) {
-  const auto *tr = static_cast<const PgrRuntimeTransportApi *>(pgs_runtime_transport_api(1));
+  const auto *tr = static_cast<const PgsRuntimeTransportApi *>(pgs_runtime_transport_api(1));
   char text[16]{};
   uint32_t length = 0;
   return tr && tr->get_string(14, text, sizeof(text), &length) == 0 && length == 8 && !std::memcmp(text, "S2|", 3) &&

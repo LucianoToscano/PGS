@@ -31,17 +31,17 @@
 //     cleanup is latched. The seen quarantine persists across a stop (no uncertain release is resent).
 //   * sample() reads atomic mirrors published on the owner thread.
 
-static_assert(sizeof(PgrTransferExecConfig) == 144, "config must be 144 bytes");
-static_assert(sizeof(PgrTransferExecRequest) == 104, "request must be 104 bytes");
-static_assert(sizeof(PgrTransferExecSample) == 88, "sample must be 88 bytes");
-static_assert(sizeof(PgrTransferExecEvent) == 24, "event must be 24 bytes");
-static_assert(sizeof(PgrTransferExecApi) == 72, "table must be 72 bytes");
-static_assert(offsetof(PgrTransferExecConfig, gchandle_new) == 8, "layout");
-static_assert(offsetof(PgrTransferExecConfig, m_get) == 56, "layout");
-static_assert(offsetof(PgrTransferExecConfig, class_bag) == 72, "layout");
-static_assert(offsetof(PgrTransferExecConfig, f_id) == 104, "layout");
-static_assert(offsetof(PgrTransferExecConfig, success_literal) == 136, "layout");
-static_assert(offsetof(PgrTransferExecRequest, input) == 48, "layout");
+static_assert(sizeof(PgsTransferExecConfig) == 144, "config must be 144 bytes");
+static_assert(sizeof(PgsTransferExecRequest) == 104, "request must be 104 bytes");
+static_assert(sizeof(PgsTransferExecSample) == 88, "sample must be 88 bytes");
+static_assert(sizeof(PgsTransferExecEvent) == 24, "event must be 24 bytes");
+static_assert(sizeof(PgsTransferExecApi) == 72, "table must be 72 bytes");
+static_assert(offsetof(PgsTransferExecConfig, gchandle_new) == 8, "layout");
+static_assert(offsetof(PgsTransferExecConfig, m_get) == 56, "layout");
+static_assert(offsetof(PgsTransferExecConfig, class_bag) == 72, "layout");
+static_assert(offsetof(PgsTransferExecConfig, f_id) == 104, "layout");
+static_assert(offsetof(PgsTransferExecConfig, success_literal) == 136, "layout");
+static_assert(offsetof(PgsTransferExecRequest, input) == 48, "layout");
 
 namespace {
 
@@ -58,7 +58,7 @@ using FieldGet = void (*)(void *obj, void *field, void *out);
 // --- lifetime / publication --------------------------------------------------------
 std::mutex g_install_mutex;
 std::mutex g_state_mutex;
-PgrTransferExecConfig g_cfg{};
+PgsTransferExecConfig g_cfg{};
 const PgsTransferApi *g_policy = nullptr;  // feature-4 transfer_policy, resolved once at install
 std::atomic<bool> g_installed{false};
 bool g_install_attempted = false;
@@ -86,7 +86,7 @@ bool g_overflow = false;
 uint64_t g_request_serial = 0, g_complete_serial = 0, g_timeout_serial = 0, g_error_serial = 0,
          g_token_serial = 0, g_last_tid = 0, g_last_token = 0;
 
-PgrTransferExecEvent g_fifo[PGS_TX_EVENT_CAP];
+PgsTransferExecEvent g_fifo[PGS_TX_EVENT_CAP];
 uint32_t g_fifo_head = 0, g_fifo_count = 0;
 
 // --- owner-thread reentrancy guards ------------------------------------------------
@@ -204,7 +204,7 @@ void push_event(uint32_t kind, int32_t id, uint64_t token, int32_t aux, uint64_t
     return;
   }
   uint32_t idx = (g_fifo_head + g_fifo_count) % PGS_TX_EVENT_CAP;
-  g_fifo[idx] = PgrTransferExecEvent{kind, id, token, aux, 0};
+  g_fifo[idx] = PgsTransferExecEvent{kind, id, token, aux, 0};
   ++g_fifo_count;
 }
 
@@ -341,7 +341,7 @@ int ticket_consume(uint64_t ticket, uint64_t *out_token, bool *out_success) {
 // --- submit ------------------------------------------------------------------------
 // Runs inside an active owner frame. Locals bag_root/pokemon_root are dropped at the single exit; on
 // the success path their ownership is moved into the transaction (locals zeroed) before the invoke.
-int do_submit(const PgrTransferExecRequest *req, uint64_t tid, uint64_t *out_token) {
+int do_submit(const PgsTransferExecRequest *req, uint64_t tid, uint64_t *out_token) {
   uintptr_t bag_root = 0, pokemon_root = 0;
   int rc = PGS_TX_OK;
   const uint64_t generation = pin_generation();
@@ -474,10 +474,10 @@ void do_observe_end(uint64_t ticket, uint64_t tid) {
 }
 
 // --- public API --------------------------------------------------------------------
-bool validate_config(const PgrTransferExecConfig *c, int *rc) {
+bool validate_config(const PgsTransferExecConfig *c, int *rc) {
   if (c == nullptr) { *rc = PGS_TX_ERR_NULL_ARG; return false; }
   if (c->version != PGS_TX_CONFIG_VERSION) { *rc = PGS_TX_ERR_BAD_VERSION; return false; }
-  if (c->size != sizeof(PgrTransferExecConfig)) { *rc = PGS_TX_ERR_BAD_SIZE; return false; }
+  if (c->size != sizeof(PgsTransferExecConfig)) { *rc = PGS_TX_ERR_BAD_SIZE; return false; }
   void *const *ptrs = reinterpret_cast<void *const *>(&c->gchandle_new);
   for (int i = 0; i < 16; ++i) {
     if (ptrs[i] == nullptr) { *rc = PGS_TX_ERR_MISSING_PTR; return false; }
@@ -486,7 +486,7 @@ bool validate_config(const PgrTransferExecConfig *c, int *rc) {
   return true;
 }
 
-int api_install(const PgrTransferExecConfig *config) {
+int api_install(const PgsTransferExecConfig *config) {
   int rc = PGS_TX_OK;
   if (!validate_config(config, &rc)) return rc;
   uint64_t probe = 0;
@@ -543,12 +543,12 @@ int api_update(int enabled, uint64_t remaining, uint64_t epoch, uint64_t proven_
   return PGS_TX_OK;
 }
 
-int api_submit(const PgrTransferExecRequest *request, uint64_t *out_token) {
+int api_submit(const PgsTransferExecRequest *request, uint64_t *out_token) {
   if (out_token != nullptr) *out_token = 0;
   if (!g_installed.load(std::memory_order_acquire)) return PGS_TX_ERR_NOT_INSTALLED;
   if (request == nullptr || out_token == nullptr) return PGS_TX_ERR_NULL_ARG;
   if (request->version != PGS_TX_REQUEST_VERSION) return PGS_TX_ERR_BAD_VERSION;
-  if (request->size != sizeof(PgrTransferExecRequest)) return PGS_TX_ERR_BAD_SIZE;
+  if (request->size != sizeof(PgsTransferExecRequest)) return PGS_TX_ERR_BAD_SIZE;
 
   const uint64_t tid = current_tid();
   if (request->tid == 0 || tid != request->tid) return PGS_TX_OK;  // wrong thread: refused
@@ -619,7 +619,7 @@ int api_tick(uint64_t proven_tid, int stopping) {
   return PGS_TX_OK;
 }
 
-int api_sample(PgrTransferExecSample *out) {
+int api_sample(PgsTransferExecSample *out) {
   if (out == nullptr) return PGS_TX_ERR_NULL_ARG;
   const uint32_t roots = root_total();
   const uint32_t pending = g_m_pending.load(std::memory_order_relaxed);
@@ -627,7 +627,7 @@ int api_sample(PgrTransferExecSample *out) {
   const uint32_t tickets = g_m_tickets.load(std::memory_order_relaxed);
   std::lock_guard<std::mutex> lock(g_state_mutex);
   out->version = PGS_TX_SAMPLE_VERSION;
-  out->size = sizeof(PgrTransferExecSample);
+  out->size = sizeof(PgsTransferExecSample);
   out->request_serial = g_request_serial;
   out->complete_serial = g_complete_serial;
   out->timeout_serial = g_timeout_serial;
@@ -645,7 +645,7 @@ int api_sample(PgrTransferExecSample *out) {
   return PGS_TX_OK;
 }
 
-int api_next_event(PgrTransferExecEvent *out) {
+int api_next_event(PgsTransferExecEvent *out) {
   if (out == nullptr) return PGS_TX_ERR_NULL_ARG;
   std::lock_guard<std::mutex> lock(g_state_mutex);
   if (g_fifo_count == 0) return 0;
@@ -655,8 +655,8 @@ int api_next_event(PgrTransferExecEvent *out) {
   return 1;
 }
 
-const PgrTransferExecApi kApiTable = {
-    PGS_TX_API_VERSION, static_cast<uint32_t>(sizeof(PgrTransferExecApi)),
+const PgsTransferExecApi kApiTable = {
+    PGS_TX_API_VERSION, static_cast<uint32_t>(sizeof(PgsTransferExecApi)),
     &api_install,       &api_update,
     &api_submit,        &api_observe_begin,
     &api_observe_end,   &api_tick,

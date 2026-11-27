@@ -12,7 +12,7 @@
 #include <time.h>
 #include <unistd.h>
 namespace {
-using namespace pgr_shared_meta;
+using namespace pgs_shared_meta;
 std::mutex config_mutex,policy_mutex,event_mutex;
 std::atomic<bool> configured{false},installed{false},stopping{false},busy{false},ready{false};
 std::atomic<int> error{0},leaf_error{0};
@@ -23,22 +23,22 @@ PgsSpawnHostOptions policy{};uint64_t deadline=0;
 uint64_t sample_at=0,logged_at=0;double previous_original=0,previous_effective=0;bool sampled=false;
 PgsSpawnHostEvent events[32]{};uint32_t head=0,count=0;
 const pgs_native_api_v1 *leaf(){return static_cast<const pgs_native_api_v1*>(pgs_native_api(1));}
-const PgrRuntimeTransportApi *transport(){return static_cast<const PgrRuntimeTransportApi*>(pgs_runtime_transport_api(1));}
+const PgsRuntimeTransportApi *transport(){return static_cast<const PgsRuntimeTransportApi*>(pgs_runtime_transport_api(1));}
 uint64_t now(){timespec t{};return clock_gettime(CLOCK_BOOTTIME,&t)||t.tv_sec<0?0:uint64_t(t.tv_sec)*1000+uint64_t(t.tv_nsec)/1000000;}
 void disable(){auto l=leaf();if(l&&l->update)l->update(0,0,0);}
 void fault(int status){error=status;stopping=true;ready=false;{std::lock_guard<std::mutex> lock(policy_mutex);deadline=0;}disable();if(flags&PGS_SPAH_TRANSPORT){auto tr=transport();int64_t value=0;if(tr)tr->emit(49,&value,1,nullptr,0);}}
-bool action(uint32_t op,const int64_t *v,uint32_t n,const PgrRuntimeTransportString *s,uint32_t ns){if(!(flags&PGS_SPAH_TRANSPORT))return true;auto tr=transport();if(tr&&tr->emit(op,v,n,s,ns)==0)return true;fault(PGS_SPAH_TRANSPORT_ERROR);return false;}
+bool action(uint32_t op,const int64_t *v,uint32_t n,const PgsRuntimeTransportString *s,uint32_t ns){if(!(flags&PGS_SPAH_TRANSPORT))return true;auto tr=transport();if(tr&&tr->emit(op,v,n,s,ns)==0)return true;fault(PGS_SPAH_TRANSPORT_ERROR);return false;}
 void event(const char *kind,const char *body){PgsSpawnHostEvent e{1,sizeof(e)};std::snprintf(e.json,sizeof(e.json),"{\"kind\":\"%s\",\"boottimeMs\":%llu%s%s}",kind,(unsigned long long)now(),*body?",":"",body);
- if(flags&PGS_SPAH_TRANSPORT){const char channel[]="quick-close";PgrRuntimeTransportString s[]={{channel,sizeof(channel)-1},{e.json,uint32_t(std::strlen(e.json))}};action(19,nullptr,0,s,2);}
+ if(flags&PGS_SPAH_TRANSPORT){const char channel[]="quick-close";PgsRuntimeTransportString s[]={{channel,sizeof(channel)-1},{e.json,uint32_t(std::strlen(e.json))}};action(19,nullptr,0,s,2);}
  else{bool overflow=false;{std::lock_guard<std::mutex> lock(event_mutex);if(count==32)overflow=true;else events[(head+count++)%32]=e;}if(overflow)fault(PGS_SPAH_TRANSPORT_ERROR);}
 }
 void publish_ready(bool value){value=value&&!stopping;int64_t b=value;action(49,&b,1,nullptr,0);event("spawn-ready",value?"\"available\":true":"\"available\":false,\"reason\":\"native-spawn-unavailable\"");}
 int stop(){bool first=!stopping.exchange(true);ready=false;{std::lock_guard<std::mutex> lock(policy_mutex);deadline=0;disable();}if(first&&configured)publish_ready(false);return 0;}
 int configure(const PgsSpawnHostConfig *c){
- if(c&&(c->version!=1||c->size!=sizeof(*c)||c->flags&~1u||c->exclusive_owner!=1||!c->metadata||c->metadata->version!=2||c->metadata->size!=sizeof(PgrSharedMetadataOutput)||!c->thread_current||c->owner_tid!=uint64_t(gettid())))return PGS_SPAH_BAD_CONFIG;
- std::lock_guard<std::mutex> lock(config_mutex);if(configured){if(bootstrap)return c?PGS_SPAH_REBIND:0;return c&&!std::memcmp(c,&accepted,sizeof(*c))&&spawn_code==(c->metadata->optional[OPT_SPAWN]==PGR_SHARED_OPT_AVAILABLE?c->metadata->opt_handles[H_SP_CODE]:nullptr)?0:PGS_SPAH_REBIND;}
+ if(c&&(c->version!=1||c->size!=sizeof(*c)||c->flags&~1u||c->exclusive_owner!=1||!c->metadata||c->metadata->version!=2||c->metadata->size!=sizeof(PgsSharedMetadataOutput)||!c->thread_current||c->owner_tid!=uint64_t(gettid())))return PGS_SPAH_BAD_CONFIG;
+ std::lock_guard<std::mutex> lock(config_mutex);if(configured){if(bootstrap)return c?PGS_SPAH_REBIND:0;return c&&!std::memcmp(c,&accepted,sizeof(*c))&&spawn_code==(c->metadata->optional[OPT_SPAWN]==PGS_SHARED_OPT_AVAILABLE?c->metadata->opt_handles[H_SP_CODE]:nullptr)?0:PGS_SPAH_REBIND;}
  if(stopping)return PGS_SPAH_STOPPED;
- if(c){if(!reinterpret_cast<void*(*)()>(c->thread_current)())return PGS_SPAH_OFF_OWNER;accepted=*c;flags=c->flags;thread_current=c->thread_current;owner_tid=c->owner_tid;if(c->metadata->optional[OPT_SPAWN]==PGR_SHARED_OPT_AVAILABLE)spawn_code=c->metadata->opt_handles[H_SP_CODE];}
+ if(c){if(!reinterpret_cast<void*(*)()>(c->thread_current)())return PGS_SPAH_OFF_OWNER;accepted=*c;flags=c->flags;thread_current=c->thread_current;owner_tid=c->owner_tid;if(c->metadata->optional[OPT_SPAWN]==PGS_SHARED_OPT_AVAILABLE)spawn_code=c->metadata->opt_handles[H_SP_CODE];}
  else{bootstrap=true;flags=PGS_SPAH_TRANSPORT;}configured=true;return 0;
 }
 int update(const PgsSpawnHostOptions *p){
@@ -47,12 +47,12 @@ int update(const PgsSpawnHostOptions *p){
  std::lock_guard<std::mutex> lock(policy_mutex);policy=*p;deadline=p->enabled&&p->allowed?t+p->lease_ms:0;if(!deadline)disable();return 0;
 }
 int prepare(uint64_t tid){
- if(bootstrap&&!thread_current){PgrBootBinding b{};auto boot=static_cast<const PgrBootApi*>(pgs_runtime_bootstrap_api(1));if(!boot||boot->snapshot(&b)!=0)return PGS_SPAH_NOT_READY;
-  auto scheduler=static_cast<const PgrUnitySchedulerApi*>(pgs_unity_scheduler_api(2));PgsUnitySchedulerSnapshot state{};
+ if(bootstrap&&!thread_current){PgsBootBinding b{};auto boot=static_cast<const PgsBootApi*>(pgs_runtime_bootstrap_api(1));if(!boot||boot->snapshot(&b)!=0)return PGS_SPAH_NOT_READY;
+  auto scheduler=static_cast<const PgsUnitySchedulerApi*>(pgs_unity_scheduler_api(2));PgsUnitySchedulerSnapshot state{};
   if(!scheduler||scheduler->snapshot(&state)||state.owner_tid<=0||uint64_t(state.owner_tid)!=tid)return PGS_SPAH_NOT_READY;
-  auto sh=static_cast<const PgrSharedHostApi*>(pgs_shared_host_api(1));auto md=sh&&sh->metadata?sh->metadata():nullptr;if(!md)return PGS_SPAH_NOT_READY;
+  auto sh=static_cast<const PgsSharedHostApi*>(pgs_shared_host_api(1));auto md=sh&&sh->metadata?sh->metadata():nullptr;if(!md)return PGS_SPAH_NOT_READY;
   if(md->version!=2||md->size!=sizeof(*md)){fault(PGS_SPAH_BAD_CONFIG);return PGS_SPAH_BAD_CONFIG;}
-  thread_current=b.runtime.thread_current;owner_tid=tid;if(md->optional[OPT_SPAWN]==PGR_SHARED_OPT_AVAILABLE)spawn_code=md->opt_handles[H_SP_CODE];
+  thread_current=b.runtime.thread_current;owner_tid=tid;if(md->optional[OPT_SPAWN]==PGS_SHARED_OPT_AVAILABLE)spawn_code=md->opt_handles[H_SP_CODE];
  }
  if(!thread_current||!reinterpret_cast<void*(*)()>(thread_current)())return PGS_SPAH_OFF_OWNER;
  if(tid!=owner_tid.load())return PGS_SPAH_OFF_OWNER;
@@ -66,7 +66,7 @@ int tick(uint64_t tid){
  if(stopping){disable();return PGS_SPAH_STOPPED;}if(!installed){int rc=prepare(tid);if(rc)return rc;}
  if(tid!=owner_tid.load()||!thread_current||!reinterpret_cast<void*(*)()>(thread_current)())return PGS_SPAH_OFF_OWNER;
  ++ticks;auto t=now();if(!t){fault(PGS_SPAH_UNAVAILABLE);return PGS_SPAH_UNAVAILABLE;}
- if(flags&PGS_SPAH_TRANSPORT){auto tr=transport();PgrRuntimeTransportSample a{},b{};int allowed=0,enabled=0;
+ if(flags&PGS_SPAH_TRANSPORT){auto tr=transport();PgsRuntimeTransportSample a{},b{};int allowed=0,enabled=0;
   bool coherent=tr&&!tr->sample(&a)&&a.snapshot_fresh&&!a.fault&&!tr->get_bool(27,&allowed)&&!tr->get_bool(28,&enabled)&&!tr->sample(&b)&&b.snapshot_fresh&&!b.fault&&a.snapshot_seq==b.snapshot_seq;
   PgsSpawnHostOptions p{1,sizeof(p),uint32_t(coherent&&enabled==1),uint32_t(coherent&&allowed==1),coherent?100u:0u,0};update(&p);
  }
@@ -83,7 +83,7 @@ int tick(uint64_t tid){
 }
 int sample(PgsSpawnHostSample *s){if(!s)return PGS_SPAH_BAD_CONFIG;pgs_spawn_snapshot v{};auto l=leaf();if(l&&l->sample)l->sample(&v);*s={1,sizeof(*s),uint32_t(configured.load()),uint32_t(installed.load()),uint32_t(stopping.load()),uint32_t(ready.load()),error.load(),leaf_error.load(),owner_tid.load(),ticks.load(),v.original,v.effective,v.count};return 0;}
 int next(PgsSpawnHostEvent *e){if(!e)return PGS_SPAH_BAD_CONFIG;std::lock_guard<std::mutex> lock(event_mutex);if(!count){*e={};return PGS_SPAH_EMPTY;}*e=events[head];head=(head+1)%32;--count;return 0;}
-void pulse(void*,const PgrUnityPulse *p){if(!p||p->reserved||p->tid<=0)return;auto a=static_cast<const PgrUnitySchedulerApi*>(pgs_unity_scheduler_api(2));if(a&&a->valid(p->generation)==1)tick(p->tid);}
+void pulse(void*,const PgsUnityPulse *p){if(!p||p->reserved||p->tid<=0)return;auto a=static_cast<const PgsUnitySchedulerApi*>(pgs_unity_scheduler_api(2));if(a&&a->valid(p->generation)==1)tick(p->tid);}
 const PgsSpawnHostApi api{1,sizeof(api),configure,update,tick,stop,sample,next,pulse};
 }
 extern "C" const void *pgs_spawn_host_api(uint32_t version){return version==1?&api:nullptr;}

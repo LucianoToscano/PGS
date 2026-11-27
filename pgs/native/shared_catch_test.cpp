@@ -20,14 +20,14 @@
 namespace {
 
 using GetApiFn = const void *(*)(uint32_t);
-const PgrSharedCatchApi *g_api = nullptr;
+const PgsSharedCatchApi *g_api = nullptr;
 
 uint64_t this_tid() { return static_cast<uint64_t>(static_cast<pid_t>(::gettid())); }
 
-PgrSharedCatchConfig make_config() {
-  PgrSharedCatchConfig c{};
+PgsSharedCatchConfig make_config() {
+  PgsSharedCatchConfig c{};
   c.version = 1;
-  c.size = sizeof(PgrSharedCatchConfig);
+  c.size = sizeof(PgsSharedCatchConfig);
   c.max_records = PGS_SH_MAX_RECORDS;
   c.timeout_ms = PGS_SH_TIMEOUT_MS;
   c.lease_ceiling_ms = PGS_SH_MAX_LEASE_MS;
@@ -35,10 +35,10 @@ PgrSharedCatchConfig make_config() {
   return c;
 }
 
-PgrSharedCatchSample take_sample() {
-  PgrSharedCatchSample s{};
+PgsSharedCatchSample take_sample() {
+  PgsSharedCatchSample s{};
   assert(g_api->sample(&s) == PGS_SH_OK);
-  assert(s.version == 1 && s.size == sizeof(PgrSharedCatchSample));
+  assert(s.version == 1 && s.size == sizeof(PgsSharedCatchSample));
   return s;
 }
 
@@ -48,27 +48,27 @@ uint64_t upsert(uint64_t gui_key, uint32_t kind, uint64_t tid) {
   return slot;
 }
 
-PgrSharedCatchDecision select(uint64_t ticks, uint64_t tid) {
-  PgrSharedCatchDecision d{};
+PgsSharedCatchDecision select(uint64_t ticks, uint64_t tid) {
+  PgsSharedCatchDecision d{};
   assert(g_api->select(ticks, tid, &d) == PGS_SH_OK);
-  assert(d.version == 1 && d.size == sizeof(PgrSharedCatchDecision) && d.tick == ticks);
+  assert(d.version == 1 && d.size == sizeof(PgsSharedCatchDecision) && d.tick == ticks);
   return d;
 }
 
 // Drain every pending event and return them (host behaviour: free the GC root per record).
-std::vector<PgrSharedCatchEvent> drain() {
-  std::vector<PgrSharedCatchEvent> out;
-  PgrSharedCatchEvent e{};
+std::vector<PgsSharedCatchEvent> drain() {
+  std::vector<PgsSharedCatchEvent> out;
+  PgsSharedCatchEvent e{};
   while (g_api->next_event(&e) == 1) out.push_back(e);
   return out;
 }
 
-int count_kind(const std::vector<PgrSharedCatchEvent> &v, uint32_t kind) {
+int count_kind(const std::vector<PgsSharedCatchEvent> &v, uint32_t kind) {
   int n = 0;
   for (auto &e : v) if (e.kind == kind) ++n;
   return n;
 }
-bool has_reason(const std::vector<PgrSharedCatchEvent> &v, int32_t reason) {
+bool has_reason(const std::vector<PgsSharedCatchEvent> &v, int32_t reason) {
   for (auto &e : v) if (e.kind == PGS_SH_EVENT_CANCELLED && e.reason == reason) return true;
   return false;
 }
@@ -91,19 +91,19 @@ int main(int argc, char **argv) {
   const auto *core = static_cast<const pgs_native_api_v2 *>(getter(2));
   assert(core && core->size == 48);
   assert(core->query_feature(51, 99) == nullptr);
-  const auto *api = static_cast<const PgrSharedCatchApi *>(core->query_feature(51, 1));
-  assert(api != nullptr && api->version == 1 && api->size == sizeof(PgrSharedCatchApi));
+  const auto *api = static_cast<const PgsSharedCatchApi *>(core->query_feature(51, 1));
+  assert(api != nullptr && api->version == 1 && api->size == sizeof(PgsSharedCatchApi));
   g_api = api;
 
   std::printf("ABI sizes: config=%zu decision=%zu event=%zu sample=%zu table=%zu\n",
-              sizeof(PgrSharedCatchConfig), sizeof(PgrSharedCatchDecision),
-              sizeof(PgrSharedCatchEvent), sizeof(PgrSharedCatchSample), sizeof(PgrSharedCatchApi));
-  assert(sizeof(PgrSharedCatchConfig) == 32 && sizeof(PgrSharedCatchDecision) == 40 &&
-         sizeof(PgrSharedCatchEvent) == 24 && sizeof(PgrSharedCatchSample) == 88 &&
-         sizeof(PgrSharedCatchApi) == 112);
+              sizeof(PgsSharedCatchConfig), sizeof(PgsSharedCatchDecision),
+              sizeof(PgsSharedCatchEvent), sizeof(PgsSharedCatchSample), sizeof(PgsSharedCatchApi));
+  assert(sizeof(PgsSharedCatchConfig) == 32 && sizeof(PgsSharedCatchDecision) == 40 &&
+         sizeof(PgsSharedCatchEvent) == 24 && sizeof(PgsSharedCatchSample) == 88 &&
+         sizeof(PgsSharedCatchApi) == 112);
 
   const uint64_t tid = this_tid();
-  PgrSharedCatchConfig cfg = make_config();
+  PgsSharedCatchConfig cfg = make_config();
   // A transfer extends the UI record's initial discovery deadline. Exercise a
   // short initial deadline in a fresh child without sleeping the production11s.
   {
@@ -124,14 +124,14 @@ int main(int argc, char **argv) {
 
   // 1. Validation + not-installed + idempotence + reconfig + bad bounds.
   assert(api->install(nullptr) == PGS_SH_ERR_NULL_ARG);
-  { PgrSharedCatchConfig b = cfg; b.version = 2; assert(api->install(&b) == PGS_SH_ERR_BAD_VERSION); }
-  { PgrSharedCatchConfig b = cfg; b.size = sizeof(cfg) - 1; assert(api->install(&b) == PGS_SH_ERR_BAD_SIZE); }
-  { PgrSharedCatchConfig b = cfg; b.max_records = 99; assert(api->install(&b) == PGS_SH_ERR_MISSING_PTR); }
-  { PgrSharedCatchConfig b = cfg; b.lease_ceiling_ms = PGS_SH_MAX_LEASE_MS + 1; assert(api->install(&b) == PGS_SH_ERR_MISSING_PTR); }
+  { PgsSharedCatchConfig b = cfg; b.version = 2; assert(api->install(&b) == PGS_SH_ERR_BAD_VERSION); }
+  { PgsSharedCatchConfig b = cfg; b.size = sizeof(cfg) - 1; assert(api->install(&b) == PGS_SH_ERR_BAD_SIZE); }
+  { PgsSharedCatchConfig b = cfg; b.max_records = 99; assert(api->install(&b) == PGS_SH_ERR_MISSING_PTR); }
+  { PgsSharedCatchConfig b = cfg; b.lease_ceiling_ms = PGS_SH_MAX_LEASE_MS + 1; assert(api->install(&b) == PGS_SH_ERR_MISSING_PTR); }
   { uint64_t s = 0; assert(api->upsert(1, PGS_SH_KIND_SUMMARY, tid, &s) == PGS_SH_ERR_NOT_INSTALLED); }
   assert(api->install(&cfg) == PGS_SH_OK);
   assert(api->install(&cfg) == PGS_SH_OK);  // idempotent
-  { PgrSharedCatchConfig b = cfg; b.timeout_ms = 1234; assert(api->install(&b) == PGS_SH_ERR_RECONFIG); }
+  { PgsSharedCatchConfig b = cfg; b.timeout_ms = 1234; assert(api->install(&b) == PGS_SH_ERR_RECONFIG); }
 
   // 2. Summary success path: upsert -> mark -> ARM on first ready tick -> DISMISS on a later tick -> finish.
   {
@@ -141,17 +141,17 @@ int main(int argc, char **argv) {
     // Not ready yet: NONE.
     assert(select(10, tid).action == PGS_SH_ACT_NONE);
     make_summary_ready(slot, tid);
-    PgrSharedCatchDecision d1 = select(11, tid);
+    PgsSharedCatchDecision d1 = select(11, tid);
     assert(d1.action == PGS_SH_ACT_ARM && d1.slot == slot && d1.gui_key == 0x1001 && d1.kind == PGS_SH_KIND_SUMMARY);
     // Same tick -> still NONE (needs a STRICTLY later proven tick).
     assert(select(11, tid).action == PGS_SH_ACT_NONE);
-    PgrSharedCatchDecision d2 = select(12, tid);
+    PgsSharedCatchDecision d2 = select(12, tid);
     assert(d2.action == PGS_SH_ACT_DISMISS && d2.slot == slot);
     assert(api->finish(slot, 1, tid) == PGS_SH_OK);
     auto ev = drain();
     assert(count_kind(ev, PGS_SH_EVENT_REAPED) == 1 && ev.back().slot == slot && ev.back().gui_key == 0x1001);
     assert(select(13, tid).action == PGS_SH_ACT_NONE);  // table empty after reap
-    PgrSharedCatchSample sm = take_sample();
+    PgsSharedCatchSample sm = take_sample();
     assert(sm.records == 0 && sm.armed_serial >= 1 && sm.dismiss_serial >= 1 && sm.reap_serial >= 1);
   }
 
@@ -177,7 +177,7 @@ int main(int argc, char **argv) {
     assert(api->mark(slot, PGS_SH_STAGE_OPEN_COMPLETE, 0, tid) == PGS_SH_OK);
     assert(select(30, tid).action == PGS_SH_ACT_NONE);                       // present_done missing
     assert(api->mark(slot, PGS_SH_STAGE_PRESENT, 0, tid) == PGS_SH_OK);
-    PgrSharedCatchDecision d = select(31, tid);
+    PgsSharedCatchDecision d = select(31, tid);
     assert(d.action == PGS_SH_ACT_ARM && d.kind == PGS_SH_KIND_DETAILS);
     assert(select(32, tid).action == PGS_SH_ACT_DISMISS);
     assert(api->finish(slot, 0, tid) == PGS_SH_OK);  // failed dismiss still latches invoked -> reaped once
@@ -288,7 +288,7 @@ int main(int argc, char **argv) {
   std::thread([&]() {
     uint64_t s = 5;
     assert(g_api->upsert(0xF001, PGS_SH_KIND_SUMMARY, this_tid(), &s) == PGS_SH_OK && s == 0);
-    PgrSharedCatchDecision d{};
+    PgsSharedCatchDecision d{};
     assert(g_api->select(1, this_tid(), &d) == PGS_SH_OK && d.action == PGS_SH_ACT_NONE);
     assert(g_api->mark(1, PGS_SH_STAGE_INIT, 0, this_tid()) == PGS_SH_OK);
     assert(g_api->stop(this_tid()) == PGS_SH_OK);  // revoke from any thread is allowed

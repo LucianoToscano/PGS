@@ -34,15 +34,15 @@
 // state after an invoke; it only re-validates UI/gym/account immediately before the
 // side effect and performs it exactly once.
 namespace {
-using namespace pgr_shared_meta;
+using namespace pgs_shared_meta;
 using namespace pgs_gym_repeat;
 
 struct Failure { const char *where; };
 void require(bool ok, const char *where) { if (!ok) throw Failure{where}; }
 
 // --- Process-lifetime state -------------------------------------------------------
-PgrBootBinding boot{};
-const PgrSharedMetadataOutput *md = nullptr;
+PgsBootBinding boot{};
+const PgsSharedMetadataOutput *md = nullptr;
 uint64_t owner = 0;
 std::atomic<bool> g_ready{false};     // required hooks installed
 std::atomic<bool> g_faulted{false};   // unrecoverable managed fault -> inert
@@ -154,10 +154,10 @@ uint64_t g_badge_scan=0;
 
 void *klass(void *o) { require(o, "null object"); return fn<void *(*)(void *)>(boot.runtime.object_get_class)(o); }
 void *cls(const char *ns, const char *name) {
-    const auto *api = static_cast<const PgrMetaApi *>(pgs_runtime_metadata_api(1));
+    const auto *api = static_cast<const PgsMetaApi *>(pgs_runtime_metadata_api(1));
     require(api && api->resolve_class, "metadata API");
-    PgrMetaClassQuery q{}; q.version = 1; q.size = sizeof(q); q.name_space = ns; q.name = name; q.canonical_match = PGR_MD_MATCH_EXACT;
-    PgrMetaClassResult out{}; require(api->resolve_class(&q, &out) == 0, name);
+    PgsMetaClassQuery q{}; q.version = 1; q.size = sizeof(q); q.name_space = ns; q.name = name; q.canonical_match = PGS_MD_MATCH_EXACT;
+    PgsMetaClassResult out{}; require(api->resolve_class(&q, &out) == 0, name);
     return const_cast<void *>(out.klass);
 }
 void *method_named(void *k, const char *name, int count) {
@@ -285,13 +285,13 @@ uint64_t player_id_hash() {
 }
 
 // --- Status surface (Android log tag + existing battle-status transport action) ---
-const PgrRuntimeTransportApi *transport() { return static_cast<const PgrRuntimeTransportApi *>(pgs_runtime_transport_api(1)); }
+const PgsRuntimeTransportApi *transport() { return static_cast<const PgsRuntimeTransportApi *>(pgs_runtime_transport_api(1)); }
 void status(const char *msg) {
     if (g_last_status == msg) return;
     g_last_status = msg;
     __android_log_print(ANDROID_LOG_INFO, "PGSGymRepeat", "%s", msg);
     const auto *tr = transport();
-    if (tr && tr->emit) { PgrRuntimeTransportString s{msg, uint32_t(std::strlen(msg))}; tr->emit(24, nullptr, 0, &s, 1); }
+    if (tr && tr->emit) { PgsRuntimeTransportString s{msg, uint32_t(std::strlen(msg))}; tr->emit(24, nullptr, 0, &s, 1); }
 }
 
 // --- Gate from transport (bool 40 enabled, 3 active, 6 battles, fresh/fault) -------
@@ -300,13 +300,13 @@ Gate read_gate() {
     g.foreground = !g_faulted.load(std::memory_order_acquire);
     const auto *tr = transport();
     if (!tr || !tr->sample || !tr->get_bool) { g.fresh = false; return g; }
-    PgrRuntimeTransportSample a{};
+    PgsRuntimeTransportSample a{};
     if (tr->sample(&a) != 0 || !a.snapshot_fresh || a.fault) { g.fresh = false; return g; }
     int enabled = 0, active = 0, battles = 0;
     tr->get_bool(40, &enabled);
     tr->get_bool(3, &active);
     tr->get_bool(6, &battles);
-    PgrRuntimeTransportSample z{};
+    PgsRuntimeTransportSample z{};
     if (tr->sample(&z) != 0 || !z.snapshot_fresh || z.snapshot_seq != a.snapshot_seq || z.fault || z.generation != a.generation) { g.fresh = false; return g; }
     g.enabled = enabled == 1;
     g.active = active == 1;
@@ -454,22 +454,22 @@ struct Bind { Slot slot; void *repl; };
 
 void *validate_hook(void *k, const char *name, const char *ret, int pcount,
                     const char *p0, const char *p1, uint64_t rva, const uint8_t *bytes, size_t len, void **code_out) {
-    const auto *api = static_cast<const PgrMetaApi *>(pgs_runtime_metadata_api(1));
+    const auto *api = static_cast<const PgsMetaApi *>(pgs_runtime_metadata_api(1));
     require(api && api->validate_method, "metadata validate");
-    PgrMetaMethodQuery q{}; q.version = 1; q.size = sizeof(q); q.owner = k; q.name = name;
-    q.return_type = ret; q.return_match = PGR_MD_MATCH_EXACT;
+    PgsMetaMethodQuery q{}; q.version = 1; q.size = sizeof(q); q.owner = k; q.name = name;
+    q.return_type = ret; q.return_match = PGS_MD_MATCH_EXACT;
     q.param_count = pcount; q.param_types[0] = p0; q.param_types[1] = p1;
-    q.param_match[0] = q.param_match[1] = PGR_MD_MATCH_EXACT;
+    q.param_match[0] = q.param_match[1] = PGS_MD_MATCH_EXACT;
     q.expected_code = static_cast<const char *>(boot.module_base) + rva;
     q.prologue = bytes; q.prologue_len = uint32_t(len);
-    PgrMetaMethodResult r{};
+    PgsMetaMethodResult r{};
     if (api->validate_method(&q, &r) != 0) return nullptr;
     if (code_out) *code_out = const_cast<void *>(r.code);
     return const_cast<void *>(r.method);
 }
 
 bool install() {
-    const auto *boot_api = static_cast<const PgrBootApi *>(pgs_runtime_bootstrap_api(1));
+    const auto *boot_api = static_cast<const PgsBootApi *>(pgs_runtime_bootstrap_api(1));
     require(boot_api && boot_api->snapshot && boot_api->snapshot(&boot) == 0 && boot.module_base, "runtime bootstrap");
 
     g_approach_class = cls("Niantic.Holoholo.Gym.Approach", "GymApproachGuiController");
@@ -477,29 +477,29 @@ bool install() {
     g_results_class = cls("Niantic.Holoholo.Gym", "GymBattleState");
     void *frame_class = cls("Niantic.Holoholo.Battle", "BattleFrame");
 
-    static const uint8_t b_ao[] = PGR_GAME_GYM_REPEAT_CPP_APPROACH_OPEN_BYTES;
-    static const uint8_t b_ab[] = PGR_GAME_GYM_REPEAT_CPP_APPROACH_BACK_BYTES;
-    static const uint8_t b_po[] = PGR_GAME_GYM_REPEAT_CPP_PREP_OPEN_BYTES;
-    static const uint8_t b_pb[] = PGR_GAME_GYM_REPEAT_CPP_PREP_BATTLE_BYTES;
-    static const uint8_t b_pe[] = PGR_GAME_GYM_REPEAT_CPP_PREP_EXIT_BYTES;
-    static const uint8_t b_re[] = PGR_GAME_GYM_REPEAT_CPP_RESULTS_EXIT_BYTES;
+    static const uint8_t b_ao[] = PGS_GAME_GYM_REPEAT_CPP_APPROACH_OPEN_BYTES;
+    static const uint8_t b_ab[] = PGS_GAME_GYM_REPEAT_CPP_APPROACH_BACK_BYTES;
+    static const uint8_t b_po[] = PGS_GAME_GYM_REPEAT_CPP_PREP_OPEN_BYTES;
+    static const uint8_t b_pb[] = PGS_GAME_GYM_REPEAT_CPP_PREP_BATTLE_BYTES;
+    static const uint8_t b_pe[] = PGS_GAME_GYM_REPEAT_CPP_PREP_EXIT_BYTES;
+    static const uint8_t b_re[] = PGS_GAME_GYM_REPEAT_CPP_RESULTS_EXIT_BYTES;
 
     void *code_ao = nullptr, *code_ab = nullptr, *code_po = nullptr, *code_pb = nullptr, *code_pe = nullptr, *code_re = nullptr;
     void *mo = validate_hook(g_approach_class, "HandleOpen", "System.Void", 0, nullptr, nullptr,
-                             PGR_GAME_GYM_REPEAT_CPP_APPROACH_OPEN_RVA, b_ao, sizeof(b_ao), &code_ao);
+                             PGS_GAME_GYM_REPEAT_CPP_APPROACH_OPEN_RVA, b_ao, sizeof(b_ao), &code_ao);
     void *mb = validate_hook(g_approach_class, "OnBackButtonPressed", "System.Void", 0, nullptr, nullptr,
-                             PGR_GAME_GYM_REPEAT_CPP_APPROACH_BACK_RVA, b_ab, sizeof(b_ab), &code_ab);
+                             PGS_GAME_GYM_REPEAT_CPP_APPROACH_BACK_RVA, b_ab, sizeof(b_ab), &code_ab);
     void *mpo = validate_hook(g_prep_class, "HandleOpen", "System.Void", 0, nullptr, nullptr,
-                              PGR_GAME_GYM_REPEAT_CPP_PREP_OPEN_RVA, b_po, sizeof(b_po), &code_po);
+                              PGS_GAME_GYM_REPEAT_CPP_PREP_OPEN_RVA, b_po, sizeof(b_po), &code_po);
     void *mpb = validate_hook(g_prep_class, "Battle", "System.Void", 0, nullptr, nullptr,
-                              PGR_GAME_GYM_REPEAT_CPP_PREP_BATTLE_RVA, b_pb, sizeof(b_pb), &code_pb);
+                              PGS_GAME_GYM_REPEAT_CPP_PREP_BATTLE_RVA, b_pb, sizeof(b_pb), &code_pb);
     void *mpe = validate_hook(g_prep_class, "ExitPressed", "System.Void", 0, nullptr, nullptr,
-                              PGR_GAME_GYM_REPEAT_CPP_PREP_EXIT_RVA, b_pe, sizeof(b_pe), &code_pe);
+                              PGS_GAME_GYM_REPEAT_CPP_PREP_EXIT_RVA, b_pe, sizeof(b_pe), &code_pe);
     // ExitBattleResultsState(BattleFrame, BattleResultsExit) -> the second parameter is
     // the exact BattleResultsExit enum, not a null/opaque pointer.
     void *mre = validate_hook(g_results_class, "ExitBattleResultsState", "System.Void", 2,
                               "Niantic.Holoholo.Battle.BattleFrame", "Niantic.Holoholo.Gym.BattleResultsExit",
-                              PGR_GAME_GYM_REPEAT_CPP_RESULTS_EXIT_RVA, b_re, sizeof(b_re), &code_re);
+                              PGS_GAME_GYM_REPEAT_CPP_RESULTS_EXIT_RVA, b_re, sizeof(b_re), &code_re);
 
     // Invoke-only (no fingerprint): the loop never passes synthetic team arrays.
     m_click_battle = method_named(g_approach_class, "ClickBattle", 0);
@@ -545,7 +545,7 @@ void drain_events(uint64_t now, const Gate &g) {
                     if (policy.state == ST_ARMED) {
                         g_gym_fort_id.assign(e.fort);
                         g_account_hash = e.account;
-                        PgrRuntimeTransportSample snap{}; transport()->sample(&snap); g_generation = snap.generation;
+                        PgsRuntimeTransportSample snap{}; transport()->sample(&snap); g_generation = snap.generation;
                         ++g_sessions;
                     }
                 }
@@ -597,7 +597,7 @@ void map_status_to_end(GymStatus st) {
 bool action_allowed() {
     if (g_cancel.load() || g_manual_cancel) { policy.on_manual_cancel(); return false; }
     if (!policy.gate_ok(read_gate())) return false;
-    PgrRuntimeTransportSample snap{};
+    PgsRuntimeTransportSample snap{};
     const auto *tr = transport();
     if (!tr || tr->sample(&snap) || snap.generation != g_generation) { policy.on_account_change(); return false; }
     const auto account = player_id_hash();
@@ -829,7 +829,7 @@ int api_tick(uint64_t proven_tid) {
         const uint64_t pid = player_id_hash();
         if (!pid || pid != g_account_hash) policy.on_account_change();
 
-        PgrRuntimeTransportSample snap{};
+        PgsRuntimeTransportSample snap{};
         if (transport()->sample(&snap) || snap.generation != g_generation) policy.on_account_change();
         if(policy.state==ST_WON && now>policy.deadline)policy.end_session(END_TIMEOUT);
         if (policy.gate_ok(read_gate()) && settle_gym_badge(now)) {

@@ -24,14 +24,14 @@ bool mighty=false,safari_offered=true;
 std::vector<std::string> safari_events;
 int safari_reads=0;
 bool safari_source(void *target,uint64_t owner,int item){assert(target==&wild&&owner==uint64_t(gettid())&&item==7);++safari_reads;return safari_offered;}
-int emit(uint32_t op,const int64_t*,uint32_t,const PgrRuntimeTransportString *s,uint32_t n){assert(op==19&&n==2);safari_events.emplace_back(s[1].ptr,s[1].len);return 0;}
+int emit(uint32_t op,const int64_t*,uint32_t,const PgsRuntimeTransportString *s,uint32_t n){assert(op==19&&n==2);safari_events.emplace_back(s[1].ptr,s[1].len);return 0;}
 uint64_t encounter=0xfedcba9876543210ULL, sent_encounter=0;
 int req_item=0;uint64_t req_encounter=0;void *req_spawn=nullptr;
 std::string config="1;1;1;0;1;1500;30;3;1;";
-int sample(PgrRuntimeTransportSample *out){out->snapshot_fresh=fresh;out->fault=0;return 0;}
+int sample(PgsRuntimeTransportSample *out){out->snapshot_fresh=fresh;out->fault=0;return 0;}
 int get_bool(uint32_t field,int *out){assert(field==36||field==38);*out=field==36?allowed:visible;return 0;}
 int get_string(uint32_t field,char *out,uint32_t cap,uint32_t *len){assert(field==7);*len=config.size();if(cap<config.size())return -1;memcpy(out,config.data(),config.size());return 0;}
-PgrRuntimeTransportApi transport{};
+PgsRuntimeTransportApi transport{};
 uintptr_t gc_new(void *o,int){auto h=next_root++;roots[h]=o;return h;}
 void *gc_get(uintptr_t h){auto i=roots.find(h);return i==roots.end()?nullptr:i->second;}
 void gc_free(uintptr_t h){assert(roots.erase(h)==1);}
@@ -192,9 +192,9 @@ int main(){
  wild_pokemon_ptr=&pokemon;atk=15;def=14;sta=12;
  PgsVgpIncense incense{};incense.klass=incense_map.cls;incense.class_response=incense_response.cls;
  incense.f_response=tag(INCENSE_RESPONSE);incense.f_pokemon=tag(INCENSE_POKEMON);
- g_pgr_vgp_kinds[0].store(&incense);
+ g_pgs_vgp_kinds[0].store(&incense);
  assert(pgs_smart_plan(&incense_map,&bag,tid,&d)==0&&d.ball==3&&d.berry==706);assert(roots.empty());
- g_pgr_vgp_kinds[0].store(nullptr);atk=def=sta=0;
+ g_pgs_vgp_kinds[0].store(nullptr);atk=def=sta=0;
  config="1;1;3;705;1;1500;30;3;1;25";
  wild_pokemon_ptr=&pokemon;stock[3]=0;stock[706]=0;
  stock[705]=0;assert(pgs_smart_plan(&wild,&bag,tid,&d)==0&&d.berry==0);assert(roots.empty());

@@ -18,12 +18,12 @@ uint64_t regressionGcNew(void *o,int pinned){
   return gcNew(o,pinned);
 }
 int regressionDue(uint64_t){return g_due&&!g_blocked?PGS_VP_YES:PGS_VP_OK;}
-int encounter(const PgrVgpActionsTarget *,uintptr_t *h){++encounters;return act_action(nullptr,h);}
-int capture(const PgrVgpActionsTarget *r,uintptr_t *h){
+int encounter(const PgsVgpActionsTarget *,uintptr_t *h){++encounters;return act_action(nullptr,h);}
+int capture(const PgsVgpActionsTarget *r,uintptr_t *h){
   ++captures;if(expectedCapture)assert(r->target==expectedCapture);return act_action(nullptr,h);
 }
-int spin(const PgrVgpActionsSpin *,uintptr_t *h){++spins;return act_action(nullptr,h);}
-int snapshot(void *svc,uint64_t owner,uint64_t lease,PgrVgpDiscoverySnapshot *out){
+int spin(const PgsVgpActionsSpin *,uintptr_t *h){++spins;return act_action(nullptr,h);}
+int snapshot(void *svc,uint64_t owner,uint64_t lease,PgsVgpDiscoverySnapshot *out){
   ++snapshots;const int rc=dsc_snapshot(svc,owner,lease,out);
   if(slowSnapshot)::usleep(4000);return rc;
 }
@@ -40,7 +40,7 @@ void resetRegression(){
   failPendingBag=slowSnapshot=false;afterBalls=nullptr;expectedCapture=nullptr;
   *reinterpret_cast<void**>(candObj.p())=&wildClass;
 }
-PgrVgpControllerTick catchTick(bool transfer=false){
+PgsVgpControllerTick catchTick(bool transfer=false){
   auto t=makeTick();t.mask=1;t.flags=PGS_VGC_TF_MANUAL_READY|(transfer?PGS_VGC_TF_TRANSFER_ENABLED:0);return t;
 }
 void drainEncounter(){
@@ -58,7 +58,7 @@ int main(int argc,char **argv){
   using GetApiFn=const void *(*)(uint32_t);
   auto get=reinterpret_cast<GetApiFn>(dlsym(lib,"pgs_native_api"));assert(get);
   const auto *core=static_cast<const pgs_native_api_v2*>(get(2));assert(core);
-  api=static_cast<const PgrVgpControllerApi*>(core->query_feature(33,1));assert(api&&api->size==72);
+  api=static_cast<const PgsVgpControllerApi*>(core->query_feature(33,1));assert(api&&api->size==72);
   tid=static_cast<uint64_t>(gettid());
   POL.due=regressionDue;ACT.encounter=encounter;ACT.capture=capture;ACT.spin=spin;
   DSC.snapshot=snapshot;MNT.balls=balls;MNT.cooldown=cooldown;

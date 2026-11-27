@@ -33,7 +33,7 @@ void throw_event(const char* phase,const std::string& message,int value=0) {
     auto tr=transport();if(!tr||!tr->emit)return;
     const std::string json="{\"phase\":"+json_quote(phase)+",\"message\":"+json_quote(message)+
         ",\"throw\":"+std::to_string(manual_throw.attempts)+",\"value\":"+std::to_string(value)+"}";
-    PgrRuntimeTransportString strings[]={{"auto-throw",10},{json.c_str(),uint32_t(json.size())}};
+    PgsRuntimeTransportString strings[]={{"auto-throw",10},{json.c_str(),uint32_t(json.size())}};
     tr->emit(19,nullptr,0,strings,2);
 }
 void throw_wait(const char* reason) {
@@ -48,7 +48,7 @@ struct ManualThrowPermission {PgsCatchChanceOptions config;bool foreground=false
 ManualThrowPermission throw_permission() {
     ManualThrowPermission p;auto tr=transport();
     if(!tr||!tr->sample||!tr->get_string||!tr->get_bool)return p;
-    PgrRuntimeTransportSample a{},z{};int foreground=0;char raw[96]{};uint32_t n=0;
+    PgsRuntimeTransportSample a{},z{};int foreground=0;char raw[96]{};uint32_t n=0;
     if(tr->sample(&a)||!a.snapshot_fresh||a.fault)return p;
     if(tr->get_string(15,raw,sizeof(raw),&n)||n>=sizeof(raw)||tr->get_bool(3,&foreground))return p;
     raw[n]=0;
@@ -87,9 +87,9 @@ void poll_manual_throw(uint64_t tid,int64_t now) {
     const uint64_t generation=manual_throw_generation;
     Root response;int result=0;int rc=PGS_VR_PENDING;
     if(manual_throw.berry_item){
-        const auto* api=static_cast<const PgrVgpResultsApi*>(pgs_vgp_results_api(1));
+        const auto* api=static_cast<const PgsVgpResultsApi*>(pgs_vgp_results_api(1));
         require(api&&api->poll,"Berry promise observer unavailable");
-        PgrVgpResultsResult out{};rc=api->poll(manual_throw.promise.get(),PGS_VR_PHASE_ENCOUNTER,tid,&out);response.h=out.value_handle;
+        PgsVgpResultsResult out{};rc=api->poll(manual_throw.promise.get(),PGS_VR_PHASE_ENCOUNTER,tid,&out);response.h=out.value_handle;
     }else rc=poll_auto_throw(manual_throw.promise,tid,response,result);
     if(generation!=manual_throw_generation)return;
     if(rc==PGS_VR_PENDING){
@@ -201,7 +201,7 @@ void step_manual_throw(uint64_t tid,bool raid_owns_game) {
     Root promise=submit_auto_throw(manual_throw.state,manual_throw.pokemon,value);
     if(generation!=manual_throw_generation)return;
     manual_throw.promise=std::move(promise);
-    PgrRuntimeTransportString action{"Ball throw",10};if(auto tr=transport())tr->emit(17,nullptr,0,&action,1);
+    PgsRuntimeTransportString action{"Ball throw",10};if(auto tr=transport())tr->emit(17,nullptr,0,&action,1);
     manual_throw.last_message.clear();throw_event("throw",std::string("Always Hit; radius=")+std::to_string(value.radius)+
         "; curve="+(value.spinning?"true":"false"),item);
 }

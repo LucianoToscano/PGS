@@ -1,12 +1,12 @@
 #pragma once
 #include <stdint.h>
-struct PgrSharedMetadataOutput;
+struct PgsSharedMetadataOutput;
 // Auto Rocket: walks to invaded PokéStops, starts each Team GO Rocket battle (grunts, optionally
 // leaders), lets the Rocket battle automation fight it, leaves the shadow catch to Auto throw and
 // moves on. Java owns the session (transport string slot 12, "T1|...") and the movement; this
 // controller owns finding stops and pressing the game's own screens. Unity owner thread only.
 // Returns true while a session owns the game, so other map automation waits.
-bool pgs_auto_rocket_tick(uint64_t tid, const PgrSharedMetadataOutput* metadata);
+bool pgs_auto_rocket_tick(uint64_t tid, const PgsSharedMetadataOutput* metadata);
 void pgs_auto_rocket_stop(uint64_t tid);
 // 1 while an Auto Rocket session is set to keep every catch (no transfer rules).
 extern "C" int pgs_auto_rocket_keeps_catches();

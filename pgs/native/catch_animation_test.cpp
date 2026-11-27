@@ -76,8 +76,8 @@ int   g_reenter = 0;
 void *g_reenter_anim = nullptr;
 void *g_reenter_resp = nullptr;
 
-const PgrSpeedApi *g_api = nullptr; // resolved once; used by the reentry injection
-const PgrSpeedApi2 *g_max_api = nullptr;
+const PgsSpeedApi *g_api = nullptr; // resolved once; used by the reentry injection
+const PgsSpeedApi2 *g_max_api = nullptr;
 bool revoke_on_speed_read=false;
 
 // --- fake IL2CPP exports ----------------------------------------------------------
@@ -118,7 +118,7 @@ void *fake_invoke(void *method, void *obj, void **params, void **exc) {
 }
 
 // --- test helpers -----------------------------------------------------------------
-PgrSpeedSample snap() { PgrSpeedSample s{}; g_api->sample(&s); return s; }
+PgsSpeedSample snap() { PgsSpeedSample s{}; g_api->sample(&s); return s; }
 
 void reset_fakes() {
     for (auto &h : g_handles) { h.used = false; h.obj = nullptr; }
@@ -336,12 +336,12 @@ int main(int argc, char **argv) {
     auto get = reinterpret_cast<const void *(*)(uint32_t)>(dlsym(lib, "pgs_native_api"));
     auto core = get ? static_cast<const pgs_native_api_v2 *>(get(2)) : nullptr;
     if (!core || core->size != 48 || core->query_feature(8, 99) || core->query_feature(99, 1)) return 3;
-    g_api = static_cast<const PgrSpeedApi *>(core->query_feature(8, 1));
+    g_api = static_cast<const PgsSpeedApi *>(core->query_feature(8, 1));
     if (!g_api || g_api->version != 1 || g_api->size != 56) return 4;
-    g_max_api=static_cast<const PgrSpeedApi2*>(core->query_feature(8,2));
+    g_max_api=static_cast<const PgsSpeedApi2*>(core->query_feature(8,2));
     if(!g_max_api||g_max_api->version!=2||g_max_api->size!=16)return 90;
 
-    PgrSpeedConfig cfg{};
+    PgsSpeedConfig cfg{};
     cfg.version = 1; cfg.size = sizeof(cfg);
     cfg.runtime_invoke = reinterpret_cast<void *>(&fake_invoke);
     cfg.gchandle_new = reinterpret_cast<void *>(&fake_root);
@@ -360,7 +360,7 @@ int main(int argc, char **argv) {
     // install() is process-lifetime and idempotent for an identical config; a config
     // whose version/size/pointers fail validation never writes.
     if (g_api->install(&cfg) != 0 || g_api->install(&cfg) != 0) return 5;
-    PgrSpeedConfig bad = cfg; bad.class_bool = bad.class_single; // duplicate class -> refused
+    PgsSpeedConfig bad = cfg; bad.class_bool = bad.class_single; // duplicate class -> refused
     if (g_api->install(&bad) == 0) return 6;
 
     // --- latched-fault cases, each off the pristine post-install state ----------------

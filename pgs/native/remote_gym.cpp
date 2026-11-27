@@ -15,12 +15,12 @@
 #include <algorithm>
 #include <utility>
 namespace {
-using namespace pgr_shared_meta;
+using namespace pgs_shared_meta;
 using namespace pgs_remote_gym;
 struct Failure {const char *where;};
 void require(bool ok,const char *where){if(!ok)throw Failure{where};}
 template<class F>F fn(void *p){require(p,"missing runtime export");return reinterpret_cast<F>(p);}
-PgrBootBinding boot{};const PgrSharedMetadataOutput *md=nullptr;
+PgsBootBinding boot{};const PgsSharedMetadataOutput *md=nullptr;
 uint64_t owner=0,finished_token=0;
 uint64_t clock_ms(clockid_t c=CLOCK_BOOTTIME){timespec t{};clock_gettime(c,&t);return uint64_t(t.tv_sec)*1000+t.tv_nsec/1000000;}
 void *exp(const char *name){std::string n="il2cpp_";n+=name;void *p=dlsym(boot.handle,n.c_str());require(p,name);return p;}
@@ -37,9 +37,9 @@ struct Root {
 void *klass(void *o){require(o,"null object");return fn<void*(*)(void*)>(boot.runtime.object_get_class)(o);}
 void *cls(const char *ns,const char *name){
  static std::map<std::string,void*> cache;std::string key=std::string(ns)+"."+name;auto it=cache.find(key);if(it!=cache.end())return it->second;
- const auto *api=static_cast<const PgrMetaApi*>(pgs_runtime_metadata_api(1));require(api,"metadata API");
- PgrMetaClassQuery q{};q.version=1;q.size=sizeof(q);q.name_space=ns;q.name=name;q.canonical_match=PGR_MD_MATCH_EXACT;
- PgrMetaClassResult out{};require(api->resolve_class(&q,&out)==0,name);return cache[key]=const_cast<void*>(out.klass);
+ const auto *api=static_cast<const PgsMetaApi*>(pgs_runtime_metadata_api(1));require(api,"metadata API");
+ PgsMetaClassQuery q{};q.version=1;q.size=sizeof(q);q.name_space=ns;q.name=name;q.canonical_match=PGS_MD_MATCH_EXACT;
+ PgsMetaClassResult out{};require(api->resolve_class(&q,&out)==0,name);return cache[key]=const_cast<void*>(out.klass);
 }
 std::string typename_of(void *type){char *p=fn<char*(*)(void*)>(boot.meta.type_get_name)(type);require(p,"type name");std::string s=p;fn<void(*)(void*)>(boot.meta.mem_free)(p);return s;}
 void *field_info(void *k,const char *name,const char *type){
@@ -79,8 +79,8 @@ Root item(Root &list,int index){void *args[]={&index};return Root(call(list.get(
 void *virtual_call(Root &o,void *m,void **args=nullptr){void *v=fn<void*(*)(void*,void*)>(exp("object_get_virtual_method"))(o.get(),m);require(v,"virtual method");return invoke(v,o.get(),args);}
 struct Permission {Command command;double lat=0,lon=0;bool allowed=false,valid=false;};
 Permission permission(){
- Permission p;auto tr=static_cast<const PgrRuntimeTransportApi*>(pgs_runtime_transport_api(1));if(!tr)return p;
- PgrRuntimeTransportSample before{},after{};if(tr->sample(&before)||!before.snapshot_fresh||before.fault)return p;
+ Permission p;auto tr=static_cast<const PgsRuntimeTransportApi*>(pgs_runtime_transport_api(1));if(!tr)return p;
+ PgsRuntimeTransportSample before{},after{};if(tr->sample(&before)||!before.snapshot_fresh||before.fault)return p;
  char text[97]{};uint32_t len=0;int active=0,ready=0,has=0;
  if(tr->get_string(12,text,sizeof(text),&len)||!parse(text,len,p.command))return p;
  tr->get_bool(3,&active);tr->get_bool(16,&ready);
@@ -100,9 +100,9 @@ struct Session {
 Session session;
 std::string quote(const std::string &s){std::string out="\"";for(unsigned char c:s){if(c=='"'||c=='\\')out+='\\';if(c>=32)out+=char(c);}return out+'"';}
 void event(const char *phase,const std::string &message){
- auto tr=static_cast<const PgrRuntimeTransportApi*>(pgs_runtime_transport_api(1));if(!tr)return;
+ auto tr=static_cast<const PgsRuntimeTransportApi*>(pgs_runtime_transport_api(1));if(!tr)return;
  std::string json="{\"kind\":\"remote-gym\",\"token\":"+quote(std::to_string(session.command.token))+",\"phase\":"+quote(phase)+",\"message\":"+quote(message)+",\"berries\":"+std::to_string(session.berries)+",\"dust\":"+std::to_string(session.dust)+",\"gyms\":"+std::to_string(session.visited.size())+"}";
- PgrRuntimeTransportString strings[]={{"remote-gym",10},{json.c_str(),uint32_t(json.size())}};
+ PgsRuntimeTransportString strings[]={{"remote-gym",10},{json.c_str(),uint32_t(json.size())}};
  if(tr->emit(19,nullptr,0,strings,2)!=0)session.canceled=true;
 }
 void finish(const char *phase,const std::string &message){
@@ -171,8 +171,8 @@ void expand_defenders(void *response,pgs_gym::History &history){
  }
 }
 void poll(pgs_gym::History &history){
- auto now=clock_ms();auto vr=static_cast<const PgrVgpResultsApi*>(pgs_vgp_results_api(1));require(vr,"Promise observer unavailable");
- PgrVgpResultsResult out{};int rc=vr->poll(session.promise.get(),1,owner,&out);
+ auto now=clock_ms();auto vr=static_cast<const PgsVgpResultsApi*>(pgs_vgp_results_api(1));require(vr,"Promise observer unavailable");
+ PgsVgpResultsResult out{};int rc=vr->poll(session.promise.get(),1,owner,&out);
  if(!rc){if(now-session.since>15000){history.refuse(session.targets[session.cursor].id,now);finish("error","Feed outcome unknown; not retried");}return;}
  Root response;if(out.value_handle)response.h=out.value_handle;
  session.promise.reset();session.reflection.reset();
@@ -199,14 +199,14 @@ void poll(pgs_gym::History &history){
  if(session.canceled)finish("stopped","Batch stopped");
 }
 }
-void pgs_remote_gym_tick(uint64_t tid,const PgrSharedMetadataOutput *metadata){
+void pgs_remote_gym_tick(uint64_t tid,const PgsSharedMetadataOutput *metadata){
  if(!tid||tid!=uint64_t(gettid())||(owner&&owner!=tid))return;
  try{
   auto p=permission();
   if(!session.active){
    if(!p.valid||!p.allowed||p.command.mode!=1||p.command.token==finished_token)return;
    owner=tid;md=metadata;require(md,"Shared metadata unavailable");
-   auto api=static_cast<const PgrBootApi*>(pgs_runtime_bootstrap_api(1));boot.version=1;boot.size=sizeof(boot);require(api&&api->snapshot(&boot)==0,"Runtime unavailable");
+   auto api=static_cast<const PgsBootApi*>(pgs_runtime_bootstrap_api(1));boot.version=1;boot.size=sizeof(boot);require(api&&api->snapshot(&boot)==0,"Runtime unavailable");
    session.active=true;session.command=p.command;session.started=clock_ms();session.account=player();require(!session.account.empty(),"Account identity unavailable");
    session.bag=resolve("Niantic.Holoholo","IPokemonBag");require(bool(session.bag),"Pokemon bag unavailable");
    Root all(call(session.bag.get(),"get_AllPokemon"));require(bool(all),"Pokemon collection unavailable");

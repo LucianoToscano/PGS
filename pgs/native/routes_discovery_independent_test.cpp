@@ -27,13 +27,13 @@
 #include <vector>
 
 // The test re-asserts the frozen ABI sizes independently of the header's own static_asserts.
-static_assert(sizeof(PgrRoutesDiscoveryConfig) == 312, "config 312");
-static_assert(sizeof(PgrRoutesDiscoveryRequest) == 48, "request 48");
-static_assert(sizeof(PgrRoutesDiscoveryLookup) == 304, "lookup 304");
-static_assert(sizeof(PgrRoutesDiscoveryRoute) == 832, "route 832");
-static_assert(sizeof(PgrRoutesDiscoveryOutput) == 83216, "output 83216");
-static_assert(sizeof(PgrRoutesDiscoveryPoints) == 80016, "points 80016");
-static_assert(sizeof(PgrRoutesDiscoveryApi) == 64, "table 64");
+static_assert(sizeof(PgsRoutesDiscoveryConfig) == 312, "config 312");
+static_assert(sizeof(PgsRoutesDiscoveryRequest) == 48, "request 48");
+static_assert(sizeof(PgsRoutesDiscoveryLookup) == 304, "lookup 304");
+static_assert(sizeof(PgsRoutesDiscoveryRoute) == 832, "route 832");
+static_assert(sizeof(PgsRoutesDiscoveryOutput) == 83216, "output 83216");
+static_assert(sizeof(PgsRoutesDiscoveryPoints) == 80016, "points 80016");
+static_assert(sizeof(PgsRoutesDiscoveryApi) == 64, "table 64");
 
 namespace {
 
@@ -69,7 +69,7 @@ int generation = 0, moves = 0, managed = 0, listItemCalls = 0, wpItemCalls = 0;
 std::map<uintptr_t, void *> roots;
 uintptr_t serial = 100, hostService = 0, hostServiceB = 0;
 
-const PgrRoutesDiscoveryApi *api = nullptr;
+const PgsRoutesDiscoveryApi *api = nullptr;
 const char *mode = nullptr;
 
 // Scenario knobs.
@@ -80,8 +80,8 @@ bool cleanupFired = false;
 uintptr_t cleanupTarget=0, lookupRevokeTarget=0;
 int reentryResult = 999;
 
-PgrRoutesDiscoveryOutput g_out;   // 83 KB; reused + zeroed per discover()
-PgrRoutesDiscoveryPoints g_pts;   // 80 KB; reused + zeroed per points()
+PgsRoutesDiscoveryOutput g_out;   // 83 KB; reused + zeroed per discover()
+PgsRoutesDiscoveryPoints g_pts;   // 80 KB; reused + zeroed per points()
 
 Object *obj(int i) { return &gens[generation]->object[i]; }
 int index(void *p) {
@@ -107,7 +107,7 @@ void move() {
   ++moves;
 }
 
-PgrRoutesDiscoveryRequest discReq();  // fwd
+PgsRoutesDiscoveryRequest discReq();  // fwd
 
 // --- fake il2cpp callbacks ------------------------------------------------------------------------------
 uintptr_t gcNew(void *p, int pinned) { assert(!pinned); index(p); auto h = ++serial; roots[h] = p; move(); return h; }
@@ -120,7 +120,7 @@ void gcFree(uintptr_t h) {
     if (cleanupAction == CLEAN_REENTER) {
       auto r = discReq();
       int before = managed;
-      static PgrRoutesDiscoveryOutput nested;  // separate buffer; reentrant call must refuse before any work
+      static PgsRoutesDiscoveryOutput nested;  // separate buffer; reentrant call must refuse before any work
       std::memset(&nested, 0, sizeof(nested));
       reentryResult = api->discover(&r, &nested);
       assert(managed == before && "reentrant discover must refuse BEFORE any managed work");
@@ -188,8 +188,8 @@ void *invoke(const void *method, void *recv, void **args, void **exc) {
 }
 
 // --- request / lookup builders --------------------------------------------------------------------------
-PgrRoutesDiscoveryRequest discReq() {
-  PgrRoutesDiscoveryRequest r{};
+PgsRoutesDiscoveryRequest discReq() {
+  PgsRoutesDiscoveryRequest r{};
   r.version = PGS_RD_REQUEST_VERSION;
   r.size = sizeof(r);
   r.tid = static_cast<uint64_t>(gettid());
@@ -198,8 +198,8 @@ PgrRoutesDiscoveryRequest discReq() {
   r.service_handle = hostService;
   return r;
 }
-PgrRoutesDiscoveryLookup lookupReq(const char *id, uint64_t svc) {
-  PgrRoutesDiscoveryLookup l{};
+PgsRoutesDiscoveryLookup lookupReq(const char *id, uint64_t svc) {
+  PgsRoutesDiscoveryLookup l{};
   l.version = PGS_RD_LOOKUP_VERSION;
   l.size = sizeof(l);
   l.tid = static_cast<uint64_t>(gettid());
@@ -211,14 +211,14 @@ PgrRoutesDiscoveryLookup lookupReq(const char *id, uint64_t svc) {
   for (int i = 0; i < n; i++) l.id[i] = static_cast<uint16_t>(id[i]);
   return l;
 }
-bool idEq(const PgrRoutesDiscoveryRoute &r, const char *s) {
+bool idEq(const PgsRoutesDiscoveryRoute &r, const char *s) {
   size_t n = std::strlen(s);
   if (r.id_length != n) return false;
   for (size_t i = 0; i < n; i++)
     if (r.id[i] != static_cast<uint16_t>(s[i])) return false;
   return true;
 }
-int doDiscover(PgrRoutesDiscoveryRequest &r) {
+int doDiscover(PgsRoutesDiscoveryRequest &r) {
   std::memset(&g_out, 0, sizeof(g_out));
   inDiscover = true;
   int rc = api->discover(&r, &g_out);
@@ -263,7 +263,7 @@ void setupGraph() {
   for (int i = 0; i < 4; i++) obj(NAME0)->text[i] = static_cast<uint16_t>("Name"[i]);
 }
 void installConfig() {
-  PgrRoutesDiscoveryConfig c{};
+  PgsRoutesDiscoveryConfig c{};
   c.version = PGS_RD_CONFIG_VERSION;
   c.size = sizeof(c);
   c.runtime_invoke = reinterpret_cast<void *>(&invoke);
@@ -466,9 +466,9 @@ int scenario(const char *name) {
     distinctIds = true;
     auto r = discReq();
     int rc = doDiscover(r);
-    assert(listItemCalls <= PGR_RD_MAX_ROUTES && "the route walk must be bounded by PGR_RD_MAX_ROUTES");
-    assert(g_out.count <= PGR_RD_MAX_ROUTES);
-    assert(rc==PGS_RD_OK && g_out.count==PGR_RD_MAX_ROUTES && listItemCalls==PGR_RD_MAX_ROUTES);
+    assert(listItemCalls <= PGS_RD_MAX_ROUTES && "the route walk must be bounded by PGS_RD_MAX_ROUTES");
+    assert(g_out.count <= PGS_RD_MAX_ROUTES);
+    assert(rc==PGS_RD_OK && g_out.count==PGS_RD_MAX_ROUTES && listItemCalls==PGS_RD_MAX_ROUTES);
     std::printf("count-truncate observed: status=%d count=%u itemCalls=%d\n", rc, g_out.count, listItemCalls);
     cleanupRoots(); pass(name); return 0;
   }
@@ -569,7 +569,7 @@ int main(int argc, char **argv) {
   auto get = reinterpret_cast<const void *(*)(uint32_t)>(dlsym(library, "pgs_native_api"));
   auto core = get ? static_cast<const pgs_native_api_v2 *>(get(2)) : nullptr;
   assert(core && core->query_feature(44, 99) == nullptr);  // exact-version only
-  api = static_cast<const PgrRoutesDiscoveryApi *>(core->query_feature(44, 1));
-  assert(api && api->size == sizeof(PgrRoutesDiscoveryApi) && api->version == PGS_RD_API_VERSION);
+  api = static_cast<const PgsRoutesDiscoveryApi *>(core->query_feature(44, 1));
+  assert(api && api->size == sizeof(PgsRoutesDiscoveryApi) && api->version == PGS_RD_API_VERSION);
   return scenario(argv[2]);
 }

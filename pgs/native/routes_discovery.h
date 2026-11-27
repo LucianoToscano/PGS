@@ -12,7 +12,7 @@
 // back into JS.
 //
 // It OWNS the discovery read AND the retained GC roots to accepted SharedRouteProto route definitions
-// (max PGR_RD_MAX_ROUTES). It has its OWN revocation generation, distinct from feature 43. doStart passes
+// (max PGS_RD_MAX_ROUTES). It has its OWN revocation generation, distinct from feature 43. doStart passes
 // the BORROWED handle lookup() returns straight to the existing feature-43 action(START); feature 43
 // resolves + roots it and never frees it. feature 43's ABI is NOT altered by this module.
 //
@@ -59,7 +59,7 @@ enum PgsRoutesDiscoveryInfo {
   PGS_RD_OUTPUT_VERSION  = 1,
   PGS_RD_POINTS_VERSION  = 1,
   PGS_RD_MAX_LEASE_MS    = 2500,  // residual foreground lease ceiling (JS quick-close lease window)
-  PGR_RD_MAX_ROUTES      = 100,   // snapshot / cache route ceiling (JS LIMITS.routesMax)
+  PGS_RD_MAX_ROUTES      = 100,   // snapshot / cache route ceiling (JS LIMITS.routesMax)
   PGS_RD_MAX_POINTS      = 5000,  // waypoints per route (JS LIMITS.pointsMax)
   PGS_RD_ID_MAX          = 128,   // UTF16 route-id length ceiling (JS id length 1..128)
   PGS_RD_NAME_MAX        = 256,   // UTF16 route-name length ceiling (JS boundSnapshot name slice)
@@ -81,7 +81,7 @@ enum PgsRoutesDiscoveryStatus {
   PGS_RD_ERR_GCHANDLE      = -12, // a temporary/cache root could not be allocated / expected value null
   PGS_RD_ERR_MANAGED       = -13, // a LIST-level managed call threw
   PGS_RD_ERR_METADATA      = -14, // a resolved object had the wrong class / a count box was not Int32
-  PGS_RD_ERR_BAD_COUNT     = -16, // the nearby-routes List length exceeded PGR_RD_MAX_ROUTES
+  PGS_RD_ERR_BAD_COUNT     = -16, // the nearby-routes List length exceeded PGS_RD_MAX_ROUTES
   PGS_RD_ERR_ALLOCATION    = -17, // heap staging / point-array allocation failed
   PGS_RD_ERR_BAD_INDEX     = -18  // points(): index >= the published route count
 };
@@ -97,9 +97,9 @@ enum PgsRoutesDiscoveryFlags {
 // is an already-validated il2cpp export / Il2CppClass* / MethodInfo* / FieldInfo* packed by the host from
 // routes.js metadata. All are MANDATORY (non-null). Reordering is forbidden. install() publishes the
 // config immutably: an identical config is idempotent (0); a different one is rejected (RECONFIG).
-struct PgrRoutesDiscoveryConfig {
+struct PgsRoutesDiscoveryConfig {
   uint32_t version;  // == PGS_RD_CONFIG_VERSION
-  uint32_t size;     // == sizeof(PgrRoutesDiscoveryConfig)
+  uint32_t size;     // == sizeof(PgsRoutesDiscoveryConfig)
 
   // il2cpp runtime exports (slots 0-9).
   void *runtime_invoke;        // 0  void*     (MethodInfo*, void* obj, void** params, void** exc)
@@ -148,19 +148,19 @@ struct PgrRoutesDiscoveryConfig {
   void *class_waypoints; // 37 validated SharedRoute Waypoints collection class
 };
 
-static_assert(sizeof(PgrRoutesDiscoveryConfig) == 312, "PgrRoutesDiscoveryConfig must remain 312 bytes on LP64");
-static_assert(offsetof(PgrRoutesDiscoveryConfig, runtime_invoke) == 8, "config body start (slot 0)");
-static_assert(offsetof(PgrRoutesDiscoveryConfig, class_routes) == 88, "slot 10");        // 8 + 10*8
-static_assert(offsetof(PgrRoutesDiscoveryConfig, class_int32) == 144, "slot 17");        // 8 + 17*8
-static_assert(offsetof(PgrRoutesDiscoveryConfig, m_listCount) == 152, "slot 18");        // 8 + 18*8
-static_assert(offsetof(PgrRoutesDiscoveryConfig, f_routes_didn) == 184, "slot 22");      // 8 + 22*8
-static_assert(offsetof(PgrRoutesDiscoveryConfig, f_wp_lon) == 280, "slot 34");           // 8 + 34*8
-static_assert(offsetof(PgrRoutesDiscoveryConfig, f_stats_cooldown) == 288, "slot 35");   // 8 + 35*8
+static_assert(sizeof(PgsRoutesDiscoveryConfig) == 312, "PgsRoutesDiscoveryConfig must remain 312 bytes on LP64");
+static_assert(offsetof(PgsRoutesDiscoveryConfig, runtime_invoke) == 8, "config body start (slot 0)");
+static_assert(offsetof(PgsRoutesDiscoveryConfig, class_routes) == 88, "slot 10");        // 8 + 10*8
+static_assert(offsetof(PgsRoutesDiscoveryConfig, class_int32) == 144, "slot 17");        // 8 + 17*8
+static_assert(offsetof(PgsRoutesDiscoveryConfig, m_listCount) == 152, "slot 18");        // 8 + 18*8
+static_assert(offsetof(PgsRoutesDiscoveryConfig, f_routes_didn) == 184, "slot 22");      // 8 + 22*8
+static_assert(offsetof(PgsRoutesDiscoveryConfig, f_wp_lon) == 280, "slot 34");           // 8 + 34*8
+static_assert(offsetof(PgsRoutesDiscoveryConfig, f_stats_cooldown) == 288, "slot 35");   // 8 + 35*8
 
 // Fixed LP64 request (48 bytes) for discover / points / drain.
-struct PgrRoutesDiscoveryRequest {
+struct PgsRoutesDiscoveryRequest {
   uint32_t version;        // off 0  == PGS_RD_REQUEST_VERSION
-  uint32_t size;           // off 4  == sizeof(PgrRoutesDiscoveryRequest)
+  uint32_t size;           // off 4  == sizeof(PgsRoutesDiscoveryRequest)
   uint64_t tid;            // off 8  proven owner tid
   uint64_t residual_ms;    // off 16 residual lease; clamped, 0 refuses (drain ignores the lease)
   uint64_t generation;     // off 24 revocation token (== generation() at stamp)
@@ -169,17 +169,17 @@ struct PgrRoutesDiscoveryRequest {
   uint32_t reserved;       // off 44 0 in v1
 };
 
-static_assert(sizeof(PgrRoutesDiscoveryRequest) == 48, "PgrRoutesDiscoveryRequest must remain 48 bytes on LP64");
-static_assert(offsetof(PgrRoutesDiscoveryRequest, tid) == 8, "request tid");
-static_assert(offsetof(PgrRoutesDiscoveryRequest, residual_ms) == 16, "request residual");
-static_assert(offsetof(PgrRoutesDiscoveryRequest, generation) == 24, "request generation");
-static_assert(offsetof(PgrRoutesDiscoveryRequest, service_handle) == 32, "request service handle");
-static_assert(offsetof(PgrRoutesDiscoveryRequest, index) == 40, "request index");
+static_assert(sizeof(PgsRoutesDiscoveryRequest) == 48, "PgsRoutesDiscoveryRequest must remain 48 bytes on LP64");
+static_assert(offsetof(PgsRoutesDiscoveryRequest, tid) == 8, "request tid");
+static_assert(offsetof(PgsRoutesDiscoveryRequest, residual_ms) == 16, "request residual");
+static_assert(offsetof(PgsRoutesDiscoveryRequest, generation) == 24, "request generation");
+static_assert(offsetof(PgsRoutesDiscoveryRequest, service_handle) == 32, "request service handle");
+static_assert(offsetof(PgsRoutesDiscoveryRequest, index) == 40, "request index");
 
 // Fixed LP64 lookup (304 bytes). service_handle MUST resolve to the cache-bound RoutesService object.
-struct PgrRoutesDiscoveryLookup {
+struct PgsRoutesDiscoveryLookup {
   uint32_t version;        // off 0  == PGS_RD_LOOKUP_VERSION
-  uint32_t size;           // off 4  == sizeof(PgrRoutesDiscoveryLookup)
+  uint32_t size;           // off 4  == sizeof(PgsRoutesDiscoveryLookup)
   uint64_t tid;            // off 8  proven owner tid
   uint64_t residual_ms;    // off 16 residual lease; clamped, 0 refuses
   uint64_t generation;     // off 24 revocation token (== generation() at stamp)
@@ -189,14 +189,14 @@ struct PgrRoutesDiscoveryLookup {
   uint16_t id[PGS_RD_ID_MAX]; // off 48 requested route id (UTF16, not NUL terminated)
 };
 
-static_assert(sizeof(PgrRoutesDiscoveryLookup) == 304, "PgrRoutesDiscoveryLookup must remain 304 bytes on LP64");
-static_assert(offsetof(PgrRoutesDiscoveryLookup, service_handle) == 32, "lookup service handle");
-static_assert(offsetof(PgrRoutesDiscoveryLookup, id_length) == 40, "lookup id length");
-static_assert(offsetof(PgrRoutesDiscoveryLookup, id) == 48, "lookup id");
+static_assert(sizeof(PgsRoutesDiscoveryLookup) == 304, "PgsRoutesDiscoveryLookup must remain 304 bytes on LP64");
+static_assert(offsetof(PgsRoutesDiscoveryLookup, service_handle) == 32, "lookup service handle");
+static_assert(offsetof(PgsRoutesDiscoveryLookup, id_length) == 40, "lookup id length");
+static_assert(offsetof(PgsRoutesDiscoveryLookup, id) == 48, "lookup id");
 
 // Fixed LP64 route header (832 bytes), discover() output element. Scalar only -- NO managed pointer and NO
 // inline points (fetched separately via points()). start/end doubles are valid only when flagged.
-struct PgrRoutesDiscoveryRoute {
+struct PgsRoutesDiscoveryRoute {
   uint32_t flags;        // off 0  PgsRoutesDiscoveryFlags
   uint32_t id_length;    // off 4  UTF16 units in id (1..128)
   uint32_t name_length;  // off 8  UTF16 units in name (0..256)
@@ -211,71 +211,71 @@ struct PgrRoutesDiscoveryRoute {
   uint16_t name[PGS_RD_NAME_MAX]; // off 320 copied UTF16 route name
 };
 
-static_assert(sizeof(PgrRoutesDiscoveryRoute) == 832, "PgrRoutesDiscoveryRoute must remain 832 bytes on LP64");
-static_assert(offsetof(PgrRoutesDiscoveryRoute, distance_meters) == 16, "route distance");
-static_assert(offsetof(PgrRoutesDiscoveryRoute, start_lat) == 32, "route start");
-static_assert(offsetof(PgrRoutesDiscoveryRoute, id) == 64, "route id");
-static_assert(offsetof(PgrRoutesDiscoveryRoute, name) == 320, "route name");
+static_assert(sizeof(PgsRoutesDiscoveryRoute) == 832, "PgsRoutesDiscoveryRoute must remain 832 bytes on LP64");
+static_assert(offsetof(PgsRoutesDiscoveryRoute, distance_meters) == 16, "route distance");
+static_assert(offsetof(PgsRoutesDiscoveryRoute, start_lat) == 32, "route start");
+static_assert(offsetof(PgsRoutesDiscoveryRoute, id) == 64, "route id");
+static_assert(offsetof(PgsRoutesDiscoveryRoute, name) == 320, "route name");
 
 // Fixed LP64 discover output (83216 bytes). Fully zeroed on entry; header re-stamped. On a positive return
 // the first `count` route headers are valid; on 0/negative count stays 0.
-struct PgrRoutesDiscoveryOutput {
+struct PgsRoutesDiscoveryOutput {
   uint32_t version;  // off 0  == PGS_RD_OUTPUT_VERSION
-  uint32_t size;     // off 4  == sizeof(PgrRoutesDiscoveryOutput)
+  uint32_t size;     // off 4  == sizeof(PgsRoutesDiscoveryOutput)
   int32_t  status;   // off 8  == the discover() return
-  uint32_t count;    // off 12 number of valid route headers (<= PGR_RD_MAX_ROUTES)
-  PgrRoutesDiscoveryRoute routes[PGR_RD_MAX_ROUTES]; // off 16
+  uint32_t count;    // off 12 number of valid route headers (<= PGS_RD_MAX_ROUTES)
+  PgsRoutesDiscoveryRoute routes[PGS_RD_MAX_ROUTES]; // off 16
 };
 
-static_assert(sizeof(PgrRoutesDiscoveryOutput) == 83216, "PgrRoutesDiscoveryOutput must remain 83216 bytes on LP64");
-static_assert(offsetof(PgrRoutesDiscoveryOutput, status) == 8, "output status");
-static_assert(offsetof(PgrRoutesDiscoveryOutput, count) == 12, "output count");
-static_assert(offsetof(PgrRoutesDiscoveryOutput, routes) == 16, "output routes");
+static_assert(sizeof(PgsRoutesDiscoveryOutput) == 83216, "PgsRoutesDiscoveryOutput must remain 83216 bytes on LP64");
+static_assert(offsetof(PgsRoutesDiscoveryOutput, status) == 8, "output status");
+static_assert(offsetof(PgsRoutesDiscoveryOutput, count) == 12, "output count");
+static_assert(offsetof(PgsRoutesDiscoveryOutput, routes) == 16, "output routes");
 
 // One decoded waypoint.
-struct PgrRoutesDiscoveryPoint {
+struct PgsRoutesDiscoveryPoint {
   double lat;  // off 0
   double lon;  // off 8
 };
 
-static_assert(sizeof(PgrRoutesDiscoveryPoint) == 16, "PgrRoutesDiscoveryPoint must remain 16 bytes on LP64");
+static_assert(sizeof(PgsRoutesDiscoveryPoint) == 16, "PgsRoutesDiscoveryPoint must remain 16 bytes on LP64");
 
 // Fixed LP64 points output (80016 bytes), reused per route. Fully zeroed on entry; header re-stamped.
-struct PgrRoutesDiscoveryPoints {
+struct PgsRoutesDiscoveryPoints {
   uint32_t version;  // off 0  == PGS_RD_POINTS_VERSION
-  uint32_t size;     // off 4  == sizeof(PgrRoutesDiscoveryPoints)
+  uint32_t size;     // off 4  == sizeof(PgsRoutesDiscoveryPoints)
   int32_t  status;   // off 8  == the points() return
   uint32_t count;    // off 12 number of valid points (<= PGS_RD_MAX_POINTS)
-  PgrRoutesDiscoveryPoint points[PGS_RD_MAX_POINTS]; // off 16
+  PgsRoutesDiscoveryPoint points[PGS_RD_MAX_POINTS]; // off 16
 };
 
-static_assert(sizeof(PgrRoutesDiscoveryPoints) == 80016, "PgrRoutesDiscoveryPoints must remain 80016 bytes on LP64");
-static_assert(offsetof(PgrRoutesDiscoveryPoints, points) == 16, "points points");
+static_assert(sizeof(PgsRoutesDiscoveryPoints) == 80016, "PgsRoutesDiscoveryPoints must remain 80016 bytes on LP64");
+static_assert(offsetof(PgsRoutesDiscoveryPoints, points) == 16, "points points");
 
 // Fixed LP64 table: 8-byte header + 7 function pointers = 64 bytes.
-struct PgrRoutesDiscoveryApi {
+struct PgsRoutesDiscoveryApi {
   uint32_t version;  // == PGS_RD_API_VERSION
-  uint32_t size;     // == sizeof(PgrRoutesDiscoveryApi)
+  uint32_t size;     // == sizeof(PgsRoutesDiscoveryApi)
   // Verify + publish the immutable config once for the process lifetime. Idempotent for an identical
   // config; a different config returns PGS_RD_ERR_RECONFIG. A null pointer or bad header is rejected.
-  int (*install)(const PgrRoutesDiscoveryConfig *config);
+  int (*install)(const PgsRoutesDiscoveryConfig *config);
   // Current revocation generation (initially 1). The host stamps it onto each request.
   uint64_t (*generation)(void);
   // Atomically bump the generation and return the new value. Any thread; no managed work; frees no handle.
   uint64_t (*revoke)(void);
   // Owner-thread discovery read + transactional cache swap + scalar header publish.
-  int (*discover)(const PgrRoutesDiscoveryRequest *request, PgrRoutesDiscoveryOutput *out);
+  int (*discover)(const PgsRoutesDiscoveryRequest *request, PgsRoutesDiscoveryOutput *out);
   // Owner-thread copy of a published route's decoded point array (no managed work). index from request.index.
-  int (*points)(const PgrRoutesDiscoveryRequest *request, uint32_t index, PgrRoutesDiscoveryPoints *out);
+  int (*points)(const PgsRoutesDiscoveryRequest *request, uint32_t index, PgsRoutesDiscoveryPoints *out);
   // Owner-thread borrowed-handle lookup by id. *out_handle always written (0 on any non-OK); on OK it is a
   // BORROWED cache GC handle the caller must NOT free.
-  int (*lookup)(const PgrRoutesDiscoveryLookup *lookup, uint64_t *out_handle);
+  int (*lookup)(const PgsRoutesDiscoveryLookup *lookup, uint64_t *out_handle);
   // Owner-thread cache drain: free ALL retained roots and clear the cache. Needs an attached thread; no
   // lease. An off-owner call is a benign SKIP (no frees).
-  int (*drain)(const PgrRoutesDiscoveryRequest *request);
+  int (*drain)(const PgsRoutesDiscoveryRequest *request);
 };
 
-static_assert(sizeof(PgrRoutesDiscoveryApi) == 64, "PgrRoutesDiscoveryApi must remain a 64-byte version-1 table");
+static_assert(sizeof(PgsRoutesDiscoveryApi) == 64, "PgsRoutesDiscoveryApi must remain a 64-byte version-1 table");
 
 // Hidden getter. NOT exported by the version script; the coordinator registers it in query_feature under
 // feature id 44 and answers only on an exact version match.

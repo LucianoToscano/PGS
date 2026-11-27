@@ -31,19 +31,19 @@
 //     never frees the issuing frame's locals. queue() and re-arm are blocked while a stop is latched.
 //   * sample() reads atomic mirrors published on the owner thread, never the owner-thread Txn.
 
-static_assert(sizeof(PgrOutgoingGiftsConfig) == 488, "config must be 488 bytes");
-static_assert(sizeof(PgrOutgoingGiftsSample) == 88, "sample must be 88 bytes");
-static_assert(sizeof(PgrOutgoingGiftsEvent) == 16, "event must be 16 bytes");
-static_assert(sizeof(PgrOutgoingGiftsApi) == 64, "table must be 64 bytes");
-static_assert(offsetof(PgrOutgoingGiftsConfig, gchandle_new) == 8, "layout");
-static_assert(offsetof(PgrOutgoingGiftsConfig, m_panel) == 96, "layout");
-static_assert(offsetof(PgrOutgoingGiftsConfig, m_alive) == 232, "layout");
-static_assert(offsetof(PgrOutgoingGiftsConfig, class_panel) == 240, "layout");
-static_assert(offsetof(PgrOutgoingGiftsConfig, class_string) == 344, "layout");
-static_assert(offsetof(PgrOutgoingGiftsConfig, f_data) == 352, "layout");
-static_assert(offsetof(PgrOutgoingGiftsConfig, f_callback_id) == 472, "layout");
-static_assert(offsetof(PgrOutgoingGiftsConfig, check_success) == 480, "layout");
-static_assert(offsetof(PgrOutgoingGiftsConfig, send_success) == 484, "layout");
+static_assert(sizeof(PgsOutgoingGiftsConfig) == 488, "config must be 488 bytes");
+static_assert(sizeof(PgsOutgoingGiftsSample) == 88, "sample must be 88 bytes");
+static_assert(sizeof(PgsOutgoingGiftsEvent) == 16, "event must be 16 bytes");
+static_assert(sizeof(PgsOutgoingGiftsApi) == 64, "table must be 64 bytes");
+static_assert(offsetof(PgsOutgoingGiftsConfig, gchandle_new) == 8, "layout");
+static_assert(offsetof(PgsOutgoingGiftsConfig, m_panel) == 96, "layout");
+static_assert(offsetof(PgsOutgoingGiftsConfig, m_alive) == 232, "layout");
+static_assert(offsetof(PgsOutgoingGiftsConfig, class_panel) == 240, "layout");
+static_assert(offsetof(PgsOutgoingGiftsConfig, class_string) == 344, "layout");
+static_assert(offsetof(PgsOutgoingGiftsConfig, f_data) == 352, "layout");
+static_assert(offsetof(PgsOutgoingGiftsConfig, f_callback_id) == 472, "layout");
+static_assert(offsetof(PgsOutgoingGiftsConfig, check_success) == 480, "layout");
+static_assert(offsetof(PgsOutgoingGiftsConfig, send_success) == 484, "layout");
 
 namespace {
 
@@ -64,7 +64,7 @@ using StringChars = uint16_t *(*)(void *str);
 // --- lifetime / publication --------------------------------------------------------
 std::mutex g_install_mutex;
 std::mutex g_state_mutex;
-PgrOutgoingGiftsConfig g_cfg{};
+PgsOutgoingGiftsConfig g_cfg{};
 std::atomic<bool> g_installed{false};
 bool g_install_attempted = false;
 int g_install_error = PGS_OG_ERR_NOT_INSTALLED;
@@ -92,7 +92,7 @@ bool g_overflow = false;
 uint64_t g_request_serial = 0, g_result_serial = 0, g_error_serial = 0, g_status_serial = 0,
          g_last_tid = 0;
 
-PgrOutgoingGiftsEvent g_fifo[PGS_OG_EVENT_CAP];
+PgsOutgoingGiftsEvent g_fifo[PGS_OG_EVENT_CAP];
 uint32_t g_fifo_head = 0, g_fifo_count = 0;
 
 // --- owner-thread reentrancy guards ------------------------------------------------
@@ -344,11 +344,11 @@ void push_event(uint32_t kind, int32_t id, int32_t aux, uint64_t tid) {
     g_overflow = true;
     g_fault = true;  // fail closed: no further issue while faulted
     uint32_t last = (g_fifo_head + g_fifo_count - 1) % PGS_OG_EVENT_CAP;
-    g_fifo[last] = PgrOutgoingGiftsEvent{PGS_OG_EVENT_ERROR, PGS_OG_ERR_OVERFLOW, 0, 0};
+    g_fifo[last] = PgsOutgoingGiftsEvent{PGS_OG_EVENT_ERROR, PGS_OG_ERR_OVERFLOW, 0, 0};
     return;
   }
   uint32_t idx = (g_fifo_head + g_fifo_count) % PGS_OG_EVENT_CAP;
-  g_fifo[idx] = PgrOutgoingGiftsEvent{kind, id, aux, 0};
+  g_fifo[idx] = PgsOutgoingGiftsEvent{kind, id, aux, 0};
   ++g_fifo_count;
 }
 void emit_status(int32_t msg, int32_t aux, uint64_t tid) { push_event(PGS_OG_EVENT_STATUS, msg, aux, tid); }
@@ -827,10 +827,10 @@ void observe_profile_close(void *profile){
 }
 
 // --- public API --------------------------------------------------------------------
-bool validate_config(const PgrOutgoingGiftsConfig *c, int *rc) {
+bool validate_config(const PgsOutgoingGiftsConfig *c, int *rc) {
   if (c == nullptr) { *rc = PGS_OG_ERR_INVALID_ARG; return false; }
   if (c->version != PGS_OG_CONFIG_VERSION) { *rc = PGS_OG_ERR_BAD_VERSION; return false; }
-  if (c->size != sizeof(PgrOutgoingGiftsConfig)) { *rc = PGS_OG_ERR_BAD_SIZE; return false; }
+  if (c->size != sizeof(PgsOutgoingGiftsConfig)) { *rc = PGS_OG_ERR_BAD_SIZE; return false; }
   void *const *ptrs = reinterpret_cast<void *const *>(&c->gchandle_new);
   for (int i = 0; i < 59; ++i) {
     if (ptrs[i] == nullptr) { *rc = PGS_OG_ERR_MISSING_PTR; return false; }
@@ -839,7 +839,7 @@ bool validate_config(const PgrOutgoingGiftsConfig *c, int *rc) {
   return true;
 }
 
-int api_install(const PgrOutgoingGiftsConfig *config) {
+int api_install(const PgsOutgoingGiftsConfig *config) {
   int rc = PGS_OG_OK;
   if (!validate_config(config, &rc)) return rc;
   uint64_t probe = 0;
@@ -979,7 +979,7 @@ int api_tick(uint64_t proven_tid, int stopping) {
   return PGS_OG_OK;
 }
 
-int api_sample(PgrOutgoingGiftsSample *out) {
+int api_sample(PgsOutgoingGiftsSample *out) {
   if (out == nullptr) return PGS_OG_ERR_INVALID_ARG;
   const uint32_t roots = root_total();
   const uint32_t active = g_m_active.load(std::memory_order_relaxed);
@@ -989,7 +989,7 @@ int api_sample(PgrOutgoingGiftsSample *out) {
   const uint32_t timed_out = g_m_timed_out.load(std::memory_order_relaxed);
   std::lock_guard<std::mutex> lock(g_state_mutex);
   out->version = PGS_OG_SAMPLE_VERSION;
-  out->size = sizeof(PgrOutgoingGiftsSample);
+  out->size = sizeof(PgsOutgoingGiftsSample);
   out->request_serial = g_request_serial;
   out->result_serial = g_result_serial;
   out->error_serial = g_error_serial;
@@ -1008,7 +1008,7 @@ int api_sample(PgrOutgoingGiftsSample *out) {
   return PGS_OG_OK;
 }
 
-int api_next_event(PgrOutgoingGiftsEvent *out) {
+int api_next_event(PgsOutgoingGiftsEvent *out) {
   if (out == nullptr) return PGS_OG_ERR_INVALID_ARG;
   std::lock_guard<std::mutex> lock(g_state_mutex);
   if (g_fifo_count == 0) return 0;
@@ -1018,8 +1018,8 @@ int api_next_event(PgrOutgoingGiftsEvent *out) {
   return 1;
 }
 
-const PgrOutgoingGiftsApi kApiTable = {
-    PGS_OG_API_VERSION, static_cast<uint32_t>(sizeof(PgrOutgoingGiftsApi)),
+const PgsOutgoingGiftsApi kApiTable = {
+    PGS_OG_API_VERSION, static_cast<uint32_t>(sizeof(PgsOutgoingGiftsApi)),
     &api_install,       &api_update,
     &api_queue,         &api_observe,
     &api_tick,          &api_sample,

@@ -38,18 +38,18 @@ void *invoke_body(void *entry){
  if(!address||(address&3u))return nullptr;
  uint32_t word=0;std::memcpy(&word,entry,sizeof(word)); // verify_metadata proved export executable
  if((word&0xfc000000u)!=0x14000000u)return entry;
- const auto *metadata=static_cast<const PgrMetaApi*>(pgs_runtime_metadata_api(1));
+ const auto *metadata=static_cast<const PgsMetaApi*>(pgs_runtime_metadata_api(1));
  if(!metadata||metadata->version!=1||metadata->size!=sizeof(*metadata)||!metadata->validate_code)return nullptr;
  uintptr_t seen[8]{};
  for(unsigned hop=0;hop<8;++hop){
   for(unsigned prior=0;prior<hop;++prior)if(seen[prior]==address)return nullptr;
   seen[hop]=address;
-  PgrMetaCodeQuery check{1,sizeof(check),reinterpret_cast<void*>(address),4,nullptr,0,0};
-  if(metadata->validate_code(&check)!=PGR_MD_OK)return nullptr;
+  PgsMetaCodeQuery check{1,sizeof(check),reinterpret_cast<void*>(address),4,nullptr,0,0};
+  if(metadata->validate_code(&check)!=PGS_MD_OK)return nullptr;
   std::memcpy(&word,reinterpret_cast<void*>(address),sizeof(word));
   if((word&0xfc000000u)!=0x14000000u){
    check.length=16;
-   return metadata->validate_code(&check)==PGR_MD_OK?reinterpret_cast<void*>(address):nullptr;
+   return metadata->validate_code(&check)==PGS_MD_OK?reinterpret_cast<void*>(address):nullptr;
   }
   int64_t displacement=static_cast<int64_t>(word&0x03ffffffu);
   if(displacement&0x02000000LL)displacement-=0x04000000LL;
@@ -83,7 +83,7 @@ void pulse(const void *method,void *object,void **,int32_t count,uint64_t entere
  if(depth!=1||method!=config.execute_tasks||object||count!=0)return;
  const int32_t tid=static_cast<int32_t>(gettid());
  if(tid!=config.expected_owner_tid||!config.thread_current())return;
- PgrUnityPulse frame{};
+ PgsUnityPulse frame{};
  {
   // Serialize the diagnostic tuple, never a managed call or subscriber.
   std::lock_guard<std::mutex> guard(state_mutex);
@@ -212,8 +212,8 @@ int diagnostics(PgsUnitySchedulerDiag *out){
  *out=diag;out->version=4;out->size=sizeof(PgsUnitySchedulerDiag);
  out->installed=uint32_t(installed);out->poisoned=uint32_t(poisoned);return PGS_US_OK;
 }
-const PgrUnitySchedulerApi api{2,sizeof(PgrUnitySchedulerApi),install,activate,revoke,valid,snapshot};
-const PgrUnitySchedulerApi3 api3{3,sizeof(PgrUnitySchedulerApi3),install,activate,revoke,valid,snapshot,executing_generation};
+const PgsUnitySchedulerApi api{2,sizeof(PgsUnitySchedulerApi),install,activate,revoke,valid,snapshot};
+const PgsUnitySchedulerApi3 api3{3,sizeof(PgsUnitySchedulerApi3),install,activate,revoke,valid,snapshot,executing_generation};
 const PgsUnitySchedulerApi4 api4{4,sizeof(PgsUnitySchedulerApi4),install,activate,revoke,valid,snapshot,executing_generation,diagnostics};
 }
 extern "C" const void *pgs_unity_scheduler_api(uint32_t version){

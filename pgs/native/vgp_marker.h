@@ -26,4 +26,4 @@ static_assert(sizeof(PgsVgpMarkerApi)==24,"marker API ABI");
 extern "C" const void *pgs_vgp_marker_api(uint32_t version);
 // Map tap-to-catch also marks lure, incense and event spawns. It publishes MapPokemon here once it
 // has resolved it; until then the marker accepts only the classes in its config (and bound incense).
-inline std::atomic<void *> g_pgr_vgp_marker_map_pokemon{nullptr};
+inline std::atomic<void *> g_pgs_vgp_marker_map_pokemon{nullptr};

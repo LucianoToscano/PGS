@@ -5,9 +5,9 @@
 // the native fixture seam; no JavaScript pointer marshalling is needed in production.
 struct PgsCatchWaitConfig {
  uint32_t version,size;
- const PgrBootBinding *binding;
+ const PgsBootBinding *binding;
  void *class_get_name;
- pgr_meta_seg_fn segment;
+ pgs_meta_seg_fn segment;
  void *segment_context;
  void *fixture_move_next; // native fixture only, requires explicit segment resolver
 };

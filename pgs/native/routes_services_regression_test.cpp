@@ -44,23 +44,23 @@ void regression_free(uintptr_t handle) {
     request_target(obj, reinterpret_cast<void *>(0x1234));
   }
 }
-PgrRoutesServicesOutput poll_now(int expected = PGS_RS_OK) {
-  PgrRoutesServicesRequest r; make_request(&r,self_tid(),2500,api()->generation());
-  PgrRoutesServicesOutput out{};
+PgsRoutesServicesOutput poll_now(int expected = PGS_RS_OK) {
+  PgsRoutesServicesRequest r; make_request(&r,self_tid(),2500,api()->generation());
+  PgsRoutesServicesOutput out{};
   assert(api()->poll(&r,&out) == expected);
   assert(out.status == expected);
   return out;
 }
 void drain_all() {
-  PgrRoutesServicesRequest r; make_request(&r,self_tid(),0,api()->generation());
+  PgsRoutesServicesRequest r; make_request(&r,self_tid(),0,api()->generation());
   assert(api()->drain(&r) == PGS_RS_OK && g_live_handles == 0);
 }
 void setup_library(const char *path) {
   void *library=dlopen(path,RTLD_NOW|RTLD_LOCAL);assert(library);
   auto get=reinterpret_cast<const void *(*)(uint32_t)>(dlsym(library,"pgs_native_api"));
   auto core=get?static_cast<const pgs_native_api_v2 *>(get(2)):nullptr;assert(core);
-  loaded=static_cast<const PgrRoutesServicesApi *>(core->query_feature(45,1));assert(loaded);
-  PgrRoutesServicesConfig c;make_config(&c);
+  loaded=static_cast<const PgsRoutesServicesApi *>(core->query_feature(45,1));assert(loaded);
+  PgsRoutesServicesConfig c;make_config(&c);
   c.gchandle_new=reinterpret_cast<void *>(&regression_new);
   c.gchandle_free=reinterpret_cast<void *>(&regression_free);
   c.addr_request_nearby=reinterpret_cast<void *>(&request_target);

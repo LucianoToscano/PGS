@@ -99,7 +99,7 @@ FakeString *make_string(const char *utf8) {
 
 // Runtime hooks the capture path can drive mid-call. Declared early so the string/GC shims
 // below can re-enter the public API (reentrant disable during StringNew, nested stopping tick).
-const PgrIvDisplayApi *g_api = nullptr;
+const PgsIvDisplayApi *g_api = nullptr;
 uint64_t g_owner = 0;
 bool g_stringnew_disables = false;  // on string_new: disable once (revokes before set_text runs)
 
@@ -291,10 +291,10 @@ void init_text(FakeText *t) {
   t->go.outline = nullptr;
 }
 
-PgrIvDisplayConfig make_config() {
-  PgrIvDisplayConfig c{};
+PgsIvDisplayConfig make_config() {
+  PgsIvDisplayConfig c{};
   c.version = 1;
-  c.size = sizeof(PgrIvDisplayConfig);
+  c.size = sizeof(PgsIvDisplayConfig);
   c.gchandle_new = reinterpret_cast<void *>(&fake_gc_new);
   c.gchandle_get_target = reinterpret_cast<void *>(&fake_gc_get);
   c.gchandle_free = reinterpret_cast<void *>(&fake_gc_free);
@@ -377,10 +377,10 @@ PgrIvDisplayConfig make_config() {
   return c;
 }
 
-PgrIvDisplaySample take_sample() {
-  PgrIvDisplaySample s{};
+PgsIvDisplaySample take_sample() {
+  PgsIvDisplaySample s{};
   assert(g_api->sample(&s) == PGS_IV_OK);
-  assert(s.version == 1 && s.size == sizeof(PgrIvDisplaySample));
+  assert(s.version == 1 && s.size == sizeof(PgsIvDisplaySample));
   return s;
 }
 
@@ -389,7 +389,7 @@ PgrIvDisplaySample take_sample() {
 // its default-mode config. It verifies the Dobby setup hook is skipped (the original runs un-
 // intercepted), that begin/end drive the catch overlay exactly like the standalone hook, and the
 // identity/thread/nesting/cancellation/duplicate/mismatch guards, leaving every GC handle freed.
-uint64_t begin_shared(const PgrIvDisplayApi *api, void *plate, void *map, uint64_t tid) {
+uint64_t begin_shared(const PgsIvDisplayApi *api, void *plate, void *map, uint64_t tid) {
   void *forwarded[2]{};
   const auto token = api->begin_catch(plate, map, tid, forwarded);
   if (token) {
@@ -405,8 +405,8 @@ int run_shared_mode(void *lib) {
   assert(getter);
   const auto *core = static_cast<const pgs_native_api_v2 *>(getter(2));
   assert(core && core->size == 48);
-  const auto *api = static_cast<const PgrIvDisplayApi *>(core->query_feature(15, 1));
-  assert(api != nullptr && api->version == 1 && api->size == sizeof(PgrIvDisplayApi));
+  const auto *api = static_cast<const PgsIvDisplayApi *>(core->query_feature(15, 1));
+  assert(api != nullptr && api->version == 1 && api->size == sizeof(PgsIvDisplayApi));
   g_api = api;
 
   const uint64_t tid = this_tid();
@@ -414,7 +414,7 @@ int run_shared_mode(void *lib) {
   int dummy_method = 0;
   void *gm = &g_gm_obj;
 
-  PgrIvDisplayConfig cfg = make_config();
+  PgsIvDisplayConfig cfg = make_config();
   cfg.external_catch_observer = 1;  // shared mode: native must NOT hook setup_address
   // begin/end are inert before install.
   assert(begin_shared(api, nullptr, nullptr, tid) == 0);
@@ -494,7 +494,7 @@ int run_shared_mode(void *lib) {
   target_setup(&plate, &map, 0, &dummy_method);
   assert(api->update(0, 0, 2000, tid) == PGS_IV_OK);  // preference OFF while in flight
   assert(api->end_catch(t5, tid) == PGS_IV_OK);
-  PgrIvDisplaySample s = take_sample();
+  PgsIvDisplaySample s = take_sample();
   assert(std::strcmp(plate_text.text, "999") == 0);                   // stale overlay NOT applied
   assert(s.catch_active == 1 && (s.fault & PGS_IV_FAULT_CATCH) == 0);  // retained, un-applied
   assert(api->update(1, 1, 2000, tid) == PGS_IV_OK);
@@ -595,20 +595,20 @@ int main(int argc, char **argv) {
   const auto *core = static_cast<const pgs_native_api_v2 *>(getter(2));
   assert(core && core->size == 48);
   assert(core->query_feature(15, 99) == nullptr);  // exact version only
-  const auto *api = static_cast<const PgrIvDisplayApi *>(core->query_feature(15, 1));
-  assert(api != nullptr && api->version == 1 && api->size == sizeof(PgrIvDisplayApi));
+  const auto *api = static_cast<const PgsIvDisplayApi *>(core->query_feature(15, 1));
+  assert(api != nullptr && api->version == 1 && api->size == sizeof(PgsIvDisplayApi));
   g_api = api;
 
   const uint64_t tid = this_tid();
   g_owner = tid;
-  PgrIvDisplayConfig cfg = make_config();
+  PgsIvDisplayConfig cfg = make_config();
 
   // Validation before install.
   assert(api->install(nullptr) == PGS_IV_ERR_INVALID_ARG);
-  PgrIvDisplayConfig bad = cfg;
+  PgsIvDisplayConfig bad = cfg;
   bad.version = 2;
   assert(api->install(&bad) == PGS_IV_ERR_BAD_VERSION);
-  bad = cfg; bad.size = sizeof(PgrIvDisplayConfig) - 1;
+  bad = cfg; bad.size = sizeof(PgsIvDisplayConfig) - 1;
   assert(api->install(&bad) == PGS_IV_ERR_BAD_SIZE);
   bad = cfg; bad.class_text = nullptr;  // required pointer
   assert(api->install(&bad) == PGS_IV_ERR_MISSING_PTR);
@@ -616,7 +616,7 @@ int main(int argc, char **argv) {
   assert(api->install(&bad) == PGS_IV_ERR_DUPLICATE_TARGET);
 
   // Not installed yet.
-  PgrIvDisplaySample s{};
+  PgsIvDisplaySample s{};
   assert(api->update(1, 1, 1000, tid) == PGS_IV_ERR_NOT_INSTALLED);
   assert(api->tick(tid, 0) == PGS_IV_ERR_NOT_INSTALLED);
   assert(api->disable() == PGS_IV_ERR_NOT_INSTALLED);

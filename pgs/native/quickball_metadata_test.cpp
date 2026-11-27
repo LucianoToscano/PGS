@@ -170,15 +170,15 @@ void *enumerate_fields(void *owner, void **iter) {
 void *enumerate_empty(void *, void **) { return nullptr; }
 void *declaring(void *) { return nullptr; }
 void *thread_current() { ++thread_checks; return attached && (!detach_at || thread_checks < detach_at) ? &thread_token : nullptr; }
-int segment(void *, const void *address, uint64_t length, PgrMetaSegment *out) {
+int segment(void *, const void *address, uint64_t length, PgsMetaSegment *out) {
   *out = {};
   uintptr_t a = reinterpret_cast<uintptr_t>(address), base = reinterpret_cast<uintptr_t>(module_base);
   if (a < base || a - base > module_size || !length || length > module_size - (a - base)) return 0;
   out->found = out->readable = out->host_exec = out->writable = 1;
   out->seg_base = module_base; out->seg_size = module_size; return 0;
 }
-PgrMetaExports exports() {
-  PgrMetaExports e{};
+PgsMetaExports exports() {
+  PgsMetaExports e{};
   e.domain_get = reinterpret_cast<void *>(domain_get);
   e.domain_get_assemblies = reinterpret_cast<void *>(domain_assemblies);
   e.assembly_get_image = reinterpret_cast<void *>(assembly_image);
@@ -404,7 +404,7 @@ int main(int argc, char **argv) {
          api->output_size == sizeof(PgsQuickballMetaOutput));
 
   build_fixture();
-  PgrMetaExports e = exports();
+  PgsMetaExports e = exports();
   extra_cfg.version = 2; extra_cfg.size = sizeof(PgsQuickballExtra);
   extra_cfg.field_static_get_value = reinterpret_cast<void *>(field_static_get_value);
   extra_cfg.type_is_byref = reinterpret_cast<void *>(type_is_byref);
@@ -416,7 +416,7 @@ int main(int argc, char **argv) {
   extra_cfg.reserved = 0;
 
   config.version = 2; config.size = sizeof(config);
-  config.binding.version = 1; config.binding.size = sizeof(PgrMetaBindConfig); config.binding.exports = &e;
+  config.binding.version = 1; config.binding.size = sizeof(PgsMetaBindConfig); config.binding.exports = &e;
   config.binding.module_base = module_base; config.binding.module_size = module_size; config.binding.seg_query = segment;
   config.thread_current = reinterpret_cast<void *>(thread_current); config.owner_tid = gettid();
   config.extra = &extra_cfg;
@@ -440,9 +440,9 @@ int main(int argc, char **argv) {
   { assembly_count=0; failure(PGS_QB_NOT_READY); assembly_count=2; success(); }
   { domain_ready=false; failure(PGS_QB_NOT_READY); domain_ready=true; success(); }
   { auto name=fields[0]->name; fields[0]->name="hidden-core-field";
-    failure(PGR_MD_ERR_NOT_FOUND); fields[0]->name=name; success(); }
+    failure(PGS_MD_ERR_NOT_FOUND); fields[0]->name=name; success(); }
   { int m=method_at("buna"); auto name=methods[m]->name; methods[m]->name="hidden-core-method";
-    failure(PGR_MD_ERR_NOT_FOUND); methods[m]->name=name; success(); }
+    failure(PGS_MD_ERR_NOT_FOUND); methods[m]->name=name; success(); }
 
   // Mandatory (CORE) structural + value + enum + GC pointer ABI faults are fatal.
   { auto s = fields[0]->offset; fields[0]->offset++; failure(PGS_MD_ERR_OFFSET); fields[0]->offset = s; }

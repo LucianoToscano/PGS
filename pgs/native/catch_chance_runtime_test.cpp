@@ -62,12 +62,12 @@ void *managed_call(void *m,void *o,void **args,void **exc){
  if(name=="get_CanUseWildBallInEncounter"){boxed.b=eligible;return &boxed;}
  assert(false);return nullptr;
 }
-int sample(PgrRuntimeTransportSample *out){*out={};out->snapshot_fresh=fresh;return 0;}
+int sample(PgsRuntimeTransportSample *out){*out={};out->snapshot_fresh=fresh;return 0;}
 int get_string(uint32_t slot,char *out,uint32_t cap,uint32_t *len){assert(slot==15&&cap>settings.size());*len=settings.size();std::memcpy(out,settings.data(),*len);return 0;}
 int get_bool(uint32_t,int *out){*out=0;return 0;}
 int get_int(uint32_t,int32_t *out){*out=0;return 0;}
-int emit(uint32_t op,const int64_t*,uint32_t,const PgrRuntimeTransportString *s,uint32_t n){assert(op==19&&n==2);events.emplace_back(s[1].ptr,s[1].len);return 0;}
-PgrRuntimeTransportApi transport_api{};
+int emit(uint32_t op,const int64_t*,uint32_t,const PgsRuntimeTransportString *s,uint32_t n){assert(op==19&&n==2);events.emplace_back(s[1].ptr,s[1].len);return 0;}
+PgsRuntimeTransportApi transport_api{};
 void reset(){
  settings="C2|1|1|75|0|1";stocks={{1,10},{2,10},{3,10},{7,5}};
  offered={1,2,3,7};rates={0.1f,0.2f,0.3f,0.8f};mighty=true;eligible=true;broken=false;fresh=true;in_play=false;

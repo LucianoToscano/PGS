@@ -83,7 +83,7 @@ void resetScenario() {
 }
 
 // ---- fake sibling tables ---------------------------------------------------------------------------
-int pol_install(const PgrVgpPolicyConfig *) { return 0; }
+int pol_install(const PgsVgpPolicyConfig *) { return 0; }
 int pol_update(uint64_t, uint64_t) { return 0; }
 int pol_reset(uint64_t) { g_seen.clear(); return 0; }
 int pol_due(uint64_t) { return g_due ? PGS_VP_YES : PGS_VP_OK; }
@@ -95,19 +95,19 @@ int pol_arm(uint64_t, uint64_t) { return 0; }
 int pol_block(uint64_t) { g_blocked = true; return 0; }
 int pol_clearBlock(uint64_t) { g_blocked = false; return 0; }
 int pol_catchDelay(int32_t, uint64_t *ms) { *ms = 30000; return 0; }
-int pol_sample(PgrVgpPolicySample *) { return 0; }
+int pol_sample(PgsVgpPolicySample *) { return 0; }
 
-int act_install(const PgrVgpActionsConfig *) { return 0; }
+int act_install(const PgsVgpActionsConfig *) { return 0; }
 int act_update(uint32_t, uint64_t, uint64_t, uint64_t) { return PGS_VA_OK; }
 int act_action(const void *, uintptr_t *h) { if (g_actionRc == PGS_VA_ISSUED) *h = gcNew(promiseObj.p(), 0); return g_actionRc; }
-int act_encounter(const PgrVgpActionsTarget *, uintptr_t *h) { return act_action(nullptr, h); }
-int act_capture(const PgrVgpActionsTarget *, uintptr_t *h) { return act_action(nullptr, h); }
-int act_spin(const PgrVgpActionsSpin *, uintptr_t *h) { return act_action(nullptr, h); }
+int act_encounter(const PgsVgpActionsTarget *, uintptr_t *h) { return act_action(nullptr, h); }
+int act_capture(const PgsVgpActionsTarget *, uintptr_t *h) { return act_action(nullptr, h); }
+int act_spin(const PgsVgpActionsSpin *, uintptr_t *h) { return act_action(nullptr, h); }
 int act_stop(uint64_t) { g_actStopped++; return PGS_VA_OK; }
-int act_sample(PgrVgpActionsSample *) { return 0; }
+int act_sample(PgsVgpActionsSample *) { return 0; }
 
-int cnd_install(const PgrVgpCandidateConfig *) { return 0; }
-int cnd_inspect(const PgrVgpCandidateRequest *req, PgrVgpCandidateResult *out) {
+int cnd_install(const PgsVgpCandidateConfig *) { return 0; }
+int cnd_inspect(const PgsVgpCandidateRequest *req, PgsVgpCandidateResult *out) {
   memset(out, 0, sizeof(*out)); out->version = PGS_VC_RESULT_VERSION; out->size = sizeof(*out);
   if (!g_eligible) { out->eligible = 0; out->reason = g_reason; return PGS_VC_NOT; }
   out->eligible = 1; out->reason = 0;
@@ -117,8 +117,8 @@ int cnd_inspect(const PgrVgpCandidateRequest *req, PgrVgpCandidateResult *out) {
   return PGS_VC_ELIGIBLE;
 }
 
-int res_install(const PgrVgpResultsConfig *) { return 0; }
-int res_poll(void *, uint32_t, uint64_t, PgrVgpResultsResult *out) {
+int res_install(const PgsVgpResultsConfig *) { return 0; }
+int res_poll(void *, uint32_t, uint64_t, PgsVgpResultsResult *out) {
   memset(out, 0, sizeof(*out)); out->version = PGS_VR_RESULT_VERSION; out->size = sizeof(*out);
   if (g_pollRc == PGS_VR_DONE) {
     out->state = 1; out->status_known = g_statusKnown; out->status = g_catchStatus; out->success = g_success;
@@ -126,10 +126,10 @@ int res_poll(void *, uint32_t, uint64_t, PgrVgpResultsResult *out) {
   } else if (g_pollRc == PGS_VR_REJECTED) out->state = 2;
   return g_pollRc;
 }
-int res_sample(PgrVgpResultsSample *) { return 0; }
+int res_sample(PgsVgpResultsSample *) { return 0; }
 
-int dsc_install(const PgrVgpDiscoveryConfig *) { return 0; }
-int dsc_snapshot(void *, uint64_t, uint64_t, PgrVgpDiscoverySnapshot *out) {
+int dsc_install(const PgsVgpDiscoveryConfig *) { return 0; }
+int dsc_snapshot(void *, uint64_t, uint64_t, PgsVgpDiscoverySnapshot *out) {
   memset(out, 0, sizeof(*out)); out->version = PGS_VD_SNAPSHOT_VERSION; out->size = sizeof(*out);
   if (g_snapshotRc != PGS_VD_OK) return g_snapshotRc;
   out->balls = g_balls; out->stored = g_stored; out->capacity = g_capacity;
@@ -137,7 +137,7 @@ int dsc_snapshot(void *, uint64_t, uint64_t, PgrVgpDiscoverySnapshot *out) {
   out->pokemon_bag_handle = gcNew(bagObj.p(), 0); out->item_bag_handle = gcNew(ibagObj.p(), 0);
   return PGS_VD_OK;
 }
-int dsc_enumerate(uint32_t, uint64_t, uint64_t, PgrVgpDiscoveryEnumeration *out) {
+int dsc_enumerate(uint32_t, uint64_t, uint64_t, PgsVgpDiscoveryEnumeration *out) {
   memset(out, 0, sizeof(*out)); out->version = PGS_VD_ENUM_VERSION; out->size = sizeof(*out);
   if (g_enumRc != PGS_VD_OK) return g_enumRc;
   out->count = g_count; out->array_handle = gcNew(arrObj.p(), 0); return PGS_VD_OK;
@@ -146,7 +146,7 @@ int dsc_at(void *, uint32_t, uint64_t, uint64_t, uintptr_t *h) {
   *h = 0; if (g_atRc != PGS_VD_OK) return g_atRc; *h = gcNew(candObj.p(), 0); return PGS_VD_OK;
 }
 
-int mnt_install(const PgrVgpMaintenanceConfig *) { return 0; }
+int mnt_install(const PgsVgpMaintenanceConfig *) { return 0; }
 int mnt_balls(void *, uint64_t, uint64_t, int32_t *c) { *c = g_ball2; return g_ballsRc; }
 int mnt_cooldown(void *, void *, uint64_t, uint64_t) { return g_cooldownRc; }
 
@@ -178,26 +178,26 @@ int aux_transfer(void *, void *, uint64_t, uint64_t, AuxTransferOut *out) {
   return 1;
 }
 
-PgrVgpPolicyApi POL{PGS_VP_API_VERSION, sizeof(PgrVgpPolicyApi), pol_install, pol_update, pol_reset, pol_due,
+PgsVgpPolicyApi POL{PGS_VP_API_VERSION, sizeof(PgsVgpPolicyApi), pol_install, pol_update, pol_reset, pol_due,
                     pol_order, pol_sweep, pol_seen, pol_touch, pol_arm, pol_block, pol_clearBlock,
                     pol_catchDelay, pol_sample};
-PgrVgpActionsApi ACT{PGS_VA_API_VERSION, sizeof(PgrVgpActionsApi), act_install, act_update, act_encounter,
+PgsVgpActionsApi ACT{PGS_VA_API_VERSION, sizeof(PgsVgpActionsApi), act_install, act_update, act_encounter,
                      act_capture, act_spin, act_stop, act_sample};
-PgrVgpCandidateApi CND{PGS_VC_API_VERSION, sizeof(PgrVgpCandidateApi), cnd_install, cnd_inspect};
-PgrVgpResultsApi RES{PGS_VR_API_VERSION, sizeof(PgrVgpResultsApi), res_install, res_poll, res_sample};
-PgrVgpDiscoveryApi DSC{PGS_VD_API_VERSION, sizeof(PgrVgpDiscoveryApi), dsc_install, dsc_snapshot,
+PgsVgpCandidateApi CND{PGS_VC_API_VERSION, sizeof(PgsVgpCandidateApi), cnd_install, cnd_inspect};
+PgsVgpResultsApi RES{PGS_VR_API_VERSION, sizeof(PgsVgpResultsApi), res_install, res_poll, res_sample};
+PgsVgpDiscoveryApi DSC{PGS_VD_API_VERSION, sizeof(PgsVgpDiscoveryApi), dsc_install, dsc_snapshot,
                        dsc_enumerate, dsc_at};
-PgrVgpMaintenanceApi MNT{PGS_VM_API_VERSION, sizeof(PgrVgpMaintenanceApi), mnt_install, mnt_balls, mnt_cooldown};
+PgsVgpMaintenanceApi MNT{PGS_VM_API_VERSION, sizeof(PgsVgpMaintenanceApi), mnt_install, mnt_balls, mnt_cooldown};
 PgsVgpMarkerApi MRK{1, sizeof(PgsVgpMarkerApi), mrk_install, mrk_project};
 pgs_items_api_v1 ITM{PGS_ITEMS_API_VERSION, sizeof(pgs_items_api_v1), itm_install, itm_tick,
                          itm_clear, itm_sample, itm_catalog, itm_serviceHandle, itm_drain, itm_serviceAcquire};
 AuxApi AUX{1, sizeof(AuxApi), aux_install, aux_spin, aux_transfer};
 
-const PgrVgpControllerApi *api = nullptr;
+const PgsVgpControllerApi *api = nullptr;
 uint64_t tid = 0;
 
-PgrVgpControllerConfig makeConfig() {
-  PgrVgpControllerConfig c{};
+PgsVgpControllerConfig makeConfig() {
+  PgsVgpControllerConfig c{};
   c.version = PGS_VGC_CONFIG_VERSION; c.size = sizeof(c);
   c.policy_table = &POL; c.actions_table = &ACT; c.candidates_table = &CND; c.results_table = &RES;
   c.discovery_table = &DSC; c.maintenance_table = &MNT; c.marker_table = &MRK; c.items_table = &ITM;
@@ -209,20 +209,20 @@ PgrVgpControllerConfig makeConfig() {
   c.class_bool = &boolClass; c.rpc_id = 42;
   return c;
 }
-PgrVgpControllerTick makeTick() {
-  PgrVgpControllerTick t{};
+PgsVgpControllerTick makeTick() {
+  PgsVgpControllerTick t{};
   t.version = PGS_VGC_TICK_VERSION; t.size = sizeof(t); t.owner = tid; t.epoch = 1;
   t.lease_ms = 2000; t.allowed_ms = 2000; t.cleanup_ms = 0; t.generation = api->generation();
   t.lat = 10; t.lon = 20; t.mask = 3;
   t.flags = PGS_VGC_TF_TRANSFER_ENABLED | PGS_VGC_TF_MANUAL_READY;
   return t;
 }
-PgrVgpControllerOut run(PgrVgpControllerTick t) {
-  PgrVgpControllerOut o{};
+PgsVgpControllerOut run(PgsVgpControllerTick t) {
+  PgsVgpControllerOut o{};
   assert(api->tick(&t, &o) == PGS_VGC_OK);
   return o;
 }
-void freeExports(const PgrVgpControllerOut &o) {
+void freeExports(const PgsVgpControllerOut &o) {
   gcFree(o.response_handle); gcFree(o.bag_handle); gcFree(o.pokemon_handle); gcFree(o.gm_handle);
 }
 }  // namespace
@@ -236,38 +236,38 @@ int main(int argc, char **argv) {
   auto *core = static_cast<const pgs_native_api_v2 *>(load(2));
   assert(core);
   assert(!core->query_feature(33, 2));
-  api = static_cast<const PgrVgpControllerApi *>(core->query_feature(33, 1));
+  api = static_cast<const PgsVgpControllerApi *>(core->query_feature(33, 1));
   assert(api && api->version == 1 && api->size == 72);
   tid = static_cast<uint64_t>(gettid());
 
   // --- install validation --------------------------------------------------------------------------
   assert(api->install(nullptr) == PGS_VGC_ERR_NULL_ARG);
-  { PgrVgpControllerConfig c = makeConfig(); c.gc_new = nullptr; assert(api->install(&c) == PGS_VGC_ERR_MISSING_PTR); }
-  { PgrVgpControllerConfig c = makeConfig(); PgrVgpPolicyApi bad = POL; bad.size = 1; c.policy_table = &bad;
+  { PgsVgpControllerConfig c = makeConfig(); c.gc_new = nullptr; assert(api->install(&c) == PGS_VGC_ERR_MISSING_PTR); }
+  { PgsVgpControllerConfig c = makeConfig(); PgsVgpPolicyApi bad = POL; bad.size = 1; c.policy_table = &bad;
     assert(api->install(&c) == PGS_VGC_ERR_BAD_TABLE); }
-  PgrVgpControllerConfig cfg = makeConfig();
+  PgsVgpControllerConfig cfg = makeConfig();
   assert(api->install(&cfg) == PGS_VGC_OK);
   assert(api->install(&cfg) == PGS_VGC_OK);  // idempotent
-  { PgrVgpControllerConfig c = makeConfig(); c.rpc_id = 7; assert(api->install(&c) == PGS_VGC_ERR_RECONFIG); }
+  { PgsVgpControllerConfig c = makeConfig(); c.rpc_id = 7; assert(api->install(&c) == PGS_VGC_ERR_RECONFIG); }
 
   // tick() before any owner work must reject a foreign owner and a bad header.
-  { PgrVgpControllerOut o{}; PgrVgpControllerTick t = makeTick(); t.owner = tid + 1;
+  { PgsVgpControllerOut o{}; PgsVgpControllerTick t = makeTick(); t.owner = tid + 1;
     assert(api->tick(&t, &o) == PGS_VGC_ERR_OFF_OWNER); }
-  { PgrVgpControllerOut o{}; PgrVgpControllerTick t = makeTick(); t.version = 9;
+  { PgsVgpControllerOut o{}; PgsVgpControllerTick t = makeTick(); t.version = 9;
     assert(api->tick(&t, &o) == PGS_VGC_ERR_BAD_VERSION); }
 
   resetScenario();
 
   // --- OFF (mask 0) and WAIT_READY (no lease) ------------------------------------------------------
-  { PgrVgpControllerTick t = makeTick(); t.mask = 0; auto o = run(t);
+  { PgsVgpControllerTick t = makeTick(); t.mask = 0; auto o = run(t);
     assert(o.status == PGS_VGC_ST_OFF && o.phase == PGS_VGC_PH_NONE); }
-  { PgrVgpControllerTick t = makeTick(); t.lease_ms = 0; auto o = run(t);
+  { PgsVgpControllerTick t = makeTick(); t.lease_ms = 0; auto o = run(t);
     assert(o.status == PGS_VGC_ST_WAIT_READY); }
 
   // --- no balls / storage full / item bag full -----------------------------------------------------
-  { resetScenario(); g_balls = 0; PgrVgpControllerTick t = makeTick(); t.mask = 1; auto o = run(t);
+  { resetScenario(); g_balls = 0; PgsVgpControllerTick t = makeTick(); t.mask = 1; auto o = run(t);
     assert(o.status == PGS_VGC_ST_OUT_BALLS); assert(roots.empty()); }
-  { resetScenario(); g_stored = 1000; g_capacity = 1000; PgrVgpControllerTick t = makeTick(); t.mask = 1;
+  { resetScenario(); g_stored = 1000; g_capacity = 1000; PgsVgpControllerTick t = makeTick(); t.mask = 1;
     auto o = run(t); assert(o.status == PGS_VGC_ST_STORAGE_FULL); assert(roots.empty()); }
 
   // --- full catch -> transfer handoff -> feedback flow ---------------------------------------------
@@ -275,7 +275,7 @@ int main(int argc, char **argv) {
   g_pollRc = PGS_VR_PENDING;  // scan issues the encounter
   auto o1 = run(makeTick());
   assert(o1.status == PGS_VGC_ST_CATCHING && !(o1.flags & PGS_VGC_EV_CATCH_ISSUED) && o1.phase == PGS_VGC_PH_ENCOUNTER);
-  { PgrVgpControllerSample s{}; api->sample(&s); assert(s.roots == 3 && s.phase == PGS_VGC_PH_ENCOUNTER); }
+  { PgsVgpControllerSample s{}; api->sample(&s); assert(s.roots == 3 && s.phase == PGS_VGC_PH_ENCOUNTER); }
 
   g_pollRc = PGS_VR_DONE;  // encounter resolves -> capture issued
   auto o2 = run(makeTick());
@@ -292,7 +292,7 @@ int main(int argc, char **argv) {
          o4.bag_handle && o4.pokemon_handle && o4.gm_handle && o4.phase == PGS_VGC_PH_HANDED_OFF);
   uint64_t token = o4.transfer_token;
   freeExports(o4);  // the shared JS executor adopts all four handles
-  { PgrVgpControllerSample s{}; api->sample(&s); assert(s.roots == 0); }  // controller kept no export
+  { PgsVgpControllerSample s{}; api->sample(&s); assert(s.roots == 0); }  // controller kept no export
 
   assert(api->transfer_feedback(token, PGS_VGC_FB_REQUESTED, tid) == PGS_VGC_OK);
   assert(run(makeTick()).status == PGS_VGC_ST_TRANSFERRING);
@@ -315,11 +315,11 @@ int main(int argc, char **argv) {
   resetScenario();
   Obj gui(&nameplateClass), manual(&wildClass), notGui(&otherClass);
   assert(api->observe(gui.p(), manual.p(), tid) == PGS_VGC_OK);
-  { PgrVgpControllerSample s{}; api->sample(&s); assert(s.roots == 1); }   // the manual root is held
+  { PgsVgpControllerSample s{}; api->sample(&s); assert(s.roots == 1); }   // the manual root is held
   assert(api->observe(notGui.p(), manual.p(), tid) == PGS_VGC_OK);         // not the nameplate: ignored
-  { PgrVgpControllerSample s{}; api->sample(&s); assert(s.roots == 1); }
+  { PgsVgpControllerSample s{}; api->sample(&s); assert(s.roots == 1); }
   assert(api->observe(gui.p() /*nameplate*/, nullptr, tid) == PGS_VGC_OK); // non-wild target clears it
-  { PgrVgpControllerSample s{}; api->sample(&s); assert(s.roots == 0); }
+  { PgsVgpControllerSample s{}; api->sample(&s); assert(s.roots == 0); }
   assert(api->observe(gui.p(), manual.p(), tid + 1) == PGS_VGC_ERR_OFF_OWNER);  // foreign owner refused
   assert(roots.empty());
 
@@ -348,14 +348,14 @@ int main(int argc, char **argv) {
   resetScenario();
   assert(api->revoke() == PGS_VGC_OK);  // bumps the generation + stops actions
   int stoppedBefore = g_actStopped;
-  { PgrVgpControllerTick t = makeTick(); t.generation = api->generation() - 1; auto o = run(t);
+  { PgsVgpControllerTick t = makeTick(); t.generation = api->generation() - 1; auto o = run(t);
     assert(o.status == PGS_VGC_ST_NATIVE_UNAVAILABLE && roots.empty()); }
   assert(stoppedBefore >= 1);
 
   // --- result still finishes after VGP mask drops (in-flight completion) ---------------------------
   resetScenario(); g_pollRc = PGS_VR_PENDING; run(makeTick());  // issue encounter (pending)
   g_pollRc = PGS_VR_DONE; g_success = true; g_statusKnown = true; g_catchStatus = 100;
-  { PgrVgpControllerTick t = makeTick(); t.mask = 0; /* mask dropped but transfer disabled keeps it simple */
+  { PgsVgpControllerTick t = makeTick(); t.mask = 0; /* mask dropped but transfer disabled keeps it simple */
     t.flags = 0; auto o = run(t);  // encounter branch requires mask bit1 -> retry + drop
     assert(o.phase == PGS_VGC_PH_NONE); }
   // drain any quarantine and roots
@@ -365,7 +365,7 @@ int main(int argc, char **argv) {
   resetScenario(); g_pollRc = PGS_VR_PENDING; run(makeTick());  // leave a pending record (3 roots)
   assert(!roots.empty());
   std::thread([] { assert(api->stop(tid) == PGS_VGC_OK); }).join();  // foreign thread: defers the free
-  { PgrVgpControllerOut o{}; PgrVgpControllerTick t = makeTick(); assert(api->tick(&t, &o) == PGS_VGC_OK);
+  { PgsVgpControllerOut o{}; PgsVgpControllerTick t = makeTick(); assert(api->tick(&t, &o) == PGS_VGC_OK);
     assert(o.status == PGS_VGC_ST_OFF && o.phase == PGS_VGC_PH_NONE); }
   assert(roots.empty());  // the owner tick freed every deferred root
 

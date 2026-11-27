@@ -157,8 +157,8 @@ void *fake_runtime_invoke(const void *method, void *self, void **params, void **
   return nullptr;
 }
 
-PgrRoutesActionsConfig make_config() {
-  PgrRoutesActionsConfig c{};
+PgsRoutesActionsConfig make_config() {
+  PgsRoutesActionsConfig c{};
   c.version = 1; c.size = sizeof(c);
   c.runtime_invoke = reinterpret_cast<void *>(&fake_runtime_invoke);
   c.object_get_class = reinterpret_cast<void *>(&fake_obj_class);
@@ -191,13 +191,13 @@ PgrRoutesActionsConfig make_config() {
 
 uint64_t this_tid() { return static_cast<uint64_t>(static_cast<pid_t>(::gettid())); }
 
-const PgrRoutesActionsApi *g_api = nullptr;
+const PgsRoutesActionsApi *g_api = nullptr;
 uint64_t g_seq = 0;  // monotonic across the process (the module's high-water never resets)
 
 // Build a request. For a mutating action pass a strictly increasing seq via next_seq(); CURRENT uses 0.
-PgrRoutesActionsRequest make_req(uint32_t action, uint64_t tid, uint64_t residual, uint64_t svc_handle,
+PgsRoutesActionsRequest make_req(uint32_t action, uint64_t tid, uint64_t residual, uint64_t svc_handle,
                                  uint64_t route_handle, uint64_t seq, const char *id, bool reversed) {
-  PgrRoutesActionsRequest r{};
+  PgsRoutesActionsRequest r{};
   r.version = 1; r.size = sizeof(r);
   r.tid = tid; r.residual_ms = residual; r.generation = g_api->generation();
   r.service_handle = svc_handle; r.route_handle = route_handle; r.seq = seq;
@@ -227,31 +227,31 @@ int main(int argc, char **argv) {
   const auto *core = static_cast<const pgs_native_api_v2 *>(getter(2));
   assert(core && core->query_feature);
   assert(core->query_feature(43, 99) == nullptr);
-  const auto *api = static_cast<const PgrRoutesActionsApi *>(core->query_feature(43, 1));
-  assert(api && api->version == 1 && api->size == sizeof(PgrRoutesActionsApi));
+  const auto *api = static_cast<const PgsRoutesActionsApi *>(core->query_feature(43, 1));
+  assert(api && api->version == 1 && api->size == sizeof(PgsRoutesActionsApi));
   g_api = api;
 
   std::printf("ABI sizes: config=%zu request=%zu output=%zu table=%zu\n",
-              sizeof(PgrRoutesActionsConfig), sizeof(PgrRoutesActionsRequest),
-              sizeof(PgrRoutesActionsOutput), sizeof(PgrRoutesActionsApi));
-  assert(sizeof(PgrRoutesActionsConfig) == 352 && sizeof(PgrRoutesActionsRequest) == 328 &&
-         sizeof(PgrRoutesActionsOutput) == 280 && sizeof(PgrRoutesActionsApi) == 40);
+              sizeof(PgsRoutesActionsConfig), sizeof(PgsRoutesActionsRequest),
+              sizeof(PgsRoutesActionsOutput), sizeof(PgsRoutesActionsApi));
+  assert(sizeof(PgsRoutesActionsConfig) == 352 && sizeof(PgsRoutesActionsRequest) == 328 &&
+         sizeof(PgsRoutesActionsOutput) == 280 && sizeof(PgsRoutesActionsApi) == 40);
 
   const uint64_t tid = this_tid();
-  PgrRoutesActionsConfig cfg = make_config();
-  PgrRoutesActionsOutput out{};
+  PgsRoutesActionsConfig cfg = make_config();
+  PgsRoutesActionsOutput out{};
 
   // 1. Validation + not-installed + idempotence + reconfig. generation starts at 1.
   assert(api->generation() == 1);
   assert(api->install(nullptr) == PGS_RA_ERR_NULL_ARG);
-  { PgrRoutesActionsConfig bad = cfg; bad.version = 2; assert(api->install(&bad) == PGS_RA_ERR_BAD_VERSION); }
-  { PgrRoutesActionsConfig bad = cfg; bad.size = sizeof(cfg) - 1; assert(api->install(&bad) == PGS_RA_ERR_BAD_SIZE); }
-  { PgrRoutesActionsConfig bad = cfg; bad.m_start = nullptr; assert(api->install(&bad) == PGS_RA_ERR_MISSING_PTR); }
-  { PgrRoutesActionsRequest r = make_req(PGS_RA_ACT_CURRENT, tid, 2000, 1, 0, 0, nullptr, false);
+  { PgsRoutesActionsConfig bad = cfg; bad.version = 2; assert(api->install(&bad) == PGS_RA_ERR_BAD_VERSION); }
+  { PgsRoutesActionsConfig bad = cfg; bad.size = sizeof(cfg) - 1; assert(api->install(&bad) == PGS_RA_ERR_BAD_SIZE); }
+  { PgsRoutesActionsConfig bad = cfg; bad.m_start = nullptr; assert(api->install(&bad) == PGS_RA_ERR_MISSING_PTR); }
+  { PgsRoutesActionsRequest r = make_req(PGS_RA_ACT_CURRENT, tid, 2000, 1, 0, 0, nullptr, false);
     assert(api->execute(&r, &out) == PGS_RA_ERR_NOT_INSTALLED); }
   assert(api->install(&cfg) == PGS_RA_OK);
   assert(api->install(&cfg) == PGS_RA_OK);  // idempotent
-  { PgrRoutesActionsConfig bad = cfg; bad.class_play = &cls_shared; assert(api->install(&bad) == PGS_RA_ERR_RECONFIG); }
+  { PgsRoutesActionsConfig bad = cfg; bad.class_play = &cls_shared; assert(api->install(&bad) == PGS_RA_ERR_RECONFIG); }
 
   // Fake heap: a consumption service (eligible play) + a routes service + a route definition.
   FakeString route_id = make_string("route-abc");
@@ -265,7 +265,7 @@ int main(int argc, char **argv) {
   const uintptr_t hShared = insert_host_handle(&shared);
 
   // 2. ABI header rejections (null request / bad version / bad size).
-  { PgrRoutesActionsRequest r = make_req(PGS_RA_ACT_CURRENT, tid, 2000, hCons, 0, 0, nullptr, false);
+  { PgsRoutesActionsRequest r = make_req(PGS_RA_ACT_CURRENT, tid, 2000, hCons, 0, 0, nullptr, false);
     r.version = 2; assert(api->execute(&r, &out) == PGS_RA_ERR_BAD_VERSION);
     r = make_req(PGS_RA_ACT_CURRENT, tid, 2000, hCons, 0, 0, nullptr, false); r.size = 1;
     assert(api->execute(&r, &out) == PGS_RA_ERR_BAD_SIZE);
@@ -275,7 +275,7 @@ int main(int argc, char **argv) {
   { reset_invoke_state();
     cons.hasStarted = 1; cons.inRangeOfEnd = 1; cons.inRangeToResume = 1; cons.isCompleting = 1;
     play.paused = 1; play.completedWalk = 1; play.acquiredReward = 1; play.travelInReverse = 1;
-    PgrRoutesActionsRequest r = make_req(PGS_RA_ACT_CURRENT, tid, 2000, hCons, 0, 0, nullptr, false);
+    PgsRoutesActionsRequest r = make_req(PGS_RA_ACT_CURRENT, tid, 2000, hCons, 0, 0, nullptr, false);
     assert(api->execute(&r, &out) == PGS_RA_SUCCESS && out.reason == PGS_RA_REASON_NONE);
     const uint32_t expect = PGS_RA_FLAG_PRESENT | PGS_RA_FLAG_STARTED | PGS_RA_FLAG_PAUSED |
       PGS_RA_FLAG_COMPLETED_WALK | PGS_RA_FLAG_ACQUIRED_REWARD | PGS_RA_FLAG_IN_RANGE_END |
@@ -286,7 +286,7 @@ int main(int argc, char **argv) {
 
   // 3b. CURRENT empty when no play (legacy preservation): flags 0, id_length 0, success.
   { reset_invoke_state(); cons.currentPlay = nullptr;
-    PgrRoutesActionsRequest r = make_req(PGS_RA_ACT_CURRENT, tid, 2000, hCons, 0, 0, nullptr, false);
+    PgsRoutesActionsRequest r = make_req(PGS_RA_ACT_CURRENT, tid, 2000, hCons, 0, 0, nullptr, false);
     assert(api->execute(&r, &out) == PGS_RA_SUCCESS && out.flags == 0 && out.id_length == 0);
     cons.currentPlay = &play; assert_no_leak(); }
 
@@ -295,7 +295,7 @@ int main(int argc, char **argv) {
     cons.hasStarted = 1; play.paused = 0; play.completedWalk = 0; play.acquiredReward = 0; play.travelInReverse = 0;
     cons.inRangeOfEnd = 0; cons.inRangeToResume = 0; cons.isCompleting = 0;
     g_throw_token = &m_hasStarted;  // one throw -> STARTED clears, not a fault
-    PgrRoutesActionsRequest r = make_req(PGS_RA_ACT_CURRENT, tid, 2000, hCons, 0, 0, nullptr, false);
+    PgsRoutesActionsRequest r = make_req(PGS_RA_ACT_CURRENT, tid, 2000, hCons, 0, 0, nullptr, false);
     assert(api->execute(&r, &out) == PGS_RA_SUCCESS);
     assert((out.flags & PGS_RA_FLAG_PRESENT) && !(out.flags & PGS_RA_FLAG_STARTED));
     assert_no_leak(); }
@@ -312,14 +312,14 @@ int main(int argc, char **argv) {
       cons.currentPlay = moved; play.route = nullptr; play.completedWalk = 0;  // stale read would miss the route + walk
       moved->completedWalk = 1;
     };
-    PgrRoutesActionsRequest r = make_req(PGS_RA_ACT_CURRENT, tid, 2000, hCons, 0, 0, nullptr, false);
+    PgsRoutesActionsRequest r = make_req(PGS_RA_ACT_CURRENT, tid, 2000, hCons, 0, 0, nullptr, false);
     assert(api->execute(&r, &out) == PGS_RA_SUCCESS);
     assert((out.flags & PGS_RA_FLAG_PRESENT) && (out.flags & PGS_RA_FLAG_COMPLETED_WALK) && out.id_length == route_id.len);
     cons.currentPlay = &play; play.route = &shared; play.completedWalk = 1; delete moved; assert_no_leak(); }
 
   // 4. DISCOVER: requestNearby on the routes service, submitted. Wrong service class -> awaiting-service.
   { reset_invoke_state();
-    PgrRoutesActionsRequest r = make_req(PGS_RA_ACT_DISCOVER, tid, 2000, hRoutes, 0, next_seq(), nullptr, false);
+    PgsRoutesActionsRequest r = make_req(PGS_RA_ACT_DISCOVER, tid, 2000, hRoutes, 0, next_seq(), nullptr, false);
     assert(api->execute(&r, &out) == PGS_RA_SUCCESS && g_discover_calls == 1);
     // consumption handle supplied for DISCOVER -> wrong class -> awaiting-service.
     r = make_req(PGS_RA_ACT_DISCOVER, tid, 2000, hCons, 0, next_seq(), nullptr, false);
@@ -329,7 +329,7 @@ int main(int argc, char **argv) {
   // 5. START: full path builds start data and invokes StartRoute with the data reference directly.
   { reset_invoke_state();
     cons.isConsuming = 0;  // not already active
-    PgrRoutesActionsRequest r = make_req(PGS_RA_ACT_START, tid, 2000, hCons, hShared, next_seq(), "route-abc", true);
+    PgsRoutesActionsRequest r = make_req(PGS_RA_ACT_START, tid, 2000, hCons, hShared, next_seq(), "route-abc", true);
     assert(api->execute(&r, &out) == PGS_RA_SUCCESS);
     assert(g_ctor_calls == 1 && g_start_calls == 1 && g_last_data && g_last_data->ctor == 1);
     assert(g_last_data->published == &shared && g_last_data->reversed == 1);
@@ -423,7 +423,7 @@ int main(int argc, char **argv) {
       assert(api->execute(&r, &out) == PGS_RA_REFUSE && out.reason == PGS_RA_REASON_AWAITING_SVC);
       g_handles.erase(hNull); g_host_handles.erase(hNull); }
     // revoke: a request stamped with the prior generation now refuses lease-expired.
-    PgrRoutesActionsRequest stale = make_req(PGS_RA_ACT_CURRENT, tid, 2000, hCons, 0, 0, nullptr, false);
+    PgsRoutesActionsRequest stale = make_req(PGS_RA_ACT_CURRENT, tid, 2000, hCons, 0, 0, nullptr, false);
     const uint64_t g1 = api->generation(); assert(api->revoke() == g1 + 1 && api->generation() == g1 + 1);
     assert(api->execute(&stale, &out) == PGS_RA_REFUSE && out.reason == PGS_RA_REASON_LEASE_EXPIRED);
     // a freshly-stamped request works again.
@@ -457,7 +457,7 @@ int main(int argc, char **argv) {
   // 10. Off-owner thread: refused (owner already latched to main), no mutation, no seq consumed.
   reset_invoke_state();
   std::thread([&]() {
-    PgrRoutesActionsOutput o{};
+    PgsRoutesActionsOutput o{};
     auto r = make_req(PGS_RA_ACT_PAUSE, this_tid(), 2000, hCons, 0, next_seq(), nullptr, false);
     assert(g_api->execute(&r, &o) == PGS_RA_REFUSE && o.reason == PGS_RA_REASON_LEASE_EXPIRED);
     assert(g_pause_calls == 0);
@@ -473,7 +473,7 @@ int main(int argc, char **argv) {
   // 12. Reentrancy (busy): a nested CURRENT fired from inside StartRoute is refused; the outer START
   //     still submits exactly once (the one invoke already happened).
   { reset_invoke_state(); cons.isConsuming = 0;
-    int nested_rc = 99; PgrRoutesActionsOutput nested{};
+    int nested_rc = 99; PgsRoutesActionsOutput nested{};
     g_oneshot_method = &m_start;
     g_invoke_oneshot = [&]() {
       auto nr = make_req(PGS_RA_ACT_CURRENT, tid, 2000, hCons, 0, 0, nullptr, false);

@@ -113,9 +113,9 @@ enum PgsOutgoingGiftsError {
 // the JS adapter straight off p.gifts; the native layer re-checks the header and rejects any null.
 // No hook address is carried. See the static_asserts in outgoing_gifts.cpp for the authoritative
 // offsets.
-struct PgrOutgoingGiftsConfig {
+struct PgsOutgoingGiftsConfig {
   uint32_t version;  // == PGS_OG_CONFIG_VERSION
-  uint32_t size;     // == sizeof(PgrOutgoingGiftsConfig)
+  uint32_t size;     // == sizeof(PgsOutgoingGiftsConfig)
 
   // il2cpp runtime exports.
   void *gchandle_new;              // uintptr_t (void* obj, int pinned)
@@ -189,13 +189,13 @@ struct PgrOutgoingGiftsConfig {
   int32_t send_success;     // gifts.sendSuccess  (SendGiftOutProto.Result Success)
 };
 
-static_assert(sizeof(PgrOutgoingGiftsConfig) == 488,
-              "PgrOutgoingGiftsConfig must remain 488 bytes on LP64");
+static_assert(sizeof(PgsOutgoingGiftsConfig) == 488,
+              "PgsOutgoingGiftsConfig must remain 488 bytes on LP64");
 
 // Fixed LP64 telemetry gauge (88 bytes). Pull-only; the native layer never calls JS.
-struct PgrOutgoingGiftsSample {
+struct PgsOutgoingGiftsSample {
   uint32_t version;         // == PGS_OG_SAMPLE_VERSION
-  uint32_t size;            // == sizeof(PgrOutgoingGiftsSample)
+  uint32_t size;            // == sizeof(PgsOutgoingGiftsSample)
   uint64_t request_serial;  // bumps on each issued send (gift-bundled-request)
   uint64_t result_serial;   // bumps on each completed result (gift-bundled-result)
   uint64_t error_serial;    // bumps on each error
@@ -213,25 +213,25 @@ struct PgrOutgoingGiftsSample {
   uint32_t reserved;        // 0
 };
 
-static_assert(sizeof(PgrOutgoingGiftsSample) == 88,
-              "PgrOutgoingGiftsSample must remain 88 bytes on LP64");
+static_assert(sizeof(PgsOutgoingGiftsSample) == 88,
+              "PgsOutgoingGiftsSample must remain 88 bytes on LP64");
 
 // Fixed LP64 drain record (16 bytes). id/aux are codes/ints only, never an id string.
-struct PgrOutgoingGiftsEvent {
+struct PgsOutgoingGiftsEvent {
   uint32_t kind;      // PgsOutgoingGiftsEventKind
   int32_t  id;        // status msg / error reason / result value
   int32_t  aux;       // sticker / success / result int
   int32_t  reserved;  // 0
 };
 
-static_assert(sizeof(PgrOutgoingGiftsEvent) == 16,
-              "PgrOutgoingGiftsEvent must remain 16 bytes on LP64");
+static_assert(sizeof(PgsOutgoingGiftsEvent) == 16,
+              "PgsOutgoingGiftsEvent must remain 16 bytes on LP64");
 
 // Fixed LP64 table: 8-byte header + 7 function pointers = 64 bytes.
-struct PgrOutgoingGiftsApi {
+struct PgsOutgoingGiftsApi {
   uint32_t version;  // == PGS_OG_API_VERSION
-  uint32_t size;     // == sizeof(PgrOutgoingGiftsApi)
-  int (*install)(const PgrOutgoingGiftsConfig *config);
+  uint32_t size;     // == sizeof(PgsOutgoingGiftsApi)
+  int (*install)(const PgsOutgoingGiftsConfig *config);
   // Refresh the policy gate: mask bits 2(send)/4(sticker) and a residual lease clamped to 2500 ms.
   // Carries proven_tid; a foreign thread (once the owner is latched) can only disarm. Any thread.
   int (*update)(uint32_t mask, uint64_t remaining_lease_ms, uint64_t proven_tid);
@@ -245,13 +245,13 @@ struct PgrOutgoingGiftsApi {
   // pending one. stopping != 0 cancels the transaction (returning any reserved sticker). No-op off
   // the owner thread (never frees).
   int (*tick)(uint64_t proven_tid, int stopping);
-  int (*sample)(PgrOutgoingGiftsSample *out_sample);
+  int (*sample)(PgsOutgoingGiftsSample *out_sample);
   // Pop one FIFO record (returns 1), report empty (0), or a negative status. Any thread.
-  int (*next_event)(PgrOutgoingGiftsEvent *out);
+  int (*next_event)(PgsOutgoingGiftsEvent *out);
 };
 
-static_assert(sizeof(PgrOutgoingGiftsApi) == 64,
-              "PgrOutgoingGiftsApi must remain a 64-byte version-1 table");
+static_assert(sizeof(PgsOutgoingGiftsApi) == 64,
+              "PgsOutgoingGiftsApi must remain a 64-byte version-1 table");
 
 // Hidden getter. NOT exported by the version script; the coordinator registers it in query_feature
 // under feature id 22 and answers only on an exact version match.

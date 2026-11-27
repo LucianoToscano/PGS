@@ -11,7 +11,7 @@ namespace {
 constexpr jlong kOwnerToken=1;
 std::mutex lifecycle;
 bool attempted=false,active=false;
-const PgrRuntimeTransportApi *transport=nullptr;
+const PgsRuntimeTransportApi *transport=nullptr;
 std::atomic<jmethodID> is_read_only{nullptr};
 
 jlong JNICALL native_install(JNIEnv *,jclass,jint lease,jint events,jint string_bytes,jint budget){
@@ -23,9 +23,9 @@ jlong JNICALL native_install(JNIEnv *,jclass,jint lease,jint events,jint string_
  std::lock_guard<std::mutex> lock(lifecycle);
  if(attempted)return 0;
  attempted=true;
- const auto *api=static_cast<const PgrRuntimeTransportApi *>(pgs_runtime_transport_api(1));
- if(!api||api->version!=1||api->size!=sizeof(PgrRuntimeTransportApi)||!api->install||!api->exchange||!api->stop)return 0;
- if(api->install(&config)!=PGR_TRANSPORT_OK)return 0;
+ const auto *api=static_cast<const PgsRuntimeTransportApi *>(pgs_runtime_transport_api(1));
+ if(!api||api->version!=1||api->size!=sizeof(PgsRuntimeTransportApi)||!api->install||!api->exchange||!api->stop)return 0;
+ if(api->install(&config)!=PGS_TRANSPORT_OK)return 0;
  transport=api;active=true;return kOwnerToken;
 }
 
@@ -65,7 +65,7 @@ jint JNICALL native_exchange(JNIEnv *env,jclass,jlong handle,jobject snapshot,ji
   if(!active||!transport)return attempted?PGS_TRANSPORT_STOPPED:PGS_TRANSPORT_ERR_NOT_INSTALLED;
   rc=transport->exchange(input,static_cast<uint32_t>(length),output,static_cast<uint32_t>(capacity),&written);
  }
- if(rc!=PGR_TRANSPORT_OK)return rc<0?rc:PGS_TRANSPORT_ERR_BAD_FRAME;
+ if(rc!=PGS_TRANSPORT_OK)return rc<0?rc:PGS_TRANSPORT_ERR_BAD_FRAME;
  if(written<PGS_TRANSPORT_EVENT_HEADER||written>static_cast<uint32_t>(capacity)||written>PGS_TRANSPORT_MAX_FRAME)return PGS_TRANSPORT_ERR_BAD_FRAME;
  return static_cast<jint>(written);
 }

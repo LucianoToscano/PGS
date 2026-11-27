@@ -111,7 +111,7 @@ def macros(bindings):
         for key, entry in entries.items():
             if not NAME.fullmatch(key):
                 raise ValueError('Invalid binding key')
-            name = f'PGR_GAME_{module}_{key}'.upper()
+            name = f'PGS_GAME_{module}_{key}'.upper()
             if name in result:
                 raise ValueError(f'Colliding binding name: {name}')
             result[name] = resolve(module, key)

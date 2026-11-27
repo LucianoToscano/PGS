@@ -14,14 +14,14 @@ pgs_gym::History shared_history;
 uintptr_t root_new(void *p,int){assert(p);auto h=next_root++;test_roots[h]=p;++allocations;return h;}
 void *root_get(uintptr_t h){return test_roots.at(h);}
 void root_free(uintptr_t h){assert(test_roots.erase(h)==1);++frees;}
-int sample(PgrRuntimeTransportSample *s){*s={};s->snapshot_fresh=fresh;s->snapshot_seq=100+(changing?samples:0);++samples;return 0;}
+int sample(PgsRuntimeTransportSample *s){*s={};s->snapshot_fresh=fresh;s->snapshot_seq=100+(changing?samples:0);++samples;return 0;}
 int get_string(uint32_t f,char *p,uint32_t cap,uint32_t *n){assert(f==12&&cap>config.size());*n=config.size();memcpy(p,config.data(),*n);return 0;}
 int get_bool(uint32_t f,int *v){assert(f==3||f==16);*v=f==3?active_flag:ready_flag;return 0;}
 int get_double(uint32_t f,double *v,int *has){assert(f<2);*has=coordinates;*v=f==0?latitude:longitude;return 0;}
-int emit(uint32_t op,const int64_t*,uint32_t scalar_count,const PgrRuntimeTransportString *s,uint32_t n){assert(op==19&&!scalar_count&&n==2);last_event.assign(s[1].ptr,s[1].len);++events;return 0;}
-int poll_promise(void *p,uint32_t phase,uint64_t tid,PgrVgpResultsResult *out){assert(p==&object_tokens[0]&&phase==1&&tid==owner);++polls;*out={};return poll_result;}
-int bootstrap(PgrBootBinding*){++bootstraps;return -1;}
-PgrRuntimeTransportApi transport{};PgrVgpResultsApi results{};PgrBootApi bootstrap_api{};
+int emit(uint32_t op,const int64_t*,uint32_t scalar_count,const PgsRuntimeTransportString *s,uint32_t n){assert(op==19&&!scalar_count&&n==2);last_event.assign(s[1].ptr,s[1].len);++events;return 0;}
+int poll_promise(void *p,uint32_t phase,uint64_t tid,PgsVgpResultsResult *out){assert(p==&object_tokens[0]&&phase==1&&tid==owner);++polls;*out={};return poll_result;}
+int bootstrap(PgsBootBinding*){++bootstraps;return -1;}
+PgsRuntimeTransportApi transport{};PgsVgpResultsApi results{};PgsBootApi bootstrap_api{};
 void pending_setup(){
  assert(test_roots.empty());session=Session{};shared_history=pgs_gym::History{};
  owner=gettid();session.active=true;session.command.token=123;session.command.mode=1;
@@ -62,7 +62,7 @@ int main(){
  pending_setup();finish("stopped","Account changed; submitted request not replayed");cleared();
  assert(!shared_history.feed_allowed(42,clock_ms())); // unknown result cannot leak to a later account/run
  // Actual entrypoint startup failure consumes the token; coherent repeated snapshots do not restart it.
- finished_token=0;PgrSharedMetadataOutput metadata{};owner=0;bootstraps=0;
+ finished_token=0;PgsSharedMetadataOutput metadata{};owner=0;bootstraps=0;
  pgs_remote_gym_tick(gettid(),&metadata);assert(bootstraps==1&&finished_token==123&&!session.active);
  pgs_remote_gym_tick(gettid(),&metadata);assert(bootstraps==1);
  config="1|124|1|10|20|1|30|0";pgs_remote_gym_tick(gettid(),&metadata);assert(bootstraps==2&&finished_token==124);

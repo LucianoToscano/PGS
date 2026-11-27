@@ -96,7 +96,7 @@ enum PgsRuntimeTransportLayout {
 };
 
 enum PgsRuntimeTransportStatus {
-  PGR_TRANSPORT_OK                = 0,
+  PGS_TRANSPORT_OK                = 0,
   PGS_TRANSPORT_ERR_NULL_ARG      = -1,
   PGS_TRANSPORT_ERR_BAD_VERSION   = -2,
   PGS_TRANSPORT_ERR_BAD_SIZE      = -3,
@@ -132,9 +132,9 @@ struct PgsRuntimeTransportConfig {
 static_assert(sizeof(PgsRuntimeTransportConfig) == 32, "config must remain 32 bytes on LP64");
 
 // Fixed LP64 telemetry gauge (88 bytes). Pull-only; the native layer never calls the host.
-struct PgrRuntimeTransportSample {
+struct PgsRuntimeTransportSample {
   uint32_t version;            // == PGS_TRANSPORT_SAMPLE_VERSION
-  uint32_t size;               // == sizeof(PgrRuntimeTransportSample)
+  uint32_t size;               // == sizeof(PgsRuntimeTransportSample)
   uint64_t snapshots_accepted; // bumps on each validated snapshot push
   uint64_t snapshots_rejected; // bumps on each rejected snapshot frame
   uint64_t events_emitted;     // bumps on each accepted emit()
@@ -149,19 +149,19 @@ struct PgrRuntimeTransportSample {
   uint32_t fault;              // 1 if overflow/malformed input was ever latched
 };
 
-static_assert(sizeof(PgrRuntimeTransportSample) == 88, "sample must remain 88 bytes on LP64");
+static_assert(sizeof(PgsRuntimeTransportSample) == 88, "sample must remain 88 bytes on LP64");
 
 // A producer-supplied string argument (gameplay owns the storage for the duration of the emit() call only;
 // native copies it). ptr may be null iff len == 0.
-struct PgrRuntimeTransportString {
+struct PgsRuntimeTransportString {
   const char *ptr;
   uint32_t    len;
 };
 
 // Fixed LP64 table: 8-byte header + 11 function pointers = 96 bytes.
-struct PgrRuntimeTransportApi {
+struct PgsRuntimeTransportApi {
   uint32_t version;  // == PGS_TRANSPORT_API_VERSION
-  uint32_t size;     // == sizeof(PgrRuntimeTransportApi)
+  uint32_t size;     // == sizeof(PgsRuntimeTransportApi)
 
   // Idempotent install. A second call with an identical config returns OK; a different config ERR_RECONFIG.
   int (*install)(const PgsRuntimeTransportConfig *config);
@@ -188,7 +188,7 @@ struct PgrRuntimeTransportApi {
   // Returns OK, ERR_OVERFLOW (fail closed), STOPPED (clean shutdown no-op), ERR_DOMAIN/ERR_BAD_* (validation),
   // or ERR_TOO_LARGE. Holds the state mutex only; makes no callback.
   int (*emit)(uint32_t opcode, const int64_t *scalars, uint32_t n_scalars,
-              const PgrRuntimeTransportString *strings, uint32_t n_strings);
+              const PgsRuntimeTransportString *strings, uint32_t n_strings);
 
   // Typed settings getters for compiled gameplay consumers. Return STALE when the snapshot is not fresh,
   // except get_bool returns OK with *out == 0 for a guarded field on a stale snapshot. field is the reader's
@@ -207,14 +207,14 @@ struct PgrRuntimeTransportApi {
   // last take_pulse for this pulse id. STALE snapshot yields OK with *out_fired == 0 (legacy client default).
   int (*take_pulse)(uint32_t pulse, int *out_fired);
 
-  int (*sample)(PgrRuntimeTransportSample *out);
+  int (*sample)(PgsRuntimeTransportSample *out);
 
   // Stop: mark stopped (snapshot getters go STALE), clear the queue, bump the session generation. A later
   // install()/exchange() does not auto-restart gameplay; the host owns restart. Any thread; no callback.
   int (*stop)(void);
 };
 
-static_assert(sizeof(PgrRuntimeTransportApi) == 96, "RuntimeTransport table must remain a 96-byte v1 table");
+static_assert(sizeof(PgsRuntimeTransportApi) == 96, "RuntimeTransport table must remain a 96-byte v1 table");
 
 // Hidden getter. NOT exported by the version script; the coordinator registers it in query_feature under
 // feature id 52 and answers only on an exact version match.

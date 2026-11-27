@@ -132,8 +132,8 @@ void *fake_invoke(const void *method, void *self, void **params, void **exc) {
   return nullptr;
 }
 
-PgrRoutesDiscoveryConfig make_config() {
-  PgrRoutesDiscoveryConfig c{};
+PgsRoutesDiscoveryConfig make_config() {
+  PgsRoutesDiscoveryConfig c{};
   c.version = 1; c.size = sizeof(c);
   c.runtime_invoke = (void *)&fake_invoke; c.object_get_class = (void *)&fake_obj_class;
   c.field_get_value = (void *)&fake_field_get; c.object_unbox = (void *)&fake_unbox;
@@ -154,14 +154,14 @@ PgrRoutesDiscoveryConfig make_config() {
 }
 
 uint64_t this_tid() { return static_cast<uint64_t>(static_cast<pid_t>(::gettid())); }
-const PgrRoutesDiscoveryApi *g_api = nullptr;
+const PgsRoutesDiscoveryApi *g_api = nullptr;
 
-PgrRoutesDiscoveryRequest req(uint64_t tid, uint64_t residual, uint64_t svc, uint32_t index) {
-  PgrRoutesDiscoveryRequest r{}; r.version = 1; r.size = sizeof(r); r.tid = tid; r.residual_ms = residual;
+PgsRoutesDiscoveryRequest req(uint64_t tid, uint64_t residual, uint64_t svc, uint32_t index) {
+  PgsRoutesDiscoveryRequest r{}; r.version = 1; r.size = sizeof(r); r.tid = tid; r.residual_ms = residual;
   r.generation = g_api->generation(); r.service_handle = svc; r.index = index; return r;
 }
-PgrRoutesDiscoveryLookup lk(uint64_t tid, uint64_t residual, uint64_t svc, const char *id) {
-  PgrRoutesDiscoveryLookup l{}; l.version = 1; l.size = sizeof(l); l.tid = tid; l.residual_ms = residual;
+PgsRoutesDiscoveryLookup lk(uint64_t tid, uint64_t residual, uint64_t svc, const char *id) {
+  PgsRoutesDiscoveryLookup l{}; l.version = 1; l.size = sizeof(l); l.tid = tid; l.residual_ms = residual;
   l.generation = g_api->generation(); l.service_handle = svc;
   for (int i = 0; id[i] && i < PGS_RD_ID_MAX; ++i) { l.id[i] = (uint16_t)id[i]; ++l.id_length; }
   return l;
@@ -170,7 +170,7 @@ PgrRoutesDiscoveryLookup lk(uint64_t tid, uint64_t residual, uint64_t svc, const
 void reset_invoke() { g_invokes = 0; g_throw_token = nullptr; g_oneshot = nullptr; g_oneshot_method = nullptr; g_gcnew_fail = 0; g_gcnew_calls = 0; g_wide_count = false; }
 void drain(uint64_t tid, uint64_t svc) { auto r = req(tid, 0, svc, 0); assert(g_api->drain(&r) == PGS_RD_OK); }
 
-bool id_is(const PgrRoutesDiscoveryRoute &h, const char *expect) {
+bool id_is(const PgsRoutesDiscoveryRoute &h, const char *expect) {
   int n = 0; while (expect[n]) ++n;
   if ((int)h.id_length != n) return false;
   for (int i = 0; i < n; ++i) if (h.id[i] != (uint16_t)expect[i]) return false;
@@ -187,23 +187,23 @@ int main(int argc, char **argv) {
   const auto *core = static_cast<const pgs_native_api_v2 *>(getter(2));
   assert(core && core->query_feature);
   assert(core->query_feature(44, 99) == nullptr);
-  const auto *api = static_cast<const PgrRoutesDiscoveryApi *>(core->query_feature(44, 1));
-  assert(api && api->version == 1 && api->size == sizeof(PgrRoutesDiscoveryApi));
+  const auto *api = static_cast<const PgsRoutesDiscoveryApi *>(core->query_feature(44, 1));
+  assert(api && api->version == 1 && api->size == sizeof(PgsRoutesDiscoveryApi));
   g_api = api;
 
   std::printf("ABI sizes: config=%zu request=%zu lookup=%zu route=%zu output=%zu points=%zu table=%zu\n",
-              sizeof(PgrRoutesDiscoveryConfig), sizeof(PgrRoutesDiscoveryRequest), sizeof(PgrRoutesDiscoveryLookup),
-              sizeof(PgrRoutesDiscoveryRoute), sizeof(PgrRoutesDiscoveryOutput), sizeof(PgrRoutesDiscoveryPoints),
-              sizeof(PgrRoutesDiscoveryApi));
-  assert(sizeof(PgrRoutesDiscoveryConfig) == 312 && sizeof(PgrRoutesDiscoveryRequest) == 48 &&
-         sizeof(PgrRoutesDiscoveryLookup) == 304 && sizeof(PgrRoutesDiscoveryRoute) == 832 &&
-         sizeof(PgrRoutesDiscoveryOutput) == 83216 && sizeof(PgrRoutesDiscoveryPoints) == 80016 &&
-         sizeof(PgrRoutesDiscoveryApi) == 64);
+              sizeof(PgsRoutesDiscoveryConfig), sizeof(PgsRoutesDiscoveryRequest), sizeof(PgsRoutesDiscoveryLookup),
+              sizeof(PgsRoutesDiscoveryRoute), sizeof(PgsRoutesDiscoveryOutput), sizeof(PgsRoutesDiscoveryPoints),
+              sizeof(PgsRoutesDiscoveryApi));
+  assert(sizeof(PgsRoutesDiscoveryConfig) == 312 && sizeof(PgsRoutesDiscoveryRequest) == 48 &&
+         sizeof(PgsRoutesDiscoveryLookup) == 304 && sizeof(PgsRoutesDiscoveryRoute) == 832 &&
+         sizeof(PgsRoutesDiscoveryOutput) == 83216 && sizeof(PgsRoutesDiscoveryPoints) == 80016 &&
+         sizeof(PgsRoutesDiscoveryApi) == 64);
 
   const uint64_t tid = this_tid();
-  PgrRoutesDiscoveryConfig cfg = make_config();
-  static PgrRoutesDiscoveryOutput out;    // 83 KB: never on the stack
-  static PgrRoutesDiscoveryPoints pts;     // 80 KB: never on the stack
+  PgsRoutesDiscoveryConfig cfg = make_config();
+  static PgsRoutesDiscoveryOutput out;    // 83 KB: never on the stack
+  static PgsRoutesDiscoveryPoints pts;     // 80 KB: never on the stack
 
   // 1. install validation / not-installed / idempotent / reconfig.
   assert(api->generation() == 1);
@@ -383,7 +383,7 @@ int main(int argc, char **argv) {
   { reset_invoke();
     auto r = req(tid, 2000, hRoutes, 0); assert(api->discover(&r, &out) == PGS_RD_OK && out.count == 2);
     std::thread([&]() {
-      PgrRoutesDiscoveryOutput o{};
+      PgsRoutesDiscoveryOutput o{};
       auto fr = req(this_tid(), 2000, hRoutes, 0);  // this_tid() here is the foreign worker tid
       assert(g_api->discover(&fr, &o) == PGS_RD_SKIP && o.count == 0);
       auto dr = req(this_tid(), 0, hRoutes, 0);

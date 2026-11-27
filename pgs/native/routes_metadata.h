@@ -8,7 +8,7 @@
 // descriptors and validation decisions are compiled into the binary.
 struct PgsRoutesMetadataConfig {
     uint32_t version,size;
-    PgrMetaBindConfig binding;
+    PgsMetaBindConfig binding;
     void *thread_current;
     uint64_t owner_tid;
 };

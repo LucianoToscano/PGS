@@ -17,18 +17,18 @@
 // becomes a fail-closed refusal. No mutex is held across runtime_invoke, a field read or a GC op; the
 // hook NEVER invokes a managed method or JS and NEVER latches the owner.
 
-static_assert(sizeof(PgrCatchCanvasConfig) == 128, "config must be 128 bytes");
-static_assert(sizeof(PgrCatchCanvasSample) == 40, "sample must be 40 bytes");
-static_assert(sizeof(PgrCatchCanvasApi) == 72, "table must be 72 bytes");
-static_assert(offsetof(PgrCatchCanvasConfig, object_get_class) == 8, "layout");
-static_assert(offsetof(PgrCatchCanvasConfig, class_summary) == 64, "layout");
-static_assert(offsetof(PgrCatchCanvasConfig, f_current_state) == 88, "layout");
-static_assert(offsetof(PgrCatchCanvasConfig, canvas_address) == 112, "layout");
-static_assert(offsetof(PgrCatchCanvasConfig, state_open) == 120, "layout");
-static_assert(offsetof(PgrCatchCanvasConfig, reserved0) == 124, "layout");
-static_assert(offsetof(PgrCatchCanvasSample, masked_count) == 16, "layout");
-static_assert(offsetof(PgrCatchCanvasSample, hide_count) == 24, "layout");
-static_assert(offsetof(PgrCatchCanvasSample, restore_count) == 32, "layout");
+static_assert(sizeof(PgsCatchCanvasConfig) == 128, "config must be 128 bytes");
+static_assert(sizeof(PgsCatchCanvasSample) == 40, "sample must be 40 bytes");
+static_assert(sizeof(PgsCatchCanvasApi) == 72, "table must be 72 bytes");
+static_assert(offsetof(PgsCatchCanvasConfig, object_get_class) == 8, "layout");
+static_assert(offsetof(PgsCatchCanvasConfig, class_summary) == 64, "layout");
+static_assert(offsetof(PgsCatchCanvasConfig, f_current_state) == 88, "layout");
+static_assert(offsetof(PgsCatchCanvasConfig, canvas_address) == 112, "layout");
+static_assert(offsetof(PgsCatchCanvasConfig, state_open) == 120, "layout");
+static_assert(offsetof(PgsCatchCanvasConfig, reserved0) == 124, "layout");
+static_assert(offsetof(PgsCatchCanvasSample, masked_count) == 16, "layout");
+static_assert(offsetof(PgsCatchCanvasSample, hide_count) == 24, "layout");
+static_assert(offsetof(PgsCatchCanvasSample, restore_count) == 32, "layout");
 
 namespace {
 
@@ -52,7 +52,7 @@ enum { ALIVE_FALSE = 0, ALIVE_TRUE = 1, ALIVE_ERR = -1 };
 // --- lifetime / publication --------------------------------------------------------
 std::mutex g_install_mutex;
 std::mutex g_state_mutex;
-PgrCatchCanvasConfig g_cfg{};
+PgsCatchCanvasConfig g_cfg{};
 std::atomic<bool> g_installed{false};
 std::mutex g_observer_mutex;
 PgsCatchCanvasObserver g_observer{};
@@ -345,12 +345,12 @@ int install_alpha(const PgsCatchCanvasAlphaConfig *config){
 const PgsCatchCanvasApi3 kApi3{3,sizeof(PgsCatchCanvasApi3),install_alpha};
 
 // --- install -----------------------------------------------------------------------
-bool validate_config(const PgrCatchCanvasConfig *c, int *rc) {
+bool validate_config(const PgsCatchCanvasConfig *c, int *rc) {
   if (c == nullptr) { *rc = PGS_CANVAS_ERR_NULL_ARG; return false; }
   if (c->version != PGS_CANVAS_CONFIG_VERSION) { *rc = PGS_CANVAS_ERR_BAD_VERSION; return false; }
-  if (c->size != sizeof(PgrCatchCanvasConfig)) { *rc = PGS_CANVAS_ERR_BAD_SIZE; return false; }
+  if (c->size != sizeof(PgsCatchCanvasConfig)) { *rc = PGS_CANVAS_ERR_BAD_SIZE; return false; }
   void *ptrs[kConfigPtrCount];
-  std::memcpy(ptrs,reinterpret_cast<const unsigned char*>(c)+offsetof(PgrCatchCanvasConfig,object_get_class),sizeof(ptrs));
+  std::memcpy(ptrs,reinterpret_cast<const unsigned char*>(c)+offsetof(PgsCatchCanvasConfig,object_get_class),sizeof(ptrs));
   for (int i = 0; i < kConfigPtrCount; ++i) {
     if (ptrs[i] == nullptr) { *rc = PGS_CANVAS_ERR_MISSING_PTR; return false; }
   }
@@ -359,7 +359,7 @@ bool validate_config(const PgrCatchCanvasConfig *c, int *rc) {
   return true;
 }
 
-int api_install(const PgrCatchCanvasConfig *config) {
+int api_install(const PgsCatchCanvasConfig *config) {
   int rc = PGS_CANVAS_OK;
   if (!validate_config(config, &rc)) return rc;
   uint64_t probe = 0;
@@ -601,10 +601,10 @@ int api_stop() {
   return PGS_CANVAS_OK;
 }
 
-int api_sample(PgrCatchCanvasSample *out) {
+int api_sample(PgsCatchCanvasSample *out) {
   if (out == nullptr) return PGS_CANVAS_ERR_NULL_ARG;
   out->version = PGS_CANVAS_SAMPLE_VERSION;
-  out->size = sizeof(PgrCatchCanvasSample);
+  out->size = sizeof(PgsCatchCanvasSample);
   out->owned = g_owned.load(std::memory_order_relaxed)+g_observer_frames.load(std::memory_order_relaxed);
   out->fault = g_fault.load(std::memory_order_relaxed);
   out->masked_count = g_masked_count.load(std::memory_order_relaxed);
@@ -613,8 +613,8 @@ int api_sample(PgrCatchCanvasSample *out) {
   return PGS_CANVAS_OK;
 }
 
-const PgrCatchCanvasApi kApiTable = {
-    PGS_CANVAS_API_VERSION, static_cast<uint32_t>(sizeof(PgrCatchCanvasApi)),
+const PgsCatchCanvasApi kApiTable = {
+    PGS_CANVAS_API_VERSION, static_cast<uint32_t>(sizeof(PgsCatchCanvasApi)),
     &api_install,  &api_update, &api_hide_opening, &api_hide_dismissed,
     &api_release,  &api_tick,   &api_stop,         &api_sample,
 };

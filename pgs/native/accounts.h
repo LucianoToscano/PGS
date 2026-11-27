@@ -188,7 +188,4 @@ static inline const pgs_accounts_api_v1_t* pgrazor_accounts_api(uint32_t version
 }
 #endif
 
-// Compatibility for the preserved account-host source.
-#include "account_source_compat.h"
-
 #endif  // PGS_ACCOUNTS_H_

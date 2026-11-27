@@ -12,5 +12,5 @@
 // where the player waits is zero), then caught with the best ball on hand (Ultra, Great, then Poké; never
 // a Master Ball) after a Golden Razz (or Razz) Berry, as excellent curveballs. Results go out as
 // "shundo-sniper" events tagged with the request number.
-void pgs_shundo_tick(uint64_t tid, const PgrSharedMetadataOutput *metadata);
+void pgs_shundo_tick(uint64_t tid, const PgsSharedMetadataOutput *metadata);
 void pgs_shundo_stop(uint64_t tid);

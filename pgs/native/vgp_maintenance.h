@@ -79,9 +79,9 @@ enum PgsVgpMaintenanceStatus {
 // NON-virtually (m_alive is the static UnityEngine.Object.op_Implicit(Object) overload, taking the stop as
 // its argument); m_cooldown is the BASE SetCooldownTime MethodInfo* resolved per stop with
 // object_get_virtual_method. The field offsets of this struct are the published contract: never reorder.
-struct PgrVgpMaintenanceConfig {
+struct PgsVgpMaintenanceConfig {
   uint32_t version;  // == PGS_VM_CONFIG_VERSION
-  uint32_t size;     // == sizeof(PgrVgpMaintenanceConfig)
+  uint32_t size;     // == sizeof(PgsVgpMaintenanceConfig)
 
   // [0..7] il2cpp runtime exports.
   void *gchandle_new;              // 0 uintptr_t (void* obj, int pinned)
@@ -115,17 +115,17 @@ struct PgrVgpMaintenanceConfig {
   uint32_t reserved;      // off 172 0
 };
 
-static_assert(sizeof(PgrVgpMaintenanceConfig) == 176,
-              "PgrVgpMaintenanceConfig must remain 176 bytes on LP64");
+static_assert(sizeof(PgsVgpMaintenanceConfig) == 176,
+              "PgsVgpMaintenanceConfig must remain 176 bytes on LP64");
 
 // Fixed LP64 table: 8-byte header + 3 function pointers = 32 bytes.
-struct PgrVgpMaintenanceApi {
+struct PgsVgpMaintenanceApi {
   uint32_t version;  // == PGS_VM_API_VERSION
-  uint32_t size;     // == sizeof(PgrVgpMaintenanceApi)
+  uint32_t size;     // == sizeof(PgsVgpMaintenanceApi)
   // install(config): bind the validated runtime once for the process lifetime. Idempotent for an
   // identical config; a different config returns PGS_VM_ERR_RECONFIG. Any null required pointer or a
   // bad header is rejected (fail closed). No hook is installed.
-  int (*install)(const PgrVgpMaintenanceConfig *config);
+  int (*install)(const PgsVgpMaintenanceConfig *config);
   // balls(svc, owner, lease_ms, out_count): read the current red Poke Ball count off the service's item
   // bag. *out_count is always initialised to 0 before any early return; set to the (>=0) count only on
   // PGS_VM_OK. Owner thread only.
@@ -135,8 +135,8 @@ struct PgrVgpMaintenanceApi {
   int (*cooldown)(void *stop, void *response, uint64_t owner, uint64_t lease_ms);
 };
 
-static_assert(sizeof(PgrVgpMaintenanceApi) == 32,
-              "PgrVgpMaintenanceApi must remain a 32-byte version-1 table");
+static_assert(sizeof(PgsVgpMaintenanceApi) == 32,
+              "PgsVgpMaintenanceApi must remain a 32-byte version-1 table");
 
 // Hidden getter. NOT exported by the version script; the coordinator registers it in query_feature under
 // feature id 32 and answers only on an exact version match.

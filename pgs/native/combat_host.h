@@ -19,7 +19,7 @@ extern "C" {
 //   - Feature 20 (`rocket_actions.h`):  Stateless Rocket fast / charge / shield action helper
 //   - Feature 21 (`rocket_combat.h`):   Rocket scope / UI / vNext / shield / hold-gate controller
 //
-// Consumes canonical Feature 56 (`PgrSharedMetadataOutput`, 67304B) resolved from
+// Consumes canonical Feature 56 (`PgsSharedMetadataOutput`, 67304B) resolved from
 // explicit `cfg->metadata`, `pgs_shared_host_api(1)->metadata()`, or
 // `pgs_shared_metadata_api(2)->prepare(&cfg->metadata_config, ...)`.
 //
@@ -100,15 +100,15 @@ enum PgsCombatHostEventKind : uint32_t {
     PGS_CBH_EV_ROCKET_ERROR          = 17  // rocket-error
 };
 
-struct PgrCombatHostConfig {
+struct PgsCombatHostConfig {
     uint32_t version;                          // 0: 1
-    uint32_t size;                             // 4: sizeof(PgrCombatHostConfig) == 200 on LP64
+    uint32_t size;                             // 4: sizeof(PgsCombatHostConfig) == 200 on LP64
     uint32_t flags;                            // 8: PgsCombatHostConfigFlags
     uint32_t reserved0;                        // 12: 0
 
     // Optional pre-prepared Feature 56 output. If NULL, resolved from
     // `pgs_shared_host_api(1)->metadata()` or `metadata_config`.
-    const PgrSharedMetadataOutput *metadata;   // 16
+    const PgsSharedMetadataOutput *metadata;   // 16
 
     // Direct IL2CPP exports required by leaves 6 / 19 / 20 / 21.
     uintptr_t thread_current;                  // 24: il2cpp_thread_current
@@ -127,9 +127,9 @@ struct PgrCombatHostConfig {
     PgsSharedMetadataConfig metadata_config;   // 104: 96 bytes (104..199)
 };
 
-struct PgrCombatHostOptions {
+struct PgsCombatHostOptions {
     uint32_t version;          // 0: 1
-    uint32_t size;             // 4: sizeof(PgrCombatHostOptions) == 48
+    uint32_t size;             // 4: sizeof(PgsCombatHostOptions) == 48
     uint32_t flags;            // 8: PgsCombatHostOptionFlags
     uint32_t battle_mask;      // 12: 0..1023
     uint32_t rocket_mask;      // 16: 0..7
@@ -139,9 +139,9 @@ struct PgrCombatHostOptions {
     uint64_t epoch;            // 40
 };
 
-struct PgrCombatHostSample {
+struct PgsCombatHostSample {
     uint32_t version;              // 0: 1
-    uint32_t size;                 // 4: sizeof(PgrCombatHostSample) == 120
+    uint32_t size;                 // 4: sizeof(PgsCombatHostSample) == 120
     uint32_t ready;                // 8: 0 or 1
     uint32_t capabilities;         // 12: PgsCombatHostCaps bitmask
     uint32_t stopping;             // 16: 0 or 1
@@ -167,9 +167,9 @@ struct PgrCombatHostSample {
     uint64_t gym_cooldown_serial;  // 112: monotonic gym cooldown-action counter
 };
 
-struct PgrCombatHostEvent {
+struct PgsCombatHostEvent {
     uint32_t version;   // 0: 1
-    uint32_t size;      // 4: sizeof(PgrCombatHostEvent) == 64
+    uint32_t size;      // 4: sizeof(PgsCombatHostEvent) == 64
     uint32_t kind;      // 8: PgsCombatHostEventKind
     uint32_t json_len;  // 12: UTF-8 byte length (excluding NUL)
     int64_t  code0;     // 16: mode / aux0
@@ -180,33 +180,33 @@ struct PgrCombatHostEvent {
     uint64_t reserved1; // 56
 };
 
-struct PgrCombatHostApi {
+struct PgsCombatHostApi {
     uint32_t version; // 0: 1
-    uint32_t size;    // 4: sizeof(PgrCombatHostApi) == 72 on LP64
+    uint32_t size;    // 4: sizeof(PgsCombatHostApi) == 72 on LP64
 
-    int (*configure)(const PgrCombatHostConfig *cfg);
-    int (*update)(const PgrCombatHostOptions *opts);
+    int (*configure)(const PgsCombatHostConfig *cfg);
+    int (*update)(const PgsCombatHostOptions *opts);
     int (*tick)(uint64_t proven_tid);
     int (*revoke)(void);
     int (*stop)(uint64_t proven_tid);
-    int (*sample)(PgrCombatHostSample *out);
-    int (*next_event)(PgrCombatHostEvent *out, char *json_buf, uint32_t json_cap);
+    int (*sample)(PgsCombatHostSample *out);
+    int (*next_event)(PgsCombatHostEvent *out, char *json_buf, uint32_t json_cap);
 
     // Feature 48 API 2 compatible post-original pulse callback.
-    void (*on_unity_pulse)(void *ctx, const PgrUnityPulse *pulse);
+    void (*on_unity_pulse)(void *ctx, const PgsUnityPulse *pulse);
 };
 
 #if defined(__cplusplus) && (__SIZEOF_POINTER__ == 8)
-static_assert(sizeof(PgrCombatHostConfig) == 200, "PgrCombatHostConfig LP64 size mismatch");
-static_assert(offsetof(PgrCombatHostConfig, metadata) == 16, "metadata offset");
-static_assert(offsetof(PgrCombatHostConfig, thread_current) == 24, "thread_current offset");
-static_assert(offsetof(PgrCombatHostConfig, field_get_value) == 80, "field_get_value offset");
-static_assert(offsetof(PgrCombatHostConfig, owner_tid) == 88, "owner_tid offset");
-static_assert(offsetof(PgrCombatHostConfig, metadata_config) == 104, "metadata_config offset");
-static_assert(sizeof(PgrCombatHostOptions) == 48, "PgrCombatHostOptions size mismatch");
-static_assert(sizeof(PgrCombatHostSample) == 120, "PgrCombatHostSample size mismatch");
-static_assert(sizeof(PgrCombatHostEvent) == 64, "PgrCombatHostEvent size mismatch");
-static_assert(sizeof(PgrCombatHostApi) == 72, "PgrCombatHostApi LP64 size mismatch");
+static_assert(sizeof(PgsCombatHostConfig) == 200, "PgsCombatHostConfig LP64 size mismatch");
+static_assert(offsetof(PgsCombatHostConfig, metadata) == 16, "metadata offset");
+static_assert(offsetof(PgsCombatHostConfig, thread_current) == 24, "thread_current offset");
+static_assert(offsetof(PgsCombatHostConfig, field_get_value) == 80, "field_get_value offset");
+static_assert(offsetof(PgsCombatHostConfig, owner_tid) == 88, "owner_tid offset");
+static_assert(offsetof(PgsCombatHostConfig, metadata_config) == 104, "metadata_config offset");
+static_assert(sizeof(PgsCombatHostOptions) == 48, "PgsCombatHostOptions size mismatch");
+static_assert(sizeof(PgsCombatHostSample) == 120, "PgsCombatHostSample size mismatch");
+static_assert(sizeof(PgsCombatHostEvent) == 64, "PgsCombatHostEvent size mismatch");
+static_assert(sizeof(PgsCombatHostApi) == 72, "PgsCombatHostApi LP64 size mismatch");
 #endif
 
 const void *pgs_combat_host_api(uint32_t version);

@@ -13,11 +13,11 @@
 #include <map>
 #include <algorithm>
 namespace {
-using namespace pgr_shared_meta;
+using namespace pgs_shared_meta;
 using namespace pgs_buddy_ep;
 struct Failure {const char *where;};
 void require(bool ok,const char *where){if(!ok)throw Failure{where};}
-PgrBootBinding boot{};const PgrSharedMetadataOutput *md=nullptr;
+PgsBootBinding boot{};const PgsSharedMetadataOutput *md=nullptr;
 bool initialized=false,busy=false,paused=false;uint64_t owner=0,next_poll=0,next_action=0,last_stats=0,last_publish=0;
 std::string account,config,status;History history;int ep=-1,feed_burst=0;bool excited=false;int64_t prevention=0;
 uint64_t clock_ms(clockid_t c=CLOCK_BOOTTIME){timespec t{};clock_gettime(c,&t);return uint64_t(t.tv_sec)*1000+t.tv_nsec/1000000;}
@@ -36,9 +36,9 @@ struct Root {
 void *klass(void *o){require(o,"null object");return fn<void*(*)(void*)>(boot.runtime.object_get_class)(o);}
 void *cls(const char *ns,const char *name){
  static std::map<std::string,void*> cache;std::string key=std::string(ns)+"."+name;auto it=cache.find(key);if(it!=cache.end())return it->second;
- const auto *api=static_cast<const PgrMetaApi*>(pgs_runtime_metadata_api(1));require(api,"metadata API");
- PgrMetaClassQuery q{};q.version=1;q.size=sizeof(q);q.name_space=ns;q.name=name;q.canonical_match=PGR_MD_MATCH_EXACT;
- PgrMetaClassResult out{};require(api->resolve_class(&q,&out)==0,name);return cache[key]=const_cast<void*>(out.klass);
+ const auto *api=static_cast<const PgsMetaApi*>(pgs_runtime_metadata_api(1));require(api,"metadata API");
+ PgsMetaClassQuery q{};q.version=1;q.size=sizeof(q);q.name_space=ns;q.name=name;q.canonical_match=PGS_MD_MATCH_EXACT;
+ PgsMetaClassResult out{};require(api->resolve_class(&q,&out)==0,name);return cache[key]=const_cast<void*>(out.klass);
 }
 std::string typename_of(void *type){char *p=fn<char*(*)(void*)>(boot.meta.type_get_name)(type);require(p,"type name");std::string s=p;fn<void(*)(void*)>(boot.meta.mem_free)(p);return s;}
 void *field_info(void *k,const char *name,const char *type){
@@ -84,8 +84,8 @@ int count(Root &list,int cap){int n=boxed<int>(call(list.get(),"get_Count"),"Sys
 Root item(Root &list,int index){void *args[]={&index};return Root(call(list.get(),"get_Item",1,args));}
 struct Permission {Settings settings;std::string config,saved;bool valid=false,allowed=false,ready=false;};
 Permission permission(){
- Permission p;auto tr=static_cast<const PgrRuntimeTransportApi*>(pgs_runtime_transport_api(1));if(!tr)return p;
- PgrRuntimeTransportSample a{},z{};if(tr->sample(&a)||!a.snapshot_fresh||a.fault)return p;
+ Permission p;auto tr=static_cast<const PgsRuntimeTransportApi*>(pgs_runtime_transport_api(1));if(!tr)return p;
+ PgsRuntimeTransportSample a{},z{};if(tr->sample(&a)||!a.snapshot_fresh||a.fault)return p;
  char text[257]{};uint32_t len=0;int ready=0;
  if(tr->get_string(9,text,sizeof(text),&len)||!parse(text,len,p.settings))return p;p.config.assign(text,len);
  if(tr->get_string(10,text,sizeof(text),&len)||len>256)return p;p.saved.assign(text,len);
@@ -99,7 +99,7 @@ void publish(const std::string &message,bool force=false){
  auto wall=clock_ms(CLOCK_REALTIME);uint64_t maintenance=history.interaction&&wall>=history.interaction?((wall-history.interaction>=1200000)?0:(1200000-(wall-history.interaction))/1000):0;
  std::string json="{\"message\":\""+message+"\",\"ep\":"+std::to_string(ep)+",\"excited\":"+(excited?"true":"false")+",\"maintenanceSeconds\":"+std::to_string(maintenance)+",\"history\":\""+encode(history)+"\",\"account\":\""+account+"\"}";
  __android_log_print(ANDROID_LOG_INFO,"PGSBuddyEP","%s EP=%d excited=%d",message.c_str(),ep,int(excited));
- auto tr=static_cast<const PgrRuntimeTransportApi*>(pgs_runtime_transport_api(1));PgrRuntimeTransportString values[]={{"buddy-emotion",13},{json.c_str(),uint32_t(json.size())}};
+ auto tr=static_cast<const PgsRuntimeTransportApi*>(pgs_runtime_transport_api(1));PgsRuntimeTransportString values[]={{"buddy-emotion",13},{json.c_str(),uint32_t(json.size())}};
  if(tr&&tr->emit(19,nullptr,0,values,2))paused=true;
 }
 struct Pending {Root promise,reflection;int phase=0;uint64_t since=0,buddy=0;int64_t snapshot_started=0;std::string config,account;bool canceled=false;};Pending pending;
@@ -151,7 +151,7 @@ Root start_photo_session(const Permission &p){
 }
 Root photo_request(const Permission &p){
  Root service=resolve("Niantic.Holoholo.ARPhoto","IARPhotoRpcService");require(bool(service),"snapshot service unavailable");
- Root rpc(field<void*>(service.get(),PGR_GAME_BUDDY_EMOTION_CPP_EJBD_NAME,"Niantic.Holoholo.Rpc.IRpcHandler"));require(bool(rpc),"snapshot RPC");
+ Root rpc(field<void*>(service.get(),PGS_GAME_BUDDY_EMOTION_CPP_EJBD_NAME,"Niantic.Holoholo.Rpc.IRpcHandler"));require(bool(rpc),"snapshot RPC");
  Root req(fn<void*(*)(void*)>(boot.runtime.object_new)(cls("Holoholo.Rpc","CompleteSnapshotSessionProto")));call(req.get(),".ctor");
  put(req.get(),"PhotoPokemonId","System.UInt64",history.buddy);put(req.get(),"NumPhotosTaken","System.Int32",1);put(req.get(),"SnapshotSessionStartTime","System.Int64",pending.snapshot_started);
  void *open=method(klass(rpc.get()),"SendRpc",5);require(fn<bool(*)(void*)>(boot.meta.method_is_generic)(open),"generic snapshot RPC");
@@ -182,7 +182,7 @@ void begin(int phase,const Permission &p){
 void poll(const Permission &p){
  if(!p.allowed||p.config!=pending.config||account!=pending.account||history.buddy!=pending.buddy)pending.canceled=true;
  uint64_t now=clock_ms();if(now-pending.since>15000){bool canceled=pending.canceled;paused=!canceled;clear();feed_burst=0;publish(canceled?"Canceled request expired; refreshing buddy":"Paused: request timed out; toggle off to resume",true);return;}
- auto api=static_cast<const PgrVgpResultsApi*>(pgs_vgp_results_api(1));require(api,"promise reader");PgrVgpResultsResult out{};int rc=api->poll(pending.promise.get(),1,owner,&out);if(!rc)return;
+ auto api=static_cast<const PgsVgpResultsApi*>(pgs_vgp_results_api(1));require(api,"promise reader");PgsVgpResultsResult out{};int rc=api->poll(pending.promise.get(),1,owner,&out);if(!rc)return;
  if(rc!=PGS_VR_DONE){bool canceled=pending.canceled;clear();feed_burst=0;paused=!canceled;publish(canceled?"Canceled request ended; refreshing buddy":"Paused: buddy request rejected; toggle off to resume",true);return;}
  Root response;response.h=out.value_handle;if(pending.canceled){clear();feed_burst=0;next_action=now+5000;return;}
  if(pending.phase==6){
@@ -215,7 +215,7 @@ void validate(){
  publish("Buddy interfaces validated",true);
 }
 }
-void pgs_buddy_emotion_tick(uint64_t tid,const PgrSharedMetadataOutput *metadata){
+void pgs_buddy_emotion_tick(uint64_t tid,const PgsSharedMetadataOutput *metadata){
  if(busy||!tid||tid!=uint64_t(gettid())||(owner&&tid!=owner))return;struct Guard{Guard(){busy=true;}~Guard(){busy=false;}} guard;
  ResolutionScope resolution;
  try{
@@ -231,7 +231,7 @@ void pgs_buddy_emotion_tick(uint64_t tid,const PgrSharedMetadataOutput *metadata
   const uint64_t now=clock_ms();
   if(!pending.phase&&now<next_poll)return;
   if(!pending.phase)next_poll=now+1000;
-  if(!initialized){if(!p.allowed)return;auto api=static_cast<const PgrBootApi*>(pgs_runtime_bootstrap_api(1));boot.version=1;boot.size=sizeof(boot);require(api&&api->snapshot(&boot)==0,"runtime bootstrap");md=metadata;require(md,"metadata");owner=tid;validate();initialized=true;}
+  if(!initialized){if(!p.allowed)return;auto api=static_cast<const PgsBootApi*>(pgs_runtime_bootstrap_api(1));boot.version=1;boot.size=sizeof(boot);require(api&&api->snapshot(&boot)==0,"runtime bootstrap");md=metadata;require(md,"metadata");owner=tid;validate();initialized=true;}
   if(p.valid&&p.settings.enabled){Root player=resolve("Niantic.Holoholo","IPlayerService");if(!player){if(pending.phase){p.allowed=false;poll(p);}else publish("Waiting for buddy services");return;}std::string id=string(call(player.get(),"get_PlayerId"));if(id.empty()){if(pending.phase){p.allowed=false;poll(p);}else publish("Waiting for account identity");return;}bool buddy_available=false;uint64_t buddy=current_buddy(&buddy_available);
    if(!buddy_available){if(pending.phase){p.allowed=false;poll(p);}else publish("Waiting for buddy services");return;}
    adopt_buddy(id,buddy,p.saved);}

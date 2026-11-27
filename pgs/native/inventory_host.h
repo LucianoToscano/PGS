@@ -5,12 +5,12 @@
 #include <stdint.h>
 enum PgsInventoryHostCaps : uint32_t {PGS_IH_ITEMS=1,PGS_IH_BUDDY=2,PGS_IH_INCUBATION=4,PGS_IH_INCOMING=8,PGS_IH_OUTGOING=16,PGS_IH_SOCIAL=32};
 struct PgsInventoryRuntime {
- PgrBootRuntimeExports boot;
+ PgsBootRuntimeExports boot;
  void *string_length,*object_get_virtual_method,*class_get_type,*type_get_object,*runtime_class_init,*method_get_object;
 };
 struct PgsInventoryHostConfig {
  uint32_t version,size,flags,reserved; // flags1 native52 transport; null config enables it
- const PgrSharedMetadataOutput *metadata;
+ const PgsSharedMetadataOutput *metadata;
  const PgsInventoryRuntime *runtime;
 };
 struct PgsInventoryHostOptions {
@@ -30,7 +30,7 @@ struct PgsInventoryHostApi {
  int (*next_event)(PgsInventoryHostEvent*);
  void (*request_item_poll)();
  void *(*acquire_item_service)(); // owned root; caller must release through IL2CPP
- void (*on_unity_pulse)(void*,const PgrUnityPulse*);
+ void (*on_unity_pulse)(void*,const PgsUnityPulse*);
  int (*visibility_site)(uint32_t);
  void (*on_visibility)(void*,uint64_t);
 };

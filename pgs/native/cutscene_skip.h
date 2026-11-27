@@ -1,6 +1,6 @@
 #pragma once
 #include <stdint.h>
-struct PgrSharedMetadataOutput;
+struct PgsSharedMetadataOutput;
 // Slot 17: "K2|<skip cutscenes>|<auto incubate>" (legacy K1 is accepted).
 // Auto incubate OR Skip cutscenes skips the egg hatch intro, animation and result details,
 // then uses the game's hatch-completion callback without opening the follow-up Eggs inventory.
@@ -12,5 +12,5 @@ struct PgrSharedMetadataOutput;
 // new species / Pokedex) and a Team GO Rocket member's spoken lines are never created: the hooked
 // entry points return what the game would get after the cutscene ends, without building its GUI.
 // The Rocket screen with the BATTLE button still appears; battles start only when it is pressed.
-void pgs_cutscene_skip_tick(uint64_t tid,const PgrSharedMetadataOutput *metadata);
+void pgs_cutscene_skip_tick(uint64_t tid,const PgsSharedMetadataOutput *metadata);
 void pgs_cutscene_skip_stop(uint64_t tid);

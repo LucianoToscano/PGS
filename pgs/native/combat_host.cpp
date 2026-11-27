@@ -26,7 +26,7 @@
 
 namespace {
 
-using namespace pgr_shared_meta;
+using namespace pgs_shared_meta;
 
 template <typename T>
 const T *api_table(const void *p) {
@@ -114,7 +114,7 @@ constexpr size_t kEventCap     = 256;
 constexpr size_t kEventJsonMax = 16384;
 
 struct QueuedEvent {
-    PgrCombatHostEvent desc{};
+    PgsCombatHostEvent desc{};
     std::string json{};
 };
 
@@ -123,13 +123,13 @@ std::mutex g_setup_mutex;
 std::mutex g_options_mutex;
 std::mutex g_event_mutex;
 
-PgrCombatHostConfig g_cfg{};
-PgrCombatHostConfig g_accepted_cfg{};
+PgsCombatHostConfig g_cfg{};
+PgsCombatHostConfig g_accepted_cfg{};
 bool g_has_accepted_cfg = false;
 bool g_default_bind_mode = false;
-PgrSharedMetadataOutput g_md{};
+PgsSharedMetadataOutput g_md{};
 
-const PgrRocketMiniApi         *g_rocket_mini    = nullptr;
+const PgsRocketMiniApi         *g_rocket_mini    = nullptr;
 const pgs_rocket_actions_api_v1 *g_rocket_actions = nullptr;
 const pgs_rocket_combat_api_v1 *g_rocket_combat  = nullptr;
 const pgs_battle_api_v1        *g_battles        = nullptr;
@@ -160,7 +160,7 @@ void gym_repeat_scope(int entered, uint64_t tid) { if (g_gym_repeat) g_gym_repea
 void gym_repeat_leave(uint64_t tid) { if (g_gym_repeat) g_gym_repeat->observe_leave(tid); }
 
 // Guarded by g_options_mutex
-PgrCombatHostOptions g_opts{};
+PgsCombatHostOptions g_opts{};
 uint64_t g_battle_deadline_ms = 0;
 uint64_t g_rocket_deadline_ms = 0;
 uint64_t g_policy_epoch       = 0;
@@ -248,8 +248,8 @@ bool observation_allowed(uint64_t *out_tid) {
     // automated actions still run from the scheduled tick. Requiring an active
     // ExecuteTasks frame here silently loses normal battle entry/UI callbacks.
     {
-        const auto *sched3 = api_table<PgrUnitySchedulerApi3>(pgs_unity_scheduler_api(3));
-        if (sched3 && sched3->version == 3 && sched3->size >= sizeof(PgrUnitySchedulerApi3) &&
+        const auto *sched3 = api_table<PgsUnitySchedulerApi3>(pgs_unity_scheduler_api(3));
+        if (sched3 && sched3->version == 3 && sched3->size >= sizeof(PgsUnitySchedulerApi3) &&
             sched3->snapshot && sched3->valid) {
             PgsUnitySchedulerSnapshot snap{};
             if (sched3->snapshot(&snap) != PGS_US_OK) return false;
@@ -271,9 +271,9 @@ bool observation_allowed(uint64_t *out_tid) {
 }
 
 // --- Transport 52 & Event Queue Helpers -------------------------------------------
-const PgrRuntimeTransportApi *transport_api() {
-    const auto *tr = api_table<PgrRuntimeTransportApi>(pgs_runtime_transport_api(1));
-    if (!tr || tr->version != 1 || tr->size < sizeof(PgrRuntimeTransportApi)) return nullptr;
+const PgsRuntimeTransportApi *transport_api() {
+    const auto *tr = api_table<PgsRuntimeTransportApi>(pgs_runtime_transport_api(1));
+    if (!tr || tr->version != 1 || tr->size < sizeof(PgsRuntimeTransportApi)) return nullptr;
     return tr;
 }
 
@@ -281,7 +281,7 @@ void transport_text_action(uint32_t op, const char *msg) {
     if (!(g_cfg.flags & PGS_CBH_CFG_USE_TRANSPORT) || !msg) return;
     const auto *tr = transport_api();
     if (!tr || !tr->emit) return;
-    PgrRuntimeTransportString s{msg, static_cast<uint32_t>(std::strlen(msg))};
+    PgsRuntimeTransportString s{msg, static_cast<uint32_t>(std::strlen(msg))};
     tr->emit(op, nullptr, 0, &s, 1);
 }
 
@@ -290,7 +290,7 @@ void transport_ready_action(uint32_t op, bool ready, const char *msg) {
     const auto *tr = transport_api();
     if (!tr || !tr->emit) return;
     int64_t val = ready ? 1 : 0;
-    PgrRuntimeTransportString s{msg, static_cast<uint32_t>(std::strlen(msg))};
+    PgsRuntimeTransportString s{msg, static_cast<uint32_t>(std::strlen(msg))};
     tr->emit(op, &val, 1, &s, 1);
 }
 
@@ -329,7 +329,7 @@ void queue_event(uint32_t kind, int64_t code0, int64_t code1, uint64_t tid, cons
         const size_t idx = (g_event_head + g_event_count) % kEventCap;
         QueuedEvent &slot = g_events[idx];
         slot.desc.version   = 1;
-        slot.desc.size      = sizeof(PgrCombatHostEvent);
+        slot.desc.size      = sizeof(PgsCombatHostEvent);
         slot.desc.kind      = kind;
         slot.desc.json_len  = static_cast<uint32_t>(json.size());
         slot.desc.code0     = code0;
@@ -346,7 +346,7 @@ void queue_event(uint32_t kind, int64_t code0, int64_t code1, uint64_t tid, cons
         const auto *tr = transport_api();
         if (tr && tr->emit) {
             const char *name = event_kind_name(kind);
-            PgrRuntimeTransportString strs[2] = {
+            PgsRuntimeTransportString strs[2] = {
                 {name, static_cast<uint32_t>(std::strlen(name))},
                 {json.c_str(), static_cast<uint32_t>(json.size())}
             };
@@ -790,24 +790,24 @@ bool install_hook_group(const HookEntry *entries, size_t count) {
 
 bool install_gym_next(){
  if(g_gym_next_ready)return true;
- const auto *api=api_table<PgrMetaApi>(pgs_runtime_metadata_api(1));
+ const auto *api=api_table<PgsMetaApi>(pgs_runtime_metadata_api(1));
  if(!api||!api->resolve_class||!api->validate_method)return false;
- const auto *boot=api_table<PgrBootApi>(pgs_runtime_bootstrap_api(1));PgrBootBinding binding{};
+ const auto *boot=api_table<PgsBootApi>(pgs_runtime_bootstrap_api(1));PgsBootBinding binding{};
  if(!boot||!boot->snapshot||boot->snapshot(&binding)!=0||!binding.module_base)return false;
  auto klass=[&](const char *ns,const char *name)->void*{
-  PgrMetaClassQuery q{};q.version=1;q.size=sizeof(q);q.name_space=ns;q.name=name;q.canonical_match=PGR_MD_MATCH_EXACT;
-  PgrMetaClassResult r{};return api->resolve_class(&q,&r)==0?const_cast<void*>(r.klass):nullptr;};
+  PgsMetaClassQuery q{};q.version=1;q.size=sizeof(q);q.name_space=ns;q.name=name;q.canonical_match=PGS_MD_MATCH_EXACT;
+  PgsMetaClassResult r{};return api->resolve_class(&q,&r)==0?const_cast<void*>(r.klass):nullptr;};
  void *k=klass("Niantic.Holoholo.Gym.Battle","GymBattleContinueGuiController");
  void *base=klass("Niantic.Holoholo.NUI","GuiController");if(!k||!base)return false;
  auto method=[&](void *owner,const char *name,const char *ret,const char *p0=nullptr,const char *p1=nullptr){
-  PgrMetaMethodQuery q{};q.version=1;q.size=sizeof(q);q.owner=owner;q.name=name;q.return_type=ret;
+  PgsMetaMethodQuery q{};q.version=1;q.size=sizeof(q);q.owner=owner;q.name=name;q.return_type=ret;
   q.param_count=p1?2:p0?1:0;q.param_types[0]=p0;q.param_types[1]=p1;
-  q.return_match=q.param_match[0]=q.param_match[1]=PGR_MD_MATCH_EXACT;
-  if(owner==k&&std::strcmp(name,"HandleDismissComplete")==0){static const uint8_t bytes[]=PGR_GAME_COMBAT_HOST_CPP_BYTES_FINGERPRINT;q.expected_code=static_cast<const char*>(binding.module_base)+PGR_GAME_COMBAT_HOST_CPP_GYMBATTLECONTINUEGUICONTROLLER_HANDLEDISMISSCOMPLETE_RVA;q.prologue=bytes;q.prologue_len=sizeof(bytes);}
-  if(owner==k&&std::strcmp(name,"Initialize")==0){static const uint8_t bytes[]=PGR_GAME_COMBAT_HOST_CPP_BYTES_FINGERPRINT_2;q.expected_code=static_cast<const char*>(binding.module_base)+PGR_GAME_COMBAT_HOST_CPP_GYMBATTLECONTINUEGUICONTROLLER_INITIALIZE_RVA;q.prologue=bytes;q.prologue_len=sizeof(bytes);}
-  if(owner==k&&std::strcmp(name,"LeaveBattle")==0){static const uint8_t bytes[]=PGR_GAME_COMBAT_HOST_CPP_BYTES_FINGERPRINT_3;q.expected_code=static_cast<const char*>(binding.module_base)+PGR_GAME_COMBAT_HOST_CPP_GYMBATTLECONTINUEGUICONTROLLER_LEAVEBATTLE_RVA;q.prologue=bytes;q.prologue_len=sizeof(bytes);}
-  if(owner==k&&std::strcmp(name,"ContinueToNextBattle")==0){static const uint8_t bytes[]=PGR_GAME_COMBAT_HOST_CPP_BYTES_FINGERPRINT_4;q.expected_code=static_cast<const char*>(binding.module_base)+PGR_GAME_COMBAT_HOST_CPP_GYMBATTLECONTINUEGUICONTROLLER_CONTINUETONEXTBATTLE_RVA;q.prologue=bytes;q.prologue_len=sizeof(bytes);}
-  PgrMetaMethodResult r{};if(api->validate_method(&q,&r)!=0)return PgrMetaMethodResult{};return r;};
+  q.return_match=q.param_match[0]=q.param_match[1]=PGS_MD_MATCH_EXACT;
+  if(owner==k&&std::strcmp(name,"HandleDismissComplete")==0){static const uint8_t bytes[]=PGS_GAME_COMBAT_HOST_CPP_BYTES_FINGERPRINT;q.expected_code=static_cast<const char*>(binding.module_base)+PGS_GAME_COMBAT_HOST_CPP_GYMBATTLECONTINUEGUICONTROLLER_HANDLEDISMISSCOMPLETE_RVA;q.prologue=bytes;q.prologue_len=sizeof(bytes);}
+  if(owner==k&&std::strcmp(name,"Initialize")==0){static const uint8_t bytes[]=PGS_GAME_COMBAT_HOST_CPP_BYTES_FINGERPRINT_2;q.expected_code=static_cast<const char*>(binding.module_base)+PGS_GAME_COMBAT_HOST_CPP_GYMBATTLECONTINUEGUICONTROLLER_INITIALIZE_RVA;q.prologue=bytes;q.prologue_len=sizeof(bytes);}
+  if(owner==k&&std::strcmp(name,"LeaveBattle")==0){static const uint8_t bytes[]=PGS_GAME_COMBAT_HOST_CPP_BYTES_FINGERPRINT_3;q.expected_code=static_cast<const char*>(binding.module_base)+PGS_GAME_COMBAT_HOST_CPP_GYMBATTLECONTINUEGUICONTROLLER_LEAVEBATTLE_RVA;q.prologue=bytes;q.prologue_len=sizeof(bytes);}
+  if(owner==k&&std::strcmp(name,"ContinueToNextBattle")==0){static const uint8_t bytes[]=PGS_GAME_COMBAT_HOST_CPP_BYTES_FINGERPRINT_4;q.expected_code=static_cast<const char*>(binding.module_base)+PGS_GAME_COMBAT_HOST_CPP_GYMBATTLECONTINUEGUICONTROLLER_CONTINUETONEXTBATTLE_RVA;q.prologue=bytes;q.prologue_len=sizeof(bytes);}
+  PgsMetaMethodResult r{};if(api->validate_method(&q,&r)!=0)return PgsMetaMethodResult{};return r;};
  auto init=method(k,"Initialize","System.Void","Holoholo.Rpc.GymDefenderProto","System.Int32");
  auto press=method(k,"ContinueToNextBattle","System.Void");
  auto leave=method(k,"LeaveBattle","System.Void");
@@ -840,7 +840,7 @@ bool install_shared_vnext_hook() {
 }
 
 bool configure_and_install_rocket(uint64_t tid) {
-    if (g_md.optional[OPT_ROCKET] != PGR_SHARED_OPT_AVAILABLE) return false;
+    if (g_md.optional[OPT_ROCKET] != PGS_SHARED_OPT_AVAILABLE) return false;
 
     g_rocket_actions = api_table<pgs_rocket_actions_api_v1>(pgs_rocket_actions_api(1));
     if (g_rocket_actions && g_rocket_actions->version == 1 &&
@@ -939,9 +939,9 @@ bool configure_and_install_rocket(uint64_t tid) {
     }
 
     // Configure & install Feature 6 (Rocket Particle Minigame) if available.
-    g_rocket_mini = api_table<PgrRocketMiniApi>(pgs_rocket_minigame_api(1));
+    g_rocket_mini = api_table<PgsRocketMiniApi>(pgs_rocket_minigame_api(1));
     if (g_rocket_mini && g_rocket_mini->version == 1 &&
-        g_rocket_mini->size == sizeof(PgrRocketMiniApi)) {
+        g_rocket_mini->size == sizeof(PgsRocketMiniApi)) {
         // Ensure none of leaf 6's 4 minigame hook addresses collide with host hooks.
         void *mini_codes[4] = {
             md_h(H_RK_MN_UPDATE_CODE),
@@ -962,7 +962,7 @@ bool configure_and_install_rocket(uint64_t tid) {
             }
         }
         if (!mini_collision) {
-            PgrRocketMiniConfig mn_cfg{};
+            PgsRocketMiniConfig mn_cfg{};
             mn_cfg.version           = 1;
             mn_cfg.size              = sizeof(mn_cfg);
             mn_cfg.update_addr       = md_h(H_RK_MN_UPDATE_CODE);
@@ -1005,7 +1005,7 @@ bool configure_and_install_rocket(uint64_t tid) {
 }
 
 bool configure_and_install_battles() {
-    if (g_md.optional[OPT_BATTLES] != PGR_SHARED_OPT_AVAILABLE) return false;
+    if (g_md.optional[OPT_BATTLES] != PGS_SHARED_OPT_AVAILABLE) return false;
 
     g_battles = api_table<pgs_battle_api_v1>(pgs_battles_api(1));
     if (!g_battles || g_battles->version != 1 ||
@@ -1170,7 +1170,7 @@ bool configure_and_install_battles() {
 
 // --- Metadata & Export Resolution -------------------------------------------------
 
-bool exports_complete(const PgrCombatHostConfig &c) {
+bool exports_complete(const PgsCombatHostConfig &c) {
     return c.thread_current != 0 &&
            c.gchandle_new != 0 &&
            c.gchandle_get_target != 0 &&
@@ -1181,11 +1181,11 @@ bool exports_complete(const PgrCombatHostConfig &c) {
            c.field_get_value != 0;
 }
 
-void fill_exports_from_bootstrap(PgrCombatHostConfig &c) {
-    const auto *boot = api_table<PgrBootApi>(pgs_runtime_bootstrap_api(1));
-    if (!boot || boot->version != 1 || boot->size < sizeof(PgrBootApi) || !boot->snapshot) return;
-    PgrBootBinding b{};
-    if (boot->snapshot(&b) != PGR_BOOT_OK) return;
+void fill_exports_from_bootstrap(PgsCombatHostConfig &c) {
+    const auto *boot = api_table<PgsBootApi>(pgs_runtime_bootstrap_api(1));
+    if (!boot || boot->version != 1 || boot->size < sizeof(PgsBootApi) || !boot->snapshot) return;
+    PgsBootBinding b{};
+    if (boot->snapshot(&b) != PGS_BOOT_OK) return;
     if (!c.thread_current)      c.thread_current      = reinterpret_cast<uintptr_t>(b.runtime.thread_current);
     if (!c.gchandle_new)        c.gchandle_new        = reinterpret_cast<uintptr_t>(b.runtime.gchandle_new);
     if (!c.gchandle_get_target) c.gchandle_get_target = reinterpret_cast<uintptr_t>(b.runtime.gchandle_get_target);
@@ -1213,8 +1213,8 @@ int finish_setup_locked(uint64_t tid) {
     // 2. Resolve owner_tid if not yet set.
     uint64_t owner = g_cfg.owner_tid;
     if (owner == 0) {
-        const auto *sh = api_table<PgrSharedHostApi>(pgs_shared_host_api(1));
-        if (sh && sh->version == 1 && sh->size >= sizeof(PgrSharedHostApi) && sh->sample) {
+        const auto *sh = api_table<PgsSharedHostApi>(pgs_shared_host_api(1));
+        if (sh && sh->version == 1 && sh->size >= sizeof(PgsSharedHostApi) && sh->sample) {
             PgsSharedHostSample sh_s{};
             if (sh->sample(&sh_s) == 0 && sh_s.owner_tid != 0) {
                 owner = sh_s.owner_tid;
@@ -1235,16 +1235,16 @@ int finish_setup_locked(uint64_t tid) {
     g_cfg.owner_tid = owner;
 
     // 3. Resolve Feature 56 metadata (`cfg->metadata`, `shared_host(61)->metadata()`, or `metadata_config`).
-    const PgrSharedMetadataOutput *md_ptr = g_cfg.metadata;
+    const PgsSharedMetadataOutput *md_ptr = g_cfg.metadata;
     if (!md_ptr) {
-        const auto *sh = api_table<PgrSharedHostApi>(pgs_shared_host_api(1));
-        if (sh && sh->version == 1 && sh->size >= sizeof(PgrSharedHostApi) && sh->metadata) {
+        const auto *sh = api_table<PgsSharedHostApi>(pgs_shared_host_api(1));
+        if (sh && sh->version == 1 && sh->size >= sizeof(PgsSharedHostApi) && sh->metadata) {
             md_ptr = sh->metadata();
         }
     }
     if (md_ptr) {
         if (md_ptr->version != 2u ||
-            md_ptr->size != sizeof(PgrSharedMetadataOutput)) {
+            md_ptr->size != sizeof(PgsSharedMetadataOutput)) {
             g_failed.store(true, std::memory_order_release);
             g_last_error.store(PGS_CBH_ERR_METADATA, std::memory_order_release);
             return PGS_CBH_ERR_METADATA;
@@ -1267,7 +1267,7 @@ int finish_setup_locked(uint64_t tid) {
         }
         if (mrc != PGS_SHARED_OK ||
             g_md.version != 2u ||
-            g_md.size != sizeof(PgrSharedMetadataOutput)) {
+            g_md.size != sizeof(PgsSharedMetadataOutput)) {
             g_failed.store(true, std::memory_order_release);
             g_last_error.store(PGS_CBH_ERR_METADATA, std::memory_order_release);
             return PGS_CBH_ERR_METADATA;
@@ -1288,8 +1288,8 @@ int finish_setup_locked(uint64_t tid) {
     g_owner_tid.store(owner, std::memory_order_release);
 
     // 4. Configure & install Rocket (Features 6, 20, 21 + 11 hooks) and Battles (Feature 19 + 31 hooks).
-    const bool want_rocket  = (g_md.optional[OPT_ROCKET] == PGR_SHARED_OPT_AVAILABLE);
-    const bool want_battles = (g_md.optional[OPT_BATTLES] == PGR_SHARED_OPT_AVAILABLE);
+    const bool want_rocket  = (g_md.optional[OPT_ROCKET] == PGS_SHARED_OPT_AVAILABLE);
+    const bool want_battles = (g_md.optional[OPT_BATTLES] == PGS_SHARED_OPT_AVAILABLE);
 
     if ((g_cfg.flags & PGS_CBH_CFG_REQUIRE_ROCKET) && !want_rocket) {
         g_failed.store(true, std::memory_order_release);
@@ -1389,7 +1389,7 @@ int finish_setup_locked(uint64_t tid) {
 
 // --- API Entrypoints --------------------------------------------------------------
 
-int api_configure(const PgrCombatHostConfig *cfg) {
+int api_configure(const PgsCombatHostConfig *cfg) {
     if (g_stopping.load(std::memory_order_acquire)) return PGS_CBH_ERR_STOPPED;
     if (g_failed.load(std::memory_order_acquire)) return g_last_error.load(std::memory_order_acquire);
 
@@ -1397,9 +1397,9 @@ int api_configure(const PgrCombatHostConfig *cfg) {
     if (!cfg) {
         // Default bind mode (matches inventory_host.cpp): uses shared_host(61) + runtime_bootstrap(54) + transport(52).
         if (g_ready.load(std::memory_order_acquire)) return PGS_CBH_OK;
-        g_cfg               = PgrCombatHostConfig{};
+        g_cfg               = PgsCombatHostConfig{};
         g_cfg.version       = PGS_COMBAT_HOST_API_VERSION;
-        g_cfg.size          = sizeof(PgrCombatHostConfig);
+        g_cfg.size          = sizeof(PgsCombatHostConfig);
         g_cfg.flags         = PGS_CBH_CFG_USE_TRANSPORT;
         g_default_bind_mode = true;
         g_configured.store(true, std::memory_order_release);
@@ -1408,7 +1408,7 @@ int api_configure(const PgrCombatHostConfig *cfg) {
     }
 
     if (cfg->version != PGS_COMBAT_HOST_API_VERSION) return PGS_CBH_ERR_VERSION;
-    if (cfg->size != sizeof(PgrCombatHostConfig)) return PGS_CBH_ERR_SIZE;
+    if (cfg->size != sizeof(PgsCombatHostConfig)) return PGS_CBH_ERR_SIZE;
     if (cfg->reserved0 != 0 || cfg->reserved1 != 0) return PGS_CBH_ERR_INVALID_ARG;
     if ((cfg->flags & ~(PGS_CBH_CFG_HAS_METADATA_CONFIG | PGS_CBH_CFG_USE_TRANSPORT |
                         PGS_CBH_CFG_REQUIRE_BATTLES | PGS_CBH_CFG_REQUIRE_ROCKET)) != 0) {
@@ -1416,7 +1416,7 @@ int api_configure(const PgrCombatHostConfig *cfg) {
     }
 
     if (g_ready.load(std::memory_order_acquire)) {
-        if (g_has_accepted_cfg && std::memcmp(&g_accepted_cfg, cfg, offsetof(PgrCombatHostConfig, owner_tid)) == 0) {
+        if (g_has_accepted_cfg && std::memcmp(&g_accepted_cfg, cfg, offsetof(PgsCombatHostConfig, owner_tid)) == 0) {
             return PGS_CBH_OK;
         }
         return PGS_CBH_ERR_INVALID_ARG;
@@ -1439,11 +1439,11 @@ void refresh_leaf_gates(){
  if((caps&PGS_CBH_CAP_ROCKET_MINIGAME)&&g_rocket_mini){bool on=active&&rocket&&!rocket_failed&&rocket_active&&(g_opts.rocket_mask&2);g_rocket_mini->update(on?1:0,on?int64_t(rocket):0);g_mini_active.store(on?1:0);}
 }
 int api_revoke();
-int api_update(const PgrCombatHostOptions *opts) {
+int api_update(const PgsCombatHostOptions *opts) {
     if (!g_configured.load(std::memory_order_acquire)) return PGS_CBH_ERR_NOT_CONFIGURED;
     if (!opts) {api_revoke();return PGS_CBH_ERR_INVALID_ARG;}
     if (opts->version != PGS_COMBAT_HOST_API_VERSION) {api_revoke();return PGS_CBH_ERR_VERSION;}
-    if (opts->size != sizeof(PgrCombatHostOptions)) {api_revoke();return PGS_CBH_ERR_SIZE;}
+    if (opts->size != sizeof(PgsCombatHostOptions)) {api_revoke();return PGS_CBH_ERR_SIZE;}
     if (opts->reserved0 != 0||opts->battle_mask>PGS_CBH_BATTLE_MASK_ALL||opts->rocket_mask>PGS_CBH_ROCKET_MASK_ALL) {api_revoke();return PGS_CBH_ERR_INVALID_ARG;}
     if ((opts->flags & ~(PGS_CBH_OPT_ACTIVE | PGS_CBH_OPT_BATTLES_ALLOWED |
                          PGS_CBH_OPT_ROCKET_ALLOWED | PGS_CBH_OPT_STOPPING)) != 0) {
@@ -1508,7 +1508,7 @@ void poll_transport_options() {
     const auto *tr = transport_api();
     if (!tr || !tr->sample || !tr->get_bool || !tr->get_int) return;
 
-    PgrRuntimeTransportSample a{}, z{};
+    PgsRuntimeTransportSample a{}, z{};
     if (tr->sample(&a) != 0 || !a.snapshot_fresh) {
         api_revoke();
         return;
@@ -1540,7 +1540,7 @@ void poll_transport_options() {
                                 ? static_cast<uint32_t>(r_raw)
                                 : 0u;
 
-    PgrCombatHostOptions opts{};
+    PgsCombatHostOptions opts{};
     opts.version = PGS_COMBAT_HOST_API_VERSION;
     opts.size    = sizeof(opts);
     if (active)          opts.flags |= PGS_CBH_OPT_ACTIVE;
@@ -1630,7 +1630,7 @@ int api_stop(uint64_t proven_tid) {
     return PGS_CBH_OK;
 }
 
-int api_sample(PgrCombatHostSample *out) {
+int api_sample(PgsCombatHostSample *out) {
     if (!out) return PGS_CBH_ERR_INVALID_ARG;
 
     uint32_t b_roots = 0, b_scope = 0, b_swap = 0;
@@ -1676,7 +1676,7 @@ int api_sample(PgrCombatHostSample *out) {
 
     std::memset(out, 0, sizeof(*out));
     out->version              = PGS_COMBAT_HOST_API_VERSION;
-    out->size                 = sizeof(PgrCombatHostSample);
+    out->size                 = sizeof(PgsCombatHostSample);
     out->ready                = g_ready.load(std::memory_order_acquire) ? 1u : 0u;
     out->capabilities         = caps;
     out->stopping             = g_stopping.load(std::memory_order_acquire) ? 1u : 0u;
@@ -1703,7 +1703,7 @@ int api_sample(PgrCombatHostSample *out) {
     return PGS_CBH_OK;
 }
 
-int api_next_event(PgrCombatHostEvent *out, char *json_buf, uint32_t json_cap) {
+int api_next_event(PgsCombatHostEvent *out, char *json_buf, uint32_t json_cap) {
     if (!out) return PGS_CBH_ERR_INVALID_ARG;
     std::lock_guard<std::mutex> lk(g_event_mutex);
     if (g_event_count == 0) return 0;
@@ -1727,12 +1727,12 @@ int api_next_event(PgrCombatHostEvent *out, char *json_buf, uint32_t json_cap) {
     return 1;
 }
 
-void api_on_unity_pulse(void * /*ctx*/, const PgrUnityPulse *pulse) {
+void api_on_unity_pulse(void * /*ctx*/, const PgsUnityPulse *pulse) {
     if (!pulse || pulse->tid <= 0) {
         return;
     }
-    const auto *sched = api_table<PgrUnitySchedulerApi>(pgs_unity_scheduler_api(2));
-    if (sched && sched->version >= 2 && sched->size >= sizeof(PgrUnitySchedulerApi) &&
+    const auto *sched = api_table<PgsUnitySchedulerApi>(pgs_unity_scheduler_api(2));
+    if (sched && sched->version >= 2 && sched->size >= sizeof(PgsUnitySchedulerApi) &&
         sched->snapshot && sched->valid) {
         PgsUnitySchedulerSnapshot snap{};
         if (sched->snapshot(&snap) == PGS_US_OK && snap.installed != 0) {
@@ -1742,9 +1742,9 @@ void api_on_unity_pulse(void * /*ctx*/, const PgrUnityPulse *pulse) {
     api_tick(static_cast<uint64_t>(pulse->tid));
 }
 
-const PgrCombatHostApi kApiTable = {
+const PgsCombatHostApi kApiTable = {
     PGS_COMBAT_HOST_API_VERSION,
-    sizeof(PgrCombatHostApi),
+    sizeof(PgsCombatHostApi),
     api_configure,
     api_update,
     api_tick,

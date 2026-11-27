@@ -28,7 +28,7 @@ std::atomic<uint64_t> policy_revision{1};
 std::atomic<uint32_t> capabilities{0},sites{0},owned_count{0};
 std::atomic<uint32_t> optional_faults{0};
 std::atomic<int> fault{0},meta_error{0};
-PgsQuickballMetaConfig mc{};PgsQuickballExtra extra{};PgrMetaExports me{};
+PgsQuickballMetaConfig mc{};PgsQuickballExtra extra{};PgsMetaExports me{};
 PgsQuickballHostRuntime rt{};PgsQuickballMetaOutput md{};
 uint32_t flags=0;bool bootstrap=false,binding_ready=false,install_attempted=false;
 PgsQuickballHostOptions options{};uint64_t option_deadline=0,metadata_retry=0;
@@ -36,14 +36,14 @@ PgsQuickballHostEvent events[128]{};uint32_t event_head=0,event_count=0;uint64_t
 uint64_t obs_cursor=0,throws_cursor=0,ar_cursor=0,hit_cursor=0,hit_normal_cursor=0,hit_error_cursor=0;
 uint32_t speed_cursor=0;uint64_t catch_cursor=0,owned_cursor=0,position_cursor=0,encounter_cursor=0;
 bool ready_emitted=false,terminal_emitted=false,control_configured=false;uint32_t previous_ready_bits=UINT32_MAX;
-const PgrSpeedApi *speed(){return static_cast<const PgrSpeedApi*>(pgs_catch_animation_api(1));}
-const PgrObsApi *obs(){return static_cast<const PgrObsApi*>(pgs_catch_observers_api(1));}
+const PgsSpeedApi *speed(){return static_cast<const PgsSpeedApi*>(pgs_catch_animation_api(1));}
+const PgsObsApi *obs(){return static_cast<const PgsObsApi*>(pgs_catch_observers_api(1));}
 const PgsThrowApi *throws(){return static_cast<const PgsThrowApi*>(pgs_throws_api(1));}
-const PgrAlwaysHitApi *hit(){return static_cast<const PgrAlwaysHitApi*>(pgs_always_hit_api(1));}
-const PgrArThrowApi *ar(){return static_cast<const PgrArThrowApi*>(pgs_ar_throw_api(1));}
+const PgsAlwaysHitApi *hit(){return static_cast<const PgsAlwaysHitApi*>(pgs_always_hit_api(1));}
+const PgsArThrowApi *ar(){return static_cast<const PgsArThrowApi*>(pgs_ar_throw_api(1));}
 const PgsMapTapApi *map(){return static_cast<const PgsMapTapApi*>(pgs_map_tap_api(1));}
-const PgrIvDisplayApi *iv(){return static_cast<const PgrIvDisplayApi*>(pgs_iv_display_api(1));}
-const PgrRuntimeTransportApi *transport(){return static_cast<const PgrRuntimeTransportApi*>(pgs_runtime_transport_api(1));}
+const PgsIvDisplayApi *iv(){return static_cast<const PgsIvDisplayApi*>(pgs_iv_display_api(1));}
+const PgsRuntimeTransportApi *transport(){return static_cast<const PgsRuntimeTransportApi*>(pgs_runtime_transport_api(1));}
 bool now(uint64_t *v){timespec t{};if(clock_gettime(CLOCK_BOOTTIME,&t)||t.tv_sec<0)return false;*v=uint64_t(t.tv_sec)*1000+uint64_t(t.tv_nsec)/1000000;return true;}
 void *mut(const void *p){return const_cast<void*>(p);}
 void *klass(unsigned i){return mut(md.classes[i]);}
@@ -69,13 +69,13 @@ std::string quote(const char *s){
   if(*p=='"'||*p=='\\'){out+='\\';out+=char(*p);}else if(*p<32){char b[7];std::snprintf(b,sizeof(b),"\\u%04x",unsigned(*p));out+=b;}else out+=char(*p);
  }out+='"';return out;
 }
-int emit_action(uint32_t op,const int64_t *scalar,uint32_t ns,const PgrRuntimeTransportString *text,uint32_t nt){
+int emit_action(uint32_t op,const int64_t *scalar,uint32_t ns,const PgsRuntimeTransportString *text,uint32_t nt){
  if(!(flags&PGS_QBH_TRANSPORT))return 0;
  int rc=transport()->emit(op,scalar,ns,text,nt);if(rc<0)fail(PGS_QBH_OVERFLOW);return rc;
 }
 void bool_action(uint32_t op,bool value){int64_t v=value?1:0;emit_action(op,&v,1,nullptr,0);}
-void string_action(uint32_t op,const char *value){PgrRuntimeTransportString s{value,uint32_t(std::strlen(value))};emit_action(op,nullptr,0,&s,1);}
-void ready_action(bool value,const char *reason){int64_t v=value?1:0;PgrRuntimeTransportString s{reason,uint32_t(std::strlen(reason))};emit_action(43,&v,1,&s,1);}
+void string_action(uint32_t op,const char *value){PgsRuntimeTransportString s{value,uint32_t(std::strlen(value))};emit_action(op,nullptr,0,&s,1);}
+void ready_action(bool value,const char *reason){int64_t v=value?1:0;PgsRuntimeTransportString s{reason,uint32_t(std::strlen(reason))};emit_action(43,&v,1,&s,1);}
 void event(const char *kind,const std::string &body="",uint64_t sampled_at=UINT64_MAX){
  uint64_t time=0;if(sampled_at==UINT64_MAX)now(&time);else time=sampled_at;
  std::string json="{\"kind\":"+quote(kind)+",\"backend\":\"native\",\"boottimeMs\":"+std::to_string(time);
@@ -83,7 +83,7 @@ void event(const char *kind,const std::string &body="",uint64_t sampled_at=UINT6
  if(json.size()>=sizeof(events[0].json)||std::strlen(kind)>=sizeof(events[0].kind)){fail(PGS_QBH_OVERFLOW);return;}
  if(flags&PGS_QBH_TRANSPORT){
   const char *channel=std::strncmp(kind,"outcome-",8)==0?"quick-ball-outcome":"quick-ball";
-  PgrRuntimeTransportString args[]={{channel,uint32_t(std::strlen(channel))},{json.data(),uint32_t(json.size())}};
+  PgsRuntimeTransportString args[]={{channel,uint32_t(std::strlen(channel))},{json.data(),uint32_t(json.size())}};
   emit_action(19,nullptr,0,args,2);return;
  }
  bool overflow=false;
@@ -94,7 +94,7 @@ void event(const char *kind,const std::string &body="",uint64_t sampled_at=UINT6
 }
 void *symbol(void *handle,const char *suffix){std::string n="il2cpp_";n+=suffix;return dlsym(handle,n.c_str());}
 int bootstrap_binding(){
- PgrBootBinding b{};const auto *api=static_cast<const PgrBootApi*>(pgs_runtime_bootstrap_api(1));
+ PgsBootBinding b{};const auto *api=static_cast<const PgsBootApi*>(pgs_runtime_bootstrap_api(1));
  if(!api||api->snapshot(&b)!=0)return PGS_QBH_NOT_READY;
  me=b.meta;rt={b.runtime.runtime_invoke,b.runtime.gchandle_new,b.runtime.gchandle_get_target,b.runtime.gchandle_free,
   b.runtime.object_get_class,b.runtime.object_unbox,b.runtime.field_get_value,symbol(b.handle,"class_is_assignable_from"),
@@ -214,7 +214,7 @@ bool install_max_speed(){
    reason="breadballAnimSpeed-type";
    if(valid){
     auto bridge=static_cast<const PgsObsApi3*>(pgs_catch_observers_api(3));
-    auto max=static_cast<const PgrSpeedApi2*>(pgs_catch_animation_api(2));
+    auto max=static_cast<const PgsSpeedApi2*>(pgs_catch_animation_api(2));
     reason="max-speed-registration";
     if(bridge&&bridge->register_max(f,max,owner.load())==0){
      const bool context=install_max_context();
@@ -231,11 +231,11 @@ bool install_max_speed(){
 void optional_failure(uint32_t bit,const char *kind,int code);
 int install_leaves(){
  if(!required_runtime())return PGS_QBH_BAD_CONFIG;
- PgrSpeedConfig sc{1,sizeof(sc),rt.runtime_invoke,rt.gchandle_new,rt.gchandle_get_target,rt.gchandle_free,
+ PgsSpeedConfig sc{1,sizeof(sc),rt.runtime_invoke,rt.gchandle_new,rt.gchandle_get_target,rt.gchandle_free,
   rt.object_get_class,rt.object_unbox,method(2),method(3),method(4),klass(C_SINGLE),klass(C_BOOL),klass(C_ANIMATOR)};
  int rc=speed()->install(&sc);if(rc)return PGS_QBH_LEAF;capabilities.fetch_or(PGS_QBH_SPEED);
  if(!group(GROUP_OUTCOMES))return PGS_QBH_METADATA; // cannot silently retire outcome behavior
- PgrObsConfig oc{};oc.version=1;oc.size=sizeof(oc);oc.object_get_class=rt.object_get_class;oc.field_get_value=rt.field_get_value;
+ PgsObsConfig oc{};oc.version=1;oc.size=sizeof(oc);oc.object_get_class=rt.object_get_class;oc.field_get_value=rt.field_get_value;
  oc.gchandle_new=rt.gchandle_new;oc.gchandle_get_target=rt.gchandle_get_target;oc.gchandle_free=rt.gchandle_free;
  oc.code_btxu=code(1);oc.code_caught=code(6);oc.code_escaped=code(0);oc.class_ball=klass(C_BALL);oc.class_response=klass(C_RESPONSE);oc.class_animator=klass(C_ANIMATOR);
  oc.field_bread=field(1);oc.field_animator=field(0);oc.field_status=field(2);oc.speed_api=mut(speed());oc.thread_current=mc.thread_current;
@@ -248,13 +248,13 @@ int install_leaves(){
   rc=throws()->install(&c);if(rc)optional_failure(PGS_QBH_THROWS,"throw-unavailable",rc);else capabilities.fetch_or(PGS_QBH_THROWS);
  }
  if(group(GROUP_ALWAYSHIT)){
-  PgrAlwaysHitConfig c{1,sizeof(c),code(19),code(20),code(17),code(18),code(21),klass(C_BALL),klass(C_SCHEDULER),klass(C_ACTION),
+  PgsAlwaysHitConfig c{1,sizeof(c),code(19),code(20),code(17),code(18),code(21),klass(C_BALL),klass(C_SCHEDULER),klass(C_ACTION),
    rt.object_get_class,rt.field_get_value,rt.runtime_invoke,method(16),rt.gchandle_new,rt.gchandle_get_target,rt.gchandle_free,
    field(1),field(36),field(31),mut(md.alwayshit_current),field(32),field(33),field(35),field(34)};
   rc=hit()->install(&c);if(rc)optional_failure(PGS_QBH_ALWAYS_HIT,"always-hit-unavailable",rc);else capabilities.fetch_or(PGS_QBH_ALWAYS_HIT);
  }
  if(group(GROUP_ARTHROWS)){
-  PgrArThrowConfig c{1,sizeof(c),code(22),klass(C_WILDMAP),klass(C_ARVALUES),rt.object_get_class,rt.class_is_assignable_from,
+  PgsArThrowConfig c{1,sizeof(c),code(22),klass(C_WILDMAP),klass(C_ARVALUES),rt.object_get_class,rt.class_is_assignable_from,
    rt.object_new,rt.gchandle_new,rt.gchandle_get_target,rt.gchandle_free,rt.field_set_value,field(37),field(38),field(39)};
   rc=ar()->install(&c);if(rc)optional_failure(PGS_QBH_AR,"ar-throw-unavailable",rc);else capabilities.fetch_or(PGS_QBH_AR);
  }
@@ -264,7 +264,7 @@ int install_leaves(){
   rc=map()->install(&c);if(rc)optional_failure(PGS_QBH_MAP,"map-tap-unavailable",rc);else capabilities.fetch_or(PGS_QBH_MAP);
  }
  if(group(GROUP_IV)&&group(GROUP_IVTEXT)&&group(GROUP_IVOWNED)){
-  PgrIvDisplayConfig c{};c.version=1;c.size=sizeof(c);const bool outline=group(GROUP_IVOUTLINE);
+  PgsIvDisplayConfig c{};c.version=1;c.size=sizeof(c);const bool outline=group(GROUP_IVOUTLINE);
   void *p[]={rt.gchandle_new,rt.gchandle_get_target,rt.gchandle_free,rt.object_get_class,rt.object_unbox,rt.runtime_invoke,
    rt.field_get_value,rt.class_is_assignable_from,outline?me.class_get_type:nullptr,outline?rt.type_get_object:nullptr,
    rt.string_new,rt.string_length,rt.string_chars,method(27),method(28),method(29),method(30),method(32),method(33),
@@ -318,7 +318,7 @@ std::atomic<bool> preview_wanted{false};
 std::atomic<bool> transfer_wanted{false};
 void poll_options(){
  if(!(flags&PGS_QBH_TRANSPORT))return;
- const auto *tr=transport();PgrRuntimeTransportSample before{},after{};
+ const auto *tr=transport();PgsRuntimeTransportSample before{},after{};
  PgsQuickballHostOptions p{};p.version=1;p.size=sizeof(p);p.lease_ms=100;
  auto b=[&](uint32_t i){int v=0;return tr->get_bool(i,&v)==0&&v==1;};
  auto n=[&](uint32_t i){int32_t v=0;return tr->get_int(i,&v)==0?v:0;};
@@ -360,7 +360,7 @@ void optional_failure(uint32_t bit,const char *kind,int code){
 
 const char *outcome(uint32_t reason){return reason==10?"caught":reason==11?"broke-free":reason==12?"fled":nullptr;}
 void drain_observers(){
- PgrObsSample s{};if(obs()->sample(&s))return;
+ PgsObsSample s{};if(obs()->sample(&s))return;
  if(s.event_head<obs_cursor)obs_cursor=s.event_head;
  if(s.event_head-obs_cursor>PGS_OBS_EVENT_RING){event("outcome-dropped","\"count\":"+std::to_string(s.event_head-obs_cursor-PGS_OBS_EVENT_RING));obs_cursor=s.event_head-PGS_OBS_EVENT_RING;}
  for(uint64_t seq=obs_cursor+1;seq<=s.event_head;++seq){const auto &e=s.events[seq%PGS_OBS_EVENT_RING];if(e.seq!=seq)continue;
@@ -376,7 +376,7 @@ void drain_observers(){
  }obs_cursor=s.event_head;if(s.fault)fail(PGS_QBH_LEAF);
 }
 void drain_speed(){
- PgrSpeedSample s{};if(speed()->sample(&s))return;
+ PgsSpeedSample s{};if(speed()->sample(&s))return;
  if(s.serial!=speed_cursor){speed_cursor=s.serial;const char *names[]={"","speed-applied","speed-restored","speed-external-change","speed-target-destroyed","cleanup-failed","speed-skip"};
   const char *reasons[]={"","stop","off","lease-expired","timeout","caught","broke-free","clock-failed","apply-readback","destroyed-animator","nonstandard-speed","concurrent-attempt","root-failed","fled","max-game-speed-reset"};
   if(s.action<7&&s.action){std::string values="\"originalSpeed\":"+(std::isfinite(s.original)?std::to_string(s.original):"null")+",\"readback\":"+(std::isfinite(s.readback)?std::to_string(s.readback):"null")+",\"fault\":"+(s.fault?"true":"false");
@@ -395,7 +395,7 @@ void iv_notice(bool inventory,uint32_t notice,int32_t level,int32_t attack,int32
 }
 int64_t double_bits(double value){int64_t b;std::memcpy(&b,&value,8);return b;}
 void drain_iv(){
- PgrIvDisplaySample s{};if(iv()->sample(&s))return;
+ PgsIvDisplaySample s{};if(iv()->sample(&s))return;
  // Classification is published synchronously at begin_catch, before any throw action.
  // A delayed sample must not overwrite the encounter host's subsequent scope-exit clear.
  if(s.encounter_serial!=encounter_cursor)encounter_cursor=s.encounter_serial;
@@ -423,12 +423,12 @@ void drain_map(const PgsQuickballHostOptions &p,uint64_t deadline){
 void drain_counters(){
  if(has(PGS_QBH_THROWS)){PgsThrowSample s{};if(!throws()->sample(&s)&&s.count!=throws_cursor){throws_cursor=s.count;
   const char *grades[]={"Off","Nice","Great","Excellent"};event("throw-applied","\"route\":"+quote(s.route?"hit":"submit")+",\"grade\":"+quote(s.grade<4?grades[s.grade]:"Off")+",\"curve\":"+(s.curve?"true":"false")+",\"reticle\":"+std::to_string(s.radius)+",\"count\":"+quote(std::to_string(s.count).c_str()));}}
- if(has(PGS_QBH_AR)){PgrArThrowSample s{};if(!ar()->sample(&s)&&s.applied!=ar_cursor){ar_cursor=s.applied;event("ar-throw-applied","\"applied\":"+quote(std::to_string(s.applied).c_str())+",\"errors\":"+quote(std::to_string(s.errors).c_str()));}}
- if(has(PGS_QBH_ALWAYS_HIT)){PgrAlwaysHitSample s{};if(!hit()->sample(&s)&&(s.applied!=hit_cursor||s.normalized!=hit_normal_cursor||s.errors!=hit_error_cursor)){
+ if(has(PGS_QBH_AR)){PgsArThrowSample s{};if(!ar()->sample(&s)&&s.applied!=ar_cursor){ar_cursor=s.applied;event("ar-throw-applied","\"applied\":"+quote(std::to_string(s.applied).c_str())+",\"errors\":"+quote(std::to_string(s.errors).c_str()));}}
+ if(has(PGS_QBH_ALWAYS_HIT)){PgsAlwaysHitSample s{};if(!hit()->sample(&s)&&(s.applied!=hit_cursor||s.normalized!=hit_normal_cursor||s.errors!=hit_error_cursor)){
   hit_cursor=s.applied;hit_normal_cursor=s.normalized;hit_error_cursor=s.errors;event("always-hit-applied","\"applied\":"+quote(std::to_string(s.applied).c_str())+",\"normalized\":"+quote(std::to_string(s.normalized).c_str())+",\"errors\":"+quote(std::to_string(s.errors).c_str()));}}
 }
 void update_owned(){
- uint32_t count=0;PgrSpeedSample a{};PgrObsSample b{};PgsMapTapSample c{};PgrIvDisplaySample d{};
+ uint32_t count=0;PgsSpeedSample a{};PgsObsSample b{};PgsMapTapSample c{};PgsIvDisplaySample d{};
  if(has(PGS_QBH_SPEED)){if(speed()->sample(&a))++count;else count+=a.owned;}
  if(has(PGS_QBH_OBSERVERS)){if(obs()->sample(&b))++count;else count+=b.seen_count;}
  if(has(PGS_QBH_MAP)){if(map()->sample(&c))++count;else count+=c.owned_root_count;}
@@ -516,8 +516,8 @@ int end_catch(uint64_t token,uint64_t tid){
  if(!has(PGS_QBH_IV)||tid!=owner.load()||!attached(tid))return PGS_QBH_OFF_OWNER;
  return iv()->end_catch(token,tid);
 }
-void on_pulse(void *,const PgrUnityPulse *pulse){if(pulse&&pulse->tid>0&&pulse->generation){
- const auto *api=static_cast<const PgrUnitySchedulerApi*>(pgs_unity_scheduler_api(2));if(api&&api->valid(pulse->generation)==1)tick(uint64_t(pulse->tid));}}
+void on_pulse(void *,const PgsUnityPulse *pulse){if(pulse&&pulse->tid>0&&pulse->generation){
+ const auto *api=static_cast<const PgsUnitySchedulerApi*>(pgs_unity_scheduler_api(2));if(api&&api->valid(pulse->generation)==1)tick(uint64_t(pulse->tid));}}
 const PgsQuickballHostApi api{1,sizeof(PgsQuickballHostApi),configure,set_options,shared_sites,tick,stop,sample,next_event,rewrite_submit,begin_catch,end_catch,on_pulse};
 }
 extern "C" const void *pgs_quickball_host_api(uint32_t version){return version==1?&api:nullptr;}

@@ -12,12 +12,12 @@ using namespace pgs_camera_schema;
 
 std::mutex g_resolving;
 
-const PgrMetaApi *metadata() {
-  return static_cast<const PgrMetaApi *>(pgs_runtime_metadata_api(1));
+const PgsMetaApi *metadata() {
+  return static_cast<const PgsMetaApi *>(pgs_runtime_metadata_api(1));
 }
 
-const PgrBootApi *bootstrap() {
-  return static_cast<const PgrBootApi *>(pgs_runtime_bootstrap_api(1));
+const PgsBootApi *bootstrap() {
+  return static_cast<const PgsBootApi *>(pgs_runtime_bootstrap_api(1));
 }
 
 bool attached(const PgsCameraMetaConfig &c) {
@@ -67,17 +67,17 @@ int set_status_reason(PgsCameraMetaOutput *out, int32_t status, const char *fmt,
   return status;
 }
 
-bool mandatory_meta_exports_ok(const PgrMetaExports &e) {
-  // Exact legacy SIGNATURES subset carried by PgrMetaExports. Extra47-only
+bool mandatory_meta_exports_ok(const PgsMetaExports &e) {
+  // Exact legacy SIGNATURES subset carried by PgsMetaExports. Extra47-only
   // dependencies may be absent without removing passive camera capabilities.
   return e.domain_get && e.domain_get_assemblies && e.assembly_get_image && e.class_from_name &&
          e.type_get_name && e.mem_free && e.class_get_method_from_name && e.method_get_class &&
          e.method_get_name && e.method_get_flags && e.method_get_param_count && e.method_get_return_type;
 }
 
-bool all_meta_exports_ok(const PgrMetaExports &e) {
+bool all_meta_exports_ok(const PgsMetaExports &e) {
   const void *const *slots = reinterpret_cast<const void *const *>(&e);
-  for (size_t i = 0; i < sizeof(PgrMetaExports) / sizeof(void *); ++i)
+  for (size_t i = 0; i < sizeof(PgsMetaExports) / sizeof(void *); ++i)
     if (!slots[i]) return false;
   return true;
 }
@@ -91,7 +91,7 @@ const void *add_off(const void *p, uint64_t off) {
 // Independent default range proof for a partial metadata export table. Same
 // readable/host-exec or nonwritable ELF-PF_X rule as feature47, without binding
 // invented export pointers into its immutable singleton.
-int partial_segment(const void *address,uint64_t length,PgrMetaSegment *out) {
+int partial_segment(const void *address,uint64_t length,PgsMetaSegment *out) {
   *out={};const uintptr_t a=reinterpret_cast<uintptr_t>(address);
   if(!length||length>UINTPTR_MAX-a)return -1;
   FILE *fp=std::fopen("/proc/self/maps","re");if(!fp)return -1;
@@ -119,11 +119,11 @@ int partial_segment(const void *address,uint64_t length,PgrMetaSegment *out) {
   return 0;
 }
 
-int check_code_span(const PgrMetaApi *md, bool md_bound, const PgsCameraMetaConfig &c,
+int check_code_span(const PgsMetaApi *md, bool md_bound, const PgsCameraMetaConfig &c,
                     const void *address, uint64_t length, const void *prologue, uint32_t prologue_len) {
   if (!address || !length || length > PGS_MD_CODE_MAX) return PGS_MD_ERR_CODE_RANGE;
   if (md_bound) {
-    PgrMetaCodeQuery q{};
+    PgsMetaCodeQuery q{};
     q.version = 1;
     q.size = sizeof(q);
     q.address = address;
@@ -137,7 +137,7 @@ int check_code_span(const PgrMetaApi *md, bool md_bound, const PgsCameraMetaConf
   if ((a & 3u) != 0 || a < base || a - base > c.binding.module_size ||
       length > c.binding.module_size - (a - base))
     return PGS_MD_ERR_CODE_RANGE;
-  PgrMetaSegment seg{};
+  PgsMetaSegment seg{};
   const int segment_rc=c.binding.seg_query?c.binding.seg_query(c.binding.seg_ctx,address,length,&seg):partial_segment(address,length,&seg);
   if(segment_rc!=0)return PGS_MD_ERR_SEGMENT;
   if (seg.found != 1 || seg.readable != 1 || seg.host_exec > 1 || seg.elf_exec > 1 ||
@@ -155,19 +155,19 @@ int check_code_span(const PgrMetaApi *md, bool md_bound, const PgsCameraMetaConf
   return 0;
 }
 
-bool code_readable(const PgrMetaApi *md, bool md_bound, const PgsCameraMetaConfig &c,
+bool code_readable(const PgsMetaApi *md, bool md_bound, const PgsCameraMetaConfig &c,
                    const void *addr, uint64_t len) {
   return check_code_span(md, md_bound, c, addr, len, nullptr, 0) == 0;
 }
 
-bool code_words(const PgrMetaApi *md, bool md_bound, const PgsCameraMetaConfig &c,
+bool code_words(const PgsMetaApi *md, bool md_bound, const PgsCameraMetaConfig &c,
                 const void *addr, const uint32_t *words, uint32_t count) {
   if (!addr || !words || !count) return false;
   return check_code_span(md, md_bound, c, addr, static_cast<uint64_t>(count) * 4u,
                          words, count * 4u) == 0;
 }
 
-const void *branch_target(const PgrMetaApi *md, bool md_bound, const PgsCameraMetaConfig &c,
+const void *branch_target(const PgsMetaApi *md, bool md_bound, const PgsCameraMetaConfig &c,
                           const void *addr) {
   if (!code_readable(md, md_bound, c, addr, 4)) return nullptr;
   uint32_t word = *reinterpret_cast<const uint32_t *>(addr);
@@ -192,7 +192,7 @@ const void *branch_target(const PgrMetaApi *md, bool md_bound, const PgsCameraMe
 
 // pointerHandleAbi (camera-probe.js lines 80..111): read-only code fingerprint of
 // il2cpp_gchandle_new / il2cpp_gchandle_get_target / il2cpp_gchandle_free.
-bool pointer_handle_abi(const PgrMetaApi *md, bool md_bound, const PgsCameraMetaConfig &c) {
+bool pointer_handle_abi(const PgsMetaApi *md, bool md_bound, const PgsCameraMetaConfig &c) {
   const PgsCameraMetaExtra *ex = c.extra;
   if (!ex->gchandle_new || !ex->gchandle_get_target || !ex->gchandle_free) return false;
   if (!code_words(md, md_bound, c, ex->gchandle_new, kGcCreateWords, kGcCreateWordCount)) return false;
@@ -210,7 +210,7 @@ bool pointer_handle_abi(const PgrMetaApi *md, bool md_bound, const PgsCameraMeta
 // Validate a continuous map-gate method (get_MainCamera, get_cullingMask, NameToLayer) preserving
 // camera-probe.js evaluation order (throw on null/overlong string or type; unavailable on missing or
 // signature mismatch) and also verifying through feature 47's validate_method.
-int validate_map_gate_method(const PgrMetaApi *md, bool md_bound, const PgsCameraMetaConfig &c, const void *owner,
+int validate_map_gate_method(const PgsMetaApi *md, bool md_bound, const PgsCameraMetaConfig &c, const void *owner,
                              const char *key, const char *want_ret, uint32_t is_static,
                              uint32_t param_count, const char *param0_type,
                              PgsCameraMetaOutput *out, const void **method_out) {
@@ -257,21 +257,21 @@ int validate_map_gate_method(const PgrMetaApi *md, bool md_bound, const PgsCamer
   }
 
   // Also run through feature 47's structural validator to confirm agreement and record telemetry.
-  PgrMetaMethodQuery mq{};
+  PgsMetaMethodQuery mq{};
   mq.version = 1;
   mq.size = sizeof(mq);
   mq.owner = owner;
   mq.name = key;
   mq.return_type = want_ret;
-  mq.return_match = PGR_MD_MATCH_EXACT;
+  mq.return_match = PGS_MD_MATCH_EXACT;
   mq.param_count = param_count;
   if (param_count == 1) {
     mq.param_types[0] = param0_type;
-    mq.param_match[0] = PGR_MD_MATCH_EXACT;
+    mq.param_match[0] = PGS_MD_MATCH_EXACT;
   }
   mq.is_static = is_static;
   mq.allow_inflated = 0;
-  PgrMetaMethodResult mr{};
+  PgsMetaMethodResult mr{};
   rc = md_bound?md->validate_method(&mq, &mr):0;
   if (rc != 0 || (md_bound && mr.method != m))
     return set_status_reason(out, PGS_CAM_UNAVAILABLE, "map-gate-signature-mismatch:%s", key);
@@ -285,8 +285,8 @@ int resolve(const PgsCameraMetaConfig *input, PgsCameraMetaOutput *out) {
   std::memset(out, 0, sizeof(*out));
   if (!input || input->version != PGS_CAM_CFG_VERSION || input->size != sizeof(*input) ||
       !input->thread_current || input->sample_camera > 1u || input->continuous > 1u ||
-      !input->binding.exports || input->binding.version != PGR_MD_CONFIG_VERSION ||
-      input->binding.size != sizeof(PgrMetaBindConfig) || input->binding.reserved != 0)
+      !input->binding.exports || input->binding.version != PGS_MD_CONFIG_VERSION ||
+      input->binding.size != sizeof(PgsMetaBindConfig) || input->binding.reserved != 0)
     return PGS_MD_ERR_BAD_VERSION;
   if (!input->extra || input->extra->version != PGS_CAM_EXTRA_VERSION ||
       input->extra->size != sizeof(PgsCameraMetaExtra) || input->extra->reserved != 0 ||
@@ -294,11 +294,11 @@ int resolve(const PgsCameraMetaConfig *input, PgsCameraMetaOutput *out) {
     return PGS_CAM_ERR_EXTRA_MISSING;
 
   std::unique_lock<std::mutex> lock(g_resolving, std::try_to_lock);
-  if (!lock.owns_lock()) return PGR_MD_ERR_BUSY;
+  if (!lock.owns_lock()) return PGS_MD_ERR_BUSY;
 
   PgsCameraMetaConfig c = *input;
   PgsCameraMetaExtra extra_copy = *input->extra;
-  PgrMetaExports exports_copy = *input->binding.exports;
+  PgsMetaExports exports_copy = *input->binding.exports;
   c.extra = &extra_copy;
   c.binding.exports = &exports_copy;
 
@@ -313,8 +313,8 @@ int resolve(const PgsCameraMetaConfig *input, PgsCameraMetaOutput *out) {
   if (!mandatory_meta_exports_ok(exports_copy)) return PGS_MD_ERR_MISSING_EXPORT;
   if (!attached(c)) return PGS_CAM_ERR_ATTACH;
 
-  const PgrMetaApi *md = metadata();
-  if (!md || md->version != 1 || md->size != sizeof(PgrMetaApi)) return PGS_CAM_ERR_METADATA;
+  const PgsMetaApi *md = metadata();
+  if (!md || md->version != 1 || md->size != sizeof(PgsMetaApi)) return PGS_CAM_ERR_METADATA;
 
   if (!c.binding.seg_query) {
     // Frida reports a page-rounded mapping; feature 47 reports the canonical PT_LOAD extent
@@ -338,14 +338,14 @@ int resolve(const PgsCameraMetaConfig *input, PgsCameraMetaOutput *out) {
   }
 
   // Cross-check with feature 54 (runtime_bootstrap) pull-only snapshot if active on this module.
-  const PgrBootApi *boot_api = bootstrap();
-  PgrBootBinding boot{};
+  const PgsBootApi *boot_api = bootstrap();
+  PgsBootBinding boot{};
   bool boot_ready = false;
   if (boot_api && boot_api->version == PGS_BOOT_API_VERSION &&
-      boot_api->size == sizeof(PgrBootApi) && boot_api->snapshot) {
+      boot_api->size == sizeof(PgsBootApi) && boot_api->snapshot) {
     int brc = boot_api->snapshot(&boot);
-    if (brc == PGR_BOOT_ERR_BUSY) return PGR_MD_ERR_BUSY;
-    if (brc == PGR_BOOT_OK && boot.module_base == c.binding.module_base) {
+    if (brc == PGS_BOOT_ERR_BUSY) return PGS_MD_ERR_BUSY;
+    if (brc == PGS_BOOT_OK && boot.module_base == c.binding.module_base) {
       if (boot.module_size != c.binding.module_size) return PGS_CAM_ERR_BOOTSTRAP;
       boot_ready = true;
     }
@@ -390,7 +390,7 @@ int resolve(const PgsCameraMetaConfig *input, PgsCameraMetaOutput *out) {
     int rc = read_meta_string(image_name(candidate), &iname);
     if (rc != 0) return rc;
     if (iname == "UnityEngine.CoreModule.dll") core_image = candidate;
-    if (c.continuous && iname == PGR_GAME_CAMERA_METADATA_H_GAME_IMAGE_NAME) game_image = candidate;
+    if (c.continuous && iname == PGS_GAME_CAMERA_METADATA_H_GAME_IMAGE_NAME) game_image = candidate;
     if (core_image && (!c.continuous || game_image)) break;
   }
   if (!core_image) return set_status_reason(out, PGS_CAM_RETRY, "core-module-not-found-within-bound");

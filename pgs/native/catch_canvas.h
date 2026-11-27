@@ -61,9 +61,9 @@ enum PgsCatchCanvasStatus {
 // reserved. Every pointer is an already-validated export / Il2CppClass* / FieldInfo* / MethodInfo* /
 // hook address packed by the host off p.module / classes / fields / methods / p.catchCanvas; native
 // re-checks the header and rejects any null. Pointer order is the shared contract's canonical layout.
-struct PgrCatchCanvasConfig {
+struct PgsCatchCanvasConfig {
   uint32_t version;  // == PGS_CANVAS_CONFIG_VERSION
-  uint32_t size;     // == sizeof(PgrCatchCanvasConfig)
+  uint32_t size;     // == sizeof(PgsCatchCanvasConfig)
 
   // il2cpp runtime exports (slots 0-6).
   void *object_get_class;  // 0: void* (void* obj)
@@ -89,15 +89,15 @@ struct PgrCatchCanvasConfig {
   uint32_t reserved0;      // reserved; 0 in v1
 };
 
-static_assert(sizeof(PgrCatchCanvasConfig) == 128,
-              "PgrCatchCanvasConfig must remain 128 bytes on LP64");
+static_assert(sizeof(PgsCatchCanvasConfig) == 128,
+              "PgsCatchCanvasConfig must remain 128 bytes on LP64");
 
 // Fixed LP64 telemetry gauge (40 bytes). Pull-only; the native layer never calls JS. 'owned' is the
 // current number of live hidden opening-details roots; 'fault' latches only on a real install/runtime
 // clock failure (never on an identity refusal); the counters are monotonic.
-struct PgrCatchCanvasSample {
+struct PgsCatchCanvasSample {
   uint32_t version;       // == PGS_CANVAS_SAMPLE_VERSION  (@0)
-  uint32_t size;          // == sizeof(PgrCatchCanvasSample) (@4)
+  uint32_t size;          // == sizeof(PgsCatchCanvasSample) (@4)
   uint32_t owned;         // live owned opening-details roots (@8)
   uint32_t fault;         // install/clock fault latch (@12)
   uint64_t masked_count;  // hook true->false masks (@16)
@@ -105,16 +105,16 @@ struct PgrCatchCanvasSample {
   uint64_t restore_count; // managed set-true restorations (@32)
 };
 
-static_assert(sizeof(PgrCatchCanvasSample) == 40,
-              "PgrCatchCanvasSample must remain 40 bytes on LP64");
+static_assert(sizeof(PgsCatchCanvasSample) == 40,
+              "PgsCatchCanvasSample must remain 40 bytes on LP64");
 
 // Fixed LP64 table: 8-byte header + 8 function pointers = 72 bytes. Functions in the canonical order.
-struct PgrCatchCanvasApi {
+struct PgsCatchCanvasApi {
   uint32_t version;  // == PGS_CANVAS_API_VERSION
-  uint32_t size;     // == sizeof(PgrCatchCanvasApi)
+  uint32_t size;     // == sizeof(PgsCatchCanvasApi)
   // Install the config and the single set_CanvasGroupVisible hook. Immutable + idempotent; a partial
   // hook failure faults closed and is never retried; the original is published atomically.
-  int (*install)(const PgrCatchCanvasConfig *config);
+  int (*install)(const PgsCatchCanvasConfig *config);
   // Refresh the gate: enabled, a residual lease clamped to 2500 ms, the caller's current epoch and
   // proven_tid. Arming requires the verified owner thread; a foreign thread/disable only revokes. Any
   // thread. Never frees or restores a root.
@@ -140,11 +140,11 @@ struct PgrCatchCanvasApi {
   // Immediate revoke from any thread (disables the gate, bumps the generation). No managed work and the
   // original is NOT detached: the hook stays installed and passes through safely.
   int (*stop)();
-  int (*sample)(PgrCatchCanvasSample *out);
+  int (*sample)(PgsCatchCanvasSample *out);
 };
 
-static_assert(sizeof(PgrCatchCanvasApi) == 72,
-              "PgrCatchCanvasApi must remain a 72-byte version-1 table");
+static_assert(sizeof(PgsCatchCanvasApi) == 72,
+              "PgsCatchCanvasApi must remain a 72-byte version-1 table");
 
 // API2 is a separate immutable native observer registration table; API1 is unchanged.
 // filter MUST be a pure, nonallocating predicate (no managed invocation/GC). on_enter

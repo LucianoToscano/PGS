@@ -14,13 +14,13 @@
 // indexing. Built -fno-exceptions / -fno-rtti like every sibling: managed exceptions surface through
 // runtime_invoke's exc out-param, never as C++ throws. No mutex is held across a managed call.
 
-static_assert(sizeof(PgrCatchDiscoveryConfig) == 104, "config 104");
-static_assert(sizeof(PgrCatchDiscoveryRequest) == 32, "request 32");
-static_assert(sizeof(PgrCatchDiscoveryOutput) == 144, "output 144");
-static_assert(sizeof(PgrCatchDiscoveryApi) == 40, "table 40");
-static_assert(offsetof(PgrCatchDiscoveryConfig, m_find) == 96, "config layout");
-static_assert(offsetof(PgrCatchDiscoveryRequest, layer) == 24, "request layout");
-static_assert(offsetof(PgrCatchDiscoveryOutput, handles) == 16, "output layout");
+static_assert(sizeof(PgsCatchDiscoveryConfig) == 104, "config 104");
+static_assert(sizeof(PgsCatchDiscoveryRequest) == 32, "request 32");
+static_assert(sizeof(PgsCatchDiscoveryOutput) == 144, "output 144");
+static_assert(sizeof(PgsCatchDiscoveryApi) == 40, "table 40");
+static_assert(offsetof(PgsCatchDiscoveryConfig, m_find) == 96, "config layout");
+static_assert(offsetof(PgsCatchDiscoveryRequest, layer) == 24, "request layout");
+static_assert(offsetof(PgsCatchDiscoveryOutput, handles) == 16, "output layout");
 
 namespace {
 
@@ -38,7 +38,7 @@ using ArrayLen   = uintptr_t (*)(void *);
 
 std::mutex g_install_mutex;
 std::mutex g_state_mutex;
-PgrCatchDiscoveryConfig g_cfg{};
+PgsCatchDiscoveryConfig g_cfg{};
 std::atomic<bool> g_installed{false};
 
 // Permanent Unity owner, latched once from a genuine on-thread call.
@@ -110,10 +110,10 @@ bool type_object(void *klass, Root &out, int &err) {
   return true;
 }
 
-void init_output(PgrCatchDiscoveryOutput *out) {
+void init_output(PgsCatchDiscoveryOutput *out) {
   std::memset(out, 0, sizeof(*out));
   out->version = PGS_CD_OUTPUT_VERSION;
-  out->size = sizeof(PgrCatchDiscoveryOutput);
+  out->size = sizeof(PgsCatchDiscoveryOutput);
 }
 
 // Supplied tid must be nonzero AND equal the current OS tid BEFORE the owner is latched; a later foreign
@@ -129,7 +129,7 @@ bool owner_ready(uint64_t tid) {
 
 // Shared gate/clock preamble. Fills *deadline, or returns a non-OK code the caller returns verbatim: 0 for
 // a closed lease / owner mismatch, negative for a clock failure. The owner latch and lease clamp run here.
-int gate(const PgrCatchDiscoveryRequest *request, uint64_t *deadline) {
+int gate(const PgsCatchDiscoveryRequest *request, uint64_t *deadline) {
   if (!owner_ready(request->tid)) return PGS_CD_SKIP;
   const uint64_t remaining = request->remaining_ms > kMaxLeaseMs ? kMaxLeaseMs : request->remaining_ms;
   if (remaining == 0) return PGS_CD_SKIP;
@@ -140,22 +140,22 @@ int gate(const PgrCatchDiscoveryRequest *request, uint64_t *deadline) {
 }
 
 // Common request header validation; *rc set, returns false on failure (output already initialised).
-bool check_request(const PgrCatchDiscoveryRequest *request, int *rc) {
+bool check_request(const PgsCatchDiscoveryRequest *request, int *rc) {
   if (!g_installed.load(std::memory_order_acquire)) { *rc = PGS_CD_ERR_NOT_INSTALLED; return false; }
   if (request == nullptr) { *rc = PGS_CD_ERR_NULL_ARG; return false; }
   if (request->version != PGS_CD_REQUEST_VERSION) { *rc = PGS_CD_ERR_BAD_VERSION; return false; }
-  if (request->size != sizeof(PgrCatchDiscoveryRequest)) { *rc = PGS_CD_ERR_BAD_SIZE; return false; }
+  if (request->size != sizeof(PgsCatchDiscoveryRequest)) { *rc = PGS_CD_ERR_BAD_SIZE; return false; }
   *rc = PGS_CD_OK;
   return true;
 }
 
 // --- config validation / install ---------------------------------------------------
-bool validate_config(const PgrCatchDiscoveryConfig *c, int *rc) {
+bool validate_config(const PgsCatchDiscoveryConfig *c, int *rc) {
   if (c == nullptr) { *rc = PGS_CD_ERR_NULL_ARG; return false; }
   if (c->version != PGS_CD_CONFIG_VERSION) { *rc = PGS_CD_ERR_BAD_VERSION; return false; }
-  if (c->size != sizeof(PgrCatchDiscoveryConfig)) { *rc = PGS_CD_ERR_BAD_SIZE; return false; }
+  if (c->size != sizeof(PgsCatchDiscoveryConfig)) { *rc = PGS_CD_ERR_BAD_SIZE; return false; }
   void *ptrs[kConfigPtrCount];
-  std::memcpy(ptrs, reinterpret_cast<const unsigned char *>(c) + offsetof(PgrCatchDiscoveryConfig, object_get_class),
+  std::memcpy(ptrs, reinterpret_cast<const unsigned char *>(c) + offsetof(PgsCatchDiscoveryConfig, object_get_class),
               sizeof(ptrs));
   for (int i = 0; i < kConfigPtrCount; ++i)
     if (ptrs[i] == nullptr) { *rc = PGS_CD_ERR_MISSING_PTR; return false; }
@@ -163,7 +163,7 @@ bool validate_config(const PgrCatchDiscoveryConfig *c, int *rc) {
   return true;
 }
 
-int api_install(const PgrCatchDiscoveryConfig *config) {
+int api_install(const PgsCatchDiscoveryConfig *config) {
   int rc = PGS_CD_OK;
   if (!validate_config(config, &rc)) return rc;
   uint64_t probe = 0;
@@ -183,7 +183,7 @@ int api_install(const PgrCatchDiscoveryConfig *config) {
   return 0;
 }
 
-int api_top(const PgrCatchDiscoveryRequest *request, PgrCatchDiscoveryOutput *out) {
+int api_top(const PgsCatchDiscoveryRequest *request, PgsCatchDiscoveryOutput *out) {
   if (out == nullptr) return PGS_CD_ERR_NULL_ARG;  // cannot report
   init_output(out);
   int rc = PGS_CD_OK;
@@ -223,7 +223,7 @@ int api_top(const PgrCatchDiscoveryRequest *request, PgrCatchDiscoveryOutput *ou
   return PGS_CD_OK;
 }
 
-int api_scene(const PgrCatchDiscoveryRequest *request, PgrCatchDiscoveryOutput *out) {
+int api_scene(const PgsCatchDiscoveryRequest *request, PgsCatchDiscoveryOutput *out) {
   if (out == nullptr) return PGS_CD_ERR_NULL_ARG;
   init_output(out);
   int rc = PGS_CD_OK;
@@ -288,7 +288,7 @@ int api_scene(const PgrCatchDiscoveryRequest *request, PgrCatchDiscoveryOutput *
   return PGS_CD_OK;
 }
 
-int api_release(PgrCatchDiscoveryOutput *out) {
+int api_release(PgsCatchDiscoveryOutput *out) {
   if (out == nullptr) return PGS_CD_ERR_NULL_ARG;
   if (!g_installed.load(std::memory_order_acquire)) return PGS_CD_ERR_NOT_INSTALLED;
   { std::lock_guard<std::mutex> lock(g_state_mutex); if (g_busy) return PGS_CD_ERR_BUSY; g_busy = true; }
@@ -307,8 +307,8 @@ int api_release(PgrCatchDiscoveryOutput *out) {
   return PGS_CD_OK;
 }
 
-const PgrCatchDiscoveryApi kApiTable = {
-    PGS_CD_API_VERSION, static_cast<uint32_t>(sizeof(PgrCatchDiscoveryApi)),
+const PgsCatchDiscoveryApi kApiTable = {
+    PGS_CD_API_VERSION, static_cast<uint32_t>(sizeof(PgsCatchDiscoveryApi)),
     &api_install, &api_top, &api_scene, &api_release,
 };
 

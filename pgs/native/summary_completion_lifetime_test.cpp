@@ -29,8 +29,8 @@ uintptr_t serial=0x1000;int newCalls=0,failNew=0,dismissCalls=0;
 bool allocationFailed=false,moveAlive=false,moveDismiss=false,moveBox=false,moveOnInputRoot=false;
 bool live=true,throwDismiss=false;
 std::function<void()> onAlive;
-const PgrSummaryCompletionApi *api=nullptr;
-PgrSummaryCompletionRequest request{};uint64_t owner=0,token=0;
+const PgsSummaryCompletionApi *api=nullptr;
+PgsSummaryCompletionRequest request{};uint64_t owner=0,token=0;
 
 void relocate(){
  assert(currentScene<7);Scene &old=scenes[currentScene],&next=scenes[++currentScene];next=old;
@@ -101,12 +101,12 @@ void reset(bool withState=true){
  token=0;assert(api->acquire(7,owner,&token)==PGS_SC_OK&&token);
 }
 void balanced(){assert(handles.size()==hostHandles.size());for(uintptr_t h:hostHandles)assert(handles.count(h));}
-PgrSummaryCompletionOutput complete(int expected=PGS_SC_DONE){
- PgrSummaryCompletionOutput out{};const int rc=api->complete(&request,token,&out);
+PgsSummaryCompletionOutput complete(int expected=PGS_SC_DONE){
+ PgsSummaryCompletionOutput out{};const int rc=api->complete(&request,token,&out);
  assert(rc==expected);assert(out.version==1&&out.size==24);balanced();return out;
 }
-PgrSummaryCompletionConfig config(){
- PgrSummaryCompletionConfig c{};c.version=PGS_SC_CONFIG_VERSION;c.size=sizeof(c);
+PgsSummaryCompletionConfig config(){
+ PgsSummaryCompletionConfig c{};c.version=PGS_SC_CONFIG_VERSION;c.size=sizeof(c);
  c.object_get_class=reinterpret_cast<void*>(klass);c.field_get_value=reinterpret_cast<void*>(fieldGet);
  c.runtime_invoke=reinterpret_cast<void*>(invoke);c.object_unbox=reinterpret_cast<void*>(unbox);
  c.class_gui=&guiClass;c.class_state=&stateClass;c.class_response=&responseClass;c.class_bool=&boolClass;
@@ -121,9 +121,9 @@ int main(int argc,char **argv){
  assert(argc==2);void *lib=dlopen(argv[1],RTLD_NOW|RTLD_LOCAL);assert(lib);
  auto get=reinterpret_cast<const void*(*)(uint32_t)>(dlsym(lib,"pgs_native_api"));assert(get);
  auto *core=static_cast<const pgs_native_api_v2*>(get(2));assert(core);
- api=static_cast<const PgrSummaryCompletionApi*>(core->query_feature(36,1));assert(api&&api->size==64);
- assert(sizeof(PgrSummaryCompletionConfig)==168&&sizeof(PgrSummaryCompletionRequest)==72);
- assert(offsetof(PgrSummaryCompletionConfig,gc_new)==136&&offsetof(PgrSummaryCompletionConfig,success_literal)==160);
+ api=static_cast<const PgsSummaryCompletionApi*>(core->query_feature(36,1));assert(api&&api->size==64);
+ assert(sizeof(PgsSummaryCompletionConfig)==168&&sizeof(PgsSummaryCompletionRequest)==72);
+ assert(offsetof(PgsSummaryCompletionConfig,gc_new)==136&&offsetof(PgsSummaryCompletionConfig,success_literal)==160);
  owner=gettid();auto cfg=config();assert(api->install(&cfg)==PGS_SC_OK);
 
  reset();assert(api->validate(&request)==PGS_SC_DONE);balanced();newCalls=0;
@@ -145,7 +145,7 @@ int main(int argc,char **argv){
   reset();failNew=n;assert(api->validate(&request)!=PGS_SC_DONE);assert(allocationFailed&&dismissCalls==0);balanced();
  }
  for(int n=1;n<=completeAllocations;++n){
-  reset();failNew=n;PgrSummaryCompletionOutput failed{};api->complete(&request,token,&failed);
+  reset();failNew=n;PgsSummaryCompletionOutput failed{};api->complete(&request,token,&failed);
   assert(allocationFailed&&dismissCalls<=1);balanced();
   assert(!(failed.flags&PGS_SC_FLAG_GONE)); // inability to root an alive box is not proof of destruction
  }
@@ -153,7 +153,7 @@ int main(int argc,char **argv){
  // A nested validation/completion from alive must be refused while the outer native call owns roots.
  for(bool outerComplete:{false,true}){
   reset();onAlive=[&](){
-   const size_t before=handles.size();PgrSummaryCompletionOutput nested{};
+   const size_t before=handles.size();PgsSummaryCompletionOutput nested{};
    assert(api->validate(&request)!=PGS_SC_DONE);
    assert(api->complete(&request,token,&nested)!=PGS_SC_DONE&&!(nested.flags&PGS_SC_FLAG_INVOKED));
    assert(handles.size()==before);

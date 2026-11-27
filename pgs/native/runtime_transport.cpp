@@ -17,8 +17,8 @@
 // cross-boundary data is compiled primitive fields plus length-prefixed, UTF-8-validated bytes.
 
 static_assert(sizeof(PgsRuntimeTransportConfig) == 32, "config must be 32 bytes");
-static_assert(sizeof(PgrRuntimeTransportSample) == 88, "sample must be 88 bytes");
-static_assert(sizeof(PgrRuntimeTransportApi) == 96, "table must be 96 bytes");
+static_assert(sizeof(PgsRuntimeTransportSample) == 88, "sample must be 88 bytes");
+static_assert(sizeof(PgsRuntimeTransportApi) == 96, "table must be 96 bytes");
 
 namespace {
 
@@ -91,19 +91,19 @@ constexpr ActionSchema kActions[PGS_TRANSPORT_ACTIONS] = {
   {3, 0, {ST_B, ST_D, ST_D}}        // 59 setShinyTarget(boolean,double,double)
 };
 
-// Validate one scalar against its compiled type. Returns PGR_TRANSPORT_OK or PGS_TRANSPORT_ERR_DOMAIN. Longs are NOT bounded
+// Validate one scalar against its compiled type. Returns PGS_TRANSPORT_OK or PGS_TRANSPORT_ERR_DOMAIN. Longs are NOT bounded
 // here (the typed native wire carries the exact 64-bit value -- no JS safe-integer clamp); any per-opcode long
 // domain is enforced separately below.
 int validate_scalar(uint8_t type, int64_t v) {
   switch (type) {
-    case ST_B: return (v == 0 || v == 1) ? PGR_TRANSPORT_OK : PGS_TRANSPORT_ERR_DOMAIN;
-    case ST_I: return (v >= INT32_MIN && v <= INT32_MAX) ? PGR_TRANSPORT_OK : PGS_TRANSPORT_ERR_DOMAIN;
-    case ST_L: return PGR_TRANSPORT_OK;  // exact 64-bit; Long.MAX_VALUE is valid
+    case ST_B: return (v == 0 || v == 1) ? PGS_TRANSPORT_OK : PGS_TRANSPORT_ERR_DOMAIN;
+    case ST_I: return (v >= INT32_MIN && v <= INT32_MAX) ? PGS_TRANSPORT_OK : PGS_TRANSPORT_ERR_DOMAIN;
+    case ST_L: return PGS_TRANSPORT_OK;  // exact 64-bit; Long.MAX_VALUE is valid
     case ST_D: {
       double d;
       uint64_t bits = static_cast<uint64_t>(v);
       std::memcpy(&d, &bits, sizeof(d));
-      return std::isfinite(d) ? PGR_TRANSPORT_OK : PGS_TRANSPORT_ERR_DOMAIN;
+      return std::isfinite(d) ? PGS_TRANSPORT_OK : PGS_TRANSPORT_ERR_DOMAIN;
     }
     default: return PGS_TRANSPORT_ERR_DOMAIN;
   }
@@ -127,7 +127,7 @@ int validate_domain(uint32_t opcode, const int64_t *s) {
   } else if (opcode == 57) {  // updateCameraHeadingAt: timestamp (long arg3) >= 0
     if (s[3] < 0) return PGS_TRANSPORT_ERR_DOMAIN;
   }
-  return PGR_TRANSPORT_OK;
+  return PGS_TRANSPORT_OK;
 }
 
 // Guarded booleans (active, vgpEnabled, *Allowed, *Requested) return 0 on a stale snapshot instead of STALE,
@@ -238,7 +238,7 @@ bool config_ok(const PgsRuntimeTransportConfig *c, int *rc) {
   if (c->max_string_bytes < 1 || c->max_string_bytes > PGS_TRANSPORT_MAX_STRING) { *rc = PGS_TRANSPORT_ERR_BAD_BOUND; return false; }
   if (c->queue_byte_budget < 1 || c->queue_byte_budget > PGS_TRANSPORT_MAX_FRAME) { *rc = PGS_TRANSPORT_ERR_BAD_BOUND; return false; }
   if (c->reserved0 != 0 || c->reserved1 != 0) { *rc = PGS_TRANSPORT_ERR_BAD_BOUND; return false; }  // reserved must be 0
-  *rc = PGR_TRANSPORT_OK;
+  *rc = PGS_TRANSPORT_OK;
   return true;
 }
 
@@ -287,7 +287,7 @@ int parse_snapshot(const uint8_t *p, uint32_t len, uint32_t max_string, Snapshot
   }
   if (at != len) return PGS_TRANSPORT_ERR_BAD_FRAME;  // no trailing bytes
   out->valid = true;
-  return PGR_TRANSPORT_OK;
+  return PGS_TRANSPORT_OK;
 }
 
 // Caller holds g_state_mutex. Serialize up to the drain cap of queued events into [out, out+cap).
@@ -325,12 +325,12 @@ int drain_locked(uint8_t *out, uint32_t cap, uint32_t *out_len) {
   store_u64(out + 24, g_generation);
   *out_len = at;
   g_drained.fetch_add(count, std::memory_order_relaxed);
-  return PGR_TRANSPORT_OK;
+  return PGS_TRANSPORT_OK;
 }
 
 // --- public API --------------------------------------------------------------------
 int api_install(const PgsRuntimeTransportConfig *config) {
-  int rc = PGR_TRANSPORT_OK;
+  int rc = PGS_TRANSPORT_OK;
   if (!config_ok(config, &rc)) return rc;
   uint64_t probe = 0;
   if (!read_boottime_ms(&probe)) return PGS_TRANSPORT_ERR_CLOCK;
@@ -339,7 +339,7 @@ int api_install(const PgsRuntimeTransportConfig *config) {
   if (g_installed.load(std::memory_order_acquire)) {
     std::lock_guard<std::mutex> state_lock(g_state_mutex);
     if (std::memcmp(&g_cfg, config, sizeof(*config)) != 0) return PGS_TRANSPORT_ERR_RECONFIG;
-    return PGR_TRANSPORT_OK;
+    return PGS_TRANSPORT_OK;
   }
   if (g_install_attempted) return g_install_error;
   g_install_attempted = true;
@@ -354,7 +354,7 @@ int api_install(const PgsRuntimeTransportConfig *config) {
     for (auto &c : g_pulse_consumed) c = 0;
   }
   g_installed.store(true, std::memory_order_release);
-  return g_install_error = PGR_TRANSPORT_OK;
+  return g_install_error = PGS_TRANSPORT_OK;
 }
 
 int api_exchange(const uint8_t *snapshot, uint32_t snap_len, uint8_t *out, uint32_t out_cap, uint32_t *out_len) {
@@ -364,11 +364,11 @@ int api_exchange(const uint8_t *snapshot, uint32_t snap_len, uint8_t *out, uint3
   uint64_t now = 0;
   if (!read_boottime_ms(&now)) return PGS_TRANSPORT_ERR_CLOCK;
 
-  int snap_rc = PGR_TRANSPORT_OK;
+  int snap_rc = PGS_TRANSPORT_OK;
   Snapshot parsed;
   if (snap_len != 0) {
     snap_rc = parse_snapshot(snapshot, snap_len, g_cfg.max_string_bytes, &parsed);
-    if (snap_rc == PGR_TRANSPORT_OK) parsed.accept_ms = now;
+    if (snap_rc == PGS_TRANSPORT_OK) parsed.accept_ms = now;
   }
 
   std::lock_guard<std::mutex> lock(g_state_mutex);
@@ -376,13 +376,13 @@ int api_exchange(const uint8_t *snapshot, uint32_t snap_len, uint8_t *out, uint3
     // A well-formed frame still has to be STRICTLY NEWER than the stored snapshot: seq must advance and no
     // monotonic pulse count may regress. A stale/replayed frame is rejected -- it does NOT overwrite the
     // stored snapshot and does NOT refresh the lease (accepting it would revive expired gameplay state).
-    if (snap_rc == PGR_TRANSPORT_OK && g_snapshot.valid) {
+    if (snap_rc == PGS_TRANSPORT_OK && g_snapshot.valid) {
       bool replay = parsed.seq <= g_snapshot.seq;
       for (uint32_t i = 0; !replay && i < PGS_TRANSPORT_PULSES; ++i)
         if (parsed.pulses[i] < g_snapshot.pulses[i]) replay = true;
       if (replay) snap_rc = PGS_TRANSPORT_ERR_REPLAY;
     }
-    if (snap_rc == PGR_TRANSPORT_OK) {
+    if (snap_rc == PGS_TRANSPORT_OK) {
       // Pulse counts are monotonic across snapshots (the host keeps cumulative counts); the per-pulse
       // consumed baselines persist and only reset on install(), so take_pulse() keeps edge semantics.
       g_snapshot = std::move(parsed);
@@ -394,12 +394,12 @@ int api_exchange(const uint8_t *snapshot, uint32_t snap_len, uint8_t *out, uint3
     }
   }
   int rc = drain_locked(out, out_cap, out_len);
-  if (rc != PGR_TRANSPORT_OK) return rc;
+  if (rc != PGS_TRANSPORT_OK) return rc;
   return snap_rc;  // surfaces a rejected snapshot while still delivering the drained events
 }
 
 int api_emit(uint32_t opcode, const int64_t *scalars, uint32_t n_scalars,
-             const PgrRuntimeTransportString *strings, uint32_t n_strings) {
+             const PgsRuntimeTransportString *strings, uint32_t n_strings) {
   if (!g_installed.load(std::memory_order_acquire)) return PGS_TRANSPORT_ERR_NOT_INSTALLED;
   if (opcode >= PGS_TRANSPORT_ACTIONS) return PGS_TRANSPORT_ERR_BAD_OPCODE;
   const ActionSchema &a = kActions[opcode];
@@ -410,9 +410,9 @@ int api_emit(uint32_t opcode, const int64_t *scalars, uint32_t n_scalars,
   // value domain must hold. A bad native producer cannot push a poisoned value through to the host.
   for (uint32_t i = 0; i < n_scalars; ++i) {
     int srv = validate_scalar(a.types[i], scalars[i]);
-    if (srv != PGR_TRANSPORT_OK) return srv;
+    if (srv != PGS_TRANSPORT_OK) return srv;
   }
-  { int drv = validate_domain(opcode, scalars); if (drv != PGR_TRANSPORT_OK) return drv; }
+  { int drv = validate_domain(opcode, scalars); if (drv != PGS_TRANSPORT_OK) return drv; }
 
   Event e;
   e.opcode = opcode;
@@ -422,7 +422,7 @@ int api_emit(uint32_t opcode, const int64_t *scalars, uint32_t n_scalars,
   uint32_t add_bytes = 0;
   uint64_t serialized = 12 + static_cast<uint64_t>(n_scalars) * 8;  // opcode,n_scalars,n_strings + scalars
   for (uint32_t i = 0; i < n_strings; ++i) {
-    const PgrRuntimeTransportString &s = strings[i];
+    const PgsRuntimeTransportString &s = strings[i];
     if (s.len > 0 && s.ptr == nullptr) return PGS_TRANSPORT_ERR_NULL_ARG;
     if (s.len > g_cfg.max_string_bytes) return PGS_TRANSPORT_ERR_RANGE;
     if (!valid_utf8(s.ptr, s.len)) return PGS_TRANSPORT_ERR_BAD_UTF8;
@@ -445,7 +445,7 @@ int api_emit(uint32_t opcode, const int64_t *scalars, uint32_t n_scalars,
   g_queue_bytes += add_bytes;
   g_queue.push_back(std::move(e));
   g_emitted.fetch_add(1, std::memory_order_relaxed);
-  return PGR_TRANSPORT_OK;
+  return PGS_TRANSPORT_OK;
 }
 
 int api_get_bool(uint32_t field, int *out) {
@@ -456,11 +456,11 @@ int api_get_bool(uint32_t field, int *out) {
   if (!read_boottime_ms(&now)) return PGS_TRANSPORT_ERR_CLOCK;
   std::lock_guard<std::mutex> lock(g_state_mutex);
   if (!snapshot_fresh_locked(now)) {
-    if (kGuardedBool[field]) { *out = 0; return PGR_TRANSPORT_OK; }  // legacy guarded false default
+    if (kGuardedBool[field]) { *out = 0; return PGS_TRANSPORT_OK; }  // legacy guarded false default
     return PGS_TRANSPORT_STALE;
   }
   *out = g_snapshot.bools[field] ? 1 : 0;
-  return PGR_TRANSPORT_OK;
+  return PGS_TRANSPORT_OK;
 }
 
 int api_get_int(uint32_t field, int32_t *out) {
@@ -472,7 +472,7 @@ int api_get_int(uint32_t field, int32_t *out) {
   std::lock_guard<std::mutex> lock(g_state_mutex);
   if (!snapshot_fresh_locked(now)) return PGS_TRANSPORT_STALE;
   *out = g_snapshot.ints[field];
-  return PGR_TRANSPORT_OK;
+  return PGS_TRANSPORT_OK;
 }
 
 int api_get_double(uint32_t field, double *out, int *has_value) {
@@ -487,7 +487,7 @@ int api_get_double(uint32_t field, double *out, int *has_value) {
   bool finite = std::isfinite(d);
   *has_value = finite ? 1 : 0;  // NaN/inf sentinel == legacy JSON null coord
   *out = finite ? d : 0.0;
-  return PGR_TRANSPORT_OK;
+  return PGS_TRANSPORT_OK;
 }
 
 int copy_out(const std::string &s, char *buf, uint32_t cap, uint32_t *out_len) {
@@ -496,7 +496,7 @@ int copy_out(const std::string &s, char *buf, uint32_t cap, uint32_t *out_len) {
   if (buf == nullptr) return PGS_TRANSPORT_ERR_NULL_ARG;
   if (cap < n) return PGS_TRANSPORT_ERR_RANGE;
   std::memcpy(buf, s.data(), n);
-  return PGR_TRANSPORT_OK;
+  return PGS_TRANSPORT_OK;
 }
 
 int api_get_string(uint32_t field, char *buf, uint32_t cap, uint32_t *out_len) {
@@ -532,7 +532,7 @@ int api_get_command_snapshot(char *cmd, uint32_t cmd_cap, uint32_t *cmd_len,
   if (cmd_cap < cn || tok_cap < tn) return PGS_TRANSPORT_ERR_RANGE;  // neither copied
   std::memcpy(cmd, c.data(), cn);
   std::memcpy(tok, t.data(), tn);
-  return PGR_TRANSPORT_OK;
+  return PGS_TRANSPORT_OK;
 }
 
 int api_take_pulse(uint32_t pulse, int *out_fired) {
@@ -543,13 +543,13 @@ int api_take_pulse(uint32_t pulse, int *out_fired) {
   uint64_t now = 0;
   if (!read_boottime_ms(&now)) return PGS_TRANSPORT_ERR_CLOCK;
   std::lock_guard<std::mutex> lock(g_state_mutex);
-  if (!snapshot_fresh_locked(now)) return PGR_TRANSPORT_OK;  // legacy client: stale -> no edge
+  if (!snapshot_fresh_locked(now)) return PGS_TRANSPORT_OK;  // legacy client: stale -> no edge
   uint64_t count = g_snapshot.pulses[pulse];
   if (count > g_pulse_consumed[pulse]) { g_pulse_consumed[pulse] = count; *out_fired = 1; }
-  return PGR_TRANSPORT_OK;
+  return PGS_TRANSPORT_OK;
 }
 
-int api_sample(PgrRuntimeTransportSample *out) {
+int api_sample(PgsRuntimeTransportSample *out) {
   if (out == nullptr) return PGS_TRANSPORT_ERR_NULL_ARG;
   uint32_t depth = 0, bytes = 0, fresh = 0;
   uint64_t gen = 0, snap_seq = 0;
@@ -564,7 +564,7 @@ int api_sample(PgrRuntimeTransportSample *out) {
     snap_seq = g_snapshot.valid ? g_snapshot.seq : 0;
   }
   out->version = PGS_TRANSPORT_SAMPLE_VERSION;
-  out->size = sizeof(PgrRuntimeTransportSample);
+  out->size = sizeof(PgsRuntimeTransportSample);
   out->snapshots_accepted = g_snap_ok.load(std::memory_order_relaxed);
   out->snapshots_rejected = g_snap_bad.load(std::memory_order_relaxed);
   out->events_emitted = g_emitted.load(std::memory_order_relaxed);
@@ -577,7 +577,7 @@ int api_sample(PgrRuntimeTransportSample *out) {
   out->queue_bytes = bytes;
   out->snapshot_fresh = fresh;
   out->fault = g_fault.load(std::memory_order_relaxed);
-  return PGR_TRANSPORT_OK;
+  return PGS_TRANSPORT_OK;
 }
 
 int api_stop(void) {
@@ -588,11 +588,11 @@ int api_stop(void) {
   g_queue.clear();
   g_queue_bytes = 0;
   ++g_generation;
-  return PGR_TRANSPORT_OK;
+  return PGS_TRANSPORT_OK;
 }
 
-const PgrRuntimeTransportApi kApiTable = {
-    PGS_TRANSPORT_API_VERSION, static_cast<uint32_t>(sizeof(PgrRuntimeTransportApi)),
+const PgsRuntimeTransportApi kApiTable = {
+    PGS_TRANSPORT_API_VERSION, static_cast<uint32_t>(sizeof(PgsRuntimeTransportApi)),
     &api_install, &api_exchange, &api_emit,
     &api_get_bool, &api_get_int, &api_get_double, &api_get_string,
     &api_get_command_snapshot, &api_take_pulse, &api_sample, &api_stop,

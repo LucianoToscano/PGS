@@ -22,20 +22,20 @@
 // A VGP mask toggle clears g_blocked but PRESERVES g_seen (clear_block does not touch the quarantine);
 // only reset() drops it. All deadlines are now + delay on the single native CLOCK_BOOTTIME.
 
-static_assert(sizeof(PgrVgpPolicyConfig) == 128, "config must be 128 bytes");
-static_assert(sizeof(PgrVgpPolicySample) == 64, "sample must be 64 bytes");
-static_assert(sizeof(PgrVgpPolicyApi) == 112, "table must be 112 bytes");
-static_assert(offsetof(PgrVgpPolicyConfig, scan_interval_ms) == 8, "layout");
-static_assert(offsetof(PgrVgpPolicyConfig, max_keys) == 64, "layout");
-static_assert(offsetof(PgrVgpPolicyConfig, status_terminal) == 72, "layout");
-static_assert(offsetof(PgrVgpPolicyConfig, status_retry) == 88, "layout");
+static_assert(sizeof(PgsVgpPolicyConfig) == 128, "config must be 128 bytes");
+static_assert(sizeof(PgsVgpPolicySample) == 64, "sample must be 64 bytes");
+static_assert(sizeof(PgsVgpPolicyApi) == 112, "table must be 112 bytes");
+static_assert(offsetof(PgsVgpPolicyConfig, scan_interval_ms) == 8, "layout");
+static_assert(offsetof(PgsVgpPolicyConfig, max_keys) == 64, "layout");
+static_assert(offsetof(PgsVgpPolicyConfig, status_terminal) == 72, "layout");
+static_assert(offsetof(PgsVgpPolicyConfig, status_retry) == 88, "layout");
 
 namespace {
 
 // --- lifetime / publication --------------------------------------------------------
 std::mutex g_install_mutex;
 std::mutex g_state_mutex;
-PgrVgpPolicyConfig g_cfg{};
+PgsVgpPolicyConfig g_cfg{};
 std::atomic<bool> g_installed{false};
 bool g_install_attempted = false;
 
@@ -104,10 +104,10 @@ bool valid_key(const char *key, uint32_t len) {
 }
 
 // --- config validation -------------------------------------------------------------
-bool validate_config(const PgrVgpPolicyConfig *c, int *rc) {
+bool validate_config(const PgsVgpPolicyConfig *c, int *rc) {
   if (c == nullptr) { *rc = PGS_VP_ERR_NULL_ARG; return false; }
   if (c->version != PGS_VP_CONFIG_VERSION) { *rc = PGS_VP_ERR_BAD_VERSION; return false; }
-  if (c->size != sizeof(PgrVgpPolicyConfig)) { *rc = PGS_VP_ERR_BAD_SIZE; return false; }
+  if (c->size != sizeof(PgsVgpPolicyConfig)) { *rc = PGS_VP_ERR_BAD_SIZE; return false; }
   if (c->max_keys == 0 || c->max_keys > PGS_VP_MAX_KEYS) { *rc = PGS_VP_ERR_BAD_CONFIG; return false; }
   if (c->scan_interval_ms == 0) { *rc = PGS_VP_ERR_BAD_CONFIG; return false; }
   *rc = PGS_VP_OK;
@@ -115,7 +115,7 @@ bool validate_config(const PgrVgpPolicyConfig *c, int *rc) {
 }
 
 // --- public API --------------------------------------------------------------------
-int api_install(const PgrVgpPolicyConfig *config) {
+int api_install(const PgsVgpPolicyConfig *config) {
   int rc = PGS_VP_OK;
   if (!validate_config(config, &rc)) return rc;
   uint64_t probe = 0;
@@ -282,7 +282,7 @@ int api_catch_delay(int32_t status, uint64_t *out_ms) {
   return PGS_VP_OK;
 }
 
-int api_sample(PgrVgpPolicySample *out) {
+int api_sample(PgsVgpPolicySample *out) {
   if (out == nullptr) return PGS_VP_ERR_NULL_ARG;
   uint32_t size, turn, blocked;
   {
@@ -292,7 +292,7 @@ int api_sample(PgrVgpPolicySample *out) {
     blocked = g_blocked ? 1u : 0u;
   }
   out->version = PGS_VP_SAMPLE_VERSION;
-  out->size = sizeof(PgrVgpPolicySample);
+  out->size = sizeof(PgsVgpPolicySample);
   out->scans = g_scans.load(std::memory_order_relaxed);
   out->marks = g_marks.load(std::memory_order_relaxed);
   out->evictions = g_evictions.load(std::memory_order_relaxed);
@@ -305,8 +305,8 @@ int api_sample(PgrVgpPolicySample *out) {
   return PGS_VP_OK;
 }
 
-const PgrVgpPolicyApi kApiTable = {
-    PGS_VP_API_VERSION, static_cast<uint32_t>(sizeof(PgrVgpPolicyApi)),
+const PgsVgpPolicyApi kApiTable = {
+    PGS_VP_API_VERSION, static_cast<uint32_t>(sizeof(PgsVgpPolicyApi)),
     &api_install, &api_update, &api_reset,       &api_due,         &api_order,
     &api_sweep,   &api_seen,   &api_touch,        &api_arm,         &api_block,
     &api_clear_block, &api_catch_delay, &api_sample,

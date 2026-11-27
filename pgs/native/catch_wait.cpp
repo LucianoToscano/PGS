@@ -11,7 +11,7 @@
 #include <dlfcn.h>
 #include <unistd.h>
 namespace {
-using namespace pgr_catch_wait_schema;
+using namespace pgs_catch_wait_schema;
 using Move=uint8_t(*)(void *,const void *);
 using GetField=void(*)(void *,const void *,void *);
 using ObjClass=void *(*)(void *);
@@ -23,7 +23,7 @@ std::atomic<Move> original{nullptr};
 std::atomic<bool> ready{false},active{false};
 std::atomic<int32_t> fault{0},owner{0};
 std::atomic<uint64_t> deadline{0},observed{0},shortened{0};
-PgrBootBinding binding{};
+PgsBootBinding binding{};
 const void *classes[4]{},*fields[7]{};
 int32_t success=0;
 bool poisoned=false;
@@ -87,16 +87,16 @@ uint8_t replacement(void *self,const void *method){
  receipt.kind=2;receipt.new_seconds=actual;event(receipt);shortened.fetch_add(1);
  return result;
 }
-bool named_type(const PgrMetaExports &e,const void *type,const char *expected){
+bool named_type(const PgsMetaExports &e,const void *type,const char *expected){
  char *name=reinterpret_cast<char *(*)(const void *)>(e.type_get_name)(type);
  if(!name)return false;
  const auto n=strnlen(name,kNameBytesMax);const bool same=n<kNameBytesMax&&std::strcmp(name,expected)==0;
  reinterpret_cast<void(*)(void *)>(e.mem_free)(name);return same;
 }
-int prepare(const PgsCatchWaitConfig *test,PgrBootBinding &b,void **target){
- const auto *md=static_cast<const PgrMetaApi *>(pgs_runtime_metadata_api(1));if(!md)return -2;
+int prepare(const PgsCatchWaitConfig *test,PgsBootBinding &b,void **target){
+ const auto *md=static_cast<const PgsMetaApi *>(pgs_runtime_metadata_api(1));if(!md)return -2;
  if(test){if(test->version!=1||test->size!=sizeof(*test)||!test->binding||!test->segment||!test->class_get_name||!test->fixture_move_next)return -2;b=*test->binding;}
- else {const auto *boot=static_cast<const PgrBootApi *>(pgs_runtime_bootstrap_api(1));const int rc=boot->snapshot(&b);if(rc)return rc;}
+ else {const auto *boot=static_cast<const PgsBootApi *>(pgs_runtime_bootstrap_api(1));const int rc=boot->snapshot(&b);if(rc)return rc;}
  if(b.version!=1||b.size!=sizeof(b)||b.status||!b.module_base||!b.module_size||!b.runtime.thread_current)return -2;
  if(!b.runtime.gchandle_new||!b.runtime.gchandle_get_target||!b.runtime.gchandle_free||
     !b.runtime.field_get_value||!b.runtime.field_set_value||!b.runtime.object_get_class||!b.runtime.field_static_get_value)return -2;
@@ -105,21 +105,21 @@ int prepare(const PgsCatchWaitConfig *test,PgrBootBinding &b,void **target){
  auto detach=reinterpret_cast<void(*)(void *)>(b.runtime.thread_detach);
  struct Attachment{void *owned;void(*drop)(void *);~Attachment(){if(owned)drop(owned);}} attachment{nullptr,detach};
  if(!current()){if(!attach||!detach||!b.domain)return -3;attachment.owned=attach(const_cast<void *>(b.domain));if(!attachment.owned)return -3;}
- PgrMetaBindConfig config{};config.version=1;config.size=sizeof(config);config.exports=&b.meta;
+ PgsMetaBindConfig config{};config.version=1;config.size=sizeof(config);config.exports=&b.meta;
  config.module_base=b.module_base;config.module_size=b.module_size;
  if(test){config.seg_query=test->segment;config.seg_ctx=test->segment_context;}
  else {config.debug_prologue=kDebugPrologue;config.debug_prologue_len=sizeof(kDebugPrologue);}
  int rc=md->bind(&config);if(rc)return rc;
  auto check=[&](uint64_t rva,uint64_t length,const void *bytes=nullptr,uint32_t n=0){
   if(rva>b.module_size||length>b.module_size-rva)return int(PGS_MD_ERR_CODE_RANGE);
-  PgrMetaCodeQuery q{};q.version=1;q.size=sizeof(q);q.address=static_cast<const char *>(b.module_base)+rva;q.length=length;q.prologue=bytes;q.prologue_len=n;return md->validate_code(&q);
+  PgsMetaCodeQuery q{};q.version=1;q.size=sizeof(q);q.address=static_cast<const char *>(b.module_base)+rva;q.length=length;q.prologue=bytes;q.prologue_len=n;return md->validate_code(&q);
  };
  if(!test&&pgs_pointer_handles(md,b.runtime.gchandle_new,b.runtime.gchandle_get_target,b.runtime.gchandle_free))return -4;
  void *name_export=test?test->class_get_name:dlsym(b.handle,"il2cpp_class_get_name");if(!name_export)return -5;
- if(!test){PgrMetaCodeQuery q{};q.version=1;q.size=sizeof(q);q.address=name_export;q.length=4;if((rc=md->validate_code(&q)))return rc;}
+ if(!test){PgsMetaCodeQuery q{};q.version=1;q.size=sizeof(q);q.address=name_export;q.length=4;if((rc=md->validate_code(&q)))return rc;}
  for(const auto &spec:kClasses){
-  PgrMetaClassQuery q{};q.version=1;q.size=sizeof(q);q.name_space=spec.name_space;q.name=spec.name;q.canonical=spec.canonical;q.canonical_match=PGR_MD_MATCH_EXACT;
-  PgrMetaClassResult out{};rc=md->resolve_class(&q,&out);if(rc)return rc==PGR_MD_ERR_NOT_FOUND?1:rc;classes[spec.owner]=out.klass;
+  PgsMetaClassQuery q{};q.version=1;q.size=sizeof(q);q.name_space=spec.name_space;q.name=spec.name;q.canonical=spec.canonical;q.canonical_match=PGS_MD_MATCH_EXACT;
+  PgsMetaClassResult out{};rc=md->resolve_class(&q,&out);if(rc)return rc==PGS_MD_ERR_NOT_FOUND?1:rc;classes[spec.owner]=out.klass;
  }
  void *iterator=nullptr;bool ended=false;
  const auto nested=reinterpret_cast<void *(*)(const void *,void **)>(b.meta.class_get_nested_types);
@@ -138,10 +138,10 @@ int prepare(const PgsCatchWaitConfig *test,PgrBootBinding &b,void **target){
  for(unsigned i=0;i<kFieldCount;i++){
   const auto &spec=kFields[i];const void *f=field_from(classes[spec.owner],spec.name);if(!f)return -7;
   const auto off=offset(f);if(off<spec.min_offset||off>spec.max_offset)return -7;
-  PgrMetaFieldQuery q{};q.version=1;q.size=sizeof(q);q.owner=classes[spec.owner];q.name=spec.name;
+  PgsMetaFieldQuery q{};q.version=1;q.size=sizeof(q);q.owner=classes[spec.owner];q.name=spec.name;
   q.offset=spec.offset_is_exact?spec.exact_offset:off;q.forbidden_mask=kRejectedFieldFlags;
-  q.kind=i==6?PGS_MD_FIELD_ENUM_I32:PGR_MD_FIELD_ANY;q.type_name=spec.type_name;q.type_match=PGR_MD_MATCH_EXACT;
-  PgrMetaFieldResult out{};if((rc=md->validate_field(&q,&out)))return rc;fields[i]=out.field;
+  q.kind=i==6?PGS_MD_FIELD_ENUM_I32:PGS_MD_FIELD_ANY;q.type_name=spec.type_name;q.type_match=PGS_MD_MATCH_EXACT;
+  PgsMetaFieldResult out{};if((rc=md->validate_field(&q,&out)))return rc;fields[i]=out.field;
  }
  const void *enum_class=reinterpret_cast<void *(*)(const void *)>(b.meta.class_from_type)(field_type(fields[6]));
  const void *literal=field_from(enum_class,kSuccessLiteral);if(!literal)return -8;
@@ -152,10 +152,10 @@ int prepare(const PgsCatchWaitConfig *test,PgrBootBinding &b,void **target){
  reinterpret_cast<void(*)(const void *,void *)>(b.runtime.field_static_get_value)(literal,&success);
  for(const auto &spec:kMethods){
   if(spec.rva>b.module_size)return PGS_MD_ERR_CODE_RANGE;
-  PgrMetaMethodQuery q{};q.version=1;q.size=sizeof(q);q.owner=classes[spec.owner];q.name=spec.name;
-  q.return_type=spec.return_type;q.return_match=PGR_MD_MATCH_EXACT;q.param_count=spec.param_count;q.is_static=spec.is_static;
+  PgsMetaMethodQuery q{};q.version=1;q.size=sizeof(q);q.owner=classes[spec.owner];q.name=spec.name;
+  q.return_type=spec.return_type;q.return_match=PGS_MD_MATCH_EXACT;q.param_count=spec.param_count;q.is_static=spec.is_static;
   q.expected_code=static_cast<const char *>(b.module_base)+spec.rva;q.prologue=spec.prologue;q.prologue_len=spec.prologue_size;
-  PgrMetaMethodResult out{};if((rc=md->validate_method(&q,&out)))return rc;
+  PgsMetaMethodResult out{};if((rc=md->validate_method(&q,&out)))return rc;
   if(spec.owner==0)*target=const_cast<void *>(out.code);
  }
  for(const auto &site:{kYieldTailSite,kYieldReturnSite,kStepSite})if((rc=check(site.rva,site.size,site.bytes,site.size)))return rc;
@@ -167,7 +167,7 @@ int install(const PgsCatchWaitConfig *test){
  std::unique_lock<std::mutex> guard(install_mutex,std::try_to_lock);if(!guard.owns_lock())return -10;
  if(poisoned)return -11;if(ready.load())return 0;
  std::memset(classes,0,sizeof(classes));std::memset(fields,0,sizeof(fields));
- PgrBootBinding resolved{};void *target=nullptr;const int rc=prepare(test,resolved,&target);if(rc)return rc;
+ PgsBootBinding resolved{};void *target=nullptr;const int rc=prepare(test,resolved,&target);if(rc)return rc;
  binding=resolved;void *trampoline=nullptr;
  const int hook=pgs_hook(target,reinterpret_cast<void *>(replacement),&trampoline);
  if(trampoline)original.store(reinterpret_cast<Move>(trampoline),std::memory_order_release);

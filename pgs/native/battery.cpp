@@ -21,7 +21,7 @@
 namespace {
 struct Failure {const char *where;};
 void require(bool ok,const char *where){if(!ok)throw Failure{where};}
-PgrBootBinding boot{};
+PgsBootBinding boot{};
 bool initialized=false,busy=false,faulted=false,hooks_tried=false;uint64_t owner=0,next_apply=0;
 std::string hook_note;
 constexpr uint64_t kApplyEveryMs=2000;
@@ -34,10 +34,10 @@ constexpr float kDarkRenderScale=0.25f;
 uint64_t clock_ms(){timespec t{};clock_gettime(CLOCK_BOOTTIME,&t);return uint64_t(t.tv_sec)*1000+t.tv_nsec/1000000;}
 template<class F>F fn(const void *p){require(p,"missing runtime export");return reinterpret_cast<F>(const_cast<void*>(p));}
 void *klass(void *o){require(o,"null object");return fn<void*(*)(void*)>(boot.runtime.object_get_class)(o);}
-const PgrMetaApi *metadata(){const auto *api=static_cast<const PgrMetaApi*>(pgs_runtime_metadata_api(1));require(api&&api->resolve_class&&api->validate_method,"metadata API");return api;}
+const PgsMetaApi *metadata(){const auto *api=static_cast<const PgsMetaApi*>(pgs_runtime_metadata_api(1));require(api&&api->resolve_class&&api->validate_method,"metadata API");return api;}
 void *cls(const char *ns,const char *name){
- PgrMetaClassQuery q{};q.version=1;q.size=sizeof(q);q.name_space=ns;q.name=name;q.canonical_match=PGR_MD_MATCH_EXACT;
- PgrMetaClassResult out{};require(metadata()->resolve_class(&q,&out)==0,name);return const_cast<void*>(out.klass);
+ PgsMetaClassQuery q{};q.version=1;q.size=sizeof(q);q.name_space=ns;q.name=name;q.canonical_match=PGS_MD_MATCH_EXACT;
+ PgsMetaClassResult out{};require(metadata()->resolve_class(&q,&out)==0,name);return const_cast<void*>(out.klass);
 }
 void *method(void *k,const char *name,int count){
  void *m=fn<void*(*)(void*,const char*,int)>(boot.meta.class_get_method_from_name)(k,name,count);require(m,name);
@@ -45,16 +45,16 @@ void *method(void *k,const char *name,int count){
 }
 void *invoke(void *m,void *o,void **args=nullptr){void *ex=nullptr;void *v=fn<void*(*)(void*,void*,void**,void**)>(boot.runtime.runtime_invoke)(m,o,args,&ex);require(!ex,"managed call failed");return v;}
 template<class T>T unbox(void *o){require(o,"null result");T v{};auto p=fn<void*(*)(void*)>(boot.runtime.object_unbox)(o);require(p,"boxed value");std::memcpy(&v,p,sizeof(v));return v;}
-const PgrRuntimeTransportApi *transport(){return static_cast<const PgrRuntimeTransportApi*>(pgs_runtime_transport_api(1));}
+const PgsRuntimeTransportApi *transport(){return static_cast<const PgsRuntimeTransportApi*>(pgs_runtime_transport_api(1));}
 void event(const std::string &message){
  auto tr=transport();if(!tr)return;
- PgrRuntimeTransportString s[]={{"battery",7},{message.c_str(),uint32_t(message.size())}};tr->emit(19,nullptr,0,s,2);
+ PgsRuntimeTransportString s[]={{"battery",7},{message.c_str(),uint32_t(message.size())}};tr->emit(19,nullptr,0,s,2);
 }
 
 struct Config {bool res=false,fps=false,quality=false,dark=false;};
 // "B2|r|f|q|d"; anything malformed or stale means everything off (the game's values come back).
 Config configured(){
- Config c;auto tr=transport();PgrRuntimeTransportSample a{};char s[16]{};uint32_t n=0;
+ Config c;auto tr=transport();PgsRuntimeTransportSample a{};char s[16]{};uint32_t n=0;
  if(!tr||tr->sample(&a)||!a.snapshot_fresh||a.fault||tr->get_string(20,s,sizeof(s)-1,&n)||n!=10)return c;
  if(std::memcmp(s,"B2|",3)||s[4]!='|'||s[6]!='|'||s[8]!='|')return c;
  for(int i:{3,5,7,9})if(s[i]!='0'&&s[i]!='1')return c;
@@ -90,22 +90,22 @@ struct Target {Step step;const char *ns,*owner,*name;unsigned params;uint64_t rv
 // is installed; one that does not match is left out and named in the log, the rest still work.
 void install_hooks(){
  hooks_tried=true;
- static const uint8_t p_shadows[]=PGR_GAME_BATTERY_CPP_SHADOW_PASS_FINGERPRINT,p_water[]=PGR_GAME_BATTERY_CPP_WATER_REFLECTION_FINGERPRINT,
-  p_ground[]=PGR_GAME_BATTERY_CPP_GROUND_COVER_FINGERPRINT;
+ static const uint8_t p_shadows[]=PGS_GAME_BATTERY_CPP_SHADOW_PASS_FINGERPRINT,p_water[]=PGS_GAME_BATTERY_CPP_WATER_REFLECTION_FINGERPRINT,
+  p_ground[]=PGS_GAME_BATTERY_CPP_GROUND_COVER_FINGERPRINT;
  static_assert(sizeof(p_shadows)==24&&sizeof(p_water)==24&&sizeof(p_ground)==24,"24-byte prologues");
  const Target targets[]={
-  {S_SHADOWS,"Niantic.Holoholo.Rendering","AngledGradientShadowScriptableRenderFeature","AddRenderPasses",2,PGR_GAME_BATTERY_CPP_SHADOW_PASS_RVA,p_shadows,reinterpret_cast<void*>(hook_shadows)},
-  {S_WATER,"Niantic.Holoholo.Vista","WaterReflection","UpdateRenderTexture",0,PGR_GAME_BATTERY_CPP_WATER_REFLECTION_RVA,p_water,reinterpret_cast<void*>(hook_water)},
-  {S_GROUND,"Niantic.Holoholo.Encounter","DenseGroundCoverRenderer","RenderDenseGroundCover",0,PGR_GAME_BATTERY_CPP_GROUND_COVER_RVA,p_ground,reinterpret_cast<void*>(hook_ground)},
+  {S_SHADOWS,"Niantic.Holoholo.Rendering","AngledGradientShadowScriptableRenderFeature","AddRenderPasses",2,PGS_GAME_BATTERY_CPP_SHADOW_PASS_RVA,p_shadows,reinterpret_cast<void*>(hook_shadows)},
+  {S_WATER,"Niantic.Holoholo.Vista","WaterReflection","UpdateRenderTexture",0,PGS_GAME_BATTERY_CPP_WATER_REFLECTION_RVA,p_water,reinterpret_cast<void*>(hook_water)},
+  {S_GROUND,"Niantic.Holoholo.Encounter","DenseGroundCoverRenderer","RenderDenseGroundCover",0,PGS_GAME_BATTERY_CPP_GROUND_COVER_RVA,p_ground,reinterpret_cast<void*>(hook_ground)},
  };
  std::string missing;
  for(const Target &t:targets){
   try{
    require(boot.module_base,"il2cpp module");
-   PgrMetaMethodQuery q{};q.version=1;q.size=sizeof(q);q.owner=cls(t.ns,t.owner);q.name=t.name;
-   q.return_type="System.Void";q.return_match=PGR_MD_MATCH_EXACT;q.param_count=t.params;
+   PgsMetaMethodQuery q{};q.version=1;q.size=sizeof(q);q.owner=cls(t.ns,t.owner);q.name=t.name;
+   q.return_type="System.Void";q.return_match=PGS_MD_MATCH_EXACT;q.param_count=t.params;
    q.expected_code=static_cast<const char*>(boot.module_base)+t.rva;q.prologue=t.prologue;q.prologue_len=24;
-   PgrMetaMethodResult r{};const int rc=metadata()->validate_method(&q,&r);
+   PgsMetaMethodResult r{};const int rc=metadata()->validate_method(&q,&r);
    if(rc!=0||!r.code){missing+=std::string(missing.empty()?"":", ")+kStepNames[t.step]+" (code "+std::to_string(rc)+")";continue;}
    void *o=nullptr;
    if(pgs_hook(const_cast<void*>(r.code),t.replacement,&o)!=0||!o){missing+=std::string(missing.empty()?"":", ")+kStepNames[t.step]+" (hook)";continue;}
@@ -311,7 +311,7 @@ void apply(const Config &c){
 
 }
 
-void pgs_battery_tick(uint64_t tid,const PgrSharedMetadataOutput *){
+void pgs_battery_tick(uint64_t tid,const PgsSharedMetadataOutput *){
  if(busy||faulted||!tid||tid!=uint64_t(gettid())||(owner&&owner!=tid))return;
  struct Guard{Guard(){busy=true;}~Guard(){busy=false;}}guard;
  const uint64_t now=clock_ms();if(now<next_apply)return;next_apply=now+kApplyEveryMs;
@@ -319,7 +319,7 @@ void pgs_battery_tick(uint64_t tid,const PgrSharedMetadataOutput *){
  if(!(c.res||c.fps||c.quality||c.dark)&&!held()&&hidden.empty()&&!encounter)return;
  try{
   if(!initialized){
-   auto api=static_cast<const PgrBootApi*>(pgs_runtime_bootstrap_api(1));boot.version=1;boot.size=sizeof(boot);
+   auto api=static_cast<const PgsBootApi*>(pgs_runtime_bootstrap_api(1));boot.version=1;boot.size=sizeof(boot);
    require(api&&api->snapshot(&boot)==0,"runtime unavailable");bind();bind_plants();owner=tid;initialized=true;
   }
   require(fn<void*(*)()>(boot.runtime.thread_current)()!=nullptr,"owner thread not attached");

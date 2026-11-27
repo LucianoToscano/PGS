@@ -118,8 +118,8 @@ void *fake_invoke(void *method, void *obj, void **args, void **exc) {
   return nullptr;
 }
 
-PgrVgpMaintenanceConfig make_config() {
-  PgrVgpMaintenanceConfig c{};
+PgsVgpMaintenanceConfig make_config() {
+  PgsVgpMaintenanceConfig c{};
   c.version = PGS_VM_CONFIG_VERSION;
   c.size = sizeof(c);
   c.gchandle_new = reinterpret_cast<void *>(&fake_gc_new);
@@ -177,7 +177,7 @@ void relocate(void *from, void *to) {
   for (auto &e : g_handles) if (e.second == from) e.second = to;
 }
 
-const PgrVgpMaintenanceApi *g_api = nullptr;
+const PgsVgpMaintenanceApi *g_api = nullptr;
 
 }  // namespace
 
@@ -190,35 +190,35 @@ int main(int argc, char **argv) {
   const auto *core = static_cast<const pgs_native_api_v2 *>(getter(2));
   assert(core && core->size == 48);
   assert(core->query_feature(32, 99) == nullptr);
-  const auto *api = static_cast<const PgrVgpMaintenanceApi *>(core->query_feature(32, 1));
-  assert(api && api->version == 1 && api->size == sizeof(PgrVgpMaintenanceApi));
+  const auto *api = static_cast<const PgsVgpMaintenanceApi *>(core->query_feature(32, 1));
+  assert(api && api->version == 1 && api->size == sizeof(PgsVgpMaintenanceApi));
   g_api = api;
 
   // 0. ABI layout: fixed config/table sizes and the published trailing-field offsets.
   std::printf("ABI sizes: config=%zu table=%zu\n",
-              sizeof(PgrVgpMaintenanceConfig), sizeof(PgrVgpMaintenanceApi));
-  assert(sizeof(PgrVgpMaintenanceConfig) == 176 && sizeof(PgrVgpMaintenanceApi) == 32);
+              sizeof(PgsVgpMaintenanceConfig), sizeof(PgsVgpMaintenanceApi));
+  assert(sizeof(PgsVgpMaintenanceConfig) == 176 && sizeof(PgsVgpMaintenanceApi) == 32);
   assert(PGS_VM_CONFIG_VERSION == 1 && PGS_VM_API_VERSION == 1);
-  assert(offsetof(PgrVgpMaintenanceConfig, spin_success) == 168 &&
-         offsetof(PgrVgpMaintenanceConfig, reserved) == 172);
+  assert(offsetof(PgsVgpMaintenanceConfig, spin_success) == 168 &&
+         offsetof(PgsVgpMaintenanceConfig, reserved) == 172);
 
   const uint64_t tid = this_tid();
-  PgrVgpMaintenanceConfig cfg = make_config();
+  PgsVgpMaintenanceConfig cfg = make_config();
   int32_t count = -99;
 
   // 1. install validation + not-installed + idempotence + reconfig.
   assert(api->install(nullptr) == PGS_VM_ERR_NULL_ARG);
-  { PgrVgpMaintenanceConfig b = cfg; b.version = 2; assert(api->install(&b) == PGS_VM_ERR_BAD_VERSION); }
-  { PgrVgpMaintenanceConfig b = cfg; b.size = sizeof(cfg) - 1; assert(api->install(&b) == PGS_VM_ERR_BAD_SIZE); }
-  { PgrVgpMaintenanceConfig b = cfg; b.f_until = nullptr; assert(api->install(&b) == PGS_VM_ERR_MISSING_PTR); }
-  { PgrVgpMaintenanceConfig b = cfg; b.gchandle_new = nullptr; assert(api->install(&b) == PGS_VM_ERR_MISSING_PTR); }
-  { PgrVgpMaintenanceConfig b = cfg; b.class_spin_result = nullptr; assert(api->install(&b) == PGS_VM_ERR_MISSING_PTR); }
+  { PgsVgpMaintenanceConfig b = cfg; b.version = 2; assert(api->install(&b) == PGS_VM_ERR_BAD_VERSION); }
+  { PgsVgpMaintenanceConfig b = cfg; b.size = sizeof(cfg) - 1; assert(api->install(&b) == PGS_VM_ERR_BAD_SIZE); }
+  { PgsVgpMaintenanceConfig b = cfg; b.f_until = nullptr; assert(api->install(&b) == PGS_VM_ERR_MISSING_PTR); }
+  { PgsVgpMaintenanceConfig b = cfg; b.gchandle_new = nullptr; assert(api->install(&b) == PGS_VM_ERR_MISSING_PTR); }
+  { PgsVgpMaintenanceConfig b = cfg; b.class_spin_result = nullptr; assert(api->install(&b) == PGS_VM_ERR_MISSING_PTR); }
   assert(api->balls(&g_service, tid, 2000, &count) == PGS_VM_ERR_NOT_INSTALLED && count == 0);
   assert(api->cooldown(&g_stop, &g_spin, tid, 2000) == PGS_VM_ERR_NOT_INSTALLED);
   assert(api->install(&cfg) == 0);
   assert(api->install(&cfg) == 0);  // idempotent
-  { PgrVgpMaintenanceConfig b = cfg; b.class_stop = &cls_other; assert(api->install(&b) == PGS_VM_ERR_RECONFIG); }
-  { PgrVgpMaintenanceConfig b = cfg; b.spin_success = g_spinSuccess + 1; assert(api->install(&b) == PGS_VM_ERR_RECONFIG); }
+  { PgsVgpMaintenanceConfig b = cfg; b.class_stop = &cls_other; assert(api->install(&b) == PGS_VM_ERR_RECONFIG); }
+  { PgsVgpMaintenanceConfig b = cfg; b.spin_success = g_spinSuccess + 1; assert(api->install(&b) == PGS_VM_ERR_RECONFIG); }
 
   // 2. Owner / lease gate: no managed work, no handles, out_count initialised.
   reset();

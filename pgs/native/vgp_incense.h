@@ -20,16 +20,16 @@ struct PgsVgpIncense {
   void *m_destroy;       // MapPokemon.Destroy() -> System.Void; null leaves a caught spawn standing
 };
 
-constexpr int kPgrVgpKinds = 8;
-inline std::atomic<const PgsVgpIncense *> g_pgr_vgp_kinds[kPgrVgpKinds]{};
+constexpr int kPgsVgpKinds = 8;
+inline std::atomic<const PgsVgpIncense *> g_pgs_vgp_kinds[kPgsVgpKinds]{};
 // WildMapPokemon's Destroy(): a caught wild spawn also stays standing for a while unless removed.
-inline std::atomic<void *> g_pgr_vgp_wild_destroy{nullptr};
+inline std::atomic<void *> g_pgs_vgp_wild_destroy{nullptr};
 // Set once any kind is bound; its base drives the MapPokemon scene query.
-inline std::atomic<const PgsVgpIncense *> g_pgr_vgp_incense{nullptr};
-inline const PgsVgpIncense *pgs_vgp_incense() { return g_pgr_vgp_incense.load(std::memory_order_acquire); }
+inline std::atomic<const PgsVgpIncense *> g_pgs_vgp_incense{nullptr};
+inline const PgsVgpIncense *pgs_vgp_incense() { return g_pgs_vgp_incense.load(std::memory_order_acquire); }
 // The bound kind whose class satisfies `is`, or null (wild, a stop, or an unsupported kind).
 template <class Is> const PgsVgpIncense *pgs_vgp_kind_where(Is is) {
-  for (auto &slot : g_pgr_vgp_kinds) {
+  for (auto &slot : g_pgs_vgp_kinds) {
     const PgsVgpIncense *k = slot.load(std::memory_order_acquire);
     if (k && is(k->klass)) return k;
   }

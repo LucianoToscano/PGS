@@ -34,22 +34,22 @@ constexpr char kRoutesVersion[] = "routes-native-0.1.0";
 constexpr uint64_t kMaxSafeInt = 9007199254740991ULL;
 
 // Disasm-pinned instruction prefixes for leaves 45, 46, 50 (identical to routes.js).
-constexpr unsigned char kPrefixRequestNearby[] = PGR_GAME_ROUTES_HOST_CPP_KPREFIXREQUESTNEARBY_FINGERPRINT;
-constexpr unsigned char kPrefixInRangeOfEnd[] = PGR_GAME_ROUTES_HOST_CPP_KPREFIXINRANGEOFEND_FINGERPRINT;
-constexpr unsigned char kPrefixRewardInit[] = PGR_GAME_ROUTES_HOST_CPP_KPREFIXREWARDINIT_FINGERPRINT;
-constexpr unsigned char kPrefixRatingInit[] = PGR_GAME_ROUTES_HOST_CPP_KPREFIXRATINGINIT_FINGERPRINT;
-constexpr unsigned char kPrefixCompletionResp[] = PGR_GAME_ROUTES_HOST_CPP_KPREFIXCOMPLETIONRESP_FINGERPRINT;
-constexpr unsigned char kPrefixTrackingStatus[] = PGR_GAME_ROUTES_HOST_CPP_KPREFIXTRACKINGSTATUS_FINGERPRINT;
-constexpr unsigned char kPrefixTrackingWaypoint[] = PGR_GAME_ROUTES_HOST_CPP_KPREFIXTRACKINGWAYPOINT_FINGERPRINT;
-constexpr unsigned char kRoutesDebugPrologue[] = PGR_GAME_ROUTES_HOST_CPP_KROUTESDEBUGPROLOGUE_FINGERPRINT;
+constexpr unsigned char kPrefixRequestNearby[] = PGS_GAME_ROUTES_HOST_CPP_KPREFIXREQUESTNEARBY_FINGERPRINT;
+constexpr unsigned char kPrefixInRangeOfEnd[] = PGS_GAME_ROUTES_HOST_CPP_KPREFIXINRANGEOFEND_FINGERPRINT;
+constexpr unsigned char kPrefixRewardInit[] = PGS_GAME_ROUTES_HOST_CPP_KPREFIXREWARDINIT_FINGERPRINT;
+constexpr unsigned char kPrefixRatingInit[] = PGS_GAME_ROUTES_HOST_CPP_KPREFIXRATINGINIT_FINGERPRINT;
+constexpr unsigned char kPrefixCompletionResp[] = PGS_GAME_ROUTES_HOST_CPP_KPREFIXCOMPLETIONRESP_FINGERPRINT;
+constexpr unsigned char kPrefixTrackingStatus[] = PGS_GAME_ROUTES_HOST_CPP_KPREFIXTRACKINGSTATUS_FINGERPRINT;
+constexpr unsigned char kPrefixTrackingWaypoint[] = PGS_GAME_ROUTES_HOST_CPP_KPREFIXTRACKINGWAYPOINT_FINGERPRINT;
+constexpr unsigned char kRoutesDebugPrologue[] = PGS_GAME_ROUTES_HOST_CPP_KROUTESDEBUGPROLOGUE_FINGERPRINT;
 
-constexpr uint64_t kRvaRequestNearby    = PGR_GAME_ROUTES_HOST_CPP_KRVAREQUESTNEARBY_RVA;
-constexpr uint64_t kRvaInRangeOfEnd     = PGR_GAME_ROUTES_HOST_CPP_KRVAINRANGEOFEND_RVA;
-constexpr uint64_t kRvaRewardInit       = PGR_GAME_ROUTES_HOST_CPP_KRVAREWARDINIT_RVA;
-constexpr uint64_t kRvaRatingInit       = PGR_GAME_ROUTES_HOST_CPP_KRVARATINGINIT_RVA;
-constexpr uint64_t kRvaCompletionResp   = PGR_GAME_ROUTES_HOST_CPP_KRVACOMPLETIONRESP_RVA;
-constexpr uint64_t kRvaTrackingStatus   = PGR_GAME_ROUTES_HOST_CPP_KRVATRACKINGSTATUS_RVA;
-constexpr uint64_t kRvaTrackingWaypoint = PGR_GAME_ROUTES_HOST_CPP_KRVATRACKINGWAYPOINT_RVA;
+constexpr uint64_t kRvaRequestNearby    = PGS_GAME_ROUTES_HOST_CPP_KRVAREQUESTNEARBY_RVA;
+constexpr uint64_t kRvaInRangeOfEnd     = PGS_GAME_ROUTES_HOST_CPP_KRVAINRANGEOFEND_RVA;
+constexpr uint64_t kRvaRewardInit       = PGS_GAME_ROUTES_HOST_CPP_KRVAREWARDINIT_RVA;
+constexpr uint64_t kRvaRatingInit       = PGS_GAME_ROUTES_HOST_CPP_KRVARATINGINIT_RVA;
+constexpr uint64_t kRvaCompletionResp   = PGS_GAME_ROUTES_HOST_CPP_KRVACOMPLETIONRESP_RVA;
+constexpr uint64_t kRvaTrackingStatus   = PGS_GAME_ROUTES_HOST_CPP_KRVATRACKINGSTATUS_RVA;
+constexpr uint64_t kRvaTrackingWaypoint = PGS_GAME_ROUTES_HOST_CPP_KRVATRACKINGWAYPOINT_RVA;
 constexpr char kLocationIcallName[]     = "UnityEngine.LocationService::IsServiceEnabledByUser()";
 
 const char *const kActionReasons[] = {
@@ -600,7 +600,7 @@ int find_method_idx(const char *key) {
 
 // --- host state --------------------------------------------------------------------
 struct QueuedEvent {
-  PgrRoutesHostEvent header{};
+  PgsRoutesHostEvent header{};
   std::string json;
 };
 
@@ -610,8 +610,8 @@ std::mutex g_event_mutex;
 
 bool g_configured = false;
 bool g_use_bootstrap_only = false;
-PgrRoutesHostConfig g_cfg{};
-PgrMetaExports g_cfg_meta_exports{};
+PgsRoutesHostConfig g_cfg{};
+PgsMetaExports g_cfg_meta_exports{};
 
 std::atomic<bool> g_meta_ready{false};
 std::atomic<bool> g_services_ready{false};
@@ -646,9 +646,9 @@ std::string g_cached_routes_json = "[]";
 bool g_leaves_installed = false;
 
 // Reusable heap buffers for discovery/observers/actions on the owner thread.
-PgrRoutesDiscoveryOutput g_disc_out{};
-PgrRoutesDiscoveryPoints g_points_out{};
-PgrRoutesObserversOutput g_obs_out{};
+PgsRoutesDiscoveryOutput g_disc_out{};
+PgsRoutesDiscoveryPoints g_points_out{};
+PgsRoutesObserversOutput g_obs_out{};
 
 // Event ring (guarded by g_event_mutex).
 QueuedEvent g_events[PGS_RH_EVENT_QUEUE_MAX];
@@ -659,32 +659,32 @@ uint32_t g_event_count = 0;
 const PgsRoutesGateApi *gate_api() {
   return static_cast<const PgsRoutesGateApi *>(pgs_routes_gate_api(1));
 }
-const PgrRoutesActionsApi *actions_api() {
-  return static_cast<const PgrRoutesActionsApi *>(pgs_routes_actions_api(1));
+const PgsRoutesActionsApi *actions_api() {
+  return static_cast<const PgsRoutesActionsApi *>(pgs_routes_actions_api(1));
 }
-const PgrRoutesDiscoveryApi *discovery_api() {
-  return static_cast<const PgrRoutesDiscoveryApi *>(pgs_routes_discovery_api(1));
+const PgsRoutesDiscoveryApi *discovery_api() {
+  return static_cast<const PgsRoutesDiscoveryApi *>(pgs_routes_discovery_api(1));
 }
-const PgrRoutesServicesApi *services_api() {
-  return static_cast<const PgrRoutesServicesApi *>(pgs_routes_services_api(1));
+const PgsRoutesServicesApi *services_api() {
+  return static_cast<const PgsRoutesServicesApi *>(pgs_routes_services_api(1));
 }
-const PgrRoutesObserversApi *observers_api() {
-  return static_cast<const PgrRoutesObserversApi *>(pgs_routes_observers_api(1));
+const PgsRoutesObserversApi *observers_api() {
+  return static_cast<const PgsRoutesObserversApi *>(pgs_routes_observers_api(1));
 }
-const PgrRoutesTrackingApi *tracking_api() {
-  return static_cast<const PgrRoutesTrackingApi *>(pgs_routes_tracking_api(1));
+const PgsRoutesTrackingApi *tracking_api() {
+  return static_cast<const PgsRoutesTrackingApi *>(pgs_routes_tracking_api(1));
 }
 const PgsRoutesMetadataApi *routes_meta_api() {
   return static_cast<const PgsRoutesMetadataApi *>(pgs_routes_metadata_api(1));
 }
-const PgrMetaApi *runtime_meta_api() {
-  return static_cast<const PgrMetaApi *>(pgs_runtime_metadata_api(1));
+const PgsMetaApi *runtime_meta_api() {
+  return static_cast<const PgsMetaApi *>(pgs_runtime_metadata_api(1));
 }
-const PgrBootApi *bootstrap_api() {
-  return static_cast<const PgrBootApi *>(pgs_runtime_bootstrap_api(1));
+const PgsBootApi *bootstrap_api() {
+  return static_cast<const PgsBootApi *>(pgs_runtime_bootstrap_api(1));
 }
-const PgrRuntimeTransportApi *transport_api() {
-  return static_cast<const PgrRuntimeTransportApi *>(pgs_runtime_transport_api(1));
+const PgsRuntimeTransportApi *transport_api() {
+  return static_cast<const PgsRuntimeTransportApi *>(pgs_runtime_transport_api(1));
 }
 
 uint64_t ensure_gate_locked() {
@@ -740,7 +740,7 @@ const char *event_full_name(uint32_t kind) {
 
 void emit_transport52(uint32_t kind, const std::string &fields_json, int64_t scalar0, const char *ready_reason) {
   const auto *tr = transport_api();
-  if (!tr || tr->version != 1 || tr->size != sizeof(PgrRuntimeTransportApi) || !tr->emit) return;
+  if (!tr || tr->version != 1 || tr->size != sizeof(PgsRuntimeTransportApi) || !tr->emit) return;
 
   uint64_t ts = 0;
   read_boottime_ms(&ts);
@@ -757,7 +757,7 @@ void emit_transport52(uint32_t kind, const std::string &fields_json, int64_t sca
   wrapped.push_back('}');
 
   if (kind != PGS_RH_EV_SNAPSHOT) {
-    PgrRuntimeTransportString strs[2] = {
+    PgsRuntimeTransportString strs[2] = {
         {"quick-close", 11u},
         {wrapped.data(), static_cast<uint32_t>(wrapped.size())}};
     tr->emit(19u, nullptr, 0u, strs, 2u);
@@ -765,13 +765,13 @@ void emit_transport52(uint32_t kind, const std::string &fields_json, int64_t sca
   if (kind == PGS_RH_EV_READY) {
     int64_t avail = scalar0 ? 1 : 0;
     const char *r = ready_reason ? ready_reason : "";
-    PgrRuntimeTransportString s0{r, static_cast<uint32_t>(std::strlen(r))};
+    PgsRuntimeTransportString s0{r, static_cast<uint32_t>(std::strlen(r))};
     tr->emit(7u, &avail, 1u, &s0, 1u);
   } else if (kind == PGS_RH_EV_SNAPSHOT) {
-    PgrRuntimeTransportString s0{wrapped.data(), static_cast<uint32_t>(wrapped.size())};
+    PgsRuntimeTransportString s0{wrapped.data(), static_cast<uint32_t>(wrapped.size())};
     tr->emit(8u, nullptr, 0u, &s0, 1u);
   } else if (kind == PGS_RH_EV_ACTION) {
-    PgrRuntimeTransportString s0{wrapped.data(), static_cast<uint32_t>(wrapped.size())};
+    PgsRuntimeTransportString s0{wrapped.data(), static_cast<uint32_t>(wrapped.size())};
     tr->emit(9u, nullptr, 0u, &s0, 1u);
   }
 }
@@ -798,7 +798,7 @@ void push_event(uint32_t kind, const std::string &fields_json, uint64_t seq = 0,
   QueuedEvent &ev = g_events[slot];
   std::memset(&ev.header, 0, sizeof(ev.header));
   ev.header.version = PGS_RH_EVENT_VERSION;
-  ev.header.size = sizeof(PgrRoutesHostEvent);
+  ev.header.size = sizeof(PgsRoutesHostEvent);
   ev.header.kind = kind;
   ev.header.json_len = static_cast<uint32_t>(fields_json.size());
   ev.header.seq = seq;
@@ -859,8 +859,8 @@ void emit_simple_reason_event(uint32_t kind, const char *reason) {
 struct EffectiveBindings {
   const void *module_base = nullptr;
   uint64_t module_size = 0;
-  PgrMetaExports meta{};
-  pgr_meta_seg_fn seg_query = nullptr;
+  PgsMetaExports meta{};
+  pgs_meta_seg_fn seg_query = nullptr;
   void *seg_ctx = nullptr;
   void *runtime_invoke = nullptr;
   void *object_get_class = nullptr;
@@ -892,8 +892,8 @@ struct EffectiveBindings {
 };
 
 bool resolve_effective_bindings(EffectiveBindings *out, std::string *err_reason) {
-  PgrRoutesHostConfig local_cfg{};
-  PgrMetaExports local_meta{};
+  PgsRoutesHostConfig local_cfg{};
+  PgsMetaExports local_meta{};
   bool configured = false;
   bool boot_only = false;
   {
@@ -911,8 +911,8 @@ bool resolve_effective_bindings(EffectiveBindings *out, std::string *err_reason)
   bool used_boot = false;
   if (boot_only || (local_cfg.flags & PGS_RH_CFG_PREFER_BOOTSTRAP) || !local_cfg.module_base) {
     const auto *boot = bootstrap_api();
-    PgrBootBinding b{};
-    if (boot && boot->version == 1 && boot->snapshot && boot->snapshot(&b) == PGR_BOOT_OK) {
+    PgsBootBinding b{};
+    if (boot && boot->version == 1 && boot->snapshot && boot->snapshot(&b) == PGS_BOOT_OK) {
       out->module_base = b.module_base;
       out->module_size = b.module_size;
       out->meta = b.meta;
@@ -995,7 +995,7 @@ bool resolve_effective_bindings(EffectiveBindings *out, std::string *err_reason)
   return true;
 }
 
-bool validate_hook_code(const PgrMetaApi *md, const EffectiveBindings &eb, const void *method_info,
+bool validate_hook_code(const PgsMetaApi *md, const EffectiveBindings &eb, const void *method_info,
                         uint64_t rva, const unsigned char *prefix, uint32_t prefix_len,
                         const void **out_addr, const char *label, std::string *err_reason) {
   const uintptr_t base = reinterpret_cast<uintptr_t>(eb.module_base);
@@ -1015,7 +1015,7 @@ bool validate_hook_code(const PgrMetaApi *md, const EffectiveBindings &eb, const
     return false;
   }
   if (!g_leaves_installed) {
-    PgrMetaCodeQuery q{};
+    PgsMetaCodeQuery q{};
     q.version = 1;
     q.size = sizeof(q);
     q.address = addr;
@@ -1074,10 +1074,10 @@ bool validate_observer_hook_shape(const EffectiveBindings &eb, const void *metho
   return true;
 }
 
-void install_tracking_diagnostics(const PgrMetaApi *md, const EffectiveBindings &eb,
+void install_tracking_diagnostics(const PgsMetaApi *md, const EffectiveBindings &eb,
                                   const PgsRoutesMetadataOutput &meta_out) {
   const auto *trk = tracking_api();
-  if (!trk || trk->version != 1 || trk->size != sizeof(PgrRoutesTrackingApi) || !trk->install || !trk->installed) {
+  if (!trk || trk->version != 1 || trk->size != sizeof(PgsRoutesTrackingApi) || !trk->install || !trk->installed) {
     emit_simple_reason_event(PGS_RH_EV_DIAGNOSTIC_UNAVAILABLE, "Error: native-routes-tracking-table");
     return;
   }
@@ -1156,7 +1156,7 @@ void install_tracking_diagnostics(const PgrMetaApi *md, const EffectiveBindings 
     return;
   }
   if (!eb.seg_query) {
-    PgrMetaCodeQuery rq{};
+    PgsMetaCodeQuery rq{};
     rq.version = 1;
     rq.size = sizeof(rq);
     rq.address = eb.resolve_icall;
@@ -1193,12 +1193,12 @@ void install_tracking_diagnostics(const PgrMetaApi *md, const EffectiveBindings 
 
   const size_t lat_off = reinterpret_cast<OffsetFn>(eb.meta.field_get_offset)(meta_out.fields[f_wplat]);
   const size_t lng_off = reinterpret_cast<OffsetFn>(eb.meta.field_get_offset)(meta_out.fields[f_wplng]);
-  if (lat_off != PGR_RT_WAYPOINT_LAT_OFFSET || lng_off != PGR_RT_WAYPOINT_LNG_OFFSET) {
+  if (lat_off != PGS_RT_WAYPOINT_LAT_OFFSET || lng_off != PGS_RT_WAYPOINT_LNG_OFFSET) {
     emit_simple_reason_event(PGS_RH_EV_DIAGNOSTIC_UNAVAILABLE, "Error: routes-tracking-waypoint-offset");
     return;
   }
 
-  PgrRoutesTrackingConfig tcfg{};
+  PgsRoutesTrackingConfig tcfg{};
   tcfg.version = PGS_RT_CONFIG_VERSION;
   tcfg.size = sizeof(tcfg);
   tcfg.object_get_class = eb.object_get_class;
@@ -1229,11 +1229,11 @@ bool init_metadata_and_leaves(uint64_t tid, std::string *err_reason) {
   const auto *svc = services_api();
   const auto *obs = observers_api();
   if (!rmd || rmd->version != 1 || rmd->size != sizeof(PgsRoutesMetadataApi) || !rmd->resolve ||
-      !md || md->version != 1 || md->size != sizeof(PgrMetaApi) ||
-      !act || act->version != 1 || act->size != sizeof(PgrRoutesActionsApi) || !act->install ||
-      !dsc || dsc->version != 1 || dsc->size != sizeof(PgrRoutesDiscoveryApi) || !dsc->install ||
-      !svc || svc->version != 1 || svc->size != sizeof(PgrRoutesServicesApi) || !svc->install ||
-      !obs || obs->version != 1 || obs->size != sizeof(PgrRoutesObserversApi) || !obs->install) {
+      !md || md->version != 1 || md->size != sizeof(PgsMetaApi) ||
+      !act || act->version != 1 || act->size != sizeof(PgsRoutesActionsApi) || !act->install ||
+      !dsc || dsc->version != 1 || dsc->size != sizeof(PgsRoutesDiscoveryApi) || !dsc->install ||
+      !svc || svc->version != 1 || svc->size != sizeof(PgsRoutesServicesApi) || !svc->install ||
+      !obs || obs->version != 1 || obs->size != sizeof(PgsRoutesObserversApi) || !obs->install) {
     *err_reason = "native-leaf-table-missing";
     return false;
   }
@@ -1306,7 +1306,7 @@ bool init_metadata_and_leaves(uint64_t tid, std::string *err_reason) {
   }
 
   // 1. Build and install Feature 43 (routes_actions).
-  PgrRoutesActionsConfig acfg{};
+  PgsRoutesActionsConfig acfg{};
   acfg.version = PGS_RA_CONFIG_VERSION;
   acfg.size = sizeof(acfg);
   acfg.runtime_invoke = eb.runtime_invoke;
@@ -1363,7 +1363,7 @@ bool init_metadata_and_leaves(uint64_t tid, std::string *err_reason) {
   }
 
   // 2. Build and install Feature 44 (routes_discovery).
-  PgrRoutesDiscoveryConfig dcfg{};
+  PgsRoutesDiscoveryConfig dcfg{};
   dcfg.version = PGS_RD_CONFIG_VERSION;
   dcfg.size = sizeof(dcfg);
   dcfg.runtime_invoke = eb.runtime_invoke;
@@ -1388,7 +1388,7 @@ bool init_metadata_and_leaves(uint64_t tid, std::string *err_reason) {
   dcfg.m_listItem = const_cast<void *>(meta_out.list_item);
   dcfg.m_wpCount = const_cast<void *>(meta_out.waypoint_count);
   dcfg.m_wpItem = const_cast<void *>(meta_out.waypoint_item);
-  dcfg.f_routes_didn = const_cast<void *>(meta_out.fields[find_field_idx(static_cast<uint32_t>(c_routes), PGR_GAME_ROUTES_HOST_CPP_NEARBY_ROUTES_FIELD_NAME)]);
+  dcfg.f_routes_didn = const_cast<void *>(meta_out.fields[find_field_idx(static_cast<uint32_t>(c_routes), PGS_GAME_ROUTES_HOST_CPP_NEARBY_ROUTES_FIELD_NAME)]);
   dcfg.f_nearby_routes = const_cast<void *>(meta_out.fields[f_nearby_list]);
   dcfg.f_shared_id = const_cast<void *>(meta_out.fields[f_shared_id]);
   dcfg.f_shared_name = const_cast<void *>(meta_out.fields[find_field_idx(static_cast<uint32_t>(c_shared), "Name")]);
@@ -1432,7 +1432,7 @@ bool init_metadata_and_leaves(uint64_t tid, std::string *err_reason) {
     return false;
   }
 
-  PgrRoutesServicesConfig scfg{};
+  PgsRoutesServicesConfig scfg{};
   scfg.version = PGS_RS_CONFIG_VERSION;
   scfg.size = sizeof(scfg);
   scfg.object_get_class = eb.object_get_class;
@@ -1443,7 +1443,7 @@ bool init_metadata_and_leaves(uint64_t tid, std::string *err_reason) {
   scfg.thread_current = eb.thread_current;
   scfg.class_routes = const_cast<void *>(meta_out.classes[c_routes]);
   scfg.class_consumption = const_cast<void *>(meta_out.classes[c_consumption]);
-  scfg.f_routes_dica = const_cast<void *>(meta_out.fields[find_field_idx(static_cast<uint32_t>(c_routes), PGR_GAME_ROUTES_HOST_CPP_DIKX_NAME)]);
+  scfg.f_routes_dica = const_cast<void *>(meta_out.fields[find_field_idx(static_cast<uint32_t>(c_routes), PGS_GAME_ROUTES_HOST_CPP_DIKX_NAME)]);
   scfg.addr_request_nearby = eb.fixture_hooks && eb.fixture_request_nearby ? eb.fixture_request_nearby : const_cast<void *>(addr_req);
   scfg.addr_in_range_of_end = eb.fixture_hooks && eb.fixture_in_range_of_end ? eb.fixture_in_range_of_end : const_cast<void *>(addr_ir);
 
@@ -1484,7 +1484,7 @@ bool init_metadata_and_leaves(uint64_t tid, std::string *err_reason) {
     return false;
   }
 
-  PgrRoutesObserversConfig ocfg{};
+  PgsRoutesObserversConfig ocfg{};
   ocfg.version = PGS_RO_CONFIG_VERSION;
   ocfg.size = sizeof(ocfg);
   ocfg.runtime_invoke = eb.runtime_invoke;
@@ -1573,7 +1573,7 @@ bool read_current_json(uint64_t tid, std::string *out_current_json, std::string 
   if (!res) { *err_reason = "Error: lease-expired"; return false; }
   uint64_t gen = act->generation();
 
-  PgrRoutesActionsRequest req{};
+  PgsRoutesActionsRequest req{};
   req.version = PGS_RA_REQUEST_VERSION;
   req.size = sizeof(req);
   req.tid = tid;
@@ -1582,7 +1582,7 @@ bool read_current_json(uint64_t tid, std::string *out_current_json, std::string 
   req.service_handle = g_consumption_handle;
   req.action = PGS_RA_ACT_CURRENT;
 
-  PgrRoutesActionsOutput out{};
+  PgsRoutesActionsOutput out{};
   int status = act->execute(&req, &out);
   if (status != PGS_RA_SUCCESS || out.status != PGS_RA_SUCCESS) {
     *err_reason = std::string("Error: ") + map_action_reason(status, out.reason);
@@ -1635,7 +1635,7 @@ bool read_discovery_json(uint64_t tid, std::string *out_routes_json, uint32_t *o
   if (!res || !g_routes_handle) return false;
   uint64_t gen = dsc->generation();
 
-  PgrRoutesDiscoveryRequest req{};
+  PgsRoutesDiscoveryRequest req{};
   req.version = PGS_RD_REQUEST_VERSION;
   req.size = sizeof(req);
   req.tid = tid;
@@ -1645,7 +1645,7 @@ bool read_discovery_json(uint64_t tid, std::string *out_routes_json, uint32_t *o
   req.index = 0;
 
   int status = dsc->discover(&req, &g_disc_out);
-  if (status != PGS_RD_OK || g_disc_out.status != PGS_RD_OK || g_disc_out.count > PGR_RD_MAX_ROUTES) {
+  if (status != PGS_RD_OK || g_disc_out.status != PGS_RD_OK || g_disc_out.count > PGS_RD_MAX_ROUTES) {
     return false;
   }
 
@@ -1658,13 +1658,13 @@ bool read_discovery_json(uint64_t tid, std::string *out_routes_json, uint32_t *o
     uint64_t left = current_residual_ms();
     if (!left || dsc->generation() != gen) return false;
 
-    const PgrRoutesDiscoveryRoute &r = g_disc_out.routes[i];
+    const PgsRoutesDiscoveryRoute &r = g_disc_out.routes[i];
     if ((r.flags & ~7u) != 0 || r.id_length < 1 || r.id_length > PGS_RD_ID_MAX ||
         r.name_length > PGS_RD_NAME_MAX || r.point_count > PGS_RD_MAX_POINTS) {
       return false;
     }
 
-    PgrRoutesDiscoveryRequest preq{};
+    PgsRoutesDiscoveryRequest preq{};
     preq.version = PGS_RD_REQUEST_VERSION;
     preq.size = sizeof(preq);
     preq.tid = tid;
@@ -1760,7 +1760,7 @@ void execute_command(uint64_t tid, const ParsedCommand &cmd) {
       return;
     }
     uint64_t gen = act->generation();
-    PgrRoutesActionsRequest req{};
+    PgsRoutesActionsRequest req{};
     req.version = PGS_RA_REQUEST_VERSION;
     req.size = sizeof(req);
     req.tid = tid;
@@ -1769,7 +1769,7 @@ void execute_command(uint64_t tid, const ParsedCommand &cmd) {
     req.service_handle = g_routes_handle;
     req.seq = cmd.seq;
     req.action = PGS_RA_ACT_DISCOVER;
-    PgrRoutesActionsOutput out{};
+    PgsRoutesActionsOutput out{};
     int status = act->execute(&req, &out);
     if (status == PGS_RA_SUCCESS && out.status == PGS_RA_SUCCESS) {
       emit_action_event(cmd.seq, cmd.action, "submitted", nullptr);
@@ -1788,7 +1788,7 @@ void execute_command(uint64_t tid, const ParsedCommand &cmd) {
       emit_action_event(cmd.seq, cmd.action, "error", "route-not-discovered");
       return;
     }
-    PgrRoutesDiscoveryLookup lk{};
+    PgsRoutesDiscoveryLookup lk{};
     lk.version = PGS_RD_LOOKUP_VERSION;
     lk.size = sizeof(lk);
     lk.tid = tid;
@@ -1809,7 +1809,7 @@ void execute_command(uint64_t tid, const ParsedCommand &cmd) {
       emit_action_event(cmd.seq, cmd.action, "error", "lease-expired");
       return;
     }
-    PgrRoutesActionsRequest req{};
+    PgsRoutesActionsRequest req{};
     req.version = PGS_RA_REQUEST_VERSION;
     req.size = sizeof(req);
     req.tid = tid;
@@ -1822,7 +1822,7 @@ void execute_command(uint64_t tid, const ParsedCommand &cmd) {
     req.reversed = cmd.reversed ? 1u : 0u;
     req.id_length = cmd.id_len;
     std::memcpy(req.id, cmd.id_u16, cmd.id_len * sizeof(uint16_t));
-    PgrRoutesActionsOutput out{};
+    PgsRoutesActionsOutput out{};
     int status = act->execute(&req, &out);
     if (status == PGS_RA_SUCCESS && out.status == PGS_RA_SUCCESS) {
       emit_action_event(cmd.seq, cmd.action, "submitted", nullptr);
@@ -1838,7 +1838,7 @@ void execute_command(uint64_t tid, const ParsedCommand &cmd) {
       return;
     }
     // Latch completing in Feature 46 BEFORE the invoke so synchronous bjan correlates it.
-    PgrRoutesObserversCompleting comp{};
+    PgsRoutesObserversCompleting comp{};
     comp.version = PGS_RO_COMPLETING_VERSION;
     comp.size = sizeof(comp);
     comp.tid = tid;
@@ -1851,7 +1851,7 @@ void execute_command(uint64_t tid, const ParsedCommand &cmd) {
     obs->set_completing(&comp);
 
     uint64_t left = current_residual_ms();
-    PgrRoutesActionsRequest req{};
+    PgsRoutesActionsRequest req{};
     req.version = PGS_RA_REQUEST_VERSION;
     req.size = sizeof(req);
     req.tid = tid;
@@ -1862,12 +1862,12 @@ void execute_command(uint64_t tid, const ParsedCommand &cmd) {
     req.action = PGS_RA_ACT_COMPLETE;
     req.id_length = cmd.id_len;
     std::memcpy(req.id, cmd.id_u16, cmd.id_len * sizeof(uint16_t));
-    PgrRoutesActionsOutput out{};
+    PgsRoutesActionsOutput out{};
     int status = act->execute(&req, &out);
     if (status == PGS_RA_SUCCESS && out.status == PGS_RA_SUCCESS) {
       emit_action_event(cmd.seq, cmd.action, "submitted", nullptr);
     } else {
-      PgrRoutesObserversRequest clr{};
+      PgsRoutesObserversRequest clr{};
       clr.version = PGS_RO_REQUEST_VERSION;
       clr.size = sizeof(clr);
       clr.tid = tid;
@@ -1884,7 +1884,7 @@ void execute_command(uint64_t tid, const ParsedCommand &cmd) {
       emit_action_event(cmd.seq, cmd.action, "error", "awaiting-service");
       return;
     }
-    PgrRoutesActionsRequest req{};
+    PgsRoutesActionsRequest req{};
     req.version = PGS_RA_REQUEST_VERSION;
     req.size = sizeof(req);
     req.tid = tid;
@@ -1893,7 +1893,7 @@ void execute_command(uint64_t tid, const ParsedCommand &cmd) {
     req.service_handle = g_consumption_handle;
     req.seq = cmd.seq;
     req.action = PGS_RA_ACT_PAUSE;
-    PgrRoutesActionsOutput out{};
+    PgsRoutesActionsOutput out{};
     int status = act->execute(&req, &out);
     if (status == PGS_RA_SUCCESS && out.status == PGS_RA_SUCCESS) {
       emit_action_event(cmd.seq, cmd.action, "submitted", nullptr);
@@ -1905,10 +1905,10 @@ void execute_command(uint64_t tid, const ParsedCommand &cmd) {
 }
 
 // --- API implementations -----------------------------------------------------------
-int api_configure(const PgrRoutesHostConfig *config) {
+int api_configure(const PgsRoutesHostConfig *config) {
   if (config != nullptr) {
     if (config->version != PGS_RH_CONFIG_VERSION) return PGS_RH_ERR_BAD_VERSION;
-    if (config->size != sizeof(PgrRoutesHostConfig) || config->reserved0 != 0) return PGS_RH_ERR_BAD_SIZE;
+    if (config->size != sizeof(PgsRoutesHostConfig) || config->reserved0 != 0) return PGS_RH_ERR_BAD_SIZE;
     if ((config->flags & PGS_RH_CFG_FIXTURE_HOOKS) && config->seg_query == nullptr) return PGS_RH_ERR_MISSING_PTR;
   }
 
@@ -1916,14 +1916,14 @@ int api_configure(const PgrRoutesHostConfig *config) {
   if (g_configured) {
     if (config == nullptr && g_use_bootstrap_only) return PGS_RH_OK;
     if (config != nullptr && !g_use_bootstrap_only) {
-      PgrRoutesHostConfig cmp_a = g_cfg;
-      PgrRoutesHostConfig cmp_b = *config;
+      PgsRoutesHostConfig cmp_a = g_cfg;
+      PgsRoutesHostConfig cmp_b = *config;
       cmp_a.meta_exports = nullptr;
       cmp_b.meta_exports = nullptr;
       bool meta_same = (config->meta_exports == nullptr && g_cfg.meta_exports == nullptr) ||
                        (config->meta_exports != nullptr && g_cfg.meta_exports != nullptr &&
-                        std::memcmp(config->meta_exports, &g_cfg_meta_exports, sizeof(PgrMetaExports)) == 0);
-      if (std::memcmp(&cmp_a, &cmp_b, sizeof(PgrRoutesHostConfig)) == 0 && meta_same) return PGS_RH_OK;
+                        std::memcmp(config->meta_exports, &g_cfg_meta_exports, sizeof(PgsMetaExports)) == 0);
+      if (std::memcmp(&cmp_a, &cmp_b, sizeof(PgsRoutesHostConfig)) == 0 && meta_same) return PGS_RH_OK;
     }
     return PGS_RH_ERR_RECONFIG;
   }
@@ -1931,7 +1931,7 @@ int api_configure(const PgrRoutesHostConfig *config) {
   if (config == nullptr) {
     std::memset(&g_cfg, 0, sizeof(g_cfg));
     g_cfg.version = PGS_RH_CONFIG_VERSION;
-    g_cfg.size = sizeof(PgrRoutesHostConfig);
+    g_cfg.size = sizeof(PgsRoutesHostConfig);
     g_cfg.flags = PGS_RH_CFG_PREFER_BOOTSTRAP;
     std::memset(&g_cfg_meta_exports, 0, sizeof(g_cfg_meta_exports));
     g_use_bootstrap_only = true;
@@ -1952,10 +1952,10 @@ int api_configure(const PgrRoutesHostConfig *config) {
   return PGS_RH_OK;
 }
 
-int api_set_options(int allowed, const char *command_json, uint32_t command_len, PgrRoutesHostOptionsOut *out) {
-  PgrRoutesHostOptionsOut local_out{};
+int api_set_options(int allowed, const char *command_json, uint32_t command_len, PgsRoutesHostOptionsOut *out) {
+  PgsRoutesHostOptionsOut local_out{};
   local_out.version = PGS_RH_OPTIONS_OUT_VERSION;
-  local_out.size = sizeof(PgrRoutesHostOptionsOut);
+  local_out.size = sizeof(PgsRoutesHostOptionsOut);
 
   if (command_len > 0 && command_json == nullptr) return PGS_RH_ERR_NULL_ARG;
 
@@ -2030,15 +2030,15 @@ void poll_transport52_options() {
   }
   if (!(flags & PGS_RH_CFG_POLL_TRANSPORT52)) return;
   const auto *tr = transport_api();
-  if (!tr || tr->version != 1 || tr->size != sizeof(PgrRuntimeTransportApi) || !tr->get_bool || !tr->get_string)
+  if (!tr || tr->version != 1 || tr->size != sizeof(PgsRuntimeTransportApi) || !tr->get_bool || !tr->get_string)
     return;
 
   // In Feature 52: bool[2] is gameRoutesAllowed (guarded bool: returns 0 when stale); string[1] is gameRoutesCommand.
   int allowed = 0;
-  if (tr->get_bool(2u, &allowed) != PGR_TRANSPORT_OK) allowed = 0;
+  if (tr->get_bool(2u, &allowed) != PGS_TRANSPORT_OK) allowed = 0;
   // bool[3] "active": PGS is supplying the player location (enabled, foreground, ready, connected).
   int spoofing = 0;
-  if (tr->get_bool(3u, &spoofing) != PGR_TRANSPORT_OK) spoofing = 0;
+  if (tr->get_bool(3u, &spoofing) != PGS_TRANSPORT_OK) spoofing = 0;
   uint64_t now_ms = 0;
   if (read_boottime_ms(&now_ms)) {
     g_tracking_until_ms.store(spoofing == 1 ? now_ms + PGS_RH_MAX_LEASE_MS : 0ULL, std::memory_order_release);
@@ -2047,7 +2047,7 @@ void poll_transport52_options() {
   uint32_t cmd_len = 0;
   if (allowed == 1) {
     int src = tr->get_string(1u, cmd_buf, PGS_RH_COMMAND_MAX_BYTES, &cmd_len);
-    if (src != PGR_TRANSPORT_OK) cmd_len = 0;
+    if (src != PGS_TRANSPORT_OK) cmd_len = 0;
   }
   api_set_options(allowed == 1 ? 1 : 0, cmd_buf, cmd_len, nullptr);
 }
@@ -2104,13 +2104,13 @@ int api_tick(uint64_t tid) {
 
   // 2. Service capture heartbeat & dica derivation (Feature 45).
   {
-    PgrRoutesServicesRequest sreq{};
+    PgsRoutesServicesRequest sreq{};
     sreq.version = PGS_RS_REQUEST_VERSION;
     sreq.size = sizeof(sreq);
     sreq.tid = tid;
     sreq.residual_ms = PGS_RH_MAX_LEASE_MS;
     sreq.generation = svc->generation();
-    PgrRoutesServicesOutput sout{};
+    PgsRoutesServicesOutput sout{};
     int src = svc->poll(&sreq, &sout);
     if (src == PGS_RS_OK && sout.status == PGS_RS_OK && sout.generation == sreq.generation) {
       g_routes_handle = (sout.flags & PGS_RS_FLAG_ROUTES_PRESENT) ? sout.routes_handle : 0;
@@ -2145,7 +2145,7 @@ int api_tick(uint64_t tid) {
   read_boottime_ms(&poll_now);
   const bool lease_on = gh != 0 && g->active(gh, static_cast<double>(poll_now)) == 1 && current_residual_ms() > 0;
   if (!lease_on) {
-    PgrRoutesDiscoveryRequest dreq{};
+    PgsRoutesDiscoveryRequest dreq{};
     dreq.version = PGS_RD_REQUEST_VERSION;
     dreq.size = sizeof(dreq);
     dreq.tid = tid;
@@ -2156,7 +2156,7 @@ int api_tick(uint64_t tid) {
 
   std::string completion_json = "null";
   {
-    PgrRoutesObserversRequest oreq{};
+    PgsRoutesObserversRequest oreq{};
     oreq.version = PGS_RO_REQUEST_VERSION;
     oreq.size = sizeof(oreq);
     oreq.tid = tid;
@@ -2166,7 +2166,7 @@ int api_tick(uint64_t tid) {
     if (orc == PGS_RO_OK && g_obs_out.status == PGS_RO_OK && g_obs_out.generation == oreq.generation) {
       const uint32_t ev_cnt = std::min<uint32_t>(g_obs_out.event_count, PGS_RO_MAX_EVENTS);
       for (uint32_t i = 0; i < ev_cnt; ++i) {
-        const PgrRoutesObserversEvent &ev = g_obs_out.events[i];
+        const PgsRoutesObserversEvent &ev = g_obs_out.events[i];
         if (ev.type == PGS_RO_EV_TRACKING_STATUS) {
           char buf[64];
           std::snprintf(buf, sizeof(buf), "{\"code\":%lld}", static_cast<long long>(ev.i0));
@@ -2286,7 +2286,7 @@ int api_tick(uint64_t tid) {
   return PGS_RH_OK;
 }
 
-int api_next_event(PgrRoutesHostEvent *out, char *json_buf, uint32_t json_cap) {
+int api_next_event(PgsRoutesHostEvent *out, char *json_buf, uint32_t json_cap) {
   if (!out) return PGS_RH_ERR_NULL_ARG;
   std::lock_guard<std::mutex> lk(g_event_mutex);
   if (g_event_count == 0) {
@@ -2333,15 +2333,15 @@ int api_stop(uint64_t tid) {
     const uint64_t owner = g_owner_tid.load(std::memory_order_acquire);
     if (tid != 0 && tid == current_tid() && (owner == 0 || owner == tid)) {
       if (const auto *dsc = discovery_api()) {
-        PgrRoutesDiscoveryRequest dreq{PGS_RD_REQUEST_VERSION, sizeof(dreq), tid, 0, dsc->generation(), 0, 0, 0};
+        PgsRoutesDiscoveryRequest dreq{PGS_RD_REQUEST_VERSION, sizeof(dreq), tid, 0, dsc->generation(), 0, 0, 0};
         dsc->drain(&dreq);
       }
       if (const auto *svc = services_api()) {
-        PgrRoutesServicesRequest sreq{PGS_RS_REQUEST_VERSION, sizeof(sreq), tid, 0, svc->generation()};
+        PgsRoutesServicesRequest sreq{PGS_RS_REQUEST_VERSION, sizeof(sreq), tid, 0, svc->generation()};
         svc->drain(&sreq);
       }
       if (const auto *obs = observers_api()) {
-        PgrRoutesObserversRequest oreq{PGS_RO_REQUEST_VERSION, sizeof(oreq), tid, 0, obs->generation()};
+        PgsRoutesObserversRequest oreq{PGS_RO_REQUEST_VERSION, sizeof(oreq), tid, 0, obs->generation()};
         obs->drain(&oreq);
       }
       g_routes_handle = 0;
@@ -2354,11 +2354,11 @@ int api_stop(uint64_t tid) {
   return PGS_RH_OK;
 }
 
-int api_sample(PgrRoutesHostSample *out) {
+int api_sample(PgsRoutesHostSample *out) {
   if (!out) return PGS_RH_ERR_NULL_ARG;
   std::memset(out, 0, sizeof(*out));
   out->version = PGS_RH_SAMPLE_VERSION;
-  out->size = sizeof(PgrRoutesHostSample);
+  out->size = sizeof(PgsRoutesHostSample);
   {
     std::lock_guard<std::mutex> lk(g_config_mutex);
     out->configured = g_configured ? 1u : 0u;
@@ -2383,14 +2383,14 @@ int api_sample(PgrRoutesHostSample *out) {
   return PGS_RH_OK;
 }
 
-void api_on_unity_pulse(void *, const PgrUnityPulse *pulse) {
+void api_on_unity_pulse(void *, const PgsUnityPulse *pulse) {
   if (!pulse || pulse->tid <= 0) return;
   api_tick(static_cast<uint64_t>(pulse->tid));
 }
 
-const PgrRoutesHostApi kApiTable = {
+const PgsRoutesHostApi kApiTable = {
     PGS_RH_API_VERSION,
-    static_cast<uint32_t>(sizeof(PgrRoutesHostApi)),
+    static_cast<uint32_t>(sizeof(PgsRoutesHostApi)),
     &api_configure,
     &api_set_options,
     &api_tick,

@@ -10,7 +10,7 @@ namespace pgs_gym_feed {
 inline void observe_stock(bool &seen,int before,int current){
  if(before>0&&current>=0&&current<before)seen=true;
 }
-inline void *resolve(const PgrBootBinding &b,void *bag){
+inline void *resolve(const PgsBootBinding &b,void *bag){
  if(!bag||!b.runtime.object_get_class||!b.meta.class_get_method_from_name||
     !b.meta.method_get_param_count||!b.meta.method_get_param||!b.meta.method_get_return_type||
     !b.meta.method_get_flags||!b.meta.type_get_name||!b.meta.mem_free)return nullptr;

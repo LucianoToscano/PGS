@@ -29,34 +29,34 @@
 #include <string>
 
 int evolve_offer_result=0,evolve_offer_calls=0,evolve_events=0;bool consume_evolve_events=false;
-int pgs_evolve_transfer_offer(const PgrTransferExecRequest*,bool manual){assert(manual);++evolve_offer_calls;return evolve_offer_result;}
-bool pgs_evolve_transfer_event(const PgrTransferExecEvent*){if(consume_evolve_events){++evolve_events;return true;}return false;}
-PgrSharedCatchApi fixture_sh{};PgrSummaryCompletionApi fixture_sc{};PgrDetailsCompletionApi fixture_dc{};
-PgrDetailsRecoveryApi fixture_dr{};PgrCatchDiscoveryApi fixture_cd{};PgrCatchCanvasApi fixture_cv{};
-PgrCatchCompletionApi fixture_cc{};PgsCatchApi fixture_bridge{};PgrTransferExecApi fixture_tx{};
-PgrTransferFactsApi fixture_tf{};PgsTransferObserversApi fixture_to{};PgrUnitySchedulerApi fixture_scheduler{};
-PgsSharedMetadataApi fixture_md_api{};PgrBootApi fixture_boot{};PgrMetaApi fixture_meta{};
-PgrRuntimeTransportApi fixture_transport{};PgsTransferApi fixture_transfer_policy{};
+int pgs_evolve_transfer_offer(const PgsTransferExecRequest*,bool manual){assert(manual);++evolve_offer_calls;return evolve_offer_result;}
+bool pgs_evolve_transfer_event(const PgsTransferExecEvent*){if(consume_evolve_events){++evolve_events;return true;}return false;}
+PgsSharedCatchApi fixture_sh{};PgsSummaryCompletionApi fixture_sc{};PgsDetailsCompletionApi fixture_dc{};
+PgsDetailsRecoveryApi fixture_dr{};PgsCatchDiscoveryApi fixture_cd{};PgsCatchCanvasApi fixture_cv{};
+PgsCatchCompletionApi fixture_cc{};PgsCatchApi fixture_bridge{};PgsTransferExecApi fixture_tx{};
+PgsTransferFactsApi fixture_tf{};PgsTransferObserversApi fixture_to{};PgsUnitySchedulerApi fixture_scheduler{};
+PgsSharedMetadataApi fixture_md_api{};PgsBootApi fixture_boot{};PgsMetaApi fixture_meta{};
+PgsRuntimeTransportApi fixture_transport{};PgsTransferApi fixture_transfer_policy{};
 const void *fixture_interaction_table=nullptr;
 extern "C" const void *fixture_interaction_api(uint32_t version){return version==2?fixture_interaction_table:nullptr;}
 #define SHIM(NAME,TYPE,VALUE) const void *NAME(uint32_t){return &VALUE;}
-SHIM(fixture_shared_api,PgrSharedCatchApi,fixture_sh)
-SHIM(fixture_summary_api,PgrSummaryCompletionApi,fixture_sc)
-SHIM(fixture_details_api,PgrDetailsCompletionApi,fixture_dc)
-SHIM(fixture_recovery_api,PgrDetailsRecoveryApi,fixture_dr)
-SHIM(fixture_discovery_api,PgrCatchDiscoveryApi,fixture_cd)
-SHIM(fixture_canvas_api,PgrCatchCanvasApi,fixture_cv)
-SHIM(fixture_completion_api,PgrCatchCompletionApi,fixture_cc)
+SHIM(fixture_shared_api,PgsSharedCatchApi,fixture_sh)
+SHIM(fixture_summary_api,PgsSummaryCompletionApi,fixture_sc)
+SHIM(fixture_details_api,PgsDetailsCompletionApi,fixture_dc)
+SHIM(fixture_recovery_api,PgsDetailsRecoveryApi,fixture_dr)
+SHIM(fixture_discovery_api,PgsCatchDiscoveryApi,fixture_cd)
+SHIM(fixture_canvas_api,PgsCatchCanvasApi,fixture_cv)
+SHIM(fixture_completion_api,PgsCatchCompletionApi,fixture_cc)
 SHIM(fixture_presentation_api,PgsCatchApi,fixture_bridge)
-SHIM(fixture_transfer_api,PgrTransferExecApi,fixture_tx)
-SHIM(fixture_facts_api,PgrTransferFactsApi,fixture_tf)
+SHIM(fixture_transfer_api,PgsTransferExecApi,fixture_tx)
+SHIM(fixture_facts_api,PgsTransferFactsApi,fixture_tf)
 SHIM(fixture_observers_api,PgsTransferObserversApi,fixture_to)
-SHIM(fixture_scheduler_api,PgrUnitySchedulerApi,fixture_scheduler)
+SHIM(fixture_scheduler_api,PgsUnitySchedulerApi,fixture_scheduler)
 SHIM(fixture_metadata_api,PgsSharedMetadataApi,fixture_md_api)
-SHIM(fixture_transport_api,PgrRuntimeTransportApi,fixture_transport)
+SHIM(fixture_transport_api,PgsRuntimeTransportApi,fixture_transport)
 SHIM(fixture_transfer_policy_api,PgsTransferApi,fixture_transfer_policy)
-SHIM(fixture_boot_api,PgrBootApi,fixture_boot)
-SHIM(fixture_meta_api,PgrMetaApi,fixture_meta)
+SHIM(fixture_boot_api,PgsBootApi,fixture_boot)
+SHIM(fixture_meta_api,PgsMetaApi,fixture_meta)
 #undef SHIM
 int fixture_hook(void *address,void *replacement,void **original){return DobbyHook(address,replacement,original);}
 // The optional shadow / Max transfer facts live in transfer_facts.cpp, which this fixture replaces.
@@ -126,7 +126,7 @@ uint64_t observer_enter(uint32_t id,void *self,void *arg){assert(!arg&&(id==15||
 void observer_leave(uint64_t token,void *result){assert(token&&!result&&!live_handles.empty());++observer_leaves;}
 void observer_abort(uint64_t token){assert(token&&!live_handles.empty());++observer_aborts;}
 const pgs_interaction_owner::Api observer_api{2,sizeof(pgs_interaction_owner::Api),observer_wants,observer_enter,observer_leave,observer_abort};
-const PgrSharedHostApi *host=nullptr;
+const PgsSharedHostApi *host=nullptr;
 void *gc_new(void *o,int pinned){if(!o||gc_fail)return nullptr;++handles;++allocated;auto h=new Handle{o,pinned};live_handles.push_back(h);return h;}
 void *gc_get(void *h){return h?static_cast<Handle*>(h)->object:nullptr;}
 void gc_free(void *h){if(h){auto found=std::find(live_handles.begin(),live_handles.end(),static_cast<Handle*>(h));assert(found!=live_handles.end());live_handles.erase(found);delete static_cast<Handle*>(h);assert(handles);--handles;++freed;}}
@@ -203,10 +203,10 @@ void *runtime(const void *method,void *o,void **args,void **exception){*exceptio
  if(method==&method_tokens[19]){++direct_calls;if(direct_exception)*exception=&gm_object;else view.active=0;return nullptr;}
  if(method==&method_tokens[20]){using Show=decltype(&show_fn);Show volatile show=&show_fn;show(o,args[0],*static_cast<uint8_t*>(args[1]),*static_cast<uint8_t*>(args[2]),*static_cast<int32_t*>(args[3]),args[4],args[5],args[6],*static_cast<uint8_t*>(args[7]),*static_cast<uint8_t*>(args[8]),*static_cast<uint8_t*>(args[9]),nullptr);return nullptr;}
  std::abort();}
-PgrSharedMetadataOutput prepared{};
-int resolve(const PgsSharedMetadataConfig*,PgrSharedMetadataOutput *out){*out=prepared;return 0;}
-void prepare(){using namespace pgr_shared_meta;prepared.version=2;prepared.size=sizeof(prepared);for(unsigned i=0;i<7;++i){prepared.classes[i]=&klasses[i];prepared.methods[i]=&method_tokens[i];}for(unsigned i=0;i<6;++i)prepared.fields[i]=&field_tokens[i];for(auto &o:prepared.optional)o=PGS_SHARED_OPT_UNAVAILABLE;prepared.success=7;prepared.caught_id_size=8;prepared.method_code[0]=reinterpret_cast<void*>(exit_fn);prepared.method_code[1]=reinterpret_cast<void*>(dismiss_fn);prepared.method_code[2]=reinterpret_cast<void*>(init_fn);prepared.method_code[3]=reinterpret_cast<void*>(scores_fn);prepared.method_code[4]=reinterpret_cast<void*>(open_fn);}
-void prepare_details(){using namespace pgr_shared_meta;prepared.optional[OPT_DETAILS]=PGR_SHARED_OPT_AVAILABLE;prepared.optional[OPT_TRANSFER]=PGR_SHARED_OPT_AVAILABLE;
+PgsSharedMetadataOutput prepared{};
+int resolve(const PgsSharedMetadataConfig*,PgsSharedMetadataOutput *out){*out=prepared;return 0;}
+void prepare(){using namespace pgs_shared_meta;prepared.version=2;prepared.size=sizeof(prepared);for(unsigned i=0;i<7;++i){prepared.classes[i]=&klasses[i];prepared.methods[i]=&method_tokens[i];}for(unsigned i=0;i<6;++i)prepared.fields[i]=&field_tokens[i];for(auto &o:prepared.optional)o=PGS_SHARED_OPT_UNAVAILABLE;prepared.success=7;prepared.caught_id_size=8;prepared.method_code[0]=reinterpret_cast<void*>(exit_fn);prepared.method_code[1]=reinterpret_cast<void*>(dismiss_fn);prepared.method_code[2]=reinterpret_cast<void*>(init_fn);prepared.method_code[3]=reinterpret_cast<void*>(scores_fn);prepared.method_code[4]=reinterpret_cast<void*>(open_fn);}
+void prepare_details(){using namespace pgs_shared_meta;prepared.optional[OPT_DETAILS]=PGS_SHARED_OPT_AVAILABLE;prepared.optional[OPT_TRANSFER]=PGS_SHARED_OPT_AVAILABLE;
  const int oc[]={OC_DGUI,OC_VIEW,OC_DATA,OC_PK,OC_ACTION,OC_INT,OC_DISPLAY,OC_BAG,OC_CHAR_SIZE,OC_STRING,OC_RELEASE};const int kc[]={10,11,12,13,7,14,16,18,20,23,22};for(unsigned i=0;i<sizeof(oc)/sizeof(*oc);++i)prepared.opt_classes[oc[i]]=&klasses[kc[i]];
  const int df[]={H_DET_DELEGATE_TARGET,H_DET_VIEW_RESP,H_DET_DATA,H_DET_CALLBACK,H_DET_ON_DISMISSED,H_DET_LIST,H_DET_INDEX,H_DET_POST,H_DET_ID};for(unsigned i=0;i<9;++i)prepared.opt_handles[df[i]]=&field_tokens[6+i];prepared.opt_handles[H_DET_LIST_CLASS]=&klasses[15];
  prepared.opt_handles[H_DET_PRESENT_CODE]=reinterpret_cast<void*>(detail_present_fn);prepared.opt_handles[H_DET_INIT_CODE]=reinterpret_cast<void*>(detail_init_fn);prepared.opt_handles[H_DET_OPEN_CODE]=reinterpret_cast<void*>(detail_open_fn);prepared.opt_handles[H_DET_EXIT_CODE]=reinterpret_cast<void*>(detail_exit_fn);prepared.opt_handles[H_DET_CLICK_CODE]=reinterpret_cast<void*>(detail_click_fn);
@@ -214,10 +214,10 @@ void prepare_details(){using namespace pgr_shared_meta;prepared.optional[OPT_DET
  const int trf[]={H_TR_BAG,H_TR_GM,H_TR_SPECIES,H_TR_ATTACK,H_TR_DEFENSE,H_TR_STAMINA,H_TR_FAVORITE,H_TR_EGG,H_TR_DISPLAY,H_TR_EVENTS,H_TR_LIMITED,H_TR_COSTUME,H_TR_ORIG_COSTUME,H_TR_BACKGROUND,H_TR_ART,H_TR_ART_ASSET,H_TR_CB_POKEMON,H_TR_CB_BAG,H_TR_RESULT_STATUS};for(unsigned i=0;i<19;++i)prepared.opt_handles[trf[i]]=&field_tokens[15+i];
  prepared.opt_handles[H_TR_EVENT_CLASS]=&klasses[17];prepared.opt_handles[H_TR_CB_CLASS]=&klasses[21];const int trm[]={H_TR_SIZE_M,H_TR_RARE_M,H_TR_SHINY_M,H_TR_EVENT_COUNT_M,H_TR_GET_M,H_TR_RELEASE_M};for(unsigned i=0;i<6;++i)prepared.opt_handles[trm[i]]=&method_tokens[10+i];
  prepared.opt_handles[H_TR_RESULT_CODE]=reinterpret_cast<void*>(result_fn);prepared.opt_handles[H_TR_ERROR_CODE]=reinterpret_cast<void*>(error_fn);for(int i=0;i<5;++i)prepared.opt_ints[I_TR_SIZE_XXS+i]=i;prepared.opt_ints[I_TR_RESULT_SUCCESS]=9;
- prepared.optional[OPT_CATCH_CANVAS]=PGR_SHARED_OPT_AVAILABLE;prepared.opt_handles[H_CC_METHOD]=&method_tokens[16];prepared.opt_handles[H_CC_CODE]=reinterpret_cast<void*>(canvas_fn);
+ prepared.optional[OPT_CATCH_CANVAS]=PGS_SHARED_OPT_AVAILABLE;prepared.opt_handles[H_CC_METHOD]=&method_tokens[16];prepared.opt_handles[H_CC_CODE]=reinterpret_cast<void*>(canvas_fn);
 }
-void prepare_recovery(){using namespace pgr_shared_meta;recovery_mode=true;gui.layer=&layer;prepared.optional[OPT_CATCH_DISCOVERY]=prepared.optional[OPT_CATCH_SCENE]=PGR_SHARED_OPT_AVAILABLE;prepared.opt_handles[H_CD_CLASS]=&klasses[24];prepared.opt_handles[H_CD_LAYER]=&field_tokens[34];prepared.opt_handles[H_CD_TOP]=&method_tokens[17];prepared.opt_handles[H_CS_FIND]=&method_tokens[18];}
-void prepare_direct(){using namespace pgr_shared_meta;direct_mode=true;prepared.optional[OPT_DIRECT_PRESENTATION]=PGR_SHARED_OPT_AVAILABLE;prepared.opt_handles[H_DP_ACTIVE]=&field_tokens[35];prepared.opt_handles[H_DP_CALLBACK]=&method_tokens[19];prepared.opt_handles[H_DP_SHOW]=&method_tokens[20];prepared.opt_handles[H_DP_SHOW_CODE]=reinterpret_cast<void*>(show_fn);}
+void prepare_recovery(){using namespace pgs_shared_meta;recovery_mode=true;gui.layer=&layer;prepared.optional[OPT_CATCH_DISCOVERY]=prepared.optional[OPT_CATCH_SCENE]=PGS_SHARED_OPT_AVAILABLE;prepared.opt_handles[H_CD_CLASS]=&klasses[24];prepared.opt_handles[H_CD_LAYER]=&field_tokens[34];prepared.opt_handles[H_CD_TOP]=&method_tokens[17];prepared.opt_handles[H_CS_FIND]=&method_tokens[18];}
+void prepare_direct(){using namespace pgs_shared_meta;direct_mode=true;prepared.optional[OPT_DIRECT_PRESENTATION]=PGS_SHARED_OPT_AVAILABLE;prepared.opt_handles[H_DP_ACTIVE]=&field_tokens[35];prepared.opt_handles[H_DP_CALLBACK]=&method_tokens[19];prepared.opt_handles[H_DP_SHOW]=&method_tokens[20];prepared.opt_handles[H_DP_SHOW_CODE]=reinterpret_cast<void*>(show_fn);}
 void options(uint64_t epoch=1){PgsSharedHostOptions o{1,sizeof(o),PGS_SHH_ALLOWED|PGS_SHH_DISMISS,63,epoch,2500,nullptr,0,0};assert(host->update(&o)==0);}
 void initialize(){Init volatile fn=&init_fn;expected_disguise=!expected_disguise;expected_init_info=&method_tokens[0];fn(&state,&response,expected_disguise,expected_init_info);}
 PgsSharedHostSample snapshot(){PgsSharedHostSample s{};assert(host->sample(&s)==0);return s;}
@@ -232,17 +232,17 @@ bool wire_has(uint32_t opcode,const char *text=nullptr){for(auto &e:wire_events)
 }
 int main(int argc,char **argv){assert(argc==2||argc==3);void *lib=dlopen(argv[1],RTLD_NOW|RTLD_LOCAL);assert(lib);auto get=reinterpret_cast<const void *(*)(uint32_t)>(dlsym(lib,"pgs_native_api"));assert(get);auto core=static_cast<const pgs_native_api_v2*>(get(2));assert(core);
 #define LOAD(VAR,TYPE,ID,VER) {auto value=static_cast<const TYPE*>(core->query_feature(ID,VER));assert(value);VAR=*value;}
- LOAD(fixture_sh,PgrSharedCatchApi,51,1) LOAD(fixture_sc,PgrSummaryCompletionApi,36,1) LOAD(fixture_dc,PgrDetailsCompletionApi,37,1)
- LOAD(fixture_dr,PgrDetailsRecoveryApi,38,1) LOAD(fixture_cd,PgrCatchDiscoveryApi,40,1) LOAD(fixture_cv,PgrCatchCanvasApi,39,1)
- LOAD(fixture_cc,PgrCatchCompletionApi,24,1) LOAD(fixture_bridge,PgsCatchApi,3,1) LOAD(fixture_tx,PgrTransferExecApi,23,1)
- LOAD(fixture_tf,PgrTransferFactsApi,35,1) LOAD(fixture_to,PgsTransferObserversApi,57,1) LOAD(fixture_scheduler,PgrUnitySchedulerApi,48,2)
- LOAD(fixture_boot,PgrBootApi,54,1) LOAD(fixture_meta,PgrMetaApi,47,1)
- LOAD(fixture_transport,PgrRuntimeTransportApi,52,1) LOAD(fixture_transfer_policy,PgsTransferApi,4,1)
+ LOAD(fixture_sh,PgsSharedCatchApi,51,1) LOAD(fixture_sc,PgsSummaryCompletionApi,36,1) LOAD(fixture_dc,PgsDetailsCompletionApi,37,1)
+ LOAD(fixture_dr,PgsDetailsRecoveryApi,38,1) LOAD(fixture_cd,PgsCatchDiscoveryApi,40,1) LOAD(fixture_cv,PgsCatchCanvasApi,39,1)
+ LOAD(fixture_cc,PgsCatchCompletionApi,24,1) LOAD(fixture_bridge,PgsCatchApi,3,1) LOAD(fixture_tx,PgsTransferExecApi,23,1)
+ LOAD(fixture_tf,PgsTransferFactsApi,35,1) LOAD(fixture_to,PgsTransferObserversApi,57,1) LOAD(fixture_scheduler,PgsUnitySchedulerApi,48,2)
+ LOAD(fixture_boot,PgsBootApi,54,1) LOAD(fixture_meta,PgsMetaApi,47,1)
+ LOAD(fixture_transport,PgsRuntimeTransportApi,52,1) LOAD(fixture_transfer_policy,PgsTransferApi,4,1)
 #undef LOAD
  fixture_interaction_table=core->query_feature(69,2);assert(fixture_interaction_table);
- using namespace test;prepare();if(argc==3){prepare_details();if(std::strcmp(argv[2],"recovery")==0||std::strcmp(argv[2],"scene")==0){prepare_recovery();scene_only=std::strcmp(argv[2],"scene")==0;}if(std::strcmp(argv[2],"direct")==0)prepare_direct();}fixture_md_api={2,sizeof(fixture_md_api),sizeof(PgsSharedMetadataConfig),sizeof(PgrSharedMetadataOutput),resolve};host=static_cast<const PgrSharedHostApi*>(fixture_host_api(1));
+ using namespace test;prepare();if(argc==3){prepare_details();if(std::strcmp(argv[2],"recovery")==0||std::strcmp(argv[2],"scene")==0){prepare_recovery();scene_only=std::strcmp(argv[2],"scene")==0;}if(std::strcmp(argv[2],"direct")==0)prepare_direct();}fixture_md_api={2,sizeof(fixture_md_api),sizeof(PgsSharedMetadataConfig),sizeof(PgsSharedMetadataOutput),resolve};host=static_cast<const PgsSharedHostApi*>(fixture_host_api(1));
  assert(host->configure(nullptr)==1);assert(!snapshot().ready&&!snapshot().fault);
- PgrMetaExports exp{};exp.class_get_type=reinterpret_cast<void*>(class_type);PgsSharedMetaExtraExports ex{};ex.type_get_object=reinterpret_cast<void*>(type_get_object);ex.array_length=reinterpret_cast<void*>(array_length);ex.gchandle_new=reinterpret_cast<void*>(gc_new);ex.gchandle_get_target=reinterpret_cast<void*>(gc_get);ex.gchandle_free=reinterpret_cast<void*>(gc_free);
+ PgsMetaExports exp{};exp.class_get_type=reinterpret_cast<void*>(class_type);PgsSharedMetaExtraExports ex{};ex.type_get_object=reinterpret_cast<void*>(type_get_object);ex.array_length=reinterpret_cast<void*>(array_length);ex.gchandle_new=reinterpret_cast<void*>(gc_new);ex.gchandle_get_target=reinterpret_cast<void*>(gc_get);ex.gchandle_free=reinterpret_cast<void*>(gc_free);
  PgsSharedHostConfig config{1,sizeof(config)};config.metadata.version=2;config.metadata.size=sizeof(config.metadata);config.metadata.binding.exports=&exp;config.metadata.extra=&ex;config.metadata.owner_tid=gettid();config.metadata.thread_current=reinterpret_cast<void*>(attached);config.object_get_class=reinterpret_cast<void*>(object_class);config.field_get_value=reinterpret_cast<void*>(field_read);config.runtime_invoke=reinterpret_cast<void*>(runtime);config.object_unbox=reinterpret_cast<void*>(unbox);config.exclusive_hooks=1;
  config.string_length=reinterpret_cast<void*>(string_length);const bool transport_mode=argc==3&&std::strcmp(argv[2],"transport")==0;
  if(transport_mode){PgsRuntimeTransportConfig transport_config{1,sizeof(transport_config),1000,256,10000,65536,0,0};assert(fixture_transport.install(&transport_config)==0);config.transport_flags=1;}
@@ -338,10 +338,10 @@ int main(int argc,char **argv){assert(argc==2||argc==3);void *lib=dlopen(argv[1]
   evolve_offer_result=1;Present volatile present=&detail_present_fn;present(&view,&pokemon,nullptr,false,nullptr);host->tick(gettid(),3);host->tick(gettid(),4);host->tick(gettid(),5);
   assert(evolve_offer_calls==1&&release_calls==0&&detail_clicks==1);check_clean();
   // Completion belongs to the evolution worker, not the VGP external-event reader.
-  PgrTransferFactsRequest fq{1,sizeof(fq),uint64_t(gettid()),2500,response.id,&pokemon,&gm_object,63,0};PgrTransferFactsOut facts{};assert(fixture_tf.inspect(&fq,&facts)==1);
-  PgrTransferExecRequest req{1,sizeof(req),response.id,0,uint64_t(gettid()),&bag_object,&pokemon,{}};
+  PgsTransferFactsRequest fq{1,sizeof(fq),uint64_t(gettid()),2500,response.id,&pokemon,&gm_object,63,0};PgsTransferFactsOut facts{};assert(fixture_tf.inspect(&fq,&facts)==1);
+  PgsTransferExecRequest req{1,sizeof(req),response.id,0,uint64_t(gettid()),&bag_object,&pokemon,{}};
   req.input={1,sizeof(PgsTransferInput),facts.attack,facts.defense,facts.stamina,facts.species,0,facts.known,facts.flags,0,0,0,nullptr};
-  consume_evolve_events=true;uint64_t token=0;assert(broker->submit(&req,&token)==1&&token&&release_calls==1);assert(evolve_events==2);PgrTransferExecEvent event{};assert(broker->next_event(&event)==0);host->tick(gettid(),6);check_clean();
+  consume_evolve_events=true;uint64_t token=0;assert(broker->submit(&req,&token)==1&&token&&release_calls==1);assert(evolve_events==2);PgsTransferExecEvent event{};assert(broker->next_event(&event)==0);host->tick(gettid(),6);check_clean();
   // A list exclusion keeps the next catch and leaves its screen open without Quick Catch.
   response.id++;pokemon.id=response.id;evolve_offer_result=2;present(&view,&pokemon,nullptr,false,nullptr);host->tick(gettid(),7);host->tick(gettid(),8);host->tick(gettid(),9);
   assert(evolve_offer_calls==2&&release_calls==1&&detail_clicks==1);check_clean();
@@ -350,12 +350,12 @@ int main(int argc,char **argv){assert(argc==2||argc==3);void *lib=dlopen(argv[1]
  if(argc==3&&std::strcmp(argv[2],"broker")==0){
   auto broker=static_cast<const PgsSharedHostTransferApi*>(fixture_host_api(2));assert(broker&&broker->size==32&&broker->ready()==1);
   int32_t kept=25;PgsSharedHostOptions opt{1,sizeof(opt),PGS_SHH_ALLOWED|PGS_SHH_TRANSFER_ENABLED,63,2,2500,&kept,1,0};assert(host->update(&opt)==0);host->tick(gettid(),2);
-  PgrTransferFactsRequest facts_request{1,sizeof(facts_request),uint64_t(gettid()),2500,response.id,&pokemon,&gm_object,63,0};PgrTransferFactsOut facts{};assert(fixture_tf.inspect(&facts_request,&facts)==1);
-  PgrTransferExecRequest req{1,sizeof(req),response.id,999,uint64_t(gettid()),&bag_object,&pokemon,{}};
+  PgsTransferFactsRequest facts_request{1,sizeof(facts_request),uint64_t(gettid()),2500,response.id,&pokemon,&gm_object,63,0};PgsTransferFactsOut facts{};assert(fixture_tf.inspect(&facts_request,&facts)==1);
+  PgsTransferExecRequest req{1,sizeof(req),response.id,999,uint64_t(gettid()),&bag_object,&pokemon,{}};
   req.input={1,sizeof(PgsTransferInput),facts.attack,facts.defense,facts.stamina,facts.species,0,facts.known,facts.flags,0,0,0,nullptr};
   uint64_t token=0;assert(broker->submit(&req,&token)==0&&!token&&!release_calls); // authoritative keep list
   opt.epoch=3;opt.keep_ids=nullptr;opt.keep_count=0;opt.flags|=PGS_SHH_KEEP_ALL;assert(host->update(&opt)==0);host->tick(gettid(),3);
-  assert(broker->submit(&req,&token)==1&&token&&release_calls==1);PgrTransferExecEvent e{};unsigned requests=0,completed=0;
+  assert(broker->submit(&req,&token)==1&&token&&release_calls==1);PgsTransferExecEvent e{};unsigned requests=0,completed=0;
   while(broker->next_event(&e)==1){assert(e.token==token);requests+=e.kind==PGS_TX_EVENT_REQUEST;completed+=e.kind==PGS_TX_EVENT_COMPLETE&&(e.aux&1);}
   assert(requests==1&&completed==1);host->tick(gettid(),4);check_clean();assert(broker->next_event(&e)==0);
   // Manual Keep All does not block the broker, but still protects manual catches.

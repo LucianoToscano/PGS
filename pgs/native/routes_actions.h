@@ -112,9 +112,9 @@ enum PgsRoutesActionsFlags {
 // pointer is an already-validated il2cpp export / Il2CppClass* / MethodInfo* / FieldInfo* packed by
 // the host from routes.js metadata. All are MANDATORY (non-null). Reordering is forbidden. install()
 // publishes the config immutably: an identical config is idempotent (0); a different one is rejected.
-struct PgrRoutesActionsConfig {
+struct PgsRoutesActionsConfig {
   uint32_t version;  // == PGS_RA_CONFIG_VERSION
-  uint32_t size;     // == sizeof(PgrRoutesActionsConfig)
+  uint32_t size;     // == sizeof(PgsRoutesActionsConfig)
 
   // il2cpp runtime exports (slots 0-10).
   void *runtime_invoke;        // 0  void*     (MethodInfo*, void* obj, void** params, void** exc)
@@ -170,26 +170,26 @@ struct PgrRoutesActionsConfig {
   void *string_chars;          // 42 uint16_t* (void* string) -> interior chars (not NUL terminated)
 };
 
-static_assert(sizeof(PgrRoutesActionsConfig) == 352, "PgrRoutesActionsConfig must remain 352 bytes on LP64");
-static_assert(offsetof(PgrRoutesActionsConfig, runtime_invoke) == 8, "config body start (slot 0)");
-static_assert(offsetof(PgrRoutesActionsConfig, class_consumption) == 96, "slot 11");   // 8 + 11*8
-static_assert(offsetof(PgrRoutesActionsConfig, class_play) == 112, "slot 13");         // 8 + 13*8
-static_assert(offsetof(PgrRoutesActionsConfig, m_currentRoute) == 152, "slot 18");     // 8 + 18*8
-static_assert(offsetof(PgrRoutesActionsConfig, m_ctor) == 256, "slot 31");             // 8 + 31*8
-static_assert(offsetof(PgrRoutesActionsConfig, f_playRoute) == 264, "slot 32");        // 8 + 32*8
-static_assert(offsetof(PgrRoutesActionsConfig, f_sharedId) == 304, "slot 37");         // 8 + 37*8
-static_assert(offsetof(PgrRoutesActionsConfig, f_dataPublishedRoute) == 320, "slot 39");// 8 + 39*8
-static_assert(offsetof(PgrRoutesActionsConfig, string_length) == 336, "slot 41");      // 8 + 41*8
-static_assert(offsetof(PgrRoutesActionsConfig, string_chars) == 344, "slot 42");       // 8 + 42*8
+static_assert(sizeof(PgsRoutesActionsConfig) == 352, "PgsRoutesActionsConfig must remain 352 bytes on LP64");
+static_assert(offsetof(PgsRoutesActionsConfig, runtime_invoke) == 8, "config body start (slot 0)");
+static_assert(offsetof(PgsRoutesActionsConfig, class_consumption) == 96, "slot 11");   // 8 + 11*8
+static_assert(offsetof(PgsRoutesActionsConfig, class_play) == 112, "slot 13");         // 8 + 13*8
+static_assert(offsetof(PgsRoutesActionsConfig, m_currentRoute) == 152, "slot 18");     // 8 + 18*8
+static_assert(offsetof(PgsRoutesActionsConfig, m_ctor) == 256, "slot 31");             // 8 + 31*8
+static_assert(offsetof(PgsRoutesActionsConfig, f_playRoute) == 264, "slot 32");        // 8 + 32*8
+static_assert(offsetof(PgsRoutesActionsConfig, f_sharedId) == 304, "slot 37");         // 8 + 37*8
+static_assert(offsetof(PgsRoutesActionsConfig, f_dataPublishedRoute) == 320, "slot 39");// 8 + 39*8
+static_assert(offsetof(PgsRoutesActionsConfig, string_length) == 336, "slot 41");      // 8 + 41*8
+static_assert(offsetof(PgsRoutesActionsConfig, string_chars) == 344, "slot 42");       // 8 + 42*8
 
 // Fixed LP64 request (328 bytes). tid is the proven owner tid. residual_ms is the remaining lease
 // (clamped to PGS_RA_MAX_LEASE_MS; 0 refuses). generation is the revocation token stamped from
 // generation(). service_handle / route_handle are BORROWED host GC handles (never freed here). seq is
 // the process-wide monotonic mutating sequence (ignored for CURRENT, which uses 0). id is the
 // requested route id (START/COMPLETE), id_length 1..128 units.
-struct PgrRoutesActionsRequest {
+struct PgsRoutesActionsRequest {
   uint32_t version;        // off 0  == PGS_RA_REQUEST_VERSION
-  uint32_t size;           // off 4  == sizeof(PgrRoutesActionsRequest)
+  uint32_t size;           // off 4  == sizeof(PgsRoutesActionsRequest)
   uint64_t tid;            // off 8  proven owner tid
   uint64_t residual_ms;    // off 16 residual lease; clamped, 0 refuses
   uint64_t generation;     // off 24 revocation token (== generation() at stamp time)
@@ -203,24 +203,24 @@ struct PgrRoutesActionsRequest {
   uint16_t id[PGS_RA_ID_MAX]; // off 72 requested route id (UTF16, not NUL terminated)
 };
 
-static_assert(sizeof(PgrRoutesActionsRequest) == 328, "PgrRoutesActionsRequest must remain 328 bytes on LP64");
-static_assert(offsetof(PgrRoutesActionsRequest, tid) == 8, "request tid");
-static_assert(offsetof(PgrRoutesActionsRequest, residual_ms) == 16, "request residual");
-static_assert(offsetof(PgrRoutesActionsRequest, generation) == 24, "request generation");
-static_assert(offsetof(PgrRoutesActionsRequest, service_handle) == 32, "request service handle");
-static_assert(offsetof(PgrRoutesActionsRequest, route_handle) == 40, "request route handle");
-static_assert(offsetof(PgrRoutesActionsRequest, seq) == 48, "request seq");
-static_assert(offsetof(PgrRoutesActionsRequest, action) == 56, "request action");
-static_assert(offsetof(PgrRoutesActionsRequest, reversed) == 60, "request reversed");
-static_assert(offsetof(PgrRoutesActionsRequest, id_length) == 64, "request id length");
-static_assert(offsetof(PgrRoutesActionsRequest, reserved) == 68, "request reserved");
-static_assert(offsetof(PgrRoutesActionsRequest, id) == 72, "request id");
+static_assert(sizeof(PgsRoutesActionsRequest) == 328, "PgsRoutesActionsRequest must remain 328 bytes on LP64");
+static_assert(offsetof(PgsRoutesActionsRequest, tid) == 8, "request tid");
+static_assert(offsetof(PgsRoutesActionsRequest, residual_ms) == 16, "request residual");
+static_assert(offsetof(PgsRoutesActionsRequest, generation) == 24, "request generation");
+static_assert(offsetof(PgsRoutesActionsRequest, service_handle) == 32, "request service handle");
+static_assert(offsetof(PgsRoutesActionsRequest, route_handle) == 40, "request route handle");
+static_assert(offsetof(PgsRoutesActionsRequest, seq) == 48, "request seq");
+static_assert(offsetof(PgsRoutesActionsRequest, action) == 56, "request action");
+static_assert(offsetof(PgsRoutesActionsRequest, reversed) == 60, "request reversed");
+static_assert(offsetof(PgsRoutesActionsRequest, id_length) == 64, "request id length");
+static_assert(offsetof(PgsRoutesActionsRequest, reserved) == 68, "request reserved");
+static_assert(offsetof(PgsRoutesActionsRequest, id) == 72, "request id");
 
 // Fixed LP64 output (280 bytes). status mirrors the return; reason the enumerated cause. For CURRENT,
 // flags/id carry the snapshot (0/0 when empty). For a mutation, flags 0 and id_length 0.
-struct PgrRoutesActionsOutput {
+struct PgsRoutesActionsOutput {
   uint32_t version;    // off 0  == PGS_RA_OUTPUT_VERSION
-  uint32_t size;       // off 4  == sizeof(PgrRoutesActionsOutput)
+  uint32_t size;       // off 4  == sizeof(PgsRoutesActionsOutput)
   int32_t status;      // off 8  == the execute() return
   int32_t reason;      // off 12 PgsRoutesActionsReason
   uint32_t flags;      // off 16 PgsRoutesActionsFlags (CURRENT)
@@ -228,20 +228,20 @@ struct PgrRoutesActionsOutput {
   uint16_t id[PGS_RA_ID_MAX]; // off 24 current route id (UTF16, not NUL terminated)
 };
 
-static_assert(sizeof(PgrRoutesActionsOutput) == 280, "PgrRoutesActionsOutput must remain 280 bytes on LP64");
-static_assert(offsetof(PgrRoutesActionsOutput, status) == 8, "output status");
-static_assert(offsetof(PgrRoutesActionsOutput, reason) == 12, "output reason");
-static_assert(offsetof(PgrRoutesActionsOutput, flags) == 16, "output flags");
-static_assert(offsetof(PgrRoutesActionsOutput, id_length) == 20, "output id length");
-static_assert(offsetof(PgrRoutesActionsOutput, id) == 24, "output id");
+static_assert(sizeof(PgsRoutesActionsOutput) == 280, "PgsRoutesActionsOutput must remain 280 bytes on LP64");
+static_assert(offsetof(PgsRoutesActionsOutput, status) == 8, "output status");
+static_assert(offsetof(PgsRoutesActionsOutput, reason) == 12, "output reason");
+static_assert(offsetof(PgsRoutesActionsOutput, flags) == 16, "output flags");
+static_assert(offsetof(PgsRoutesActionsOutput, id_length) == 20, "output id length");
+static_assert(offsetof(PgsRoutesActionsOutput, id) == 24, "output id");
 
 // Fixed LP64 table: 8-byte header + 4 function pointers = 40 bytes.
-struct PgrRoutesActionsApi {
+struct PgsRoutesActionsApi {
   uint32_t version;  // == PGS_RA_API_VERSION
-  uint32_t size;     // == sizeof(PgrRoutesActionsApi)
+  uint32_t size;     // == sizeof(PgsRoutesActionsApi)
   // Verify + publish the immutable config once for the process lifetime. Idempotent for an identical
   // config; a different config returns PGS_RA_ERR_RECONFIG. A null pointer or bad header is rejected.
-  int (*install)(const PgrRoutesActionsConfig *config);
+  int (*install)(const PgsRoutesActionsConfig *config);
   // Current revocation generation (initially 1). The host stamps it onto each request.
   uint64_t (*generation)(void);
   // Atomically bump the generation and return the new value. Any thread; no managed work; frees no
@@ -249,10 +249,10 @@ struct PgrRoutesActionsApi {
   uint64_t (*revoke)(void);
   // Owner-thread synchronous read / managed submission. See the file header for the full contract.
   // 1 SUCCESS / 0 REFUSE / negative FAULT; out always carries status + reason.
-  int (*execute)(const PgrRoutesActionsRequest *request, PgrRoutesActionsOutput *out);
+  int (*execute)(const PgsRoutesActionsRequest *request, PgsRoutesActionsOutput *out);
 };
 
-static_assert(sizeof(PgrRoutesActionsApi) == 40, "PgrRoutesActionsApi must remain a 40-byte version-1 table");
+static_assert(sizeof(PgsRoutesActionsApi) == 40, "PgsRoutesActionsApi must remain a 40-byte version-1 table");
 
 // Hidden getter. NOT exported by the version script; the coordinator registers it in query_feature
 // under feature id 43 and answers only on an exact version match.

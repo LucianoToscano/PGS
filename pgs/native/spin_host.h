@@ -7,7 +7,7 @@ enum PgsSpinHostFlags {PGS_SPH_TRANSPORT=1};
 enum PgsSpinHostCapabilities {PGS_SPH_CAMERA=1,PGS_SPH_QUICK=2};
 struct PgsSpinHostConfig {
  uint32_t version,size,flags,exclusive_owner;
- const PgrSharedMetadataOutput *metadata;
+ const PgsSharedMetadataOutput *metadata;
  const PgsSharedMetaExtraExports *extra;
  void *object_get_class,*field_get_value,*runtime_invoke,*object_unbox;
  void *(*thread_current)();

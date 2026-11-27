@@ -22,7 +22,7 @@ class GameUpdateTests(unittest.TestCase):
         for path in (ROOT / 'pgs/native').rglob('*'):
             if path.suffix not in ('.h', '.cpp', '.inc') or path.name == 'game_bindings.h':
                 continue
-            referenced.update(re.findall(r'\bPGR_GAME_\w+\b', path.read_bytes().decode('latin1')))
+            referenced.update(re.findall(r'\bPGS_GAME_\w+\b', path.read_bytes().decode('latin1')))
         self.assertTrue(referenced)
         self.assertFalse(referenced - definitions.keys())
 
@@ -33,8 +33,8 @@ class GameUpdateTests(unittest.TestCase):
             'words': {'kind': 'view', 'value': 'shared.bytes', 'view': 'words_le', 'count': 4, 'purpose': 'fixture'},
             'alias': {'kind': 'alias', 'value': 'shared.words', 'purpose': 'fixture'}}}
         values = binding.macros(entries)
-        self.assertEqual(values['PGR_GAME_SHARED_WORDS'], '{0x04030201}')
-        self.assertEqual(values['PGR_GAME_SHARED_ALIAS'], '{0x04030201}')
+        self.assertEqual(values['PGS_GAME_SHARED_WORDS'], '{0x04030201}')
+        self.assertEqual(values['PGS_GAME_SHARED_ALIAS'], '{0x04030201}')
         for target in ['shared.alias', 'shared.missing', 'missing.bytes']:
             changed = copy.deepcopy(entries)
             changed['shared']['alias']['value'] = target
@@ -135,6 +135,8 @@ class GameUpdateTests(unittest.TestCase):
         rendered = update.render((update.SCHEMA / 'catch_wait.h.in').read_text(), profile['modules']['catch_wait'], profile['bindings'])
         self.assertEqual(rendered, (ROOT / 'pgs/native/catch_wait_schema.h').read_text())
         tokens = re.sub(r'\s+', '', re.sub(r'//[^\n]*', '', rendered))
+        # Compare the original signed-metadata golden with only the namespace spelling normalized.
+        tokens = tokens.replace('pgs_catch_wait_schema', 'pgr_catch_wait_schema')
         # Golden from the 0.437.0 bindings checked against signed game metadata/code.
         self.assertEqual(hashlib.sha256(tokens.encode()).hexdigest(),
                          '94ca64f5ba47733a1e341efb11219709ecc3fd65de86a15edd74bc4c3aa4020e')

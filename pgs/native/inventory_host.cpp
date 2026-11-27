@@ -19,11 +19,11 @@
 #include <time.h>
 #include <unistd.h>
 namespace {
-using namespace pgr_shared_meta;
+using namespace pgs_shared_meta;
 std::mutex config_lock,policy_lock,event_lock;
 std::atomic<bool> configured{false},stopping{false},busy{false},force_poll{false},cleanup_poll{false};
 std::atomic<uint32_t> caps{0},faults{0},roots{0};std::atomic<uint64_t> owner{0},ticks{0};
-PgrSharedMetadataOutput md{};PgsInventoryRuntime rt{};bool binding=false;std::atomic<bool> installed{false};uint32_t flags=0;
+PgsSharedMetadataOutput md{};PgsInventoryRuntime rt{};bool binding=false;std::atomic<bool> installed{false};uint32_t flags=0;
 bool permission_seen=false;
 PgsInventoryHostOptions policy{};std::string rule_text;uint64_t deadline=0,revision=0,rule_generation=0,rule_epoch=0;
 pgs_items_rules_v1 rules{};std::string event_queue[64];uint32_t event_head=0,event_count=0;uint64_t event_seq=0;
@@ -31,19 +31,19 @@ pgs_items_sample_v1 old_items{};pgs_buddy_sample_v1 old_buddy{};pgs_incubation_s
 const pgs_items_api_v1 *items(){return static_cast<const pgs_items_api_v1*>(pgs_items_api(1));}
 const pgs_buddy_api_v1 *buddy(){return static_cast<const pgs_buddy_api_v1*>(pgs_buddy_feeding_api(1));}
 const pgs_incubation_api_v1 *inc(){return static_cast<const pgs_incubation_api_v1*>(pgs_incubation_api(1));}
-const PgrRuntimeTransportApi *transport(){return static_cast<const PgrRuntimeTransportApi*>(pgs_runtime_transport_api(1));}
+const PgsRuntimeTransportApi *transport(){return static_cast<const PgsRuntimeTransportApi*>(pgs_runtime_transport_api(1));}
 void *h(unsigned n){return const_cast<void*>(md.opt_handles[n]);}void *c(unsigned n){return const_cast<void*>(md.opt_classes[n]);}
 void *core_m(unsigned n){return const_cast<void*>(md.methods[n]);}void *core_c(unsigned n){return const_cast<void*>(md.classes[n]);}
-bool available(unsigned n){return md.optional[n]==PGR_SHARED_OPT_AVAILABLE;}
+bool available(unsigned n){return md.optional[n]==PGS_SHARED_OPT_AVAILABLE;}
 uint64_t clock_ms(){timespec t{};return clock_gettime(CLOCK_BOOTTIME,&t)==0?uint64_t(t.tv_sec)*1000+uint64_t(t.tv_nsec)/1000000:0;}
 std::string quote(const std::string &s){std::string out="\"";for(unsigned char ch:s){if(ch=='"'||ch=='\\'){out+='\\';out+=char(ch);}else if(ch<32){char b[7];snprintf(b,sizeof(b),"\\u%04x",unsigned(ch));out+=b;}else out+=char(ch);}return out+'"';}
-int action(uint32_t op,const int64_t *v,uint32_t nv,const PgrRuntimeTransportString *s,uint32_t ns){if(!(flags&1))return 0;int r=transport()->emit(op,v,nv,s,ns);if(r<0)stopping.store(true);return r;}
-void text_action(uint32_t op,const std::string &value){PgrRuntimeTransportString s{value.data(),uint32_t(value.size())};action(op,nullptr,0,&s,1);}
-void ready_action(uint32_t op,bool yes,const char *message){int64_t v=yes?1:0;PgrRuntimeTransportString s{message,uint32_t(strlen(message))};action(op,&v,1,&s,1);}
+int action(uint32_t op,const int64_t *v,uint32_t nv,const PgsRuntimeTransportString *s,uint32_t ns){if(!(flags&1))return 0;int r=transport()->emit(op,v,nv,s,ns);if(r<0)stopping.store(true);return r;}
+void text_action(uint32_t op,const std::string &value){PgsRuntimeTransportString s{value.data(),uint32_t(value.size())};action(op,nullptr,0,&s,1);}
+void ready_action(uint32_t op,bool yes,const char *message){int64_t v=yes?1:0;PgsRuntimeTransportString s{message,uint32_t(strlen(message))};action(op,&v,1,&s,1);}
 void event(const char *kind,const std::string &body=""){
  std::string json="{\"kind\":"+quote(kind)+",\"backend\":\"native\",\"boottimeMs\":"+std::to_string(clock_ms())+(body.empty()?"":","+body)+"}";
  if(json.size()>=65536){stopping.store(true);return;}
- if(flags&1){const char *channel="quick-close";PgrRuntimeTransportString v[]={{channel,uint32_t(strlen(channel))},{json.data(),uint32_t(json.size())}};action(19,nullptr,0,v,2);return;}
+ if(flags&1){const char *channel="quick-close";PgsRuntimeTransportString v[]={{channel,uint32_t(strlen(channel))},{json.data(),uint32_t(json.size())}};action(19,nullptr,0,v,2);return;}
  std::lock_guard<std::mutex> lock(event_lock);if(event_count==64){stopping.store(true);return;}event_queue[(event_head+event_count++)%64]=json;
 }
 void status(const char *kind,uint32_t op,const std::string &message){event(kind,"\"message\":"+quote(message));text_action(op,message);}
@@ -53,8 +53,8 @@ void feature_ready(uint32_t bit,const char *kind,uint32_t op,int rc){if(!rc)caps
 }
 bool attached(uint64_t tid){return tid&&tid==uint64_t(gettid())&&rt.boot.thread_current&&reinterpret_cast<void*(*)()>(rt.boot.thread_current)();}
 int bind_default(){
- const auto *sh=static_cast<const PgrSharedHostApi*>(pgs_shared_host_api(1));const auto *metadata=sh?sh->metadata():nullptr;if(!metadata)return 1;
- PgrBootBinding b{};const auto *boot=static_cast<const PgrBootApi*>(pgs_runtime_bootstrap_api(1));if(!boot||boot->snapshot(&b))return 1;
+ const auto *sh=static_cast<const PgsSharedHostApi*>(pgs_shared_host_api(1));const auto *metadata=sh?sh->metadata():nullptr;if(!metadata)return 1;
+ PgsBootBinding b{};const auto *boot=static_cast<const PgsBootApi*>(pgs_runtime_bootstrap_api(1));if(!boot||boot->snapshot(&b))return 1;
  md=*metadata;rt.boot=b.runtime;auto exp=[&](const char *name){return dlsym(b.handle,(std::string("il2cpp_")+name).c_str());};
  rt.string_length=exp("string_length");rt.object_get_virtual_method=exp("object_get_virtual_method");rt.class_get_type=b.meta.class_get_type;
  rt.type_get_object=exp("type_get_object");rt.runtime_class_init=exp("runtime_class_init");rt.method_get_object=exp("method_get_object");binding=true;return 0;
@@ -118,7 +118,7 @@ int update(const PgsInventoryHostOptions *p){
  if(permission_changed)event("gift-permission","\"mask\":"+std::to_string(p->gift_mask)+",\"allowed\":"+(p->gift_allowed?"true":"false"));return 0;
 }
 void poll_policy(){
- if(!(flags&1))return;auto tr=transport();PgrRuntimeTransportSample a{},z{};PgsInventoryHostOptions p{};p.version=1;p.size=sizeof(p);p.lease_ms=100;
+ if(!(flags&1))return;auto tr=transport();PgsRuntimeTransportSample a{},z{};PgsInventoryHostOptions p{};p.version=1;p.size=sizeof(p);p.lease_ms=100;
  auto b=[&](unsigned i){int v=0;return tr->get_bool(i,&v)==0&&v==1;};auto n=[&](unsigned i){int32_t v=0;return tr->get_int(i,&v)==0?v:0;};
  if(tr->sample(&a)||!a.snapshot_fresh){p.lease_ms=0;update(&p);return;}
  p.item_enabled=b(17);p.item_allowed=b(16);int mode=n(3);p.item_catalog=mode>=0&&mode<=2?mode:0;p.buddy_allowed=b(8);p.buddy_berry=n(1);
@@ -162,8 +162,8 @@ void drain_inventory(int32_t berry){
   if(v.fault_serial!=old_inc.fault_serial){const char *step[]={"native","map","player","incubators","too many incubators","eggs","too many Pokemon and eggs","incubator service","request"};event("incubator-error","\"reason\":"+quote(v.fault_step<9?step[v.fault_step]:"native"));}old_inc=v;
  }}
 }
-const PgrIncomingGiftsApi *incoming(){return static_cast<const PgrIncomingGiftsApi*>(pgs_incoming_gifts_api(1));}
-const PgrOutgoingGiftsApi *outgoing(){return static_cast<const PgrOutgoingGiftsApi*>(pgs_outgoing_gifts_api(1));}
+const PgsIncomingGiftsApi *incoming(){return static_cast<const PgsIncomingGiftsApi*>(pgs_incoming_gifts_api(1));}
+const PgsOutgoingGiftsApi *outgoing(){return static_cast<const PgsOutgoingGiftsApi*>(pgs_outgoing_gifts_api(1));}
 std::atomic<uint32_t> social_roots{0},social_frames{0};std::atomic<bool> visibility_wired{false};
 void *profile=nullptr,*open_gui=nullptr,*guest_open=nullptr;bool guest_fired=false,profile_checked=false,profile_failed=false;
 std::string friend_id;uint64_t profile_next=0,profile_deadline=0,dialog_serial=0;uint32_t gift_mask=0;uint64_t gift_deadline=0;
@@ -186,7 +186,7 @@ bool observation_allowed(){uint64_t tid=gettid();if(stopping.load()||tid!=owner.
  // scheduler has already proven this attached Unity owner; require its live
  // generation, not an ExecuteTasks frame currently on the stack. Leaf leases
  // still gate actions and the scheduled tick performs opening/sending.
- auto api=static_cast<const PgrUnitySchedulerApi3*>(pgs_unity_scheduler_api(3));
+ auto api=static_cast<const PgsUnitySchedulerApi3*>(pgs_unity_scheduler_api(3));
  if(!api||!api->snapshot||!api->valid)return false;
  PgsUnitySchedulerSnapshot s{};
  return api->snapshot(&s)==0&&s.installed&&!s.poisoned&&s.owner_tid==int64_t(tid)&&s.generation&&api->valid(s.generation)==1;}
@@ -228,11 +228,11 @@ void bind_visibility(){if(!needs_visibility||visibility_wired.load())return;auto
 int visibility_site(uint32_t ready){if(ready>1)return -2;visibility_wired.store(ready!=0);return 0;}
 void install_social(){
  if(!available(OPT_GIFTS)){feature_ready(PGS_IH_SOCIAL,"gift-ready",33,-1);return;}auto &r=rt.boot;
- PgrIncomingGiftsConfig in{};in.version=1;in.size=sizeof(in);
+ PgsIncomingGiftsConfig in{};in.version=1;in.size=sizeof(in);
  void *a[]={r.gchandle_new,r.gchandle_get_target,r.gchandle_free,r.object_get_class,r.object_unbox,r.runtime_invoke,r.field_get_value,r.field_set_value,rt.string_length,r.string_chars,
  h(H_GF_M_OPEN),h(H_GF_M_ACTIVE),h(H_GF_M_INTERACTABLE),core_m(5),c(OC_GIFT_6240),c(OC_GIFT_BOX_DETAILS),c(OC_OPEN_GIFT_OUT),c(OC_GIFT_OPEN_SEQ),core_c(6),c(OC_STRING),const_cast<void*>(md.fields[1]),h(H_GF_F_OPEN_DETAILS),h(H_GF_F_SENDER),h(H_GF_F_OPEN_BTN),h(H_GF_F_SEQ_GUI),h(H_GF_F_SEQ_RESP),h(H_GF_F_SEQ_STATE),h(H_GF_F_OPEN_RESULT)};
  static_assert(sizeof(a)==28*8,"incoming");memcpy(&in.gchandle_new,a,sizeof(a));in.state_open=2;in.open_success=md.opt_ints[I_GIFT_OPEN_SUCCESS];feature_ready(PGS_IH_INCOMING,"native-incoming-gifts-ready",0,incoming()->install(&in));
- PgrOutgoingGiftsConfig out{};out.version=1;out.size=sizeof(out);
+ PgsOutgoingGiftsConfig out{};out.version=1;out.size=sizeof(out);
  void *b[]={r.gchandle_new,r.gchandle_get_target,r.gchandle_free,r.object_get_class,r.object_unbox,rt.object_get_virtual_method,r.runtime_invoke,r.field_get_value,r.field_set_value,rt.string_length,r.string_chars,
  h(H_GF_M_PANEL),h(H_GF_M_DISABLED),h(H_GF_M_ACTIVE),h(H_GF_M_INTERACTABLE),h(H_GF_M_SENDABLE),h(H_GF_M_GET_ENUM),h(H_GF_M_MOVE_GIFT),h(H_GF_M_CUR_GIFT),h(H_GF_M_DISP_GIFT),h(H_GF_M_NIA_ID),h(H_GF_M_INVENTORY),h(H_GF_M_STICKER_COUNT),h(H_GF_M_STICKER_ITEM),h(H_GF_M_QUANTITY),h(H_GF_M_RESERVE),h(H_GF_M_RETURN_STICKER),h(H_GF_M_RPC_SEND),core_m(5),
  c(OC_GIFT_5936),c(OC_FRIEND_DETAILS),c(OC_PLAYER_SUMMARY),c(OC_GIFT_6154),c(OC_GIFT_6149),c(OC_GIFT_6164),c(OC_GIFT_BOX_PROTO),c(OC_STICKER_PROTO),h(H_GF_STICKER_LIST_CLASS),c(OC_SEND_GIFT_OUT),h(H_GF_CB_CLASS),core_c(6),c(OC_INT),c(OC_STRING),
@@ -246,8 +246,8 @@ void install_social(){
  social_hooks=true;
 }
 void drain_social(){
- if(caps.load()&PGS_IH_INCOMING){PgrIncomingGiftsSample s{};if(!incoming()->sample(&s)&&s.dialog_serial!=dialog_serial){dialog_serial=s.dialog_serial;event("gift-dialog","\"source\":\"incoming\",\"profilePresent\":"+std::string(profile?"true":"false"));}
- PgrIncomingGiftsEvent e{};for(unsigned n=0;n<64&&incoming()->drain(&e)==1;++n){
+ if(caps.load()&PGS_IH_INCOMING){PgsIncomingGiftsSample s{};if(!incoming()->sample(&s)&&s.dialog_serial!=dialog_serial){dialog_serial=s.dialog_serial;event("gift-dialog","\"source\":\"incoming\",\"profilePresent\":"+std::string(profile?"true":"false"));}
+ PgsIncomingGiftsEvent e{};for(unsigned n=0;n<64&&incoming()->drain(&e)==1;++n){
   static const char *wait[]={"native-wait","Auto open is off","Waiting for foreground readiness","Waiting for dialog to finish opening","Waiting for incoming gift details","Waiting for Open button"};
   static const char *err[]={"native","native-open-exception","native-gc-handle","native-event-overflow"};
   if(e.kind==1){const char *reason=e.reason<6?wait[e.reason]:wait[0];event("gift-wait","\"reason\":"+quote(reason)+",\"mask\":"+std::to_string(gift_mask));text_action(32,reason);}
@@ -255,7 +255,7 @@ void drain_social(){
   else if(e.kind==3){const char *reason=e.reason<4?err[e.reason]:err[0];event("gift-error","\"reason\":"+quote(reason));text_action(32,"Gift automation paused: "+std::string(reason));}
   else if(e.kind==4)event("gift-presentation-skipped","\"kindOfGift\":\"received\"");
  }}
- if(caps.load()&PGS_IH_OUTGOING){PgrOutgoingGiftsEvent e{};for(unsigned n=0;n<64&&outgoing()->next_event(&e)==1;++n){
+ if(caps.load()&PGS_IH_OUTGOING){PgsOutgoingGiftsEvent e{};for(unsigned n=0;n<64&&outgoing()->next_event(&e)==1;++n){
   static const char *msg[]={"","Preparing gift","Gift sending is not available for this friend yet","No gifts available","Sending gift","Gift sent","Gift send failed; no automatic retry","","Gift result pending; no automatic retry","Gift result uncertain; no automatic retry","Gift send already pending"};
   static const char *err[]={"native-outgoing","gift-recipient-missing","gift-service-type","gift-inventory","gift-id-zero","gift-nia","gift-sticker-service","gift-sticker-id","gift-gc-handle","gift-invoke","sticker-release","gift-event-overflow"};
   if(e.kind==1){std::string m=e.id>=0&&e.id<11?msg[e.id]:"";if(e.id==7)m="Gift send failed (result "+std::to_string(e.aux)+")";if(!m.empty())status("gift-status",32,m);}
@@ -287,8 +287,8 @@ void refresh_roots(){uint32_t n=social_roots.load()+social_frames.load();
  if(caps.load()&PGS_IH_ITEMS){pgs_items_sample_v1 s{};n+=items()->sample(&s)?1:s.owned_roots;}
  if(caps.load()&PGS_IH_BUDDY){pgs_buddy_sample_v1 s{};n+=buddy()->sample(&s)?1:s.owned_roots;}
  if(caps.load()&PGS_IH_INCUBATION){pgs_incubation_sample_v1 s{};n+=inc()->sample(&s)?1:s.owned_roots;}
- if(caps.load()&PGS_IH_INCOMING){PgrIncomingGiftsSample s{};n+=incoming()->sample(&s)?1:s.root_count;}
- if(caps.load()&PGS_IH_OUTGOING){PgrOutgoingGiftsSample s{};n+=outgoing()->sample(&s)?1:s.roots;}roots.store(n);
+ if(caps.load()&PGS_IH_INCOMING){PgsIncomingGiftsSample s{};n+=incoming()->sample(&s)?1:s.root_count;}
+ if(caps.load()&PGS_IH_OUTGOING){PgsOutgoingGiftsSample s{};n+=outgoing()->sample(&s)?1:s.roots;}roots.store(n);
 }
 int configure(const PgsInventoryHostConfig *cfg){
  if(cfg&&(cfg->version!=1||cfg->size!=sizeof(*cfg)||cfg->reserved||(cfg->flags&~1u)||!cfg->metadata||!cfg->runtime||cfg->metadata->version!=2||cfg->metadata->size!=sizeof(md)))return -2;
@@ -321,7 +321,7 @@ int stop(){stopping.store(true);{std::lock_guard<std::mutex> lock(policy_lock);d
 int sample(PgsInventoryHostSample *s){if(!s)return -2;refresh_roots();*s={1,sizeof(*s),uint32_t(configured.load()),uint32_t(installed.load()&&!stopping.load()&&caps.load()==63&&faults.load()==0),caps.load(),uint32_t(stopping.load()),roots.load(),faults.load(),owner.load(),ticks.load()};return 0;}
 int next_event(PgsInventoryHostEvent *out){if(!out)return -2;std::lock_guard<std::mutex> lock(event_lock);if(!event_count)return 1;*out={};out->version=1;out->size=sizeof(*out);out->sequence=++event_seq;auto &s=event_queue[event_head];memcpy(out->json,s.c_str(),s.size()+1);s.clear();event_head=(event_head+1)%64;--event_count;return 0;}
 void request_item_poll(){force_poll.store(true);}void *acquire_item_service(){return (caps.load()&PGS_IH_ITEMS)&&!stopping.load()&&owner.load()==uint64_t(gettid())?items()->service_acquire():nullptr;}
-void on_pulse(void*,const PgrUnityPulse *pulse){auto api=static_cast<const PgrUnitySchedulerApi*>(pgs_unity_scheduler_api(2));if(pulse&&api&&api->valid(pulse->generation)==1)tick(pulse->tid);}
+void on_pulse(void*,const PgsUnityPulse *pulse){auto api=static_cast<const PgsUnitySchedulerApi*>(pgs_unity_scheduler_api(2));if(pulse&&api&&api->valid(pulse->generation)==1)tick(pulse->tid);}
 bool cleanup_available(){
  if(!configured.load()||!installed.load()||stopping.load()||!(caps.load()&PGS_IH_ITEMS)||(faults.load()&PGS_IH_ITEMS))return false;
  std::lock_guard<std::mutex> lock(policy_lock);

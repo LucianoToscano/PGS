@@ -20,18 +20,18 @@
 // exactly once on the owner thread. No mutex is ever held across a managed call, a GC
 // handle call, or an original trampoline.
 
-static_assert(sizeof(PgrIvDisplayConfig) == 640, "config must be 640 bytes");
-static_assert(sizeof(PgrIvDisplaySample) == 656, "sample must be 656 bytes");
-static_assert(sizeof(PgrIvDisplayApi) == 64, "table must be 64 bytes");
-static_assert(offsetof(PgrIvDisplayConfig, gchandle_new) == 8, "layout");
-static_assert(offsetof(PgrIvDisplayConfig, m_get_level) == 8 + 13 * 8, "layout");
-static_assert(offsetof(PgrIvDisplayConfig, setup_address) == 8 + 37 * 8, "layout");
-static_assert(offsetof(PgrIvDisplayConfig, class_plate) == 8 + 39 * 8, "layout");
-static_assert(offsetof(PgrIvDisplayConfig, f_plate_text) == 8 + 57 * 8, "layout");
-static_assert(offsetof(PgrIvDisplayConfig, f_panel_gm) == 8 + 76 * 8, "layout");
-static_assert(offsetof(PgrIvDisplayConfig, overflow_value) == 8 + 77 * 8, "layout");
-static_assert(offsetof(PgrIvDisplayConfig, external_catch_observer) == 8 + 77 * 8 + 8, "layout");
-static_assert(offsetof(PgrIvDisplayConfig, reserved) == 8 + 77 * 8 + 12, "layout");
+static_assert(sizeof(PgsIvDisplayConfig) == 640, "config must be 640 bytes");
+static_assert(sizeof(PgsIvDisplaySample) == 656, "sample must be 656 bytes");
+static_assert(sizeof(PgsIvDisplayApi) == 64, "table must be 64 bytes");
+static_assert(offsetof(PgsIvDisplayConfig, gchandle_new) == 8, "layout");
+static_assert(offsetof(PgsIvDisplayConfig, m_get_level) == 8 + 13 * 8, "layout");
+static_assert(offsetof(PgsIvDisplayConfig, setup_address) == 8 + 37 * 8, "layout");
+static_assert(offsetof(PgsIvDisplayConfig, class_plate) == 8 + 39 * 8, "layout");
+static_assert(offsetof(PgsIvDisplayConfig, f_plate_text) == 8 + 57 * 8, "layout");
+static_assert(offsetof(PgsIvDisplayConfig, f_panel_gm) == 8 + 76 * 8, "layout");
+static_assert(offsetof(PgsIvDisplayConfig, overflow_value) == 8 + 77 * 8, "layout");
+static_assert(offsetof(PgsIvDisplayConfig, external_catch_observer) == 8 + 77 * 8 + 8, "layout");
+static_assert(offsetof(PgsIvDisplayConfig, reserved) == 8 + 77 * 8 + 12, "layout");
 
 namespace {
 
@@ -61,7 +61,7 @@ using OwnedFn = void (*)(void *self, void *proto, const void *method);
 // --- lifetime / publication --------------------------------------------------------
 std::mutex g_install_mutex;
 std::mutex g_state_mutex;
-PgrIvDisplayConfig g_cfg{};
+PgsIvDisplayConfig g_cfg{};
 bool g_outline_available = false;
 std::atomic<bool> g_installed{false};
 bool g_install_attempted = false;
@@ -1128,8 +1128,8 @@ void *interface_pokemon(void *map, Ctx &c) {
   static bool resolved = false;
   if (!resolved) {
     resolved = true;
-    const auto *api = static_cast<const PgrBootApi *>(pgs_runtime_bootstrap_api(1));
-    PgrBootBinding b{};
+    const auto *api = static_cast<const PgsBootApi *>(pgs_runtime_bootstrap_api(1));
+    PgsBootBinding b{};
     b.version = 1;
     b.size = sizeof(b);
     if (api != nullptr && api->snapshot != nullptr && api->snapshot(&b) == 0 && b.handle != nullptr &&
@@ -1521,7 +1521,7 @@ bool required_index(int i) {
   return true;
 }
 
-bool validate_config(const PgrIvDisplayConfig *c, int *out_rc) {
+bool validate_config(const PgsIvDisplayConfig *c, int *out_rc) {
   if (c == nullptr) {
     *out_rc = PGS_IV_ERR_INVALID_ARG;
     return false;
@@ -1530,7 +1530,7 @@ bool validate_config(const PgrIvDisplayConfig *c, int *out_rc) {
     *out_rc = PGS_IV_ERR_BAD_VERSION;
     return false;
   }
-  if (c->size != sizeof(PgrIvDisplayConfig)) {
+  if (c->size != sizeof(PgsIvDisplayConfig)) {
     *out_rc = PGS_IV_ERR_BAD_SIZE;
     return false;
   }
@@ -1558,7 +1558,7 @@ bool validate_config(const PgrIvDisplayConfig *c, int *out_rc) {
   return true;
 }
 
-int api_install(const PgrIvDisplayConfig *config) {
+int api_install(const PgsIvDisplayConfig *config) {
   int rc = PGS_IV_OK;
   if (!validate_config(config, &rc)) return rc;
 
@@ -1754,11 +1754,11 @@ int api_tick(uint64_t proven_tid, int stopping) {
 }
 
 // --- sample ------------------------------------------------------------------------
-int api_sample(PgrIvDisplaySample *out) {
+int api_sample(PgsIvDisplaySample *out) {
   if (out == nullptr) return PGS_IV_ERR_INVALID_ARG;
   std::lock_guard<std::mutex> lock(g_state_mutex);
   out->version = PGS_IV_SAMPLE_VERSION;
-  out->size = sizeof(PgrIvDisplaySample);
+  out->size = sizeof(PgsIvDisplaySample);
   out->catch_serial = g_catch_serial;
   out->owned_serial = g_owned_serial;
   out->position_serial = g_position_serial;
@@ -1818,8 +1818,8 @@ int api_end_catch(uint64_t token, uint64_t proven_tid) {
   return catch_end(token, tid);
 }
 
-const PgrIvDisplayApi kApiTable = {
-    PGS_IV_API_VERSION, static_cast<uint32_t>(sizeof(PgrIvDisplayApi)),
+const PgsIvDisplayApi kApiTable = {
+    PGS_IV_API_VERSION, static_cast<uint32_t>(sizeof(PgsIvDisplayApi)),
     &api_install,       &api_update,
     &api_tick,          &api_sample,
     &api_disable,       &api_begin_catch,

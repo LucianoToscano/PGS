@@ -25,8 +25,8 @@ int main(int argc,char **argv){
  if(argc!=2)return 1;void *lib=dlopen(argv[1],RTLD_NOW|RTLD_LOCAL);if(!lib){std::puts(dlerror());return 2;}
  auto getter=reinterpret_cast<const void *(*)(uint32_t)>(dlsym(lib,"pgs_native_api"));
  auto core=getter?static_cast<const pgs_native_api_v2 *>(getter(2)):nullptr;
- auto api=core?static_cast<const PgrArThrowApi *>(core->query_feature(5,1)):nullptr;if(!api||api->size!=32)return 3;
- PgrArThrowConfig cfg{1,sizeof(cfg),(void *)&capture,&wild,&values,(void *)&klass,(void *)&assignable,(void *)&allocate,(void *)&root,(void *)&target,(void *)&free_root,(void *)&set,&proximity,&awareness,&frightened};
+ auto api=core?static_cast<const PgsArThrowApi *>(core->query_feature(5,1)):nullptr;if(!api||api->size!=32)return 3;
+ PgsArThrowConfig cfg{1,sizeof(cfg),(void *)&capture,&wild,&values,(void *)&klass,(void *)&assignable,(void *)&allocate,(void *)&root,(void *)&target,(void *)&free_root,(void *)&set,&proximity,&awareness,&frightened};
  if(api->install(&cfg)||api->install(&cfg))return 4;
  Object self{&wild,0,0,0};PgsThrowValue t{2,.2f,1,1,0,0xa5};decltype(&capture) volatile call=&capture;
  if(call(&self,t,&cfg,&self)!=&other||last_value!=&cfg||roots)return 5;
@@ -40,6 +40,6 @@ int main(int argc,char **argv){
  api->update(1,1,2500,gettid());if(!api->update(1,1,3000,gettid()))return 12;call(&self,t,&cfg,&self);if(last_value!=&cfg)return 13;
  api->update(1,1,2500,gettid());alloc_fail=true;call(&self,t,&cfg,&self);if(last_value!=&cfg||roots)return 14;
  alloc_fail=false;call(&self,t,&cfg,&self);if(last_value!=&cfg)return 15;
- PgrArThrowSample sample{};api->sample(&sample);if(sample.applied!=1||sample.errors!=1)return 16;
+ PgsArThrowSample sample{};api->sample(&sample);if(sample.applied!=1||sample.errors!=1)return 16;
  std::puts("PASS native AR metadata: exact ABI/return, root balance, exclusions, thread/lease, latched allocation failure");return 0;
 }

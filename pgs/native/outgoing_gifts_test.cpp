@@ -78,7 +78,7 @@ FakeBoxB *box_bool(bool v) { FakeBoxB *b = &g_bb[g_bbi++ & 31]; b->klass = &cls_
 FakeBoxI *box_int(int32_t v) { FakeBoxI *b = &g_bi[g_bii++ & 31]; b->klass = &cls_int32; b->v = v; return b; }
 
 // ----- runtime shims ----------------------------------------------------------------
-const PgrOutgoingGiftsApi *g_api = nullptr;
+const PgsOutgoingGiftsApi *g_api = nullptr;
 
 uint64_t g_owner = 0;
 
@@ -190,10 +190,10 @@ void *fake_runtime_invoke(const void *method, void *obj, void **params, void **e
   return nullptr;
 }
 
-PgrOutgoingGiftsConfig make_config() {
-  PgrOutgoingGiftsConfig c{};
+PgsOutgoingGiftsConfig make_config() {
+  PgsOutgoingGiftsConfig c{};
   c.version = 1;
-  c.size = sizeof(PgrOutgoingGiftsConfig);
+  c.size = sizeof(PgsOutgoingGiftsConfig);
   c.gchandle_new = reinterpret_cast<void *>(&fake_gc_new);
   c.gchandle_get_target = reinterpret_cast<void *>(&fake_gc_get);
   c.gchandle_free = reinterpret_cast<void *>(&fake_gc_free);
@@ -231,21 +231,21 @@ PgrOutgoingGiftsConfig make_config() {
 
 uint64_t this_tid() { return static_cast<uint64_t>(static_cast<pid_t>(::gettid())); }
 
-PgrOutgoingGiftsSample take_sample() {
-  PgrOutgoingGiftsSample s{};
+PgsOutgoingGiftsSample take_sample() {
+  PgsOutgoingGiftsSample s{};
   assert(g_api->sample(&s) == PGS_OG_OK);
-  assert(s.version == 1 && s.size == sizeof(PgrOutgoingGiftsSample));
+  assert(s.version == 1 && s.size == sizeof(PgsOutgoingGiftsSample));
   return s;
 }
-std::vector<PgrOutgoingGiftsEvent> drain_all() {
-  std::vector<PgrOutgoingGiftsEvent> out;
-  PgrOutgoingGiftsEvent e{};
+std::vector<PgsOutgoingGiftsEvent> drain_all() {
+  std::vector<PgsOutgoingGiftsEvent> out;
+  PgsOutgoingGiftsEvent e{};
   int r;
   while ((r = g_api->next_event(&e)) == 1) out.push_back(e);
   assert(r == 0);
   return out;
 }
-bool saw(const std::vector<PgrOutgoingGiftsEvent> &v, uint32_t kind, int32_t id) {
+bool saw(const std::vector<PgsOutgoingGiftsEvent> &v, uint32_t kind, int32_t id) {
   for (const auto &e : v) if (e.kind == kind && e.id == id) return true;
   return false;
 }
@@ -313,26 +313,26 @@ int main(int argc, char **argv) {
   const auto *core = static_cast<const pgs_native_api_v2 *>(getter(2));
   assert(core && core->size == 48);
   assert(core->query_feature(22, 99) == nullptr);
-  const auto *api = static_cast<const PgrOutgoingGiftsApi *>(core->query_feature(22, 1));
-  assert(api != nullptr && api->version == 1 && api->size == sizeof(PgrOutgoingGiftsApi));
+  const auto *api = static_cast<const PgsOutgoingGiftsApi *>(core->query_feature(22, 1));
+  assert(api != nullptr && api->version == 1 && api->size == sizeof(PgsOutgoingGiftsApi));
   g_api = api;
 
 
   std::printf("ABI sizes: config=%zu sample=%zu event=%zu table=%zu\n",
-              sizeof(PgrOutgoingGiftsConfig), sizeof(PgrOutgoingGiftsSample),
-              sizeof(PgrOutgoingGiftsEvent), sizeof(PgrOutgoingGiftsApi));
-  assert(sizeof(PgrOutgoingGiftsConfig) == 488 && sizeof(PgrOutgoingGiftsSample) == 88 &&
-         sizeof(PgrOutgoingGiftsEvent) == 16 && sizeof(PgrOutgoingGiftsApi) == 64);
+              sizeof(PgsOutgoingGiftsConfig), sizeof(PgsOutgoingGiftsSample),
+              sizeof(PgsOutgoingGiftsEvent), sizeof(PgsOutgoingGiftsApi));
+  assert(sizeof(PgsOutgoingGiftsConfig) == 488 && sizeof(PgsOutgoingGiftsSample) == 88 &&
+         sizeof(PgsOutgoingGiftsEvent) == 16 && sizeof(PgsOutgoingGiftsApi) == 64);
 
   const uint64_t tid = this_tid();
   g_owner = tid;
-  PgrOutgoingGiftsConfig cfg = make_config();
+  PgsOutgoingGiftsConfig cfg = make_config();
 
   // 1. Validation + not-installed.
   assert(api->install(nullptr) == PGS_OG_ERR_INVALID_ARG);
-  PgrOutgoingGiftsConfig bad = cfg; bad.version = 2;
+  PgsOutgoingGiftsConfig bad = cfg; bad.version = 2;
   assert(api->install(&bad) == PGS_OG_ERR_BAD_VERSION);
-  bad = cfg; bad.size = sizeof(PgrOutgoingGiftsConfig) - 1;
+  bad = cfg; bad.size = sizeof(PgsOutgoingGiftsConfig) - 1;
   assert(api->install(&bad) == PGS_OG_ERR_BAD_SIZE);
   bad = cfg; bad.f_callback_id = nullptr;
   assert(api->install(&bad) == PGS_OG_ERR_MISSING_PTR);
@@ -350,7 +350,7 @@ int main(int argc, char **argv) {
     assert(api->update(PGS_OG_MASK_SEND, 2000, tid) == PGS_OG_OK);
     g_send_calls = 0;
     assert(api->queue(&s.panel, &s.profile, tid) == PGS_OG_QUEUE_HANDLED);
-    PgrOutgoingGiftsSample sm = take_sample();
+    PgsOutgoingGiftsSample sm = take_sample();
     assert(sm.active == 1 && sm.issued == 0 && sm.roots >= 2);
     assert(saw(drain_all(), PGS_OG_EVENT_STATUS, PGS_OG_MSG_PREPARING));
     assert(api->tick(tid, 0) == PGS_OG_OK);
@@ -401,7 +401,7 @@ int main(int argc, char **argv) {
       bool req_sticker = false;
       for (const auto &e : ev) if (e.kind == PGS_OG_EVENT_REQUEST && e.aux == 1) req_sticker = true;
       assert(req_sticker); }
-    PgrOutgoingGiftsSample sm = take_sample();
+    PgsOutgoingGiftsSample sm = take_sample();
     assert(sm.result_known == 1);  // callback recorded synchronously
     assert(api->tick(tid, 0) == PGS_OG_OK);  // completes -> clear returns reservation
     assert(s.svc.returns == 1);     // reservation returned exactly once
@@ -442,7 +442,7 @@ int main(int argc, char **argv) {
     FakeCallback bad_cb{&cls_callback, &s.rpc, &wrong};
     assert(api->observe(PGS_OG_OBSERVE_RPC_RESULT, &bad_cb, &s.sendout, tid) == PGS_OG_OK);
     assert(api->observe(PGS_OG_OBSERVE_RPC_FINALLY, &bad_cb, nullptr, tid) == PGS_OG_OK);
-    PgrOutgoingGiftsSample sm = take_sample();
+    PgsOutgoingGiftsSample sm = take_sample();
     assert(sm.result_known == 0 && sm.issued == 1 && sm.active == 1);  // unmatched: ignored
     // Wrong service also unmatched.
     FakeRpc other_rpc{&cls_rpc, &s.svc};
@@ -467,7 +467,7 @@ int main(int argc, char **argv) {
     usleep((PGS_OG_TXN_TIMEOUT_MS + 1000) * 1000);
     assert(api->update(PGS_OG_MASK_SEND, 2000, tid) == PGS_OG_OK);  // keep the gate live
     assert(api->tick(tid, 0) == PGS_OG_OK);
-    PgrOutgoingGiftsSample sm = take_sample();
+    PgsOutgoingGiftsSample sm = take_sample();
     assert(sm.timed_out == 1 && sm.active == 1 && sm.issued == 1);  // retained, not cleared
     assert(saw(drain_all(), PGS_OG_EVENT_STATUS, PGS_OG_MSG_PENDING));
     s.sendout.result = kSendSuccess;
@@ -554,7 +554,7 @@ int main(int argc, char **argv) {
     assert(api->tick(tid, 0) == PGS_OG_OK);
     assert(g_send_calls == 1);        // the send was issued before the stop latched
     assert(s.svc.reserves == 1 && s.svc.returns == 1);  // reserved then returned exactly once
-    PgrOutgoingGiftsSample sm = take_sample();
+    PgsOutgoingGiftsSample sm = take_sample();
     assert(sm.active == 0 && sm.roots == 0 && g_live.empty());  // deferred teardown ran, no leaks
     drain_all();
   }
@@ -580,7 +580,7 @@ int main(int argc, char **argv) {
     g_oneshot_method = &m_disabled;
     g_oneshot = [&]() { g_api->tick(g_owner, 1); };  // reentrant stop mid queue getter
     assert(api->queue(&s.panel, &s.profile, tid) == PGS_OG_QUEUE_HANDLED);
-    PgrOutgoingGiftsSample sm = take_sample();
+    PgsOutgoingGiftsSample sm = take_sample();
     assert(sm.active == 0 && sm.roots == 0 && g_live.empty());  // never armed/published
     assert(!saw(drain_all(), PGS_OG_EVENT_STATUS, PGS_OG_MSG_PREPARING));
   }

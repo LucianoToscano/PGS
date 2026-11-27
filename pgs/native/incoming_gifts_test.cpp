@@ -51,7 +51,7 @@ FakeBox *box_bool(bool v) {
 }
 
 // ----- runtime shims ----------------------------------------------------------------
-const PgrIncomingGiftsApi *g_api = nullptr;
+const PgsIncomingGiftsApi *g_api = nullptr;
 uint64_t g_owner = 0;
 int g_open_invokes = 0;
 bool g_open_throws = false;
@@ -191,10 +191,10 @@ void *fake_runtime_invoke(const void *method, void *obj, void **params, void **e
   return nullptr;
 }
 
-PgrIncomingGiftsConfig make_config() {
-  PgrIncomingGiftsConfig c{};
+PgsIncomingGiftsConfig make_config() {
+  PgsIncomingGiftsConfig c{};
   c.version = 1;
-  c.size = sizeof(PgrIncomingGiftsConfig);
+  c.size = sizeof(PgsIncomingGiftsConfig);
   c.gchandle_new = reinterpret_cast<void *>(&fake_gc_new);
   c.gchandle_get_target = reinterpret_cast<void *>(&fake_gc_get);
   c.gchandle_free = reinterpret_cast<void *>(&fake_gc_free);
@@ -230,23 +230,23 @@ PgrIncomingGiftsConfig make_config() {
 
 uint64_t this_tid() { return static_cast<uint64_t>(static_cast<pid_t>(::gettid())); }
 
-PgrIncomingGiftsSample take_sample() {
-  PgrIncomingGiftsSample s{};
+PgsIncomingGiftsSample take_sample() {
+  PgsIncomingGiftsSample s{};
   assert(g_api->sample(&s) == PGS_GIFT_OK);
-  assert(s.version == 1 && s.size == sizeof(PgrIncomingGiftsSample));
+  assert(s.version == 1 && s.size == sizeof(PgsIncomingGiftsSample));
   return s;
 }
 
-std::vector<PgrIncomingGiftsEvent> drain_all() {
-  std::vector<PgrIncomingGiftsEvent> out;
-  PgrIncomingGiftsEvent e{};
+std::vector<PgsIncomingGiftsEvent> drain_all() {
+  std::vector<PgsIncomingGiftsEvent> out;
+  PgsIncomingGiftsEvent e{};
   int r;
   while ((r = g_api->drain(&e)) == 1) out.push_back(e);
   assert(r == 0);
   return out;
 }
 
-bool saw(const std::vector<PgrIncomingGiftsEvent> &v, uint32_t kind, uint32_t reason) {
+bool saw(const std::vector<PgsIncomingGiftsEvent> &v, uint32_t kind, uint32_t reason) {
   for (const auto &e : v)
     if (e.kind == kind && e.reason == reason) return true;
   return false;
@@ -284,26 +284,26 @@ int main(int argc, char **argv) {
   const auto *core = static_cast<const pgs_native_api_v2 *>(getter(2));
   assert(core && core->size == 48);
   assert(core->query_feature(17, 99) == nullptr);  // exact version only
-  const auto *api = static_cast<const PgrIncomingGiftsApi *>(core->query_feature(17, 1));
-  assert(api != nullptr && api->version == 1 && api->size == sizeof(PgrIncomingGiftsApi));
+  const auto *api = static_cast<const PgsIncomingGiftsApi *>(core->query_feature(17, 1));
+  assert(api != nullptr && api->version == 1 && api->size == sizeof(PgsIncomingGiftsApi));
   g_api = api;
 
   std::printf("ABI sizes: config=%zu sample=%zu event=%zu table=%zu\n",
-              sizeof(PgrIncomingGiftsConfig), sizeof(PgrIncomingGiftsSample),
-              sizeof(PgrIncomingGiftsEvent), sizeof(PgrIncomingGiftsApi));
-  assert(sizeof(PgrIncomingGiftsConfig) == 240 && sizeof(PgrIncomingGiftsSample) == 88 &&
-         sizeof(PgrIncomingGiftsEvent) == 16 && sizeof(PgrIncomingGiftsApi) == 64);
+              sizeof(PgsIncomingGiftsConfig), sizeof(PgsIncomingGiftsSample),
+              sizeof(PgsIncomingGiftsEvent), sizeof(PgsIncomingGiftsApi));
+  assert(sizeof(PgsIncomingGiftsConfig) == 240 && sizeof(PgsIncomingGiftsSample) == 88 &&
+         sizeof(PgsIncomingGiftsEvent) == 16 && sizeof(PgsIncomingGiftsApi) == 64);
 
   const uint64_t tid = this_tid();
   g_owner = tid;
-  PgrIncomingGiftsConfig cfg = make_config();
+  PgsIncomingGiftsConfig cfg = make_config();
 
   // 1. Validation + not-installed.
   assert(api->install(nullptr) == PGS_GIFT_ERR_INVALID_ARG);
-  PgrIncomingGiftsConfig bad = cfg;
+  PgsIncomingGiftsConfig bad = cfg;
   bad.version = 2;
   assert(api->install(&bad) == PGS_GIFT_ERR_BAD_VERSION);
-  bad = cfg; bad.size = sizeof(PgrIncomingGiftsConfig) - 1;
+  bad = cfg; bad.size = sizeof(PgsIncomingGiftsConfig) - 1;
   assert(api->install(&bad) == PGS_GIFT_ERR_BAD_SIZE);
   bad = cfg; bad.f_seq_state = nullptr;
   assert(api->install(&bad) == PGS_GIFT_ERR_MISSING_PTR);
@@ -322,7 +322,7 @@ int main(int argc, char **argv) {
   FakeString sender; FakeDetails details; FakeSelectable button;
   FakeGui gui = make_ready_gui(&sender, &details, &button);
   assert(api->observe(PGS_GIFT_OBSERVE_READY, &gui, tid) == PGS_GIFT_OK);
-  PgrIncomingGiftsSample s = take_sample();
+  PgsIncomingGiftsSample s = take_sample();
   assert(s.owned == 1 && s.dialog_serial == 1 && s.root_count >= 1 && s.attempted == 0);
   assert(api->is_open(tid) == 1);  // currentState == STATE_OPEN
 

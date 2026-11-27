@@ -12,9 +12,9 @@
 #include <time.h>
 #include <unistd.h>
 namespace {
-using namespace pgr_shared_meta;
+using namespace pgs_shared_meta;
 PgsSpinHostConfig config{},accepted{};
-PgrSharedMetadataOutput metadata{};
+PgsSharedMetadataOutput metadata{};
 PgsSharedMetaExtraExports extra{};
 std::mutex setup_mutex,policy_mutex,event_mutex;
 std::atomic<bool> configured{false},stopping{false},busy{false};
@@ -28,27 +28,27 @@ bool transport_enabled=false,readiness_sent=false;
 std::atomic<bool> revoked_readiness{false};
 uint32_t fast_serial=0,camera_error_serial=0,request_serial=0,closed_serial=0,error_serial=0,cooldown_serial=0;
 PgsSpinHostEvent events[32]{};unsigned head=0,count=0;
-const PgrSpinCameraApi *camera(){return static_cast<const PgrSpinCameraApi*>(pgs_spin_camera_api(1));}
-const PgrQuickSpinApi *quick(){return static_cast<const PgrQuickSpinApi*>(pgs_quick_spin_api(1));}
-const PgrRuntimeTransportApi *transport(){return static_cast<const PgrRuntimeTransportApi*>(pgs_runtime_transport_api(1));}
+const PgsSpinCameraApi *camera(){return static_cast<const PgsSpinCameraApi*>(pgs_spin_camera_api(1));}
+const PgsQuickSpinApi *quick(){return static_cast<const PgsQuickSpinApi*>(pgs_quick_spin_api(1));}
+const PgsRuntimeTransportApi *transport(){return static_cast<const PgsRuntimeTransportApi*>(pgs_runtime_transport_api(1));}
 uint64_t now(){timespec t{};return clock_gettime(CLOCK_BOOTTIME,&t)||t.tv_sec<0?0:uint64_t(t.tv_sec)*1000+uint64_t(t.tv_nsec)/1000000;}
 bool owner(uint64_t tid){return tid&&tid==uint64_t(gettid())&&tid==config.owner_tid&&config.thread_current&&config.thread_current();}
 void revoke(){if(caps.load()&PGS_SPH_CAMERA)camera()->update(0,0,config.owner_tid,0);if(caps.load()&PGS_SPH_QUICK){quick()->update(0,0,config.owner_tid,0);quick()->clear();}}
 int stop(){stopping=true;{std::lock_guard<std::mutex> lock(policy_mutex);deadline=0;++revision;}revoke();
- if(config.flags&PGS_SPH_TRANSPORT&&!revoked_readiness.exchange(true)){auto tr=transport();const char text[]="Unavailable: stopped";PgrRuntimeTransportString s{text,sizeof(text)-1};int64_t value=0;if(tr)tr->emit(44,&value,1,&s,1);}return 0;}
-bool action(uint32_t opcode,const int64_t *numbers,uint32_t n,const PgrRuntimeTransportString *strings,uint32_t s){
+ if(config.flags&PGS_SPH_TRANSPORT&&!revoked_readiness.exchange(true)){auto tr=transport();const char text[]="Unavailable: stopped";PgsRuntimeTransportString s{text,sizeof(text)-1};int64_t value=0;if(tr)tr->emit(44,&value,1,&s,1);}return 0;}
+bool action(uint32_t opcode,const int64_t *numbers,uint32_t n,const PgsRuntimeTransportString *strings,uint32_t s){
  if(!(config.flags&PGS_SPH_TRANSPORT))return true;
  const auto t=transport();if(t&&t->emit(opcode,numbers,n,strings,s)==0)return true;stop();return false;
 }
 void event(const char *kind,const char *body){
  PgsSpinHostEvent e{1,sizeof(e)};std::snprintf(e.kind,sizeof(e.kind),"%s",kind);
  std::snprintf(e.json,sizeof(e.json),"{\"kind\":\"%s\",\"boottimeMs\":%llu%s%s}",kind,(unsigned long long)now(),*body?",":"",body);
- if(config.flags&PGS_SPH_TRANSPORT){const char channel[]="quick-close";PgrRuntimeTransportString s[]={{channel,uint32_t(sizeof(channel)-1)},{e.json,uint32_t(std::strlen(e.json))}};action(19,nullptr,0,s,2);}
+ if(config.flags&PGS_SPH_TRANSPORT){const char channel[]="quick-close";PgsRuntimeTransportString s[]={{channel,uint32_t(sizeof(channel)-1)},{e.json,uint32_t(std::strlen(e.json))}};action(19,nullptr,0,s,2);}
  else {std::lock_guard<std::mutex> lock(event_mutex);if(count==32){stopping=true;return;}events[(head+count++)%32]=e;}
 }
 void readiness(){if(readiness_sent)return;readiness_sent=true;const bool ready=(caps.load()&PGS_SPH_QUICK)&&!quick_error.load()&&!stopping;
  const char *reason=ready?"Ready":"Unavailable: native quick-spin metadata or installation";int64_t value=ready;
- PgrRuntimeTransportString s{reason,uint32_t(std::strlen(reason))};action(44,&value,1,&s,1);
+ PgsRuntimeTransportString s{reason,uint32_t(std::strlen(reason))};action(44,&value,1,&s,1);
 }
 void *h(unsigned i){return const_cast<void*>(metadata.opt_handles[i]);}
 void *k(unsigned i){return const_cast<void*>(metadata.opt_classes[i]);}
@@ -59,22 +59,22 @@ int configure(const PgsSpinHostConfig *c){
  !c->extra->gchandle_new||!c->extra->gchandle_get_target||!c->extra->gchandle_free)return PGS_SPH_BAD_CONFIG;
  std::lock_guard<std::mutex> lock(setup_mutex);if(configured)return std::memcmp(c,&accepted,sizeof(*c))||std::memcmp(c->metadata,&metadata,sizeof(metadata))||std::memcmp(c->extra,&extra,sizeof(extra))?PGS_SPH_REBIND:0;
  if(stopping)return PGS_SPH_STOPPED;accepted=*c;config=*c;metadata=*c->metadata;extra=*c->extra;config.metadata=&metadata;config.extra=&extra;
- if(metadata.optional[OPT_SPIN_CAMERA]==PGR_SHARED_OPT_AVAILABLE){
-  PgrSpinCameraConfig p{};p.version=1;p.size=sizeof(p);
+ if(metadata.optional[OPT_SPIN_CAMERA]==PGS_SHARED_OPT_AVAILABLE){
+  PgsSpinCameraConfig p{};p.version=1;p.size=sizeof(p);
   void *values[]={extra.gchandle_new,extra.gchandle_get_target,extra.gchandle_free,c->object_get_class,c->field_get_value,
    h(H_SC_APP_ENTER_CODE),h(H_SC_APP_EXIT_CODE),h(H_SC_RES_ENTER_CODE),h(H_SC_RES_EXIT_CODE),h(H_SC_MOVE_CODE),
    h(H_SC_APPROACH),h(H_SC_RESOLVE),k(OC_SPLINE),h(H_SC_ITER),h(H_SC_APP_CAM),h(H_SC_RES_CAM),h(H_SC_THIS_F),h(H_SC_STATE_F)};
   static_assert(sizeof(values)==sizeof(p)-8,"Camera pointer order");std::memcpy(&p.gchandle_new,values,sizeof(values));
-  int rc=camera()?camera()->install(&p):PGS_SPH_FAULT;camera_error=rc;if(!rc){caps.fetch_or(PGS_SPH_CAMERA);PgrSpinCameraSample s{};camera()->sample(&s);fast_serial=s.fast_serial;camera_error_serial=s.error_serial;event("native-spin-camera-ready","\"backend\":\"native-spin-camera\"");}
+  int rc=camera()?camera()->install(&p):PGS_SPH_FAULT;camera_error=rc;if(!rc){caps.fetch_or(PGS_SPH_CAMERA);PgsSpinCameraSample s{};camera()->sample(&s);fast_serial=s.fast_serial;camera_error_serial=s.error_serial;event("native-spin-camera-ready","\"backend\":\"native-spin-camera\"");}
  }
- if(metadata.optional[OPT_SPIN]==PGR_SHARED_OPT_AVAILABLE){
-  PgrQuickSpinConfig p{};p.version=1;p.size=sizeof(p);p.success_value=metadata.opt_ints[I_SPIN_SUCCESS];p.state_open_value=2;
+ if(metadata.optional[OPT_SPIN]==PGS_SHARED_OPT_AVAILABLE){
+  PgsQuickSpinConfig p{};p.version=1;p.size=sizeof(p);p.success_value=metadata.opt_ints[I_SPIN_SUCCESS];p.state_open_value=2;
   void *values[]={extra.gchandle_new,extra.gchandle_get_target,extra.gchandle_free,c->object_get_class,c->field_get_value,c->runtime_invoke,c->object_unbox,
    h(H_SPIN_ENTER_CODE),h(H_SPIN_EXIT_CODE),h(H_SPIN_RESULT_CODE),h(H_SPIN_SPIN_CODE),h(H_SPIN_SPIN_M),h(H_SPIN_REQUEST),h(H_SPIN_CAN),h(H_SPIN_ACTIVE),h(H_SPIN_CLOSE),const_cast<void*>(metadata.methods[5]),
    k(OC_SPINSTATE),k(OC_SPINGUI),k(OC_GESTURE),k(OC_SPINNER),k(OC_SPINRESULT),const_cast<void*>(metadata.classes[6]),
    h(H_SPIN_GUI_F),h(H_SPIN_GESTURE_F),h(H_SPIN_SPINNER_F),h(H_SPIN_RESULT_F),const_cast<void*>(metadata.fields[1])};
   static_assert(sizeof(values)==sizeof(p)-16,"Quick pointer order");std::memcpy(&p.gchandle_new,values,sizeof(values));
-  int rc=quick()?quick()->install(&p):PGS_SPH_FAULT;quick_error=rc;if(!rc){caps.fetch_or(PGS_SPH_QUICK);PgrQuickSpinSample s{};quick()->sample(&s);request_serial=s.request_serial;closed_serial=s.closed_serial;error_serial=s.error_serial;cooldown_serial=s.cooldown_serial;event("native-quick-spin-ready","\"backend\":\"native-quick-spin\"");}
+  int rc=quick()?quick()->install(&p):PGS_SPH_FAULT;quick_error=rc;if(!rc){caps.fetch_or(PGS_SPH_QUICK);PgsQuickSpinSample s{};quick()->sample(&s);request_serial=s.request_serial;closed_serial=s.closed_serial;error_serial=s.error_serial;cooldown_serial=s.cooldown_serial;event("native-quick-spin-ready","\"backend\":\"native-quick-spin\"");}
  }
  configured=true;readiness();return 0;
 }
@@ -86,7 +86,7 @@ int update(const PgsSpinHostOptions *p){
 }
 void poll(uint64_t t){
  if(!(config.flags&PGS_SPH_TRANSPORT)||t<last_poll+50)return;last_poll=t;
- PgrRuntimeTransportSample before{},after{};int enabled=0;const auto tr=transport();
+ PgsRuntimeTransportSample before{},after{};int enabled=0;const auto tr=transport();
  // A settings publication between reads is not a revocation. Retry a bounded
  // number of times; stale, disabled, or unreadable transport still fails closed.
  bool fresh=false;
@@ -102,15 +102,15 @@ void poll(uint64_t t){
  transport_enabled=allow;PgsSpinHostOptions p{1,sizeof(p),uint32_t(allow),allow?1000u:0u,transport_epoch};update(&p);
 }
 void drain(){char body[512];
- if(caps.load()&PGS_SPH_CAMERA){PgrSpinCameraSample s{};if(camera()->sample(&s)){camera_error=PGS_SPH_FAULT;stop();}else{
+ if(caps.load()&PGS_SPH_CAMERA){PgsSpinCameraSample s{};if(camera()->sample(&s)){camera_error=PGS_SPH_FAULT;stop();}else{
   if(s.fast_serial!=fast_serial){fast_serial=s.fast_serial;if(std::isfinite(s.last_original_speed)&&s.last_original_speed>0){double ms=1000.0/s.last_original_speed;std::snprintf(body,sizeof(body),"\"phase\":\"%s\",\"originalMs\":%.9g,\"targetMs\":%.9g,\"backend\":\"native\"",s.last_phase==1?"in":s.last_phase==2?"out":"unknown",ms,std::min(ms,40.0));event("spin-camera-fast",body);}}
   if(s.error_serial!=camera_error_serial){camera_error_serial=s.error_serial;const char *reasons[]={"","gchandle-enter-failed","gchandle-iterator-failed","clock-boottime-failed","reentrant-overflow"};std::snprintf(body,sizeof(body),"\"reason\":\"%s%u\",\"backend\":\"native\"",s.last_error<5?reasons[s.last_error]:"native-error:",s.last_error<5?0:s.last_error);if(s.last_error<5)std::snprintf(body,sizeof(body),"\"reason\":\"%s\",\"backend\":\"native\"",reasons[s.last_error]);event("spin-camera-error",body);}
   if(s.fault){camera_error=PGS_SPH_FAULT;stop();}
  }}
- if(caps.load()&PGS_SPH_QUICK){PgrQuickSpinSample s{};if(quick()->sample(&s)){quick_error=PGS_SPH_FAULT;stop();return;}
+ if(caps.load()&PGS_SPH_QUICK){PgsQuickSpinSample s{};if(quick()->sample(&s)){quick_error=PGS_SPH_FAULT;stop();return;}
   uint32_t delta=s.cooldown_serial-cooldown_serial;cooldown_serial=s.cooldown_serial;
   if(delta>1024){quick_error=PGS_SPH_FAULT;stop();return;} // bounded; never silently drop cooldown actions
-  for(uint32_t i=0;i<delta;++i){event("cooldown-action","\"action\":\"Pokestop spin\"");const char text[]="Pokestop spin";PgrRuntimeTransportString str{text,sizeof(text)-1};action(17,nullptr,0,&str,1);}
+  for(uint32_t i=0;i<delta;++i){event("cooldown-action","\"action\":\"Pokestop spin\"");const char text[]="Pokestop spin";PgsRuntimeTransportString str{text,sizeof(text)-1};action(17,nullptr,0,&str,1);}
   if(s.request_serial!=request_serial){request_serial=s.request_serial;std::snprintf(body,sizeof(body),"\"tid\":%llu,\"immediate\":true,\"guiState\":%d,\"openedMs\":%llu",(unsigned long long)s.last_tid,s.last_gui_state,(unsigned long long)s.last_opened_ms);event("spin-requested",body);}
   if(s.closed_serial!=closed_serial){closed_serial=s.closed_serial;std::snprintf(body,sizeof(body),"\"tid\":%llu,\"openedMs\":%llu",(unsigned long long)s.last_tid,(unsigned long long)s.last_opened_ms);event("spin-dismissed",body);}
   if(s.error_serial!=error_serial){error_serial=s.error_serial;const char *reasons[]={"","","gchandle-state-failed","gchandle-gui-failed","gchandle-temp-failed","spin-bool-type","alive-invoke-exception","active-invoke-exception","can-invoke-exception","spin-invoke-exception","request-invoke-exception","close-invoke-exception","clock-boottime-failed","reentrant-overflow"};
@@ -135,15 +135,15 @@ int tick(uint64_t tid,uint64_t sequence,uint64_t opener){
  if(cr){camera_error=cr;stop();}if(qr){quick_error=qr;stop();}
  if(caps.load()&PGS_SPH_CAMERA){int r=camera()->tick(tid);if(r){camera_error=r;stop();}}
  if(caps.load()&PGS_SPH_QUICK){int r=quick()->tick(tid,sequence,opener);if(r){quick_error=r;stop();}}
- drain();uint32_t roots=0;PgrSpinCameraSample a{};PgrQuickSpinSample b{};
+ drain();uint32_t roots=0;PgsSpinCameraSample a{};PgsQuickSpinSample b{};
  if(caps.load()&PGS_SPH_CAMERA){if(camera()->sample(&a))++roots;else roots+=a.active_roots_mask!=0;}
  if(caps.load()&PGS_SPH_QUICK){if(quick()->sample(&b))++roots;else roots+=b.owned_root_count+(b.active_generation!=0);}
  owned=roots;return stopping?PGS_SPH_STOPPED:0;
 }
 int sample(PgsSpinHostSample *s){if(!s)return PGS_SPH_BAD_CONFIG;*s={1,sizeof(*s),uint32_t(configured.load()),caps.load(),uint32_t(stopping.load()),owned.load(),camera_error.load(),quick_error.load(),configured?config.owner_tid:0,ticks.load()};return 0;}
 int next_event(PgsSpinHostEvent *e){if(!e)return PGS_SPH_BAD_CONFIG;std::lock_guard<std::mutex> lock(event_mutex);if(!count){*e={};return PGS_SPH_EMPTY;}*e=events[head];head=(head+1)%32;--count;return 0;}
-void pulse(void*,const PgrUnityPulse *p){if(!p||p->reserved||p->tid<=0)return;auto scheduler=static_cast<const PgrUnitySchedulerApi*>(pgs_unity_scheduler_api(2));if(!scheduler||scheduler->valid(p->generation)!=1)return;
- uint64_t opener=1;auto shared=static_cast<const PgrSharedHostApi*>(pgs_shared_host_api(1));PgsSharedHostSample s{};if(shared&&!shared->sample(&s))opener=s.hook_frames;tick(p->tid,p->sequence,opener);
+void pulse(void*,const PgsUnityPulse *p){if(!p||p->reserved||p->tid<=0)return;auto scheduler=static_cast<const PgsUnitySchedulerApi*>(pgs_unity_scheduler_api(2));if(!scheduler||scheduler->valid(p->generation)!=1)return;
+ uint64_t opener=1;auto shared=static_cast<const PgsSharedHostApi*>(pgs_shared_host_api(1));PgsSharedHostSample s{};if(shared&&!shared->sample(&s))opener=s.hook_frames;tick(p->tid,p->sequence,opener);
 }
 const PgsSpinHostApi api{1,sizeof(PgsSpinHostApi),configure,update,tick,stop,sample,next_event,pulse};
 }

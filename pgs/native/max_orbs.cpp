@@ -10,12 +10,12 @@
 namespace {
 struct Failure {};
 void require(bool ok){if(!ok)throw Failure{};}
-PgrBootBinding boot{};
+PgsBootBinding boot{};
 bool ready=false,reported=false;
 uint64_t next_prepare=0;
 void report(const char *json){
- auto tr=static_cast<const PgrRuntimeTransportApi*>(pgs_runtime_transport_api(1));
- if(tr&&tr->emit){PgrRuntimeTransportString args[]={{"max-orbs",8},{json,uint32_t(std::strlen(json))}};tr->emit(19,nullptr,0,args,2);}
+ auto tr=static_cast<const PgsRuntimeTransportApi*>(pgs_runtime_transport_api(1));
+ if(tr&&tr->emit){PgsRuntimeTransportString args[]={{"max-orbs",8},{json,uint32_t(std::strlen(json))}};tr->emit(19,nullptr,0,args,2);}
 }
 void unavailable(){if(!reported){reported=true;report("{\"phase\":\"unavailable\",\"message\":\"Max orb position unavailable\"}");}}
 template<class F>F fn(const void *p){require(p);return reinterpret_cast<F>(const_cast<void*>(p));}
@@ -29,9 +29,9 @@ struct Root {
 };
 void *klass(void *o){require(o);return fn<void*(*)(void*)>(boot.runtime.object_get_class)(o);}
 void *cls(const char *ns,const char *name){
- auto api=static_cast<const PgrMetaApi*>(pgs_runtime_metadata_api(1));require(api);
- PgrMetaClassQuery q{};q.version=1;q.size=sizeof(q);q.name_space=ns;q.name=name;q.canonical_match=PGR_MD_MATCH_EXACT;
- PgrMetaClassResult r{};require(api->resolve_class(&q,&r)==0&&r.klass);return const_cast<void*>(r.klass);
+ auto api=static_cast<const PgsMetaApi*>(pgs_runtime_metadata_api(1));require(api);
+ PgsMetaClassQuery q{};q.version=1;q.size=sizeof(q);q.name_space=ns;q.name=name;q.canonical_match=PGS_MD_MATCH_EXACT;
+ PgsMetaClassResult r{};require(api->resolve_class(&q,&r)==0&&r.klass);return const_cast<void*>(r.klass);
 }
 void *method(void *k,const char *name,int n){auto m=fn<void*(*)(void*,const char*,int)>(boot.meta.class_get_method_from_name)(k,name,n);require(m);return m;}
 void *field(void *k,const char *name){auto f=fn<void*(*)(void*,const char*)>(boot.meta.class_get_field_from_name)(k,name);require(f);return f;}
@@ -50,7 +50,7 @@ struct Binding {
 } b;
 void prepare(void *dodge){
  if(ready)return;
- auto api=static_cast<const PgrBootApi*>(pgs_runtime_bootstrap_api(1));boot.version=1;boot.size=sizeof(boot);require(api&&api->snapshot(&boot)==0);
+ auto api=static_cast<const PgsBootApi*>(pgs_runtime_bootstrap_api(1));boot.version=1;boot.size=sizeof(boot);require(api&&api->snapshot(&boot)==0);
  Binding next;
  next.state_class=cls("Niantic.Holoholo.VNext","BattleState");
  next.field_class=cls("Niantic.Holoholo.VNext","BattleFieldActorState");

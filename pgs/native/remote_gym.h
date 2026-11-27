@@ -10,7 +10,7 @@
 // (command at string slot 12, event action 19 kind "remote-gym"); the coordinator wires the slot, the
 // per-tick call site and the Java/Control side. See remote_gym_policy.h for the testable policy.
 
-struct PgrSharedMetadataOutput;
+struct PgsSharedMetadataOutput;
 
-void pgs_remote_gym_tick(uint64_t tid, const PgrSharedMetadataOutput *metadata);
+void pgs_remote_gym_tick(uint64_t tid, const PgsSharedMetadataOutput *metadata);
 void pgs_remote_gym_stop(uint64_t tid);

@@ -130,10 +130,10 @@ int main(int argc, char **argv) {
     auto get = reinterpret_cast<const void *(*)(uint32_t)>(dlsym(lib, "pgs_native_api"));
     auto core = get ? static_cast<const pgs_native_api_v2 *>(get(2)) : nullptr;
     if (!core || core->size != 48 || core->query_feature(6, 99) || core->query_feature(99, 1)) return 3;
-    auto api = static_cast<const PgrRocketMiniApi *>(core->query_feature(6, 1));
+    auto api = static_cast<const PgsRocketMiniApi *>(core->query_feature(6, 1));
     if (!api || api->version != 1 || api->size != 40) return 4;
 
-    PgrRocketMiniConfig cfg{};
+    PgsRocketMiniConfig cfg{};
     cfg.version = 1; cfg.size = sizeof(cfg);
     cfg.update_addr = (void *)&t_update; cfg.exit_addr = (void *)&t_exit;
     cfg.hide_addr = (void *)&t_hide; cfg.destroy_addr = (void *)&t_destroy;

@@ -36,16 +36,16 @@
 //   * The cross-thread sample() reads atomic owned/attempted/automated mirrors (published on the
 //     owner thread) rather than the owner-thread Slot fields, so there is no data race.
 
-static_assert(sizeof(PgrIncomingGiftsConfig) == 240, "config must be 240 bytes");
-static_assert(sizeof(PgrIncomingGiftsSample) == 88, "sample must be 88 bytes");
-static_assert(sizeof(PgrIncomingGiftsEvent) == 16, "event must be 16 bytes");
-static_assert(sizeof(PgrIncomingGiftsApi) == 64, "table must be 64 bytes");
-static_assert(offsetof(PgrIncomingGiftsConfig, gchandle_new) == 8, "layout");
-static_assert(offsetof(PgrIncomingGiftsConfig, m_open) == 8 + 10 * 8, "layout");
-static_assert(offsetof(PgrIncomingGiftsConfig, class_open_gui) == 8 + 14 * 8, "layout");
-static_assert(offsetof(PgrIncomingGiftsConfig, f_current_state) == 8 + 20 * 8, "layout");
-static_assert(offsetof(PgrIncomingGiftsConfig, state_open) == 8 + 28 * 8, "layout");
-static_assert(offsetof(PgrIncomingGiftsConfig, open_success) == 8 + 28 * 8 + 4, "layout");
+static_assert(sizeof(PgsIncomingGiftsConfig) == 240, "config must be 240 bytes");
+static_assert(sizeof(PgsIncomingGiftsSample) == 88, "sample must be 88 bytes");
+static_assert(sizeof(PgsIncomingGiftsEvent) == 16, "event must be 16 bytes");
+static_assert(sizeof(PgsIncomingGiftsApi) == 64, "table must be 64 bytes");
+static_assert(offsetof(PgsIncomingGiftsConfig, gchandle_new) == 8, "layout");
+static_assert(offsetof(PgsIncomingGiftsConfig, m_open) == 8 + 10 * 8, "layout");
+static_assert(offsetof(PgsIncomingGiftsConfig, class_open_gui) == 8 + 14 * 8, "layout");
+static_assert(offsetof(PgsIncomingGiftsConfig, f_current_state) == 8 + 20 * 8, "layout");
+static_assert(offsetof(PgsIncomingGiftsConfig, state_open) == 8 + 28 * 8, "layout");
+static_assert(offsetof(PgsIncomingGiftsConfig, open_success) == 8 + 28 * 8 + 4, "layout");
 
 namespace {
 
@@ -66,7 +66,7 @@ using StringChars = uint16_t *(*)(void *str);
 // --- lifetime / publication --------------------------------------------------------
 std::mutex g_install_mutex;
 std::mutex g_state_mutex;
-PgrIncomingGiftsConfig g_cfg{};
+PgsIncomingGiftsConfig g_cfg{};
 std::atomic<bool> g_installed{false};
 bool g_install_attempted = false;
 int g_install_error = PGS_GIFT_ERR_NOT_INSTALLED;
@@ -99,7 +99,7 @@ uint32_t g_last_wait_reason = PGS_GIFT_WAIT_NONE;
 bool g_overflow = false;
 
 // Bounded FIFO of event records (reason codes only). Guarded by g_state_mutex.
-PgrIncomingGiftsEvent g_fifo[PGS_GIFT_EVENT_CAP];
+PgsIncomingGiftsEvent g_fifo[PGS_GIFT_EVENT_CAP];
 uint32_t g_fifo_head = 0, g_fifo_count = 0;
 
 // --- owner-thread-only slot --------------------------------------------------------
@@ -345,11 +345,11 @@ void push_event(uint32_t kind, uint32_t reason, uint64_t tid) {
     g_overflow = true;
     g_fault = true;
     uint32_t last = (g_fifo_head + g_fifo_count - 1) % PGS_GIFT_EVENT_CAP;
-    g_fifo[last] = PgrIncomingGiftsEvent{PGS_GIFT_EVENT_ERROR, PGS_GIFT_ERR_REASON_OVERFLOW, tid};
+    g_fifo[last] = PgsIncomingGiftsEvent{PGS_GIFT_EVENT_ERROR, PGS_GIFT_ERR_REASON_OVERFLOW, tid};
     return;
   }
   uint32_t idx = (g_fifo_head + g_fifo_count) % PGS_GIFT_EVENT_CAP;
-  g_fifo[idx] = PgrIncomingGiftsEvent{kind, reason, tid};
+  g_fifo[idx] = PgsIncomingGiftsEvent{kind, reason, tid};
   ++g_fifo_count;
 }
 
@@ -536,7 +536,7 @@ void observe_sequence(void *obj, uint64_t tid) {
 }
 
 // --- public API --------------------------------------------------------------------
-bool validate_config(const PgrIncomingGiftsConfig *c, int *rc) {
+bool validate_config(const PgsIncomingGiftsConfig *c, int *rc) {
   if (c == nullptr) {
     *rc = PGS_GIFT_ERR_INVALID_ARG;
     return false;
@@ -545,7 +545,7 @@ bool validate_config(const PgrIncomingGiftsConfig *c, int *rc) {
     *rc = PGS_GIFT_ERR_BAD_VERSION;
     return false;
   }
-  if (c->size != sizeof(PgrIncomingGiftsConfig)) {
+  if (c->size != sizeof(PgsIncomingGiftsConfig)) {
     *rc = PGS_GIFT_ERR_BAD_SIZE;
     return false;
   }
@@ -560,7 +560,7 @@ bool validate_config(const PgrIncomingGiftsConfig *c, int *rc) {
   return true;
 }
 
-int api_install(const PgrIncomingGiftsConfig *config) {
+int api_install(const PgsIncomingGiftsConfig *config) {
   int rc = PGS_GIFT_OK;
   if (!validate_config(config, &rc)) return rc;
 
@@ -770,7 +770,7 @@ int api_tick(uint64_t proven_tid, int stopping) {
   return PGS_GIFT_OK;
 }
 
-int api_sample(PgrIncomingGiftsSample *out) {
+int api_sample(PgsIncomingGiftsSample *out) {
   if (out == nullptr) return PGS_GIFT_ERR_INVALID_ARG;
   const uint32_t roots = root_count();
   // Owned/attempted/automated come from the atomic mirrors (published on the owner thread), never
@@ -780,7 +780,7 @@ int api_sample(PgrIncomingGiftsSample *out) {
   const uint32_t automated = g_m_automated.load(std::memory_order_relaxed);
   std::lock_guard<std::mutex> lock(g_state_mutex);
   out->version = PGS_GIFT_SAMPLE_VERSION;
-  out->size = sizeof(PgrIncomingGiftsSample);
+  out->size = sizeof(PgsIncomingGiftsSample);
   out->issued_serial = g_issued_serial;
   out->wait_serial = g_wait_serial;
   out->error_serial = g_error_serial;
@@ -798,7 +798,7 @@ int api_sample(PgrIncomingGiftsSample *out) {
   return PGS_GIFT_OK;
 }
 
-int api_drain(PgrIncomingGiftsEvent *out) {
+int api_drain(PgsIncomingGiftsEvent *out) {
   if (out == nullptr) return PGS_GIFT_ERR_INVALID_ARG;
   std::lock_guard<std::mutex> lock(g_state_mutex);
   if (g_fifo_count == 0) return 0;
@@ -834,8 +834,8 @@ int api_is_open(uint64_t proven_tid) {
   return result;
 }
 
-const PgrIncomingGiftsApi kApiTable = {
-    PGS_GIFT_API_VERSION, static_cast<uint32_t>(sizeof(PgrIncomingGiftsApi)),
+const PgsIncomingGiftsApi kApiTable = {
+    PGS_GIFT_API_VERSION, static_cast<uint32_t>(sizeof(PgsIncomingGiftsApi)),
     &api_install,         &api_update,
     &api_observe,         &api_tick,
     &api_sample,          &api_drain,

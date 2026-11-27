@@ -93,9 +93,9 @@ enum PgsCameraSamplerReason {
 // expected_layer(13)/reserved0(0) pair. Every pointer is an already-validated il2cpp export / Il2CppClass* /
 // MethodInfo* / Il2CppFieldInfo* packed by the host; the native layer re-checks the header and rejects any
 // null. No hook address. Reordering is forbidden.
-struct PgrCameraSamplerConfig {
+struct PgsCameraSamplerConfig {
   uint32_t version;  // == PGS_CS_CONFIG_VERSION
-  uint32_t size;     // == sizeof(PgrCameraSamplerConfig)
+  uint32_t size;     // == sizeof(PgsCameraSamplerConfig)
 
   // il2cpp runtime exports (slots 0-9).
   void *runtime_invoke;           // 0  void*  (MethodInfo*, void* obj, void** params, void** exc)
@@ -134,31 +134,31 @@ struct PgrCameraSamplerConfig {
   int32_t reserved0;      // off 212 == 0 in v1
 };
 
-static_assert(sizeof(PgrCameraSamplerConfig) == 216,
-              "PgrCameraSamplerConfig must remain 216 bytes on LP64");
+static_assert(sizeof(PgsCameraSamplerConfig) == 216,
+              "PgsCameraSamplerConfig must remain 216 bytes on LP64");
 
 // Fixed LP64 request (40 bytes). tid is the proven owner tid (nonzero and == the current OS tid). remaining_ms
 // is the residual lease (clamped to PGS_CS_MAX_LEASE_MS; 0 is the benign off refusal). rig and camera are RAW
 // managed pointers borrowed from the getter observer for THIS CALL ONLY (never GC handles): the native layer
 // class-proves rig before any allocation, roots camera first, and never retains either raw pointer.
-struct PgrCameraSamplerRequest {
+struct PgsCameraSamplerRequest {
   uint32_t version;      // off 0  == PGS_CS_REQUEST_VERSION
-  uint32_t size;         // off 4  == sizeof(PgrCameraSamplerRequest)
+  uint32_t size;         // off 4  == sizeof(PgsCameraSamplerRequest)
   uint64_t tid;          // off 8  proven owner tid
   uint64_t remaining_ms; // off 16 residual lease; clamped, 0 refuses (off)
   void *rig;             // off 24 raw MainCameraRig receiver (class proof only)
   void *camera;          // off 32 raw UnityEngine.Camera the getter returned (rooted first)
 };
 
-static_assert(sizeof(PgrCameraSamplerRequest) == 40,
-              "PgrCameraSamplerRequest must remain 40 bytes on LP64");
+static_assert(sizeof(PgsCameraSamplerRequest) == 40,
+              "PgsCameraSamplerRequest must remain 40 bytes on LP64");
 
 // Fixed LP64 output (72 bytes). Always fully zeroed on entry (header re-stamped). status mirrors the return.
 // On 1 every field is valid. On 0 only reason + time_ms are set, plus mask/layer when reason == map-hidden.
 // On a negative fault only status + reason are set (no garbage reading).
-struct PgrCameraSamplerOutput {
+struct PgsCameraSamplerOutput {
   uint32_t version;   // off 0  == PGS_CS_OUTPUT_VERSION
-  uint32_t size;      // off 4  == sizeof(PgrCameraSamplerOutput)
+  uint32_t size;      // off 4  == sizeof(PgsCameraSamplerOutput)
   int32_t status;     // off 8  == the sample() return
   uint32_t reason;    // off 12 PgsCameraSamplerReason
   int32_t camera_id;  // off 16 Object.GetInstanceID (status 1)
@@ -172,23 +172,23 @@ struct PgrCameraSamplerOutput {
   double time_ms;     // off 64 CLOCK_BOOTTIME ms at the sample (status 0 or 1)
 };
 
-static_assert(sizeof(PgrCameraSamplerOutput) == 72,
-              "PgrCameraSamplerOutput must remain 72 bytes on LP64");
+static_assert(sizeof(PgsCameraSamplerOutput) == 72,
+              "PgsCameraSamplerOutput must remain 72 bytes on LP64");
 
 // Fixed LP64 table: 8-byte header + 2 function pointers = 24 bytes.
-struct PgrCameraSamplerApi {
+struct PgsCameraSamplerApi {
   uint32_t version;  // == PGS_CS_API_VERSION
-  uint32_t size;     // == sizeof(PgrCameraSamplerApi)
+  uint32_t size;     // == sizeof(PgsCameraSamplerApi)
   // Verify + publish the immutable config once for the process lifetime. Idempotent for an identical config;
   // a different config returns PGS_CS_ERR_RECONFIG. Any null required pointer, a bad header or a bad
   // expected_layer/reserved0 is rejected (fail closed). No hook is installed.
-  int (*install)(const PgrCameraSamplerConfig *config);
+  int (*install)(const PgsCameraSamplerConfig *config);
   // Owner-thread continuous sample. See the file header for the full contract. 1 / 0 / negative.
-  int (*sample)(const PgrCameraSamplerRequest *request, PgrCameraSamplerOutput *out);
+  int (*sample)(const PgsCameraSamplerRequest *request, PgsCameraSamplerOutput *out);
 };
 
-static_assert(sizeof(PgrCameraSamplerApi) == 24,
-              "PgrCameraSamplerApi must remain a 24-byte version-1 table");
+static_assert(sizeof(PgsCameraSamplerApi) == 24,
+              "PgsCameraSamplerApi must remain a 24-byte version-1 table");
 
 // Hidden getter. NOT exported by the version script; the coordinator registers it in query_feature under
 // feature id 41 and answers only on an exact version match.

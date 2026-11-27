@@ -22,7 +22,7 @@ typedef void (*UpdateFn)(void *, int64_t, void *);
 typedef void (*LifeFn)(void *, void *);
 
 std::mutex g_install_mutex;                    // serialises install() and publishes originals
-PgrRocketMiniConfig g_cfg{};                   // validated copy, published under the mutex
+PgsRocketMiniConfig g_cfg{};                   // validated copy, published under the mutex
 bool g_install_failed = false;                 // sticky; guarded by g_install_mutex
 
 std::atomic<int>     g_active{0};          // fully installed and live
@@ -273,7 +273,7 @@ void repl_destroy(void *self, void *method) { restore_if_owned(self); original_f
 
 // --- config validation -------------------------------------------------------------
 
-bool config_pointers_ok(const PgrRocketMiniConfig *c) {
+bool config_pointers_ok(const PgsRocketMiniConfig *c) {
     const void *const ptrs[] = {
         c->update_addr, c->exit_addr, c->hide_addr, c->destroy_addr,
         c->transform_method, c->gameObject_method, c->scale_method, c->active_method,
@@ -298,13 +298,13 @@ int hook_site(void *addr, void *repl, void **orig) {
     return rc == 0 ? PGS_RMINI_OK : PGS_RMINI_ERR_HOOK_FAILED;
 }
 
-int api_install(const PgrRocketMiniConfig *cfg) {
+int api_install(const PgsRocketMiniConfig *cfg) {
     if (!cfg) return PGS_RMINI_ERR_NULL_ARG;
 
     std::lock_guard<std::mutex> lk(g_install_mutex);
     if (g_install_failed) return PGS_RMINI_ERR_HOOK_FAILED; // never re-patch after a partial failure
 
-    if (cfg->version != 1 || cfg->size != sizeof(PgrRocketMiniConfig) || !config_pointers_ok(cfg))
+    if (cfg->version != 1 || cfg->size != sizeof(PgsRocketMiniConfig) || !config_pointers_ok(cfg))
         return PGS_RMINI_ERR_BAD_CONFIG;
 
     if (g_active.load(std::memory_order_acquire)) {
@@ -387,8 +387,8 @@ int api_restore() {
 } // namespace
 
 extern "C" const void *pgs_rocket_minigame_api(uint32_t version) {
-    static const PgrRocketMiniApi api = {
-        1, (uint32_t)sizeof(PgrRocketMiniApi),
+    static const PgsRocketMiniApi api = {
+        1, (uint32_t)sizeof(PgsRocketMiniApi),
         api_install, api_update, api_tick, api_restore
     };
     return version == 1 ? &api : nullptr;

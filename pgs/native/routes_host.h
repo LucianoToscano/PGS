@@ -11,7 +11,7 @@
 //
 // C++ owns:
 //   * Feature 53 (routes_metadata) initialization, preferring Feature 54 (runtime_bootstrap) bindings
-//     when ready or explicit PgrRoutesHostConfig bindings when driven by the temporary JS scheduler or
+//     when ready or explicit PgsRoutesHostConfig bindings when driven by the temporary JS scheduler or
 //     isolated native test fixtures.
 //   * Validated leaf configuration + installation for Feature 43 (routes_actions), Feature 44
 //     (routes_discovery), Feature 45 (routes_services), Feature 46 (routes_observers), and Feature 50
@@ -121,15 +121,15 @@ enum PgsRoutesHostEventKind {
 };
 
 // Fixed LP64 config (264 bytes). Passing nullptr to configure() selects pure Feature 54 bootstrap mode.
-struct PgrRoutesHostConfig {
+struct PgsRoutesHostConfig {
   uint32_t version;                   // off 0   == PGS_RH_CONFIG_VERSION
-  uint32_t size;                      // off 4   == sizeof(PgrRoutesHostConfig)
+  uint32_t size;                      // off 4   == sizeof(PgsRoutesHostConfig)
   uint32_t flags;                     // off 8   PgsRoutesHostConfigFlags
   uint32_t reserved0;                 // off 12  == 0
   const void *module_base;            // off 16  libil2cpp.so base (optional if bootstrap54 ready)
   uint64_t module_size;               // off 24  libil2cpp.so byte size
-  const PgrMetaExports *meta_exports; // off 32  31 metadata exports for 47/53
-  pgr_meta_seg_fn seg_query;          // off 40  optional fixture segment callback (nullptr in prod)
+  const PgsMetaExports *meta_exports; // off 32  31 metadata exports for 47/53
+  pgs_meta_seg_fn seg_query;          // off 40  optional fixture segment callback (nullptr in prod)
   void *seg_ctx;                      // off 48  optional fixture segment context
 
   // Runtime + extra exports used to populate leaves 43/44/45/46/50 when not resolved via bootstrap54:
@@ -163,17 +163,17 @@ struct PgrRoutesHostConfig {
   uint64_t unity_module_size;         // off 256 optional fixture libunity.so size
 };
 
-static_assert(sizeof(PgrRoutesHostConfig) == 264, "PgrRoutesHostConfig must remain 264 bytes on LP64");
-static_assert(offsetof(PgrRoutesHostConfig, module_base) == 16, "cfg module_base");
-static_assert(offsetof(PgrRoutesHostConfig, runtime_invoke) == 56, "cfg runtime_invoke");
-static_assert(offsetof(PgrRoutesHostConfig, resolve_icall) == 176, "cfg resolve_icall");
-static_assert(offsetof(PgrRoutesHostConfig, fixture_request_nearby) == 184, "cfg fixture_request_nearby");
-static_assert(offsetof(PgrRoutesHostConfig, unity_module_size) == 256, "cfg unity_module_size");
+static_assert(sizeof(PgsRoutesHostConfig) == 264, "PgsRoutesHostConfig must remain 264 bytes on LP64");
+static_assert(offsetof(PgsRoutesHostConfig, module_base) == 16, "cfg module_base");
+static_assert(offsetof(PgsRoutesHostConfig, runtime_invoke) == 56, "cfg runtime_invoke");
+static_assert(offsetof(PgsRoutesHostConfig, resolve_icall) == 176, "cfg resolve_icall");
+static_assert(offsetof(PgsRoutesHostConfig, fixture_request_nearby) == 184, "cfg fixture_request_nearby");
+static_assert(offsetof(PgsRoutesHostConfig, unity_module_size) == 256, "cfg unity_module_size");
 
 // Fixed LP64 set_options output (96 bytes).
-struct PgrRoutesHostOptionsOut {
+struct PgsRoutesHostOptionsOut {
   uint32_t version;     // off 0   == PGS_RH_OPTIONS_OUT_VERSION
-  uint32_t size;        // off 4   == sizeof(PgrRoutesHostOptionsOut)
+  uint32_t size;        // off 4   == sizeof(PgsRoutesHostOptionsOut)
   int32_t  status_code; // off 8   PgsRoutesHostOptStatus (0 off, 1 rejected, 2 accepted)
   int32_t  reason_code; // off 12  PgsRoutesHostOptReason
   uint32_t action_code; // off 16  0 none, 1 discover, 2 start, 3 complete, 4 pause
@@ -182,14 +182,14 @@ struct PgrRoutesHostOptionsOut {
   char     reason[64];  // off 32  NUL-terminated rejection reason
 };
 
-static_assert(sizeof(PgrRoutesHostOptionsOut) == 96, "PgrRoutesHostOptionsOut must remain 96 bytes on LP64");
-static_assert(offsetof(PgrRoutesHostOptionsOut, seq) == 24, "opt out seq");
-static_assert(offsetof(PgrRoutesHostOptionsOut, reason) == 32, "opt out reason");
+static_assert(sizeof(PgsRoutesHostOptionsOut) == 96, "PgsRoutesHostOptionsOut must remain 96 bytes on LP64");
+static_assert(offsetof(PgsRoutesHostOptionsOut, seq) == 24, "opt out seq");
+static_assert(offsetof(PgsRoutesHostOptionsOut, reason) == 32, "opt out reason");
 
 // Fixed LP64 drained event descriptor (64 bytes).
-struct PgrRoutesHostEvent {
+struct PgsRoutesHostEvent {
   uint32_t version;      // off 0   == PGS_RH_EVENT_VERSION
-  uint32_t size;         // off 4   == sizeof(PgrRoutesHostEvent)
+  uint32_t size;         // off 4   == sizeof(PgsRoutesHostEvent)
   uint32_t kind;         // off 8   PgsRoutesHostEventKind
   uint32_t json_len;     // off 12  UTF-8 JSON payload byte length (excluding NUL)
   uint64_t seq;          // off 16  command or reward seq when applicable
@@ -199,15 +199,15 @@ struct PgrRoutesHostEvent {
   char     kind_tag[16]; // off 48  NUL-terminated suffix after "routes-" (e.g. "ready", "snapshot")
 };
 
-static_assert(sizeof(PgrRoutesHostEvent) == 64, "PgrRoutesHostEvent must remain 64 bytes on LP64");
-static_assert(offsetof(PgrRoutesHostEvent, seq) == 16, "event seq");
-static_assert(offsetof(PgrRoutesHostEvent, lat) == 32, "event lat");
-static_assert(offsetof(PgrRoutesHostEvent, kind_tag) == 48, "event kind_tag");
+static_assert(sizeof(PgsRoutesHostEvent) == 64, "PgsRoutesHostEvent must remain 64 bytes on LP64");
+static_assert(offsetof(PgsRoutesHostEvent, seq) == 16, "event seq");
+static_assert(offsetof(PgsRoutesHostEvent, lat) == 32, "event lat");
+static_assert(offsetof(PgsRoutesHostEvent, kind_tag) == 48, "event kind_tag");
 
 // Fixed LP64 telemetry sample (64 bytes).
-struct PgrRoutesHostSample {
+struct PgsRoutesHostSample {
   uint32_t version;            // off 0   == PGS_RH_SAMPLE_VERSION
-  uint32_t size;               // off 4   == sizeof(PgrRoutesHostSample)
+  uint32_t size;               // off 4   == sizeof(PgsRoutesHostSample)
   uint32_t configured;         // off 8   0/1
   uint32_t meta_ready;         // off 12  0/1
   uint32_t services_ready;     // off 16  0/1 (both routes + consumption active)
@@ -221,32 +221,32 @@ struct PgrRoutesHostSample {
   uint32_t cached_route_count; // off 60  routes in last bounded snapshot
 };
 
-static_assert(sizeof(PgrRoutesHostSample) == 64, "PgrRoutesHostSample must remain 64 bytes on LP64");
-static_assert(offsetof(PgrRoutesHostSample, owner_tid) == 32, "sample owner_tid");
-static_assert(offsetof(PgrRoutesHostSample, last_error) == 56, "sample last_error");
+static_assert(sizeof(PgsRoutesHostSample) == 64, "PgsRoutesHostSample must remain 64 bytes on LP64");
+static_assert(offsetof(PgsRoutesHostSample, owner_tid) == 32, "sample owner_tid");
+static_assert(offsetof(PgsRoutesHostSample, last_error) == 56, "sample last_error");
 
 // Fixed LP64 API table (64 bytes): 8-byte header + 7 function pointers.
-struct PgrRoutesHostApi {
+struct PgsRoutesHostApi {
   uint32_t version; // == PGS_RH_API_VERSION
-  uint32_t size;    // == sizeof(PgrRoutesHostApi)
+  uint32_t size;    // == sizeof(PgsRoutesHostApi)
   // Configure the host (nullptr selects pure Bootstrap 54 mode). Idempotent for identical config.
-  int (*configure)(const PgrRoutesHostConfig *config);
+  int (*configure)(const PgsRoutesHostConfig *config);
   // Parse command_json + update foreground lease and gate (any thread; no managed calls).
-  int (*set_options)(int allowed, const char *command_json, uint32_t command_len, PgrRoutesHostOptionsOut *out);
+  int (*set_options)(int allowed, const char *command_json, uint32_t command_len, PgsRoutesHostOptionsOut *out);
   // Run one orchestration tick on the proven Unity owner thread (tid == gettid()).
   int (*tick)(uint64_t tid);
   // Pop the oldest queued event. Returns 1 when popped, 0 when empty, PGS_RH_ERR_BUFFER_TOO_SMALL (-8)
   // if json_buf != nullptr and json_cap < json_len (leaving the event queued and setting out->json_len).
-  int (*next_event)(PgrRoutesHostEvent *out, char *json_buf, uint32_t json_cap);
+  int (*next_event)(PgsRoutesHostEvent *out, char *json_buf, uint32_t json_cap);
   // Revoke all leaf generations and (when on the owner thread) drain all leaf roots and clear state.
   int (*stop)(uint64_t tid);
   // Read pull-only telemetry snapshot (any thread).
-  int (*sample)(PgrRoutesHostSample *out);
+  int (*sample)(PgsRoutesHostSample *out);
   // Feature 48 (unity_scheduler) PgsUnityWork subscriber callback entry point.
-  void (*on_unity_pulse)(void *context, const PgrUnityPulse *pulse);
+  void (*on_unity_pulse)(void *context, const PgsUnityPulse *pulse);
 };
 
-static_assert(sizeof(PgrRoutesHostApi) == 64, "PgrRoutesHostApi must remain a 64-byte version-1 table");
+static_assert(sizeof(PgsRoutesHostApi) == 64, "PgsRoutesHostApi must remain a 64-byte version-1 table");
 
 const void *pgs_routes_host_api(uint32_t version);
 

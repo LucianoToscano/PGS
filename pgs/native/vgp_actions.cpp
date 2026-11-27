@@ -32,18 +32,18 @@
 //   * If the invoke succeeds but the promise cannot be rooted, the action has already issued: that is
 //     reported as PGS_VA_ERR_UNCERTAIN so the host never retries.
 
-static_assert(sizeof(PgrVgpActionsConfig) == 208, "config must be 208 bytes");
-static_assert(sizeof(PgrVgpActionsTarget) == 32, "target request must be 32 bytes");
-static_assert(sizeof(PgrVgpActionsSpin) == 80, "spin request must be 80 bytes");
-static_assert(sizeof(PgrVgpActionsSample) == 72, "sample must be 72 bytes");
-static_assert(sizeof(PgrVgpActionsApi) == 64, "table must be 64 bytes");
-static_assert(offsetof(PgrVgpActionsConfig, gchandle_new) == 8, "layout");
-static_assert(offsetof(PgrVgpActionsConfig, m_encounter) == 80, "layout");
-static_assert(offsetof(PgrVgpActionsConfig, class_wild) == 104, "layout");
-static_assert(offsetof(PgrVgpActionsConfig, f_fort_id) == 136, "layout");
-static_assert(offsetof(PgrVgpActionsConfig, f_req_target_lon) == 192, "layout");
-static_assert(offsetof(PgrVgpActionsSpin, target) == 48, "layout");
-static_assert(offsetof(PgrVgpActionsSpin, closed_method) == 72, "layout");
+static_assert(sizeof(PgsVgpActionsConfig) == 208, "config must be 208 bytes");
+static_assert(sizeof(PgsVgpActionsTarget) == 32, "target request must be 32 bytes");
+static_assert(sizeof(PgsVgpActionsSpin) == 80, "spin request must be 80 bytes");
+static_assert(sizeof(PgsVgpActionsSample) == 72, "sample must be 72 bytes");
+static_assert(sizeof(PgsVgpActionsApi) == 64, "table must be 64 bytes");
+static_assert(offsetof(PgsVgpActionsConfig, gchandle_new) == 8, "layout");
+static_assert(offsetof(PgsVgpActionsConfig, m_encounter) == 80, "layout");
+static_assert(offsetof(PgsVgpActionsConfig, class_wild) == 104, "layout");
+static_assert(offsetof(PgsVgpActionsConfig, f_fort_id) == 136, "layout");
+static_assert(offsetof(PgsVgpActionsConfig, f_req_target_lon) == 192, "layout");
+static_assert(offsetof(PgsVgpActionsSpin, target) == 48, "layout");
+static_assert(offsetof(PgsVgpActionsSpin, closed_method) == 72, "layout");
 
 namespace {
 
@@ -62,7 +62,7 @@ using FieldSet = void (*)(void *obj, void *field, void *value);
 // --- lifetime / publication --------------------------------------------------------
 std::mutex g_install_mutex;
 std::mutex g_state_mutex;
-PgrVgpActionsConfig g_cfg{};
+PgsVgpActionsConfig g_cfg{};
 std::atomic<bool> g_installed{false};
 bool g_install_attempted = false;
 int g_install_error = PGS_VA_ERR_NOT_INSTALLED;
@@ -168,7 +168,7 @@ enum ActionKind { ACT_ENCOUNTER, ACT_CAPTURE, ACT_SPIN };
 // construction, the pre-invoke generation re-check and the single game-action invoke, roots the returned
 // promise and transfers it via *out_handle. Frees every temporary root before returning. *out_handle is
 // written only on PGS_VA_ISSUED.
-int do_action(ActionKind kind, const PgrVgpActionsTarget *t, const PgrVgpActionsSpin *sp,
+int do_action(ActionKind kind, const PgsVgpActionsTarget *t, const PgsVgpActionsSpin *sp,
               uint64_t epoch, uint64_t tid, uint64_t generation, uintptr_t *out_handle,
               const uint8_t *selected_throw) {
   void *target_obj = (kind == ACT_SPIN) ? sp->target : t->target;
@@ -293,7 +293,7 @@ done:
 
 // Common prologue: validate installation / header, latch the owner, reject reentrancy, claim g_busy
 // under the gate, run do_action, release g_busy. need_mask selects catch vs spin.
-int run_action(ActionKind kind, const PgrVgpActionsTarget *t, const PgrVgpActionsSpin *sp,
+int run_action(ActionKind kind, const PgsVgpActionsTarget *t, const PgsVgpActionsSpin *sp,
                uintptr_t *out_handle, const uint8_t *selected_throw=nullptr) {
   if (out_handle != nullptr) *out_handle = 0;
   if (!g_installed.load(std::memory_order_acquire)) return PGS_VA_ERR_NOT_INSTALLED;
@@ -303,12 +303,12 @@ int run_action(ActionKind kind, const PgrVgpActionsTarget *t, const PgrVgpAction
   if (kind == ACT_SPIN) {
     if (sp == nullptr) return PGS_VA_ERR_NULL_ARG;
     if (sp->version != PGS_VA_SPIN_VERSION) return PGS_VA_ERR_BAD_VERSION;
-    if (sp->size != sizeof(PgrVgpActionsSpin)) return PGS_VA_ERR_BAD_SIZE;
+    if (sp->size != sizeof(PgsVgpActionsSpin)) return PGS_VA_ERR_BAD_SIZE;
     epoch = sp->epoch; req_tid = sp->tid;
   } else {
     if (t == nullptr) return PGS_VA_ERR_NULL_ARG;
     if (t->version != PGS_VA_TARGET_VERSION) return PGS_VA_ERR_BAD_VERSION;
-    if (t->size != sizeof(PgrVgpActionsTarget)) return PGS_VA_ERR_BAD_SIZE;
+    if (t->size != sizeof(PgsVgpActionsTarget)) return PGS_VA_ERR_BAD_SIZE;
     epoch = t->epoch; req_tid = t->tid;
   }
 
@@ -349,10 +349,10 @@ int run_action(ActionKind kind, const PgrVgpActionsTarget *t, const PgrVgpAction
 }
 
 // --- public API --------------------------------------------------------------------
-bool validate_config(const PgrVgpActionsConfig *c, int *rc) {
+bool validate_config(const PgsVgpActionsConfig *c, int *rc) {
   if (c == nullptr) { *rc = PGS_VA_ERR_NULL_ARG; return false; }
   if (c->version != PGS_VA_CONFIG_VERSION) { *rc = PGS_VA_ERR_BAD_VERSION; return false; }
-  if (c->size != sizeof(PgrVgpActionsConfig)) { *rc = PGS_VA_ERR_BAD_SIZE; return false; }
+  if (c->size != sizeof(PgsVgpActionsConfig)) { *rc = PGS_VA_ERR_BAD_SIZE; return false; }
   void *const *ptrs = reinterpret_cast<void *const *>(&c->gchandle_new);
   for (int i = 0; i < 25; ++i) {
     if (ptrs[i] == nullptr) { *rc = PGS_VA_ERR_MISSING_PTR; return false; }
@@ -361,7 +361,7 @@ bool validate_config(const PgrVgpActionsConfig *c, int *rc) {
   return true;
 }
 
-int api_install(const PgrVgpActionsConfig *config) {
+int api_install(const PgsVgpActionsConfig *config) {
   int rc = PGS_VA_OK;
   if (!validate_config(config, &rc)) return rc;
   uint64_t probe = 0;
@@ -411,13 +411,13 @@ int api_update(uint32_t mask, uint64_t remaining, uint64_t epoch, uint64_t prove
   return PGS_VA_OK;
 }
 
-int api_encounter(const PgrVgpActionsTarget *request, uintptr_t *out_handle) {
+int api_encounter(const PgsVgpActionsTarget *request, uintptr_t *out_handle) {
   return run_action(ACT_ENCOUNTER, request, nullptr, out_handle);
 }
-int api_capture(const PgrVgpActionsTarget *request, uintptr_t *out_handle) {
+int api_capture(const PgsVgpActionsTarget *request, uintptr_t *out_handle) {
   return run_action(ACT_CAPTURE, request, nullptr, out_handle);
 }
-int api_spin(const PgrVgpActionsSpin *request, uintptr_t *out_handle) {
+int api_spin(const PgsVgpActionsSpin *request, uintptr_t *out_handle) {
   return run_action(ACT_SPIN, nullptr, request, out_handle);
 }
 
@@ -433,12 +433,12 @@ int api_stop(uint64_t /*proven_tid*/) {
   return PGS_VA_OK;
 }
 
-int api_sample(PgrVgpActionsSample *out) {
+int api_sample(PgsVgpActionsSample *out) {
   if (out == nullptr) return PGS_VA_ERR_NULL_ARG;
   const uint32_t roots = g_roots.load(std::memory_order_relaxed);
   std::lock_guard<std::mutex> lock(g_state_mutex);
   out->version = PGS_VA_SAMPLE_VERSION;
-  out->size = sizeof(PgrVgpActionsSample);
+  out->size = sizeof(PgsVgpActionsSample);
   out->encounter_serial = g_encounter_serial;
   out->capture_serial = g_capture_serial;
   out->spin_serial = g_spin_serial;
@@ -451,8 +451,8 @@ int api_sample(PgrVgpActionsSample *out) {
   return PGS_VA_OK;
 }
 
-const PgrVgpActionsApi kApiTable = {
-    PGS_VA_API_VERSION, static_cast<uint32_t>(sizeof(PgrVgpActionsApi)),
+const PgsVgpActionsApi kApiTable = {
+    PGS_VA_API_VERSION, static_cast<uint32_t>(sizeof(PgsVgpActionsApi)),
     &api_install,   &api_update, &api_encounter, &api_capture,
     &api_spin,      &api_stop,   &api_sample,
 };
@@ -466,7 +466,7 @@ extern "C" const void *pgs_vgp_actions_api(uint32_t version) {
   return &kApiTable;
 }
 
-extern "C" int pgs_vgp_capture_selected(const PgrVgpActionsTarget *request,int item,int grade,int curve,uintptr_t *out_handle){
+extern "C" int pgs_vgp_capture_selected(const PgsVgpActionsTarget *request,int item,int grade,int curve,uintptr_t *out_handle){
   if(out_handle)*out_handle=0;
   if(((item<1||item>3)&&!pgs_is_inventory_safari_ball(item))||grade<0||grade>3||(curve!=0&&curve!=1))return PGS_VA_ERR_BAD_VERSION;
   alignas(8) uint8_t ball[12]{};

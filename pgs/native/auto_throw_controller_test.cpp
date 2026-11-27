@@ -33,12 +33,12 @@ std::string settings="C3|1|1|75|0|0|1|0",account="account";
 std::string json_quote(const std::string& s){return "\""+s+"\"";}
 int64_t clock_ms(){return now;}
 unsigned sample_count=0;
-int sample(PgrRuntimeTransportSample* out){*out={};out->snapshot_fresh=fresh;out->snapshot_seq=coherent?1:++sample_count;return 0;}
+int sample(PgsRuntimeTransportSample* out){*out={};out->snapshot_fresh=fresh;out->snapshot_seq=coherent?1:++sample_count;return 0;}
 int get_string(uint32_t slot,char* out,uint32_t cap,uint32_t* len){assert(slot==15&&cap>settings.size());*len=settings.size();std::memcpy(out,settings.data(),*len);return 0;}
 int get_bool(uint32_t slot,int* out){assert(slot==3);*out=foreground;return 0;}
-int emit(uint32_t,const int64_t*,uint32_t,const PgrRuntimeTransportString*,uint32_t){return 0;}
-PgrRuntimeTransportApi tr{};
-const PgrRuntimeTransportApi* transport(){return &tr;}
+int emit(uint32_t,const int64_t*,uint32_t,const PgsRuntimeTransportString*,uint32_t){return 0;}
+PgsRuntimeTransportApi tr{};
+const PgsRuntimeTransportApi* transport(){return &tr;}
 void* resolve_class(const char*,const char*){return &gui;}
 void* obj_klass(void* o){return o;}
 std::string pokemon_class="WildMapPokemon";

@@ -93,9 +93,9 @@ enum PgsTransferFactsStatus {
 // pointer is already validated by the JS adapter straight off p.transfer / p.details; the native layer
 // re-checks the header, rejects any null, and validates the enum sentinels. No hook address. The field
 // order matches runtime/native-transfer-facts.js exactly (indices in the comments).
-struct PgrTransferFactsConfig {
+struct PgsTransferFactsConfig {
   uint32_t version;  // == PGS_TF_CONFIG_VERSION
-  uint32_t size;     // == sizeof(PgrTransferFactsConfig)
+  uint32_t size;     // == sizeof(PgsTransferFactsConfig)
 
   // --- il2cpp runtime exports (indices 0..7) ----------------------------------------
   void *gc_new;           // 0  uintptr_t (void* obj, int pinned)
@@ -148,15 +148,15 @@ struct PgrTransferFactsConfig {
   int32_t sizes[PGS_TF_SIZE_COUNT]; // all 5 CharacterSize members, pairwise distinct
 };
 
-static_assert(sizeof(PgrTransferFactsConfig) == 320,
-              "PgrTransferFactsConfig must remain 320 bytes on LP64");
+static_assert(sizeof(PgsTransferFactsConfig) == 320,
+              "PgsTransferFactsConfig must remain 320 bytes on LP64");
 
 // Fixed LP64 request (56 bytes). bag/pokemon are caller-rooted managed pointers; native roots both
 // immediately on entry. The caller has already resolved the pokemon (feature 34 / its bag lookup) and
 // proved the source/encounter in JS; the reader only re-proves identity against the caught id.
-struct PgrTransferFactsRequest {
+struct PgsTransferFactsRequest {
   uint32_t version;    // == PGS_TF_REQUEST_VERSION
-  uint32_t size;       // == sizeof(PgrTransferFactsRequest)
+  uint32_t size;       // == sizeof(PgsTransferFactsRequest)
   uint64_t owner_tid;  // proven owner tid (must equal the current OS tid, nonzero)
   uint64_t lease_ms;   // residual foreground lease (clamped to 2500; re-checked after managed work)
   uint64_t caught_id;  // proven caught id (nonzero; must equal pokemon id before AND after managed calls)
@@ -166,14 +166,14 @@ struct PgrTransferFactsRequest {
   uint32_t reserved;   // 0
 };
 
-static_assert(sizeof(PgrTransferFactsRequest) == 56,
-              "PgrTransferFactsRequest must remain 56 bytes on LP64");
+static_assert(sizeof(PgsTransferFactsRequest) == 56,
+              "PgsTransferFactsRequest must remain 56 bytes on LP64");
 
 // Fixed LP64 output (40 bytes). Zeroed + header-initialised on EVERY path; facts and flags are written
 // ONLY on success (code 1). flags use PgsTransferFactsFlag; known is 0xFF on success, 0 otherwise.
-struct PgrTransferFactsOut {
+struct PgsTransferFactsOut {
   uint32_t version;   // == PGS_TF_OUT_VERSION
-  uint32_t size;      // == sizeof(PgrTransferFactsOut)
+  uint32_t size;      // == sizeof(PgsTransferFactsOut)
   int32_t  attack;    // individual attack (0..15 on success)
   int32_t  defense;   // individual defense (0..15 on success)
   int32_t  stamina;   // individual stamina (0..15 on success)
@@ -183,8 +183,8 @@ struct PgrTransferFactsOut {
   uint64_t caught_id; // echoed proven caught id (== pokemon id)
 };
 
-static_assert(sizeof(PgrTransferFactsOut) == 40,
-              "PgrTransferFactsOut must remain 40 bytes on LP64");
+static_assert(sizeof(PgsTransferFactsOut) == 40,
+              "PgsTransferFactsOut must remain 40 bytes on LP64");
 
 // Fixed LP64 table: 8-byte header + 2 function pointers = 24 bytes.
 // Optional shadow fact, outside the fixed config: the display's Alignment field and its Shadow
@@ -194,21 +194,21 @@ extern "C" void pgs_transfer_facts_set_shadow(void *alignment_field, int32_t sha
 // Gigantamax values (-1 for any the game lacks). Until set, no Pokemon is reported as Max.
 extern "C" void pgs_transfer_facts_set_max(void *bread_field, int32_t dynamax, int32_t gmax_a, int32_t gmax_b, int32_t gmax_c);
 
-struct PgrTransferFactsApi {
+struct PgsTransferFactsApi {
   uint32_t version;  // == PGS_TF_API_VERSION
-  uint32_t size;     // == sizeof(PgrTransferFactsApi)
+  uint32_t size;     // == sizeof(PgsTransferFactsApi)
   // Validate + publish the immutable config once for the process lifetime. A repeat of the identical
   // config is PGS_TF_OK; a different one is PGS_TF_ERR_RECONFIG. No managed work.
-  int (*install)(const PgrTransferFactsConfig *config);
+  int (*install)(const PgsTransferFactsConfig *config);
   // Read one pokemon's transfer facts. Requires current tid == owner_tid (nonzero) and a residual lease
   // (clamped to 2500 ms, re-checked after the managed work). Returns PGS_TF_VALID (1, *out written),
   // PGS_TF_OK (0, refused: gate/busy/thread/expired), or a negative error (keep). Owner thread only; a
   // reentrant call is refused. NEVER issues a release action.
-  int (*inspect)(const PgrTransferFactsRequest *request, PgrTransferFactsOut *out);
+  int (*inspect)(const PgsTransferFactsRequest *request, PgsTransferFactsOut *out);
 };
 
-static_assert(sizeof(PgrTransferFactsApi) == 24,
-              "PgrTransferFactsApi must remain a 24-byte version-1 table");
+static_assert(sizeof(PgsTransferFactsApi) == 24,
+              "PgsTransferFactsApi must remain a 24-byte version-1 table");
 
 // Hidden getter. NOT exported by the version script; the coordinator registers it in query_feature under
 // feature id 35 and answers only on an exact version match.

@@ -25,8 +25,8 @@ enum PgsHookPadding : uint32_t {
     PGS_HOOK_PAD_WRITE_FAILED = 64,  // an island was chosen but writing it failed
     PGS_HOOK_PAD_MAPS_FAILED = 128   // /proc/self/maps could not be opened
 };
-struct PgrHookDiag {
-    uint32_t version, size;   // version==1, size==sizeof(PgrHookDiag)
+struct PgsHookDiag {
+    uint32_t version, size;   // version==1, size==sizeof(PgsHookDiag)
     uint32_t failures;        // failed pgs_hook() calls so far
     int32_t reason;           // PgsHookReason of the first failure
     int32_t rc;               // Dobby rc of the first failure (0 unless reason is DOBBY)
@@ -37,11 +37,8 @@ struct PgrHookDiag {
     uint32_t island_source;   // PgsHookIslandSource of the most recent island page
     uint32_t island_pages;    // island pages claimed so far
 };
-static_assert(sizeof(PgrHookDiag) == 48, "Hook diag ABI1");
-// The PGS type aliases the exact same 48-byte diagnostic layout.
-using PgsHookDiag = PgrHookDiag;
-static_assert(sizeof(PgsHookDiag) == sizeof(PgrHookDiag), "PGS hook diagnostic ABI");
+static_assert(sizeof(PgsHookDiag) == 48, "Hook diag ABI1");
 int pgs_hook_diag(PgsHookDiag *out);
 
 // Compatibility name: returns the same diagnostic, installs nothing.
-int pgrazor_hook_diag(PgrHookDiag *out);
+int pgrazor_hook_diag(PgsHookDiag *out);

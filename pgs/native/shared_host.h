@@ -36,7 +36,7 @@ struct PgsSharedHostSample {
  uint64_t owner_tid,ticks,hook_frames;
 };
 static_assert(sizeof(PgsSharedHostSample)==56,"LP64 sample");
-struct PgrSharedHostApi {
+struct PgsSharedHostApi {
  uint32_t version,size;
  // nullptr: compiled54 snapshot + validated exports; caller must already be
  // attached on Unity owner thread and own exclusive hooks. Returns1 to retry.
@@ -46,17 +46,17 @@ struct PgrSharedHostApi {
  int (*stop)();
  int (*sample)(PgsSharedHostSample*);
  int (*next_event)(PgsSharedHostEvent*);
- const PgrSharedMetadataOutput *(*metadata)();
- void (*on_unity_pulse)(void*,const PgrUnityPulse*);
+ const PgsSharedMetadataOutput *(*metadata)();
+ void (*on_unity_pulse)(void*,const PgsUnityPulse*);
 };
-static_assert(sizeof(PgrSharedHostApi)==72,"LP64 API");
+static_assert(sizeof(PgsSharedHostApi)==72,"LP64 API");
 // One transfer executor, policy epoch and FIFO owner for catch and VGP hosts.
 // Owner-thread only. Callers retain their managed arguments across submit.
 struct PgsSharedHostTransferApi {
  uint32_t version,size;
  int (*ready)();
- int (*submit)(const PgrTransferExecRequest*,uint64_t*);
- int (*next_event)(PgrTransferExecEvent*);
+ int (*submit)(const PgsTransferExecRequest*,uint64_t*);
+ int (*next_event)(PgsTransferExecEvent*);
 };
 static_assert(sizeof(PgsSharedHostTransferApi)==32,"LP64 transfer broker API2");
 extern "C" const void *pgs_shared_host_api(uint32_t version);

@@ -18,9 +18,9 @@
 #include "pgs_native_api.h"
 #include <dlfcn.h>
 
-static_assert(sizeof(PgrRoutesObserversConfig) == 184, "config 184");
-static_assert(sizeof(PgrRoutesObserversOutput) == 2672, "output 2672");
-static_assert(sizeof(PgrRoutesObserversApi) == 96, "table 96");
+static_assert(sizeof(PgsRoutesObserversConfig) == 184, "config 184");
+static_assert(sizeof(PgsRoutesObserversOutput) == 2672, "output 2672");
+static_assert(sizeof(PgsRoutesObserversApi) == 96, "table 96");
 
 namespace {
 
@@ -128,10 +128,10 @@ extern "C" __attribute__((noinline)) void fixture_bjan(void *self, void *, const
 using FixtureHook = void (*)(void *,void *,const void *);
 FixtureHook volatile call_bjan=fixture_bjan,call_reward=fixture_reward_init,call_rating=fixture_rating_init;
 
-const PgrRoutesObserversApi *api = nullptr;
+const PgsRoutesObserversApi *api = nullptr;
 uint64_t self_tid() { return static_cast<uint64_t>(static_cast<pid_t>(gettid())); }
 
-void make_config(PgrRoutesObserversConfig *c) {
+void make_config(PgsRoutesObserversConfig *c) {
   std::memset(c, 0, sizeof(*c));
   c->version = PGS_RO_CONFIG_VERSION;
   c->size = sizeof(*c);
@@ -159,7 +159,7 @@ void make_config(PgrRoutesObserversConfig *c) {
   c->addr_completion_resp = reinterpret_cast<void *>(&fixture_bjan);
 }
 
-void make_request(PgrRoutesObserversRequest *r, uint64_t tid, uint64_t residual, uint64_t gen) {
+void make_request(PgsRoutesObserversRequest *r, uint64_t tid, uint64_t residual, uint64_t gen) {
   std::memset(r, 0, sizeof(*r));
   r->version = PGS_RO_REQUEST_VERSION;
   r->size = sizeof(*r);
@@ -173,7 +173,7 @@ void set_id(uint16_t *dst, const char *s, uint32_t n) {
   for(uint32_t i=0;i<n;i++){const uint16_t unit=static_cast<unsigned char>(s[i]);std::memcpy(bytes+i*2,&unit,sizeof(unit));}
 }
 
-void make_completing(PgrRoutesObserversCompleting *c, uint64_t tid, uint64_t gen, uint64_t handle,
+void make_completing(PgsRoutesObserversCompleting *c, uint64_t tid, uint64_t gen, uint64_t handle,
                      uint64_t seq, const char *id) {
   std::memset(c, 0, sizeof(*c));
   c->version = PGS_RO_COMPLETING_VERSION;
@@ -209,11 +209,11 @@ void build_route_chain(const char *id) {
   assert(fake_string_length(str)==static_cast<int32_t>(std::strlen(id)));
 }
 
-bool has_event(const PgrRoutesObserversOutput &out, uint32_t type) {
+bool has_event(const PgsRoutesObserversOutput &out, uint32_t type) {
   for (uint32_t i = 0; i < out.event_count; ++i) if (out.events[i].type == type) return true;
   return false;
 }
-const PgrRoutesObserversEvent *find_event(const PgrRoutesObserversOutput &out, uint32_t type) {
+const PgsRoutesObserversEvent *find_event(const PgsRoutesObserversOutput &out, uint32_t type) {
   for (uint32_t i = 0; i < out.event_count; ++i) if (out.events[i].type == type) return &out.events[i];
   return nullptr;
 }
@@ -227,17 +227,17 @@ int main(int argc, char **argv) {
   auto get = reinterpret_cast<const void *(*)(uint32_t)>(dlsym(library, "pgs_native_api"));
   auto core = get ? static_cast<const pgs_native_api_v2 *>(get(2)) : nullptr;
   assert(core && core->query_feature(46, 99) == nullptr);
-  api = static_cast<const PgrRoutesObserversApi *>(core->query_feature(46, 1));
-  assert(api && api->size == sizeof(PgrRoutesObserversApi));
+  api = static_cast<const PgsRoutesObserversApi *>(core->query_feature(46, 1));
+  assert(api && api->size == sizeof(PgsRoutesObserversApi));
 
   // install(): header validation, hook placement, idempotent, reconfig, missing pointer.
   {
-    PgrRoutesObserversConfig c; make_config(&c);
+    PgsRoutesObserversConfig c; make_config(&c);
     assert(api->install(&c) == 0);
     assert(api->install(&c) == 0);  // idempotent
-    PgrRoutesObserversConfig c2 = c; c2.m_dismiss_gui = &kThread;
+    PgsRoutesObserversConfig c2 = c; c2.m_dismiss_gui = &kThread;
     assert(api->install(&c2) == PGS_RO_ERR_RECONFIG);
-    PgrRoutesObserversConfig bad; make_config(&bad); bad.class_progress = nullptr;
+    PgsRoutesObserversConfig bad; make_config(&bad); bad.class_progress = nullptr;
     assert(api->install(&bad) == PGS_RO_ERR_MISSING_PTR);
   }
 
@@ -249,26 +249,26 @@ int main(int argc, char **argv) {
   build_route_chain("route-a");
 
   // Arm owner + lease.
-  { PgrRoutesObserversRequest r; make_request(&r, tid, 2500, api->generation());
-    PgrRoutesObserversOutput out; assert(api->poll(&r, &out) == PGS_RO_OK); }
+  { PgsRoutesObserversRequest r; make_request(&r, tid, 2500, api->generation());
+    PgsRoutesObserversOutput out; assert(api->poll(&r, &out) == PGS_RO_OK); }
 
   // bjan BEFORE set_completing captures nothing: no completing latched.
   { Fake progress; std::memset(&progress, 0, sizeof(progress)); set_klass(&progress, &kProgressClass); set_i32(&progress, 0x14, 1);
     g_bjan_calls = 0; call_bjan(&consumption, &progress, nullptr);
     assert(g_bjan_calls.load() == 1 && g_last_bjan_self == &consumption);  // original chained, receiver preserved
-    PgrRoutesObserversRequest r; make_request(&r, tid, 2500, api->generation());
-    PgrRoutesObserversOutput out; assert(api->poll(&r, &out) == PGS_RO_OK);
+    PgsRoutesObserversRequest r; make_request(&r, tid, 2500, api->generation());
+    PgsRoutesObserversOutput out; assert(api->poll(&r, &out) == PGS_RO_OK);
     assert(!has_event(out, PGS_RO_EV_REWARD_CONFIRMED) && !(out.flags & PGS_RO_FLAG_COMPLETION_READY)); }
 
   // set_completing + a success bjan confirms the reward and correlates the current id.
-  { PgrRoutesObserversCompleting c; make_completing(&c, tid, api->generation(), cons_handle, 7, "route-a");
+  { PgsRoutesObserversCompleting c; make_completing(&c, tid, api->generation(), cons_handle, 7, "route-a");
     assert(api->set_completing(&c) == PGS_RO_OK);
     Fake progress; std::memset(&progress, 0, sizeof(progress)); set_klass(&progress, &kProgressClass); set_i32(&progress, 0x14, PGS_RO_COMPLETION_SUCCESS);
     g_bjan_calls = 0; call_bjan(&consumption, &progress, nullptr);
     assert(g_bjan_calls.load() == 1);
-    PgrRoutesObserversRequest r; make_request(&r, tid, 2500, api->generation());
-    PgrRoutesObserversOutput out; assert(api->poll(&r, &out) == PGS_RO_OK);
-    const PgrRoutesObserversEvent *e = find_event(out, PGS_RO_EV_REWARD_CONFIRMED);
+    PgsRoutesObserversRequest r; make_request(&r, tid, 2500, api->generation());
+    PgsRoutesObserversOutput out; assert(api->poll(&r, &out) == PGS_RO_OK);
+    const PgsRoutesObserversEvent *e = find_event(out, PGS_RO_EV_REWARD_CONFIRMED);
     assert(e && e->i0 == 7 && e->id_length == 7 && e->id[6] == 'a');
     // Immediately after confirmation the completion snapshot is NOT yet ready (< COMPLETION_MS).
     assert(!(out.flags & PGS_RO_FLAG_COMPLETION_READY)); }
@@ -281,49 +281,49 @@ int main(int argc, char **argv) {
     usleep(150000);                              // cross UI_SETTLE_MS
     set_i32(&gui, 0x70, PGS_RO_GUI_STATE_DISMISSED);
     g_dismiss_called = false;
-    PgrRoutesObserversRequest r; make_request(&r, tid, 2500, api->generation());
-    PgrRoutesObserversOutput out; assert(api->poll(&r, &out) == PGS_RO_OK);
+    PgsRoutesObserversRequest r; make_request(&r, tid, 2500, api->generation());
+    PgsRoutesObserversOutput out; assert(api->poll(&r, &out) == PGS_RO_OK);
     assert(g_dismiss_called && g_dismiss_receiver == &gui);
-    const PgrRoutesObserversEvent *e = find_event(out, PGS_RO_EV_RESULT_DISMISSED);
+    const PgsRoutesObserversEvent *e = find_event(out, PGS_RO_EV_RESULT_DISMISSED);
     assert(e && e->aux == PGS_RO_SCREEN_REWARD);
     assert(g_live_handles == live_with_root - 1);  // pendingUi root freed on dismissal
   }
 
   // After COMPLETION_MS with the queue empty the completion snapshot is reported.
   { usleep(3100000);
-    PgrRoutesObserversRequest r; make_request(&r, tid, 2500, api->generation());
-    PgrRoutesObserversOutput out; assert(api->poll(&r, &out) == PGS_RO_OK);
+    PgsRoutesObserversRequest r; make_request(&r, tid, 2500, api->generation());
+    PgsRoutesObserversOutput out; assert(api->poll(&r, &out) == PGS_RO_OK);
     assert(out.flags & PGS_RO_FLAG_COMPLETION_READY);
     assert(out.completion_seq == 7 && out.completion_id_length == 7 && out.completion_id[0] == 'r'); }
 
   // A rejected (status!=1) bjan queues REWARD_REJECTED and does not set completion.
-  { PgrRoutesObserversRequest rd; make_request(&rd, tid, 0, api->generation()); assert(api->drain(&rd) == PGS_RO_OK);
-    { PgrRoutesObserversRequest r; make_request(&r, tid, 2500, api->generation()); PgrRoutesObserversOutput o; api->poll(&r, &o); }
-    PgrRoutesObserversCompleting c; make_completing(&c, tid, api->generation(), cons_handle, 9, "route-a");
+  { PgsRoutesObserversRequest rd; make_request(&rd, tid, 0, api->generation()); assert(api->drain(&rd) == PGS_RO_OK);
+    { PgsRoutesObserversRequest r; make_request(&r, tid, 2500, api->generation()); PgsRoutesObserversOutput o; api->poll(&r, &o); }
+    PgsRoutesObserversCompleting c; make_completing(&c, tid, api->generation(), cons_handle, 9, "route-a");
     assert(api->set_completing(&c) == PGS_RO_OK);
     Fake progress; std::memset(&progress, 0, sizeof(progress)); set_klass(&progress, &kProgressClass); set_i32(&progress, 0x14, 3);
     call_bjan(&consumption, &progress, nullptr);
-    PgrRoutesObserversRequest r; make_request(&r, tid, 2500, api->generation());
-    PgrRoutesObserversOutput out; assert(api->poll(&r, &out) == PGS_RO_OK);
-    const PgrRoutesObserversEvent *e = find_event(out, PGS_RO_EV_REWARD_REJECTED);
+    PgsRoutesObserversRequest r; make_request(&r, tid, 2500, api->generation());
+    PgsRoutesObserversOutput out; assert(api->poll(&r, &out) == PGS_RO_OK);
+    const PgsRoutesObserversEvent *e = find_event(out, PGS_RO_EV_REWARD_REJECTED);
     assert(e && e->i0 == 3 && !(out.flags & PGS_RO_FLAG_COMPLETION_READY)); }
 
   // A bjan whose current id disagrees with completing.id does not confirm.
-  { PgrRoutesObserversRequest rd; make_request(&rd, tid, 0, api->generation()); assert(api->drain(&rd) == PGS_RO_OK);
-    { PgrRoutesObserversRequest r; make_request(&r, tid, 2500, api->generation()); PgrRoutesObserversOutput o; api->poll(&r, &o); }
-    PgrRoutesObserversCompleting c; make_completing(&c, tid, api->generation(), cons_handle, 11, "route-a");
+  { PgsRoutesObserversRequest rd; make_request(&rd, tid, 0, api->generation()); assert(api->drain(&rd) == PGS_RO_OK);
+    { PgsRoutesObserversRequest r; make_request(&r, tid, 2500, api->generation()); PgsRoutesObserversOutput o; api->poll(&r, &o); }
+    PgsRoutesObserversCompleting c; make_completing(&c, tid, api->generation(), cons_handle, 11, "route-a");
     assert(api->set_completing(&c) == PGS_RO_OK);
     build_route_chain("route-b");  // current route id now differs
     Fake progress; std::memset(&progress, 0, sizeof(progress)); set_klass(&progress, &kProgressClass); set_i32(&progress, 0x14, 1);
     call_bjan(&consumption, &progress, nullptr);
-    PgrRoutesObserversRequest r; make_request(&r, tid, 2500, api->generation());
-    PgrRoutesObserversOutput out; assert(api->poll(&r, &out) == PGS_RO_OK);
+    PgsRoutesObserversRequest r; make_request(&r, tid, 2500, api->generation());
+    PgsRoutesObserversOutput out; assert(api->poll(&r, &out) == PGS_RO_OK);
     assert(!has_event(out, PGS_RO_EV_REWARD_CONFIRMED));
     build_route_chain("route-a"); }
 
   // Lite entries: tracking depth drives the location gate + a status-change event; waypoint throttles.
-  { PgrRoutesObserversRequest rd; make_request(&rd, tid, 0, api->generation()); assert(api->drain(&rd) == PGS_RO_OK);
-    { PgrRoutesObserversRequest r; make_request(&r, tid, 2500, api->generation()); PgrRoutesObserversOutput o; api->poll(&r, &o); }
+  { PgsRoutesObserversRequest rd; make_request(&rd, tid, 0, api->generation()); assert(api->drain(&rd) == PGS_RO_OK);
+    { PgsRoutesObserversRequest r; make_request(&r, tid, 2500, api->generation()); PgsRoutesObserversOutput o; api->poll(&r, &o); }
     assert(api->location_gate(tid) == 0);              // no tracking depth yet
     assert(api->tracking_enter(tid) == 1);
     assert(api->location_gate(tid) == 1);              // inside route tracking -> override allowed
@@ -331,10 +331,10 @@ int main(int argc, char **argv) {
     assert(api->location_gate(tid) == 0);              // depth back to zero
     assert(api->waypoint_observed(tid, 12.5, -45.25) == 1);
     assert(api->waypoint_observed(tid, 1.0, 2.0) == 0); // throttled within 10s
-    PgrRoutesObserversRequest r; make_request(&r, tid, 2500, api->generation());
-    PgrRoutesObserversOutput out; assert(api->poll(&r, &out) == PGS_RO_OK);
-    const PgrRoutesObserversEvent *t = find_event(out, PGS_RO_EV_TRACKING_STATUS);
-    const PgrRoutesObserversEvent *w = find_event(out, PGS_RO_EV_WAYPOINT);
+    PgsRoutesObserversRequest r; make_request(&r, tid, 2500, api->generation());
+    PgsRoutesObserversOutput out; assert(api->poll(&r, &out) == PGS_RO_OK);
+    const PgsRoutesObserversEvent *t = find_event(out, PGS_RO_EV_TRACKING_STATUS);
+    const PgsRoutesObserversEvent *w = find_event(out, PGS_RO_EV_WAYPOINT);
     assert(t && t->i0 == 5);
     assert(w && w->f0 == 12.5 && w->f1 == -45.25); }
 
@@ -342,31 +342,31 @@ int main(int argc, char **argv) {
   { const uint64_t newgen = api->revoke();
     assert(api->tracking_enter(tid) == 0 && api->location_gate(tid) == 0);
     assert(api->waypoint_observed(tid, 3.0, 4.0) == 0);
-    PgrRoutesObserversRequest stale; make_request(&stale, tid, 2500, newgen - 1);
-    PgrRoutesObserversOutput so; assert(api->poll(&stale, &so) == PGS_RO_SKIP);
-    PgrRoutesObserversRequest fresh; make_request(&fresh, tid, 2500, newgen);
-    PgrRoutesObserversOutput fo; assert(api->poll(&fresh, &fo) == PGS_RO_OK); }
+    PgsRoutesObserversRequest stale; make_request(&stale, tid, 2500, newgen - 1);
+    PgsRoutesObserversOutput so; assert(api->poll(&stale, &so) == PGS_RO_SKIP);
+    PgsRoutesObserversRequest fresh; make_request(&fresh, tid, 2500, newgen);
+    PgsRoutesObserversOutput fo; assert(api->poll(&fresh, &fo) == PGS_RO_OK); }
 
   // Foreign-thread poll / set_completing are benign SKIPs.
   { std::thread foreign([&]() {
-      PgrRoutesObserversRequest fr; make_request(&fr, tid, 2500, api->generation());  // owner tid, wrong gettid
-      PgrRoutesObserversOutput fo; assert(api->poll(&fr, &fo) == PGS_RO_SKIP);
-      PgrRoutesObserversCompleting c; make_completing(&c, tid, api->generation(), cons_handle, 13, "route-a");
+      PgsRoutesObserversRequest fr; make_request(&fr, tid, 2500, api->generation());  // owner tid, wrong gettid
+      PgsRoutesObserversOutput fo; assert(api->poll(&fr, &fo) == PGS_RO_SKIP);
+      PgsRoutesObserversCompleting c; make_completing(&c, tid, api->generation(), cons_handle, 13, "route-a");
       assert(api->set_completing(&c) == PGS_RO_SKIP);
     });
     foreign.join(); }
 
   // drain frees every pendingUi root.
-  { { PgrRoutesObserversRequest r; make_request(&r, tid, 2500, api->generation()); PgrRoutesObserversOutput o; api->poll(&r, &o); }
+  { { PgsRoutesObserversRequest r; make_request(&r, tid, 2500, api->generation()); PgsRoutesObserversOutput o; api->poll(&r, &o); }
     Fake gui; std::memset(&gui, 0, sizeof(gui)); set_klass(&gui, &kRewardGuiClass);
     // re-confirm so the reward hook captures: issue completing + success bjan first.
-    PgrRoutesObserversCompleting c; make_completing(&c, tid, api->generation(), cons_handle, 15, "route-a");
+    PgsRoutesObserversCompleting c; make_completing(&c, tid, api->generation(), cons_handle, 15, "route-a");
     assert(api->set_completing(&c) == PGS_RO_OK);
     Fake progress; std::memset(&progress, 0, sizeof(progress)); set_klass(&progress, &kProgressClass); set_i32(&progress, 0x14, 1);
     call_bjan(&consumption, &progress, nullptr);
     call_reward(&gui, nullptr, nullptr);
     const int before = g_live_handles;
-    PgrRoutesObserversRequest rd; make_request(&rd, tid, 0, api->generation());
+    PgsRoutesObserversRequest rd; make_request(&rd, tid, 0, api->generation());
     assert(api->drain(&rd) == PGS_RO_OK);
     assert(g_live_handles <= before);  // at least the pendingUi root was freed
   }

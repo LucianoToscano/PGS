@@ -24,10 +24,10 @@
 // construction aborts WITHOUT invoking. Once the invoke has issued, the result is SUBMITTED even if a
 // revoke raced the call -- never retried. A busy flag spans all root cleanup; only one matching CURRENT leaf is allowed during confirmation.
 
-static_assert(sizeof(PgrRoutesActionsConfig) == 352, "config 352");
-static_assert(sizeof(PgrRoutesActionsRequest) == 328, "request 328");
-static_assert(sizeof(PgrRoutesActionsOutput) == 280, "output 280");
-static_assert(sizeof(PgrRoutesActionsApi) == 40, "table 40");
+static_assert(sizeof(PgsRoutesActionsConfig) == 352, "config 352");
+static_assert(sizeof(PgsRoutesActionsRequest) == 328, "request 328");
+static_assert(sizeof(PgsRoutesActionsOutput) == 280, "output 280");
+static_assert(sizeof(PgsRoutesActionsApi) == 40, "table 40");
 
 namespace {
 
@@ -51,7 +51,7 @@ using StrChars = uint16_t *(*)(void *string);
 // --- lifetime / publication --------------------------------------------------------
 std::mutex g_install_mutex;
 std::mutex g_state_mutex;
-PgrRoutesActionsConfig g_cfg{};
+PgsRoutesActionsConfig g_cfg{};
 std::atomic<bool> g_installed{false};
 
 // Permanent Unity owner, latched once from a genuine on-thread call.
@@ -263,7 +263,7 @@ int read_current_state(const Root &svc, uint64_t deadline, uint64_t generation, 
 // Each resolves/roots its service (consumption or routes) in api_execute, runs under g_busy with a
 // fresh deadline + generation, and on success sets out->status = SUCCESS, out->reason = NONE.
 
-int do_current(const Root &svc, uint64_t deadline, uint64_t generation, PgrRoutesActionsOutput *out) {
+int do_current(const Root &svc, uint64_t deadline, uint64_t generation, PgsRoutesActionsOutput *out) {
   CurrentState cs;
   int status = 0, reason = 0;
   int rc = read_current_state(svc, deadline, generation, &cs, &status, &reason);
@@ -293,7 +293,7 @@ int do_current(const Root &svc, uint64_t deadline, uint64_t generation, PgrRoute
   return PGS_RA_SUCCESS;
 }
 
-int do_discover(const Root &svc, uint64_t deadline, uint64_t generation, PgrRoutesActionsOutput *out) {
+int do_discover(const Root &svc, uint64_t deadline, uint64_t generation, PgsRoutesActionsOutput *out) {
   int status = 0, reason = 0;
   if (!preflight(deadline, generation, &status, &reason)) { out->status = status; out->reason = reason; return status; }
   void *self = svc.get();
@@ -308,8 +308,8 @@ int do_discover(const Root &svc, uint64_t deadline, uint64_t generation, PgrRout
   return PGS_RA_SUCCESS;
 }
 
-int do_start(const Root &svc, const PgrRoutesActionsRequest *r, uint64_t deadline, uint64_t generation,
-             PgrRoutesActionsOutput *out) {
+int do_start(const Root &svc, const PgsRoutesActionsRequest *r, uint64_t deadline, uint64_t generation,
+             PgsRoutesActionsOutput *out) {
   int status = 0, reason = 0;
   int b;
   b = invoke_getter_bool(g_cfg.m_flagInitialized, svc, deadline, generation, true, &status, &reason);
@@ -394,8 +394,8 @@ int do_start(const Root &svc, const PgrRoutesActionsRequest *r, uint64_t deadlin
   return PGS_RA_SUCCESS;
 }
 
-int do_complete(const Root &svc, const PgrRoutesActionsRequest *r, uint64_t deadline, uint64_t generation,
-                PgrRoutesActionsOutput *out) {
+int do_complete(const Root &svc, const PgsRoutesActionsRequest *r, uint64_t deadline, uint64_t generation,
+                PgsRoutesActionsOutput *out) {
   CurrentState cs;
   int status = 0, reason = 0;
   int rc = read_current_state(svc, deadline, generation, &cs, &status, &reason);
@@ -431,7 +431,7 @@ int do_complete(const Root &svc, const PgrRoutesActionsRequest *r, uint64_t dead
   return PGS_RA_SUCCESS;
 }
 
-int do_pause(const Root &svc, uint64_t deadline, uint64_t generation, PgrRoutesActionsOutput *out) {
+int do_pause(const Root &svc, uint64_t deadline, uint64_t generation, PgsRoutesActionsOutput *out) {
   int status = 0, reason = 0;
   int b;
   b = invoke_getter_bool(g_cfg.m_isConsuming, svc, deadline, generation, true, &status, &reason);
@@ -467,28 +467,28 @@ bool owner_ready(uint64_t tid) {
   return g_owner_tid.load(std::memory_order_acquire) == tid;
 }
 
-void init_output(PgrRoutesActionsOutput *out) {
+void init_output(PgsRoutesActionsOutput *out) {
   std::memset(out, 0, sizeof(*out));
   out->version = PGS_RA_OUTPUT_VERSION;
-  out->size = sizeof(PgrRoutesActionsOutput);
+  out->size = sizeof(PgsRoutesActionsOutput);
 }
 
 bool is_safe_seq(uint64_t v) { return static_cast<double>(v) <= kMaxSafeInteger; }
 
 // --- config validation / install ---------------------------------------------------
-bool validate_config(const PgrRoutesActionsConfig *c, int *rc) {
+bool validate_config(const PgsRoutesActionsConfig *c, int *rc) {
   if (c == nullptr) { *rc = PGS_RA_ERR_NULL_ARG; return false; }
   if (c->version != PGS_RA_CONFIG_VERSION) { *rc = PGS_RA_ERR_BAD_VERSION; return false; }
-  if (c->size != sizeof(PgrRoutesActionsConfig)) { *rc = PGS_RA_ERR_BAD_SIZE; return false; }
+  if (c->size != sizeof(PgsRoutesActionsConfig)) { *rc = PGS_RA_ERR_BAD_SIZE; return false; }
   void *const *ptrs = reinterpret_cast<void *const *>(
-      reinterpret_cast<const unsigned char *>(c) + offsetof(PgrRoutesActionsConfig, runtime_invoke));
+      reinterpret_cast<const unsigned char *>(c) + offsetof(PgsRoutesActionsConfig, runtime_invoke));
   for (int i = 0; i < PGS_RA_PTR_COUNT; ++i)
     if (ptrs[i] == nullptr) { *rc = PGS_RA_ERR_MISSING_PTR; return false; }
   *rc = 0;  // success; api_install ignores *rc when this returns true
   return true;
 }
 
-int api_install(const PgrRoutesActionsConfig *config) {
+int api_install(const PgsRoutesActionsConfig *config) {
   int rc = 0;
   if (!validate_config(config, &rc)) return rc;
   uint64_t probe = 0;
@@ -513,7 +513,7 @@ uint64_t api_generation() { return g_gen.load(std::memory_order_acquire); }
 
 uint64_t api_revoke() { return g_gen.fetch_add(1, std::memory_order_acq_rel) + 1; }
 
-int api_execute(const PgrRoutesActionsRequest *req, PgrRoutesActionsOutput *out) {
+int api_execute(const PgsRoutesActionsRequest *req, PgsRoutesActionsOutput *out) {
   if (!out) return PGS_RA_ERR_NULL_ARG;
   init_output(out);
   auto reject = [&](int status, int reason) { out->status=status; out->reason=reason; return status; };
@@ -521,7 +521,7 @@ int api_execute(const PgrRoutesActionsRequest *req, PgrRoutesActionsOutput *out)
   if (!req) return reject(PGS_RA_ERR_NULL_ARG, PGS_RA_REASON_NATIVE_ERROR);
   if (req->version != 1) return reject(PGS_RA_ERR_BAD_VERSION, PGS_RA_REASON_NATIVE_ERROR);
   if (req->size != sizeof(*req)) return reject(PGS_RA_ERR_BAD_SIZE, PGS_RA_REASON_NATIVE_ERROR);
-  const PgrRoutesActionsRequest r=*req;
+  const PgsRoutesActionsRequest r=*req;
   if (r.action>PGS_RA_ACT_PAUSE || r.reserved || r.reversed>1 || r.id_length>PGS_RA_ID_MAX ||
       (r.action==PGS_RA_ACT_CURRENT && r.seq!=0)) return reject(PGS_RA_FAULT,PGS_RA_REASON_NATIVE_ERROR);
   const bool mutating=r.action!=PGS_RA_ACT_CURRENT;
@@ -553,7 +553,7 @@ int api_execute(const PgrRoutesActionsRequest *req, PgrRoutesActionsOutput *out)
     if (!r.seq || !is_safe_seq(r.seq) || r.seq<=g_seq_highwater) return reject(PGS_RA_REFUSE,PGS_RA_REASON_STALE_SEQ);
     g_seq_highwater=r.seq;
   }
-  PgrRoutesActionsOutput staged{};init_output(&staged);
+  PgsRoutesActionsOutput staged{};init_output(&staged);
   // The lambda owns every managed root. Its destruction completes before publication,
   // while the outer busy/leaf guard remains held through final validation.
   const int result=[&]() {
@@ -583,8 +583,8 @@ int api_execute(const PgrRoutesActionsRequest *req, PgrRoutesActionsOutput *out)
   return staged.status;
 }
 
-const PgrRoutesActionsApi kApiTable = {
-    PGS_RA_API_VERSION, static_cast<uint32_t>(sizeof(PgrRoutesActionsApi)),
+const PgsRoutesActionsApi kApiTable = {
+    PGS_RA_API_VERSION, static_cast<uint32_t>(sizeof(PgsRoutesActionsApi)),
     &api_install, &api_generation, &api_revoke, &api_execute,
 };
 

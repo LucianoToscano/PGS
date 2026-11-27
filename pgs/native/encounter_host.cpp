@@ -72,7 +72,7 @@
 
 namespace {
 
-using namespace pgr_shared_meta;
+using namespace pgs_shared_meta;
 
 static uint64_t current_os_tid() {
 #if defined(__BIONIC__)
@@ -125,7 +125,7 @@ static uint32_t g_event_count = 0;
 // Resolved IL2CPP Exports & Host State
 // ============================================================================
 struct ResolvedExports {
-  PgrMetaExports meta;
+  PgsMetaExports meta;
   PgsSharedMetaExtraExports extra;
   void *(*thread_current)(void);
   void *(*runtime_invoke)(const void *method, void *obj, void **params, void **exc);
@@ -160,11 +160,11 @@ static bool g_installed = false;
 static bool g_stopped = false;
 static uint64_t g_owner_tid = 0;
 
-static PgrEncounterHostConfig g_cfg = {};
+static PgsEncounterHostConfig g_cfg = {};
 static ResolvedExports g_exp = {};
-static PgrSharedMetadataOutput g_md = {};
-static PgrEncounterHostOptions g_opts = {};
-static PgrEncounterHostSample g_sample = {PGS_EH_API_VERSION, sizeof(PgrEncounterHostSample), 0, 0, 0, 0, 0, 0, 0, 0, 0};
+static PgsSharedMetadataOutput g_md = {};
+static PgsEncounterHostOptions g_opts = {};
+static PgsEncounterHostSample g_sample = {PGS_EH_API_VERSION, sizeof(PgsEncounterHostSample), 0, 0, 0, 0, 0, 0, 0, 0, 0};
 
 static uint32_t g_active_caps = 0;
 static uint64_t g_lease_deadline_ms = 0;
@@ -186,20 +186,20 @@ static uint32_t g_keep_species_count = 0;
 // Leaf API pointers
 static const pgs_berry_api_v1 *g_berries = nullptr;
 static const PgsMapPoiApi *g_map_poi = nullptr;
-static const PgrVgpPolicyApi *g_vp = nullptr;
-static const PgrVgpActionsApi *g_va = nullptr;
+static const PgsVgpPolicyApi *g_vp = nullptr;
+static const PgsVgpActionsApi *g_va = nullptr;
 static const PgsVgpMarkerApi *g_vmk = nullptr;
-static const PgrVgpCandidateApi *g_vc = nullptr;
-static const PgrVgpResultsApi *g_vr = nullptr;
-static const PgrVgpDiscoveryApi *g_vd = nullptr;
-static const PgrVgpMaintenanceApi *g_vm = nullptr;
+static const PgsVgpCandidateApi *g_vc = nullptr;
+static const PgsVgpResultsApi *g_vr = nullptr;
+static const PgsVgpDiscoveryApi *g_vd = nullptr;
+static const PgsVgpMaintenanceApi *g_vm = nullptr;
 static const PgsVgpAuxApi *g_vx = nullptr;
-static const PgrVgpControllerApi *g_vgc = nullptr;
+static const PgsVgpControllerApi *g_vgc = nullptr;
 static const PgsTransferApi *g_tp = nullptr;
-static const PgrTransferExecApi *g_tx = nullptr;
-static const PgrTransferFactsApi *g_tf = nullptr;
+static const PgsTransferExecApi *g_tx = nullptr;
+static const PgsTransferFactsApi *g_tf = nullptr;
 // Feature61 is the sole owner of executor23 updates, cleanup and event routing.
-struct TransferBroker { uint32_t version,size; int(*ready)(); int(*submit)(const PgrTransferExecRequest*,uint64_t*); int(*next_event)(PgrTransferExecEvent*); };
+struct TransferBroker { uint32_t version,size; int(*ready)(); int(*submit)(const PgsTransferExecRequest*,uint64_t*); int(*next_event)(PgsTransferExecEvent*); };
 static const TransferBroker *g_broker = nullptr;
 static void *g_berry_status_field = nullptr;
 static void *g_berry_response_class = nullptr;
@@ -256,18 +256,18 @@ static void pack_throw_value(const PgsThrowValue &tv, uint64_t *first, uint64_t 
 // ============================================================================
 // Transport & Event Emission Helpers
 // ============================================================================
-static const PgrRuntimeTransportApi *transport_api() {
-  const auto *t = static_cast<const PgrRuntimeTransportApi *>(
+static const PgsRuntimeTransportApi *transport_api() {
+  const auto *t = static_cast<const PgsRuntimeTransportApi *>(
       pgs_runtime_transport_api(PGS_TRANSPORT_API_VERSION));
   return t;
 }
 
 static void transport_emit_op(uint32_t op, const uint64_t *scalars, uint32_t sc_cnt,
                               const char *const *strings, uint32_t st_cnt) {
-  const PgrRuntimeTransportApi *t = transport_api();
+  const PgsRuntimeTransportApi *t = transport_api();
   if (!t || !t->emit) return;
   int64_t sc_vals[PGS_TRANSPORT_MAX_SCALARS] = {};
-  PgrRuntimeTransportString st_vals[PGS_TRANSPORT_MAX_STR_ARGS] = {};
+  PgsRuntimeTransportString st_vals[PGS_TRANSPORT_MAX_STR_ARGS] = {};
   for (uint32_t i = 0; i < sc_cnt && i < PGS_TRANSPORT_MAX_SCALARS; ++i) {
     sc_vals[i] = static_cast<int64_t>(scalars[i]);
   }
@@ -276,7 +276,7 @@ static void transport_emit_op(uint32_t op, const uint64_t *scalars, uint32_t sc_
     st_vals[i].ptr = s;
     st_vals[i].len = static_cast<uint32_t>(strlen(s));
   }
-  if (t->emit(op, sc_cnt ? sc_vals : nullptr, sc_cnt, st_cnt ? st_vals : nullptr, st_cnt) != PGR_TRANSPORT_OK && g_direct_transport)
+  if (t->emit(op, sc_cnt ? sc_vals : nullptr, sc_cnt, st_cnt ? st_vals : nullptr, st_cnt) != PGS_TRANSPORT_OK && g_direct_transport)
     g_stop_requested.store(true,std::memory_order_release);
 }
 
@@ -717,7 +717,7 @@ static void *resolve_rpc_field(void *bag_class,void *rpc_class){
   auto value=reinterpret_cast<bool(*)(void*)>(g_exp.meta.class_is_valuetype);
   auto accepts=reinterpret_cast<bool(*)(void*,void*)>(g_exp.meta.class_is_assignable_from);
   for(unsigned i=0;bag_class&&i<16;++i,bag_class=parent(bag_class)){
-    void *f=field(bag_class,PGR_GAME_ENCOUNTER_HOST_CPP_ERHP_NAME);if(!f)continue;void *k=klass(type(f));
+    void *f=field(bag_class,PGS_GAME_ENCOUNTER_HOST_CPP_ERHP_NAME);if(!f)continue;void *k=klass(type(f));
     if(offset(f)<16||offset(f)>512||!k||value(k)||!accepts(k,rpc_class))return nullptr;
     return f;
   }return nullptr;
@@ -736,7 +736,7 @@ static void clear_active_vgp_transfer() {
   memset(&g_vgp_transfer, 0, sizeof(g_vgp_transfer));
 }
 
-static void handle_vgp_transfer_ready(const PgrVgpControllerOut &out, uint64_t tid, uint64_t lease_ms, int keep_all = 0, bool honor_keep_all = false) {
+static void handle_vgp_transfer_ready(const PgsVgpControllerOut &out, uint64_t tid, uint64_t lease_ms, int keep_all = 0, bool honor_keep_all = false) {
   clear_active_vgp_transfer();
   g_vgp_transfer.response_handle = reinterpret_cast<void *>(static_cast<uintptr_t>(out.response_handle));
   g_vgp_transfer.bag_handle = reinterpret_cast<void *>(static_cast<uintptr_t>(out.bag_handle));
@@ -761,7 +761,7 @@ static void handle_vgp_transfer_ready(const PgrVgpControllerOut &out, uint64_t t
   void *gm_obj = g_exp.gchandle_get_target ? g_exp.gchandle_get_target(g_vgp_transfer.gm_handle) : nullptr;
   uint32_t protect_mask = g_opts.transfer_protect >= 0 ? static_cast<uint32_t>(g_opts.transfer_protect&2047) : 2047u;
 
-  PgrTransferFactsRequest req = {};
+  PgsTransferFactsRequest req = {};
   req.version = PGS_TF_REQUEST_VERSION;
   req.size = sizeof(req);
   req.owner_tid = tid;
@@ -771,7 +771,7 @@ static void handle_vgp_transfer_ready(const PgrVgpControllerOut &out, uint64_t t
   req.gm = gm_obj;
   req.protect = protect_mask;
 
-  PgrTransferFactsOut tf_out = {};
+  PgsTransferFactsOut tf_out = {};
   int ins_rc = g_tf->inspect(&req, &tf_out);
   if (ins_rc != PGS_TF_VALID) {
     emit_eventf("transfer-error", "{\"id\":\"%llu\",\"reason\":\"facts-%d\"}",
@@ -840,7 +840,7 @@ static void handle_vgp_transfer_ready(const PgrVgpControllerOut &out, uint64_t t
   void *bag_obj = g_exp.gchandle_get_target ? g_exp.gchandle_get_target(g_vgp_transfer.bag_handle) : nullptr;
   pk_obj = g_exp.gchandle_get_target ? g_exp.gchandle_get_target(g_vgp_transfer.pokemon_handle) : nullptr;
 
-  PgrTransferExecRequest tx_req = {};
+  PgsTransferExecRequest tx_req = {};
   tx_req.version = PGS_TX_REQUEST_VERSION;
   tx_req.size = sizeof(tx_req);
   tx_req.captured_id = out.caught_id;
@@ -892,7 +892,7 @@ static void handle_vgp_transfer_ready(const PgrVgpControllerOut &out, uint64_t t
 extern "C" int pgs_research_transfer_caught(uint64_t caught_id, uint64_t response, uint64_t bag,
                                             uint64_t pokemon, uint64_t gm, uint64_t tid, int keep_all) {
   if (!caught_id || !response || !bag || !pokemon || !gm || g_vgp_transfer.active) return 0;
-  PgrVgpControllerOut out = {};
+  PgsVgpControllerOut out = {};
   out.caught_id = caught_id;
   out.response_handle = response;
   out.bag_handle = bag;
@@ -904,7 +904,7 @@ extern "C" int pgs_research_transfer_caught(uint64_t caught_id, uint64_t respons
 
 static void pump_transfer_events(uint64_t tid, int stopping) {
   if (!g_broker || !(g_active_caps & PGS_EH_CAP_TRANSFER) || stopping) return;
-  PgrTransferExecEvent ev = {};
+  PgsTransferExecEvent ev = {};
   while (g_broker->next_event(&ev) == 1) {
     if (ev.kind == PGS_TX_EVENT_COMPLETE || ev.kind == PGS_TX_EVENT_TIMEOUT) {
       bool ok = (ev.kind == PGS_TX_EVENT_COMPLETE) && ((ev.aux & 1) != 0);
@@ -1097,7 +1097,7 @@ static void tick_vgp_controller(uint64_t tid, uint64_t now_ms, uint64_t lease_ms
     else incense_retry_at = UINT64_MAX;
   }
 
-  PgrVgpControllerTick in = {};
+  PgsVgpControllerTick in = {};
   in.version = PGS_VGC_TICK_VERSION;
   in.size = sizeof(in);
   in.owner = tid;
@@ -1132,7 +1132,7 @@ static void tick_vgp_controller(uint64_t tid, uint64_t now_ms, uint64_t lease_ms
     flags |= PGS_VGC_TF_MANUAL_READY;
   in.flags = flags;
 
-  PgrVgpControllerOut out = {};
+  PgsVgpControllerOut out = {};
   int rc = g_vgc->tick(&in, &out);
   static int last_tick_error=0;
   if (rc < 0) {
@@ -1377,35 +1377,35 @@ static int32_t resolve_berry_token(const char *tok, size_t len) {
 }
 
 static void sync_from_transport(uint64_t tid) {
-  const PgrRuntimeTransportApi *t = transport_api();
+  const PgsRuntimeTransportApi *t = transport_api();
   if (!t || !t->sample || !t->get_bool || !t->get_int || !t->get_double || !t->get_string) return;
 
-  PgrRuntimeTransportSample start = {PGS_TRANSPORT_SAMPLE_VERSION, sizeof(start)};
-  if (t->sample(&start) != PGR_TRANSPORT_OK || start.snapshots_accepted == 0) {
+  PgsRuntimeTransportSample start = {PGS_TRANSPORT_SAMPLE_VERSION, sizeof(start)};
+  if (t->sample(&start) != PGS_TRANSPORT_OK || start.snapshots_accepted == 0) {
     if (!g_direct_transport) return;
     start = {};
   }
   bool fresh = (start.snapshot_fresh != 0 && start.fault == 0);
   int active = 0;
-  if (fresh && t->get_bool(3, &active) != PGR_TRANSPORT_OK) {
+  if (fresh && t->get_bool(3, &active) != PGS_TRANSPORT_OK) {
     fresh = false;
   }
 
   auto bval = [&](uint32_t idx) -> int {
     int v = 0;
-    return (fresh && t->get_bool(idx, &v) == PGR_TRANSPORT_OK && v != 0) ? 1 : 0;
+    return (fresh && t->get_bool(idx, &v) == PGS_TRANSPORT_OK && v != 0) ? 1 : 0;
   };
   auto ival = [&](uint32_t idx) -> int32_t {
     int32_t v = 0;
-    return (fresh && t->get_int(idx, &v) == PGR_TRANSPORT_OK) ? v : 0;
+    return (fresh && t->get_int(idx, &v) == PGS_TRANSPORT_OK) ? v : 0;
   };
   auto dval = [&](uint32_t idx, double fallback) -> double {
     double v = fallback;
     int has = 0;
-    return (fresh && t->get_double(idx, &v, &has) == PGR_TRANSPORT_OK && has) ? v : fallback;
+    return (fresh && t->get_double(idx, &v, &has) == PGS_TRANSPORT_OK && has) ? v : fallback;
   };
 
-  PgrEncounterHostOptions next_opts = g_opts;
+  PgsEncounterHostOptions next_opts = g_opts;
   next_opts.berries_allowed = (active > 0 && bval(7) > 0) ? 1u : 0u;
   next_opts.auto_transfer_allowed = (active > 0 && bval(5) > 0) ? 1u : 0u;
   next_opts.item_access_allowed = (active > 0 && bval(16) > 0) ? 1u : 0u;
@@ -1426,7 +1426,7 @@ static void sync_from_transport(uint64_t tid) {
   // Parse berry priority string[2]
   char prio_buf[128] = {};
   uint32_t prio_len = 0;
-  if (fresh && t->get_string(2, prio_buf, sizeof(prio_buf) - 1, &prio_len) == PGR_TRANSPORT_OK) {
+  if (fresh && t->get_string(2, prio_buf, sizeof(prio_buf) - 1, &prio_len) == PGS_TRANSPORT_OK) {
     if (prio_len < sizeof(prio_buf)) prio_buf[prio_len] = '\0';
     { // Parse every coherent poll; a prior stale snapshot may have cleared options.
       snprintf(g_last_berry_prio_str, sizeof(g_last_berry_prio_str), "%s", prio_buf);
@@ -1456,7 +1456,7 @@ static void sync_from_transport(uint64_t tid) {
   // noncanonical leading zeros, overflow and truncation rather than preserving stale policy.
   char keep_buf[10000] = {};uint32_t keep_len=0, pending_count=0;
   int32_t pending_ids[2000]={};bool seen[2001]={};
-  bool policy_valid=fresh && t->get_string(4,keep_buf,sizeof(keep_buf),&keep_len)==PGR_TRANSPORT_OK && keep_len<sizeof(keep_buf);
+  bool policy_valid=fresh && t->get_string(4,keep_buf,sizeof(keep_buf),&keep_len)==PGS_TRANSPORT_OK && keep_len<sizeof(keep_buf);
   if(policy_valid){
     size_t i=0;
     while(i<keep_len){
@@ -1474,16 +1474,16 @@ static void sync_from_transport(uint64_t tid) {
 
   // Keep-IV cutoff, string slot 25. A missing or malformed value falls back to the original 90%.
   char keep_iv_buf[16] = {};uint32_t keep_iv_len=0, pending_keep_iv=0;
-  if(fresh && t->get_string(25,keep_iv_buf,sizeof(keep_iv_buf),&keep_iv_len)==PGR_TRANSPORT_OK && keep_iv_len<sizeof(keep_iv_buf))
+  if(fresh && t->get_string(25,keep_iv_buf,sizeof(keep_iv_buf),&keep_iv_len)==PGS_TRANSPORT_OK && keep_iv_len<sizeof(keep_iv_buf))
     pending_keep_iv=pgs_transfer_keep_iv_parse(keep_iv_buf,keep_iv_len);
 
-  PgrRuntimeTransportSample end = {PGS_TRANSPORT_SAMPLE_VERSION, sizeof(end)};
-  if (!fresh || t->sample(&end) != PGR_TRANSPORT_OK || end.snapshot_fresh == 0 ||
+  PgsRuntimeTransportSample end = {PGS_TRANSPORT_SAMPLE_VERSION, sizeof(end)};
+  if (!fresh || t->sample(&end) != PGS_TRANSPORT_OK || end.snapshot_fresh == 0 ||
       end.fault != 0 || end.snapshot_seq != start.snapshot_seq ||
       end.generation != start.generation) {
     next_opts = {};
     next_opts.version = PGS_EH_API_VERSION;
-    next_opts.size = sizeof(PgrEncounterHostOptions);
+    next_opts.size = sizeof(PgsEncounterHostOptions);
     next_opts.transfer_protect = 2047;
     next_opts.lease_remaining_ms = 0ULL;
     g_opts = next_opts;
@@ -1523,8 +1523,8 @@ static void sync_from_transport(uint64_t tid) {
 // Leaf Installation Helpers
 // ============================================================================
 static int install_berries_leaf() {
-  if (g_md.optional[OPT_BERRIES] != PGR_SHARED_OPT_AVAILABLE ||
-      g_md.optional[OPT_ITEMS] != PGR_SHARED_OPT_AVAILABLE) {
+  if (g_md.optional[OPT_BERRIES] != PGS_SHARED_OPT_AVAILABLE ||
+      g_md.optional[OPT_ITEMS] != PGS_SHARED_OPT_AVAILABLE) {
     return PGS_EH_ERR_METADATA;
   }
   const auto *api = static_cast<const pgs_berry_api_v1 *>(
@@ -1546,7 +1546,7 @@ static int install_berries_leaf() {
   void *iter=nullptr;
   for(unsigned i=0;g_berry_response_class && i<128;++i){
     void *f=fields(g_berry_response_class,&iter);if(!f)break;
-    if(offset(f)!=PGR_GAME_ENCOUNTER_HOST_CPP_BOXED_VALUE_OFFSET || (flags(f)&0x10))continue;
+    if(offset(f)!=PGS_GAME_ENCOUNTER_HOST_CPP_BOXED_VALUE_OFFSET || (flags(f)&0x10))continue;
     void *klass=from_type(type(f));int align=0;
     if(!klass || !is_enum(klass) || size(klass,&align)!=4 || g_berry_status_field) return PGS_EH_ERR_METADATA;
     g_berry_status_field=f;
@@ -1607,8 +1607,8 @@ static int install_berries_leaf() {
 static void map_poi_incident_fields(PgsMapPoiConfig *cfg);
 static int install_map_poi_leaf(bool *out_has_extra) {
   if (out_has_extra) *out_has_extra = false;
-  if (g_md.optional[OPT_MAP_POI] != PGR_SHARED_OPT_AVAILABLE ||
-      g_md.optional[OPT_VGP] != PGR_SHARED_OPT_AVAILABLE) {
+  if (g_md.optional[OPT_MAP_POI] != PGS_SHARED_OPT_AVAILABLE ||
+      g_md.optional[OPT_VGP] != PGS_SHARED_OPT_AVAILABLE) {
     return PGS_EH_ERR_METADATA;
   }
   const auto *api = static_cast<const PgsMapPoiApi *>(
@@ -1654,7 +1654,7 @@ static int install_map_poi_leaf(bool *out_has_extra) {
   mcfg.f_hidden = md_h(H_MP_HIDDEN);
 
   bool has_extra = false;
-  if (g_md.optional[OPT_MAP_POI_EXTRA] == PGR_SHARED_OPT_AVAILABLE) {
+  if (g_md.optional[OPT_MAP_POI_EXTRA] == PGS_SHARED_OPT_AVAILABLE) {
     void *m_team = md_h(H_MPE_TEAM_M);
     void *c_team = derived_return_class(m_team);
     if (m_team && c_team) {
@@ -1749,7 +1749,7 @@ static int install_transfer_leaves() {
       !broker->ready || !broker->submit || !broker->next_event || broker->ready()!=1)
     return PGS_EH_RETRY;
   g_tp=static_cast<const PgsTransferApi*>(pgs_transfer_policy_api(1));
-  g_tf=static_cast<const PgrTransferFactsApi*>(pgs_transfer_facts_api(PGS_TF_API_VERSION));
+  g_tf=static_cast<const PgsTransferFactsApi*>(pgs_transfer_facts_api(PGS_TF_API_VERSION));
   if(!g_tp || !g_tf) return PGS_EH_ERR_LEAF;
   g_broker=broker;
   return PGS_EH_OK;
@@ -1760,32 +1760,32 @@ static int install_vgp_leaves(bool *out_has_marker) {
   if(!items || items->version!=PGS_ITEMS_API_VERSION || items->size!=sizeof(*items))return PGS_EH_ERR_LEAF;
   kProxyItemsApi=*items;kProxyItemsApi.service_handle=&proxy_items_service_handle;kProxyItemsApi.service_acquire=&proxy_items_service_acquire;
   if (out_has_marker) *out_has_marker = false;
-  if (g_md.optional[OPT_VGP] != PGR_SHARED_OPT_AVAILABLE ||
-      g_md.optional[OPT_ITEMS] != PGR_SHARED_OPT_AVAILABLE ||
-      g_md.optional[OPT_ITEMS_LOOKUP] != PGR_SHARED_OPT_AVAILABLE) {
+  if (g_md.optional[OPT_VGP] != PGS_SHARED_OPT_AVAILABLE ||
+      g_md.optional[OPT_ITEMS] != PGS_SHARED_OPT_AVAILABLE ||
+      g_md.optional[OPT_ITEMS_LOOKUP] != PGS_SHARED_OPT_AVAILABLE) {
     return PGS_EH_ERR_METADATA;
   }
 
-  const auto *vp = static_cast<const PgrVgpPolicyApi *>(
+  const auto *vp = static_cast<const PgsVgpPolicyApi *>(
       pgs_vgp_policy_api(PGS_VP_API_VERSION));
-  const auto *va = static_cast<const PgrVgpActionsApi *>(
+  const auto *va = static_cast<const PgsVgpActionsApi *>(
       pgs_vgp_actions_api(PGS_VA_API_VERSION));
-  const auto *vc = static_cast<const PgrVgpCandidateApi *>(
+  const auto *vc = static_cast<const PgsVgpCandidateApi *>(
       pgs_vgp_candidates_api(PGS_VC_API_VERSION));
-  const auto *vr = static_cast<const PgrVgpResultsApi *>(
+  const auto *vr = static_cast<const PgsVgpResultsApi *>(
       pgs_vgp_results_api(PGS_VR_API_VERSION));
-  const auto *vd = static_cast<const PgrVgpDiscoveryApi *>(
+  const auto *vd = static_cast<const PgsVgpDiscoveryApi *>(
       pgs_vgp_discovery_api(PGS_VD_API_VERSION));
-  const auto *vm = static_cast<const PgrVgpMaintenanceApi *>(
+  const auto *vm = static_cast<const PgsVgpMaintenanceApi *>(
       pgs_vgp_maintenance_api(PGS_VM_API_VERSION));
   const auto *vx = static_cast<const PgsVgpAuxApi *>(
       pgs_vgp_aux_api(PGS_VX_API_VERSION));
-  const auto *vgc = static_cast<const PgrVgpControllerApi *>(
+  const auto *vgc = static_cast<const PgsVgpControllerApi *>(
       pgs_vgp_controller_api(PGS_VGC_API_VERSION));
   if (!vp || !va || !vc || !vr || !vd || !vm || !vx || !vgc) return PGS_EH_ERR_LEAF;
 
   // 1. Feature 25: VGP Policy
-  PgrVgpPolicyConfig vp_cfg = {};
+  PgsVgpPolicyConfig vp_cfg = {};
   vp_cfg.version = PGS_VP_CONFIG_VERSION;
   vp_cfg.size = sizeof(vp_cfg);
   vp_cfg.scan_interval_ms = 2500;
@@ -1808,7 +1808,7 @@ static int install_vgp_leaves(bool *out_has_marker) {
   if (vp->install(&vp_cfg) != 0) return PGS_EH_ERR_LEAF;
 
   // 2. Feature 26: VGP Actions
-  PgrVgpActionsConfig va_cfg = {};
+  PgsVgpActionsConfig va_cfg = {};
   va_cfg.version = PGS_VA_CONFIG_VERSION;
   va_cfg.size = sizeof(va_cfg);
   va_cfg.gchandle_new = reinterpret_cast<void *>(g_exp.gchandle_new);
@@ -1843,7 +1843,7 @@ static int install_vgp_leaves(bool *out_has_marker) {
   void *class_uint64 = derived_return_class(md_h(H_VGP_M_ID));
   if (!class_uint64) class_uint64 = const_cast<void *>(g_md.field_type_classes[0]);
 
-  PgrVgpCandidateConfig vc_cfg = {};
+  PgsVgpCandidateConfig vc_cfg = {};
   vc_cfg.version = PGS_VC_CONFIG_VERSION;
   vc_cfg.size = sizeof(vc_cfg);
   vc_cfg.gchandle_new = reinterpret_cast<void *>(g_exp.gchandle_new);
@@ -1873,7 +1873,7 @@ static int install_vgp_leaves(bool *out_has_marker) {
   if (vc->install(&vc_cfg) != 0) return PGS_EH_ERR_LEAF;
 
   // 4. Feature 30: VGP Results
-  PgrVgpResultsConfig vr_cfg = {};
+  PgsVgpResultsConfig vr_cfg = {};
   vr_cfg.version = PGS_VR_CONFIG_VERSION;
   vr_cfg.size = sizeof(vr_cfg);
   vr_cfg.gchandle_new = reinterpret_cast<void *>(g_exp.gchandle_new);
@@ -1908,7 +1908,7 @@ static int install_vgp_leaves(bool *out_has_marker) {
   void *class_container = derived_return_class(md_h(H_IL_CONTAINER_M));
   if (!class_container) class_container = md_k(OC_DICONTAINER);
 
-  PgrVgpDiscoveryConfig vd_cfg = {};
+  PgsVgpDiscoveryConfig vd_cfg = {};
   vd_cfg.version = PGS_VD_CONFIG_VERSION;
   vd_cfg.size = sizeof(vd_cfg);
   vd_cfg.gchandle_new = reinterpret_cast<void *>(g_exp.gchandle_new);
@@ -1947,7 +1947,7 @@ static int install_vgp_leaves(bool *out_has_marker) {
   if (vd->install(&vd_cfg) != 0) return PGS_EH_ERR_LEAF;
 
   // 6. Feature 32: VGP Maintenance
-  PgrVgpMaintenanceConfig vm_cfg = {};
+  PgsVgpMaintenanceConfig vm_cfg = {};
   vm_cfg.version = PGS_VM_CONFIG_VERSION;
   vm_cfg.size = sizeof(vm_cfg);
   vm_cfg.gchandle_new = reinterpret_cast<void *>(g_exp.gchandle_new);
@@ -2015,7 +2015,7 @@ static int install_vgp_leaves(bool *out_has_marker) {
   // 8. Optional Feature 28: VGP Marker
   const PgsVgpMarkerApi *vmk = static_cast<const PgsVgpMarkerApi*>(pgs_vgp_marker_api(1));
   bool has_marker = false;
-  if (g_md.optional[OPT_VGP_MARKER] == PGR_SHARED_OPT_AVAILABLE) {
+  if (g_md.optional[OPT_VGP_MARKER] == PGS_SHARED_OPT_AVAILABLE) {
     const auto *mk = static_cast<const PgsVgpMarkerApi *>(
         pgs_vgp_marker_api(1));
     if (mk && mk->install) {
@@ -2051,15 +2051,15 @@ static int install_vgp_leaves(bool *out_has_marker) {
   }
 
   // 9. Feature 33: VGP Controller
-  PgrVgpControllerConfig vgc_cfg = {};
+  PgsVgpControllerConfig vgc_cfg = {};
   vgc_cfg.version = PGS_VGC_CONFIG_VERSION;
   vgc_cfg.size = sizeof(vgc_cfg);
-  vgc_cfg.policy_table = const_cast<PgrVgpPolicyApi *>(vp);
-  vgc_cfg.actions_table = const_cast<PgrVgpActionsApi *>(va);
-  vgc_cfg.candidates_table = const_cast<PgrVgpCandidateApi *>(vc);
-  vgc_cfg.results_table = const_cast<PgrVgpResultsApi *>(vr);
-  vgc_cfg.discovery_table = const_cast<PgrVgpDiscoveryApi *>(vd);
-  vgc_cfg.maintenance_table = const_cast<PgrVgpMaintenanceApi *>(vm);
+  vgc_cfg.policy_table = const_cast<PgsVgpPolicyApi *>(vp);
+  vgc_cfg.actions_table = const_cast<PgsVgpActionsApi *>(va);
+  vgc_cfg.candidates_table = const_cast<PgsVgpCandidateApi *>(vc);
+  vgc_cfg.results_table = const_cast<PgsVgpResultsApi *>(vr);
+  vgc_cfg.discovery_table = const_cast<PgsVgpDiscoveryApi *>(vd);
+  vgc_cfg.maintenance_table = const_cast<PgsVgpMaintenanceApi *>(vm);
   vgc_cfg.marker_table = const_cast<PgsVgpMarkerApi *>(vmk);
   vgc_cfg.items_table = const_cast<pgs_items_api_v1 *>(&kProxyItemsApi);
   vgc_cfg.aux_table = const_cast<PgsVgpAuxApi *>(vx);
@@ -2114,7 +2114,7 @@ static int install_one_hook(void *target, void *replacement, void **orig_out) {
 // ============================================================================
 // API Implementation
 // ============================================================================
-static int api_configure(const PgrEncounterHostConfig *config) {
+static int api_configure(const PgsEncounterHostConfig *config) {
   StateGuard state; if (!state) return PGS_EH_RETRY;
   if (g_hook_poisoned) return PGS_EH_ERR_HOOK;
   if (g_installed) {
@@ -2123,13 +2123,13 @@ static int api_configure(const PgrEncounterHostConfig *config) {
   }
 
   ResolvedExports exp = {};
-  PgrSharedMetadataOutput md = {};
-  PgrEncounterHostConfig local_cfg = {};
+  PgsSharedMetadataOutput md = {};
+  PgsEncounterHostConfig local_cfg = {};
   bool have_md = false;
 
   if (config != nullptr) {
     if (config->version != PGS_EH_API_VERSION ||
-        config->size != sizeof(PgrEncounterHostConfig)) {
+        config->size != sizeof(PgsEncounterHostConfig)) {
 
       return PGS_EH_ERR_BAD_CONFIG;
     }
@@ -2159,7 +2159,7 @@ static int api_configure(const PgrEncounterHostConfig *config) {
 
     if (config->resolved_metadata) {
       if (config->resolved_metadata->version != 2u ||
-          config->resolved_metadata->size != sizeof(PgrSharedMetadataOutput)) {
+          config->resolved_metadata->size != sizeof(PgsSharedMetadataOutput)) {
 
         return PGS_EH_ERR_METADATA;
       }
@@ -2168,16 +2168,16 @@ static int api_configure(const PgrEncounterHostConfig *config) {
     }
   } else {
     local_cfg.version = PGS_EH_API_VERSION;
-    local_cfg.size = sizeof(PgrEncounterHostConfig);
+    local_cfg.size = sizeof(PgsEncounterHostConfig);
   }
 
   // Fill any missing runtime/meta exports from Feature 54 (runtime_bootstrap) if available.
-  const auto *boot = static_cast<const PgrBootApi *>(
+  const auto *boot = static_cast<const PgsBootApi *>(
       pgs_runtime_bootstrap_api(PGS_BOOT_API_VERSION));
-  PgrBootBinding b = {};
+  PgsBootBinding b = {};
   b.version = PGS_BOOT_BINDING_VERSION;
-  b.size = sizeof(PgrBootBinding);
-  if (boot && boot->snapshot && boot->snapshot(&b) == PGR_BOOT_OK && b.status == PGR_BOOT_OK) {
+  b.size = sizeof(PgsBootBinding);
+  if (boot && boot->snapshot && boot->snapshot(&b) == PGS_BOOT_OK && b.status == PGS_BOOT_OK) {
     if (!exp.meta.domain_get) exp.meta = b.meta;
     if (!exp.thread_current) {
       exp.thread_current = reinterpret_cast<decltype(exp.thread_current)>(b.runtime.thread_current);
@@ -2224,8 +2224,8 @@ static int api_configure(const PgrEncounterHostConfig *config) {
     if (b.handle) {
       auto sym = [&](const char *n) {
         void *p=dlsym(b.handle,n);
-        const auto *mdapi=static_cast<const PgrMetaApi*>(pgs_runtime_metadata_api(1));
-        PgrMetaCodeQuery q{1,sizeof(q),p,4,nullptr,0,0};
+        const auto *mdapi=static_cast<const PgsMetaApi*>(pgs_runtime_metadata_api(1));
+        PgsMetaCodeQuery q{1,sizeof(q),p,4,nullptr,0,0};
         return p && mdapi && mdapi->validate_code(&q)==0 ? p : nullptr;
       };
       if (!exp.field_set_value_object) {
@@ -2256,9 +2256,9 @@ static int api_configure(const PgrEncounterHostConfig *config) {
   // Resolve Feature 56 metadata if not already provided: first check Feature 61 shared_host,
   // then fall back to Feature 56 pgs_shared_metadata_api(2)->resolve().
   if (!have_md) {
-    const auto *sh = static_cast<const PgrSharedHostApi *>(pgs_shared_host_api(1));
-    const PgrSharedMetadataOutput *sh_md = (sh && sh->metadata) ? sh->metadata() : nullptr;
-    if (sh_md && sh_md->version == 2u && sh_md->size == sizeof(PgrSharedMetadataOutput)) {
+    const auto *sh = static_cast<const PgsSharedHostApi *>(pgs_shared_host_api(1));
+    const PgsSharedMetadataOutput *sh_md = (sh && sh->metadata) ? sh->metadata() : nullptr;
+    if (sh_md && sh_md->version == 2u && sh_md->size == sizeof(PgsSharedMetadataOutput)) {
       md = *sh_md;
       have_md = true;
     }
@@ -2279,8 +2279,8 @@ static int api_configure(const PgrEncounterHostConfig *config) {
     } else {
       mcfg.version = 2u;
       mcfg.size = sizeof(PgsSharedMetadataConfig);
-      mcfg.binding.version = PGR_MD_CONFIG_VERSION;
-      mcfg.binding.size = sizeof(PgrMetaBindConfig);
+      mcfg.binding.version = PGS_MD_CONFIG_VERSION;
+      mcfg.binding.size = sizeof(PgsMetaBindConfig);
       mcfg.binding.exports = &exp.meta;
       mcfg.binding.module_base = b.module_base;
       mcfg.binding.module_size = b.module_size;
@@ -2348,7 +2348,7 @@ static int api_install(void) {
     int rc = install_berries_leaf();
     if (rc == PGS_EH_OK) {
       active_caps |= PGS_EH_CAP_BERRIES;
-      if (g_md.optional[OPT_ITEMS] == PGR_SHARED_OPT_AVAILABLE) {
+      if (g_md.optional[OPT_ITEMS] == PGS_SHARED_OPT_AVAILABLE) {
         active_caps |= PGS_EH_CAP_ITEMS;
       }
       emit_event("berry-ready", "{\"ready\":true}");
@@ -2458,10 +2458,10 @@ static int api_install(void) {
   return PGS_EH_OK;
 }
 
-static int api_update_options(const PgrEncounterHostOptions *options, uint64_t proven_tid) {
+static int api_update_options(const PgsEncounterHostOptions *options, uint64_t proven_tid) {
   if (!options) return PGS_EH_ERR_NULL_ARG;
   if (options->version != PGS_EH_API_VERSION ||
-      options->size != sizeof(PgrEncounterHostOptions)) {
+      options->size != sizeof(PgsEncounterHostOptions)) {
     return PGS_EH_ERR_BAD_CONFIG;
   }
   StateGuard state; if (!state) return PGS_EH_RETRY;
@@ -2651,9 +2651,9 @@ static int api_stop(uint64_t proven_tid) {
   return PGS_EH_OK;
 }
 
-static int api_sample(PgrEncounterHostSample *out) {
+static int api_sample(PgsEncounterHostSample *out) {
   if (!out) return PGS_EH_ERR_NULL_ARG;
-  if (out->version != PGS_EH_API_VERSION || out->size != sizeof(PgrEncounterHostSample)) {
+  if (out->version != PGS_EH_API_VERSION || out->size != sizeof(PgsEncounterHostSample)) {
     return PGS_EH_ERR_BAD_CONFIG;
   }
   StateGuard state; if (!state) return PGS_EH_RETRY;
@@ -2678,9 +2678,9 @@ static int api_poll_event(char *type_buf, uint32_t type_cap, char *json_buf, uin
   return 1;
 }
 
-static const PgrEncounterHostApi kEncounterHostApi = {
+static const PgsEncounterHostApi kEncounterHostApi = {
     PGS_EH_API_VERSION,
-    sizeof(PgrEncounterHostApi),
+    sizeof(PgsEncounterHostApi),
     &api_configure,
     &api_install,
     &api_update_options,

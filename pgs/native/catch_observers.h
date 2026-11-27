@@ -1,7 +1,7 @@
 #pragma once
 #include <cstdint>
 
-#include "catch_animation.h"  // PgrSpeedApi v1: feature49 DELEGATES the speed attempt to feature8.
+#include "catch_animation.h"  // PgsSpeedApi v1: feature49 DELEGATES the speed attempt to feature8.
 
 // PGS native module: catch OBSERVERS ownership (feature id 49, API 1).
 //
@@ -16,7 +16,7 @@
 //   * This module installs the three Dobby hooks (btxu/btdd/btdf) and OWNS the outcome
 //     state. It NEVER calls back into JS; telemetry is pull-only through sample().
 //   * The per-instance Animator speed attempt is NOT re-implemented here. It is DELEGATED
-//     to the existing feature8 speed engine (catch_animation.*, PgrSpeedApi v1) through
+//     to the existing feature8 speed engine (catch_animation.*, PgsSpeedApi v1) through
 //     config.speed_api: feature49 calls speed_api->update() (micro-refresh of feature8's
 //     lease, == the JS s.nativeSpeed.update() before apply), ->apply(animator,response)
 //     on a confirmed success, and ->complete(response,reason) on btdd/btdf. feature8 keeps
@@ -109,9 +109,9 @@ enum PgsObsReason {
 // appended at the END of the still-unreleased config ABI so the observer can prove il2cpp
 // attachment itself (defence in depth, mirroring the sibling native modules) rather than
 // trusting gettid() alone. See the contract for the exact pointer order.
-struct PgrObsConfig {
+struct PgsObsConfig {
     uint32_t version;              // 0   == PGS_OBS_CONFIG_VERSION
-    uint32_t size;                 // 4   == sizeof(PgrObsConfig)
+    uint32_t size;                 // 4   == sizeof(PgsObsConfig)
 
     void *object_get_class;        // 8   void* (void* obj)
     void *field_get_value;         // 16  void  (void* obj, FieldInfo*, void* out)
@@ -131,7 +131,7 @@ struct PgrObsConfig {
     void *field_animator;          // 104 Pokeball animator ptr
     void *field_status;            // 112 CatchPokemonOutProto Status (Int32 enum)
 
-    void *speed_api;               // 120 feature8 PgrSpeedApi* (v1, 56-byte table)
+    void *speed_api;               // 120 feature8 PgsSpeedApi* (v1, 56-byte table)
 
     int32_t status_success;        // 128
     int32_t status_escape;         // 132
@@ -145,12 +145,12 @@ struct PgrObsConfig {
     void *thread_current;          // 160 void* (void) -> attached Unity thread or null (appended)
 };
 
-static_assert(sizeof(PgrObsConfig) == 168, "PgrObsConfig must remain 168 bytes on LP64");
+static_assert(sizeof(PgsObsConfig) == 168, "PgsObsConfig must remain 168 bytes on LP64");
 
 // One entry of the bounded native event ring. Each slot carries its own global `seq` so a
 // reader (the JS adapter) can detect tearing (slot seq != expected) and gaps (seq skipped),
 // instead of silently dropping every outcome but the last between two polls.
-struct PgrObsEvent {
+struct PgsObsEvent {
     uint64_t seq;        // 0   1-based global append sequence (0 == never written)
     uint64_t tid;        // 8   owner tid when the event was emitted
     uint32_t action;     // 16  event code (PgsObsAction)
@@ -159,15 +159,15 @@ struct PgrObsEvent {
     uint32_t pad;        // 28  reserved / alignment
 };
 
-static_assert(sizeof(PgrObsEvent) == 32, "PgrObsEvent must remain 32 bytes on LP64");
+static_assert(sizeof(PgsObsEvent) == 32, "PgsObsEvent must remain 32 bytes on LP64");
 
 // Pull-only telemetry (616 bytes). The monotonic counters + last_* slot are retained for
 // debugging/compat; the primary event stream is the bounded ring drained by cursor through
 // `event_head`. The adapter turns ring entries into the existing outcome-* / skip event names
 // and surfaces an 'outcome-dropped' note on a detected gap; no native->JS callback is made.
-struct PgrObsSample {
+struct PgsObsSample {
     uint32_t version;    // 0   == PGS_OBS_SAMPLE_VERSION
-    uint32_t size;       // 4   == sizeof(PgrObsSample)
+    uint32_t size;       // 4   == sizeof(PgsObsSample)
     uint64_t confirmed;  // 8   confirmed outcomes reported
     uint64_t suppressed; // 16  suppressed outcomes reported
     uint64_t dropped;    // 24  outcomes dropped (rate / queue pressure)
@@ -183,16 +183,16 @@ struct PgrObsSample {
     uint32_t fault;      // 84  latched fault flag
     uint64_t last_caller;// 88  last observed btxu return address (debug; validates the caller gate)
     uint64_t event_head; // 96  total events ever appended to the ring (cursor horizon)
-    PgrObsEvent events[PGS_OBS_EVENT_RING]; // 104  the ring (indexed by seq % PGS_OBS_EVENT_RING)
+    PgsObsEvent events[PGS_OBS_EVENT_RING]; // 104  the ring (indexed by seq % PGS_OBS_EVENT_RING)
 };
 
-static_assert(sizeof(PgrObsSample) == 616, "PgrObsSample must remain 616 bytes on LP64");
+static_assert(sizeof(PgsObsSample) == 616, "PgsObsSample must remain 616 bytes on LP64");
 
 // Fixed LP64 table: 8-byte header + 5 function pointers = 48 bytes.
-struct PgrObsApi {
+struct PgsObsApi {
     uint32_t version;    // == PGS_OBS_API_VERSION
-    uint32_t size;       // == sizeof(PgrObsApi)
-    int (*install)(const PgrObsConfig *config);
+    uint32_t size;       // == sizeof(PgsObsApi)
+    int (*install)(const PgsObsConfig *config);
     // Arm feature49's own observer/outcome gate. lease clamped/refused above 2500 ms. enabled==0
     // closes the window (soft stop); 1 observes the outcome and applies the Quick catch animation
     // speed; 2 only observes and reports the outcome (Catch preview without Quick catch). expected_caller gates the btxu return address (nullptr ->
@@ -203,10 +203,10 @@ struct PgrObsApi {
     // Immediate revoke from any thread: set stopping + bump generation; frees nothing (deferred to
     // the next proven tick). A later update() re-arms.
     int (*stop)(uint64_t proven_tid);
-    int (*sample)(PgrObsSample *out);
+    int (*sample)(PgsObsSample *out);
 };
 
-static_assert(sizeof(PgrObsApi) == 48, "PgrObsApi must remain a 48-byte version-1 table");
+static_assert(sizeof(PgsObsApi) == 48, "PgsObsApi must remain a 48-byte version-1 table");
 
 // API2: one immutable compiled berry predicate at the existing btxu owner.
 // Called only on the registered attached owner with a live rooted receiver.
@@ -226,7 +226,7 @@ static_assert(sizeof(PgsObsApi2)==24,"Catch observer berry bridge API2");
 // on Pokeball before registering it on the attached Unity owner. No V1 ABI changes.
 struct PgsObsApi3 {
     uint32_t version,size;
-    int (*register_max)(void *field_max_speed,const PgrSpeedApi2 *speed,uint64_t owner_tid);
+    int (*register_max)(void *field_max_speed,const PgsSpeedApi2 *speed,uint64_t owner_tid);
 };
 static_assert(sizeof(PgsObsApi3)==16,"Catch observer Max binding API3");
 

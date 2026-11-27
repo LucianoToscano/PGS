@@ -51,7 +51,7 @@ double t_lat = 37.7749;
 double t_lon = -122.4194;
 std::vector<std::string> t_events;
 
-int fake_transport_sample(PgrRuntimeTransportSample* out) {
+int fake_transport_sample(PgsRuntimeTransportSample* out) {
     *out = {};
     out->snapshot_fresh = t_fresh ? 1 : 0;
     out->fault = t_fault ? 1 : 0;
@@ -86,7 +86,7 @@ int fake_transport_get_double(uint32_t slot, double* out_val, int* out_has) {
 int fake_transport_emit(uint32_t op,
                         const int64_t*,
                         uint32_t scalar_cnt,
-                        const PgrRuntimeTransportString* strs,
+                        const PgsRuntimeTransportString* strs,
                         uint32_t str_cnt) {
     assert(op == 19 && scalar_cnt == 0 && str_cnt == 2);
     assert( std::string(strs[0].ptr, strs[0].len) == "auto-raid" );
@@ -96,7 +96,7 @@ int fake_transport_emit(uint32_t op,
 
 unsigned bootstrap_calls = 0;
 int bootstrap_rc = -1;
-int fake_bootstrap_snapshot(PgrBootBinding* out) {
+int fake_bootstrap_snapshot(PgsBootBinding* out) {
     ++bootstrap_calls;
     if (bootstrap_rc != 0) return bootstrap_rc;
     out->runtime.gchandle_new = reinterpret_cast<void*>(fake_gchandle_new);
@@ -105,14 +105,14 @@ int fake_bootstrap_snapshot(PgrBootBinding* out) {
     return 0;
 }
 
-int fake_meta_resolve_class(const PgrMetaClassQuery*, PgrMetaClassResult*) {
+int fake_meta_resolve_class(const PgsMetaClassQuery*, PgsMetaClassResult*) {
     return -1; // Simulate missing class on raw metadata path
 }
 
-PgrRuntimeTransportApi g_transport_api{};
-PgrBootApi g_boot_api{};
-PgrMetaApi g_meta_api{};
-PgrVgpResultsApi g_results_api{};
+PgsRuntimeTransportApi g_transport_api{};
+PgsBootApi g_boot_api{};
+PgsMetaApi g_meta_api{};
+PgsVgpResultsApi g_results_api{};
 
 // Fake managed game world for the runtime adapter
 int dummy_gym_objs[8]       = {101, 102, 103, 104, 105, 106, 107, 108};
@@ -427,7 +427,7 @@ int main() {
     g_meta_api.resolve_class = fake_meta_resolve_class;
 
     const uint64_t tid = static_cast<uint64_t>(gettid());
-    PgrSharedMetadataOutput metadata{};
+    PgsSharedMetadataOutput metadata{};
 
     // ------------------------------------------------------------------------
     // 1. Inactive / disabled / stale fast-exit BEFORE bootstrap or services

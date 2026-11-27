@@ -46,7 +46,7 @@ void map_event(const char* phase,const std::string& message,int value=0){
     const std::string json="{\"phase\":"+json_quote(phase)+",\"message\":"+json_quote(message)+
         ",\"encounterId\":"+json_quote(std::to_string(map_tap.id))+",\"throw\":"+std::to_string(map_tap.attempts)+
         ",\"value\":"+std::to_string(value)+"}";
-    PgrRuntimeTransportString s[]={{"map-auto-throw",14},{json.c_str(),uint32_t(json.size())}};
+    PgsRuntimeTransportString s[]={{"map-auto-throw",14},{json.c_str(),uint32_t(json.size())}};
     tr->emit(19,nullptr,0,s,2);
 }
 void map_reset(){++map_tap_generation;map_tap=MapTapSession{};}
@@ -59,7 +59,7 @@ void map_done(const char* phase,const std::string& why,bool remember=false){
 void map_block(const std::string& why){map_done("stopped",why,true);}
 struct MapTapPermission {PgsCatchChanceOptions config;bool foreground=false,coherent=false;};
 MapTapPermission map_permission(){
-    MapTapPermission p;auto tr=transport();PgrRuntimeTransportSample a{},z{};char raw[96]{};uint32_t n=0;int fg=0;
+    MapTapPermission p;auto tr=transport();PgsRuntimeTransportSample a{},z{};char raw[96]{};uint32_t n=0;int fg=0;
     if(!tr||!tr->sample||!tr->get_string||!tr->get_bool||tr->sample(&a)||!a.snapshot_fresh||a.fault)return p;
     if(tr->get_string(15,raw,sizeof(raw),&n)||n>=sizeof(raw)||tr->get_bool(3,&fg))return p;
     if(tr->sample(&z)||!z.snapshot_fresh||z.fault||a.snapshot_seq!=z.snapshot_seq)return p;
@@ -186,6 +186,6 @@ void step_map_auto_throw(uint64_t tid,bool blocked,bool vgp_busy=false){
     }
     map_tap.uncertain=true;map_tap.promise_ms=now;map_tap.phase=MapTapCapture;++map_tap.attempts;
     map_tap.promise=a.capture(map_tap.target.get(),value);require(bool(map_tap.promise),"Capture returned no promise; not retried");
-    auto tr=transport();PgrRuntimeTransportString action{"Ball throw",10};if(tr)tr->emit(17,nullptr,0,&action,1);
+    auto tr=transport();PgsRuntimeTransportString action{"Ball throw",10};if(tr)tr->emit(17,nullptr,0,&action,1);
     map_event("throw",std::string("Always Hit; radius=")+std::to_string(value.radius)+"; curve="+(value.spinning?"true":"false"),value.item);
 }

@@ -32,7 +32,7 @@ class BuddyFeedingNativeTests(unittest.TestCase):
             executable = work / 'buddy-feeding-test'
             built = subprocess.run([
                 compiler, '-std=c++17', '-O2', '-pthread',
-                '-DPGR_BUDDY_HOST_TEST', '-I' + str(work),
+                '-DPGS_BUDDY_HOST_TEST', '-I' + str(work),
                 str(NATIVE / 'buddy_feeding.cpp'),
                 str(NATIVE / 'buddy_feeding_test.cpp'),
                 '-Wl,--wrap=clock_gettime,--wrap=nanosleep', '-ldl',

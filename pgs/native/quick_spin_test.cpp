@@ -41,7 +41,7 @@ int g_method_active = 23, g_method_close = 24, g_method_alive = 25;
 bool g_gui_alive = true, g_is_active = true, g_can_spin = true;
 int g_spin_calls = 0, g_request_calls = 0, g_close_calls = 0;
 float g_last_spin_speed = 0.0f;
-const PgrQuickSpinApi *g_test_api = nullptr;
+const PgsQuickSpinApi *g_test_api = nullptr;
 uint64_t g_test_tick = 100;
 bool g_sync_result = false, g_close_reenter = false, g_request_throws = false;
 bool g_slow_can = false;
@@ -148,10 +148,10 @@ void (*volatile call_spin)(void *, float, void *) = &target_spin;
 
 uint64_t this_tid() { return static_cast<uint64_t>(static_cast<pid_t>(::gettid())); }
 
-PgrQuickSpinConfig make_config() {
-  PgrQuickSpinConfig c{};
+PgsQuickSpinConfig make_config() {
+  PgsQuickSpinConfig c{};
   c.version = 1;
-  c.size = sizeof(PgrQuickSpinConfig);
+  c.size = sizeof(PgsQuickSpinConfig);
   c.success_value = 7;
   c.state_open_value = 2;
   c.gchandle_new = reinterpret_cast<void *>(&fake_gchandle_new);
@@ -185,10 +185,10 @@ PgrQuickSpinConfig make_config() {
   return c;
 }
 
-PgrQuickSpinSample take_sample(const PgrQuickSpinApi *api) {
-  PgrQuickSpinSample s{};
+PgsQuickSpinSample take_sample(const PgsQuickSpinApi *api) {
+  PgsQuickSpinSample s{};
   assert(api->sample(&s) == PGS_QUICK_SPIN_OK);
-  assert(s.version == 1 && s.size == sizeof(PgrQuickSpinSample));
+  assert(s.version == 1 && s.size == sizeof(PgsQuickSpinSample));
   return s;
 }
 
@@ -207,19 +207,19 @@ int main(int argc, char **argv) {
   const auto *core = static_cast<const pgs_native_api_v2 *>(getter(2));
   assert(core && core->size == 48);
   assert(core->query_feature(11, 99) == nullptr);  // exact version only
-  const auto *api = static_cast<const PgrQuickSpinApi *>(core->query_feature(11, 1));
-  assert(api != nullptr && api->version == 1 && api->size == sizeof(PgrQuickSpinApi));
+  const auto *api = static_cast<const PgsQuickSpinApi *>(core->query_feature(11, 1));
+  assert(api != nullptr && api->version == 1 && api->size == sizeof(PgsQuickSpinApi));
 
   const uint64_t tid = this_tid();
-  PgrQuickSpinConfig cfg = make_config();
+  PgsQuickSpinConfig cfg = make_config();
 
   // Validation before install.
   assert(api->install(nullptr) == PGS_QUICK_SPIN_ERR_INVALID_ARG);
-  PgrQuickSpinConfig bad = cfg;
+  PgsQuickSpinConfig bad = cfg;
   bad.version = 2;
   assert(api->install(&bad) == PGS_QUICK_SPIN_ERR_BAD_VERSION);
   bad = cfg;
-  bad.size = sizeof(PgrQuickSpinConfig) - 1;
+  bad.size = sizeof(PgsQuickSpinConfig) - 1;
   assert(api->install(&bad) == PGS_QUICK_SPIN_ERR_BAD_SIZE);
   bad = cfg;
   bad.spinner_class = nullptr;
@@ -256,7 +256,7 @@ int main(int argc, char **argv) {
   assert(api->update(0, 0, tid, 1) == PGS_QUICK_SPIN_OK);
   call_enter(&state, &dummy_method);
   assert(g_enter_log.count == 1 && g_enter_log.last_self == &state);
-  PgrQuickSpinSample s = take_sample(api);
+  PgsQuickSpinSample s = take_sample(api);
   assert(s.active_generation == 0 && s.owned_root_count == 0);
   call_result(&state, &result, &dummy_method);
   assert(g_result_log.count == 1);

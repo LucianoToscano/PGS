@@ -15,7 +15,7 @@
 namespace {
 std::mutex engine_mutex;
 // Guarded by engine_mutex. The failure fields latch the first failed hook.
-PgrHookDiag hook_diag{1, sizeof(PgrHookDiag), 0, 0, 0, 0, 0, 0, 0, 0, 0};
+PgsHookDiag hook_diag{1, sizeof(PgsHookDiag), 0, 0, 0, 0, 0, 0, 0, 0, 0};
 void record_failure(void *address, int32_t reason, int32_t rc, int32_t error,
                     uint32_t gaps, uint32_t padding) {
     if (hook_diag.failures++) return;
@@ -128,7 +128,7 @@ int padding_callback(dl_phdr_info *info, size_t, void *opaque) {
             const bool page_aligned = alignment == search.page_size;
             if (a) attempt.padding |= PGS_HOOK_PAD_PAGE_RETRY;
             if (end > UINTPTR_MAX - alignment + 1) continue;
-            const PgrPaddingRanges padding = pgr_padding_ranges(begin, end, alignment);
+            const PgsPaddingRanges padding = pgs_padding_ranges(begin, end, alignment);
             const uintptr_t ranges[][2] = {
                 {padding.before_lo, padding.before_hi}, {padding.after_lo, padding.after_hi}
             };
@@ -348,6 +348,6 @@ int pgrazor_unhook(void *address) {
 int pgrazor_instrument(void *address, dobby_instrument_callback_t callback) {
     return pgs_instrument(address, callback);
 }
-int pgrazor_hook_diag(PgrHookDiag *out) {
+int pgrazor_hook_diag(PgsHookDiag *out) {
     return pgs_hook_diag(out);
 }

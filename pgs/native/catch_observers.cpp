@@ -17,30 +17,30 @@
 // proven Unity thread (every hook body gates on gettid()==g_tid). See catch_observers.h and
 // the contract for the ABI and division of labour with feature8 (the speed engine).
 
-static_assert(sizeof(PgrObsConfig) == 168, "config must be 168 bytes");
-static_assert(sizeof(PgrObsSample) == 616, "sample must be 616 bytes");
-static_assert(sizeof(PgrObsApi)    == 48,  "table must be 48 bytes");
-static_assert(offsetof(PgrObsConfig, object_get_class)     == 8,   "layout: object_get_class");
-static_assert(offsetof(PgrObsConfig, field_get_value)      == 16,  "layout: field_get_value");
-static_assert(offsetof(PgrObsConfig, gchandle_new)         == 24,  "layout: gchandle_new");
-static_assert(offsetof(PgrObsConfig, gchandle_get_target)  == 32,  "layout: gchandle_get_target");
-static_assert(offsetof(PgrObsConfig, gchandle_free)        == 40,  "layout: gchandle_free");
-static_assert(offsetof(PgrObsConfig, code_btxu)            == 48,  "layout: code_btxu");
-static_assert(offsetof(PgrObsConfig, code_caught)          == 56,  "layout: code_caught");
-static_assert(offsetof(PgrObsConfig, code_escaped)         == 64,  "layout: code_escaped");
-static_assert(offsetof(PgrObsConfig, class_ball)           == 72,  "layout: class_ball");
-static_assert(offsetof(PgrObsConfig, class_response)       == 80,  "layout: class_response");
-static_assert(offsetof(PgrObsConfig, class_animator)       == 88,  "layout: class_animator");
-static_assert(offsetof(PgrObsConfig, field_bread)          == 96,  "layout: field_bread");
-static_assert(offsetof(PgrObsConfig, field_animator)       == 104, "layout: field_animator");
-static_assert(offsetof(PgrObsConfig, field_status)         == 112, "layout: field_status");
-static_assert(offsetof(PgrObsConfig, speed_api)            == 120, "layout: speed_api");
-static_assert(offsetof(PgrObsConfig, status_success)       == 128, "layout: status_success");
-static_assert(offsetof(PgrObsConfig, status_item_replacement) == 148, "layout: status_item_replacement");
-static_assert(offsetof(PgrObsConfig, thread_current)       == 160, "layout: thread_current");
-static_assert(offsetof(PgrObsSample, last_caller)          == 88,  "layout: last_caller");
-static_assert(offsetof(PgrObsSample, event_head)           == 96,  "layout: event_head");
-static_assert(offsetof(PgrObsSample, events)               == 104, "layout: events");
+static_assert(sizeof(PgsObsConfig) == 168, "config must be 168 bytes");
+static_assert(sizeof(PgsObsSample) == 616, "sample must be 616 bytes");
+static_assert(sizeof(PgsObsApi)    == 48,  "table must be 48 bytes");
+static_assert(offsetof(PgsObsConfig, object_get_class)     == 8,   "layout: object_get_class");
+static_assert(offsetof(PgsObsConfig, field_get_value)      == 16,  "layout: field_get_value");
+static_assert(offsetof(PgsObsConfig, gchandle_new)         == 24,  "layout: gchandle_new");
+static_assert(offsetof(PgsObsConfig, gchandle_get_target)  == 32,  "layout: gchandle_get_target");
+static_assert(offsetof(PgsObsConfig, gchandle_free)        == 40,  "layout: gchandle_free");
+static_assert(offsetof(PgsObsConfig, code_btxu)            == 48,  "layout: code_btxu");
+static_assert(offsetof(PgsObsConfig, code_caught)          == 56,  "layout: code_caught");
+static_assert(offsetof(PgsObsConfig, code_escaped)         == 64,  "layout: code_escaped");
+static_assert(offsetof(PgsObsConfig, class_ball)           == 72,  "layout: class_ball");
+static_assert(offsetof(PgsObsConfig, class_response)       == 80,  "layout: class_response");
+static_assert(offsetof(PgsObsConfig, class_animator)       == 88,  "layout: class_animator");
+static_assert(offsetof(PgsObsConfig, field_bread)          == 96,  "layout: field_bread");
+static_assert(offsetof(PgsObsConfig, field_animator)       == 104, "layout: field_animator");
+static_assert(offsetof(PgsObsConfig, field_status)         == 112, "layout: field_status");
+static_assert(offsetof(PgsObsConfig, speed_api)            == 120, "layout: speed_api");
+static_assert(offsetof(PgsObsConfig, status_success)       == 128, "layout: status_success");
+static_assert(offsetof(PgsObsConfig, status_item_replacement) == 148, "layout: status_item_replacement");
+static_assert(offsetof(PgsObsConfig, thread_current)       == 160, "layout: thread_current");
+static_assert(offsetof(PgsObsSample, last_caller)          == 88,  "layout: last_caller");
+static_assert(offsetof(PgsObsSample, event_head)           == 96,  "layout: event_head");
+static_assert(offsetof(PgsObsSample, events)               == 104, "layout: events");
 
 namespace {
 
@@ -58,7 +58,7 @@ extern "C" void pgs_queue_caught_transfer(void *response) __attribute__((weak));
 
 // --- lifetime / publication --------------------------------------------------------
 std::mutex        g_install_mutex;
-PgrObsConfig      g_config{};
+PgsObsConfig      g_config{};
 std::atomic<bool> g_installed{false};
 bool              g_install_failed = false;
 
@@ -67,7 +67,7 @@ std::atomic<CompletionFn> g_orig_caught{nullptr};
 std::atomic<CompletionFn> g_orig_escaped{nullptr};
 std::atomic<PgsObsBerryFilter> g_berry_filter{nullptr};
 uint64_t g_berry_owner=0; // immutable before callback release-publication
-std::atomic<const PgrSpeedApi2 *> g_max_speed{nullptr};
+std::atomic<const PgsSpeedApi2 *> g_max_speed{nullptr};
 void *g_max_field=nullptr; // immutable before g_max_speed release-publication
 uint64_t g_max_owner=0;
 std::atomic<PgsObsMaxContext> g_max_context{nullptr};
@@ -186,7 +186,7 @@ struct CatchFrame {
     ~CatchFrame(){if(self)gc_free(self);if(response)gc_free(response);if(busy)g_busy.store(0,std::memory_order_release);}
 };
 
-inline const PgrSpeedApi *speed() { return reinterpret_cast<const PgrSpeedApi *>(g_config.speed_api); }
+inline const PgsSpeedApi *speed() { return reinterpret_cast<const PgsSpeedApi *>(g_config.speed_api); }
 
 bool on_proven_thread() {
     uint64_t tid = g_tid.load(std::memory_order_relaxed);
@@ -374,7 +374,7 @@ void *btxu_replacement(void *self, void *method) {
             status != g_config.status_flee) break;
 
         // Concurrent owned speed attempt -> skip (no re-apply).
-        PgrSpeedSample ss{};
+        PgsSpeedSample ss{};
         if (speed()->sample(&ss) == 0 && ss.owned) { emit(PGS_OBS_A_SKIP, PGS_OBS_R_CONCURRENT, status); break; }
 
         void *ball = gc_target(self_h);
@@ -495,7 +495,7 @@ void escaped_replacement(void *self, void *response, void *method) {
 }
 
 // --- config validation -------------------------------------------------------------
-bool config_ok(const PgrObsConfig *c) {
+bool config_ok(const PgsObsConfig *c) {
     if(c->reserved||c->reserved2)return false;
     const void *const *ptrs = reinterpret_cast<const void *const *>(&c->object_get_class);
     for (int i = 0; i < 15; ++i) if (ptrs[i] == nullptr) return false;
@@ -510,18 +510,18 @@ bool config_ok(const PgrObsConfig *c) {
                              c->status_missed, c->status_error, c->status_item_replacement };
     for (int i = 0; i < 6; ++i) for (int j = i + 1; j < 6; ++j) if (lits[i] == lits[j]) return false;
     // feature8 speed table must be the v1 56-byte table.
-    const PgrSpeedApi *sp = reinterpret_cast<const PgrSpeedApi *>(c->speed_api);
-    if (sp->version != 1 || sp->size != sizeof(PgrSpeedApi) || sp->update == nullptr ||
+    const PgsSpeedApi *sp = reinterpret_cast<const PgsSpeedApi *>(c->speed_api);
+    if (sp->version != 1 || sp->size != sizeof(PgsSpeedApi) || sp->update == nullptr ||
         sp->apply == nullptr || sp->complete == nullptr || sp->sample == nullptr) return false;
     return true;
 }
 
 // --- C API table functions ---------------------------------------------------------
-int api_install(const PgrObsConfig *config) {
+int api_install(const PgsObsConfig *config) {
     if (config == nullptr) return PGS_OBS_ERR_NULL;
     std::lock_guard<std::mutex> lock(g_install_mutex);
     if (g_install_failed) return PGS_OBS_ERR_HOOK;
-    if (config->version != 1 || config->size != sizeof(PgrObsConfig) || !config_ok(config))
+    if (config->version != 1 || config->size != sizeof(PgsObsConfig) || !config_ok(config))
         return PGS_OBS_ERR_BAD_CONFIG;
     if (g_installed.load(std::memory_order_acquire)) {
         return std::memcmp(&g_config, config, sizeof(g_config)) == 0 ? PGS_OBS_OK : PGS_OBS_ERR_HOOK;
@@ -600,11 +600,11 @@ int api_stop(uint64_t /*proven_tid*/) {
     return PGS_OBS_OK;
 }
 
-int api_sample(PgrObsSample *out) {
+int api_sample(PgsObsSample *out) {
     if (out == nullptr) return PGS_OBS_ERR_NULL;
     std::lock_guard<std::mutex> event_lock(g_event_mutex);
     out->version    = PGS_OBS_SAMPLE_VERSION;
-    out->size       = sizeof(PgrObsSample);
+    out->size       = sizeof(PgsObsSample);
     out->confirmed  = g_confirmed.load(std::memory_order_relaxed);
     out->suppressed = g_suppressed.load(std::memory_order_relaxed);
     out->dropped    = g_dropped.load(std::memory_order_relaxed);
@@ -624,7 +624,7 @@ int api_sample(PgrObsSample *out) {
     // own seq so the JS adapter rejects a torn/overwritten slot (seq != expected) and detects a
     // gap (a seq skipped because the ring wrapped between polls -> 'outcome-dropped').
     for (uint32_t i = 0; i < PGS_OBS_EVENT_RING; ++i) {
-        PgrObsEvent &dst = out->events[i];
+        PgsObsEvent &dst = out->events[i];
         const EventSlot &src = g_events[i];
         uint64_t s1 = src.seq.load(std::memory_order_acquire);
         dst.tid    = src.tid.load(std::memory_order_relaxed);
@@ -640,8 +640,8 @@ int api_sample(PgrObsSample *out) {
     return PGS_OBS_OK;
 }
 
-const PgrObsApi g_api = {
-    1, sizeof(PgrObsApi),
+const PgsObsApi g_api = {
+    1, sizeof(PgsObsApi),
     &api_install,
     &api_update,
     &api_tick,
@@ -663,7 +663,7 @@ int register_berry_filter(PgsObsBerryFilter filter,uint64_t tid){
 int berry_filter_ready(){return g_berry_filter.load(std::memory_order_acquire)?1:0;}
 const PgsObsApi2 g_api2={2,sizeof(PgsObsApi2),register_berry_filter,berry_filter_ready};
 
-int register_max(void *field,const PgrSpeedApi2 *api,uint64_t tid){
+int register_max(void *field,const PgsSpeedApi2 *api,uint64_t tid){
     if(!g_installed.load(std::memory_order_acquire))return PGS_OBS_ERR_NOT_INSTALLED;
     if(!field||!api||api->version!=2||api->size!=sizeof(*api)||!api->apply_max)
         return PGS_OBS_ERR_BAD_CONFIG;

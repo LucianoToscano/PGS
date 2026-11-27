@@ -142,16 +142,16 @@ enum PgsVgpControllerFeedback {
 // already-installed sibling feature tables (the controller re-validates each table's version/size and that
 // every function pointer is non-null); 9..18 are the shared il2cpp primitives the controller uses directly
 // for the manual-exclusion exclusion identity / alive check. The config is immutable after install().
-struct PgrVgpControllerConfig {
+struct PgsVgpControllerConfig {
   uint32_t version;  // == PGS_VGC_CONFIG_VERSION
-  uint32_t size;     // == sizeof(PgrVgpControllerConfig)
+  uint32_t size;     // == sizeof(PgsVgpControllerConfig)
 
-  void *policy_table;       // 0  PgrVgpPolicyApi*        (feature 25)
-  void *actions_table;      // 1  PgrVgpActionsApi*       (feature 26)
-  void *candidates_table;   // 2  PgrVgpCandidateApi*     (feature 29)
-  void *results_table;      // 3  PgrVgpResultsApi*       (feature 30)
-  void *discovery_table;    // 4  PgrVgpDiscoveryApi*     (feature 31)
-  void *maintenance_table;  // 5  PgrVgpMaintenanceApi*   (feature 32)
+  void *policy_table;       // 0  PgsVgpPolicyApi*        (feature 25)
+  void *actions_table;      // 1  PgsVgpActionsApi*       (feature 26)
+  void *candidates_table;   // 2  PgsVgpCandidateApi*     (feature 29)
+  void *results_table;      // 3  PgsVgpResultsApi*       (feature 30)
+  void *discovery_table;    // 4  PgsVgpDiscoveryApi*     (feature 31)
+  void *maintenance_table;  // 5  PgsVgpMaintenanceApi*   (feature 32)
   void *marker_table;       // 6  PgsVgpMarkerApi*        (feature 28)
   void *items_table;        // 7  pgs_items_api_v1*   (feature 14)
   void *aux_table;          // 8  pgs_vgp_aux_api*    (feature 34)
@@ -171,17 +171,17 @@ struct PgrVgpControllerConfig {
   uint32_t reserved;        // @164 0
 };
 
-static_assert(sizeof(PgrVgpControllerConfig) == 168,
-              "PgrVgpControllerConfig must remain 168 bytes on LP64");
+static_assert(sizeof(PgsVgpControllerConfig) == 168,
+              "PgsVgpControllerConfig must remain 168 bytes on LP64");
 
 // Fixed LP64 tick input (80 bytes). owner is the proven Unity owner tid (must equal the current OS tid).
 // epoch is the host transfer epoch. lease_ms / allowed_ms / cleanup_ms are RESIDUAL durations (ms) the
 // adapter computed from its absolute deadlines; the controller re-samples CLOCK_BOOTTIME and treats each as
 // a relative window. generation is the controller generation the adapter captured BEFORE it packed this
 // tick's game reads; a mismatch with the live generation blocks a NEW action (never a pending completion).
-struct PgrVgpControllerTick {
+struct PgsVgpControllerTick {
   uint32_t version;    // == PGS_VGC_TICK_VERSION
-  uint32_t size;       // == sizeof(PgrVgpControllerTick)
+  uint32_t size;       // == sizeof(PgsVgpControllerTick)
   uint64_t owner;      // @8  proven Unity owner tid
   uint64_t epoch;      // @16 host transfer epoch
   uint64_t lease_ms;   // @24 residual vgp lease (mask gate)
@@ -194,15 +194,15 @@ struct PgrVgpControllerTick {
   uint32_t flags;      // @76 PgsVgpControllerTickFlag
 };
 
-static_assert(sizeof(PgrVgpControllerTick) == 80,
-              "PgrVgpControllerTick must remain 80 bytes on LP64");
+static_assert(sizeof(PgsVgpControllerTick) == 80,
+              "PgsVgpControllerTick must remain 80 bytes on LP64");
 
 // Fixed LP64 tick output (120 bytes). Always fully initialised before any early return. The four transfer
 // handles are OWNED and set ONLY alongside PGS_VGC_EV_TRANSFER_READY; the caller adopts ALL FOUR or frees
 // ALL FOUR (no partial ownership). All other handle fields are 0.
-struct PgrVgpControllerOut {
+struct PgsVgpControllerOut {
   uint32_t version;         // @0   == PGS_VGC_OUT_VERSION
-  uint32_t size;            // @4   == sizeof(PgrVgpControllerOut)
+  uint32_t size;            // @4   == sizeof(PgsVgpControllerOut)
   uint32_t status;          // @8   PgsVgpControllerStatusCode
   uint32_t phase;           // @12  PgsVgpControllerPhase
   uint32_t flags;           // @16  PgsVgpControllerEvent (OR of this tick's edges)
@@ -223,15 +223,15 @@ struct PgrVgpControllerOut {
   int32_t  error;           // @116 sibling/native error code accompanying PGS_VGC_ST_ERROR
 };
 
-static_assert(sizeof(PgrVgpControllerOut) == 120,
-              "PgrVgpControllerOut must remain 120 bytes on LP64");
+static_assert(sizeof(PgsVgpControllerOut) == 120,
+              "PgsVgpControllerOut must remain 120 bytes on LP64");
 
 // Fixed LP64 telemetry gauge (32 bytes). Thread-safe pure atomic read. roots is the controller-owned live
 // root count (manual + pending target/bag/promise/reflection + the internal transfer response/bag); the
 // handed-off exports are NOT counted. generation mirrors generation().
-struct PgrVgpControllerSample {
+struct PgsVgpControllerSample {
   uint32_t version;     // == PGS_VGC_SAMPLE_VERSION
-  uint32_t size;        // == sizeof(PgrVgpControllerSample)
+  uint32_t size;        // == sizeof(PgsVgpControllerSample)
   uint32_t roots;       // @8  live controller-owned GC roots
   uint32_t phase;       // @12 PgsVgpControllerPhase
   uint32_t status;      // @16 last out.status
@@ -239,21 +239,21 @@ struct PgrVgpControllerSample {
   uint64_t generation;  // @24 current revocation generation
 };
 
-static_assert(sizeof(PgrVgpControllerSample) == 32,
-              "PgrVgpControllerSample must remain 32 bytes on LP64");
+static_assert(sizeof(PgsVgpControllerSample) == 32,
+              "PgsVgpControllerSample must remain 32 bytes on LP64");
 
 // Fixed LP64 table: 8-byte header + 8 function pointers = 72 bytes.
-struct PgrVgpControllerApi {
+struct PgsVgpControllerApi {
   uint32_t version;  // == PGS_VGC_API_VERSION
-  uint32_t size;     // == sizeof(PgrVgpControllerApi)
+  uint32_t size;     // == sizeof(PgsVgpControllerApi)
   // install(config): validate the header, the 10 shared primitives and each of the 9 already-installed
   // sibling tables (version/size/every function pointer), then bind the immutable config once for the
   // process lifetime. Idempotent for an identical config; a different config returns PGS_VGC_ERR_RECONFIG.
   // Installs NO hook.
-  int (*install)(const PgrVgpControllerConfig *config);
+  int (*install)(const PgsVgpControllerConfig *config);
   // tick(in, out): one orchestration pass on the proven owner thread. out is always fully initialised.
   // A reentrant tick is a no-op (out reflects the idle gauge). Returns PGS_VGC_OK or a negative error.
-  int (*tick)(const PgrVgpControllerTick *in, PgrVgpControllerOut *out);
+  int (*tick)(const PgsVgpControllerTick *in, PgsVgpControllerOut *out);
   // observe(gui, target, owner): the shared nameplate observer forwards the manual encounter here. On the
   // owner thread only; may be called nested from inside a managed callback during tick(). An exact
   // nameplate gui with an exact wild target replaces the manual-exclusion root (root-before-free); any
@@ -268,13 +268,13 @@ struct PgrVgpControllerApi {
   // stop(owner): permanent teardown. Bumps the generation, stops actions, resets the policy. Frees every
   // owned root when called on the latched owner thread; otherwise defers the free to the owner's tick().
   int (*stop)(uint64_t owner);
-  int (*sample)(PgrVgpControllerSample *out);
+  int (*sample)(PgsVgpControllerSample *out);
   // generation(): the current revocation generation (the adapter captures this before packing a tick).
   uint64_t (*generation)(void);
 };
 
-static_assert(sizeof(PgrVgpControllerApi) == 72,
-              "PgrVgpControllerApi must remain a 72-byte version-1 table");
+static_assert(sizeof(PgsVgpControllerApi) == 72,
+              "PgsVgpControllerApi must remain a 72-byte version-1 table");
 
 // Hidden getter. NOT exported by the version script; the coordinator registers it in query_feature under
 // feature id 33 and answers only on an exact version match.

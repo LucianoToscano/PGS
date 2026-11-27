@@ -64,9 +64,9 @@ enum PgsVgpPolicyStatus {
 
 // Fixed LP64 config (128 bytes). All durations are milliseconds; the native layer re-checks the
 // header and the max_keys ceiling. Mirrors the literal policy constants in vgp.js.
-struct PgrVgpPolicyConfig {
+struct PgsVgpPolicyConfig {
   uint32_t version;            // == PGS_VP_CONFIG_VERSION
-  uint32_t size;               // == sizeof(PgrVgpPolicyConfig)
+  uint32_t size;               // == sizeof(PgsVgpPolicyConfig)
   uint64_t scan_interval_ms;   // cadence between scans (vgp.js r.next = now + 2500)
   uint64_t catch_seen_ms;      // suppression for a newly selected catch target (30000)
   uint64_t spin_seen_ms;       // suppression for a newly selected spin target (300000)
@@ -81,12 +81,12 @@ struct PgrVgpPolicyConfig {
   uint32_t reserved_tail[6];   // 0
 };
 
-static_assert(sizeof(PgrVgpPolicyConfig) == 128, "PgrVgpPolicyConfig must remain 128 bytes on LP64");
+static_assert(sizeof(PgsVgpPolicyConfig) == 128, "PgsVgpPolicyConfig must remain 128 bytes on LP64");
 
 // Fixed LP64 telemetry gauge (64 bytes). Pull-only; the native layer never calls JS.
-struct PgrVgpPolicySample {
+struct PgsVgpPolicySample {
   uint32_t version;       // == PGS_VP_SAMPLE_VERSION
-  uint32_t size;          // == sizeof(PgrVgpPolicySample)
+  uint32_t size;          // == sizeof(PgsVgpPolicySample)
   uint64_t scans;         // due() that returned YES (a scan was permitted)
   uint64_t marks;         // touch() inserts/updates
   uint64_t evictions;     // expired keys removed by sweep()
@@ -98,16 +98,16 @@ struct PgrVgpPolicySample {
   uint32_t full_rejects;  // touch() that hit PGS_VP_FULL
 };
 
-static_assert(sizeof(PgrVgpPolicySample) == 64, "PgrVgpPolicySample must remain 64 bytes on LP64");
+static_assert(sizeof(PgsVgpPolicySample) == 64, "PgsVgpPolicySample must remain 64 bytes on LP64");
 
 // Fixed LP64 table: 8-byte header + 13 function pointers = 112 bytes. All owner-gated calls carry the
 // caller's proven Unity owner tid; the owner is latched once from a genuine on-thread call and a
 // foreign thread is rejected (PGS_VP_ERR_OFF_OWNER). catch_delay() and sample() are pure / pull-only
 // and run on any thread.
-struct PgrVgpPolicyApi {
+struct PgsVgpPolicyApi {
   uint32_t version;  // == PGS_VP_API_VERSION
-  uint32_t size;     // == sizeof(PgrVgpPolicyApi)
-  int (*install)(const PgrVgpPolicyConfig *config);
+  uint32_t size;     // == sizeof(PgsVgpPolicyApi)
+  int (*install)(const PgsVgpPolicyConfig *config);
   // Latch the owner (idempotent) and record the host epoch. Does NOT touch the quarantine or the
   // blocked latch. Owner thread only.
   int (*update)(uint64_t epoch, uint64_t proven_tid);
@@ -136,10 +136,10 @@ struct PgrVgpPolicyApi {
   int (*clear_block)(uint64_t proven_tid);
   // Map a catch status to its suppression delay (terminal / retry / default). Pure; any thread.
   int (*catch_delay)(int32_t status, uint64_t *out_ms);
-  int (*sample)(PgrVgpPolicySample *out_sample);
+  int (*sample)(PgsVgpPolicySample *out_sample);
 };
 
-static_assert(sizeof(PgrVgpPolicyApi) == 112, "PgrVgpPolicyApi must remain a 112-byte version-1 table");
+static_assert(sizeof(PgsVgpPolicyApi) == 112, "PgsVgpPolicyApi must remain a 112-byte version-1 table");
 
 // Hidden getter. NOT exported by the version script; the coordinator registers it in query_feature
 // under feature id 25 and answers only on an exact version match.

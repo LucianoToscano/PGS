@@ -104,8 +104,8 @@ struct HostState {
   void *core_handle = nullptr;
 
   bool configured = false;
-  PgrCameraHostConfig cfg = {};
-  PgrMetaExports boot_meta_exports = {};
+  PgsCameraHostConfig cfg = {};
+  PgsMetaExports boot_meta_exports = {};
   PgsCameraMetaExtra boot_meta_extra = {};
 
   bool active = false;
@@ -180,7 +180,7 @@ struct HostState {
   uint32_t bounded_count = 0;
   char last_bounded_reading[160] = {};
 
-  PgrCameraHostEvent events[PGS_CH_EVENT_QUEUE_MAX] = {};
+  PgsCameraHostEvent events[PGS_CH_EVENT_QUEUE_MAX] = {};
   uint32_t event_head = 0;
   uint32_t event_count = 0;
 };
@@ -250,45 +250,45 @@ const PgsCameraMetaApi *resolve_metadata_api() {
   return nullptr;
 }
 
-const PgrCameraSamplerApi *resolve_sampler_api() {
+const PgsCameraSamplerApi *resolve_sampler_api() {
 #if !defined(PGS_CAMERA_HOST_STANDALONE_TEST)
   const void *direct = pgs_camera_sampler_api(PGS_CS_API_VERSION);
   if (direct != nullptr) {
-    return static_cast<const PgrCameraSamplerApi *>(direct);
+    return static_cast<const PgsCameraSamplerApi *>(direct);
   }
 #endif
   const pgs_native_api_v2 *native = resolve_native_api();
   if (native != nullptr && native->query_feature != nullptr) {
-    return static_cast<const PgrCameraSamplerApi *>(
+    return static_cast<const PgsCameraSamplerApi *>(
         native->query_feature(PGS_CS_FEATURE_ID, PGS_CS_API_VERSION));
   }
   return nullptr;
 }
 
-const PgrRuntimeTransportApi *resolve_transport_api() {
+const PgsRuntimeTransportApi *resolve_transport_api() {
 #if !defined(PGS_CAMERA_HOST_STANDALONE_TEST)
   const void *direct =
       pgs_runtime_transport_api(PGS_TRANSPORT_API_VERSION);
   if (direct != nullptr) {
-    return static_cast<const PgrRuntimeTransportApi *>(direct);
+    return static_cast<const PgsRuntimeTransportApi *>(direct);
   }
 #endif
   const pgs_native_api_v2 *native = resolve_native_api();
   if (native != nullptr && native->query_feature != nullptr) {
-    return static_cast<const PgrRuntimeTransportApi *>(native->query_feature(
+    return static_cast<const PgsRuntimeTransportApi *>(native->query_feature(
         PGS_TRANSPORT_FEATURE_ID, PGS_TRANSPORT_API_VERSION));
   }
   return nullptr;
 }
 
-const PgrBootApi *resolve_bootstrap_api() {
+const PgsBootApi *resolve_bootstrap_api() {
 #if !defined(PGS_CAMERA_HOST_STANDALONE_TEST)
   const void *direct = pgs_runtime_bootstrap_api(PGS_BOOT_API_VERSION);
-  if (direct != nullptr) return static_cast<const PgrBootApi *>(direct);
+  if (direct != nullptr) return static_cast<const PgsBootApi *>(direct);
 #endif
   const pgs_native_api_v2 *native = resolve_native_api();
   if (native != nullptr && native->query_feature != nullptr) {
-    return static_cast<const PgrBootApi *>(
+    return static_cast<const PgsBootApi *>(
         native->query_feature(PGS_BOOT_FEATURE_ID, PGS_BOOT_API_VERSION));
   }
   return nullptr;
@@ -478,22 +478,22 @@ void append_json_str(char *dst, size_t cap, size_t *pos, const char *s) {
 uint64_t remaining_lease_ms(double now);
 bool transport_current(){
  if(!(g_state.cfg.flags&PGS_CH_FLAG_USE_TRANSPORT))return true;
- const auto rt=resolve_transport_api();PgrRuntimeTransportSample sample{};
+ const auto rt=resolve_transport_api();PgsRuntimeTransportSample sample{};
  return rt&&rt->sample(&sample)==0&&sample.snapshot_fresh&&!sample.fault&&sample.snapshot_seq==g_state.transport_sequence&&sample.generation==g_state.transport_generation;
 }
 void transport_result(int rc){if(rc!=0){g_state.last_error=PGS_CH_ERR_INTERNAL;g_state.stop_requested.store(true,std::memory_order_release);g_state.lease_until_ms=0;}}
 void emit_transport_string(uint32_t opcode, const char *s0) {
   if ((g_state.cfg.flags & PGS_CH_FLAG_USE_TRANSPORT) == 0) return;
-  const PgrRuntimeTransportApi *rt = resolve_transport_api();
+  const PgsRuntimeTransportApi *rt = resolve_transport_api();
   if (!rt || !rt->emit) return;
   const char *txt = s0 ? s0 : "";
-  PgrRuntimeTransportString s = {txt, static_cast<uint32_t>(strlen(txt))};
+  PgsRuntimeTransportString s = {txt, static_cast<uint32_t>(strlen(txt))};
   transport_result(rt->emit(opcode, nullptr, 0, &s, 1));
 }
 
 void emit_transport_bool(uint32_t opcode, bool val) {
   if ((g_state.cfg.flags & PGS_CH_FLAG_USE_TRANSPORT) == 0) return;
-  const PgrRuntimeTransportApi *rt = resolve_transport_api();
+  const PgsRuntimeTransportApi *rt = resolve_transport_api();
   if (!rt || !rt->emit) return;
   int64_t scalars[1] = {val ? 1 : 0};
   transport_result(rt->emit(opcode, scalars, 1, nullptr, 0));
@@ -501,11 +501,11 @@ void emit_transport_bool(uint32_t opcode, bool val) {
 
 void emit_transport_event(const char *channel, const char *json) {
   if ((g_state.cfg.flags & PGS_CH_FLAG_USE_TRANSPORT) == 0) return;
-  const PgrRuntimeTransportApi *rt = resolve_transport_api();
+  const PgsRuntimeTransportApi *rt = resolve_transport_api();
   if (!rt || !rt->emit) return;
   const char *ch = channel ? channel : "camera-probe";
   const char *js = json ? json : "{}";
-  PgrRuntimeTransportString strings[2] = {
+  PgsRuntimeTransportString strings[2] = {
       {ch, static_cast<uint32_t>(strlen(ch))},
       {js, static_cast<uint32_t>(strlen(js))},
   };
@@ -515,7 +515,7 @@ void emit_transport_event(const char *channel, const char *json) {
 void emit_transport_heading(double yaw_degrees, int32_t camera_id,
                             bool map_visible, double time_ms) {
   if ((g_state.cfg.flags & PGS_CH_FLAG_USE_TRANSPORT) == 0) return;
-  const PgrRuntimeTransportApi *rt = resolve_transport_api();
+  const PgsRuntimeTransportApi *rt = resolve_transport_api();
   if (!rt || !rt->emit) return;
   if (!std::isfinite(yaw_degrees) || camera_id == 0 ||
       !std::isfinite(time_ms) || time_ms < 0.0) {
@@ -539,7 +539,7 @@ void emit_transport_heading(double yaw_degrees, int32_t camera_id,
 
 void sync_transport_demand(double now) {
  if(!(g_state.cfg.flags&PGS_CH_FLAG_USE_TRANSPORT))return;
- const auto rt=resolve_transport_api();PgrRuntimeTransportSample before{},after{};int steering=0,buddy=0,pulse=0;
+ const auto rt=resolve_transport_api();PgsRuntimeTransportSample before{},after{};int steering=0,buddy=0,pulse=0;
  bool fresh=rt&&rt->sample(&before)==0&&before.snapshot_fresh&&!before.fault;
  if(fresh)fresh=rt->get_bool(kTransportBoolCameraSteering,&steering)==0&&rt->get_bool(kTransportBoolBuddySampling,&buddy)==0&&rt->take_pulse(kTransportPulseCameraSample,&pulse)==0;
  if(fresh)fresh=rt->sample(&after)==0&&after.snapshot_fresh&&!after.fault&&before.snapshot_seq==after.snapshot_seq&&before.generation==after.generation;
@@ -551,7 +551,7 @@ void sync_transport_demand(double now) {
  g_state.transport_boolean_demand=steering>0||buddy>0;
 }
 
-void push_event(const PgrCameraHostEvent &ev) {
+void push_event(const PgsCameraHostEvent &ev) {
   if(g_state.cfg.flags&PGS_CH_FLAG_USE_TRANSPORT){
     // Same Control routing as embedded-agent: continuous samples publish typed
     // heading57 plus throttled camera-heading below. Every other kind, including
@@ -575,7 +575,7 @@ void enqueue_signature_events() {
   uint32_t count = g_state.sample_camera ? kTargetCount : (kTargetCount - 1u);
   for (uint32_t i = 0; i < count; ++i) {
     const TargetSpec &spec = kTargets[i];
-    PgrCameraHostEvent ev = {};
+    PgsCameraHostEvent ev = {};
     ev.version = PGS_CH_API_VERSION;
     ev.size = sizeof(ev);
     ev.kind = PGS_CH_EVENT_SIGNATURE;
@@ -591,7 +591,7 @@ void enqueue_signature_events() {
 }
 
 void enqueue_sampler_ready_event() {
-  PgrCameraHostEvent ev = {};
+  PgsCameraHostEvent ev = {};
   ev.version = PGS_CH_API_VERSION;
   ev.size = sizeof(ev);
   ev.kind = PGS_CH_EVENT_SAMPLER_READY;
@@ -603,7 +603,7 @@ void enqueue_sampler_ready_event() {
 }
 
 void enqueue_ready_event() {
-  PgrCameraHostEvent ev = {};
+  PgsCameraHostEvent ev = {};
   ev.version = PGS_CH_API_VERSION;
   ev.size = sizeof(ev);
   ev.kind = PGS_CH_EVENT_READY;
@@ -643,7 +643,7 @@ void enqueue_ready_event() {
 }
 
 void enqueue_sampler_error_event(const FailureRecord &f) {
-  PgrCameraHostEvent ev = {};
+  PgsCameraHostEvent ev = {};
   ev.version = PGS_CH_API_VERSION;
   ev.size = sizeof(ev);
   ev.kind = PGS_CH_EVENT_SAMPLER_ERROR;
@@ -700,7 +700,7 @@ void format_summary_fields(char *dst, size_t cap, size_t *pos,
 }
 
 void enqueue_thread_summary_event(uint64_t observed_ms) {
-  PgrCameraHostEvent ev = {};
+  PgsCameraHostEvent ev = {};
   ev.version = PGS_CH_API_VERSION;
   ev.size = sizeof(ev);
   ev.kind = PGS_CH_EVENT_THREAD_SUMMARY;
@@ -732,7 +732,7 @@ void drain_samples() {
       if (!g_state.unavailable_reported) {
         double delivered_at = fallback_now_ms();
         g_state.unavailable_reported = true;
-        PgrCameraHostEvent ev = {};
+        PgsCameraHostEvent ev = {};
         ev.version = PGS_CH_API_VERSION;
         ev.size = sizeof(ev);
         ev.kind = PGS_CH_EVENT_CAMERA_UNAVAILABLE;
@@ -778,7 +778,7 @@ void drain_samples() {
       }
       g_state.unavailable_reported = false;
 
-      PgrCameraHostEvent ev = {};
+      PgsCameraHostEvent ev = {};
       ev.version = PGS_CH_API_VERSION;
       ev.size = sizeof(ev);
       ev.kind = PGS_CH_EVENT_CAMERA_SAMPLE;
@@ -832,7 +832,7 @@ void drain_samples() {
       break;
     }
 
-    PgrCameraHostEvent ev = {};
+    PgsCameraHostEvent ev = {};
     ev.version = PGS_CH_API_VERSION;
     ev.size = sizeof(ev);
     ev.kind = PGS_CH_EVENT_CAMERA_SAMPLE;
@@ -964,7 +964,7 @@ void finish_observation(const char *override_status,
   }
   copy_str(g_state.reason, sizeof(g_state.reason), final_reason);
 
-  PgrCameraHostEvent ev = {};
+  PgsCameraHostEvent ev = {};
   ev.version = PGS_CH_API_VERSION;
   ev.size = sizeof(ev);
   ev.kind = PGS_CH_EVENT_FINISHED;
@@ -1176,10 +1176,10 @@ void execute_sample_locked(uint64_t tid, void *rig_receiver,
   // local test seam override is active.
   if (g_state.continuous && g_state.sampler_installed &&
       !g_state.use_local_continuous) {
-    const PgrCameraSamplerApi *sampler = resolve_sampler_api();
+    const PgsCameraSamplerApi *sampler = resolve_sampler_api();
     if (sampler && sampler->sample) {
       uint64_t rem = remaining_lease_ms(now);
-      PgrCameraSamplerRequest req = {};
+      PgsCameraSamplerRequest req = {};
       req.version = PGS_CS_REQUEST_VERSION;
       req.size = sizeof(req);
       req.tid = tid;
@@ -1187,7 +1187,7 @@ void execute_sample_locked(uint64_t tid, void *rig_receiver,
       req.rig = rig_receiver;
       req.camera = returned_camera;
 
-      PgrCameraSamplerOutput out = {};
+      PgsCameraSamplerOutput out = {};
       out.version = PGS_CS_OUTPUT_VERSION;
       out.size = sizeof(out);
 
@@ -1254,7 +1254,7 @@ void execute_sample_locked(uint64_t tid, void *rig_receiver,
   // Bounded diagnostic sampling (and local continuous fallback when test seams
   // are active).
   const PgsCameraMetaExtra *ex = g_state.cfg.meta_extra;
-  const PgrMetaExports *me = g_state.cfg.meta_exports;
+  const PgsMetaExports *me = g_state.cfg.meta_exports;
   auto thread_current =
       reinterpret_cast<Il2CppThreadCurrentFn>(g_state.cfg.thread_current);
   auto runtime_invoke =
@@ -1669,11 +1669,11 @@ void execute_sample_locked(uint64_t tid, void *rig_receiver,
 }
 
 uint64_t idle_getter_generation(uint64_t tid) {
- const PgrUnitySchedulerApi3 *scheduler=nullptr;
+ const PgsUnitySchedulerApi3 *scheduler=nullptr;
 #if !defined(PGS_CAMERA_HOST_STANDALONE_TEST)
- scheduler=static_cast<const PgrUnitySchedulerApi3*>(pgs_unity_scheduler_api(3));
+ scheduler=static_cast<const PgsUnitySchedulerApi3*>(pgs_unity_scheduler_api(3));
 #else
- auto core=resolve_native_api();if(core&&core->query_feature)scheduler=static_cast<const PgrUnitySchedulerApi3*>(core->query_feature(48,3));
+ auto core=resolve_native_api();if(core&&core->query_feature)scheduler=static_cast<const PgsUnitySchedulerApi3*>(core->query_feature(48,3));
 #endif
  // Only an actually observed getter on the proven attached Unity owner may
  // sample. ExecuteTasks and this host's subscriber work are excluded, matching
@@ -1716,13 +1716,13 @@ void *hook_get_main_camera(void *rig,const void *method_info) {
   return roots.camera?get(roots.camera):returned;
 }
 
-void populate_config_from_bootstrap(PgrCameraHostConfig *cfg) {
-  const PgrBootApi *rb = resolve_bootstrap_api();
+void populate_config_from_bootstrap(PgsCameraHostConfig *cfg) {
+  const PgsBootApi *rb = resolve_bootstrap_api();
   if (!rb || !rb->snapshot) return;
-  PgrBootBinding b = {};
+  PgsBootBinding b = {};
   b.version = PGS_BOOT_BINDING_VERSION;
   b.size = sizeof(b);
-  if (rb->snapshot(&b) != PGR_BOOT_OK) return;
+  if (rb->snapshot(&b) != PGS_BOOT_OK) return;
 
   if (!cfg->module_base) cfg->module_base = b.module_base;
   if (cfg->module_size == 0) cfg->module_size = b.module_size;
@@ -1860,8 +1860,8 @@ int attempt_prepare(double now) {
   PgsCameraMetaConfig mcfg = {};
   mcfg.version = PGS_CAM_CFG_VERSION;
   mcfg.size = sizeof(mcfg);
-  mcfg.binding.version = PGR_MD_CONFIG_VERSION;
-  mcfg.binding.size = sizeof(PgrMetaBindConfig);
+  mcfg.binding.version = PGS_MD_CONFIG_VERSION;
+  mcfg.binding.size = sizeof(PgsMetaBindConfig);
   mcfg.binding.exports = g_state.cfg.meta_exports;
   mcfg.binding.module_base = g_state.cfg.module_base;
   mcfg.binding.module_size = g_state.cfg.module_size;
@@ -1911,16 +1911,16 @@ int attempt_prepare(double now) {
   g_state.reason[0] = '\0';
 
   if (g_state.sample_camera && g_state.continuous) {
-    const PgrCameraSamplerApi *sampler = resolve_sampler_api();
+    const PgsCameraSamplerApi *sampler = resolve_sampler_api();
     const PgsCameraMetaExtra *ex = g_state.cfg.meta_extra;
-    const PgrMetaExports *me = g_state.cfg.meta_exports;
+    const PgsMetaExports *me = g_state.cfg.meta_exports;
     if (!sampler || !sampler->install || !ex || !me) {
       finish_observation("unavailable", "native-camera-sampler-unavailable",
                          nullptr, false, false);
       return PGS_CH_ERR_INTERNAL;
     }
 
-    PgrCameraSamplerConfig scfg = {};
+    PgsCameraSamplerConfig scfg = {};
     scfg.version = PGS_CS_CONFIG_VERSION;
     scfg.size = sizeof(scfg);
     scfg.runtime_invoke = ex->runtime_invoke;
@@ -2062,13 +2062,13 @@ ThreadEntry *find_or_add_thread(uint64_t tid) {
   return e;
 }
 
-int api_configure(const PgrCameraHostConfig *config) {
+int api_configure(const PgsCameraHostConfig *config) {
   StateGuard guard;if(!guard.entered)return PGS_CH_RETRY;
   if(g_state.hook_installed){if(config&&memcmp(config,&g_state.cfg,sizeof(*config))==0)return PGS_CH_OK;return PGS_CH_ERR_RESTART_REQUIRED;}
   if (config == nullptr) {
     g_state.cfg = {};
     g_state.cfg.version = PGS_CH_API_VERSION;
-    g_state.cfg.size = sizeof(PgrCameraHostConfig);
+    g_state.cfg.size = sizeof(PgsCameraHostConfig);
     g_state.cfg.flags = PGS_CH_FLAG_USE_BOOTSTRAP | PGS_CH_FLAG_USE_TRANSPORT;
     g_state.cfg.expected_layer = PGS_CS_WORLD_MAP_LAYER;
     populate_config_from_bootstrap(&g_state.cfg);
@@ -2076,7 +2076,7 @@ int api_configure(const PgrCameraHostConfig *config) {
     return PGS_CH_OK;
   }
   if (config->version != PGS_CH_API_VERSION ||
-      config->size != sizeof(PgrCameraHostConfig) || config->reserved0 != 0) {
+      config->size != sizeof(PgsCameraHostConfig) || config->reserved0 != 0) {
     return PGS_CH_ERR_VERSION;
   }
   g_state.cfg = *config;
@@ -2157,12 +2157,12 @@ void reset_session_state(double now, bool clear_events) {
   }
 }
 
-int api_start(const PgrCameraHostOptions *options) {
+int api_start(const PgsCameraHostOptions *options) {
   StateGuard guard;if(!guard.entered)return PGS_CH_RETRY;
   if(g_state.sampling.load()||g_state.getter_depth.load())return PGS_CH_RETRY;
   if (!options) return PGS_CH_ERR_INVALID_ARG;
   if (options->version != PGS_CH_API_VERSION ||
-      options->size != sizeof(PgrCameraHostOptions)) {
+      options->size != sizeof(PgsCameraHostOptions)) {
     return PGS_CH_ERR_VERSION;
   }
   if (!g_state.configured) {
@@ -2213,11 +2213,11 @@ int api_start(const PgrCameraHostOptions *options) {
   return attempt_prepare(now);
 }
 
-int api_set_options(const PgrCameraHostOptions *options) {
+int api_set_options(const PgsCameraHostOptions *options) {
   StateGuard guard;if(!guard.entered)return PGS_CH_RETRY;
   if (!options) return PGS_CH_ERR_INVALID_ARG;
   if (options->version != PGS_CH_API_VERSION ||
-      options->size != sizeof(PgrCameraHostOptions)) {
+      options->size != sizeof(PgsCameraHostOptions)) {
     return PGS_CH_ERR_VERSION;
   }
 
@@ -2338,10 +2338,10 @@ int api_tick(uint64_t tid) {
   return g_state.event_count > 0 ? PGS_CH_HAS_EVENT : PGS_CH_OK;
 }
 
-int api_next_event(PgrCameraHostEvent *out_event) {
+int api_next_event(PgsCameraHostEvent *out_event) {
   if (!out_event) return PGS_CH_ERR_INVALID_ARG;
   if (out_event->version != PGS_CH_API_VERSION ||
-      out_event->size != sizeof(PgrCameraHostEvent)) {
+      out_event->size != sizeof(PgsCameraHostEvent)) {
     return PGS_CH_ERR_VERSION;
   }
   StateGuard guard;if(!guard.entered)return PGS_CH_RETRY;
@@ -2365,17 +2365,17 @@ int api_stop(const char *reason) {
   return PGS_CH_OK;
 }
 
-int api_sample(PgrCameraHostSample *out_sample) {
+int api_sample(PgsCameraHostSample *out_sample) {
   if (!out_sample) return PGS_CH_ERR_INVALID_ARG;
   if (out_sample->version != PGS_CH_API_VERSION ||
-      out_sample->size != sizeof(PgrCameraHostSample)) {
+      out_sample->size != sizeof(PgsCameraHostSample)) {
     return PGS_CH_ERR_VERSION;
   }
   StateGuard guard;if(!guard.entered)return PGS_CH_RETRY;
   double now = fallback_now_ms();
   memset(out_sample, 0, sizeof(*out_sample));
   out_sample->version = PGS_CH_API_VERSION;
-  out_sample->size = sizeof(PgrCameraHostSample);
+  out_sample->size = sizeof(PgsCameraHostSample);
   out_sample->active = g_state.active ? 1 : 0;
   out_sample->ready = g_state.ready ? 1 : 0;
   out_sample->stopping = revoked() ? 1 : 0;
@@ -2414,13 +2414,13 @@ int api_sample(PgrCameraHostSample *out_sample) {
   return PGS_CH_OK;
 }
 
-bool valid_pulse(const PgrUnityPulse *p){
+bool valid_pulse(const PgsUnityPulse *p){
  if(!p||p->reserved||p->tid<=0||uint64_t(p->tid)!=current_tid())return false;
- const auto core=resolve_native_api();const auto scheduler=core&&core->query_feature?static_cast<const PgrUnitySchedulerApi*>(core->query_feature(48,2)):nullptr;
+ const auto core=resolve_native_api();const auto scheduler=core&&core->query_feature?static_cast<const PgsUnitySchedulerApi*>(core->query_feature(48,2)):nullptr;
  auto thread=reinterpret_cast<Il2CppThreadCurrentFn>(g_state.cfg.thread_current);
  return scheduler&&scheduler->valid(p->generation)==1&&thread&&thread();
 }
-void api_on_unity_begin(void *ctx, const PgrUnityPulse *pulse) {
+void api_on_unity_begin(void *ctx, const PgsUnityPulse *pulse) {
   (void)ctx;
   StateGuard guard;if(!guard.entered)return;
   if(!valid_pulse(pulse))return;
@@ -2456,7 +2456,7 @@ void api_on_unity_begin(void *ctx, const PgrUnityPulse *pulse) {
   }
 }
 
-void api_on_unity_end(void *ctx, const PgrUnityPulse *pulse) {
+void api_on_unity_end(void *ctx, const PgsUnityPulse *pulse) {
   (void)ctx;
   StateGuard guard;if(!guard.entered)return;
   if(!valid_pulse(pulse))return;
@@ -2483,9 +2483,9 @@ void api_bind_core_handle(void *lib_handle) {
   g_state.core_handle = lib_handle;
 }
 
-const PgrCameraHostApi kApi = {
+const PgsCameraHostApi kApi = {
     .version = PGS_CH_API_VERSION,
-    .size = sizeof(PgrCameraHostApi),
+    .size = sizeof(PgsCameraHostApi),
     .configure = api_configure,
     .start = api_start,
     .set_options = api_set_options,

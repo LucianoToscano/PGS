@@ -20,10 +20,10 @@
 // keeps on the map Pokemon for shiny and IVs, the RPC handler for the berry and MapPokemon.TryCapture
 // for each throw. Only while the game is active and the map is showing.
 namespace {
-using namespace pgr_shared_meta;
+using namespace pgs_shared_meta;
 struct Failure {const char *where;};
 void require(bool ok,const char *where){if(!ok)throw Failure{where};}
-PgrBootBinding boot{};const PgrSharedMetadataOutput *md=nullptr;
+PgsBootBinding boot{};const PgsSharedMetadataOutput *md=nullptr;
 bool initialized=false,busy=false,faulted=false;uint64_t owner=0;
 uint64_t clock_ms(){timespec t{};clock_gettime(CLOCK_BOOTTIME,&t);return uint64_t(t.tv_sec)*1000+t.tv_nsec/1000000;}
 template<class F>F fn(const void *p){require(p,"missing runtime export");return reinterpret_cast<F>(const_cast<void*>(p));}
@@ -41,9 +41,9 @@ struct Root {
 void *klass(void *o){require(o,"null object");return fn<void*(*)(void*)>(boot.runtime.object_get_class)(o);}
 void *cls(const char *ns,const char *name){
  static std::map<std::string,void*> cache;const std::string key=std::string(ns)+"."+name;auto it=cache.find(key);if(it!=cache.end())return it->second;
- const auto *api=static_cast<const PgrMetaApi*>(pgs_runtime_metadata_api(1));require(api,"metadata API");
- PgrMetaClassQuery q{};q.version=1;q.size=sizeof(q);q.name_space=ns;q.name=name;q.canonical_match=PGR_MD_MATCH_EXACT;
- PgrMetaClassResult out{};require(api->resolve_class(&q,&out)==0,name);return cache[key]=const_cast<void*>(out.klass);
+ const auto *api=static_cast<const PgsMetaApi*>(pgs_runtime_metadata_api(1));require(api,"metadata API");
+ PgsMetaClassQuery q{};q.version=1;q.size=sizeof(q);q.name_space=ns;q.name=name;q.canonical_match=PGS_MD_MATCH_EXACT;
+ PgsMetaClassResult out{};require(api->resolve_class(&q,&out)==0,name);return cache[key]=const_cast<void*>(out.klass);
 }
 std::string typename_of(void *type){char *p=fn<char*(*)(void*)>(boot.meta.type_get_name)(type);require(p,"type name");std::string s=p;fn<void(*)(void*)>(boot.meta.mem_free)(p);return s;}
 void *method(void *k,const char *name,int count){
@@ -83,7 +83,7 @@ double distance_m(double lat1,double lon1,double lat2,double lon2){
  return 12742000.0*std::asin(std::sqrt(std::fmin(1.0,h)));
 }
 std::string quote(const std::string &s){std::string out="\"";for(unsigned char c:s){if(c=='"'||c=='\\')out+='\\';if(c>=32)out+=char(c);}return out+'"';}
-const PgrRuntimeTransportApi *transport(){return static_cast<const PgrRuntimeTransportApi*>(pgs_runtime_transport_api(1));}
+const PgsRuntimeTransportApi *transport(){return static_cast<const PgsRuntimeTransportApi*>(pgs_runtime_transport_api(1));}
 
 struct Config {uint64_t request=0,id=0;int dex=0;double lat=0,lon=0;bool go=false,running=false,active=false,map=false;};
 // "S1|<request>|<encounter id>|<go>|<running>", or for a spawn a feed lists without an encounter id (a
@@ -92,7 +92,7 @@ struct Config {uint64_t request=0,id=0;int dex=0;double lat=0,lon=0;bool go=fals
 // anything malformed or stale means off. go turns 1 once a found shiny can be caught without cooldown;
 // until then the encounter is held.
 Config configured(){
- Config c;auto tr=transport();PgrRuntimeTransportSample a{};char s[128]{};uint32_t n=0;
+ Config c;auto tr=transport();PgsRuntimeTransportSample a{};char s[128]{};uint32_t n=0;
  if(!tr||tr->sample(&a)||!a.snapshot_fresh||a.fault||tr->get_string(19,s,sizeof(s)-1,&n)||n>=sizeof(s))return c;
  s[n]=0;unsigned long long request=0,id=0;int go=0,running=0,dex=0;double lat=0,lon=0;char tail=0;
  if(std::sscanf(s,"S1|%llu|%llu|%d|%d%c",&request,&id,&go,&running,&tail)==4){
@@ -148,10 +148,10 @@ struct State {
 void event(const char *phase,const std::string &extra=""){
  auto tr=transport();if(!tr)return;
  const std::string json="{\"request\":"+std::to_string(st.request)+",\"phase\":\""+phase+"\""+extra+"}";
- PgrRuntimeTransportString s[]={{"shundo-sniper",13},{json.c_str(),uint32_t(json.size())}};tr->emit(19,nullptr,0,s,2);
+ PgsRuntimeTransportString s[]={{"shundo-sniper",13},{json.c_str(),uint32_t(json.size())}};tr->emit(19,nullptr,0,s,2);
 }
 // A berry or a throw counts toward the cooldown estimate; the encounter itself does not.
-void cooldown(const char *action){auto tr=transport();if(!tr)return;PgrRuntimeTransportString s[]={{action,uint32_t(std::strlen(action))}};tr->emit(17,nullptr,0,s,1);}
+void cooldown(const char *action){auto tr=transport();if(!tr)return;PgsRuntimeTransportString s[]={{action,uint32_t(std::strlen(action))}};tr->emit(17,nullptr,0,s,1);}
 void reset(){st.promise.reset();st.target.reset();st.spawn.reset();st.step=IDLE;st.throws=0;st.species=0;st.mighty=st.safari_refused=false;st.last_ball=0;st.scans=st.seen=0;st.sample.clear();st.next_refresh=0;st.refreshes=0;st.before.clear();st.have_before=false;st.fresh_at=st.first_fresh=st.early_ms=0;st.fresh=st.early=0;}
 void finish(const char *phase,const std::string &message,const std::string &extra=""){
  event(phase,",\"message\":"+quote(message)+extra);st.promise.reset();st.target.reset();st.step=DONE;
@@ -237,8 +237,8 @@ void *encounter_response(void *wild){
  return at<void*>(wild,offset);
 }
 int poll(Root &value){
- auto vr=static_cast<const PgrVgpResultsApi*>(pgs_vgp_results_api(1));require(vr,"response polling unavailable");
- PgrVgpResultsResult out{};const int rc=vr->poll(st.promise.get(),PGS_VR_PHASE_ENCOUNTER,owner,&out);value.h=out.value_handle;return rc;
+ auto vr=static_cast<const PgsVgpResultsApi*>(pgs_vgp_results_api(1));require(vr,"response polling unavailable");
+ PgsVgpResultsResult out{};const int rc=vr->poll(st.promise.get(),PGS_VR_PHASE_ENCOUNTER,owner,&out);value.h=out.value_handle;return rc;
 }
 int count(int item){void *a[]={&item};const int n=unbox<int32_t>(call(st.items.get(),"GetItemCount",1,a));return n>0?n:0;}
 int item_id(const char *name){return literal(cls("Holoholo.Rpc","Item"),name);}
@@ -404,10 +404,10 @@ void hook_gym_selected(void *self,void *gym,void *flag,void *done,void *context,
  reinterpret_cast<void(*)(void*,void*,void*,void*,void*,void*,const void*)>(orig_gym.load(std::memory_order_acquire))(self,gym,flag,done,context,recovery,m);
 }
 bool pin(void *owner,const char *name,unsigned params,uint64_t rva,const uint8_t *prologue,void *replacement,std::atomic<void*> &original){
- const auto *api=static_cast<const PgrMetaApi*>(pgs_runtime_metadata_api(1));if(!api)return false;
- PgrMetaMethodQuery q{};q.version=1;q.size=sizeof(q);q.owner=owner;q.name=name;q.return_type="System.Void";q.return_match=PGR_MD_MATCH_EXACT;
+ const auto *api=static_cast<const PgsMetaApi*>(pgs_runtime_metadata_api(1));if(!api)return false;
+ PgsMetaMethodQuery q{};q.version=1;q.size=sizeof(q);q.owner=owner;q.name=name;q.return_type="System.Void";q.return_match=PGS_MD_MATCH_EXACT;
  q.param_count=params;q.expected_code=static_cast<const char*>(boot.module_base)+rva;q.prologue=prologue;q.prologue_len=24;
- PgrMetaMethodResult r{};if(api->validate_method(&q,&r)!=0||!r.code)return false;
+ PgsMetaMethodResult r{};if(api->validate_method(&q,&r)!=0||!r.code)return false;
  void *o=nullptr;if(pgs_hook(const_cast<void*>(r.code),replacement,&o)!=0||!o)return false;
  original.store(o,std::memory_order_release);return true;
 }
@@ -415,17 +415,17 @@ void install_block(){
  hooks_tried=true;
  void *state=nullptr;try{state=cls("Niantic.Holoholo.Map","MapExploreState");}catch(const Failure&){}
  if(!state){event("block-unavailable",",\"message\":\"Map taps not blocked: map state not found\"");return;}
- static const uint8_t p_pokemon[]=PGR_GAME_SHUNDO_CPP_POKEMON_SELECTED_FINGERPRINT,p_stop[]=PGR_GAME_SHUNDO_CPP_POKESTOP_SELECTED_FINGERPRINT,p_gym[]=PGR_GAME_SHUNDO_CPP_GYM_SELECTED_FINGERPRINT;
+ static const uint8_t p_pokemon[]=PGS_GAME_SHUNDO_CPP_POKEMON_SELECTED_FINGERPRINT,p_stop[]=PGS_GAME_SHUNDO_CPP_POKESTOP_SELECTED_FINGERPRINT,p_gym[]=PGS_GAME_SHUNDO_CPP_GYM_SELECTED_FINGERPRINT;
  static_assert(sizeof(p_pokemon)==24&&sizeof(p_stop)==24&&sizeof(p_gym)==24,"24-byte prologues");
  std::string missing;
- if(!pin(state,"PokemonSelected",2,PGR_GAME_SHUNDO_CPP_POKEMON_SELECTED_RVA,p_pokemon,reinterpret_cast<void*>(hook_pokemon_selected),orig_pokemon))missing+="Pokémon ";
- if(!pin(state,"PokestopSelected",3,PGR_GAME_SHUNDO_CPP_POKESTOP_SELECTED_RVA,p_stop,reinterpret_cast<void*>(hook_pokestop_selected),orig_stop))missing+="PokéStops ";
- if(!pin(state,"GymSelected",5,PGR_GAME_SHUNDO_CPP_GYM_SELECTED_RVA,p_gym,reinterpret_cast<void*>(hook_gym_selected),orig_gym))missing+="gyms ";
+ if(!pin(state,"PokemonSelected",2,PGS_GAME_SHUNDO_CPP_POKEMON_SELECTED_RVA,p_pokemon,reinterpret_cast<void*>(hook_pokemon_selected),orig_pokemon))missing+="Pokémon ";
+ if(!pin(state,"PokestopSelected",3,PGS_GAME_SHUNDO_CPP_POKESTOP_SELECTED_RVA,p_stop,reinterpret_cast<void*>(hook_pokestop_selected),orig_stop))missing+="PokéStops ";
+ if(!pin(state,"GymSelected",5,PGS_GAME_SHUNDO_CPP_GYM_SELECTED_RVA,p_gym,reinterpret_cast<void*>(hook_gym_selected),orig_gym))missing+="gyms ";
  if(!missing.empty())event("block-unavailable",",\"message\":\"Taps not blocked on: "+missing+"\"");
 }
 }  // namespace
 
-void pgs_shundo_tick(uint64_t tid,const PgrSharedMetadataOutput *metadata){
+void pgs_shundo_tick(uint64_t tid,const PgsSharedMetadataOutput *metadata){
  if(busy||faulted||!tid||tid!=uint64_t(gettid())||(owner&&owner!=tid))return;
  struct Guard{Guard(){busy=true;}~Guard(){busy=false;}}guard;
  const Config c=configured();const uint64_t now=clock_ms();
@@ -433,7 +433,7 @@ void pgs_shundo_tick(uint64_t tid,const PgrSharedMetadataOutput *metadata){
   blocking.store(c.running&&!faulted,std::memory_order_release);last_tick_ms.store(now,std::memory_order_release);
   if(!c.request&&!c.running){if(st.step!=IDLE){reset();st.request=0;}return;}
   if(!initialized){
-   auto api=static_cast<const PgrBootApi*>(pgs_runtime_bootstrap_api(1));boot.version=1;boot.size=sizeof(boot);
+   auto api=static_cast<const PgsBootApi*>(pgs_runtime_bootstrap_api(1));boot.version=1;boot.size=sizeof(boot);
    require(api&&api->snapshot(&boot)==0,"runtime unavailable");md=metadata;require(md,"shared metadata");owner=tid;initialized=true;
   }
   require(fn<void*(*)()>(boot.runtime.thread_current)()!=nullptr,"owner thread not attached");

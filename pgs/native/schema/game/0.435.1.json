@@ -735,7 +735,7 @@
         "value": "shared.gc_free_tail_offset",
         "purpose": "kGcFreeTailOff object/code layout offset"
       },
-      "pgr_cam_main_camera_rva_rva": {
+      "pgs_cam_main_camera_rva_rva": {
         "kind": "rva",
         "value": "0xad814b8u",
         "purpose": "pgr cam main camera rva rva"
@@ -1491,17 +1491,17 @@
       }
     },
     "interaction_host_h": {
-      "pgr_ih_btxu_rva_rva": {
+      "pgs_ih_btxu_rva_rva": {
         "kind": "rva",
         "value": "0xaccfdecu",
         "purpose": "pgr ih btxu rva rva"
       },
-      "pgr_ih_tr_rva_zlc_rva": {
+      "pgs_ih_tr_rva_zlc_rva": {
         "kind": "rva",
         "value": "0x92fb1f0u",
         "purpose": "pgr ih tr rva zlc rva"
       },
-      "pgr_ih_tr_rva_zld_rva": {
+      "pgs_ih_tr_rva_zld_rva": {
         "kind": "rva",
         "value": "0x92fb604u",
         "purpose": "pgr ih tr rva zld rva"
@@ -2726,32 +2726,32 @@
       }
     },
     "routes_observers_h": {
-      "pgr_ro_progress_status_offset": {
+      "pgs_ro_progress_status_offset": {
         "kind": "offset",
         "value": "0x14",
-        "purpose": "PGR_RO_PROGRESS_STATUS_OFFSET object/code layout offset"
+        "purpose": "PGS_RO_PROGRESS_STATUS_OFFSET object/code layout offset"
       },
-      "pgr_ro_gui_state_offset": {
+      "pgs_ro_gui_state_offset": {
         "kind": "offset",
         "value": "0x70",
-        "purpose": "PGR_RO_GUI_STATE_OFFSET object/code layout offset"
+        "purpose": "PGS_RO_GUI_STATE_OFFSET object/code layout offset"
       }
     },
     "routes_tracking_h": {
-      "pgr_rt_waypoint_lat_offset": {
+      "pgs_rt_waypoint_lat_offset": {
         "kind": "offset",
         "value": "0x18",
-        "purpose": "PGR_RT_WAYPOINT_LAT_OFFSET object/code layout offset"
+        "purpose": "PGS_RT_WAYPOINT_LAT_OFFSET object/code layout offset"
       },
-      "pgr_rt_waypoint_lng_offset": {
+      "pgs_rt_waypoint_lng_offset": {
         "kind": "offset",
         "value": "0x20",
-        "purpose": "PGR_RT_WAYPOINT_LNG_OFFSET object/code layout offset"
+        "purpose": "PGS_RT_WAYPOINT_LNG_OFFSET object/code layout offset"
       },
-      "pgr_rt_max_field_offset": {
+      "pgs_rt_max_field_offset": {
         "kind": "offset",
         "value": "0x1000",
-        "purpose": "PGR_RT_MAX_FIELD_OFFSET object/code layout offset"
+        "purpose": "PGS_RT_MAX_FIELD_OFFSET object/code layout offset"
       }
     },
     "shared_metadata_cpp": {
@@ -9587,15 +9587,15 @@
       }
     },
     "vgp_results_h": {
-      "pgr_vr_offset_min": {
+      "pgs_vr_offset_min": {
         "kind": "offset",
         "value": "16",
-        "purpose": "PGR_VR_OFFSET_MIN object/code layout offset"
+        "purpose": "PGS_VR_OFFSET_MIN object/code layout offset"
       },
-      "pgr_vr_offset_max": {
+      "pgs_vr_offset_max": {
         "kind": "offset",
         "value": "512",
-        "purpose": "PGR_VR_OFFSET_MAX object/code layout offset"
+        "purpose": "PGS_VR_OFFSET_MAX object/code layout offset"
       }
     },
     "catch_presentation_cpp": {

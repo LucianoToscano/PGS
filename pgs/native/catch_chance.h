@@ -1,10 +1,10 @@
 #pragma once
 #include <stdint.h>
-struct PgrSharedMetadataOutput;
+struct PgsSharedMetadataOutput;
 // Catch chance and auto ball for manual encounters. Transport string slot 15 carries
 // "C3|<show>|<auto>|<target percent>|<picker berry>|<Mighty Safari>|<auto throw>|<cooldown ms>".
 // C1 and C2 remain accepted.
-void pgs_catch_chance_tick(uint64_t tid,const PgrSharedMetadataOutput *metadata);
+void pgs_catch_chance_tick(uint64_t tid,const PgsSharedMetadataOutput *metadata);
 // The encounter state opened / closed (from the EncounterInteractionState hooks; Unity thread).
 void pgs_catch_chance_enter(void *state);
 void pgs_catch_chance_exit(void *state);

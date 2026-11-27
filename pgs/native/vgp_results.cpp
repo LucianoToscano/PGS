@@ -8,7 +8,7 @@
 // managed interaction here is a pure metadata read (field offsets/types/classes) or a GC root call.
 
 namespace {
-PgrVgpResultsConfig cfg{};
+PgsVgpResultsConfig cfg{};
 std::mutex installMutex;
 std::atomic<bool> installed{false};
 std::atomic<bool> busy{false};
@@ -64,7 +64,7 @@ void *resolveField(void *klass, void *name, bool *bad) {
     void *f = reinterpret_cast<FieldByName>(cfg.class_get_field_from_name)(k, static_cast<const char *>(name));
     if (f) {
       size_t off = reinterpret_cast<FieldOffset>(cfg.field_get_offset)(f);
-      if (off < static_cast<size_t>(PGR_VR_OFFSET_MIN) || off > static_cast<size_t>(PGR_VR_OFFSET_MAX)) {
+      if (off < static_cast<size_t>(PGS_VR_OFFSET_MIN) || off > static_cast<size_t>(PGS_VR_OFFSET_MAX)) {
         *bad = true;
         return nullptr;
       }
@@ -103,7 +103,7 @@ int32_t readInt32(void *obj, void *f) {
   return v;
 }
 
-int install(const PgrVgpResultsConfig *c) {
+int install(const PgsVgpResultsConfig *c) {
   if (!c || c->version != PGS_VR_CONFIG_VERSION || c->size != sizeof(*c)) return PGS_VR_ERR_NULL_ARG;
   // 20 validated pointers follow the 8-byte header; every one is required.
   void *pointers[20];
@@ -117,7 +117,7 @@ int install(const PgrVgpResultsConfig *c) {
   return 0;
 }
 
-int poll(void *promise, uint32_t phase, uint64_t owner, PgrVgpResultsResult *out) {
+int poll(void *promise, uint32_t phase, uint64_t owner, PgsVgpResultsResult *out) {
   if (!out) return PGS_VR_ERR_NULL_ARG;
   *out = {PGS_VR_RESULT_VERSION, sizeof(*out), 0, 0, 0, 0, 0};
   if (!installed.load(std::memory_order_acquire)) return PGS_VR_ERR_NOT_INSTALLED;
@@ -216,7 +216,7 @@ int poll(void *promise, uint32_t phase, uint64_t owner, PgrVgpResultsResult *out
   return PGS_VR_DONE;
 }
 
-int sample(PgrVgpResultsSample *out) {
+int sample(PgsVgpResultsSample *out) {
   if (!out) return PGS_VR_ERR_NULL_ARG;
   out->version = PGS_VR_SAMPLE_VERSION;
   out->size = sizeof(*out);
@@ -229,7 +229,7 @@ int sample(PgrVgpResultsSample *out) {
   return 0;
 }
 
-const PgrVgpResultsApi api = {PGS_VR_API_VERSION, sizeof(PgrVgpResultsApi), install, poll, sample};
+const PgsVgpResultsApi api = {PGS_VR_API_VERSION, sizeof(PgsVgpResultsApi), install, poll, sample};
 }  // namespace
 
 extern "C" const void *pgs_vgp_results_api(uint32_t version) {

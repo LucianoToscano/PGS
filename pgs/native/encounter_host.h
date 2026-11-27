@@ -48,21 +48,21 @@ typedef void (*pgs_eh_set_map_poi_snapshot_fn)(const char *json_array);
 
 // Fixed LP64 configuration (264 bytes).
 // Keeps exact layout constraints:
-//   offsetof(PgrEncounterHostConfig, metadata_config) == 160
-//   offsetof(PgrEncounterHostConfig, object_get_virtual_method) == 256
-//   sizeof(PgrEncounterHostConfig) == 264
-struct PgrEncounterHostConfig {
+//   offsetof(PgsEncounterHostConfig, metadata_config) == 160
+//   offsetof(PgsEncounterHostConfig, object_get_virtual_method) == 256
+//   sizeof(PgsEncounterHostConfig) == 264
+struct PgsEncounterHostConfig {
   uint32_t version;           // 0: == PGS_EH_API_VERSION (1)
-  uint32_t size;              // 4: == sizeof(PgrEncounterHostConfig) (264)
+  uint32_t size;              // 4: == sizeof(PgsEncounterHostConfig) (264)
   uint32_t require_all;       // 8: 0 = modular capability gating, non-zero = require all
   uint32_t capability_mask;   // 12: 0 = all available, else bitmask of PgsEncounterHostCapabilityFlags
 
   // 18 pointer slots (offsets 16..159 = 144 bytes):
   // Optional pre-resolved Feature 56 metadata and extra exports (slots 0..1).
-  const PgrSharedMetadataOutput *resolved_metadata; // 16
+  const PgsSharedMetadataOutput *resolved_metadata; // 16
   const PgsSharedMetaExtraExports *extra_exports;   // 24
 
-  // IL2CPP runtime exports not in PgrMetaExports / PgsSharedMetaExtraExports (slots 2..10).
+  // IL2CPP runtime exports not in PgsMetaExports / PgsSharedMetaExtraExports (slots 2..10).
   void *runtime_invoke;         // 32: void* (MethodInfo*, void* obj, void** params, void** exc)
   void *object_get_class;       // 40: void* (void* obj)
   void *object_unbox;           // 48: void* (void* boxed)
@@ -89,17 +89,17 @@ struct PgrEncounterHostConfig {
   void *object_get_virtual_method;                       // 256..263
 };
 
-static_assert(offsetof(PgrEncounterHostConfig, metadata_config) == 160,
+static_assert(offsetof(PgsEncounterHostConfig, metadata_config) == 160,
               "metadata_config must be at offset 160");
-static_assert(offsetof(PgrEncounterHostConfig, object_get_virtual_method) == 256,
+static_assert(offsetof(PgsEncounterHostConfig, object_get_virtual_method) == 256,
               "object_get_virtual_method must be at offset 256");
-static_assert(sizeof(PgrEncounterHostConfig) == 264,
-              "PgrEncounterHostConfig must be 264 bytes on LP64");
+static_assert(sizeof(PgsEncounterHostConfig) == 264,
+              "PgsEncounterHostConfig must be 264 bytes on LP64");
 
 // Runtime options snapshot (96 bytes on LP64).
-struct PgrEncounterHostOptions {
+struct PgsEncounterHostOptions {
   uint32_t version;                  // 0: == PGS_EH_API_VERSION (1)
-  uint32_t size;                     // 4: == sizeof(PgrEncounterHostOptions) (96)
+  uint32_t size;                     // 4: == sizeof(PgsEncounterHostOptions) (96)
 
   uint32_t berries_allowed;          // 8
   uint32_t berry_priority_count;     // 12: 0..3
@@ -124,13 +124,13 @@ struct PgrEncounterHostOptions {
   double   lon;                      // 88
 };
 
-static_assert(sizeof(PgrEncounterHostOptions) == 96,
-              "PgrEncounterHostOptions must be 96 bytes on LP64");
+static_assert(sizeof(PgsEncounterHostOptions) == 96,
+              "PgsEncounterHostOptions must be 96 bytes on LP64");
 
 // Pull-only telemetry snapshot (64 bytes on LP64).
-struct PgrEncounterHostSample {
+struct PgsEncounterHostSample {
   uint32_t version;              // 0: == PGS_EH_API_VERSION
-  uint32_t size;                 // 4: == sizeof(PgrEncounterHostSample) (64)
+  uint32_t size;                 // 4: == sizeof(PgsEncounterHostSample) (64)
   uint32_t installed;            // 8
   uint32_t active_capabilities;  // 12: bitmask of PgsEncounterHostCapabilityFlags
   uint64_t tick_serial;          // 16
@@ -142,25 +142,25 @@ struct PgrEncounterHostSample {
   int32_t  last_error;           // 60
 };
 
-static_assert(sizeof(PgrEncounterHostSample) == 64,
-              "PgrEncounterHostSample must be 64 bytes on LP64");
+static_assert(sizeof(PgsEncounterHostSample) == 64,
+              "PgsEncounterHostSample must be 64 bytes on LP64");
 
 // Feature 63 API table (72 bytes on LP64).
-struct PgrEncounterHostApi {
+struct PgsEncounterHostApi {
   uint32_t version; // == PGS_EH_API_VERSION
-  uint32_t size;    // == sizeof(PgrEncounterHostApi) (72)
-  int (*configure)(const PgrEncounterHostConfig *config);
+  uint32_t size;    // == sizeof(PgsEncounterHostApi) (72)
+  int (*configure)(const PgsEncounterHostConfig *config);
   int (*install)(void);
-  int (*update_options)(const PgrEncounterHostOptions *options, uint64_t proven_tid);
+  int (*update_options)(const PgsEncounterHostOptions *options, uint64_t proven_tid);
   int (*set_keep_species)(const int32_t *species_ids, uint32_t count);
   int (*tick)(uint64_t proven_tid);
   int (*stop)(uint64_t proven_tid);
-  int (*sample)(PgrEncounterHostSample *out);
+  int (*sample)(PgsEncounterHostSample *out);
   int (*poll_event)(char *type_buf, uint32_t type_cap, char *json_buf, uint32_t json_cap);
 };
 
-static_assert(sizeof(PgrEncounterHostApi) == 72,
-              "PgrEncounterHostApi must be 72 bytes on LP64");
+static_assert(sizeof(PgsEncounterHostApi) == 72,
+              "PgsEncounterHostApi must be 72 bytes on LP64");
 
 const void *pgs_encounter_host_api(uint32_t version);
 

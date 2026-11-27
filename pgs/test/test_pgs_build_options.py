@@ -51,6 +51,25 @@ class PgsBuildOptionTests(unittest.TestCase):
                 with self.assertRaisesRegex(ValueError, "Invalid PGS version"):
                     build.release_version(root)
 
+    def test_signing_setting_pgs_priority_and_legacy_fallback(self):
+        self.assertEqual(build.signing_setting("KEYSTORE", environ={"PGS_KEYSTORE": "new", "PGRAZOR_KEYSTORE": "old"}), "new")
+        self.assertEqual(build.signing_setting("KEYSTORE", environ={"PGRAZOR_KEYSTORE": "old"}), "old")
+        self.assertIsNone(build.signing_setting("KEYSTORE", environ={}))
+        with tempfile.TemporaryDirectory() as folder:
+            key = Path(folder) / "existing.jks"
+            key.write_bytes(b"fixture")
+            env = {"PGS_KEYSTORE": str(key), "PGS_KEY_ALIAS": "alias",
+                   "PGS_STORE_PASSWORD": "fixture-store", "PGS_KEY_PASSWORD": "fixture-key"}
+            with patch.dict(build.os.environ, env, clear=True), patch.object(build, "run") as run:
+                args = build.signing_args()
+                self.assertEqual(args[1], key)
+                self.assertEqual(args[-1], "alias")
+                self.assertIn("env:PGS_STORE_PASSWORD", args)
+                run.assert_not_called()
+            with patch.dict(build.os.environ, {"PGS_KEYSTORE": ""}, clear=True):
+                with self.assertRaises(RuntimeError):
+                    build.signing_args()
+
     def test_workflows_use_pgs_nonsecret_build_options(self):
         workflows = Path(__file__).resolve().parents[2] / '.github' / 'workflows'
         for name in ('ci.yml', 'release.yml', 'pgs-v0.0.1-release.yml',

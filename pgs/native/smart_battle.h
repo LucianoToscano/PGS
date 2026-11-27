@@ -1,12 +1,12 @@
 #pragma once
 #include <stdint.h>
-struct PgrSharedMetadataOutput;
+struct PgsSharedMetadataOutput;
 // Smart battling: picks counters for the Pokemon you are fighting. Before a gym, raid or typed Rocket
 // grunt battle the game's recommended party is replaced with the best counters from storage. During
 // gym and Team GO Rocket battles the team member best suited to the current opponent is swapped in,
 // when a new opponent appears or yours faints. One setting, off by default, on transport string slot
 // 21 ("F1|enabled"). Unity owner thread only.
-void pgs_smart_battle_tick(uint64_t tid,const PgrSharedMetadataOutput *metadata);
+void pgs_smart_battle_tick(uint64_t tid,const PgsSharedMetadataOutput *metadata);
 void pgs_smart_battle_stop(uint64_t tid);
 bool pgs_smart_battle_enabled();
 // Rocket "choose your next Pokemon" prompt: of these SwapButtonVNext buttons (all usable), the index

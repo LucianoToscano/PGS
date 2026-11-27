@@ -22,7 +22,7 @@ enum PgsUnitySchedulerStatus {
 constexpr uint32_t PGS_US_MAX_SUBSCRIBERS=16;
 using PgsUnityInvoke=void *(*)(const void *,void *,void **,void **);
 using PgsUnityConvert=void *(*)(const void *,void *,void **,int32_t,void **);
-struct PgrUnityPulse {
+struct PgsUnityPulse {
  uint64_t generation, sequence;
  int32_t tid;
  uint32_t reserved;
@@ -37,7 +37,7 @@ struct PgrUnityPulse {
 // They may call managed functions. They MUST NOT throw C++ exceptions or unload
 // code. On revoke, callbacks must test valid(generation) after managed operations
 // before mutation. Revoke prevents subsequent dispatch, not an in-flight action.
-using PgsUnityWork=void (*)(void *,const PgrUnityPulse *);
+using PgsUnityWork=void (*)(void *,const PgsUnityPulse *);
 struct PgsUnitySubscriber { PgsUnityWork begin,end; void *context; };
 struct PgsUnitySchedulerConfig {
  uint32_t version,size;
@@ -57,7 +57,7 @@ struct PgsUnitySchedulerSnapshot {
  int32_t owner_tid;
  uint32_t installed,poisoned,reserved;
 };
-struct PgrUnitySchedulerApi {
+struct PgsUnitySchedulerApi {
  uint32_t version,size;
  int (*install)(const PgsUnitySchedulerConfig *);
  uint64_t (*activate)(); // fresh generation replaces any prior one; no replay;0 before install/poison
@@ -68,7 +68,7 @@ struct PgrUnitySchedulerApi {
 // API3 preserves API2 scheduling/configuration and adds a read-only gate for
 // native getter observers running INSIDE the original ExecuteTasks call. This
 // does not introduce a pre-original work callback or another invoke hook owner.
-struct PgrUnitySchedulerApi3 {
+struct PgsUnitySchedulerApi3 {
  uint32_t version,size;
  int (*install)(const PgsUnitySchedulerConfig *);
  uint64_t (*activate)();
@@ -111,13 +111,13 @@ struct PgsUnitySchedulerApi4 {
  int (*diagnostics)(PgsUnitySchedulerDiag *out);
 };
 static_assert(sizeof(PgsUnitySchedulerApi4)==64,"Scheduler inspection ABI4");
-static_assert(sizeof(PgrUnitySchedulerApi3)==56,"Scheduler inspection ABI3");
+static_assert(sizeof(PgsUnitySchedulerApi3)==56,"Scheduler inspection ABI3");
 static_assert(sizeof(void *)==8,"Scheduler requires LP64");
-static_assert(sizeof(PgrUnityPulse)==24,"Pulse ABI");
+static_assert(sizeof(PgsUnityPulse)==24,"Pulse ABI");
 static_assert(sizeof(PgsUnitySubscriber)==24,"Subscriber ABI");
 static_assert(sizeof(PgsUnitySchedulerConfig)==448,"Config ABI");
 static_assert(sizeof(PgsUnitySchedulerSnapshot)==32,"Snapshot ABI");
-static_assert(sizeof(PgrUnitySchedulerApi)==48,"API ABI");
+static_assert(sizeof(PgsUnitySchedulerApi)==48,"API ABI");
 extern "C" const void *pgs_unity_scheduler_api(uint32_t version);
 // Compatibility for older source consumers; the PGS name is the primary hidden getter.
 static inline const void *pgrazor_unity_scheduler_api(uint32_t version) {

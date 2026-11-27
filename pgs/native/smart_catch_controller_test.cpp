@@ -18,23 +18,23 @@ unsigned idle_enumerations=0;
 uint32_t last_discovery_kind=0;
 int idle_due(uint64_t){return idle_clock>=idle_deadline?PGS_VP_YES:PGS_VP_OK;}
 int idle_arm(uint64_t,uint64_t delay){idle_deadline=idle_clock+delay;return 0;}
-int idle_enumerate(uint32_t kind,uint64_t owner,uint64_t lease,PgrVgpDiscoveryEnumeration *out){
+int idle_enumerate(uint32_t kind,uint64_t owner,uint64_t lease,PgsVgpDiscoveryEnumeration *out){
  last_discovery_kind=kind;++idle_enumerations;return dsc_enumerate(kind,owner,lease,out);
 }
 bool (*admission)(void*)=nullptr;void *admission_context=nullptr;
 uint64_t clock_ms(){return std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now().time_since_epoch()).count();}
 int smart_string(uint32_t index,char *out,uint32_t cap,uint32_t *len){assert(index==7);*len=smart_text.size();if(cap<*len)return -1;memcpy(out,smart_text.data(),*len);return 0;}
-int smart_emit(uint32_t opcode,const int64_t *,uint32_t,const PgrRuntimeTransportString *,uint32_t count){assert(opcode==19&&count==2);return 0;}
-PgrRuntimeTransportApi smart_transport{};
-int selected_capture(const PgrVgpActionsTarget *request,int ball,int grade,int curve,uintptr_t *handle){
+int smart_emit(uint32_t opcode,const int64_t *,uint32_t,const PgsRuntimeTransportString *,uint32_t count){assert(opcode==19&&count==2);return 0;}
+PgsRuntimeTransportApi smart_transport{};
+int selected_capture(const PgsVgpActionsTarget *request,int ball,int grade,int curve,uintptr_t *handle){
  assert(request->tid==tid&&request->target==candObj.p());assert(ball==3&&grade==3&&curve==1);
  if(desired_berry)assert(berry_confirmations>=selected_calls+1);
  ++selected_calls;*handle=gcNew(promiseObj.p(),0);return PGS_VA_ISSUED;
 }
 PgsVgpSmartActionsApi selected_api{2,sizeof(selected_api),selected_capture};
 // Run the complete encounter/berry/retry lifecycle with the map hidden by a menu.
-PgrVgpControllerTick smart_tick(){auto t=makeTick();t.mask=1;t.flags=PGS_VGC_TF_MANUAL_READY;return t;}
-PgrVgpControllerOut step(){return run(smart_tick());}
+PgsVgpControllerTick smart_tick(){auto t=makeTick();t.mask=1;t.flags=PGS_VGC_TF_MANUAL_READY;return t;}
+PgsVgpControllerOut step(){return run(smart_tick());}
 void next_poll(){usleep(110000);}
 uint64_t begin_wait(){
  resetScenario();smart_text="1;1;3;0;1;1500;30;3;1;";g_pollRc=PGS_VR_PENDING;
@@ -42,8 +42,8 @@ uint64_t begin_wait(){
  g_pollRc=PGS_VR_DONE;g_success=true;next_poll();o=step();
  assert(o.phase==PGS_VGC_PH_SMART_WAIT);return clock_ms();
 }
-PgrVgpControllerOut await_phase(uint32_t phase,uint64_t deadline){
- PgrVgpControllerOut o{};
+PgsVgpControllerOut await_phase(uint32_t phase,uint64_t deadline){
+ PgsVgpControllerOut o{};
  do{usleep(20000);o=step();if(o.phase==phase)return o;}while(clock_ms()<deadline);
  std::fprintf(stderr,"wanted phase %u, got %u status %u\n",phase,o.phase,o.status);assert(false);return o;
 }
@@ -52,7 +52,7 @@ void confirm_berry_then_throw(){
  g_pollRc=PGS_VR_DONE;next_poll();o=step();assert(o.phase==PGS_VGC_PH_SMART_WAIT&&selected_calls==before);
  next_poll();o=step();assert(o.phase==PGS_VGC_PH_CATCH&&selected_calls==before+1);
 }
-void assert_clean(){PgrVgpControllerSample s{};assert(api->sample(&s)==0);if(s.roots||!roots.empty())std::fprintf(stderr,"roots=%llu handles=%zu phase=%u idle_clock=%llu\n",(unsigned long long)s.roots,roots.size(),s.phase,(unsigned long long)idle_clock);assert(s.roots==0&&roots.empty());}
+void assert_clean(){PgsVgpControllerSample s{};assert(api->sample(&s)==0);if(s.roots||!roots.empty())std::fprintf(stderr,"roots=%llu handles=%zu phase=%u idle_clock=%llu\n",(unsigned long long)s.roots,roots.size(),s.phase,(unsigned long long)idle_clock);assert(s.roots==0&&roots.empty());}
 }
 extern "C" int pgs_smart_parse_settings(const char *text,size_t len,PgsSmartSettings *out){
  if(!out)return PGS_SMART_ERR_NULL_ARG;*out={};out->enabled=len>3&&text&&text[0]=='1'&&text[2]=='1';return 0;
@@ -74,7 +74,7 @@ extern "C" const void *pgs_runtime_transport_api(uint32_t version){return versio
 extern "C" const void *pgs_vgp_actions_api(uint32_t version){return version==2?&selected_api:nullptr;}
 extern "C" void pgs_vgp_smart_escape_status(int32_t);
 int main(){
- api=static_cast<const PgrVgpControllerApi*>(pgs_vgp_controller_api(1));assert(api);tid=gettid();
+ api=static_cast<const PgsVgpControllerApi*>(pgs_vgp_controller_api(1));assert(api);tid=gettid();
  smart_transport.version=1;smart_transport.size=sizeof(smart_transport);smart_transport.get_string=smart_string;smart_transport.emit=smart_emit;
  auto cfg=makeConfig();assert(api->install(&cfg)==0);pgs_vgp_smart_escape_status(2);
  // Visible map uses active-only discovery; menus retain inactive discovery.

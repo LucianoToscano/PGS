@@ -17,11 +17,11 @@ static uintptr_t replacement(uintptr_t) { return 99; }
 // on that page and keeps 928 bytes (58 islands) in front of the code.
 namespace padding_check {
 constexpr uintptr_t base = 0x7000000000, begin = base + 0x45fd3a0, end = base + 0xe296c10;
-constexpr PgrPaddingRanges wide = pgr_padding_ranges(begin, end, 16384);
+constexpr PgsPaddingRanges wide = pgs_padding_ranges(begin, end, 16384);
 constexpr PgsPaddingRanges pgsWide = pgs_padding_ranges(begin, end, 16384);
 static_assert(pgsWide.before_lo == wide.before_lo && pgsWide.after_hi == wide.after_hi,
               "PGS padding aliases must preserve the legacy arithmetic");
-constexpr PgrPaddingRanges narrow = pgr_padding_ranges(begin, end, 4096);
+constexpr PgsPaddingRanges narrow = pgs_padding_ranges(begin, end, 4096);
 static_assert(wide.before_lo == base + 0x45fc000 && wide.before_hi == begin, "ELF-aligned lead");
 static_assert(narrow.before_lo == base + 0x45fd000 && narrow.before_hi == begin, "4K-aligned lead");
 static_assert(narrow.before_hi - narrow.before_lo == 928, "4K lead holds 58 islands");
@@ -34,7 +34,7 @@ static_assert(narrow.after_lo == end && narrow.after_hi == base + 0xe297000, "4K
 // slots it is 26 + 250.
 namespace padding_check_439 {
 constexpr uintptr_t base = 0x7000000000, begin = base + 0x46480e0, end = base + 0xe39b820;
-constexpr PgrPaddingRanges narrow = pgr_padding_ranges(begin, end, 4096);
+constexpr PgsPaddingRanges narrow = pgs_padding_ranges(begin, end, 4096);
 static_assert(narrow.before_hi - narrow.before_lo == 224, "0.439.0 lead");
 static_assert(narrow.after_hi - narrow.after_lo == 2016, "0.439.0 tail");
 static_assert((224 - 16) / 8 + (2016 - 16) / 8 == 276, "dispatched capacity");

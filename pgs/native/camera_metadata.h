@@ -29,7 +29,7 @@ enum PgsCameraMetaInfo {
   PGS_CAM_ASM_LIMIT       = 128,        // camera-probe LIMITS.assemblies
   PGS_CAM_SCAN_MS         = 3000,       // camera-probe LIMITS.scanMs
   PGS_CAM_NAME_MAX        = 256,        // camera-probe LIMITS.nameBytes
-  PGS_CAM_MAIN_CAMERA_RVA = PGR_GAME_CAMERA_METADATA_H_PGR_CAM_MAIN_CAMERA_RVA_RVA  // CameraStack.get_MainCamera pinned RVA
+  PGS_CAM_MAIN_CAMERA_RVA = PGS_GAME_CAMERA_METADATA_H_PGS_CAM_MAIN_CAMERA_RVA_RVA  // CameraStack.get_MainCamera pinned RVA
 };
 
 // resolve() return codes.
@@ -154,25 +154,25 @@ inline constexpr const char *kVectorFieldNames[kFieldCount] = {"x", "y", "z"};
 
 // pointerHandleAbi (camera-probe.js lines 80..111): read-only AArch64 code fingerprint of
 // il2cpp_gchandle_new / il2cpp_gchandle_get_target / il2cpp_gchandle_free.
-inline constexpr uint32_t kGcCreateWords[] = PGR_GAME_CAMERA_METADATA_H_KGCCREATEWORDS_FINGERPRINT;
+inline constexpr uint32_t kGcCreateWords[] = PGS_GAME_CAMERA_METADATA_H_KGCCREATEWORDS_FINGERPRINT;
 inline constexpr uint32_t kGcCreateWordCount = 5;
-inline constexpr uint64_t kGcCreateBranchOff = PGR_GAME_CAMERA_METADATA_H_KGCCREATEBRANCHOFF;
-inline constexpr uint64_t kGcCreateBodyOff   = PGR_GAME_CAMERA_METADATA_H_KGCCREATEBODYOFF;
-inline constexpr uint32_t kGcCreateBodyWord  = PGR_GAME_CAMERA_METADATA_H_KGCCREATEBODYWORD;
-inline constexpr uint32_t kGcGetHead         = PGR_GAME_CAMERA_METADATA_H_KGCGETHEAD;
-inline constexpr uint64_t kGcGetTailOff      = PGR_GAME_CAMERA_METADATA_H_KGCGETTAILOFF;
-inline constexpr uint32_t kGcGetTail[]       = PGR_GAME_CAMERA_METADATA_H_KGCGETTAIL_FINGERPRINT;
-inline constexpr uint32_t kGcFreeHead        = PGR_GAME_CAMERA_METADATA_H_KGCFREEHEAD;
-inline constexpr uint64_t kGcFreeTailOff     = PGR_GAME_CAMERA_METADATA_H_KGCFREETAILOFF;
-inline constexpr uint32_t kGcFreeTail[]      = PGR_GAME_CAMERA_METADATA_H_KGCFREETAIL_FINGERPRINT;
+inline constexpr uint64_t kGcCreateBranchOff = PGS_GAME_CAMERA_METADATA_H_KGCCREATEBRANCHOFF;
+inline constexpr uint64_t kGcCreateBodyOff   = PGS_GAME_CAMERA_METADATA_H_KGCCREATEBODYOFF;
+inline constexpr uint32_t kGcCreateBodyWord  = PGS_GAME_CAMERA_METADATA_H_KGCCREATEBODYWORD;
+inline constexpr uint32_t kGcGetHead         = PGS_GAME_CAMERA_METADATA_H_KGCGETHEAD;
+inline constexpr uint64_t kGcGetTailOff      = PGS_GAME_CAMERA_METADATA_H_KGCGETTAILOFF;
+inline constexpr uint32_t kGcGetTail[]       = PGS_GAME_CAMERA_METADATA_H_KGCGETTAIL_FINGERPRINT;
+inline constexpr uint32_t kGcFreeHead        = PGS_GAME_CAMERA_METADATA_H_KGCFREEHEAD;
+inline constexpr uint64_t kGcFreeTailOff     = PGS_GAME_CAMERA_METADATA_H_KGCFREETAILOFF;
+inline constexpr uint32_t kGcFreeTail[]      = PGS_GAME_CAMERA_METADATA_H_KGCFREETAIL_FINGERPRINT;
 
 // 80-byte il2cpp_debug_get_method_info prologue (camera-probe.js DEBUG_INFO_WORDS, lines 26..29).
-inline constexpr unsigned char kDebugPrologue[] = PGR_GAME_CAMERA_METADATA_H_KDEBUGPROLOGUE_FINGERPRINT;
+inline constexpr unsigned char kDebugPrologue[] = PGS_GAME_CAMERA_METADATA_H_KDEBUGPROLOGUE_FINGERPRINT;
 inline constexpr uint32_t kDebugPrologueLen = sizeof(kDebugPrologue);
 static_assert(kDebugPrologueLen == 80, "DEBUG_INFO_WORDS is 20 AArch64 words (80 bytes)");
 
 // CameraStack.get_MainCamera 2-word leaf getter prologue at RVA 0xad814b8 (ldr x0,[x0,#24]; ret).
-inline constexpr uint32_t kGetMainCameraWords[] = PGR_GAME_CAMERA_METADATA_H_KGETMAINCAMERAWORDS_FINGERPRINT;
+inline constexpr uint32_t kGetMainCameraWords[] = PGS_GAME_CAMERA_METADATA_H_KGETMAINCAMERAWORDS_FINGERPRINT;
 inline constexpr uint32_t kGetMainCameraByteLen = sizeof(kGetMainCameraWords);
 static_assert(kGetMainCameraByteLen == 8, "get_MainCamera leaf getter prologue is 8 bytes");
 
@@ -203,7 +203,7 @@ struct PgsCameraMetaExtra {
 
 struct PgsCameraMetaConfig {
   uint32_t version, size;               // 0..7    (1, 112)
-  PgrMetaBindConfig binding;            // 8..71   (64 bytes, feature 47 bind config)
+  PgsMetaBindConfig binding;            // 8..71   (64 bytes, feature 47 bind config)
   void *thread_current;                 // 72..79  mandatory (il2cpp_thread_current)
   uint64_t owner_tid;                   // 80..87  gettid() of attached caller thread
   const void *domain;                   // 88..95  optional explicit domain (null -> domain_get())

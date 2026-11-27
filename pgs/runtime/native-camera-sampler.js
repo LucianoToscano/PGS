@@ -35,7 +35,7 @@
   const classes=s.classes||{},methods=s.methods||{},fields=s.fields||{};
 
   const exp=n=>{const a=module.findExportByName('il2cpp_'+n);return a&&!a.isNull()?a:null;};
-  // Flat pointer array in EXACT PgrCameraSamplerConfig order (camera_sampler.h). Every one is required; the
+  // Flat pointer array in EXACT PgsCameraSamplerConfig order (camera_sampler.h). Every one is required; the
   // native layer re-checks the header and rejects any null, so a null here fails closed (throws).
   const pointers=[
    exp('runtime_invoke'),exp('object_get_class'),exp('class_is_assignable_from'),exp('field_get_value'),exp('object_unbox'),

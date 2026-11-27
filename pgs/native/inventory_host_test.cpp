@@ -10,7 +10,7 @@
 #include <unistd.h>
 #include <map>
 #include <sys/wait.h>
-using namespace pgr_shared_meta;
+using namespace pgs_shared_meta;
 namespace {
 int class_tokens[160]{},handle_tokens[PGS_OPT_HANDLE_COUNT]{};int calls=0,original_calls=0;bool is_attached=true;
 struct Object{void *klass;unsigned char bytes[16];} boxed_bool{&class_tokens[6],{1}},map_type{&class_tokens[19],{}};
@@ -62,7 +62,7 @@ int inventory_run(int argc,char **argv){
  auto cleanup=static_cast<const PgsInventoryCleanupApi*>(core->query_feature(65,2));
  assert(cleanup&&cleanup->version==2&&cleanup->size==sizeof(*cleanup));
  assert(cleanup->request()==0&&!cleanup->pending(1));
- PgrSharedMetadataOutput md{};md.version=2;md.size=sizeof(md);for(unsigned i=0;i<kClassCount;++i)md.classes[i]=&class_tokens[i];for(unsigned i=0;i<kOptClassCount;++i)md.opt_classes[i]=&class_tokens[i+7];
+ PgsSharedMetadataOutput md{};md.version=2;md.size=sizeof(md);for(unsigned i=0;i<kClassCount;++i)md.classes[i]=&class_tokens[i];for(unsigned i=0;i<kOptClassCount;++i)md.opt_classes[i]=&class_tokens[i+7];
  for(unsigned i=0;i<PGS_OPT_HANDLE_COUNT;++i)md.opt_handles[i]=&handle_tokens[i];
  md.optional[OPT_ITEMS]=md.optional[OPT_ITEMS_LOOKUP]=md.optional[OPT_BUDDY]=md.optional[OPT_INCUBATOR]=1;
  md.opt_handles[H_IT_INIT_CODE]=reinterpret_cast<void*>(init);md.opt_handles[H_IT_LIST_CODE]=reinterpret_cast<void*>(list);md.opt_handles[H_IT_RECYCLE_CODE]=reinterpret_cast<void*>(recycle);
@@ -198,13 +198,13 @@ void initialize(){
 }
 int run(const char *library){
  void *lib=dlopen(library,RTLD_NOW|RTLD_LOCAL);assert(lib);auto get=reinterpret_cast<const void*(*)(uint32_t)>(dlsym(lib,"pgs_native_api"));assert(get);auto core=static_cast<const pgs_native_api_v2*>(get(2));host=static_cast<const PgsInventoryHostApi*>(core->query_feature(65,1));assert(host);
- initialize();PgrSharedMetadataOutput md{};md.version=2;md.size=sizeof(md);for(unsigned i=0;i<kClassCount;++i)md.classes[i]=&classes[i];for(unsigned i=0;i<kOptClassCount;++i)md.opt_classes[i]=k(i);for(unsigned i=0;i<PGS_OPT_HANDLE_COUNT;++i)md.opt_handles[i]=h(i);md.fields[1]=&current_state_token;md.methods[5]=&alive_token;md.optional[OPT_GIFTS]=1;
+ initialize();PgsSharedMetadataOutput md{};md.version=2;md.size=sizeof(md);for(unsigned i=0;i<kClassCount;++i)md.classes[i]=&classes[i];for(unsigned i=0;i<kOptClassCount;++i)md.opt_classes[i]=k(i);for(unsigned i=0;i<PGS_OPT_HANDLE_COUNT;++i)md.opt_handles[i]=h(i);md.fields[1]=&current_state_token;md.methods[5]=&alive_token;md.optional[OPT_GIFTS]=1;
  md.opt_ints[I_GIFT_OPEN_SUCCESS]=5;md.opt_ints[I_GIFT_SEND_SUCCESS]=1;md.opt_ints[I_GIFT_CHECK_SUCCESS]=7;
  md.opt_handles[H_GF_M_PROF_OPEN_CODE]=reinterpret_cast<void*>(prof_open);md.opt_handles[H_GF_M_PROF_CLOSE_CODE]=reinterpret_cast<void*>(prof_close);md.opt_handles[H_GF_M_OPEN_READY_CODE]=reinterpret_cast<void*>(ready);md.opt_handles[H_GF_M_OPEN_CODE]=reinterpret_cast<void*>(manual_open);md.opt_handles[H_GF_M_OPEN_CLOSE_CODE]=reinterpret_cast<void*>(close);md.opt_handles[H_GF_M_SEQ_CODE]=reinterpret_cast<void*>(seq);md.opt_handles[H_GF_M_RPC_RESULT_CODE]=reinterpret_cast<void*>(result);md.opt_handles[H_GF_M_RPC_FINALLY_CODE]=reinterpret_cast<void*>(final);md.opt_handles[H_GF_M_CHOOSE_CODE]=reinterpret_cast<void*>(choose);
  PgsInventoryRuntime rt{};rt.boot.runtime_invoke=reinterpret_cast<void*>(invoke);rt.boot.thread_current=reinterpret_cast<void*>(thread);rt.boot.gchandle_new=reinterpret_cast<void*>(new_root);rt.boot.gchandle_get_target=reinterpret_cast<void*>(get_root);rt.boot.gchandle_free=reinterpret_cast<void*>(free_root);rt.boot.object_get_class=reinterpret_cast<void*>(object_class);rt.boot.object_unbox=reinterpret_cast<void*>(unbox);rt.boot.field_get_value=reinterpret_cast<void*>(read);rt.boot.field_set_value=reinterpret_cast<void*>(write);rt.boot.string_chars=reinterpret_cast<void*>(chars);rt.string_length=reinterpret_cast<void*>(length);rt.object_get_virtual_method=reinterpret_cast<void*>(virtual_method);
  PgsInventoryHostConfig config{1,sizeof(config),0,0,&md,&rt};assert(host->configure(&config)==0);
  PgsInventoryHostOptions p{};p.version=1;p.size=sizeof(p);p.gift_mask=7;p.gift_allowed=1;p.lease_ms=2500;assert(host->update(&p)==0);assert(host->update(&p)==0);
- const auto *scheduler=static_cast<const PgrUnitySchedulerApi*>(core->query_feature(48,2));assert(scheduler);
+ const auto *scheduler=static_cast<const PgsUnitySchedulerApi*>(core->query_feature(48,2));assert(scheduler);
  PgsUnitySchedulerConfig cfg{};cfg.version=2;cfg.size=sizeof(cfg);cfg.runtime_invoke=reinterpret_cast<void*>(invoke);cfg.runtime_invoke_convert_args=reinterpret_cast<void*>(convert);cfg.execute_tasks=&execute_token;cfg.thread_current=thread;cfg.verify_metadata=verify;cfg.expected_owner_tid=gettid();cfg.exclusive_owner=1;cfg.subscriber_count=1;cfg.subscribers[0].end=host->on_unity_pulse;
  assert(scheduler->install(&cfg)==0);assert(scheduler->activate());pulse();pulse();pulse();PgsInventoryHostSample gauge{};assert(host->sample(&gauge)==0&&(gauge.capabilities&56)==56);
  std::thread foreign([]{call_prof_open(&profile,nullptr);});foreign.join();

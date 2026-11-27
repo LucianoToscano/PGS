@@ -143,10 +143,10 @@ uint64_t this_tid() {
     return static_cast<uint64_t>(static_cast<pid_t>(::gettid()));
 }
 
-PgrSpinCameraConfig make_valid_config() {
-    PgrSpinCameraConfig cfg{};
+PgsSpinCameraConfig make_valid_config() {
+    PgsSpinCameraConfig cfg{};
     cfg.version = 1;
-    cfg.size = sizeof(PgrSpinCameraConfig);
+    cfg.size = sizeof(PgsSpinCameraConfig);
     cfg.gchandle_new = &fake_gchandle_new;
     cfg.gchandle_get_target = &fake_gchandle_get_target;
     cfg.gchandle_free = &fake_gchandle_free;
@@ -183,15 +183,15 @@ int main(int argc, char **argv) {
     const auto *core = static_cast<const pgs_native_api_v2 *>(getter(2));
     assert(core && core->size == 48);
     assert(core->query_feature(10, 99) == nullptr);
-    const auto *api = static_cast<const PgrSpinCameraApi *>(core->query_feature(10, 1));
-    assert(api != nullptr && api->version == 1 && api->size == sizeof(PgrSpinCameraApi));
+    const auto *api = static_cast<const PgsSpinCameraApi *>(core->query_feature(10, 1));
+    assert(api != nullptr && api->version == 1 && api->size == sizeof(PgsSpinCameraApi));
 
     const uint64_t tid = this_tid();
-    PgrSpinCameraConfig cfg = make_valid_config();
+    PgsSpinCameraConfig cfg = make_valid_config();
 
     // Validation before install
     assert(api->install(nullptr) == PGS_SCAM_ERR_NULL_ARG);
-    PgrSpinCameraConfig bad_cfg = cfg;
+    PgsSpinCameraConfig bad_cfg = cfg;
     bad_cfg.in_exit_addr = bad_cfg.in_enter_addr;
     assert(api->install(&bad_cfg) == PGS_SCAM_ERR_BAD_CONFIG);
     assert(api->update(1, 1000, tid, 1) == PGS_SCAM_ERR_HOOK_FAILED);
@@ -222,7 +222,7 @@ int main(int argc, char **argv) {
     // 2. Enable policy, Enter ('in') -> MoveNext clamp max(speed, 25)
     assert(api->update(1, 2000, tid, 1) == PGS_SCAM_OK);
     call_in_enter(&state_in, &dummy_method);
-    PgrSpinCameraSample s{};
+    PgsSpinCameraSample s{};
     assert(api->sample(&s) == PGS_SCAM_OK);
     assert(s.enter_count == 1 && s.active_roots_mask == 1U && g_live_handles.size() == 1);
 

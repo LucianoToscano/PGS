@@ -14,7 +14,7 @@
 
 namespace {
 
-PgrVgpCandidateConfig cfg{};
+PgsVgpCandidateConfig cfg{};
 std::mutex installMutex;
 std::atomic<bool> installed{false};
 std::atomic<bool> busy{false};
@@ -145,7 +145,7 @@ size_t utf16ToUtf8(const uint16_t *src, uint32_t units, char *dst, size_t cap) {
   return out;
 }
 
-int install(const PgrVgpCandidateConfig *c) {
+int install(const PgsVgpCandidateConfig *c) {
   if (!c) return PGS_VC_ERR_NULL_ARG;
   if (c->version != PGS_VC_CONFIG_VERSION) return PGS_VC_ERR_BAD_VERSION;
   if (c->size != sizeof(*c)) return PGS_VC_ERR_BAD_SIZE;
@@ -159,7 +159,7 @@ int install(const PgrVgpCandidateConfig *c) {
   return 0;
 }
 
-int inspect(const PgrVgpCandidateRequest *req, PgrVgpCandidateResult *out) {
+int inspect(const PgsVgpCandidateRequest *req, PgsVgpCandidateResult *out) {
   if (!out) return PGS_VC_ERR_NULL_ARG;
   *out = {PGS_VC_RESULT_VERSION, uint32_t(sizeof(*out)), 0, PGS_VC_REASON_INVALID, 0, 0, 0, {}};
   if (!req) return PGS_VC_ERR_NULL_ARG;
@@ -300,7 +300,7 @@ int inspect(const PgrVgpCandidateRequest *req, PgrVgpCandidateResult *out) {
   return PGS_VC_ELIGIBLE;
 }
 
-const PgrVgpCandidateApi api = {PGS_VC_API_VERSION, uint32_t(sizeof(PgrVgpCandidateApi)), install, inspect};
+const PgsVgpCandidateApi api = {PGS_VC_API_VERSION, uint32_t(sizeof(PgsVgpCandidateApi)), install, inspect};
 
 }  // namespace
 

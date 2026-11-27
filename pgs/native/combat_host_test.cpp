@@ -2,7 +2,7 @@
 // Orchestration Host (pgs/native/combat_host.{h,cpp}).
 //
 // Exercises Feature 66 (API 1) end-to-end against real leaves (6, 19, 20, 21) and Dobby:
-//   * Feature 56 (`PgrSharedMetadataOutput`, 67304B) validation & leaf configuration
+//   * Feature 56 (`PgsSharedMetadataOutput`, 67304B) validation & leaf configuration
 //   * Truthful capability reporting (`0x1F`: Rocket Minigame 6 + Rocket Actions 20 +
 //     Rocket Combat 21 + Battles 19 + Shared `H_RK_VN_OBSERVE_CODE` site)
 //   * Shared Site (`ChargeAttackDisplayVNext.ObserveBattleState`): single Dobby hook
@@ -41,7 +41,7 @@
 
 namespace {
 
-using namespace pgr_shared_meta;
+using namespace pgs_shared_meta;
 
 uint64_t self_tid() {
     return static_cast<uint64_t>(static_cast<pid_t>(gettid()));
@@ -677,7 +677,7 @@ __attribute__((noinline,aligned(16))) void *fake_convert(const void *m,void *o,v
 decltype(&fake_runtime_invoke) volatile call_invoke=&fake_runtime_invoke;
 int verify_scheduler(const PgsUnitySchedulerConfig *c){return c->execute_tasks==&g_execute_token;}
 void execute(){void *exc=nullptr;assert(!call_invoke(&g_execute_token,nullptr,nullptr,&exc));assert(!exc);}
-const PgrRuntimeTransportApi *g_transport=nullptr;
+const PgsRuntimeTransportApi *g_transport=nullptr;
 uint64_t g_snapshot_sequence=0;
 void settings(bool battle,bool rocket,bool adjacent){
     uint8_t frame[PGS_TRANSPORT_SNAPSHOT_FIXED + 4 * PGS_TRANSPORT_STRINGS]{};auto u32=[&](size_t o,uint32_t v){memcpy(frame+o,&v,4);};
@@ -694,9 +694,9 @@ struct DrainedEvent {
     std::string json;
 };
 
-std::vector<DrainedEvent> drain_all(const PgrCombatHostApi *host) {
+std::vector<DrainedEvent> drain_all(const PgsCombatHostApi *host) {
     std::vector<DrainedEvent> out;
-    PgrCombatHostEvent ev{};
+    PgsCombatHostEvent ev{};
     char buf[4096]{};
     while (host->next_event(&ev, buf, sizeof(buf)) == 1) {
         out.push_back(DrainedEvent{ev.kind, ev.code0, ev.code1, std::string(buf, ev.json_len)});
@@ -720,22 +720,22 @@ int main(int argc, char **argv) {
     void *lib=dlopen(argv[1],RTLD_NOW|RTLD_LOCAL);if(!lib)puts(dlerror());assert(lib);
     auto entry=reinterpret_cast<const void*(*)(uint32_t)>(dlsym(lib,"pgs_native_api"));assert(entry);
     const auto *core=static_cast<const pgs_native_api_v2*>(entry(2));assert(core);
-    const auto *host=static_cast<const PgrCombatHostApi*>(core->query_feature(66,1));
+    const auto *host=static_cast<const PgsCombatHostApi*>(core->query_feature(66,1));
     assert(host != nullptr);
     assert(host->version == PGS_COMBAT_HOST_API_VERSION);
-    assert(host->size == sizeof(PgrCombatHostApi));
+    assert(host->size == sizeof(PgsCombatHostApi));
 
     const uint64_t tid = self_tid();
     if(transport_mode){
-        g_transport=static_cast<const PgrRuntimeTransportApi*>(core->query_feature(52,1));assert(g_transport);
+        g_transport=static_cast<const PgsRuntimeTransportApi*>(core->query_feature(52,1));assert(g_transport);
         PgsRuntimeTransportConfig tc{1,sizeof(tc),2500,2048,65536,1048576,0,0};assert(g_transport->install(&tc)==0);settings(true,true,false);
     }
 
-    // --- 1. Populate Synthetic Feature 56 (`PgrSharedMetadataOutput`) --------------
-    static PgrSharedMetadataOutput md{};
+    // --- 1. Populate Synthetic Feature 56 (`PgsSharedMetadataOutput`) --------------
+    static PgsSharedMetadataOutput md{};
     std::memset(&md, 0, sizeof(md));
     md.version        = 2u;
-    md.size           = sizeof(PgrSharedMetadataOutput);
+    md.size           = sizeof(PgsSharedMetadataOutput);
     md.success        = 1;
     md.caught_id_size = 8;
 
@@ -747,8 +747,8 @@ int main(int argc, char **argv) {
     md.fields[1] = &g_fields[0];
     md.methods[5] = &g_methods[M_ALIVE];
 
-    md.optional[OPT_ROCKET]  = PGR_SHARED_OPT_AVAILABLE;
-    md.optional[OPT_BATTLES] = PGR_SHARED_OPT_AVAILABLE;
+    md.optional[OPT_ROCKET]  = PGS_SHARED_OPT_AVAILABLE;
+    md.optional[OPT_BATTLES] = PGS_SHARED_OPT_AVAILABLE;
 
     md.opt_ints[I_BAT_STATUS_ACTIVE] = 2;
     md.opt_ints[I_BAT_STATUS_UNSET]  = 0;
@@ -984,7 +984,7 @@ int main(int argc, char **argv) {
     md.opt_handles[H_BT_M_PRESS]              = &g_methods[M_BT_PRESS];
 
     // --- 2. Configure Feature 66 (`combat_host`) -----------------------------------
-    PgrCombatHostConfig cfg{};
+    PgsCombatHostConfig cfg{};
     cfg.version             = PGS_COMBAT_HOST_API_VERSION;
     cfg.size                = sizeof(cfg);
     cfg.flags               = PGS_CBH_CFG_REQUIRE_BATTLES | PGS_CBH_CFG_REQUIRE_ROCKET;
@@ -1003,7 +1003,7 @@ int main(int argc, char **argv) {
     int rc = host->configure(&cfg);
     assert(rc == PGS_CBH_OK);
 
-    PgrCombatHostSample s{};
+    PgsCombatHostSample s{};
     assert(host->sample(&s) == PGS_CBH_OK);
     assert(s.ready == 1);
     assert(s.failed == 0);
@@ -1094,7 +1094,7 @@ int main(int argc, char **argv) {
     set_u8(&g_mini_challenge, 0x48, 1); // running = 1
 
     // Arm both Battle (all 1023 bits) and Rocket (all 7 bits) leases
-    PgrCombatHostOptions opts{};
+    PgsCombatHostOptions opts{};
     opts.version         = PGS_COMBAT_HOST_API_VERSION;
     opts.size            = sizeof(opts);
     opts.flags           = PGS_CBH_OPT_ACTIVE | PGS_CBH_OPT_BATTLES_ALLOWED | PGS_CBH_OPT_ROCKET_ALLOWED;
@@ -1106,7 +1106,7 @@ int main(int argc, char **argv) {
     assert(host->update(&opts) == PGS_CBH_OK);
 
     if(transport_mode){
-        const auto *scheduler=static_cast<const PgrUnitySchedulerApi3*>(core->query_feature(48,3));assert(scheduler);
+        const auto *scheduler=static_cast<const PgsUnitySchedulerApi3*>(core->query_feature(48,3));assert(scheduler);
         PgsUnitySchedulerConfig sc{};sc.version=2;sc.size=sizeof(sc);sc.runtime_invoke=reinterpret_cast<void*>(fake_runtime_invoke);
         sc.runtime_invoke_convert_args=reinterpret_cast<void*>(fake_convert);sc.execute_tasks=&g_execute_token;sc.thread_current=fake_thread_current;
         sc.verify_metadata=verify_scheduler;sc.expected_owner_tid=tid;sc.exclusive_owner=1;sc.subscriber_count=1;sc.subscribers[0].end=host->on_unity_pulse;
@@ -1127,7 +1127,7 @@ int main(int argc, char **argv) {
         g_execute_mode=4;execute();
         // More events than the diagnostic queue capacity, regularly drained by52.
         for(int n=0;n<300;++n){g_execute_mode=1;execute();g_execute_mode=2;execute();settings(true,true,false);}
-        PgrRuntimeTransportSample ts{};assert(g_transport->sample(&ts)==0&&ts.events_emitted>600&&ts.events_dropped==0&&!ts.fault);
+        PgsRuntimeTransportSample ts{};assert(g_transport->sample(&ts)==0&&ts.events_emitted>600&&ts.events_dropped==0&&!ts.fault);
         assert(drain_all(host).empty());assert(scheduler->revoke(generation)==0);
         call_target_bt_sc0_enter(&g_raid_scope,nullptr,nullptr,nullptr);
         assert(host->sample(&s)==0&&!s.battle_scope_active&&g_live_gc_handles==0);
@@ -1316,7 +1316,7 @@ int main(int argc, char **argv) {
     // --- 8. Scheduler 48 `on_unity_pulse` + `revoke()` + `stop(tid)` Cleanup -------
     assert(host->sample(&s) == PGS_CBH_OK);
     const uint64_t ticks_before = s.ticks;
-    PgrUnityPulse pulse{1, 1, static_cast<int32_t>(tid), 0};
+    PgsUnityPulse pulse{1, 1, static_cast<int32_t>(tid), 0};
     host->on_unity_pulse(nullptr, &pulse);
     assert(host->sample(&s) == PGS_CBH_OK);
     assert(s.ticks == ticks_before + 1);

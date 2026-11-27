@@ -21,7 +21,7 @@ int main(){
  pgs_gym_feed::observe_stock(seen,10,9);assert(seen);
  pgs_gym_feed::observe_stock(seen,10,12);assert(seen);
  seen=false;pgs_gym_feed::observe_stock(seen,1,0);assert(seen);
- PgrBootBinding b{};b.runtime.object_get_class=reinterpret_cast<void*>(get_class);
+ PgsBootBinding b{};b.runtime.object_get_class=reinterpret_cast<void*>(get_class);
  b.meta.class_get_method_from_name=reinterpret_cast<void*>(get_method);
  b.meta.method_get_param_count=reinterpret_cast<void*>(count);b.meta.method_get_flags=reinterpret_cast<void*>(get_flags);
  b.meta.method_get_param=reinterpret_cast<void*>(param);b.meta.method_get_return_type=reinterpret_cast<void*>(ret);

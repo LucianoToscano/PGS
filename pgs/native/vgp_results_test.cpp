@@ -101,11 +101,11 @@ int main(int argc, char **argv) {
   auto *core = static_cast<const pgs_native_api_v2 *>(load(2));
   assert(core);
   assert(!core->query_feature(30, 2));
-  auto *api = static_cast<const PgrVgpResultsApi *>(core->query_feature(30, 1));
+  auto *api = static_cast<const PgsVgpResultsApi *>(core->query_feature(30, 1));
   assert(api && api->version == 1 && api->size == 32);
 
   setup();
-  PgrVgpResultsConfig cfg{1,
+  PgsVgpResultsConfig cfg{1,
                           sizeof(cfg),
                           reinterpret_cast<void *>(gcNew),
                           reinterpret_cast<void *>(gcGet),
@@ -133,20 +133,20 @@ int main(int argc, char **argv) {
   // install: null / bad header rejected; good install idempotent; reconfig refused.
   assert(api->install(nullptr) < 0);
   {
-    PgrVgpResultsConfig bad = cfg;
+    PgsVgpResultsConfig bad = cfg;
     bad.object_get_class = nullptr;
     assert(api->install(&bad) < 0);  // required pointer null
   }
   assert(api->install(&cfg) == 0);
   assert(api->install(&cfg) == 0);  // idempotent
   {
-    PgrVgpResultsConfig other = cfg;
+    PgsVgpResultsConfig other = cfg;
     other.catch_success = 1;
     assert(api->install(&other) < 0);  // reconfigure refused
   }
 
   const uint64_t tid = gettid();
-  PgrVgpResultsResult out{};
+  PgsVgpResultsResult out{};
 
   // --- phase/arg validation ----------------------------------------------------------------------
   reset();
@@ -382,7 +382,7 @@ int main(int argc, char **argv) {
     Obj resp(&respClass);
     p.setPtr(fValue, resp.ptr());
     std::thread other([&] {
-      PgrVgpResultsResult o{};
+      PgsVgpResultsResult o{};
       assert(api->poll(p.ptr(), PGS_VR_PHASE_CATCH, tid, &o) == PGS_VR_PENDING);
     });
     other.join();
@@ -391,7 +391,7 @@ int main(int argc, char **argv) {
 
   // --- telemetry sample is coherent --------------------------------------------------------------
   {
-    PgrVgpResultsSample s{};
+    PgsVgpResultsSample s{};
     assert(api->sample(&s) == 0 && s.version == 1 && s.size == 48);
     assert(s.completed_serial > 0 && s.rejected_serial > 0 && s.error_serial > 0 && s.fault == 1);
   }

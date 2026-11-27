@@ -29,7 +29,7 @@ Obj completed,original_result;
 bool result_bypassed=false;
 Obj *reenter_hatch=nullptr;
 bool throw_after_completion=false;
-int policy_sample(PgrRuntimeTransportSample *out){*out={};out->snapshot_fresh=1;return 0;}
+int policy_sample(PgsRuntimeTransportSample *out){*out={};out->snapshot_fresh=1;return 0;}
 int policy_string(uint32_t field,char *out,uint32_t cap,uint32_t *len){
  assert(field==17&&cap>=policy_text.size());
  *len=uint32_t(policy_text.size());std::memcpy(out,policy_text.data(),*len);return 0;
@@ -109,10 +109,10 @@ void *call(void *m,void *o,void **args,void **ex){
  if(m==&egg_ids[E_SERVICE]||m==&egg_ids[E_CURRENT])return x->target;
  assert(false);return nullptr;
 }
-int emit(uint32_t,const int64_t*,uint32_t,const PgrRuntimeTransportString *s,uint32_t n){
+int emit(uint32_t,const int64_t*,uint32_t,const PgsRuntimeTransportString *s,uint32_t n){
  assert(n==2);events.emplace_back(s[1].ptr,s[1].len);return 0;
 }
-PgrRuntimeTransportApi transport_mock{};
+PgsRuntimeTransportApi transport_mock{};
 void *from_reflection(void *o){return o;}
 void *fixture_class(void *o){return static_cast<Obj*>(o)->cls;}  // il2cpp_object_get_class stand-in
 int gym_open_calls=0;

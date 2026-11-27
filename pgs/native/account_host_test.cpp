@@ -5,7 +5,7 @@
 // 2. Executes the unchanged Feature 68 host end-to-end through real Dobby inline hooks,
 //    real Feature 16 (accounts), real Feature 2 (adventure_sync), real Feature 48
 //    (unity_scheduler), and real Feature 52 (runtime_transport), substituting only
-//    the 5 Dobby-hooked code target addresses in PgrAccountHostMetadataOutput so native
+//    the 5 Dobby-hooked code target addresses in PgsAccountHostMetadataOutput so native
 //    host execution can call compiled NOP-padded functions through Dobby trampolines.
 
 #include "account_host.cpp"
@@ -68,7 +68,7 @@ int g_thread_token = 1;
 void *g_assemblies[1] = {&g_image_token};
 bool g_thread_attached = true;
 bool hide_player=false,reenter_metadata=false,stop_during_metadata=false;
-const PgrAccountHostConfig *reentry_config=nullptr;
+const PgsAccountHostConfig *reentry_config=nullptr;
 
 constexpr uint64_t kModuleSize = 256ULL * 1024ULL * 1024ULL;
 unsigned char *g_module_base = nullptr;
@@ -320,8 +320,8 @@ decltype(&fixture_adv_update) volatile call_adv_update = &fixture_adv_update;
 
 // --- Fake IL2CPP exports -----------------------------------------------------------
 void *fake_domain_get() {
- if(stop_during_metadata){stop_during_metadata=false;auto host=static_cast<const PgrAccountHostApi*>(pgs_account_host_api(1));assert(host->stop()==0);}
- if(reenter_metadata){reenter_metadata=false;PgrAccountHostMetadataOutput out;std::memset(&out,0xa5,sizeof(out));auto host=static_cast<const PgrAccountHostApi*>(pgs_account_host_api(1));assert(host->resolve_metadata(reentry_config,&out)==PGR_ACH_ERR_BUSY);PgrAccountHostMetadataOutput zero{};assert(!std::memcmp(&out,&zero,sizeof(out)));assert(host->configure(reentry_config)==PGR_ACH_ERR_BUSY);}
+ if(stop_during_metadata){stop_during_metadata=false;auto host=static_cast<const PgsAccountHostApi*>(pgs_account_host_api(1));assert(host->stop()==0);}
+ if(reenter_metadata){reenter_metadata=false;PgsAccountHostMetadataOutput out;std::memset(&out,0xa5,sizeof(out));auto host=static_cast<const PgsAccountHostApi*>(pgs_account_host_api(1));assert(host->resolve_metadata(reentry_config,&out)==PGS_ACH_ERR_BUSY);PgsAccountHostMetadataOutput zero{};assert(!std::memcmp(&out,&zero,sizeof(out)));assert(host->configure(reentry_config)==PGS_ACH_ERR_BUSY);}
  return &g_domain_token;
 }
 void *fake_domain_assemblies(void *, size_t *count) {
@@ -400,7 +400,7 @@ void *fake_class_get_methods(void *, void **) { return nullptr; }
 void *fake_class_get_nested(void *, void **) { return nullptr; }
 void *fake_class_get_declaring(void *) { return nullptr; }
 
-int fake_seg_query(void *, const void *addr, uint64_t size, PgrMetaSegment *out) {
+int fake_seg_query(void *, const void *addr, uint64_t size, PgsMetaSegment *out) {
   std::memset(out, 0, sizeof(*out));
   uintptr_t a = reinterpret_cast<uintptr_t>(addr);
   uintptr_t base = reinterpret_cast<uintptr_t>(g_module_base);
@@ -529,9 +529,9 @@ void *fake_runtime_invoke(void *method_raw, void *self, void **args, void **exc)
   return nullptr;
 }
 
-PgrMetaExports g_meta_exports{};
-PgrAccountHostRuntime g_runtime{};
-PgrSharedMetadataOutput g_shared_md{};
+PgsMetaExports g_meta_exports{};
+PgsAccountHostRuntime g_runtime{};
+PgsSharedMetadataOutput g_shared_md{};
 
 void setup_universe() {
   g_module_base=static_cast<unsigned char*>(mmap(nullptr,kModuleSize,PROT_READ|PROT_WRITE,MAP_PRIVATE|MAP_ANONYMOUS,-1,0));
@@ -667,8 +667,8 @@ void setup_universe() {
 #error Unsupported fixture ISA
 #endif
   assert(mprotect(shim,4096,PROT_READ|PROT_EXEC)==0);__builtin___clear_cache(reinterpret_cast<char*>(shim),reinterpret_cast<char*>(shim+32));
-  g_runtime.version = PGR_ACH_RUNTIME_VERSION;
-  g_runtime.size = sizeof(PgrAccountHostRuntime);
+  g_runtime.version = PGS_ACH_RUNTIME_VERSION;
+  g_runtime.size = sizeof(PgsAccountHostRuntime);
   g_runtime.boot = {};
   g_runtime.boot.runtime_invoke=reinterpret_cast<void *>(fake_runtime_invoke);
   g_runtime.boot.runtime_invoke_convert_args=reinterpret_cast<void *>(fake_thread_current);
@@ -697,7 +697,7 @@ void setup_universe() {
   std::memset(&g_shared_md, 0, sizeof(g_shared_md));
   g_shared_md.version = 2;
   g_shared_md.size = sizeof(g_shared_md);
-  g_shared_md.optional[OPT_ITEMS_LOOKUP] = PGR_SHARED_OPT_AVAILABLE;
+  g_shared_md.optional[OPT_ITEMS_LOOKUP] = PGS_SHARED_OPT_AVAILABLE;
   g_shared_md.opt_handles[H_IL_MAP] = c_map_scene_context;
   g_shared_md.opt_handles[H_IL_FIND_M] = m_find_obj;
   g_shared_md.opt_handles[H_IL_CONTAINER_M] = m_get_container;
@@ -731,8 +731,8 @@ int main(int argc, char **argv) {
   g_core = static_cast<const pgs_native_api_v2 *>(get_api(2));
   assert(g_core && g_core->query_feature);
 
-  const auto *host = static_cast<const PgrAccountHostApi *>(pgs_account_host_api(1));
-  assert(host && host->version == 1 && host->size == sizeof(PgrAccountHostApi));
+  const auto *host = static_cast<const PgsAccountHostApi *>(pgs_account_host_api(1));
+  assert(host && host->version == 1 && host->size == sizeof(PgsAccountHostApi));
   assert(pgs_account_host_api(2) == nullptr);
 
   setup_universe();
@@ -740,10 +740,10 @@ int main(int argc, char **argv) {
   // =========================================================================
   // 1. Real Feature 47 Metadata + RVA + 24-Byte Prologue + itemsLookup Proof
   // =========================================================================
-  PgrAccountHostConfig cfg{};
-  cfg.version = PGR_ACH_CONFIG_VERSION;
+  PgsAccountHostConfig cfg{};
+  cfg.version = PGS_ACH_CONFIG_VERSION;
   cfg.size = sizeof(cfg);
-  cfg.flags = PGR_ACH_CFG_REQ_ALL;
+  cfg.flags = PGS_ACH_CFG_REQ_ALL;
   cfg.owner_tid = self_tid();
   cfg.module_base = g_module_base;
   cfg.module_size = kModuleSize;
@@ -756,16 +756,16 @@ int main(int argc, char **argv) {
   for(unsigned mode=0;mode<4;++mode){pid_t child=fork();assert(child>=0);if(!child){
     // fork changes OS tid: fixture proof must identify the child, not its parent.
     cfg.owner_tid=self_tid();
-    if(mode==0){assert(host->configure(nullptr)==PGR_ACH_NOT_READY);assert(!g.configured&&!g.accounts_attempted&&!g.advsync_attempted);}
-    if(mode==1){cfg.flags=PGR_ACH_CFG_REQ_ACCOUNTS;hide_player=true;int rc=host->configure(&cfg);if(rc!=PGR_ACH_NOT_READY){std::fprintf(stderr,"account68 child mode=%u configure rc=%d owner=%llu actual=%llu\n",mode,rc,(unsigned long long)cfg.owner_tid,(unsigned long long)self_tid());std::fflush(stderr);}assert(rc==PGR_ACH_NOT_READY);assert(!g.configured&&!g.accounts_attempted&&!g.advsync_attempted);hide_player=false;PgrAccountHostMetadataOutput retry{};assert(host->resolve_metadata(&cfg,&retry)==0&&retry.accounts_valid);}
-    if(mode==2){reentry_config=&cfg;reenter_metadata=true;PgrAccountHostMetadataOutput result{};assert(host->resolve_metadata(&cfg,&result)==0&&!reenter_metadata);}
-    if(mode==3){stop_during_metadata=true;assert(host->configure(&cfg)==PGR_ACH_ERR_STOPPED);assert(!g.accounts_attempted&&!g.advsync_attempted);}
+    if(mode==0){assert(host->configure(nullptr)==PGS_ACH_NOT_READY);assert(!g.configured&&!g.accounts_attempted&&!g.advsync_attempted);}
+    if(mode==1){cfg.flags=PGS_ACH_CFG_REQ_ACCOUNTS;hide_player=true;int rc=host->configure(&cfg);if(rc!=PGS_ACH_NOT_READY){std::fprintf(stderr,"account68 child mode=%u configure rc=%d owner=%llu actual=%llu\n",mode,rc,(unsigned long long)cfg.owner_tid,(unsigned long long)self_tid());std::fflush(stderr);}assert(rc==PGS_ACH_NOT_READY);assert(!g.configured&&!g.accounts_attempted&&!g.advsync_attempted);hide_player=false;PgsAccountHostMetadataOutput retry{};assert(host->resolve_metadata(&cfg,&retry)==0&&retry.accounts_valid);}
+    if(mode==2){reentry_config=&cfg;reenter_metadata=true;PgsAccountHostMetadataOutput result{};assert(host->resolve_metadata(&cfg,&result)==0&&!reenter_metadata);}
+    if(mode==3){stop_during_metadata=true;assert(host->configure(&cfg)==PGS_ACH_ERR_STOPPED);assert(!g.accounts_attempted&&!g.advsync_attempted);}
     _exit(0);
    }int status=0;assert(waitpid(child,&status,0)==child&&WIFEXITED(status)&&WEXITSTATUS(status)==0);
   }
 
-  PgrAccountHostMetadataOutput md_out{};
-  assert(host->resolve_metadata(&cfg, &md_out) == PGR_ACH_OK);
+  PgsAccountHostMetadataOutput md_out{};
+  assert(host->resolve_metadata(&cfg, &md_out) == PGS_ACH_OK);
   assert(md_out.accounts_valid == 1 && md_out.advsync_valid == 1);
   assert(md_out.promise_succeeded_value == 1 && md_out.promise_failed_value == 2);
   assert(md_out.di_container_class == c_di_container);
@@ -775,38 +775,38 @@ int main(int argc, char **argv) {
   // Negative check A: corrupted 24-byte prologue on AuthService.Logout fails Accounts closed,
   // while AdventureSync metadata still validates independently.
   g_module_base[kRvaAuthLogout] ^= 0xFFu;
-  PgrAccountHostMetadataOutput bad_acc_md{};
-  assert(host->resolve_metadata(&cfg, &bad_acc_md) == PGR_ACH_ERR_METADATA);
+  PgsAccountHostMetadataOutput bad_acc_md{};
+  assert(host->resolve_metadata(&cfg, &bad_acc_md) == PGS_ACH_ERR_METADATA);
   assert(bad_acc_md.accounts_valid == 0 && bad_acc_md.advsync_valid == 1);
   g_module_base[kRvaAuthLogout] ^= 0xFFu;
 
   // Negative check B: corrupted 24-byte prologue on DialogController.Update fails AdventureSync
   // closed, while Accounts metadata still validates independently.
   g_module_base[kRvaAdvUpdate] ^= 0xFFu;
-  PgrAccountHostMetadataOutput bad_adv_md{};
-  assert(host->resolve_metadata(&cfg, &bad_adv_md) == PGR_ACH_ERR_METADATA);
+  PgsAccountHostMetadataOutput bad_adv_md{};
+  assert(host->resolve_metadata(&cfg, &bad_adv_md) == PGS_ACH_ERR_METADATA);
   assert(bad_adv_md.accounts_valid == 1 && bad_adv_md.advsync_valid == 0);
   g_module_base[kRvaAdvUpdate] ^= 0xFFu;
 
   // Negative check C: missing OPT_ITEMS_LOOKUP preserves "no available lookup" behavior
   // (Accounts fails closed, AdventureSync remains valid).
   g_shared_md.optional[OPT_ITEMS_LOOKUP] = PGS_SHARED_OPT_UNAVAILABLE;
-  PgrAccountHostMetadataOutput no_lookup_md{};
-  assert(host->resolve_metadata(&cfg, &no_lookup_md) == PGR_ACH_ERR_METADATA);
+  PgsAccountHostMetadataOutput no_lookup_md{};
+  assert(host->resolve_metadata(&cfg, &no_lookup_md) == PGS_ACH_ERR_METADATA);
   assert(no_lookup_md.accounts_valid == 0 && no_lookup_md.advsync_valid == 1);
-  g_shared_md.optional[OPT_ITEMS_LOOKUP] = PGR_SHARED_OPT_AVAILABLE;
+  g_shared_md.optional[OPT_ITEMS_LOOKUP] = PGS_SHARED_OPT_AVAILABLE;
 
   // Negative check D: unassignable get_Container declaring class fails Accounts closed.
   m_get_container->owner = c_di_container;
-  PgrAccountHostMetadataOutput bad_owner_md{};
-  assert(host->resolve_metadata(&cfg, &bad_owner_md) == PGR_ACH_ERR_METADATA);
+  PgsAccountHostMetadataOutput bad_owner_md{};
+  assert(host->resolve_metadata(&cfg, &bad_owner_md) == PGS_ACH_ERR_METADATA);
   assert(bad_owner_md.accounts_valid == 0 && bad_owner_md.advsync_valid == 1);
   m_get_container->owner = c_scene_context;
 
   // Negative check E: enum literal missing 0x8050 flags fails Accounts closed.
   f_status_succeeded->flags = 0x0010u;
-  PgrAccountHostMetadataOutput bad_enum_md{};
-  assert(host->resolve_metadata(&cfg, &bad_enum_md) == PGR_ACH_ERR_METADATA);
+  PgsAccountHostMetadataOutput bad_enum_md{};
+  assert(host->resolve_metadata(&cfg, &bad_enum_md) == PGS_ACH_ERR_METADATA);
   assert(bad_enum_md.accounts_valid == 0 && bad_enum_md.advsync_valid == 1);
   f_status_succeeded->flags = 0x8056u;
 
@@ -823,22 +823,22 @@ int main(int argc, char **argv) {
   md_out.adv_code_on_confirm = reinterpret_cast<void *>(&fixture_adv_on_confirm);
   md_out.adv_code_on_decline = reinterpret_cast<void *>(&fixture_adv_on_decline);
 
-  cfg.flags = PGR_ACH_CFG_SUBSTITUTE_METADATA | PGR_ACH_CFG_REQ_ALL;
+  cfg.flags = PGS_ACH_CFG_SUBSTITUTE_METADATA | PGS_ACH_CFG_REQ_ALL;
   cfg.substituted_metadata = &md_out;
 
   // Actual Dobby family isolation: metadata readiness is injected only AFTER the
   // real47 validation above; all installed native2/16 leaves remain production.
   for(unsigned mode=0;mode<2;++mode){pid_t child=fork();assert(child>=0);if(!child){
     cfg.owner_tid=self_tid();auto partial=md_out;partial.accounts_valid=0;
-    partial.accounts_error=mode?PGR_ACH_NOT_READY:PGR_ACH_ERR_METADATA;
+    partial.accounts_error=mode?PGS_ACH_NOT_READY:PGS_ACH_ERR_METADATA;
     cfg.substituted_metadata=&partial;
-    assert(host->configure(&cfg)==(mode?PGR_ACH_NOT_READY:PGR_ACH_OK));
-    PgrAccountHostSample s{};assert(host->sample(&s)==0&&s.configured&&s.capabilities==PGR_ACH_CAP_ADVENTURE_SYNC);
+    assert(host->configure(&cfg)==(mode?PGS_ACH_NOT_READY:PGS_ACH_OK));
+    PgsAccountHostSample s{};assert(host->sample(&s)==0&&s.configured&&s.capabilities==PGS_ACH_CAP_ADVENTURE_SYNC);
     assert(g.advsync_attempted);assert(g.accounts_attempted==(mode==0));
     assert(host->set_adventure_sync_allowed(1)==0);
     call_adv_init_initial(&g_dialog_obj,nullptr,nullptr,nullptr,nullptr,nullptr);usleep(120*1000);call_adv_update(&g_dialog_obj,nullptr);
     assert(g_adv_decline_calls==1&&g_adv_confirm_calls==0);
-    if(mode){partial.accounts_valid=1;partial.accounts_error=0;assert(host->configure(&cfg)==0);assert(host->sample(&s)==0&&s.capabilities==(PGR_ACH_CAP_ACCOUNTS|PGR_ACH_CAP_ADVENTURE_SYNC));}
+    if(mode){partial.accounts_valid=1;partial.accounts_error=0;assert(host->configure(&cfg)==0);assert(host->sample(&s)==0&&s.capabilities==(PGS_ACH_CAP_ACCOUNTS|PGS_ACH_CAP_ADVENTURE_SYNC));}
     else assert(host->configure(&cfg)==0);
     // Patched AdventureSync prologues must not be revalidated/re-hooked on retry.
     assert(g.advsync_attempted&&host->configure(&cfg)==0);assert(host->tick(self_tid())==0);assert(host->stop()==0);
@@ -849,29 +849,29 @@ int main(int argc, char **argv) {
   // Reject bad config flags or off-owner tid before configure.
   auto bad_cfg = cfg;
   bad_cfg.flags = 0x100u;
-  assert(host->configure(&bad_cfg) == PGR_ACH_ERR_BAD_CONFIG);
+  assert(host->configure(&bad_cfg) == PGS_ACH_ERR_BAD_CONFIG);
   bad_cfg = cfg;
   bad_cfg.owner_tid = self_tid() + 1;
-  assert(host->configure(&bad_cfg) == PGR_ACH_ERR_OFF_OWNER);
+  assert(host->configure(&bad_cfg) == PGS_ACH_ERR_OFF_OWNER);
 
-  assert(host->configure(&cfg) == PGR_ACH_OK);
+  assert(host->configure(&cfg) == PGS_ACH_OK);
   // Idempotent reconfigure with identical binding succeeds; changed module_base rejects.
-  assert(host->configure(&cfg) == PGR_ACH_OK);
+  assert(host->configure(&cfg) == PGS_ACH_OK);
   bad_cfg = cfg;
   bad_cfg.module_size = kModuleSize - 4096;
-  assert(host->configure(&bad_cfg) == PGR_ACH_ERR_RECONFIG);
+  assert(host->configure(&bad_cfg) == PGS_ACH_ERR_RECONFIG);
 
-  PgrAccountHostSample sample{};
-  assert(host->sample(&sample) == PGR_ACH_OK);
+  PgsAccountHostSample sample{};
+  assert(host->sample(&sample) == PGS_ACH_OK);
   assert(sample.configured == 1);
-  assert(sample.capabilities == (PGR_ACH_CAP_ACCOUNTS | PGR_ACH_CAP_ADVENTURE_SYNC));
+  assert(sample.capabilities == (PGS_ACH_CAP_ACCOUNTS | PGS_ACH_CAP_ADVENTURE_SYNC));
   assert(sample.accounts_error == 0 && sample.advsync_error == 0);
 
   // Drain initial ready events.
   bool saw_acc_ready = false;
   bool saw_adv_ready = false;
-  PgrAccountHostEvent ev{};
-  while (host->next_event(&ev) == PGR_ACH_OK) {
+  PgsAccountHostEvent ev{};
+  while (host->next_event(&ev) == PGS_ACH_OK) {
     if (std::strcmp(ev.kind, "accounts-ready") == 0) {
       saw_acc_ready = true;
       assert(std::strstr(ev.json, "\"available\":true") != nullptr);
@@ -882,19 +882,19 @@ int main(int argc, char **argv) {
   assert(saw_acc_ready && saw_adv_ready);
 
   // 2a. Account Identity Polling on Unity owner thread
-  PgrAccountHostOptions opts{};
-  opts.version = PGR_ACH_OPTIONS_VERSION;
+  PgsAccountHostOptions opts{};
+  opts.version = PGS_ACH_OPTIONS_VERSION;
   opts.size = sizeof(opts);
-  opts.flags = PGR_ACH_OPT_SET_ACCOUNTS;
+  opts.flags = PGS_ACH_OPT_SET_ACCOUNTS;
   opts.accounts_allowed = 1;
   opts.accounts_lease_ms = 2000;
   opts.command = "";
   opts.command_token = "";
-  assert(host->set_options(&opts) == PGR_ACH_OK);
-  assert(host->tick(self_tid()) == PGR_ACH_OK);
+  assert(host->set_options(&opts) == PGS_ACH_OK);
+  assert(host->tick(self_tid()) == PGS_ACH_OK);
 
   bool saw_identity = false;
-  while (host->next_event(&ev) == PGR_ACH_OK) {
+  while (host->next_event(&ev) == PGS_ACH_OK) {
     if (std::strcmp(ev.kind, "account-identity") == 0) {
       saw_identity = true;
       assert(std::strcmp(ev.id, "uid-777") == 0);
@@ -909,8 +909,8 @@ int main(int argc, char **argv) {
   for (const char *bt : bad_tokens) {
     opts.command = "save-session:bad";
     opts.command_token = bt;
-    assert(host->set_options(&opts) == PGR_ACH_OK);
-    assert(host->sample(&sample) == PGR_ACH_OK);
+    assert(host->set_options(&opts) == PGS_ACH_OK);
+    assert(host->sample(&sample) == PGS_ACH_OK);
     assert(sample.last_cmd_kind == PGS_ACC_CMD_NONE && sample.last_cmd_token == 0);
   }
   assert(g_prefs_save_calls == 0);
@@ -920,16 +920,16 @@ int main(int argc, char **argv) {
   usleep(260 * 1000);
   opts.command = "save-session:req-1";
   opts.command_token = "9007199254740993";
-  assert(host->set_options(&opts) == PGR_ACH_OK);
-  assert(host->sample(&sample) == PGR_ACH_OK);
+  assert(host->set_options(&opts) == PGS_ACH_OK);
+  assert(host->sample(&sample) == PGS_ACH_OK);
   assert(sample.last_cmd_kind == PGS_ACC_CMD_SAVE_SESSION);
   assert(sample.last_cmd_token == 9007199254740993ULL);
   assert(parse_token_exact64("9223372036854775807")==UINT64_C(9223372036854775807));
-  assert(host->tick(self_tid()) == PGR_ACH_OK);
+  assert(host->tick(self_tid()) == PGS_ACH_OK);
   assert(g_prefs_save_calls == 1);
 
   bool saw_saved = false;
-  while (host->next_event(&ev) == PGR_ACH_OK) {
+  while (host->next_event(&ev) == PGS_ACH_OK) {
     if (std::strcmp(ev.kind, "account-session-saved") == 0) saw_saved = true;
   }
   assert(saw_saved);
@@ -938,15 +938,15 @@ int main(int argc, char **argv) {
   usleep(260 * 1000);
   opts.command = "reset-login:req-2";
   opts.command_token = "9223372036854775805"; // greater than save token
-  assert(host->set_options(&opts) == PGR_ACH_OK);
-  assert(host->tick(self_tid()) == PGR_ACH_OK);
+  assert(host->set_options(&opts) == PGS_ACH_OK);
+  assert(host->tick(self_tid()) == PGS_ACH_OK);
   assert(g_prefs_map.count("4b9b44d8-66f5-46dc-86bb-0215bfa90f5e") == 0);
   assert(g_prefs_map.count("80a6f7e6-1a8d-442e-bd95-74c795242b3f") == 0);
   assert(g_prefs_map.count("keep-other-pref") == 1);
   assert(g_prefs_save_calls == 2);
 
   bool saw_reset = false;
-  while (host->next_event(&ev) == PGR_ACH_OK) {
+  while (host->next_event(&ev) == PGS_ACH_OK) {
     if (std::strcmp(ev.kind, "account-login-reset-complete") == 0) saw_reset = true;
   }
   assert(saw_reset);
@@ -957,13 +957,13 @@ int main(int argc, char **argv) {
   usleep(260 * 1000);
   opts.command = "logout:req-3";
   opts.command_token = "9223372036854775806";
-  assert(host->set_options(&opts) == PGR_ACH_OK);
-  assert(host->tick(self_tid()) == PGR_ACH_OK);
+  assert(host->set_options(&opts) == PGS_ACH_OK);
+  assert(host->tick(self_tid()) == PGS_ACH_OK);
   assert(g_wrapper_logout_calls == 1);
 
   bool saw_session_ended = false;
   bool saw_logout_req = false;
-  while (host->next_event(&ev) == PGR_ACH_OK) {
+  while (host->next_event(&ev) == PGS_ACH_OK) {
     if (std::strcmp(ev.kind, "account-session-ended") == 0) saw_session_ended = true;
     if (std::strcmp(ev.kind, "account-logout-requested") == 0) {
       saw_logout_req = true;
@@ -976,17 +976,17 @@ int main(int argc, char **argv) {
   g_future_status_val = 1; // CompletedSucceeded
   g_is_connected = false;
   usleep(260 * 1000);
-  assert(host->tick(self_tid()) == PGR_ACH_OK);
+  assert(host->tick(self_tid()) == PGS_ACH_OK);
 
   bool saw_logout_complete = false;
-  while (host->next_event(&ev) == PGR_ACH_OK) {
+  while (host->next_event(&ev) == PGS_ACH_OK) {
     if (std::strcmp(ev.kind, "account-logout-complete") == 0) saw_logout_complete = true;
   }
   assert(saw_logout_complete);
   assert(g_live_roots == 0);
 
   // 2f. Real Feature 2 (AdventureSync) Dobby hooks on DialogController
-  assert(host->set_adventure_sync_allowed(1) == PGR_ACH_OK);
+  assert(host->set_adventure_sync_allowed(1) == PGS_ACH_OK);
   call_adv_init_initial(&g_dialog_obj, nullptr, nullptr, nullptr, nullptr, nullptr);
   call_adv_update(&g_dialog_obj, nullptr);
   assert(g_adv_decline_calls==0&&g_adv_confirm_calls==0); // real2 settles >=100ms
@@ -1001,11 +1001,11 @@ int main(int argc, char **argv) {
   call_adv_update(&g_dialog_obj,nullptr);
   assert(g_adv_confirm_calls == 1 && g_adv_decline_calls == 1);
 
-  assert(host->tick(self_tid()) == PGR_ACH_OK);
+  assert(host->tick(self_tid()) == PGS_ACH_OK);
   assert(g_live_roots == 0);
 
   // Disallow AdventureSync: subsequent dialog initializations are ignored.
-  assert(host->set_adventure_sync_allowed(0) == PGR_ACH_OK);
+  assert(host->set_adventure_sync_allowed(0) == PGS_ACH_OK);
   call_adv_init_initial(&g_dialog_obj, nullptr, nullptr, nullptr, nullptr, nullptr);
   usleep(120*1000);
   call_adv_update(&g_dialog_obj, nullptr);
@@ -1013,16 +1013,16 @@ int main(int argc, char **argv) {
 
   // 2g. Foreign thread rejection and terminal stop cleanup
   std::thread foreign([&]() {
-    assert(host->tick(self_tid()) == PGR_ACH_ERR_OFF_OWNER);
-    assert(host->stop() == PGR_ACH_OK);
+    assert(host->tick(self_tid()) == PGS_ACH_ERR_OFF_OWNER);
+    assert(host->stop() == PGS_ACH_OK);
   });
   foreign.join();
 
-  assert(host->tick(self_tid()) == PGR_ACH_OK);
-  assert(host->sample(&sample) == PGR_ACH_OK);
+  assert(host->tick(self_tid()) == PGS_ACH_OK);
+  assert(host->sample(&sample) == PGS_ACH_OK);
   assert(sample.stopping == 1 && sample.accounts_cleared == 1 && sample.owned == 0);
-  assert(host->set_options(&opts) == PGR_ACH_ERR_STOPPED);
-  assert(host->set_adventure_sync_allowed(1) == PGR_ACH_ERR_STOPPED);
+  assert(host->set_options(&opts) == PGS_ACH_ERR_STOPPED);
+  assert(host->set_adventure_sync_allowed(1) == PGS_ACH_ERR_STOPPED);
   // Simulate a previously-entered setter reaching its pure publication after stop.
   const auto *acc=pgs_accounts_api(1);pgs_account_snapshot_v1_t before{},after{};acc->api_sample(&before);
   publish_accounts(true,2000,PGS_ACC_CMD_LOGOUT,UINT64_C(9223372036854775807));

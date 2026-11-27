@@ -25,11 +25,11 @@
 // non-owner Unity thread; those are guarded by g_obs_mutex, held only for bookkeeping/push -- never
 // across a managed call or a chained hook original. revoke() touches only atomics (any thread).
 
-static_assert(sizeof(PgrRoutesObserversConfig) == 184, "config 184");
-static_assert(sizeof(PgrRoutesObserversRequest) == 32, "request 32");
-static_assert(sizeof(PgrRoutesObserversCompleting) == 312, "completing 312");
-static_assert(sizeof(PgrRoutesObserversOutput) == 2672, "output 2672");
-static_assert(sizeof(PgrRoutesObserversApi) == 96, "table 96");
+static_assert(sizeof(PgsRoutesObserversConfig) == 184, "config 184");
+static_assert(sizeof(PgsRoutesObserversRequest) == 32, "request 32");
+static_assert(sizeof(PgsRoutesObserversCompleting) == 312, "completing 312");
+static_assert(sizeof(PgsRoutesObserversOutput) == 2672, "output 2672");
+static_assert(sizeof(PgsRoutesObserversApi) == 96, "table 96");
 
 namespace {
 
@@ -53,7 +53,7 @@ using BjanFn = void (*)(void *self, void *progress, const void *method);
 
 // --- lifetime / publication --------------------------------------------------------
 std::mutex g_install_mutex;
-PgrRoutesObserversConfig g_cfg{};
+PgsRoutesObserversConfig g_cfg{};
 std::atomic<bool> g_installed{false};
 std::atomic<bool> g_hook_failed{false};
 
@@ -112,7 +112,7 @@ DepthSlot g_depth[kDepthSlots];
 bool g_has_last_tracking = false;
 int32_t g_last_tracking = 0;
 uint64_t g_last_waypoint_at = 0;
-PgrRoutesObserversEvent g_ev[PGS_RO_MAX_EVENTS];
+PgsRoutesObserversEvent g_ev[PGS_RO_MAX_EVENTS];
 uint32_t g_ev_count = 0;
 uint32_t g_ev_dropped = 0;
 
@@ -154,7 +154,7 @@ bool fresh(uint64_t generation){return generation==g_gen.load(std::memory_order_
 void push_event_locked(uint32_t type, uint32_t aux, int64_t i0, double f0, double f1,
                        const uint16_t *id, uint32_t id_length) {
   if (g_ev_count >= PGS_RO_MAX_EVENTS) { ++g_ev_dropped; return; }
-  PgrRoutesObserversEvent &e = g_ev[g_ev_count++];
+  PgsRoutesObserversEvent &e = g_ev[g_ev_count++];
   std::memset(&e, 0, sizeof(e));
   e.type = type;
   e.aux = aux;
@@ -300,7 +300,7 @@ void hook_bjan(void *self, void *progress, const void *method) {
       is_exact(self, g_cfg.class_consumption) && is_exact(progress, g_cfg.class_progress) &&
       handle_target(g_completing.handle) == self) {
     const int32_t status =
-        *reinterpret_cast<const int32_t *>(reinterpret_cast<const char *>(progress) + PGR_RO_PROGRESS_STATUS_OFFSET);
+        *reinterpret_cast<const int32_t *>(reinterpret_cast<const char *>(progress) + PGS_RO_PROGRESS_STATUS_OFFSET);
     progress_root=gc_new()(progress,1);
     if(progress_root)self_root=gc_new()(handle_target(g_completing.handle),1);
     uint16_t cur[PGS_RO_ID_MAX];
@@ -330,18 +330,18 @@ void hook_bjan(void *self, void *progress, const void *method) {
 }
 
 // --- install -----------------------------------------------------------------------
-void init_output(PgrRoutesObserversOutput *out) {
+void init_output(PgsRoutesObserversOutput *out) {
   std::memset(out, 0, sizeof(*out));
   out->version = PGS_RO_OUTPUT_VERSION;
-  out->size = sizeof(PgrRoutesObserversOutput);
+  out->size = sizeof(PgsRoutesObserversOutput);
 }
 
-bool validate_config(const PgrRoutesObserversConfig *c, int *rc) {
+bool validate_config(const PgsRoutesObserversConfig *c, int *rc) {
   if (c == nullptr) { *rc = PGS_RO_ERR_NULL_ARG; return false; }
   if (c->version != PGS_RO_CONFIG_VERSION) { *rc = PGS_RO_ERR_BAD_VERSION; return false; }
-  if (c->size != sizeof(PgrRoutesObserversConfig)) { *rc = PGS_RO_ERR_BAD_SIZE; return false; }
+  if (c->size != sizeof(PgsRoutesObserversConfig)) { *rc = PGS_RO_ERR_BAD_SIZE; return false; }
   void *const *ptrs = reinterpret_cast<void *const *>(
-      reinterpret_cast<const unsigned char *>(c) + offsetof(PgrRoutesObserversConfig, runtime_invoke));
+      reinterpret_cast<const unsigned char *>(c) + offsetof(PgsRoutesObserversConfig, runtime_invoke));
   for (int i = 0; i < PGS_RO_PTR_COUNT; ++i)
     if (ptrs[i] == nullptr) { *rc = PGS_RO_ERR_MISSING_PTR; return false; }
   *rc = 0;
@@ -365,7 +365,7 @@ int install_hooks() {
   return 0;
 }
 
-int api_install(const PgrRoutesObserversConfig *config) {
+int api_install(const PgsRoutesObserversConfig *config) {
   int rc = 0;
   if (!validate_config(config, &rc)) return rc;
   uint64_t probe = 0;
@@ -392,7 +392,7 @@ uint64_t api_revoke() {
 
 // Validate an owner request header + owner/thread/generation gate. Returns 0 on pass or a hard fault;
 // *skip is true for a benign gate refusal. deadline_out is set from a positive residual when require_lease.
-int gate_owner(const PgrRoutesObserversRequest *req, bool require_lease, uint64_t *deadline_out, bool *skip) {
+int gate_owner(const PgsRoutesObserversRequest *req, bool require_lease, uint64_t *deadline_out, bool *skip) {
   *skip = false;
   if (!g_installed.load(std::memory_order_acquire)) return PGS_RO_ERR_NOT_INSTALLED;
   if (!req) return PGS_RO_ERR_NULL_ARG;
@@ -412,7 +412,7 @@ int gate_owner(const PgrRoutesObserversRequest *req, bool require_lease, uint64_
 
 void clear_pending() { for (int i = 0; i < PGS_RO_PENDING_UI_MAX; ++i) free_handle(&g_pending[i].handle); }
 
-int api_poll(const PgrRoutesObserversRequest *req, PgrRoutesObserversOutput *out) {
+int api_poll(const PgsRoutesObserversRequest *req, PgsRoutesObserversOutput *out) {
   if (!out) return PGS_RO_ERR_NULL_ARG;
   init_output(out);
   // poll runs every tick even with the lease off (to drop stale pendingUi), so it does NOT require a lease.
@@ -445,7 +445,7 @@ int api_poll(const PgrRoutesObserversRequest *req, PgrRoutesObserversOutput *out
     void *gui = handle_target(g_pending[i].handle);
     void *klass = g_pending[i].screen == PGS_RO_SCREEN_RATING ? g_cfg.class_rating_gui : g_cfg.class_reward_gui;
     if (!fresh(req->generation) || age >= PGS_RO_UI_MAX_MS || !is_exact(gui, klass)) { free_handle(&g_pending[i].handle); continue; }
-    const int32_t state = *reinterpret_cast<const int32_t *>(reinterpret_cast<const char *>(gui) + PGR_RO_GUI_STATE_OFFSET);
+    const int32_t state = *reinterpret_cast<const int32_t *>(reinterpret_cast<const char *>(gui) + PGS_RO_GUI_STATE_OFFSET);
     if (state == PGS_RO_GUI_STATE_DISMISSED) {
       if(!fresh(req->generation))break;
       void *exc = nullptr;
@@ -470,7 +470,7 @@ int api_poll(const PgrRoutesObserversRequest *req, PgrRoutesObserversOutput *out
     std::lock_guard<std::mutex> lock(g_obs_mutex);
     out->event_count = g_ev_count;
     out->dropped_events = g_ev_dropped;
-    if (g_ev_count) std::memcpy(out->events, g_ev, g_ev_count * sizeof(PgrRoutesObserversEvent));
+    if (g_ev_count) std::memcpy(out->events, g_ev, g_ev_count * sizeof(PgsRoutesObserversEvent));
     g_ev_count = 0;
     g_ev_dropped = 0;
   }
@@ -485,7 +485,7 @@ int api_poll(const PgrRoutesObserversRequest *req, PgrRoutesObserversOutput *out
   return out->status;
 }
 
-int api_set_completing(const PgrRoutesObserversCompleting *c) {
+int api_set_completing(const PgsRoutesObserversCompleting *c) {
   if (!g_installed.load(std::memory_order_acquire)) return PGS_RO_ERR_NOT_INSTALLED;
   if (!c) return PGS_RO_ERR_NULL_ARG;
   if (c->version != PGS_RO_COMPLETING_VERSION) return PGS_RO_ERR_BAD_VERSION;
@@ -517,7 +517,7 @@ int api_set_completing(const PgrRoutesObserversCompleting *c) {
   return PGS_RO_OK;
 }
 
-int api_clear_completing(const PgrRoutesObserversRequest *req) {
+int api_clear_completing(const PgsRoutesObserversRequest *req) {
   uint64_t unused = 0;
   bool skip = false;
   const int grc = gate_owner(req, false, &unused, &skip);
@@ -529,7 +529,7 @@ int api_clear_completing(const PgrRoutesObserversRequest *req) {
   return PGS_RO_OK;
 }
 
-int api_drain(const PgrRoutesObserversRequest *req) {
+int api_drain(const PgsRoutesObserversRequest *req) {
   // drain needs an attached owner thread but no lease (teardown).
   if (!g_installed.load(std::memory_order_acquire)) return PGS_RO_ERR_NOT_INSTALLED;
   if (!req) return PGS_RO_ERR_NULL_ARG;
@@ -610,8 +610,8 @@ int api_waypoint_observed(uint64_t tid, double lat, double lon) {
   return 1;
 }
 
-const PgrRoutesObserversApi kApiTable = {
-    PGS_RO_API_VERSION, static_cast<uint32_t>(sizeof(PgrRoutesObserversApi)),
+const PgsRoutesObserversApi kApiTable = {
+    PGS_RO_API_VERSION, static_cast<uint32_t>(sizeof(PgsRoutesObserversApi)),
     &api_install, &api_generation, &api_revoke, &api_poll, &api_set_completing, &api_clear_completing,
     &api_drain, &api_tracking_enter, &api_tracking_leave, &api_location_gate, &api_waypoint_observed,
 };

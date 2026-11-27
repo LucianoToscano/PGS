@@ -22,10 +22,10 @@ struct Object {void *klass,*reference;uint8_t value;int32_t length;uint16_t text
 struct Heap {Object object[NOBJECTS];};
 Heap heaps[256];int generation=0,moves=0,managed=0,submissions=0,currentCalls=0;
 std::map<uintptr_t,void*> roots;uintptr_t serial=100,hostService=0,hostOther=0;
-const PgrRoutesActionsApi *api=nullptr;const char *mode=nullptr;
+const PgsRoutesActionsApi *api=nullptr;const char *mode=nullptr;
 bool inConfirm=false,inLeaf=false,nestedAgain=false,cleanupChecked=false;
 bool revokeCurrentCleanup=false;
-int leafResult=999,recursiveResult=999,cleanupResult=999;PgrRoutesActionsOutput leafOutput{};
+int leafResult=999,recursiveResult=999,cleanupResult=999;PgsRoutesActionsOutput leafOutput{};
 Object *obj(int i){return &heaps[generation].object[i];}
 int index(void *p){for(int i=0;i<NOBJECTS;i++)if(p==obj(i))return i;assert(false&&"stale managed pointer");return -1;}
 void move(){
@@ -35,8 +35,8 @@ void move(){
  for(auto &object:fresh.object)object.reference=remap(object.reference);
  for(auto &object:old.object)object.klass=&poisonClass;++moves;
 }
-PgrRoutesActionsRequest request(uint32_t action,uint64_t seq=0){
- PgrRoutesActionsRequest r{};r.version=1;r.size=sizeof(r);r.tid=static_cast<uint64_t>(gettid());r.residual_ms=2500;r.generation=api->generation();
+PgsRoutesActionsRequest request(uint32_t action,uint64_t seq=0){
+ PgsRoutesActionsRequest r{};r.version=1;r.size=sizeof(r);r.tid=static_cast<uint64_t>(gettid());r.residual_ms=2500;r.generation=api->generation();
  r.service_handle=hostService;r.action=action;r.seq=seq;
  if(action==PGS_RA_ACT_COMPLETE||action==PGS_RA_ACT_START){r.id_length=7;const char *s="route-a";for(int i=0;i<7;i++)r.id[i]=s[i];}
  return r;
@@ -48,7 +48,7 @@ void gcFree(uintptr_t h){
  assert(roots.erase(h)==1);
  if(revokeCurrentCleanup&&which==SERVICE&&h!=hostService){revokeCurrentCleanup=false;api->revoke();}
  if(submissions&&!inConfirm&&!cleanupChecked){
-  cleanupChecked=true;const int before=managed;auto r=request(PGS_RA_ACT_CURRENT);PgrRoutesActionsOutput out{};
+  cleanupChecked=true;const int before=managed;auto r=request(PGS_RA_ACT_CURRENT);PgsRoutesActionsOutput out{};
   cleanupResult=api->execute(&r,&out);assert(cleanupResult<=0&&managed==before);
  }
  move();
@@ -84,7 +84,7 @@ void *invoke(const void *method,void *receiver,void **args,void **exception){
   assert(!args);++currentCalls;
   if(inConfirm&&inLeaf&&std::strcmp(mode,"revoke-leaf")==0)api->revoke();
   if(inConfirm&&inLeaf&&std::strcmp(mode,"one-leaf-depth")==0&&!nestedAgain){
-   nestedAgain=true;const int before=managed;auto r=request(PGS_RA_ACT_CURRENT);PgrRoutesActionsOutput out{};
+   nestedAgain=true;const int before=managed;auto r=request(PGS_RA_ACT_CURRENT);PgsRoutesActionsOutput out{};
    recursiveResult=api->execute(&r,&out);assert(recursiveResult<=0&&managed==before);
   }
   move();return obj(PLAY);
@@ -96,7 +96,7 @@ int scenario(const char *name){
  mode=name;void *classes[NOBJECTS]={&serviceClass,&serviceClass,&playClass,&sharedClass,&stringClass,&boolClass,&dataClass,&dataClass};
  for(int i=0;i<NOBJECTS;i++)obj(i)->klass=classes[i];obj(PLAY)->reference=obj(SHARED);obj(SHARED)->reference=obj(ID);
  obj(ID)->length=7;for(int i=0;i<7;i++)obj(ID)->text[i]="route-a"[i];
- PgrRoutesActionsConfig c{};c.version=1;c.size=sizeof(c);
+ PgsRoutesActionsConfig c{};c.version=1;c.size=sizeof(c);
  c.runtime_invoke=reinterpret_cast<void*>(&invoke);c.object_get_class=reinterpret_cast<void*>(&objectClass);c.field_get_value=reinterpret_cast<void*>(&getField);c.object_unbox=reinterpret_cast<void*>(&unbox);
  c.gchandle_new=reinterpret_cast<void*>(&gcNew);c.gchandle_get_target=reinterpret_cast<void*>(&gcGet);c.gchandle_free=reinterpret_cast<void*>(&gcFree);c.thread_current=reinterpret_cast<void*>(&threadCurrent);
  c.object_new=reinterpret_cast<void*>(&newObject);c.field_set_value_object=reinterpret_cast<void*>(&setRef);c.field_set_value=reinterpret_cast<void*>(&setValue);
@@ -109,17 +109,17 @@ int scenario(const char *name){
  c.string_length=reinterpret_cast<void*>(&stringLength);c.string_chars=reinterpret_cast<void*>(&stringChars);assert(api->install(&c)==0);
  hostService=gcNew(obj(SERVICE),0);hostOther=gcNew(obj(OTHER_SERVICE),0);
  if(std::strcmp(mode,"current-cleanup-revoke")==0){
-  revokeCurrentCleanup=true;auto current=request(PGS_RA_ACT_CURRENT);PgrRoutesActionsOutput result{};
+  revokeCurrentCleanup=true;auto current=request(PGS_RA_ACT_CURRENT);PgsRoutesActionsOutput result{};
   assert(api->execute(&current,&result)==PGS_RA_REFUSE&&result.status==PGS_RA_REFUSE&&result.flags==0&&result.id_length==0);
   assert(!revokeCurrentCleanup&&roots.size()==2&&submissions==0);gcFree(hostService);gcFree(hostOther);assert(roots.empty());
   std::puts("PASS independent Routes current-cleanup-revoke");return 0;
  }
  if(std::strcmp(mode,"invalid-paused")==0||std::strcmp(mode,"invalid-reward")==0){
-  auto invalid=request(PGS_RA_ACT_COMPLETE,1);PgrRoutesActionsOutput result{};
+  auto invalid=request(PGS_RA_ACT_COMPLETE,1);PgsRoutesActionsOutput result{};
   assert(api->execute(&invalid,&result)<0&&result.status<0&&result.flags==0&&submissions==0&&roots.size()==2);
   gcFree(hostService);gcFree(hostOther);assert(roots.empty());std::printf("PASS independent Routes %s\n",mode);return 0;
  }
- auto r=request(PGS_RA_ACT_COMPLETE,1);PgrRoutesActionsOutput out{};
+ auto r=request(PGS_RA_ACT_COMPLETE,1);PgsRoutesActionsOutput out{};
  assert(api->execute(&r,&out)==PGS_RA_SUCCESS&&out.status==PGS_RA_SUCCESS&&submissions==1);
  if(std::strcmp(mode,"revoke-leaf")==0||std::strcmp(mode,"wrong-service")==0)assert(leafResult<=0&&leafOutput.flags==0);
  else {assert(leafResult==PGS_RA_SUCCESS&&leafOutput.id_length==7&&(leafOutput.flags&PGS_RA_FLAG_PRESENT));
@@ -139,6 +139,6 @@ int main(int argc,char **argv){
  }
  void *library=dlopen(argv[1],RTLD_NOW|RTLD_LOCAL);if(!library){std::puts(dlerror());return 2;}
  auto get=reinterpret_cast<const void*(*)(uint32_t)>(dlsym(library,"pgs_native_api"));auto core=get?static_cast<const pgs_native_api_v2*>(get(2)):nullptr;
- assert(core&&core->query_feature(43,99)==nullptr);api=static_cast<const PgrRoutesActionsApi*>(core->query_feature(43,1));assert(api&&api->size==40);
+ assert(core&&core->query_feature(43,99)==nullptr);api=static_cast<const PgsRoutesActionsApi*>(core->query_feature(43,1));assert(api&&api->size==40);
  return scenario(argv[2]);
 }

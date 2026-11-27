@@ -146,7 +146,7 @@ int main(int argc,char **argv){
  core=static_cast<const pgs_native_api_v2*>(get(2));assert(core&&core->query_feature(62,1)&&!core->query_feature(62,2));
  host=static_cast<const PgsQuickballHostApi*>(pgs_quickball_host_api(1));assert(host&&host->size==96);
  initialize();wrapped_btxu();assert(learned_caller);
- PgrMetaExports meta_exports{};meta_exports.class_get_type=reinterpret_cast<void*>(type_object);
+ PgsMetaExports meta_exports{};meta_exports.class_get_type=reinterpret_cast<void*>(type_object);
  meta_exports.class_get_field_from_name=reinterpret_cast<void*>(max_field_by_name);
  meta_exports.field_get_parent=reinterpret_cast<void*>(max_parent);
  meta_exports.field_get_flags=reinterpret_cast<void*>(max_flags);
@@ -205,7 +205,7 @@ int main(int argc,char **argv){
   assert(wrapped_btxu()==&response&&current_speed()==20);
   float max_speed=0.7f;std::memcpy(animator.data,&max_speed,4);
   assert(host->tick(gettid())==0&&current_speed()==20);
-  PgrSpeedSample speed_state{};speed()->sample(&speed_state);
+  PgsSpeedSample speed_state{};speed()->sample(&speed_state);
   assert(speed_state.owned&&speed_state.pad==1&&speed_state.reason==14);
   float normal=1;std::memcpy(animator.data,&normal,4);
   assert(host->tick(gettid())==0);speed()->sample(&speed_state);

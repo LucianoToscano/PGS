@@ -15,7 +15,7 @@
 
 namespace {
 
-PgrVgpDiscoveryConfig cfg{};
+PgsVgpDiscoveryConfig cfg{};
 std::mutex installMutex;
 std::atomic<bool> installed{false};
 std::atomic<bool> busy{false};
@@ -136,7 +136,7 @@ struct BusyGuard {
   ~BusyGuard() { if (held) busy.store(false); }
 };
 
-int install(const PgrVgpDiscoveryConfig *c) {
+int install(const PgsVgpDiscoveryConfig *c) {
   if (!c) return PGS_VD_ERR_NULL_ARG;
   if (c->version != PGS_VD_CONFIG_VERSION) return PGS_VD_ERR_BAD_VERSION;
   if (c->size != sizeof(*c)) return PGS_VD_ERR_BAD_SIZE;
@@ -150,7 +150,7 @@ int install(const PgrVgpDiscoveryConfig *c) {
   return 0;
 }
 
-int snapshot(void *svc, uint64_t owner, uint64_t lease_ms, PgrVgpDiscoverySnapshot *out) {
+int snapshot(void *svc, uint64_t owner, uint64_t lease_ms, PgsVgpDiscoverySnapshot *out) {
   if (!out) return PGS_VD_ERR_NULL_ARG;
   *out = {PGS_VD_SNAPSHOT_VERSION, uint32_t(sizeof(*out)), 0, 0, 0, 0, 0, 0, 0, 0};
   if (!svc) return PGS_VD_ERR_NULL_ARG;
@@ -283,7 +283,7 @@ int snapshot(void *svc, uint64_t owner, uint64_t lease_ms, PgrVgpDiscoverySnapsh
   return PGS_VD_OK;
 }
 
-int enumerate(uint32_t kind, uint64_t owner, uint64_t lease_ms, PgrVgpDiscoveryEnumeration *out) {
+int enumerate(uint32_t kind, uint64_t owner, uint64_t lease_ms, PgsVgpDiscoveryEnumeration *out) {
   if (!out) return PGS_VD_ERR_NULL_ARG;
   *out = {PGS_VD_ENUM_VERSION, uint32_t(sizeof(*out)), 0, 0, 0};
   if (kind != PGS_VD_KIND_CATCH && kind != PGS_VD_KIND_SPIN && kind != PGS_VD_KIND_CATCH_LOADED) return PGS_VD_ERR_BAD_KIND;
@@ -371,8 +371,8 @@ int at(void *array, uint32_t index, uint64_t owner, uint64_t lease_ms, uintptr_t
   return PGS_VD_OK;
 }
 
-const PgrVgpDiscoveryApi api = {
-    PGS_VD_API_VERSION, uint32_t(sizeof(PgrVgpDiscoveryApi)), install, snapshot, enumerate, at};
+const PgsVgpDiscoveryApi api = {
+    PGS_VD_API_VERSION, uint32_t(sizeof(PgsVgpDiscoveryApi)), install, snapshot, enumerate, at};
 
 }  // namespace
 

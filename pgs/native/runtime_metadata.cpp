@@ -48,13 +48,13 @@ using fn_debug_method_info = bool (*)(void *, void *);
 // ---- bound resolver singleton (metadata is read-only + process-lifetime stable) ---------------
 struct State {
   bool bound = false;
-  PgrMetaExports exports{};
+  PgsMetaExports exports{};
   const void *module_base = nullptr;
   uint64_t module_size = 0;
-  pgr_meta_seg_fn seg_query = nullptr;
+  pgs_meta_seg_fn seg_query = nullptr;
   void *seg_ctx = nullptr;
 
-  PgrMetaSample sample{};
+  PgsMetaSample sample{};
 };
 
 State g;
@@ -95,11 +95,11 @@ bool type_name(void *type, std::string *out) {
 }
 
 bool match(const std::string &actual, const char *expected, uint32_t mode) {
-  if (mode == PGR_MD_MATCH_ANY || expected == nullptr) return true;
+  if (mode == PGS_MD_MATCH_ANY || expected == nullptr) return true;
   std::string want;
   if(!read_name(expected,&want))return false;
   switch (mode) {
-    case PGR_MD_MATCH_EXACT:    return actual == want;
+    case PGS_MD_MATCH_EXACT:    return actual == want;
     case PGS_MD_MATCH_PREFIX:   return actual.size() >= want.size() && actual.compare(0, want.size(), want) == 0;
     case PGS_MD_MATCH_SUFFIX:   return actual.size() >= want.size() &&
                                        actual.compare(actual.size() - want.size(), want.size(), want) == 0;
@@ -125,7 +125,7 @@ int phdr_cb(struct dl_phdr_info *info, size_t, void *data) {
   }
   return 0;
 }
-int default_seg(void *, const void *addr, uint64_t size, PgrMetaSegment *out) {
+int default_seg(void *, const void *addr, uint64_t size, PgsMetaSegment *out) {
   std::memset(out, 0, sizeof(*out));
   uintptr_t a = reinterpret_cast<uintptr_t>(addr);
   if(!range(a,size))return -1;
@@ -165,7 +165,7 @@ int default_seg(void *, const void *addr, uint64_t size, PgrMetaSegment *out) {
   return 0;
 }
 #else
-int default_seg(void *, const void *, uint64_t, PgrMetaSegment *out) {
+int default_seg(void *, const void *, uint64_t, PgsMetaSegment *out) {
   std::memset(out, 0, sizeof(*out));
   return -1;  // no supported resolver off-Linux; callers must inject seg_query
 }
@@ -179,7 +179,7 @@ int check_code(const void *address, uint64_t length, const void *prologue, uint3
   uintptr_t base = reinterpret_cast<uintptr_t>(g.module_base);
   if (!contains(base,g.module_size,a,length)) return PGS_MD_ERR_CODE_RANGE;
 
-  PgrMetaSegment seg{};
+  PgsMetaSegment seg{};
   if (g.seg_query(g.seg_ctx, address, length, &seg) != 0) return PGS_MD_ERR_SEGMENT;
   if(seg.found!=1||seg.readable!=1||seg.host_exec>1||seg.elf_exec>1||seg.writable>1||seg.reserved||
      !(seg.host_exec||(!seg.writable&&seg.elf_exec)))return PGS_MD_ERR_SEGMENT;
@@ -191,15 +191,15 @@ int check_code(const void *address, uint64_t length, const void *prologue, uint3
       return PGS_MD_ERR_PROLOGUE;
     if (std::memcmp(address, prologue, prologue_len) != 0) return PGS_MD_ERR_PROLOGUE;
   }
-  return PGR_MD_OK;
+  return PGS_MD_OK;
 }
 
 // ================================================================================================
-int api_bind(const PgrMetaBindConfig *config) {
-  ApiGuard guard;if(!guard)return PGR_MD_ERR_BUSY;
+int api_bind(const PgsMetaBindConfig *config) {
+  ApiGuard guard;if(!guard)return PGS_MD_ERR_BUSY;
   if (config == nullptr || config->exports == nullptr) return fail(PGS_MD_ERR_NULL_ARG);
-  if (config->version != PGR_MD_CONFIG_VERSION) return fail(PGS_MD_ERR_BAD_VERSION);
-  if (config->size != sizeof(PgrMetaBindConfig)) return fail(PGS_MD_ERR_BAD_SIZE);
+  if (config->version != PGS_MD_CONFIG_VERSION) return fail(PGS_MD_ERR_BAD_VERSION);
+  if (config->size != sizeof(PgsMetaBindConfig)) return fail(PGS_MD_ERR_BAD_SIZE);
   if (config->module_base == nullptr || config->module_size == 0) return fail(PGS_MD_ERR_MISSING_EXPORT);
   if(!range(reinterpret_cast<uintptr_t>(config->module_base),config->module_size))return fail(PGS_MD_ERR_CODE_RANGE);
   if(config->reserved)return fail(PGS_MD_ERR_BAD_SIZE);
@@ -207,14 +207,14 @@ int api_bind(const PgrMetaBindConfig *config) {
     (config->debug_prologue_len&&!config->debug_prologue))return fail(PGS_MD_ERR_PROLOGUE);
 
   const void *const *slots = reinterpret_cast<const void *const *>(config->exports);
-  const size_t count = sizeof(PgrMetaExports) / sizeof(void *);
+  const size_t count = sizeof(PgsMetaExports) / sizeof(void *);
   for (size_t i = 0; i < count; ++i)
     if (slots[i] == nullptr) return fail(PGS_MD_ERR_MISSING_EXPORT);
 
-  pgr_meta_seg_fn seg = config->seg_query ? config->seg_query : &default_seg;
+  pgs_meta_seg_fn seg = config->seg_query ? config->seg_query : &default_seg;
 
   if (g.bound) {  // immutable runtime identity; optional code proof belongs to this call
-    if (std::memcmp(&g.exports, config->exports, sizeof(PgrMetaExports)) != 0 ||
+    if (std::memcmp(&g.exports, config->exports, sizeof(PgsMetaExports)) != 0 ||
         g.module_base != config->module_base || g.module_size != config->module_size ||
         g.seg_query != seg || g.seg_ctx != config->seg_ctx)
       return fail(PGS_MD_ERR_BOUND_MISMATCH);
@@ -226,7 +226,7 @@ int api_bind(const PgrMetaBindConfig *config) {
                               config->debug_prologue,config->debug_prologue_len);
       if(rc)return fail(rc);
     }
-    return PGR_MD_OK;
+    return PGS_MD_OK;
   }
 
   const State previous=g;
@@ -241,20 +241,20 @@ int api_bind(const PgrMetaBindConfig *config) {
   if (config->debug_prologue_len != 0) {
     int rc = check_code(config->exports->debug_get_method_info, config->debug_prologue_len,
                         config->debug_prologue, config->debug_prologue_len);
-    if (rc != PGR_MD_OK) { g = previous; return fail(rc); }
+    if (rc != PGS_MD_OK) { g = previous; return fail(rc); }
   }
 
   g.bound = true;
   g.sample.bound = 1;
-  return PGR_MD_OK;
+  return PGS_MD_OK;
 }
 
-int api_resolve_class(const PgrMetaClassQuery *q, PgrMetaClassResult *out) {
+int api_resolve_class(const PgsMetaClassQuery *q, PgsMetaClassResult *out) {
   if(out)*out={};
-  ApiGuard guard;if(!guard)return PGR_MD_ERR_BUSY;
+  ApiGuard guard;if(!guard)return PGS_MD_ERR_BUSY;
   if (q == nullptr || out == nullptr) return fail(PGS_MD_ERR_NULL_ARG);
-  if (q->version != PGR_MD_QUERY_VERSION) return fail(PGS_MD_ERR_BAD_VERSION);
-  if (q->size != sizeof(PgrMetaClassQuery)) return fail(PGS_MD_ERR_BAD_SIZE);
+  if (q->version != PGS_MD_QUERY_VERSION) return fail(PGS_MD_ERR_BAD_VERSION);
+  if (q->size != sizeof(PgsMetaClassQuery)) return fail(PGS_MD_ERR_BAD_SIZE);
   if (!g.bound) return fail(PGS_MD_ERR_NOT_BOUND);
 
   std::string ns, name;
@@ -265,10 +265,10 @@ int api_resolve_class(const PgrMetaClassQuery *q, PgrMetaClassResult *out) {
   uint32_t expected_mode;
   if (q->canonical != nullptr) {
     if (!read_name(q->canonical, &expected)) return fail(PGS_MD_ERR_NAME_TOO_LONG);
-    expected_mode = q->canonical_match ? q->canonical_match : PGR_MD_MATCH_EXACT;
+    expected_mode = q->canonical_match ? q->canonical_match : PGS_MD_MATCH_EXACT;
   } else {
     expected = ns.empty() ? name : ns + "." + name;
-    expected_mode = PGR_MD_MATCH_EXACT;
+    expected_mode = PGS_MD_MATCH_EXACT;
   }
 
   auto domain_get = reinterpret_cast<fn_domain_get>(g.exports.domain_get);
@@ -278,10 +278,10 @@ int api_resolve_class(const PgrMetaClassQuery *q, PgrMetaClassResult *out) {
   auto get_type = reinterpret_cast<fn_class_get_type>(g.exports.class_get_type);
 
   void *domain = domain_get();
-  if (domain == nullptr) return fail(PGR_MD_ERR_NOT_FOUND);
+  if (domain == nullptr) return fail(PGS_MD_ERR_NOT_FOUND);
   size_t total = 0;
   void **list = static_cast<void **>(assemblies(domain, &total));
-  if (total == 0 || list == nullptr) return fail(PGR_MD_ERR_NOT_FOUND);
+  if (total == 0 || list == nullptr) return fail(PGS_MD_ERR_NOT_FOUND);
   if (total > PGS_MD_ASM_MAX) return fail(PGS_MD_ERR_LIMIT);
 
   void *found = nullptr;
@@ -296,23 +296,23 @@ int api_resolve_class(const PgrMetaClassQuery *q, PgrMetaClassResult *out) {
     if (found != nullptr && found != k) return fail(PGS_MD_ERR_DUPLICATE);
     found = k;
   }
-  if (found == nullptr) return fail(PGR_MD_ERR_NOT_FOUND);
+  if (found == nullptr) return fail(PGS_MD_ERR_NOT_FOUND);
 
-  out->version = PGR_MD_QUERY_VERSION;
-  out->size = sizeof(PgrMetaClassResult);
+  out->version = PGS_MD_QUERY_VERSION;
+  out->size = sizeof(PgsMetaClassResult);
   out->klass = found;
   out->type = get_type(found);
   ++g.sample.classes_resolved;
-  return PGR_MD_OK;
+  return PGS_MD_OK;
 }
 
-int api_validate_field(const PgrMetaFieldQuery *q, PgrMetaFieldResult *out) {
+int api_validate_field(const PgsMetaFieldQuery *q, PgsMetaFieldResult *out) {
   if(out)*out={};
-  ApiGuard guard;if(!guard)return PGR_MD_ERR_BUSY;
+  ApiGuard guard;if(!guard)return PGS_MD_ERR_BUSY;
   if (q == nullptr || out == nullptr || q->owner == nullptr || q->name == nullptr)
     return fail(PGS_MD_ERR_NULL_ARG);
-  if (q->version != PGR_MD_QUERY_VERSION) return fail(PGS_MD_ERR_BAD_VERSION);
-  if (q->size != sizeof(PgrMetaFieldQuery)) return fail(PGS_MD_ERR_BAD_SIZE);
+  if (q->version != PGS_MD_QUERY_VERSION) return fail(PGS_MD_ERR_BAD_VERSION);
+  if (q->size != sizeof(PgsMetaFieldQuery)) return fail(PGS_MD_ERR_BAD_SIZE);
   if (!g.bound) return fail(PGS_MD_ERR_NOT_BOUND);
 
   std::string name;
@@ -331,7 +331,7 @@ int api_validate_field(const PgrMetaFieldQuery *q, PgrMetaFieldResult *out) {
 
   void *owner = const_cast<void *>(q->owner);
   void *f = field_from_name(owner, name.c_str());
-  if (f == nullptr) return fail(PGR_MD_ERR_NOT_FOUND);
+  if (f == nullptr) return fail(PGS_MD_ERR_NOT_FOUND);
   if (field_parent(f) != owner) return fail(PGS_MD_ERR_OWNER_MISMATCH);
 
   uint32_t flags = static_cast<uint32_t>(field_flags(f));
@@ -346,7 +346,7 @@ int api_validate_field(const PgrMetaFieldQuery *q, PgrMetaFieldResult *out) {
   uint32_t vsize = 0;
 
   switch (q->kind) {
-    case PGR_MD_FIELD_ANY:
+    case PGS_MD_FIELD_ANY:
       break;
     case PGS_MD_FIELD_REF:
       if (type_class == nullptr || is_valuetype(type_class)) return fail(PGS_MD_ERR_KIND);
@@ -374,14 +374,14 @@ int api_validate_field(const PgrMetaFieldQuery *q, PgrMetaFieldResult *out) {
       return fail(PGS_MD_ERR_KIND);
   }
 
-  if (q->type_name != nullptr && q->type_match != PGR_MD_MATCH_ANY) {
+  if (q->type_name != nullptr && q->type_match != PGS_MD_MATCH_ANY) {
     std::string tn;
     if (!type_name(type, &tn)) return fail(PGS_MD_ERR_NULL_TYPE_NAME);
     if (!match(tn, q->type_name, q->type_match)) return fail(PGS_MD_ERR_TYPE);
   }
 
-  out->version = PGR_MD_QUERY_VERSION;
-  out->size = sizeof(PgrMetaFieldResult);
+  out->version = PGS_MD_QUERY_VERSION;
+  out->size = sizeof(PgsMetaFieldResult);
   out->field = f;
   out->type = type;
   out->type_class = type_class;
@@ -389,16 +389,16 @@ int api_validate_field(const PgrMetaFieldQuery *q, PgrMetaFieldResult *out) {
   out->flags = flags;
   out->value_size = vsize;
   ++g.sample.fields_validated;
-  return PGR_MD_OK;
+  return PGS_MD_OK;
 }
 
-int api_validate_method(const PgrMetaMethodQuery *q, PgrMetaMethodResult *out) {
+int api_validate_method(const PgsMetaMethodQuery *q, PgsMetaMethodResult *out) {
   if(out)*out={};
-  ApiGuard guard;if(!guard)return PGR_MD_ERR_BUSY;
+  ApiGuard guard;if(!guard)return PGS_MD_ERR_BUSY;
   if (q == nullptr || out == nullptr || q->owner == nullptr || q->name == nullptr)
     return fail(PGS_MD_ERR_NULL_ARG);
-  if (q->version != PGR_MD_QUERY_VERSION) return fail(PGS_MD_ERR_BAD_VERSION);
-  if (q->size != sizeof(PgrMetaMethodQuery)) return fail(PGS_MD_ERR_BAD_SIZE);
+  if (q->version != PGS_MD_QUERY_VERSION) return fail(PGS_MD_ERR_BAD_VERSION);
+  if (q->size != sizeof(PgsMetaMethodQuery)) return fail(PGS_MD_ERR_BAD_SIZE);
   if (!g.bound) return fail(PGS_MD_ERR_NOT_BOUND);
   if (q->param_count > PGS_MD_PARAM_MAX) return fail(PGS_MD_ERR_LIMIT);
 
@@ -418,7 +418,7 @@ int api_validate_method(const PgrMetaMethodQuery *q, PgrMetaMethodResult *out) {
 
   void *owner = const_cast<void *>(q->owner);
   void *m = method_from_name(owner, name.c_str(), static_cast<int>(q->param_count));
-  if (m == nullptr) return fail(PGR_MD_ERR_NOT_FOUND);
+  if (m == nullptr) return fail(PGS_MD_ERR_NOT_FOUND);
   if (method_class(m) != owner) return fail(PGS_MD_ERR_OWNER_MISMATCH);
 
   std::string actual_name;
@@ -433,13 +433,13 @@ int api_validate_method(const PgrMetaMethodQuery *q, PgrMetaMethodResult *out) {
   if (method_is_generic(m)) return fail(PGS_MD_ERR_GENERIC);          // always rejected
   if (q->allow_inflated == 0 && method_is_inflated(m)) return fail(PGS_MD_ERR_INFLATED);
 
-  if (q->return_type != nullptr && q->return_match != PGR_MD_MATCH_ANY) {
+  if (q->return_type != nullptr && q->return_match != PGS_MD_MATCH_ANY) {
     std::string rn;
     if (!type_name(method_return(m), &rn)) return fail(PGS_MD_ERR_NULL_TYPE_NAME);
     if (!match(rn, q->return_type, q->return_match)) return fail(PGS_MD_ERR_TYPE);
   }
   for (uint32_t i = 0; i < q->param_count; ++i) {
-    if (q->param_types[i] == nullptr || q->param_match[i] == PGR_MD_MATCH_ANY) continue;
+    if (q->param_types[i] == nullptr || q->param_match[i] == PGS_MD_MATCH_ANY) continue;
     std::string pn;
     if (!type_name(method_param(m, i), &pn)) return fail(PGS_MD_ERR_NULL_TYPE_NAME);
     if (!match(pn, q->param_types[i], q->param_match[i])) return fail(PGS_MD_ERR_TYPE);
@@ -453,37 +453,37 @@ int api_validate_method(const PgrMetaMethodQuery *q, PgrMetaMethodResult *out) {
     code = info[0];
     if (code != q->expected_code) return fail(PGS_MD_ERR_CODE_RANGE);
     int rc = check_code(code, q->prologue_len, q->prologue, q->prologue_len);
-    if (rc != PGR_MD_OK) return fail(rc);
+    if (rc != PGS_MD_OK) return fail(rc);
     ++g.sample.code_checks;
   }
 
-  out->version = PGR_MD_QUERY_VERSION;
-  out->size = sizeof(PgrMetaMethodResult);
+  out->version = PGS_MD_QUERY_VERSION;
+  out->size = sizeof(PgsMetaMethodResult);
   out->method = m;
   out->code = code;
   out->flags = flags;
   out->iflags = iflags;
   out->param_count = q->param_count;
   ++g.sample.methods_validated;
-  return PGR_MD_OK;
+  return PGS_MD_OK;
 }
 
-int api_validate_code(const PgrMetaCodeQuery *q) {
-  ApiGuard guard;if(!guard)return PGR_MD_ERR_BUSY;
+int api_validate_code(const PgsMetaCodeQuery *q) {
+  ApiGuard guard;if(!guard)return PGS_MD_ERR_BUSY;
   if (q == nullptr) return fail(PGS_MD_ERR_NULL_ARG);
-  if (q->version != PGR_MD_QUERY_VERSION) return fail(PGS_MD_ERR_BAD_VERSION);
-  if (q->size != sizeof(PgrMetaCodeQuery)) return fail(PGS_MD_ERR_BAD_SIZE);
+  if (q->version != PGS_MD_QUERY_VERSION) return fail(PGS_MD_ERR_BAD_VERSION);
+  if (q->size != sizeof(PgsMetaCodeQuery)) return fail(PGS_MD_ERR_BAD_SIZE);
   if (!g.bound) return fail(PGS_MD_ERR_NOT_BOUND);
   int rc = check_code(q->address, q->length, q->prologue, q->prologue_len);
-  if (rc != PGR_MD_OK) return fail(rc);
+  if (rc != PGS_MD_OK) return fail(rc);
   ++g.sample.code_checks;
-  return PGR_MD_OK;
+  return PGS_MD_OK;
 }
 
 int api_resolve_module(const char *soname, const void **base, uint64_t *size) {
   if(base)*base=nullptr;
   if(size)*size=0;
-  ApiGuard guard;if(!guard)return PGR_MD_ERR_BUSY;
+  ApiGuard guard;if(!guard)return PGS_MD_ERR_BUSY;
   if (soname == nullptr || base == nullptr || size == nullptr) return fail(PGS_MD_ERR_NULL_ARG);
   *base = nullptr;
   *size = 0;
@@ -511,26 +511,26 @@ int api_resolve_module(const char *soname, const void **base, uint64_t *size) {
   },&ctx);
   if(ctx.matches>1)return fail(PGS_MD_ERR_DUPLICATE);
   if(ctx.invalid)return fail(PGS_MD_ERR_CODE_RANGE);
-  if(!ctx.base)return fail(PGR_MD_ERR_NOT_FOUND);
-  *base=ctx.base;*size=ctx.size;return PGR_MD_OK;
+  if(!ctx.base)return fail(PGS_MD_ERR_NOT_FOUND);
+  *base=ctx.base;*size=ctx.size;return PGS_MD_OK;
 #else
-  return fail(PGR_MD_ERR_NOT_FOUND);
+  return fail(PGS_MD_ERR_NOT_FOUND);
 #endif
 }
 
-int api_sample(PgrMetaSample *out) {
+int api_sample(PgsMetaSample *out) {
   if(out)*out={};
-  ApiGuard guard;if(!guard)return PGR_MD_ERR_BUSY;
+  ApiGuard guard;if(!guard)return PGS_MD_ERR_BUSY;
   if (out == nullptr) return PGS_MD_ERR_NULL_ARG;
   g.sample.version = PGS_MD_SAMPLE_VERSION;
-  g.sample.size = sizeof(PgrMetaSample);
+  g.sample.size = sizeof(PgsMetaSample);
   *out = g.sample;
-  return PGR_MD_OK;
+  return PGS_MD_OK;
 }
 
-const PgrMetaApi g_api = {
+const PgsMetaApi g_api = {
     PGS_MD_API_VERSION,
-    sizeof(PgrMetaApi),
+    sizeof(PgsMetaApi),
     api_bind,
     api_resolve_class,
     api_validate_field,

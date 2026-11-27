@@ -15,11 +15,11 @@
 // deadlock window across a managed callback (there is none) and no GC rooting here (the host owns every
 // root and frees it on the owner thread when it drains a CANCELLED/REAPED event).
 
-static_assert(sizeof(PgrSharedCatchConfig) == 32, "config must be 32 bytes");
-static_assert(sizeof(PgrSharedCatchDecision) == 40, "decision must be 40 bytes");
-static_assert(sizeof(PgrSharedCatchEvent) == 24, "event must be 24 bytes");
-static_assert(sizeof(PgrSharedCatchSample) == 88, "sample must be 88 bytes");
-static_assert(sizeof(PgrSharedCatchApi) == 112, "table must be 112 bytes");
+static_assert(sizeof(PgsSharedCatchConfig) == 32, "config must be 32 bytes");
+static_assert(sizeof(PgsSharedCatchDecision) == 40, "decision must be 40 bytes");
+static_assert(sizeof(PgsSharedCatchEvent) == 24, "event must be 24 bytes");
+static_assert(sizeof(PgsSharedCatchSample) == 88, "sample must be 88 bytes");
+static_assert(sizeof(PgsSharedCatchApi) == 112, "table must be 112 bytes");
 
 namespace {
 
@@ -46,7 +46,7 @@ struct Binding {
 // --- lifetime / publication --------------------------------------------------------
 std::mutex g_install_mutex;
 std::mutex g_state_mutex;
-PgrSharedCatchConfig g_cfg{};
+PgsSharedCatchConfig g_cfg{};
 std::atomic<bool> g_installed{false};
 bool g_install_attempted = false;
 int g_install_error = PGS_SH_ERR_NOT_INSTALLED;
@@ -65,7 +65,7 @@ uint64_t g_slot_serial = 0;  // monotonic slot id source
 Record g_records[PGS_SH_MAX_RECORDS];
 Binding g_bindings[PGS_SH_XFER_SLOTS];
 
-PgrSharedCatchEvent g_events[kEventCap];
+PgsSharedCatchEvent g_events[kEventCap];
 int g_event_head = 0, g_event_tail = 0, g_event_count = 0;
 
 // --- telemetry (atomic so sample is lock-free for the counters) --------------------
@@ -102,7 +102,7 @@ bool gate_live_locked(uint64_t now) {
 // Caller holds g_state_mutex. Push a drain record; fail closed (latch fault) on overflow.
 void push_event_locked(uint32_t kind, int32_t reason, const Record &r) {
   if (g_event_count >= kEventCap) { g_fault.store(1, std::memory_order_relaxed); return; }
-  PgrSharedCatchEvent &e = g_events[g_event_tail];
+  PgsSharedCatchEvent &e = g_events[g_event_tail];
   e.kind = kind;
   e.reason = reason;
   e.slot = r.slot;
@@ -159,10 +159,10 @@ void prune_locked(uint64_t now) {
 }
 
 // --- config validation -------------------------------------------------------------
-bool validate_config(const PgrSharedCatchConfig *c, int *rc) {
+bool validate_config(const PgsSharedCatchConfig *c, int *rc) {
   if (c == nullptr) { *rc = PGS_SH_ERR_NULL_ARG; return false; }
   if (c->version != PGS_SH_CONFIG_VERSION) { *rc = PGS_SH_ERR_BAD_VERSION; return false; }
-  if (c->size != sizeof(PgrSharedCatchConfig)) { *rc = PGS_SH_ERR_BAD_SIZE; return false; }
+  if (c->size != sizeof(PgsSharedCatchConfig)) { *rc = PGS_SH_ERR_BAD_SIZE; return false; }
   if(c->reserved0 || c->reserved1) { *rc = PGS_SH_ERR_MISSING_PTR; return false; }
   if (c->max_records < 1 || c->max_records > PGS_SH_MAX_RECORDS) { *rc = PGS_SH_ERR_MISSING_PTR; return false; }
   if (c->timeout_ms < 1 || c->timeout_ms > PGS_SH_TIMEOUT_MS) { *rc = PGS_SH_ERR_MISSING_PTR; return false; }
@@ -173,7 +173,7 @@ bool validate_config(const PgrSharedCatchConfig *c, int *rc) {
 }
 
 // --- public API --------------------------------------------------------------------
-int api_install(const PgrSharedCatchConfig *config) {
+int api_install(const PgsSharedCatchConfig *config) {
   int rc = PGS_SH_OK;
   if (!validate_config(config, &rc)) return rc;
   uint64_t probe = 0;
@@ -311,10 +311,10 @@ int api_cancel(uint64_t slot, int32_t reason, uint64_t proven_tid) {
   return PGS_SH_OK;
 }
 
-int api_select(uint64_t unity_ticks, uint64_t proven_tid, PgrSharedCatchDecision *out) {
+int api_select(uint64_t unity_ticks, uint64_t proven_tid, PgsSharedCatchDecision *out) {
   if (out == nullptr) return PGS_SH_ERR_NULL_ARG;
   out->version = PGS_SH_DECISION_VERSION;
-  out->size = sizeof(PgrSharedCatchDecision);
+  out->size = sizeof(PgsSharedCatchDecision);
   out->action = PGS_SH_ACT_NONE;
   out->kind = PGS_SH_KIND_SUMMARY;
   out->slot = 0;
@@ -423,7 +423,7 @@ int api_stop(uint64_t /*proven_tid*/) {
   return PGS_SH_OK;
 }
 
-int api_sample(PgrSharedCatchSample *out) {
+int api_sample(PgsSharedCatchSample *out) {
   if (out == nullptr) return PGS_SH_ERR_NULL_ARG;
   uint32_t records = 0, pending = 0, open_xfer = 0;
   {
@@ -433,7 +433,7 @@ int api_sample(PgrSharedCatchSample *out) {
     for (auto &b : g_bindings) if (b.used) ++open_xfer;
   }
   out->version = PGS_SH_SAMPLE_VERSION;
-  out->size = sizeof(PgrSharedCatchSample);
+  out->size = sizeof(PgsSharedCatchSample);
   out->created_serial = g_created.load(std::memory_order_relaxed);
   out->armed_serial = g_armed.load(std::memory_order_relaxed);
   out->dismiss_serial = g_dismiss.load(std::memory_order_relaxed);
@@ -449,7 +449,7 @@ int api_sample(PgrSharedCatchSample *out) {
   return PGS_SH_OK;
 }
 
-int api_next_event(PgrSharedCatchEvent *out) {
+int api_next_event(PgsSharedCatchEvent *out) {
   if (out == nullptr) return PGS_SH_ERR_NULL_ARG;
   if (!g_installed.load(std::memory_order_acquire)) return PGS_SH_ERR_NOT_INSTALLED;
   std::lock_guard<std::mutex> lock(g_state_mutex);
@@ -460,8 +460,8 @@ int api_next_event(PgrSharedCatchEvent *out) {
   return 1;
 }
 
-const PgrSharedCatchApi kApiTable = {
-    PGS_SH_API_VERSION, static_cast<uint32_t>(sizeof(PgrSharedCatchApi)),
+const PgsSharedCatchApi kApiTable = {
+    PGS_SH_API_VERSION, static_cast<uint32_t>(sizeof(PgsSharedCatchApi)),
     &api_install,  &api_update,   &api_cancel_all,      &api_upsert,
     &api_mark,     &api_cancel,   &api_select,          &api_finish,
     &api_transfer_bind, &api_transfer_resolve, &api_stop, &api_sample,

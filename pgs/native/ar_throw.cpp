@@ -13,23 +13,23 @@
 #endif
 
 // Built -fno-exceptions on both the ARM64 target ABI and the host x86 test ABI.
-static_assert(sizeof(PgrArThrowConfig) == 112, "PgrArThrowConfig must be 112 bytes");
-static_assert(sizeof(PgrArThrowSample) == 16,  "PgrArThrowSample must be 16 bytes");
-static_assert(sizeof(PgrArThrowApi)    == 32,  "PgrArThrowApi must be 32 bytes");
+static_assert(sizeof(PgsArThrowConfig) == 112, "PgsArThrowConfig must be 112 bytes");
+static_assert(sizeof(PgsArThrowSample) == 16,  "PgsArThrowSample must be 16 bytes");
+static_assert(sizeof(PgsArThrowApi)    == 32,  "PgsArThrowApi must be 32 bytes");
 static_assert(sizeof(PgsThrowValue)    == 12,  "PokeballThrow by-value must be 12 bytes");
-static_assert(offsetof(PgrArThrowConfig, capture_code)        == 8,   "layout: capture_code");
-static_assert(offsetof(PgrArThrowConfig, wild_class)          == 16,  "layout: wild_class");
-static_assert(offsetof(PgrArThrowConfig, values_class)        == 24,  "layout: values_class");
-static_assert(offsetof(PgrArThrowConfig, object_get_class)    == 32,  "layout: object_get_class");
-static_assert(offsetof(PgrArThrowConfig, class_is_assignable) == 40,  "layout: class_is_assignable");
-static_assert(offsetof(PgrArThrowConfig, object_new)          == 48,  "layout: object_new");
-static_assert(offsetof(PgrArThrowConfig, gchandle_new)        == 56,  "layout: gchandle_new");
-static_assert(offsetof(PgrArThrowConfig, gchandle_get_target) == 64,  "layout: gchandle_get_target");
-static_assert(offsetof(PgrArThrowConfig, gchandle_free)       == 72,  "layout: gchandle_free");
-static_assert(offsetof(PgrArThrowConfig, field_set_value)     == 80,  "layout: field_set_value");
-static_assert(offsetof(PgrArThrowConfig, field_proximity)     == 88,  "layout: field_proximity");
-static_assert(offsetof(PgrArThrowConfig, field_awareness)     == 96,  "layout: field_awareness");
-static_assert(offsetof(PgrArThrowConfig, field_frightened)    == 104, "layout: field_frightened");
+static_assert(offsetof(PgsArThrowConfig, capture_code)        == 8,   "layout: capture_code");
+static_assert(offsetof(PgsArThrowConfig, wild_class)          == 16,  "layout: wild_class");
+static_assert(offsetof(PgsArThrowConfig, values_class)        == 24,  "layout: values_class");
+static_assert(offsetof(PgsArThrowConfig, object_get_class)    == 32,  "layout: object_get_class");
+static_assert(offsetof(PgsArThrowConfig, class_is_assignable) == 40,  "layout: class_is_assignable");
+static_assert(offsetof(PgsArThrowConfig, object_new)          == 48,  "layout: object_new");
+static_assert(offsetof(PgsArThrowConfig, gchandle_new)        == 56,  "layout: gchandle_new");
+static_assert(offsetof(PgsArThrowConfig, gchandle_get_target) == 64,  "layout: gchandle_get_target");
+static_assert(offsetof(PgsArThrowConfig, gchandle_free)       == 72,  "layout: gchandle_free");
+static_assert(offsetof(PgsArThrowConfig, field_set_value)     == 80,  "layout: field_set_value");
+static_assert(offsetof(PgsArThrowConfig, field_proximity)     == 88,  "layout: field_proximity");
+static_assert(offsetof(PgsArThrowConfig, field_awareness)     == 96,  "layout: field_awareness");
+static_assert(offsetof(PgsArThrowConfig, field_frightened)    == 104, "layout: field_frightened");
 
 namespace {
 
@@ -46,7 +46,7 @@ typedef void   (*Il2cppGchandleFree)(void *handle);
 typedef void   (*Il2cppFieldSetValue)(void *obj, void *field, void *value);
 
 std::mutex        g_mutex;             // publication mutex: install + original handoff
-PgrArThrowConfig  g_config{};          // stable after a successful install
+PgsArThrowConfig  g_config{};          // stable after a successful install
 bool              g_installed = false; // process-lifetime: never unhooked
 
 ArCaptureFn        g_original = nullptr;
@@ -190,9 +190,9 @@ void *ar_capture_replacement(void *self, PgsThrowValue thr, void *values, void *
     return result;
 }
 
-int ar_install(const PgrArThrowConfig *config) {
+int ar_install(const PgsArThrowConfig *config) {
     if (config == nullptr) return 1;
-    if (config->version != 1 || config->size != sizeof(PgrArThrowConfig)) return 2;
+    if (config->version != 1 || config->size != sizeof(PgsArThrowConfig)) return 2;
 
     const void *const *ptrs = reinterpret_cast<const void *const *>(&config->capture_code);
     for (int i = 0; i < 13; ++i) {
@@ -203,7 +203,7 @@ int ar_install(const PgrArThrowConfig *config) {
     if (g_installed) {
         // Identical config repeats are idempotent; a different config is refused. There
         // is no fallback engine once a patch has been attempted.
-        if (memcmp(&g_config, config, sizeof(PgrArThrowConfig)) == 0) return 0;
+        if (memcmp(&g_config, config, sizeof(PgsArThrowConfig)) == 0) return 0;
         return 4;
     }
 
@@ -247,15 +247,15 @@ int ar_update(int enabled, int allowed, uint64_t lease_ms, uint64_t unity_tid) {
     return 0;
 }
 
-int ar_sample(PgrArThrowSample *out) {
+int ar_sample(PgsArThrowSample *out) {
     if (out == nullptr) return 1;
     out->applied = g_applied.load(std::memory_order_relaxed);
     out->errors  = g_errors.load(std::memory_order_relaxed);
     return 0;
 }
 
-const PgrArThrowApi g_api = {
-    1, sizeof(PgrArThrowApi),
+const PgsArThrowApi g_api = {
+    1, sizeof(PgsArThrowApi),
     &ar_install,
     &ar_update,
     &ar_sample,

@@ -26,7 +26,7 @@ namespace {
 struct Failure {const char *where;};
 void require(bool ok,const char *where){if(!ok)throw Failure{where};}
 template<class F>F fn(void *p){require(p,"missing runtime export");return reinterpret_cast<F>(p);}
-PgrBootBinding boot{};uint64_t owner=0;bool ready=false,busy=false;
+PgsBootBinding boot{};uint64_t owner=0;bool ready=false,busy=false;
 std::atomic<int> mode{0};
 std::atomic<bool> installed{false},faulted{false};
 bool pokemon_arg=false;  // Initialize(Initializer) confirmed; the Pokemon is Initializer.PokemonProto
@@ -51,15 +51,15 @@ void *call(void *o,const char *name,int n=0,void **args=nullptr){return invoke(m
 template<class T>T unbox(void *o){require(o,"boxed value");T v{};auto p=fn<void*(*)(void*)>(boot.runtime.object_unbox)(o);require(p,"boxed value");std::memcpy(&v,p,sizeof(v));return v;}
 void *managed_string(const std::string &s){void *v=fn<void*(*)(const char*)>(boot.runtime.string_new)(s.c_str());require(v,"string");return v;}
 std::string class_name(void *o){return fn<const char*(*)(void*)>(exp("class_get_name"))(klass(o));}
-const PgrRuntimeTransportApi *transport(){return static_cast<const PgrRuntimeTransportApi*>(pgs_runtime_transport_api(1));}
-void event(const std::string &json){auto tr=transport();if(!tr)return;PgrRuntimeTransportString strings[]={{"storage-iv",10},{json.c_str(),uint32_t(json.size())}};tr->emit(19,nullptr,0,strings,2);}
+const PgsRuntimeTransportApi *transport(){return static_cast<const PgsRuntimeTransportApi*>(pgs_runtime_transport_api(1));}
+void event(const std::string &json){auto tr=transport();if(!tr)return;PgsRuntimeTransportString strings[]={{"storage-iv",10},{json.c_str(),uint32_t(json.size())}};tr->emit(19,nullptr,0,strings,2);}
 void status(const char *phase,const std::string &message){event(std::string("{\"phase\":\"")+phase+"\",\"message\":\""+message+"\"}");}
 
 // The storage mode of "S2|<storage>|<encounter>|<details>" from the current snapshot (0 off,
 // 1 level and attack/defense/stamina, 2 level and percent, 3 all three, 4 all three and a second row
 // with the PvP crest and rank); anything else means off.
 int configured_mode(){
- auto tr=transport();char s[16];uint32_t n=0;PgrRuntimeTransportSample a{};
+ auto tr=transport();char s[16];uint32_t n=0;PgsRuntimeTransportSample a{};
  if(!tr||tr->sample(&a)||!a.snapshot_fresh||a.fault)return 0;
  if(tr->get_string(14,s,sizeof(s),&n)||n!=8||std::memcmp(s,"S2|",3)!=0||s[3]<'0'||s[3]>'4')return 0;
  return s[3]-'0';
@@ -77,9 +77,9 @@ bool register_sized(const void *type){
  return false;
 }
 void *class_of(const char *ns,const char *name){
- const auto *api=static_cast<const PgrMetaApi*>(pgs_runtime_metadata_api(1));require(api,"metadata API");
- PgrMetaClassQuery q{};q.version=1;q.size=sizeof(q);q.name_space=ns;q.name=name;q.canonical_match=PGR_MD_MATCH_EXACT;
- PgrMetaClassResult r{};require(api->resolve_class(&q,&r)==0,name);return const_cast<void*>(r.klass);
+ const auto *api=static_cast<const PgsMetaApi*>(pgs_runtime_metadata_api(1));require(api,"metadata API");
+ PgsMetaClassQuery q{};q.version=1;q.size=sizeof(q);q.name_space=ns;q.name=name;q.canonical_match=PGS_MD_MATCH_EXACT;
+ PgsMetaClassResult r{};require(api->resolve_class(&q,&r)==0,name);return const_cast<void*>(r.klass);
 }
 // The non-generic overload of ns.owner.name whose parameters are exactly p0[, p1].
 void *overload(const char *ns,const char *owner,const char *name,const char *p0,const char *p1=nullptr){
@@ -100,7 +100,7 @@ void *type_object(void *o){return fn<void*(*)(void*)>(exp("type_get_object"))(fn
 // quadratic mean of its neighbors, with the same tolerance as the encounter overlay. Without the
 // table the line simply has no level; a failure here never stops the IVs.
 std::vector<float> cpm;  // cpm[i] = multiplier at level i+1, strictly increasing
-const PgrSharedMetadataOutput *md=nullptr;
+const PgsSharedMetadataOutput *md=nullptr;
 uint64_t next_table_try=0;int table_tries=0;
 constexpr int kLevelUnknown=-1,kTableTries=60;
 uint64_t clock_ms(){timespec t{};clock_gettime(CLOCK_BOOTTIME,&t);return uint64_t(t.tv_sec)*1000+t.tv_nsec/1000000;}
@@ -115,7 +115,7 @@ void *handle(unsigned id){require(md,"metadata");void *p=const_cast<void*>(md->o
 void *class_type_object(void *k){return fn<void*(*)(void*)>(exp("type_get_object"))(fn<void*(*)(void*)>(boot.meta.class_get_type)(k));}
 // IGameMasterData from the game's service container, as ar_values.cpp resolves it.
 void *game_master(){
- using namespace pgr_shared_meta;
+ using namespace pgs_shared_meta;
  Root type(class_type_object(handle(H_IL_MAP)));void *args[]={type.get()};
  Root map(invoke(handle(H_IL_FIND_M),nullptr,args));if(!map.get())return nullptr;
  Root container(invoke(handle(H_IL_CONTAINER_M),map.get()));if(!container.get())return nullptr;
@@ -340,12 +340,12 @@ void render(void *cell,void *pokemon){
  if(!l.panel)return;
  bool show=m!=0&&pokemon;void *active[]={&show};call(l.panel,"SetActive",1,active);
  if(!show)return;
- const int atk=field<int>(pokemon,PGR_GAME_QUICKBALL_METADATA_H_INDIVIDUALATTACK__NAME,"System.Int32");
- const int def=field<int>(pokemon,PGR_GAME_QUICKBALL_METADATA_H_INDIVIDUALDEFENSE__NAME,"System.Int32");
- const int sta=field<int>(pokemon,PGR_GAME_QUICKBALL_METADATA_H_INDIVIDUALSTAMINA__NAME,"System.Int32");
+ const int atk=field<int>(pokemon,PGS_GAME_QUICKBALL_METADATA_H_INDIVIDUALATTACK__NAME,"System.Int32");
+ const int def=field<int>(pokemon,PGS_GAME_QUICKBALL_METADATA_H_INDIVIDUALDEFENSE__NAME,"System.Int32");
+ const int sta=field<int>(pokemon,PGS_GAME_QUICKBALL_METADATA_H_INDIVIDUALSTAMINA__NAME,"System.Int32");
  require(atk>=0&&atk<=15&&def>=0&&def<=15&&sta>=0&&sta<=15,"IV range");
- const float multiplier=field<float>(pokemon,PGR_GAME_QUICKBALL_METADATA_H_CPMULTIPLIER__NAME,"System.Single")+
-                        field<float>(pokemon,PGR_GAME_QUICKBALL_METADATA_H_ADDITIONALCPMULTIPLIER__NAME,"System.Single");
+ const float multiplier=field<float>(pokemon,PGS_GAME_QUICKBALL_METADATA_H_CPMULTIPLIER__NAME,"System.Single")+
+                        field<float>(pokemon,PGS_GAME_QUICKBALL_METADATA_H_ADDITIONALCPMULTIPLIER__NAME,"System.Single");
  void *args[]={managed_string(label(atk,def,sta,m,level_half(multiplier)))};call(l.text,"set_text",1,args);
  PgsPvpBest best{};
  const bool pvp=m==4&&pgs_pvp_best&&pgs_pvp_best(pokemon,PGS_PVP_STORAGE,atk,def,sta,owner,&best);
@@ -368,14 +368,14 @@ void hook_initialize(void *self,void *initializer,const void *info){
 }
 
 void install(){
- const auto *api=static_cast<const PgrMetaApi*>(pgs_runtime_metadata_api(1));require(api&&api->resolve_class&&api->validate_method,"metadata API");
+ const auto *api=static_cast<const PgsMetaApi*>(pgs_runtime_metadata_api(1));require(api&&api->resolve_class&&api->validate_method,"metadata API");
  require(boot.module_base,"il2cpp module");
- PgrMetaClassQuery cq{};cq.version=1;cq.size=sizeof(cq);cq.name_space="Niantic.Holoholo.UI";cq.name="PokemonInventoryCellView";cq.canonical_match=PGR_MD_MATCH_EXACT;
- PgrMetaClassResult cr{};require(api->resolve_class(&cq,&cr)==0,"PokemonInventoryCellView");
- static const uint8_t prologue[]=PGR_GAME_STORAGE_IV_CPP_POKEMONINVENTORYCELLVIEW_INITIALIZE_FINGERPRINT;
- PgrMetaMethodQuery q{};q.version=1;q.size=sizeof(q);q.owner=cr.klass;q.name="Initialize";q.return_type="System.Void";q.return_match=PGR_MD_MATCH_EXACT;q.param_count=1;
- q.expected_code=static_cast<const char*>(boot.module_base)+PGR_GAME_STORAGE_IV_CPP_POKEMONINVENTORYCELLVIEW_INITIALIZE_RVA;q.prologue=prologue;q.prologue_len=sizeof(prologue);
- PgrMetaMethodResult r{};const int rc_validate=api->validate_method(&q,&r);
+ PgsMetaClassQuery cq{};cq.version=1;cq.size=sizeof(cq);cq.name_space="Niantic.Holoholo.UI";cq.name="PokemonInventoryCellView";cq.canonical_match=PGS_MD_MATCH_EXACT;
+ PgsMetaClassResult cr{};require(api->resolve_class(&cq,&cr)==0,"PokemonInventoryCellView");
+ static const uint8_t prologue[]=PGS_GAME_STORAGE_IV_CPP_POKEMONINVENTORYCELLVIEW_INITIALIZE_FINGERPRINT;
+ PgsMetaMethodQuery q{};q.version=1;q.size=sizeof(q);q.owner=cr.klass;q.name="Initialize";q.return_type="System.Void";q.return_match=PGS_MD_MATCH_EXACT;q.param_count=1;
+ q.expected_code=static_cast<const char*>(boot.module_base)+PGS_GAME_STORAGE_IV_CPP_POKEMONINVENTORYCELLVIEW_INITIALIZE_RVA;q.prologue=prologue;q.prologue_len=sizeof(prologue);
+ PgsMetaMethodResult r{};const int rc_validate=api->validate_method(&q,&r);
  if(rc_validate!=0||!r.code){
   // Name the signature the game has, so a changed method can be told from a moved one.
   static std::string why;why="Initialize signature (code "+std::to_string(rc_validate)+")";
@@ -400,14 +400,14 @@ void install(){
 }
 }  // namespace
 
-void pgs_storage_iv_tick(uint64_t tid,const PgrSharedMetadataOutput *metadata){
+void pgs_storage_iv_tick(uint64_t tid,const PgsSharedMetadataOutput *metadata){
  if(busy||!tid||tid!=uint64_t(gettid())||(owner&&owner!=tid))return;
  struct Guard{Guard(){busy=true;}~Guard(){busy=false;}}guard;owner=tid;md=metadata;
  const int m=configured_mode();mode.store(m,std::memory_order_release);
  if(m&&installed.load(std::memory_order_acquire)&&!faulted.load(std::memory_order_acquire))tick_levels();
  if(!m||installed.load(std::memory_order_acquire)||faulted.load(std::memory_order_acquire))return;
  try{
-  if(!ready){auto api=static_cast<const PgrBootApi*>(pgs_runtime_bootstrap_api(1));boot.version=1;boot.size=sizeof(boot);require(api&&api->snapshot(&boot)==0,"Runtime unavailable");ready=true;}
+  if(!ready){auto api=static_cast<const PgsBootApi*>(pgs_runtime_bootstrap_api(1));boot.version=1;boot.size=sizeof(boot);require(api&&api->snapshot(&boot)==0,"Runtime unavailable");ready=true;}
   install();
  }catch(const Failure &f){faulted.store(true,std::memory_order_release);status("error",std::string("Storage IVs unavailable: ")+f.where);}
  catch(...){faulted.store(true,std::memory_order_release);status("error","Storage IVs unavailable: native failure");}

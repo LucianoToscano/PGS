@@ -105,7 +105,7 @@ std::mutex g_state_mutex;
 std::atomic<bool> g_installed{false};
 bool g_install_attempted = false; // install mutex; partially installed hooks stay alive
 int g_install_error = PGS_QUICK_SPIN_ERR_NOT_INSTALLED;
-PgrQuickSpinConfig g_bound_config{};
+PgsQuickSpinConfig g_bound_config{};
 std::atomic<EnterHookFn> g_orig_enter{nullptr};
 std::atomic<ExitHookFn> g_orig_exit{nullptr};
 std::atomic<ResultHookFn> g_orig_result{nullptr};
@@ -653,7 +653,7 @@ void hook_spin(void *self, float speed, const void *method) {
 // Install.
 // ---------------------------------------------------------------------------
 
-bool validate_config(const PgrQuickSpinConfig *config, int *out_rc) {
+bool validate_config(const PgsQuickSpinConfig *config, int *out_rc) {
   if (config == nullptr) {
     *out_rc = PGS_QUICK_SPIN_ERR_INVALID_ARG;
     return false;
@@ -662,7 +662,7 @@ bool validate_config(const PgrQuickSpinConfig *config, int *out_rc) {
     *out_rc = PGS_QUICK_SPIN_ERR_BAD_VERSION;
     return false;
   }
-  if (config->size != sizeof(PgrQuickSpinConfig)) {
+  if (config->size != sizeof(PgsQuickSpinConfig)) {
     *out_rc = PGS_QUICK_SPIN_ERR_BAD_SIZE;
     return false;
   }
@@ -698,7 +698,7 @@ bool validate_config(const PgrQuickSpinConfig *config, int *out_rc) {
   return true;
 }
 
-ResolvedConfig resolve_config(const PgrQuickSpinConfig *c) {
+ResolvedConfig resolve_config(const PgsQuickSpinConfig *c) {
   ResolvedConfig r{};
   r.success_value = c->success_value;
   r.state_open_value = c->state_open_value;
@@ -733,7 +733,7 @@ ResolvedConfig resolve_config(const PgrQuickSpinConfig *c) {
   return r;
 }
 
-int api_install(const PgrQuickSpinConfig *config) {
+int api_install(const PgsQuickSpinConfig *config) {
   int validation_rc = PGS_QUICK_SPIN_OK;
   if (!validate_config(config, &validation_rc)) {
     return validation_rc;
@@ -1221,13 +1221,13 @@ int api_tick(uint64_t proven_tid, uint64_t tick_number, uint64_t opener_depth) {
 // Sample: pure pull. Never frees handles, never calls back into JS.
 // ---------------------------------------------------------------------------
 
-int api_sample(PgrQuickSpinSample *out_sample) {
+int api_sample(PgsQuickSpinSample *out_sample) {
   if (out_sample == nullptr) {
     return PGS_QUICK_SPIN_ERR_INVALID_ARG;
   }
   std::lock_guard<std::mutex> lock(g_state_mutex);
   out_sample->version = PGS_QUICK_SPIN_SAMPLE_VERSION;
-  out_sample->size = sizeof(PgrQuickSpinSample);
+  out_sample->size = sizeof(PgsQuickSpinSample);
   out_sample->owned_root_count = owned_root_count_locked();
   out_sample->request_serial = g_request_serial;
   out_sample->closed_serial = g_closed_serial;
@@ -1242,9 +1242,9 @@ int api_sample(PgrQuickSpinSample *out_sample) {
   return PGS_QUICK_SPIN_OK;
 }
 
-const PgrQuickSpinApi kApiTable = {
+const PgsQuickSpinApi kApiTable = {
     PGS_QUICK_SPIN_API_VERSION,
-    static_cast<uint32_t>(sizeof(PgrQuickSpinApi)),
+    static_cast<uint32_t>(sizeof(PgsQuickSpinApi)),
     &api_install,
     &api_update,
     &api_tick,

@@ -22,7 +22,7 @@
 namespace {
 
 using GetApiFn = const void *(*)(uint32_t);
-const PgrRuntimeTransportApi *g_api = nullptr;
+const PgsRuntimeTransportApi *g_api = nullptr;
 
 // Little-endian writers mirroring the wire the host produces.
 void put_u32(std::vector<uint8_t> &b, uint32_t off, uint32_t v) {
@@ -91,7 +91,7 @@ std::vector<Ev> drain(uint32_t cap, uint32_t *count_out = nullptr, uint64_t *gen
   std::vector<uint8_t> out(cap);
   uint32_t out_len = 0;
   int rc = g_api->exchange(nullptr, 0, out.data(), cap, &out_len);
-  assert(rc == PGR_TRANSPORT_OK);
+  assert(rc == PGS_TRANSPORT_OK);
   assert(out_len >= PGS_TRANSPORT_EVENT_HEADER && out_len <= cap);
   assert(get_u32(out.data() + PGS_TRANSPORT_OFF_MAGIC) == PGS_TRANSPORT_EVENTS_MAGIC);
   assert(get_u32(out.data() + PGS_TRANSPORT_OFF_VERSION) == PGS_TRANSPORT_FRAME_VERSION);
@@ -117,9 +117,9 @@ std::vector<Ev> drain(uint32_t cap, uint32_t *count_out = nullptr, uint64_t *gen
   return events;
 }
 
-PgrRuntimeTransportSample sample() {
-  PgrRuntimeTransportSample s{};
-  assert(g_api->sample(&s) == PGR_TRANSPORT_OK && s.version == 1 && s.size == sizeof(s));
+PgsRuntimeTransportSample sample() {
+  PgsRuntimeTransportSample s{};
+  assert(g_api->sample(&s) == PGS_TRANSPORT_OK && s.version == 1 && s.size == sizeof(s));
   return s;
 }
 
@@ -150,14 +150,14 @@ int main(int argc, char **argv) {
   const auto *core = static_cast<const pgs_native_api_v2 *>(getter(2));
   assert(core && core->size == 48);
   assert(core->query_feature(52, 99) == nullptr);
-  const auto *api = static_cast<const PgrRuntimeTransportApi *>(core->query_feature(52, 1));
-  assert(api != nullptr && api->version == 1 && api->size == sizeof(PgrRuntimeTransportApi));
+  const auto *api = static_cast<const PgsRuntimeTransportApi *>(core->query_feature(52, 1));
+  assert(api != nullptr && api->version == 1 && api->size == sizeof(PgsRuntimeTransportApi));
   g_api = api;
 
   std::printf("ABI sizes: config=%zu sample=%zu table=%zu\n",
-              sizeof(PgsRuntimeTransportConfig), sizeof(PgrRuntimeTransportSample), sizeof(PgrRuntimeTransportApi));
-  assert(sizeof(PgsRuntimeTransportConfig) == 32 && sizeof(PgrRuntimeTransportSample) == 88 &&
-         sizeof(PgrRuntimeTransportApi) == 96);
+              sizeof(PgsRuntimeTransportConfig), sizeof(PgsRuntimeTransportSample), sizeof(PgsRuntimeTransportApi));
+  assert(sizeof(PgsRuntimeTransportConfig) == 32 && sizeof(PgsRuntimeTransportSample) == 88 &&
+         sizeof(PgsRuntimeTransportApi) == 96);
 
   PgsRuntimeTransportConfig cfg = make_config();
 
@@ -168,13 +168,13 @@ int main(int argc, char **argv) {
   { auto b = cfg; b.lease_ms = PGS_TRANSPORT_MAX_LEASE_MS + 1; assert(api->install(&b) == PGS_TRANSPORT_ERR_BAD_BOUND); }
   { auto b = cfg; b.max_events = PGS_TRANSPORT_MAX_EVENTS + 1; assert(api->install(&b) == PGS_TRANSPORT_ERR_BAD_BOUND); }
   { int v = 0; assert(api->get_bool(0, &v) == PGS_TRANSPORT_ERR_NOT_INSTALLED); }
-  assert(api->install(&cfg) == PGR_TRANSPORT_OK);
-  assert(api->install(&cfg) == PGR_TRANSPORT_OK);  // idempotent
+  assert(api->install(&cfg) == PGS_TRANSPORT_OK);
+  assert(api->install(&cfg) == PGS_TRANSPORT_OK);  // idempotent
   { auto b = cfg; b.lease_ms = 50; assert(api->install(&b) == PGS_TRANSPORT_ERR_RECONFIG); }
 
   // 2. No snapshot yet: non-guarded getter STALE; guarded bool returns 0.
   { int v = 7; assert(api->get_int(0, &v) == PGS_TRANSPORT_STALE); }
-  { int v = 7; assert(api->get_bool(0 /*accountManagementAllowed, guarded*/, &v) == PGR_TRANSPORT_OK && v == 0); }
+  { int v = 7; assert(api->get_bool(0 /*accountManagementAllowed, guarded*/, &v) == PGS_TRANSPORT_OK && v == 0); }
   { int v = 7; assert(api->get_bool(4 /*autoIncubate, NOT guarded*/, &v) == PGS_TRANSPORT_STALE); }
 
   // 3. Push a full snapshot; typed round-trip for every field group, coord null sentinel, pulse edge.
@@ -193,29 +193,29 @@ int main(int argc, char **argv) {
     s.strings[5] = "cmd";                    // accountCommandSnapshot[0]
     s.strings[6] = "18446744073709551615";   // accountCommandSnapshot[1] (beyond JS precision)
     s.strings[12] = "1|123|0|0|0|0|0|1";     // one-shot automation (frame v9)
-    assert(push(s.frame()) == PGR_TRANSPORT_OK);
+    assert(push(s.frame()) == PGS_TRANSPORT_OK);
 
-    int bv = 0; assert(api->get_bool(3, &bv) == PGR_TRANSPORT_OK && bv == 1);
-    assert(api->get_bool(4, &bv) == PGR_TRANSPORT_OK && bv == 1);
-    assert(api->get_bool(39, &bv) == PGR_TRANSPORT_OK && bv == 1);
-    int32_t iv = 0; assert(api->get_int(0, &iv) == PGR_TRANSPORT_OK && iv == -12345);
-    assert(api->get_int(7, &iv) == PGR_TRANSPORT_OK && iv == 2147483647);
+    int bv = 0; assert(api->get_bool(3, &bv) == PGS_TRANSPORT_OK && bv == 1);
+    assert(api->get_bool(4, &bv) == PGS_TRANSPORT_OK && bv == 1);
+    assert(api->get_bool(39, &bv) == PGS_TRANSPORT_OK && bv == 1);
+    int32_t iv = 0; assert(api->get_int(0, &iv) == PGS_TRANSPORT_OK && iv == -12345);
+    assert(api->get_int(7, &iv) == PGS_TRANSPORT_OK && iv == 2147483647);
     double dv = 0; int has = 9;
-    assert(api->get_double(0, &dv, &has) == PGR_TRANSPORT_OK && has == 1 && dv == 37.5);
-    assert(api->get_double(1, &dv, &has) == PGR_TRANSPORT_OK && has == 0);  // NaN -> null coord
+    assert(api->get_double(0, &dv, &has) == PGS_TRANSPORT_OK && has == 1 && dv == 37.5);
+    assert(api->get_double(1, &dv, &has) == PGS_TRANSPORT_OK && has == 0);  // NaN -> null coord
     char buf[64]; uint32_t n = 0;
-    assert(api->get_string(0, buf, sizeof(buf), &n) == PGR_TRANSPORT_OK && std::string(buf, n) == "signin");
-    assert(api->get_string(12, buf, sizeof(buf), &n) == PGR_TRANSPORT_OK && std::string(buf, n) == s.strings[12]);
-    assert(api->get_string(2, buf, sizeof(buf), &n) == PGR_TRANSPORT_OK && std::string(buf, n) == u8"berryÃ©");
+    assert(api->get_string(0, buf, sizeof(buf), &n) == PGS_TRANSPORT_OK && std::string(buf, n) == "signin");
+    assert(api->get_string(12, buf, sizeof(buf), &n) == PGS_TRANSPORT_OK && std::string(buf, n) == s.strings[12]);
+    assert(api->get_string(2, buf, sizeof(buf), &n) == PGS_TRANSPORT_OK && std::string(buf, n) == u8"berryÃ©");
     char cmd[32], tok[32]; uint32_t cl = 0, tl = 0;
-    assert(api->get_command_snapshot(cmd, sizeof(cmd), &cl, tok, sizeof(tok), &tl) == PGR_TRANSPORT_OK);
+    assert(api->get_command_snapshot(cmd, sizeof(cmd), &cl, tok, sizeof(tok), &tl) == PGS_TRANSPORT_OK);
     assert(std::string(cmd, cl) == "cmd" && std::string(tok, tl) == "18446744073709551615");
     // Capacity too small fails closed but reports the required length.
     assert(api->get_string(6, buf, 3, &n) == PGS_TRANSPORT_ERR_RANGE && n == 20);
     int fired = 0;
-    assert(api->take_pulse(0, &fired) == PGR_TRANSPORT_OK && fired == 1);  // first edge
-    assert(api->take_pulse(0, &fired) == PGR_TRANSPORT_OK && fired == 0);  // no new count -> no edge
-    assert(api->take_pulse(1, &fired) == PGR_TRANSPORT_OK && fired == 0);  // count 0
+    assert(api->take_pulse(0, &fired) == PGS_TRANSPORT_OK && fired == 1);  // first edge
+    assert(api->take_pulse(0, &fired) == PGS_TRANSPORT_OK && fired == 0);  // no new count -> no edge
+    assert(api->take_pulse(1, &fired) == PGS_TRANSPORT_OK && fired == 0);  // count 0
   }
 
   // 4. Malformed snapshot frames are rejected; the previously stored snapshot stays intact.
@@ -233,18 +233,18 @@ int main(int argc, char **argv) {
                                                                    static_cast<uint32_t>(trailing.size()));
     assert(push(trailing) == PGS_TRANSPORT_ERR_BAD_FRAME);  // string heap does not reach frame end
     // Stored snapshot from case 3 survived every rejection.
-    int bv = 0; assert(api->get_bool(3, &bv) == PGR_TRANSPORT_OK && bv == 1);
+    int bv = 0; assert(api->get_bool(3, &bv) == PGS_TRANSPORT_OK && bv == 1);
   }
 
   // 5. Snapshot staleness: after the lease elapses every getter is STALE (guarded booleans stay 0).
   {
     ::usleep((cfg.lease_ms + 40) * 1000);
     int32_t iv = 0; assert(api->get_int(0, &iv) == PGS_TRANSPORT_STALE);
-    int bv = 7; assert(api->get_bool(3 /*active, guarded*/, &bv) == PGR_TRANSPORT_OK && bv == 0);
-    bv=7; assert(api->get_bool(39, &bv) == PGR_TRANSPORT_OK && bv == 0);
-    int fired = 9; assert(api->take_pulse(0, &fired) == PGR_TRANSPORT_OK && fired == 0);  // stale -> no edge
+    int bv = 7; assert(api->get_bool(3 /*active, guarded*/, &bv) == PGS_TRANSPORT_OK && bv == 0);
+    bv=7; assert(api->get_bool(39, &bv) == PGS_TRANSPORT_OK && bv == 0);
+    int fired = 9; assert(api->take_pulse(0, &fired) == PGS_TRANSPORT_OK && fired == 0);  // stale -> no edge
     // Refresh with a STRICTLY NEWER frame (seq advances past the stored 1; pulses do not regress below 3).
-    Snap r; r.seq = 2; r.pulses[0] = 3; assert(push(r.frame()) == PGR_TRANSPORT_OK);
+    Snap r; r.seq = 2; r.pulses[0] = 3; assert(push(r.frame()) == PGS_TRANSPORT_OK);
   }
 
   // 5b. Replay/stale snapshot rejection: a non-advancing seq or a regressed pulse count is refused WITHOUT
@@ -257,7 +257,7 @@ int main(int argc, char **argv) {
     assert(sample().snapshot_seq == stored_seq);               // stored snapshot untouched
     assert(sample().snapshots_rejected == rejected0 + 3 && sample().fault == 1);
     // A genuinely newer frame (seq advances, pulses equal) is still accepted.
-    { Snap n; n.seq = 4; n.pulses[0] = 3; assert(push(n.frame()) == PGR_TRANSPORT_OK); }
+    { Snap n; n.seq = 4; n.pulses[0] = 3; assert(push(n.frame()) == PGS_TRANSPORT_OK); }
   }
 
   // 5c. Strict snapshot framing: unknown flag bits and nonzero layout padding are rejected; stored intact.
@@ -272,9 +272,9 @@ int main(int argc, char **argv) {
   // 6. Emit schema validation (arity + UTF-8).
   { int64_t one = 1; assert(g_api->emit(PGS_TRANSPORT_ACTIONS, &one, 1, nullptr, 0) == PGS_TRANSPORT_ERR_BAD_OPCODE); }
   assert(emit_scalar(1 /*setAccountsReady, 1 scalar*/, {}) == PGS_TRANSPORT_ERR_BAD_SCHEMA);  // wrong arity
-  { PgrRuntimeTransportString str{"ok", 2};
+  { PgsRuntimeTransportString str{"ok", 2};
     assert(g_api->emit(1, nullptr, 0, &str, 1) == PGS_TRANSPORT_ERR_BAD_SCHEMA); }  // string where scalar expected
-  { PgrRuntimeTransportString bad{"\xff", 1};
+  { PgsRuntimeTransportString bad{"\xff", 1};
     assert(g_api->emit(8 /*setGameRoutesSnapshot(String)*/, nullptr, 0, &bad, 1) == PGS_TRANSPORT_ERR_BAD_UTF8); }
 
   // 6b. Emit TYPE + DOMAIN validation (not arity alone): a bad native producer cannot push a poisoned scalar.
@@ -294,7 +294,7 @@ int main(int argc, char **argv) {
     // Exact 64-bit long: Long.MAX_VALUE is a valid timestamp and round-trips bit-for-bit (no JS-safe clamp).
     (void)drain(4096);
     int64_t h_max[4] = {bits(20.0), 7, 1, INT64_MAX};
-    assert(g_api->emit(57, h_max, 4, nullptr, 0) == PGR_TRANSPORT_OK);
+    assert(g_api->emit(57, h_max, 4, nullptr, 0) == PGS_TRANSPORT_OK);
     auto evs = drain(4096);
     assert(evs.size() == 1 && evs[0].scalars[3] == INT64_MAX);
   }
@@ -303,7 +303,7 @@ int main(int argc, char **argv) {
   // fit the caller's output buffer fails EXPLICITLY instead of looping on an empty frame forever.
   {
     (void)drain(1 << 20);
-    assert(emit_scalar(2 /*accountSessionEnded: 12 wire bytes*/, {}) == PGR_TRANSPORT_OK);
+    assert(emit_scalar(2 /*accountSessionEnded: 12 wire bytes*/, {}) == PGS_TRANSPORT_OK);
     std::vector<uint8_t> tiny(PGS_TRANSPORT_EVENT_HEADER + 11);  // one byte short of the 12-byte head event
     uint32_t tiny_len = 123;
     int rc = g_api->exchange(nullptr, 0, tiny.data(), static_cast<uint32_t>(tiny.size()), &tiny_len);
@@ -319,13 +319,13 @@ int main(int argc, char **argv) {
     // applyMapTap: double,double,int,int,double -> 5 scalars as raw bits / integer values.
     auto bits = [](double d) { uint64_t b; std::memcpy(&b, &d, 8); return static_cast<int64_t>(b); };
     int64_t tap[5] = {bits(37.5), bits(-122.25), 2, 7, bits(0.0)};
-    assert(g_api->emit(10, tap, 5, nullptr, 0) == PGR_TRANSPORT_OK);
+    assert(g_api->emit(10, tap, 5, nullptr, 0) == PGS_TRANSPORT_OK);
     // accountIdentity: two string args.
-    PgrRuntimeTransportString pair[2] = {{"idv", 3}, {"name", 4}};
-    assert(g_api->emit(0, nullptr, 0, pair, 2) == PGR_TRANSPORT_OK);
+    PgsRuntimeTransportString pair[2] = {{"idv", 3}, {"name", 4}};
+    assert(g_api->emit(0, nullptr, 0, pair, 2) == PGS_TRANSPORT_OK);
     // updateCameraHeadingAt: double,int,boolean,long with a large exact long.
     int64_t heading[4] = {bits(20.0), 7, 1, 9007199254740991LL};
-    assert(g_api->emit(57, heading, 4, nullptr, 0) == PGR_TRANSPORT_OK);
+    assert(g_api->emit(57, heading, 4, nullptr, 0) == PGS_TRANSPORT_OK);
 
     auto evs = drain(4096);
     assert(evs.size() == 3);
@@ -339,7 +339,7 @@ int main(int argc, char **argv) {
   // 8. Drain cap of 128: 130 events -> 128 then 2; consume-before-dispatch means no replay.
   {
     (void)drain(1 << 20);
-    for (int i = 0; i < 130; ++i) assert(emit_scalar(2 /*accountSessionEnded*/, {}) == PGR_TRANSPORT_OK);
+    for (int i = 0; i < 130; ++i) assert(emit_scalar(2 /*accountSessionEnded*/, {}) == PGS_TRANSPORT_OK);
     uint32_t c1 = 0, c2 = 0;
     auto first = drain(1 << 20, &c1);
     assert(c1 == PGS_TRANSPORT_DRAIN_CAP && first.size() == PGS_TRANSPORT_DRAIN_CAP);
@@ -351,7 +351,7 @@ int main(int argc, char **argv) {
   // 9. A small output buffer drains only what fits; the remainder stays queued (not dropped).
   {
     (void)drain(1 << 20);
-    for (int i = 0; i < 5; ++i) assert(emit_scalar(2, {}) == PGR_TRANSPORT_OK);
+    for (int i = 0; i < 5; ++i) assert(emit_scalar(2, {}) == PGS_TRANSPORT_OK);
     uint32_t c = 0;
     auto part = drain(PGS_TRANSPORT_EVENT_HEADER + 2 * 12, &c);  // room for 2 no-arg events
     assert(c == 2 && part.size() == 2);
@@ -362,7 +362,7 @@ int main(int argc, char **argv) {
 
   // 10. Count overflow fails closed with an explicit status + latched fault (no silent drop).
   {
-    for (uint32_t i = 0; i < cfg.max_events; ++i) assert(emit_scalar(2, {}) == PGR_TRANSPORT_OK);
+    for (uint32_t i = 0; i < cfg.max_events; ++i) assert(emit_scalar(2, {}) == PGS_TRANSPORT_OK);
     assert(emit_scalar(2, {}) == PGS_TRANSPORT_ERR_OVERFLOW);
     assert(sample().events_dropped >= 1 && sample().fault == 1);
     (void)drain(1 << 20);  // clear
@@ -371,18 +371,18 @@ int main(int argc, char **argv) {
   // 11. Byte-budget overflow (independent of count).
   {
     std::string big(65536, 'x');
-    PgrRuntimeTransportString s{big.data(), static_cast<uint32_t>(big.size())};
+    PgsRuntimeTransportString s{big.data(), static_cast<uint32_t>(big.size())};
     uint32_t fit = cfg.queue_byte_budget / 65536;  // 16 for a 1 MiB budget
-    for (uint32_t i = 0; i < fit; ++i) assert(g_api->emit(41 /*setMapPoiSnapshot*/, nullptr, 0, &s, 1) == PGR_TRANSPORT_OK);
+    for (uint32_t i = 0; i < fit; ++i) assert(g_api->emit(41 /*setMapPoiSnapshot*/, nullptr, 0, &s, 1) == PGS_TRANSPORT_OK);
     assert(g_api->emit(41, nullptr, 0, &s, 1) == PGS_TRANSPORT_ERR_OVERFLOW);
     (void)drain(1 << 20);
   }
 
   // 12. stop(): queue cleared, snapshot getters STALE, generation bumped, emit becomes a clean no-op.
   {
-    assert(emit_scalar(2, {}) == PGR_TRANSPORT_OK);
+    assert(emit_scalar(2, {}) == PGS_TRANSPORT_OK);
     uint64_t gen_before = sample().generation;
-    assert(api->stop() == PGR_TRANSPORT_OK);
+    assert(api->stop() == PGS_TRANSPORT_OK);
     assert(sample().generation == gen_before + 1 && sample().queue_depth == 0);
     int32_t iv = 0; assert(api->get_int(0, &iv) == PGS_TRANSPORT_STALE);
     assert(emit_scalar(2, {}) == PGS_TRANSPORT_STOPPED);  // clean shutdown, not a fault

@@ -140,9 +140,9 @@ enum PgsIncomingGiftsError {
 // il2cpp export, MethodInfo*, Il2CppClass* or FieldInfo*. The native layer re-checks the header
 // and rejects any null pointer (all 28 are required). No hook address is carried -- this module
 // installs nothing.
-struct PgrIncomingGiftsConfig {
+struct PgsIncomingGiftsConfig {
   uint32_t version;  // == PGS_GIFT_CONFIG_VERSION
-  uint32_t size;     // == sizeof(PgrIncomingGiftsConfig)
+  uint32_t size;     // == sizeof(PgsIncomingGiftsConfig)
 
   // il2cpp runtime exports (indices 0..9 in the adapter's flat array).
   void *gchandle_new;        // void* (void* obj, int pinned)
@@ -185,13 +185,13 @@ struct PgrIncomingGiftsConfig {
   int32_t open_success;  // gifts.openSuccess (OpenGiftOutProto.Result Success literal)
 };
 
-static_assert(sizeof(PgrIncomingGiftsConfig) == 240,
-              "PgrIncomingGiftsConfig must remain 240 bytes on LP64");
+static_assert(sizeof(PgsIncomingGiftsConfig) == 240,
+              "PgsIncomingGiftsConfig must remain 240 bytes on LP64");
 
 // Fixed LP64 telemetry gauge (88 bytes). Pull-only; the native layer never calls JS.
-struct PgrIncomingGiftsSample {
+struct PgsIncomingGiftsSample {
   uint32_t version;          // == PGS_GIFT_SAMPLE_VERSION
-  uint32_t size;             // == sizeof(PgrIncomingGiftsSample)
+  uint32_t size;             // == sizeof(PgsIncomingGiftsSample)
   uint64_t issued_serial;    // bumps on each auto-issued open
   uint64_t wait_serial;      // bumps on each wait-reason change
   uint64_t error_serial;     // bumps on each error
@@ -208,25 +208,25 @@ struct PgrIncomingGiftsSample {
   uint32_t pending_events;   // records currently queued in the FIFO
 };
 
-static_assert(sizeof(PgrIncomingGiftsSample) == 88,
-              "PgrIncomingGiftsSample must remain 88 bytes on LP64");
+static_assert(sizeof(PgsIncomingGiftsSample) == 88,
+              "PgsIncomingGiftsSample must remain 88 bytes on LP64");
 
 // Fixed LP64 drain record (16 bytes). reason is a code (PgsIncomingGiftsWait /
 // PgsIncomingGiftsError); it is NEVER a sender string or friend id.
-struct PgrIncomingGiftsEvent {
+struct PgsIncomingGiftsEvent {
   uint32_t kind;    // PgsIncomingGiftsEventKind
   uint32_t reason;  // wait/error reason code (0 for ISSUED/SKIP)
   uint64_t tid;     // owner tid that produced the record
 };
 
-static_assert(sizeof(PgrIncomingGiftsEvent) == 16,
-              "PgrIncomingGiftsEvent must remain 16 bytes on LP64");
+static_assert(sizeof(PgsIncomingGiftsEvent) == 16,
+              "PgsIncomingGiftsEvent must remain 16 bytes on LP64");
 
 // Fixed LP64 table: 8-byte header + 7 function pointers = 64 bytes.
-struct PgrIncomingGiftsApi {
+struct PgsIncomingGiftsApi {
   uint32_t version;  // == PGS_GIFT_API_VERSION
-  uint32_t size;     // == sizeof(PgrIncomingGiftsApi)
-  int (*install)(const PgrIncomingGiftsConfig *config);
+  uint32_t size;     // == sizeof(PgsIncomingGiftsApi)
+  int (*install)(const PgsIncomingGiftsConfig *config);
   // Arm/clear the auto-open gate and the residual lease. Carries no tid (the owner is latched by
   // observe()/tick()); a bit-1 mask enables auto-open. remaining_lease_ms is clamped to 2500.
   int (*update)(uint32_t mask, uint64_t remaining_lease_ms);
@@ -236,17 +236,17 @@ struct PgrIncomingGiftsApi {
   // One owner-thread attempt pass (incomingTick). stopping != 0 clears the owned root regardless
   // of the lease. Off the owner thread it is a no-op (never frees).
   int (*tick)(uint64_t proven_tid, int stopping);
-  int (*sample)(PgrIncomingGiftsSample *out_sample);
+  int (*sample)(PgsIncomingGiftsSample *out_sample);
   // Pop one FIFO record into *out. Returns 1 when a record was written, 0 when empty, or a
   // negative status on error. Any thread.
-  int (*drain)(PgrIncomingGiftsEvent *out);
+  int (*drain)(PgsIncomingGiftsEvent *out);
   // 1 if the owned GUI is alive and currentState == STATE_OPEN, else 0. Owner thread only (does
   // managed work); off the owner thread or with no slot it returns 0.
   int (*is_open)(uint64_t proven_tid);
 };
 
-static_assert(sizeof(PgrIncomingGiftsApi) == 64,
-              "PgrIncomingGiftsApi must remain a 64-byte version-1 table");
+static_assert(sizeof(PgsIncomingGiftsApi) == 64,
+              "PgsIncomingGiftsApi must remain a 64-byte version-1 table");
 
 // Standard feature getter. Returns the static const 64-byte table when `version` == 1, else NULL.
 // The coordinator registers it in query_feature as case 17.

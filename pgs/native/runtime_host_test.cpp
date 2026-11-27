@@ -9,7 +9,7 @@ int main(int argc,char **argv){
  auto get=reinterpret_cast<const void *(*)(uint32_t)>(dlsym(lib,"pgs_native_api"));assert(get);
  auto core=static_cast<const pgs_native_api_v2*>(get(2));assert(core);
  auto host=static_cast<const PgsRuntimeHostApi*>(core->query_feature(70,1));assert(host&&host->size==32&&!core->query_feature(70,2));
- auto scheduler=static_cast<const PgrUnitySchedulerApi*>(core->query_feature(48,2));assert(scheduler);
+ auto scheduler=static_cast<const PgsUnitySchedulerApi*>(core->query_feature(48,2));assert(scheduler);
  PgsUnitySchedulerSnapshot before{},after{};assert(!scheduler->snapshot(&before)&&!before.installed);
  assert(host->configure(nullptr)==-1);PgsRuntimeHostConfig c{1,sizeof(c),0,0};assert(host->configure(&c)==-1);c.exclusive_owner=2;assert(host->configure(&c)==-1);
  c.exclusive_owner=1;c.reserved=1;assert(host->configure(&c)==-1);c.reserved=0;

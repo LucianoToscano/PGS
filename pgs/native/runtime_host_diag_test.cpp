@@ -45,9 +45,9 @@ void *thread_current_stub(){ return &token; }
 // --- Transport (feature52) ---------------------------------------------------
 int tr_install(const PgsRuntimeTransportConfig *){ return 0; }
 int tr_exchange(const uint8_t*,uint32_t,uint8_t*,uint32_t,uint32_t*){ return 0; }
-int tr_emit(uint32_t op,const int64_t*,uint32_t,const PgrRuntimeTransportString *s,uint32_t n){
+int tr_emit(uint32_t op,const int64_t*,uint32_t,const PgsRuntimeTransportString *s,uint32_t n){
   if(op==19&&n==2&&s){ events.emplace_back(std::string(s[0].ptr,s[0].len),std::string(s[1].ptr,s[1].len)); }
-  return PGR_TRANSPORT_OK;
+  return PGS_TRANSPORT_OK;
 }
 int tr_get_bool(uint32_t,int*){ return PGS_TRANSPORT_STALE; }
 int tr_get_int(uint32_t,int32_t*){ return PGS_TRANSPORT_STALE; }
@@ -55,27 +55,27 @@ int tr_get_double(uint32_t,double*,int*){ return PGS_TRANSPORT_STALE; }
 int tr_get_string(uint32_t,char*,uint32_t,uint32_t*){ return PGS_TRANSPORT_STALE; }
 int tr_get_cmd(char*,uint32_t,uint32_t*,char*,uint32_t,uint32_t*){ return PGS_TRANSPORT_STALE; }
 int tr_take_pulse(uint32_t,int*){ return PGS_TRANSPORT_STALE; }
-int tr_sample(PgrRuntimeTransportSample *out){
+int tr_sample(PgsRuntimeTransportSample *out){
   if(!out) return PGS_TRANSPORT_ERR_NULL_ARG; *out={};
   out->version=PGS_TRANSPORT_SAMPLE_VERSION; out->size=sizeof(*out);
   out->snapshot_fresh=uint32_t(g_transport_fresh); out->fault=uint32_t(g_transport_fault); return 0;
 }
 int tr_stop(){ return 0; }
-PgrRuntimeTransportApi transport{PGS_TRANSPORT_API_VERSION,sizeof(PgrRuntimeTransportApi),
+PgsRuntimeTransportApi transport{PGS_TRANSPORT_API_VERSION,sizeof(PgsRuntimeTransportApi),
   tr_install,tr_exchange,tr_emit,tr_get_bool,tr_get_int,tr_get_double,tr_get_string,
   tr_get_cmd,tr_take_pulse,tr_sample,tr_stop};
 
 // --- Bootstrap (feature54) ---------------------------------------------------
-int bt_probe(const PgrBootConfig*,PgrBootBinding *out){ if(out){*out={};out->version=PGS_BOOT_BINDING_VERSION;out->size=sizeof(*out);} return 0; }
-int bt_snapshot(PgrBootBinding *out){
+int bt_probe(const PgsBootConfig*,PgsBootBinding *out){ if(out){*out={};out->version=PGS_BOOT_BINDING_VERSION;out->size=sizeof(*out);} return 0; }
+int bt_snapshot(PgsBootBinding *out){
   if(!out) return PGS_BOOT_ERR_NULL_ARG; *out={};
   out->version=PGS_BOOT_BINDING_VERSION; out->size=sizeof(*out); out->handle=&token;
   out->execute_tasks=&dummy_exec; out->execute_tasks_code=&dummy_exec;
   out->runtime.runtime_invoke=&dummy_invoke; out->runtime.runtime_invoke_convert_args=&dummy_convert;
   out->runtime.thread_current=reinterpret_cast<void*>(&thread_current_stub);
-  return PGR_BOOT_OK;
+  return PGS_BOOT_OK;
 }
-PgrBootApi boot{PGS_BOOT_API_VERSION,sizeof(PgrBootApi),bt_probe,bt_snapshot};
+PgsBootApi boot{PGS_BOOT_API_VERSION,sizeof(PgsBootApi),bt_probe,bt_snapshot};
 
 // --- Unity scheduler (feature48): install FAILS with -3 ----------------------
 int sc_install(const PgsUnitySchedulerConfig*){ return g_install_rc; }
@@ -90,9 +90,9 @@ int sc_diag(PgsUnitySchedulerDiag *o){
   o->failed_stage=PGS_US_STAGE_INVOKE_HOOK; o->invoke_hook_rc=-7; o->convert_hook_rc=0;
   o->poisoned=1; o->invoke_body=0xA000; o->convert_body=0xB000; return PGS_US_OK;
 }
-PgrUnitySchedulerApi  sched2{2,sizeof(PgrUnitySchedulerApi),sc_install,sc_activate,sc_revoke,sc_valid,sc_snapshot};
+PgsUnitySchedulerApi  sched2{2,sizeof(PgsUnitySchedulerApi),sc_install,sc_activate,sc_revoke,sc_valid,sc_snapshot};
 PgsUnitySchedulerApi4 sched4{4,sizeof(PgsUnitySchedulerApi4),sc_install,sc_activate,sc_revoke,sc_valid,sc_snapshot,sc_exec_gen,sc_diag};
-PgrMetaApi metadata{};  // referenced only by verify(), which the failing install never calls
+PgsMetaApi metadata{};  // referenced only by verify(), which the failing install never calls
 
 const void *scheduler_api(uint32_t v){ if(v==2) return &sched2; if(v==4) return &sched4; return nullptr; }
 const void *transport_api(uint32_t){ return &transport; }

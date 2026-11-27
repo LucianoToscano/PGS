@@ -19,10 +19,10 @@
 // pending/active handle slots are single-threaded and need no mutex. revoke() touches only atomics and may
 // run on any thread. No mutex is ever held across the chained original or a field read.
 
-static_assert(sizeof(PgrRoutesServicesConfig) == 96, "config 96");
-static_assert(sizeof(PgrRoutesServicesRequest) == 32, "request 32");
-static_assert(sizeof(PgrRoutesServicesOutput) == 40, "output 40");
-static_assert(sizeof(PgrRoutesServicesApi) == 48, "table 48");
+static_assert(sizeof(PgsRoutesServicesConfig) == 96, "config 96");
+static_assert(sizeof(PgsRoutesServicesRequest) == 32, "request 32");
+static_assert(sizeof(PgsRoutesServicesOutput) == 40, "output 40");
+static_assert(sizeof(PgsRoutesServicesApi) == 48, "table 48");
 
 namespace {
 
@@ -42,7 +42,7 @@ using InRangeFn       = bool (*)(void *self, const void *method);
 
 // --- lifetime / publication --------------------------------------------------------
 std::mutex g_install_mutex;
-PgrRoutesServicesConfig g_cfg{};
+PgsRoutesServicesConfig g_cfg{};
 std::atomic<bool> g_installed{false};
 std::atomic<bool> g_hook_failed{false};
 
@@ -193,19 +193,19 @@ bool owner_ready(uint64_t tid) {
   return g_owner_tid.load(std::memory_order_acquire) == tid;
 }
 
-void init_output(PgrRoutesServicesOutput *out) {
+void init_output(PgsRoutesServicesOutput *out) {
   std::memset(out, 0, sizeof(*out));
   out->version = PGS_RS_OUTPUT_VERSION;
-  out->size = sizeof(PgrRoutesServicesOutput);
+  out->size = sizeof(PgsRoutesServicesOutput);
 }
 
 // --- config validation / install ---------------------------------------------------
-bool validate_config(const PgrRoutesServicesConfig *c, int *rc) {
+bool validate_config(const PgsRoutesServicesConfig *c, int *rc) {
   if (c == nullptr) { *rc = PGS_RS_ERR_NULL_ARG; return false; }
   if (c->version != PGS_RS_CONFIG_VERSION) { *rc = PGS_RS_ERR_BAD_VERSION; return false; }
-  if (c->size != sizeof(PgrRoutesServicesConfig)) { *rc = PGS_RS_ERR_BAD_SIZE; return false; }
+  if (c->size != sizeof(PgsRoutesServicesConfig)) { *rc = PGS_RS_ERR_BAD_SIZE; return false; }
   void *const *ptrs = reinterpret_cast<void *const *>(
-      reinterpret_cast<const unsigned char *>(c) + offsetof(PgrRoutesServicesConfig, object_get_class));
+      reinterpret_cast<const unsigned char *>(c) + offsetof(PgsRoutesServicesConfig, object_get_class));
   for (int i = 0; i < PGS_RS_PTR_COUNT; ++i)
     if (ptrs[i] == nullptr) { *rc = PGS_RS_ERR_MISSING_PTR; return false; }
   *rc = 0;
@@ -232,7 +232,7 @@ int install_hooks() {
   return 0;
 }
 
-int api_install(const PgrRoutesServicesConfig *config) {
+int api_install(const PgsRoutesServicesConfig *config) {
   int rc = 0;
   if (!validate_config(config, &rc)) return rc;
   uint64_t probe = 0;
@@ -262,7 +262,7 @@ uint64_t api_revoke() {
 
 // Validate the request header + owner/thread gate shared by poll/drain. Returns 0 on pass or a negative
 // error for a hard fault; *skip is set true for a benign gate refusal.
-int gate_request(const PgrRoutesServicesRequest *req, bool require_lease, uint64_t *deadline_out, bool *skip) {
+int gate_request(const PgsRoutesServicesRequest *req, bool require_lease, uint64_t *deadline_out, bool *skip) {
   *skip = false;
   if (!g_installed.load(std::memory_order_acquire)) return PGS_RS_ERR_NOT_INSTALLED;
   if (!req) return PGS_RS_ERR_NULL_ARG;
@@ -301,7 +301,7 @@ bool poll_live(uint64_t gen, uint64_t deadline) {
       read_boottime_ms(&now) && now < deadline;
 }
 
-int api_poll(const PgrRoutesServicesRequest *req, PgrRoutesServicesOutput *out) {
+int api_poll(const PgsRoutesServicesRequest *req, PgsRoutesServicesOutput *out) {
   if (!out) return PGS_RS_ERR_NULL_ARG;
   init_output(out);
   uint64_t deadline = 0;
@@ -370,7 +370,7 @@ int api_poll(const PgrRoutesServicesRequest *req, PgrRoutesServicesOutput *out) 
   return out->status;
 }
 
-int api_drain(const PgrRoutesServicesRequest *req) {
+int api_drain(const PgsRoutesServicesRequest *req) {
   uint64_t deadline = 0;
   bool skip = false;
   const int grc = gate_request(req, false, &deadline, &skip);
@@ -385,8 +385,8 @@ int api_drain(const PgrRoutesServicesRequest *req) {
 }
 
 
-const PgrRoutesServicesApi kApiTable = {
-    PGS_RS_API_VERSION, static_cast<uint32_t>(sizeof(PgrRoutesServicesApi)),
+const PgsRoutesServicesApi kApiTable = {
+    PGS_RS_API_VERSION, static_cast<uint32_t>(sizeof(PgsRoutesServicesApi)),
     &api_install, &api_generation, &api_revoke, &api_poll, &api_drain,
 };
 

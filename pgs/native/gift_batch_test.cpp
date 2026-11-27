@@ -46,7 +46,7 @@ void *enum_fields(void *k,void **iter){
  if(i==4)return nullptr;*iter=reinterpret_cast<void*>(i+1);return fields[i];
 }
 const char *field_name(void *f){return f==&success_field?"Success":f==&bag_field?"ErrorPlayerBagFull":f==&limit_field?"ErrorPlayerLimitReached":"ErrorGiftDoesNotExist";}
-int resolve_class(const PgrMetaClassQuery *q,PgrMetaClassResult *out){
+int resolve_class(const PgsMetaClassQuery *q,PgsMetaClassResult *out){
  if(!strcmp(q->name,"String"))out->klass=&string_class;
  else if(!strcmp(q->name,"SendGiftOutProto")||!strcmp(q->name,"OpenGiftOutProto")||!strcmp(q->name,"CheckSendGiftOutProto"))out->klass=&response_class;
  else {assert(false&&"unexpected class resolution");return -1;}
@@ -56,13 +56,13 @@ void *lookup_method(void *k,const char *name,int n){assert(k==&player_class&&!st
 unsigned param_count(void *m){assert(m==&player_method);return 0;}
 void *invoke_method(void *m,void *o,void **,void **ex){assert(m==&player_method&&o==&player_object);*ex=nullptr;++invocations;return &string_object;}
 const uint16_t *chars(void *o){assert(o==&string_object);static uint16_t buffer[64];assert(account.size()<64);for(size_t i=0;i<account.size();i++)buffer[i]=account[i];return buffer;}
-int sample(PgrRuntimeTransportSample *out){*out={};out->snapshot_fresh=fresh;out->snapshot_seq=100+(changing?samples:0);++samples;return 0;}
+int sample(PgsRuntimeTransportSample *out){*out={};out->snapshot_fresh=fresh;out->snapshot_seq=100+(changing?samples:0);++samples;return 0;}
 int get_string(uint32_t slot,char *out,uint32_t cap,uint32_t *len){assert(slot==12&&config.size()<cap);*len=config.size();memcpy(out,config.data(),*len);return 0;}
 int get_bool(uint32_t slot,int *out){assert(slot==12);*out=ready;return 0;}
-int emit(uint32_t op,const int64_t*,uint32_t n,const PgrRuntimeTransportString *s,uint32_t count){assert(op==19&&!n&&count==2);assert(std::string(s[0].ptr,s[0].len)=="gift-batch");events.emplace_back(s[1].ptr,s[1].len);return 0;}
-int poll_result(void *p,uint32_t phase,uint64_t tid,PgrVgpResultsResult *out){assert(p==&promise_object&&phase==1&&tid==owner);++polls;*out={};if(poll_code==PGS_VR_DONE)out->value_handle=root_new(&response_object,0);return poll_code;}
-int bootstrap(PgrBootBinding*){++bootstraps;return -1;}
-PgrRuntimeTransportApi transport{};PgrVgpResultsApi results{};PgrMetaApi metadata{};PgrBootApi bootstrap_api{};
+int emit(uint32_t op,const int64_t*,uint32_t n,const PgsRuntimeTransportString *s,uint32_t count){assert(op==19&&!n&&count==2);assert(std::string(s[0].ptr,s[0].len)=="gift-batch");events.emplace_back(s[1].ptr,s[1].len);return 0;}
+int poll_result(void *p,uint32_t phase,uint64_t tid,PgsVgpResultsResult *out){assert(p==&promise_object&&phase==1&&tid==owner);++polls;*out={};if(poll_code==PGS_VR_DONE)out->value_handle=root_new(&response_object,0);return poll_code;}
+int bootstrap(PgsBootBinding*){++bootstraps;return -1;}
+PgsRuntimeTransportApi transport{};PgsVgpResultsApi results{};PgsMetaApi metadata{};PgsBootApi bootstrap_api{};
 void clean(){session=Session{};assert(roots.empty()&&allocated==freed);}
 void fixture(Stage stage=SEND){
  clean();events.clear();polls=invocations=0;fresh=ready=true;changing=false;samples=0;

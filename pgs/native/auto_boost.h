@@ -1,12 +1,12 @@
 #pragma once
 #include <stdint.h>
 #include <cstdio>
-struct PgrSharedMetadataOutput;
+struct PgsSharedMetadataOutput;
 // Auto Lucky Egg / Auto Star Piece: while the map shows, uses a Lucky Egg or a Star Piece whenever
 // that boost is not running and the bag has one, through the game's own
 // IPlayerBuffService.SelectBuff (what using it from the item bag does). Settings ride transport
 // string slot 26 ("B1|luckyEgg|starPiece"). Unity owner thread only.
-void pgs_auto_boost_tick(uint64_t tid,const PgrSharedMetadataOutput *metadata);
+void pgs_auto_boost_tick(uint64_t tid,const PgsSharedMetadataOutput *metadata);
 void pgs_auto_boost_stop(uint64_t tid);
 
 namespace pgs_auto_boost {

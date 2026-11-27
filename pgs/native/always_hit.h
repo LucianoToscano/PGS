@@ -51,7 +51,7 @@ struct PgsAlwaysHitValue {   // 12 bytes, 4-byte aligned
     uint8_t pad;             // 11 preserved verbatim
 };
 
-struct PgrAlwaysHitConfig {  // 192 bytes: 8-byte header then 23 pointers in table order
+struct PgsAlwaysHitConfig {  // 192 bytes: 8-byte header then 23 pointers in table order
     uint32_t version, size;  // 0   { version==1, size==sizeof }
     void *code_launch;       // 8   instrument target: Launch (reads x0/rdi only)
     void *code_release;      // 16  instrument target: EndDrag (reads x0/rdi only)
@@ -78,17 +78,17 @@ struct PgrAlwaysHitConfig {  // 192 bytes: 8-byte header then 23 pointers in tab
     void *field_pokemon;     // 184 FieldInfo* IEncounterPokemon reference
 };
 
-struct PgrAlwaysHitSample {  // 24 bytes: pull-only telemetry snapshot
+struct PgsAlwaysHitSample {  // 24 bytes: pull-only telemetry snapshot
     uint64_t applied;        // 0  HitPokemon actions invoked
     uint64_t normalized;     // 8  makeThrow "missed" bytes cleared
     uint64_t errors;         // 16 managed-exception / root failures that latched the fault
 };
 
-struct PgrAlwaysHitApi {     // 40 bytes: ordered, read-only table
+struct PgsAlwaysHitApi {     // 40 bytes: ordered, read-only table
     uint32_t version, size;  // 0  { version==1, size==sizeof }
-    int (*install)(const PgrAlwaysHitConfig *config);
+    int (*install)(const PgsAlwaysHitConfig *config);
     int (*update)(int enabled, int allowed, uint64_t lease_ms, uint64_t unity_tid);
-    int (*sample)(PgrAlwaysHitSample *out);
+    int (*sample)(PgsAlwaysHitSample *out);
     int (*tick)(uint64_t proven_tid);
 };
 

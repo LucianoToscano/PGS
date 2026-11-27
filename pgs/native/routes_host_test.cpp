@@ -534,7 +534,7 @@ void *fake_runtime_invoke(const void *method_raw, void *obj, void **args, void *
   return nullptr;
 }
 
-int fixture_seg_query(void *, const void *address, uint64_t length, PgrMetaSegment *out) {
+int fixture_seg_query(void *, const void *address, uint64_t length, PgsMetaSegment *out) {
   *out = {};
   uintptr_t a = reinterpret_cast<uintptr_t>(address);
   uintptr_t base = reinterpret_cast<uintptr_t>(g_module_base);
@@ -548,8 +548,8 @@ int fixture_seg_query(void *, const void *address, uint64_t length, PgrMetaSegme
   return 0;
 }
 
-PgrMetaExports make_meta_exports() {
-  PgrMetaExports e{};
+PgsMetaExports make_meta_exports() {
+  PgsMetaExports e{};
   e.domain_get = reinterpret_cast<void *>(&fake_domain_get);
   e.domain_get_assemblies = reinterpret_cast<void *>(&fake_domain_assemblies);
   e.assembly_get_image = reinterpret_cast<void *>(&fake_assembly_image);
@@ -755,19 +755,19 @@ void setup_fixture_world() {
 }
 
 struct Popped {
-  PgrRoutesHostEvent ev{};
+  PgsRoutesHostEvent ev{};
   std::string json;
 };
 
-std::vector<Popped> drain_all(const PgrRoutesHostApi *host) {
+std::vector<Popped> drain_all(const PgsRoutesHostApi *host) {
   std::vector<Popped> out;
   char buf[16384];
   while (true) {
-    PgrRoutesHostEvent ev{};
+    PgsRoutesHostEvent ev{};
     int rc = host->next_event(&ev, buf, sizeof(buf));
     if (rc == 0) break;
     assert(rc == PGS_RH_EVENT_POPPED);
-    assert(ev.version == PGS_RH_EVENT_VERSION && ev.size == sizeof(PgrRoutesHostEvent));
+    assert(ev.version == PGS_RH_EVENT_VERSION && ev.size == sizeof(PgsRoutesHostEvent));
     out.push_back(Popped{ev, std::string(buf, ev.json_len)});
   }
   return out;
@@ -793,29 +793,29 @@ int main(int argc, char **argv) {
   assert(core->query_feature(60, 0) == nullptr);
   assert(core->query_feature(60, 2) == nullptr);
 
-  const auto *host = static_cast<const PgrRoutesHostApi *>(core->query_feature(60, 1));
-  assert(host && host->version == 1 && host->size == sizeof(PgrRoutesHostApi));
+  const auto *host = static_cast<const PgsRoutesHostApi *>(core->query_feature(60, 1));
+  assert(host && host->version == 1 && host->size == sizeof(PgsRoutesHostApi));
   assert(host->configure && host->set_options && host->tick && host->next_event &&
          host->stop && host->sample && host->on_unity_pulse);
 
-  const auto *tr = static_cast<const PgrRuntimeTransportApi *>(core->query_feature(52, 1));
-  assert(tr && tr->version == 1 && tr->size == sizeof(PgrRuntimeTransportApi));
+  const auto *tr = static_cast<const PgsRuntimeTransportApi *>(core->query_feature(52, 1));
+  assert(tr && tr->version == 1 && tr->size == sizeof(PgsRuntimeTransportApi));
   // Java normally installs52 before compiled gameplay starts. No snapshot is
   // needed for testing its producer queue; drain on a separate host thread.
   PgsRuntimeTransportConfig transport_config{1,sizeof(PgsRuntimeTransportConfig),500,
       PGS_TRANSPORT_MAX_EVENTS,PGS_TRANSPORT_MAX_STRING,PGS_TRANSPORT_MAX_FRAME,0,0};
-  assert(tr->install(&transport_config)==PGR_TRANSPORT_OK);
+  assert(tr->install(&transport_config)==PGS_TRANSPORT_OK);
 
 
   setup_fixture_world();
-  PgrMetaExports meta_exports = make_meta_exports();
+  PgsMetaExports meta_exports = make_meta_exports();
 
   // Compute bounds around fixture_location so libunity.so containment check succeeds.
   const uintptr_t loc_addr = reinterpret_cast<uintptr_t>(&fixture_location);
   const void *unity_base = reinterpret_cast<const void *>(loc_addr & ~uintptr_t(0xFFF));
   const uint64_t unity_size = 65536ULL;
 
-  PgrRoutesHostConfig cfg{};
+  PgsRoutesHostConfig cfg{};
   cfg.version = PGS_RH_CONFIG_VERSION;
   cfg.size = sizeof(cfg);
   cfg.flags = PGS_RH_CFG_FIXTURE_HOOKS | PGS_RH_CFG_EMIT_TRANSPORT52;
@@ -874,7 +874,7 @@ int main(int argc, char **argv) {
   // --- Phase 2: command JSON parser + Feature 27 gate parity -------------------------
   auto check_opt = [&](int allowed, const char *json, int32_t exp_status, const char *exp_reason,
                        uint64_t exp_seq = 0, uint32_t exp_act = 0) {
-    PgrRoutesHostOptionsOut out{};
+    PgsRoutesHostOptionsOut out{};
     uint32_t len = json ? static_cast<uint32_t>(std::strlen(json)) : 0;
     assert(host->set_options(allowed, json, len, &out) == PGS_RH_OK);
     assert(out.version == PGS_RH_OPTIONS_OUT_VERSION && out.size == sizeof(out));
@@ -936,7 +936,7 @@ int main(int argc, char **argv) {
     // Doomed seq 1 from Phase 2 drained as lease-expired
     assert(act_ev && act_ev->ev.seq == 1 && act_ev->json.find("\"reason\":\"lease-expired\"") != std::string::npos);
 
-    PgrRoutesHostSample s{};
+    PgsRoutesHostSample s{};
     assert(host->sample(&s) == PGS_RH_OK);
     assert(s.configured == 1 && s.meta_ready == 1 && s.tracking_ready == 1 && s.services_ready == 0);
     assert(s.owner_tid == self_tid() && s.last_seq == 1);
@@ -970,7 +970,7 @@ int main(int argc, char **argv) {
   {
     // Small buffer check: must return PGS_RH_ERR_BUFFER_TOO_SMALL (-8) without popping
     char tiny[4]{};
-    PgrRoutesHostEvent peek{};
+    PgsRoutesHostEvent peek{};
     assert(host->next_event(&peek, tiny, sizeof(tiny)) == PGS_RH_ERR_BUFFER_TOO_SMALL);
     assert(peek.json_len > sizeof(tiny));
 
@@ -984,7 +984,7 @@ int main(int argc, char **argv) {
     // 1-waypoint route must be filtered out by boundSnapshot
     assert(snap_ev->json.find("route-one-pt") == std::string::npos);
 
-    PgrRoutesHostSample s{};
+    PgsRoutesHostSample s{};
     assert(host->sample(&s) == PGS_RH_OK);
     assert(s.services_ready == 1 && s.cached_route_count == 1);
   }
@@ -1087,7 +1087,7 @@ int main(int argc, char **argv) {
       };
       for(;;){
         uint32_t length=0;
-        assert(tr->exchange(nullptr,0,frame.data(),uint32_t(frame.size()),&length)==PGR_TRANSPORT_OK);
+        assert(tr->exchange(nullptr,0,frame.data(),uint32_t(frame.size()),&length)==PGS_TRANSPORT_OK);
         assert(length>=PGS_TRANSPORT_EVENT_HEADER&&length<=frame.size());
         assert(u32(0)==PGS_TRANSPORT_EVENTS_MAGIC&&u32(4)==PGS_TRANSPORT_FRAME_VERSION&&u32(8)==length);
         const uint32_t count=u32(12);assert(count<=PGS_TRANSPORT_DRAIN_CAP);
@@ -1119,9 +1119,9 @@ int main(int argc, char **argv) {
     assert(saw_op7 && saw_op8 && saw_op9 && saw_op19);
   }
   {
-    PgrRoutesHostSample before{}, after{};
+    PgsRoutesHostSample before{}, after{};
     assert(host->sample(&before) == PGS_RH_OK);
-    PgrUnityPulse pulse{};
+    PgsUnityPulse pulse{};
     pulse.generation = 1;
     pulse.sequence = 1;
     pulse.tid = static_cast<int32_t>(self_tid());

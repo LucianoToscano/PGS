@@ -18,11 +18,11 @@
 // once that screen is open. Then nothing more for 30 s while the game applies it. A use that does not
 // start the boost counts as a miss; after three misses in a row that boost waits 10 minutes.
 namespace {
-using namespace pgr_shared_meta;
+using namespace pgs_shared_meta;
 using namespace pgs_auto_boost;
 struct Failure {const char *where;};
 void require(bool ok,const char *where){if(!ok)throw Failure{where};}
-PgrBootBinding boot{};const PgrSharedMetadataOutput *md=nullptr;
+PgsBootBinding boot{};const PgsSharedMetadataOutput *md=nullptr;
 bool initialized=false,busy=false,faulted=false;uint64_t owner=0;
 uint64_t clock_ms(){timespec t{};clock_gettime(CLOCK_BOOTTIME,&t);return uint64_t(t.tv_sec)*1000+t.tv_nsec/1000000;}
 template<class F>F fn(const void *p){require(p,"missing runtime export");return reinterpret_cast<F>(const_cast<void*>(p));}
@@ -39,9 +39,9 @@ struct Root {
 };
 void *klass(void *o){require(o,"null object");return fn<void*(*)(void*)>(boot.runtime.object_get_class)(o);}
 void *cls(const char *ns,const char *name){
- const auto *api=static_cast<const PgrMetaApi*>(pgs_runtime_metadata_api(1));require(api,"metadata API");
- PgrMetaClassQuery q{};q.version=1;q.size=sizeof(q);q.name_space=ns;q.name=name;q.canonical_match=PGR_MD_MATCH_EXACT;
- PgrMetaClassResult out{};require(api->resolve_class(&q,&out)==0,name);return const_cast<void*>(out.klass);
+ const auto *api=static_cast<const PgsMetaApi*>(pgs_runtime_metadata_api(1));require(api,"metadata API");
+ PgsMetaClassQuery q{};q.version=1;q.size=sizeof(q);q.name_space=ns;q.name=name;q.canonical_match=PGS_MD_MATCH_EXACT;
+ PgsMetaClassResult out{};require(api->resolve_class(&q,&out)==0,name);return const_cast<void*>(out.klass);
 }
 void *method(void *k,const char *name,int count){void *m=fn<void*(*)(void*,const char*,int)>(boot.meta.class_get_method_from_name)(k,name,count);require(m,name);return m;}
 void *invoke(void *m,void *o,void **args=nullptr){void *ex=nullptr;void *v=fn<void*(*)(void*,void*,void**,void**)>(boot.runtime.runtime_invoke)(m,o,args,&ex);require(!ex,"managed call failed");return v;}
@@ -57,14 +57,14 @@ Root resolve(void *contract){
 }
 int literal(void *k,const char *name){void *f=fn<void*(*)(void*,const char*)>(boot.meta.class_get_field_from_name)(k,name);require(f,name);require((fn<int(*)(void*)>(boot.meta.field_get_flags)(f)&0x8050)==0x8050,name);int n=0;fn<void(*)(void*,void*)>(boot.runtime.field_static_get_value)(f,&n);return n;}
 
-const PgrRuntimeTransportApi *transport(){return static_cast<const PgrRuntimeTransportApi*>(pgs_runtime_transport_api(1));}
-void event(const std::string &json){auto tr=transport();if(!tr)return;PgrRuntimeTransportString s[]={{"auto-boost",10},{json.c_str(),uint32_t(json.size())}};tr->emit(19,nullptr,0,s,2);}
+const PgsRuntimeTransportApi *transport(){return static_cast<const PgsRuntimeTransportApi*>(pgs_runtime_transport_api(1));}
+void event(const std::string &json){auto tr=transport();if(!tr)return;PgsRuntimeTransportString s[]={{"auto-boost",10},{json.c_str(),uint32_t(json.size())}};tr->emit(19,nullptr,0,s,2);}
 void status(const char *phase,const std::string &message){event(std::string("{\"phase\":\"")+phase+"\",\"message\":\""+message+"\"}");}
 
 // Slot 26 settings, honoured only with a fresh snapshot while the game is active, the account ready
 // and the map showing (the same gates Smart healing uses).
 Config configured(bool &on_map){
- Config c;on_map=false;auto tr=transport();PgrRuntimeTransportSample a{};char s[32]{};uint32_t n=0;
+ Config c;on_map=false;auto tr=transport();PgsRuntimeTransportSample a{};char s[32]{};uint32_t n=0;
  if(!tr||tr->sample(&a)||!a.snapshot_fresh||a.fault||tr->get_string(26,s,sizeof(s)-1,&n)||n>=sizeof(s))return {};
  s[n]=0;c=parse(s);if(!c.valid)return {};
  int active=0,ready=0,map=0;tr->get_bool(3,&active);tr->get_bool(16,&ready);tr->get_bool(38,&map);
@@ -155,9 +155,9 @@ void confirm(uint64_t now){
  }
  if(now>=st.confirm_until){st.confirm=-1;status("warning",std::string(b.name)+" screen did not open");}
 }
-void ensure_init(const PgrSharedMetadataOutput *metadata,uint64_t tid){
+void ensure_init(const PgsSharedMetadataOutput *metadata,uint64_t tid){
  if(initialized)return;
- auto api=static_cast<const PgrBootApi*>(pgs_runtime_bootstrap_api(1));boot.version=1;boot.size=sizeof(boot);
+ auto api=static_cast<const PgsBootApi*>(pgs_runtime_bootstrap_api(1));boot.version=1;boot.size=sizeof(boot);
  require(api&&api->snapshot(&boot)==0,"runtime unavailable");md=metadata;require(md,"shared metadata");owner=tid;initialized=true;
 }
 void tick(const Config &c,uint64_t now){
@@ -180,7 +180,7 @@ void tick(const Config &c,uint64_t now){
 }
 }  // namespace
 
-void pgs_auto_boost_tick(uint64_t tid,const PgrSharedMetadataOutput *metadata){
+void pgs_auto_boost_tick(uint64_t tid,const PgsSharedMetadataOutput *metadata){
  if(busy||faulted||!tid||tid!=uint64_t(gettid())||(owner&&owner!=tid))return;
  struct Guard{Guard(){busy=true;}~Guard(){busy=false;}}guard;
  bool on_map=false;const Config c=configured(on_map);const uint64_t now=clock_ms();

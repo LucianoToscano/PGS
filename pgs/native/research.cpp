@@ -23,11 +23,11 @@
 // settings list. Caught Pokemon go through the VGP transfer handoff, honoring Keep All.
 extern "C" int pgs_research_transfer_caught(uint64_t,uint64_t,uint64_t,uint64_t,uint64_t,uint64_t,int);
 namespace {
-using namespace pgr_shared_meta;
+using namespace pgs_shared_meta;
 struct Failure {const char *where;};
 void require(bool ok,const char *where){if(!ok)throw Failure{where};}
 template<class F>F fn(void *p){require(p,"missing runtime export");return reinterpret_cast<F>(p);}
-PgrBootBinding boot{};const PgrSharedMetadataOutput *md=nullptr;
+PgsBootBinding boot{};const PgsSharedMetadataOutput *md=nullptr;
 uint64_t owner=0;bool busy=false,ready=false;
 constexpr uint64_t kScanMs=2000,kRetryMs=10000,kTimeoutMs=20000,kGapMs=1500,kWindowMs=600000;
 // Claims, removals and encounter catches all count; an event that hands out a task per stop needs room.
@@ -48,9 +48,9 @@ void *klass(void *o){require(o,"null object");return fn<void*(*)(void*)>(boot.ru
 std::string class_name(void *o){return fn<const char*(*)(void*)>(exp("class_get_name"))(klass(o));}
 void *cls(const char *ns,const char *name){
  static std::map<std::string,void*> cache;std::string key=std::string(ns)+"."+name;auto it=cache.find(key);if(it!=cache.end())return it->second;
- const auto *api=static_cast<const PgrMetaApi*>(pgs_runtime_metadata_api(1));require(api,"metadata API");
- PgrMetaClassQuery q{};q.version=1;q.size=sizeof(q);q.name_space=ns;q.name=name;q.canonical_match=PGR_MD_MATCH_EXACT;
- PgrMetaClassResult out{};require(api->resolve_class(&q,&out)==0,name);return cache[key]=const_cast<void*>(out.klass);
+ const auto *api=static_cast<const PgsMetaApi*>(pgs_runtime_metadata_api(1));require(api,"metadata API");
+ PgsMetaClassQuery q{};q.version=1;q.size=sizeof(q);q.name_space=ns;q.name=name;q.canonical_match=PGS_MD_MATCH_EXACT;
+ PgsMetaClassResult out{};require(api->resolve_class(&q,&out)==0,name);return cache[key]=const_cast<void*>(out.klass);
 }
 std::string typename_of(void *type){char *p=fn<char*(*)(void*)>(boot.meta.type_get_name)(type);require(p,"type name");std::string s=p;fn<void(*)(void*)>(boot.meta.mem_free)(p);return s;}
 void *field_info(void *o,const char *name){void *f=fn<void*(*)(void*,const char*)>(boot.meta.class_get_field_from_name)(klass(o),name);require(f,name);require(!(fn<int(*)(void*)>(boot.meta.field_get_flags)(f)&0x10),name);return f;}
@@ -97,13 +97,13 @@ Root resolve(const char *ns,const char *name){
 int count(void *list,unsigned cap){int n=unbox<int>(call(list,"get_Count"));require(n>=0&&unsigned(n)<=cap,"collection bound");return n;}
 Root item(void *list,int index){void *args[]={&index};return Root(call(list,"get_Item",1,args));}
 std::string quote(const std::string &s){std::string out="\"";for(unsigned char c:s){if(c=='"'||c=='\\')out+='\\';if(c>=32)out+=char(c);}return out+'"';}
-const PgrRuntimeTransportApi *transport(){return static_cast<const PgrRuntimeTransportApi*>(pgs_runtime_transport_api(1));}
-void event(const std::string &json){auto tr=transport();if(!tr)return;PgrRuntimeTransportString strings[]={{"research",8},{json.c_str(),uint32_t(json.size())}};tr->emit(19,nullptr,0,strings,2);}
+const PgsRuntimeTransportApi *transport(){return static_cast<const PgsRuntimeTransportApi*>(pgs_runtime_transport_api(1));}
+void event(const std::string &json){auto tr=transport();if(!tr)return;PgsRuntimeTransportString strings[]={{"research",8},{json.c_str(),uint32_t(json.size())}};tr->emit(19,nullptr,0,strings,2);}
 void status(const char *phase,const std::string &message,const std::string &templ=""){
  event("{\"kind\":\"research\",\"phase\":"+quote(phase)+",\"template\":"+quote(templ)+",\"message\":"+quote(message)+"}");}
 // The snapshot config, read between two equal fresh samples. Invalid or stale means no actions.
 pgs_research::Config config(){
- pgs_research::Config c;auto tr=transport();if(!tr)return c;PgrRuntimeTransportSample a{},z{};
+ pgs_research::Config c;auto tr=transport();if(!tr)return c;PgsRuntimeTransportSample a{},z{};
  if(tr->sample(&a)||!a.snapshot_fresh||a.fault)return c;
  static char s[pgs_research::kMaxTemplates*(pgs_research::kMaxTemplateBytes+1)+16];uint32_t n=0;
  if(tr->get_string(13,s,sizeof(s),&n)||n>=sizeof(s))return c;
@@ -252,8 +252,8 @@ void finish(bool ok,const std::string &message){
  st.next_action=clock_ms()+kGapMs;st.next_scan=0;
 }
 void poll(uint64_t tid){
- auto api=static_cast<const PgrVgpResultsApi*>(pgs_vgp_results_api(1));require(api,"Promise observer unavailable");
- PgrVgpResultsResult out{};const int rc=api->poll(st.promise.get(),1,tid,&out);Root result;result.h=out.value_handle;
+ auto api=static_cast<const PgsVgpResultsApi*>(pgs_vgp_results_api(1));require(api,"Promise observer unavailable");
+ PgsVgpResultsResult out{};const int rc=api->poll(st.promise.get(),1,tid,&out);Root result;result.h=out.value_handle;
  const bool claim=st.pending==pgs_research::CLAIM;
  if(!rc){if(clock_ms()-st.since>=kTimeoutMs)finish(false,"Request outcome unknown; not retried");return;}
  if(rc!=PGS_VR_DONE||!result){finish(false,claim?"Claim failed; not retried":"Removal failed; not retried");return;}
@@ -287,7 +287,7 @@ bool begin_encounter(){
   if(type!=literal(k,"ChallengeQuest"))continue;  // field research rewards only; weekly/party and other encounters stay manual
   Root pokemon(object_field(e.get(),"Pokemon","Holoholo.Rpc.PokemonProto"));require(bool(pokemon),"Encounter Pokemon");
   st.ball=throw_settings();if(!available_ball(st.ball.ball)){status("error","No Poké, Great or Ultra Balls left; encounters wait");st.next_action=clock_ms()+kRetryMs*6;return false;}
-  st.enc_handled.insert(id);st.enc_id=id;st.enc_pokemon=field<uint64_t>(pokemon.get(),PGR_GAME_SHARED_METADATA_CPP_H_DET_ID_NAME,"System.UInt64");require(st.enc_pokemon!=0,"Encounter id");
+  st.enc_handled.insert(id);st.enc_id=id;st.enc_pokemon=field<uint64_t>(pokemon.get(),PGS_GAME_SHARED_METADATA_CPP_H_DET_ID_NAME,"System.UInt64");require(st.enc_pokemon!=0,"Encounter id");
   st.encounter=std::move(e);st.throws=0;
   void *args[]={st.encounter.get()};st.promise=Root(call(st.rpc.get(),"BeginQuestEncounter",1,args));require(bool(st.promise),"Encounter outcome unknown; not retried");
   st.enc=E_BEGIN;st.since=clock_ms();++st.actions;return true;
@@ -297,7 +297,7 @@ bool begin_encounter(){
 // The game's typed RPC handler, closed over CatchPokemonProto -> CatchPokemonOutProto once.
 void *catch_sender(Root &rpc){
  Root bag=resolve("Niantic.Holoholo","IItemBag");require(bool(bag),"item bag unavailable");
- rpc=Root(field<void*>(bag.get(),PGR_GAME_GYM_RUNTIME_CPP_ERHP_NAME,"Niantic.Holoholo.Rpc.IRpcHandler"));require(bool(rpc),"RPC unavailable");
+ rpc=Root(field<void*>(bag.get(),PGS_GAME_GYM_RUNTIME_CPP_ERHP_NAME,"Niantic.Holoholo.Rpc.IRpcHandler"));require(bool(rpc),"RPC unavailable");
  if(st.send_method)return st.send_method;
  void *open=method(rpc.get(),"SendRpc",5);require(fn<bool(*)(void*)>(boot.meta.method_is_generic)(open),"generic RPC");
  Root reflected(fn<void*(*)(void*,void*)>(exp("method_get_object"))(open,klass(rpc.get())));
@@ -342,8 +342,8 @@ void transfer_caught(uint64_t tid){
 }
 void poll_encounter(uint64_t tid){
  if(st.enc==E_TRANSFER){transfer_caught(tid);return;}
- auto api=static_cast<const PgrVgpResultsApi*>(pgs_vgp_results_api(1));require(api,"Promise observer unavailable");
- PgrVgpResultsResult out{};const int rc=api->poll(st.promise.get(),1,tid,&out);Root result;result.h=out.value_handle;
+ auto api=static_cast<const PgsVgpResultsApi*>(pgs_vgp_results_api(1));require(api,"Promise observer unavailable");
+ PgsVgpResultsResult out{};const int rc=api->poll(st.promise.get(),1,tid,&out);Root result;result.h=out.value_handle;
  if(!rc){if(clock_ms()-st.since>=kTimeoutMs)enc_done("Encounter outcome unknown; not retried",false);return;}
  if(rc!=PGS_VR_DONE||!result){enc_done(st.enc==E_BEGIN?"Encounter failed; not retried":"Catch failed; not retried",false);return;}
  st.promise.reset();void *k=nullptr;
@@ -361,7 +361,7 @@ void poll_encounter(uint64_t tid){
 }
 
 void step(uint64_t tid){
- if(!ready){auto api=static_cast<const PgrBootApi*>(pgs_runtime_bootstrap_api(1));boot.version=1;boot.size=sizeof(boot);require(md&&api&&api->snapshot(&boot)==0,"Runtime unavailable");ready=true;}
+ if(!ready){auto api=static_cast<const PgsBootApi*>(pgs_runtime_bootstrap_api(1));boot.version=1;boot.size=sizeof(boot);require(md&&api&&api->snapshot(&boot)==0,"Runtime unavailable");ready=true;}
  if(!services())return;
  if(st.enc!=E_IDLE){poll_encounter(tid);return;}
  if(st.promise){poll(tid);return;}
@@ -399,7 +399,7 @@ void step(uint64_t tid){
  if(c.catch_encounters)begin_encounter();
 }
 }  // namespace
-void pgs_research_tick(uint64_t tid,const PgrSharedMetadataOutput *metadata){
+void pgs_research_tick(uint64_t tid,const PgsSharedMetadataOutput *metadata){
  if(busy||!tid||tid!=uint64_t(gettid())||(owner&&owner!=tid))return;
  struct Guard{Guard(){busy=true;}~Guard(){busy=false;}}guard;
  owner=tid;md=metadata;

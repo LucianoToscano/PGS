@@ -59,7 +59,7 @@ IntBox g_int{&intClass, 1};
 Pokemon g_stray{&pokemonClass, {}};  // a Pokemon that is NOT the one in the scene list
 
 // ----- runtime shims ----------------------------------------------------------------
-const PgrDetailsCompletionApi *g_api = nullptr;
+const PgsDetailsCompletionApi *g_api = nullptr;
 uint64_t g_owner = 0;
 
 int g_click_calls = 0;
@@ -165,8 +165,8 @@ void *fake_runtime_invoke(const void *method, void *obj, void **params, void **e
   return nullptr;
 }
 
-PgrDetailsCompletionConfig make_config() {
-  PgrDetailsCompletionConfig c{};
+PgsDetailsCompletionConfig make_config() {
+  PgsDetailsCompletionConfig c{};
   c.version = 1; c.size = sizeof(c);
   c.object_get_class = reinterpret_cast<void *>(&fake_obj_class);
   c.field_get_value = reinterpret_cast<void *>(&fake_field_get);
@@ -191,7 +191,7 @@ uint64_t this_tid() { return static_cast<uint64_t>(static_cast<pid_t>(::gettid()
 void put_id(uint8_t out[8], uint64_t id) { for (int i = 0; i < 8; ++i) out[i] = static_cast<uint8_t>((id >> (8 * i)) & 0xff); }
 
 uint64_t g_id_seq = 0x5000;
-PgrDetailsCompletionRequest g_req{};
+PgsDetailsCompletionRequest g_req{};
 
 // Rebuild a fully-wired confirmed details scene on scene 0 and borrow one host handle per object.
 uint64_t build(bool arm = true) {
@@ -223,18 +223,18 @@ uint64_t acquire(uint64_t epoch = 7) {
   uint64_t t = 0; assert(g_api->acquire(epoch, g_owner, &t) == PGS_DC_OK); return t;
 }
 int validate() { return g_api->validate(&g_req); }
-int complete(uint64_t tok, PgrDetailsCompletionOutput &out) {
+int complete(uint64_t tok, PgsDetailsCompletionOutput &out) {
   std::memset(&out, 0, sizeof(out)); int rc = g_api->complete(&g_req, tok, &out); balanced(); return rc;
 }
-PgrDetailsCompletionSample sample() {
-  PgrDetailsCompletionSample s{}; assert(g_api->sample(&s) == PGS_DC_OK);
+PgsDetailsCompletionSample sample() {
+  PgsDetailsCompletionSample s{}; assert(g_api->sample(&s) == PGS_DC_OK);
   assert(s.version == 1 && s.size == sizeof(s)); return s;
 }
 // Each mismatch must make validate INVALID and complete REFUSED without ever clicking.
 void expect_rejected() {
   assert(validate() == PGS_DC_OK);
   uint64_t t = acquire(); assert(t != 0);
-  PgrDetailsCompletionOutput out{};
+  PgsDetailsCompletionOutput out{};
   assert(complete(t, out) == PGS_DC_OK && !(out.flags & PGS_DC_FLAG_INVOKED));
   assert(g_click_calls == 0);
 }
@@ -250,29 +250,29 @@ int main(int argc, char **argv) {
   const auto *core = static_cast<const pgs_native_api_v2 *>(getter(2));
   assert(core && core->size == sizeof(pgs_native_api_v2));
   assert(core->query_feature(37, 99) == nullptr);
-  const auto *api = static_cast<const PgrDetailsCompletionApi *>(core->query_feature(37, 1));
-  assert(api != nullptr && api->version == 1 && api->size == sizeof(PgrDetailsCompletionApi));
+  const auto *api = static_cast<const PgsDetailsCompletionApi *>(core->query_feature(37, 1));
+  assert(api != nullptr && api->version == 1 && api->size == sizeof(PgsDetailsCompletionApi));
   g_api = api;
 
   std::printf("ABI sizes: config=%zu request=%zu output=%zu sample=%zu table=%zu\n",
-              sizeof(PgrDetailsCompletionConfig), sizeof(PgrDetailsCompletionRequest),
-              sizeof(PgrDetailsCompletionOutput), sizeof(PgrDetailsCompletionSample),
-              sizeof(PgrDetailsCompletionApi));
-  assert(sizeof(PgrDetailsCompletionConfig) == 272 && sizeof(PgrDetailsCompletionRequest) == 80 &&
-         sizeof(PgrDetailsCompletionOutput) == 24 && sizeof(PgrDetailsCompletionSample) == 72 &&
-         sizeof(PgrDetailsCompletionApi) == 64);
-  assert(offsetof(PgrDetailsCompletionConfig, f_list) == 256 &&
-         offsetof(PgrDetailsCompletionConfig, state_open) == 268);
-  assert(offsetof(PgrDetailsCompletionRequest, dismissed) == 72);
+              sizeof(PgsDetailsCompletionConfig), sizeof(PgsDetailsCompletionRequest),
+              sizeof(PgsDetailsCompletionOutput), sizeof(PgsDetailsCompletionSample),
+              sizeof(PgsDetailsCompletionApi));
+  assert(sizeof(PgsDetailsCompletionConfig) == 272 && sizeof(PgsDetailsCompletionRequest) == 80 &&
+         sizeof(PgsDetailsCompletionOutput) == 24 && sizeof(PgsDetailsCompletionSample) == 72 &&
+         sizeof(PgsDetailsCompletionApi) == 64);
+  assert(offsetof(PgsDetailsCompletionConfig, f_list) == 256 &&
+         offsetof(PgsDetailsCompletionConfig, state_open) == 268);
+  assert(offsetof(PgsDetailsCompletionRequest, dismissed) == 72);
 
   const uint64_t tid = this_tid();
   g_owner = tid;
-  PgrDetailsCompletionConfig cfg = make_config();
-  PgrDetailsCompletionOutput out{};
+  PgsDetailsCompletionConfig cfg = make_config();
+  PgsDetailsCompletionOutput out{};
 
   // 1. Config validation, not-installed, idempotence, reconfig, missing output buffer.
   assert(api->install(nullptr) == PGS_DC_ERR_NULL_ARG);
-  PgrDetailsCompletionConfig bad = cfg; bad.version = 2;
+  PgsDetailsCompletionConfig bad = cfg; bad.version = 2;
   assert(api->install(&bad) == PGS_DC_ERR_BAD_VERSION);
   bad = cfg; bad.size = sizeof(cfg) - 1; assert(api->install(&bad) == PGS_DC_ERR_BAD_SIZE);
   bad = cfg; bad.m_click = nullptr; assert(api->install(&bad) == PGS_DC_ERR_MISSING_PTR);
@@ -293,7 +293,7 @@ int main(int argc, char **argv) {
     assert((out.flags & PGS_DC_FLAG_INVOKED) && (out.flags & PGS_DC_FLAG_BEFORE_KNOWN));
     assert((out.flags & PGS_DC_FLAG_AFTER_KNOWN) && !(out.flags & PGS_DC_FLAG_GONE));
     assert(out.before == kStateOpen && out.after == kDoneState);
-    PgrDetailsCompletionSample sm = sample();
+    PgsDetailsCompletionSample sm = sample();
     assert(sm.validate_ok >= 1 && sm.complete_ok == 1 && sm.last_token == t && sm.busy == 0); }
 
   // 2b. transfer-only independence: there is NO dismissEnabled gate, so an auto-transfer-only session
@@ -396,7 +396,7 @@ int main(int argc, char **argv) {
     g_on_click = [&]() {
       uint64_t nested = 7; assert(g_api->acquire(7, g_owner, &nested) == PGS_DC_OK);
       reentrant_token = (nested != 0);
-      PgrDetailsCompletionOutput nout{};
+      PgsDetailsCompletionOutput nout{};
       reentrant_complete = g_api->complete(&g_req, t, &nout);
       g_api->stop(g_owner); };
     assert(complete(t, out) == PGS_DC_DONE && g_click_calls == 1);
@@ -408,7 +408,7 @@ int main(int argc, char **argv) {
     build(/*arm=*/false);
     assert(g_api->validate(&g_req) == PGS_DC_OK);  // off-owner validate -> 0
     uint64_t t = 5; assert(g_api->acquire(7, this_tid(), &t) == PGS_DC_OK && t == 0);
-    PgrDetailsCompletionOutput o{};
+    PgsDetailsCompletionOutput o{};
     assert(g_api->complete(&g_req, 1, &o) == PGS_DC_OK && !(o.flags & PGS_DC_FLAG_INVOKED));
   }).join();
   { build(); g_req.tid = tid + 1;  // mismatched proven_tid
@@ -440,7 +440,7 @@ int main(int argc, char **argv) {
   { build(); uint64_t t = acquire(); g_new_calls = 0;
     assert(complete(t, out) == PGS_DC_DONE); const int ca = g_new_calls; balanced(); assert(ca >= 7);
     for (int n = 1; n <= ca; ++n) { build(); uint64_t tn = acquire(); g_fail_new = n;
-      PgrDetailsCompletionOutput failed{}; g_api->complete(&g_req, tn, &failed); balanced();
+      PgsDetailsCompletionOutput failed{}; g_api->complete(&g_req, tn, &failed); balanced();
       assert(g_alloc_failed && g_click_calls <= 1);
       assert(!(failed.flags & PGS_DC_FLAG_GONE)); } }  // a failed root is not proof of destruction
 

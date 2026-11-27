@@ -91,16 +91,16 @@ enum PgsCameraHostEventFlags {
 typedef double (*PgsCameraHostClockFn)(void *ctx);
 typedef uint64_t (*PgsCameraHostTidFn)(void *ctx);
 
-typedef struct PgrCameraHostConfig {
+typedef struct PgsCameraHostConfig {
   uint32_t version;
   uint32_t size;
   uint32_t flags;
   int32_t expected_layer;
   const void *module_base;
   uint64_t module_size;
-  const PgrMetaExports *meta_exports;
+  const PgsMetaExports *meta_exports;
   const PgsCameraMetaExtra *meta_extra;
-  pgr_meta_seg_fn seg_query;
+  pgs_meta_seg_fn seg_query;
   void *seg_ctx;
   const void *domain;
   void *thread_current;
@@ -112,9 +112,9 @@ typedef struct PgrCameraHostConfig {
   void *tid_ctx;
   void *fixture_getter_code;
   uint64_t reserved0;
-} PgrCameraHostConfig;
+} PgsCameraHostConfig;
 
-typedef struct PgrCameraHostOptions {
+typedef struct PgsCameraHostOptions {
   uint32_t version;
   uint32_t size;
   uint8_t enabled;
@@ -125,9 +125,9 @@ typedef struct PgrCameraHostOptions {
   uint64_t now_ms;
   uint32_t flags;
   uint32_t reserved;
-} PgrCameraHostOptions;
+} PgsCameraHostOptions;
 
-typedef struct PgrCameraHostEvent {
+typedef struct PgsCameraHostEvent {
   uint32_t version;
   uint32_t size;
   uint32_t kind;
@@ -147,9 +147,9 @@ typedef struct PgrCameraHostEvent {
   char reason[64];
   char status[32];
   char json[1576];
-} PgrCameraHostEvent;
+} PgsCameraHostEvent;
 
-typedef struct PgrCameraHostSample {
+typedef struct PgsCameraHostSample {
   uint32_t version;
   uint32_t size;
   uint8_t active;
@@ -180,62 +180,62 @@ typedef struct PgrCameraHostSample {
   char failure_stage[64];
   char failure_name[64];
   char failure_message[264];
-} PgrCameraHostSample;
+} PgsCameraHostSample;
 
-typedef struct PgrCameraHostApi {
+typedef struct PgsCameraHostApi {
   uint32_t version;
   uint32_t size;
-  int (*configure)(const PgrCameraHostConfig *config);
-  int (*start)(const PgrCameraHostOptions *options);
-  int (*set_options)(const PgrCameraHostOptions *options);
+  int (*configure)(const PgsCameraHostConfig *config);
+  int (*start)(const PgsCameraHostOptions *options);
+  int (*set_options)(const PgsCameraHostOptions *options);
   int (*tick)(uint64_t tid);
   int (*on_execute_enter)(uint64_t tid, uint32_t is_execute_tasks);
   int (*on_execute_leave)(uint64_t tid, uint32_t is_execute_tasks);
   int (*on_main_camera_getter)(void *rig, void *returned_camera, uint64_t tid);
-  int (*next_event)(PgrCameraHostEvent *out_event);
+  int (*next_event)(PgsCameraHostEvent *out_event);
   int (*stop)(const char *reason);
-  int (*sample)(PgrCameraHostSample *out_sample);
-  void (*on_unity_begin)(void *ctx, const PgrUnityPulse *pulse);
-  void (*on_unity_end)(void *ctx, const PgrUnityPulse *pulse);
+  int (*sample)(PgsCameraHostSample *out_sample);
+  void (*on_unity_begin)(void *ctx, const PgsUnityPulse *pulse);
+  void (*on_unity_end)(void *ctx, const PgsUnityPulse *pulse);
   void (*bind_core_handle)(void *lib_handle);
-} PgrCameraHostApi;
+} PgsCameraHostApi;
 
 #if defined(__cplusplus) && (defined(__LP64__) || defined(_LP64) || defined(__aarch64__) || defined(__x86_64__))
-static_assert(sizeof(PgrCameraHostConfig) == 144, "PgrCameraHostConfig size");
-static_assert(offsetof(PgrCameraHostConfig, module_base) == 16, "module_base offset");
-static_assert(offsetof(PgrCameraHostConfig, meta_exports) == 32, "meta_exports offset");
-static_assert(offsetof(PgrCameraHostConfig, meta_extra) == 40, "meta_extra offset");
-static_assert(offsetof(PgrCameraHostConfig, seg_query) == 48, "seg_query offset");
-static_assert(offsetof(PgrCameraHostConfig, domain) == 64, "domain offset");
-static_assert(offsetof(PgrCameraHostConfig, thread_current) == 72, "thread_current offset");
-static_assert(offsetof(PgrCameraHostConfig, clock_fn) == 96, "clock_fn offset");
-static_assert(offsetof(PgrCameraHostConfig, tid_fn) == 112, "tid_fn offset");
-static_assert(offsetof(PgrCameraHostConfig, fixture_getter_code) == 128, "fixture_getter_code offset");
+static_assert(sizeof(PgsCameraHostConfig) == 144, "PgsCameraHostConfig size");
+static_assert(offsetof(PgsCameraHostConfig, module_base) == 16, "module_base offset");
+static_assert(offsetof(PgsCameraHostConfig, meta_exports) == 32, "meta_exports offset");
+static_assert(offsetof(PgsCameraHostConfig, meta_extra) == 40, "meta_extra offset");
+static_assert(offsetof(PgsCameraHostConfig, seg_query) == 48, "seg_query offset");
+static_assert(offsetof(PgsCameraHostConfig, domain) == 64, "domain offset");
+static_assert(offsetof(PgsCameraHostConfig, thread_current) == 72, "thread_current offset");
+static_assert(offsetof(PgsCameraHostConfig, clock_fn) == 96, "clock_fn offset");
+static_assert(offsetof(PgsCameraHostConfig, tid_fn) == 112, "tid_fn offset");
+static_assert(offsetof(PgsCameraHostConfig, fixture_getter_code) == 128, "fixture_getter_code offset");
 
-static_assert(sizeof(PgrCameraHostOptions) == 32, "PgrCameraHostOptions size");
-static_assert(offsetof(PgrCameraHostOptions, enabled) == 8, "enabled offset");
-static_assert(offsetof(PgrCameraHostOptions, lease_ms) == 12, "lease_ms offset");
-static_assert(offsetof(PgrCameraHostOptions, now_ms) == 16, "now_ms offset");
+static_assert(sizeof(PgsCameraHostOptions) == 32, "PgsCameraHostOptions size");
+static_assert(offsetof(PgsCameraHostOptions, enabled) == 8, "enabled offset");
+static_assert(offsetof(PgsCameraHostOptions, lease_ms) == 12, "lease_ms offset");
+static_assert(offsetof(PgsCameraHostOptions, now_ms) == 16, "now_ms offset");
 
-static_assert(sizeof(PgrCameraHostEvent) == 1792, "PgrCameraHostEvent size");
-static_assert(offsetof(PgrCameraHostEvent, tid) == 32, "tid offset");
-static_assert(offsetof(PgrCameraHostEvent, x) == 56, "x offset");
-static_assert(offsetof(PgrCameraHostEvent, yaw_degrees) == 80, "yaw_degrees offset");
-static_assert(offsetof(PgrCameraHostEvent, kind_name) == 88, "kind_name offset");
-static_assert(offsetof(PgrCameraHostEvent, reason) == 120, "reason offset");
-static_assert(offsetof(PgrCameraHostEvent, status) == 184, "status offset");
-static_assert(offsetof(PgrCameraHostEvent, json) == 216, "json offset");
+static_assert(sizeof(PgsCameraHostEvent) == 1792, "PgsCameraHostEvent size");
+static_assert(offsetof(PgsCameraHostEvent, tid) == 32, "tid offset");
+static_assert(offsetof(PgsCameraHostEvent, x) == 56, "x offset");
+static_assert(offsetof(PgsCameraHostEvent, yaw_degrees) == 80, "yaw_degrees offset");
+static_assert(offsetof(PgsCameraHostEvent, kind_name) == 88, "kind_name offset");
+static_assert(offsetof(PgsCameraHostEvent, reason) == 120, "reason offset");
+static_assert(offsetof(PgsCameraHostEvent, status) == 184, "status offset");
+static_assert(offsetof(PgsCameraHostEvent, json) == 216, "json offset");
 
-static_assert(sizeof(PgrCameraHostSample) == 552, "PgrCameraHostSample size");
-static_assert(offsetof(PgrCameraHostSample, vector_fields) == 16, "vector_fields offset");
-static_assert(offsetof(PgrCameraHostSample, owner_tid) == 56, "owner_tid offset");
-static_assert(offsetof(PgrCameraHostSample, last_error) == 88, "last_error offset");
-static_assert(offsetof(PgrCameraHostSample, reason) == 96, "reason offset");
-static_assert(offsetof(PgrCameraHostSample, failure_stage) == 160, "failure_stage offset");
-static_assert(offsetof(PgrCameraHostSample, failure_name) == 224, "failure_name offset");
-static_assert(offsetof(PgrCameraHostSample, failure_message) == 288, "failure_message offset");
+static_assert(sizeof(PgsCameraHostSample) == 552, "PgsCameraHostSample size");
+static_assert(offsetof(PgsCameraHostSample, vector_fields) == 16, "vector_fields offset");
+static_assert(offsetof(PgsCameraHostSample, owner_tid) == 56, "owner_tid offset");
+static_assert(offsetof(PgsCameraHostSample, last_error) == 88, "last_error offset");
+static_assert(offsetof(PgsCameraHostSample, reason) == 96, "reason offset");
+static_assert(offsetof(PgsCameraHostSample, failure_stage) == 160, "failure_stage offset");
+static_assert(offsetof(PgsCameraHostSample, failure_name) == 224, "failure_name offset");
+static_assert(offsetof(PgsCameraHostSample, failure_message) == 288, "failure_message offset");
 
-static_assert(sizeof(PgrCameraHostApi) == 112, "PgrCameraHostApi size");
+static_assert(sizeof(PgsCameraHostApi) == 112, "PgsCameraHostApi size");
 #endif
 
 const void *pgs_camera_host_api(uint32_t version);

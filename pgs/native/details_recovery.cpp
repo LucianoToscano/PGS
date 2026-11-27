@@ -16,15 +16,15 @@
 // refusals. No mutex is held across a managed call; no raw managed pointer survives one.
 
 static_assert(sizeof(PgsDetailsRecoveryConfig) == 272, "config 272");
-static_assert(sizeof(PgrDetailsRecoveryRequest) == 56, "request 56");
-static_assert(sizeof(PgrDetailsRecoveryOutput) == 64, "output 64");
-static_assert(sizeof(PgrDetailsRecoveryApi) == 32, "table 32");
-static_assert(offsetof(PgrDetailsRecoveryRequest, expected_key) == 8, "layout");
-static_assert(offsetof(PgrDetailsRecoveryRequest, remaining_ms) == 32, "layout");
-static_assert(offsetof(PgrDetailsRecoveryRequest, gui) == 40, "layout");
-static_assert(offsetof(PgrDetailsRecoveryRequest, response) == 48, "layout");
-static_assert(offsetof(PgrDetailsRecoveryOutput, gui) == 16, "layout");
-static_assert(offsetof(PgrDetailsRecoveryOutput, dismissed) == 56, "layout");
+static_assert(sizeof(PgsDetailsRecoveryRequest) == 56, "request 56");
+static_assert(sizeof(PgsDetailsRecoveryOutput) == 64, "output 64");
+static_assert(sizeof(PgsDetailsRecoveryApi) == 32, "table 32");
+static_assert(offsetof(PgsDetailsRecoveryRequest, expected_key) == 8, "layout");
+static_assert(offsetof(PgsDetailsRecoveryRequest, remaining_ms) == 32, "layout");
+static_assert(offsetof(PgsDetailsRecoveryRequest, gui) == 40, "layout");
+static_assert(offsetof(PgsDetailsRecoveryRequest, response) == 48, "layout");
+static_assert(offsetof(PgsDetailsRecoveryOutput, gui) == 16, "layout");
+static_assert(offsetof(PgsDetailsRecoveryOutput, dismissed) == 56, "layout");
 
 namespace {
 
@@ -43,7 +43,7 @@ PgsDetailsRecoveryConfig g_cfg{};
 std::atomic<bool> g_installed{false};
 bool g_install_attempted = false;
 int g_install_error = PGS_DR_ERR_NOT_INSTALLED;
-const PgrDetailsCompletionApi *g_validator = nullptr;  // feature 37 table (the identity validator)
+const PgsDetailsCompletionApi *g_validator = nullptr;  // feature 37 table (the identity validator)
 
 // Permanent Unity owner, latched once from a genuine on-thread call.
 std::atomic<uint64_t> g_owner_tid{0};
@@ -138,7 +138,7 @@ bool exact_record(const Record &r, bool withPokemon = true) {
          is_exact(r.response.get(), g_cfg.class_response) && is_exact(r.data.get(), g_cfg.class_data) &&
          (!withPokemon || is_exact(r.pokemon.get(), g_cfg.class_pokemon)) && is_exact(r.dismissed.get(), g_cfg.class_action);
 }
-bool check_relationships(const PgrDetailsRecoveryRequest *req, const Record &r, bool withPokemon = true) {
+bool check_relationships(const PgsDetailsRecoveryRequest *req, const Record &r, bool withPokemon = true) {
   if (!exact_record(r,withPokemon)) return false;
   if (field_ptr(r.gui.get(), g_cfg.f_gui_data) != r.data.get()) return false;
   if (field_ptr(r.gui.get(), g_cfg.f_gui_callback) != r.dismissed.get()) return false;
@@ -161,7 +161,7 @@ bool check_relationships(const PgrDetailsRecoveryRequest *req, const Record &r, 
 // Re-derive + root the whole record from the borrowed gui + response, proving every relationship. On
 // success the record is fully rooted and validated by feature 37. Returns 1 / 0. Mirrors
 // quick-close.js recoverDetails plus the one-element backing-list proof.
-int rebuild(const PgrDetailsRecoveryRequest *req, Record &r) {
+int rebuild(const PgsDetailsRecoveryRequest *req, Record &r) {
   bool any = false;
   for (int i = 0; i < 8; ++i) any = any || (req->expected_key[i] != 0);
   if (!any) return 0;  // zero caught key never recovers
@@ -216,10 +216,10 @@ int rebuild(const PgrDetailsRecoveryRequest *req, Record &r) {
   return 1;
 }
 
-void init_output(PgrDetailsRecoveryOutput *out) {
+void init_output(PgsDetailsRecoveryOutput *out) {
   std::memset(out, 0, sizeof(*out));
   out->version = PGS_DR_OUTPUT_VERSION;
-  out->size = sizeof(PgrDetailsRecoveryOutput);
+  out->size = sizeof(PgsDetailsRecoveryOutput);
   out->status = PGS_DR_OK;
 }
 
@@ -254,9 +254,9 @@ int api_install(const PgsDetailsRecoveryConfig *config) {
   // Guarantee the prerequisite validator: resolve feature 37's table and install it with the SAME
   // config (idempotent). Without it recover() has nothing to prove the final snapshot against.
   const auto *validator =
-      static_cast<const PgrDetailsCompletionApi *>(pgs_details_completion_api(PGS_DC_API_VERSION));
+      static_cast<const PgsDetailsCompletionApi *>(pgs_details_completion_api(PGS_DC_API_VERSION));
   if (validator == nullptr || validator->version != PGS_DC_API_VERSION ||
-      validator->size != sizeof(PgrDetailsCompletionApi) || validator->install == nullptr ||
+      validator->size != sizeof(PgsDetailsCompletionApi) || validator->install == nullptr ||
       validator->validate == nullptr)
     return g_install_error = PGS_DR_ERR_PREREQUISITE;
   const int vrc = validator->install(config);
@@ -272,13 +272,13 @@ int api_install(const PgsDetailsRecoveryConfig *config) {
   return g_install_error = PGS_DR_OK;
 }
 
-int api_recover(const PgrDetailsRecoveryRequest *request, PgrDetailsRecoveryOutput *out) {
+int api_recover(const PgsDetailsRecoveryRequest *request, PgsDetailsRecoveryOutput *out) {
   if (out == nullptr) return PGS_DR_ERR_NULL_ARG;  // cannot report
   init_output(out);
   if (!g_installed.load(std::memory_order_acquire)) return out->status = PGS_DR_ERR_NOT_INSTALLED;
   if (request == nullptr) return out->status = PGS_DR_ERR_NULL_ARG;
   if (request->version != PGS_DR_REQUEST_VERSION) return out->status = PGS_DR_ERR_BAD_VERSION;
-  if (request->size != sizeof(PgrDetailsRecoveryRequest)) return out->status = PGS_DR_ERR_BAD_SIZE;
+  if (request->size != sizeof(PgsDetailsRecoveryRequest)) return out->status = PGS_DR_ERR_BAD_SIZE;
 
   const uint64_t tid = current_tid();
   if (request->tid == 0 || tid != request->tid || !owner_ready(tid))
@@ -298,7 +298,7 @@ int api_recover(const PgrDetailsRecoveryRequest *request, PgrDetailsRecoveryOutp
 
   // Final validated snapshot: feature 37 proves alive/callback/scalars/list(count/post) on the rooted
   // handles. It re-runs the heap-relocating managed calls, so re-prove the relationships afterwards.
-  PgrDetailsCompletionRequest v{};
+  PgsDetailsCompletionRequest v{};
   v.version = PGS_DC_REQUEST_VERSION;
   v.size = sizeof(v);
   std::memcpy(v.expected_key, request->expected_key, 8);
@@ -329,7 +329,7 @@ int api_recover(const PgrDetailsRecoveryRequest *request, PgrDetailsRecoveryOutp
   return out->status = PGS_DR_RECOVERED;
 }
 
-int api_release(PgrDetailsRecoveryOutput *out) {
+int api_release(PgsDetailsRecoveryOutput *out) {
   if (out == nullptr) return PGS_DR_ERR_NULL_ARG;
   if (!g_installed.load(std::memory_order_acquire)) return PGS_DR_ERR_NOT_INSTALLED;
   void **slots[] = {&out->gui,&out->state,&out->response,&out->data,&out->pokemon,&out->dismissed};
@@ -342,8 +342,8 @@ int api_release(PgrDetailsRecoveryOutput *out) {
   return PGS_DR_OK;
 }
 
-const PgrDetailsRecoveryApi kApiTable = {
-    PGS_DR_API_VERSION, static_cast<uint32_t>(sizeof(PgrDetailsRecoveryApi)),
+const PgsDetailsRecoveryApi kApiTable = {
+    PGS_DR_API_VERSION, static_cast<uint32_t>(sizeof(PgsDetailsRecoveryApi)),
     &api_install, &api_recover, &api_release,
 };
 

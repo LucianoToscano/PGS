@@ -47,7 +47,7 @@ extern "C" int pgs_auto_rocket_keeps_catches() __attribute__((weak));
 
 namespace {
 
-using namespace pgr_shared_meta;
+using namespace pgs_shared_meta;
 
 struct Failure {
     std::string where;
@@ -63,8 +63,8 @@ F fn(const void* p) {
     return reinterpret_cast<F>(const_cast<void*>(p));
 }
 
-PgrBootBinding boot{};
-const PgrSharedMetadataOutput* md = nullptr;
+PgsBootBinding boot{};
+const PgsSharedMetadataOutput* md = nullptr;
 uint64_t owner = 0;
 bool busy = false;
 bool boot_ready = false;
@@ -149,8 +149,8 @@ struct Root {
     explicit operator bool() const { return get() != nullptr; }
 };
 
-const PgrRuntimeTransportApi* transport() {
-    return static_cast<const PgrRuntimeTransportApi*>(pgs_runtime_transport_api(1));
+const PgsRuntimeTransportApi* transport() {
+    return static_cast<const PgsRuntimeTransportApi*>(pgs_runtime_transport_api(1));
 }
 
 std::string json_quote(const std::string& s) {
@@ -164,9 +164,9 @@ std::string json_quote(const std::string& s) {
 }
 
 void emit_raw_event(const std::string& json) {
-    const PgrRuntimeTransportApi* tr = transport();
+    const PgsRuntimeTransportApi* tr = transport();
     if (!tr || !tr->emit) return;
-    PgrRuntimeTransportString strs[2] = {
+    PgsRuntimeTransportString strs[2] = {
         {"auto-raid", 9},
         {json.c_str(), static_cast<uint32_t>(json.size())},
     };
@@ -189,10 +189,10 @@ struct TransportPermission {
 
 TransportPermission read_permission() {
     TransportPermission p{};
-    const PgrRuntimeTransportApi* tr = transport();
+    const PgsRuntimeTransportApi* tr = transport();
     if (!tr || !tr->sample || !tr->get_string || !tr->get_bool || !tr->get_double) return p;
 
-    PgrRuntimeTransportSample a{}, z{};
+    PgsRuntimeTransportSample a{}, z{};
     if (tr->sample(&a) != 0 || !a.snapshot_fresh || a.fault) return p;
 
     char raw[1280]{};
@@ -513,15 +513,15 @@ void* resolve_class_optional(const char* ns, const char* name) {
     auto it = cache.find(key);
     if (it != cache.end()) return it->second;
 
-    const auto* api = static_cast<const PgrMetaApi*>(pgs_runtime_metadata_api(1));
+    const auto* api = static_cast<const PgsMetaApi*>(pgs_runtime_metadata_api(1));
     require(api != nullptr, "metadata API unavailable");
-    PgrMetaClassQuery q{};
+    PgsMetaClassQuery q{};
     q.version = 1;
     q.size = sizeof(q);
     q.name_space = ns;
     q.name = name;
-    q.canonical_match = PGR_MD_MATCH_EXACT;
-    PgrMetaClassResult out{};
+    q.canonical_match = PGS_MD_MATCH_EXACT;
+    PgsMetaClassResult out{};
     if (api->resolve_class(&q, &out) != 0 || !out.klass) {
         return nullptr;
     }
@@ -1612,7 +1612,7 @@ bool step_controller(uint64_t tid) {
 
 } // namespace
 
-bool pgs_auto_raid_tick(uint64_t tid, const PgrSharedMetadataOutput* metadata) {
+bool pgs_auto_raid_tick(uint64_t tid, const PgsSharedMetadataOutput* metadata) {
     if (busy || tid == 0 || tid != static_cast<uint64_t>(gettid()) || (owner != 0 && owner != tid)) {
         return session.active;
     }
@@ -1663,13 +1663,13 @@ void pgs_auto_raid_stop(uint64_t tid) {
 }
 
 
-void pgs_auto_throw_tick(uint64_t tid,const PgrSharedMetadataOutput* metadata,bool raid_owns_game) {
+void pgs_auto_throw_tick(uint64_t tid,const PgsSharedMetadataOutput* metadata,bool raid_owns_game) {
     if(busy||!tid||tid!=static_cast<uint64_t>(gettid())||(owner&&owner!=tid))return;
     struct Guard {Guard(){busy=true;}~Guard(){busy=false;}} guard;
     owner=tid;md=metadata;
     try {
         if(!boot_ready){
-            const auto* api=static_cast<const PgrBootApi*>(pgs_runtime_bootstrap_api(1));
+            const auto* api=static_cast<const PgsBootApi*>(pgs_runtime_bootstrap_api(1));
             boot.version=1;boot.size=sizeof(boot);
             if(!md||!api||api->snapshot(&boot)!=0)return;
             boot_ready=true;
@@ -1700,12 +1700,12 @@ extern "C" void pgs_queue_caught_transfer(void* response) {
     catch(...){}
 }
 
-void pgs_map_auto_throw_tick(uint64_t tid,const PgrSharedMetadataOutput* metadata,bool blocked) {
+void pgs_map_auto_throw_tick(uint64_t tid,const PgsSharedMetadataOutput* metadata,bool blocked) {
     if(!tid||tid!=uint64_t(gettid())||(owner&&owner!=tid)||busy)return;
     owner=tid;md=metadata;map_gate=!blocked;
     struct Guard{Guard(){busy=true;}~Guard(){busy=false;}} guard;
     try{
-        if(!boot_ready){auto api=static_cast<const PgrBootApi*>(pgs_runtime_bootstrap_api(1));boot.version=1;boot.size=sizeof(boot);if(!api||api->snapshot(&boot)!=0)return;boot_ready=true;}
+        if(!boot_ready){auto api=static_cast<const PgsBootApi*>(pgs_runtime_bootstrap_api(1));boot.version=1;boot.size=sizeof(boot);if(!api||api->snapshot(&boot)!=0)return;boot_ready=true;}
         if(map_mode_on(map_permission()))map_install_hook();
         step_map_auto_throw(tid,blocked||!map_command_free(),map_vgp_busy());
     }catch(const Failure& f){map_block(f.where);}catch(...){map_block("Unexpected native failure; not retried");}

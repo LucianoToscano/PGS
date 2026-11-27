@@ -18,7 +18,7 @@
 #include <unistd.h>
 
 namespace {
-using namespace pgr_shared_meta;
+using namespace pgs_shared_meta;
 
 struct Class;
 struct Type { std::string name; Class *klass = nullptr; };
@@ -76,11 +76,11 @@ Method *new_method(Class *owner, const char *name, Type *result, Type *p0 = null
   methods.emplace_back(new Method{nullptr, owner, owner, name, result, p0, p1, n, 0, false, false});
   return methods.back().get();
 }
-bool zero(const PgrSharedMetadataOutput &out) { PgrSharedMetadataOutput e{}; return std::memcmp(&out, &e, sizeof(out)) == 0; }
+bool zero(const PgsSharedMetadataOutput &out) { PgsSharedMetadataOutput e{}; return std::memcmp(&out, &e, sizeof(out)) == 0; }
 
 void *domain_get() {
-  if (reenter) { reenter = false; PgrSharedMetadataOutput out; std::memset(&out, 0xa5, sizeof(out));
-    assert(api->resolve(&config, &out) == PGR_MD_ERR_BUSY && zero(out)); ++reentries; }
+  if (reenter) { reenter = false; PgsSharedMetadataOutput out; std::memset(&out, 0xa5, sizeof(out));
+    assert(api->resolve(&config, &out) == PGS_MD_ERR_BUSY && zero(out)); ++reentries; }
   return &domain_token;
 }
 void *domain_assemblies(void *, size_t *count) { *count = 2; return assemblies; }
@@ -124,13 +124,13 @@ bool assignable(void *, void *) { return false; }
 void *enumerate(void *, void **) { return nullptr; }
 void *declaring(void *) { return nullptr; }
 void *thread_current() { ++thread_checks; return attached && (!detach_at || thread_checks < detach_at) ? &thread_token : nullptr; }
-int segment(void *, const void *address, uint64_t length, PgrMetaSegment *out) {
+int segment(void *, const void *address, uint64_t length, PgsMetaSegment *out) {
   *out = {}; uintptr_t a = reinterpret_cast<uintptr_t>(address), base = reinterpret_cast<uintptr_t>(module_base);
   if (a < base || a - base > module_size || !length || length > module_size - (a - base)) return 0;
   out->found = out->readable = out->host_exec = out->writable = 1; out->seg_base = module_base; out->seg_size = module_size; return 0;
 }
-PgrMetaExports exports() {
-  PgrMetaExports e{};
+PgsMetaExports exports() {
+  PgsMetaExports e{};
   e.domain_get = reinterpret_cast<void *>(domain_get); e.domain_get_assemblies = reinterpret_cast<void *>(domain_assemblies);
   e.assembly_get_image = reinterpret_cast<void *>(assembly_image); e.class_from_name = reinterpret_cast<void *>(class_from_name);
   e.class_get_type = reinterpret_cast<void *>(class_type); e.type_get_name = reinterpret_cast<void *>(type_name); e.mem_free = reinterpret_cast<void *>(mem_free);
@@ -210,8 +210,8 @@ void build_fixture() {
   }
 }
 
-PgrSharedMetadataOutput success() {
-  PgrSharedMetadataOutput out{}; const int rc=api->resolve(&config,&out);if(rc)std::fprintf(stderr,"shared56 resolve status=%d\n",rc);
+PgsSharedMetadataOutput success() {
+  PgsSharedMetadataOutput out{}; const int rc=api->resolve(&config,&out);if(rc)std::fprintf(stderr,"shared56 resolve status=%d\n",rc);
   assert(rc == 0 && out.version == 2 && out.size == sizeof(out));
   for (size_t i = 0; i < kClassCount; i++) assert(out.classes[i] == &classes[i]);
   for (size_t i = 0; i < kFieldCount; i++) assert(out.fields[i] == fields[i].get());
@@ -227,7 +227,7 @@ PgrSharedMetadataOutput success() {
   return out;
 }
 void failure(int expected, const PgsSharedMetadataConfig *c = nullptr) {
-  PgrSharedMetadataOutput out; std::memset(&out, 0xa5, sizeof(out));
+  PgsSharedMetadataOutput out; std::memset(&out, 0xa5, sizeof(out));
   assert(api->resolve(c ? c : &config, &out) == expected);
   assert(zero(out) && names_allocated == names_freed);
 }
@@ -241,13 +241,13 @@ int main(int argc, char **argv) {
   assert(api && api->version == 2 && api->size == 24 && api->config_size == 96 && api->output_size == 67304);
 
   build_fixture();
-  PgrMetaExports e = exports();
+  PgsMetaExports e = exports();
   e.debug_get_method_info=module_base+0x7000;
   config.version = 2; config.size = sizeof(config);
   extra.field_static_get_value=reinterpret_cast<void*>(static_value);
   extra.gchandle_new=module_base+gc_new_rva;extra.gchandle_get_target=module_base+gc_get_rva;extra.gchandle_free=module_base+gc_free_rva;
   config.extra=&extra;assert(sizeof(extra)==112);
-  config.binding.version = 1; config.binding.size = sizeof(PgrMetaBindConfig); config.binding.exports = &e;
+  config.binding.version = 1; config.binding.size = sizeof(PgsMetaBindConfig); config.binding.exports = &e;
   config.binding.module_base = module_base; config.binding.module_size = module_size; config.binding.seg_query = segment;
   config.binding.debug_prologue=debug_trampoline;config.binding.debug_prologue_len=sizeof(debug_trampoline);
   config.thread_current = reinterpret_cast<void *>(thread_current); config.owner_tid = gettid();
@@ -259,7 +259,7 @@ int main(int argc, char **argv) {
     c = config; c.thread_current = nullptr; failure(PGS_SHARED_ERR_CONFIG, &c); }
   {auto c=config;c.extra=nullptr;failure(PGS_SHARED_ERR_CONFIG,&c);
    auto x=extra;c=config;c.extra=&x;x.field_static_get_value=nullptr;failure(PGS_SHARED_ERR_CONFIG,&c);}
-  { PgrSharedMetadataOutput out; std::memset(&out, 0xa5, sizeof(out));
+  { PgsSharedMetadataOutput out; std::memset(&out, 0xa5, sizeof(out));
     assert(api->resolve(nullptr, &out) == PGS_SHARED_ERR_CONFIG && zero(out));
     assert(api->resolve(&config, nullptr) == PGS_SHARED_ERR_NULL_ARG); }
 

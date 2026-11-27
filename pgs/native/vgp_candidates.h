@@ -97,9 +97,9 @@ enum PgsVgpCandidateReason {
 // the native layer re-checks the header and rejects any null. No hook address. The virtual getters are
 // the BASE MethodInfo* (resolved per object with object_get_virtual_method); location / id / alive are
 // invoked directly (non-virtual).
-struct PgrVgpCandidateConfig {
+struct PgsVgpCandidateConfig {
   uint32_t version;  // == PGS_VC_CONFIG_VERSION
-  uint32_t size;     // == sizeof(PgrVgpCandidateConfig)
+  uint32_t size;     // == sizeof(PgsVgpCandidateConfig)
 
   // il2cpp runtime exports.
   void *gchandle_new;            // uintptr_t (void* obj, int pinned)
@@ -136,16 +136,16 @@ struct PgrVgpCandidateConfig {
   void *class_uint64;  // System.UInt64 (value size 8)
 };
 
-static_assert(sizeof(PgrVgpCandidateConfig) == 200,
-              "PgrVgpCandidateConfig must remain 200 bytes on LP64");
+static_assert(sizeof(PgsVgpCandidateConfig) == 200,
+              "PgsVgpCandidateConfig must remain 200 bytes on LP64");
 
 // Fixed LP64 request (64 bytes). target / manual are raw managed pointers the caller keeps rooted for
 // the synchronous call; native also roots them. manual may be null (no manual exclusion). lat/lon are
 // the player coordinates (finite, |lat|<=90, |lon|<=180). owner_tid is the proven Unity owner tid
 // (must equal the current OS tid). lease_ms is the residual foreground lease (clamped MAX_LEASE_MS).
-struct PgrVgpCandidateRequest {
+struct PgsVgpCandidateRequest {
   uint32_t version;    // == PGS_VC_REQUEST_VERSION
-  uint32_t size;       // == sizeof(PgrVgpCandidateRequest)
+  uint32_t size;       // == sizeof(PgsVgpCandidateRequest)
   uint32_t action;     // normal catch, smart catch, or spin (PGS_VC_ACTION_*)
   uint32_t reserved;   // 0
   uint64_t owner_tid;  // proven Unity owner tid
@@ -156,13 +156,13 @@ struct PgrVgpCandidateRequest {
   void    *manual;     // manual-encounter target, or null (catch only)
 };
 
-static_assert(sizeof(PgrVgpCandidateRequest) == 64,
-              "PgrVgpCandidateRequest must remain 64 bytes on LP64");
+static_assert(sizeof(PgsVgpCandidateRequest) == 64,
+              "PgsVgpCandidateRequest must remain 64 bytes on LP64");
 
 // Fixed LP64 result (1072 bytes). Always fully initialised by inspect() before any early return.
-struct PgrVgpCandidateResult {
+struct PgsVgpCandidateResult {
   uint32_t version;      // == PGS_VC_RESULT_VERSION
-  uint32_t size;         // == sizeof(PgrVgpCandidateResult)
+  uint32_t size;         // == sizeof(PgsVgpCandidateResult)
   int32_t  eligible;     // 1 eligible, 0 otherwise
   int32_t  reason;       // PgsVgpCandidateReason
   uint32_t key_len;      // key bytes written (excluding the NUL); 0 unless eligible
@@ -171,24 +171,24 @@ struct PgrVgpCandidateResult {
   char     key[PGS_VC_KEY_CAPACITY];  // 's'/'p' prefix + payload, NUL-terminated
 };
 
-static_assert(sizeof(PgrVgpCandidateResult) == 1072,
-              "PgrVgpCandidateResult must remain 1072 bytes on LP64");
+static_assert(sizeof(PgsVgpCandidateResult) == 1072,
+              "PgsVgpCandidateResult must remain 1072 bytes on LP64");
 
 // Fixed LP64 table: 8-byte header + 2 function pointers = 24 bytes.
-struct PgrVgpCandidateApi {
+struct PgsVgpCandidateApi {
   uint32_t version;  // == PGS_VC_API_VERSION
-  uint32_t size;     // == sizeof(PgrVgpCandidateApi)
+  uint32_t size;     // == sizeof(PgsVgpCandidateApi)
   // install(config): bind the validated runtime once for the process lifetime. Idempotent for an
   // identical config; a different config returns PGS_VC_ERR_RECONFIG. Any null required pointer or a
   // bad header is rejected (fail closed). No hook is installed.
-  int (*install)(const PgrVgpCandidateConfig *config);
+  int (*install)(const PgsVgpCandidateConfig *config);
   // inspect(request, out): evaluate ONE candidate. Returns PGS_VC_ELIGIBLE / PGS_VC_NOT / negative.
   // out is always fully initialised. Owner thread only.
-  int (*inspect)(const PgrVgpCandidateRequest *request, PgrVgpCandidateResult *out);
+  int (*inspect)(const PgsVgpCandidateRequest *request, PgsVgpCandidateResult *out);
 };
 
-static_assert(sizeof(PgrVgpCandidateApi) == 24,
-              "PgrVgpCandidateApi must remain a 24-byte version-1 table");
+static_assert(sizeof(PgsVgpCandidateApi) == 24,
+              "PgsVgpCandidateApi must remain a 24-byte version-1 table");
 
 // Hidden getter. NOT exported by the version script; the coordinator registers it in query_feature
 // under feature id 29 and answers only on an exact version match.

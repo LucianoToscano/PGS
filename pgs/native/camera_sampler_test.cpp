@@ -118,8 +118,8 @@ void *fake_invoke(const void *method, void *obj, void **args, void **exc) {
   return ret;
 }
 
-PgrCameraSamplerConfig make_config() {
-  PgrCameraSamplerConfig c{};
+PgsCameraSamplerConfig make_config() {
+  PgsCameraSamplerConfig c{};
   c.version = PGS_CS_CONFIG_VERSION;
   c.size = sizeof(c);
   c.runtime_invoke = reinterpret_cast<void *>(&fake_invoke);
@@ -185,10 +185,10 @@ void relocate(void *from, void *to) {
   if (from == &g_camera) g_cam_now = to;
 }
 
-const PgrCameraSamplerApi *g_api = nullptr;
+const PgsCameraSamplerApi *g_api = nullptr;
 
-PgrCameraSamplerRequest make_request(uint64_t tid, uint64_t remaining, void *rig, void *camera) {
-  PgrCameraSamplerRequest r{};
+PgsCameraSamplerRequest make_request(uint64_t tid, uint64_t remaining, void *rig, void *camera) {
+  PgsCameraSamplerRequest r{};
   r.version = PGS_CS_REQUEST_VERSION;
   r.size = sizeof(r);
   r.tid = tid;
@@ -209,60 +209,60 @@ int main(int argc, char **argv) {
   const auto *core = static_cast<const pgs_native_api_v2 *>(getter(2));
   assert(core && core->size == 48);
   assert(core->query_feature(41, 99) == nullptr);
-  const auto *api = static_cast<const PgrCameraSamplerApi *>(core->query_feature(41, 1));
-  assert(api && api->version == 1 && api->size == sizeof(PgrCameraSamplerApi));
+  const auto *api = static_cast<const PgsCameraSamplerApi *>(core->query_feature(41, 1));
+  assert(api && api->version == 1 && api->size == sizeof(PgsCameraSamplerApi));
   g_api = api;
 
   // 0. ABI layout: fixed config/request/output/table sizes and field offsets.
   std::printf("ABI sizes: config=%zu request=%zu output=%zu table=%zu\n",
-              sizeof(PgrCameraSamplerConfig), sizeof(PgrCameraSamplerRequest),
-              sizeof(PgrCameraSamplerOutput), sizeof(PgrCameraSamplerApi));
-  assert(sizeof(PgrCameraSamplerConfig) == 216 && sizeof(PgrCameraSamplerRequest) == 40 &&
-         sizeof(PgrCameraSamplerOutput) == 72 && sizeof(PgrCameraSamplerApi) == 24);
-  assert(offsetof(PgrCameraSamplerConfig, expected_layer) == 208 && offsetof(PgrCameraSamplerConfig, reserved0) == 212);
-  assert(offsetof(PgrCameraSamplerRequest, rig) == 24 && offsetof(PgrCameraSamplerRequest, camera) == 32);
-  assert(offsetof(PgrCameraSamplerOutput, status) == 8 && offsetof(PgrCameraSamplerOutput, reason) == 12 &&
-         offsetof(PgrCameraSamplerOutput, camera_id) == 16 && offsetof(PgrCameraSamplerOutput, mask) == 20 &&
-         offsetof(PgrCameraSamplerOutput, layer) == 24 && offsetof(PgrCameraSamplerOutput, x) == 32 &&
-         offsetof(PgrCameraSamplerOutput, time_ms) == 64);
+              sizeof(PgsCameraSamplerConfig), sizeof(PgsCameraSamplerRequest),
+              sizeof(PgsCameraSamplerOutput), sizeof(PgsCameraSamplerApi));
+  assert(sizeof(PgsCameraSamplerConfig) == 216 && sizeof(PgsCameraSamplerRequest) == 40 &&
+         sizeof(PgsCameraSamplerOutput) == 72 && sizeof(PgsCameraSamplerApi) == 24);
+  assert(offsetof(PgsCameraSamplerConfig, expected_layer) == 208 && offsetof(PgsCameraSamplerConfig, reserved0) == 212);
+  assert(offsetof(PgsCameraSamplerRequest, rig) == 24 && offsetof(PgsCameraSamplerRequest, camera) == 32);
+  assert(offsetof(PgsCameraSamplerOutput, status) == 8 && offsetof(PgsCameraSamplerOutput, reason) == 12 &&
+         offsetof(PgsCameraSamplerOutput, camera_id) == 16 && offsetof(PgsCameraSamplerOutput, mask) == 20 &&
+         offsetof(PgsCameraSamplerOutput, layer) == 24 && offsetof(PgsCameraSamplerOutput, x) == 32 &&
+         offsetof(PgsCameraSamplerOutput, time_ms) == 64);
   assert(PGS_CS_CONFIG_VERSION == 1 && PGS_CS_WORLD_MAP_LAYER == 13 && PGS_CS_MAX_LEASE_MS == 2500);
 
   const uint64_t tid = this_tid();
-  PgrCameraSamplerConfig cfg = make_config();
-  PgrCameraSamplerOutput out{};
+  PgsCameraSamplerConfig cfg = make_config();
+  PgsCameraSamplerOutput out{};
 
   // 1. install validation + not-installed + idempotence + reconfig.
   assert(api->install(nullptr) == PGS_CS_ERR_NULL_ARG);
-  { PgrCameraSamplerConfig b = cfg; b.version = 2; assert(api->install(&b) == PGS_CS_ERR_BAD_VERSION); }
-  { PgrCameraSamplerConfig b = cfg; b.size = sizeof(cfg) - 1; assert(api->install(&b) == PGS_CS_ERR_BAD_SIZE); }
-  { PgrCameraSamplerConfig b = cfg; b.runtime_invoke = nullptr; assert(api->install(&b) == PGS_CS_ERR_MISSING_PTR); }
-  { PgrCameraSamplerConfig b = cfg; b.f_z = nullptr; assert(api->install(&b) == PGS_CS_ERR_MISSING_PTR); }
-  { PgrCameraSamplerConfig b = cfg; b.class_rig = nullptr; assert(api->install(&b) == PGS_CS_ERR_MISSING_PTR); }
-  { PgrCameraSamplerConfig b = cfg; b.expected_layer = 12; assert(api->install(&b) == PGS_CS_ERR_BAD_CONFIG); }
-  { PgrCameraSamplerConfig b = cfg; b.reserved0 = 1; assert(api->install(&b) == PGS_CS_ERR_BAD_CONFIG); }
+  { PgsCameraSamplerConfig b = cfg; b.version = 2; assert(api->install(&b) == PGS_CS_ERR_BAD_VERSION); }
+  { PgsCameraSamplerConfig b = cfg; b.size = sizeof(cfg) - 1; assert(api->install(&b) == PGS_CS_ERR_BAD_SIZE); }
+  { PgsCameraSamplerConfig b = cfg; b.runtime_invoke = nullptr; assert(api->install(&b) == PGS_CS_ERR_MISSING_PTR); }
+  { PgsCameraSamplerConfig b = cfg; b.f_z = nullptr; assert(api->install(&b) == PGS_CS_ERR_MISSING_PTR); }
+  { PgsCameraSamplerConfig b = cfg; b.class_rig = nullptr; assert(api->install(&b) == PGS_CS_ERR_MISSING_PTR); }
+  { PgsCameraSamplerConfig b = cfg; b.expected_layer = 12; assert(api->install(&b) == PGS_CS_ERR_BAD_CONFIG); }
+  { PgsCameraSamplerConfig b = cfg; b.reserved0 = 1; assert(api->install(&b) == PGS_CS_ERR_BAD_CONFIG); }
   {
-    PgrCameraSamplerRequest r = make_request(tid, 2000, &g_rig, &g_camera);
+    PgsCameraSamplerRequest r = make_request(tid, 2000, &g_rig, &g_camera);
     assert(api->sample(&r, &out) == PGS_CS_ERR_NOT_INSTALLED);
     assert(out.version == 1 && out.size == sizeof(out) && out.status == PGS_CS_ERR_NOT_INSTALLED && out.x == 0);
   }
   assert(api->install(&cfg) == 0);
   assert(api->install(&cfg) == 0);  // idempotent
-  { PgrCameraSamplerConfig b = cfg; b.class_rig = &cls_other; assert(api->install(&b) == PGS_CS_ERR_RECONFIG); }
+  { PgsCameraSamplerConfig b = cfg; b.class_rig = &cls_other; assert(api->install(&b) == PGS_CS_ERR_RECONFIG); }
   assert(api->sample(nullptr, &out) == PGS_CS_ERR_NULL_ARG);
-  assert(api->sample(reinterpret_cast<const PgrCameraSamplerRequest *>(&cfg), nullptr) == PGS_CS_ERR_NULL_ARG);
+  assert(api->sample(reinterpret_cast<const PgsCameraSamplerRequest *>(&cfg), nullptr) == PGS_CS_ERR_NULL_ARG);
 
   // 2. owner / lease gate: no managed work; output carries only status/reason (+ time_ms once the clock runs).
   reset();
   {
-    PgrCameraSamplerRequest foreign = make_request(tid + 7, 2000, &g_rig, &g_camera);
+    PgsCameraSamplerRequest foreign = make_request(tid + 7, 2000, &g_rig, &g_camera);
     assert(api->sample(&foreign, &out) == PGS_CS_UNAVAILABLE && out.reason == 4 && g_invokes == 0);
-    PgrCameraSamplerRequest zero = make_request(0, 2000, &g_rig, &g_camera);
+    PgsCameraSamplerRequest zero = make_request(0, 2000, &g_rig, &g_camera);
     assert(api->sample(&zero, &out) == PGS_CS_UNAVAILABLE && out.reason == 4 && g_invokes == 0);
     g_thread = nullptr;  // attached-thread gate
-    PgrCameraSamplerRequest detached = make_request(tid, 2000, &g_rig, &g_camera);
+    PgsCameraSamplerRequest detached = make_request(tid, 2000, &g_rig, &g_camera);
     assert(api->sample(&detached, &out) == PGS_CS_UNAVAILABLE && out.reason == 4 && g_invokes == 0);
     g_thread = reinterpret_cast<void *>(0x7700);
-    PgrCameraSamplerRequest off = make_request(tid, 0, &g_rig, &g_camera);  // latches owner, lease closed
+    PgsCameraSamplerRequest off = make_request(tid, 0, &g_rig, &g_camera);  // latches owner, lease closed
     assert(api->sample(&off, &out) == PGS_CS_UNAVAILABLE && out.reason == 2 && g_invokes == 0);
     assert(g_handles.empty());
   }
@@ -270,20 +270,20 @@ int main(int argc, char **argv) {
   // 3. non-map-rig: the receiver is not the exact MainCameraRig -> benign 0, no allocation, no invoke.
   reset();
   {
-    PgrCameraSamplerRequest r = make_request(tid, 2000, &g_badRig, &g_camera);
+    PgsCameraSamplerRequest r = make_request(tid, 2000, &g_badRig, &g_camera);
     assert(api->sample(&r, &out) == PGS_CS_UNAVAILABLE && out.reason == 5 && g_invokes == 0 && g_gcnew_calls == 0);
   }
   // null returned camera -> benign 0, no invoke.
   reset();
   {
-    PgrCameraSamplerRequest r = make_request(tid, 2000, &g_rig, nullptr);
+    PgsCameraSamplerRequest r = make_request(tid, 2000, &g_rig, nullptr);
     assert(api->sample(&r, &out) == PGS_CS_UNAVAILABLE && out.reason == 6 && g_invokes == 0);
   }
   // camera mismatch: get_main returns a different camera -> benign 0 (before the layer lookup, so no cache).
   reset();
   {
     g_ret_main = &g_otherCamera;
-    PgrCameraSamplerRequest r = make_request(tid, 2000, &g_rig, &g_camera);
+    PgsCameraSamplerRequest r = make_request(tid, 2000, &g_rig, &g_camera);
     assert(api->sample(&r, &out) == PGS_CS_UNAVAILABLE && out.reason == 7 && g_nmlayer_calls == 0 && g_handles.empty());
   }
 
@@ -291,7 +291,7 @@ int main(int argc, char **argv) {
   reset();
   {
     g_layerBox.value = 14;
-    PgrCameraSamplerRequest r = make_request(tid, 2000, &g_rig, &g_camera);
+    PgsCameraSamplerRequest r = make_request(tid, 2000, &g_rig, &g_camera);
     assert(api->sample(&r, &out) == PGS_CS_ERR_LAYER && out.reason == 14 && g_handles.empty());
     assert(out.status == PGS_CS_ERR_LAYER && out.x == 0 && out.time_ms == 0);  // no garbage on fault
   }
@@ -300,7 +300,7 @@ int main(int argc, char **argv) {
   reset();
   {
     const int nml = g_nmlayer_calls;
-    PgrCameraSamplerRequest r = make_request(tid, 2000, &g_rig, &g_camera);
+    PgsCameraSamplerRequest r = make_request(tid, 2000, &g_rig, &g_camera);
     assert(api->sample(&r, &out) == PGS_CS_SAMPLE && out.status == 1 && out.reason == 1);
     assert(out.camera_id == 777 && out.mask == (1u << 13) && out.layer == 13);
     assert(std::fabs(out.x - 1.0) < 1e-9 && out.y == 0.0 && out.z == 0.0);
@@ -312,7 +312,7 @@ int main(int argc, char **argv) {
   reset();
   {
     const int nml = g_nmlayer_calls;
-    PgrCameraSamplerRequest r = make_request(tid, 2000, &g_rig, &g_camera);
+    PgsCameraSamplerRequest r = make_request(tid, 2000, &g_rig, &g_camera);
     assert(api->sample(&r, &out) == PGS_CS_SAMPLE && g_nmlayer_calls == nml && g_handles.empty());
   }
 
@@ -320,7 +320,7 @@ int main(int argc, char **argv) {
   reset();
   {
     g_maskBox.value = 0x4;  // bit 13 clear
-    PgrCameraSamplerRequest r = make_request(tid, 2000, &g_rig, &g_camera);
+    PgsCameraSamplerRequest r = make_request(tid, 2000, &g_rig, &g_camera);
     assert(api->sample(&r, &out) == PGS_CS_UNAVAILABLE && out.reason == 9);
     assert(out.mask == 0x4u && out.layer == 13 && out.x == 0.0 && g_handles.empty());
   }
@@ -328,7 +328,7 @@ int main(int argc, char **argv) {
   reset();
   {
     g_ret_transform = nullptr;
-    PgrCameraSamplerRequest r = make_request(tid, 2000, &g_rig, &g_camera);
+    PgsCameraSamplerRequest r = make_request(tid, 2000, &g_rig, &g_camera);
     assert(api->sample(&r, &out) == PGS_CS_UNAVAILABLE && out.reason == 8 && g_handles.empty());
   }
 
@@ -336,13 +336,13 @@ int main(int argc, char **argv) {
   reset();
   {
     g_vector = {&cls_vector, INFINITY, 0.0f, 0.0f};
-    PgrCameraSamplerRequest r = make_request(tid, 2000, &g_rig, &g_camera);
+    PgsCameraSamplerRequest r = make_request(tid, 2000, &g_rig, &g_camera);
     assert(api->sample(&r, &out) == PGS_CS_ERR_VECTOR && out.reason == 15 && out.x == 0.0 && g_handles.empty());
   }
   reset();
   {
     g_vector = {&cls_vector, 0.0f, 1.0f, 0.0f};  // purely vertical: hypot(x,z)==0
-    PgrCameraSamplerRequest r = make_request(tid, 2000, &g_rig, &g_camera);
+    PgsCameraSamplerRequest r = make_request(tid, 2000, &g_rig, &g_camera);
     assert(api->sample(&r, &out) == PGS_CS_UNAVAILABLE && out.reason == 16 && out.x == 0.0 && g_handles.empty());
     g_vector = {&cls_vector, 1.0f, 0.0f, 0.0f};
     assert(api->sample(&r, &out) == PGS_CS_SAMPLE && std::fabs(out.yaw-90.0)<1e-6 && g_handles.empty());
@@ -353,7 +353,7 @@ int main(int argc, char **argv) {
   for (const Quad &q : {Quad{0, 1, 0.0}, Quad{1, 0, 90.0}, Quad{0, -1, 180.0}, Quad{-1, 0, 270.0}, Quad{1, 1, 45.0}}) {
     reset();
     g_vector = {&cls_vector, q.x, 0.0f, q.z};
-    PgrCameraSamplerRequest r = make_request(tid, 2000, &g_rig, &g_camera);
+    PgsCameraSamplerRequest r = make_request(tid, 2000, &g_rig, &g_camera);
     assert(api->sample(&r, &out) == PGS_CS_SAMPLE && std::fabs(out.yaw - q.yaw) < 1e-6);
   }
 
@@ -361,7 +361,7 @@ int main(int argc, char **argv) {
   for (void *thrower : {&m_main, &m_culling, &m_transform, &m_forward, &m_instanceid}) {
     reset();
     g_throw_method = thrower;
-    PgrCameraSamplerRequest r = make_request(tid, 2000, &g_rig, &g_camera);
+    PgsCameraSamplerRequest r = make_request(tid, 2000, &g_rig, &g_camera);
     assert(api->sample(&r, &out) == PGS_CS_ERR_MANAGED && out.reason == 12 && out.x == 0.0 && g_handles.empty());
   }
 
@@ -370,7 +370,7 @@ int main(int argc, char **argv) {
   for (int n = 1; n <= 8; ++n) {
     reset();
     g_gcnew_fail = n;
-    PgrCameraSamplerRequest r = make_request(tid, 2000, &g_rig, &g_camera);
+    PgsCameraSamplerRequest r = make_request(tid, 2000, &g_rig, &g_camera);
     int rc = api->sample(&r, &out);
     if (n <= g_gcnew_calls) { assert(rc == PGS_CS_ERR_GCHANDLE); assert(out.x == 0.0); }
     else { assert(rc == PGS_CS_SAMPLE); }
@@ -385,7 +385,7 @@ int main(int argc, char **argv) {
       relocate(&g_vector, &g_moved_vector);
       g_vector.y = -99.0f; g_vector.z = -99.0f;  // poison the stale slot
     };
-    PgrCameraSamplerRequest r = make_request(tid, 2000, &g_rig, &g_camera);
+    PgsCameraSamplerRequest r = make_request(tid, 2000, &g_rig, &g_camera);
     assert(api->sample(&r, &out) == PGS_CS_SAMPLE);
     assert(std::fabs(out.y - 5.0) < 1e-9 && std::fabs(out.z - 7.0) < 1e-9);  // from the relocated vector
     assert(g_handles.empty());
@@ -397,7 +397,7 @@ int main(int argc, char **argv) {
     static FakeObj moved_cam{&cls_camera};
     g_oneshot_on = &m_culling;
     g_oneshot = []() { relocate(&g_camera, &moved_cam); };  // fires inside get_cullingMask
-    PgrCameraSamplerRequest r = make_request(tid, 2000, &g_rig, &g_camera);
+    PgsCameraSamplerRequest r = make_request(tid, 2000, &g_rig, &g_camera);
     assert(api->sample(&r, &out) == PGS_CS_SAMPLE && out.camera_id == 777 && g_handles.empty());
   }
 
@@ -406,7 +406,7 @@ int main(int argc, char **argv) {
   {
     g_oneshot_on = &m_culling;
     g_oneshot = []() { ::usleep(4000); };  // blow past the 1 ms lease before publication
-    PgrCameraSamplerRequest r = make_request(tid, 1, &g_rig, &g_camera);
+    PgsCameraSamplerRequest r = make_request(tid, 1, &g_rig, &g_camera);
     assert(api->sample(&r, &out) == PGS_CS_UNAVAILABLE && out.reason == 3 && out.x == 0.0 && g_handles.empty());
   }
 
@@ -416,11 +416,11 @@ int main(int argc, char **argv) {
     int nested = 99;
     g_oneshot_on = &m_main;
     g_oneshot = [&]() {
-      PgrCameraSamplerOutput inner{};
-      PgrCameraSamplerRequest ri = make_request(this_tid(), 2000, &g_rig, &g_camera);
+      PgsCameraSamplerOutput inner{};
+      PgsCameraSamplerRequest ri = make_request(this_tid(), 2000, &g_rig, &g_camera);
       nested = g_api->sample(&ri, &inner);
     };
-    PgrCameraSamplerRequest r = make_request(tid, 2000, &g_rig, &g_camera);
+    PgsCameraSamplerRequest r = make_request(tid, 2000, &g_rig, &g_camera);
     assert(api->sample(&r, &out) == PGS_CS_SAMPLE && nested == PGS_CS_ERR_BUSY && g_handles.empty());
   }
 
@@ -430,8 +430,8 @@ int main(int argc, char **argv) {
     int worker_rc = 123;
     uint32_t worker_reason = 0;
     std::thread worker([&]() {
-      PgrCameraSamplerOutput wout{};
-      PgrCameraSamplerRequest wr = make_request(this_tid(), 2000, &g_rig, &g_camera);
+      PgsCameraSamplerOutput wout{};
+      PgsCameraSamplerRequest wr = make_request(this_tid(), 2000, &g_rig, &g_camera);
       worker_rc = g_api->sample(&wr, &wout);
       worker_reason = wout.reason;
     });

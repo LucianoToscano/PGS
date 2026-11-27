@@ -35,10 +35,10 @@
 // All game data (types, base stats, moves) comes from the game master at runtime.
 namespace {
 using namespace pgs_counter;
-using namespace pgr_shared_meta;
+using namespace pgs_shared_meta;
 struct Failure {const char *where;};
 void require(bool ok,const char *where){if(!ok)throw Failure{where};}
-PgrBootBinding boot{};const PgrSharedMetadataOutput *md=nullptr;
+PgsBootBinding boot{};const PgsSharedMetadataOutput *md=nullptr;
 bool busy=false,initialized=false,hooks_tried=false;
 std::atomic<bool> enabled{false},hooks_ready{false};std::atomic<uint64_t> owner{0};
 constexpr uint64_t kStepMs=250,kSettleMs=1200,kOpenMs=350,kPressRetryMs=500,kPressGiveUpMs=4500,kTableRetryMs=5000;
@@ -60,9 +60,9 @@ struct Root {
 };
 void *klass(void *o){require(o,"null object");return fn<void*(*)(void*)>(boot.runtime.object_get_class)(o);}
 void *cls(const char *ns,const char *name){
- const auto *api=static_cast<const PgrMetaApi*>(pgs_runtime_metadata_api(1));require(api,"metadata API");
- PgrMetaClassQuery q{};q.version=1;q.size=sizeof(q);q.name_space=ns;q.name=name;q.canonical_match=PGR_MD_MATCH_EXACT;
- PgrMetaClassResult out{};require(api->resolve_class(&q,&out)==0,name);return const_cast<void*>(out.klass);
+ const auto *api=static_cast<const PgsMetaApi*>(pgs_runtime_metadata_api(1));require(api,"metadata API");
+ PgsMetaClassQuery q{};q.version=1;q.size=sizeof(q);q.name_space=ns;q.name=name;q.canonical_match=PGS_MD_MATCH_EXACT;
+ PgsMetaClassResult out{};require(api->resolve_class(&q,&out)==0,name);return const_cast<void*>(out.klass);
 }
 std::string typename_of(void *type){char *p=fn<char*(*)(void*)>(boot.meta.type_get_name)(type);require(p,"type name");std::string s=p;fn<void(*)(void*)>(boot.meta.mem_free)(p);return s;}
 void *method(void *k,const char *name,int count){void *m=fn<void*(*)(void*,const char*,int)>(boot.meta.class_get_method_from_name)(k,name,count);require(m,name);return m;}
@@ -102,18 +102,18 @@ Root resolve(void *contract){
  Root target=type_object(contract);void *resolve_args[]={target.get()};return Root(invoke(h(H_IL_RESOLVE_M),container.get(),resolve_args));
 }
 
-const PgrRuntimeTransportApi *transport(){return static_cast<const PgrRuntimeTransportApi*>(pgs_runtime_transport_api(1));}
-void event(const std::string &json){auto tr=transport();if(!tr)return;PgrRuntimeTransportString s[]={{"smart-battle",12},{json.c_str(),uint32_t(json.size())}};tr->emit(19,nullptr,0,s,2);}
+const PgsRuntimeTransportApi *transport(){return static_cast<const PgsRuntimeTransportApi*>(pgs_runtime_transport_api(1));}
+void event(const std::string &json){auto tr=transport();if(!tr)return;PgsRuntimeTransportString s[]={{"smart-battle",12},{json.c_str(),uint32_t(json.size())}};tr->emit(19,nullptr,0,s,2);}
 void status(const char *phase,const std::string &message){event(std::string("{\"phase\":\"")+phase+"\",\"message\":\""+message+"\"}");}
 
 // "F1|enabled"; anything else (or a stale snapshot) means off.
 bool configured(){
- auto tr=transport();PgrRuntimeTransportSample a{};char s[16]{};uint32_t n=0;
+ auto tr=transport();PgsRuntimeTransportSample a{};char s[16]{};uint32_t n=0;
  if(!tr||tr->sample(&a)||!a.snapshot_fresh||a.fault||tr->get_string(21,s,sizeof(s)-1,&n)||n!=4||std::memcmp(s,"F1|1",4)!=0)return false;
  int active=0,ready=0;tr->get_bool(3,&active);tr->get_bool(16,&ready);return active&&ready;
 }
 pgs_smart_party::HealingPolicy healing_policy(){
- auto tr=transport();PgrRuntimeTransportSample a{};char s[64]{};uint32_t n=0;
+ auto tr=transport();PgsRuntimeTransportSample a{};char s[64]{};uint32_t n=0;
  if(!tr||tr->sample(&a)||!a.snapshot_fresh||a.fault||tr->get_string(18,s,sizeof(s)-1,&n)||n>=sizeof(s))return {};
  int active=0,ready=0;
  if(tr->get_bool(3,&active)||tr->get_bool(16,&ready)||!active||!ready)return {};
@@ -531,8 +531,8 @@ void step_rocket(uint64_t now){
 }
 
 bool gym_battle(){
- auto api=static_cast<const PgrCombatHostApi*>(pgs_combat_host_api(1));if(!api||!api->sample)return false;
- PgrCombatHostSample s{};s.version=1;s.size=sizeof(s);
+ auto api=static_cast<const PgsCombatHostApi*>(pgs_combat_host_api(1));if(!api||!api->sample)return false;
+ PgsCombatHostSample s{};s.version=1;s.size=sizeof(s);
  return api->sample(&s)==0&&s.battle_scope_active==1&&s.battle_mode==1;
 }
 bool rocket_battle(){
@@ -550,27 +550,27 @@ void battle_step(){
 
 // ---- Install ---------------------------------------------------------------------------------
 template<class F>void install_hook(void *k,const char *name,int params,const char *ret,uint64_t rva,const uint8_t *prologue,F hook,std::atomic<F> &slot,void **method_out=nullptr){
- const auto *api=static_cast<const PgrMetaApi*>(pgs_runtime_metadata_api(1));require(api&&api->validate_method,"metadata API");
- PgrMetaMethodQuery q{};q.version=1;q.size=sizeof(q);q.owner=k;q.name=name;q.return_type=ret;q.return_match=PGR_MD_MATCH_EXACT;q.param_count=params;
+ const auto *api=static_cast<const PgsMetaApi*>(pgs_runtime_metadata_api(1));require(api&&api->validate_method,"metadata API");
+ PgsMetaMethodQuery q{};q.version=1;q.size=sizeof(q);q.owner=k;q.name=name;q.return_type=ret;q.return_match=PGS_MD_MATCH_EXACT;q.param_count=params;
  q.expected_code=static_cast<const char*>(boot.module_base)+rva;q.prologue=prologue;q.prologue_len=24;
- PgrMetaMethodResult r{};require(api->validate_method(&q,&r)==0&&r.code,name);
+ PgsMetaMethodResult r{};require(api->validate_method(&q,&r)==0&&r.code,name);
  if(method_out)*method_out=method(k,name,params);
  void *o=nullptr;require(pgs_hook(const_cast<void*>(r.code),reinterpret_cast<void*>(hook),&o)==0&&o,name);
  slot.store(reinterpret_cast<F>(o),std::memory_order_release);
 }
 void install(){
- static const uint8_t construct[]=PGR_GAME_SMART_BATTLE_CPP_CONSTRUCT_PARTY_FINGERPRINT,grunt[]=PGR_GAME_SMART_BATTLE_CPP_FIND_GRUNT_PARTY_FINGERPRINT;
- static const uint8_t gym[]=PGR_GAME_SMART_BATTLE_CPP_SWAP_UI_START_FINGERPRINT,vnext[]=PGR_GAME_SMART_BATTLE_CPP_SWAP_UI_VNEXT_START_FINGERPRINT;
+ static const uint8_t construct[]=PGS_GAME_SMART_BATTLE_CPP_CONSTRUCT_PARTY_FINGERPRINT,grunt[]=PGS_GAME_SMART_BATTLE_CPP_FIND_GRUNT_PARTY_FINGERPRINT;
+ static const uint8_t gym[]=PGS_GAME_SMART_BATTLE_CPP_SWAP_UI_START_FINGERPRINT,vnext[]=PGS_GAME_SMART_BATTLE_CPP_SWAP_UI_VNEXT_START_FINGERPRINT;
  static_assert(sizeof(construct)==24&&sizeof(grunt)==24&&sizeof(gym)==24&&sizeof(vnext)==24,"24-byte prologues");
  require(boot.module_base,"il2cpp module");
  load_proto_fields();
  void *service=cls("Niantic.Holoholo.Battle","BattlePartyService");
  void *find_grunt=nullptr;
- install_hook<Construct>(service,"ConstructPartyAgainst",5,"Niantic.Holoholo.Battle.BattleParty",PGR_GAME_SMART_BATTLE_CPP_CONSTRUCT_PARTY_RVA,construct,hook_construct,construct_original);
- install_hook<FindGrunt>(service,"FindGruntParty",1,"Niantic.Holoholo.Battle.BattleParty",PGR_GAME_SMART_BATTLE_CPP_FIND_GRUNT_PARTY_RVA,grunt,hook_grunt,grunt_original,&find_grunt);
+ install_hook<Construct>(service,"ConstructPartyAgainst",5,"Niantic.Holoholo.Battle.BattleParty",PGS_GAME_SMART_BATTLE_CPP_CONSTRUCT_PARTY_RVA,construct,hook_construct,construct_original);
+ install_hook<FindGrunt>(service,"FindGruntParty",1,"Niantic.Holoholo.Battle.BattleParty",PGS_GAME_SMART_BATTLE_CPP_FIND_GRUNT_PARTY_RVA,grunt,hook_grunt,grunt_original,&find_grunt);
  load_grunt_types(find_grunt);
- install_hook<Start>(cls("Niantic.Holoholo.Battle","SwapUI"),"Start",0,"System.Void",PGR_GAME_SMART_BATTLE_CPP_SWAP_UI_START_RVA,gym,hook_gym_start,gym_start_original);
- install_hook<Start>(cls("Niantic.Holoholo.VNext","SwapUIVNext"),"Start",0,"System.Void",PGR_GAME_SMART_BATTLE_CPP_SWAP_UI_VNEXT_START_RVA,vnext,hook_vnext_start,vnext_start_original);
+ install_hook<Start>(cls("Niantic.Holoholo.Battle","SwapUI"),"Start",0,"System.Void",PGS_GAME_SMART_BATTLE_CPP_SWAP_UI_START_RVA,gym,hook_gym_start,gym_start_original);
+ install_hook<Start>(cls("Niantic.Holoholo.VNext","SwapUIVNext"),"Start",0,"System.Void",PGS_GAME_SMART_BATTLE_CPP_SWAP_UI_VNEXT_START_RVA,vnext,hook_vnext_start,vnext_start_original);
  hooks_ready.store(true,std::memory_order_release);
 }
 }  // namespace
@@ -595,7 +595,7 @@ int pgs_smart_battle_pick_prompt(void *const *buttons,int count){
  return -1;
 }
 
-void pgs_smart_battle_tick(uint64_t tid,const PgrSharedMetadataOutput *metadata){
+void pgs_smart_battle_tick(uint64_t tid,const PgsSharedMetadataOutput *metadata){
  if(busy||!tid||tid!=uint64_t(gettid()))return;
  const uint64_t prior=owner.load(std::memory_order_acquire);if(prior&&prior!=tid)return;
  struct Guard{Guard(){busy=true;}~Guard(){busy=false;}}guard;
@@ -603,7 +603,7 @@ void pgs_smart_battle_tick(uint64_t tid,const PgrSharedMetadataOutput *metadata)
  const bool on=configured();enabled.store(on,std::memory_order_release);
  if(!on){press=Press{};gym_watch=Watch{};rocket_watch=Watch{};return;}
  try{
-  if(!initialized){auto api=static_cast<const PgrBootApi*>(pgs_runtime_bootstrap_api(1));boot.version=1;boot.size=sizeof(boot);require(api&&api->snapshot(&boot)==0,"Runtime unavailable");initialized=true;}
+  if(!initialized){auto api=static_cast<const PgsBootApi*>(pgs_runtime_bootstrap_api(1));boot.version=1;boot.size=sizeof(boot);require(api&&api->snapshot(&boot)==0,"Runtime unavailable");initialized=true;}
   if(!hooks_tried){hooks_tried=true;install();}
   if(!hooks_ready.load(std::memory_order_acquire))return;
   if(!tables_ready()){const uint64_t now=clock_ms();if(now>=next_table_try){next_table_try=now+kTableRetryMs;load_tables();}return;}

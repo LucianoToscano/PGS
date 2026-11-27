@@ -132,7 +132,7 @@ enum PgsIvReason {
   PGS_IV_REASON_RENDER = 13
 };
 
-// Fault bits in PgrIvDisplaySample.fault.
+// Fault bits in PgsIvDisplaySample.fault.
 enum PgsIvFaultBits {
   PGS_IV_FAULT_CATCH = 1,
   PGS_IV_FAULT_OWNED = 2
@@ -146,9 +146,9 @@ enum PgsIvFaultBits {
 // group (class_get_type, type_get_object, the nine m_outline_* methods and the outline/
 // color/vector2 classes) is all-or-nothing: if any is null the outline overlay is simply
 // disabled and the rest of the feature works.
-struct PgrIvDisplayConfig {
+struct PgsIvDisplayConfig {
   uint32_t version;  // == PGS_IV_CONFIG_VERSION
-  uint32_t size;     // == sizeof(PgrIvDisplayConfig)
+  uint32_t size;     // == sizeof(PgsIvDisplayConfig)
 
   // il2cpp runtime exports (indices 0..12 in the adapter's flat array).
   void *gchandle_new;            // void* (void* obj, int pinned)
@@ -248,15 +248,15 @@ struct PgrIvDisplayConfig {
   uint32_t reserved;                 // must be 0
 };
 
-static_assert(sizeof(PgrIvDisplayConfig) == 640,
-              "PgrIvDisplayConfig must remain 640 bytes on LP64");
+static_assert(sizeof(PgsIvDisplayConfig) == 640,
+              "PgsIvDisplayConfig must remain 640 bytes on LP64");
 
 // Fixed LP64 telemetry snapshot (656 bytes). Pull-only; the native layer never calls JS.
 // The adapter drives events off the serial counters (like buddy_feeding) and reads the
 // two label buffers for the iv-label / iv-owned-label event text.
-struct PgrIvDisplaySample {
+struct PgsIvDisplaySample {
   uint32_t version;            // == PGS_IV_SAMPLE_VERSION
-  uint32_t size;               // == sizeof(PgrIvDisplaySample)
+  uint32_t size;               // == sizeof(PgsIvDisplaySample)
   uint64_t catch_serial;       // bumps on each catch notice (label/pending/unavailable)
   uint64_t owned_serial;       // bumps on each owned notice
   uint64_t position_serial;    // bumps on each resolved encounter position
@@ -287,14 +287,14 @@ struct PgrIvDisplaySample {
   char owned_label[PGS_IV_LABEL_CAP];
 };
 
-static_assert(sizeof(PgrIvDisplaySample) == 656,
-              "PgrIvDisplaySample must remain 656 bytes on LP64");
+static_assert(sizeof(PgsIvDisplaySample) == 656,
+              "PgsIvDisplaySample must remain 656 bytes on LP64");
 
 // Fixed LP64 table: 8-byte header + 7 function pointers = 64 bytes.
-struct PgrIvDisplayApi {
+struct PgsIvDisplayApi {
   uint32_t version;  // == PGS_IV_API_VERSION
-  uint32_t size;     // == sizeof(PgrIvDisplayApi)
-  int (*install)(const PgrIvDisplayConfig *config);
+  uint32_t size;     // == sizeof(PgsIvDisplayApi)
+  int (*install)(const PgsIvDisplayConfig *config);
   // Arm/clear the independent catch/owned gates and the residual lease. Any thread; a
   // wrong-thread update can only disable, never reassign the owner.
   int (*update)(int catch_enabled, int owned_enabled, uint64_t remaining_lease_ms,
@@ -302,7 +302,7 @@ struct PgrIvDisplayApi {
   // One owner-thread refresh pass (ivTick). stopping != 0 restores and frees every record
   // regardless of the lease. Off the owner thread it is a no-op (never frees).
   int (*tick)(uint64_t proven_tid, int stopping);
-  int (*sample)(PgrIvDisplaySample *out_sample);
+  int (*sample)(PgsIvDisplaySample *out_sample);
   // Clear both gates immediately (any thread). Never frees a record; the next owner-thread
   // tick performs the deferred restore/free.
   int (*disable)(void);
@@ -322,8 +322,8 @@ struct PgrIvDisplayApi {
   int (*end_catch)(uint64_t token, uint64_t proven_tid);
 };
 
-static_assert(sizeof(PgrIvDisplayApi) == 64,
-              "PgrIvDisplayApi must remain a 64-byte version-1 table");
+static_assert(sizeof(PgsIvDisplayApi) == 64,
+              "PgsIvDisplayApi must remain a 64-byte version-1 table");
 
 // Standard feature getter. Returns the static const 64-byte table when `version` == 1,
 // else NULL. The coordinator registers it in query_feature as case 15.

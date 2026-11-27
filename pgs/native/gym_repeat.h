@@ -3,7 +3,7 @@
 #include <stddef.h>
 #include <stdint.h>
 
-struct PgrSharedMetadataOutput;
+struct PgsSharedMetadataOutput;
 
 #ifdef __cplusplus
 extern "C" {
@@ -48,7 +48,7 @@ struct PgsGymRepeatConfig {
     // method). Runtime exports, metadata class/method resolution, module base and the
     // transport gate are taken from the existing runtime leaves (bootstrap 54,
     // metadata 1, transport 52) exactly like gym_runtime.cpp.
-    const PgrSharedMetadataOutput *metadata; // 16
+    const PgsSharedMetadataOutput *metadata; // 16
 };
 
 struct PgsGymRepeatSample {

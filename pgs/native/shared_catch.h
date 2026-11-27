@@ -98,9 +98,9 @@ enum PgsSharedCatchEventKind {
 };
 
 // Fixed LP64 config (32 bytes): 8-byte header + 6 uint32 bounds. No pointers -- this module calls nothing.
-struct PgrSharedCatchConfig {
+struct PgsSharedCatchConfig {
   uint32_t version;          // == PGS_SH_CONFIG_VERSION
-  uint32_t size;             // == sizeof(PgrSharedCatchConfig)
+  uint32_t size;             // == sizeof(PgsSharedCatchConfig)
   uint32_t max_records;      // 1..PGS_SH_MAX_RECORDS
   uint32_t timeout_ms;       // 1..PGS_SH_TIMEOUT_MS
   uint32_t lease_ceiling_ms; // 1..PGS_SH_MAX_LEASE_MS
@@ -109,12 +109,12 @@ struct PgrSharedCatchConfig {
   uint32_t reserved1;        // 0
 };
 
-static_assert(sizeof(PgrSharedCatchConfig) == 32, "PgrSharedCatchConfig must remain 32 bytes on LP64");
+static_assert(sizeof(PgsSharedCatchConfig) == 32, "PgsSharedCatchConfig must remain 32 bytes on LP64");
 
 // Fixed LP64 select() output (40 bytes).
-struct PgrSharedCatchDecision {
+struct PgsSharedCatchDecision {
   uint32_t version;  // == PGS_SH_DECISION_VERSION
-  uint32_t size;     // == sizeof(PgrSharedCatchDecision)
+  uint32_t size;     // == sizeof(PgsSharedCatchDecision)
   uint32_t action;   // PgsSharedCatchAction
   uint32_t kind;     // PgsSharedCatchKind of the target slot (valid when action != NONE)
   uint64_t slot;     // target slot id (0 when action == NONE)
@@ -122,22 +122,22 @@ struct PgrSharedCatchDecision {
   uint64_t tick;     // the current native-observed unity tick (== the unity_ticks the host passed)
 };
 
-static_assert(sizeof(PgrSharedCatchDecision) == 40, "PgrSharedCatchDecision must remain 40 bytes on LP64");
+static_assert(sizeof(PgsSharedCatchDecision) == 40, "PgsSharedCatchDecision must remain 40 bytes on LP64");
 
 // Fixed LP64 drain record (24 bytes). slot/gui_key are opaque host ids -- never a managed pointer.
-struct PgrSharedCatchEvent {
+struct PgsSharedCatchEvent {
   uint32_t kind;    // PgsSharedCatchEventKind
   int32_t  reason;  // CANCELLED: PgsSharedCatchReason; REAPED: 0
   uint64_t slot;
   uint64_t gui_key;
 };
 
-static_assert(sizeof(PgrSharedCatchEvent) == 24, "PgrSharedCatchEvent must remain 24 bytes on LP64");
+static_assert(sizeof(PgsSharedCatchEvent) == 24, "PgsSharedCatchEvent must remain 24 bytes on LP64");
 
 // Fixed LP64 telemetry gauge (88 bytes). Pull-only; the native layer never calls the host.
-struct PgrSharedCatchSample {
+struct PgsSharedCatchSample {
   uint32_t version;         // == PGS_SH_SAMPLE_VERSION
-  uint32_t size;            // == sizeof(PgrSharedCatchSample)
+  uint32_t size;            // == sizeof(PgsSharedCatchSample)
   uint64_t created_serial;  // bumps on each upsert that creates a new record
   uint64_t armed_serial;    // bumps on each ARM decision
   uint64_t dismiss_serial;  // bumps on each DISMISS decision
@@ -152,13 +152,13 @@ struct PgrSharedCatchSample {
   uint32_t fault;           // 1 if a bounded table ever overflowed (latched)
 };
 
-static_assert(sizeof(PgrSharedCatchSample) == 88, "PgrSharedCatchSample must remain 88 bytes on LP64");
+static_assert(sizeof(PgsSharedCatchSample) == 88, "PgsSharedCatchSample must remain 88 bytes on LP64");
 
 // Fixed LP64 table: 8-byte header + 13 function pointers = 112 bytes.
-struct PgrSharedCatchApi {
+struct PgsSharedCatchApi {
   uint32_t version;  // == PGS_SH_API_VERSION
-  uint32_t size;     // == sizeof(PgrSharedCatchApi)
-  int (*install)(const PgrSharedCatchConfig *config);
+  uint32_t size;     // == sizeof(PgsSharedCatchApi)
+  int (*install)(const PgsSharedCatchConfig *config);
   // Refresh the gate: enabled, a residual lease clamped to the configured ceiling, and the caller's
   // current epoch. Carries proven_tid; once the owner is latched a foreign thread can only revoke. Any
   // thread. enabled==0 marks OFF and clears the lease; stop() (below) marks STOPPING in addition.
@@ -181,7 +181,7 @@ struct PgrSharedCatchApi {
   // then returns at most one decision in *out: NONE, ARM (first ready tick, latch readyMatch), or DISMISS
   // (ready on a strictly later unity tick than readyMatch). unity_ticks is the host's proven Unity-thread
   // tick count (from the retained single ExecuteTasks observer). Owner thread only; off-owner yields NONE.
-  int (*select)(uint64_t unity_ticks, uint64_t proven_tid, PgrSharedCatchDecision *out);
+  int (*select)(uint64_t unity_ticks, uint64_t proven_tid, PgsSharedCatchDecision *out);
   // Latch a candidate as invoked after the host ran the leaf dismissal, then reap it (REAPED event). A
   // suppressed/failed dismiss still latches so the decision is never issued twice. Owner thread only.
   int (*finish)(uint64_t slot, int advanced, uint64_t proven_tid);
@@ -194,12 +194,12 @@ struct PgrSharedCatchApi {
   // Immediate revoke from any thread: disable the gate, mark stopping, bump the revocation generation.
   // A later update(enabled) re-arms and clears stopping. No host callback; no deadlock.
   int (*stop)(uint64_t proven_tid);
-  int (*sample)(PgrSharedCatchSample *out_sample);
+  int (*sample)(PgsSharedCatchSample *out_sample);
   // Pop one drain record (returns 1), report empty (0), or a negative status. Any thread.
-  int (*next_event)(PgrSharedCatchEvent *out);
+  int (*next_event)(PgsSharedCatchEvent *out);
 };
 
-static_assert(sizeof(PgrSharedCatchApi) == 112, "PgrSharedCatchApi must remain a 112-byte version-1 table");
+static_assert(sizeof(PgsSharedCatchApi) == 112, "PgsSharedCatchApi must remain a 112-byte version-1 table");
 
 // Hidden getter. NOT exported by the version script; the coordinator registers it in query_feature under
 // feature id 51 and answers only on an exact version match.

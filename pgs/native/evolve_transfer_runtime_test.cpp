@@ -21,7 +21,7 @@ std::map<std::string,K> classes;std::map<std::string,F> fields;std::map<std::str
 std::vector<std::unique_ptr<O>> objects;std::map<uintptr_t,void*> handles;uintptr_t handle_next=1;
 std::map<uint64_t,O*> inventory;
 O *bag,*gm,*player,*buddy,*map_object,*container,*account,*pk,*settings_object,*branch,*branches,*quests,*promise,*response,*evolved;
-PgrSharedMetadataOutput fixture_md{};PgrBootBinding fixture_boot{};
+PgsSharedMetadataOutput fixture_md{};PgsBootBinding fixture_boot{};
 std::string config="1|1|0|1|",keep_config,pvp_config="P2|0|0|0|150";
 bool allowed=true,fresh=true,keep_all=false,pvp_protected=false,response_ready=false,poll_error=false,foreign_bag=false,batch_busy=false;
 bool move_on_root=false;
@@ -49,7 +49,7 @@ void *field_lookup(void *k,const char *name){
  if(n=="deployedFortId_"||n=="deployedStationId_")t="System.String";
  if(n=="KmBuddyDistanceRequirement")t="System.Single";
  if(n=="QuestDisplay")t="Niantic.Protobuf.Collections.RepeatedField<Quest>";
- if(n==PGR_GAME_BATCH_EVOLUTION_CPP_ERIK_NAME)t="IGameMasterData";
+ if(n==PGS_GAME_BATCH_EVOLUTION_CPP_ERIK_NAME)t="IGameMasterData";
  if(n=="EvolvedPokemon")t="Holoholo.Rpc.PokemonProto";
  if(n=="Evolution"||n=="Form"||n=="EvolutionItemRequirement"||n=="GenderRequirement"||n=="LureItemRequirement"||n=="TemporaryEvolution"||n=="EvolutionMoveRequirement"||n=="TargetPokemonId"||n=="TargetPokemonForm"||n=="Result")t="Test.Enum";
  auto key=static_cast<K*>(k)->name+"."+n;auto [it,inserted]=fields.emplace(key,F{n,type(t)});return &it->second;
@@ -94,28 +94,28 @@ void *invoke_fixture(void *method,void *receiver,void **args,void **ex){
  }
  assert(false&&"unexpected managed invoke");return nullptr;
 }
-int metadata_class(const PgrMetaClassQuery*q,PgrMetaClassResult*out){out->klass=type(std::string(q->name_space)+"."+q->name);return 0;}
-int bootstrap(PgrBootBinding*out){*out=fixture_boot;return 0;}
-int transport_sample(PgrRuntimeTransportSample*out){*out={};out->snapshot_fresh=fresh;out->snapshot_seq=1;return 0;}
+int metadata_class(const PgsMetaClassQuery*q,PgsMetaClassResult*out){out->klass=type(std::string(q->name_space)+"."+q->name);return 0;}
+int bootstrap(PgsBootBinding*out){*out=fixture_boot;return 0;}
+int transport_sample(PgsRuntimeTransportSample*out){*out={};out->snapshot_fresh=fresh;out->snapshot_seq=1;return 0;}
 int transport_string(uint32_t id,char*out,uint32_t cap,uint32_t*len){std::string s=id==22?config:id==4?keep_config:id==16?pvp_config:"";if(cap<=s.size())return -1;memcpy(out,s.c_str(),s.size()+1);*len=s.size();return 0;}
 int transport_bool(uint32_t id,int*out){*out=id==5?allowed:id==35?keep_all:1;return 0;}
 int transport_int(uint32_t,int32_t*out){*out=protect;return 0;}
-int transport_emit(uint32_t,const int64_t*,uint32_t,const PgrRuntimeTransportString*s,uint32_t n){if(n)messages.emplace_back(s[0].ptr,s[0].len);return 0;}
-int inspect(const PgrTransferFactsRequest*q,PgrTransferFactsOut*out){auto*p=static_cast<O*>(q->pokemon);*out={1,sizeof(*out),iv_attack,iv_defense,iv_stamina,int32_t(p->data["pokemonId_"]),255,uint32_t(p->data["favorite_"]?64:0),q->caught_id};return 1;}
+int transport_emit(uint32_t,const int64_t*,uint32_t,const PgsRuntimeTransportString*s,uint32_t n){if(n)messages.emplace_back(s[0].ptr,s[0].len);return 0;}
+int inspect(const PgsTransferFactsRequest*q,PgsTransferFactsOut*out){auto*p=static_cast<O*>(q->pokemon);*out={1,sizeof(*out),iv_attack,iv_defense,iv_stamina,int32_t(p->data["pokemonId_"]),255,uint32_t(p->data["favorite_"]?64:0),q->caught_id};return 1;}
 int ready(){return 1;}
-int submit(const PgrTransferExecRequest*q,uint64_t*token){assert(pgs_transfer_policy_api(1));assert(q->captured_id==job.id);assert(q->pokemon==inventory.at(job.id));++release_calls;*token=100+release_calls;
- if(synchronous){inventory.erase(job.id);PgrTransferExecEvent e{PGS_TX_EVENT_COMPLETE,0,*token,1,0};assert(pgs_evolve_transfer_event(&e));}return 1;
+int submit(const PgsTransferExecRequest*q,uint64_t*token){assert(pgs_transfer_policy_api(1));assert(q->captured_id==job.id);assert(q->pokemon==inventory.at(job.id));++release_calls;*token=100+release_calls;
+ if(synchronous){inventory.erase(job.id);PgsTransferExecEvent e{PGS_TX_EVENT_COMPLETE,0,*token,1,0};assert(pgs_evolve_transfer_event(&e));}return 1;
 }
-int poll_response(void*,uint32_t,uint64_t,PgrVgpResultsResult*out){*out={};if(poll_error)return -1;if(!response_ready)return 0;
+int poll_response(void*,uint32_t,uint64_t,PgsVgpResultsResult*out){*out={};if(poll_error)return -1;if(!response_ready)return 0;
  response->data["Result"]=result_status;response->data["EvolvedPokemon"]=reinterpret_cast<uint64_t>(evolved);response->data["CandyAwarded"]=1;
  evolved->data["id_"]=returned_id;evolved->data["pokemonId_"]=returned_species;out->value_handle=gc_new(response,0);return PGS_VR_DONE;
 }
-PgrRuntimeTransportApi transport_api{};PgrMetaApi meta_api{};PgrBootApi boot_api{};PgrSharedHostApi host_api{};PgsSharedHostTransferApi broker_api{};PgrTransferFactsApi facts_api{};PgrVgpResultsApi result_api{};
+PgsRuntimeTransportApi transport_api{};PgsMetaApi meta_api{};PgsBootApi boot_api{};PgsSharedHostApi host_api{};PgsSharedHostTransferApi broker_api{};PgsTransferFactsApi facts_api{};PgsVgpResultsApi result_api{};
 void fixture(){
  queue.clear();job=Job{};assert(handles.empty());seen.clear();objects.clear();inventory.clear();messages.clear();initialized=false;busy=false;owner=0;boot={};md=nullptr;
  move_on_root=false;iv_attack=1;iv_defense=2;iv_stamina=3;config="1|1|0|1|";keep_config="";pvp_config="P2|0|0|0|150";allowed=fresh=true;keep_all=pvp_protected=response_ready=poll_error=foreign_bag=batch_busy=not_evolvable=special=cancel_during_check=change_account=false;synchronous=true;protect=127;stock=100;cost=12;evolution_calls=release_calls=0;next_target=2;returned_id=10;returned_species=2;result_status=1;
  for(auto n:{"System.Int32","System.UInt64","System.Boolean","System.Single","Test.Enum"})type(n)->value=true;type("Test.Enum")->enumeration=true;
- bag=object("Bag");gm=object("IGameMasterData");bag->data[PGR_GAME_BATCH_EVOLUTION_CPP_ERIK_NAME]=reinterpret_cast<uint64_t>(gm);
+ bag=object("Bag");gm=object("IGameMasterData");bag->data[PGS_GAME_BATCH_EVOLUTION_CPP_ERIK_NAME]=reinterpret_cast<uint64_t>(gm);
  player=object("Player");buddy=object("Buddy");map_object=object("Map");container=object("Container");account=object("System.String");account->text=u"account";
  pk=object("Holoholo.Rpc.PokemonProto");pk->data["id_"]=10;pk->data["pokemonId_"]=1;inventory[10]=pk;
  settings_object=object("Settings");branch=object("Holoholo.Rpc.EvolutionBranchProto");branches=object("List");branches->list={branch};quests=object("Niantic.Protobuf.Collections.RepeatedField<Quest>");branch->data["QuestDisplay"]=reinterpret_cast<uint64_t>(quests);
@@ -126,11 +126,11 @@ void fixture(){
  BIND(r,gchandle_new,gc_new);BIND(r,gchandle_get_target,gc_get);BIND(r,gchandle_free,gc_free);BIND(r,object_get_class,object_class);BIND(r,runtime_invoke,invoke_fixture);BIND(r,field_get_value,field_read);BIND(r,field_set_value,field_write);BIND(r,field_static_get_value,field_static);BIND(r,object_new,object_new);BIND(r,object_unbox,unbox);BIND(r,string_chars,string_chars);
  BIND(m,class_get_type,class_type);BIND(m,type_get_name,type_name);BIND(m,mem_free,free_name);BIND(m,class_get_field_from_name,field_lookup);BIND(m,field_get_type,field_type);BIND(m,class_from_type,class_type);BIND(m,class_is_valuetype,value_type);BIND(m,class_is_enum,enum_type);BIND(m,field_get_flags,field_flags);BIND(m,class_get_method_from_name,method_lookup);BIND(m,method_get_param_count,method_count);
  #undef BIND
- boot_api.snapshot=bootstrap;meta_api.resolve_class=metadata_class;host_api.metadata=[](){return static_cast<const PgrSharedMetadataOutput*>(&fixture_md);};
+ boot_api.snapshot=bootstrap;meta_api.resolve_class=metadata_class;host_api.metadata=[](){return static_cast<const PgsSharedMetadataOutput*>(&fixture_md);};
  transport_api.sample=transport_sample;transport_api.get_string=transport_string;transport_api.get_bool=transport_bool;transport_api.get_int=transport_int;transport_api.emit=transport_emit;
  facts_api.inspect=inspect;broker_api.ready=ready;broker_api.submit=submit;result_api.poll=poll_response;
 }
-int offer(bool manual=true){PgrTransferExecRequest q{1,sizeof(q),10,1,uint64_t(gettid()),bag,pk,{}};q.input.species=1;return pgs_evolve_transfer_offer(&q,manual);}
+int offer(bool manual=true){PgsTransferExecRequest q{1,sizeof(q),10,1,uint64_t(gettid()),bag,pk,{}};q.input.species=1;return pgs_evolve_transfer_offer(&q,manual);}
 void tick(){job.next=0;pgs_evolve_transfer_tick(gettid(),&fixture_md);}
 void accept(){response_ready=true;tick();assert(job.await_inventory);}
 void reconcile(uint64_t id=10){O *p=object("Holoholo.Rpc.PokemonProto");p->data["id_"]=id;p->data["pokemonId_"]=next_target;inventory.erase(job.sending.id);inventory[id]=p;stock-=cost-1;tick();}

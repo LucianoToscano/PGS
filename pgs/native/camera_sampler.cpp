@@ -15,19 +15,19 @@
 // -fno-exceptions / -fno-rtti like every sibling: managed exceptions surface through runtime_invoke's exc
 // out-param, never a C++ throw. No mutex is held across a managed call.
 
-static_assert(sizeof(PgrCameraSamplerConfig) == 216, "config 216");
-static_assert(sizeof(PgrCameraSamplerRequest) == 40, "request 40");
-static_assert(sizeof(PgrCameraSamplerOutput) == 72, "output 72");
-static_assert(sizeof(PgrCameraSamplerApi) == 24, "table 24");
-static_assert(offsetof(PgrCameraSamplerConfig, f_z) == 200, "config fields");
-static_assert(offsetof(PgrCameraSamplerConfig, expected_layer) == 208, "config expected_layer");
-static_assert(offsetof(PgrCameraSamplerConfig, reserved0) == 212, "config reserved0");
-static_assert(offsetof(PgrCameraSamplerRequest, rig) == 24, "request rig");
-static_assert(offsetof(PgrCameraSamplerRequest, camera) == 32, "request camera");
-static_assert(offsetof(PgrCameraSamplerOutput, mask) == 20, "output mask");
-static_assert(offsetof(PgrCameraSamplerOutput, layer) == 24, "output layer");
-static_assert(offsetof(PgrCameraSamplerOutput, x) == 32, "output x");
-static_assert(offsetof(PgrCameraSamplerOutput, time_ms) == 64, "output time_ms");
+static_assert(sizeof(PgsCameraSamplerConfig) == 216, "config 216");
+static_assert(sizeof(PgsCameraSamplerRequest) == 40, "request 40");
+static_assert(sizeof(PgsCameraSamplerOutput) == 72, "output 72");
+static_assert(sizeof(PgsCameraSamplerApi) == 24, "table 24");
+static_assert(offsetof(PgsCameraSamplerConfig, f_z) == 200, "config fields");
+static_assert(offsetof(PgsCameraSamplerConfig, expected_layer) == 208, "config expected_layer");
+static_assert(offsetof(PgsCameraSamplerConfig, reserved0) == 212, "config reserved0");
+static_assert(offsetof(PgsCameraSamplerRequest, rig) == 24, "request rig");
+static_assert(offsetof(PgsCameraSamplerRequest, camera) == 32, "request camera");
+static_assert(offsetof(PgsCameraSamplerOutput, mask) == 20, "output mask");
+static_assert(offsetof(PgsCameraSamplerOutput, layer) == 24, "output layer");
+static_assert(offsetof(PgsCameraSamplerOutput, x) == 32, "output x");
+static_assert(offsetof(PgsCameraSamplerOutput, time_ms) == 64, "output time_ms");
 
 namespace {
 
@@ -50,7 +50,7 @@ const char kWorldMap[] = "WorldMap";
 
 std::mutex g_install_mutex;
 std::mutex g_state_mutex;
-PgrCameraSamplerConfig g_cfg{};
+PgsCameraSamplerConfig g_cfg{};
 std::atomic<bool> g_installed{false};
 
 // Permanent Unity owner, latched once from a genuine on-thread call.
@@ -191,7 +191,7 @@ int ensure_world_map_layer(int32_t *out_layer, uint64_t deadline, Result &r) {
 // All managed work for one sample. Every root is local; the scalar outcome is written into r. Returns the
 // status (1 / 0 / negative). The deadline is re-sampled here (the last managed step is complete) and the
 // roots are freed when this function returns, before the caller publishes.
-int run_sample(const PgrCameraSamplerRequest *request, uint64_t deadline, Result &r) {
+int run_sample(const PgsCameraSamplerRequest *request, uint64_t deadline, Result &r) {
   // (1) RAW rig: class proof ONLY, taken before any gchandle_new/runtime_invoke. A non-MainCameraRig rig is
   // the off-map case -> benign 0. The rig pointer is never retained or re-read.
   if (!is_exact(request->rig, g_cfg.class_rig)) { r.reason = PGS_CS_REASON_NON_MAP_RIG; return PGS_CS_UNAVAILABLE; }
@@ -273,15 +273,15 @@ int run_sample(const PgrCameraSamplerRequest *request, uint64_t deadline, Result
   return PGS_CS_SAMPLE;
 }
 
-void init_output(PgrCameraSamplerOutput *out) {
+void init_output(PgsCameraSamplerOutput *out) {
   std::memset(out, 0, sizeof(*out));
   out->version = PGS_CS_OUTPUT_VERSION;
-  out->size = sizeof(PgrCameraSamplerOutput);
+  out->size = sizeof(PgsCameraSamplerOutput);
 }
 
 // Publish r into *out (which was zeroed by init_output). Emits no garbage: success fills everything, a 0
 // refusal fills reason + time_ms (plus mask/layer only on map-hidden), a fault fills status + reason only.
-void publish(PgrCameraSamplerOutput *out, const Result &r) {
+void publish(PgsCameraSamplerOutput *out, const Result &r) {
   out->status = r.status;
   out->reason = r.reason;
   if (r.status >= 0) out->time_ms = r.time_ms;
@@ -307,22 +307,22 @@ bool owner_ready(uint64_t tid) {
   return g_owner_tid.load(std::memory_order_acquire) == tid;
 }
 
-bool check_request(const PgrCameraSamplerRequest *request, int *rc) {
+bool check_request(const PgsCameraSamplerRequest *request, int *rc) {
   if (!g_installed.load(std::memory_order_acquire)) { *rc = PGS_CS_ERR_NOT_INSTALLED; return false; }
   if (request == nullptr) { *rc = PGS_CS_ERR_NULL_ARG; return false; }
   if (request->version != PGS_CS_REQUEST_VERSION) { *rc = PGS_CS_ERR_BAD_VERSION; return false; }
-  if (request->size != sizeof(PgrCameraSamplerRequest)) { *rc = PGS_CS_ERR_BAD_SIZE; return false; }
+  if (request->size != sizeof(PgsCameraSamplerRequest)) { *rc = PGS_CS_ERR_BAD_SIZE; return false; }
   *rc = 0;
   return true;
 }
 
 // --- config validation / install ---------------------------------------------------
-bool validate_config(const PgrCameraSamplerConfig *c, int *rc) {
+bool validate_config(const PgsCameraSamplerConfig *c, int *rc) {
   if (c == nullptr) { *rc = PGS_CS_ERR_NULL_ARG; return false; }
   if (c->version != PGS_CS_CONFIG_VERSION) { *rc = PGS_CS_ERR_BAD_VERSION; return false; }
-  if (c->size != sizeof(PgrCameraSamplerConfig)) { *rc = PGS_CS_ERR_BAD_SIZE; return false; }
+  if (c->size != sizeof(PgsCameraSamplerConfig)) { *rc = PGS_CS_ERR_BAD_SIZE; return false; }
   void *ptrs[kConfigPtrCount];
-  std::memcpy(ptrs, reinterpret_cast<const unsigned char *>(c) + offsetof(PgrCameraSamplerConfig, runtime_invoke),
+  std::memcpy(ptrs, reinterpret_cast<const unsigned char *>(c) + offsetof(PgsCameraSamplerConfig, runtime_invoke),
               sizeof(ptrs));
   for (int i = 0; i < kConfigPtrCount; ++i)
     if (ptrs[i] == nullptr) { *rc = PGS_CS_ERR_MISSING_PTR; return false; }
@@ -331,7 +331,7 @@ bool validate_config(const PgrCameraSamplerConfig *c, int *rc) {
   return true;
 }
 
-int api_install(const PgrCameraSamplerConfig *config) {
+int api_install(const PgsCameraSamplerConfig *config) {
   int rc = 0;
   if (!validate_config(config, &rc)) return rc;
   uint64_t probe = 0;
@@ -351,7 +351,7 @@ int api_install(const PgrCameraSamplerConfig *config) {
   return 0;
 }
 
-int api_sample(const PgrCameraSamplerRequest *request, PgrCameraSamplerOutput *out) {
+int api_sample(const PgsCameraSamplerRequest *request, PgsCameraSamplerOutput *out) {
   if (out == nullptr) return PGS_CS_ERR_NULL_ARG;  // cannot report
   init_output(out);
   int rc = 0;
@@ -380,8 +380,8 @@ int api_sample(const PgrCameraSamplerRequest *request, PgrCameraSamplerOutput *o
   return r.status;
 }
 
-const PgrCameraSamplerApi kApiTable = {
-    PGS_CS_API_VERSION, static_cast<uint32_t>(sizeof(PgrCameraSamplerApi)),
+const PgsCameraSamplerApi kApiTable = {
+    PGS_CS_API_VERSION, static_cast<uint32_t>(sizeof(PgsCameraSamplerApi)),
     &api_install, &api_sample,
 };
 

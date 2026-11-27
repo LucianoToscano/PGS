@@ -7,12 +7,12 @@
 #include <sys/mman.h>
 #include <unistd.h>
 
-extern "C" int pgr_chain_fixture(int);
-asm(".text\n.balign 16\n.global pgr_chain_fixture\n"
-    ".type pgr_chain_fixture, %function\npgr_chain_fixture:\n"
+extern "C" int pgs_chain_fixture(int);
+asm(".text\n.balign 16\n.global pgs_chain_fixture\n"
+    ".type pgs_chain_fixture, %function\npgs_chain_fixture:\n"
     "add w0, w0, #1\nadd w0, w0, #1\n"
     "add w0, w0, #1\nadd w0, w0, #1\nret\n"
-    ".size pgr_chain_fixture, .-pgr_chain_fixture\n");
+    ".size pgs_chain_fixture, .-pgs_chain_fixture\n");
 
 static int (*backup)(int);
 static int first_hook(int value) { return backup(value) + 100; }
@@ -20,12 +20,12 @@ static int first_hook(int value) { return backup(value) + 100; }
 static int second_hook(int value) { return first_hook(value) + 1000; }
 
 int main() {
-    if (pgr_chain_fixture(5) != 9) return 1;
-    void *target = reinterpret_cast<void *>(pgr_chain_fixture);
+    if (pgs_chain_fixture(5) != 9) return 1;
+    void *target = reinterpret_cast<void *>(pgs_chain_fixture);
     void *original = nullptr;
     if (DobbyHook(target, reinterpret_cast<void *>(first_hook), &original) != 0 || !original) return 2;
     backup = reinterpret_cast<int (*)(int)>(original);
-    if (pgr_chain_fixture(5) != 109 || backup(5) != 9) return 3;
+    if (pgs_chain_fixture(5) != 109 || backup(5) != 9) return 3;
     uint32_t entry[4];
     std::memcpy(entry, target, sizeof entry);
     // This regression specifically needs Dobby's shorter ADRP/ADD/BR entry.
@@ -44,7 +44,7 @@ int main() {
     std::memcpy(target, absolute_jump, sizeof absolute_jump);
     __builtin___clear_cache(static_cast<char *>(target), static_cast<char *>(target) + sizeof absolute_jump);
     if (mprotect(reinterpret_cast<void *>(page), page_size, PROT_READ | PROT_EXEC)) return 7;
-    if (backup(5) != 9 || pgr_chain_fixture(5) != 1109) return 8;
+    if (backup(5) != 9 || pgs_chain_fixture(5) != 1109) return 8;
     std::puts("PASS: 12-byte hook backup survives a later 16-byte entry replacement");
     return 0;
 }

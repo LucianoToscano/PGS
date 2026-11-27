@@ -13,7 +13,7 @@
 
 namespace {
 
-PgrVgpMaintenanceConfig cfg{};
+PgsVgpMaintenanceConfig cfg{};
 std::mutex installMutex;
 std::atomic<bool> installed{false};
 std::atomic<bool> busy{false};
@@ -98,7 +98,7 @@ struct BusyGuard {
   ~BusyGuard() { if (held) busy.store(false); }
 };
 
-int install(const PgrVgpMaintenanceConfig *c) {
+int install(const PgsVgpMaintenanceConfig *c) {
   if (!c) return PGS_VM_ERR_NULL_ARG;
   if (c->version != PGS_VM_CONFIG_VERSION) return PGS_VM_ERR_BAD_VERSION;
   if (c->size != sizeof(*c)) return PGS_VM_ERR_BAD_SIZE;
@@ -238,8 +238,8 @@ int cooldown(void *stop, void *response, uint64_t owner, uint64_t lease_ms) {
   return PGS_VM_OK;
 }
 
-const PgrVgpMaintenanceApi api = {
-    PGS_VM_API_VERSION, uint32_t(sizeof(PgrVgpMaintenanceApi)), install, balls, cooldown};
+const PgsVgpMaintenanceApi api = {
+    PGS_VM_API_VERSION, uint32_t(sizeof(PgsVgpMaintenanceApi)), install, balls, cooldown};
 
 }  // namespace
 

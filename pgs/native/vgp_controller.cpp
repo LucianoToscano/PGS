@@ -65,17 +65,17 @@ using Class = void *(*)(void *);
 using Invoke = void *(*)(void *, void *, void **, void **);
 using Unbox = void *(*)(void *);
 
-PgrVgpControllerConfig cfg{};
+PgsVgpControllerConfig cfg{};
 std::mutex installMutex;
 std::atomic<bool> installed{false};
 
 // Sibling tables (validated at install).
-const PgrVgpPolicyApi      *POL = nullptr;
-const PgrVgpActionsApi      *ACT = nullptr;
-const PgrVgpCandidateApi    *CND = nullptr;
-const PgrVgpResultsApi      *RES = nullptr;
-const PgrVgpDiscoveryApi    *DSC = nullptr;
-const PgrVgpMaintenanceApi  *MNT = nullptr;
+const PgsVgpPolicyApi      *POL = nullptr;
+const PgsVgpActionsApi      *ACT = nullptr;
+const PgsVgpCandidateApi    *CND = nullptr;
+const PgsVgpResultsApi      *RES = nullptr;
+const PgsVgpDiscoveryApi    *DSC = nullptr;
+const PgsVgpMaintenanceApi  *MNT = nullptr;
 const PgsVgpMarkerApi       *MRK = nullptr;
 const pgs_items_api_v1  *ITM = nullptr;
 const AuxApi                *AUX = nullptr;
@@ -118,19 +118,19 @@ struct DiscoveryTrace {
 void discoveryEvent(uint64_t now) {
   auto &d=discoveryTrace;
   if(now<d.next)return;
-  const auto *t=static_cast<const PgrRuntimeTransportApi*>(pgs_runtime_transport_api(1));
+  const auto *t=static_cast<const PgsRuntimeTransportApi*>(pgs_runtime_transport_api(1));
   char detail[512];int n=snprintf(detail,sizeof(detail),
     "scans=%llu hiddenScans=%llu enumerated=%llu rejected=%llu stale=%llu recent=%llu issued=%llu notListed=%llu invalid=%llu manual=%llu hidden=%llu range=%llu",
     (unsigned long long)d.scans,(unsigned long long)d.hiddenScans,(unsigned long long)d.loaded,
     (unsigned long long)d.rejected,(unsigned long long)d.stale,(unsigned long long)d.recent,(unsigned long long)d.issued,(unsigned long long)d.species,
     (unsigned long long)d.reasons[1],(unsigned long long)d.reasons[2],(unsigned long long)d.reasons[3],(unsigned long long)d.reasons[4]);
   const char name[]="vgp-discovery";
-  PgrRuntimeTransportString text[]={{name,sizeof(name)-1},{detail,uint32_t(n)}};
+  PgsRuntimeTransportString text[]={{name,sizeof(name)-1},{detail,uint32_t(n)}};
   if(t)t->emit(19,nullptr,0,text,2);
   d={};d.next=now+30000;
 }
 std::string smartConfig(){
-  const auto *t=static_cast<const PgrRuntimeTransportApi*>(pgs_runtime_transport_api(1));
+  const auto *t=static_cast<const PgsRuntimeTransportApi*>(pgs_runtime_transport_api(1));
   char text[4096];uint32_t size=0;
   if(!t||t->get_string(7,text,sizeof(text),&size)!=0||size>=sizeof(text))return {};
   return std::string(text,size);
@@ -138,10 +138,10 @@ std::string smartConfig(){
 int smartSpeed(const std::string &s){PgsSmartSettings options{};pgs_smart_parse_settings(s.data(),s.size(),&options);return options.enabled?options.speed:0;}
 bool smartEnabled(const std::string &s){PgsSmartSettings options{};pgs_smart_parse_settings(s.data(),s.size(),&options);return options.enabled!=0;}
 void smartEvent(int ball,int berry,unsigned attempt,int grade=-1){
-  const auto *t=static_cast<const PgrRuntimeTransportApi*>(pgs_runtime_transport_api(1));
+  const auto *t=static_cast<const PgsRuntimeTransportApi*>(pgs_runtime_transport_api(1));
   char detail[128];int n=grade<0?snprintf(detail,sizeof(detail),"ball=%d berry=%d attempt=%u",ball,berry,attempt):snprintf(detail,sizeof(detail),"ball=%d berry=%d grade=%d attempt=%u",ball,berry,grade,attempt);
   const char name[]="smart-catch-request";
-  PgrRuntimeTransportString text[]={{name,sizeof(name)-1},{detail,uint32_t(n)}};
+  PgsRuntimeTransportString text[]={{name,sizeof(name)-1},{detail,uint32_t(n)}};
   if(t)t->emit(19,nullptr,0,text,2);
 }
 
@@ -211,7 +211,7 @@ bool manualMatches(uint64_t target) {
 
 
 // ---- out helpers ----------------------------------------------------------------------------------
-void initOut(PgrVgpControllerOut *o) {
+void initOut(PgsVgpControllerOut *o) {
   memset(o, 0, sizeof(*o));
   o->version = PGS_VGC_OUT_VERSION;
   o->size = sizeof(*o);
@@ -221,7 +221,7 @@ uint32_t currentPhase() {
   if (pend.active) return pend.phase;
   return PGS_VGC_PH_NONE;
 }
-void finalize(PgrVgpControllerOut *o) {
+void finalize(PgsVgpControllerOut *o) {
   if (o->flags) o->event_serial = ++eventSerial;
   o->phase = currentPhase();
   publishedPhase.store(o->phase);
@@ -230,7 +230,7 @@ void finalize(PgrVgpControllerOut *o) {
 }
 
 // ---- root lifecycle -------------------------------------------------------------------------------
-void dropPending(PgrVgpControllerOut *o) {
+void dropPending(PgsVgpControllerOut *o) {
   if (!pend.active) return;
   rootFree(pend.promise);
   rootFree(pend.target);
@@ -240,7 +240,7 @@ void dropPending(PgrVgpControllerOut *o) {
   pend = Pending{};
   if (o) o->flags |= PGS_VGC_EV_MARKER_HIDE;  // vgpDrop() hides the marker
 }
-void clearTransfer(PgrVgpControllerOut *o, bool cancel) {
+void clearTransfer(PgsVgpControllerOut *o, bool cancel) {
   if (!xfer.active) return;
   rootFree(xfer.response);
   rootFree(xfer.bag);
@@ -250,7 +250,7 @@ void clearTransfer(PgrVgpControllerOut *o, bool cancel) {
   }
   xfer = Transfer{};
 }
-void freeAllRoots(PgrVgpControllerOut *o) {
+void freeAllRoots(PgsVgpControllerOut *o) {
   smartArrival.clear();
   dropPending(o);
   clearTransfer(o, true);
@@ -259,8 +259,8 @@ void freeAllRoots(PgrVgpControllerOut *o) {
     rootFree(manualTarget);
   }
 }
-void setStatus(PgrVgpControllerOut *o, uint32_t s) { o->status = s; }
-int pauseError(PgrVgpControllerOut *o, int32_t code) {
+void setStatus(PgsVgpControllerOut *o, uint32_t s) { o->status = s; }
+int pauseError(PgsVgpControllerOut *o, int32_t code) {
   POL->block(ownerTid.load());
   dropPending(o);
   clearTransfer(o, true);
@@ -277,7 +277,7 @@ void retrySeen(uint64_t owner, uint64_t ms) {
 // ---- actions gate ---------------------------------------------------------------------------------
 // Arm the actions sibling under the gate iff not stopped and the tick's generation is still live, then
 // unlock BEFORE the managed action so no lock is ever held across a managed invoke.
-bool armActions(const PgrVgpControllerTick *in, uint64_t lease) {
+bool armActions(const PgsVgpControllerTick *in, uint64_t lease) {
   std::lock_guard<std::mutex> g(gate);
   const uint64_t fresh = remaining(lease);
   if (!fresh || stopped.load() || !(in->flags & PGS_VGC_TF_MANUAL_READY) || in->generation != generationCounter.load()) return false;
@@ -291,7 +291,7 @@ IssueResult classifyIssue(int rc) {
   if (rc == PGS_VA_OK) return ISSUE_REFUSED;  // 0: proven NOT issued
   return ISSUE_ERROR;
 }
-void onRefused(PgrVgpControllerOut *o, uint64_t owner, uint64_t now) {
+void onRefused(PgsVgpControllerOut *o, uint64_t owner, uint64_t now) {
   if (pend.key_len) POL->touch(owner, pend.key, pend.key_len, 5000);  // 5 s admission quarantine
   dropPending(o);
   POL->arm(owner, 2500);
@@ -299,7 +299,7 @@ void onRefused(PgrVgpControllerOut *o, uint64_t owner, uint64_t now) {
 }
 
 // ---- marker ---------------------------------------------------------------------------------------
-void tickMarker(const PgrVgpControllerTick *in, PgrVgpControllerOut *o, uint64_t now) {
+void tickMarker(const PgsVgpControllerTick *in, PgsVgpControllerOut *o, uint64_t now) {
   if (!pend.active || now - markerAt < 100) return;
   markerAt = now;
   if (remaining(in->lease_ms) == 0 || stopped.load()) {
@@ -320,7 +320,7 @@ void tickMarker(const PgrVgpControllerTick *in, PgrVgpControllerOut *o, uint64_t
 
 // ---- transfer ------------------------------------------------------------------------------------
 // Returns true if the transfer machine consumed this tick (skip the scan / pending logic).
-bool tickTransfer(const PgrVgpControllerTick *in, PgrVgpControllerOut *o, uint64_t now) {
+bool tickTransfer(const PgsVgpControllerTick *in, PgsVgpControllerOut *o, uint64_t now) {
   if (!xfer.active) return false;
   const bool transferEnabled = in->flags & PGS_VGC_TF_TRANSFER_ENABLED;
   // Clear conditions (apply to any transfer record; a handed-off record also cancels the JS record).
@@ -420,7 +420,7 @@ bool tickTransfer(const PgrVgpControllerTick *in, PgrVgpControllerOut *o, uint64
 }
 
 // ---- pending result ------------------------------------------------------------------------------
-bool smartMayAct(const PgrVgpControllerTick *in,bool stale){
+bool smartMayAct(const PgsVgpControllerTick *in,bool stale){
   if(stale||in->generation!=generationCounter.load()||stopped.load()||!(in->mask&1)||!remaining(in->lease_ms)||
      !(in->flags&PGS_VGC_TF_MANUAL_READY)||
      smartConfig()!=pend.smart_config||!alive(rootGet(pend.target)))return false;
@@ -433,7 +433,7 @@ void smartWait(uint64_t now){
   const int speed=smartSpeed(pend.smart_config);
   pend.next_throw=now+pgs_smart_throw_base_ms(speed)+(now%pgs_smart_throw_jitter_ms(speed));pend.deadline=now+20000;
 }
-void tickSmartWait(const PgrVgpControllerTick *in,PgrVgpControllerOut *o,uint64_t now,bool stale){
+void tickSmartWait(const PgsVgpControllerTick *in,PgsVgpControllerOut *o,uint64_t now,bool stale){
   if(!smartMayAct(in,stale)){retrySeen(in->owner,30000);dropPending(o);setStatus(o,PGS_VGC_ST_WAIT_READY);return;}
   if(now<pend.next_throw){setStatus(o,PGS_VGC_ST_SMART_WAIT);return;}
   PgsSmartDecision decision{};
@@ -451,7 +451,7 @@ void tickSmartWait(const PgrVgpControllerTick *in,PgrVgpControllerOut *o,uint64_
   }
   if(!pend.berry_done&&decision.berry){
     uint64_t promise=0,reflection=0;
-    pgs_smart_set_admission_guard([](void *ctx){return smartMayAct(static_cast<const PgrVgpControllerTick*>(ctx),false);},const_cast<PgrVgpControllerTick*>(in));
+    pgs_smart_set_admission_guard([](void *ctx){return smartMayAct(static_cast<const PgsVgpControllerTick*>(ctx),false);},const_cast<PgsVgpControllerTick*>(in));
     int rc=pgs_smart_berry(rootGet(pend.target),rootGet(pend.item_bag),decision.berry,in->owner,remaining(in->lease_ms),&promise,&reflection);
     pgs_smart_set_admission_guard(nullptr,nullptr);
     if(rc<0){pauseError(o,rc);return;}
@@ -462,7 +462,7 @@ void tickSmartWait(const PgrVgpControllerTick *in,PgrVgpControllerOut *o,uint64_
   }
   const auto *selected=static_cast<const PgsVgpSmartActionsApi*>(pgs_vgp_actions_api(2));
   if(!selected){pauseError(o,-40);return;}
-  PgrVgpActionsTarget req{PGS_VA_TARGET_VERSION,sizeof(req),in->epoch,in->owner,rootGet(pend.target)};
+  PgsVgpActionsTarget req{PGS_VA_TARGET_VERSION,sizeof(req),in->epoch,in->owner,rootGet(pend.target)};
   uintptr_t promise=0;
   int rc=selected->capture_selected(&req,decision.ball,decision.grade,decision.curve?1:0,&promise);
   if(rc<0){pauseError(o,rc);return;}
@@ -472,14 +472,14 @@ void tickSmartWait(const PgrVgpControllerTick *in,PgrVgpControllerOut *o,uint64_
   pend.phase=PGS_VGC_PH_CATCH;pend.deadline=nowMs()+20000;
   o->flags|=PGS_VGC_EV_CATCH_ISSUED;setStatus(o,PGS_VGC_ST_CATCHING);
 }
-void tickPending(const PgrVgpControllerTick *in, PgrVgpControllerOut *o, uint64_t now, bool stale) {
+void tickPending(const PgsVgpControllerTick *in, PgsVgpControllerOut *o, uint64_t now, bool stale) {
   const uint64_t owner = in->owner;
   const bool allowed = in->mask && remaining(in->lease_ms) > 0;
   const bool actionsBlocked = stale;  // a stale generation blocks a NEW action, not the completion itself
 
   if(pend.phase==PGS_VGC_PH_SMART_WAIT){tickSmartWait(in,o,now,stale);return;}
   const bool berryPhase=pend.phase==PGS_VGC_PH_SMART_BERRY;
-  PgrVgpResultsResult pr{};
+  PgsVgpResultsResult pr{};
   int rc = RES->poll(rootGet(pend.promise), berryPhase?PGS_VGC_PH_ENCOUNTER:pend.phase, owner, &pr);
   if (rc < 0) { pauseError(o, rc); return; }
   if (rc == PGS_VR_PENDING) {
@@ -577,7 +577,7 @@ void tickPending(const PgrVgpControllerTick *in, PgrVgpControllerOut *o, uint64_
     rootFree(pend.promise);
     pend.phase = PGS_VGC_PH_CATCH;
     pend.deadline = now + 20000;
-    PgrVgpActionsTarget req{PGS_VA_TARGET_VERSION, sizeof(req), in->epoch, owner, rootGet(pend.target)};
+    PgsVgpActionsTarget req{PGS_VA_TARGET_VERSION, sizeof(req), in->epoch, owner, rootGet(pend.target)};
     uintptr_t handle = 0;
     int ir = armActions(in, in->lease_ms) ? ACT->capture(&req, &handle) : PGS_VA_OK;
     rootFree(svcRoot);
@@ -623,7 +623,7 @@ void tickPending(const PgrVgpControllerTick *in, PgrVgpControllerOut *o, uint64_
     void *target = rootGet(pend.target);
     const PgsVgpIncense *kind = pgs_vgp_kind_where([&](void *k) { return exactClass(target, k); });
     void *destroy = kind ? kind->m_destroy
-                         : exactClass(target, cfg.class_wild) ? g_pgr_vgp_wild_destroy.load(std::memory_order_acquire) : nullptr;
+                         : exactClass(target, cfg.class_wild) ? g_pgs_vgp_wild_destroy.load(std::memory_order_acquire) : nullptr;
     if (destroy && alive(target)) {
       void *exc = nullptr;
       reinterpret_cast<Invoke>(cfg.runtime_invoke)(destroy, target, nullptr, &exc);
@@ -668,7 +668,7 @@ void tickPending(const PgrVgpControllerTick *in, PgrVgpControllerOut *o, uint64_
 
 // ---- scan ----------------------------------------------------------------------------------------
 // Issue at most one new action. Frees svc + the discovery handles on every exit.
-void tickScan(const PgrVgpControllerTick *in, PgrVgpControllerOut *o, uint64_t now, bool stale) {
+void tickScan(const PgsVgpControllerTick *in, PgsVgpControllerOut *o, uint64_t now, bool stale) {
   const uint64_t owner = in->owner;
   const bool allowed = in->mask && remaining(in->lease_ms) > 0;
 
@@ -702,7 +702,7 @@ void tickScan(const PgrVgpControllerTick *in, PgrVgpControllerOut *o, uint64_t n
   if (!svcRoot) { setStatus(o, PGS_VGC_ST_WAIT_INV); return; }
   rootCount.fetch_add(1);
 
-  PgrVgpDiscoverySnapshot snap{};
+  PgsVgpDiscoverySnapshot snap{};
   int sr = DSC->snapshot(rootGet(svcRoot), owner, remaining(in->lease_ms), &snap);
   if (sr < 0) { rootFree(svcRoot); pauseError(o, sr); return; }
   if (sr == 0) { rootFree(svcRoot); setStatus(o, PGS_VGC_ST_WAIT_INV); return; }
@@ -752,7 +752,7 @@ void tickScan(const PgrVgpControllerTick *in, PgrVgpControllerOut *o, uint64_t n
     const uint32_t kind = isCatch ? (smart&&hidden?PGS_VD_KIND_CATCH_LOADED:PGS_VD_KIND_CATCH) : PGS_VD_KIND_SPIN;
     if(smart){discoveryEvent(now);++discoveryTrace.scans;if(hidden)++discoveryTrace.hiddenScans;}
 
-    PgrVgpDiscoveryEnumeration en{};
+    PgsVgpDiscoveryEnumeration en{};
     int er = DSC->enumerate(kind, owner, remaining(in->lease_ms), &en);
     if(smart&&er>0)discoveryTrace.loaded+=en.count;
     if (er < 0) { cleanup(); pauseError(o, er); return; }
@@ -771,10 +771,10 @@ void tickScan(const PgrVgpControllerTick *in, PgrVgpControllerOut *o, uint64_t n
         uintptr_t h=0;int rc=DSC->at(rootGet(arrHandle),i,owner,remaining(in->lease_ms),&h);
         if(rc<0){cleanup();pauseError(o,rc);return;}
         if(!h)continue;rootCount.fetch_add(1);uint64_t candidate=h;
-        PgrVgpCandidateRequest q{PGS_VC_REQUEST_VERSION,sizeof(q)};
+        PgsVgpCandidateRequest q{PGS_VC_REQUEST_VERSION,sizeof(q)};
         q.action=PGS_VC_ACTION_SMART_CATCH;q.owner_tid=owner;q.lease_ms=remaining(in->lease_ms);
         q.lat=in->lat;q.lon=in->lon;q.target=rootGet(candidate);
-        PgrVgpCandidateResult r{};rc=CND->inspect(&q,&r);rootFree(candidate);
+        PgsVgpCandidateResult r{};rc=CND->inspect(&q,&r);rootFree(candidate);
         if(r.fort_handle){uint64_t f=r.fort_handle;rootCount.fetch_add(1);rootFree(f);}
         if(rc<0){cleanup();pauseError(o,rc);return;}
         if(rc!=PGS_VC_ELIGIBLE||r.key_len>=PGS_VC_KEY_CAPACITY){++discoveryTrace.rejected;if(r.reason<6)++discoveryTrace.reasons[r.reason];continue;}
@@ -809,7 +809,7 @@ void tickScan(const PgrVgpControllerTick *in, PgrVgpControllerOut *o, uint64_t n
         std::lock_guard<std::mutex> g(manualMutex);
         manualObj = manualTarget ? rootGet(manualTarget) : nullptr;
       }
-      PgrVgpCandidateRequest creq{};
+      PgsVgpCandidateRequest creq{};
       creq.version = PGS_VC_REQUEST_VERSION;
       creq.size = sizeof(creq);
       creq.action = isCatch ? (smartEnabled(smartConfig())?PGS_VC_ACTION_SMART_CATCH:PGS_VC_ACTION_CATCH) : PGS_VC_ACTION_SPIN;
@@ -819,7 +819,7 @@ void tickScan(const PgrVgpControllerTick *in, PgrVgpControllerOut *o, uint64_t n
       creq.lon = in->lon;
       creq.target = rootGet(cand);
       creq.manual = manualObj;
-      PgrVgpCandidateResult cres{};
+      PgsVgpCandidateResult cres{};
       int ir = CND->inspect(&creq, &cres);
       if (ir < 0) { rootFree(cand); cleanup(); pauseError(o, ir); return; }
       uint64_t fort = cres.fort_handle;  // OWNED on an eligible spin
@@ -866,7 +866,7 @@ void tickScan(const PgrVgpControllerTick *in, PgrVgpControllerOut *o, uint64_t n
       int issue;
       if (isCatch) {
         if (manualMatches(pend.target)) { onRefused(o, owner, now); cleanup(); return; }
-        PgrVgpActionsTarget req{PGS_VA_TARGET_VERSION, sizeof(req), in->epoch, owner, rootGet(pend.target)};
+        PgsVgpActionsTarget req{PGS_VA_TARGET_VERSION, sizeof(req), in->epoch, owner, rootGet(pend.target)};
         issue = armActions(in, in->lease_ms) ? ACT->encounter(&req, &handle) : PGS_VA_OK;
       } else {
         AuxSpinOut sp{};
@@ -882,7 +882,7 @@ void tickScan(const PgrVgpControllerTick *in, PgrVgpControllerOut *o, uint64_t n
         if (sp.reflection_handle) rootCount.fetch_add(1);
         uint64_t rpcRoot = sp.rpc_handle;
         if (rpcRoot) rootCount.fetch_add(1);
-        PgrVgpActionsSpin req{};
+        PgsVgpActionsSpin req{};
         req.version = PGS_VA_SPIN_VERSION;
         req.size = sizeof(req);
         req.epoch = in->epoch;
@@ -937,7 +937,7 @@ bool allFns(const void *const *fns, size_t n) {
   return true;
 }
 
-int install(const PgrVgpControllerConfig *c) {
+int install(const PgsVgpControllerConfig *c) {
   if (!c) return PGS_VGC_ERR_NULL_ARG;
   if (c->version != PGS_VGC_CONFIG_VERSION) return PGS_VGC_ERR_BAD_VERSION;
   if (c->size != sizeof(*c)) return PGS_VGC_ERR_BAD_SIZE;
@@ -945,12 +945,12 @@ int install(const PgrVgpControllerConfig *c) {
   void *const *ptrs = reinterpret_cast<void *const *>(reinterpret_cast<const char *>(c) + 8);
   for (int i = 0; i < 19; i++) if (!ptrs[i]) return PGS_VGC_ERR_MISSING_PTR;
 
-  auto pol = checkTable<PgrVgpPolicyApi>(c->policy_table, PGS_VP_API_VERSION, sizeof(PgrVgpPolicyApi));
-  auto act = checkTable<PgrVgpActionsApi>(c->actions_table, PGS_VA_API_VERSION, sizeof(PgrVgpActionsApi));
-  auto cnd = checkTable<PgrVgpCandidateApi>(c->candidates_table, PGS_VC_API_VERSION, sizeof(PgrVgpCandidateApi));
-  auto res = checkTable<PgrVgpResultsApi>(c->results_table, PGS_VR_API_VERSION, sizeof(PgrVgpResultsApi));
-  auto dsc = checkTable<PgrVgpDiscoveryApi>(c->discovery_table, PGS_VD_API_VERSION, sizeof(PgrVgpDiscoveryApi));
-  auto mnt = checkTable<PgrVgpMaintenanceApi>(c->maintenance_table, PGS_VM_API_VERSION, sizeof(PgrVgpMaintenanceApi));
+  auto pol = checkTable<PgsVgpPolicyApi>(c->policy_table, PGS_VP_API_VERSION, sizeof(PgsVgpPolicyApi));
+  auto act = checkTable<PgsVgpActionsApi>(c->actions_table, PGS_VA_API_VERSION, sizeof(PgsVgpActionsApi));
+  auto cnd = checkTable<PgsVgpCandidateApi>(c->candidates_table, PGS_VC_API_VERSION, sizeof(PgsVgpCandidateApi));
+  auto res = checkTable<PgsVgpResultsApi>(c->results_table, PGS_VR_API_VERSION, sizeof(PgsVgpResultsApi));
+  auto dsc = checkTable<PgsVgpDiscoveryApi>(c->discovery_table, PGS_VD_API_VERSION, sizeof(PgsVgpDiscoveryApi));
+  auto mnt = checkTable<PgsVgpMaintenanceApi>(c->maintenance_table, PGS_VM_API_VERSION, sizeof(PgsVgpMaintenanceApi));
   auto mrk = checkTable<PgsVgpMarkerApi>(c->marker_table, 1, sizeof(PgsVgpMarkerApi));
   auto itm = checkTable<pgs_items_api_v1>(c->items_table, PGS_ITEMS_API_VERSION, sizeof(pgs_items_api_v1));
   auto aux = checkTable<AuxApi>(c->aux_table, 1, sizeof(AuxApi));
@@ -974,7 +974,7 @@ int install(const PgrVgpControllerConfig *c) {
   return PGS_VGC_OK;
 }
 
-int tick(const PgrVgpControllerTick *in, PgrVgpControllerOut *out) {
+int tick(const PgsVgpControllerTick *in, PgsVgpControllerOut *out) {
   if (!out) return PGS_VGC_ERR_NULL_ARG;
   initOut(out);
   out->status = lastStatus.load();
@@ -1076,7 +1076,7 @@ int stop(uint64_t owner) {
     bool idle = false;
     if (busy.compare_exchange_strong(idle, true)) {
       struct BusyExit { ~BusyExit() { busy.store(false); } } exit;
-      PgrVgpControllerOut scratch{};
+      PgsVgpControllerOut scratch{};
       initOut(&scratch);
       freeAllRoots(&scratch);
       POL->reset(owner);
@@ -1086,7 +1086,7 @@ int stop(uint64_t owner) {
   return PGS_VGC_OK;
 }
 
-int sample(PgrVgpControllerSample *out) {
+int sample(PgsVgpControllerSample *out) {
   if (!out) return PGS_VGC_ERR_NULL_ARG;
   out->version = PGS_VGC_SAMPLE_VERSION;
   out->size = sizeof(*out);
@@ -1100,7 +1100,7 @@ int sample(PgrVgpControllerSample *out) {
 
 uint64_t generation(void) { return generationCounter.load(); }
 
-const PgrVgpControllerApi api = {PGS_VGC_API_VERSION, sizeof(PgrVgpControllerApi),
+const PgsVgpControllerApi api = {PGS_VGC_API_VERSION, sizeof(PgsVgpControllerApi),
                                  install, tick, observe, transfer_feedback,
                                  revoke, stop, sample, generation};
 

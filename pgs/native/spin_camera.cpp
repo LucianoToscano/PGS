@@ -15,7 +15,7 @@ namespace {
 constexpr uint64_t kMaxLeaseMs = 2500ULL;
 constexpr uint64_t kNsPerMs = 1000000ULL;
 constexpr uint64_t kPhaseExpiryNs = 15000ULL * kNsPerMs;
-constexpr uintptr_t kIteratorSpeedOffset = PGR_GAME_SPIN_CAMERA_CPP_KITERATORSPEEDOFFSET;
+constexpr uintptr_t kIteratorSpeedOffset = PGS_GAME_SPIN_CAMERA_CPP_KITERATORSPEEDOFFSET;
 constexpr float kTargetMinSpeed = 25.0f;
 
 enum PhaseId : uint32_t {
@@ -34,7 +34,7 @@ struct PhaseSlot {
 };
 
 std::mutex g_install_mutex;
-PgrSpinCameraConfig g_cfg{};
+PgsSpinCameraConfig g_cfg{};
 std::atomic<int> g_install_state{0}; // 0 = uninstalled, 1 = installed, -1 = faulted
 
 std::atomic<StateLifecycleFn> g_orig_in_enter{nullptr};
@@ -352,9 +352,9 @@ bool hook_move_next(void *self, void *method_info) {
     return ret;
 }
 
-bool validate_config(const PgrSpinCameraConfig *cfg) noexcept {
+bool validate_config(const PgsSpinCameraConfig *cfg) noexcept {
     if (cfg == nullptr) return false;
-    if (cfg->version != 1 || cfg->size != sizeof(PgrSpinCameraConfig)) return false;
+    if (cfg->version != 1 || cfg->size != sizeof(PgsSpinCameraConfig)) return false;
     if (cfg->gchandle_new == nullptr || cfg->gchandle_get_target == nullptr ||
         cfg->gchandle_free == nullptr || cfg->object_get_class == nullptr ||
         cfg->field_get_value == nullptr) {
@@ -402,7 +402,7 @@ bool install_one_hook(void *target, void *replacement, std::atomic<Fn> *orig_slo
     return true;
 }
 
-int api_install(const PgrSpinCameraConfig *config) {
+int api_install(const PgsSpinCameraConfig *config) {
     if (config == nullptr) return PGS_SCAM_ERR_NULL_ARG;
     if (!validate_config(config)) return PGS_SCAM_ERR_BAD_CONFIG;
 
@@ -412,7 +412,7 @@ int api_install(const PgrSpinCameraConfig *config) {
         return PGS_SCAM_ERR_HOOK_FAILED;
     }
     if (state == 1) {
-        if (std::memcmp(&g_cfg, config, sizeof(PgrSpinCameraConfig)) == 0) {
+        if (std::memcmp(&g_cfg, config, sizeof(PgsSpinCameraConfig)) == 0) {
             return PGS_SCAM_OK;
         }
         return PGS_SCAM_ERR_ALREADY_BOUND;
@@ -496,10 +496,10 @@ int api_tick(uint64_t proven_tid) {
     return PGS_SCAM_OK;
 }
 
-int api_sample(PgrSpinCameraSample *out) {
+int api_sample(PgsSpinCameraSample *out) {
     if (out == nullptr) return PGS_SCAM_ERR_NULL_ARG;
     out->version = 1;
-    out->size = sizeof(PgrSpinCameraSample);
+    out->size = sizeof(PgsSpinCameraSample);
     out->fast_serial = g_fast_serial.load(std::memory_order_acquire);
     out->error_serial = g_error_serial.load(std::memory_order_acquire);
     out->last_phase = g_last_phase.load(std::memory_order_relaxed);
@@ -515,9 +515,9 @@ int api_sample(PgrSpinCameraSample *out) {
     return PGS_SCAM_OK;
 }
 
-const PgrSpinCameraApi kApiTable = {
+const PgsSpinCameraApi kApiTable = {
     1,
-    sizeof(PgrSpinCameraApi),
+    sizeof(PgsSpinCameraApi),
     &api_install,
     &api_update,
     &api_tick,

@@ -26,7 +26,7 @@ struct Failure {const char *where;};
 void require(bool ok,const char *where){if(!ok)throw Failure{where};}
 template<class F>F fn(const void *p){require(p,"missing runtime export");return reinterpret_cast<F>(const_cast<void*>(p));}
 
-PgrBootBinding boot{};
+PgsBootBinding boot{};
 bool ready=false,busy=false,tried=false;
 std::atomic<bool> enabled{false},faulted{false},installed{false};
 std::atomic<uint64_t> owner{0};
@@ -45,13 +45,13 @@ void *method(void *k,const char *name,int n){void *m=fn<void*(*)(void*,const cha
 template<class T>T unbox(void *o){require(o,"boxed value");T v{};auto p=fn<void*(*)(void*)>(boot.runtime.object_unbox)(o);require(p,"boxed value");std::memcpy(&v,p,sizeof(v));return v;}
 void *ref_field(void *o,void *f){void *v=nullptr;fn<void(*)(void*,void*,void*)>(boot.runtime.field_get_value)(o,f,&v);return v;}
 std::string typename_of(const void *type){char *p=fn<char*(*)(const void*)>(boot.meta.type_get_name)(type);require(p,"type name");std::string s=p;fn<void(*)(void*)>(boot.meta.mem_free)(p);return s;}
-const PgrRuntimeTransportApi *transport(){return static_cast<const PgrRuntimeTransportApi*>(pgs_runtime_transport_api(1));}
-void event(const std::string &json){auto tr=transport();if(!tr)return;PgrRuntimeTransportString s[]={{"rocket-swap",11},{json.c_str(),uint32_t(json.size())}};tr->emit(19,nullptr,0,s,2);}
+const PgsRuntimeTransportApi *transport(){return static_cast<const PgsRuntimeTransportApi*>(pgs_runtime_transport_api(1));}
+void event(const std::string &json){auto tr=transport();if(!tr)return;PgsRuntimeTransportString s[]={{"rocket-swap",11},{json.c_str(),uint32_t(json.size())}};tr->emit(19,nullptr,0,s,2);}
 void status(const char *phase,const std::string &message){event(std::string("{\"phase\":\"")+phase+"\",\"message\":\""+message+"\"}");}
 
 // Team GO Rocket automation on: active, rocketAllowed and any rocketOptions bit, from one fresh snapshot.
 bool configured(){
- auto tr=transport();PgrRuntimeTransportSample a{},z{};
+ auto tr=transport();PgsRuntimeTransportSample a{},z{};
  if(!tr||tr->sample(&a)||!a.snapshot_fresh||a.fault)return false;
  int active=0,allowed=0;int32_t options=0;
  if(tr->get_bool(3,&active)||tr->get_bool(26,&allowed)||tr->get_int(6,&options))return false;
@@ -107,12 +107,12 @@ void step(){
  next_try=now+kSettleMs;  // buttons not ready yet
 }
 
-void *class_of(const PgrMetaApi *api,const char *ns,const char *name){
- PgrMetaClassQuery q{};q.version=1;q.size=sizeof(q);q.name_space=ns;q.name=name;q.canonical_match=PGR_MD_MATCH_EXACT;
- PgrMetaClassResult r{};require(api->resolve_class(&q,&r)==0,name);return const_cast<void*>(r.klass);
+void *class_of(const PgsMetaApi *api,const char *ns,const char *name){
+ PgsMetaClassQuery q{};q.version=1;q.size=sizeof(q);q.name_space=ns;q.name=name;q.canonical_match=PGS_MD_MATCH_EXACT;
+ PgsMetaClassResult r{};require(api->resolve_class(&q,&r)==0,name);return const_cast<void*>(r.klass);
 }
 void install(){
- const auto *api=static_cast<const PgrMetaApi*>(pgs_runtime_metadata_api(1));require(api&&api->resolve_class&&api->validate_method,"metadata API");
+ const auto *api=static_cast<const PgsMetaApi*>(pgs_runtime_metadata_api(1));require(api&&api->resolve_class&&api->validate_method,"metadata API");
  require(boot.module_base,"il2cpp module");
  void *widget=class_of(api,"Niantic.Holoholo.Combat.UI","CombatVNextSwapPromptWidget");
  void *button=class_of(api,"Niantic.Holoholo.VNext","SwapButtonVNext");
@@ -134,11 +134,11 @@ void install(){
   if(t.rfind("System.Collections.Generic.List",0)==0&&t.find("SwapButtonVNext")!=std::string::npos){require(!prompt_list,"swap button list");prompt_list=f;}
  }
  require(prompt_list,"swap button list");
- static const uint8_t prologue[]=PGR_GAME_ROCKET_SWAP_CPP_SHOW_PROMPT_FINGERPRINT;
+ static const uint8_t prologue[]=PGS_GAME_ROCKET_SWAP_CPP_SHOW_PROMPT_FINGERPRINT;
  static_assert(sizeof(prologue)==24,"24-byte prologue");
- PgrMetaMethodQuery q{};q.version=1;q.size=sizeof(q);q.owner=widget;q.name="ShowPromptWidget";q.return_type="System.Void";q.return_match=PGR_MD_MATCH_EXACT;q.param_count=0;
- q.expected_code=static_cast<const char*>(boot.module_base)+PGR_GAME_ROCKET_SWAP_CPP_SHOW_PROMPT_RVA;q.prologue=prologue;q.prologue_len=sizeof(prologue);
- PgrMetaMethodResult r{};const int rc=api->validate_method(&q,&r);
+ PgsMetaMethodQuery q{};q.version=1;q.size=sizeof(q);q.owner=widget;q.name="ShowPromptWidget";q.return_type="System.Void";q.return_match=PGS_MD_MATCH_EXACT;q.param_count=0;
+ q.expected_code=static_cast<const char*>(boot.module_base)+PGS_GAME_ROCKET_SWAP_CPP_SHOW_PROMPT_RVA;q.prologue=prologue;q.prologue_len=sizeof(prologue);
+ PgsMetaMethodResult r{};const int rc=api->validate_method(&q,&r);
  require(rc==0&&r.code,"ShowPromptWidget signature");
  void *o=nullptr;require(pgs_hook(const_cast<void*>(r.code),reinterpret_cast<void*>(hook_show),&o)==0&&o,"ShowPromptWidget hook");
  original.store(reinterpret_cast<Show>(o),std::memory_order_release);
@@ -164,7 +164,7 @@ void pgs_rocket_swap_tick(uint64_t tid){
  if(!on||tried||faulted.load(std::memory_order_acquire))return;
  tried=true;
  try{
-  if(!ready){auto api=static_cast<const PgrBootApi*>(pgs_runtime_bootstrap_api(1));boot.version=1;boot.size=sizeof(boot);require(api&&api->snapshot(&boot)==0,"Runtime unavailable");ready=true;}
+  if(!ready){auto api=static_cast<const PgsBootApi*>(pgs_runtime_bootstrap_api(1));boot.version=1;boot.size=sizeof(boot);require(api&&api->snapshot(&boot)==0,"Runtime unavailable");ready=true;}
   install();
  }catch(const Failure &f){faulted.store(true,std::memory_order_release);status("error",std::string("Rocket auto swap unavailable: ")+f.where);}
  catch(...){faulted.store(true,std::memory_order_release);status("error","Rocket auto swap unavailable: native failure");}

@@ -27,6 +27,7 @@ def body_digest(text):
     # Excludes only whole-line comments; all C++ tables, row comments, indices,
     # declarations, ordering, byte values and literal types remain covered.
     body = '\n'.join(line for line in text.splitlines() if not line.startswith('//')) + '\n'
+    body = body.replace('pgs_routes_schema', 'pgr_routes_schema').replace('pgs_shared_gift', 'pgr_shared_gift')
     return hashlib.sha256(body.encode()).hexdigest()
 
 

@@ -19,8 +19,8 @@ static_assert(offsetof(Array,values)==32,"array layout");
 struct Heap {Object layer,details[2],type;Array array;};
 Heap heaps[96];int generation=0,moves=0,invokes=0;
 std::map<uintptr_t,void*> handles;uintptr_t serial=100,host=0;
-const PgrCatchDiscoveryApi *api=nullptr;
-PgrCatchDiscoveryRequest request{};PgrCatchDiscoveryOutput *reenterOutput=nullptr;
+const PgsCatchDiscoveryApi *api=nullptr;
+PgsCatchDiscoveryRequest request{};PgsCatchDiscoveryOutput *reenterOutput=nullptr;
 int nestedResult=0;bool moveAlloc=true,reenterFree=false;
 Heap &heap(){return heaps[generation];}
 void *remap(void *p,Heap &old,Heap &next){
@@ -56,15 +56,15 @@ void *invoke(const void *method,void *receiver,void **params,void **exception){
  assert(method==&findMethod&&receiver==nullptr&&params&&params[0]==&heap().type);
  move();return &heap().array;
 }
-void clean(const PgrCatchDiscoveryOutput &out){assert(out.count==0);for(void *h:out.handles)assert(!h);}
+void clean(const PgsCatchDiscoveryOutput &out){assert(out.count==0);for(void *h:out.handles)assert(!h);}
 }
 int main(int argc,char **argv){
  if(argc!=2)return 1;void *lib=dlopen(argv[1],RTLD_NOW|RTLD_LOCAL);if(!lib){std::puts(dlerror());return 2;}
  auto get=reinterpret_cast<const void*(*)(uint32_t)>(dlsym(lib,"pgs_native_api"));
  auto core=get?static_cast<const pgs_native_api_v2*>(get(2)):nullptr;
  assert(core&&core->query_feature(40,99)==nullptr);
- api=static_cast<const PgrCatchDiscoveryApi*>(core->query_feature(40,1));assert(api&&api->version==1&&api->size==40);
- PgrCatchDiscoveryConfig c{};c.version=1;c.size=sizeof(c);
+ api=static_cast<const PgsCatchDiscoveryApi*>(core->query_feature(40,1));assert(api&&api->version==1&&api->size==40);
+ PgsCatchDiscoveryConfig c{};c.version=1;c.size=sizeof(c);
  c.object_get_class=reinterpret_cast<void*>(&objectClass);c.runtime_invoke=reinterpret_cast<void*>(&invoke);
  c.gchandle_new=reinterpret_cast<void*>(&gcNew);c.gchandle_get_target=reinterpret_cast<void*>(&gcGet);c.gchandle_free=reinterpret_cast<void*>(&gcFree);
  c.class_get_type=reinterpret_cast<void*>(&classType);c.type_get_object=reinterpret_cast<void*>(&typeObject);c.array_length=reinterpret_cast<void*>(&length);
@@ -76,7 +76,7 @@ int main(int argc,char **argv){
  heap().array.values[0]=&heap().details[0];heap().array.values[1]=&heap().details[1];
  host=gcNew(&heap().layer,0);
  request.version=1;request.size=sizeof(request);request.tid=static_cast<uint64_t>(gettid());request.remaining_ms=2500;request.layer=reinterpret_cast<void*>(host);
- PgrCatchDiscoveryOutput out{};
+ PgsCatchDiscoveryOutput out{};
  assert(api->top(&request,&out)==PGS_CD_OK&&out.count==1);
  assert(gcGet(reinterpret_cast<uintptr_t>(out.handles[0]))==&heap().details[0]);
  assert(api->release(&out)==PGS_CD_OK);clean(out);assert(handles.size()==1);

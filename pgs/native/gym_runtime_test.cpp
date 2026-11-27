@@ -16,7 +16,7 @@ int test_objects[8]{};
 bool test_active = true, test_map = true, test_fresh = true;
 bool test_coordinates = true, test_changing_sequence = false;
 unsigned test_samples = 0;
-int test_sample(PgrRuntimeTransportSample *out) {
+int test_sample(PgsRuntimeTransportSample *out) {
  *out = {};
  out->snapshot_fresh = test_fresh;
  out->snapshot_seq = 100 + (test_changing_sequence ? test_samples : 0);
@@ -70,7 +70,7 @@ void *test_forbidden_class(void*) {
  return nullptr;
 }
 int test_emit(uint32_t opcode, const int64_t *scalars, uint32_t scalar_count,
-              const PgrRuntimeTransportString *strings, uint32_t string_count) {
+              const PgsRuntimeTransportString *strings, uint32_t string_count) {
  assert(opcode == 19 && !scalars && scalar_count == 0);
  assert(strings && string_count == 2);
  test_event_kind.assign(strings[0].ptr,strings[0].len);
@@ -78,7 +78,7 @@ int test_emit(uint32_t opcode, const int64_t *scalars, uint32_t scalar_count,
  return 0;
 }
 int test_poll(void *promise, uint32_t phase, uint64_t tid,
-              PgrVgpResultsResult *out) {
+              PgsVgpResultsResult *out) {
  assert(promise == &test_objects[1] && phase == 1 && tid == 123);
  ++test_polls;
  *out = {};
@@ -90,8 +90,8 @@ int test_poll(void *promise, uint32_t phase, uint64_t tid,
  }
  return test_result;
 }
-PgrRuntimeTransportApi test_transport{};
-PgrVgpResultsApi test_results{1, sizeof(PgrVgpResultsApi), nullptr, test_poll, nullptr};
+PgsRuntimeTransportApi test_transport{};
+PgsVgpResultsApi test_results{1, sizeof(PgsVgpResultsApi), nullptr, test_poll, nullptr};
 
 Permission test_setup(int phase) {
  assert(test_roots.empty());

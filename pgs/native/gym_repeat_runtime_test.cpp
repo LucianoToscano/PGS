@@ -38,8 +38,8 @@ std::map<uintptr_t, void *> handles;
 uintptr_t handle_next = 0;
 int live_handles = 0;
 
-PgrSharedMetadataOutput fixture_md{};
-PgrBootBinding fixture_boot{};
+PgsSharedMetadataOutput fixture_md{};
+PgsBootBinding fixture_boot{};
 
 // Transport state.
 int tr_enabled = 1, tr_active = 1, tr_battles = 1;
@@ -155,10 +155,10 @@ void *field_type(void *p){return klass_of(static_cast<F*>(p)->type);}
 char *type_name(void *p){return strdup(static_cast<K*>(p)->name.c_str());}
 void static_value(void *p,void *out){auto n=static_cast<F*>(p)->name;*static_cast<int*>(out)=n=="LEAVE_GYM"?0:n=="LEAVE_BATTLE"?1:2;}
 
-int resolve_class(const PgrMetaClassQuery *q, PgrMetaClassResult *out) {
+int resolve_class(const PgsMetaClassQuery *q, PgsMetaClassResult *out) {
     *out = {}; out->klass = klass_of(std::string(q->name_space) + "." + q->name); out->type = out->klass; return 0;
 }
-int validate_method(const PgrMetaMethodQuery *q, PgrMetaMethodResult *out) {
+int validate_method(const PgsMetaMethodQuery *q, PgsMetaMethodResult *out) {
     *out = {};
     if(fail_validation)return -1;
     void *code = nullptr;
@@ -178,19 +178,19 @@ int validate_method(const PgrMetaMethodQuery *q, PgrMetaMethodResult *out) {
 }
 
 // --- fake transport ---------------------------------------------------------------
-int tr_sample(PgrRuntimeTransportSample *out) { *out = {}; out->snapshot_fresh = tr_fresh; out->fault = 0; out->snapshot_seq = tr_seq; out->generation=tr_generation; return 0; }
+int tr_sample(PgsRuntimeTransportSample *out) { *out = {}; out->snapshot_fresh = tr_fresh; out->fault = 0; out->snapshot_seq = tr_seq; out->generation=tr_generation; return 0; }
 int tr_bool(uint32_t id, int *out) { *out = id == 40 ? tr_enabled : id == 3 ? tr_active : id == 6 ? tr_battles : id==38 ? tr_map : 0; return 0; }
 int tr_double(uint32_t, double *out, int *has) { *out = 0; if (has) *has = 1; return 0; }
-int tr_emit(uint32_t, const int64_t *, uint32_t, const PgrRuntimeTransportString *s, uint32_t n) {
+int tr_emit(uint32_t, const int64_t *, uint32_t, const PgsRuntimeTransportString *s, uint32_t n) {
     if (n) statuses.emplace_back(s[0].ptr, s[0].len);
     return 0;
 }
 
-PgrBootApi boot_api{};
-PgrMetaApi meta_api{};
-PgrRuntimeTransportApi transport_api{};
+PgsBootApi boot_api{};
+PgsMetaApi meta_api{};
+PgsRuntimeTransportApi transport_api{};
 
-int boot_snapshot(PgrBootBinding *out) { *out = fixture_boot; return 0; }
+int boot_snapshot(PgsBootBinding *out) { *out = fixture_boot; return 0; }
 
 // fixture exports resolved via dlsym.
 void *type_get_object(void *k) { return k; }
@@ -312,8 +312,8 @@ int pgs_hook(void *address, void *replacement, void **original) {
     return fail_hook_at && int(hooks.size())==fail_hook_at ? -1 : 0;
 }
 int pgs_heal_busy() { return g_heal; }
-void pgs_heal_gym_baseline(uint64_t tid,const PgrSharedMetadataOutput *metadata){assert(tid==self_tid()&&metadata==&fixture_md);++baseline_calls;}
-int pgs_heal_gym_tick(uint64_t tid,const PgrSharedMetadataOutput *metadata,uint64_t token,bool (*ready)()){
+void pgs_heal_gym_baseline(uint64_t tid,const PgsSharedMetadataOutput *metadata){assert(tid==self_tid()&&metadata==&fixture_md);++baseline_calls;}
+int pgs_heal_gym_tick(uint64_t tid,const PgsSharedMetadataOutput *metadata,uint64_t token,bool (*ready)()){
  assert(tid==self_tid()&&metadata==&fixture_md&&token==policy.won_at);assert(ready&&ready());++gym_heal_calls;return gym_heal_result;
 }
 void *fixture_symbol(void *, const char *n) {

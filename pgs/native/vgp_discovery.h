@@ -88,9 +88,9 @@ enum PgsVgpDiscoveryStatus {
 // host off p.items.lookup and p.vgp.m; the native layer re-checks the header and rejects any null. No
 // hook address. Each count method and the two Resolve-returned objects are invoked NON-virtually, exactly
 // as the legacy JS path. The field offsets of this struct are the published contract: never reorder.
-struct PgrVgpDiscoveryConfig {
+struct PgsVgpDiscoveryConfig {
   uint32_t version;  // == PGS_VD_CONFIG_VERSION
-  uint32_t size;     // == sizeof(PgrVgpDiscoveryConfig)
+  uint32_t size;     // == sizeof(PgsVgpDiscoveryConfig)
 
   // [0..9] il2cpp runtime exports.
   void *gchandle_new;          // 0  uintptr_t (void* obj, int pinned)
@@ -134,14 +134,14 @@ struct PgrVgpDiscoveryConfig {
   void *class_is_assignable_from; // 32 expected class, actual class; IL2CPP bool return
 };
 
-static_assert(sizeof(PgrVgpDiscoveryConfig) == 272,
-              "PgrVgpDiscoveryConfig must remain 272 bytes on LP64");
+static_assert(sizeof(PgsVgpDiscoveryConfig) == 272,
+              "PgsVgpDiscoveryConfig must remain 272 bytes on LP64");
 
 // Fixed LP64 snapshot output (48 bytes). Always fully initialised before any early return. The two
 // handles are OWNED (adopted by the caller exactly once) and set ONLY on PGS_VD_OK; they are 0 otherwise.
-struct PgrVgpDiscoverySnapshot {
+struct PgsVgpDiscoverySnapshot {
   uint32_t version;          // off 0  == PGS_VD_SNAPSHOT_VERSION
-  uint32_t size;             // off 4  == sizeof(PgrVgpDiscoverySnapshot)
+  uint32_t size;             // off 4  == sizeof(PgsVgpDiscoverySnapshot)
   int32_t  balls;            // off 8  GetItemCount(item id 1)
   int32_t  stored;           // off 12 pokemon bag get_Count()
   int32_t  capacity;         // off 16 player get_MaxPokemon()
@@ -152,44 +152,44 @@ struct PgrVgpDiscoverySnapshot {
   uint64_t item_bag_handle;    // off 40 OWNED GC handle for the item bag (IBAG)
 };
 
-static_assert(sizeof(PgrVgpDiscoverySnapshot) == 48,
-              "PgrVgpDiscoverySnapshot must remain 48 bytes on LP64");
+static_assert(sizeof(PgsVgpDiscoverySnapshot) == 48,
+              "PgsVgpDiscoverySnapshot must remain 48 bytes on LP64");
 
 // Fixed LP64 enumeration output (24 bytes). Always fully initialised. arrayHandle is an OWNED GC handle
 // set ONLY on PGS_VD_OK (0 otherwise). count == 0 is a valid success.
-struct PgrVgpDiscoveryEnumeration {
+struct PgsVgpDiscoveryEnumeration {
   uint32_t version;      // off 0  == PGS_VD_ENUM_VERSION
-  uint32_t size;         // off 4  == sizeof(PgrVgpDiscoveryEnumeration)
+  uint32_t size;         // off 4  == sizeof(PgsVgpDiscoveryEnumeration)
   uint32_t count;        // off 8  element count (<= PGS_VD_MAX_ARRAY)
   uint32_t reserved;     // off 12 0
   uint64_t array_handle; // off 16 OWNED GC handle for the Object[] (adopt exactly once)
 };
 
-static_assert(sizeof(PgrVgpDiscoveryEnumeration) == 24,
-              "PgrVgpDiscoveryEnumeration must remain 24 bytes on LP64");
+static_assert(sizeof(PgsVgpDiscoveryEnumeration) == 24,
+              "PgsVgpDiscoveryEnumeration must remain 24 bytes on LP64");
 
 // Fixed LP64 table: 8-byte header + 4 function pointers = 40 bytes.
-struct PgrVgpDiscoveryApi {
+struct PgsVgpDiscoveryApi {
   uint32_t version;  // == PGS_VD_API_VERSION
-  uint32_t size;     // == sizeof(PgrVgpDiscoveryApi)
+  uint32_t size;     // == sizeof(PgsVgpDiscoveryApi)
   // install(config): bind the validated runtime once for the process lifetime. Idempotent for an
   // identical config; a different config returns PGS_VD_ERR_RECONFIG. Any null required pointer or a bad
   // header is rejected (fail closed). No hook is installed.
-  int (*install)(const PgrVgpDiscoveryConfig *config);
+  int (*install)(const PgsVgpDiscoveryConfig *config);
   // snapshot(svc, owner, lease_ms, out): resolve the inventory and counts off the service object `svc`
   // (a raw managed pointer the caller keeps rooted). Owner thread only.
-  int (*snapshot)(void *svc, uint64_t owner, uint64_t lease_ms, PgrVgpDiscoverySnapshot *out);
+  int (*snapshot)(void *svc, uint64_t owner, uint64_t lease_ms, PgsVgpDiscoverySnapshot *out);
   // enumerate(kind, owner, lease_ms, out): FindObjectsOfType(wild|stop) and return the owned array handle
   // plus its element count. Owner thread only.
-  int (*enumerate)(uint32_t kind, uint64_t owner, uint64_t lease_ms, PgrVgpDiscoveryEnumeration *out);
+  int (*enumerate)(uint32_t kind, uint64_t owner, uint64_t lease_ms, PgsVgpDiscoveryEnumeration *out);
   // at(array, index, owner, lease_ms, out_handle): return an owned GC handle for element `index` of the
   // already-rooted Object[] `array`. *out_handle is always initialised (0 on any non-OK path). Owner
   // thread only.
   int (*at)(void *array, uint32_t index, uint64_t owner, uint64_t lease_ms, uintptr_t *out_handle);
 };
 
-static_assert(sizeof(PgrVgpDiscoveryApi) == 40,
-              "PgrVgpDiscoveryApi must remain a 40-byte version-1 table");
+static_assert(sizeof(PgsVgpDiscoveryApi) == 40,
+              "PgsVgpDiscoveryApi must remain a 40-byte version-1 table");
 
 // Hidden getter. NOT exported by the version script; the coordinator registers it in query_feature under
 // feature id 31 and answers only on an exact version match.

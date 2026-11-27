@@ -24,7 +24,7 @@ struct Root {size_t entity;bool live,pinned;};
 std::vector<std::unique_ptr<Object>> allocations;
 std::vector<Entity> entities;
 std::vector<Root> roots;
-const PgrRoutesObserversApi *api=nullptr;
+const PgsRoutesObserversApi *api=nullptr;
 size_t service,progress,play,shared,string_id,reward,rating,arg;
 uint64_t borrowed=0;
 bool move_on_new=false,move_on_invoke=false,move_on_free=false;
@@ -78,7 +78,7 @@ void *runtime_invoke(const void *method,void *obj,void **params,void **exception
   assert(method==&method_dismiss&&(id==reward||id==rating));++dismiss_calls;
   if(revoke_dismiss){revoke_dismiss=false;api->revoke();}
   if(expire_dismiss){expire_dismiss=false;usleep(550000);}
-  put_i32(at(id),PGR_RO_GUI_STATE_OFFSET,0);return nullptr;
+  put_i32(at(id),PGS_RO_GUI_STATE_OFFSET,0);return nullptr;
 }
 using Hook=void (*)(void *,void *,const void *);
 extern "C" __attribute__((noinline)) void reward_original(void *self,void *argument,const void *method){
@@ -100,20 +100,20 @@ void initialize(const std::string &route){
   assert(route.size()<=200);put_i32(at(string_id),0x10,route.size());
   auto *chars=reinterpret_cast<uint16_t *>(at(string_id)->bytes+0x18);
   for(size_t i=0;i<route.size();++i)chars[i]=static_cast<unsigned char>(route[i]);
-  put_i32(at(progress),PGR_RO_PROGRESS_STATUS_OFFSET,PGS_RO_COMPLETION_SUCCESS);
-  put_i32(at(reward),PGR_RO_GUI_STATE_OFFSET,PGS_RO_GUI_STATE_DISMISSED);
-  put_i32(at(rating),PGR_RO_GUI_STATE_OFFSET,PGS_RO_GUI_STATE_DISMISSED);repair_references();
+  put_i32(at(progress),PGS_RO_PROGRESS_STATUS_OFFSET,PGS_RO_COMPLETION_SUCCESS);
+  put_i32(at(reward),PGS_RO_GUI_STATE_OFFSET,PGS_RO_GUI_STATE_DISMISSED);
+  put_i32(at(rating),PGS_RO_GUI_STATE_OFFSET,PGS_RO_GUI_STATE_DISMISSED);repair_references();
   borrowed=gc_new(at(service),0);
 }
-PgrRoutesObserversRequest request(uint64_t residual=PGS_RO_MAX_LEASE_MS){
-  PgrRoutesObserversRequest r{};r.version=1;r.size=sizeof(r);r.tid=gettid();r.residual_ms=residual;r.generation=api->generation();return r;
+PgsRoutesObserversRequest request(uint64_t residual=PGS_RO_MAX_LEASE_MS){
+  PgsRoutesObserversRequest r{};r.version=1;r.size=sizeof(r);r.tid=gettid();r.residual_ms=residual;r.generation=api->generation();return r;
 }
-PgrRoutesObserversOutput poll(uint64_t residual=PGS_RO_MAX_LEASE_MS){
-  auto r=request(residual);PgrRoutesObserversOutput out{};int rc=api->poll(&r,&out);assert(rc>=0&&rc==out.status);return out;
+PgsRoutesObserversOutput poll(uint64_t residual=PGS_RO_MAX_LEASE_MS){
+  auto r=request(residual);PgsRoutesObserversOutput out{};int rc=api->poll(&r,&out);assert(rc>=0&&rc==out.status);return out;
 }
-bool event(const PgrRoutesObserversOutput &out,uint32_t type){for(uint32_t i=0;i<out.event_count;i++)if(out.events[i].type==type)return true;return false;}
+bool event(const PgsRoutesObserversOutput &out,uint32_t type){for(uint32_t i=0;i<out.event_count;i++)if(out.events[i].type==type)return true;return false;}
 void arm(const std::string &id){
-  assert(id.size()<=PGS_RO_ID_MAX);PgrRoutesObserversCompleting c{};c.version=1;c.size=sizeof(c);c.tid=gettid();
+  assert(id.size()<=PGS_RO_ID_MAX);PgsRoutesObserversCompleting c{};c.version=1;c.size=sizeof(c);c.tid=gettid();
   c.residual_ms=PGS_RO_MAX_LEASE_MS;c.generation=api->generation();c.consumption_handle=borrowed;c.seq=77;c.id_length=id.size();
   for(size_t i=0;i<id.size();i++)c.id[i]=static_cast<unsigned char>(id[i]);assert(api->set_completing(&c)==PGS_RO_OK);
 }
@@ -124,8 +124,8 @@ void load(const char *path){
   void *library=dlopen(path,RTLD_NOW|RTLD_LOCAL);assert(library);
   auto get=reinterpret_cast<const void *(*)(uint32_t)>(dlsym(library,"pgs_native_api"));assert(get);
   auto *core=static_cast<const pgs_native_api_v2 *>(get(2));assert(core&&core->query_feature);
-  api=static_cast<const PgrRoutesObserversApi *>(core->query_feature(46,1));assert(api&&api->size==sizeof(*api));
-  PgrRoutesObserversConfig c{};c.version=1;c.size=sizeof(c);
+  api=static_cast<const PgsRoutesObserversApi *>(core->query_feature(46,1));assert(api&&api->size==sizeof(*api));
+  PgsRoutesObserversConfig c{};c.version=1;c.size=sizeof(c);
   c.runtime_invoke=reinterpret_cast<void *>(runtime_invoke);c.object_get_class=reinterpret_cast<void *>(object_class);
   c.field_get_value=reinterpret_cast<void *>(field_get);c.gchandle_new=reinterpret_cast<void *>(gc_new);
   c.gchandle_get_target=reinterpret_cast<void *>(gc_target);c.gchandle_free=reinterpret_cast<void *>(gc_free);
@@ -148,12 +148,12 @@ void scenario(const char *library,unsigned index){
     invoke_bjan();auto out=poll();assert(!event(out,PGS_RO_EV_REWARD_CONFIRMED)&&!(out.flags&PGS_RO_FLAG_COMPLETION_READY));}
   else if(index==6||index==7){confirm();queue_both();usleep(110000);
     if(index==6)revoke_dismiss=true;else expire_dismiss=true;
-    auto r=request(index==7?500:PGS_RO_MAX_LEASE_MS);PgrRoutesObserversOutput out{};api->poll(&r,&out);
+    auto r=request(index==7?500:PGS_RO_MAX_LEASE_MS);PgsRoutesObserversOutput out{};api->poll(&r,&out);
     assert(dismiss_calls==1); // fresh generation+lease proof required before second managed UI call
     if(index==6){assert(!(out.flags&PGS_RO_FLAG_COMPLETION_READY));assert(!event(out,PGS_RO_EV_REWARD_CONFIRMED));
       assert(out.status!=PGS_RO_OK||out.generation==r.generation);}
   }else if(index==8){confirm();queue_both();usleep((PGS_RO_COMPLETION_MS+50)*1000);
-    revoke_free=true;auto r=request();PgrRoutesObserversOutput out{};api->poll(&r,&out);
+    revoke_free=true;auto r=request();PgsRoutesObserversOutput out{};api->poll(&r,&out);
     assert(!(out.flags&PGS_RO_FLAG_COMPLETION_READY));
     assert(out.status!=PGS_RO_OK||out.generation==r.generation);
     assert(!event(out,PGS_RO_EV_REWARD_CONFIRMED));

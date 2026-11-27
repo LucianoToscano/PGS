@@ -35,7 +35,7 @@ struct FakePokemon { void *klass; uint64_t id; };
 struct FakeAction { void *klass; void *target; };
 
 // ----- runtime shims ----------------------------------------------------------------
-const PgrCatchCompletionApi *g_api = nullptr;
+const PgsCatchCompletionApi *g_api = nullptr;
 uint64_t g_owner = 0;
 
 int g_invoke_calls = 0;
@@ -68,10 +68,10 @@ void *fake_runtime_invoke(const void *method, void *, void **, void **exc) {
   return nullptr;
 }
 
-PgrCatchCompletionConfig make_config() {
-  PgrCatchCompletionConfig c{};
+PgsCatchCompletionConfig make_config() {
+  PgsCatchCompletionConfig c{};
   c.version = 1;
-  c.size = sizeof(PgrCatchCompletionConfig);
+  c.size = sizeof(PgsCatchCompletionConfig);
   c.object_get_class = reinterpret_cast<void *>(&fake_obj_class);
   c.field_get_value = reinterpret_cast<void *>(&fake_field_get);
   c.runtime_invoke = reinterpret_cast<void *>(&fake_runtime_invoke);
@@ -93,10 +93,10 @@ PgrCatchCompletionConfig make_config() {
 
 uint64_t this_tid() { return static_cast<uint64_t>(static_cast<pid_t>(::gettid())); }
 
-PgrCatchCompletionSample take_sample() {
-  PgrCatchCompletionSample s{};
+PgsCatchCompletionSample take_sample() {
+  PgsCatchCompletionSample s{};
   assert(g_api->sample(&s) == PGS_CC_OK);
-  assert(s.version == 1 && s.size == sizeof(PgrCatchCompletionSample));
+  assert(s.version == 1 && s.size == sizeof(PgsCatchCompletionSample));
   return s;
 }
 
@@ -118,8 +118,8 @@ void wire(Scene &s, uint64_t id) {
   s.pk.id = id;
   s.cb.target = &s.view;
 }
-PgrCatchCompletionRequest make_req(Scene &s, uint64_t id, uint64_t epoch, uint64_t tid) {
-  PgrCatchCompletionRequest r{};
+PgsCatchCompletionRequest make_req(Scene &s, uint64_t id, uint64_t epoch, uint64_t tid) {
+  PgsCatchCompletionRequest r{};
   r.version = 1;
   r.size = sizeof(r);
   r.expected_id = id;
@@ -149,30 +149,30 @@ int main(int argc, char **argv) {
   const auto *core = static_cast<const pgs_native_api_v2 *>(getter(2));
   assert(core && core->size == 48);
   assert(core->query_feature(24, 99) == nullptr);
-  const auto *api = static_cast<const PgrCatchCompletionApi *>(core->query_feature(24, 1));
-  assert(api != nullptr && api->version == 1 && api->size == sizeof(PgrCatchCompletionApi));
+  const auto *api = static_cast<const PgsCatchCompletionApi *>(core->query_feature(24, 1));
+  assert(api != nullptr && api->version == 1 && api->size == sizeof(PgsCatchCompletionApi));
   g_api = api;
 
   std::printf("ABI sizes: config=%zu request=%zu sample=%zu table=%zu\n",
-              sizeof(PgrCatchCompletionConfig), sizeof(PgrCatchCompletionRequest),
-              sizeof(PgrCatchCompletionSample), sizeof(PgrCatchCompletionApi));
-  assert(sizeof(PgrCatchCompletionConfig) == 128 && sizeof(PgrCatchCompletionRequest) == 64 &&
-         sizeof(PgrCatchCompletionSample) == 72 && sizeof(PgrCatchCompletionApi) == 64);
+              sizeof(PgsCatchCompletionConfig), sizeof(PgsCatchCompletionRequest),
+              sizeof(PgsCatchCompletionSample), sizeof(PgsCatchCompletionApi));
+  assert(sizeof(PgsCatchCompletionConfig) == 128 && sizeof(PgsCatchCompletionRequest) == 64 &&
+         sizeof(PgsCatchCompletionSample) == 72 && sizeof(PgsCatchCompletionApi) == 64);
 
   const uint64_t tid = this_tid();
   g_owner = tid;
-  PgrCatchCompletionConfig cfg = make_config();
+  PgsCatchCompletionConfig cfg = make_config();
   uint64_t tok = 0;
 
   // 1. Validation + not-installed + idempotence + reconfig.
   assert(api->install(nullptr) == PGS_CC_ERR_NULL_ARG);
-  PgrCatchCompletionConfig bad = cfg; bad.version = 2;
+  PgsCatchCompletionConfig bad = cfg; bad.version = 2;
   assert(api->install(&bad) == PGS_CC_ERR_BAD_VERSION);
-  bad = cfg; bad.size = sizeof(PgrCatchCompletionConfig) - 1;
+  bad = cfg; bad.size = sizeof(PgsCatchCompletionConfig) - 1;
   assert(api->install(&bad) == PGS_CC_ERR_BAD_SIZE);
   bad = cfg; bad.m_callback_invoke = nullptr;
   assert(api->install(&bad) == PGS_CC_ERR_MISSING_PTR);
-  { Scene s; wire(s, next_id()); PgrCatchCompletionRequest r = make_req(s, s.pk.id, 1, tid);
+  { Scene s; wire(s, next_id()); PgsCatchCompletionRequest r = make_req(s, s.pk.id, 1, tid);
     assert(api->validate(&r) == PGS_CC_ERR_NOT_INSTALLED);
     assert(api->complete(&r, 1) == PGS_CC_ERR_NOT_INSTALLED); }
 
@@ -184,13 +184,13 @@ int main(int argc, char **argv) {
   // 2. Valid first catch: validate VALID, acquire a token, complete DONE, callback invoked exactly once.
   { Scene s; wire(s, next_id());
     assert(api->update(1, 2000, 1, tid) == PGS_CC_OK);
-    PgrCatchCompletionRequest r = make_req(s, s.pk.id, 1, tid);
+    PgsCatchCompletionRequest r = make_req(s, s.pk.id, 1, tid);
     assert(api->validate(&r) == PGS_CC_DONE);
     tok = acquire(1, tid); assert(tok != 0);
     g_invoke_calls = 0;
     assert(api->complete(&r, tok) == PGS_CC_DONE);
     assert(g_invoke_calls == 1);
-    PgrCatchCompletionSample sm = take_sample();
+    PgsCatchCompletionSample sm = take_sample();
     assert(sm.validate_ok >= 1 && sm.complete_ok == 1 && sm.last_token == tok && sm.busy == 0);
   }
 
@@ -199,32 +199,32 @@ int main(int argc, char **argv) {
     assert(api->update(1, 2000, 1, tid) == PGS_CC_OK);
     g_invoke_calls = 0;
 
-    PgrCatchCompletionRequest wrong_id = make_req(s, s.pk.id + 1, 1, tid);  // expected id != response/pokemon
+    PgsCatchCompletionRequest wrong_id = make_req(s, s.pk.id + 1, 1, tid);  // expected id != response/pokemon
     assert(api->validate(&wrong_id) == PGS_CC_OK);
     uint64_t t = acquire(1, tid); assert(t != 0);
     assert(api->complete(&wrong_id, t) == PGS_CC_OK);  // refused: re-validation fails
 
     FakeResponse other{&cls_response, kSuccess, s.pk.id};  // wrong class in the response slot
-    PgrCatchCompletionRequest wrong_class = make_req(s, s.pk.id, 1, tid);
+    PgsCatchCompletionRequest wrong_class = make_req(s, s.pk.id, 1, tid);
     wrong_class.response = &s.cb;  // an Action object where a response is expected
     assert(api->validate(&wrong_class) == PGS_CC_OK);
 
     s.view.active = 0;  // inactive view
-    PgrCatchCompletionRequest inactive = make_req(s, s.pk.id, 1, tid);
+    PgsCatchCompletionRequest inactive = make_req(s, s.pk.id, 1, tid);
     assert(api->validate(&inactive) == PGS_CC_OK);
     s.view.active = 1;
 
     s.resp.status = kSuccess + 1;  // not CatchSuccess
-    PgrCatchCompletionRequest bad_status = make_req(s, s.pk.id, 1, tid);
+    PgsCatchCompletionRequest bad_status = make_req(s, s.pk.id, 1, tid);
     assert(api->validate(&bad_status) == PGS_CC_OK);
     s.resp.status = kSuccess;
 
     s.cb.target = &s.resp;  // delegate target is not the view
-    PgrCatchCompletionRequest bad_target = make_req(s, s.pk.id, 1, tid);
+    PgsCatchCompletionRequest bad_target = make_req(s, s.pk.id, 1, tid);
     assert(api->validate(&bad_target) == PGS_CC_OK);
     s.cb.target = &s.view;
 
-    PgrCatchCompletionRequest zero = make_req(s, 0, 1, tid);  // zero expected id
+    PgsCatchCompletionRequest zero = make_req(s, 0, 1, tid);  // zero expected id
     assert(api->validate(&zero) == PGS_CC_OK);
 
     (void)other;
@@ -233,7 +233,7 @@ int main(int argc, char **argv) {
 
   // 4. Gate: off / expired lease / wrong epoch -> acquire yields no token and complete is refused.
   { Scene s; wire(s, next_id());
-    PgrCatchCompletionRequest r = make_req(s, s.pk.id, 1, tid);
+    PgsCatchCompletionRequest r = make_req(s, s.pk.id, 1, tid);
     // Disabled.
     assert(api->update(0, 0, 1, tid) == PGS_CC_OK);
     assert(acquire(1, tid) == 0);
@@ -242,7 +242,7 @@ int main(int argc, char **argv) {
     assert(api->update(1, 2000, 2, tid) == PGS_CC_OK);
     assert(acquire(1, tid) == 0);  // epoch mismatch
     uint64_t t = acquire(2, tid); assert(t != 0);
-    PgrCatchCompletionRequest r2 = make_req(s, s.pk.id, 1, tid);  // request epoch 1 != armed 2
+    PgsCatchCompletionRequest r2 = make_req(s, s.pk.id, 1, tid);  // request epoch 1 != armed 2
     g_invoke_calls = 0;
     assert(api->complete(&r2, t) == PGS_CC_OK && g_invoke_calls == 0);  // refused on epoch
     // Expired lease.
@@ -255,7 +255,7 @@ int main(int argc, char **argv) {
   // 5. Repeated / older token: a token completes at most once; reusing it or an older one is refused.
   { Scene s; wire(s, next_id());
     assert(api->update(1, 2000, 1, tid) == PGS_CC_OK);
-    PgrCatchCompletionRequest r = make_req(s, s.pk.id, 1, tid);
+    PgsCatchCompletionRequest r = make_req(s, s.pk.id, 1, tid);
     uint64_t t1 = acquire(1, tid); assert(t1 != 0);
     uint64_t t2 = acquire(1, tid); assert(t2 == t1 + 1);  // strictly monotonic
     g_invoke_calls = 0;
@@ -269,7 +269,7 @@ int main(int argc, char **argv) {
   // 6. Callback exception: complete reports ERR_MANAGED (host safe fallback); it still invoked once.
   { Scene s; wire(s, next_id());
     assert(api->update(1, 2000, 1, tid) == PGS_CC_OK);
-    PgrCatchCompletionRequest r = make_req(s, s.pk.id, 1, tid);
+    PgsCatchCompletionRequest r = make_req(s, s.pk.id, 1, tid);
     uint64_t t = acquire(1, tid); assert(t != 0);
     g_invoke_calls = 0; g_throw_on_invoke = true;
     assert(api->complete(&r, t) == PGS_CC_ERR_MANAGED && g_invoke_calls == 1);
@@ -280,7 +280,7 @@ int main(int argc, char **argv) {
   //    refused; a nested stop() cannot cause a second invoke either. The outer invoke happens once.
   { Scene s; wire(s, next_id());
     assert(api->update(1, 2000, 1, tid) == PGS_CC_OK);
-    PgrCatchCompletionRequest r = make_req(s, s.pk.id, 1, tid);
+    PgsCatchCompletionRequest r = make_req(s, s.pk.id, 1, tid);
     uint64_t t = acquire(1, tid); assert(t != 0);
     g_invoke_calls = 0;
     bool reentrant_token = true; int reentrant_complete = -1;
@@ -302,7 +302,7 @@ int main(int argc, char **argv) {
   // 8. Wrong thread cannot validate, acquire, or complete (owner already latched on this thread).
   std::thread([&]() {
     Scene s; wire(s, next_id());
-    PgrCatchCompletionRequest r = make_req(s, s.pk.id, 1, this_tid());
+    PgsCatchCompletionRequest r = make_req(s, s.pk.id, 1, this_tid());
     assert(g_api->validate(&r) == PGS_CC_OK);       // off-owner validate -> 0
     uint64_t t = 5;
     assert(g_api->acquire(1, this_tid(), &t) == PGS_CC_OK && t == 0);
@@ -310,7 +310,7 @@ int main(int argc, char **argv) {
   }).join();
   { Scene s; wire(s, next_id());
     assert(api->update(1, 2000, 1, tid) == PGS_CC_OK);
-    PgrCatchCompletionRequest r = make_req(s, s.pk.id, 1, tid + 1);  // mismatched proven_tid
+    PgsCatchCompletionRequest r = make_req(s, s.pk.id, 1, tid + 1);  // mismatched proven_tid
     uint64_t t = 5;
     assert(api->acquire(1, tid + 1, &t) == PGS_CC_OK && t == 0);
     assert(api->complete(&r, 1) == PGS_CC_OK);
@@ -319,7 +319,7 @@ int main(int argc, char **argv) {
   // 9. stop(): immediate revoke; a token acquired before the stop no longer completes.
   { Scene s; wire(s, next_id());
     assert(api->update(1, 2000, 1, tid) == PGS_CC_OK);
-    PgrCatchCompletionRequest r = make_req(s, s.pk.id, 1, tid);
+    PgsCatchCompletionRequest r = make_req(s, s.pk.id, 1, tid);
     uint64_t t = acquire(1, tid); assert(t != 0);
     assert(api->stop(tid) == PGS_CC_OK);
     g_invoke_calls = 0;

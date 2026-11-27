@@ -1,10 +1,10 @@
 #pragma once
 #include <stdint.h>
-struct PgrSharedMetadataOutput;
+struct PgsSharedMetadataOutput;
 // Smart healing: heals damaged (and optionally fainted) Pokemon with the cheapest mix of potions and
 // revives through the game's own IItemBag.UseItemOnPokemon. Settings ride transport string slot 18
 // ("H2|enabled|when|threshold|revive|full"). Unity owner thread only.
-void pgs_heal_tick(uint64_t tid,const PgrSharedMetadataOutput *metadata);
+void pgs_heal_tick(uint64_t tid,const PgsSharedMetadataOutput *metadata);
 void pgs_heal_stop(uint64_t tid);
 
 // Read-only owner-thread probe: non-zero while smart healing still has pending work
@@ -24,7 +24,7 @@ int pgs_heal_busy();
 // READ ONLY -- records every stored Pokemon's current HP as the after-battle baseline and arms the
 // off-map session. Uses no item and queues nothing. A disabled or periodic-only setting records no
 // baseline and grants no permission.
-void pgs_heal_gym_baseline(uint64_t tid,const PgrSharedMetadataOutput *metadata);
+void pgs_heal_gym_baseline(uint64_t tid,const PgsSharedMetadataOutput *metadata);
 
 // pgs_heal_gym_tick: call only after a CONFIRMED complete, victorious round with the same hostile
 // gym's approach/prep open on top and every repeat gate already passed. round_token is the round's
@@ -37,7 +37,7 @@ void pgs_heal_gym_baseline(uint64_t tid,const PgrSharedMetadataOutput *metadata)
 // observation window open and scans for the real HP drop before declaring a round done, and follows
 // each item use to its async result + HP confirmation; an initially empty queue is never mistaken for
 // a finished scan.
-int pgs_heal_gym_tick(uint64_t tid,const PgrSharedMetadataOutput *metadata,uint64_t round_token,bool (*still_ready)());
+int pgs_heal_gym_tick(uint64_t tid,const PgsSharedMetadataOutput *metadata,uint64_t round_token,bool (*still_ready)());
 
 // The item choice, separate so it can be tested without the game.
 namespace pgs_heal {

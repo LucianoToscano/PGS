@@ -109,13 +109,24 @@ export function feed(state,now) {
 }
 
 export default {
-  async scheduled(event,env) { await refresh(env); },
+  async scheduled(event,env) {
+    const now=event.scheduledTime;
+    const row=["18446744073709551615",25,0,0,0,now+900000,10,1];
+    const sample=rows({v:1,fetched_ms:now,hundos:[row,row]},now);
+    await env.FEED.put("pgs-simulation-v1",JSON.stringify({time:now,entries:[
+      {name:"simulation",updated:now,status:"online",...sample}
+    ]}));
+    await refresh(env);
+  },
   async fetch(request,env) {
-    if (new URL(request.url).pathname!=="/hundos.json") return new Response(null,{status:404});
+    const path=new URL(request.url).pathname;
+    const simulation=path==="/simulation/hundos.json";
+    if (!simulation && path!=="/hundos.json") return new Response(null,{status:404});
     if (!["GET","HEAD"].includes(request.method)) return new Response(null,{status:405,headers:{Allow:"GET, HEAD"}});
-    const state=await env.FEED.get(stateKey,"json");
+    const state=await env.FEED.get(simulation?"pgs-simulation-v1":stateKey,"json");
     if (!state?.entries?.some(s=>s.updated)) return new Response(null,{status:503,headers:{"Retry-After":"300","Cache-Control":"no-store"}});
     const body=feed(state,Date.now());
+    if (simulation) body.simulated=true;
     return new Response(request.method==="HEAD"?null:JSON.stringify(body),{headers:{
       "Content-Type":"application/json; charset=utf-8","Cache-Control":"public, max-age=15"}});
   }

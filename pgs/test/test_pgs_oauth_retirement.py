@@ -92,6 +92,15 @@ public class RetiredAuthTest {
         self.assertNotIn("gh release create", flow)
         self.assertNotIn("--google-browser-login", flow)
         self.assertIn("test -f \"$PGS_KEYSTORE\"", flow)
+        early = flow.split("name: Check required private configuration before installing tools", 1)[1].split("      - uses:", 1)[0]
+        self.assertLess(flow.index("name: Check required private configuration"), flow.index("name: Install pinned toolchain"))
+        for name in ("PGS_INPUT_URL", "PGS_KEYSTORE_BASE64", "PGS_KEY_ALIAS", "PGS_STORE_PASSWORD", "PGS_KEY_PASSWORD"):
+            self.assertIn(name + ":", early)
+        self.assertIn('[[ -z "${!name}" ]]', early)
+        self.assertIn('echo "::error::Missing required configuration: $name.', early)
+        self.assertIn('test "$missing" = 0', early)
+        self.assertNotIn("set -x", early)
+        self.assertNotIn("private_input.py", early)
         self.assertIn("= 2026111605", flow)
         self.assertIn("d['version_code']==2026111606", flow)
         upload = flow.split("name: Upload verification receipts only", 1)[1].split("      - name:", 1)[0]

@@ -50,6 +50,22 @@ class PgsRuntimeIdentityTests(unittest.TestCase):
         self.assertEqual(rooted.MODULE_ID, "pgrazor")
         self.assertEqual(rooted.INJECTION_OFF_FLAG, "pgrazor/injection-off")
 
+    def test_standalone_preview_package_is_pgs(self):
+        import xml.etree.ElementTree as ET
+        manifest = ET.parse(PROJECT / "AndroidManifest.xml").getroot()
+        self.assertEqual(manifest.get("package"), "dev.pgs.preview")
+        source = (PROJECT / "nonroot.py").read_text(encoding="utf-8")
+        self.assertIn("package_name!='dev.pgs.preview'", source)
+        self.assertIn("report['package']!='dev.pgs.preview'", source)
+        self.assertIn("'dev.pgs.preview/dev.pgs.PreviewActivity'", source)
+        self.assertIn("'am','force-stop','dev.pgs.preview'", source)
+        self.assertNotIn("dev.pgrazor.preview", source)
+        # Keep recognizing old build receipts without installing the old preview.
+        cleanup = (PROJECT / "cleanup.ps1").read_text(encoding="utf-8-sig")
+        self.assertIn("'dev.pgs.preview', 'dev.pgrazor.preview'", cleanup)
+        with self.assertRaisesRegex(RuntimeError, "restricted to our standalone preview"):
+            nonroot.probe({"package": "dev.pgrazor.preview", "outputs": [{}]}, PROJECT, None)
+
     def test_new_root_cache_is_pgs_without_retiring_installed_off_switch(self):
         runtime = (PROJECT / "src/dev/pgs/RootedRuntime.java").read_text(encoding="utf-8")
         self.assertIn('new File(new File(dataDir, "code_cache"), "pgs-root")', runtime)

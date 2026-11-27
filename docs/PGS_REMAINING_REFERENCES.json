@@ -5,16 +5,16 @@
   "changed_files": 37,
   "added_files": 1,
   "previous_occurrences": 1041,
-  "remaining_files": 139,
+  "remaining_files": 136,
   "remaining_occurrences": 779,
   "remaining_by_category": {
-    "workflows": 5,
-    "other": 92,
+    "workflows": 10,
+    "other": 84,
     "documentation": 277,
     "legal": 3,
     "release_history": 103,
     "native": 13,
-    "tests": 217,
+    "tests": 220,
     "java": 62,
     "javascript": 1,
     "vendor": 6
@@ -23,7 +23,7 @@
     {
       "path": ".github/workflows/pgs-v0.0.3-candidate.yml",
       "category": "workflows",
-      "occurrences": 5
+      "occurrences": 10
     },
     {
       "path": ".gitignore",
@@ -261,11 +261,6 @@
       "occurrences": 2
     },
     {
-      "path": "pgs/AndroidManifest.xml",
-      "category": "other",
-      "occurrences": 1
-    },
-    {
       "path": "pgs/art/CMakeLists.txt",
       "category": "native",
       "occurrences": 2
@@ -353,7 +348,7 @@
     {
       "path": "pgs/nonroot.py",
       "category": "other",
-      "occurrences": 10
+      "occurrences": 6
     },
     {
       "path": "pgs/pgs.cmd",
@@ -613,7 +608,7 @@
     {
       "path": "pgs/test/test_pgs_runtime_identity.py",
       "category": "tests",
-      "occurrences": 12
+      "occurrences": 15
     },
     {
       "path": "pgs/test/test_release_bundle.py",
@@ -669,16 +664,6 @@
       "path": "tools/hundo-feed/README.md",
       "category": "documentation",
       "occurrences": 3
-    },
-    {
-      "path": "tools/hundo-feed/hundo-feed.env.example",
-      "category": "other",
-      "occurrences": 2
-    },
-    {
-      "path": "tools/hundo-feed/hundo_feed.py",
-      "category": "other",
-      "occurrences": 1
     },
     {
       "path": "tools/pgs_branding_audit.py",
@@ -1147,7 +1132,7 @@
     "limitations": "Counts are exact deltas from the verified indexed baseline; full CI must independently reconcile the snapshot. Older backup readers do not support version 2."
   },
   "current_retention_review": {
-    "base_commit": "5441d7850310eb76689f72b79c50a466a4a7e55a",
+    "base_commit": "f0115d78b159c11e43231a3c2a1b4dde8f980ba1",
     "scope": "Current per-file triage; all matching indexed text paths classified exactly once, not a claim of necessity of each individual occurrence.",
     "groups": {
       "historical_records": {
@@ -1216,7 +1201,7 @@
       "build_signing_contracts": {
         "status": "retain_compatibility",
         "reason": "PGS-first build and signing configuration, old configuration aliases and historical guarded rebuilds. No new signing key.",
-        "occurrences": 26,
+        "occurrences": 31,
         "paths": [
           ".github/workflows/pgs-v0.0.3-candidate.yml",
           "CONTRIBUTING.md",
@@ -1232,10 +1217,9 @@
       "installed_identity_storage": {
         "status": "retain_compatibility",
         "reason": "Existing package/module IDs, physical storage, crypto, notification IDs and state markers. Require a tested migration before retirement.",
-        "occurrences": 76,
+        "occurrences": 75,
         "paths": [
           "docs/ARCHITECTURE.md",
-          "pgs/AndroidManifest.xml",
           "pgs/root-installer/AndroidManifest.xml",
           "pgs/root-installer/README.md",
           "pgs/root-installer/src/dev/pgs/root/RootModuleState.java",
@@ -1258,7 +1242,7 @@
       "legacy_input_artifacts": {
         "status": "retain_compatibility",
         "reason": "Legacy input recognition/rejection, archived verification and cleanup rules. Some files have mixed responsibilities.",
-        "occurrences": 38,
+        "occurrences": 34,
         "paths": [
           "pgs/axml.py",
           "pgs/cleanup-rooted.ps1",
@@ -1300,18 +1284,16 @@
       "external_feed": {
         "status": "pending_verified_replacement",
         "reason": "Endpoint, protocol and server examples. Independent deployment and authorization are not established by this audit.",
-        "occurrences": 7,
+        "occurrences": 4,
         "paths": [
           "pgs/src/dev/pgs/ShundoSniper.java",
-          "tools/hundo-feed/README.md",
-          "tools/hundo-feed/hundo-feed.env.example",
-          "tools/hundo-feed/hundo_feed.py"
+          "tools/hundo-feed/README.md"
         ]
       },
       "tests": {
         "status": "retain_or_review",
         "reason": "Tests of legacy input, data continuity, ABI, build options, attribution and forbidden-name detection. Ordinary fixture use may be reviewed individually.",
-        "occurrences": 218,
+        "occurrences": 221,
         "paths": [
           "pgs/native/adventure_sync_test.cpp",
           "pgs/native/test_runner.cpp",
@@ -1406,5 +1388,28 @@
       "physical device verification"
     ],
     "signed_apk_generated": false
+  },
+  "audit_followup": {
+    "base_commit": "f0115d78b159c11e43231a3c2a1b4dde8f980ba1",
+    "arena_commit": "37fcb78b3d8124802227962417f1e6f8efabf7af",
+    "scope": "Verified targeted source changes and exact indexed-inventory deltas; not an exhaustive per-occurrence or compressed-resource audit.",
+    "preview_package": "dev.pgs.preview",
+    "game_and_root_installed_identity_unchanged": true,
+    "old_preview_data_automatically_migrated": false,
+    "feed_examples_canonicalized": true,
+    "production_feed_changed": false,
+    "missing_input_confirmed_by_run": 46047731065,
+    "early_configuration_check": true,
+    "source_tests_in_failed_candidate": {
+      "run": 285,
+      "passed": 282,
+      "skipped": 3,
+      "failures": 0
+    },
+    "authorized_input_secret_configured": false,
+    "signed_apk_generated": false,
+    "remaining_occurrences": 779,
+    "remaining_files": 136,
+    "limitations": "CI must reconcile counts. External input authorization and secret configuration require the maintainer; no APK produced. Individual retention review and binary resource inspection remain incomplete."
   }
 }

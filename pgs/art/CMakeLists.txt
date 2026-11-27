@@ -48,22 +48,22 @@ string(FIND "${helper_text}" "${old_hook}" hook_index)
 if(hook_index EQUAL -1)
   message(FATAL_ERROR "Pinned LSPlant publication code changed; review correction")
 endif()
-string(REPLACE "namespace lsplant {" [=[extern "C" bool pgrazor_art_publication_begin() noexcept;
-extern "C" void pgrazor_art_publication_end() noexcept;
-struct PgrArtPublicationGuard {
-    bool active = pgrazor_art_publication_begin();
-    ~PgrArtPublicationGuard() { if (active) pgrazor_art_publication_end(); }
+string(REPLACE "namespace lsplant {" [=[extern "C" bool pgs_art_publication_begin() noexcept;
+extern "C" void pgs_art_publication_end() noexcept;
+struct PgsArtPublicationGuard {
+    bool active = pgs_art_publication_begin();
+    ~PgsArtPublicationGuard() { if (active) pgs_art_publication_end(); }
 };
 namespace lsplant {]=] helper_text "${helper_text}")
 string(REPLACE "${old_hook}" [=[hooker.address_ = dlsym<Sym>(match_prefix);
         if (!hooker.address_) return false;
-        PgrArtPublicationGuard guard;
+        PgsArtPublicationGuard guard;
         if (!guard.active) return false;
         return hooker = hook(hooker.address_, reinterpret_cast<void *>(hooker.replace_));]=]
   helper_text "${helper_text}")
 string(REPLACE "if (hooker.address_ && info_.inline_unhooker && info_.inline_unhooker(hooker.address_)) {"
   [=[if (!hooker.address_ || !info_.inline_unhooker) return false;
-        PgrArtPublicationGuard guard;
+        PgsArtPublicationGuard guard;
         if (!guard.active) return false;
         if (info_.inline_unhooker(hooker.address_)) {]=] helper_text "${helper_text}")
 file(WRITE "${helper_path}" "${helper_text}")

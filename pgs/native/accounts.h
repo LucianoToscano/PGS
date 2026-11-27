@@ -129,7 +129,7 @@ typedef struct pgrazor_account_event_v1 {
 } pgrazor_account_event_v1_t;
 typedef pgrazor_account_event_v1_t pgs_account_event_v1_t;
 
-static_assert(sizeof(pgrazor_account_event_v1_t) == 1056, "event POD layout mismatch");
+static_assert(sizeof(pgs_account_event_v1_t) == 1056, "event POD layout mismatch");
 
 typedef struct pgrazor_account_snapshot_v1 {
   uint64_t seq;
@@ -153,29 +153,29 @@ typedef struct pgrazor_account_snapshot_v1 {
 } pgrazor_account_snapshot_v1_t;
 typedef pgrazor_account_snapshot_v1_t pgs_account_snapshot_v1_t;
 
-static_assert(sizeof(pgrazor_account_snapshot_v1_t) == 1080, "snapshot POD layout mismatch");
+static_assert(sizeof(pgs_account_snapshot_v1_t) == 1080, "snapshot POD layout mismatch");
 
 typedef struct pgrazor_accounts_api_v1 {
   uint32_t version;
   uint32_t size;
-  bool (*api_init)(const pgrazor_accounts_config_v1_t* cfg);
+  bool (*api_init)(const pgs_accounts_config_v1_t* cfg);
   bool (*api_update)(bool allowed, uint32_t lease_ms, uint32_t cmd_kind, uint64_t cmd_token);
   void (*api_tick)(uint64_t now_ms, int32_t caller_tid);
   bool (*api_clear)(void);
-  void (*api_sample)(pgrazor_account_snapshot_v1_t* out_snapshot);
-  size_t (*api_drain)(pgrazor_account_event_v1_t* out_events, size_t max_events);
+  void (*api_sample)(pgs_account_snapshot_v1_t* out_snapshot);
+  size_t (*api_drain)(pgs_account_event_v1_t* out_events, size_t max_events);
 } pgrazor_accounts_api_v1_t;
 typedef pgrazor_accounts_api_v1_t pgs_accounts_api_v1_t;
 
 #if defined(__LP64__) || UINTPTR_MAX == 0xffffffffffffffffULL
 static_assert(sizeof(void*) == 8, "LP64 ABI required");
 static_assert(sizeof(uintptr_t) == 8, "LP64 uintptr_t required");
-static_assert(sizeof(pgrazor_accounts_config_v1_t) == 41 * 8, "LP64 config layout mismatch");
-static_assert(sizeof(pgrazor_accounts_api_v1_t) == PGR_ACCOUNTS_API_TABLE_SIZE, "LP64 api table layout mismatch");
+static_assert(sizeof(pgs_accounts_config_v1_t) == 41 * 8, "LP64 config layout mismatch");
+static_assert(sizeof(pgs_accounts_api_v1_t) == PGR_ACCOUNTS_API_TABLE_SIZE, "LP64 api table layout mismatch");
 #else
 static_assert(sizeof(void*) == 4, "ILP32 ABI expected on 32-bit build");
-static_assert(sizeof(pgrazor_accounts_config_v1_t) == 42 * 4, "ILP32 config layout mismatch");
-static_assert(sizeof(pgrazor_accounts_api_v1_t) == 32, "ILP32 api table layout mismatch");
+static_assert(sizeof(pgs_accounts_config_v1_t) == 42 * 4, "ILP32 config layout mismatch");
+static_assert(sizeof(pgs_accounts_api_v1_t) == 32, "ILP32 api table layout mismatch");
 #endif
 
 const pgrazor_accounts_api_v1_t* pgrazor_accounts_api(uint32_t version);

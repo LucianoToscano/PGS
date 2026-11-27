@@ -82,7 +82,7 @@ JNINativeMethod methods[]={
 // Called by the generated, build-local LSPlant HookHandler guard. Its scope
 // covers native code activation AND LSPlant's backup-pointer assignment. Do not
 // wrap InitJNI/InitNative wholesale: JNI/class creation must run unsuspended.
-extern "C" __attribute__((visibility("hidden"))) bool pgrazor_art_publication_begin() noexcept {
+extern "C" __attribute__((visibility("hidden"))) bool pgs_art_publication_begin() noexcept {
  if (!current_thread || !suspend_ctor || !suspend_dtor || !gc_ctor || !gc_dtor ||
      publication_scope.active) return false;
  void *self = current_thread();
@@ -94,7 +94,7 @@ extern "C" __attribute__((visibility("hidden"))) bool pgrazor_art_publication_be
  publication_scope.active = true;
  return true;
 }
-extern "C" __attribute__((visibility("hidden"))) void pgrazor_art_publication_end() noexcept {
+extern "C" __attribute__((visibility("hidden"))) void pgs_art_publication_end() noexcept {
  if (!publication_scope.active) return;
  suspend_dtor(publication_scope.suspend);
  gc_dtor(publication_scope.gc);

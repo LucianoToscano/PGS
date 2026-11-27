@@ -1,0 +1,57 @@
+name: PGS AUTO UPDATE - Version monitor
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '23 12 * * *'
+  pull_request:
+    paths:
+      - 'tools/pgs_version_monitor.py'
+      - '.github/workflows/pgs-auto-update.yml'
+permissions:
+  contents: read
+jobs:
+  monitor:
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    outputs:
+      new_version: ${{ steps.catalog.outputs.new_version }}
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
+      - name: Offline tests
+        run: python3 -B tools/pgs_version_monitor.py --self-test
+      - name: Check public version catalog
+        id: catalog
+        if: github.event_name != 'pull_request'
+        env:
+          PGS_GAME_REVIEWED_VERSION: ${{ vars.PGS_GAME_REVIEWED_VERSION }}
+        run: python3 -B tools/pgs_version_monitor.py
+  notify:
+    needs: monitor
+    if: github.event_name != 'pull_request' && github.ref_name == github.event.repository.default_branch && needs.monitor.outputs.new_version != ''
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    concurrency:
+      group: pgs-version-notify
+      cancel-in-progress: false
+    permissions:
+      contents: read
+      issues: write
+    steps:
+      - name: Create one notification issue per new stable version
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+          NEW_VERSION: ${{ needs.monitor.outputs.new_version }}
+          REPO_OWNER: ${{ github.repository_owner }}
+        run: |
+          set -euo pipefail
+          [[ "$NEW_VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]
+          title="PGS ALERTA: Pokemon GO $NEW_VERSION"
+          titles="$(gh api --paginate --method GET "repos/$GITHUB_REPOSITORY/issues" -f state=all -F per_page=100 --jq '.[] | select(has("pull_request") | not) | .title')"
+          if grep -Fxq -- "$title" <<< "$titles"; then
+            echo "Version already reported; no duplicate issue."
+            exit 0
+          fi
+          gh issue create --repo "$GITHUB_REPOSITORY" --title "$title" --assignee "$REPO_OWNER" --body "$(printf 'Nova versao estavel do Pokemon GO observada no catalogo publico do APKMirror: %s.\n\nCatalogo: https://www.apkmirror.com/apk/niantic-inc/pokemon-go/\n\nA disponibilidade na Google Play pode variar. Este aviso nao confirma compatibilidade e nao inicia downloads, builds ou publicacoes.\n' "$NEW_VERSION")"

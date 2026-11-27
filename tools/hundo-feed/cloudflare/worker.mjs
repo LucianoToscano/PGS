@@ -82,7 +82,7 @@ async function collect(source, now) {
   const controller=new AbortController();
   const timer=setTimeout(()=>controller.abort(),12000);
   try {
-  const response = await fetch(url,{redirect:"error",signal:controller.signal,
+  const response = await fetch(url,{redirect:"manual",signal:controller.signal,
     headers:{Accept:"application/json","User-Agent":"PGS-Hundo-Feed/1"}});
   if (!response.ok) {
     const error = Error("upstream_http");

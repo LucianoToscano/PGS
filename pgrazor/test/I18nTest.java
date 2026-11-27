@@ -80,7 +80,6 @@ public final class I18nTest {
             I18n.init("fr", Locale.US);
             equal("fr", I18n.language());
             equal("Fermer", I18n.t("Close"));
-            equal(french.text("PGS VGP"), french.text("PGRazor VGP"));
             if (I18n.t("PGRazor version %1$s").contains("PGRazor"))
                 throw new AssertionError("PGS display brand did not replace legacy name");
             String brandedArgument = "PGRazor saved user text";
@@ -141,6 +140,7 @@ public final class I18nTest {
         for (Map.Entry<String, I18n.Translator> entry : translators.entrySet()) {
             equal(counts.get("en").toString(), counts.get(entry.getKey()).toString());
             I18n.Translator translator = entry.getValue();
+            equal(translator.text("PGS VGP"), translator.text("PGRazor VGP"));
             String formatted = translator.format("Saved %1$s to Favorites", opaque);
             if (!formatted.contains(opaque)) throw new AssertionError("Catalog translated opaque data: " + entry.getKey());
             equal(translator.text("Language") + ": " + opaque, translator.row("Language: " + opaque));

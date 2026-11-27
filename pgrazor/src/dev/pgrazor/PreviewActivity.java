@@ -12,7 +12,7 @@ import android.widget.*;
 import java.io.*;
 
 /**
- * Standalone preview of the PGRazor control surface: the same design tokens as the in-game panel,
+ * Standalone preview of the PGS control surface: the same design tokens as the in-game panel,
  * plus a live synthetic-location probe. It never changes device GPS and never talks to the game.
  */
 public final class PreviewActivity extends Activity {

@@ -42,7 +42,7 @@ final class MoonaniFeed {
         http.setRequestProperty("Accept", "application/json");
         http.setRequestProperty("X-Requested-With", "XMLHttpRequest");
         http.setRequestProperty("Referer", "https://moonani.com/PokeList/index.php");
-        http.setRequestProperty("User-Agent", "PGRazor-ShundoSniper");
+        http.setRequestProperty("User-Agent", "PGS-ShundoSniper");
         try {
             try (OutputStream out = http.getOutputStream()) { out.write(BODY.getBytes(StandardCharsets.UTF_8)); }
             int code = http.getResponseCode();

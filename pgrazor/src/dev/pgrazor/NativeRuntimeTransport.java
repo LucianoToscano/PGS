@@ -211,7 +211,7 @@ public final class NativeRuntimeTransport {
         try {
             ensureBuffers();
             executor = Executors.newSingleThreadScheduledExecutor(task -> {
-                Thread thread = new Thread(task, "PGRazor-NativeRuntimeTransport");
+                Thread thread = new Thread(task, "PGS-NativeRuntimeTransport");
                 thread.setDaemon(true);
                 return thread;
             });

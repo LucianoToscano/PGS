@@ -8,7 +8,7 @@
 #include <unistd.h>
 
 namespace {
-PgrVgpMarkerConfig cfg{};
+PgsVgpMarkerConfig cfg{};
 std::mutex installMutex;
 std::atomic<bool> installed{false},busy{false};
 std::atomic<uint64_t> ownerTid{0};
@@ -44,7 +44,7 @@ bool live(Root &r){
 struct Vector {float x,y,z;};
 bool vector(const Root &r,Vector &v){if(!exact(r,cfg.vector_class))return false;void *p=unbox(r);if(!p)return false;memcpy(&v,p,sizeof(v));return true;}
 bool integer(const Root &r,int32_t &v){if(!exact(r,cfg.int_class))return false;void *p=unbox(r);if(!p)return false;memcpy(&v,p,sizeof(v));return true;}
-int install(const PgrVgpMarkerConfig *c){
+int install(const PgsVgpMarkerConfig *c){
  if(!c||c->version!=1||c->size!=sizeof(*c))return -1;
  void *pointers[21];memcpy(pointers,reinterpret_cast<const char*>(c)+8,sizeof(pointers));
  for(void *p:pointers)if(!p)return -1;
@@ -52,7 +52,7 @@ int install(const PgrVgpMarkerConfig *c){
  if(installed.load())return memcmp(c,&cfg,sizeof(cfg))==0?0:-2;
  cfg=*c;installed.store(true,std::memory_order_release);return 0;
 }
-int project(void *target,uint64_t lease,uint64_t owner,PgrVgpMarkerResult *out){
+int project(void *target,uint64_t lease,uint64_t owner,PgsVgpMarkerResult *out){
  if(!out)return -1;
  *out={1,sizeof(*out),0,0,0,0};
  if(!installed.load(std::memory_order_acquire))return -2;
@@ -66,8 +66,8 @@ int project(void *target,uint64_t lease,uint64_t owner,PgrVgpMarkerResult *out){
  struct BusyExit{~BusyExit(){busy.store(false);}} exit;
  Root object,camera,transform,position,screen,width,height;
  if(!object.set(target))return -4;
- const bool incense=pgr_vgp_kind_where([&](void *k){return is(object,k);})!=nullptr;
- void *map_pokemon=g_pgr_vgp_marker_map_pokemon.load(std::memory_order_acquire);
+ const bool incense=pgs_vgp_kind_where([&](void *k){return is(object,k);})!=nullptr;
+ void *map_pokemon=g_pgs_vgp_marker_map_pokemon.load(std::memory_order_acquire);
  if(!(incense||is(object,cfg.wild_class)||is(object,cfg.stop_class)||(map_pokemon&&is(object,map_pokemon)))||!live(object))return 0;
  if(!call(cfg.camera,nullptr,nullptr,camera)||!is(camera,cfg.camera_class)||!live(camera))return 0;
  if(!call(cfg.transform,&object,nullptr,transform)||!is(transform,cfg.transform_class)||!live(transform))return 0;
@@ -85,6 +85,6 @@ int project(void *target,uint64_t lease,uint64_t owner,PgrVgpMarkerResult *out){
  out->visible=out->x>=0&&out->x<=1&&out->y>=0&&out->y<=1;
  return 1;
 }
-const PgrVgpMarkerApi api={1,sizeof(PgrVgpMarkerApi),install,project};
+const PgsVgpMarkerApi api={1,sizeof(PgsVgpMarkerApi),install,project};
 }
 extern "C" const void *pgs_vgp_marker_api(uint32_t version){return version==1?&api:nullptr;}

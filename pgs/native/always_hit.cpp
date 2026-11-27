@@ -27,33 +27,33 @@
 #error "Always Hit native instrument supports arm64 and x86_64 register contexts only."
 #endif
 
-static_assert(sizeof(PgrAlwaysHitValue)  == 12,  "PokeballThrow by-value must be 12 bytes");
-static_assert(sizeof(PgrAlwaysHitConfig) == 192, "PgrAlwaysHitConfig must be 192 bytes");
-static_assert(sizeof(PgrAlwaysHitSample) == 24,  "PgrAlwaysHitSample must be 24 bytes");
-static_assert(sizeof(PgrAlwaysHitApi)    == 40,  "PgrAlwaysHitApi must be 40 bytes");
-static_assert(offsetof(PgrAlwaysHitConfig, code_launch)        == 8,   "layout: code_launch");
-static_assert(offsetof(PgrAlwaysHitConfig, code_release)       == 16,  "layout: code_release");
-static_assert(offsetof(PgrAlwaysHitConfig, code_collision)     == 24,  "layout: code_collision");
-static_assert(offsetof(PgrAlwaysHitConfig, code_trigger)       == 32,  "layout: code_trigger");
-static_assert(offsetof(PgrAlwaysHitConfig, code_make_throw)    == 40,  "layout: code_make_throw");
-static_assert(offsetof(PgrAlwaysHitConfig, ball_class)         == 48,  "layout: ball_class");
-static_assert(offsetof(PgrAlwaysHitConfig, machine_class)      == 56,  "layout: machine_class");
-static_assert(offsetof(PgrAlwaysHitConfig, action_class)       == 64,  "layout: action_class");
-static_assert(offsetof(PgrAlwaysHitConfig, object_get_class)   == 72,  "layout: object_get_class");
-static_assert(offsetof(PgrAlwaysHitConfig, field_get_value)    == 80,  "layout: field_get_value");
-static_assert(offsetof(PgrAlwaysHitConfig, runtime_invoke)     == 88,  "layout: runtime_invoke");
-static_assert(offsetof(PgrAlwaysHitConfig, invoke_method)      == 96,  "layout: invoke_method");
-static_assert(offsetof(PgrAlwaysHitConfig, gchandle_new)       == 104, "layout: gchandle_new");
-static_assert(offsetof(PgrAlwaysHitConfig, gchandle_get_target)== 112, "layout: gchandle_get_target");
-static_assert(offsetof(PgrAlwaysHitConfig, gchandle_free)      == 120, "layout: gchandle_free");
-static_assert(offsetof(PgrAlwaysHitConfig, field_bread)        == 128, "layout: field_bread");
-static_assert(offsetof(PgrAlwaysHitConfig, field_item)         == 136, "layout: field_item");
-static_assert(offsetof(PgrAlwaysHitConfig, field_state)        == 144, "layout: field_state");
-static_assert(offsetof(PgrAlwaysHitConfig, field_current)      == 152, "layout: field_current");
-static_assert(offsetof(PgrAlwaysHitConfig, field_flying)       == 160, "layout: field_flying");
-static_assert(offsetof(PgrAlwaysHitConfig, field_falling)      == 168, "layout: field_falling");
-static_assert(offsetof(PgrAlwaysHitConfig, field_hit)          == 176, "layout: field_hit");
-static_assert(offsetof(PgrAlwaysHitConfig, field_pokemon)      == 184, "layout: field_pokemon");
+static_assert(sizeof(PgsAlwaysHitValue)  == 12,  "PokeballThrow by-value must be 12 bytes");
+static_assert(sizeof(PgsAlwaysHitConfig) == 192, "PgsAlwaysHitConfig must be 192 bytes");
+static_assert(sizeof(PgsAlwaysHitSample) == 24,  "PgsAlwaysHitSample must be 24 bytes");
+static_assert(sizeof(PgsAlwaysHitApi)    == 40,  "PgsAlwaysHitApi must be 40 bytes");
+static_assert(offsetof(PgsAlwaysHitConfig, code_launch)        == 8,   "layout: code_launch");
+static_assert(offsetof(PgsAlwaysHitConfig, code_release)       == 16,  "layout: code_release");
+static_assert(offsetof(PgsAlwaysHitConfig, code_collision)     == 24,  "layout: code_collision");
+static_assert(offsetof(PgsAlwaysHitConfig, code_trigger)       == 32,  "layout: code_trigger");
+static_assert(offsetof(PgsAlwaysHitConfig, code_make_throw)    == 40,  "layout: code_make_throw");
+static_assert(offsetof(PgsAlwaysHitConfig, ball_class)         == 48,  "layout: ball_class");
+static_assert(offsetof(PgsAlwaysHitConfig, machine_class)      == 56,  "layout: machine_class");
+static_assert(offsetof(PgsAlwaysHitConfig, action_class)       == 64,  "layout: action_class");
+static_assert(offsetof(PgsAlwaysHitConfig, object_get_class)   == 72,  "layout: object_get_class");
+static_assert(offsetof(PgsAlwaysHitConfig, field_get_value)    == 80,  "layout: field_get_value");
+static_assert(offsetof(PgsAlwaysHitConfig, runtime_invoke)     == 88,  "layout: runtime_invoke");
+static_assert(offsetof(PgsAlwaysHitConfig, invoke_method)      == 96,  "layout: invoke_method");
+static_assert(offsetof(PgsAlwaysHitConfig, gchandle_new)       == 104, "layout: gchandle_new");
+static_assert(offsetof(PgsAlwaysHitConfig, gchandle_get_target)== 112, "layout: gchandle_get_target");
+static_assert(offsetof(PgsAlwaysHitConfig, gchandle_free)      == 120, "layout: gchandle_free");
+static_assert(offsetof(PgsAlwaysHitConfig, field_bread)        == 128, "layout: field_bread");
+static_assert(offsetof(PgsAlwaysHitConfig, field_item)         == 136, "layout: field_item");
+static_assert(offsetof(PgsAlwaysHitConfig, field_state)        == 144, "layout: field_state");
+static_assert(offsetof(PgsAlwaysHitConfig, field_current)      == 152, "layout: field_current");
+static_assert(offsetof(PgsAlwaysHitConfig, field_flying)       == 160, "layout: field_flying");
+static_assert(offsetof(PgsAlwaysHitConfig, field_falling)      == 168, "layout: field_falling");
+static_assert(offsetof(PgsAlwaysHitConfig, field_hit)          == 176, "layout: field_hit");
+static_assert(offsetof(PgsAlwaysHitConfig, field_pokemon)      == 184, "layout: field_pokemon");
 
 namespace {
 
@@ -70,11 +70,11 @@ constexpr uint64_t kMaxLeaseMs = 2500u;
 // makeThrow returns the 12-byte PokeballThrow by value (see the header's ABI note on the
 // System.Boolean parameter the original task brief omitted).
 typedef void (*CollisionFn)(void *self, void *arg, void *method);
-typedef PgrAlwaysHitValue (*MakeThrowFn)(void *self, uint8_t missed_arg, void *method);
+typedef PgsAlwaysHitValue (*MakeThrowFn)(void *self, uint8_t missed_arg, void *method);
 
 // --- lifetime / publication -------------------------------------------------------
 std::mutex        g_install_mutex;        // serialises install() + original publication
-PgrAlwaysHitConfig g_config{};            // validated copy, published under install mutex
+PgsAlwaysHitConfig g_config{};            // validated copy, published under install mutex
 std::atomic<bool> g_installed{false};     // true only after a fully successful install
 bool              g_install_failed = false; // sticky; protected by install mutex
 
@@ -177,7 +177,7 @@ void note_bread(void *ball, const char *what, int32_t value = 0) {
 bool valid_ball(void *ball) {
     if (!exact(ball, g_config.ball_class)) return false;
     int32_t item = read_int(ball, g_config.field_item);
-    if (item == 1 || item == 2 || item == 3 || item == 5 || pgr_is_inventory_safari_ball(item)) return true;
+    if (item == 1 || item == 2 || item == 3 || item == 5 || pgs_is_inventory_safari_ball(item)) return true;
     note_bread(ball, "skipped: ball item", item);
     return false;
 }
@@ -278,11 +278,11 @@ void trigger_replacement(void *self, void *arg, void *method) {
 // byte (1 -> 0) only when permitted. Permission is the enabled()+valid() pair evaluated
 // BEFORE the call, matching the JS onEnter force snapshot. Radius/item/pad are untouched.
 // ---------------------------------------------------------------------------
-PgrAlwaysHitValue make_throw_replacement(void *self, uint8_t missed_arg, void *method) {
+PgsAlwaysHitValue make_throw_replacement(void *self, uint8_t missed_arg, void *method) {
     maybe_clear_handled();
     MakeThrowFn orig = original_for(g_orig_make_throw);
     const bool permit = gate_open() && valid_ball(self);
-    PgrAlwaysHitValue out = orig(self, missed_arg, method);
+    PgsAlwaysHitValue out = orig(self, missed_arg, method);
     if (permit && out.missed == 1) {
         out.missed = 0;
         g_normalized.fetch_add(1, std::memory_order_relaxed);
@@ -312,7 +312,7 @@ void instrument_release(void *, DobbyRegisterContext *ctx) {
 // Config validation: every pointer present, headers exact, code targets and class
 // identities distinct pre-patch.
 // ---------------------------------------------------------------------------
-bool config_ok(const PgrAlwaysHitConfig *c) {
+bool config_ok(const PgsAlwaysHitConfig *c) {
     const void *const *ptrs = reinterpret_cast<const void *const *>(&c->code_launch);
     for (int i = 0; i < 23; ++i) if (ptrs[i] == nullptr) return false;
 
@@ -330,13 +330,13 @@ bool config_ok(const PgrAlwaysHitConfig *c) {
 // ---------------------------------------------------------------------------
 // C API table functions.
 // ---------------------------------------------------------------------------
-int api_install(const PgrAlwaysHitConfig *config) {
+int api_install(const PgsAlwaysHitConfig *config) {
     if (config == nullptr) return ERR_NULL;
 
     std::lock_guard<std::mutex> lock(g_install_mutex);
     if (g_install_failed) return ERR_HOOK;
 
-    if (config->version != 1 || config->size != sizeof(PgrAlwaysHitConfig) || !config_ok(config))
+    if (config->version != 1 || config->size != sizeof(PgsAlwaysHitConfig) || !config_ok(config))
         return ERR_BAD_CONFIG;
 
     if (g_installed.load(std::memory_order_acquire)) {
@@ -421,7 +421,7 @@ int api_tick(uint64_t proven_tid) {
     return OK;
 }
 
-int api_sample(PgrAlwaysHitSample *out) {
+int api_sample(PgsAlwaysHitSample *out) {
     if (out == nullptr) return ERR_NULL;
     out->applied    = g_applied.load(std::memory_order_relaxed);
     out->normalized = g_normalized.load(std::memory_order_relaxed);
@@ -429,8 +429,8 @@ int api_sample(PgrAlwaysHitSample *out) {
     return OK;
 }
 
-const PgrAlwaysHitApi g_api = {
-    1, sizeof(PgrAlwaysHitApi),
+const PgsAlwaysHitApi g_api = {
+    1, sizeof(PgsAlwaysHitApi),
     &api_install,
     &api_update,
     &api_sample,

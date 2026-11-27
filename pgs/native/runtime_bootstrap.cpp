@@ -57,10 +57,10 @@ LoaderDlopen resolve_loader_dlopen() {
 // mandatory: this must never initialize a second IL2CPP runtime. The normal
 // lookup and test seams retain precedence. Private loader API availability is
 // checked at runtime; unsupported loaders simply remain not ready. *diag reports a
-// PgrBootLoaderDetail so a stuck "pending" report localizes the exact failure; it is
+// PgsBootLoaderDetail so a stuck "pending" report localizes the exact failure; it is
 // 0 (IMAGE_PENDING) whenever the handle is returned or the image is merely not mapped yet.
 void *loaded_namespace_handle(const char *soname, int *diag) {
-  if (diag) *diag = PGR_BOOT_LD_IMAGE_PENDING;
+  if (diag) *diag = PGS_BOOT_LD_IMAGE_PENDING;
 #if defined(__ANDROID__)
   struct Search {
     const char *name;
@@ -87,12 +87,12 @@ void *loaded_namespace_handle(const char *soname, int *diag) {
     return 0;
   }, &search);
   if (search.matches == 0) return nullptr;                 // not mapped yet: ordinary retriable wait
-  if (search.matches > 1) { if (diag) *diag = PGR_BOOT_LD_IMAGE_AMBIGUOUS; return nullptr; }
-  if (!search.caller)     { if (diag) *diag = PGR_BOOT_LD_NO_EXEC_SEGMENT; return nullptr; }
+  if (search.matches > 1) { if (diag) *diag = PGS_BOOT_LD_IMAGE_AMBIGUOUS; return nullptr; }
+  if (!search.caller)     { if (diag) *diag = PGS_BOOT_LD_NO_EXEC_SEGMENT; return nullptr; }
   LoaderDlopen open = resolve_loader_dlopen();
-  if (!open)              { if (diag) *diag = PGR_BOOT_LD_SYMBOL_ABSENT; return nullptr; }
+  if (!open)              { if (diag) *diag = PGS_BOOT_LD_SYMBOL_ABSENT; return nullptr; }
   void *handle = open(search.path, RTLD_NOLOAD | RTLD_NOW, search.caller);
-  if (!handle)            { if (diag) *diag = PGR_BOOT_LD_NOLOAD_NULL; return nullptr; }
+  if (!handle)            { if (diag) *diag = PGS_BOOT_LD_NOLOAD_NULL; return nullptr; }
   return handle;
 #else
   (void)soname;
@@ -101,87 +101,87 @@ void *loaded_namespace_handle(const char *soname, int *diag) {
 }
 
 // Compiled default ExecuteTasks descriptor. DATA, not a guessed pointer. The exact namespace/class/
-// method are the best-known Unity names and are OVERRIDABLE via PgrBootConfig; the coordinator must
+// method are the best-known Unity names and are OVERRIDABLE via PgsBootConfig; the coordinator must
 // confirm them (and the strict export-name table below) against the shipped libil2cpp before relying
 // on the production default path.
 const char kExecNamespace[] = "UnityEngine";
 const char kExecClass[]     = "UnitySynchronizationContext";
 const char kExecMethod[]    = "ExecuteTasks";
 
-// Strict supported il2cpp export names, in the FIXED order of PgrMetaExports / PgrBootRuntimeExports.
+// Strict supported il2cpp export names, in the FIXED order of PgsMetaExports / PgsBootRuntimeExports.
 // This is the single reviewable list of symbols dlsym'd from the real libil2cpp. The fixture harness
 // maps these names to fake functions through the dlsym test seam; it does not need a real library.
 struct SymSlot { size_t off; const char *name; };
 
 const SymSlot kMetaSyms[] = {
-  {offsetof(PgrMetaExports, domain_get),                 "il2cpp_domain_get"},
-  {offsetof(PgrMetaExports, domain_get_assemblies),      "il2cpp_domain_get_assemblies"},
-  {offsetof(PgrMetaExports, assembly_get_image),         "il2cpp_assembly_get_image"},
-  {offsetof(PgrMetaExports, class_from_name),            "il2cpp_class_from_name"},
-  {offsetof(PgrMetaExports, class_get_type),             "il2cpp_class_get_type"},
-  {offsetof(PgrMetaExports, type_get_name),              "il2cpp_type_get_name"},
-  {offsetof(PgrMetaExports, mem_free),                   "il2cpp_free"},
-  {offsetof(PgrMetaExports, class_get_field_from_name),  "il2cpp_class_get_field_from_name"},
-  {offsetof(PgrMetaExports, field_get_parent),           "il2cpp_field_get_parent"},
-  {offsetof(PgrMetaExports, field_get_flags),            "il2cpp_field_get_flags"},
-  {offsetof(PgrMetaExports, field_get_offset),           "il2cpp_field_get_offset"},
-  {offsetof(PgrMetaExports, field_get_type),             "il2cpp_field_get_type"},
-  {offsetof(PgrMetaExports, class_from_type),            "il2cpp_class_from_type"},
-  {offsetof(PgrMetaExports, class_is_valuetype),         "il2cpp_class_is_valuetype"},
-  {offsetof(PgrMetaExports, class_is_enum),              "il2cpp_class_is_enum"},
-  {offsetof(PgrMetaExports, class_enum_basetype),        "il2cpp_class_enum_basetype"},
-  {offsetof(PgrMetaExports, class_value_size),           "il2cpp_class_value_size"},
-  {offsetof(PgrMetaExports, class_get_method_from_name), "il2cpp_class_get_method_from_name"},
-  {offsetof(PgrMetaExports, method_get_class),           "il2cpp_method_get_class"},
-  {offsetof(PgrMetaExports, method_get_name),            "il2cpp_method_get_name"},
-  {offsetof(PgrMetaExports, method_get_flags),           "il2cpp_method_get_flags"},
-  {offsetof(PgrMetaExports, method_get_param_count),     "il2cpp_method_get_param_count"},
-  {offsetof(PgrMetaExports, method_get_param),           "il2cpp_method_get_param"},
-  {offsetof(PgrMetaExports, method_get_return_type),     "il2cpp_method_get_return_type"},
-  {offsetof(PgrMetaExports, method_is_generic),          "il2cpp_method_is_generic"},
-  {offsetof(PgrMetaExports, method_is_inflated),         "il2cpp_method_is_inflated"},
-  {offsetof(PgrMetaExports, debug_get_method_info),      "il2cpp_debug_get_method_info"},
-  {offsetof(PgrMetaExports, class_is_assignable_from),   "il2cpp_class_is_assignable_from"},
-  {offsetof(PgrMetaExports, class_get_methods),          "il2cpp_class_get_methods"},
-  {offsetof(PgrMetaExports, class_get_nested_types),     "il2cpp_class_get_nested_types"},
-  {offsetof(PgrMetaExports, class_get_declaring_type),   "il2cpp_class_get_declaring_type"},
+  {offsetof(PgsMetaExports, domain_get),                 "il2cpp_domain_get"},
+  {offsetof(PgsMetaExports, domain_get_assemblies),      "il2cpp_domain_get_assemblies"},
+  {offsetof(PgsMetaExports, assembly_get_image),         "il2cpp_assembly_get_image"},
+  {offsetof(PgsMetaExports, class_from_name),            "il2cpp_class_from_name"},
+  {offsetof(PgsMetaExports, class_get_type),             "il2cpp_class_get_type"},
+  {offsetof(PgsMetaExports, type_get_name),              "il2cpp_type_get_name"},
+  {offsetof(PgsMetaExports, mem_free),                   "il2cpp_free"},
+  {offsetof(PgsMetaExports, class_get_field_from_name),  "il2cpp_class_get_field_from_name"},
+  {offsetof(PgsMetaExports, field_get_parent),           "il2cpp_field_get_parent"},
+  {offsetof(PgsMetaExports, field_get_flags),            "il2cpp_field_get_flags"},
+  {offsetof(PgsMetaExports, field_get_offset),           "il2cpp_field_get_offset"},
+  {offsetof(PgsMetaExports, field_get_type),             "il2cpp_field_get_type"},
+  {offsetof(PgsMetaExports, class_from_type),            "il2cpp_class_from_type"},
+  {offsetof(PgsMetaExports, class_is_valuetype),         "il2cpp_class_is_valuetype"},
+  {offsetof(PgsMetaExports, class_is_enum),              "il2cpp_class_is_enum"},
+  {offsetof(PgsMetaExports, class_enum_basetype),        "il2cpp_class_enum_basetype"},
+  {offsetof(PgsMetaExports, class_value_size),           "il2cpp_class_value_size"},
+  {offsetof(PgsMetaExports, class_get_method_from_name), "il2cpp_class_get_method_from_name"},
+  {offsetof(PgsMetaExports, method_get_class),           "il2cpp_method_get_class"},
+  {offsetof(PgsMetaExports, method_get_name),            "il2cpp_method_get_name"},
+  {offsetof(PgsMetaExports, method_get_flags),           "il2cpp_method_get_flags"},
+  {offsetof(PgsMetaExports, method_get_param_count),     "il2cpp_method_get_param_count"},
+  {offsetof(PgsMetaExports, method_get_param),           "il2cpp_method_get_param"},
+  {offsetof(PgsMetaExports, method_get_return_type),     "il2cpp_method_get_return_type"},
+  {offsetof(PgsMetaExports, method_is_generic),          "il2cpp_method_is_generic"},
+  {offsetof(PgsMetaExports, method_is_inflated),         "il2cpp_method_is_inflated"},
+  {offsetof(PgsMetaExports, debug_get_method_info),      "il2cpp_debug_get_method_info"},
+  {offsetof(PgsMetaExports, class_is_assignable_from),   "il2cpp_class_is_assignable_from"},
+  {offsetof(PgsMetaExports, class_get_methods),          "il2cpp_class_get_methods"},
+  {offsetof(PgsMetaExports, class_get_nested_types),     "il2cpp_class_get_nested_types"},
+  {offsetof(PgsMetaExports, class_get_declaring_type),   "il2cpp_class_get_declaring_type"},
 };
-static_assert(sizeof(kMetaSyms) / sizeof(kMetaSyms[0]) == sizeof(PgrMetaExports) / sizeof(void *),
-              "metadata symbol table must cover every PgrMetaExports slot");
+static_assert(sizeof(kMetaSyms) / sizeof(kMetaSyms[0]) == sizeof(PgsMetaExports) / sizeof(void *),
+              "metadata symbol table must cover every PgsMetaExports slot");
 
 const SymSlot kRuntimeSyms[] = {
-  {offsetof(PgrBootRuntimeExports, runtime_invoke),              "il2cpp_runtime_invoke"},
-  {offsetof(PgrBootRuntimeExports, runtime_invoke_convert_args), "il2cpp_runtime_invoke_convert_args"},
-  {offsetof(PgrBootRuntimeExports, thread_attach),              "il2cpp_thread_attach"},
-  {offsetof(PgrBootRuntimeExports, thread_detach),              "il2cpp_thread_detach"},
-  {offsetof(PgrBootRuntimeExports, thread_current),             "il2cpp_thread_current"},
-  {offsetof(PgrBootRuntimeExports, gchandle_new),               "il2cpp_gchandle_new"},
-  {offsetof(PgrBootRuntimeExports, gchandle_new_weakref),       "il2cpp_gchandle_new_weakref"},
-  {offsetof(PgrBootRuntimeExports, gchandle_get_target),        "il2cpp_gchandle_get_target"},
-  {offsetof(PgrBootRuntimeExports, gchandle_free),              "il2cpp_gchandle_free"},
-  {offsetof(PgrBootRuntimeExports, field_get_value),            "il2cpp_field_get_value"},
-  {offsetof(PgrBootRuntimeExports, field_set_value),            "il2cpp_field_set_value"},
-  {offsetof(PgrBootRuntimeExports, field_static_get_value),     "il2cpp_field_static_get_value"},
-  {offsetof(PgrBootRuntimeExports, field_static_set_value),     "il2cpp_field_static_set_value"},
-  {offsetof(PgrBootRuntimeExports, object_new),                 "il2cpp_object_new"},
-  {offsetof(PgrBootRuntimeExports, object_unbox),               "il2cpp_object_unbox"},
-  {offsetof(PgrBootRuntimeExports, object_get_class),           "il2cpp_object_get_class"},
-  {offsetof(PgrBootRuntimeExports, value_box),                  "il2cpp_value_box"},
-  {offsetof(PgrBootRuntimeExports, string_new),                 "il2cpp_string_new"},
-  {offsetof(PgrBootRuntimeExports, string_chars),               "il2cpp_string_chars"},
-  {offsetof(PgrBootRuntimeExports, array_new),                  "il2cpp_array_new"},
+  {offsetof(PgsBootRuntimeExports, runtime_invoke),              "il2cpp_runtime_invoke"},
+  {offsetof(PgsBootRuntimeExports, runtime_invoke_convert_args), "il2cpp_runtime_invoke_convert_args"},
+  {offsetof(PgsBootRuntimeExports, thread_attach),              "il2cpp_thread_attach"},
+  {offsetof(PgsBootRuntimeExports, thread_detach),              "il2cpp_thread_detach"},
+  {offsetof(PgsBootRuntimeExports, thread_current),             "il2cpp_thread_current"},
+  {offsetof(PgsBootRuntimeExports, gchandle_new),               "il2cpp_gchandle_new"},
+  {offsetof(PgsBootRuntimeExports, gchandle_new_weakref),       "il2cpp_gchandle_new_weakref"},
+  {offsetof(PgsBootRuntimeExports, gchandle_get_target),        "il2cpp_gchandle_get_target"},
+  {offsetof(PgsBootRuntimeExports, gchandle_free),              "il2cpp_gchandle_free"},
+  {offsetof(PgsBootRuntimeExports, field_get_value),            "il2cpp_field_get_value"},
+  {offsetof(PgsBootRuntimeExports, field_set_value),            "il2cpp_field_set_value"},
+  {offsetof(PgsBootRuntimeExports, field_static_get_value),     "il2cpp_field_static_get_value"},
+  {offsetof(PgsBootRuntimeExports, field_static_set_value),     "il2cpp_field_static_set_value"},
+  {offsetof(PgsBootRuntimeExports, object_new),                 "il2cpp_object_new"},
+  {offsetof(PgsBootRuntimeExports, object_unbox),               "il2cpp_object_unbox"},
+  {offsetof(PgsBootRuntimeExports, object_get_class),           "il2cpp_object_get_class"},
+  {offsetof(PgsBootRuntimeExports, value_box),                  "il2cpp_value_box"},
+  {offsetof(PgsBootRuntimeExports, string_new),                 "il2cpp_string_new"},
+  {offsetof(PgsBootRuntimeExports, string_chars),               "il2cpp_string_chars"},
+  {offsetof(PgsBootRuntimeExports, array_new),                  "il2cpp_array_new"},
 };
 static_assert(sizeof(kRuntimeSyms) / sizeof(kRuntimeSyms[0]) ==
-                  sizeof(PgrBootRuntimeExports) / sizeof(void *),
-              "runtime symbol table must cover every PgrBootRuntimeExports slot");
+                  sizeof(PgsBootRuntimeExports) / sizeof(void *),
+              "runtime symbol table must cover every PgsBootRuntimeExports slot");
 
 // Process-lifetime singleton. phase: 0 unbound, 1 ready (cached valid), 2 poisoned. Guarded by the
 // NON-BLOCKING atomic entry flag below: only one thread is ever inside a mutating API, and a reentrant
 // managed callback gets BUSY instead of a deadlock (no mutex is held across any il2cpp/dl* call).
 struct Identity {
-  PgrBootConfig cfg{};
+  PgsBootConfig cfg{};
   char names[5][256]{};
-  unsigned char prologue[PGR_MD_PROLOGUE_MAX]{};
+  unsigned char prologue[PGS_MD_PROLOGUE_MAX]{};
 };
 struct State {
   bool identified = false;
@@ -190,7 +190,7 @@ struct State {
   int poison_status = 0;
   int poison_detail = 0;
   void *handle = nullptr;   // kept for the process lifetime; NEVER dlclosed
-  PgrBootBinding cached{};
+  PgsBootBinding cached{};
 };
 State g;
 std::atomic<uint32_t> g_entry{0};
@@ -209,15 +209,15 @@ struct Guard {
   Guard &operator=(const Guard &) = delete;
 };
 
-void fill_header(PgrBootBinding *out, int status, int detail) {
+void fill_header(PgsBootBinding *out, int status, int detail) {
   std::memset(out, 0, sizeof(*out));
-  out->version = PGR_BOOT_BINDING_VERSION;
-  out->size = sizeof(PgrBootBinding);
+  out->version = PGS_BOOT_BINDING_VERSION;
+  out->size = sizeof(PgsBootBinding);
   out->status = status;
   out->detail = detail;
 }
 
-int poison(PgrBootBinding *out, int status, int detail) {
+int poison(PgsBootBinding *out, int status, int detail) {
   g.phase = 2;
   g.poison_status = status;
   g.poison_detail = detail;
@@ -225,12 +225,12 @@ int poison(PgrBootBinding *out, int status, int detail) {
   return status;
 }
 
-void *resolve_sym(const PgrBootConfig *cfg, void *handle, const char *name) {
+void *resolve_sym(const PgsBootConfig *cfg, void *handle, const char *name) {
   return cfg->dlsym_fn ? cfg->dlsym_fn(cfg->seam_ctx, handle, name) : ::dlsym(handle, name);
 }
 
-bool resolve_symbols(const PgrBootConfig *cfg, void *handle, PgrMetaExports *meta,
-                     PgrBootRuntimeExports *rt) {
+bool resolve_symbols(const PgsBootConfig *cfg, void *handle, PgsMetaExports *meta,
+                     PgsBootRuntimeExports *rt) {
   for (const SymSlot &slot : kMetaSyms) {
     void *s = resolve_sym(cfg, handle, slot.name);
     if (!s) return false;
@@ -247,16 +247,16 @@ bool resolve_symbols(const PgrBootConfig *cfg, void *handle, PgrMetaExports *met
 // Resolve+validate ExecuteTasks THROUGH feature 47. Binds 47 with the DEFAULT segment resolver and NO
 // debug prologue in production (cfg->seg_query/seg_ctx null) so the config is identical to Routes 53's;
 // 47's bind is idempotent for an identical config, so both owners coexist. Returns 0 on success, or a
-// PgrBootStatus (ERR_BIND / ERR_RESOLVE) with *detail set to the underlying PgrMetaStatus.
-int resolve_execute_tasks(const PgrBootConfig *cfg, const PgrMetaApi *md, const PgrMetaExports *meta,
+// PgsBootStatus (ERR_BIND / ERR_RESOLVE) with *detail set to the underlying PgsMetaStatus.
+int resolve_execute_tasks(const PgsBootConfig *cfg, const PgsMetaApi *md, const PgsMetaExports *meta,
                           const void *base, uint64_t size, const void **out_method,
                           const void **out_code, int *detail) {
   *out_method = nullptr;
   *out_code = nullptr;
   *detail = 0;
 
-  PgrMetaBindConfig bc{};
-  bc.version = PGR_MD_CONFIG_VERSION;
+  PgsMetaBindConfig bc{};
+  bc.version = PGS_MD_CONFIG_VERSION;
   bc.size = sizeof(bc);
   bc.exports = meta;
   bc.module_base = base;
@@ -268,48 +268,48 @@ int resolve_execute_tasks(const PgrBootConfig *cfg, const PgrMetaApi *md, const 
   int rc = md->bind(&bc);
   if (rc != 0) {
     *detail = rc;
-    return PGR_BOOT_ERR_BIND;
+    return PGS_BOOT_ERR_BIND;
   }
 
-  PgrMetaClassQuery cq{};
-  cq.version = PGR_MD_QUERY_VERSION;
+  PgsMetaClassQuery cq{};
+  cq.version = PGS_MD_QUERY_VERSION;
   cq.size = sizeof(cq);
   cq.name_space = cfg->exec_namespace ? cfg->exec_namespace : kExecNamespace;
   cq.name = cfg->exec_class ? cfg->exec_class : kExecClass;
   cq.canonical = cfg->exec_canonical; // null -> ns.name EXACT (feature 47 default)
-  cq.canonical_match = cfg->exec_canonical ? PGR_MD_MATCH_EXACT : PGR_MD_MATCH_ANY;
-  PgrMetaClassResult cr{};
+  cq.canonical_match = cfg->exec_canonical ? PGS_MD_MATCH_EXACT : PGS_MD_MATCH_ANY;
+  PgsMetaClassResult cr{};
   rc = md->resolve_class(&cq, &cr);
   if (rc != 0) {
     *detail = rc;
-    return PGR_BOOT_ERR_RESOLVE;
+    return PGS_BOOT_ERR_RESOLVE;
   }
 
-  PgrMetaMethodQuery mq{};
-  mq.version = PGR_MD_QUERY_VERSION;
+  PgsMetaMethodQuery mq{};
+  mq.version = PGS_MD_QUERY_VERSION;
   mq.size = sizeof(mq);
   mq.owner = cr.klass;
   mq.name = cfg->exec_method ? cfg->exec_method : kExecMethod;
   mq.return_type = "System.Void"; // static System.Void ExecuteTasks()
-  mq.return_match = PGR_MD_MATCH_EXACT;
+  mq.return_match = PGS_MD_MATCH_EXACT;
   mq.param_count = 0;
   mq.is_static = 1;
   mq.allow_inflated = 0; // generic is always rejected by feature 47
   if (cfg->exec_code_rva != 0) {
     const uintptr_t b = reinterpret_cast<uintptr_t>(base);
     if (cfg->exec_code_rva > UINTPTR_MAX - b) { // base+rva overflow -> treat as a resolution fault
-      *detail = PGR_MD_ERR_CODE_RANGE;
-      return PGR_BOOT_ERR_RESOLVE;
+      *detail = PGS_MD_ERR_CODE_RANGE;
+      return PGS_BOOT_ERR_RESOLVE;
     }
     mq.expected_code = reinterpret_cast<const void *>(b + cfg->exec_code_rva);
     mq.prologue = cfg->exec_prologue;
     mq.prologue_len = cfg->exec_prologue_len;
   }
-  PgrMetaMethodResult mr{};
+  PgsMetaMethodResult mr{};
   rc = md->validate_method(&mq, &mr);
   if (rc != 0) {
     *detail = rc;
-    return PGR_BOOT_ERR_RESOLVE;
+    return PGS_BOOT_ERR_RESOLVE;
   }
   *out_method = mr.method;
   *out_code = mr.code;
@@ -317,7 +317,7 @@ int resolve_execute_tasks(const PgrBootConfig *cfg, const PgrMetaApi *md, const 
 }
 
 // Copy bounded descriptor DATA, never retain caller-owned strings/prologue.
-bool identity(const PgrBootConfig *c, Identity *out) {
+bool identity(const PgsBootConfig *c, Identity *out) {
   out->cfg = *c;
   const char *names[] = {c->soname ? c->soname : "libil2cpp.so",
     c->exec_namespace ? c->exec_namespace : kExecNamespace,
@@ -342,41 +342,41 @@ bool same_identity(const Identity &a,const Identity &b) {
     std::memcmp(a.prologue,b.prologue,x.exec_prologue_len)==0;
 }
 
-int api_probe(const PgrBootConfig *cfg, PgrBootBinding *out) {
-  if (out == nullptr) return PGR_BOOT_ERR_NULL_ARG;
+int api_probe(const PgsBootConfig *cfg, PgsBootBinding *out) {
+  if (out == nullptr) return PGS_BOOT_ERR_NULL_ARG;
   Guard guard;
   if (!guard.ok) { // concurrent/reentrant probe; shared state untouched
-    fill_header(out, PGR_BOOT_ERR_BUSY, 0);
-    return PGR_BOOT_ERR_BUSY;
+    fill_header(out, PGS_BOOT_ERR_BUSY, 0);
+    return PGS_BOOT_ERR_BUSY;
   }
 
   // Config validation. These are caller programming errors, not the environment; they do NOT poison.
-  if (cfg == nullptr) { fill_header(out, PGR_BOOT_ERR_NULL_ARG, 0); return PGR_BOOT_ERR_NULL_ARG; }
-  if (cfg->version != PGR_BOOT_CONFIG_VERSION) {
-    fill_header(out, PGR_BOOT_ERR_BAD_VERSION, 0);
-    return PGR_BOOT_ERR_BAD_VERSION;
+  if (cfg == nullptr) { fill_header(out, PGS_BOOT_ERR_NULL_ARG, 0); return PGS_BOOT_ERR_NULL_ARG; }
+  if (cfg->version != PGS_BOOT_CONFIG_VERSION) {
+    fill_header(out, PGS_BOOT_ERR_BAD_VERSION, 0);
+    return PGS_BOOT_ERR_BAD_VERSION;
   }
-  if (cfg->size != sizeof(PgrBootConfig)) {
-    fill_header(out, PGR_BOOT_ERR_BAD_SIZE, 0);
-    return PGR_BOOT_ERR_BAD_SIZE;
+  if (cfg->size != sizeof(PgsBootConfig)) {
+    fill_header(out, PGS_BOOT_ERR_BAD_SIZE, 0);
+    return PGS_BOOT_ERR_BAD_SIZE;
   }
-  if (cfg->reserved & ~1u) { fill_header(out, PGR_BOOT_ERR_BAD_CONFIG, 0); return PGR_BOOT_ERR_BAD_CONFIG; }
+  if (cfg->reserved & ~1u) { fill_header(out, PGS_BOOT_ERR_BAD_CONFIG, 0); return PGS_BOOT_ERR_BAD_CONFIG; }
   if (cfg->exec_code_rva != 0) {
     if (cfg->exec_prologue == nullptr || cfg->exec_prologue_len == 0 ||
-        cfg->exec_prologue_len > PGR_MD_PROLOGUE_MAX) {
-      fill_header(out, PGR_BOOT_ERR_BAD_CONFIG, 0);
-      return PGR_BOOT_ERR_BAD_CONFIG;
+        cfg->exec_prologue_len > PGS_MD_PROLOGUE_MAX) {
+      fill_header(out, PGS_BOOT_ERR_BAD_CONFIG, 0);
+      return PGS_BOOT_ERR_BAD_CONFIG;
     }
   } else if (cfg->exec_prologue != nullptr || cfg->exec_prologue_len != 0) {
-    fill_header(out, PGR_BOOT_ERR_BAD_CONFIG, 0);
-    return PGR_BOOT_ERR_BAD_CONFIG;
+    fill_header(out, PGS_BOOT_ERR_BAD_CONFIG, 0);
+    return PGS_BOOT_ERR_BAD_CONFIG;
   }
 
   Identity candidate{};
   if (!identity(cfg, &candidate) || (g.identified && !same_identity(candidate,g.identity))) {
-    fill_header(out,PGR_BOOT_ERR_BAD_CONFIG,0); return PGR_BOOT_ERR_BAD_CONFIG;
+    fill_header(out,PGS_BOOT_ERR_BAD_CONFIG,0); return PGS_BOOT_ERR_BAD_CONFIG;
   }
-  if (g.phase == 1) { *out = g.cached; return PGR_BOOT_OK; }
+  if (g.phase == 1) { *out = g.cached; return PGS_BOOT_OK; }
   if (g.phase == 2) { fill_header(out,g.poison_status,g.poison_detail); return g.poison_status; }
   if (!g.identified) { g.identity=candidate; g.identified=true; }
 
@@ -386,71 +386,71 @@ int api_probe(const PgrBootConfig *cfg, PgrBootBinding *out) {
   //    reused across NOT_READY retries so polling never grows the refcount. Null -> not loaded yet.
   void *handle = g.handle;
   if (handle == nullptr) {
-    int loader_detail = PGR_BOOT_LD_IMAGE_PENDING;
+    int loader_detail = PGS_BOOT_LD_IMAGE_PENDING;
     handle = cfg->dlopen_fn ? cfg->dlopen_fn(cfg->seam_ctx, soname, RTLD_NOLOAD | RTLD_NOW)
                             : ::dlopen(soname, RTLD_NOLOAD | RTLD_NOW);
     if (!handle && !cfg->dlopen_fn) handle = loaded_namespace_handle(soname, &loader_detail);
     if (handle == nullptr) { // library not yet loaded; RETRIABLE, nothing latched. detail localizes a
-      fill_header(out, PGR_BOOT_NOT_READY, loader_detail); // rooted-namespace loader fallback failure.
-      return PGR_BOOT_NOT_READY;
+      fill_header(out, PGS_BOOT_NOT_READY, loader_detail); // rooted-namespace loader fallback failure.
+      return PGS_BOOT_NOT_READY;
     }
     g.handle = handle;
   }
 
   // 2. dlsym the strict supported export set. A missing export is an unsupported build -> fail closed.
-  PgrMetaExports meta{};
-  PgrBootRuntimeExports rt{};
-  if (!resolve_symbols(cfg, handle, &meta, &rt)) return poison(out, PGR_BOOT_ERR_MISSING_EXPORT, 0);
+  PgsMetaExports meta{};
+  PgsBootRuntimeExports rt{};
+  if (!resolve_symbols(cfg, handle, &meta, &rt)) return poison(out, PGS_BOOT_ERR_MISSING_EXPORT, 0);
 
   // 3. feature 47 metadata API.
-  const void *raw = cfg->metadata_fn ? cfg->metadata_fn(cfg->seam_ctx, PGR_MD_API_VERSION)
-                                     : pgs_runtime_metadata_api(PGR_MD_API_VERSION);
-  const PgrMetaApi *md = static_cast<const PgrMetaApi *>(raw);
-  if (md == nullptr || md->version != PGR_MD_API_VERSION || md->size != sizeof(PgrMetaApi) ||
+  const void *raw = cfg->metadata_fn ? cfg->metadata_fn(cfg->seam_ctx, PGS_MD_API_VERSION)
+                                     : pgs_runtime_metadata_api(PGS_MD_API_VERSION);
+  const PgsMetaApi *md = static_cast<const PgsMetaApi *>(raw);
+  if (md == nullptr || md->version != PGS_MD_API_VERSION || md->size != sizeof(PgsMetaApi) ||
       !md->bind || !md->resolve_module || !md->resolve_class || !md->validate_method || !md->validate_code)
-    return poison(out, PGR_BOOT_ERR_NO_METADATA, 0);
+    return poison(out, PGS_BOOT_ERR_NO_METADATA, 0);
 
   // 4. Real loaded-module range. Null module_fn delegates to 47 (same range Routes 53 binds against).
   const void *base = nullptr;
   uint64_t size = 0;
   int mrc = cfg->module_fn ? cfg->module_fn(cfg->seam_ctx, soname, &base, &size)
                            : md->resolve_module(soname, &base, &size);
-  if(mrc==PGR_MD_ERR_BUSY){fill_header(out,PGR_BOOT_ERR_BUSY,mrc);return PGR_BOOT_ERR_BUSY;}
+  if(mrc==PGS_MD_ERR_BUSY){fill_header(out,PGS_BOOT_ERR_BUSY,mrc);return PGS_BOOT_ERR_BUSY;}
   if (mrc != 0 || base == nullptr || size == 0 ||
       size > UINTPTR_MAX - reinterpret_cast<uintptr_t>(base))
-    return poison(out, PGR_BOOT_ERR_MODULE_RANGE, mrc);
+    return poison(out, PGS_BOOT_ERR_MODULE_RANGE, mrc);
 
   // Validate real dlsym addresses BEFORE calling domain/thread functions. Native
   // fixture callbacks intentionally live outside their synthetic module image.
   if(!cfg->dlopen_fn&&!cfg->dlsym_fn&&!cfg->module_fn&&!cfg->metadata_fn&&!cfg->seg_query){
-    PgrMetaBindConfig binding{};binding.version=1;binding.size=sizeof(binding);
+    PgsMetaBindConfig binding{};binding.version=1;binding.size=sizeof(binding);
     binding.exports=&meta;binding.module_base=base;binding.module_size=size;
     const int bound=md->bind(&binding);
-    if(bound==PGR_MD_ERR_BUSY){fill_header(out,PGR_BOOT_ERR_BUSY,bound);return PGR_BOOT_ERR_BUSY;}
-    if(bound)return poison(out,PGR_BOOT_ERR_BIND,bound);
+    if(bound==PGS_MD_ERR_BUSY){fill_header(out,PGS_BOOT_ERR_BUSY,bound);return PGS_BOOT_ERR_BUSY;}
+    if(bound)return poison(out,PGS_BOOT_ERR_BIND,bound);
     for(const auto &entry:kMetaSyms){
       const void *address=nullptr;std::memcpy(&address,reinterpret_cast<const char *>(&meta)+entry.off,sizeof(address));
-      PgrMetaCodeQuery query{};query.version=1;query.size=sizeof(query);query.address=address;query.length=4;
+      PgsMetaCodeQuery query{};query.version=1;query.size=sizeof(query);query.address=address;query.length=4;
       const int checked=md->validate_code(&query);
-      if(checked==PGR_MD_ERR_BUSY){fill_header(out,PGR_BOOT_ERR_BUSY,checked);return PGR_BOOT_ERR_BUSY;}
-      if(checked)return poison(out,PGR_BOOT_ERR_EXPORT_CODE,checked);
+      if(checked==PGS_MD_ERR_BUSY){fill_header(out,PGS_BOOT_ERR_BUSY,checked);return PGS_BOOT_ERR_BUSY;}
+      if(checked)return poison(out,PGS_BOOT_ERR_EXPORT_CODE,checked);
     }
     for(const auto &entry:kRuntimeSyms){
       const void *address=nullptr;std::memcpy(&address,reinterpret_cast<const char *>(&rt)+entry.off,sizeof(address));
-      PgrMetaCodeQuery query{};query.version=1;query.size=sizeof(query);query.address=address;query.length=4;
+      PgsMetaCodeQuery query{};query.version=1;query.size=sizeof(query);query.address=address;query.length=4;
       const int checked=md->validate_code(&query);
-      if(checked==PGR_MD_ERR_BUSY){fill_header(out,PGR_BOOT_ERR_BUSY,checked);return PGR_BOOT_ERR_BUSY;}
-      if(checked)return poison(out,PGR_BOOT_ERR_EXPORT_CODE,checked);
+      if(checked==PGS_MD_ERR_BUSY){fill_header(out,PGS_BOOT_ERR_BUSY,checked);return PGS_BOOT_ERR_BUSY;}
+      if(checked)return poison(out,PGS_BOOT_ERR_EXPORT_CODE,checked);
     }
   }
 
   // 5. Managed domain must be up. Null -> RETRIABLE (runtime not initialized yet), nothing latched.
   void *self = reinterpret_cast<void *(*)()>(rt.thread_current)();
-  if((cfg->reserved&1u)&&!self){fill_header(out,PGR_BOOT_NOT_READY,0);return PGR_BOOT_NOT_READY;}
+  if((cfg->reserved&1u)&&!self){fill_header(out,PGS_BOOT_NOT_READY,0);return PGS_BOOT_NOT_READY;}
   void *domain = reinterpret_cast<void *(*)()>(meta.domain_get)();
   if (domain == nullptr) {
-    fill_header(out, PGR_BOOT_NOT_READY, 0);
-    return PGR_BOOT_NOT_READY;
+    fill_header(out, PGS_BOOT_NOT_READY, 0);
+    return PGS_BOOT_NOT_READY;
   }
 
   // 6. Attach the calling (native worker) thread if it is not already attached, resolve ExecuteTasks
@@ -458,7 +458,7 @@ int api_probe(const PgrBootConfig *cfg, PgrBootBinding *out) {
   bool attached = false;
   if (self == nullptr) {
     self = reinterpret_cast<void *(*)(void *)>(rt.thread_attach)(domain);
-    if (self == nullptr) return poison(out, PGR_BOOT_ERR_THREAD, 0);
+    if (self == nullptr) return poison(out, PGS_BOOT_ERR_THREAD, 0);
     attached = true;
   }
 
@@ -469,15 +469,15 @@ int api_probe(const PgrBootConfig *cfg, PgrBootBinding *out) {
 
   if (attached) reinterpret_cast<void (*)(void *)>(rt.thread_detach)(self);
 
-  if(detail==PGR_MD_ERR_BUSY){fill_header(out,PGR_BOOT_ERR_BUSY,detail);return PGR_BOOT_ERR_BUSY;}
+  if(detail==PGS_MD_ERR_BUSY){fill_header(out,PGS_BOOT_ERR_BUSY,detail);return PGS_BOOT_ERR_BUSY;}
   if (rc != 0) return poison(out, rc, detail);
 
   // 7. Publish the copied, bounded binding table and latch READY.
-  PgrBootBinding &b = g.cached;
+  PgsBootBinding &b = g.cached;
   std::memset(&b, 0, sizeof(b));
-  b.version = PGR_BOOT_BINDING_VERSION;
-  b.size = sizeof(PgrBootBinding);
-  b.status = PGR_BOOT_OK;
+  b.version = PGS_BOOT_BINDING_VERSION;
+  b.size = sizeof(PgsBootBinding);
+  b.status = PGS_BOOT_OK;
   b.detail = 0;
   b.flags = attached ? 1u : 0u;
   b.handle = handle;
@@ -491,29 +491,29 @@ int api_probe(const PgrBootConfig *cfg, PgrBootBinding *out) {
   g.phase = 1;
 
   *out = b;
-  return PGR_BOOT_OK;
+  return PGS_BOOT_OK;
 }
 
-int api_snapshot(PgrBootBinding *out) {
-  if (out == nullptr) return PGR_BOOT_ERR_NULL_ARG;
+int api_snapshot(PgsBootBinding *out) {
+  if (out == nullptr) return PGS_BOOT_ERR_NULL_ARG;
   Guard guard;
   if (!guard.ok) {
-    fill_header(out, PGR_BOOT_ERR_BUSY, 0);
-    return PGR_BOOT_ERR_BUSY;
+    fill_header(out, PGS_BOOT_ERR_BUSY, 0);
+    return PGS_BOOT_ERR_BUSY;
   }
-  if (g.phase == 1) { *out = g.cached; return PGR_BOOT_OK; }
+  if (g.phase == 1) { *out = g.cached; return PGS_BOOT_OK; }
   if (g.phase == 2) {
     fill_header(out, g.poison_status, g.poison_detail);
     return g.poison_status;
   }
-  fill_header(out, PGR_BOOT_NOT_READY, 0);
-  return PGR_BOOT_NOT_READY;
+  fill_header(out, PGS_BOOT_NOT_READY, 0);
+  return PGS_BOOT_NOT_READY;
 }
 
-const PgrBootApi g_api = {PGR_BOOT_API_VERSION, sizeof(PgrBootApi), api_probe, api_snapshot};
+const PgsBootApi g_api = {PGS_BOOT_API_VERSION, sizeof(PgsBootApi), api_probe, api_snapshot};
 
 } // namespace
 
 const void *pgs_runtime_bootstrap_api(uint32_t version) {
-  return version == PGR_BOOT_API_VERSION ? &g_api : nullptr;
+  return version == PGS_BOOT_API_VERSION ? &g_api : nullptr;
 }

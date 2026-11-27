@@ -13,7 +13,7 @@
 // battles, berries, incubator, buddy, gifts, spawn, vgp, vgpMarker, mapPoi, mapPoiExtra) directly in
 // typed C++ with zero DELEGATED slots and no JS/VM interpreter.
 
-namespace pgr_shared_meta {
+namespace pgs_shared_meta {
 
 static_assert(sizeof(void *) == 8, "shared_metadata native ABI requires LP64");
 
@@ -41,35 +41,35 @@ inline constexpr ClassSpec kClasses[] = {
 inline constexpr size_t kClassCount = sizeof(kClasses) / sizeof(kClasses[0]);
 
 inline constexpr FieldSpec kFields[] = {
-  {3u, PGR_GAME_SHARED_METADATA_H_CAPTUREDPOKEMONID_NAME, PGR_GAME_SHARED_METADATA_H_CAPTUREDPOKEMONID_OFFSET, PGR_MD_FIELD_VALUE,    "System.UInt64", 8u}, // 0  RESP.CapturedPokemonId
-  {0u, PGR_GAME_SHARED_METADATA_H_CURRENTSTATE_NAME,      PGR_GAME_SHARED_METADATA_H_CURRENTSTATE_OFFSET, PGR_MD_FIELD_ENUM_I32, nullptr,         4u}, // 1  GUI.currentState
-  {1u, PGR_GAME_SHARED_METADATA_H_ONDISMISSED_NAME,       PGR_GAME_SHARED_METADATA_H_ONDISMISSED_OFFSET,PGR_MD_FIELD_REF,      nullptr,         0u}, // 2  SGUI.OnDismissed
-  {2u, PGR_GAME_SHARED_METADATA_H_DSGU_NAME,              PGR_GAME_SHARED_METADATA_H_DSGU_OFFSET, PGR_MD_FIELD_REF,      nullptr,         0u}, // 3  SSTATE.dscx
-  {2u, PGR_GAME_SHARED_METADATA_H_DSGV_NAME,              PGR_GAME_SHARED_METADATA_H_DSGV_OFFSET, PGR_MD_FIELD_REF,      nullptr,         0u}, // 4  SSTATE.dscy
-  {3u, PGR_GAME_SHARED_METADATA_H_STATUS_NAME,            PGR_GAME_SHARED_METADATA_H_STATUS_OFFSET, PGR_MD_FIELD_ENUM_I32, nullptr,         4u}, // 5  RESP.Status
+  {3u, PGS_GAME_SHARED_METADATA_H_CAPTUREDPOKEMONID_NAME, PGS_GAME_SHARED_METADATA_H_CAPTUREDPOKEMONID_OFFSET, PGS_MD_FIELD_VALUE,    "System.UInt64", 8u}, // 0  RESP.CapturedPokemonId
+  {0u, PGS_GAME_SHARED_METADATA_H_CURRENTSTATE_NAME,      PGS_GAME_SHARED_METADATA_H_CURRENTSTATE_OFFSET, PGS_MD_FIELD_ENUM_I32, nullptr,         4u}, // 1  GUI.currentState
+  {1u, PGS_GAME_SHARED_METADATA_H_ONDISMISSED_NAME,       PGS_GAME_SHARED_METADATA_H_ONDISMISSED_OFFSET,PGS_MD_FIELD_REF,      nullptr,         0u}, // 2  SGUI.OnDismissed
+  {2u, PGS_GAME_SHARED_METADATA_H_DSGU_NAME,              PGS_GAME_SHARED_METADATA_H_DSGU_OFFSET, PGS_MD_FIELD_REF,      nullptr,         0u}, // 3  SSTATE.dscx
+  {2u, PGS_GAME_SHARED_METADATA_H_DSGV_NAME,              PGS_GAME_SHARED_METADATA_H_DSGV_OFFSET, PGS_MD_FIELD_REF,      nullptr,         0u}, // 4  SSTATE.dscy
+  {3u, PGS_GAME_SHARED_METADATA_H_STATUS_NAME,            PGS_GAME_SHARED_METADATA_H_STATUS_OFFSET, PGS_MD_FIELD_ENUM_I32, nullptr,         4u}, // 5  RESP.Status
 };
 inline constexpr size_t kFieldCount = sizeof(kFields) / sizeof(kFields[0]);
 inline constexpr uint32_t kStatusFieldIndex = 5u;
 
-inline constexpr unsigned char kExitState[] = PGR_GAME_SHARED_METADATA_H_KEXITSTATE_FINGERPRINT;
-inline constexpr unsigned char kDismiss[] = PGR_GAME_SHARED_METADATA_H_KDISMISS_FINGERPRINT;
-inline constexpr unsigned char kInitialize[] = PGR_GAME_SHARED_METADATA_H_KINITIALIZE_FINGERPRINT;
-inline constexpr unsigned char kSetScores[] = PGR_GAME_SHARED_METADATA_H_KSETSCORES_FINGERPRINT;
-inline constexpr unsigned char kHandleOpenComplete[] = PGR_GAME_SHARED_METADATA_H_KHANDLEOPENCOMPLETE_FINGERPRINT;
-inline constexpr unsigned char kOpImplicit[] = PGR_GAME_SHARED_METADATA_H_KOPIMPLICIT_FINGERPRINT;
+inline constexpr unsigned char kExitState[] = PGS_GAME_SHARED_METADATA_H_KEXITSTATE_FINGERPRINT;
+inline constexpr unsigned char kDismiss[] = PGS_GAME_SHARED_METADATA_H_KDISMISS_FINGERPRINT;
+inline constexpr unsigned char kInitialize[] = PGS_GAME_SHARED_METADATA_H_KINITIALIZE_FINGERPRINT;
+inline constexpr unsigned char kSetScores[] = PGS_GAME_SHARED_METADATA_H_KSETSCORES_FINGERPRINT;
+inline constexpr unsigned char kHandleOpenComplete[] = PGS_GAME_SHARED_METADATA_H_KHANDLEOPENCOMPLETE_FINGERPRINT;
+inline constexpr unsigned char kOpImplicit[] = PGS_GAME_SHARED_METADATA_H_KOPIMPLICIT_FINGERPRINT;
 
 inline constexpr MethodSpec kMethods[] = {
-  {"exitState",          2u,"ExitState",          "System.Void",   0u,nullptr,                            nullptr,            0u,PGR_GAME_SHARED_METADATA_H_KEXITSTATE_RVA,kExitState,         sizeof(kExitState)},          // 0
-  {"dismiss",            0u,"Dismiss",             "System.Void",   0u,nullptr,                            nullptr,            0u,PGR_GAME_SHARED_METADATA_H_KDISMISS_RVA,kDismiss,           sizeof(kDismiss)},            // 1
-  {"initialize",         2u,"Initialize",          "System.Void",   2u,"Holoholo.Rpc.CatchPokemonOutProto","System.Boolean",            0u,PGR_GAME_SHARED_METADATA_H_KINITIALIZE_RVA,kInitialize,        sizeof(kInitialize)},         // 2
-  {"setScores",          1u,"SetScores",           "System.Void",   2u,"Holoholo.Rpc.CatchPokemonOutProto","Holoholo.Rpc.Item",0u,PGR_GAME_SHARED_METADATA_H_KSETSCORES_RVA,kSetScores,         sizeof(kSetScores)},          // 3
-  {"handleOpenComplete", 1u,"HandleOpenComplete",  "System.Void",   0u,nullptr,                            nullptr,            0u,PGR_GAME_SHARED_METADATA_H_KHANDLEOPENCOMPLETE_RVA,kHandleOpenComplete,sizeof(kHandleOpenComplete)}, // 4
-  {"alive",              4u,"op_Implicit",         "System.Boolean",1u,"UnityEngine.Object",                nullptr,            1u,PGR_GAME_SHARED_METADATA_H_KOPIMPLICIT_RVA,kOpImplicit,        sizeof(kOpImplicit)},         // 5
+  {"exitState",          2u,"ExitState",          "System.Void",   0u,nullptr,                            nullptr,            0u,PGS_GAME_SHARED_METADATA_H_KEXITSTATE_RVA,kExitState,         sizeof(kExitState)},          // 0
+  {"dismiss",            0u,"Dismiss",             "System.Void",   0u,nullptr,                            nullptr,            0u,PGS_GAME_SHARED_METADATA_H_KDISMISS_RVA,kDismiss,           sizeof(kDismiss)},            // 1
+  {"initialize",         2u,"Initialize",          "System.Void",   2u,"Holoholo.Rpc.CatchPokemonOutProto","System.Boolean",            0u,PGS_GAME_SHARED_METADATA_H_KINITIALIZE_RVA,kInitialize,        sizeof(kInitialize)},         // 2
+  {"setScores",          1u,"SetScores",           "System.Void",   2u,"Holoholo.Rpc.CatchPokemonOutProto","Holoholo.Rpc.Item",0u,PGS_GAME_SHARED_METADATA_H_KSETSCORES_RVA,kSetScores,         sizeof(kSetScores)},          // 3
+  {"handleOpenComplete", 1u,"HandleOpenComplete",  "System.Void",   0u,nullptr,                            nullptr,            0u,PGS_GAME_SHARED_METADATA_H_KHANDLEOPENCOMPLETE_RVA,kHandleOpenComplete,sizeof(kHandleOpenComplete)}, // 4
+  {"alive",              4u,"op_Implicit",         "System.Boolean",1u,"UnityEngine.Object",                nullptr,            1u,PGS_GAME_SHARED_METADATA_H_KOPIMPLICIT_RVA,kOpImplicit,        sizeof(kOpImplicit)},         // 5
   {"execute",            5u,"ExecuteTasks",        "System.Void",   0u,nullptr,                            nullptr,            1u,0x0ULL,       nullptr,            0u},                          // 6
 };
 inline constexpr size_t kMethodCount = sizeof(kMethods) / sizeof(kMethods[0]);
 
-inline constexpr unsigned char kDebugPrologue[] = PGR_GAME_SHARED_METADATA_H_KDEBUGPROLOGUE_FINGERPRINT;
+inline constexpr unsigned char kDebugPrologue[] = PGS_GAME_SHARED_METADATA_H_KDEBUGPROLOGUE_FINGERPRINT;
 inline constexpr uint32_t kDebugPrologueLen = sizeof(kDebugPrologue);
 
 // ---------------------------------------------------------------------------------------------------
@@ -145,7 +145,7 @@ inline constexpr ClassSpec kOptClasses[] = {
   {"IENUMERATOR",         "System.Collections",                          "IEnumerator",                               "System.Collections.IEnumerator"},                   // 30
   {"IDISPOSABLE",         "System",                                      "IDisposable",                               "System.IDisposable"},                               // 31
   {"GIFT_BOX_PROTO",      "Holoholo.Rpc",                                "GiftBoxProto",                              "Holoholo.Rpc.GiftBoxProto"},                        // 32
-  {"GIFT_OPEN_SEQ",       "Niantic.Holoholo.Social.Gifting.UI.OpenGiftGuiController", PGR_GAME_SHARED_METADATA_H_DBN_NAME,                          "Niantic.Holoholo.Social.Gifting.UI.OpenGiftGuiController.djx"}, // 33
+  {"GIFT_OPEN_SEQ",       "Niantic.Holoholo.Social.Gifting.UI.OpenGiftGuiController", PGS_GAME_SHARED_METADATA_H_DBN_NAME,                          "Niantic.Holoholo.Social.Gifting.UI.OpenGiftGuiController.djx"}, // 33
   {"OPEN_GIFT_OUT",       "Holoholo.Rpc",                                "OpenGiftOutProto",                          "Holoholo.Rpc.OpenGiftOutProto"},                    // 34
   {"SEND_GIFT_OUT",       "Holoholo.Rpc",                                "SendGiftOutProto",                          "Holoholo.Rpc.SendGiftOutProto"},                    // 35
   {"BUDDY_7757",          "Niantic.Holoholo.Buddy",                      "BuddyObservedDataExt",                      "Niantic.Holoholo.Buddy.BuddyObservedDataExt"},      // 36
@@ -427,9 +427,9 @@ enum OptHandle {
   // 20. mapPoiExtra (8)
   H_MPE_LEVEL, H_MPE_BOSS_CLASS, H_MPE_BOSS, H_MPE_BOSS_ID, H_MPE_TEAM_M,
   H_MPE_GYM_DISP_CLASS, H_MPE_GYM_DISP, H_MPE_SLOTS,
-  PGR_OPT_HANDLE_COUNT
+  PGS_OPT_HANDLE_COUNT
 };
-static_assert(PGR_OPT_HANDLE_COUNT == 595, "595 optional handles");
+static_assert(PGS_OPT_HANDLE_COUNT == 595, "595 optional handles");
 
 enum OptInt {
   I_TR_SIZE_XXS = 0, I_TR_SIZE_XS, I_TR_SIZE_M, I_TR_SIZE_XL, I_TR_SIZE_XXL,
@@ -442,9 +442,9 @@ enum OptInt {
   I_GIFT_OPEN_SUCCESS, I_GIFT_SEND_SUCCESS, I_GIFT_CHECK_SUCCESS,
   I_VGP_SPIN_SUCCESS, I_VGP_RPC_ID,
   I_VGP_CS_SUCCESS, I_VGP_CS_ESCAPE, I_VGP_CS_FLEE, I_VGP_CS_MISSED, I_VGP_CS_ERROR, I_VGP_CS_ITEM_REPL,
-  PGR_OPT_INT_COUNT
+  PGS_OPT_INT_COUNT
 };
-static_assert(PGR_OPT_INT_COUNT == 29, "29 optional static enum ints");
+static_assert(PGS_OPT_INT_COUNT == 29, "29 optional static enum ints");
 
 inline constexpr size_t kFieldMetaMax = 96;
 inline constexpr size_t kItemNameMax  = 512;
@@ -452,39 +452,39 @@ inline constexpr size_t kRaidTierMax  = 64;
 inline constexpr size_t kTeamNameMax  = 32;
 inline constexpr size_t kReasonMax    = 96;
 
-} // namespace pgr_shared_meta
+} // namespace pgs_shared_meta
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
 // Per-subfeature availability codes (zero subfeatures are DELEGATED in API 2).
-enum PgrSharedOptional {
-  PGR_SHARED_OPT_DELEGATED   = 0,
-  PGR_SHARED_OPT_AVAILABLE   = 1,
-  PGR_SHARED_OPT_UNAVAILABLE = 2
+enum PgsSharedOptional {
+  PGS_SHARED_OPT_DELEGATED   = 0,
+  PGS_SHARED_OPT_AVAILABLE   = 1,
+  PGS_SHARED_OPT_UNAVAILABLE = 2
 };
 
 // resolve() status (0 == OK). Negatives below -29 are this module's; others propagate feature-47
-// PgrMetaStatus codes verbatim. Note: PGR_MD_ERR_NOT_FOUND (-9) is returned ONLY when assemblies are 0
+// PgsMetaStatus codes verbatim. Note: PGS_MD_ERR_NOT_FOUND (-9) is returned ONLY when assemblies are 0
 // or a required class is not yet loaded internally; resolve maps that to NOT_READY (+1).
 // Missing required members return -33 and are never treated as cold-start retry.
-enum PgrSharedMetaStatus {
-  PGR_SHARED_OK                   = 0,
-  PGR_SHARED_NOT_READY            = 1,
-  PGR_SHARED_ERR_NULL_ARG         = -1,
-  PGR_SHARED_ERR_CONFIG           = -2,
-  PGR_SHARED_ERR_ATTACH           = -30,
-  PGR_SHARED_ERR_METADATA         = -31,
-  PGR_SHARED_ERR_INTERNAL         = -32,
-  PGR_SHARED_ERR_MEMBER_NOT_FOUND = -33,
-  PGR_SHARED_ERR_GC_ABI           = -34
+enum PgsSharedMetaStatus {
+  PGS_SHARED_OK                   = 0,
+  PGS_SHARED_NOT_READY            = 1,
+  PGS_SHARED_ERR_NULL_ARG         = -1,
+  PGS_SHARED_ERR_CONFIG           = -2,
+  PGS_SHARED_ERR_ATTACH           = -30,
+  PGS_SHARED_ERR_METADATA         = -31,
+  PGS_SHARED_ERR_INTERNAL         = -32,
+  PGS_SHARED_ERR_MEMBER_NOT_FOUND = -33,
+  PGS_SHARED_ERR_GC_ABI           = -34
 };
 
 // Extra IL2CPP exports outside feature-47's 31 exports. The first 4 are mandatory for prepare()
 // (CatchSuccess static read + pointerHandleAbi GC code fingerprint); the remaining 10 are optional
 // and checked only by the optional subfeatures that use them.
-struct PgrSharedMetaExtraExports {
+struct PgsSharedMetaExtraExports {
   void *field_static_get_value;    //  0  mandatory: void  (void* field, void* out)
   void *gchandle_new;              //  1  mandatory: void* (void* obj, bool pinned) [code-inspected only]
   void *gchandle_get_target;       //  2  mandatory: void* (void* handle)           [code-inspected only]
@@ -500,65 +500,65 @@ struct PgrSharedMetaExtraExports {
   void *gc_wbarrier_set_field;     // 12  optional (vgp): void  (void* obj, void* target_addr, void* val)
   void *method_get_from_reflection;// 13  optional (vgp): void* (void* reflection_method)
 };
-static_assert(sizeof(PgrSharedMetaExtraExports) == 112, "14 LP64 extra exports");
+static_assert(sizeof(PgsSharedMetaExtraExports) == 112, "14 LP64 extra exports");
 
-struct PgrSharedMetadataConfig {
-  uint32_t version, size;      // == 2, == sizeof(PgrSharedMetadataConfig)
-  PgrMetaBindConfig binding;   // 31 core exports + module range (+ optional fixture seg_query)
+struct PgsSharedMetadataConfig {
+  uint32_t version, size;      // == 2, == sizeof(PgsSharedMetadataConfig)
+  PgsMetaBindConfig binding;   // 31 core exports + module range (+ optional fixture seg_query)
   void *thread_current;        // il2cpp_thread_current export (caller-attached; checked != null)
   uint64_t owner_tid;          // gettid() of the attached caller thread
-  const PgrSharedMetaExtraExports *extra; // mandatory extra exports
+  const PgsSharedMetaExtraExports *extra; // mandatory extra exports
 };
-static_assert(sizeof(PgrSharedMetadataConfig) == 96, "LP64 config (API 2)");
+static_assert(sizeof(PgsSharedMetadataConfig) == 96, "LP64 config (API 2)");
 
-struct PgrSharedFieldMetaEntry {
+struct PgsSharedFieldMetaEntry {
   uint64_t offset;
-  uint32_t kind;               // PgrMetaFieldKind (1=ref, 2=value, 3=enum-int32)
+  uint32_t kind;               // PgsMetaFieldKind (1=ref, 2=value, 3=enum-int32)
   uint32_t size;               // value size when kind==2, else 0
   char name[64];
   char owner[128];
 };
-static_assert(sizeof(PgrSharedFieldMetaEntry) == 208, "PgrSharedFieldMetaEntry size");
+static_assert(sizeof(PgsSharedFieldMetaEntry) == 208, "PgsSharedFieldMetaEntry size");
 
-struct PgrSharedEnumEntry {
+struct PgsSharedEnumEntry {
   int32_t value;
   char name[60];
 };
-static_assert(sizeof(PgrSharedEnumEntry) == 64, "PgrSharedEnumEntry size");
+static_assert(sizeof(PgsSharedEnumEntry) == 64, "PgsSharedEnumEntry size");
 
-struct PgrSharedMetadataOutput {
+struct PgsSharedMetadataOutput {
   uint32_t version, size;                                                        // +0     (8B)
-  const void *classes[pgr_shared_meta::kClassCount];                             // +8     (56B)
-  const void *opt_classes[pgr_shared_meta::kOptClassCount];                      // +64    (1016B)
-  const void *fields[pgr_shared_meta::kFieldCount];                              // +1080  (48B)
-  const void *field_types[pgr_shared_meta::kFieldCount];                         // +1128  (48B)
-  const void *field_type_classes[pgr_shared_meta::kFieldCount];                  // +1176  (48B)
-  const void *methods[pgr_shared_meta::kMethodCount];                            // +1224  (56B)
-  const void *method_code[pgr_shared_meta::kMethodCount];                        // +1280  (56B)
+  const void *classes[pgs_shared_meta::kClassCount];                             // +8     (56B)
+  const void *opt_classes[pgs_shared_meta::kOptClassCount];                      // +64    (1016B)
+  const void *fields[pgs_shared_meta::kFieldCount];                              // +1080  (48B)
+  const void *field_types[pgs_shared_meta::kFieldCount];                         // +1128  (48B)
+  const void *field_type_classes[pgs_shared_meta::kFieldCount];                  // +1176  (48B)
+  const void *methods[pgs_shared_meta::kMethodCount];                            // +1224  (56B)
+  const void *method_code[pgs_shared_meta::kMethodCount];                        // +1280  (56B)
   int32_t success;                                                               // +1336  (4B)
   uint32_t caught_id_size;                                                       // +1340  (4B)
-  int32_t optional[pgr_shared_meta::kOptionalCount];                             // +1344  (84B)
-  int32_t optional_error[pgr_shared_meta::kOptionalCount];                       // +1428  (84B)
-  char optional_reason[pgr_shared_meta::kOptionalCount][pgr_shared_meta::kReasonMax]; // +1512 (2016B)
-  const void *opt_handles[pgr_shared_meta::PGR_OPT_HANDLE_COUNT];                // +3528  (4760B)
-  int32_t opt_ints[pgr_shared_meta::PGR_OPT_INT_COUNT];                          // +8288  (116B)
+  int32_t optional[pgs_shared_meta::kOptionalCount];                             // +1344  (84B)
+  int32_t optional_error[pgs_shared_meta::kOptionalCount];                       // +1428  (84B)
+  char optional_reason[pgs_shared_meta::kOptionalCount][pgs_shared_meta::kReasonMax]; // +1512 (2016B)
+  const void *opt_handles[pgs_shared_meta::PGS_OPT_HANDLE_COUNT];                // +3528  (4760B)
+  int32_t opt_ints[pgs_shared_meta::PGS_OPT_INT_COUNT];                          // +8288  (116B)
   uint32_t field_meta_count;                                                     // +8404  (4B)
-  PgrSharedFieldMetaEntry field_meta[pgr_shared_meta::kFieldMetaMax];            // +8408  (19968B)
+  PgsSharedFieldMetaEntry field_meta[pgs_shared_meta::kFieldMetaMax];            // +8408  (19968B)
   uint32_t item_name_count;                                                      // +28376 (4B)
   uint32_t raid_tier_count;                                                      // +28380 (4B)
   uint32_t team_name_count;                                                      // +28384 (4B)
   uint32_t enrichment_flags; // +28388: bit0 raid enum complete; bit1 team enum complete
-  PgrSharedEnumEntry item_names[pgr_shared_meta::kItemNameMax];                  // +28392 (32768B)
-  PgrSharedEnumEntry raid_tiers[pgr_shared_meta::kRaidTierMax];                  // +61160 (4096B)
-  PgrSharedEnumEntry team_names[pgr_shared_meta::kTeamNameMax];                  // +65256 (2048B)
+  PgsSharedEnumEntry item_names[pgs_shared_meta::kItemNameMax];                  // +28392 (32768B)
+  PgsSharedEnumEntry raid_tiers[pgs_shared_meta::kRaidTierMax];                  // +61160 (4096B)
+  PgsSharedEnumEntry team_names[pgs_shared_meta::kTeamNameMax];                  // +65256 (2048B)
 };
-static_assert(sizeof(PgrSharedMetadataOutput) == 67304, "LP64 output (API 2 complete)");
+static_assert(sizeof(PgsSharedMetadataOutput) == 67304, "LP64 output (API 2 complete)");
 
-struct PgrSharedMetadataApi {
+struct PgsSharedMetadataApi {
   uint32_t version, size, config_size, output_size;
-  int (*resolve)(const PgrSharedMetadataConfig *, PgrSharedMetadataOutput *);
+  int (*resolve)(const PgsSharedMetadataConfig *, PgsSharedMetadataOutput *);
 };
-static_assert(sizeof(PgrSharedMetadataApi) == 24, "LP64 API");
+static_assert(sizeof(PgsSharedMetadataApi) == 24, "LP64 API");
 
 const void *pgs_shared_metadata_api(uint32_t version);
 

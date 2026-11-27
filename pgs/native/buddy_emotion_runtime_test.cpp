@@ -23,13 +23,13 @@ void* enum_lookup(void*,const char* name){
 int enum_flags(void*){return 0x8050;}
 void enum_read(void*,void*,void* out){*static_cast<int*>(out)=enum_result;}
 void enum_static(void* field,void* out){*static_cast<int*>(out)=*static_cast<int*>(field);}
-int test_result = PGR_VR_DONE;
+int test_result = PGS_VR_DONE;
 bool test_live = true, test_map = true, test_ready = true, test_fresh = true;
 bool test_sequence_change = false;
 unsigned test_samples = 0;
 std::string test_config = "1;1;703;50;0";
 
-int test_sample(PgrRuntimeTransportSample* out) {
+int test_sample(PgsRuntimeTransportSample* out) {
     *out = {};
     out->snapshot_fresh = test_fresh;
     out->snapshot_seq = 100 + (test_sequence_change ? test_samples : 0);
@@ -80,24 +80,24 @@ void* test_forbidden_field(void*, const char*) {
     return nullptr;
 }
 int test_emit(uint32_t opcode, const int64_t* scalars, uint32_t scalar_count,
-              const PgrRuntimeTransportString* strings, uint32_t string_count) {
+              const PgsRuntimeTransportString* strings, uint32_t string_count) {
     assert(opcode == 19 && !scalars && !scalar_count && strings && string_count == 2);
     ++test_events;
     return 0;
 }
-int test_poll(void* promise, uint32_t phase, uint64_t tid, PgrVgpResultsResult* out) {
+int test_poll(void* promise, uint32_t phase, uint64_t tid, PgsVgpResultsResult* out) {
     assert(promise == &test_objects[0] && phase == 1 && tid == owner);
     ++test_polls;
     *out = {};
-    if (test_result == PGR_VR_DONE) {
+    if (test_result == PGS_VR_DONE) {
         out->version = 1;
         out->size = sizeof(*out);
         out->value_handle = test_new(&test_objects[2], 0);
     }
     return test_result;
 }
-PgrRuntimeTransportApi test_transport{};
-PgrVgpResultsApi test_results{1, sizeof(PgrVgpResultsApi), nullptr, test_poll, nullptr};
+PgsRuntimeTransportApi test_transport{};
+PgsVgpResultsApi test_results{1, sizeof(PgsVgpResultsApi), nullptr, test_poll, nullptr};
 
 void setup_transport() {
     test_transport = {};
@@ -115,7 +115,7 @@ Permission setup(int phase) {
     clear();
     setup_transport();
     test_allocations = test_frees = test_polls = test_events = 0;
-    test_result = PGR_VR_DONE;
+    test_result = PGS_VR_DONE;
     boot = {};
     boot.runtime.gchandle_new = reinterpret_cast<void*>(test_new);
     boot.runtime.gchandle_get_target = reinterpret_cast<void*>(test_get);
@@ -204,16 +204,16 @@ int main() {
     }
     {
         auto p = setup(2);
-        test_result = PGR_VR_PENDING;
+        test_result = PGS_VR_PENDING;
         p.allowed = false;
         poll(p);
         assert(pending.canceled && pending.phase == 2 && test_roots.size() == 2);
-        test_result = PGR_VR_DONE;
+        test_result = PGS_VR_DONE;
         p.allowed = true;
         poll(p); // Permission returning cannot uncancel an already canceled attempt.
         cleared(2, 0, 3);
     }
-    for (int result : {PGR_VR_REJECTED, PGR_VR_ERR_SHAPE}) {
+    for (int result : {PGS_VR_REJECTED, PGS_VR_ERR_SHAPE}) {
         auto p = setup(3);
         test_result = result;
         poll(p);
@@ -229,8 +229,8 @@ int main() {
         // A later tick cannot recreate a promise while paused, even with the
         // enable switch retained. A stale transport avoids identity resolution.
         test_fresh = false;
-        pgr_buddy_emotion_tick(owner, nullptr);
-        pgr_buddy_emotion_tick(owner, nullptr);
+        pgs_buddy_emotion_tick(owner, nullptr);
+        pgs_buddy_emotion_tick(owner, nullptr);
         cleared(0, 1, 2);
         assert(paused);
     }
@@ -238,7 +238,7 @@ int main() {
         auto p=setup(4);paused=true;next_action=999999;last_stats=999999;
         adopt_buddy(account,43,"");
         assert(!paused&&pending.canceled&&history.buddy==43&&last_stats==0&&next_action==0&&feed_burst==0);
-        if(timeout)pending.since=clock_ms()-15001;else test_result=PGR_VR_REJECTED;
+        if(timeout)pending.since=clock_ms()-15001;else test_result=PGS_VR_REJECTED;
         poll(p);cleared(timeout?0:1,1,2);assert(!paused);
     }
     {
@@ -251,19 +251,19 @@ int main() {
     {
         setup(2);clear();next_poll=clock_ms()+60000;
         unsigned allocations=test_allocations,samples=test_samples;
-        for(int i=0;i<100;++i)pgr_buddy_emotion_tick(owner,nullptr);
+        for(int i=0;i<100;++i)pgs_buddy_emotion_tick(owner,nullptr);
         assert(test_allocations==allocations&&test_roots.empty()&&test_samples>samples&&!paused);
         assert(resolution_scope==nullptr);
     }
     // Map visibility never cancels any of the six phases; loss of host/item
     // readiness does, even if the idle deadline is far in the future.
     for(int phase:{1,2,3,4,5,6}){
-        setup(phase);test_result=PGR_VR_PENDING;test_map=false;
+        setup(phase);test_result=PGS_VR_PENDING;test_map=false;
         poll(permission());assert(!pending.canceled&&pending.phase==phase);
         next_poll=clock_ms()+60000;test_live=false;
-        pgr_buddy_emotion_tick(owner,nullptr);
+        pgs_buddy_emotion_tick(owner,nullptr);
         assert(pending.canceled&&test_polls==2);
-        test_result=PGR_VR_DONE;pgr_buddy_emotion_tick(owner,nullptr);
+        test_result=PGS_VR_DONE;pgs_buddy_emotion_tick(owner,nullptr);
         cleared(3,0,3);assert(!paused&&resolution_scope==nullptr);
     }
     // Evaluation-local roots are released and scope restored, including unwind.

@@ -13,29 +13,29 @@
 #endif
 
 // Built -fno-exceptions on both the ARM64 target ABI and the host x86 test ABI.
-static_assert(sizeof(PgrArThrowConfig) == 112, "PgrArThrowConfig must be 112 bytes");
-static_assert(sizeof(PgrArThrowSample) == 16,  "PgrArThrowSample must be 16 bytes");
-static_assert(sizeof(PgrArThrowApi)    == 32,  "PgrArThrowApi must be 32 bytes");
-static_assert(sizeof(PgrThrowValue)    == 12,  "PokeballThrow by-value must be 12 bytes");
-static_assert(offsetof(PgrArThrowConfig, capture_code)        == 8,   "layout: capture_code");
-static_assert(offsetof(PgrArThrowConfig, wild_class)          == 16,  "layout: wild_class");
-static_assert(offsetof(PgrArThrowConfig, values_class)        == 24,  "layout: values_class");
-static_assert(offsetof(PgrArThrowConfig, object_get_class)    == 32,  "layout: object_get_class");
-static_assert(offsetof(PgrArThrowConfig, class_is_assignable) == 40,  "layout: class_is_assignable");
-static_assert(offsetof(PgrArThrowConfig, object_new)          == 48,  "layout: object_new");
-static_assert(offsetof(PgrArThrowConfig, gchandle_new)        == 56,  "layout: gchandle_new");
-static_assert(offsetof(PgrArThrowConfig, gchandle_get_target) == 64,  "layout: gchandle_get_target");
-static_assert(offsetof(PgrArThrowConfig, gchandle_free)       == 72,  "layout: gchandle_free");
-static_assert(offsetof(PgrArThrowConfig, field_set_value)     == 80,  "layout: field_set_value");
-static_assert(offsetof(PgrArThrowConfig, field_proximity)     == 88,  "layout: field_proximity");
-static_assert(offsetof(PgrArThrowConfig, field_awareness)     == 96,  "layout: field_awareness");
-static_assert(offsetof(PgrArThrowConfig, field_frightened)    == 104, "layout: field_frightened");
+static_assert(sizeof(PgsArThrowConfig) == 112, "PgsArThrowConfig must be 112 bytes");
+static_assert(sizeof(PgsArThrowSample) == 16,  "PgsArThrowSample must be 16 bytes");
+static_assert(sizeof(PgsArThrowApi)    == 32,  "PgsArThrowApi must be 32 bytes");
+static_assert(sizeof(PgsThrowValue)    == 12,  "PokeballThrow by-value must be 12 bytes");
+static_assert(offsetof(PgsArThrowConfig, capture_code)        == 8,   "layout: capture_code");
+static_assert(offsetof(PgsArThrowConfig, wild_class)          == 16,  "layout: wild_class");
+static_assert(offsetof(PgsArThrowConfig, values_class)        == 24,  "layout: values_class");
+static_assert(offsetof(PgsArThrowConfig, object_get_class)    == 32,  "layout: object_get_class");
+static_assert(offsetof(PgsArThrowConfig, class_is_assignable) == 40,  "layout: class_is_assignable");
+static_assert(offsetof(PgsArThrowConfig, object_new)          == 48,  "layout: object_new");
+static_assert(offsetof(PgsArThrowConfig, gchandle_new)        == 56,  "layout: gchandle_new");
+static_assert(offsetof(PgsArThrowConfig, gchandle_get_target) == 64,  "layout: gchandle_get_target");
+static_assert(offsetof(PgsArThrowConfig, gchandle_free)       == 72,  "layout: gchandle_free");
+static_assert(offsetof(PgsArThrowConfig, field_set_value)     == 80,  "layout: field_set_value");
+static_assert(offsetof(PgsArThrowConfig, field_proximity)     == 88,  "layout: field_proximity");
+static_assert(offsetof(PgsArThrowConfig, field_awareness)     == 96,  "layout: field_awareness");
+static_assert(offsetof(PgsArThrowConfig, field_frightened)    == 104, "layout: field_frightened");
 
 namespace {
 
 // Validated game ABI: TryCapture returns a managed IPromise pointer and takes the
 // instance, the 12-byte PokeballThrow by-value, the AR values proto and the MethodInfo*.
-typedef void *(*ArCaptureFn)(void *self, PgrThrowValue thr, void *values, void *method);
+typedef void *(*ArCaptureFn)(void *self, PgsThrowValue thr, void *values, void *method);
 
 typedef void *(*Il2cppObjectGetClass)(void *obj);
 typedef int    (*Il2cppClassIsAssignable)(void *klass, void *oklass);
@@ -46,7 +46,7 @@ typedef void   (*Il2cppGchandleFree)(void *handle);
 typedef void   (*Il2cppFieldSetValue)(void *obj, void *field, void *value);
 
 std::mutex        g_mutex;             // publication mutex: install + original handoff
-PgrArThrowConfig  g_config{};          // stable after a successful install
+PgsArThrowConfig  g_config{};          // stable after a successful install
 bool              g_installed = false; // process-lifetime: never unhooked
 
 ArCaptureFn        g_original = nullptr;
@@ -63,7 +63,7 @@ std::atomic<uint64_t> g_tid{0};             // proven Unity thread id
 // low-awareness thresholds once those are read.
 std::atomic<float>    g_proximity{0.25f};
 std::atomic<float>    g_awareness{0.05f};
-// GC handle of the last AR+ throw's catch promise, taken by pgr_ar_throw_take_promise.
+// GC handle of the last AR+ throw's catch promise, taken by pgs_ar_throw_take_promise.
 // Kept only once a consumer has asked for one (the first take), so nothing is left rooted otherwise.
 std::atomic<void *>   g_last_promise{nullptr};
 std::atomic<bool>     g_keep_promise{false};
@@ -99,7 +99,7 @@ void gate_close() {
     g_tid.store(0, std::memory_order_relaxed);
 }
 
-void *ar_capture_replacement(void *self, PgrThrowValue thr, void *values, void *method) {
+void *ar_capture_replacement(void *self, PgsThrowValue thr, void *values, void *method) {
     ArCaptureFn orig = g_original_ready.load(std::memory_order_acquire) ? g_original : nullptr;
     if (!orig) {
         std::lock_guard<std::mutex> lock(g_mutex);
@@ -168,7 +168,7 @@ void *ar_capture_replacement(void *self, PgrThrowValue thr, void *values, void *
 
     // Close and calm. Zero would be the protobuf default, which is never sent, so the server
     // would see no AR+ values at all; these are inside the game's own close-proximity and
-    // low-awareness thresholds (see pgr_ar_throw_set_values).
+    // low-awareness thresholds (see pgs_ar_throw_set_values).
     float   proximity = g_proximity.load(std::memory_order_relaxed);
     float   awareness = g_awareness.load(std::memory_order_relaxed);
     uint8_t clear = 0;
@@ -190,9 +190,9 @@ void *ar_capture_replacement(void *self, PgrThrowValue thr, void *values, void *
     return result;
 }
 
-int ar_install(const PgrArThrowConfig *config) {
+int ar_install(const PgsArThrowConfig *config) {
     if (config == nullptr) return 1;
-    if (config->version != 1 || config->size != sizeof(PgrArThrowConfig)) return 2;
+    if (config->version != 1 || config->size != sizeof(PgsArThrowConfig)) return 2;
 
     const void *const *ptrs = reinterpret_cast<const void *const *>(&config->capture_code);
     for (int i = 0; i < 13; ++i) {
@@ -203,7 +203,7 @@ int ar_install(const PgrArThrowConfig *config) {
     if (g_installed) {
         // Identical config repeats are idempotent; a different config is refused. There
         // is no fallback engine once a patch has been attempted.
-        if (memcmp(&g_config, config, sizeof(PgrArThrowConfig)) == 0) return 0;
+        if (memcmp(&g_config, config, sizeof(PgsArThrowConfig)) == 0) return 0;
         return 4;
     }
 
@@ -247,15 +247,15 @@ int ar_update(int enabled, int allowed, uint64_t lease_ms, uint64_t unity_tid) {
     return 0;
 }
 
-int ar_sample(PgrArThrowSample *out) {
+int ar_sample(PgsArThrowSample *out) {
     if (out == nullptr) return 1;
     out->applied = g_applied.load(std::memory_order_relaxed);
     out->errors  = g_errors.load(std::memory_order_relaxed);
     return 0;
 }
 
-const PgrArThrowApi g_api = {
-    1, sizeof(PgrArThrowApi),
+const PgsArThrowApi g_api = {
+    1, sizeof(PgsArThrowApi),
     &ar_install,
     &ar_update,
     &ar_sample,
@@ -268,12 +268,12 @@ const void *pgs_ar_throw_api(uint32_t version) {
     return &g_api;
 }
 
-void *pgr_ar_throw_take_promise() {
+void *pgs_ar_throw_take_promise() {
     g_keep_promise.store(true, std::memory_order_relaxed);
     return g_last_promise.exchange(nullptr, std::memory_order_acq_rel);
 }
 
-void pgr_ar_throw_set_values(float proximity, float awareness) {
+void pgs_ar_throw_set_values(float proximity, float awareness) {
     if (!(proximity > 0.0f && proximity < 100.0f) || !(awareness > 0.0f && awareness < 100.0f)) return;
     g_proximity.store(proximity, std::memory_order_relaxed);
     g_awareness.store(awareness, std::memory_order_relaxed);

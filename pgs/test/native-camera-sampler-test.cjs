@@ -1,5 +1,5 @@
 // VM adapter test for runtime/native-camera-sampler.js (feature 41): verifies the 216-byte config packing
-// (8-byte header + 25 pointers in exact PgrCameraSamplerConfig order + expected_layer(13)/reserved0(0)), the
+// (8-byte header + 25 pointers in exact PgsCameraSamplerConfig order + expected_layer(13)/reserved0(0)), the
 // 40-byte request packing (version/size, tid, remaining_ms clamp, raw rig, raw camera), the 72-byte output
 // decoding into the legacy reading shapes (success {x,y,z,yawDegrees,cameraId,timeMs,tid,mapVisible:true,
 // cameraCullingMask,worldMapLayer,mapGate}; unavailable {unavailable:true,reason,timeMs,tid,mapVisible:false}

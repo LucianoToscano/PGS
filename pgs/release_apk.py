@@ -103,7 +103,7 @@ def release_identity(ledger):
     ledger = Path(ledger)
     if not ledger.is_file():
         raise RuntimeError('PGS version ledger is missing; refusing legacy upstream APK naming')
-    if not os.environ.get('PGRAZOR_KEYSTORE'):
+    if not build.signing_setting('KEYSTORE'):
         raise RuntimeError('Existing PGS release keystore is required; development signing is forbidden')
     from pgs_update import MAX_VERSION_CODE
     previous_code = int(ledger.read_text(encoding='utf-8').strip())

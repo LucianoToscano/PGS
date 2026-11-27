@@ -36,7 +36,7 @@ PGS `v0.3.8-pgs.3` was built and signed in [Actions #45963966748](https://github
 
 ## Protecting the full-release path
 
-The PGS ledger `PGS_LAST_VERSION_CODE` distinguishes PGS output from a legacy build. `pgs/release_apk.py` requires `PGRAZOR_KEYSTORE` to reference **the existing PGS key**, names its internal output `PGS.apk`, and rejects output unless its certificate fingerprint matches the permanent PGS certificate. The build is blocked if the ledger is missing.
+The PGS ledger `PGS_LAST_VERSION_CODE` distinguishes PGS output from a legacy build. `pgs/release_apk.py` requires `PGS_KEYSTORE` to reference **the existing PGS key**, names its internal output `PGS.apk`, and rejects output unless its certificate fingerprint matches the permanent PGS certificate. The build is blocked if the ledger is missing.
 
 The inherited `Android release (non-root and rooted)` workflow is **explicitly disabled for PGS** because it still follows an old distribution path and must not publish packages with mixed signing configuration. The current candidate uses `.github/workflows/pgs-v0.0.2-release.yml`. This compiles the current PGS Java controls and preserves the other contents of the previous complete APK, verified by hashing every archive member. The disabled legacy workflow does not modify existing signed builds.
 
@@ -67,3 +67,7 @@ The `v0.0.2` rebuild uses only the fully signed `v0.0.1` APK with verified sourc
 The dedicated `.github/workflows/pgs-v0.0.2-release.yml` creates `PGS v0.0.2.apk` and verification receipts, enforcing the permanent PGS signer, `com.nianticlabs.pokemongo`, and base game `0.439.0`. The old `v0.0.1` workflow is archived and cannot automatically rebuild the old version. The `v0.0.2` release is created **as a draft only** until real-device verification.
 
 The original in-game icon and joystick are untouched. The previous project's Ko-fi sponsorship link was removed without substituting an unauthorized account.
+
+## Current full-candidate path
+
+The former upstream release workflow is an inert, read-only refusal; its original implementation remains in Git history. The controls-only v0.0.2 workflow is historical and deliberately refuses migrated Java namespaces. Use `.github/workflows/pgs-v0.0.3-candidate.yml` for an explicitly authorized full candidate validation. It uploads receipts, not an APK or a public release. The bundle verifier now expects PGS artifact names by default; archived bundles require explicit `--legacy-names` and mixed sets are rejected. The installed package, signer and version ledger are unchanged.

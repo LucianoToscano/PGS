@@ -22,7 +22,7 @@ namespace {
 struct Failure {const char *where;};
 void require(bool ok,const char *where){if(!ok)throw Failure{where};}
 template<class F>F fn(void *p){require(p,"missing runtime export");return reinterpret_cast<F>(p);}
-PgrBootBinding boot{};
+PgsBootBinding boot{};
 bool ready=false,faulted=false,busy=false,announced=false,announced_owned=false;
 void *instantiate=nullptr,*get_component=nullptr,*get_components=nullptr,*find_child=nullptr,*new_game_object=nullptr,*set_parent=nullptr;
 const char *kName="PGSIvLine";
@@ -38,9 +38,9 @@ template<class T>T unbox(void *o){require(o,"boxed value");T v{};auto p=fn<void*
 void *managed_string(const std::string &s){void *v=fn<void*(*)(const char*)>(boot.runtime.string_new)(s.c_str());require(v,"string");return v;}
 std::string class_name(void *o){return fn<const char*(*)(void*)>(exp("class_get_name"))(klass(o));}
 void *class_of(const char *ns,const char *name){
- const auto *api=static_cast<const PgrMetaApi*>(pgs_runtime_metadata_api(1));require(api,"metadata API");
- PgrMetaClassQuery q{};q.version=1;q.size=sizeof(q);q.name_space=ns;q.name=name;q.canonical_match=PGR_MD_MATCH_EXACT;
- PgrMetaClassResult r{};require(api->resolve_class(&q,&r)==0,name);return const_cast<void*>(r.klass);
+ const auto *api=static_cast<const PgsMetaApi*>(pgs_runtime_metadata_api(1));require(api,"metadata API");
+ PgsMetaClassQuery q{};q.version=1;q.size=sizeof(q);q.name_space=ns;q.name=name;q.canonical_match=PGS_MD_MATCH_EXACT;
+ PgsMetaClassResult r{};require(api->resolve_class(&q,&r)==0,name);return const_cast<void*>(r.klass);
 }
 // The non-generic overload of ns.owner.name whose parameters are exactly p0[, p1[, p2]].
 void *overload(const char *ns,const char *owner,const char *name,const char *p0,const char *p1=nullptr,const char *p2=nullptr){
@@ -61,16 +61,16 @@ void set_vector(void *o,const char *setter,float x,float y){float v[2]={x,y};voi
 void set_bool(void *o,const char *setter,bool value){void *a[]={&value};call(o,setter,1,a);}
 void set_color(void *graphic,float r,float g,float b,float a){float c[4]={r,g,b,a};void *args[]={c};call(graphic,"set_color",1,args);}
 
-const PgrRuntimeTransportApi *transport(){return static_cast<const PgrRuntimeTransportApi*>(pgs_runtime_transport_api(1));}
+const PgsRuntimeTransportApi *transport(){return static_cast<const PgsRuntimeTransportApi*>(pgs_runtime_transport_api(1));}
 void status(const char *phase,const std::string &message){
  auto tr=transport();if(!tr)return;
  const std::string json=std::string("{\"phase\":\"")+phase+"\",\"message\":\""+message+"\"}";
- PgrRuntimeTransportString strings[]={{"iv-panel",8},{json.c_str(),uint32_t(json.size())}};tr->emit(19,nullptr,0,strings,2);
+ PgsRuntimeTransportString strings[]={{"iv-panel",8},{json.c_str(),uint32_t(json.size())}};tr->emit(19,nullptr,0,strings,2);
 }
 
 void init(){
  if(ready)return;
- auto api=static_cast<const PgrBootApi*>(pgs_runtime_bootstrap_api(1));boot.version=1;boot.size=sizeof(boot);
+ auto api=static_cast<const PgsBootApi*>(pgs_runtime_bootstrap_api(1));boot.version=1;boot.size=sizeof(boot);
  require(api&&api->snapshot(&boot)==0&&boot.handle,"Runtime unavailable");
  instantiate=overload("UnityEngine","Object","Instantiate","UnityEngine.Object","UnityEngine.Transform");
  get_component=overload("UnityEngine","Component","GetComponent","System.Type");
@@ -96,7 +96,7 @@ std::string tier_color(int sum){
 // The format chosen for this screen from "S2|<storage>|<encounter>|<details>": 1 level and
 // attack/defense/stamina, 2 level and percent, 3 all three. Level and percent when unreadable.
 int format(bool owned){
- auto tr=transport();char s[16];uint32_t n=0;PgrRuntimeTransportSample a{};
+ auto tr=transport();char s[16];uint32_t n=0;PgsRuntimeTransportSample a{};
  if(!tr||tr->sample(&a)||!a.snapshot_fresh||a.fault)return 2;
  if(tr->get_string(14,s,sizeof(s),&n)||n!=8||std::memcmp(s,"S2|",3)!=0)return 2;
  const char c=s[owned?7:5];return c>='1'&&c<='4'?c-'0':2;
@@ -106,7 +106,7 @@ int format(bool owned){
 // the stats when they stand alone, takes the tier color.
 std::string line(int32_t level_half,int atk,int def,int sta,int fmt){
  std::string lv="--";
- if(level_half!=PGR_IV_LEVEL_UNKNOWN&&level_half>0)lv=std::to_string(level_half/2)+(level_half%2?".5":"");
+ if(level_half!=PGS_IV_LEVEL_UNKNOWN&&level_half>0)lv=std::to_string(level_half/2)+(level_half%2?".5":"");
  const bool valid=atk>=0&&atk<=15&&def>=0&&def<=15&&sta>=0&&sta<=15;
  std::string iv="IV --";
  if(valid){
@@ -173,9 +173,9 @@ void *sprite(int crest){
   void *texture_class=class_of("UnityEngine","Texture2D");
   void *texture=fn<void*(*)(void*)>(boot.runtime.object_new)(texture_class);require(texture,"PvP texture");
   int two=2;void *size[]={&two,&two};invoke(overload("UnityEngine","Texture2D",".ctor","System.Int32","System.Int32"),texture,size);
-  const unsigned length=pgr_pvp_icons::size[crest];
+  const unsigned length=pgs_pvp_icons::size[crest];
   void *bytes=fn<void*(*)(void*,uintptr_t)>(boot.runtime.array_new)(class_of("System","Byte"),length);require(bytes,"PvP crest bytes");
-  std::memcpy(static_cast<char*>(bytes)+32,pgr_pvp_icons::png[crest],length);
+  std::memcpy(static_cast<char*>(bytes)+32,pgs_pvp_icons::png[crest],length);
   void *load[]={texture,bytes};
   require(unbox<bool>(invoke(overload("UnityEngine","ImageConversion","LoadImage","UnityEngine.Texture2D","System.Byte[]"),nullptr,load)),"PvP crest decode");
   const float w=float(unbox<int>(call(texture,"get_width"))),h=float(unbox<int>(call(texture,"get_height")));
@@ -353,7 +353,7 @@ void draw_in_front(const Line &l,void *anchor){
  }
 }
 
-bool show(bool owned,void *cp_text,int32_t level_half,int atk,int def,int sta,const PgrPvpBest *pvp){
+bool show(bool owned,void *cp_text,int32_t level_half,int atk,int def,int sta,const PgsPvpBest *pvp){
  if(faulted||busy||!cp_text)return false;
  struct Guard{Guard(){busy=true;}~Guard(){busy=false;}}guard;
  try{
@@ -404,13 +404,13 @@ bool available(){
  catch(...){faulted=true;status("error","IV panel unavailable: native failure");}
  return false;
 }
-const PgrIvPanelHooks kHooks={&available,&show,&hide};
-__attribute__((constructor)) void register_panel(){pgr_iv_display_set_panel_hooks(&kHooks);}
+const PgsIvPanelHooks kHooks={&available,&show,&hide};
+__attribute__((constructor)) void register_panel(){pgs_iv_display_set_panel_hooks(&kHooks);}
 }  // namespace
 
 // The Great (0), Ultra (1) or Master (2) League crest sprite for other displays (the storage list), or
 // null when it cannot be made. Unity owner only.
-extern "C" void *pgr_pvp_crest(int crest){
+extern "C" void *pgs_pvp_crest(int crest){
  if(faulted)return nullptr;
  try{init();return sprite(crest);}
  catch(const Failure &f){status("error",std::string("PvP crest unavailable: ")+f.where);}

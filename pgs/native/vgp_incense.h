@@ -4,9 +4,9 @@
 
 // Map spawns other than wild ones that VGP and VGP+ catch: incense (Niantic.Holoholo.Map.IncenseMapPokemon)
 // and every other MapPokemon kind that shares the wild calls, such as lure (TroyDiskMapPlacePokemon)
-// spawns. pgr_vgp_incense_bind() validates each kind on the Unity owner and publishes it once. Until then,
+// spawns. pgs_vgp_incense_bind() validates each kind on the Unity owner and publishes it once. Until then,
 // and in the module fixtures, every VGP module stays wild-only.
-struct PgrVgpIncense {
+struct PgsVgpIncense {
   void *klass;           // the spawn class (exact)
   void *base;            // MapPokemon, parent of every spawn class (scene query type)
   void *m_id;            // get_EncounterId() -> System.UInt64
@@ -20,25 +20,25 @@ struct PgrVgpIncense {
   void *m_destroy;       // MapPokemon.Destroy() -> System.Void; null leaves a caught spawn standing
 };
 
-constexpr int kPgrVgpKinds = 8;
-inline std::atomic<const PgrVgpIncense *> g_pgr_vgp_kinds[kPgrVgpKinds]{};
+constexpr int kPgsVgpKinds = 8;
+inline std::atomic<const PgsVgpIncense *> g_pgs_vgp_kinds[kPgsVgpKinds]{};
 // WildMapPokemon's Destroy(): a caught wild spawn also stays standing for a while unless removed.
-inline std::atomic<void *> g_pgr_vgp_wild_destroy{nullptr};
+inline std::atomic<void *> g_pgs_vgp_wild_destroy{nullptr};
 // Set once any kind is bound; its base drives the MapPokemon scene query.
-inline std::atomic<const PgrVgpIncense *> g_pgr_vgp_incense{nullptr};
-inline const PgrVgpIncense *pgr_vgp_incense() { return g_pgr_vgp_incense.load(std::memory_order_acquire); }
+inline std::atomic<const PgsVgpIncense *> g_pgs_vgp_incense{nullptr};
+inline const PgsVgpIncense *pgs_vgp_incense() { return g_pgs_vgp_incense.load(std::memory_order_acquire); }
 // The bound kind whose class satisfies `is`, or null (wild, a stop, or an unsupported kind).
-template <class Is> const PgrVgpIncense *pgr_vgp_kind_where(Is is) {
-  for (auto &slot : g_pgr_vgp_kinds) {
-    const PgrVgpIncense *k = slot.load(std::memory_order_acquire);
+template <class Is> const PgsVgpIncense *pgs_vgp_kind_where(Is is) {
+  for (auto &slot : g_pgs_vgp_kinds) {
+    const PgsVgpIncense *k = slot.load(std::memory_order_acquire);
     if (k && is(k->klass)) return k;
   }
   return nullptr;
 }
-inline const PgrVgpIncense *pgr_vgp_kind(const void *klass) {
-  return klass ? pgr_vgp_kind_where([klass](void *k) { return k == klass; }) : nullptr;
+inline const PgsVgpIncense *pgs_vgp_kind(const void *klass) {
+  return klass ? pgs_vgp_kind_where([klass](void *k) { return k == klass; }) : nullptr;
 }
-inline bool pgr_vgp_incense_class(const void *klass) { return pgr_vgp_kind(klass) != nullptr; }
+inline bool pgs_vgp_incense_class(const void *klass) { return pgs_vgp_kind(klass) != nullptr; }
 
 // Unity owner only. 0 bound, 1 not ready yet (retry later), negative failed (stays wild-only).
-int pgr_vgp_incense_bind(uint64_t owner);
+int pgs_vgp_incense_bind(uint64_t owner);

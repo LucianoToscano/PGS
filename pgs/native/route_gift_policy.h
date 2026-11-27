@@ -6,7 +6,7 @@
 // shows; this decides which single button, if any, to press this tick. It acts only inside an NPC
 // encounter whose steps include a gift exchange and no Pokemon trade, presses each one-time button at
 // most once per encounter, and gives up (leaving the screen to the player) when a press has no effect.
-namespace pgr_route_gift {
+namespace pgs_route_gift {
 
 inline bool parse_config(const char *s, uint32_t n, bool &enabled) {
     enabled = false;
@@ -81,4 +81,4 @@ inline Action decide(State &st, bool enabled, const bool open[SC_COUNT], int64_t
     return ACT_NONE;
 }
 
-}  // namespace pgr_route_gift
+}  // namespace pgs_route_gift

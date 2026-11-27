@@ -34,7 +34,7 @@ A versão v0.3.8-pgs.3 foi gerada e assinada em [GitHub Actions #45963966748](ht
 
 ## Proteção do caminho de release completo
 
-O código `pgs/release_apk.py` agora distingue o PGS pelo seu ledger `PGS_LAST_VERSION_CODE`: exige a variável `PGRAZOR_KEYSTORE` apontando para a chave existente, gera `PGS.apk` e rejeita o binário se o SHA-256 do certificado não for o definido para PGS. Se o ledger PGS não existir, o processo é **bloqueado**; não será gerado um instalador com identificação externa com a assinatura PGS.
+O código `pgs/release_apk.py` agora distingue o PGS pelo seu ledger `PGS_LAST_VERSION_CODE`: exige a variável `PGS_KEYSTORE` apontando para a chave existente, gera `PGS.apk` e rejeita o binário se o SHA-256 do certificado não for o definido para PGS. Se o ledger PGS não existir, o processo é **bloqueado**; não será gerado um instalador com identificação externa com a assinatura PGS.
 
 O workflow herdado `Android release (non-root and rooted)` está **explicitamente bloqueado no repositório PGS**, porque ainda usa o mecanismo de distribuição legado e não deve publicar pacotes com nomes ou segredos de assinatura misturados. A candidata atual PGS v0.0.2 usa o workflow próprio `.github/workflows/pgs-v0.0.2-release.yml`, validado para gerar APK completo com os controles Java recompilados, mantendo os demais arquivos do APK anterior por hash. O bloqueio não modifica nem elimina o instalador v0.3.8-pgs.3 já assinado.
 
@@ -65,3 +65,7 @@ A reconstrução da `v0.0.2` usa **somente** o APK completo e assinado `v0.0.1`,
 O novo workflow `.github/workflows/pgs-v0.0.2-release.yml` produz `PGS v0.0.2.apk` e os recibos verificáveis, exigindo o certificado PGS permanente, package `com.nianticlabs.pokemongo` e jogo-base `0.439.0`. O fluxo antigo de `v0.0.1` fica arquivado e não pode recompilar automaticamente a versão antiga. O GitHub Release de `v0.0.2` é criado **somente como rascunho** até testes em aparelho real.
 
 O símbolo interno e o joystick são mantidos exatamente como na base anterior. A conta Ko-fi do projeto original foi removida das opções de patrocínio PGS, sem configurar uma conta substituta não autorizada.
+
+## Validação atual do candidato completo
+
+O workflow de release upstream antigo tornou-se um bloqueio explícito, somente leitura; a implementação original permanece no histórico Git. O workflow v0.0.2 que recompilava somente os controles é histórico e recusa deliberadamente o namespace Java migrado. Use `.github/workflows/pgs-v0.0.3-candidate.yml` para validar um candidato completo com entrada expressamente autorizada. Ele envia recibos, não um APK ou release público. O verificador de conjuntos de artefatos passa a exigir nomes PGS por padrão; conjuntos arquivados exigem `--legacy-names` e conjuntos misturados são rejeitados. Package instalado, certificado e ledger de versões permanecem inalterados.

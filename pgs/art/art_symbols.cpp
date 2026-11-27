@@ -25,8 +25,8 @@ bool name_at(const unsigned char *data,size_t size,uint64_t offset,std::string_v
  out=std::string_view(start,static_cast<const char *>(end)-start);return true;
 }
 }
-int PgrArtSymbols::visit(dl_phdr_info *info,size_t,void *context){
- auto &self=*static_cast<PgrArtSymbols *>(context);
+int PgsArtSymbols::visit(dl_phdr_info *info,size_t,void *context){
+ auto &self=*static_cast<PgsArtSymbols *>(context);
  if(!info->dlpi_name)return 0;
  const std::string_view path(info->dlpi_name);
  if(path.size()<10||path.substr(path.size()-10)!="/libart.so")return 0;
@@ -40,7 +40,7 @@ int PgrArtSymbols::visit(dl_phdr_info *info,size_t,void *context){
  }
  return 1;
 }
-bool PgrArtSymbols::load(){
+bool PgsArtSymbols::load(){
  symbols_.clear();ranges_.clear();execute_only_.clear();path_.clear();base_=0;
  dl_iterate_phdr(visit,this);if(path_.empty()||ranges_.empty())return false;
  const int fd=open(path_.c_str(),O_RDONLY|O_CLOEXEC);if(fd<0)return false;
@@ -51,7 +51,7 @@ bool PgrArtSymbols::load(){
  try{okay=parse(static_cast<const unsigned char *>(mapping),size,false);}catch(...){okay=false;}
  munmap(mapping,size);if(!okay)symbols_.clear();return okay&&!symbols_.empty();
 }
-bool PgrArtSymbols::parse(const unsigned char *data,size_t size,bool mini){
+bool PgsArtSymbols::parse(const unsigned char *data,size_t size,bool mini){
  Elf64_Ehdr eh{};if(!copy(data,size,0,eh)||std::memcmp(eh.e_ident,ELFMAG,SELFMAG)||
  eh.e_ident[EI_CLASS]!=ELFCLASS64||eh.e_ident[EI_DATA]!=ELFDATA2LSB||eh.e_shentsize!=sizeof(Elf64_Shdr)||
  !eh.e_shnum||eh.e_shnum>8192||eh.e_shstrndx>=eh.e_shnum||
@@ -104,11 +104,11 @@ bool PgrArtSymbols::parse(const unsigned char *data,size_t size,bool mini){
  }
  return true;
 }
-bool PgrArtSymbols::execute_only(uintptr_t address)const{
+bool PgsArtSymbols::execute_only(uintptr_t address)const{
  for(const auto &r:execute_only_)if(address>=r.begin&&address<r.end)return true;
  return false;
 }
-void *PgrArtSymbols::find(std::string_view name,bool prefix)const{
+void *PgsArtSymbols::find(std::string_view name,bool prefix)const{
  if(name.empty()||name.size()>4095)return nullptr;
  for(const auto &symbol:symbols_)
   if(prefix?std::string_view(symbol.name).substr(0,name.size())==name:symbol.name==name)

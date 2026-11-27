@@ -77,65 +77,65 @@ extern "C" {
 
 static_assert(sizeof(void *) == 8, "IvDisplay native ABI requires LP64");
 
-enum PgrIvDisplayFeatureInfo {
-  PGR_IV_FEATURE_ID = 15,
-  PGR_IV_API_VERSION = 1,
-  PGR_IV_CONFIG_VERSION = 1,
-  PGR_IV_SAMPLE_VERSION = 1,
-  PGR_IV_MAX_LEASE_MS = 2500,
-  PGR_IV_MAX_OWNED = 8,     // bounded inventory-panel overlays; oldest evicted first
-  PGR_IV_LABEL_CAP = 256,   // UTF-8 label buffer (telemetry + stored snapshot/overlay)
-  PGR_IV_REFRESH_MS = 250,  // ivTick throttle, mirrors the JS 250 ms cadence
-  PGR_IV_LEVEL_UNKNOWN = -0x7fffffff  // sentinel for '--' level (adapter emits null)
+enum PgsIvDisplayFeatureInfo {
+  PGS_IV_FEATURE_ID = 15,
+  PGS_IV_API_VERSION = 1,
+  PGS_IV_CONFIG_VERSION = 1,
+  PGS_IV_SAMPLE_VERSION = 1,
+  PGS_IV_MAX_LEASE_MS = 2500,
+  PGS_IV_MAX_OWNED = 8,     // bounded inventory-panel overlays; oldest evicted first
+  PGS_IV_LABEL_CAP = 256,   // UTF-8 label buffer (telemetry + stored snapshot/overlay)
+  PGS_IV_REFRESH_MS = 250,  // ivTick throttle, mirrors the JS 250 ms cadence
+  PGS_IV_LEVEL_UNKNOWN = -0x7fffffff  // sentinel for '--' level (adapter emits null)
 };
 
 // install()/update()/tick()/stop()/sample()/disable() status codes.
-enum PgrIvDisplayStatus {
-  PGR_IV_OK = 0,
-  PGR_IV_ERR_INVALID_ARG = -1,
-  PGR_IV_ERR_BAD_VERSION = -2,
-  PGR_IV_ERR_BAD_SIZE = -3,
-  PGR_IV_ERR_MISSING_PTR = -4,
-  PGR_IV_ERR_DUPLICATE_TARGET = -5,
-  PGR_IV_ERR_NOT_INSTALLED = -6,
-  PGR_IV_ERR_HOOK_SETUP = -7,
-  PGR_IV_ERR_HOOK_OWNED = -8,
-  PGR_IV_ERR_RECONFIG_MISMATCH = -9,
-  PGR_IV_ERR_CLOCK_FAILURE = -10
+enum PgsIvDisplayStatus {
+  PGS_IV_OK = 0,
+  PGS_IV_ERR_INVALID_ARG = -1,
+  PGS_IV_ERR_BAD_VERSION = -2,
+  PGS_IV_ERR_BAD_SIZE = -3,
+  PGS_IV_ERR_MISSING_PTR = -4,
+  PGS_IV_ERR_DUPLICATE_TARGET = -5,
+  PGS_IV_ERR_NOT_INSTALLED = -6,
+  PGS_IV_ERR_HOOK_SETUP = -7,
+  PGS_IV_ERR_HOOK_OWNED = -8,
+  PGS_IV_ERR_RECONFIG_MISMATCH = -9,
+  PGS_IV_ERR_CLOCK_FAILURE = -10
 };
 
 // Per-channel notice kind, surfaced through the sample so the adapter can re-emit the
 // exact JS event. LABEL -> iv-label / iv-owned-label; PENDING -> iv-*-pending; UNAVAIL ->
 // iv-*-unavailable (reason code gives the detail).
-enum PgrIvNotice {
-  PGR_IV_NOTICE_NONE = 0,
-  PGR_IV_NOTICE_LABEL = 1,
-  PGR_IV_NOTICE_PENDING = 2,
-  PGR_IV_NOTICE_UNAVAILABLE = 3
+enum PgsIvNotice {
+  PGS_IV_NOTICE_NONE = 0,
+  PGS_IV_NOTICE_LABEL = 1,
+  PGS_IV_NOTICE_PENDING = 2,
+  PGS_IV_NOTICE_UNAVAILABLE = 3
 };
 
 // Reason codes for PENDING/UNAVAILABLE notices and outline failures.
-enum PgrIvReason {
-  PGR_IV_REASON_NONE = 0,
-  PGR_IV_REASON_ENCOUNTER_ID_MISMATCH = 1,  // iv-pending encounter-id-mismatch
-  PGR_IV_REASON_STATS_NOT_POPULATED = 2,    // iv-(owned-)pending stats-not-populated
-  PGR_IV_REASON_POKEMON_CLASS = 3,
-  PGR_IV_REASON_TEXT_CLASS = 4,
-  PGR_IV_REASON_RESPONSE_CLASS = 5,
-  PGR_IV_REASON_STRING = 6,
-  PGR_IV_REASON_INVOKE_EXCEPTION = 7,
-  PGR_IV_REASON_GCHANDLE = 8,
-  PGR_IV_REASON_BOX_MISMATCH = 9,
-  PGR_IV_REASON_CLOCK = 10,
-  PGR_IV_REASON_OWNED_IDENTITY = 11,
-  PGR_IV_REASON_OUTLINE_UNAVAILABLE = 12,  // outline snapshot/apply failed (local only)
-  PGR_IV_REASON_RENDER = 13
+enum PgsIvReason {
+  PGS_IV_REASON_NONE = 0,
+  PGS_IV_REASON_ENCOUNTER_ID_MISMATCH = 1,  // iv-pending encounter-id-mismatch
+  PGS_IV_REASON_STATS_NOT_POPULATED = 2,    // iv-(owned-)pending stats-not-populated
+  PGS_IV_REASON_POKEMON_CLASS = 3,
+  PGS_IV_REASON_TEXT_CLASS = 4,
+  PGS_IV_REASON_RESPONSE_CLASS = 5,
+  PGS_IV_REASON_STRING = 6,
+  PGS_IV_REASON_INVOKE_EXCEPTION = 7,
+  PGS_IV_REASON_GCHANDLE = 8,
+  PGS_IV_REASON_BOX_MISMATCH = 9,
+  PGS_IV_REASON_CLOCK = 10,
+  PGS_IV_REASON_OWNED_IDENTITY = 11,
+  PGS_IV_REASON_OUTLINE_UNAVAILABLE = 12,  // outline snapshot/apply failed (local only)
+  PGS_IV_REASON_RENDER = 13
 };
 
-// Fault bits in PgrIvDisplaySample.fault.
-enum PgrIvFaultBits {
-  PGR_IV_FAULT_CATCH = 1,
-  PGR_IV_FAULT_OWNED = 2
+// Fault bits in PgsIvDisplaySample.fault.
+enum PgsIvFaultBits {
+  PGS_IV_FAULT_CATCH = 1,
+  PGS_IV_FAULT_OWNED = 2
 };
 
 // Fixed LP64 config: 8-byte header + 77 pointers (616) + two int32 enum literals + two
@@ -146,9 +146,9 @@ enum PgrIvFaultBits {
 // group (class_get_type, type_get_object, the nine m_outline_* methods and the outline/
 // color/vector2 classes) is all-or-nothing: if any is null the outline overlay is simply
 // disabled and the rest of the feature works.
-struct PgrIvDisplayConfig {
-  uint32_t version;  // == PGR_IV_CONFIG_VERSION
-  uint32_t size;     // == sizeof(PgrIvDisplayConfig)
+struct PgsIvDisplayConfig {
+  uint32_t version;  // == PGS_IV_CONFIG_VERSION
+  uint32_t size;     // == sizeof(PgsIvDisplayConfig)
 
   // il2cpp runtime exports (indices 0..12 in the adapter's flat array).
   void *gchandle_new;            // void* (void* obj, int pinned)
@@ -248,15 +248,15 @@ struct PgrIvDisplayConfig {
   uint32_t reserved;                 // must be 0
 };
 
-static_assert(sizeof(PgrIvDisplayConfig) == 640,
-              "PgrIvDisplayConfig must remain 640 bytes on LP64");
+static_assert(sizeof(PgsIvDisplayConfig) == 640,
+              "PgsIvDisplayConfig must remain 640 bytes on LP64");
 
 // Fixed LP64 telemetry snapshot (656 bytes). Pull-only; the native layer never calls JS.
 // The adapter drives events off the serial counters (like buddy_feeding) and reads the
 // two label buffers for the iv-label / iv-owned-label event text.
-struct PgrIvDisplaySample {
-  uint32_t version;            // == PGR_IV_SAMPLE_VERSION
-  uint32_t size;               // == sizeof(PgrIvDisplaySample)
+struct PgsIvDisplaySample {
+  uint32_t version;            // == PGS_IV_SAMPLE_VERSION
+  uint32_t size;               // == sizeof(PgsIvDisplaySample)
   uint64_t catch_serial;       // bumps on each catch notice (label/pending/unavailable)
   uint64_t owned_serial;       // bumps on each owned notice
   uint64_t position_serial;    // bumps on each resolved encounter position
@@ -268,14 +268,14 @@ struct PgrIvDisplaySample {
   uint32_t owned_root_count;   // durable record roots + active frame depth (finish guard)
   uint32_t catch_active;       // 1 while a catch overlay record is present
   uint32_t owned_count;        // current inventory overlay records (0..8)
-  uint32_t fault;              // PgrIvFaultBits
-  uint32_t catch_notice;       // PgrIvNotice for the latest catch notice
-  int32_t catch_level_half;    // level*2, or PGR_IV_LEVEL_UNKNOWN ('--')
+  uint32_t fault;              // PgsIvFaultBits
+  uint32_t catch_notice;       // PgsIvNotice for the latest catch notice
+  int32_t catch_level_half;    // level*2, or PGS_IV_LEVEL_UNKNOWN ('--')
   int32_t catch_attack;        // IV 0..15, or -1 when unknown/invalid
   int32_t catch_defense;
   int32_t catch_stamina;
   int32_t catch_cp;            // CP, or -1 when unknown/invalid
-  uint32_t catch_reason;       // PgrIvReason for pending/unavailable
+  uint32_t catch_reason;       // PgsIvReason for pending/unavailable
   uint32_t owned_notice;
   int32_t owned_level_half;
   int32_t owned_attack;
@@ -283,18 +283,18 @@ struct PgrIvDisplaySample {
   int32_t owned_stamina;
   int32_t owned_cp;
   uint32_t owned_reason;
-  char catch_label[PGR_IV_LABEL_CAP];  // full "<CP> · Lv .. · <color>IV ..%" UTF-8
-  char owned_label[PGR_IV_LABEL_CAP];
+  char catch_label[PGS_IV_LABEL_CAP];  // full "<CP> · Lv .. · <color>IV ..%" UTF-8
+  char owned_label[PGS_IV_LABEL_CAP];
 };
 
-static_assert(sizeof(PgrIvDisplaySample) == 656,
-              "PgrIvDisplaySample must remain 656 bytes on LP64");
+static_assert(sizeof(PgsIvDisplaySample) == 656,
+              "PgsIvDisplaySample must remain 656 bytes on LP64");
 
 // Fixed LP64 table: 8-byte header + 7 function pointers = 64 bytes.
-struct PgrIvDisplayApi {
-  uint32_t version;  // == PGR_IV_API_VERSION
-  uint32_t size;     // == sizeof(PgrIvDisplayApi)
-  int (*install)(const PgrIvDisplayConfig *config);
+struct PgsIvDisplayApi {
+  uint32_t version;  // == PGS_IV_API_VERSION
+  uint32_t size;     // == sizeof(PgsIvDisplayApi)
+  int (*install)(const PgsIvDisplayConfig *config);
   // Arm/clear the independent catch/owned gates and the residual lease. Any thread; a
   // wrong-thread update can only disable, never reassign the owner.
   int (*update)(int catch_enabled, int owned_enabled, uint64_t remaining_lease_ms,
@@ -302,7 +302,7 @@ struct PgrIvDisplayApi {
   // One owner-thread refresh pass (ivTick). stopping != 0 restores and frees every record
   // regardless of the lease. Off the owner thread it is a no-op (never frees).
   int (*tick)(uint64_t proven_tid, int stopping);
-  int (*sample)(PgrIvDisplaySample *out_sample);
+  int (*sample)(PgsIvDisplaySample *out_sample);
   // Clear both gates immediately (any thread). Never frees a record; the next owner-thread
   // tick performs the deferred restore/free.
   int (*disable)(void);
@@ -322,8 +322,8 @@ struct PgrIvDisplayApi {
   int (*end_catch)(uint64_t token, uint64_t proven_tid);
 };
 
-static_assert(sizeof(PgrIvDisplayApi) == 64,
-              "PgrIvDisplayApi must remain a 64-byte version-1 table");
+static_assert(sizeof(PgsIvDisplayApi) == 64,
+              "PgsIvDisplayApi must remain a 64-byte version-1 table");
 
 // Standard feature getter. Returns the static const 64-byte table when `version` == 1,
 // else NULL. The coordinator registers it in query_feature as case 15.
@@ -339,11 +339,11 @@ const void *pgs_iv_display_api(uint32_t version);
 // storage list style) instead of re-texting the label. Both calls run on the owner thread
 // with a live, caller-rooted UnityEngine.UI.Text. show() returning false (the panel cannot be
 // built) falls back to the label rewrite for that record. Unregistered (fixtures) = rewrite.
-struct PgrIvPanelHooks {
+struct PgsIvPanelHooks {
   bool (*available)();  // runtime ready and not faulted; false keeps the rewrite + Outline path
-  // pvp: Great, Ultra and Master League ranks to show (pvp_keep.h PgrPvpBest; a 0 rank shows nothing).
-  bool (*show)(bool owned, void *text_obj, int32_t level_half, int atk, int def, int sta, const struct PgrPvpBest *pvp);
+  // pvp: Great, Ultra and Master League ranks to show (pvp_keep.h PgsPvpBest; a 0 rank shows nothing).
+  bool (*show)(bool owned, void *text_obj, int32_t level_half, int atk, int def, int sta, const struct PgsPvpBest *pvp);
   void (*hide)(void *text_obj);
 };
-void pgr_iv_display_set_panel_hooks(const PgrIvPanelHooks *hooks);
+void pgs_iv_display_set_panel_hooks(const PgsIvPanelHooks *hooks);
 #endif

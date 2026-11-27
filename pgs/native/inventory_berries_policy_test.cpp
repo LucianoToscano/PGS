@@ -48,17 +48,17 @@ extern "C" const void *pgs_catch_canvas_api(uint32_t) { return nullptr; }
 int pgs_hook(void *, void *, void **) { assert(false && "no social hooks in this fixture"); return -1; }
 
 int main() {
-    using namespace pgr_shared_meta;
-    const auto *host = static_cast<const PgrInventoryHostApi *>(pgs_inventory_host_api(1));
+    using namespace pgs_shared_meta;
+    const auto *host = static_cast<const PgsInventoryHostApi *>(pgs_inventory_host_api(1));
     assert(host && host->version == 1);
-    PgrSharedMetadataOutput metadata{};
+    PgsSharedMetadataOutput metadata{};
     metadata.version = 2; metadata.size = sizeof(metadata);
-    metadata.optional[OPT_ITEMS] = metadata.optional[OPT_ITEMS_LOOKUP] = metadata.optional[OPT_BUDDY] = PGR_SHARED_OPT_AVAILABLE;
-    PgrInventoryRuntime runtime{};
+    metadata.optional[OPT_ITEMS] = metadata.optional[OPT_ITEMS_LOOKUP] = metadata.optional[OPT_BUDDY] = PGS_SHARED_OPT_AVAILABLE;
+    PgsInventoryRuntime runtime{};
     runtime.boot.thread_current = reinterpret_cast<void *>(&attached_thread);
-    PgrInventoryHostConfig config{1, sizeof(config), 0, 0, &metadata, &runtime};
+    PgsInventoryHostConfig config{1, sizeof(config), 0, 0, &metadata, &runtime};
     assert(host->configure(&config) == 0);
-    PgrInventoryHostOptions options{};
+    PgsInventoryHostOptions options{};
     options.version = 1; options.size = sizeof(options); options.lease_ms = 2500;
     options.buddy_allowed = 1; options.item_enabled = options.item_allowed = 1;
     options.item_rules = "707:13;708:29";

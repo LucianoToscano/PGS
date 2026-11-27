@@ -4,7 +4,7 @@
 #include <cstdio>
 #include <string>
 
-using namespace pgr_research;
+using namespace pgs_research;
 namespace {
 bool parses(const std::string &s,Config &c){return parse(s.data(),s.size(),c);}
 Quest quest(int progress,int target,const char *templ="CHALLENGE_CATCH_EASY",bool bonus=false){

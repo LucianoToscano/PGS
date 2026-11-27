@@ -1,21 +1,21 @@
 {
-  "scope": "Full-name indexed UTF-8 count unchanged from validated phase 20; abbreviation metrics separately reported by fresh scanner, exact candidate CI pending.",
+  "scope": "Git-indexed regular UTF-8 text, excluding NUL-containing files and the snapshot itself",
   "tracked_files": 2107,
   "text_files": 1032,
   "changed_files": 37,
   "added_files": 1,
   "previous_occurrences": 1041,
-  "remaining_files": 173,
-  "remaining_occurrences": 1041,
+  "remaining_files": 145,
+  "remaining_occurrences": 798,
   "remaining_by_category": {
-    "workflows": 71,
-    "other": 111,
-    "documentation": 269,
-    "release_history": 103,
+    "workflows": 21,
+    "other": 92,
+    "documentation": 277,
     "legal": 3,
-    "native": 171,
-    "tests": 237,
-    "java": 69,
+    "release_history": 103,
+    "native": 14,
+    "tests": 217,
+    "java": 64,
     "javascript": 1,
     "vendor": 6
   },
@@ -23,27 +23,22 @@
     {
       "path": ".github/workflows/pgs-same-package-update.yml",
       "category": "workflows",
-      "occurrences": 8
+      "occurrences": 4
     },
     {
       "path": ".github/workflows/pgs-v0.0.1-release.yml",
       "category": "workflows",
-      "occurrences": 10
+      "occurrences": 6
     },
     {
       "path": ".github/workflows/pgs-v0.0.2-release.yml",
       "category": "workflows",
-      "occurrences": 10
+      "occurrences": 6
     },
     {
       "path": ".github/workflows/pgs-v0.0.3-candidate.yml",
       "category": "workflows",
-      "occurrences": 17
-    },
-    {
-      "path": ".github/workflows/release.yml",
-      "category": "workflows",
-      "occurrences": 26
+      "occurrences": 5
     },
     {
       "path": ".gitignore",
@@ -61,17 +56,27 @@
       "occurrences": 1
     },
     {
-      "path": "docs/ARCHITECTURE.md",
-      "category": "documentation",
+      "path": "LICENSE",
+      "category": "legal",
       "occurrences": 1
     },
     {
-      "path": "docs/en/PGS_TECHNICAL_MIGRATION.md",
-      "category": "documentation",
-      "occurrences": 26
+      "path": "NOTICE",
+      "category": "legal",
+      "occurrences": 2
     },
     {
-      "path": "docs/en/PGS_UPDATE_POLICY.md",
+      "path": "README.md",
+      "category": "documentation",
+      "occurrences": 2
+    },
+    {
+      "path": "README.pt-BR.md",
+      "category": "documentation",
+      "occurrences": 2
+    },
+    {
+      "path": "docs/ARCHITECTURE.md",
       "category": "documentation",
       "occurrences": 1
     },
@@ -98,22 +103,17 @@
     {
       "path": "docs/PGS_NATIVE_ALIAS_INVENTORY.json",
       "category": "documentation",
-      "occurrences": 113
+      "occurrences": 125
     },
     {
-      "path": "docs/PGS_UPDATE_POLICY.md",
+      "path": "docs/en/PGS_TECHNICAL_MIGRATION.md",
       "category": "documentation",
-      "occurrences": 1
+      "occurrences": 26
     },
     {
       "path": "docs/pt-BR/PGS_TECHNICAL_MIGRATION.md",
       "category": "documentation",
       "occurrences": 22
-    },
-    {
-      "path": "docs/pt-BR/PGS_UPDATE_POLICY.md",
-      "category": "documentation",
-      "occurrences": 1
     },
     {
       "path": "docs/releases/footer.md",
@@ -276,29 +276,19 @@
       "occurrences": 2
     },
     {
-      "path": "LICENSE",
-      "category": "legal",
-      "occurrences": 1
-    },
-    {
-      "path": "NOTICE",
-      "category": "legal",
-      "occurrences": 2
-    },
-    {
       "path": "pgs/AndroidManifest.xml",
       "category": "other",
       "occurrences": 1
     },
     {
-      "path": "pgs/art_build.py",
-      "category": "other",
-      "occurrences": 3
-    },
-    {
       "path": "pgs/art/CMakeLists.txt",
       "category": "native",
       "occurrences": 2
+    },
+    {
+      "path": "pgs/art_build.py",
+      "category": "other",
+      "occurrences": 3
     },
     {
       "path": "pgs/axml.py",
@@ -308,7 +298,7 @@
     {
       "path": "pgs/build.py",
       "category": "other",
-      "occurrences": 18
+      "occurrences": 7
     },
     {
       "path": "pgs/cleanup-rooted.ps1",
@@ -321,19 +311,14 @@
       "occurrences": 1
     },
     {
-      "path": "pgs/native_build.py",
-      "category": "other",
-      "occurrences": 4
+      "path": "pgs/native/CMakeLists.txt",
+      "category": "native",
+      "occurrences": 1
     },
     {
-      "path": "pgs/native/account_host.h",
-      "category": "native",
-      "occurrences": 2
-    },
-    {
-      "path": "pgs/native/accounts.h",
-      "category": "native",
-      "occurrences": 5
+      "path": "pgs/native/README.md",
+      "category": "documentation",
+      "occurrences": 1
     },
     {
       "path": "pgs/native/adventure_sync_test.cpp",
@@ -341,64 +326,9 @@
       "occurrences": 1
     },
     {
-      "path": "pgs/native/adventure_sync.h",
-      "category": "native",
-      "occurrences": 20
-    },
-    {
-      "path": "pgs/native/buddy_feeding.h",
-      "category": "native",
-      "occurrences": 14
-    },
-    {
       "path": "pgs/native/camera_host.cpp",
       "category": "native",
-      "occurrences": 2
-    },
-    {
-      "path": "pgs/native/CMakeLists.txt",
-      "category": "native",
       "occurrences": 1
-    },
-    {
-      "path": "pgs/native/hook_engine_diag.h",
-      "category": "native",
-      "occurrences": 1
-    },
-    {
-      "path": "pgs/native/hook_engine_near_test.cpp",
-      "category": "tests",
-      "occurrences": 6
-    },
-    {
-      "path": "pgs/native/hook_engine.cpp",
-      "category": "native",
-      "occurrences": 4
-    },
-    {
-      "path": "pgs/native/hook_engine.h",
-      "category": "native",
-      "occurrences": 3
-    },
-    {
-      "path": "pgs/native/incubation.h",
-      "category": "native",
-      "occurrences": 40
-    },
-    {
-      "path": "pgs/native/interaction_host_test.cpp",
-      "category": "tests",
-      "occurrences": 4
-    },
-    {
-      "path": "pgs/native/interaction_host.cpp",
-      "category": "native",
-      "occurrences": 9
-    },
-    {
-      "path": "pgs/native/items.h",
-      "category": "native",
-      "occurrences": 28
     },
     {
       "path": "pgs/native/iv_display_test.cpp",
@@ -406,9 +336,9 @@
       "occurrences": 2
     },
     {
-      "path": "pgs/native/pgs_native_api.h",
+      "path": "pgs/native/pgs.map",
       "category": "native",
-      "occurrences": 22
+      "occurrences": 1
     },
     {
       "path": "pgs/native/pgs_native.cpp",
@@ -416,47 +346,12 @@
       "occurrences": 1
     },
     {
-      "path": "pgs/native/pgs.map",
+      "path": "pgs/native/pgs_native_api.h",
       "category": "native",
-      "occurrences": 1
-    },
-    {
-      "path": "pgs/native/pvp_icons.h",
-      "category": "native",
-      "occurrences": 1
-    },
-    {
-      "path": "pgs/native/README.md",
-      "category": "documentation",
       "occurrences": 2
     },
     {
-      "path": "pgs/native/runtime_bootstrap.h",
-      "category": "native",
-      "occurrences": 1
-    },
-    {
-      "path": "pgs/native/runtime_host_diag_test.cpp",
-      "category": "tests",
-      "occurrences": 1
-    },
-    {
-      "path": "pgs/native/runtime_host_flow_test.cpp",
-      "category": "tests",
-      "occurrences": 1
-    },
-    {
-      "path": "pgs/native/runtime_host.cpp",
-      "category": "native",
-      "occurrences": 5
-    },
-    {
-      "path": "pgs/native/runtime_metadata.h",
-      "category": "native",
-      "occurrences": 1
-    },
-    {
-      "path": "pgs/native/runtime_transport.h",
+      "path": "pgs/native/pvp_icons.h",
       "category": "native",
       "occurrences": 1
     },
@@ -466,24 +361,24 @@
       "occurrences": 1
     },
     {
-      "path": "pgs/native/shared_host.h",
-      "category": "native",
-      "occurrences": 1
-    },
-    {
       "path": "pgs/native/test_runner.cpp",
       "category": "native",
       "occurrences": 1
     },
     {
-      "path": "pgs/native/unity_scheduler.h",
-      "category": "native",
-      "occurrences": 1
+      "path": "pgs/native_build.py",
+      "category": "other",
+      "occurrences": 4
     },
     {
       "path": "pgs/nonroot.py",
       "category": "other",
       "occurrences": 10
+    },
+    {
+      "path": "pgs/pgs.cmd",
+      "category": "other",
+      "occurrences": 2
     },
     {
       "path": "pgs/pgs_candidate.py",
@@ -493,22 +388,7 @@
     {
       "path": "pgs/pgs_rebrand.py",
       "category": "other",
-      "occurrences": 8
-    },
-    {
-      "path": "pgs/pgs_update.py",
-      "category": "other",
-      "occurrences": 1
-    },
-    {
-      "path": "pgs/pgs.cmd",
-      "category": "other",
-      "occurrences": 2
-    },
-    {
-      "path": "pgs/release_apk.py",
-      "category": "other",
-      "occurrences": 1
+      "occurrences": 7
     },
     {
       "path": "pgs/root-installer/AndroidManifest.xml",
@@ -528,17 +408,7 @@
     {
       "path": "pgs/root-installer/src/dev/pgs/root/RootToggleCommand.java",
       "category": "java",
-      "occurrences": 12
-    },
-    {
-      "path": "pgs/root-installer/test/RootToggleTest.java",
-      "category": "other",
-      "occurrences": 3
-    },
-    {
-      "path": "pgs/rooted_installer.py",
-      "category": "other",
-      "occurrences": 2
+      "occurrences": 10
     },
     {
       "path": "pgs/rooted.py",
@@ -546,7 +416,7 @@
       "occurrences": 7
     },
     {
-      "path": "pgs/runtime_audit.py",
+      "path": "pgs/rooted_installer.py",
       "category": "other",
       "occurrences": 2
     },
@@ -554,6 +424,11 @@
       "path": "pgs/runtime/native-core.js",
       "category": "javascript",
       "occurrences": 1
+    },
+    {
+      "path": "pgs/runtime_audit.py",
+      "category": "other",
+      "occurrences": 2
     },
     {
       "path": "pgs/src/dev/pgs/AccountProfileStore.java",
@@ -566,12 +441,12 @@
       "occurrences": 1
     },
     {
-      "path": "pgs/src/dev/pgs/AccountSessions.java",
+      "path": "pgs/src/dev/pgs/AccountSessionVault.java",
       "category": "java",
       "occurrences": 5
     },
     {
-      "path": "pgs/src/dev/pgs/AccountSessionVault.java",
+      "path": "pgs/src/dev/pgs/AccountSessions.java",
       "category": "java",
       "occurrences": 5
     },
@@ -603,7 +478,7 @@
     {
       "path": "pgs/src/dev/pgs/SettingsBackupRules.java",
       "category": "java",
-      "occurrences": 8
+      "occurrences": 5
     },
     {
       "path": "pgs/src/dev/pgs/ShinyScanner.java",
@@ -651,11 +526,6 @@
       "occurrences": 4
     },
     {
-      "path": "pgs/test/native-core-test.cjs",
-      "category": "tests",
-      "occurrences": 4
-    },
-    {
       "path": "pgs/test/PogoFeedDataTest.java",
       "category": "tests",
       "occurrences": 1
@@ -663,7 +533,17 @@
     {
       "path": "pgs/test/SettingsBackupRulesTest.java",
       "category": "tests",
-      "occurrences": 14
+      "occurrences": 18
+    },
+    {
+      "path": "pgs/test/UpdateRulesTest.java",
+      "category": "tests",
+      "occurrences": 2
+    },
+    {
+      "path": "pgs/test/native-core-test.cjs",
+      "category": "tests",
+      "occurrences": 4
     },
     {
       "path": "pgs/test/test_account_restart_lifecycle.py",
@@ -703,7 +583,7 @@
     {
       "path": "pgs/test/test_native_build.py",
       "category": "tests",
-      "occurrences": 8
+      "occurrences": 9
     },
     {
       "path": "pgs/test/test_native_prerequisites.py",
@@ -718,7 +598,7 @@
     {
       "path": "pgs/test/test_pgs_build_options.py",
       "category": "tests",
-      "occurrences": 12
+      "occurrences": 14
     },
     {
       "path": "pgs/test/test_pgs_candidate.py",
@@ -733,17 +613,12 @@
     {
       "path": "pgs/test/test_pgs_native_aliases_native.py",
       "category": "tests",
-      "occurrences": 4
+      "occurrences": 2
     },
     {
       "path": "pgs/test/test_pgs_native_identity.py",
       "category": "tests",
-      "occurrences": 36
-    },
-    {
-      "path": "pgs/test/test_pgs_oauth_retirement.py",
-      "category": "tests",
-      "occurrences": 1
+      "occurrences": 34
     },
     {
       "path": "pgs/test/test_pgs_project_layout.py",
@@ -763,17 +638,17 @@
     {
       "path": "pgs/test/test_pgs_release_policy.py",
       "category": "tests",
-      "occurrences": 2
+      "occurrences": 1
     },
     {
       "path": "pgs/test/test_pgs_runtime_identity.py",
       "category": "tests",
-      "occurrences": 8
+      "occurrences": 9
     },
     {
       "path": "pgs/test/test_release_bundle.py",
       "category": "tests",
-      "occurrences": 15
+      "occurrences": 7
     },
     {
       "path": "pgs/test/test_rooted_cleanup.py",
@@ -783,7 +658,7 @@
     {
       "path": "pgs/test/test_rooted_installer_shell.py",
       "category": "tests",
-      "occurrences": 12
+      "occurrences": 10
     },
     {
       "path": "pgs/test/test_rooted_packaging.py",
@@ -792,11 +667,6 @@
     },
     {
       "path": "pgs/test/test_source_bundle.py",
-      "category": "tests",
-      "occurrences": 2
-    },
-    {
-      "path": "pgs/test/UpdateRulesTest.java",
       "category": "tests",
       "occurrences": 2
     },
@@ -821,24 +691,14 @@
       "occurrences": 3
     },
     {
-      "path": "README.md",
-      "category": "documentation",
-      "occurrences": 2
-    },
-    {
-      "path": "README.pt-BR.md",
-      "category": "documentation",
-      "occurrences": 2
-    },
-    {
       "path": "tools/dex_bridge/BridgeRewriter.java",
       "category": "other",
       "occurrences": 1
     },
     {
-      "path": "tools/hundo-feed/hundo_feed.py",
-      "category": "other",
-      "occurrences": 1
+      "path": "tools/hundo-feed/README.md",
+      "category": "documentation",
+      "occurrences": 3
     },
     {
       "path": "tools/hundo-feed/hundo-feed.env.example",
@@ -846,9 +706,9 @@
       "occurrences": 2
     },
     {
-      "path": "tools/hundo-feed/README.md",
-      "category": "documentation",
-      "occurrences": 3
+      "path": "tools/hundo-feed/hundo_feed.py",
+      "category": "other",
+      "occurrences": 1
     },
     {
       "path": "tools/pgs_branding_audit.py",
@@ -863,7 +723,7 @@
     {
       "path": "tools/private_input.py",
       "category": "other",
-      "occurrences": 3
+      "occurrences": 1
     },
     {
       "path": "tools/pvp_data.py",
@@ -900,8 +760,139 @@
     "validation": "pending full source CI",
     "previous_main": "47695f3d2021108b4a3a14606d2a7e04b51eb6d5"
   },
-  "retention_review": {
-    "scope": "Every matching file grouped once by primary purpose, with exact occurrence totals; mixed files can contain more than one kind of reference. This is not a line-level necessity audit or a claim of 100% completed migration.",
+  "abbreviation_migration": {
+    "base_commit": "186e6e86aac0a0bc2d7939a58e934378fab7bdd3",
+    "scope": "Separate full tracked-text abbreviation audit; original full-name inventory unchanged. Initial canonical identifier migration.",
+    "reviewed_files": 11,
+    "account_identifiers": 40,
+    "account_renamed_occurrences": 196,
+    "account_compatibility_aliases": 16,
+    "protected_blob": "pgs/native/account_host.cpp",
+    "collisions": [],
+    "validation": "pending exact head CI",
+    "additional_groups": [
+      {
+        "modules": [
+          "spin_host.h",
+          "spawn_host.h"
+        ],
+        "reviewed_files": 10,
+        "identifiers": 37,
+        "renamed_occurrences": 207,
+        "collisions": [],
+        "modified": 9
+      },
+      {
+        "modules": [
+          "map_tap.h",
+          "map_poi.h",
+          "vgp_aux.h"
+        ],
+        "reviewed_files": 16,
+        "identifiers": 109,
+        "renamed_occurrences": 796,
+        "collisions": [],
+        "modified": 14
+      },
+      {
+        "modules": [
+          "battles.h"
+        ],
+        "reviewed_files": 6,
+        "identifiers": 72,
+        "renamed_occurrences": 401,
+        "collisions": [],
+        "modified": 5
+      }
+    ],
+    "total_identifiers": 258,
+    "total_renamed_occurrences": 1600,
+    "modified_native_files": 32,
+    "original_full_name_count": 1041,
+    "original_full_name_remaining": 1041,
+    "count_excludes_legacy_alias_additions_and_new_audit_fixtures": true
+  },
+  "mass_abbreviation_migration": {
+    "base_commit": "cbbd5606a26fbec1806b8e92de7b1a218a58d56b",
+    "migration_commit": "2ae0a9765f6e36a14ce51248314abd2eebfdbd59",
+    "verified_previous_run": 46037991814,
+    "previous_abbreviated_occurrences": 21616,
+    "previous_abbreviated_files": 397,
+    "renamed_occurrences": 13569,
+    "renamed_distinct_names": 2141,
+    "modified_source_files": 371,
+    "project_files_retained": 2108,
+    "retained_distinct_candidate_names": 1371,
+    "expected_remaining_abbreviated_occurrences": 8047,
+    "expected_full_name_occurrences": 1041,
+    "retention_reasons_nonexclusive": {
+      "quoted-contract-or-fixture": 182,
+      "outside-source-scope-or-protected": 138,
+      "generated-game-bindings-retained": 1108,
+      "canonical-name-already-exists": 3
+    },
+    "validation": "One-time migration succeeded with reversible byte-exact rename checks and git diff --check. Original protected account host, generated game binding family, conflicting names, quoted contracts, historic and legal records, and existing signer/storage unchanged. Full independent source CI, Android native ABI builds, APK and device validation pending.",
+    "report_workflow_run": 46042079107
+  },
+  "tracked_name_matches": [],
+  "abbreviations": {
+    "remaining_files": 6,
+    "remaining_occurrences": 14,
+    "by_form": {
+      "camelcase": 4,
+      "lowercase": 5,
+      "uppercase": 5
+    },
+    "tracked_name_matches": [],
+    "files": [
+      {
+        "path": "docs/en/PGS_TECHNICAL_MIGRATION.md",
+        "occurrences": 1,
+        "by_form": {
+          "camelcase": 1
+        }
+      },
+      {
+        "path": "docs/pt-BR/PGS_TECHNICAL_MIGRATION.md",
+        "occurrences": 1,
+        "by_form": {
+          "camelcase": 1
+        }
+      },
+      {
+        "path": "pgs/test/test_game_update.py",
+        "occurrences": 1,
+        "by_form": {
+          "lowercase": 1
+        }
+      },
+      {
+        "path": "pgs/test/test_native_schemas.py",
+        "occurrences": 2,
+        "by_form": {
+          "lowercase": 2
+        }
+      },
+      {
+        "path": "pgs/test/test_pgs_native_identity.py",
+        "occurrences": 2,
+        "by_form": {
+          "uppercase": 2
+        }
+      },
+      {
+        "path": "pgs/test/test_pgs_reference_inventory.py",
+        "occurrences": 7,
+        "by_form": {
+          "camelcase": 2,
+          "lowercase": 2,
+          "uppercase": 3
+        }
+      }
+    ]
+  },
+  "previous_retention_review": {
+    "scope": "Historical phase-20 file grouping; not a current classification.",
     "groups": {
       "build_signing_contracts": {
         "status": "retain_pending_contract_retirement",
@@ -1151,56 +1142,268 @@
     "excluded_blob_reason": "Previous connector text reconstruction did not match the original blob hash; preserve exact bytes and review through a verified checkout.",
     "external_feed_pr": 62
   },
-  "abbreviation_migration": {
-    "base_commit": "186e6e86aac0a0bc2d7939a58e934378fab7bdd3",
-    "scope": "Separate full tracked-text abbreviation audit; original full-name inventory unchanged. Initial canonical identifier migration.",
-    "reviewed_files": 11,
-    "account_identifiers": 40,
-    "account_renamed_occurrences": 196,
-    "account_compatibility_aliases": 16,
-    "protected_blob": "pgs/native/account_host.cpp",
-    "collisions": [],
-    "validation": "pending exact head CI",
-    "additional_groups": [
-      {
-        "modules": [
-          "spin_host.h",
-          "spawn_host.h"
-        ],
-        "reviewed_files": 10,
-        "identifiers": 37,
-        "renamed_occurrences": 207,
-        "collisions": [],
-        "modified": 9
+  "complete_abbreviation_migration": {
+    "base_commit": "de6bf02f451d0c0c72ba38c2fca4a79e7900f02e",
+    "selected_prefix_replacements": 8491,
+    "selected_prefix_files": 297,
+    "account_host_bytes_migrated": true,
+    "generated_outputs_match": true,
+    "full_name_and_abbreviation_counts_recomputed": true,
+    "scope": "All selected first-party native, runtime, generator, game schema, Java and fixture prefixes. Historical, audit, legacy ABI and data-contract references remain intentionally identifiable.",
+    "validation": "Generated output equality and exact indexed inventory verified. Full source CI and APK/device gates separate."
+  },
+  "native_alias_retirement": {
+    "base_commit": "06fd50469bb98cf64b0459bddd80294cae86dc50",
+    "retired_source_aliases": 125,
+    "private_getters_retired": 8,
+    "private_hook_wrappers_retired": 4,
+    "canonical_abi_facts_captured_before_removal": true,
+    "remaining_private_native_names": [],
+    "public_compatibility_export_retained": "pgrazor_native_api",
+    "previous_full_name_occurrences": 990,
+    "remaining_full_name_occurrences": 829,
+    "limitations": "Source-only aliases removed; installed data and external/legacy contracts remain. Full CI and APK/device validation separate."
+  },
+  "current_artifact_identity": {
+    "base_commit": "ef766e93073e9670f61c508ae4c3321ff6ddc0cc",
+    "settings_backup_version": 2,
+    "legacy_backup_reading": true,
+    "physical_storage_unchanged": true,
+    "dobby_cache_marker_migrated_after_verification": true,
+    "root_receipt_prefix_migrated": true,
+    "root_paths_unchanged": true,
+    "remaining_full_name_occurrences": 823,
+    "remaining_abbreviations": 14,
+    "limitations": "Counts are exact deltas from the verified indexed baseline; full CI must independently reconcile the snapshot. Older backup readers do not support version 2."
+  },
+  "current_retention_review": {
+    "base_commit": "89748d5be4ae5eb59e3ee3a223bfa3448bbba261",
+    "scope": "Current per-file triage; all matching indexed text paths classified exactly once, not a claim of necessity of each individual occurrence.",
+    "groups": {
+      "historical_records": {
+        "status": "preserve",
+        "reason": "Historical evidence, retired names and upstream release records; not present-day branding.",
+        "occurrences": 365,
+        "paths": [
+          "docs/NATIVE_MIGRATION.md",
+          "docs/PGS_BRANDING_AUDIT.md",
+          "docs/PGS_COMMUNITY_REVIEW.md",
+          "docs/PGS_FORK_INVENTORY.json",
+          "docs/PGS_NATIVE_ALIAS_INVENTORY.json",
+          "docs/en/PGS_TECHNICAL_MIGRATION.md",
+          "docs/pt-BR/PGS_TECHNICAL_MIGRATION.md",
+          "docs/releases/footer.md",
+          "docs/releases/v0.0.1.md",
+          "docs/releases/v0.1.0-alpha.3.md",
+          "docs/releases/v0.1.0-alpha.4.md",
+          "docs/releases/v0.1.0.md",
+          "docs/releases/v0.1.1.md",
+          "docs/releases/v0.1.10.md",
+          "docs/releases/v0.1.2.md",
+          "docs/releases/v0.1.3.md",
+          "docs/releases/v0.1.4.md",
+          "docs/releases/v0.1.5.md",
+          "docs/releases/v0.1.6.md",
+          "docs/releases/v0.1.7-experimental.1.md",
+          "docs/releases/v0.1.7-experimental.2.md",
+          "docs/releases/v0.1.7-experimental.3.md",
+          "docs/releases/v0.1.7.md",
+          "docs/releases/v0.1.8.md",
+          "docs/releases/v0.1.9.md",
+          "docs/releases/v0.2.0.md",
+          "docs/releases/v0.2.1.md",
+          "docs/releases/v0.2.2.md",
+          "docs/releases/v0.2.3.md",
+          "docs/releases/v0.2.4.md",
+          "docs/releases/v0.2.5.md",
+          "docs/releases/v0.3.0.md",
+          "docs/releases/v0.3.2.md",
+          "docs/releases/v0.3.3.md",
+          "docs/releases/v0.3.4.md",
+          "docs/releases/v0.3.5.md",
+          "docs/releases/v0.3.6.md",
+          "docs/releases/v0.3.7.md",
+          "docs/releases/v0.3.8.md"
+        ]
       },
-      {
-        "modules": [
-          "map_tap.h",
-          "map_poi.h",
-          "vgp_aux.h"
-        ],
-        "reviewed_files": 16,
-        "identifiers": 109,
-        "renamed_occurrences": 796,
-        "collisions": [],
-        "modified": 14
+      "legal_provenance": {
+        "status": "preserve",
+        "reason": "Original notices and source provenance; preserve attribution.",
+        "occurrences": 16,
+        "paths": [
+          "LICENSE",
+          "NOTICE",
+          "README.md",
+          "README.pt-BR.md",
+          "pgs/native/pvp_icons.h",
+          "pgs/native/schema/pvp/icons/provenance.json",
+          "pgs/vendor/bridge-provenance.json",
+          "pgs/vendor/frida-java-bridge-302a588.js",
+          "pgs/vendor/patch_bridge.py",
+          "tools/pvp_data.py"
+        ]
       },
-      {
-        "modules": [
-          "battles.h"
-        ],
-        "reviewed_files": 6,
-        "identifiers": 72,
-        "renamed_occurrences": 401,
-        "collisions": [],
-        "modified": 5
+      "build_signing_contracts": {
+        "status": "retain_compatibility",
+        "reason": "PGS-first build and signing configuration, old configuration aliases and historical guarded rebuilds. No new signing key.",
+        "occurrences": 42,
+        "paths": [
+          ".github/workflows/pgs-same-package-update.yml",
+          ".github/workflows/pgs-v0.0.1-release.yml",
+          ".github/workflows/pgs-v0.0.2-release.yml",
+          ".github/workflows/pgs-v0.0.3-candidate.yml",
+          "CONTRIBUTING.md",
+          "CONTRIBUTING.pt-BR.md",
+          "pgs/art/CMakeLists.txt",
+          "pgs/art_build.py",
+          "pgs/build.py",
+          "pgs/native_build.py",
+          "pgs/pgs.cmd",
+          "tools/private_input.py"
+        ]
+      },
+      "installed_identity_storage": {
+        "status": "retain_compatibility",
+        "reason": "Existing package/module IDs, physical storage, crypto, notification IDs and state markers. Require a tested migration before retirement.",
+        "occurrences": 79,
+        "paths": [
+          "docs/ARCHITECTURE.md",
+          "pgs/AndroidManifest.xml",
+          "pgs/root-installer/AndroidManifest.xml",
+          "pgs/root-installer/README.md",
+          "pgs/root-installer/src/dev/pgs/root/RootModuleState.java",
+          "pgs/root-installer/src/dev/pgs/root/RootToggleCommand.java",
+          "pgs/rooted.py",
+          "pgs/rooted_installer.py",
+          "pgs/src/dev/pgs/AccountProfileStore.java",
+          "pgs/src/dev/pgs/AccountRestartActivity.java",
+          "pgs/src/dev/pgs/AccountSessionVault.java",
+          "pgs/src/dev/pgs/AccountSessions.java",
+          "pgs/src/dev/pgs/BootstrapProvider.java",
+          "pgs/src/dev/pgs/LiveFeedSession.java",
+          "pgs/src/dev/pgs/RootedRestart.java",
+          "pgs/src/dev/pgs/RootedRuntime.java",
+          "pgs/src/dev/pgs/SettingsBackupRules.java",
+          "pgs/src/dev/pgs/ShinyScanner.java",
+          "pgs/src/dev/pgs/VgpController.java",
+          "pgs/zygisk/loader.cpp"
+        ]
+      },
+      "legacy_input_artifacts": {
+        "status": "retain_compatibility",
+        "reason": "Legacy input recognition/rejection, archived verification and cleanup rules. Some files have mixed responsibilities.",
+        "occurrences": 38,
+        "paths": [
+          "pgs/axml.py",
+          "pgs/cleanup-rooted.ps1",
+          "pgs/cleanup.ps1",
+          "pgs/nonroot.py",
+          "pgs/pgs_candidate.py",
+          "pgs/pgs_rebrand.py",
+          "pgs/runtime_audit.py",
+          "tools/dex_bridge/BridgeRewriter.java",
+          "tools/verify_release.py"
+        ]
+      },
+      "public_binary_abi": {
+        "status": "retain_compatibility",
+        "reason": "Public binary factory and explicit fallback used by existing compiled clients. Private aliases already retired.",
+        "occurrences": 8,
+        "paths": [
+          "pgs/native/CMakeLists.txt",
+          "pgs/native/README.md",
+          "pgs/native/camera_host.cpp",
+          "pgs/native/pgs.map",
+          "pgs/native/pgs_native.cpp",
+          "pgs/native/pgs_native_api.h",
+          "pgs/runtime/native-core.js"
+        ]
+      },
+      "compatibility_guards": {
+        "status": "retain_guards",
+        "reason": "Legacy redirect, translation fallback, ignored old checkout, and explicit audit/brand rejection rules.",
+        "occurrences": 25,
+        "paths": [
+          ".gitignore",
+          "pgs/src/dev/pgs/I18n.java",
+          "tools/pgs_branding_audit.py",
+          "tools/pgs_reference_inventory.py",
+          "website/src/App.jsx"
+        ]
+      },
+      "external_feed": {
+        "status": "pending_verified_replacement",
+        "reason": "Endpoint, protocol and server examples. Independent deployment and authorization are not established by this audit.",
+        "occurrences": 7,
+        "paths": [
+          "pgs/src/dev/pgs/ShundoSniper.java",
+          "tools/hundo-feed/README.md",
+          "tools/hundo-feed/hundo-feed.env.example",
+          "tools/hundo-feed/hundo_feed.py"
+        ]
+      },
+      "tests": {
+        "status": "retain_or_review",
+        "reason": "Tests of legacy input, data continuity, ABI, build options, attribution and forbidden-name detection. Ordinary fixture use may be reviewed individually.",
+        "occurrences": 218,
+        "paths": [
+          "pgs/native/adventure_sync_test.cpp",
+          "pgs/native/iv_display_test.cpp",
+          "pgs/native/test_runner.cpp",
+          "pgs/test/AccountProfileDataTest.java",
+          "pgs/test/AccountProfileStoreTest.java",
+          "pgs/test/ControlLanguageTest.java",
+          "pgs/test/ControlSettingsReloadTest.java",
+          "pgs/test/ControlSettingsTest.java",
+          "pgs/test/I18nTest.java",
+          "pgs/test/PogoFeedDataTest.java",
+          "pgs/test/SettingsBackupRulesTest.java",
+          "pgs/test/UpdateRulesTest.java",
+          "pgs/test/native-core-test.cjs",
+          "pgs/test/test_account_restart_lifecycle.py",
+          "pgs/test/test_axml.py",
+          "pgs/test/test_compiled_gameplay.py",
+          "pgs/test/test_discord_release.py",
+          "pgs/test/test_event_settings_java.py",
+          "pgs/test/test_iv_owned_refresh_native.py",
+          "pgs/test/test_log_export_java.py",
+          "pgs/test/test_native_build.py",
+          "pgs/test/test_native_prerequisites.py",
+          "pgs/test/test_packaging.py",
+          "pgs/test/test_pgs_build_options.py",
+          "pgs/test/test_pgs_candidate.py",
+          "pgs/test/test_pgs_license.py",
+          "pgs/test/test_pgs_native_aliases_native.py",
+          "pgs/test/test_pgs_native_identity.py",
+          "pgs/test/test_pgs_project_layout.py",
+          "pgs/test/test_pgs_rebrand.py",
+          "pgs/test/test_pgs_reference_inventory.py",
+          "pgs/test/test_pgs_release_policy.py",
+          "pgs/test/test_pgs_runtime_identity.py",
+          "pgs/test/test_release_bundle.py",
+          "pgs/test/test_rooted_cleanup.py",
+          "pgs/test/test_rooted_installer_shell.py",
+          "pgs/test/test_rooted_packaging.py",
+          "pgs/test/test_source_bundle.py",
+          "website/tests/guides.spec.js"
+        ]
+      },
+      "mixed_review": {
+        "status": "review_individual",
+        "reason": "Remaining mixed-purpose source/documentation; file-level classification is not proof that every occurrence is necessary.",
+        "occurrences": 0,
+        "paths": []
       }
-    ],
-    "total_identifiers": 258,
-    "total_renamed_occurrences": 1600,
-    "modified_native_files": 32,
-    "original_full_name_count": 1041,
-    "original_full_name_remaining": 1041,
-    "count_excludes_legacy_alias_additions_and_new_audit_fixtures": true
+    }
+  },
+  "release_identity_cleanup": {
+    "base_commit": "89748d5be4ae5eb59e3ee3a223bfa3448bbba261",
+    "disabled_upstream_workflow_inert": true,
+    "canonical_bundle_verifier_default": true,
+    "legacy_bundle_verification_explicit": true,
+    "mixed_names_rejected": true,
+    "remaining_full_name_occurrences": 798,
+    "remaining_abbreviations": 14,
+    "validation": "Counts calculated by exact changed-file deltas against the preceding indexed inventory. Full CI reconciliation required."
   }
 }

@@ -13,11 +13,11 @@
 #include <cstring>
 #include <set>
 namespace {
-using namespace pgr_shared_meta;
-using namespace pgr_evolution;
+using namespace pgs_shared_meta;
+using namespace pgs_evolution;
 struct Failure {const char *where;};
 void require(bool ok,const char *where){if(!ok)throw Failure{where};}
-PgrBootBinding boot{};const PgrSharedMetadataOutput *md=nullptr;
+PgsBootBinding boot{};const PgsSharedMetadataOutput *md=nullptr;
 bool initialized=false,busy=false;uint64_t owner=0;
 void *reference_setter=nullptr;const char *managed_context="managed call failed";
 struct CallContext {const char *previous=managed_context;~CallContext(){managed_context=previous;}};
@@ -37,9 +37,9 @@ struct Root {
 void *klass(void *o){require(o,"null object");return fn<void*(*)(void*)>(boot.runtime.object_get_class)(o);}
 void *cls(const char *ns,const char *name){
  static std::map<std::string,void*> cache;std::string key=std::string(ns)+"."+name;auto it=cache.find(key);if(it!=cache.end())return it->second;
- const auto *api=static_cast<const PgrMetaApi*>(pgs_runtime_metadata_api(1));require(api,"metadata API");
- PgrMetaClassQuery q{};q.version=1;q.size=sizeof(q);q.name_space=ns;q.name=name;q.canonical_match=PGR_MD_MATCH_EXACT;
- PgrMetaClassResult out{};require(api->resolve_class(&q,&out)==0,name);return cache[key]=const_cast<void*>(out.klass);
+ const auto *api=static_cast<const PgsMetaApi*>(pgs_runtime_metadata_api(1));require(api,"metadata API");
+ PgsMetaClassQuery q{};q.version=1;q.size=sizeof(q);q.name_space=ns;q.name=name;q.canonical_match=PGS_MD_MATCH_EXACT;
+ PgsMetaClassResult out{};require(api->resolve_class(&q,&out)==0,name);return cache[key]=const_cast<void*>(out.klass);
 }
 std::string typename_of(void *type){char *p=fn<char*(*)(void*)>(boot.meta.type_get_name)(type);require(p,"type name");std::string s=p;fn<void(*)(void*)>(boot.meta.mem_free)(p);for(size_t pos=0;(pos=s.find("`1<",pos))!=std::string::npos;)s.erase(pos,2);return s;}
 void *field_info(void *k,const char *name,const char *type){
@@ -80,7 +80,7 @@ Root reference(void *o,const char *name,const char *prefix){
  void *v=nullptr;fn<void(*)(void*,void*,void*)>(boot.runtime.field_get_value)(o,f,&v);return Root(v);
 }
 struct Permission {Command cmd;bool valid=false,allowed=false;};
-Permission permission(){Permission p;auto tr=static_cast<const PgrRuntimeTransportApi*>(pgs_runtime_transport_api(1));if(!tr)return p;PgrRuntimeTransportSample a{},z{};char text[128]{};uint32_t len=0;int live=0,ready=0;
+Permission permission(){Permission p;auto tr=static_cast<const PgsRuntimeTransportApi*>(pgs_runtime_transport_api(1));if(!tr)return p;PgsRuntimeTransportSample a{},z{};char text[128]{};uint32_t len=0;int live=0,ready=0;
  if(tr->sample(&a)||!a.snapshot_fresh||a.fault||tr->get_string(11,text,sizeof(text),&len)||!parse(text,len,p.cmd))return p;
  tr->get_bool(9,&live);tr->get_bool(16,&ready);
  if(tr->sample(&z)||!z.snapshot_fresh||z.snapshot_seq!=a.snapshot_seq)return p;p.valid=true;p.allowed=live&&ready&&p.cmd.mode!=0;return p;
@@ -90,7 +90,7 @@ std::set<uint64_t> uncertain;
 std::string escape(const std::string&s){std::string out;for(unsigned char c:s){if(c=='"'||c=='\\')out+='\\';if(c>=32)out+=char(c);}return out;}
 void publish(const std::string &phase,const std::string &message){batch.phase=phase;batch.last_event=clock_ms();
  std::string j="{\"kind\":\"batch-evolution\",\"token\":"+std::to_string(batch.token)+",\"phase\":\""+phase+"\",\"message\":\""+escape(message)+"\",\"total\":"+std::to_string(batch.candidates.size())+",\"completed\":"+std::to_string(batch.completed)+",\"skipped\":"+std::to_string(batch.skipped)+",\"xp\":"+std::to_string(batch.xp)+",\"elapsedMs\":"+std::to_string(batch.started?clock_ms()-batch.started:0)+",\"candyCost\":"+std::to_string(batch.candy_cost)+",\"itemCount\":"+std::to_string(batch.item_count)+"}";
- __android_log_print(ANDROID_LOG_INFO,"PGSEvolution","%s",j.c_str());auto tr=static_cast<const PgrRuntimeTransportApi*>(pgs_runtime_transport_api(1));PgrRuntimeTransportString a[]={{"batch-evolution",15},{j.c_str(),uint32_t(j.size())}};if(!tr||tr->emit(19,nullptr,0,a,2)){batch.canceled=true;batch.phase="error";}
+ __android_log_print(ANDROID_LOG_INFO,"PGSEvolution","%s",j.c_str());auto tr=static_cast<const PgsRuntimeTransportApi*>(pgs_runtime_transport_api(1));PgsRuntimeTransportString a[]={{"batch-evolution",15},{j.c_str(),uint32_t(j.size())}};if(!tr||tr->emit(19,nullptr,0,a,2)){batch.canceled=true;batch.phase="error";}
 }
 int enum_field(void *o,const char *name){auto f=fn<void*(*)(void*,const char*)>(boot.meta.class_get_field_from_name)(klass(o),name);require(f,name);auto k=fn<void*(*)(void*)>(boot.meta.class_from_type)(fn<void*(*)(void*)>(boot.meta.field_get_type)(f));require(k&&fn<bool(*)(void*)>(boot.meta.class_is_enum)(k),name);int v=0;fn<void(*)(void*,void*,void*)>(boot.runtime.field_get_value)(o,f,&v);return v;}
 void put_enum(void *o,const char *name,int v){enum_field(o,name);auto f=fn<void*(*)(void*,const char*)>(boot.meta.class_get_field_from_name)(klass(o),name);fn<void(*)(void*,void*,void*)>(boot.runtime.field_set_value)(o,f,&v);}
@@ -127,7 +127,7 @@ bool same(const Candidate&a,const Candidate&b){return a.id==b.id&&a.species==b.s
 void validate_tag_removal();
 void prepare(const Command &cmd){
  batch=Batch{};batch.token=cmd.token;batch.tag=cmd.tag;batch.remove_tag=cmd.remove_tag;
- batch.bag=resolve("Niantic.Holoholo","IPokemonBag");batch.player=resolve("Niantic.Holoholo","IPlayerService");batch.buddy=resolve("Niantic.Holoholo.Buddy","IBuddyPokemonService");batch.itembag=resolve("Niantic.Holoholo","IItemBag");require(batch.bag&&batch.player&&batch.buddy&&batch.itembag,"inventory services unavailable");batch.gm=reference(batch.bag.get(),PGR_GAME_BATCH_EVOLUTION_CPP_ERIK_NAME,"IGameMasterData");require(bool(batch.gm),"game settings unavailable");batch.account=string(call(batch.player.get(),"get_PlayerId"));require(!batch.account.empty(),"account identity unavailable");
+ batch.bag=resolve("Niantic.Holoholo","IPokemonBag");batch.player=resolve("Niantic.Holoholo","IPlayerService");batch.buddy=resolve("Niantic.Holoholo.Buddy","IBuddyPokemonService");batch.itembag=resolve("Niantic.Holoholo","IItemBag");require(batch.bag&&batch.player&&batch.buddy&&batch.itembag,"inventory services unavailable");batch.gm=reference(batch.bag.get(),PGS_GAME_BATCH_EVOLUTION_CPP_ERIK_NAME,"IGameMasterData");require(bool(batch.gm),"game settings unavailable");batch.account=string(call(batch.player.get(),"get_PlayerId"));require(!batch.account.empty(),"account identity unavailable");
  Root tags=resolve("Niantic.Holoholo.Tagging","ITaggingRpcService");require(bool(tags),"tag service unavailable");Root ready(call(tags.get(),"WaitForTagCacheInitialized"));require(ready&&field<bool>(ready.get(),"completeCalled","System.Boolean")&&!field<bool>(ready.get(),"errorCalled","System.Boolean"),"tag cache not ready; preview again");
  int n=boxed<int>(call(tags.get(),"get_NumberOfTags"),"System.Int32");require(n>=0&&n<=1000,"tag count");for(int i=0;i<n;i++){void *a[]={&i};Root row(call(tags.get(),"GetCachedTagToPokemonBindingForIndex",1,a));if(!row)continue;Root tag(field<void*>(row.get(),"TagProto","Holoholo.Rpc.PokemonTagProto"));if(normalize_tag(string(field<void*>(tag.get(),"Name","System.String")))!=normalize_tag(cmd.tag))continue;
  require(!batch.rows,"multiple tags share this name");batch.tag_id=field<uint64_t>(tag.get(),"Id","System.UInt64");batch.rows=reference(row.get(),"PokemonProtos","System.Collections.Generic.List");if(batch.remove_tag)batch.tag_proto=std::move(tag);}
@@ -150,7 +150,7 @@ void scan(){
 }
 bool authorized(const Permission &p){return p.valid&&p.allowed&&p.cmd.token==batch.token&&p.cmd.tag==batch.tag&&p.cmd.remove_tag==batch.remove_tag&&p.cmd.mode==2&&!batch.canceled;}
 void start_request(){
- if(pgr_evolve_transfer_busy())return;
+ if(pgs_evolve_transfer_busy())return;
  if(batch.index>=int(batch.candidates.size())){publish("done","Batch complete");return;}
  Candidate expected=batch.candidates[batch.index++],fresh;Root current=pokemon(expected.id);
  if(!candidate(current,fresh)||!same(expected,fresh)){++batch.skipped;publish("running","Skipped changed or unavailable Pokemon");return;}
@@ -236,8 +236,8 @@ void poll_request(){
   if(matches&&costs){batch.await_inventory=false;uncertain.erase(batch.sending.id);uncertain.erase(batch.result_id);++batch.completed;batch.xp+=batch.pending_xp;remove_confirmed_tag();return;}
   require(clock_ms()<batch.since+15000,"inventory update not confirmed; inspect before retrying");return;
  }
- auto vr=static_cast<const PgrVgpResultsApi*>(pgs_vgp_results_api(1));require(vr,"promise polling unavailable");PgrVgpResultsResult out{};int rc=vr->poll(batch.promise.get(),1,owner,&out);if(!rc){require(clock_ms()<batch.since+15000,"evolution response timed out; inspect before retrying");return;}
- Root response;response.h=out.value_handle;batch.promise.reset();require(rc==PGR_VR_DONE&&response,"evolution request failed; inspect before retrying");require(klass(response.get())==cls("Holoholo.Rpc","EvolvePokemonOutProto"),"unexpected evolution response");
+ auto vr=static_cast<const PgsVgpResultsApi*>(pgs_vgp_results_api(1));require(vr,"promise polling unavailable");PgsVgpResultsResult out{};int rc=vr->poll(batch.promise.get(),1,owner,&out);if(!rc){require(clock_ms()<batch.since+15000,"evolution response timed out; inspect before retrying");return;}
+ Root response;response.h=out.value_handle;batch.promise.reset();require(rc==PGS_VR_DONE&&response,"evolution request failed; inspect before retrying");require(klass(response.get())==cls("Holoholo.Rpc","EvolvePokemonOutProto"),"unexpected evolution response");
  if(!success(response.get())){uncertain.erase(batch.sending.id);++batch.skipped;publish("error","Evolution declined (result "+std::to_string(result_value(response.get()))+"); batch stopped");return;}
  Root evolved(field<void*>(response.get(),"EvolvedPokemon","Holoholo.Rpc.PokemonProto"));
  uint64_t returned_id=0;int returned_species=0;
@@ -252,13 +252,13 @@ void poll_request(){
  uncertain.insert(batch.result_id);batch.await_inventory=true;batch.since=clock_ms();publish("running","Server accepted evolution; waiting for inventory update");
 }
 } // namespace
-void pgr_evolution_tick(uint64_t tid,const PgrSharedMetadataOutput *metadata){
+void pgs_evolution_tick(uint64_t tid,const PgsSharedMetadataOutput *metadata){
  if(busy||!tid||tid!=uint64_t(gettid())||(owner&&owner!=tid))return;struct Guard{Guard(){busy=true;}~Guard(){busy=false;}}guard;
  try{auto p=permission();
  // Stop can arrive before the first preview tick. Acknowledge that token even
  // before services are initialized, so Java does not wait forever for a drain.
  if(p.valid&&p.cmd.mode==0&&p.cmd.token&&p.cmd.token!=batch.token&&!batch.promise&&!batch.await_inventory&&!batch.await_tag){batch=Batch{};batch.token=p.cmd.token;publish("stopped","Batch stopped");return;}
- if(!initialized){if(!p.allowed)return;auto api=static_cast<const PgrBootApi*>(pgs_runtime_bootstrap_api(1));boot.version=1;boot.size=sizeof(boot);require(api&&api->snapshot(&boot)==0,"runtime bootstrap");md=metadata;require(md,"shared metadata");owner=tid;initialized=true;}
+ if(!initialized){if(!p.allowed)return;auto api=static_cast<const PgsBootApi*>(pgs_runtime_bootstrap_api(1));boot.version=1;boot.size=sizeof(boot);require(api&&api->snapshot(&boot)==0,"runtime bootstrap");md=metadata;require(md,"shared metadata");owner=tid;initialized=true;}
  require(fn<void*(*)()>(boot.runtime.thread_current)()!=nullptr,"owner not attached");
  if(batch.token&&batch.phase!="idle"&&batch.phase!="done"&&batch.phase!="stopped"&&batch.phase!="error"){
   if(!p.allowed||p.cmd.token!=batch.token||p.cmd.tag!=batch.tag||p.cmd.remove_tag!=batch.remove_tag||p.cmd.mode==0)batch.canceled=true;
@@ -274,5 +274,5 @@ void pgr_evolution_tick(uint64_t tid,const PgrSharedMetadataOutput *metadata){
  if(batch.phase=="running"&&authorized(p)&&clock_ms()>=batch.next)start_request();
  }catch(const Failure &e){batch.promise.reset();batch.await_inventory=false;batch.tag_pending=false;batch.await_tag=false;publish("error",e.where);}catch(...){batch.promise.reset();batch.await_inventory=false;batch.tag_pending=false;batch.await_tag=false;publish("error","Evolution engine stopped after an unexpected error");}
 }
-void pgr_evolution_stop(uint64_t tid){if(initialized&&tid==owner&&tid==uint64_t(gettid())){batch.canceled=true;batch.promise.reset();batch.await_inventory=false;batch.tag_pending=false;batch.await_tag=false;publish("stopped","Session ended; preview again to continue");}}
-bool pgr_evolution_busy(){return bool(batch.promise)||batch.await_inventory||batch.await_tag||batch.phase=="running";}
+void pgs_evolution_stop(uint64_t tid){if(initialized&&tid==owner&&tid==uint64_t(gettid())){batch.canceled=true;batch.promise.reset();batch.await_inventory=false;batch.tag_pending=false;batch.await_tag=false;publish("stopped","Session ended; preview again to continue");}}
+bool pgs_evolution_busy(){return bool(batch.promise)||batch.await_inventory||batch.await_tag||batch.phase=="running";}

@@ -28,27 +28,27 @@ void refresh_field_get(void *object,void *field,void *out) {
  fake_field_get(object,field,out);
 }
 bool panel_ready() { return true; }
-bool panel_show(bool owned,void *text,int32_t level,int,int,int,const PgrPvpBest *) {
+bool panel_show(bool owned,void *text,int32_t level,int,int,int,const PgsPvpBest *) {
  assert(owned);shown_text=text;shown_level=level;++shows;
  if (destroy_on_show) {destroy_on_show->destroyed=true;destroy_on_show=nullptr;}
  return true;
 }
 void panel_hide(void *) { ++hides; }
-const PgrIvPanelHooks panel_hooks{panel_ready,panel_show,panel_hide};
-void poll_owned() { usleep(160000);assert(g_api->tick(g_owner,0)==PGR_IV_OK); }
-void enable_owned(uint64_t lease=2000) { assert(g_api->update(0,1,lease,g_owner)==PGR_IV_OK); }
+const PgsIvPanelHooks panel_hooks{panel_ready,panel_show,panel_hide};
+void poll_owned() { usleep(160000);assert(g_api->tick(g_owner,0)==PGS_IV_OK); }
+void enable_owned(uint64_t lease=2000) { assert(g_api->update(0,1,lease,g_owner)==PGS_IV_OK); }
 void clean() {
- assert(g_api->tick(g_owner,1)==PGR_IV_OK);
+ assert(g_api->tick(g_owner,1)==PGS_IV_OK);
  auto s=take_sample();assert(s.owned_count==0&&s.owned_root_count==0&&g_live.empty());
 }
 }
 
 int main() {
- g_api=static_cast<const PgrIvDisplayApi*>(pgs_iv_display_api(1));assert(g_api);
+ g_api=static_cast<const PgsIvDisplayApi*>(pgs_iv_display_api(1));assert(g_api);
  g_owner=this_tid();auto config=make_config();config.gchandle_new=(void*)refresh_gc_new;
  config.field_get_value=(void*)refresh_field_get;
- assert(g_api->install(&config)==PGR_IV_OK);
- pgr_iv_display_set_panel_hooks(&panel_hooks);enable_owned();
+ assert(g_api->install(&config)==PGS_IV_OK);
+ pgs_iv_display_set_panel_hooks(&panel_hooks);enable_owned();
  FakeText text;init_text(&text);FakePokemon pokemon{&cls_pokemon,123,15,15,15,.5f,0};
  FakePanel panel{&cls_panel,&text,&pokemon,&g_gm_obj};
  call_owned(&panel,&pokemon,nullptr);
@@ -86,16 +86,16 @@ int main() {
  replacement.klass=&cls_other;replacement.cp=600;poll_owned();
  assert(take_sample().owned_cp==555);replacement.klass=&cls_pokemon;
 
- assert(g_api->disable()==PGR_IV_OK);int prior=shown_level;poll_owned();
+ assert(g_api->disable()==PGS_IV_OK);int prior=shown_level;poll_owned();
  assert(take_sample().owned_cp==555&&shown_level==prior);
  enable_owned();poll_owned();assert(take_sample().owned_cp==600);
  replacement.cp=700;enable_owned(1);poll_owned();assert(take_sample().owned_cp==600);
  enable_owned();poll_owned();assert(take_sample().owned_cp==700);
 
  replacement.cp=800;usleep(160000);
- std::thread wrong([&]{assert(g_api->tick(g_owner,0)==PGR_IV_OK);});wrong.join();
+ std::thread wrong([&]{assert(g_api->tick(g_owner,0)==PGS_IV_OK);});wrong.join();
  assert(take_sample().owned_cp==700);
- assert(g_api->tick(g_owner,0)==PGR_IV_OK);assert(take_sample().owned_cp==800);
+ assert(g_api->tick(g_owner,0)==PGS_IV_OK);assert(take_sample().owned_cp==800);
  // Revoking while capturing the refreshed label must not apply the new level.
  replacement.cp=900;replacement.cpmul=.75f;g_getfont_disables=true;poll_owned();
  assert(shown_level==28&&take_sample().owned_cp==900);
@@ -134,13 +134,13 @@ int main() {
  clean();int old_shows=shows;replacement.cp=901;poll_owned();assert(shows==old_shows&&g_live.empty());
 
  // Tracking inherits the existing eight-panel cap and stop cleanup, with no global storage scan.
- FakeText texts[PGR_IV_MAX_OWNED+2];FakePanel panels[PGR_IV_MAX_OWNED+2];
+ FakeText texts[PGS_IV_MAX_OWNED+2];FakePanel panels[PGS_IV_MAX_OWNED+2];
  enable_owned();
- for (int i=0;i<PGR_IV_MAX_OWNED+2;++i) {
+ for (int i=0;i<PGS_IV_MAX_OWNED+2;++i) {
   init_text(&texts[i]);panels[i]=FakePanel{&cls_panel,&texts[i],&replacement,&g_gm_obj};
   call_owned(&panels[i],&replacement,nullptr);
-  assert(take_sample().owned_count<=PGR_IV_MAX_OWNED&&g_live.size()<=3*PGR_IV_MAX_OWNED);
+  assert(take_sample().owned_count<=PGS_IV_MAX_OWNED&&g_live.size()<=3*PGS_IV_MAX_OWNED);
  }
- assert(take_sample().owned_count==PGR_IV_MAX_OWNED);clean();
+ assert(take_sample().owned_count==PGS_IV_MAX_OWNED);clean();
  puts("PASS owned IV refresh: CP, level-only, same-stat proto replacement, moving GC, replaced Text, destroyed panel, allocation failure, lease, owner, revocation, cap and stop");
 }

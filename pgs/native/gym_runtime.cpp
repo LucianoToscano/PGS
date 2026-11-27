@@ -15,13 +15,13 @@
 #include <utility>
 #include <cmath>
 namespace {
-using namespace pgr_shared_meta;
-using namespace pgr_gym;
+using namespace pgs_shared_meta;
+using namespace pgs_gym;
 struct Failure {const char *where;};
 struct UnsentRequest {const char *where;};
 void require_unsent(bool ok,const char *where){if(!ok)throw UnsentRequest{where};}
 void require(bool ok,const char *where){if(!ok)throw Failure{where};}
-PgrBootBinding boot{};const PgrSharedMetadataOutput *md=nullptr;
+PgsBootBinding boot{};const PgsSharedMetadataOutput *md=nullptr;
 bool remote_hold=false;
 bool initialized=false,busy=false,paused=false;uint64_t owner=0,next_scan=0;
 std::string status,spin_status,account;History history;std::map<std::string,uint64_t> inspected;std::map<uint64_t,uint64_t> reserved;
@@ -33,10 +33,10 @@ void event(const std::string &message,int result=0,int dust=0,bool spin=false){
  if(message==last&&result==0&&dust==0)return;last=message;
  const char *kind=spin?"gym-spin":"gym-automation";
  __android_log_print(ANDROID_LOG_INFO,"PGSGym","%s result=%d dust=%d",message.c_str(),result,dust);
- const auto *tr=static_cast<const PgrRuntimeTransportApi*>(pgs_runtime_transport_api(1));
+ const auto *tr=static_cast<const PgsRuntimeTransportApi*>(pgs_runtime_transport_api(1));
  std::string json=std::string("{\"kind\":\"")+kind+"\",\"message\":\""+message+"\",\"result\":"+std::to_string(result)+",\"dust\":"+std::to_string(dust)+"}";
  // Use the existing host diagnostic event action; no gameplay pointer crosses it.
- if(tr){PgrRuntimeTransportString strings[]={{kind,uint32_t(strlen(kind))},{json.c_str(),uint32_t(json.size())}};if(tr->emit(19,nullptr,0,strings,2)!=0)paused=true;}
+ if(tr){PgsRuntimeTransportString strings[]={{kind,uint32_t(strlen(kind))},{json.c_str(),uint32_t(json.size())}};if(tr->emit(19,nullptr,0,strings,2)!=0)paused=true;}
 }
 struct Root {
  uintptr_t h=0;
@@ -51,9 +51,9 @@ struct Root {
 void *klass(void *o){require(o,"null object");return fn<void*(*)(void*)>(boot.runtime.object_get_class)(o);}
 void *cls(const char *ns,const char *name){
  static std::map<std::string,void*> cache;std::string key=std::string(ns)+"."+name;auto it=cache.find(key);if(it!=cache.end())return it->second;
- const auto *api=static_cast<const PgrMetaApi*>(pgs_runtime_metadata_api(1));require(api,"metadata API");
- PgrMetaClassQuery q{};q.version=1;q.size=sizeof(q);q.name_space=ns;q.name=name;q.canonical_match=PGR_MD_MATCH_EXACT;
- PgrMetaClassResult out{};require(api->resolve_class(&q,&out)==0,name);return cache[key]=const_cast<void*>(out.klass);
+ const auto *api=static_cast<const PgsMetaApi*>(pgs_runtime_metadata_api(1));require(api,"metadata API");
+ PgsMetaClassQuery q{};q.version=1;q.size=sizeof(q);q.name_space=ns;q.name=name;q.canonical_match=PGS_MD_MATCH_EXACT;
+ PgsMetaClassResult out{};require(api->resolve_class(&q,&out)==0,name);return cache[key]=const_cast<void*>(out.klass);
 }
 std::string typename_of(void *type){char *p=fn<char*(*)(void*)>(boot.meta.type_get_name)(type);require(p,"type name");std::string s=p;fn<void(*)(void*)>(boot.meta.mem_free)(p);return s;}
 void *field_info(void *k,const char *name,const char *type){
@@ -98,8 +98,8 @@ std::string result_words(void *o){
 int count(Root &list,int cap){int n=boxed<int>(call(list.get(),"get_Count"),"System.Int32");require(n>=0&&n<=cap,"collection bound");return n;}
 Root item(Root &list,int index){void *args[]={&index};return Root(call(list.get(),"get_Item",1,args));}
 struct Permission {Settings settings;std::string config;double lat=0,lon=0;uint64_t seq=0;bool allowed=false,valid_config=false;};
-Permission permission(){Permission p;auto tr=static_cast<const PgrRuntimeTransportApi*>(pgs_runtime_transport_api(1));if(!tr)return p;
- PgrRuntimeTransportSample a{},z{};if(tr->sample(&a)||!a.snapshot_fresh||a.fault)return p;
+Permission permission(){Permission p;auto tr=static_cast<const PgsRuntimeTransportApi*>(pgs_runtime_transport_api(1));if(!tr)return p;
+ PgsRuntimeTransportSample a{},z{};if(tr->sample(&a)||!a.snapshot_fresh||a.fault)return p;
  char text[65]{};uint32_t len=0;int active=0,ready=0,map=0,has=0;
  if(tr->get_string(8,text,sizeof(text),&len)||len>64||!parse(text,len,p.settings))return p;p.config.assign(text,len);
  tr->get_bool(3,&active);tr->get_bool(16,&ready);tr->get_bool(38,&map);
@@ -147,7 +147,7 @@ bool spin_bag_room(){
 }
 Root send(Root &request,const char *out_name,const char *rpc_name,Root &reflection){
  Root bag=resolve("Niantic.Holoholo","IItemBag");require(bool(bag),"item bag unavailable");
- Root rpc(field<void*>(bag.get(),PGR_GAME_GYM_RUNTIME_CPP_ERHP_NAME,"Niantic.Holoholo.Rpc.IRpcHandler"));require(bool(rpc),"RPC unavailable");
+ Root rpc(field<void*>(bag.get(),PGS_GAME_GYM_RUNTIME_CPP_ERHP_NAME,"Niantic.Holoholo.Rpc.IRpcHandler"));require(bool(rpc),"RPC unavailable");
  void *open=method(klass(rpc.get()),"SendRpc",5);require(fn<bool(*)(void*)>(boot.meta.method_is_generic)(open),"generic RPC");
  Root reflected(fn<void*(*)(void*,void*)>(exp("method_get_object"))(open,klass(rpc.get())));
  Root types(fn<void*(*)(void*,uintptr_t)>(boot.runtime.array_new)(cls("System","Type"),2));
@@ -194,7 +194,7 @@ void validate_bindings(){
  method(cls("Niantic.Holoholo.Gym","MapGym"),"GetGymDetailsFromServer",0);
  field_info(cls("Holoholo.Rpc","PokemonFortProto"),"GymDisplay","Holoholo.Rpc.GymDisplayProto");
  field_info(cls("Holoholo.Rpc","GymDisplayProto"),"SlotsAvailable","System.Int32");
- Root bag=resolve("Niantic.Holoholo","IItemBag");require(bool(bag),"item bag not ready");field_info(klass(bag.get()),PGR_GAME_GYM_RUNTIME_CPP_ERHP_NAME,"Niantic.Holoholo.Rpc.IRpcHandler");
+ Root bag=resolve("Niantic.Holoholo","IItemBag");require(bool(bag),"item bag not ready");field_info(klass(bag.get()),PGS_GAME_GYM_RUNTIME_CPP_ERHP_NAME,"Niantic.Holoholo.Rpc.IRpcHandler");
  event("Gym request bindings validated");
 }
 void clear_pending(){
@@ -268,7 +268,7 @@ bool prepare_selection(){
   Root tag(field<void*>(row.get(),"TagProto","Holoholo.Rpc.PokemonTagProto"));std::string name=string(field<void*>(tag.get(),"Name","System.String"));for(char &c:name)if(c>='A'&&c<='Z')c+=32;
   if(name=="gym"||name=="#gym")pending.tags.push_back(field<uint64_t>(tag.get(),"Id","System.UInt64"));}
  pending.bag=resolve("Niantic.Holoholo","IPokemonBag");if(!pending.bag)return false;
- pending.gm=reference(pending.bag.get(),PGR_GAME_GYM_RUNTIME_CPP_ERIK_NAME,"IGameMasterData");pending.buddy=resolve("Niantic.Holoholo.Buddy","IBuddyPokemonService");if(!pending.gm||!pending.buddy)return false;
+ pending.gm=reference(pending.bag.get(),PGS_GAME_GYM_RUNTIME_CPP_ERIK_NAME,"IGameMasterData");pending.buddy=resolve("Niantic.Holoholo.Buddy","IBuddyPokemonService");if(!pending.gm||!pending.buddy)return false;
  Root all(call(pending.bag.get(),"get_AllPokemon"));pending.enumerator=Root(virtual_call(all,h(H_INC_M_ENUMERATE)));require(bool(pending.enumerator),"inventory enumerator");pending.phase=4;return true;
 }
 bool snapshot_valid(const Permission &p){
@@ -291,7 +291,7 @@ bool issue_feed(const Permission &p){
  int chosen=berry(ns,rs,p.settings);if(!chosen){event("Berry reserves reached");return false;}
  uint64_t id=0;for(auto d:defenders())if(history.feed_allowed(d.id,clock_ms())){id=d.id;break;}if(!id)return false;
  Root fid(fn<void*(*)(const char*)>(boot.runtime.string_new)(pending.id.c_str()));
- void *feed=pgr_gym_feed::resolve(boot,bag.get());require(feed,"Gym item-bag feeding contract unavailable");
+ void *feed=pgs_gym_feed::resolve(boot,bag.get());require(feed,"Gym item-bag feeding contract unavailable");
  if(!snapshot_valid(p)||!gym_valid(pending.gym,p))return false;
  void *stock_args[]={&chosen};int current=boxed<int>(call(bag.get(),"GetItemCount",1,stock_args),"System.Int32");
  if(current<=(chosen==703?p.settings.nanab:p.settings.razz))return false;
@@ -301,10 +301,10 @@ bool issue_feed(const Permission &p){
  void *args[]={&chosen,&id,fid.get()};
  pending.promise=Root(invoke(feed,bag.get(),args));require(bool(pending.promise),"feeding outcome unknown");
  // The game may update its cache synchronously, before a badge/reward UI opens.
- try{int after=boxed<int>(call(bag.get(),"GetItemCount",1,stock_args),"System.Int32");pgr_gym_feed::observe_stock(pending.stock_seen,current,after);}catch(...){}
+ try{int after=boxed<int>(call(bag.get(),"GetItemCount",1,stock_args),"System.Int32");pgs_gym_feed::observe_stock(pending.stock_seen,current,after);}catch(...){}
  event("Feeding gym defender");return true;
 }
-void cooldown(const char *label){const auto *t=static_cast<const PgrRuntimeTransportApi*>(pgs_runtime_transport_api(1));PgrRuntimeTransportString s{label,uint32_t(strlen(label))};if(t&&t->emit(17,nullptr,0,&s,1)!=0)paused=true;}
+void cooldown(const char *label){const auto *t=static_cast<const PgsRuntimeTransportApi*>(pgs_runtime_transport_api(1));PgsRuntimeTransportString s{label,uint32_t(strlen(label))};if(t&&t->emit(17,nullptr,0,&s,1)!=0)paused=true;}
 void act(const Permission &p){
  if(!snapshot_valid(p)){retry_no_action(clock_ms(),1500);return;}auto rows=defenders();
  if(p.settings.deploy&&rows.size()<6&&history.deploy_allowed(pending.id,clock_ms())&&gym_valid(pending.gym,p,nullptr,nullptr,true)){
@@ -337,7 +337,7 @@ bool find_open_gym(const Permission &p,uint64_t now,const std::string &skip,Root
  return false;
 }
 bool observe_feed_stock(int stock,uint64_t now){
- pgr_gym_feed::observe_stock(pending.stock_seen,pending.stock_before,stock);
+ pgs_gym_feed::observe_stock(pending.stock_seen,pending.stock_before,stock);
  if(pending.stock_seen){pending.await_stock=false;event("Berry inventory synchronized");return true;}
  if(now-pending.since>5000)event("Waiting for berry inventory update; will resume when synchronized");
  return false;
@@ -375,8 +375,8 @@ void poll(const Permission &p){
   if(now<next_scan)return;
   act(p);return;}
  if(now-pending.since>15000){paused=true;event("Paused: gym request timed out; toggle off to resume");clear_pending();return;}
- auto vr=static_cast<const PgrVgpResultsApi*>(pgs_vgp_results_api(1));PgrVgpResultsResult out{};int rc=vr->poll(pending.promise.get(),1,owner,&out);if(!rc)return;
- if(rc!=PGR_VR_DONE){
+ auto vr=static_cast<const PgsVgpResultsApi*>(pgs_vgp_results_api(1));PgsVgpResultsResult out{};int rc=vr->poll(pending.promise.get(),1,owner,&out);if(!rc)return;
+ if(rc!=PGS_VR_DONE){
   if(rc<0&&pending.promise){void *k=klass(pending.promise.get());auto nm=fn<const char*(*)(void*)>(exp("class_get_name"));auto ns=fn<const char*(*)(void*)>(exp("class_get_namespace"));
    __android_log_print(ANDROID_LOG_INFO,"PGSGym","Gym request unreadable: phase=%d rc=%d promise=%s.%s",pending.phase,rc,ns(k),nm(k));}
   if(pending.phase==3)history.refuse(pending.defender,now);event("Gym request rejected",rc);clear_pending();next_scan=now+10000;return;}
@@ -477,12 +477,12 @@ void discover(const Permission &p){
  else if(nearby_waiting){if(status!="Berry reserves reached")event("Waiting to recheck nearby gym");}else if(!nearest_reason.empty())event("Nearest gym: "+nearest_reason+" ("+std::to_string(int(nearest))+"m)");else event("Waiting for a friendly gym within 80m");
 }
 }
-void pgr_gym_tick(uint64_t tid,const PgrSharedMetadataOutput *metadata){
+void pgs_gym_tick(uint64_t tid,const PgsSharedMetadataOutput *metadata){
  if(busy||!tid||tid!=uint64_t(gettid())||(owner&&owner!=tid))return;
  struct Guard{Guard(){busy=true;}~Guard(){busy=false;}} guard;
  try{
   auto p=permission();if(remote_hold)p.allowed=false;if(p.valid_config&&!p.settings.deploy&&!p.settings.feed&&!p.settings.spin)paused=false;
-  if(!initialized){if(!p.allowed||paused)return;auto api=static_cast<const PgrBootApi*>(pgs_runtime_bootstrap_api(1));boot.version=1;boot.size=sizeof(boot);require(api&&api->snapshot(&boot)==0,"runtime bootstrap");md=metadata;require(md,"shared metadata");owner=tid;validate_bindings();initialized=true;}
+  if(!initialized){if(!p.allowed||paused)return;auto api=static_cast<const PgsBootApi*>(pgs_runtime_bootstrap_api(1));boot.version=1;boot.size=sizeof(boot);require(api&&api->snapshot(&boot)==0,"runtime bootstrap");md=metadata;require(md,"shared metadata");owner=tid;validate_bindings();initialized=true;}
   require(fn<void*(*)()>(boot.runtime.thread_current)()!=nullptr,"owner not attached");
   if(p.allowed){Root player=resolve("Niantic.Holoholo","IPlayerService");if(!player){if(pending.phase)pending.canceled=true;return;}std::string id=string(call(player.get(),"get_PlayerId"));if(id.empty())return;
    if(account!=id){clear_pending();account=id;history=History{};inspected.clear();reserved.clear();no_defender_until=0;}}
@@ -492,10 +492,10 @@ void pgr_gym_tick(uint64_t tid,const PgrSharedMetadataOutput *metadata){
   discover(p);
  }catch(const UnsentRequest &e){recover_unsent(e.where);}catch(const Failure &e){paused=true;clear_pending();event(std::string("Paused: ")+e.where);}catch(...){paused=true;clear_pending();event("Paused: gym automation failure");}
 }
-void pgr_gym_stop(uint64_t tid){if(initialized&&tid==owner&&tid==uint64_t(gettid())){clear_pending();paused=true;}}
+void pgs_gym_stop(uint64_t tid){if(initialized&&tid==owner&&tid==uint64_t(gettid())){clear_pending();paused=true;}}
 
-void pgr_gym_remote_hold(bool hold){remote_hold=hold;}
-pgr_gym::History *pgr_gym_remote_history(const std::string &player){
+void pgs_gym_remote_hold(bool hold){remote_hold=hold;}
+pgs_gym::History *pgs_gym_remote_history(const std::string &player){
  if(player.empty()||pending.phase)return nullptr;
  if(account!=player){account=player;history=History{};inspected.clear();reserved.clear();}
  return &history;

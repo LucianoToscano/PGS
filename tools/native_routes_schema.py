@@ -95,7 +95,7 @@ def render(source):
         '// Source: pgs/native/schema/routes.json (versioned metadata descriptors).',
         '// Indices preserve declaration order; no inferred signatures or runtime behavior.',
         '#pragma once', '#include <stddef.h>', '#include <stdint.h>', '',
-        'namespace pgr_routes_schema {',
+        'namespace pgs_routes_schema {',
         'struct ClassSpec {const char *key,*name_space,*name,*canonical;};',
         'struct FieldSpec {uint32_t owner;const char *name;uint64_t offset;uint32_t kind;const char *type_name;uint32_t value_size;};',
         'struct MethodSpec {const char *key;uint32_t owner;const char *name,*return_type;uint32_t param_count;const char *param0;};',
@@ -113,7 +113,7 @@ def render(source):
     for index, (key, (owner, name, result, count, param0)) in enumerate(methods.items()):
         lines.append(f'  {{{literal(key)},{indices[owner]}u,{literal(name)},{literal(result)},{count}u,{literal(param0)}}}, // {index}')
     lines += ['};', 'inline constexpr size_t kMethodCount=sizeof(kMethods)/sizeof(kMethods[0]);',
-              '} // namespace pgr_routes_schema', '']
+              '} // namespace pgs_routes_schema', '']
     return '\n'.join(lines)
 
 

@@ -45,39 +45,39 @@ extern "C" {
 
 static_assert(sizeof(void *) == 8, "CatchCompletion native ABI requires LP64");
 
-enum PgrCatchCompletionInfo {
-  PGR_CC_FEATURE_ID      = 24,
-  PGR_CC_API_VERSION     = 1,
-  PGR_CC_CONFIG_VERSION  = 1,
-  PGR_CC_REQUEST_VERSION = 1,
-  PGR_CC_SAMPLE_VERSION  = 1,
-  PGR_CC_MAX_LEASE_MS    = 2500   // residual foreground lease ceiling (JS allowedUntil gate)
+enum PgsCatchCompletionInfo {
+  PGS_CC_FEATURE_ID      = 24,
+  PGS_CC_API_VERSION     = 1,
+  PGS_CC_CONFIG_VERSION  = 1,
+  PGS_CC_REQUEST_VERSION = 1,
+  PGS_CC_SAMPLE_VERSION  = 1,
+  PGS_CC_MAX_LEASE_MS    = 2500   // residual foreground lease ceiling (JS allowedUntil gate)
 };
 
 // validate() returns 1 VALID / 0 INVALID / negative error. complete() returns 1 DONE (invoked) /
-// 0 REFUSED (gate/token/validation, NOT invoked) / negative error. acquire() returns PGR_CC_OK with
-// *out_token set to a nonzero token, or 0 when refused. Every other function returns PGR_CC_OK or a
+// 0 REFUSED (gate/token/validation, NOT invoked) / negative error. acquire() returns PGS_CC_OK with
+// *out_token set to a nonzero token, or 0 when refused. Every other function returns PGS_CC_OK or a
 // negative error.
-enum PgrCatchCompletionStatus {
-  PGR_CC_DONE              = 1,   // complete(): the callback was invoked / validate(): valid
-  PGR_CC_OK                = 0,   // generic success / complete(): refused / validate(): invalid
-  PGR_CC_ERR_NULL_ARG      = -1,
-  PGR_CC_ERR_BAD_VERSION   = -2,
-  PGR_CC_ERR_BAD_SIZE      = -3,
-  PGR_CC_ERR_MISSING_PTR   = -4,
-  PGR_CC_ERR_NOT_INSTALLED = -6,
-  PGR_CC_ERR_RECONFIG      = -9,
-  PGR_CC_ERR_CLOCK_FAILURE = -10,
-  PGR_CC_ERR_MANAGED       = -11  // the dismissal Action threw -> host runs its safe fallback
+enum PgsCatchCompletionStatus {
+  PGS_CC_DONE              = 1,   // complete(): the callback was invoked / validate(): valid
+  PGS_CC_OK                = 0,   // generic success / complete(): refused / validate(): invalid
+  PGS_CC_ERR_NULL_ARG      = -1,
+  PGS_CC_ERR_BAD_VERSION   = -2,
+  PGS_CC_ERR_BAD_SIZE      = -3,
+  PGS_CC_ERR_MISSING_PTR   = -4,
+  PGS_CC_ERR_NOT_INSTALLED = -6,
+  PGS_CC_ERR_RECONFIG      = -9,
+  PGS_CC_ERR_CLOCK_FAILURE = -10,
+  PGS_CC_ERR_MANAGED       = -11  // the dismissal Action threw -> host runs its safe fallback
 };
 
 // Fixed LP64 config (128 bytes): 8-byte header + 14 validated il2cpp pointers + 2 int32. Every
 // pointer is an already-validated export / Il2CppClass* / FieldInfo* / MethodInfo* packed by the host
 // straight off p.directPresentation / p.details / p.fields; the native layer re-checks the header and
 // rejects any null. No hook address -- feature 24 installs no hook.
-struct PgrCatchCompletionConfig {
-  uint32_t version;  // == PGR_CC_CONFIG_VERSION
-  uint32_t size;     // == sizeof(PgrCatchCompletionConfig)
+struct PgsCatchCompletionConfig {
+  uint32_t version;  // == PGS_CC_CONFIG_VERSION
+  uint32_t size;     // == sizeof(PgsCatchCompletionConfig)
 
   // il2cpp runtime exports.
   void *object_get_class;  // void* (void* obj)
@@ -106,15 +106,15 @@ struct PgrCatchCompletionConfig {
   int32_t reserved;        // 0
 };
 
-static_assert(sizeof(PgrCatchCompletionConfig) == 128,
-              "PgrCatchCompletionConfig must remain 128 bytes on LP64");
+static_assert(sizeof(PgsCatchCompletionConfig) == 128,
+              "PgsCatchCompletionConfig must remain 128 bytes on LP64");
 
 // Fixed LP64 request (64 bytes). view/response/pokemon/callback are raw managed pointers the caller
 // keeps GC-rooted for the synchronous call; native stores none of them. expected_id is the proven
 // caught id (nonzero), compared as a raw 64-bit value against the response/pokemon ids.
-struct PgrCatchCompletionRequest {
-  uint32_t version;     // == PGR_CC_REQUEST_VERSION
-  uint32_t size;        // == sizeof(PgrCatchCompletionRequest)
+struct PgsCatchCompletionRequest {
+  uint32_t version;     // == PGS_CC_REQUEST_VERSION
+  uint32_t size;        // == sizeof(PgsCatchCompletionRequest)
   uint64_t expected_id; // proven caught id (nonzero); raw 64-bit, never numerically converted
   uint64_t epoch;       // caller's current epoch; must equal the armed epoch at the gate
   uint64_t tid;         // proven owner tid (must equal the current OS tid)
@@ -124,13 +124,13 @@ struct PgrCatchCompletionRequest {
   void *callback;       // System.Action (dismissal delegate)
 };
 
-static_assert(sizeof(PgrCatchCompletionRequest) == 64,
-              "PgrCatchCompletionRequest must remain 64 bytes on LP64");
+static_assert(sizeof(PgsCatchCompletionRequest) == 64,
+              "PgsCatchCompletionRequest must remain 64 bytes on LP64");
 
 // Fixed LP64 telemetry gauge (72 bytes). Pull-only; the native layer never calls JS.
-struct PgrCatchCompletionSample {
-  uint32_t version;          // == PGR_CC_SAMPLE_VERSION
-  uint32_t size;             // == sizeof(PgrCatchCompletionSample)
+struct PgsCatchCompletionSample {
+  uint32_t version;          // == PGS_CC_SAMPLE_VERSION
+  uint32_t size;             // == sizeof(PgsCatchCompletionSample)
   uint64_t validate_ok;      // bumps on each VALID validate()
   uint64_t validate_fail;    // bumps on each INVALID validate()
   uint64_t complete_ok;      // bumps on each DONE complete() (callback invoked, no throw)
@@ -142,39 +142,39 @@ struct PgrCatchCompletionSample {
   uint32_t fault;            // reserved; 0 in v1
 };
 
-static_assert(sizeof(PgrCatchCompletionSample) == 72,
-              "PgrCatchCompletionSample must remain 72 bytes on LP64");
+static_assert(sizeof(PgsCatchCompletionSample) == 72,
+              "PgsCatchCompletionSample must remain 72 bytes on LP64");
 
 // Fixed LP64 table: 8-byte header + 7 function pointers = 64 bytes.
-struct PgrCatchCompletionApi {
-  uint32_t version;  // == PGR_CC_API_VERSION
-  uint32_t size;     // == sizeof(PgrCatchCompletionApi)
-  int (*install)(const PgrCatchCompletionConfig *config);
+struct PgsCatchCompletionApi {
+  uint32_t version;  // == PGS_CC_API_VERSION
+  uint32_t size;     // == sizeof(PgsCatchCompletionApi)
+  int (*install)(const PgsCatchCompletionConfig *config);
   // Refresh the gate: enabled, a residual lease clamped to 2500 ms, and the caller's current epoch.
   // Carries proven_tid; once the owner is latched a foreign thread can only revoke (enabled -> 0).
   // Any thread.
   int (*update)(int enabled, uint64_t remaining_lease_ms, uint64_t epoch, uint64_t proven_tid);
   // Validation-only (directCatchValid). Returns 1 valid / 0 invalid / negative error. Reads managed
   // fields; owner thread only (0 off-owner). Does NOT gate on the lease, consume a token, or invoke.
-  int (*validate)(const PgrCatchCompletionRequest *request);
+  int (*validate)(const PgsCatchCompletionRequest *request);
   // Issue one monotonic request token for a single completion attempt. *out_token is a nonzero token
   // when armed (gate live), on the owner thread, and not busy; otherwise 0. Any older/reused token is
   // then rejected by complete(). Owner thread only.
   int (*acquire)(uint64_t epoch, uint64_t proven_tid, uint64_t *out_token);
   // One owner-thread completion. Re-checks the gate + that token is the latest issued and unconsumed,
   // CONSUMES it and marks busy BEFORE anything, re-validates the identity, re-checks the generation,
-  // then runtime_invokes the dismissal Action exactly once. Returns PGR_CC_DONE (invoked),
-  // PGR_CC_OK (refused: gate/token/busy/validation, NOT invoked), or PGR_CC_ERR_MANAGED (the callback
+  // then runtime_invokes the dismissal Action exactly once. Returns PGS_CC_DONE (invoked),
+  // PGS_CC_OK (refused: gate/token/busy/validation, NOT invoked), or PGS_CC_ERR_MANAGED (the callback
   // threw -> host safe fallback). Never invokes twice on retry or reentrancy. Owner thread only.
-  int (*complete)(const PgrCatchCompletionRequest *request, uint64_t token);
+  int (*complete)(const PgsCatchCompletionRequest *request, uint64_t token);
   // Immediate revoke from any thread (bumps the generation, disables the gate). A later update()
   // re-arms. No managed work; no deadlock with an in-flight callback.
   int (*stop)(uint64_t proven_tid);
-  int (*sample)(PgrCatchCompletionSample *out_sample);
+  int (*sample)(PgsCatchCompletionSample *out_sample);
 };
 
-static_assert(sizeof(PgrCatchCompletionApi) == 64,
-              "PgrCatchCompletionApi must remain a 64-byte version-1 table");
+static_assert(sizeof(PgsCatchCompletionApi) == 64,
+              "PgsCatchCompletionApi must remain a 64-byte version-1 table");
 
 // Hidden getter. NOT exported by the version script; the coordinator registers it in query_feature
 // under feature id 24 and answers only on an exact version match.

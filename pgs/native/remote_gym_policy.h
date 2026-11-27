@@ -1,5 +1,5 @@
-#ifndef PGR_REMOTE_GYM_POLICY_H
-#define PGR_REMOTE_GYM_POLICY_H
+#ifndef PGS_REMOTE_GYM_POLICY_H
+#define PGS_REMOTE_GYM_POLICY_H
 
 // Pure, host-independent policy for the one-shot Remote Gym Feeding module (Feature 2 of
 // GALARIAN_BIRD_FEATURE.md). This header carries ONLY decisions that can be unit-tested without a
@@ -14,7 +14,7 @@
 #include <limits>
 #include <map>
 
-namespace pgr_remote_gym {
+namespace pgs_remote_gym {
 
 // Holoholo.Rpc.Item enum values == item ids (proven by gym_runtime feeding 703/701). Only surplus
 // catch-neutral berries are ever fed; golden razz (706) and silver pinap (708) are never selected.
@@ -144,6 +144,6 @@ struct FeedHistory {
     }
 };
 
-} // namespace pgr_remote_gym
+} // namespace pgs_remote_gym
 
 #endif

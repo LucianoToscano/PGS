@@ -38,43 +38,43 @@ extern "C" {
 
 static_assert(sizeof(void *) == 8, "VgpResults native ABI requires LP64");
 
-enum PgrVgpResultsInfo {
-  PGR_VR_FEATURE_ID     = 30,
-  PGR_VR_API_VERSION    = 1,
-  PGR_VR_CONFIG_VERSION = 1,
-  PGR_VR_RESULT_VERSION = 1,
-  PGR_VR_SAMPLE_VERSION = 1,
-  PGR_VR_OFFSET_MIN     = PGR_GAME_VGP_RESULTS_H_PGR_VR_OFFSET_MIN,   // existing vgpField guard: reject a field offset below this
-  PGR_VR_OFFSET_MAX     = PGR_GAME_VGP_RESULTS_H_PGR_VR_OFFSET_MAX,  // ...or above this
-  PGR_VR_PARENT_MAX     = 16    // existing vgpField guard: class_get_parent walk depth
+enum PgsVgpResultsInfo {
+  PGS_VR_FEATURE_ID     = 30,
+  PGS_VR_API_VERSION    = 1,
+  PGS_VR_CONFIG_VERSION = 1,
+  PGS_VR_RESULT_VERSION = 1,
+  PGS_VR_SAMPLE_VERSION = 1,
+  PGS_VR_OFFSET_MIN     = PGS_GAME_VGP_RESULTS_H_PGS_VR_OFFSET_MIN,   // existing vgpField guard: reject a field offset below this
+  PGS_VR_OFFSET_MAX     = PGS_GAME_VGP_RESULTS_H_PGS_VR_OFFSET_MAX,  // ...or above this
+  PGS_VR_PARENT_MAX     = 16    // existing vgpField guard: class_get_parent walk depth
 };
 
 // phase argument to poll().
-enum PgrVgpResultsPhase {
-  PGR_VR_PHASE_ENCOUNTER = 1,  // any non-null resolved value is valid (old semantics); no status/success
-  PGR_VR_PHASE_CATCH     = 2,  // exact RESP -> status + success; else status unknown, success false
-  PGR_VR_PHASE_SPIN      = 3   // exact SPINRESULT + Result==spin_success -> success; else success false
+enum PgsVgpResultsPhase {
+  PGS_VR_PHASE_ENCOUNTER = 1,  // any non-null resolved value is valid (old semantics); no status/success
+  PGS_VR_PHASE_CATCH     = 2,  // exact RESP -> status + success; else status unknown, success false
+  PGS_VR_PHASE_SPIN      = 3   // exact SPINRESULT + Result==spin_success -> success; else success false
 };
 
 // poll() return codes.
-enum PgrVgpResultsStatus {
-  PGR_VR_DONE              = 2,   // completed: *out populated, out->value_handle set (adopt exactly once)
-  PGR_VR_REJECTED         = 1,   // promise error OR null resolved value (host: "Request rejected")
-  PGR_VR_PENDING          = 0,   // not resolved yet / not the owner thread (host keeps waiting)
-  PGR_VR_ERR_NULL_ARG     = -1,  // null out / promise null-but-owner-ok is PENDING, not this
-  PGR_VR_ERR_NOT_INSTALLED= -2,
-  PGR_VR_ERR_BAD_PHASE    = -3,
-  PGR_VR_ERR_GCHANDLE     = -4,  // a GC root could not be allocated (fail closed: nothing returned)
-  PGR_VR_ERR_SHAPE        = -5,  // required field missing / bad offset / wrong field type (unknown shape)
-  PGR_VR_ERR_REENTRANT    = -6   // a poll was already in progress (defensive: no managed invokes exist)
+enum PgsVgpResultsStatus {
+  PGS_VR_DONE              = 2,   // completed: *out populated, out->value_handle set (adopt exactly once)
+  PGS_VR_REJECTED         = 1,   // promise error OR null resolved value (host: "Request rejected")
+  PGS_VR_PENDING          = 0,   // not resolved yet / not the owner thread (host keeps waiting)
+  PGS_VR_ERR_NULL_ARG     = -1,  // null out / promise null-but-owner-ok is PENDING, not this
+  PGS_VR_ERR_NOT_INSTALLED= -2,
+  PGS_VR_ERR_BAD_PHASE    = -3,
+  PGS_VR_ERR_GCHANDLE     = -4,  // a GC root could not be allocated (fail closed: nothing returned)
+  PGS_VR_ERR_SHAPE        = -5,  // required field missing / bad offset / wrong field type (unknown shape)
+  PGS_VR_ERR_REENTRANT    = -6   // a poll was already in progress (defensive: no managed invokes exist)
 };
 
 // Fixed LP64 config (176 bytes): 8-byte header + 20 validated il2cpp pointers + 2 int32. Every pointer
 // is an already-validated export / Il2CppClass* / FieldInfo* / UTF-8 name buffer packed by the host off
 // p.vgp; the native layer re-checks the header and rejects any null. No hook address. No invoked method.
-struct PgrVgpResultsConfig {
-  uint32_t version;  // == PGR_VR_CONFIG_VERSION
-  uint32_t size;     // == sizeof(PgrVgpResultsConfig)
+struct PgsVgpResultsConfig {
+  uint32_t version;  // == PGS_VR_CONFIG_VERSION
+  uint32_t size;     // == sizeof(PgsVgpResultsConfig)
 
   // il2cpp runtime exports (metadata reads only; NONE run managed code).
   void *gchandle_new;            // uintptr_t (void* obj, int pinned)
@@ -109,13 +109,13 @@ struct PgrVgpResultsConfig {
   int32_t spin_success;     // t.spinSuccess (SPINRESULT Result Success)
 };
 
-static_assert(sizeof(PgrVgpResultsConfig) == 176,
-              "PgrVgpResultsConfig must remain 176 bytes on LP64");
+static_assert(sizeof(PgsVgpResultsConfig) == 176,
+              "PgsVgpResultsConfig must remain 176 bytes on LP64");
 
 // Fixed LP64 poll output (32 bytes). Populated on DONE; otherwise state==0 and all fields clear.
-struct PgrVgpResultsResult {
-  uint32_t version;       // == PGR_VR_RESULT_VERSION
-  uint32_t size;          // == sizeof(PgrVgpResultsResult)
+struct PgsVgpResultsResult {
+  uint32_t version;       // == PGS_VR_RESULT_VERSION
+  uint32_t size;          // == sizeof(PgsVgpResultsResult)
   uint32_t state;         // 0 pending, 1 completed (DONE), 2 rejected (REJECTED)
   uint32_t status_known;  // 1 iff the catch status was read from an exact RESP; else 0
   int32_t  status;        // catch Status enum value when status_known; else 0 (spin never sets this)
@@ -123,13 +123,13 @@ struct PgrVgpResultsResult {
   uint64_t value_handle;  // DONE only: GC handle of the rooted completed value; 0 otherwise
 };
 
-static_assert(sizeof(PgrVgpResultsResult) == 32,
-              "PgrVgpResultsResult must remain 32 bytes on LP64");
+static_assert(sizeof(PgsVgpResultsResult) == 32,
+              "PgsVgpResultsResult must remain 32 bytes on LP64");
 
 // Fixed LP64 telemetry gauge (48 bytes). Pull-only; the native layer never calls JS.
-struct PgrVgpResultsSample {
-  uint32_t version;         // == PGR_VR_SAMPLE_VERSION
-  uint32_t size;            // == sizeof(PgrVgpResultsSample)
+struct PgsVgpResultsSample {
+  uint32_t version;         // == PGS_VR_SAMPLE_VERSION
+  uint32_t size;            // == sizeof(PgsVgpResultsSample)
   uint64_t poll_serial;     // owner-thread polls that passed the owner gate
   uint64_t completed_serial;// DONE results returned
   uint64_t rejected_serial; // REJECTED results (promise error or null resolved value)
@@ -138,22 +138,22 @@ struct PgrVgpResultsSample {
   uint32_t reserved;        // 0
 };
 
-static_assert(sizeof(PgrVgpResultsSample) == 48,
-              "PgrVgpResultsSample must remain 48 bytes on LP64");
+static_assert(sizeof(PgsVgpResultsSample) == 48,
+              "PgsVgpResultsSample must remain 48 bytes on LP64");
 
 // Fixed LP64 table: 8-byte header + 3 function pointers = 32 bytes.
-struct PgrVgpResultsApi {
-  uint32_t version;  // == PGR_VR_API_VERSION
-  uint32_t size;     // == sizeof(PgrVgpResultsApi)
-  int (*install)(const PgrVgpResultsConfig *config);
+struct PgsVgpResultsApi {
+  uint32_t version;  // == PGS_VR_API_VERSION
+  uint32_t size;     // == sizeof(PgsVgpResultsApi)
+  int (*install)(const PgsVgpResultsConfig *config);
   // One owner-thread read of an already-rooted promise. See the file header for return semantics.
   // out is always initialized. owner must equal the current OS tid or the call reports PENDING (0).
-  int (*poll)(void *promise, uint32_t phase, uint64_t owner, PgrVgpResultsResult *out);
-  int (*sample)(PgrVgpResultsSample *out);
+  int (*poll)(void *promise, uint32_t phase, uint64_t owner, PgsVgpResultsResult *out);
+  int (*sample)(PgsVgpResultsSample *out);
 };
 
-static_assert(sizeof(PgrVgpResultsApi) == 32,
-              "PgrVgpResultsApi must remain a 32-byte version-1 table");
+static_assert(sizeof(PgsVgpResultsApi) == 32,
+              "PgsVgpResultsApi must remain a 32-byte version-1 table");
 
 // Hidden getter. NOT exported by the version script; the coordinator registers it in query_feature
 // under feature id 30 and answers only on an exact version match.

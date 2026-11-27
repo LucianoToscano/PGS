@@ -6,8 +6,8 @@
 #include <functional>
 
 namespace {
-const PgrDetailsRecoveryApi *recovery=nullptr;
-PgrDetailsRecoveryRequest recoveryRequest{};
+const PgsDetailsRecoveryApi *recovery=nullptr;
+PgsDetailsRecoveryRequest recoveryRequest{};
 std::function<void()> validationHook,countHook;
 int countInvokes=0;
 void *recoveryInvoke(const void *m,void *self,void **args,void **exc){
@@ -22,10 +22,10 @@ void resetRecovery(){
  recoveryRequest.tid=owner;recoveryRequest.remaining_ms=2500;
  recoveryRequest.gui=req.gui;recoveryRequest.response=req.response;
 }
-void noOutputs(const PgrDetailsRecoveryOutput &o){
+void noOutputs(const PgsDetailsRecoveryOutput &o){
  assert(!o.gui&&!o.state&&!o.response&&!o.data&&!o.pokemon&&!o.dismissed);balanced();
 }
-void checkRecord(const PgrDetailsRecoveryOutput &o){
+void checkRecord(const PgsDetailsRecoveryOutput &o){
  Scene &s=scenes[sceneIndex];Obj *expected[]={&s.gui,&s.view,&s.response,&s.data,&s.pokemon,&s.action};
  void *slots[]={o.gui,o.state,o.response,o.data,o.pokemon,o.dismissed};
  std::set<void*> unique;
@@ -43,13 +43,13 @@ int main(int argc,char **argv){
  assert(argc==2);void *lib=dlopen(argv[1],RTLD_NOW|RTLD_LOCAL);assert(lib);
  auto get=reinterpret_cast<const void*(*)(uint32_t)>(dlsym(lib,"pgs_native_api"));assert(get);
  const auto *core=static_cast<const pgs_native_api_v2*>(get(2));assert(core);
- api=static_cast<const PgrDetailsCompletionApi*>(core->query_feature(37,1));assert(api);
- recovery=static_cast<const PgrDetailsRecoveryApi*>(core->query_feature(38,1));assert(recovery&&recovery->size==32);
- assert(sizeof(PgrDetailsRecoveryRequest)==56&&sizeof(PgrDetailsRecoveryOutput)==64);
+ api=static_cast<const PgsDetailsCompletionApi*>(core->query_feature(37,1));assert(api);
+ recovery=static_cast<const PgsDetailsRecoveryApi*>(core->query_feature(38,1));assert(recovery&&recovery->size==32);
+ assert(sizeof(PgsDetailsRecoveryRequest)==56&&sizeof(PgsDetailsRecoveryOutput)==64);
  owner=gettid();auto cfg=config();cfg.runtime_invoke=reinterpret_cast<void*>(recoveryInvoke);
  assert(recovery->install(&cfg)==0);assert(api->install(&cfg)==0); // actual feature37 prerequisite/config
 
- resetRecovery();PgrDetailsRecoveryOutput out{};
+ resetRecovery();PgsDetailsRecoveryOutput out{};
  assert(recovery->recover(&recoveryRequest,&out)==1);checkRecord(out);
  const int allAllocations=allocations;assert(countInvokes>=2); // recovery getter and actual37 validator
  // Simulate host adoption: independent copies stay live after release of all six native exports.
@@ -80,7 +80,7 @@ int main(int argc,char **argv){
  }
 
  resetRecovery();bool reentered=false;
- countHook=[&](){const size_t before=roots.size();PgrDetailsRecoveryOutput inner{};
+ countHook=[&](){const size_t before=roots.size();PgsDetailsRecoveryOutput inner{};
   assert(recovery->recover(&recoveryRequest,&inner)==0);assert(!inner.gui&&!inner.response);
   assert(roots.size()==before);reentered=true;};
  assert(recovery->recover(&recoveryRequest,&out)==1&&reentered);checkRecord(out);recovery->release(&out);noOutputs(out);

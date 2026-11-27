@@ -1,7 +1,7 @@
 #pragma once
 #include <string>
 #include <vector>
-namespace pgr_incense_guard {
+namespace pgs_incense_guard {
 struct Settings { std::string token; bool active=false; };
 inline bool parse(const char *text, size_t size, Settings &out) {
  if(!text||size>256)return false;

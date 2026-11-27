@@ -3,22 +3,22 @@
 #include <stdint.h>
 
 // Scoped owner-thread admission check, rechecked after managed reflection.
-void pgr_smart_set_admission_guard(bool (*guard)(void *), void *context);
+void pgs_smart_set_admission_guard(bool (*guard)(void *), void *context);
 
 // Auto ball. The binding registers a source that fills base[1..3] (Poke, Great, Ultra; 0 when not
 // offered) with the server's per-ball capture probability from the target's encounter response, on the
 // owner thread. With no source, or when it returns false, plan() keeps the rule-chosen ball.
-void pgr_smart_set_capture_source(bool (*source)(void *target, uint64_t owner, double base[4]));
+void pgs_smart_set_capture_source(bool (*source)(void *target, uint64_t owner, double base[4]));
 // Optional, owner-thread-only binding. Missing support leaves regular catching
 // available. The source checks the target's own confirmed response, not manual UI.
-void pgr_smart_set_safari_source(void *strong_field, int item,
+void pgs_smart_set_safari_source(void *strong_field, int item,
                                bool (*source)(void *target, uint64_t owner, int item));
 // Pure. The chance of one throw: 1 - (1 - base) ^ (berry * throw * curve), with the throw multiplier
 // taken from the reticle size VGP+ requests for the rating (2 - radius) and 1.7 for a curveball.
-double pgr_smart_chance(double base, int berry, int grade, bool curve);
+double pgs_smart_chance(double base, int berry, int grade, bool curve);
 // Pure. The cheapest in-stock ball from min_ball up whose chance reaches target percent; otherwise the
 // in-stock one from min_ball up with the best chance; 0 when none has data and stock.
-int pgr_smart_auto_ball(const double base[4], const int stock[4], int min_ball, int berry, int grade,
+int pgs_smart_auto_ball(const double base[4], const int stock[4], int min_ball, int berry, int grade,
                         bool curve, int target);
 
 // Smart Background Catcher native helper (FEATURE_PROPOSALS module2). This is an INTERNAL C++ helper
@@ -61,51 +61,51 @@ extern "C" {
 
 static_assert(sizeof(void *) == 8, "SmartCatch native ABI requires LP64");
 
-enum PgrSmartInfo {
-  PGR_SMART_BINDING_VERSION = 1,
-  PGR_SMART_MAX_SPECIES     = 200,   // candy-species cap (mirrors SmartCatchSettings.java)
-  PGR_SMART_CONFIG_MAX      = 4096,  // transport index-7 byte ceiling (fail closed above)
-  PGR_SMART_MAX_LEASE_MS    = 2500,  // residual foreground lease ceiling (matches VGP siblings)
-  PGR_SMART_SENDRPC_ARITY   = 5,     // SendRpc<Req,Out>(rpcId, request, 0, 10000, 0)
-  PGR_SMART_TYPE_ARGS       = 2,     // SendRpc generic arity (request + out)
-  PGR_SMART_ARRAY_DATA_OFF  = 32     // Il2CppArray<T> first element byte offset on LP64
+enum PgsSmartInfo {
+  PGS_SMART_BINDING_VERSION = 1,
+  PGS_SMART_MAX_SPECIES     = 200,   // candy-species cap (mirrors SmartCatchSettings.java)
+  PGS_SMART_CONFIG_MAX      = 4096,  // transport index-7 byte ceiling (fail closed above)
+  PGS_SMART_MAX_LEASE_MS    = 2500,  // residual foreground lease ceiling (matches VGP siblings)
+  PGS_SMART_SENDRPC_ARITY   = 5,     // SendRpc<Req,Out>(rpcId, request, 0, 10000, 0)
+  PGS_SMART_TYPE_ARGS       = 2,     // SendRpc generic arity (request + out)
+  PGS_SMART_ARRAY_DATA_OFF  = 32     // Il2CppArray<T> first element byte offset on LP64
 };
 
 // Holoholo.Rpc.Item enum values this module uses directly (written into the proto Item enum i32 field and
 // queried against ItemBag stock). Regular selection uses 1..3; optional Mighty
 // selection uses the resolved WildBall literal. MASTER (4) is never chosen.
-enum PgrSmartItem {
-  PGR_SMART_BALL_POKE   = 1,
-  PGR_SMART_BALL_GREAT  = 2,
-  PGR_SMART_BALL_ULTRA  = 3,
-  PGR_SMART_BALL_MASTER = 4,  // reference only; never selected
-  PGR_SMART_BERRY_RAZZ        = 701,
-  PGR_SMART_BERRY_NANAB       = 703,
-  PGR_SMART_BERRY_PINAP       = 705,
-  PGR_SMART_BERRY_GOLDEN_RAZZ = 706,
-  PGR_SMART_BERRY_SILVER_PINAP = 708
+enum PgsSmartItem {
+  PGS_SMART_BALL_POKE   = 1,
+  PGS_SMART_BALL_GREAT  = 2,
+  PGS_SMART_BALL_ULTRA  = 3,
+  PGS_SMART_BALL_MASTER = 4,  // reference only; never selected
+  PGS_SMART_BERRY_RAZZ        = 701,
+  PGS_SMART_BERRY_NANAB       = 703,
+  PGS_SMART_BERRY_PINAP       = 705,
+  PGS_SMART_BERRY_GOLDEN_RAZZ = 706,
+  PGS_SMART_BERRY_SILVER_PINAP = 708
 };
 
 // plan() / berry() / berry_success() status domain. Positive are distinct outcomes; negatives are
 // data/runtime faults the controller surfaces as "smart unavailable" (never as "no balls").
-enum PgrSmartStatus {
-  PGR_SMART_ISSUED        = 1,   // berry(): the single SendRpc was issued; OWN handles transferred
-  PGR_SMART_OK            = 0,   // plan(): decision written (may be .enabled==false); berry(): refused
-  PGR_SMART_NO_BALLS      = 2,   // plan(): no usable in-stock ball (distinct from error)
-  PGR_SMART_NOT_SUCCESS   = 3,   // berry_success(): response is UseItemEncounterOutProto but not Success
-  PGR_SMART_SKIP_SPECIES  = 4,   // plan(): enabled, but the species is not on the catch-only list, or it is not shiny and only shinies are caught
-  PGR_SMART_ERR_NULL_ARG      = -1,
-  PGR_SMART_ERR_BAD_VERSION   = -2,
-  PGR_SMART_ERR_BAD_SIZE      = -3,
-  PGR_SMART_ERR_MISSING_PTR   = -4,
-  PGR_SMART_ERR_NOT_BOUND     = -6,
-  PGR_SMART_ERR_RECONFIG      = -9,
-  PGR_SMART_ERR_CLOCK_FAILURE = -10,
-  PGR_SMART_ERR_IDENTITY      = -11, // a class identity check failed or a required object was null
-  PGR_SMART_ERR_GCHANDLE      = -12, // a GC root / Type[] allocation failed (fail closed)
-  PGR_SMART_ERR_MANAGED       = -13, // a managed invoke threw
-  PGR_SMART_ERR_REFLECT       = -14, // SendRpc / MakeGenericMethod resolution/validation failed
-  PGR_SMART_ERR_SHAPE         = -15  // a boxed return had the wrong class / unexpected shape
+enum PgsSmartStatus {
+  PGS_SMART_ISSUED        = 1,   // berry(): the single SendRpc was issued; OWN handles transferred
+  PGS_SMART_OK            = 0,   // plan(): decision written (may be .enabled==false); berry(): refused
+  PGS_SMART_NO_BALLS      = 2,   // plan(): no usable in-stock ball (distinct from error)
+  PGS_SMART_NOT_SUCCESS   = 3,   // berry_success(): response is UseItemEncounterOutProto but not Success
+  PGS_SMART_SKIP_SPECIES  = 4,   // plan(): enabled, but the species is not on the catch-only list, or it is not shiny and only shinies are caught
+  PGS_SMART_ERR_NULL_ARG      = -1,
+  PGS_SMART_ERR_BAD_VERSION   = -2,
+  PGS_SMART_ERR_BAD_SIZE      = -3,
+  PGS_SMART_ERR_MISSING_PTR   = -4,
+  PGS_SMART_ERR_NOT_BOUND     = -6,
+  PGS_SMART_ERR_RECONFIG      = -9,
+  PGS_SMART_ERR_CLOCK_FAILURE = -10,
+  PGS_SMART_ERR_IDENTITY      = -11, // a class identity check failed or a required object was null
+  PGS_SMART_ERR_GCHANDLE      = -12, // a GC root / Type[] allocation failed (fail closed)
+  PGS_SMART_ERR_MANAGED       = -13, // a managed invoke threw
+  PGS_SMART_ERR_REFLECT       = -14, // SendRpc / MakeGenericMethod resolution/validation failed
+  PGS_SMART_ERR_SHAPE         = -15  // a boxed return had the wrong class / unexpected shape
 };
 
 // Parsed Smart Catcher settings (transport index 7). Format, exactly as emitted by
@@ -117,7 +117,7 @@ enum PgrSmartStatus {
 // autoBall/autoTarget) are still accepted, catching every species with auto ball off for version 1.
 // Field 0 is the schema tag "1". A malformed string, a wrong tag, an out-of-range field or an over-long
 // buffer yields a SAFE DISABLED result (enabled == false): smart is never run on an unparseable config.
-struct PgrSmartSettings {
+struct PgsSmartSettings {
   int32_t  enabled;        // 0/1
   int32_t  ball;           // 1..3 (default 1)
   int32_t  berry;          // 0 or {701,703,705,706,708} (default 0 == Off)
@@ -126,12 +126,12 @@ struct PgrSmartSettings {
   int32_t  high_level;     // 0..50
   int32_t  grade;          // 0..3 (throw rating)
   int32_t  curve;          // 0/1
-  uint32_t species_count;  // number of valid candy species ids parsed (<= PGR_SMART_MAX_SPECIES)
-  int32_t  species[PGR_SMART_MAX_SPECIES];  // ascending, de-duplicated National Dex ids (1..2000)
+  uint32_t species_count;  // number of valid candy species ids parsed (<= PGS_SMART_MAX_SPECIES)
+  int32_t  species[PGS_SMART_MAX_SPECIES];  // ascending, de-duplicated National Dex ids (1..2000)
   int32_t  auto_ball;      // 0/1: pick the cheapest ball that reaches auto_target (version 2)
   int32_t  auto_target;    // 1..99 percent (default 75)
   uint32_t catch_count;    // catch-only species (version 3); 0 catches every species
-  int32_t  catch_species[PGR_SMART_MAX_SPECIES];  // ascending, de-duplicated National Dex ids (1..2000)
+  int32_t  catch_species[PGS_SMART_MAX_SPECIES];  // ascending, de-duplicated National Dex ids (1..2000)
   int32_t  variety;        // throw variety (version 4): 0 off, 1 Excellent & Great, 2 + Nice, 3 + a plain throw
   int32_t  mighty_safari;  // version 5: prefer owned, offered Safari Balls for Mighty Pokemon only
   int32_t  speed;          // version 6: catch pacing, 0 normal, 1 fast, 2 fastest
@@ -140,21 +140,21 @@ struct PgrSmartSettings {
 
 // Pacing for a catch speed (out-of-range values pace as normal). The throw wait is base plus a
 // jitter in [0, jitter); rescan is the delay before the next map scan once a catch has resolved.
-static inline uint64_t pgr_smart_throw_base_ms(int speed) { return speed == 2 ? 500 : speed == 1 ? 800 : 1200; }
-static inline uint64_t pgr_smart_throw_jitter_ms(int speed) { return speed == 2 ? 201 : speed == 1 ? 401 : 601; }
-static inline uint64_t pgr_smart_rescan_ms(int speed) { return speed == 2 ? 1000 : speed == 1 ? 1500 : 2500; }
+static inline uint64_t pgs_smart_throw_base_ms(int speed) { return speed == 2 ? 500 : speed == 1 ? 800 : 1200; }
+static inline uint64_t pgs_smart_throw_jitter_ms(int speed) { return speed == 2 ? 201 : speed == 1 ? 401 : 601; }
+static inline uint64_t pgs_smart_rescan_ms(int speed) { return speed == 2 ? 1000 : speed == 1 ? 1500 : 2500; }
 
 // Catch-only list: an empty list catches every species.
-static inline bool pgr_smart_catch_wanted(const PgrSmartSettings *s, int species) {
+static inline bool pgs_smart_catch_wanted(const PgsSmartSettings *s, int species) {
   if (!s || !s->catch_count) return true;
-  for (uint32_t i = 0; i < s->catch_count && i < PGR_SMART_MAX_SPECIES; ++i)
+  for (uint32_t i = 0; i < s->catch_count && i < PGS_SMART_MAX_SPECIES; ++i)
     if (s->catch_species[i] == species) return true;
   return false;
 }
 
 // The decision after a confirmed encounter: an in-stock regular ball (1..3), or
 // the resolved inventory Safari Ball for an eligible Mighty encounter. Berry is 0 when unavailable.
-struct PgrSmartDecision {
+struct PgsSmartDecision {
   bool     enabled;   // false -> smart disabled; the controller keeps its own default catch strategy
   int      ball;      // regular or resolved inventory Safari id; 0 when no ball is selected
   int      berry;     // selected berry id (0 == none / out of stock)
@@ -168,9 +168,9 @@ struct PgrSmartDecision {
 // the optional GameMaster group (level lookup) may be left all-null, in which case plan() never claims a
 // level and the high-level threshold is skipped. bind() re-checks version/size and rejects any null
 // mandatory pointer. Fixed LP64 order; see smart_catch.cpp for the validation loop bounds.
-struct PgrSmartBinding {
-  uint32_t version;  // == PGR_SMART_BINDING_VERSION
-  uint32_t size;     // == sizeof(PgrSmartBinding)
+struct PgsSmartBinding {
+  uint32_t version;  // == PGS_SMART_BINDING_VERSION
+  uint32_t size;     // == sizeof(PgsSmartBinding)
 
   // --- il2cpp runtime exports (11) --------------------------------------------------
   void *gc_new;                 // uintptr_t (void* obj, int pinned)
@@ -251,55 +251,55 @@ struct PgrSmartBinding {
 
 // ----- PURE helpers (no runtime; safe off-thread, used directly by the fixture) -----
 
-// Parse the transport index-7 string into *out. Returns PGR_SMART_OK (0) with a SAFE result on any input
-// (malformed -> out->enabled==0), or PGR_SMART_ERR_NULL_ARG when out is null. len is the byte length
-// (the string need not be NUL-terminated); a len above PGR_SMART_CONFIG_MAX yields a disabled result.
-int pgr_smart_parse_settings(const char *text, size_t len, PgrSmartSettings *out);
+// Parse the transport index-7 string into *out. Returns PGS_SMART_OK (0) with a SAFE result on any input
+// (malformed -> out->enabled==0), or PGS_SMART_ERR_NULL_ARG when out is null. len is the byte length
+// (the string need not be NUL-terminated); a len above PGS_SMART_CONFIG_MAX yields a disabled result.
+int pgs_smart_parse_settings(const char *text, size_t len, PgsSmartSettings *out);
 
 // Throw variety: the grade for one throw, at even odds, from Excellent & Great (variety 1); Excellent,
 // Great & Nice (2); or those and a plain throw (3). random is any uniform 32-bit value.
-int pgr_smart_variety_grade(int variety, uint32_t random);
+int pgs_smart_variety_grade(int variety, uint32_t random);
 
 // Pure decision precedence over the extracted encounter stats. With auto_ball the standard ball is
 // replaced by a Poke Ball, which plan() then raises to the target; the Ultra Ball rules still apply. iv_sum is attack+defense+stamina (0..45),
 // iv_valid says the three IVs were populated (each 0..15). level_half is the half-level (level*2), or a
 // negative value when the level is unknown (never fabricated). species_id is the National Dex id. Fills
 // the DESIRED ball/berry/grade/curve (stock is applied later by plan()). enabled follows settings.enabled.
-void pgr_smart_decide(const PgrSmartSettings *s, bool shiny, int iv_sum, bool iv_valid, int cp,
-                      int level_half, int species_id, PgrSmartDecision *out);
+void pgs_smart_decide(const PgsSmartSettings *s, bool shiny, int iv_sum, bool iv_valid, int cp,
+                      int level_half, int species_id, PgsSmartDecision *out);
 
 // ----- RUNTIME helpers (owner thread only, after bind) ------------------------------
 
 // Publish the validated binding once for the process lifetime. A repeat of the identical binding is OK;
-// a different one is PGR_SMART_ERR_RECONFIG. Validates header/size and rejects any null mandatory pointer.
-int pgr_smart_bind(const PgrSmartBinding *binding);
+// a different one is PGS_SMART_ERR_RECONFIG. Validates header/size and rejects any null mandatory pointer.
+int pgs_smart_bind(const PgsSmartBinding *binding);
 
-// Plan the ball/berry for a CONFIRMED encounter. Returns PGR_SMART_SKIP_SPECIES, before any stock read,
+// Plan the ball/berry for a CONFIRMED encounter. Returns PGS_SMART_SKIP_SPECIES, before any stock read,
 // when a catch-only list is set and the encountered species is not on it. `target` is the rooted WildMapPokemon, `itemBag` the
 // rooted IItemBag; `owner` is the proven Unity owner tid. Reads WildMapPokemon's stored EncounterOutProto ->
 // WildPokemonProto -> PokemonProto (exact classes checked), derives shiny/IV/CP/(optional level)/species, decides, then resolves actual
 // stock: an eligible Safari Ball when opted in, otherwise the selected regular ball or an in-stock
 // regular fallback (never Master); the berry is dropped when
-// Off or out of stock. Read-only: issues no managed mutation. Returns PGR_SMART_OK (decision written; may
-// be disabled), PGR_SMART_NO_BALLS (enabled, no usable ball), PGR_SMART_OK with enabled==false when
+// Off or out of stock. Read-only: issues no managed mutation. Returns PGS_SMART_OK (decision written; may
+// be disabled), PGS_SMART_NO_BALLS (enabled, no usable ball), PGS_SMART_OK with enabled==false when
 // off-thread/not-bound (refused), or a negative data/runtime fault. *out is always initialized.
-int pgr_smart_plan(void *target, void *itemBag, uint64_t owner, PgrSmartDecision *out);
+int pgs_smart_plan(void *target, void *itemBag, uint64_t owner, PgsSmartDecision *out);
 
 // Build + issue the single berry UseItemEncounter RPC. `itemId` must be a valid berry (701/703/705/706/708).
-// `leaseMs` is the residual foreground lease (clamped to PGR_SMART_MAX_LEASE_MS, re-checked after
+// `leaseMs` is the residual foreground lease (clamped to PGS_SMART_MAX_LEASE_MS, re-checked after
 // reflection and immediately before the invoke; 0/expired -> refuse). On success writes the OWN GC handles
 // the controller adopts and frees: *promiseHandle roots the returned SendRpc promise (poll it through
 // vgp_results ENCOUNTER phase); *reflectionHandle roots the closed SendRpc Reflection.MethodInfo and MUST
-// outlive the poll. Returns PGR_SMART_ISSUED (1), PGR_SMART_OK (0 refused: gate/thread/lease/not-bound), or
-// a negative error (PGR_SMART_ERR_* -- treated as uncertain: NEVER retried). *promiseHandle and
+// outlive the poll. Returns PGS_SMART_ISSUED (1), PGS_SMART_OK (0 refused: gate/thread/lease/not-bound), or
+// a negative error (PGS_SMART_ERR_* -- treated as uncertain: NEVER retried). *promiseHandle and
 // *reflectionHandle are always initialized to 0; no inventory is mutated directly.
-int pgr_smart_berry(void *target, void *itemBag, int32_t itemId, uint64_t owner, uint64_t leaseMs,
+int pgs_smart_berry(void *target, void *itemBag, int32_t itemId, uint64_t owner, uint64_t leaseMs,
                     uint64_t *promiseHandle, uint64_t *reflectionHandle);
 
-// Validate a resolved SendRpc response: returns PGR_SMART_ISSUED-like 1 when `response` is EXACTLY
-// UseItemEncounterOutProto AND its Status == status_success, PGR_SMART_NOT_SUCCESS (3) when it is the
-// right class but not Success, PGR_SMART_OK (0) when refused (off-thread/not-bound), or a negative error.
-int pgr_smart_berry_success(void *response, uint64_t owner);
+// Validate a resolved SendRpc response: returns PGS_SMART_ISSUED-like 1 when `response` is EXACTLY
+// UseItemEncounterOutProto AND its Status == status_success, PGS_SMART_NOT_SUCCESS (3) when it is the
+// right class but not Success, PGS_SMART_OK (0) when refused (off-thread/not-bound), or a negative error.
+int pgs_smart_berry_success(void *response, uint64_t owner);
 
 #ifdef __cplusplus
 }

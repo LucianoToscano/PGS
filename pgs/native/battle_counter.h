@@ -11,7 +11,7 @@
 #include <cstdint>
 #include <vector>
 
-namespace pgr_counter {
+namespace pgs_counter {
 
 // HoloPokemonType values: 1 normal ... 18 fairy, in this order. 0 means "no type".
 constexpr int kTypeCount = 18;
@@ -149,4 +149,4 @@ inline int choose_swap(const std::vector<double> &scores, int active) {
     return scores[best] >= scores[active] * kSwapMargin ? best : -1;
 }
 
-}  // namespace pgr_counter
+}  // namespace pgs_counter

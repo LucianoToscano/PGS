@@ -6,9 +6,9 @@
 #include <cstring>
 #include <initializer_list>
 
-namespace pgr_pvp {
+namespace pgs_pvp {
 namespace {
-using namespace pgr_pvp_data;
+using namespace pgs_pvp_data;
 constexpr int kSpecies = sizeof(species) / sizeof(species[0]);
 
 bool valid_iv(int v) { return v >= 0 && v <= 15; }
@@ -156,4 +156,4 @@ bool parse(const char *text, unsigned length, Settings *out) {
   return true;
 }
 
-}  // namespace pgr_pvp
+}  // namespace pgs_pvp

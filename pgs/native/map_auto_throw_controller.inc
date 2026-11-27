@@ -9,9 +9,9 @@ struct MapTapAdapter {
     int (*active_berry)(void*);
     Root (*berry)(void*,int);
     int (*poll_berry)(void*,uint64_t,Root&,int&);
-    bool (*throw_value)(PgrThrowValue&);
-    int (*choose_ball)(void*,void*,const PgrCatchChanceOptions&,const PgrThrowValue&);
-    Root (*capture)(void*,const PgrThrowValue&);
+    bool (*throw_value)(PgsThrowValue&);
+    int (*choose_ball)(void*,void*,const PgsCatchChanceOptions&,const PgsThrowValue&);
+    Root (*capture)(void*,const PgsThrowValue&);
     int (*poll_capture)(void*,uint64_t,Root&,int&);
     // Takes a caught or fled Pokemon off the map when the game has not done so itself.
     void (*remove)(void*);
@@ -46,7 +46,7 @@ void map_event(const char* phase,const std::string& message,int value=0){
     const std::string json="{\"phase\":"+json_quote(phase)+",\"message\":"+json_quote(message)+
         ",\"encounterId\":"+json_quote(std::to_string(map_tap.id))+",\"throw\":"+std::to_string(map_tap.attempts)+
         ",\"value\":"+std::to_string(value)+"}";
-    PgrRuntimeTransportString s[]={{"map-auto-throw",14},{json.c_str(),uint32_t(json.size())}};
+    PgsRuntimeTransportString s[]={{"map-auto-throw",14},{json.c_str(),uint32_t(json.size())}};
     tr->emit(19,nullptr,0,s,2);
 }
 void map_reset(){++map_tap_generation;map_tap=MapTapSession{};}
@@ -57,13 +57,13 @@ void map_done(const char* phase,const std::string& why,bool remember=false){
     map_reset();
 }
 void map_block(const std::string& why){map_done("stopped",why,true);}
-struct MapTapPermission {PgrCatchChanceOptions config;bool foreground=false,coherent=false;};
+struct MapTapPermission {PgsCatchChanceOptions config;bool foreground=false,coherent=false;};
 MapTapPermission map_permission(){
-    MapTapPermission p;auto tr=transport();PgrRuntimeTransportSample a{},z{};char raw[96]{};uint32_t n=0;int fg=0;
+    MapTapPermission p;auto tr=transport();PgsRuntimeTransportSample a{},z{};char raw[96]{};uint32_t n=0;int fg=0;
     if(!tr||!tr->sample||!tr->get_string||!tr->get_bool||tr->sample(&a)||!a.snapshot_fresh||a.fault)return p;
     if(tr->get_string(15,raw,sizeof(raw),&n)||n>=sizeof(raw)||tr->get_bool(3,&fg))return p;
     if(tr->sample(&z)||!z.snapshot_fresh||z.fault||a.snapshot_seq!=z.snapshot_seq)return p;
-    raw[n]=0;p.config=pgr_parse_catch_chance(raw);p.coherent=p.config.valid;p.foreground=fg==1;return p;
+    raw[n]=0;p.config=pgs_parse_catch_chance(raw);p.coherent=p.config.valid;p.foreground=fg==1;return p;
 }
 // Slot 12 always publishes OneShotAutomation's inactive v1 message.
 // An empty string is also idle; other command families remain exclusive.
@@ -108,8 +108,8 @@ void map_poll(uint64_t tid,int64_t now){
     else if(map_tap.phase==MapTapBerry)rc=a.poll_berry(map_tap.promise.get(),tid,response,status);
     else rc=a.poll_capture(map_tap.promise.get(),tid,response,status);
     if(generation!=map_tap_generation)return;
-    if(rc==PGR_VR_PENDING){if(now-map_tap.promise_ms>=kPromiseTimeoutMs)map_block("Request timed out; outcome unknown, not retried");return;}
-    require(rc==PGR_VR_DONE,"Request rejected; outcome not retried");
+    if(rc==PGS_VR_PENDING){if(now-map_tap.promise_ms>=kPromiseTimeoutMs)map_block("Request timed out; outcome unknown, not retried");return;}
+    require(rc==PGS_VR_DONE,"Request rejected; outcome not retried");
     map_tap.promise.reset();map_tap.uncertain=false;
     if(map_tap.phase==MapTapEncounter){
         require(bool(response),"Encounter was not accepted");map_tap.response=std::move(response);
@@ -173,7 +173,7 @@ void step_map_auto_throw(uint64_t tid,bool blocked,bool vgp_busy=false){
         map_tap.promise=a.encounter(map_tap.target.get());require(bool(map_tap.promise),"Encounter returned no promise; not retried");
         map_event("encounter","Requesting map encounter");return;
     }
-    PgrThrowValue value{};require(a.throw_value(value),"Throw settings unavailable; no throw sent");
+    PgsThrowValue value{};require(a.throw_value(value),"Throw settings unavailable; no throw sent");
     void* rate=map_tap.berry_response?map_tap.berry_response.get():map_tap.response.get();
     value.item=a.choose_ball(map_tap.target.get(),rate,p.config,value);
     if(!value.item){map_done("not-caught","No supported balls available");return;}
@@ -186,6 +186,6 @@ void step_map_auto_throw(uint64_t tid,bool blocked,bool vgp_busy=false){
     }
     map_tap.uncertain=true;map_tap.promise_ms=now;map_tap.phase=MapTapCapture;++map_tap.attempts;
     map_tap.promise=a.capture(map_tap.target.get(),value);require(bool(map_tap.promise),"Capture returned no promise; not retried");
-    auto tr=transport();PgrRuntimeTransportString action{"Ball throw",10};if(tr)tr->emit(17,nullptr,0,&action,1);
+    auto tr=transport();PgsRuntimeTransportString action{"Ball throw",10};if(tr)tr->emit(17,nullptr,0,&action,1);
     map_event("throw",std::string("Always Hit; radius=")+std::to_string(value.radius)+"; curve="+(value.spinning?"true":"false"),value.item);
 }

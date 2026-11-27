@@ -40,7 +40,7 @@ template<class F>F fn(const void *p){require(p,"missing runtime export");return 
 enum Kind {K_EVOLVE,K_MEGA,K_HATCH,K_PURIFY,K_FUSION,K_UNFUSION,K_FORM,K_SPECIES,K_INCUBATE,K_DIALOG,K_EGG_INTRO,K_HATCH_RESULT,K_RADAR,K_ROCKET_REWARDS,K_GEM,K_RAID_RESULTS,K_POWER_UP,K_HATCH_DISMISS,K_COUNT};
 const char *const kNames[K_COUNT]={"evolve","mega-evolve","egg-hatch","purify","fusion","unfusion","form-change","new-species","egg-incubate","rocket-dialogue","egg-hatch-intro","hatched-pokemon","rocket-radar-assembled","rocket-rewards","purified-gem","raid-results","power-up","post-hatch-eggs"};
 
-PgrBootBinding boot{};
+PgsBootBinding boot{};
 bool ready=false,busy=false,tried=false;
 std::atomic<bool> enabled{false},faulted{false};
 std::atomic<bool> egg_inventory_enabled{false};
@@ -197,8 +197,8 @@ void *exp(const char *name){std::string n="il2cpp_";n+=name;void *p=dlsym(boot.h
 void *klass(void *o){require(o,"null object");return fn<void*(*)(void*)>(boot.runtime.object_get_class)(o);}
 void *invoke(void *m,void *o,void **args=nullptr){void *ex=nullptr;void *v=fn<void*(*)(void*,void*,void**,void**)>(boot.runtime.runtime_invoke)(m,o,args,&ex);require(!ex,"managed call failed");return v;}
 std::string typename_of(const void *type){char *p=fn<char*(*)(const void*)>(boot.meta.type_get_name)(type);require(p,"type name");std::string s=p;fn<void(*)(void*)>(boot.meta.mem_free)(p);return s;}
-const PgrRuntimeTransportApi *transport(){return static_cast<const PgrRuntimeTransportApi*>(pgs_runtime_transport_api(1));}
-void event(const std::string &json){auto tr=transport();if(!tr)return;PgrRuntimeTransportString s[]={{"cutscene-skip",13},{json.c_str(),uint32_t(json.size())}};tr->emit(19,nullptr,0,s,2);}
+const PgsRuntimeTransportApi *transport(){return static_cast<const PgsRuntimeTransportApi*>(pgs_runtime_transport_api(1));}
+void event(const std::string &json){auto tr=transport();if(!tr)return;PgsRuntimeTransportString s[]={{"cutscene-skip",13},{json.c_str(),uint32_t(json.size())}};tr->emit(19,nullptr,0,s,2);}
 void status(const char *phase,const std::string &message){event(std::string("{\"phase\":\"")+phase+"\",\"message\":\""+message+"\"}");}
 void skipped(Kind k){event(std::string("{\"phase\":\"skipped\",\"kind\":\"")+kNames[k]+"\"}");}
 
@@ -212,7 +212,7 @@ SkipPolicy parse_policy(const char *s,uint32_t n){
  return {};
 }
 SkipPolicy configured(){
- auto tr=transport();char s[16];uint32_t n=0;PgrRuntimeTransportSample a{};
+ auto tr=transport();char s[16];uint32_t n=0;PgsRuntimeTransportSample a{};
  if(!tr||tr->sample(&a)||!a.snapshot_fresh||a.fault)return {};
  return tr->get_string(17,s,sizeof(s),&n)==0?parse_policy(s,n):SkipPolicy{};
 }
@@ -908,9 +908,9 @@ void finish_dialog(){
  catch(...){status("error","Rocket dialogue could not be completed");}
 }
 
-void *class_of(const PgrMetaApi *api,const char *ns,const char *name){
- PgrMetaClassQuery q{};q.version=1;q.size=sizeof(q);q.name_space=ns;q.name=name;q.canonical_match=PGR_MD_MATCH_EXACT;
- PgrMetaClassResult r{};require(api->resolve_class(&q,&r)==0,name);return const_cast<void*>(r.klass);
+void *class_of(const PgsMetaApi *api,const char *ns,const char *name){
+ PgsMetaClassQuery q{};q.version=1;q.size=sizeof(q);q.name_space=ns;q.name=name;q.canonical_match=PGS_MD_MATCH_EXACT;
+ PgsMetaClassResult r{};require(api->resolve_class(&q,&r)==0,name);return const_cast<void*>(r.klass);
 }
 // The instance field of k whose type is exactly type_name; there must be one.
 void *field_of_type(void *k,const char *type_name){
@@ -924,13 +924,13 @@ void *field_of_type(void *k,const char *type_name){
 }
 struct Target {Kind kind;void *owner;const char *name;unsigned params;uint64_t rva;const uint8_t *prologue;void *replacement;bool returns_promise;const char *return_prefix=nullptr;};
 
-bool hook(const PgrMetaApi *api,const Target &t,std::string &why){
- PgrMetaMethodQuery q{};q.version=1;q.size=sizeof(q);q.owner=t.owner;q.name=t.name;
- if(t.return_prefix){q.return_type=t.return_prefix;q.return_match=PGR_MD_MATCH_PREFIX;}
- else{q.return_type=t.returns_promise?"Niantic.Promises.IPromise":"System.Void";q.return_match=PGR_MD_MATCH_EXACT;}
+bool hook(const PgsMetaApi *api,const Target &t,std::string &why){
+ PgsMetaMethodQuery q{};q.version=1;q.size=sizeof(q);q.owner=t.owner;q.name=t.name;
+ if(t.return_prefix){q.return_type=t.return_prefix;q.return_match=PGS_MD_MATCH_PREFIX;}
+ else{q.return_type=t.returns_promise?"Niantic.Promises.IPromise":"System.Void";q.return_match=PGS_MD_MATCH_EXACT;}
  q.param_count=t.params;
  q.expected_code=static_cast<const char*>(boot.module_base)+t.rva;q.prologue=t.prologue;q.prologue_len=24;
- PgrMetaMethodResult r{};const int rc=api->validate_method(&q,&r);
+ PgsMetaMethodResult r{};const int rc=api->validate_method(&q,&r);
  if(rc!=0||!r.code){why+=std::string(why.empty()?"":", ")+kNames[t.kind]+" (code "+std::to_string(rc)+")";return false;}
  void *o=nullptr;const int hr=pgs_hook(const_cast<void*>(r.code),t.replacement,&o);
  if(hr!=0||!o){why+=std::string(why.empty()?"":", ")+kNames[t.kind]+" (hook)";return false;}
@@ -938,33 +938,33 @@ bool hook(const PgrMetaApi *api,const Target &t,std::string &why){
 }
 
 void install(){
- const auto *api=static_cast<const PgrMetaApi*>(pgs_runtime_metadata_api(1));require(api&&api->resolve_class&&api->validate_method,"metadata API");
+ const auto *api=static_cast<const PgsMetaApi*>(pgs_runtime_metadata_api(1));require(api&&api->resolve_class&&api->validate_method,"metadata API");
  require(boot.module_base,"il2cpp module");
  promise_class=class_of(api,"Niantic.Promises","Promise");
  auto method=[&](void *k,const char *name,int n){void *m=fn<void*(*)(void*,const char*,int)>(boot.meta.class_get_method_from_name)(k,name,n);require(m,name);return m;};
  promise_ctor=method(promise_class,".ctor",0);promise_complete=method(promise_class,"Complete",0);
  void *service=class_of(api,"Niantic.Holoholo.Cutscenes","PokemonCutsceneService");
 
- static const uint8_t p_evolve[]=PGR_GAME_CUTSCENE_SKIP_CPP_EVOLVE_FINGERPRINT,p_mega[]=PGR_GAME_CUTSCENE_SKIP_CPP_MEGA_FINGERPRINT,
-  p_hatch[]=PGR_GAME_CUTSCENE_SKIP_CPP_EGG_HATCH_FINGERPRINT,p_purify[]=PGR_GAME_CUTSCENE_SKIP_CPP_PURIFY_FINGERPRINT,
-  p_fusion[]=PGR_GAME_CUTSCENE_SKIP_CPP_FUSION_FINGERPRINT,p_unfusion[]=PGR_GAME_CUTSCENE_SKIP_CPP_UNFUSION_FINGERPRINT,
-  p_form[]=PGR_GAME_CUTSCENE_SKIP_CPP_FORM_CHANGE_FINGERPRINT,p_species[]=PGR_GAME_CUTSCENE_SKIP_CPP_NEW_SPECIES_FINGERPRINT,
-  p_incubate[]=PGR_GAME_CUTSCENE_SKIP_CPP_EGG_INCUBATE_FINGERPRINT,p_dialog[]=PGR_GAME_CUTSCENE_SKIP_CPP_INVASION_ENTER_FINGERPRINT,
-  p_egg_intro[]=PGR_GAME_CUTSCENE_SKIP_CPP_EGG_INTRO_FINGERPRINT,
-  p_hatch_result[]=PGR_GAME_CUTSCENE_SKIP_CPP_HATCH_RESULT_FINGERPRINT,p_show_info[]=PGR_GAME_CUTSCENE_SKIP_CPP_SHOW_INFO_FINGERPRINT,
-  p_radar[]=PGR_GAME_CUTSCENE_SKIP_CPP_RADAR_MODAL_FINGERPRINT,p_rewards[]=PGR_GAME_CUTSCENE_SKIP_CPP_ROCKET_REWARDS_FINGERPRINT;
+ static const uint8_t p_evolve[]=PGS_GAME_CUTSCENE_SKIP_CPP_EVOLVE_FINGERPRINT,p_mega[]=PGS_GAME_CUTSCENE_SKIP_CPP_MEGA_FINGERPRINT,
+  p_hatch[]=PGS_GAME_CUTSCENE_SKIP_CPP_EGG_HATCH_FINGERPRINT,p_purify[]=PGS_GAME_CUTSCENE_SKIP_CPP_PURIFY_FINGERPRINT,
+  p_fusion[]=PGS_GAME_CUTSCENE_SKIP_CPP_FUSION_FINGERPRINT,p_unfusion[]=PGS_GAME_CUTSCENE_SKIP_CPP_UNFUSION_FINGERPRINT,
+  p_form[]=PGS_GAME_CUTSCENE_SKIP_CPP_FORM_CHANGE_FINGERPRINT,p_species[]=PGS_GAME_CUTSCENE_SKIP_CPP_NEW_SPECIES_FINGERPRINT,
+  p_incubate[]=PGS_GAME_CUTSCENE_SKIP_CPP_EGG_INCUBATE_FINGERPRINT,p_dialog[]=PGS_GAME_CUTSCENE_SKIP_CPP_INVASION_ENTER_FINGERPRINT,
+  p_egg_intro[]=PGS_GAME_CUTSCENE_SKIP_CPP_EGG_INTRO_FINGERPRINT,
+  p_hatch_result[]=PGS_GAME_CUTSCENE_SKIP_CPP_HATCH_RESULT_FINGERPRINT,p_show_info[]=PGS_GAME_CUTSCENE_SKIP_CPP_SHOW_INFO_FINGERPRINT,
+  p_radar[]=PGS_GAME_CUTSCENE_SKIP_CPP_RADAR_MODAL_FINGERPRINT,p_rewards[]=PGS_GAME_CUTSCENE_SKIP_CPP_ROCKET_REWARDS_FINGERPRINT;
  static_assert(sizeof(p_evolve)==24&&sizeof(p_mega)==24&&sizeof(p_hatch)==24&&sizeof(p_purify)==24&&sizeof(p_fusion)==24&&
   sizeof(p_unfusion)==24&&sizeof(p_form)==24&&sizeof(p_species)==24&&sizeof(p_incubate)==24&&sizeof(p_dialog)==24&&sizeof(p_egg_intro)==24&&sizeof(p_hatch_result)==24&&sizeof(p_show_info)==24&&sizeof(p_radar)==24&&sizeof(p_rewards)==24,"24-byte prologues");
  const Target service_targets[]={
-  {K_EVOLVE,service,"PlayEvolveCutscene",2,PGR_GAME_CUTSCENE_SKIP_CPP_EVOLVE_RVA,p_evolve,reinterpret_cast<void*>(hook_evolve),true},
-  {K_MEGA,service,"PlayMegaEvolveCutscene",5,PGR_GAME_CUTSCENE_SKIP_CPP_MEGA_RVA,p_mega,reinterpret_cast<void*>(hook_mega),true},
-  {K_HATCH,service,"PlayEggHatchCutscene",3,PGR_GAME_CUTSCENE_SKIP_CPP_EGG_HATCH_RVA,p_hatch,reinterpret_cast<void*>(hook_hatch),true},
-  {K_PURIFY,service,"PlayPurifyCutscene",1,PGR_GAME_CUTSCENE_SKIP_CPP_PURIFY_RVA,p_purify,reinterpret_cast<void*>(hook_purify),true},
-  {K_FUSION,service,"PlayFusionCutscene",4,PGR_GAME_CUTSCENE_SKIP_CPP_FUSION_RVA,p_fusion,reinterpret_cast<void*>(hook_fusion),true},
-  {K_UNFUSION,service,"PlayUnfusionCutscene",2,PGR_GAME_CUTSCENE_SKIP_CPP_UNFUSION_RVA,p_unfusion,reinterpret_cast<void*>(hook_unfusion),true},
-  {K_FORM,service,"PlayFormChangeCutscene",2,PGR_GAME_CUTSCENE_SKIP_CPP_FORM_CHANGE_RVA,p_form,reinterpret_cast<void*>(hook_form),true},
-  {K_SPECIES,service,"PlayNewSpeciesCutscene",4,PGR_GAME_CUTSCENE_SKIP_CPP_NEW_SPECIES_RVA,p_species,reinterpret_cast<void*>(hook_species),true},
-  {K_INCUBATE,service,"PlayEggIncubateCutscene",1,PGR_GAME_CUTSCENE_SKIP_CPP_EGG_INCUBATE_RVA,p_incubate,reinterpret_cast<void*>(hook_incubate),true},
+  {K_EVOLVE,service,"PlayEvolveCutscene",2,PGS_GAME_CUTSCENE_SKIP_CPP_EVOLVE_RVA,p_evolve,reinterpret_cast<void*>(hook_evolve),true},
+  {K_MEGA,service,"PlayMegaEvolveCutscene",5,PGS_GAME_CUTSCENE_SKIP_CPP_MEGA_RVA,p_mega,reinterpret_cast<void*>(hook_mega),true},
+  {K_HATCH,service,"PlayEggHatchCutscene",3,PGS_GAME_CUTSCENE_SKIP_CPP_EGG_HATCH_RVA,p_hatch,reinterpret_cast<void*>(hook_hatch),true},
+  {K_PURIFY,service,"PlayPurifyCutscene",1,PGS_GAME_CUTSCENE_SKIP_CPP_PURIFY_RVA,p_purify,reinterpret_cast<void*>(hook_purify),true},
+  {K_FUSION,service,"PlayFusionCutscene",4,PGS_GAME_CUTSCENE_SKIP_CPP_FUSION_RVA,p_fusion,reinterpret_cast<void*>(hook_fusion),true},
+  {K_UNFUSION,service,"PlayUnfusionCutscene",2,PGS_GAME_CUTSCENE_SKIP_CPP_UNFUSION_RVA,p_unfusion,reinterpret_cast<void*>(hook_unfusion),true},
+  {K_FORM,service,"PlayFormChangeCutscene",2,PGS_GAME_CUTSCENE_SKIP_CPP_FORM_CHANGE_RVA,p_form,reinterpret_cast<void*>(hook_form),true},
+  {K_SPECIES,service,"PlayNewSpeciesCutscene",4,PGS_GAME_CUTSCENE_SKIP_CPP_NEW_SPECIES_RVA,p_species,reinterpret_cast<void*>(hook_species),true},
+  {K_INCUBATE,service,"PlayEggIncubateCutscene",1,PGS_GAME_CUTSCENE_SKIP_CPP_EGG_INCUBATE_RVA,p_incubate,reinterpret_cast<void*>(hook_incubate),true},
  };
  std::string missing;int count=0;
  for(const Target &t:service_targets)count+=hook(api,t,missing);
@@ -994,7 +994,7 @@ void install(){
   }
   int skippable=0;for(bool b:mode_skip)skippable+=b;
   require(skippable==6,"DialogMode values");
-  const Target t{K_DIALOG,dialog_class,"EnterState",2,PGR_GAME_CUTSCENE_SKIP_CPP_INVASION_ENTER_RVA,p_dialog,reinterpret_cast<void*>(hook_dialog),false};
+  const Target t{K_DIALOG,dialog_class,"EnterState",2,PGS_GAME_CUTSCENE_SKIP_CPP_INVASION_ENTER_RVA,p_dialog,reinterpret_cast<void*>(hook_dialog),false};
   count+=hook(api,t,missing);
  }catch(const Failure &f){dialog_class=nullptr;missing+=std::string(missing.empty()?"":", ")+"rocket-dialogue ("+f.where+")";}
 
@@ -1002,7 +1002,7 @@ void install(){
  try{
   void *egg_gui=class_of(api,"Niantic.Holoholo.UI","EggHatchGuiController");
   egg_click=method(egg_gui,"Click",0);egg_is_open=method(egg_gui,"get_IsOpen",0);
-  const Target t{K_EGG_INTRO,egg_gui,"Initialize",1,PGR_GAME_CUTSCENE_SKIP_CPP_EGG_INTRO_RVA,p_egg_intro,reinterpret_cast<void*>(hook_egg_intro),false};
+  const Target t{K_EGG_INTRO,egg_gui,"Initialize",1,PGS_GAME_CUTSCENE_SKIP_CPP_EGG_INTRO_RVA,p_egg_intro,reinterpret_cast<void*>(hook_egg_intro),false};
   if(!hook(api,t,missing))egg_click=egg_is_open=nullptr;else ++count;
  }catch(const Failure &f){egg_click=egg_is_open=nullptr;missing+=std::string(missing.empty()?"":", ")+"egg-hatch-intro ("+f.where+")";}
 
@@ -1014,15 +1014,15 @@ void install(){
   dismiss_class=class_of(api,"Niantic.Holoholo.UI.Pokemon","DismissParameters");dismiss_ctor=method(dismiss_class,".ctor",0);
   // ShowPokemonInfo is validated like a hook target; a prologue mismatch is accepted only when it is
   // the Quick Catch bridge's own hook at exactly that address.
-  void *show_code=const_cast<char*>(static_cast<const char*>(boot.module_base))+PGR_GAME_CUTSCENE_SKIP_CPP_SHOW_INFO_RVA;
-  PgrMetaMethodQuery q{};q.version=1;q.size=sizeof(q);q.owner=info_service;q.name="ShowPokemonInfo";
-  q.return_type="System.Void";q.return_match=PGR_MD_MATCH_EXACT;q.param_count=10;q.expected_code=show_code;q.prologue=p_show_info;q.prologue_len=24;
-  PgrMetaMethodResult r{};const int rc=api->validate_method(&q,&r);
-  const bool shared=rc==PGR_MD_ERR_PROLOGUE&&pgr_catch_presentation_attached(show_code);
+  void *show_code=const_cast<char*>(static_cast<const char*>(boot.module_base))+PGS_GAME_CUTSCENE_SKIP_CPP_SHOW_INFO_RVA;
+  PgsMetaMethodQuery q{};q.version=1;q.size=sizeof(q);q.owner=info_service;q.name="ShowPokemonInfo";
+  q.return_type="System.Void";q.return_match=PGS_MD_MATCH_EXACT;q.param_count=10;q.expected_code=show_code;q.prologue=p_show_info;q.prologue_len=24;
+  PgsMetaMethodResult r{};const int rc=api->validate_method(&q,&r);
+  const bool shared=rc==PGS_MD_ERR_PROLOGUE&&pgs_catch_presentation_attached(show_code);
   if(rc!=0&&!shared)missing+=std::string(missing.empty()?"":", ")+"pokemon-info (code "+std::to_string(rc)+")";
-  else if(const int br=pgr_catch_presentation_set_bypass(bypass_show_info,show_code))missing+=std::string(missing.empty()?"":", ")+"pokemon-info (bridge "+std::to_string(br)+")";
+  else if(const int br=pgs_catch_presentation_set_bypass(bypass_show_info,show_code))missing+=std::string(missing.empty()?"":", ")+"pokemon-info (bridge "+std::to_string(br)+")";
   else{
-   const Target result{K_HATCH_RESULT,hatch_state,PGR_GAME_CUTSCENE_SKIP_CPP_HATCH_RESULT_NAME,1,PGR_GAME_CUTSCENE_SKIP_CPP_HATCH_RESULT_RVA,p_hatch_result,reinterpret_cast<void*>(hook_hatch_result),false};
+   const Target result{K_HATCH_RESULT,hatch_state,PGS_GAME_CUTSCENE_SKIP_CPP_HATCH_RESULT_NAME,1,PGS_GAME_CUTSCENE_SKIP_CPP_HATCH_RESULT_RVA,p_hatch_result,reinterpret_cast<void*>(hook_hatch_result),false};
    if(hook(api,result,missing))++count;
   }
  }catch(const Failure &f){dismiss_class=nullptr;missing+=std::string(missing.empty()?"":", ")+"hatched-pokemon ("+f.where+")";}
@@ -1034,11 +1034,11 @@ void install(){
   radar_update=method(service,"UpdateMapEquippedUI",1);radar_try_show=method(service,"TryShowFragmentUI",0);
   radar_showing=field_of_type(service,"System.Boolean");
   require(fn<size_t(*)(void*)>(exp("field_get_offset"))(radar_showing)==0x48,"Rocket Radar showing flag");
-  const Target t{K_RADAR,service,PGR_GAME_CUTSCENE_SKIP_CPP_RADAR_MODAL_NAME,2,PGR_GAME_CUTSCENE_SKIP_CPP_RADAR_MODAL_RVA,p_radar,reinterpret_cast<void*>(hook_radar_modal),false,"Niantic.Holoholo.UI.UserResponsePromise"};
+  const Target t{K_RADAR,service,PGS_GAME_CUTSCENE_SKIP_CPP_RADAR_MODAL_NAME,2,PGS_GAME_CUTSCENE_SKIP_CPP_RADAR_MODAL_RVA,p_radar,reinterpret_cast<void*>(hook_radar_modal),false,"Niantic.Holoholo.UI.UserResponsePromise"};
   if(hook(api,t,missing))++count;else radar_update=nullptr;
-  static const uint8_t p_gem[]=PGR_GAME_CUTSCENE_SKIP_CPP_GEM_MODAL_FINGERPRINT;
+  static const uint8_t p_gem[]=PGS_GAME_CUTSCENE_SKIP_CPP_GEM_MODAL_FINGERPRINT;
   static_assert(sizeof(p_gem)==24,"24-byte prologue");
-  const Target g{K_GEM,service,PGR_GAME_CUTSCENE_SKIP_CPP_GEM_MODAL_NAME,2,PGR_GAME_CUTSCENE_SKIP_CPP_GEM_MODAL_RVA,p_gem,reinterpret_cast<void*>(hook_gem_modal),false,"Niantic.Holoholo.UI.UserResponsePromise"};
+  const Target g{K_GEM,service,PGS_GAME_CUTSCENE_SKIP_CPP_GEM_MODAL_NAME,2,PGS_GAME_CUTSCENE_SKIP_CPP_GEM_MODAL_RVA,p_gem,reinterpret_cast<void*>(hook_gem_modal),false,"Niantic.Holoholo.UI.UserResponsePromise"};
   if(hook(api,g,missing))++count;
  }catch(const Failure &f){radar_update=nullptr;missing+=std::string(missing.empty()?"":", ")+"rocket-radar-assembled ("+f.where+")";}
 
@@ -1053,7 +1053,7 @@ void install(){
   root_canvas=method(base,"get_RootCanvasGroup",0);
   canvas_alpha=method(class_of(api,"UnityEngine","CanvasGroup"),"set_alpha",1);
   gui_state=fn<void*(*)(void*,const char*)>(boot.meta.class_get_field_from_name)(base,"currentState");require(gui_state,"currentState");
-  const Target t{K_ROCKET_REWARDS,gui,"Initialize",2,PGR_GAME_CUTSCENE_SKIP_CPP_ROCKET_REWARDS_RVA,p_rewards,reinterpret_cast<void*>(hook_rewards),false};
+  const Target t{K_ROCKET_REWARDS,gui,"Initialize",2,PGS_GAME_CUTSCENE_SKIP_CPP_ROCKET_REWARDS_RVA,p_rewards,reinterpret_cast<void*>(hook_rewards),false};
   if(hook(api,t,missing))++count;else rewards_close=nullptr;
  }catch(const Failure &f){rewards_close=nullptr;missing+=std::string(missing.empty()?"":", ")+"rocket-rewards ("+f.where+")";}
 
@@ -1093,9 +1093,9 @@ void install(){
   void *status_class=fn<void*(*)(void*)>(boot.meta.class_from_type)(fn<void*(*)(void*)>(boot.meta.field_get_type)(raid_status));
   void *victory=fn<void*(*)(void*,const char*)>(boot.meta.class_get_field_from_name)(status_class,"Victory");require(victory,"BattleStatus.Victory");
   fn<void(*)(void*,void*)>(boot.runtime.field_static_get_value)(victory,&raid_victory);require(raid_victory>0,"BattleStatus.Victory value");
-  static const uint8_t p_raid[]=PGR_GAME_CUTSCENE_SKIP_CPP_RAID_RESULTS_FINGERPRINT;
+  static const uint8_t p_raid[]=PGS_GAME_CUTSCENE_SKIP_CPP_RAID_RESULTS_FINGERPRINT;
   static_assert(sizeof(p_raid)==24,"24-byte prologue");
-  const Target t{K_RAID_RESULTS,gui,"Initialize",1,PGR_GAME_CUTSCENE_SKIP_CPP_RAID_RESULTS_RVA,p_raid,reinterpret_cast<void*>(hook_raid_results),false};
+  const Target t{K_RAID_RESULTS,gui,"Initialize",1,PGS_GAME_CUTSCENE_SKIP_CPP_RAID_RESULTS_RVA,p_raid,reinterpret_cast<void*>(hook_raid_results),false};
   if(hook(api,t,missing))++count;else raid_tap=nullptr;
  }catch(const Failure &f){raid_tap=nullptr;missing+=std::string(missing.empty()?"":", ")+"raid-results ("+f.where+")";}
 
@@ -1135,9 +1135,9 @@ void install(){
    require(typename_of(fn<void*(*)(void*)>(boot.meta.field_get_type)(f))=="System.Single",kPowerTimingNames[i]);
    power_offset[i]=offset(f);require(power_offset[i]>=0x10&&power_offset[i]<0x2000,kPowerTimingNames[i]);
   }
-  static const uint8_t p_power[]=PGR_GAME_CUTSCENE_SKIP_CPP_POWER_UP_FINGERPRINT;
+  static const uint8_t p_power[]=PGS_GAME_CUTSCENE_SKIP_CPP_POWER_UP_FINGERPRINT;
   static_assert(sizeof(p_power)==24,"24-byte prologue");
-  const Target t{K_POWER_UP,panel,PGR_GAME_CUTSCENE_SKIP_CPP_POWER_UP_NAME,1,PGR_GAME_CUTSCENE_SKIP_CPP_POWER_UP_RVA,p_power,reinterpret_cast<void*>(hook_power_up),false};
+  const Target t{K_POWER_UP,panel,PGS_GAME_CUTSCENE_SKIP_CPP_POWER_UP_NAME,1,PGS_GAME_CUTSCENE_SKIP_CPP_POWER_UP_RVA,p_power,reinterpret_cast<void*>(hook_power_up),false};
   power_ready=true;  // read by the hook only once it is attached
   if(hook(api,t,missing))++count;else power_ready=false;
  }catch(const Failure &f){power_ready=false;missing+=std::string(missing.empty()?"":", ")+"power-up ("+f.where+")";}
@@ -1167,14 +1167,14 @@ void install(){
   inventory_is_child=method(transform,"IsChildOf",1);
   inventory_class=inventory;
   void *hatch_state=class_of(api,"Niantic.Holoholo.EggHatch","EggHatchState");
-  hatch_inventory_service=method(hatch_state,PGR_GAME_CUTSCENE_SKIP_CPP_HATCH_INVENTORY_SERVICE_NAME,0);
+  hatch_inventory_service=method(hatch_state,PGS_GAME_CUTSCENE_SKIP_CPP_HATCH_INVENTORY_SERVICE_NAME,0);
   inventory_current=method(class_of(api,"Niantic.Holoholo.UI.Pokemon","PokemonInventoryGuiService"),"get_ActivePokemonInventoryGui",0);
  }catch(const Failure &f){inventory_class=nullptr;status("warning",std::string("Egg inventory dismissal fallback unavailable: ")+f.where);}
  // Bind the completion action independently of optional inventory UI bindings. OutOfScope
  // is a different callback used by ExitState; it must never be substituted here.
  try{
   void *hatch_state=class_of(api,"Niantic.Holoholo.EggHatch","EggHatchState");
-  void *field=fn<void*(*)(void*,const char*)>(boot.meta.class_get_field_from_name)(hatch_state,PGR_GAME_CUTSCENE_SKIP_CPP_HATCH_COMPLETE_FIELD_NAME);
+  void *field=fn<void*(*)(void*,const char*)>(boot.meta.class_get_field_from_name)(hatch_state,PGS_GAME_CUTSCENE_SKIP_CPP_HATCH_COMPLETE_FIELD_NAME);
   require(field,"Hatch completion field");
   require(!(fn<int(*)(void*)>(boot.meta.field_get_flags)(field)&0x10),"Hatch completion instance field");
   require(typename_of(fn<void*(*)(void*)>(boot.meta.field_get_type)(field))=="System.Action","Hatch completion Action type");
@@ -1183,10 +1183,10 @@ void install(){
  try{
   require(hatch_complete_field||inventory_class,"Hatch completion and fallback unavailable");
   void *hatch_state=class_of(api,"Niantic.Holoholo.EggHatch","EggHatchState");
-  static const uint8_t p_hatch_dismiss[]=PGR_GAME_CUTSCENE_SKIP_CPP_HATCH_DISMISS_FINGERPRINT;
+  static const uint8_t p_hatch_dismiss[]=PGS_GAME_CUTSCENE_SKIP_CPP_HATCH_DISMISS_FINGERPRINT;
   static_assert(sizeof(p_hatch_dismiss)==24,"24-byte prologue");
-  const Target t{K_HATCH_DISMISS,hatch_state,PGR_GAME_CUTSCENE_SKIP_CPP_HATCH_DISMISS_NAME,1,
-   PGR_GAME_CUTSCENE_SKIP_CPP_HATCH_DISMISS_RVA,p_hatch_dismiss,reinterpret_cast<void*>(hook_hatch_dismiss),false};
+  const Target t{K_HATCH_DISMISS,hatch_state,PGS_GAME_CUTSCENE_SKIP_CPP_HATCH_DISMISS_NAME,1,
+   PGS_GAME_CUTSCENE_SKIP_CPP_HATCH_DISMISS_RVA,p_hatch_dismiss,reinterpret_cast<void*>(hook_hatch_dismiss),false};
   if(hook(api,t,missing)){
    ++count;event(std::string("{\"phase\":\"post-hatch-eggs-ready\",\"directCompletion\":")+(hatch_complete_field?"true":"false")+",\"inventoryFallback\":"+(inventory_class?"true":"false")+"}");
   }else{inventory_class=hatch_complete_field=nullptr;}
@@ -1195,12 +1195,12 @@ void install(){
  // The screen-open trace; not a cutscene type, so it is not counted.
  try{
   class_name_fn=exp("class_get_name");class_namespace_fn=exp("class_get_namespace");
-  static const uint8_t p_gui[]=PGR_GAME_CUTSCENE_SKIP_CPP_GUI_OPEN_FINGERPRINT;
+  static const uint8_t p_gui[]=PGS_GAME_CUTSCENE_SKIP_CPP_GUI_OPEN_FINGERPRINT;
   static_assert(sizeof(p_gui)==24,"24-byte prologue");
-  PgrMetaMethodQuery q{};q.version=1;q.size=sizeof(q);q.owner=class_of(api,"Niantic.Holoholo.NUI","GuiController");q.name="Open";
-  q.return_type="System.Void";q.return_match=PGR_MD_MATCH_EXACT;q.param_count=0;
-  q.expected_code=static_cast<const char*>(boot.module_base)+PGR_GAME_CUTSCENE_SKIP_CPP_GUI_OPEN_RVA;q.prologue=p_gui;q.prologue_len=24;
-  PgrMetaMethodResult r{};const int rc=api->validate_method(&q,&r);
+  PgsMetaMethodQuery q{};q.version=1;q.size=sizeof(q);q.owner=class_of(api,"Niantic.Holoholo.NUI","GuiController");q.name="Open";
+  q.return_type="System.Void";q.return_match=PGS_MD_MATCH_EXACT;q.param_count=0;
+  q.expected_code=static_cast<const char*>(boot.module_base)+PGS_GAME_CUTSCENE_SKIP_CPP_GUI_OPEN_RVA;q.prologue=p_gui;q.prologue_len=24;
+  PgsMetaMethodResult r{};const int rc=api->validate_method(&q,&r);
   void *o=nullptr;
   if(rc!=0||!r.code)status("warning","Screen trace unavailable (code "+std::to_string(rc)+")");
   else if(pgs_hook(const_cast<void*>(r.code),reinterpret_cast<void*>(hook_gui_open),&o)!=0||!o)status("warning","Screen trace unavailable (hook)");
@@ -1223,7 +1223,7 @@ void mark_safety_seen(){
  if(!safety_resolved){
   safety_resolved=true;
   try{
-   const auto *api=static_cast<const PgrMetaApi*>(pgs_runtime_metadata_api(1));require(api&&api->resolve_class,"metadata API");
+   const auto *api=static_cast<const PgsMetaApi*>(pgs_runtime_metadata_api(1));require(api&&api->resolve_class,"metadata API");
    auto method=[&](void *k,const char *name,int n){void *m=fn<void*(*)(void*,const char*,int)>(boot.meta.class_get_method_from_name)(k,name,n);require(m,name);return m;};
    safety_set=method(class_of(api,"Niantic.Holoholo.PersistentData","Preferences"),"set_DayLastSeenAwarenessSafetyPopUp",1);
    safety_today=method(class_of(api,"Niantic.Holoholo","TimeUtil"),"GetUniqueIndexForToday",0);
@@ -1242,7 +1242,7 @@ void mark_safety_seen(){
 
 }  // namespace
 
-void pgr_cutscene_skip_tick(uint64_t tid,const PgrSharedMetadataOutput *){
+void pgs_cutscene_skip_tick(uint64_t tid,const PgsSharedMetadataOutput *){
  if(busy||!tid||tid!=uint64_t(gettid()))return;
  const uint64_t prior=owner.load(std::memory_order_acquire);if(prior&&prior!=tid)return;
  struct Guard{Guard(){busy=true;}~Guard(){busy=false;}}guard;
@@ -1262,12 +1262,12 @@ void pgr_cutscene_skip_tick(uint64_t tid,const PgrSharedMetadataOutput *){
  if((!on&&!policy.inventory)||tried||faulted.load(std::memory_order_acquire))return;
  tried=true;
  try{
-  if(!ready){auto api=static_cast<const PgrBootApi*>(pgs_runtime_bootstrap_api(1));boot.version=1;boot.size=sizeof(boot);require(api&&api->snapshot(&boot)==0,"Runtime unavailable");ready=true;}
+  if(!ready){auto api=static_cast<const PgsBootApi*>(pgs_runtime_bootstrap_api(1));boot.version=1;boot.size=sizeof(boot);require(api&&api->snapshot(&boot)==0,"Runtime unavailable");ready=true;}
   install();
  }catch(const Failure &f){faulted.store(true,std::memory_order_release);status("error",std::string("Skip cutscenes unavailable: ")+f.where);}
  catch(...){faulted.store(true,std::memory_order_release);status("error","Skip cutscenes unavailable: native failure");}
 }
-void pgr_cutscene_skip_stop(uint64_t tid){
+void pgs_cutscene_skip_stop(uint64_t tid){
  enabled.store(false,std::memory_order_release);egg_inventory_enabled.store(false,std::memory_order_release);last_tick.store(0,std::memory_order_release);
  // No more ticks: a dialogue already bypassed must not be left waiting for one.
  if(!busy&&tid&&tid==uint64_t(gettid())&&tid==owner.load(std::memory_order_acquire)){

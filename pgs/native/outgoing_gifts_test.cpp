@@ -78,7 +78,7 @@ FakeBoxB *box_bool(bool v) { FakeBoxB *b = &g_bb[g_bbi++ & 31]; b->klass = &cls_
 FakeBoxI *box_int(int32_t v) { FakeBoxI *b = &g_bi[g_bii++ & 31]; b->klass = &cls_int32; b->v = v; return b; }
 
 // ----- runtime shims ----------------------------------------------------------------
-const PgrOutgoingGiftsApi *g_api = nullptr;
+const PgsOutgoingGiftsApi *g_api = nullptr;
 
 uint64_t g_owner = 0;
 
@@ -182,18 +182,18 @@ void *fake_runtime_invoke(const void *method, void *obj, void **params, void **e
     g_last_send_had_sticker = params[3] != nullptr;
     g_last_send_gift_id = *static_cast<uint64_t *>(params[0]);
     if (g_stop_on_send) { g_stop_on_send = false; g_api->tick(g_owner, 1); }
-    if (g_fire_result && g_cb && g_sendout) g_api->observe(PGR_OG_OBSERVE_RPC_RESULT, g_cb, g_sendout, g_owner);
-    if (g_fire_finally && g_cb) g_api->observe(PGR_OG_OBSERVE_RPC_FINALLY, g_cb, nullptr, g_owner);
+    if (g_fire_result && g_cb && g_sendout) g_api->observe(PGS_OG_OBSERVE_RPC_RESULT, g_cb, g_sendout, g_owner);
+    if (g_fire_finally && g_cb) g_api->observe(PGS_OG_OBSERVE_RPC_FINALLY, g_cb, nullptr, g_owner);
     return g_promise;
   }
   assert(false && "unknown method token");
   return nullptr;
 }
 
-PgrOutgoingGiftsConfig make_config() {
-  PgrOutgoingGiftsConfig c{};
+PgsOutgoingGiftsConfig make_config() {
+  PgsOutgoingGiftsConfig c{};
   c.version = 1;
-  c.size = sizeof(PgrOutgoingGiftsConfig);
+  c.size = sizeof(PgsOutgoingGiftsConfig);
   c.gchandle_new = reinterpret_cast<void *>(&fake_gc_new);
   c.gchandle_get_target = reinterpret_cast<void *>(&fake_gc_get);
   c.gchandle_free = reinterpret_cast<void *>(&fake_gc_free);
@@ -231,21 +231,21 @@ PgrOutgoingGiftsConfig make_config() {
 
 uint64_t this_tid() { return static_cast<uint64_t>(static_cast<pid_t>(::gettid())); }
 
-PgrOutgoingGiftsSample take_sample() {
-  PgrOutgoingGiftsSample s{};
-  assert(g_api->sample(&s) == PGR_OG_OK);
-  assert(s.version == 1 && s.size == sizeof(PgrOutgoingGiftsSample));
+PgsOutgoingGiftsSample take_sample() {
+  PgsOutgoingGiftsSample s{};
+  assert(g_api->sample(&s) == PGS_OG_OK);
+  assert(s.version == 1 && s.size == sizeof(PgsOutgoingGiftsSample));
   return s;
 }
-std::vector<PgrOutgoingGiftsEvent> drain_all() {
-  std::vector<PgrOutgoingGiftsEvent> out;
-  PgrOutgoingGiftsEvent e{};
+std::vector<PgsOutgoingGiftsEvent> drain_all() {
+  std::vector<PgsOutgoingGiftsEvent> out;
+  PgsOutgoingGiftsEvent e{};
   int r;
   while ((r = g_api->next_event(&e)) == 1) out.push_back(e);
   assert(r == 0);
   return out;
 }
-bool saw(const std::vector<PgrOutgoingGiftsEvent> &v, uint32_t kind, int32_t id) {
+bool saw(const std::vector<PgsOutgoingGiftsEvent> &v, uint32_t kind, int32_t id) {
   for (const auto &e : v) if (e.kind == kind && e.id == id) return true;
   return false;
 }
@@ -313,72 +313,72 @@ int main(int argc, char **argv) {
   const auto *core = static_cast<const pgs_native_api_v2 *>(getter(2));
   assert(core && core->size == 48);
   assert(core->query_feature(22, 99) == nullptr);
-  const auto *api = static_cast<const PgrOutgoingGiftsApi *>(core->query_feature(22, 1));
-  assert(api != nullptr && api->version == 1 && api->size == sizeof(PgrOutgoingGiftsApi));
+  const auto *api = static_cast<const PgsOutgoingGiftsApi *>(core->query_feature(22, 1));
+  assert(api != nullptr && api->version == 1 && api->size == sizeof(PgsOutgoingGiftsApi));
   g_api = api;
 
 
   std::printf("ABI sizes: config=%zu sample=%zu event=%zu table=%zu\n",
-              sizeof(PgrOutgoingGiftsConfig), sizeof(PgrOutgoingGiftsSample),
-              sizeof(PgrOutgoingGiftsEvent), sizeof(PgrOutgoingGiftsApi));
-  assert(sizeof(PgrOutgoingGiftsConfig) == 488 && sizeof(PgrOutgoingGiftsSample) == 88 &&
-         sizeof(PgrOutgoingGiftsEvent) == 16 && sizeof(PgrOutgoingGiftsApi) == 64);
+              sizeof(PgsOutgoingGiftsConfig), sizeof(PgsOutgoingGiftsSample),
+              sizeof(PgsOutgoingGiftsEvent), sizeof(PgsOutgoingGiftsApi));
+  assert(sizeof(PgsOutgoingGiftsConfig) == 488 && sizeof(PgsOutgoingGiftsSample) == 88 &&
+         sizeof(PgsOutgoingGiftsEvent) == 16 && sizeof(PgsOutgoingGiftsApi) == 64);
 
   const uint64_t tid = this_tid();
   g_owner = tid;
-  PgrOutgoingGiftsConfig cfg = make_config();
+  PgsOutgoingGiftsConfig cfg = make_config();
 
   // 1. Validation + not-installed.
-  assert(api->install(nullptr) == PGR_OG_ERR_INVALID_ARG);
-  PgrOutgoingGiftsConfig bad = cfg; bad.version = 2;
-  assert(api->install(&bad) == PGR_OG_ERR_BAD_VERSION);
-  bad = cfg; bad.size = sizeof(PgrOutgoingGiftsConfig) - 1;
-  assert(api->install(&bad) == PGR_OG_ERR_BAD_SIZE);
+  assert(api->install(nullptr) == PGS_OG_ERR_INVALID_ARG);
+  PgsOutgoingGiftsConfig bad = cfg; bad.version = 2;
+  assert(api->install(&bad) == PGS_OG_ERR_BAD_VERSION);
+  bad = cfg; bad.size = sizeof(PgsOutgoingGiftsConfig) - 1;
+  assert(api->install(&bad) == PGS_OG_ERR_BAD_SIZE);
   bad = cfg; bad.f_callback_id = nullptr;
-  assert(api->install(&bad) == PGR_OG_ERR_MISSING_PTR);
-  assert(api->update(PGR_OG_MASK_SEND, 2000, tid) == PGR_OG_ERR_NOT_INSTALLED);
-  assert(api->tick(tid, 0) == PGR_OG_ERR_NOT_INSTALLED);
-  assert(api->queue(&cfg, &cfg, tid) == PGR_OG_QUEUE_ORIGINAL);  // not installed -> original
+  assert(api->install(&bad) == PGS_OG_ERR_MISSING_PTR);
+  assert(api->update(PGS_OG_MASK_SEND, 2000, tid) == PGS_OG_ERR_NOT_INSTALLED);
+  assert(api->tick(tid, 0) == PGS_OG_ERR_NOT_INSTALLED);
+  assert(api->queue(&cfg, &cfg, tid) == PGS_OG_QUEUE_ORIGINAL);  // not installed -> original
 
-  assert(api->install(&cfg) == PGR_OG_OK);
-  assert(api->install(&cfg) == PGR_OG_OK);  // idempotent
+  assert(api->install(&cfg) == PGS_OG_OK);
+  assert(api->install(&cfg) == PGS_OG_OK);  // idempotent
   bad = cfg; bad.send_success = 9;
-  assert(api->install(&bad) == PGR_OG_ERR_RECONFIG);
+  assert(api->install(&bad) == PGS_OG_ERR_RECONFIG);
 
   // 2. queue happy path (no sticker) -> issue, one SendGift, REQUEST aux=0, SENDING.
   { Scene s; wire(s, 1);
-    assert(api->update(PGR_OG_MASK_SEND, 2000, tid) == PGR_OG_OK);
+    assert(api->update(PGS_OG_MASK_SEND, 2000, tid) == PGS_OG_OK);
     g_send_calls = 0;
-    assert(api->queue(&s.panel, &s.profile, tid) == PGR_OG_QUEUE_HANDLED);
-    PgrOutgoingGiftsSample sm = take_sample();
+    assert(api->queue(&s.panel, &s.profile, tid) == PGS_OG_QUEUE_HANDLED);
+    PgsOutgoingGiftsSample sm = take_sample();
     assert(sm.active == 1 && sm.issued == 0 && sm.roots >= 2);
-    assert(saw(drain_all(), PGR_OG_EVENT_STATUS, PGR_OG_MSG_PREPARING));
-    assert(api->tick(tid, 0) == PGR_OG_OK);
+    assert(saw(drain_all(), PGS_OG_EVENT_STATUS, PGS_OG_MSG_PREPARING));
+    assert(api->tick(tid, 0) == PGS_OG_OK);
     sm = take_sample();
     assert(g_send_calls == 1 && g_last_send_had_sticker == false && g_last_send_gift_id == 0xABCDEF);
     assert(sm.issued == 1 && sm.active == 1);
     auto ev = drain_all();
-    assert(saw(ev, PGR_OG_EVENT_STATUS, PGR_OG_MSG_SENDING) && saw(ev, PGR_OG_EVENT_REQUEST, 0));
+    assert(saw(ev, PGS_OG_EVENT_STATUS, PGS_OG_MSG_SENDING) && saw(ev, PGS_OG_EVENT_REQUEST, 0));
     // Complete via matched callbacks, then a tick reports SENT + clears.
     s.sendout.result = kSendSuccess;
-    assert(api->observe(PGR_OG_OBSERVE_RPC_RESULT, &s.cb, &s.sendout, tid) == PGR_OG_OK);
-    assert(api->observe(PGR_OG_OBSERVE_RPC_FINALLY, &s.cb, nullptr, tid) == PGR_OG_OK);
+    assert(api->observe(PGS_OG_OBSERVE_RPC_RESULT, &s.cb, &s.sendout, tid) == PGS_OG_OK);
+    assert(api->observe(PGS_OG_OBSERVE_RPC_FINALLY, &s.cb, nullptr, tid) == PGS_OG_OK);
     assert(take_sample().result_known == 1);
-    assert(api->tick(tid, 0) == PGR_OG_OK);
+    assert(api->tick(tid, 0) == PGS_OG_OK);
     sm = take_sample();
     assert(sm.active == 0 && sm.roots == 0 && g_live.empty());
     ev = drain_all();
-    assert(saw(ev, PGR_OG_EVENT_STATUS, PGR_OG_MSG_SENT) && saw(ev, PGR_OG_EVENT_RESULT, kSendSuccess));
+    assert(saw(ev, PGS_OG_EVENT_STATUS, PGS_OG_MSG_SENT) && saw(ev, PGS_OG_EVENT_RESULT, kSendSuccess));
   }
 
   // 3. "Already pending" when a transaction exists.
   { Scene s; wire(s, 1);
-    assert(api->update(PGR_OG_MASK_SEND, 2000, tid) == PGR_OG_OK);
-    assert(api->queue(&s.panel, &s.profile, tid) == PGR_OG_QUEUE_HANDLED);
+    assert(api->update(PGS_OG_MASK_SEND, 2000, tid) == PGS_OG_OK);
+    assert(api->queue(&s.panel, &s.profile, tid) == PGS_OG_QUEUE_HANDLED);
     Scene s2; wire(s2, 1);
-    assert(api->queue(&s2.panel, &s2.profile, tid) == PGR_OG_QUEUE_HANDLED);  // still handled
-    assert(saw(drain_all(), PGR_OG_EVENT_STATUS, PGR_OG_MSG_ALREADY));
-    assert(api->tick(tid, 1) == PGR_OG_OK);  // stop clears
+    assert(api->queue(&s2.panel, &s2.profile, tid) == PGS_OG_QUEUE_HANDLED);  // still handled
+    assert(saw(drain_all(), PGS_OG_EVENT_STATUS, PGS_OG_MSG_ALREADY));
+    assert(api->tick(tid, 1) == PGS_OG_OK);  // stop clears
     assert(take_sample().active == 0 && g_live.empty());
     drain_all();
   }
@@ -389,21 +389,21 @@ int main(int argc, char **argv) {
     FakeSticker s0{&cls_sticker, &s.stk, 0};
     FakeSticker s1{&cls_sticker, &s.stk, 3};
     s.items[0] = &s0; s.items[1] = &s1; s.list.items = s.items; s.list.count = 2;
-    assert(api->update(PGR_OG_MASK_SEND | PGR_OG_MASK_STICKER, 2000, tid) == PGR_OG_OK);
+    assert(api->update(PGS_OG_MASK_SEND | PGS_OG_MASK_STICKER, 2000, tid) == PGS_OG_OK);
     g_send_calls = 0;
     g_cb = &s.cb; g_sendout = &s.sendout; g_fire_result = true; g_fire_finally = true;
-    assert(api->queue(&s.panel, &s.profile, tid) == PGR_OG_QUEUE_HANDLED);
-    assert(api->tick(tid, 0) == PGR_OG_OK);  // issues; synchronous callbacks fire inside SendGift
+    assert(api->queue(&s.panel, &s.profile, tid) == PGS_OG_QUEUE_HANDLED);
+    assert(api->tick(tid, 0) == PGS_OG_OK);  // issues; synchronous callbacks fire inside SendGift
     assert(g_send_calls == 1 && g_last_send_had_sticker == true);
     assert(s.svc.reserves == 1);
     assert(s.enumr.disposes == 1);  // Dispose exactly once
     { auto ev = drain_all();  // the REQUEST record carries aux = sticker(1)
       bool req_sticker = false;
-      for (const auto &e : ev) if (e.kind == PGR_OG_EVENT_REQUEST && e.aux == 1) req_sticker = true;
+      for (const auto &e : ev) if (e.kind == PGS_OG_EVENT_REQUEST && e.aux == 1) req_sticker = true;
       assert(req_sticker); }
-    PgrOutgoingGiftsSample sm = take_sample();
+    PgsOutgoingGiftsSample sm = take_sample();
     assert(sm.result_known == 1);  // callback recorded synchronously
-    assert(api->tick(tid, 0) == PGR_OG_OK);  // completes -> clear returns reservation
+    assert(api->tick(tid, 0) == PGS_OG_OK);  // completes -> clear returns reservation
     assert(s.svc.returns == 1);     // reservation returned exactly once
     assert(take_sample().active == 0 && g_live.empty());
     g_fire_result = g_fire_finally = false; g_cb = nullptr; g_sendout = nullptr;
@@ -412,47 +412,47 @@ int main(int argc, char **argv) {
 
   // 5. No gifts available: MoveNext false -> NO_GIFTS, Dispose once, no send, clear.
   { Scene s; wire(s, 0);  // enumerator yields nothing
-    assert(api->update(PGR_OG_MASK_SEND, 2000, tid) == PGR_OG_OK);
+    assert(api->update(PGS_OG_MASK_SEND, 2000, tid) == PGS_OG_OK);
     g_send_calls = 0;
-    assert(api->queue(&s.panel, &s.profile, tid) == PGR_OG_QUEUE_HANDLED);
-    assert(api->tick(tid, 0) == PGR_OG_OK);
+    assert(api->queue(&s.panel, &s.profile, tid) == PGS_OG_QUEUE_HANDLED);
+    assert(api->tick(tid, 0) == PGS_OG_OK);
     assert(g_send_calls == 0 && s.enumr.disposes == 1);
-    assert(saw(drain_all(), PGR_OG_EVENT_STATUS, PGR_OG_MSG_NO_GIFTS));
+    assert(saw(drain_all(), PGS_OG_EVENT_STATUS, PGS_OG_MSG_NO_GIFTS));
     assert(take_sample().active == 0 && g_live.empty());
   }
 
   // 6. Sticker inventory over the scan bound -> error, clear, no send.
   { Scene s; wire(s, 1);
-    s.list.items = s.items; s.list.count = PGR_OG_STICKER_SCAN_MAX + 1;
-    assert(api->update(PGR_OG_MASK_SEND | PGR_OG_MASK_STICKER, 2000, tid) == PGR_OG_OK);
+    s.list.items = s.items; s.list.count = PGS_OG_STICKER_SCAN_MAX + 1;
+    assert(api->update(PGS_OG_MASK_SEND | PGS_OG_MASK_STICKER, 2000, tid) == PGS_OG_OK);
     g_send_calls = 0;
-    assert(api->queue(&s.panel, &s.profile, tid) == PGR_OG_QUEUE_HANDLED);
-    assert(api->tick(tid, 0) == PGR_OG_OK);
+    assert(api->queue(&s.panel, &s.profile, tid) == PGS_OG_QUEUE_HANDLED);
+    assert(api->tick(tid, 0) == PGS_OG_OK);
     assert(g_send_calls == 0);
-    assert(saw(drain_all(), PGR_OG_EVENT_ERROR, PGR_OG_ERR_STICKER_SVC));
+    assert(saw(drain_all(), PGS_OG_EVENT_ERROR, PGS_OG_ERR_STICKER_SVC));
     assert(take_sample().active == 0 && g_live.empty());
   }
 
   // 7. Unmatched callback (wrong recipient id): result NOT recorded.
   { Scene s; wire(s, 1);
-    assert(api->update(PGR_OG_MASK_SEND, 2000, tid) == PGR_OG_OK);
-    assert(api->queue(&s.panel, &s.profile, tid) == PGR_OG_QUEUE_HANDLED);
-    assert(api->tick(tid, 0) == PGR_OG_OK);  // issued
+    assert(api->update(PGS_OG_MASK_SEND, 2000, tid) == PGS_OG_OK);
+    assert(api->queue(&s.panel, &s.profile, tid) == PGS_OG_QUEUE_HANDLED);
+    assert(api->tick(tid, 0) == PGS_OG_OK);  // issued
     FakeString wrong; set_str(&wrong, "OTHER");
     FakeCallback bad_cb{&cls_callback, &s.rpc, &wrong};
-    assert(api->observe(PGR_OG_OBSERVE_RPC_RESULT, &bad_cb, &s.sendout, tid) == PGR_OG_OK);
-    assert(api->observe(PGR_OG_OBSERVE_RPC_FINALLY, &bad_cb, nullptr, tid) == PGR_OG_OK);
-    PgrOutgoingGiftsSample sm = take_sample();
+    assert(api->observe(PGS_OG_OBSERVE_RPC_RESULT, &bad_cb, &s.sendout, tid) == PGS_OG_OK);
+    assert(api->observe(PGS_OG_OBSERVE_RPC_FINALLY, &bad_cb, nullptr, tid) == PGS_OG_OK);
+    PgsOutgoingGiftsSample sm = take_sample();
     assert(sm.result_known == 0 && sm.issued == 1 && sm.active == 1);  // unmatched: ignored
     // Wrong service also unmatched.
     FakeRpc other_rpc{&cls_rpc, &s.svc};
     FakeCallback bad_cb2{&cls_callback, &other_rpc, &s.rcpt};
-    assert(api->observe(PGR_OG_OBSERVE_RPC_RESULT, &bad_cb2, &s.sendout, tid) == PGR_OG_OK);
+    assert(api->observe(PGS_OG_OBSERVE_RPC_RESULT, &bad_cb2, &s.sendout, tid) == PGS_OG_OK);
     assert(take_sample().result_known == 0);
     // Matched completes it.
-    assert(api->observe(PGR_OG_OBSERVE_RPC_RESULT, &s.cb, &s.sendout, tid) == PGR_OG_OK);
-    assert(api->observe(PGR_OG_OBSERVE_RPC_FINALLY, &s.cb, nullptr, tid) == PGR_OG_OK);
-    assert(api->tick(tid, 0) == PGR_OG_OK);
+    assert(api->observe(PGS_OG_OBSERVE_RPC_RESULT, &s.cb, &s.sendout, tid) == PGS_OG_OK);
+    assert(api->observe(PGS_OG_OBSERVE_RPC_FINALLY, &s.cb, nullptr, tid) == PGS_OG_OK);
+    assert(api->tick(tid, 0) == PGS_OG_OK);
     assert(take_sample().active == 0 && g_live.empty());
     drain_all();
   }
@@ -460,63 +460,63 @@ int main(int argc, char **argv) {
   // 8. Issued-timeout quarantine: advance the test clock past 30 s -> timed_out, PENDING, retained;
   //    a later finally completes it.
   { Scene s; wire(s, 1);
-    assert(api->update(PGR_OG_MASK_SEND, 2000, tid) == PGR_OG_OK);
-    assert(api->queue(&s.panel, &s.profile, tid) == PGR_OG_QUEUE_HANDLED);
-    assert(api->tick(tid, 0) == PGR_OG_OK);  // issued
+    assert(api->update(PGS_OG_MASK_SEND, 2000, tid) == PGS_OG_OK);
+    assert(api->queue(&s.panel, &s.profile, tid) == PGS_OG_QUEUE_HANDLED);
+    assert(api->tick(tid, 0) == PGS_OG_OK);  // issued
     drain_all();
-    usleep((PGR_OG_TXN_TIMEOUT_MS + 1000) * 1000);
-    assert(api->update(PGR_OG_MASK_SEND, 2000, tid) == PGR_OG_OK);  // keep the gate live
-    assert(api->tick(tid, 0) == PGR_OG_OK);
-    PgrOutgoingGiftsSample sm = take_sample();
+    usleep((PGS_OG_TXN_TIMEOUT_MS + 1000) * 1000);
+    assert(api->update(PGS_OG_MASK_SEND, 2000, tid) == PGS_OG_OK);  // keep the gate live
+    assert(api->tick(tid, 0) == PGS_OG_OK);
+    PgsOutgoingGiftsSample sm = take_sample();
     assert(sm.timed_out == 1 && sm.active == 1 && sm.issued == 1);  // retained, not cleared
-    assert(saw(drain_all(), PGR_OG_EVENT_STATUS, PGR_OG_MSG_PENDING));
+    assert(saw(drain_all(), PGS_OG_EVENT_STATUS, PGS_OG_MSG_PENDING));
     s.sendout.result = kSendSuccess;
-    assert(api->observe(PGR_OG_OBSERVE_RPC_RESULT, &s.cb, &s.sendout, tid) == PGR_OG_OK);
-    assert(api->observe(PGR_OG_OBSERVE_RPC_FINALLY, &s.cb, nullptr, tid) == PGR_OG_OK);
-    assert(api->tick(tid, 0) == PGR_OG_OK);
+    assert(api->observe(PGS_OG_OBSERVE_RPC_RESULT, &s.cb, &s.sendout, tid) == PGS_OG_OK);
+    assert(api->observe(PGS_OG_OBSERVE_RPC_FINALLY, &s.cb, nullptr, tid) == PGS_OG_OK);
+    assert(api->tick(tid, 0) == PGS_OG_OK);
     assert(take_sample().active == 0 && g_live.empty());
     drain_all();
   }
 
   // 9. Off BEFORE issue cancels; off AFTER issue survives.
   { Scene s; wire(s, 1);
-    assert(api->update(PGR_OG_MASK_SEND, 2000, tid) == PGR_OG_OK);
-    assert(api->queue(&s.panel, &s.profile, tid) == PGR_OG_QUEUE_HANDLED);
-    assert(api->update(0, 0, tid) == PGR_OG_OK);  // off before issue
-    assert(api->tick(tid, 0) == PGR_OG_OK);
+    assert(api->update(PGS_OG_MASK_SEND, 2000, tid) == PGS_OG_OK);
+    assert(api->queue(&s.panel, &s.profile, tid) == PGS_OG_QUEUE_HANDLED);
+    assert(api->update(0, 0, tid) == PGS_OG_OK);  // off before issue
+    assert(api->tick(tid, 0) == PGS_OG_OK);
     assert(take_sample().active == 0 && g_live.empty());  // unissued cancelled
     drain_all();
 
     Scene s2; wire(s2, 1);
-    assert(api->update(PGR_OG_MASK_SEND, 2000, tid) == PGR_OG_OK);
-    assert(api->queue(&s2.panel, &s2.profile, tid) == PGR_OG_QUEUE_HANDLED);
-    assert(api->tick(tid, 0) == PGR_OG_OK);  // issued
-    assert(api->update(0, 0, tid) == PGR_OG_OK);  // off after issue
-    assert(api->tick(tid, 0) == PGR_OG_OK);
+    assert(api->update(PGS_OG_MASK_SEND, 2000, tid) == PGS_OG_OK);
+    assert(api->queue(&s2.panel, &s2.profile, tid) == PGS_OG_QUEUE_HANDLED);
+    assert(api->tick(tid, 0) == PGS_OG_OK);  // issued
+    assert(api->update(0, 0, tid) == PGS_OG_OK);  // off after issue
+    assert(api->tick(tid, 0) == PGS_OG_OK);
     assert(take_sample().active == 1);  // issued survives off
     // Result bookkeeping still works while off.
-    assert(api->observe(PGR_OG_OBSERVE_RPC_RESULT, &s2.cb, &s2.sendout, tid) == PGR_OG_OK);
-    assert(api->observe(PGR_OG_OBSERVE_RPC_FINALLY, &s2.cb, nullptr, tid) == PGR_OG_OK);
+    assert(api->observe(PGS_OG_OBSERVE_RPC_RESULT, &s2.cb, &s2.sendout, tid) == PGS_OG_OK);
+    assert(api->observe(PGS_OG_OBSERVE_RPC_FINALLY, &s2.cb, nullptr, tid) == PGS_OG_OK);
     assert(take_sample().result_known == 1);
-    assert(api->tick(tid, 1) == PGR_OG_OK);  // stop clears
+    assert(api->tick(tid, 1) == PGS_OG_OK);  // stop clears
     assert(take_sample().active == 0 && g_live.empty());
     drain_all();
   }
 
   // 10. Profile close: unissued cancels; issued survives.
   { Scene s; wire(s, 1);
-    assert(api->update(PGR_OG_MASK_SEND, 2000, tid) == PGR_OG_OK);
-    assert(api->queue(&s.panel, &s.profile, tid) == PGR_OG_QUEUE_HANDLED);
-    assert(api->observe(PGR_OG_OBSERVE_PROFILE_CLOSE, &s.profile, nullptr, tid) == PGR_OG_OK);
+    assert(api->update(PGS_OG_MASK_SEND, 2000, tid) == PGS_OG_OK);
+    assert(api->queue(&s.panel, &s.profile, tid) == PGS_OG_QUEUE_HANDLED);
+    assert(api->observe(PGS_OG_OBSERVE_PROFILE_CLOSE, &s.profile, nullptr, tid) == PGS_OG_OK);
     assert(take_sample().active == 0 && g_live.empty());  // unissued cancelled
 
     Scene s2; wire(s2, 1);
-    assert(api->update(PGR_OG_MASK_SEND, 2000, tid) == PGR_OG_OK);
-    assert(api->queue(&s2.panel, &s2.profile, tid) == PGR_OG_QUEUE_HANDLED);
-    assert(api->tick(tid, 0) == PGR_OG_OK);  // issued
-    assert(api->observe(PGR_OG_OBSERVE_PROFILE_CLOSE, &s2.profile, nullptr, tid) == PGR_OG_OK);
+    assert(api->update(PGS_OG_MASK_SEND, 2000, tid) == PGS_OG_OK);
+    assert(api->queue(&s2.panel, &s2.profile, tid) == PGS_OG_QUEUE_HANDLED);
+    assert(api->tick(tid, 0) == PGS_OG_OK);  // issued
+    assert(api->observe(PGS_OG_OBSERVE_PROFILE_CLOSE, &s2.profile, nullptr, tid) == PGS_OG_OK);
     assert(take_sample().active == 1);  // issued survives profile close
-    assert(api->tick(tid, 1) == PGR_OG_OK);
+    assert(api->tick(tid, 1) == PGS_OG_OK);
     assert(take_sample().active == 0 && g_live.empty());
     drain_all();
   }
@@ -525,20 +525,20 @@ int main(int argc, char **argv) {
   //      still suppressed, matching JS line 283 `return;`.
   { Scene s; wire(s, 1);
     s.profile.disabled = 1;
-    assert(api->update(PGR_OG_MASK_SEND, 2000, tid) == PGR_OG_OK);
-    assert(api->queue(&s.panel, &s.profile, tid) == PGR_OG_QUEUE_HANDLED);
+    assert(api->update(PGS_OG_MASK_SEND, 2000, tid) == PGS_OG_OK);
+    assert(api->queue(&s.panel, &s.profile, tid) == PGS_OG_QUEUE_HANDLED);
     assert(take_sample().active == 0 && g_live.empty());  // nothing queued
   }
   { Scene s; wire(s, 1);
     s.button.interactable = 0;  // choose button not ready
-    assert(api->update(PGR_OG_MASK_SEND, 2000, tid) == PGR_OG_OK);
-    assert(api->queue(&s.panel, &s.profile, tid) == PGR_OG_QUEUE_HANDLED);
+    assert(api->update(PGS_OG_MASK_SEND, 2000, tid) == PGS_OG_OK);
+    assert(api->queue(&s.panel, &s.profile, tid) == PGS_OG_QUEUE_HANDLED);
     assert(take_sample().active == 0 && g_live.empty());
   }
   // 10c. Mask off -> NOT eligible -> ORIGINAL runs (host sends normally).
   { Scene s; wire(s, 1);
-    assert(api->update(0, 0, tid) == PGR_OG_OK);
-    assert(api->queue(&s.panel, &s.profile, tid) == PGR_OG_QUEUE_ORIGINAL);
+    assert(api->update(0, 0, tid) == PGS_OG_OK);
+    assert(api->queue(&s.panel, &s.profile, tid) == PGS_OG_QUEUE_ORIGINAL);
     assert(take_sample().active == 0 && g_live.empty());
   }
 
@@ -547,14 +547,14 @@ int main(int argc, char **argv) {
   { Scene s; wire(s, 1);
     FakeSticker s1{&cls_sticker, &s.stk, 5};
     s.items[0] = &s1; s.list.items = s.items; s.list.count = 1;
-    assert(api->update(PGR_OG_MASK_SEND | PGR_OG_MASK_STICKER, 2000, tid) == PGR_OG_OK);
+    assert(api->update(PGS_OG_MASK_SEND | PGS_OG_MASK_STICKER, 2000, tid) == PGS_OG_OK);
     g_send_calls = 0;
     g_stop_on_send = true;  // reentrant tick(stopping) inside SendGift
-    assert(api->queue(&s.panel, &s.profile, tid) == PGR_OG_QUEUE_HANDLED);
-    assert(api->tick(tid, 0) == PGR_OG_OK);
+    assert(api->queue(&s.panel, &s.profile, tid) == PGS_OG_QUEUE_HANDLED);
+    assert(api->tick(tid, 0) == PGS_OG_OK);
     assert(g_send_calls == 1);        // the send was issued before the stop latched
     assert(s.svc.reserves == 1 && s.svc.returns == 1);  // reserved then returned exactly once
-    PgrOutgoingGiftsSample sm = take_sample();
+    PgsOutgoingGiftsSample sm = take_sample();
     assert(sm.active == 0 && sm.roots == 0 && g_live.empty());  // deferred teardown ran, no leaks
     drain_all();
   }
@@ -562,12 +562,12 @@ int main(int argc, char **argv) {
   // 12. Wrong thread cannot drive the controller nor steal ownership.
   std::thread([&]() {
     Scene s; wire(s, 1);
-    assert(g_api->queue(&s.panel, &s.profile, this_tid()) == PGR_OG_QUEUE_ORIGINAL);  // not owner
-    assert(g_api->tick(this_tid(), 0) == PGR_OG_OK);  // no-op off the owner
-    assert(g_api->observe(PGR_OG_OBSERVE_PROFILE_CLOSE, &s.profile, nullptr, this_tid()) == PGR_OG_OK);
+    assert(g_api->queue(&s.panel, &s.profile, this_tid()) == PGS_OG_QUEUE_ORIGINAL);  // not owner
+    assert(g_api->tick(this_tid(), 0) == PGS_OG_OK);  // no-op off the owner
+    assert(g_api->observe(PGS_OG_OBSERVE_PROFILE_CLOSE, &s.profile, nullptr, this_tid()) == PGS_OG_OK);
   }).join();
   { Scene s; wire(s, 1);
-    assert(api->queue(&s.panel, &s.profile, tid + 1) == PGR_OG_QUEUE_ORIGINAL);  // mismatched proven_tid
+    assert(api->queue(&s.panel, &s.profile, tid + 1) == PGS_OG_QUEUE_ORIGINAL);  // mismatched proven_tid
   }
   assert(g_live.empty());
 
@@ -576,24 +576,24 @@ int main(int argc, char **argv) {
   // 13. A STOP latched by a reentrant tick DURING a queue() getter blocks the arm: gate_live sees
   //     g_pending_stop, so nothing is published (no PREPARING, active stays 0) and roots are freed.
   { Scene s; wire(s, 1);
-    assert(api->update(PGR_OG_MASK_SEND, 2000, tid) == PGR_OG_OK);
+    assert(api->update(PGS_OG_MASK_SEND, 2000, tid) == PGS_OG_OK);
     g_oneshot_method = &m_disabled;
     g_oneshot = [&]() { g_api->tick(g_owner, 1); };  // reentrant stop mid queue getter
-    assert(api->queue(&s.panel, &s.profile, tid) == PGR_OG_QUEUE_HANDLED);
-    PgrOutgoingGiftsSample sm = take_sample();
+    assert(api->queue(&s.panel, &s.profile, tid) == PGS_OG_QUEUE_HANDLED);
+    PgsOutgoingGiftsSample sm = take_sample();
     assert(sm.active == 0 && sm.roots == 0 && g_live.empty());  // never armed/published
-    assert(!saw(drain_all(), PGR_OG_EVENT_STATUS, PGR_OG_MSG_PREPARING));
+    assert(!saw(drain_all(), PGS_OG_EVENT_STATUS, PGS_OG_MSG_PREPARING));
   }
 
   // 14. An unrelated profile's close is ignored: the rooted profile mismatches, so an unissued
   //     transaction survives it. A later stop clears it.
   { Scene s; wire(s, 1);
-    assert(api->update(PGR_OG_MASK_SEND, 2000, tid) == PGR_OG_OK);
-    assert(api->queue(&s.panel, &s.profile, tid) == PGR_OG_QUEUE_HANDLED);
+    assert(api->update(PGS_OG_MASK_SEND, 2000, tid) == PGS_OG_OK);
+    assert(api->queue(&s.panel, &s.profile, tid) == PGS_OG_QUEUE_HANDLED);
     FakeProfile other{&cls_profile, &s.panel, 0};
-    assert(api->observe(PGR_OG_OBSERVE_PROFILE_CLOSE, &other, nullptr, tid) == PGR_OG_OK);
+    assert(api->observe(PGS_OG_OBSERVE_PROFILE_CLOSE, &other, nullptr, tid) == PGS_OG_OK);
     assert(take_sample().active == 1);  // unrelated close ignored
-    assert(api->tick(tid, 1) == PGR_OG_OK);
+    assert(api->tick(tid, 1) == PGS_OG_OK);
     assert(take_sample().active == 0 && g_live.empty());
     drain_all();
   }
@@ -604,12 +604,12 @@ int main(int argc, char **argv) {
   { Scene s; wire(s, 1);
     FakeSticker s1{&cls_sticker, &s.stk, 3};
     s.items[0] = &s1; s.list.items = s.items; s.list.count = 1;
-    assert(api->update(PGR_OG_MASK_SEND | PGR_OG_MASK_STICKER, 2000, tid) == PGR_OG_OK);
+    assert(api->update(PGS_OG_MASK_SEND | PGS_OG_MASK_STICKER, 2000, tid) == PGS_OG_OK);
     g_send_calls = 0;
     g_oneshot_method = &m_scount;  // during the sticker inventory count getter
-    g_oneshot = [&]() { g_api->observe(PGR_OG_OBSERVE_PROFILE_CLOSE, &s.profile, nullptr, g_owner); };
-    assert(api->queue(&s.panel, &s.profile, tid) == PGR_OG_QUEUE_HANDLED);
-    assert(api->tick(tid, 0) == PGR_OG_OK);
+    g_oneshot = [&]() { g_api->observe(PGS_OG_OBSERVE_PROFILE_CLOSE, &s.profile, nullptr, g_owner); };
+    assert(api->queue(&s.panel, &s.profile, tid) == PGS_OG_QUEUE_HANDLED);
+    assert(api->tick(tid, 0) == PGS_OG_OK);
     assert(g_send_calls == 0 && s.svc.reserves == 0 && s.svc.returns == 0);  // abandoned pre-reserve
     assert(take_sample().active == 0 && g_live.empty());
     drain_all();
@@ -620,14 +620,14 @@ int main(int argc, char **argv) {
   { Scene s; wire(s, 1);
     FakeSticker s1{&cls_sticker, &s.stk, 4};
     s.items[0] = &s1; s.list.items = s.items; s.list.count = 1;
-    assert(api->update(PGR_OG_MASK_SEND | PGR_OG_MASK_STICKER, 2000, tid) == PGR_OG_OK);
+    assert(api->update(PGS_OG_MASK_SEND | PGS_OG_MASK_STICKER, 2000, tid) == PGS_OG_OK);
     g_send_calls = 0;
     g_throw_on = &m_reserve;
-    assert(api->queue(&s.panel, &s.profile, tid) == PGR_OG_QUEUE_HANDLED);
-    assert(api->tick(tid, 0) == PGR_OG_OK);
+    assert(api->queue(&s.panel, &s.profile, tid) == PGS_OG_QUEUE_HANDLED);
+    assert(api->tick(tid, 0) == PGS_OG_OK);
     assert(g_send_calls == 0);
     assert(s.svc.returns == 1);  // released exactly once
-    assert(saw(drain_all(), PGR_OG_EVENT_ERROR, PGR_OG_ERR_INVOKE));
+    assert(saw(drain_all(), PGS_OG_EVENT_ERROR, PGS_OG_ERR_INVOKE));
     assert(take_sample().active == 0 && g_live.empty());
     g_throw_on = nullptr;
   }
@@ -638,12 +638,12 @@ int main(int argc, char **argv) {
   { Scene s; wire(s, 1);
     FakeSticker s1{&cls_sticker, &s.stk, 4};
     s.items[0] = &s1; s.list.items = s.items; s.list.count = 1;
-    assert(api->update(PGR_OG_MASK_SEND | PGR_OG_MASK_STICKER, 2000, tid) == PGR_OG_OK);
+    assert(api->update(PGS_OG_MASK_SEND | PGS_OG_MASK_STICKER, 2000, tid) == PGS_OG_OK);
     g_send_calls = 0;
     g_oneshot_method = &m_reserve;
     g_oneshot = [&]() { g_api->tick(g_owner, 1); };  // reentrant stop just after reserve
-    assert(api->queue(&s.panel, &s.profile, tid) == PGR_OG_QUEUE_HANDLED);
-    assert(api->tick(tid, 0) == PGR_OG_OK);
+    assert(api->queue(&s.panel, &s.profile, tid) == PGS_OG_QUEUE_HANDLED);
+    assert(api->tick(tid, 0) == PGS_OG_OK);
     assert(g_send_calls == 0);
     assert(s.svc.reserves == 1 && s.svc.returns == 1);  // reserved then returned once, no send
     assert(take_sample().active == 0 && g_live.empty());
@@ -653,15 +653,15 @@ int main(int argc, char **argv) {
   // 18. A foreign thread's STOP latches globally (revoke-any-thread) but defers teardown to the
   //     owner's next tick; a foreign thread's update cannot rearm (owner mismatch -> mask zeroed).
   { Scene s; wire(s, 1);
-    assert(api->update(PGR_OG_MASK_SEND, 2000, tid) == PGR_OG_OK);
-    assert(api->queue(&s.panel, &s.profile, tid) == PGR_OG_QUEUE_HANDLED);  // unissued txn active
+    assert(api->update(PGS_OG_MASK_SEND, 2000, tid) == PGS_OG_OK);
+    assert(api->queue(&s.panel, &s.profile, tid) == PGS_OG_QUEUE_HANDLED);  // unissued txn active
     std::thread([&]() {
       const uint64_t ftid = this_tid();
-      assert(g_api->tick(ftid, 1) == PGR_OG_OK);                               // latch pending stop
-      assert(g_api->update(PGR_OG_MASK_SEND, 2000, ftid) == PGR_OG_OK);        // cannot rearm
+      assert(g_api->tick(ftid, 1) == PGS_OG_OK);                               // latch pending stop
+      assert(g_api->update(PGS_OG_MASK_SEND, 2000, ftid) == PGS_OG_OK);        // cannot rearm
     }).join();
     assert(take_sample().active == 1);   // teardown deferred to the owner
-    assert(api->tick(tid, 0) == PGR_OG_OK);  // owner next tick clears
+    assert(api->tick(tid, 0) == PGS_OG_OK);  // owner next tick clears
     assert(take_sample().active == 0 && g_live.empty());
     drain_all();
   }
@@ -671,18 +671,18 @@ int main(int argc, char **argv) {
   { Scene s; wire(s, 1);
     FakeSticker s1{&cls_sticker, &s.stk, 4};
     s.items[0] = &s1; s.list.items = s.items; s.list.count = 1;
-    assert(api->update(PGR_OG_MASK_SEND | PGR_OG_MASK_STICKER, 2000, tid) == PGR_OG_OK);
+    assert(api->update(PGS_OG_MASK_SEND | PGS_OG_MASK_STICKER, 2000, tid) == PGS_OG_OK);
     g_send_calls = 0;
-    assert(api->queue(&s.panel, &s.profile, tid) == PGR_OG_QUEUE_HANDLED);
-    assert(api->tick(tid, 0) == PGR_OG_OK);  // issued, reserved
+    assert(api->queue(&s.panel, &s.profile, tid) == PGS_OG_QUEUE_HANDLED);
+    assert(api->tick(tid, 0) == PGS_OG_OK);  // issued, reserved
     assert(s.svc.reserves == 1);
-    assert(api->observe(PGR_OG_OBSERVE_RPC_RESULT, &s.cb, &s.sendout, tid) == PGR_OG_OK);
-    assert(api->observe(PGR_OG_OBSERVE_RPC_FINALLY, &s.cb, nullptr, tid) == PGR_OG_OK);
+    assert(api->observe(PGS_OG_OBSERVE_RPC_RESULT, &s.cb, &s.sendout, tid) == PGS_OG_OK);
+    assert(api->observe(PGS_OG_OBSERVE_RPC_FINALLY, &s.cb, nullptr, tid) == PGS_OG_OK);
     g_reentrant_queue_result = 999;
     g_oneshot_method = &m_return;  // fires inside clear_txn's ReturnReservedStickers
     g_oneshot = [&]() { g_reentrant_queue_result = g_api->queue(&s.panel, &s.profile, g_owner); };
-    assert(api->tick(tid, 0) == PGR_OG_OK);  // completes -> clear returns reservation
-    assert(g_reentrant_queue_result == PGR_OG_QUEUE_HANDLED);  // blocked during cleanup
+    assert(api->tick(tid, 0) == PGS_OG_OK);  // completes -> clear returns reservation
+    assert(g_reentrant_queue_result == PGS_OG_QUEUE_HANDLED);  // blocked during cleanup
     assert(s.svc.returns == 1);
     assert(take_sample().active == 0 && g_live.empty());  // rearm did not survive
     drain_all();
@@ -693,16 +693,16 @@ int main(int argc, char **argv) {
   { Scene s; wire(s, 1);
     FakePromise_t prom{&cls_promise};
     g_promise = &prom;
-    assert(api->update(PGR_OG_MASK_SEND, 2000, tid) == PGR_OG_OK);
-    assert(api->queue(&s.panel, &s.profile, tid) == PGR_OG_QUEUE_HANDLED);
-    assert(api->tick(tid, 0) == PGR_OG_OK);  // issued; promise rooted
+    assert(api->update(PGS_OG_MASK_SEND, 2000, tid) == PGS_OG_OK);
+    assert(api->queue(&s.panel, &s.profile, tid) == PGS_OG_QUEUE_HANDLED);
+    assert(api->tick(tid, 0) == PGS_OG_OK);  // issued; promise rooted
     assert(take_sample().issued == 1);
     assert(live_contains(&prom));            // rooted after issue
-    assert(api->tick(tid, 0) == PGR_OG_OK);  // bookkeeping-only pass
+    assert(api->tick(tid, 0) == PGS_OG_OK);  // bookkeeping-only pass
     assert(live_contains(&prom));            // still rooted
-    assert(api->observe(PGR_OG_OBSERVE_RPC_RESULT, &s.cb, &s.sendout, tid) == PGR_OG_OK);
-    assert(api->observe(PGR_OG_OBSERVE_RPC_FINALLY, &s.cb, nullptr, tid) == PGR_OG_OK);
-    assert(api->tick(tid, 0) == PGR_OG_OK);  // completes -> promise root freed
+    assert(api->observe(PGS_OG_OBSERVE_RPC_RESULT, &s.cb, &s.sendout, tid) == PGS_OG_OK);
+    assert(api->observe(PGS_OG_OBSERVE_RPC_FINALLY, &s.cb, nullptr, tid) == PGS_OG_OK);
+    assert(api->tick(tid, 0) == PGS_OG_OK);  // completes -> promise root freed
     assert(!live_contains(&prom) && take_sample().active == 0 && g_live.empty());
     g_promise = nullptr;
     drain_all();

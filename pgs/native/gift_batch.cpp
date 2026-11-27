@@ -21,12 +21,12 @@
 #include <algorithm>
 #include <utility>
 namespace {
-using namespace pgr_shared_meta;
+using namespace pgs_shared_meta;
 
 struct Failure {const char *where;};
 void require(bool ok,const char *where){if(!ok)throw Failure{where};}
 template<class F>F fn(void *p){require(p,"missing runtime export");return reinterpret_cast<F>(p);}
-PgrBootBinding boot{};const PgrSharedMetadataOutput *md=nullptr;
+PgsBootBinding boot{};const PgsSharedMetadataOutput *md=nullptr;
 uint64_t owner=0,finished_token=0;
 uint64_t clock_ms(clockid_t c=CLOCK_BOOTTIME){timespec t{};clock_gettime(c,&t);return uint64_t(t.tv_sec)*1000+t.tv_nsec/1000000;}
 void *exp(const char *name){std::string n="il2cpp_";n+=name;void *p=dlsym(boot.handle,n.c_str());require(p,name);return p;}
@@ -43,9 +43,9 @@ struct Root {
 void *klass(void *o){require(o,"null object");return fn<void*(*)(void*)>(boot.runtime.object_get_class)(o);}
 void *cls(const char *ns,const char *name){
  static std::map<std::string,void*> cache;std::string key=std::string(ns)+"."+name;auto it=cache.find(key);if(it!=cache.end())return it->second;
- const auto *api=static_cast<const PgrMetaApi*>(pgs_runtime_metadata_api(1));require(api,"metadata API");
- PgrMetaClassQuery q{};q.version=1;q.size=sizeof(q);q.name_space=ns;q.name=name;q.canonical_match=PGR_MD_MATCH_EXACT;
- PgrMetaClassResult out{};require(api->resolve_class(&q,&out)==0,name);return cache[key]=const_cast<void*>(out.klass);
+ const auto *api=static_cast<const PgsMetaApi*>(pgs_runtime_metadata_api(1));require(api,"metadata API");
+ PgsMetaClassQuery q{};q.version=1;q.size=sizeof(q);q.name_space=ns;q.name=name;q.canonical_match=PGS_MD_MATCH_EXACT;
+ PgsMetaClassResult out{};require(api->resolve_class(&q,&out)==0,name);return cache[key]=const_cast<void*>(out.klass);
 }
 std::string typename_of(void *type){char *p=fn<char*(*)(void*)>(boot.meta.type_get_name)(type);require(p,"type name");std::string s=p;fn<void(*)(void*)>(boot.meta.mem_free)(p);return s;}
 void *field_info(void *k,const char *name,const char *type){
@@ -79,13 +79,13 @@ constexpr uint64_t kGiftPauseMs=300;
 void *virtual_call(Root &o,void *m,void **args=nullptr){void *v=fn<void*(*)(void*,void*)>(exp("object_get_virtual_method"))(o.get(),m);require(v,"virtual method");return invoke(v,o.get(),args);}
 struct Command {uint64_t token=0;bool enabled=false,full_bag=false;};
 bool parse(const char *s,size_t n,Command &out){
- uint64_t v[3]{};if(n<8||memcmp(s,"G1|",3)||!pgr_remote_gym::detail::fields(s+3,n-3,v,3,INT64_MAX)||!v[0]||v[1]>1||v[2]>1)return false;
+ uint64_t v[3]{};if(n<8||memcmp(s,"G1|",3)||!pgs_remote_gym::detail::fields(s+3,n-3,v,3,INT64_MAX)||!v[0]||v[1]>1||v[2]>1)return false;
  out={v[0],v[1]!=0,v[2]!=0};return true;
 }
 struct Permission {Command command;bool valid=false,allowed=false;};
 Permission permission(){
- Permission p;auto tr=static_cast<const PgrRuntimeTransportApi*>(pgs_runtime_transport_api(1));if(!tr)return p;
- PgrRuntimeTransportSample a{},z{};if(tr->sample(&a)||!a.snapshot_fresh||a.fault)return p;
+ Permission p;auto tr=static_cast<const PgsRuntimeTransportApi*>(pgs_runtime_transport_api(1));if(!tr)return p;
+ PgsRuntimeTransportSample a{},z{};if(tr->sample(&a)||!a.snapshot_fresh||a.fault)return p;
  char s[96]{};uint32_t n=0;int ready=0;
  if(tr->get_string(12,s,sizeof(s),&n)||n>=sizeof(s)||!parse(s,n,p.command))return p;
  tr->get_bool(12,&ready);
@@ -106,9 +106,9 @@ struct Session {
 Session session;bool busy=false;
 std::string quote(const std::string &s){std::string out="\"";for(unsigned char c:s){if(c=='"'||c=='\\')out+='\\';if(c>=32)out+=char(c);}return out+'"';}
 void event(const char *phase,const std::string &message){
- auto tr=static_cast<const PgrRuntimeTransportApi*>(pgs_runtime_transport_api(1));if(!tr)return;
+ auto tr=static_cast<const PgsRuntimeTransportApi*>(pgs_runtime_transport_api(1));if(!tr)return;
  std::string json="{\"kind\":\"gift-batch\",\"token\":"+quote(std::to_string(session.command.token))+",\"phase\":"+quote(phase)+",\"message\":"+quote(message)+",\"sent\":"+std::to_string(session.sent)+",\"opened\":"+std::to_string(session.opened)+",\"skipped\":"+std::to_string(session.skipped)+"}";
- PgrRuntimeTransportString strings[]={{"gift-batch",10},{json.c_str(),uint32_t(json.size())}};
+ PgsRuntimeTransportString strings[]={{"gift-batch",10},{json.c_str(),uint32_t(json.size())}};
  if(tr->emit(19,nullptr,0,strings,2))session.canceled=true;
 }
 void finish(const char *phase,const std::string &message){
@@ -183,10 +183,10 @@ std::string result_name(void *o){
  }return "Unknown result "+std::to_string(value);
 }
 void poll(){
- auto api=static_cast<const PgrVgpResultsApi*>(pgs_vgp_results_api(1));require(api,"Promise observer unavailable");
- PgrVgpResultsResult out{};int rc=api->poll(session.promise.get(),1,owner,&out);Root result;result.h=out.value_handle;
+ auto api=static_cast<const PgsVgpResultsApi*>(pgs_vgp_results_api(1));require(api,"Promise observer unavailable");
+ PgsVgpResultsResult out{};int rc=api->poll(session.promise.get(),1,owner,&out);Root result;result.h=out.value_handle;
  if(!rc){if(clock_ms()-session.since>=20000)finish("error","Request outcome unknown; not retried");return;}
- session.promise.reset();require(rc==PGR_VR_DONE&&result,"Request failed; batch stopped without retry");
+ session.promise.reset();require(rc==PGS_VR_DONE&&result,"Request failed; batch stopped without retry");
  if(session.stage==LIST){
   if(session.canceled){finish("stopped","Batch stopped");return;}
   session.enumerator=enumerate(result);require(bool(session.enumerator),"Friend enumeration unavailable");session.stage=DISCOVER;return;
@@ -212,9 +212,9 @@ void poll(){
  if(session.canceled)finish("stopped","Batch stopped");
 }
 bool manual_request_pending(){
- auto og=static_cast<const PgrOutgoingGiftsApi*>(pgs_outgoing_gifts_api(1));PgrOutgoingGiftsSample a{};
+ auto og=static_cast<const PgsOutgoingGiftsApi*>(pgs_outgoing_gifts_api(1));PgsOutgoingGiftsSample a{};
  if(og&&!og->sample(&a)&&a.active)return true;
- auto ig=static_cast<const PgrIncomingGiftsApi*>(pgs_incoming_gifts_api(1));PgrIncomingGiftsSample b{};
+ auto ig=static_cast<const PgsIncomingGiftsApi*>(pgs_incoming_gifts_api(1));PgsIncomingGiftsSample b{};
  return ig&&!ig->sample(&b)&&b.owned&&b.attempted;
 }
 // The game's own record of a gift this friend has not opened yet (GiftingService.HasSentGiftToFriend over
@@ -252,7 +252,7 @@ void advance(){
  }
 }
 }
-void pgr_gift_batch_tick(uint64_t tid,const PgrSharedMetadataOutput *metadata){
+void pgs_gift_batch_tick(uint64_t tid,const PgsSharedMetadataOutput *metadata){
  if(busy||!tid||tid!=uint64_t(gettid())||(owner&&owner!=tid))return;
  struct Guard{Guard(){busy=true;}~Guard(){busy=false;}}guard;
  try{
@@ -263,7 +263,7 @@ void pgr_gift_batch_tick(uint64_t tid,const PgrSharedMetadataOutput *metadata){
    if(!p.command.enabled||!p.allowed){finish("stopped","Batch stopped before starting");return;}
    if(manual_request_pending())return;
    owner=tid;md=metadata;require(md,"Shared metadata unavailable");
-   auto api=static_cast<const PgrBootApi*>(pgs_runtime_bootstrap_api(1));boot.version=1;boot.size=sizeof(boot);require(api&&api->snapshot(&boot)==0,"Runtime unavailable");
+   auto api=static_cast<const PgsBootApi*>(pgs_runtime_bootstrap_api(1));boot.version=1;boot.size=sizeof(boot);require(api&&api->snapshot(&boot)==0,"Runtime unavailable");
    session.active=true;session.started=clock_ms();
    session.player=resolve("Niantic.Holoholo","IPlayerService");require(bool(session.player),"Player service unavailable");
    session.account=string(call(session.player.get(),"get_PlayerId"));require(!session.account.empty(),"Account identity unavailable");
@@ -279,7 +279,7 @@ void pgr_gift_batch_tick(uint64_t tid,const PgrSharedMetadataOutput *metadata){
   advance();
  }catch(const Failure &e){finish("error",e.where);}catch(...){finish("error","Gift batch stopped: native failure");}
 }
-void pgr_gift_batch_stop(){
+void pgs_gift_batch_stop(){
  if(owner&&owner!=uint64_t(gettid()))return;
  session.canceled=true;if(!busy&&session.active)finish("stopped","Gift batch stopped");
 }

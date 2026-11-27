@@ -22,7 +22,7 @@ typedef void (*UpdateFn)(void *, int64_t, void *);
 typedef void (*LifeFn)(void *, void *);
 
 std::mutex g_install_mutex;                    // serialises install() and publishes originals
-PgrRocketMiniConfig g_cfg{};                   // validated copy, published under the mutex
+PgsRocketMiniConfig g_cfg{};                   // validated copy, published under the mutex
 bool g_install_failed = false;                 // sticky; guarded by g_install_mutex
 
 std::atomic<int>     g_active{0};          // fully installed and live
@@ -273,7 +273,7 @@ void repl_destroy(void *self, void *method) { restore_if_owned(self); original_f
 
 // --- config validation -------------------------------------------------------------
 
-bool config_pointers_ok(const PgrRocketMiniConfig *c) {
+bool config_pointers_ok(const PgsRocketMiniConfig *c) {
     const void *const ptrs[] = {
         c->update_addr, c->exit_addr, c->hide_addr, c->destroy_addr,
         c->transform_method, c->gameObject_method, c->scale_method, c->active_method,
@@ -294,25 +294,25 @@ bool config_pointers_ok(const PgrRocketMiniConfig *c) {
 int hook_site(void *addr, void *repl, void **orig) {
     *orig = nullptr;
     int rc = pgs_hook(addr, repl, orig);
-    if (rc == 0 && *orig == nullptr) { pgs_unhook(addr); return PGR_RMINI_ERR_HOOK_FAILED; }
-    return rc == 0 ? PGR_RMINI_OK : PGR_RMINI_ERR_HOOK_FAILED;
+    if (rc == 0 && *orig == nullptr) { pgs_unhook(addr); return PGS_RMINI_ERR_HOOK_FAILED; }
+    return rc == 0 ? PGS_RMINI_OK : PGS_RMINI_ERR_HOOK_FAILED;
 }
 
-int api_install(const PgrRocketMiniConfig *cfg) {
-    if (!cfg) return PGR_RMINI_ERR_NULL_ARG;
+int api_install(const PgsRocketMiniConfig *cfg) {
+    if (!cfg) return PGS_RMINI_ERR_NULL_ARG;
 
     std::lock_guard<std::mutex> lk(g_install_mutex);
-    if (g_install_failed) return PGR_RMINI_ERR_HOOK_FAILED; // never re-patch after a partial failure
+    if (g_install_failed) return PGS_RMINI_ERR_HOOK_FAILED; // never re-patch after a partial failure
 
-    if (cfg->version != 1 || cfg->size != sizeof(PgrRocketMiniConfig) || !config_pointers_ok(cfg))
-        return PGR_RMINI_ERR_BAD_CONFIG;
+    if (cfg->version != 1 || cfg->size != sizeof(PgsRocketMiniConfig) || !config_pointers_ok(cfg))
+        return PGS_RMINI_ERR_BAD_CONFIG;
 
     if (g_active.load(std::memory_order_acquire)) {
         // Hooks live for the process lifetime: an identical repeat is a no-op success, a
         // different config is refused.
         return std::memcmp(&g_cfg, cfg, sizeof(g_cfg)) == 0
-                   ? PGR_RMINI_OK
-                   : PGR_RMINI_ERR_ALREADY_BOUND;
+                   ? PGS_RMINI_OK
+                   : PGS_RMINI_ERR_ALREADY_BOUND;
     }
 
     g_cfg = *cfg; // publish before any callback can read it (still under the mutex)
@@ -329,8 +329,8 @@ int api_install(const PgrRocketMiniConfig *cfg) {
     int rc_h = hook_site(cfg->hide_addr,    (void *)repl_hide,    &h);
     int rc_d = hook_site(cfg->destroy_addr, (void *)repl_destroy, &d);
 
-    if (rc_u != PGR_RMINI_OK || rc_e != PGR_RMINI_OK ||
-        rc_h != PGR_RMINI_OK || rc_d != PGR_RMINI_OK) {
+    if (rc_u != PGS_RMINI_OK || rc_e != PGS_RMINI_OK ||
+        rc_h != PGS_RMINI_OK || rc_d != PGS_RMINI_OK) {
         // Partial failure is permanent and inert: cleanly-patched sites keep their valid
         // trampoline and merely chain the original (g_active stays 0, so collection can
         // never arm); sites that failed/were undone run the game's original unmodified. No
@@ -340,7 +340,7 @@ int api_install(const PgrRocketMiniConfig *cfg) {
         g_orig_hide.store((LifeFn)h, std::memory_order_release);
         g_orig_destroy.store((LifeFn)d, std::memory_order_release);
         g_install_failed = true;
-        return PGR_RMINI_ERR_HOOK_FAILED;
+        return PGS_RMINI_ERR_HOOK_FAILED;
     }
 
     g_orig_update.store((UpdateFn)u, std::memory_order_release);
@@ -348,7 +348,7 @@ int api_install(const PgrRocketMiniConfig *cfg) {
     g_orig_hide.store((LifeFn)h, std::memory_order_release);
     g_orig_destroy.store((LifeFn)d, std::memory_order_release);
     g_active.store(1, std::memory_order_release); // publish last
-    return PGR_RMINI_OK;
+    return PGS_RMINI_OK;
 }
 
 int api_update(int allowed, int64_t lease_remaining_ms) {
@@ -387,8 +387,8 @@ int api_restore() {
 } // namespace
 
 extern "C" const void *pgs_rocket_minigame_api(uint32_t version) {
-    static const PgrRocketMiniApi api = {
-        1, (uint32_t)sizeof(PgrRocketMiniApi),
+    static const PgsRocketMiniApi api = {
+        1, (uint32_t)sizeof(PgsRocketMiniApi),
         api_install, api_update, api_tick, api_restore
     };
     return version == 1 ? &api : nullptr;

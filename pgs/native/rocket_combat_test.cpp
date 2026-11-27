@@ -1,7 +1,7 @@
 // Standalone focused test of the native Rocket combat controller (feature 21). Like the hook-less
 // siblings this module installs NO Dobby/Gum hooks. By default the harness loads the compiled
 // library and queries feature 21 (which internally reuses the feature-20 action table that is
-// linked into the same library); PGR_RC_DIRECT_TEST links rocket_combat.cpp + rocket_actions.cpp
+// linked into the same library); PGS_RC_DIRECT_TEST links rocket_combat.cpp + rocket_actions.cpp
 // directly. It drives a compact fake IL2CPP (runtime_invoke over the Rocket methods, boxed bool
 // returns, field get) through a proper handle table (a "GC move" relocates an object while its
 // handle stays valid) and forks per scenario for clean process-lifetime state.
@@ -36,7 +36,7 @@
 #include <sys/wait.h>
 #include <unistd.h>
 #include <thread>
-#ifndef PGR_RC_DIRECT_TEST
+#ifndef PGS_RC_DIRECT_TEST
 #include "pgs_native_api.h"
 #include <dlfcn.h>
 static const pgs_native_api_v2 *loaded_core = nullptr;
@@ -154,7 +154,7 @@ void *rt_invoke(void *method, void *obj, void **params, void **exc) {
   return nullptr;
 }
 
-const pgr_rocket_combat_api_v1 *api = nullptr;
+const pgs_rocket_combat_api_v1 *api = nullptr;
 
 void reset_runtime() {
   std::memset(g_used, 0, sizeof(g_used)); std::memset(g_slot, 0, sizeof(g_slot));
@@ -162,7 +162,7 @@ void reset_runtime() {
   g_bad_free = 0; g_cb = nullptr; g_in_cb = false; g_cb_done = 0; g_cb_tid = 0; g_scene = nullptr;
 }
 
-void fill_config(pgr_rocket_combat_config_v1 *c) {
+void fill_config(pgs_rocket_combat_config_v1 *c) {
   std::memset(c, 0, sizeof(*c));
   c->version = 1; c->size = sizeof(*c);
   c->gchandle_new = reinterpret_cast<void *>(&gc_new);
@@ -208,30 +208,30 @@ struct Scene {
 void arm(void *scope, uint32_t mask, uint64_t tid) {
   api->update(mask, 2500, tid);
   api->tick(tid, 0);  // latch the Unity identity before any observation is honoured
-  api->observe(PGR_RC_OBS_SCOPE_ENTER, scope, 0, tid);
+  api->observe(PGS_RC_OBS_SCOPE_ENTER, scope, 0, tid);
   api->update(mask, 2500, tid);
 }
-int32_t gate_now() { pgr_rocket_combat_sample_v1 s{}; api->sample(&s); return s.gate; }
-uint32_t roots_now() { pgr_rocket_combat_sample_v1 s{}; api->sample(&s); return s.owned_roots; }
-uint32_t scope_now() { pgr_rocket_combat_sample_v1 s{}; api->sample(&s); return s.scope_active; }
-uint32_t failed_now() { pgr_rocket_combat_sample_v1 s{}; api->sample(&s); return s.failed; }
-uint32_t charges_now() { pgr_rocket_combat_sample_v1 s{}; api->sample(&s); return s.charges; }
-uint32_t uiact_now() { pgr_rocket_combat_sample_v1 s{}; api->sample(&s); return s.ui_active; }
+int32_t gate_now() { pgs_rocket_combat_sample_v1 s{}; api->sample(&s); return s.gate; }
+uint32_t roots_now() { pgs_rocket_combat_sample_v1 s{}; api->sample(&s); return s.owned_roots; }
+uint32_t scope_now() { pgs_rocket_combat_sample_v1 s{}; api->sample(&s); return s.scope_active; }
+uint32_t failed_now() { pgs_rocket_combat_sample_v1 s{}; api->sample(&s); return s.failed; }
+uint32_t charges_now() { pgs_rocket_combat_sample_v1 s{}; api->sample(&s); return s.charges; }
+uint32_t uiact_now() { pgs_rocket_combat_sample_v1 s{}; api->sample(&s); return s.ui_active; }
 
 // ---- bounded reentrancy callbacks (one shot each via g_cb_done) ---------------------
 // A newer SCOPE_ENTER fires while the first scope is still being rooted in gc_new.
 void cb_scope_new(int site, void *arg) {
   if (site == SITE_NEW && arg == &g_scene->scope && !g_cb_done) {
-    g_cb_done = 1; api->observe(PGR_RC_OBS_SCOPE_ENTER, &g_scene->scope2, 0, g_cb_tid);
+    g_cb_done = 1; api->observe(PGS_RC_OBS_SCOPE_ENTER, &g_scene->scope2, 0, g_cb_tid);
   }
 }
 void cb_scope_free(int site,void *){
-  if(site==SITE_FREE&&!g_cb_done){g_cb_done=1;api->observe(PGR_RC_OBS_SCOPE_ENTER,&g_scene->scope2,0,g_cb_tid);}
+  if(site==SITE_FREE&&!g_cb_done){g_cb_done=1;api->observe(PGS_RC_OBS_SCOPE_ENTER,&g_scene->scope2,0,g_cb_tid);}
 }
 // A newer UI_UPDATE fires while the old legacy ui handle is being freed.
 void cb_ui_free(int site, void *) {
   if (site == SITE_FREE && !g_cb_done) {
-    g_cb_done = 1; api->observe(PGR_RC_OBS_UI_UPDATE, &g_scene->ui3, 0, g_cb_tid);
+    g_cb_done = 1; api->observe(PGS_RC_OBS_UI_UPDATE, &g_scene->ui3, 0, g_cb_tid);
   }
 }
 // A STOP (and a rejected rearm) fires while the scope handle is being dereferenced in a tick.
@@ -249,13 +249,13 @@ void cb_stop_free(int site, void *) {
 // A VNEXT_CLOSE fires while charge_capture is probing candidate liveness (its first m_alive).
 void cb_vclose_prune(int site, void *arg) {
   if (site == SITE_INVOKE && arg == &m_alive && !g_cb_done) {
-    g_cb_done = 1; api->observe(PGR_RC_OBS_VNEXT_CLOSE, &g_scene->vui, 0, g_cb_tid);
+    g_cb_done = 1; api->observe(PGS_RC_OBS_VNEXT_CLOSE, &g_scene->vui, 0, g_cb_tid);
   }
 }
 // A reentrant observation fires during the tick's director getter (revokes the in-flight ticket).
 void cb_revoke(int site, void *arg) {
   if (site == SITE_INVOKE && arg == &m_active && !g_cb_done) {
-    g_cb_done = 1; api->observe(PGR_RC_OBS_UI_UPDATE, &g_scene->ui, 0, g_cb_tid);
+    g_cb_done = 1; api->observe(PGS_RC_OBS_UI_UPDATE, &g_scene->ui, 0, g_cb_tid);
   }
 }
 
@@ -266,19 +266,19 @@ int scenario(int n) {
   switch (n) {
     case 0:  // legacy quick
       arm(&sc.scope, 1, tid);
-      api->observe(PGR_RC_OBS_UI_UPDATE, &sc.ui, 0, tid);
+      api->observe(PGS_RC_OBS_UI_UPDATE, &sc.ui, 0, tid);
       api->tick(tid, 0);
       if (sc.dir.fastTried != 1) return 1;
       break;
     case 1:  // legacy charged (first candidate)
       arm(&sc.scope, 2, tid);
-      api->observe(PGR_RC_OBS_UI_UPDATE, &sc.ui, 0, tid);
+      api->observe(PGS_RC_OBS_UI_UPDATE, &sc.ui, 0, tid);
       api->tick(tid, 0);
       if (sc.charge1.tapped != 1 || sc.charge2.tapped != 0) return 2;
       break;
     case 2:  // shield once, then manual lock-out
       arm(&sc.scope, 4, tid);
-      api->observe(PGR_RC_OBS_SHIELD_PROMPT, &sc.shield, 1, tid);
+      api->observe(PGS_RC_OBS_SHIELD_PROMPT, &sc.shield, 1, tid);
       api->tick(tid, 0);
       if (sc.shield.shieldClicked != 1) return 3;
       api->update(4, 2500, tid); api->tick(tid, 0);
@@ -286,34 +286,34 @@ int scenario(int n) {
       break;
     case 3:  // vNext quick
       arm(&sc.scope, 1, tid);
-      api->observe(PGR_RC_OBS_VNEXT_UPDATE, &sc.vui, 0, tid);
+      api->observe(PGS_RC_OBS_VNEXT_UPDATE, &sc.vui, 0, tid);
       api->tick(tid, 0);
       if (sc.vgest.tapped != 1) return 5;
       break;
     case 4:  // vNext charged
       arm(&sc.scope, 2, tid);
-      api->observe(PGR_RC_OBS_VNEXT_UPDATE, &sc.vui, 0, tid);
-      api->observe(PGR_RC_OBS_CHARGE, &sc.vcharge, 0, tid);
+      api->observe(PGS_RC_OBS_VNEXT_UPDATE, &sc.vui, 0, tid);
+      api->observe(PGS_RC_OBS_CHARGE, &sc.vcharge, 0, tid);
       api->tick(tid, 0);
       if (sc.vcharge.tapped != 1) return 6;
       break;
     case 5:  // battle-not-active gate, no action
       arm(&sc.scope, 1, tid);
-      api->observe(PGR_RC_OBS_UI_UPDATE, &sc.ui, 0, tid);
+      api->observe(PGS_RC_OBS_UI_UPDATE, &sc.ui, 0, tid);
       sc.dir.active = 0;
       api->tick(tid, 0);
-      if (sc.dir.fastTried != 0 || gate_now() != PGR_RC_GATE_INACTIVE) return 7;
+      if (sc.dir.fastTried != 0 || gate_now() != PGS_RC_GATE_INACTIVE) return 7;
       break;
     case 6:  // scope exit clears + balanced roots
       arm(&sc.scope, 1, tid);
-      api->observe(PGR_RC_OBS_UI_UPDATE, &sc.ui, 0, tid);
+      api->observe(PGS_RC_OBS_UI_UPDATE, &sc.ui, 0, tid);
       if (scope_now() != 1) return 8;
-      api->observe(PGR_RC_OBS_SCOPE_EXIT, &sc.scope, 0, tid);
+      api->observe(PGS_RC_OBS_SCOPE_EXIT, &sc.scope, 0, tid);
       if (scope_now() != 0 || roots_now() != 0 || g_live != 0) return 9;
       break;
     case 7:  // STOP clears and rejects rearm
       arm(&sc.scope, 1, tid);
-      api->observe(PGR_RC_OBS_UI_UPDATE, &sc.ui, 0, tid);
+      api->observe(PGS_RC_OBS_UI_UPDATE, &sc.ui, 0, tid);
       api->tick(tid, 1);  // stop
       if (scope_now() != 0 || g_live != 0) return 10;
       api->update(1, 2500, tid); api->tick(tid, 0);
@@ -322,8 +322,8 @@ int scenario(int n) {
     case 8:  // shield not open -> no fire (falls through)
       arm(&sc.scope, 4, tid);
       sc.shield.currentState = 5;  // neither STATE_OPEN(2) nor closed(3)
-      api->observe(PGR_RC_OBS_SHIELD_PROMPT, &sc.shield, 1, tid);
-      api->observe(PGR_RC_OBS_UI_UPDATE, &sc.ui, 0, tid);
+      api->observe(PGS_RC_OBS_SHIELD_PROMPT, &sc.shield, 1, tid);
+      api->observe(PGS_RC_OBS_UI_UPDATE, &sc.ui, 0, tid);
       api->tick(tid, 0);
       if (sc.shield.shieldClicked != 0) return 12;
       break;
@@ -331,7 +331,7 @@ int scenario(int n) {
       arm(&sc.scope, 1, tid);
       uint64_t token = api->begin_ui(&sc.ui, tid);
       if (!token) return 13;
-      api->observe(PGR_RC_OBS_UI_UPDATE, &sc.ui2, 0, tid);  // live replacement supersedes the pending
+      api->observe(PGS_RC_OBS_UI_UPDATE, &sc.ui2, 0, tid);  // live replacement supersedes the pending
       api->end_ui(token, &sc.ui, tid);                      // stale -> must NOT publish sc.ui
       api->tick(tid, 0);
       if (sc.dir.fastTried != 0) return 14;  // live ui is ui2 (dir2 inactive) -> no fire on dir
@@ -344,22 +344,22 @@ int scenario(int n) {
     }
     case 10:  // charge dedupe / cap / prune
       arm(&sc.scope, 2, tid);
-      api->observe(PGR_RC_OBS_VNEXT_UPDATE, &sc.vui, 0, tid);
-      api->observe(PGR_RC_OBS_CHARGE, &sc.vcharge, 0, tid);
-      api->observe(PGR_RC_OBS_CHARGE, &sc.vcharge, 0, tid);  // dedupe
+      api->observe(PGS_RC_OBS_VNEXT_UPDATE, &sc.vui, 0, tid);
+      api->observe(PGS_RC_OBS_CHARGE, &sc.vcharge, 0, tid);
+      api->observe(PGS_RC_OBS_CHARGE, &sc.vcharge, 0, tid);  // dedupe
       if (charges_now() != 1) return 16;
-      api->observe(PGR_RC_OBS_CHARGE, &sc.vc2, 0, tid);
-      api->observe(PGR_RC_OBS_CHARGE, &sc.vc3, 0, tid);
-      api->observe(PGR_RC_OBS_CHARGE, &sc.vc4, 0, tid);
-      api->observe(PGR_RC_OBS_CHARGE, &sc.vc5, 0, tid);  // over cap -> dropped
+      api->observe(PGS_RC_OBS_CHARGE, &sc.vc2, 0, tid);
+      api->observe(PGS_RC_OBS_CHARGE, &sc.vc3, 0, tid);
+      api->observe(PGS_RC_OBS_CHARGE, &sc.vc4, 0, tid);
+      api->observe(PGS_RC_OBS_CHARGE, &sc.vc5, 0, tid);  // over cap -> dropped
       if (charges_now() != 4) return 17;
       sc.vcharge.alive = 0;  // kill a tracked candidate
-      api->observe(PGR_RC_OBS_CHARGE, &sc.vc2, 0, tid);  // capture prunes the dead one first
+      api->observe(PGS_RC_OBS_CHARGE, &sc.vc2, 0, tid);  // capture prunes the dead one first
       if (charges_now() != 3) return 18;
       break;
     case 11:  // managed-invoke fault latch
       arm(&sc.scope, 1, tid);
-      api->observe(PGR_RC_OBS_UI_UPDATE, &sc.ui, 0, tid);
+      api->observe(PGS_RC_OBS_UI_UPDATE, &sc.ui, 0, tid);
       g_fault_method = &m_active;
       api->tick(tid, 0);
       if (sc.dir.fastTried != 0 || failed_now() != 1) return 19;
@@ -369,7 +369,7 @@ int scenario(int n) {
       break;
     case 12:  // wrong OS thread tick is a no-op
       arm(&sc.scope, 1, tid);
-      api->observe(PGR_RC_OBS_UI_UPDATE, &sc.ui, 0, tid);
+      api->observe(PGS_RC_OBS_UI_UPDATE, &sc.ui, 0, tid);
       api->tick(tid + 1, 0);  // proven_tid != live tid
       if (sc.dir.fastTried != 0) return 21;
       api->update(1, 2500, tid); api->tick(tid, 0);
@@ -377,8 +377,8 @@ int scenario(int n) {
       break;
     case 13:  // feature-20 lease expiry
       api->update(1, 10, tid); api->tick(tid, 0);
-      api->observe(PGR_RC_OBS_SCOPE_ENTER, &sc.scope, 0, tid);
-      api->observe(PGR_RC_OBS_UI_UPDATE, &sc.ui, 0, tid);
+      api->observe(PGS_RC_OBS_SCOPE_ENTER, &sc.scope, 0, tid);
+      api->observe(PGS_RC_OBS_UI_UPDATE, &sc.ui, 0, tid);
       api->update(1, 10, tid);
       usleep(30000);
       api->tick(tid, 0);
@@ -386,7 +386,7 @@ int scenario(int n) {
       break;
     case 14:  // feature-20 cadence
       arm(&sc.scope, 1, tid);
-      api->observe(PGR_RC_OBS_UI_UPDATE, &sc.ui, 0, tid);
+      api->observe(PGS_RC_OBS_UI_UPDATE, &sc.ui, 0, tid);
       api->tick(tid, 0);
       if (sc.dir.fastTried != 1) return 24;
       api->update(1, 2500, tid); api->tick(tid, 0);
@@ -397,7 +397,7 @@ int scenario(int n) {
       break;
     case 15:  // director rooted across a managed call that MOVES, refreshed at use
       arm(&sc.scope, 1, tid);
-      api->observe(PGR_RC_OBS_UI_UPDATE, &sc.ui, 0, tid);
+      api->observe(PGS_RC_OBS_UI_UPDATE, &sc.ui, 0, tid);
       g_move_method = &m_active; g_move_obj = &sc.dir;  // dir relocates during get_IsInActiveState
       api->tick(tid, 0);
       if (g_move_dest.fastTried != 1 || sc.dir.fastTried != 0) return 27;
@@ -406,10 +406,10 @@ int scenario(int n) {
       g_scene = &sc; g_cb_tid = tid;
       api->update(1, 2500, tid); api->tick(tid, 0);  // latch the owner first (no scope yet)
       g_cb = &cb_scope_new;
-      api->observe(PGR_RC_OBS_SCOPE_ENTER, &sc.scope, 0, tid);  // scope2 wins reentrantly in gc_new
+      api->observe(PGS_RC_OBS_SCOPE_ENTER, &sc.scope, 0, tid);  // scope2 wins reentrantly in gc_new
       g_cb = nullptr;
       if (scope_now() != 1 || g_bad_free) return 28;
-      api->observe(PGR_RC_OBS_SCOPE_EXIT, &sc.scope, 0, tid);   // stale scope must NOT clear the newer
+      api->observe(PGS_RC_OBS_SCOPE_EXIT, &sc.scope, 0, tid);   // stale scope must NOT clear the newer
       if (scope_now() != 1 || roots_now() == 0) return 29;      // newer scope preserved (nonzero roots)
       api->tick(tid, 1);                                        // STOP drains the preserved scope
       if (scope_now() != 0 || roots_now() != 0 || g_live != 0 || g_bad_free) return 30;
@@ -418,18 +418,18 @@ int scenario(int n) {
     case 17: {  // a newer UI_UPDATE wins while the superseded legacy ui handle is being freed
       g_scene = &sc; g_cb_tid = tid;
       arm(&sc.scope, 1, tid);
-      api->observe(PGR_RC_OBS_UI_UPDATE, &sc.ui, 0, tid);
+      api->observe(PGS_RC_OBS_UI_UPDATE, &sc.ui, 0, tid);
       g_cb = &cb_ui_free;
-      api->observe(PGR_RC_OBS_UI_UPDATE, &sc.ui2, 0, tid);  // during the old-ui free, ui3 supersedes
+      api->observe(PGS_RC_OBS_UI_UPDATE, &sc.ui2, 0, tid);  // during the old-ui free, ui3 supersedes
       g_cb = nullptr;
       if (uiact_now() != 1 || g_bad_free) return 31;
       api->update(1, 2500, tid); api->tick(tid, 0);         // ui3 is the live ui (shares active dir)
       if (sc.dir.fastTried != 1) return 32;
-      api->observe(PGR_RC_OBS_UI_CLOSE, &sc.ui2, 0, tid);   // stale replacement -> no-op
+      api->observe(PGS_RC_OBS_UI_CLOSE, &sc.ui2, 0, tid);   // stale replacement -> no-op
       if (uiact_now() != 1) return 33;
-      api->observe(PGR_RC_OBS_UI_CLOSE, &sc.ui3, 0, tid);   // live -> drop
+      api->observe(PGS_RC_OBS_UI_CLOSE, &sc.ui3, 0, tid);   // live -> drop
       if (uiact_now() != 0) return 34;
-      api->observe(PGR_RC_OBS_SCOPE_EXIT, &sc.scope, 0, tid);
+      api->observe(PGS_RC_OBS_SCOPE_EXIT, &sc.scope, 0, tid);
       if (roots_now() != 0 || g_live != 0 || g_bad_free) return 35;
       break;
     }
@@ -447,7 +447,7 @@ int scenario(int n) {
       api->end_ui(t2, &sc.ui, tid);              // replay after publish -> inert
       api->tick(tid, 0);
       if (sc.dir.fastTried != 1 || g_bad_free) return 39;  // within quick cadence -> unchanged
-      api->observe(PGR_RC_OBS_SCOPE_EXIT, &sc.scope, 0, tid);
+      api->observe(PGS_RC_OBS_SCOPE_EXIT, &sc.scope, 0, tid);
       if (roots_now() != 0 || g_live != 0 || g_bad_free) return 40;
       break;
     }
@@ -455,36 +455,36 @@ int scenario(int n) {
       arm(&sc.scope, 1, tid);
       uint64_t t = api->begin_ui(&sc.ui, tid);
       if (!t) return 41;
-      api->observe(PGR_RC_OBS_UI_CLOSE, &sc.ui, 0, tid);  // close arrives before onLeave
+      api->observe(PGS_RC_OBS_UI_CLOSE, &sc.ui, 0, tid);  // close arrives before onLeave
       api->end_ui(t, &sc.ui, tid);                        // pending already gone -> no publish
       api->update(1, 2500, tid); api->tick(tid, 0);
       if (sc.dir.fastTried != 0 || uiact_now() != 0 || g_bad_free) return 42;
-      api->observe(PGR_RC_OBS_SCOPE_EXIT, &sc.scope, 0, tid);
+      api->observe(PGS_RC_OBS_SCOPE_EXIT, &sc.scope, 0, tid);
       if (roots_now() != 0 || g_live != 0 || g_bad_free) return 43;
       break;
     }
     case 20: {  // STOP (deferred) + a rejected rearm fire while a tick dereferences the scope handle
       g_scene = &sc; g_cb_tid = tid;
       arm(&sc.scope, 1, tid);
-      api->observe(PGR_RC_OBS_UI_UPDATE, &sc.ui, 0, tid);
+      api->observe(PGS_RC_OBS_UI_UPDATE, &sc.ui, 0, tid);
       g_cb = &cb_stop_get;
       api->tick(tid, 0);  // getter hit -> STOP injected; cleared on the outermost frame
       g_cb = nullptr;
       if (sc.dir.fastTried != 0 || scope_now() != 0 || roots_now() != 0 || g_live != 0 || g_bad_free) return 44;
       arm(&sc.scope, 1, tid);  // the rearm during the stop was rejected -> a fresh scope is required
-      api->observe(PGR_RC_OBS_UI_UPDATE, &sc.ui, 0, tid);
+      api->observe(PGS_RC_OBS_UI_UPDATE, &sc.ui, 0, tid);
       api->tick(tid, 0);
       if (sc.dir.fastTried != 1) return 45;
-      api->observe(PGR_RC_OBS_SCOPE_EXIT, &sc.scope, 0, tid);
+      api->observe(PGS_RC_OBS_SCOPE_EXIT, &sc.scope, 0, tid);
       if (roots_now() != 0 || g_live != 0 || g_bad_free) return 46;
       break;
     }
     case 21: {  // STOP (deferred) + a rejected rearm fire while the superseded ui handle is freed
       g_scene = &sc; g_cb_tid = tid;
       arm(&sc.scope, 1, tid);
-      api->observe(PGR_RC_OBS_UI_UPDATE, &sc.ui, 0, tid);
+      api->observe(PGS_RC_OBS_UI_UPDATE, &sc.ui, 0, tid);
       g_cb = &cb_stop_free;
-      api->observe(PGR_RC_OBS_UI_UPDATE, &sc.ui2, 0, tid);  // mid old-ui free -> STOP injected
+      api->observe(PGS_RC_OBS_UI_UPDATE, &sc.ui2, 0, tid);  // mid old-ui free -> STOP injected
       g_cb = nullptr;
       if (scope_now() != 0 || roots_now() != 0 || g_live != 0 || g_bad_free) return 47;
       break;
@@ -492,35 +492,35 @@ int scenario(int n) {
     case 22: {  // VNEXT_CLOSE reenters while charge_capture probes liveness; no leak / no double free
       g_scene = &sc; g_cb_tid = tid;
       arm(&sc.scope, 2, tid);
-      api->observe(PGR_RC_OBS_VNEXT_UPDATE, &sc.vui, 0, tid);
-      api->observe(PGR_RC_OBS_CHARGE, &sc.vcharge, 0, tid);
-      api->observe(PGR_RC_OBS_CHARGE, &sc.vc2, 0, tid);
+      api->observe(PGS_RC_OBS_VNEXT_UPDATE, &sc.vui, 0, tid);
+      api->observe(PGS_RC_OBS_CHARGE, &sc.vcharge, 0, tid);
+      api->observe(PGS_RC_OBS_CHARGE, &sc.vc2, 0, tid);
       if (charges_now() != 2) return 48;
       g_cb = &cb_vclose_prune;
-      api->observe(PGR_RC_OBS_CHARGE, &sc.vc3, 0, tid);  // prune probe -> VNEXT_CLOSE drops vui+charges
+      api->observe(PGS_RC_OBS_CHARGE, &sc.vc3, 0, tid);  // prune probe -> VNEXT_CLOSE drops vui+charges
       g_cb = nullptr;
       if (charges_now() != 0 || uiact_now() != 0 || g_live != 1 || g_bad_free) return 49;
-      api->observe(PGR_RC_OBS_SCOPE_EXIT, &sc.scope, 0, tid);
+      api->observe(PGS_RC_OBS_SCOPE_EXIT, &sc.scope, 0, tid);
       if (roots_now() != 0 || g_live != 0 || g_bad_free) return 50;
       break;
     }
     case 23: {  // a reentrant observation during the director getter revokes the ticket; reenable restores
       g_scene = &sc; g_cb_tid = tid;
       arm(&sc.scope, 1, tid);
-      api->observe(PGR_RC_OBS_UI_UPDATE, &sc.ui, 0, tid);
+      api->observe(PGS_RC_OBS_UI_UPDATE, &sc.ui, 0, tid);
       g_cb = &cb_revoke;
       api->tick(tid, 0);  // reentrant observe during get_IsInActiveState -> action cancelled
       g_cb = nullptr;
       if (sc.dir.fastTried != 0 || g_bad_free) return 51;
       api->update(1, 2500, tid); api->tick(tid, 0);  // reenable -> action proceeds
       if (sc.dir.fastTried != 1) return 52;
-      api->observe(PGR_RC_OBS_SCOPE_EXIT, &sc.scope, 0, tid);
+      api->observe(PGS_RC_OBS_SCOPE_EXIT, &sc.scope, 0, tid);
       if (roots_now() != 0 || g_live != 0 || g_bad_free) return 53;
       break;
     }
     case 24: {  // a genuine foreign std::thread can only disarm; its tick never acts nor latches
       arm(&sc.scope, 1, tid);
-      api->observe(PGR_RC_OBS_UI_UPDATE, &sc.ui, 0, tid);
+      api->observe(PGS_RC_OBS_UI_UPDATE, &sc.ui, 0, tid);
       std::thread th([tid] {
         api->update(1, 2500, tid);  // foreign OS thread with the owner tid -> wrong-thread disarm
         api->tick(tid, 0);          // foreign tick -> no-op (live tid != proven tid)
@@ -530,30 +530,30 @@ int scenario(int n) {
       if (sc.dir.fastTried != 0) return 54;
       api->update(1, 2500, tid); api->tick(tid, 0);  // owner rearms -> acts
       if (sc.dir.fastTried != 1) return 55;
-      api->observe(PGR_RC_OBS_SCOPE_EXIT, &sc.scope, 0, tid);
+      api->observe(PGS_RC_OBS_SCOPE_EXIT, &sc.scope, 0, tid);
       if (roots_now() != 0 || g_live != 0 || g_bad_free) return 56;
       break;
     }
     case 25: {  // the vNext charge target RELOCATES during its charged-getter; the final tap hits the moved obj
       arm(&sc.scope, 2, tid);
-      api->observe(PGR_RC_OBS_VNEXT_UPDATE, &sc.vui, 0, tid);
-      api->observe(PGR_RC_OBS_CHARGE, &sc.vcharge, 0, tid);
+      api->observe(PGS_RC_OBS_VNEXT_UPDATE, &sc.vui, 0, tid);
+      api->observe(PGS_RC_OBS_CHARGE, &sc.vcharge, 0, tid);
       g_move_method = &vm_charged; g_move_obj = &sc.vcharge;  // relocate on get_IsCharged
       api->tick(tid, 0);
       if (g_move_dest.tapped != 1 || sc.vcharge.tapped != 0 || g_bad_free) return 57;
-      api->observe(PGR_RC_OBS_SCOPE_EXIT, &sc.scope, 0, tid);
+      api->observe(PGS_RC_OBS_SCOPE_EXIT, &sc.scope, 0, tid);
       if (roots_now() != 0 || g_live != 0 || g_bad_free) return 58;
       break;
     }
     case 26: {
       g_scene=&sc;g_cb_tid=tid;arm(&sc.scope,1,tid);
-      api->observe(PGR_RC_OBS_UI_UPDATE,&sc.ui,0,tid);
+      api->observe(PGS_RC_OBS_UI_UPDATE,&sc.ui,0,tid);
       Obj incoming;incoming.klass=&c_rocket;g_cb=&cb_scope_free;
-      api->observe(PGR_RC_OBS_SCOPE_ENTER,&incoming,0,tid);g_cb=nullptr;
+      api->observe(PGS_RC_OBS_SCOPE_ENTER,&incoming,0,tid);g_cb=nullptr;
       if(!g_cb_done||scope_now()!=1||g_live!=1||g_bad_free)return 59;
-      api->observe(PGR_RC_OBS_SCOPE_EXIT,&incoming,0,tid);
+      api->observe(PGS_RC_OBS_SCOPE_EXIT,&incoming,0,tid);
       if(scope_now()!=1)return 60;
-      api->observe(PGR_RC_OBS_SCOPE_EXIT,&sc.scope2,0,tid);
+      api->observe(PGS_RC_OBS_SCOPE_EXIT,&sc.scope2,0,tid);
       break;
     }
   }
@@ -567,9 +567,9 @@ constexpr int kScenarios = 27;
 }  // namespace
 
 int main(int argc, char **argv) {
-#ifdef PGR_RC_DIRECT_TEST
+#ifdef PGS_RC_DIRECT_TEST
   (void)argc; (void)argv;
-  api = static_cast<const pgr_rocket_combat_api_v1 *>(pgs_rocket_combat_api(1));
+  api = static_cast<const pgs_rocket_combat_api_v1 *>(pgs_rocket_combat_api(1));
   if (!api || pgs_rocket_combat_api(99) != nullptr) { std::puts("FAIL exact-version"); return 2; }
 #else
   if (argc != 2) return 80;
@@ -577,40 +577,40 @@ int main(int argc, char **argv) {
   auto get = reinterpret_cast<const void *(*)(uint32_t)>(dlsym(lib, "pgs_native_api"));
   loaded_core = get ? static_cast<const pgs_native_api_v2 *>(get(2)) : nullptr;
   if (!loaded_core || loaded_core->version != 2 || !loaded_core->query_feature) return 82;
-  api = static_cast<const pgr_rocket_combat_api_v1 *>(loaded_core->query_feature(21, 1));
+  api = static_cast<const pgs_rocket_combat_api_v1 *>(loaded_core->query_feature(21, 1));
   if (!api || api->size != 72 || loaded_core->query_feature(21, 99)) return 83;
 #endif
 
   // Game 0.439.0 has no legacy Combat UI: a config without the whole legacy group installs
   // (in a child, since install latches once per process); a partial legacy group is refused.
   {
-    pgr_rocket_combat_config_v1 partial;
+    pgs_rocket_combat_config_v1 partial;
     fill_config(&partial);
     partial.m_director = nullptr;
-    if (api->install(&partial) != PGR_RC_ERR_BAD_CONFIG) { std::puts("FAIL partial-legacy"); return 6; }
+    if (api->install(&partial) != PGS_RC_ERR_BAD_CONFIG) { std::puts("FAIL partial-legacy"); return 6; }
     pid_t pid = fork();
     if (pid == 0) {
-      pgr_rocket_combat_config_v1 v;
+      pgs_rocket_combat_config_v1 v;
       fill_config(&v);
       v.m_director = v.m_active = v.m_fast = v.m_charge = v.m_visible = nullptr;
       v.f_first = v.f_second = v.f_charged = v.f_input = nullptr;
       v.class_rui = v.class_rdir = v.class_rcharge = nullptr;
       reset_runtime();
-      _exit(api->install(&v) == PGR_RC_OK ? 0 : 1);
+      _exit(api->install(&v) == PGS_RC_OK ? 0 : 1);
     }
     int status = 0; waitpid(pid, &status, 0);
     if (!WIFEXITED(status) || WEXITSTATUS(status)) { std::puts("FAIL vnext-only install"); return 7; }
   }
 
-  pgr_rocket_combat_config_v1 cfg;
+  pgs_rocket_combat_config_v1 cfg;
   fill_config(&cfg);
   reset_runtime();
   int rc = api->install(&cfg);
-  if (rc != PGR_RC_OK) { std::printf("FAIL install %d\n", rc); return 3; }
+  if (rc != PGS_RC_OK) { std::printf("FAIL install %d\n", rc); return 3; }
   // Idempotent re-install of the identical config; a mutated one is refused.
-  if (api->install(&cfg) != PGR_RC_OK) { std::puts("FAIL reinstall"); return 4; }
-  pgr_rocket_combat_config_v1 bad = cfg; bad.state_open = PGR_RC_CLOSED_STATE;
-  if (api->install(&bad) != PGR_RC_ERR_BAD_CONFIG) { std::puts("FAIL bad-config"); return 5; }
+  if (api->install(&cfg) != PGS_RC_OK) { std::puts("FAIL reinstall"); return 4; }
+  pgs_rocket_combat_config_v1 bad = cfg; bad.state_open = PGS_RC_CLOSED_STATE;
+  if (api->install(&bad) != PGS_RC_ERR_BAD_CONFIG) { std::puts("FAIL bad-config"); return 5; }
 
   for (int n = 0; n < kScenarios; ++n) {
     pid_t pid = fork();

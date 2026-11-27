@@ -11,14 +11,14 @@ void read(void *obj,void *field,void *out){
 }
 int main(){
  Object pokemon{&pokemon_class},raw{&response_class,&pokemon,1},wild{&wild_class,&raw},wrapper{&wrapper_class};
- PgrSmartEncounterBinding b{&wild_class,&wrapper_class,&response_class,&map_field,&status_field,&pokemon_field,1,get_class,read};
- assert(pgr_smart_validate_encounter(b,&wild,&wrapper)==1);
- assert(pgr_smart_validate_encounter(b,&wild,&raw)==-11); // Raw RPC is NOT promise wrapper.
- raw.status=5;assert(pgr_smart_validate_encounter(b,&wild,&wrapper)==0);
- raw.status=1;raw.ref=nullptr;assert(pgr_smart_validate_encounter(b,&wild,&wrapper)==0);
- wild.ref=nullptr;assert(pgr_smart_validate_encounter(b,&wild,&wrapper)==0);
- wild.ref=&pokemon;assert(pgr_smart_validate_encounter(b,&wild,&wrapper)==-11);
- assert(pgr_smart_validate_encounter(b,nullptr,&wrapper)==-11);
- assert(pgr_smart_validate_encounter(b,&wild,nullptr)==-11);
+ PgsSmartEncounterBinding b{&wild_class,&wrapper_class,&response_class,&map_field,&status_field,&pokemon_field,1,get_class,read};
+ assert(pgs_smart_validate_encounter(b,&wild,&wrapper)==1);
+ assert(pgs_smart_validate_encounter(b,&wild,&raw)==-11); // Raw RPC is NOT promise wrapper.
+ raw.status=5;assert(pgs_smart_validate_encounter(b,&wild,&wrapper)==0);
+ raw.status=1;raw.ref=nullptr;assert(pgs_smart_validate_encounter(b,&wild,&wrapper)==0);
+ wild.ref=nullptr;assert(pgs_smart_validate_encounter(b,&wild,&wrapper)==0);
+ wild.ref=&pokemon;assert(pgs_smart_validate_encounter(b,&wild,&wrapper)==-11);
+ assert(pgs_smart_validate_encounter(b,nullptr,&wrapper)==-11);
+ assert(pgs_smart_validate_encounter(b,&wild,nullptr)==-11);
  puts("PASS actual smart encounter validation: wrapper versus raw response, success, rejection, missing data and wrong types");
 }

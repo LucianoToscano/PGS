@@ -40,7 +40,7 @@ struct FakeReleaseOut { void *klass; int32_t status; };
 struct FakePromise { void *klass; };
 
 // ----- runtime shims ----------------------------------------------------------------
-const PgrTransferExecApi *g_api = nullptr;
+const PgsTransferExecApi *g_api = nullptr;
 uint64_t g_owner = 0;
 
 uintptr_t g_next_handle = 0x7000;
@@ -122,10 +122,10 @@ void *fake_runtime_invoke(const void *method, void *obj, void **params, void **e
   return nullptr;
 }
 
-PgrTransferExecConfig make_config() {
-  PgrTransferExecConfig c{};
+PgsTransferExecConfig make_config() {
+  PgsTransferExecConfig c{};
   c.version = 1;
-  c.size = sizeof(PgrTransferExecConfig);
+  c.size = sizeof(PgsTransferExecConfig);
   c.gchandle_new = reinterpret_cast<void *>(&fake_gc_new);
   c.gchandle_get_target = reinterpret_cast<void *>(&fake_gc_get);
   c.gchandle_free = reinterpret_cast<void *>(&fake_gc_free);
@@ -149,34 +149,34 @@ PgrTransferExecConfig make_config() {
 
 uint64_t this_tid() { return static_cast<uint64_t>(static_cast<pid_t>(::gettid())); }
 
-PgrTransferExecSample take_sample() {
-  PgrTransferExecSample s{};
-  assert(g_api->sample(&s) == PGR_TX_OK);
-  assert(s.version == 1 && s.size == sizeof(PgrTransferExecSample));
+PgsTransferExecSample take_sample() {
+  PgsTransferExecSample s{};
+  assert(g_api->sample(&s) == PGS_TX_OK);
+  assert(s.version == 1 && s.size == sizeof(PgsTransferExecSample));
   return s;
 }
-std::vector<PgrTransferExecEvent> drain_all() {
-  std::vector<PgrTransferExecEvent> out;
-  PgrTransferExecEvent e{};
+std::vector<PgsTransferExecEvent> drain_all() {
+  std::vector<PgsTransferExecEvent> out;
+  PgsTransferExecEvent e{};
   int r;
   while ((r = g_api->next_event(&e)) == 1) out.push_back(e);
   assert(r == 0);
   return out;
 }
-bool saw(const std::vector<PgrTransferExecEvent> &v, uint32_t kind) {
+bool saw(const std::vector<PgsTransferExecEvent> &v, uint32_t kind) {
   for (const auto &e : v) if (e.kind == kind) return true;
   return false;
 }
-bool saw_complete(const std::vector<PgrTransferExecEvent> &v, bool success) {
-  for (const auto &e : v) if (e.kind == PGR_TX_EVENT_COMPLETE && ((e.aux & 1) != 0) == success) return true;
+bool saw_complete(const std::vector<PgsTransferExecEvent> &v, bool success) {
+  for (const auto &e : v) if (e.kind == PGS_TX_EVENT_COMPLETE && ((e.aux & 1) != 0) == success) return true;
   return false;
 }
 
 uint64_t g_id_seq = 0x1000;
 uint64_t next_id() { return ++g_id_seq; }
 
-PgrTransferInput base_input() {
-  PgrTransferInput v{};
+PgsTransferInput base_input() {
+  PgsTransferInput v{};
   v.version = 1;
   v.size = sizeof(v);
   v.attack = 0; v.defense = 0; v.stamina = 0;  // 0% IV: well under the 90% keep cutoff
@@ -200,8 +200,8 @@ void wire(Scene &s, uint64_t id) {
   s.cb.bag = &s.bag;
   s.ro.status = kSuccess;
 }
-PgrTransferExecRequest make_req(Scene &s, uint64_t id, const PgrTransferInput &in, uint64_t epoch, uint64_t tid) {
-  PgrTransferExecRequest r{};
+PgsTransferExecRequest make_req(Scene &s, uint64_t id, const PgsTransferInput &in, uint64_t epoch, uint64_t tid) {
+  PgsTransferExecRequest r{};
   r.version = 1; r.size = sizeof(r);
   r.captured_id = id; r.epoch = epoch; r.tid = tid;
   r.bag = &s.bag; r.pokemon = &s.pk; r.input = in;
@@ -219,77 +219,77 @@ int main(int argc, char **argv) {
   const auto *core = static_cast<const pgs_native_api_v2 *>(getter(2));
   assert(core && core->size == 48);
   assert(core->query_feature(23, 99) == nullptr);
-  const auto *api = static_cast<const PgrTransferExecApi *>(core->query_feature(23, 1));
-  assert(api != nullptr && api->version == 1 && api->size == sizeof(PgrTransferExecApi));
+  const auto *api = static_cast<const PgsTransferExecApi *>(core->query_feature(23, 1));
+  assert(api != nullptr && api->version == 1 && api->size == sizeof(PgsTransferExecApi));
   g_api = api;
 
   std::printf("ABI sizes: config=%zu request=%zu sample=%zu event=%zu table=%zu\n",
-              sizeof(PgrTransferExecConfig), sizeof(PgrTransferExecRequest),
-              sizeof(PgrTransferExecSample), sizeof(PgrTransferExecEvent), sizeof(PgrTransferExecApi));
-  assert(sizeof(PgrTransferExecConfig) == 144 && sizeof(PgrTransferExecRequest) == 104 &&
-         sizeof(PgrTransferExecSample) == 88 && sizeof(PgrTransferExecEvent) == 24 &&
-         sizeof(PgrTransferExecApi) == 72);
+              sizeof(PgsTransferExecConfig), sizeof(PgsTransferExecRequest),
+              sizeof(PgsTransferExecSample), sizeof(PgsTransferExecEvent), sizeof(PgsTransferExecApi));
+  assert(sizeof(PgsTransferExecConfig) == 144 && sizeof(PgsTransferExecRequest) == 104 &&
+         sizeof(PgsTransferExecSample) == 88 && sizeof(PgsTransferExecEvent) == 24 &&
+         sizeof(PgsTransferExecApi) == 72);
 
   const uint64_t tid = this_tid();
   g_owner = tid;
-  PgrTransferExecConfig cfg = make_config();
+  PgsTransferExecConfig cfg = make_config();
   uint64_t token = 0;
 
   // 1. Validation + not-installed + idempotence + reconfig.
-  assert(api->install(nullptr) == PGR_TX_ERR_NULL_ARG);
-  PgrTransferExecConfig bad = cfg; bad.version = 2;
-  assert(api->install(&bad) == PGR_TX_ERR_BAD_VERSION);
-  bad = cfg; bad.size = sizeof(PgrTransferExecConfig) - 1;
-  assert(api->install(&bad) == PGR_TX_ERR_BAD_SIZE);
+  assert(api->install(nullptr) == PGS_TX_ERR_NULL_ARG);
+  PgsTransferExecConfig bad = cfg; bad.version = 2;
+  assert(api->install(&bad) == PGS_TX_ERR_BAD_VERSION);
+  bad = cfg; bad.size = sizeof(PgsTransferExecConfig) - 1;
+  assert(api->install(&bad) == PGS_TX_ERR_BAD_SIZE);
   bad = cfg; bad.f_status = nullptr;
-  assert(api->install(&bad) == PGR_TX_ERR_MISSING_PTR);
-  { Scene s; wire(s, next_id()); PgrTransferExecRequest r = make_req(s, s.pk.id, base_input(), 1, tid);
-    assert(api->submit(&r, &token) == PGR_TX_ERR_NOT_INSTALLED); }
-  assert(api->tick(tid, 0) == PGR_TX_ERR_NOT_INSTALLED);
+  assert(api->install(&bad) == PGS_TX_ERR_MISSING_PTR);
+  { Scene s; wire(s, next_id()); PgsTransferExecRequest r = make_req(s, s.pk.id, base_input(), 1, tid);
+    assert(api->submit(&r, &token) == PGS_TX_ERR_NOT_INSTALLED); }
+  assert(api->tick(tid, 0) == PGS_TX_ERR_NOT_INSTALLED);
 
-  assert(api->install(&cfg) == PGR_TX_OK);
-  assert(api->install(&cfg) == PGR_TX_OK);  // idempotent
+  assert(api->install(&cfg) == PGS_TX_OK);
+  assert(api->install(&cfg) == PGS_TX_OK);  // idempotent
   bad = cfg; bad.success_literal = 9;
-  assert(api->install(&bad) == PGR_TX_ERR_RECONFIG);
+  assert(api->install(&bad) == PGS_TX_ERR_RECONFIG);
 
   // 2. Policy refusal (feature-4 decide != 0): keep-all, protected attribute, invalid IV. No issue,
   //    no event, no seen -- the host runs nothing extra and the id stays usable.
   { Scene s; wire(s, next_id());
-    assert(api->update(1, 2000, 1, tid) == PGR_TX_OK);
+    assert(api->update(1, 2000, 1, tid) == PGS_TX_OK);
     g_release_calls = 0;
-    PgrTransferInput keep_all = base_input(); keep_all.keep_all = 1;
-    PgrTransferExecRequest r = make_req(s, s.pk.id, keep_all, 1, tid);
-    assert(api->submit(&r, &token) == PGR_TX_OK && token == 0);
-    PgrTransferInput shiny = base_input(); shiny.protect = 1; shiny.flags = 1;  // a protected attribute present
+    PgsTransferInput keep_all = base_input(); keep_all.keep_all = 1;
+    PgsTransferExecRequest r = make_req(s, s.pk.id, keep_all, 1, tid);
+    assert(api->submit(&r, &token) == PGS_TX_OK && token == 0);
+    PgsTransferInput shiny = base_input(); shiny.protect = 1; shiny.flags = 1;  // a protected attribute present
     r = make_req(s, s.pk.id, shiny, 1, tid);
-    assert(api->submit(&r, &token) == PGR_TX_OK && token == 0);
-    PgrTransferInput invalid = base_input(); invalid.attack = 99;  // IV out of range
+    assert(api->submit(&r, &token) == PGS_TX_OK && token == 0);
+    PgsTransferInput invalid = base_input(); invalid.attack = 99;  // IV out of range
     r = make_req(s, s.pk.id, invalid, 1, tid);
-    assert(api->submit(&r, &token) == PGR_TX_OK && token == 0);
+    assert(api->submit(&r, &token) == PGS_TX_OK && token == 0);
     assert(g_release_calls == 0);
-    PgrTransferExecSample sm = take_sample();
+    PgsTransferExecSample sm = take_sample();
     assert(sm.pending == 0 && sm.seen == 0 && sm.roots == 0 && g_live.empty());
     assert(drain_all().empty());
   }
 
   // 3. Identity mismatch: pokemon id != captured id; GetPokemon returns a different object; wrong class.
   { Scene s; wire(s, next_id());
-    assert(api->update(1, 2000, 1, tid) == PGR_TX_OK);
-    PgrTransferExecRequest r = make_req(s, s.pk.id + 1, base_input(), 1, tid);  // captured id != pokemon id
-    assert(api->submit(&r, &token) == PGR_TX_ERR_IDENTITY && token == 0);
+    assert(api->update(1, 2000, 1, tid) == PGS_TX_OK);
+    PgsTransferExecRequest r = make_req(s, s.pk.id + 1, base_input(), 1, tid);  // captured id != pokemon id
+    assert(api->submit(&r, &token) == PGS_TX_ERR_IDENTITY && token == 0);
 
     FakePokemon imposter{&cls_pokemon, s.pk.id};  // same id, different object
     s.bag.current = &imposter;                      // GetPokemon returns the imposter, not the rooted pk
     r = make_req(s, s.pk.id, base_input(), 1, tid);
-    assert(api->submit(&r, &token) == PGR_TX_ERR_IDENTITY && token == 0);
+    assert(api->submit(&r, &token) == PGS_TX_ERR_IDENTITY && token == 0);
     s.bag.current = &s.pk;
 
     r = make_req(s, s.pk.id, base_input(), 1, tid);
     r.pokemon = &s.bag;  // wrong class for the pokemon slot
-    assert(api->submit(&r, &token) == PGR_TX_ERR_IDENTITY && token == 0);
+    assert(api->submit(&r, &token) == PGS_TX_ERR_IDENTITY && token == 0);
 
     r = make_req(s, 0, base_input(), 1, tid);  // zero captured id
-    assert(api->submit(&r, &token) == PGR_TX_ERR_IDENTITY && token == 0);
+    assert(api->submit(&r, &token) == PGS_TX_ERR_IDENTITY && token == 0);
     assert(g_release_calls == 0);
     assert(take_sample().roots == 0 && g_live.empty());
   }
@@ -297,17 +297,17 @@ int main(int argc, char **argv) {
   // 4. Successful result: issue -> REQUEST + token; matched begin/end -> COMPLETE success; reaped.
   { Scene s; wire(s, next_id());
     g_promise = &s.prom;
-    assert(api->update(1, 2000, 1, tid) == PGR_TX_OK);
+    assert(api->update(1, 2000, 1, tid) == PGS_TX_OK);
     g_release_calls = 0;
-    PgrTransferExecRequest r = make_req(s, s.pk.id, base_input(), 1, tid);
-    assert(api->submit(&r, &token) == PGR_TX_ISSUED && token != 0);
+    PgsTransferExecRequest r = make_req(s, s.pk.id, base_input(), 1, tid);
+    assert(api->submit(&r, &token) == PGS_TX_ISSUED && token != 0);
     assert(g_release_calls == 1);
-    PgrTransferExecSample sm = take_sample();
+    PgsTransferExecSample sm = take_sample();
     assert(sm.pending == 1 && sm.seen == 1 && sm.roots >= 3 && sm.last_token == token);
-    assert(saw(drain_all(), PGR_TX_EVENT_REQUEST));
+    assert(saw(drain_all(), PGS_TX_EVENT_REQUEST));
     uint64_t ticket = api->observe_begin(&s.cb, &s.ro, 0, tid);
     assert(ticket != 0);
-    assert(api->observe_end(ticket, tid) == PGR_TX_OK);
+    assert(api->observe_end(ticket, tid) == PGS_TX_OK);
     sm = take_sample();
     assert(sm.pending == 0 && sm.roots == 0 && g_live.empty());  // reaped at observe_end outer frame
     assert(saw_complete(drain_all(), true));
@@ -317,15 +317,15 @@ int main(int argc, char **argv) {
   // 5. Duplicate: a second submit of an already-seen id is refused even after completion (no retry).
   { Scene s; wire(s, next_id());
     g_promise = &s.prom;
-    assert(api->update(1, 2000, 1, tid) == PGR_TX_OK);
-    PgrTransferExecRequest r = make_req(s, s.pk.id, base_input(), 1, tid);
-    assert(api->submit(&r, &token) == PGR_TX_ISSUED);
+    assert(api->update(1, 2000, 1, tid) == PGS_TX_OK);
+    PgsTransferExecRequest r = make_req(s, s.pk.id, base_input(), 1, tid);
+    assert(api->submit(&r, &token) == PGS_TX_ISSUED);
     uint64_t ticket = api->observe_begin(&s.cb, &s.ro, 0, tid);
-    assert(api->observe_end(ticket, tid) == PGR_TX_OK);
+    assert(api->observe_end(ticket, tid) == PGS_TX_OK);
     assert(take_sample().pending == 0 && g_live.empty());
     drain_all();
     // Same id again: quarantined.
-    assert(api->submit(&r, &token) == PGR_TX_OK && token == 0);
+    assert(api->submit(&r, &token) == PGS_TX_OK && token == 0);
     assert(take_sample().pending == 0 && g_live.empty());
     g_promise = nullptr;
   }
@@ -334,9 +334,9 @@ int main(int argc, char **argv) {
   //    matched error observer (is_error) then completes it as a COMPLETE-error.
   { Scene s; wire(s, next_id());
     g_promise = &s.prom;
-    assert(api->update(1, 2000, 1, tid) == PGR_TX_OK);
-    PgrTransferExecRequest r = make_req(s, s.pk.id, base_input(), 1, tid);
-    assert(api->submit(&r, &token) == PGR_TX_ISSUED);
+    assert(api->update(1, 2000, 1, tid) == PGS_TX_OK);
+    PgsTransferExecRequest r = make_req(s, s.pk.id, base_input(), 1, tid);
+    assert(api->submit(&r, &token) == PGS_TX_ISSUED);
     drain_all();
     FakeBag other_bag{&cls_bag, &s.pk};
     FakeCallback wrong_bag{&cls_callback, &s.pk, &other_bag};
@@ -348,7 +348,7 @@ int main(int argc, char **argv) {
     // A matched error observer (is_error=1) completes it as a failure.
     uint64_t ticket = api->observe_begin(&s.cb, nullptr, 1, tid);
     assert(ticket != 0);
-    assert(api->observe_end(ticket, tid) == PGR_TX_OK);
+    assert(api->observe_end(ticket, tid) == PGS_TX_OK);
     assert(take_sample().pending == 0 && g_live.empty());
     assert(saw_complete(drain_all(), false));
     g_promise = nullptr;
@@ -360,24 +360,24 @@ int main(int argc, char **argv) {
   { Scene s; wire(s, next_id());
     g_promise = &s.prom;
     g_cb = &s.cb; g_resp = &s.ro; g_sync_complete = true;
-    assert(api->update(1, 2000, 1, tid) == PGR_TX_OK);
-    PgrTransferExecRequest r = make_req(s, s.pk.id, base_input(), 1, tid);
-    assert(api->submit(&r, &token) == PGR_TX_ISSUED && token != 0);
-    PgrTransferExecSample sm = take_sample();
+    assert(api->update(1, 2000, 1, tid) == PGS_TX_OK);
+    PgsTransferExecRequest r = make_req(s, s.pk.id, base_input(), 1, tid);
+    assert(api->submit(&r, &token) == PGS_TX_ISSUED && token != 0);
+    PgsTransferExecSample sm = take_sample();
     assert(sm.pending == 0 && sm.roots == 0 && g_live.empty());  // completed synchronously + reaped
     auto ev = drain_all();
-    assert(saw(ev, PGR_TX_EVENT_REQUEST) && saw_complete(ev, true));
+    assert(saw(ev, PGS_TX_EVENT_REQUEST) && saw_complete(ev, true));
     g_cb = nullptr; g_resp = nullptr; g_promise = nullptr;
   }
 
   // 8. STOP during the GetPokemon lookup: the final gate sees the stop and refuses; no release.
   { Scene s; wire(s, next_id());
-    assert(api->update(1, 2000, 1, tid) == PGR_TX_OK);
+    assert(api->update(1, 2000, 1, tid) == PGS_TX_OK);
     g_release_calls = 0;
     g_oneshot_method = &m_get;
     g_oneshot = [&]() { g_api->tick(g_owner, 1); };
-    PgrTransferExecRequest r = make_req(s, s.pk.id, base_input(), 1, tid);
-    assert(api->submit(&r, &token) == PGR_TX_OK && token == 0);  // refused
+    PgsTransferExecRequest r = make_req(s, s.pk.id, base_input(), 1, tid);
+    assert(api->submit(&r, &token) == PGS_TX_OK && token == 0);  // refused
     assert(g_release_calls == 0);
     assert(take_sample().pending == 0 && take_sample().roots == 0 && g_live.empty());
   }
@@ -385,12 +385,12 @@ int main(int argc, char **argv) {
   // 9. Policy/epoch change during the GetPokemon lookup: the armed epoch moves, the gate's epoch check
   //    fails, submit is refused; no release.
   { Scene s; wire(s, next_id());
-    assert(api->update(1, 2000, 1, tid) == PGR_TX_OK);
+    assert(api->update(1, 2000, 1, tid) == PGS_TX_OK);
     g_release_calls = 0;
     g_oneshot_method = &m_get;
     g_oneshot = [&]() { g_api->update(1, 2000, 2, g_owner); };  // bump epoch mid-lookup
-    PgrTransferExecRequest r = make_req(s, s.pk.id, base_input(), 1, tid);
-    assert(api->submit(&r, &token) == PGR_TX_OK && token == 0);  // refused: epoch mismatch
+    PgsTransferExecRequest r = make_req(s, s.pk.id, base_input(), 1, tid);
+    assert(api->submit(&r, &token) == PGS_TX_OK && token == 0);  // refused: epoch mismatch
     assert(g_release_calls == 0);
     assert(take_sample().roots == 0 && g_live.empty());
   }
@@ -399,42 +399,42 @@ int main(int argc, char **argv) {
   //     latched; teardown is deferred to the outer frame and frees every root. The id stays seen.
   { Scene s; wire(s, next_id());
     g_promise = &s.prom;
-    assert(api->update(1, 2000, 1, tid) == PGR_TX_OK);
+    assert(api->update(1, 2000, 1, tid) == PGS_TX_OK);
     g_release_calls = 0;
     g_stop_on_release = true;
-    PgrTransferExecRequest r = make_req(s, s.pk.id, base_input(), 1, tid);
-    assert(api->submit(&r, &token) == PGR_TX_ISSUED && token != 0);
+    PgsTransferExecRequest r = make_req(s, s.pk.id, base_input(), 1, tid);
+    assert(api->submit(&r, &token) == PGS_TX_ISSUED && token != 0);
     assert(g_release_calls == 1);  // issued before the stop
-    PgrTransferExecSample sm = take_sample();
+    PgsTransferExecSample sm = take_sample();
     assert(sm.pending == 0 && sm.roots == 0 && g_live.empty());  // deferred teardown ran
     // No retry: the id is quarantined.
-    assert(api->submit(&r, &token) == PGR_TX_OK && token == 0);
+    assert(api->submit(&r, &token) == PGS_TX_OK && token == 0);
     drain_all();
     g_promise = nullptr;
   }
 
   // 11. Null promise + throw: both retain an uncertain issued transaction (no retry). A stop clears it.
   { Scene s; wire(s, next_id());
-    assert(api->update(1, 2000, 1, tid) == PGR_TX_OK);
+    assert(api->update(1, 2000, 1, tid) == PGS_TX_OK);
     g_release_calls = 0;
     g_release_null = true;  // null promise
-    PgrTransferExecRequest r = make_req(s, s.pk.id, base_input(), 1, tid);
-    assert(api->submit(&r, &token) == PGR_TX_ISSUED && token != 0);
+    PgsTransferExecRequest r = make_req(s, s.pk.id, base_input(), 1, tid);
+    assert(api->submit(&r, &token) == PGS_TX_ISSUED && token != 0);
     g_release_null = false;
     assert(g_release_calls == 1);
     assert(take_sample().pending == 1);  // retained, uncertain
-    assert(api->submit(&r, &token) == PGR_TX_OK && token == 0);  // no retry
-    assert(api->tick(tid, 1) == PGR_TX_OK);  // stop clears
+    assert(api->submit(&r, &token) == PGS_TX_OK && token == 0);  // no retry
+    assert(api->tick(tid, 1) == PGS_TX_OK);  // stop clears
     assert(take_sample().pending == 0 && g_live.empty());
     drain_all();
 
     Scene s2; wire(s2, next_id());
-    assert(api->update(1, 2000, 1, tid) == PGR_TX_OK);
+    assert(api->update(1, 2000, 1, tid) == PGS_TX_OK);
     g_throw_on = &m_release;  // ReleasePokemon throws
-    PgrTransferExecRequest r2 = make_req(s2, s2.pk.id, base_input(), 1, tid);
-    assert(api->submit(&r2, &token) == PGR_TX_ISSUED && token != 0);  // still issued/uncertain
+    PgsTransferExecRequest r2 = make_req(s2, s2.pk.id, base_input(), 1, tid);
+    assert(api->submit(&r2, &token) == PGS_TX_ISSUED && token != 0);  // still issued/uncertain
     assert(take_sample().pending == 1);
-    assert(api->tick(tid, 1) == PGR_TX_OK);
+    assert(api->tick(tid, 1) == PGS_TX_OK);
     assert(take_sample().pending == 0 && g_live.empty());
     g_throw_on = nullptr;
     drain_all();
@@ -444,20 +444,20 @@ int main(int argc, char **argv) {
   //     gate refuses it, so no rearm survives the free.
   { Scene s; wire(s, next_id());
     g_promise = &s.prom;
-    assert(api->update(1, 2000, 1, tid) == PGR_TX_OK);
-    PgrTransferExecRequest r = make_req(s, s.pk.id, base_input(), 1, tid);
-    assert(api->submit(&r, &token) == PGR_TX_ISSUED);
+    assert(api->update(1, 2000, 1, tid) == PGS_TX_OK);
+    PgsTransferExecRequest r = make_req(s, s.pk.id, base_input(), 1, tid);
+    assert(api->submit(&r, &token) == PGS_TX_ISSUED);
     drain_all();
     uint64_t ticket = api->observe_begin(&s.cb, &s.ro, 0, tid);
     Scene s2; wire(s2, next_id());
     int reentrant = 123;
     g_free_oneshot = [&]() {
-      PgrTransferExecRequest r2 = make_req(s2, s2.pk.id, base_input(), 1, g_owner);
+      PgsTransferExecRequest r2 = make_req(s2, s2.pk.id, base_input(), 1, g_owner);
       uint64_t tk = 999;
       reentrant = g_api->submit(&r2, &tk);
     };
-    assert(api->observe_end(ticket, tid) == PGR_TX_OK);  // completes -> reap frees roots (fires oneshot)
-    assert(reentrant == PGR_TX_OK);  // refused during cleanup
+    assert(api->observe_end(ticket, tid) == PGS_TX_OK);  // completes -> reap frees roots (fires oneshot)
+    assert(reentrant == PGS_TX_OK);  // refused during cleanup
     assert(take_sample().pending == 0 && g_live.empty());  // rearm did not survive
     drain_all();
     g_promise = nullptr;
@@ -466,15 +466,15 @@ int main(int argc, char **argv) {
   // 13. Wrong thread cannot drive the controller nor steal ownership (owner already latched above).
   std::thread([&]() {
     Scene s; wire(s, next_id());
-    PgrTransferExecRequest r = make_req(s, s.pk.id, base_input(), 1, this_tid());
+    PgsTransferExecRequest r = make_req(s, s.pk.id, base_input(), 1, this_tid());
     uint64_t tk = 7;
-    assert(g_api->submit(&r, &tk) == PGR_TX_OK && tk == 0);  // not owner: refused
+    assert(g_api->submit(&r, &tk) == PGS_TX_OK && tk == 0);  // not owner: refused
     assert(g_api->observe_begin(&s.cb, &s.ro, 0, this_tid()) == 0);
-    assert(g_api->tick(this_tid(), 0) == PGR_TX_OK);  // no-op off owner
+    assert(g_api->tick(this_tid(), 0) == PGS_TX_OK);  // no-op off owner
   }).join();
   { Scene s; wire(s, next_id());
-    PgrTransferExecRequest r = make_req(s, s.pk.id, base_input(), 1, tid + 1);  // mismatched proven_tid
-    assert(api->submit(&r, &token) == PGR_TX_OK && token == 0);
+    PgsTransferExecRequest r = make_req(s, s.pk.id, base_input(), 1, tid + 1);  // mismatched proven_tid
+    assert(api->submit(&r, &token) == PGS_TX_OK && token == 0);
   }
   assert(g_live.empty());
 
@@ -482,18 +482,18 @@ int main(int argc, char **argv) {
   //     a stop then clears it and frees every root.
   { Scene s; wire(s, next_id());
     g_promise = &s.prom;
-    assert(api->update(1, 2000, 1, tid) == PGR_TX_OK);
-    PgrTransferExecRequest r = make_req(s, s.pk.id, base_input(), 1, tid);
-    assert(api->submit(&r, &token) == PGR_TX_ISSUED);
+    assert(api->update(1, 2000, 1, tid) == PGS_TX_OK);
+    PgsTransferExecRequest r = make_req(s, s.pk.id, base_input(), 1, tid);
+    assert(api->submit(&r, &token) == PGS_TX_ISSUED);
     drain_all();
-    ::usleep((PGR_TX_TIMEOUT_MS + 1000) * 1000);  // 11 s against the production clock
-    assert(api->tick(tid, 0) == PGR_TX_OK);
-    PgrTransferExecSample sm = take_sample();
+    ::usleep((PGS_TX_TIMEOUT_MS + 1000) * 1000);  // 11 s against the production clock
+    assert(api->tick(tid, 0) == PGS_TX_OK);
+    PgsTransferExecSample sm = take_sample();
     assert(sm.pending == 1 && sm.timeout_serial >= 1);  // retained, timed out once
-    assert(saw(drain_all(), PGR_TX_EVENT_TIMEOUT));
-    assert(api->tick(tid, 0) == PGR_TX_OK);  // no second timeout for the same request
+    assert(saw(drain_all(), PGS_TX_EVENT_TIMEOUT));
+    assert(api->tick(tid, 0) == PGS_TX_OK);  // no second timeout for the same request
     assert(drain_all().empty());
-    assert(api->tick(tid, 1) == PGR_TX_OK);  // stop clears
+    assert(api->tick(tid, 1) == PGS_TX_OK);  // stop clears
     sm = take_sample();
     assert(sm.pending == 0 && sm.roots == 0 && g_live.empty());
     g_promise = nullptr;
@@ -505,20 +505,20 @@ int main(int argc, char **argv) {
     api->update(1,2000,1,tid);
     auto req=make_req(s,s.pk.id,base_input(),1,tid);
     g_oneshot_method=&m_get;g_oneshot=[&](){api->update(0,0,1,tid);api->update(1,2000,1,tid);};
-    assert(api->submit(&req,&token)==PGR_TX_OK && token==0);
+    assert(api->submit(&req,&token)==PGS_TX_OK && token==0);
     assert(g_release_calls==0 && g_live.empty());drain_all();
   }
   // Revoke on the final argument lookup, after GetPokemon returned.
   { Scene s; wire(s,next_id());g_promise=&s.prom;g_release_calls=0;
     api->update(1,2000,1,tid);auto req=make_req(s,s.pk.id,base_input(),1,tid);
     g_oneshot_method=&m_get;g_oneshot=[&](){g_get_after=3;g_get_oneshot=[&](){api->tick(tid,1);};};
-    assert(api->submit(&req,&token)==PGR_TX_OK && token==0);
+    assert(api->submit(&req,&token)==PGS_TX_OK && token==0);
     assert(!g_get_oneshot && g_release_calls==0 && g_live.empty());drain_all();
   }
   // Shutdown invalidates abandoned onEnter tickets without reusing their nonce.
   { Scene s; wire(s,next_id());g_promise=&s.prom;
     api->update(1,2000,1,tid);auto req=make_req(s,s.pk.id,base_input(),1,tid);
-    assert(api->submit(&req,&token)==PGR_TX_ISSUED);
+    assert(api->submit(&req,&token)==PGS_TX_ISSUED);
     auto stale=api->observe_begin(&s.cb,&s.ro,0,tid);assert(stale);
     assert(take_sample().open_tickets==1);api->tick(tid,1);
     assert(take_sample().open_tickets==0 && g_live.empty());drain_all();
@@ -527,8 +527,8 @@ int main(int argc, char **argv) {
   // STOP during one completed transaction's free also clears another pending transaction.
   { Scene a,b;wire(a,next_id());wire(b,next_id());api->update(1,2000,1,tid);
     auto ra=make_req(a,a.pk.id,base_input(),1,tid),rb=make_req(b,b.pk.id,base_input(),1,tid);
-    g_promise=&a.prom;assert(api->submit(&ra,&token)==PGR_TX_ISSUED);
-    g_promise=&b.prom;assert(api->submit(&rb,&token)==PGR_TX_ISSUED);
+    g_promise=&a.prom;assert(api->submit(&ra,&token)==PGS_TX_ISSUED);
+    g_promise=&b.prom;assert(api->submit(&rb,&token)==PGS_TX_ISSUED);
     auto ticket=api->observe_begin(&a.cb,&a.ro,0,tid);assert(ticket);
     g_free_oneshot=[&](){api->tick(tid,1);};api->observe_end(ticket,tid);
     assert(take_sample().pending==0 && g_live.empty());drain_all();

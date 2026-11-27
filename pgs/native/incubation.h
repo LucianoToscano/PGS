@@ -33,32 +33,24 @@ extern "C" {
 
 // Table + config ABI version. The getter answers an exact match only.
 #define PGS_INCUBATION_API_VERSION 1u
-#define PGRAZOR_INCUBATION_API_VERSION PGS_INCUBATION_API_VERSION
 
 // Bounds (fail closed on overflow). Players can hold well over 128 incubators (every
 // limited and Super Incubator is its own entry), and a 128 cap stopped auto-incubation
 // for them, so the incubator bound now sits above any realistic item bag.
 #define PGS_INCUBATION_MAX_INCUBATORS 10000u
-#define PGRAZOR_INCUBATION_MAX_INCUBATORS PGS_INCUBATION_MAX_INCUBATORS
 #define PGS_INCUBATION_MAX_EGGS       25000u
-#define PGRAZOR_INCUBATION_MAX_EGGS PGS_INCUBATION_MAX_EGGS
 #define PGS_INCUBATION_MAX_STRLEN     256u
-#define PGRAZOR_INCUBATION_MAX_STRLEN PGS_INCUBATION_MAX_STRLEN
 
 // Timers, milliseconds (CLOCK_BOOTTIME). 5s poll, 15s back-off with no eggs, 30s
 // confirmation deadline; identical to the JS now+5000 / now+15000 / now+30000.
 #define PGS_INCUBATION_POLL_MS     5000u
-#define PGRAZOR_INCUBATION_POLL_MS PGS_INCUBATION_POLL_MS
 #define PGS_INCUBATION_NO_EGGS_MS  15000u
-#define PGRAZOR_INCUBATION_NO_EGGS_MS PGS_INCUBATION_NO_EGGS_MS
 #define PGS_INCUBATION_DEADLINE_MS 30000u
-#define PGRAZOR_INCUBATION_DEADLINE_MS PGS_INCUBATION_DEADLINE_MS
 
 // Hard cap on the per-tick authorization lease the host may hand us (ms). The host
 // passes the RESIDUAL window; we clamp to this and build an absolute CLOCK_BOOTTIME
 // deadline that is re-checked immediately before the single PutEggInIncubator.
 #define PGS_INCUBATION_MAX_LEASE_MS 2500u
-#define PGRAZOR_INCUBATION_MAX_LEASE_MS PGS_INCUBATION_MAX_LEASE_MS
 
 // Status codes surfaced through the sample. The adapter maps each to the exact JS
 // status string; code 10 (STARTING) carries the chosen distance in the sample.
@@ -75,19 +67,6 @@ enum {
     PGS_INC_STATUS_NO_EGGS       = 9,  /* "No eggs waiting" */
     PGS_INC_STATUS_STARTING      = 10, /* "Starting <distance> km egg" */
     PGS_INC_STATUS_ERROR_RETRY   = 11,  /* "Incubation unavailable; toggle off/on to retry" */
-    // Legacy aliases retain the same enum type and numeric values.
-    PGRAZOR_INC_STATUS_NONE = PGS_INC_STATUS_NONE,
-    PGRAZOR_INC_STATUS_OFF = PGS_INC_STATUS_OFF,
-    PGRAZOR_INC_STATUS_WAIT_MAP = PGS_INC_STATUS_WAIT_MAP,
-    PGRAZOR_INC_STATUS_EGG_INCUBATING = PGS_INC_STATUS_EGG_INCUBATING,
-    PGRAZOR_INC_STATUS_ALREADY_IN_USE = PGS_INC_STATUS_ALREADY_IN_USE,
-    PGRAZOR_INC_STATUS_UNCONFIRMED = PGS_INC_STATUS_UNCONFIRMED,
-    PGRAZOR_INC_STATUS_CONFIRMING = PGS_INC_STATUS_CONFIRMING,
-    PGRAZOR_INC_STATUS_STOPPED_RETRY = PGS_INC_STATUS_STOPPED_RETRY,
-    PGRAZOR_INC_STATUS_NO_FREE = PGS_INC_STATUS_NO_FREE,
-    PGRAZOR_INC_STATUS_NO_EGGS = PGS_INC_STATUS_NO_EGGS,
-    PGRAZOR_INC_STATUS_STARTING = PGS_INC_STATUS_STARTING,
-    PGRAZOR_INC_STATUS_ERROR_RETRY = PGS_INC_STATUS_ERROR_RETRY,
 };
 
 // Step of the most recent fail-closed error (sample.fault_step), so a log shows where it stopped.
@@ -101,15 +80,6 @@ enum {
     PGS_INC_FAULT_EGG_LIMIT      = 6,  /* more Pokemon and eggs than MAX_EGGS */
     PGS_INC_FAULT_SERVICE        = 7,  /* incubator service resolve */
     PGS_INC_FAULT_REQUEST        = 8,   /* PutEggInIncubator call or its result */
-    // Legacy aliases retain the same enum type and numeric values.
-    PGRAZOR_INC_FAULT_MAP = PGS_INC_FAULT_MAP,
-    PGRAZOR_INC_FAULT_PLAYER = PGS_INC_FAULT_PLAYER,
-    PGRAZOR_INC_FAULT_INCUBATORS = PGS_INC_FAULT_INCUBATORS,
-    PGRAZOR_INC_FAULT_INCUBATOR_LIMIT = PGS_INC_FAULT_INCUBATOR_LIMIT,
-    PGRAZOR_INC_FAULT_EGGS = PGS_INC_FAULT_EGGS,
-    PGRAZOR_INC_FAULT_EGG_LIMIT = PGS_INC_FAULT_EGG_LIMIT,
-    PGRAZOR_INC_FAULT_SERVICE = PGS_INC_FAULT_SERVICE,
-    PGRAZOR_INC_FAULT_REQUEST = PGS_INC_FAULT_REQUEST,
 };
 
 // Status codes returned by every table function. 0 == success.
@@ -119,12 +89,6 @@ enum {
     PGS_INC_ERR_BAD_CONFIG= 2,  /* config header/size/pointer/literal invalid */
     PGS_INC_ERR_ALREADY_BOUND = 3, /* install() called again with a different config */
     PGS_INC_ERR_NOT_INSTALLED = 6,  /* operation needs a successful install() */
-    // Legacy aliases retain the same enum type and numeric values.
-    PGRAZOR_INC_OK = PGS_INC_OK,
-    PGRAZOR_INC_ERR_NULL_ARG = PGS_INC_ERR_NULL_ARG,
-    PGRAZOR_INC_ERR_BAD_CONFIG = PGS_INC_ERR_BAD_CONFIG,
-    PGRAZOR_INC_ERR_ALREADY_BOUND = PGS_INC_ERR_ALREADY_BOUND,
-    PGRAZOR_INC_ERR_NOT_INSTALLED = PGS_INC_ERR_NOT_INSTALLED,
 };
 
 // Install-time configuration, packed by the JS adapter after its metadata validation.
@@ -199,7 +163,6 @@ typedef struct pgs_incubation_config_v1 {
     void *class_boolean;           /* System.Boolean (exact check before unbox) (offset 344) */
     void *class_string;            /* System.String  (exact check before chars)  (offset 352) */
 } pgs_incubation_config_v1;
-typedef pgs_incubation_config_v1 pgrazor_incubation_config_v1;
 
 // Pull-only telemetry snapshot (48 bytes). status_serial increments on each distinct
 // status transition; request_serial increments once per issued PutEggInIncubator (the
@@ -220,7 +183,6 @@ typedef struct pgs_incubation_sample_v1 {
     uint32_t owned_roots;          /* durable pending GC roots currently held (0..4) */
     uint32_t fault_step;           /* PGS_INC_FAULT_* of the latest fault (was reserved 0) */
 } pgs_incubation_sample_v1;
-typedef pgs_incubation_sample_v1 pgrazor_incubation_sample_v1;
 
 /*
  * install(config): validate and publish the config once for the process lifetime. A
@@ -229,7 +191,6 @@ typedef pgs_incubation_sample_v1 pgrazor_incubation_sample_v1;
  * process image is mutated and no managed call is made here.
  */
 typedef int (*pgs_incubation_install_fn)(const pgs_incubation_config_v1 *config);
-typedef pgs_incubation_install_fn pgrazor_incubation_install_fn;
 
 /*
  * tick(enabled, longest, remaining_lease_ms, proven_tid): one orchestration pass. Runs
@@ -245,7 +206,6 @@ typedef pgs_incubation_install_fn pgrazor_incubation_install_fn;
  */
 typedef int (*pgs_incubation_tick_fn)(int enabled, int longest,
                                           uint64_t remaining_lease_ms, uint64_t proven_tid);
-typedef pgs_incubation_tick_fn pgrazor_incubation_tick_fn;
 
 /*
  * clear(proven_tid): Unity-thread-only teardown for stop/detach. RELEASES the durable
@@ -257,11 +217,9 @@ typedef pgs_incubation_tick_fn pgrazor_incubation_tick_fn;
  * own pass defers the free until that pass finishes). Returns OK or NOT_INSTALLED.
  */
 typedef int (*pgs_incubation_clear_fn)(uint64_t proven_tid);
-typedef pgs_incubation_clear_fn pgrazor_incubation_clear_fn;
 
 /* sample(out): copy the latest telemetry snapshot. Safe from any thread. */
 typedef int (*pgs_incubation_sample_fn)(pgs_incubation_sample_v1 *out);
-typedef pgs_incubation_sample_fn pgrazor_incubation_sample_fn;
 
 // Ordered, read-only table advertised by the getter (40 bytes: header + 4 pointers).
 typedef struct pgs_incubation_api_v1 {
@@ -272,7 +230,6 @@ typedef struct pgs_incubation_api_v1 {
     pgs_incubation_clear_fn   clear;
     pgs_incubation_sample_fn  sample;
 } pgs_incubation_api_v1;
-typedef pgs_incubation_api_v1 pgrazor_incubation_api_v1;
 
 /*
  * Hidden getter (NOT exported by the version script). The coordinator registers it in

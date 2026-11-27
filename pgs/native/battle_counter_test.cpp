@@ -3,7 +3,7 @@
 #include <cstdlib>
 #include <vector>
 
-using namespace pgr_counter;
+using namespace pgs_counter;
 
 namespace {
 enum { NORMAL = 1, FIGHTING, FLYING, POISON, GROUND, ROCK, BUG, GHOST, STEEL, FIRE, WATER, GRASS, ELECTRIC, PSYCHIC, ICE, DRAGON, DARK, FAIRY };

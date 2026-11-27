@@ -34,7 +34,7 @@
 // are pointer-sized (LP64). collider_field/running_field are il2cpp FieldInfo* and are
 // read with field_get_value exactly as the JS readPtr()/present() helpers do -- they are
 // NOT raw byte offsets.
-struct PgrRocketMiniConfig {
+struct PgsRocketMiniConfig {
     uint32_t version, size;
     // Patched method entry points (direct chained intercepts of the types below).
     void *update_addr;    // UpdateMinigame        void(self, int64, MethodInfo*)
@@ -64,16 +64,16 @@ struct PgrRocketMiniConfig {
     void *(*runtime_invoke)(void *method, void *obj, void **params, void **exc);
     void (*field_get_value)(void *obj, void *field, void *out);
 };
-static_assert(sizeof(PgrRocketMiniConfig) == 184,
-              "PgrRocketMiniConfig layout must match the JS adapter writer");
+static_assert(sizeof(PgsRocketMiniConfig) == 184,
+              "PgsRocketMiniConfig layout must match the JS adapter writer");
 
 // Status codes (0 == success). Shared spirit with the other feature headers.
 enum {
-    PGR_RMINI_OK = 0,
-    PGR_RMINI_ERR_NULL_ARG = 1,       // config pointer / a required member pointer was null
-    PGR_RMINI_ERR_BAD_CONFIG = 2,     // header, size or a pointer member invalid
-    PGR_RMINI_ERR_ALREADY_BOUND = 3,  // install() called again with a different config
-    PGR_RMINI_ERR_HOOK_FAILED = 4     // a target could not be hooked (install latched failed)
+    PGS_RMINI_OK = 0,
+    PGS_RMINI_ERR_NULL_ARG = 1,       // config pointer / a required member pointer was null
+    PGS_RMINI_ERR_BAD_CONFIG = 2,     // header, size or a pointer member invalid
+    PGS_RMINI_ERR_ALREADY_BOUND = 3,  // install() called again with a different config
+    PGS_RMINI_ERR_HOOK_FAILED = 4     // a target could not be hooked (install latched failed)
 };
 
 // Version-1 table: 8-byte header + install/update/tick/restore (40 bytes total).
@@ -91,15 +91,15 @@ enum {
 //   restore : request an immediate stop of collection; restores now if called on the
 //             Unity thread, otherwise latches a pending restore for the next on-thread
 //             hook/tick. Restoration is preserved even after a latched failure.
-struct PgrRocketMiniApi {
+struct PgsRocketMiniApi {
     uint32_t version, size;
-    int (*install)(const PgrRocketMiniConfig *);
+    int (*install)(const PgsRocketMiniConfig *);
     int (*update)(int allowed, int64_t lease_remaining_ms);
     int (*tick)(int proven_unity_tick);
     int (*restore)();
 };
-static_assert(sizeof(PgrRocketMiniApi) == 40,
-              "PgrRocketMiniApi must stay a 40-byte version-1 table");
+static_assert(sizeof(PgsRocketMiniApi) == 40,
+              "PgsRocketMiniApi must stay a 40-byte version-1 table");
 
 #ifdef __cplusplus
 extern "C" {

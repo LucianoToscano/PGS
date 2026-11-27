@@ -14,8 +14,14 @@ class HttpsRedirect(urllib.request.HTTPRedirectHandler):
             redirected.remove_header('Authorization')
         return redirected
 
+def required_setting(name):
+    value = os.environ.get('PGS_' + name) or os.environ.get('PGRAZOR_' + name)
+    if not value:
+        raise SystemExit('Required PGS input/signing setting is missing: ' + name)
+    return value
+
 def main():
-    url=os.environ['PGRAZOR_INPUT_URL']
+    url=required_setting('INPUT_URL')
     if urllib.parse.urlsplit(url).scheme!='https': raise SystemExit('Input URL must use HTTPS')
     folder=ROOT/'input';folder.mkdir(exist_ok=True)
     output=folder/'game.apkm'
@@ -33,6 +39,6 @@ def main():
                 dest.write(chunk)
     except Exception: raise SystemExit('Private game input download failed; check the secret URL') from None
     verify_input(output, current_profile())
-    key=Path(os.environ['PGRAZOR_KEYSTORE']);key.parent.mkdir(parents=True,exist_ok=True)
-    key.write_bytes(base64.b64decode(os.environ['PGRAZOR_KEYSTORE_BASE64'],validate=True))
+    key=Path(required_setting('KEYSTORE'));key.parent.mkdir(parents=True,exist_ok=True)
+    key.write_bytes(base64.b64decode(required_setting('KEYSTORE_BASE64'),validate=True))
 if __name__=='__main__': main()

@@ -2,7 +2,7 @@
 #include <cassert>
 #include <cstdio>
 #include <initializer_list>
-using namespace pgr_auto_boost;
+using namespace pgs_auto_boost;
 int main(){
  const Config both=parse("B1|1|1"),egg=parse("B1|1|0"),star=parse("B1|0|1"),off=parse("B1|0|0");
  assert(both.valid&&both.egg&&both.star);assert(egg.valid&&egg.egg&&!egg.star);

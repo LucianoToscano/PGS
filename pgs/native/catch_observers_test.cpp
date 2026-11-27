@@ -6,7 +6,7 @@
 // stubs through volatile pointers so the compiler cannot bypass the installed Dobby trampoline.
 // The feature8 speed engine is replaced by a recording stub table so the DELEGATION is observable
 // without the real engine; this is the actual-library Dobby harness required for this batch.
-#include "catch_observers.h"       // pulls in catch_animation.h (PgrSpeedApi / PgrSpeedSample)
+#include "catch_observers.h"       // pulls in catch_animation.h (PgsSpeedApi / PgsSpeedSample)
 #include "pgs_native_api.h"
 #include <dlfcn.h>
 #include <unistd.h>
@@ -84,16 +84,16 @@ void  gc_free(void *) {
 int   stub_owned = 0, stub_applied = 0, stub_completed = 0;
 int32_t stub_last_reason = -1;
 void *stub_apply_animator = nullptr, *stub_apply_response = nullptr;
-int sp_install(const PgrSpeedConfig *) { return 0; }
+int sp_install(const PgsSpeedConfig *) { return 0; }
 int sp_update(int, uint64_t, uint64_t) { return 0; }
 int sp_apply(void *a, void *r) { stub_apply_animator = a; stub_apply_response = r; ++stub_applied; return 0; }
 int sp_complete(void *r, int32_t reason) { (void)r; stub_last_reason = reason; ++stub_completed; return 0; }
 int sp_tick(uint64_t) { return 0; }
-int sp_sample(PgrSpeedSample *out) { if (out) { std::memset(out, 0, sizeof(*out)); out->owned = static_cast<uint32_t>(stub_owned); } return 0; }
-PgrSpeedApi stub_speed{1, sizeof(PgrSpeedApi), &sp_install, &sp_update, &sp_apply, &sp_complete, &sp_tick, &sp_sample};
+int sp_sample(PgsSpeedSample *out) { if (out) { std::memset(out, 0, sizeof(*out)); out->owned = static_cast<uint32_t>(stub_owned); } return 0; }
+PgsSpeedApi stub_speed{1, sizeof(PgsSpeedApi), &sp_install, &sp_update, &sp_apply, &sp_complete, &sp_tick, &sp_sample};
 int max_applied=0;float max_received=0;
 int sp_max(void *a,void *r,float baseline){++max_applied;max_received=baseline;return sp_apply(a,r);}
-PgrSpeedApi2 stub_max{2,sizeof(PgrSpeedApi2),sp_max};
+PgsSpeedApi2 stub_max{2,sizeof(PgsSpeedApi2),sp_max};
 
 #define PAD asm volatile("nop; nop; nop; nop; nop; nop; nop; nop" ::: "memory")
 typedef void *(*BtxuPtr)(void *, void *);
@@ -103,7 +103,7 @@ int orig_btxu_calls = 0, orig_caught_calls = 0, orig_escaped_calls = 0;
 void *last_caught_resp = nullptr, *last_escaped_resp = nullptr;
 int reenter_btxu = 0; // when >0, btxu_stub re-enters btxu once (nested-call test)
 
-const PgrObsApi *g_api_for_stub = nullptr; // set in main, used to stop() from inside orig (M4)
+const PgsObsApi *g_api_for_stub = nullptr; // set in main, used to stop() from inside orig (M4)
 int stop_in_orig = 0;                      // when >0, btxu_stub calls stop() mid-flight once
 
 volatile BtxuPtr call_btxu;
@@ -161,7 +161,7 @@ int main(int argc, char **argv) {
     if (!lib) { std::puts(dlerror()); return 2; }
     auto getter = reinterpret_cast<const void *(*)(uint32_t)>(dlsym(lib, "pgs_native_api"));
     auto core = getter ? static_cast<const pgs_native_api_v2 *>(getter(2)) : nullptr;
-    auto api  = core ? static_cast<const PgrObsApi *>(core->query_feature(49, 1)) : nullptr;
+    auto api  = core ? static_cast<const PgsObsApi *>(core->query_feature(49, 1)) : nullptr;
     if (!api || api->size != 48) return 3;
     g_api_for_stub = api;
 
@@ -170,7 +170,7 @@ int main(int argc, char **argv) {
     nested_caught = &caught_stub;
     volatile CompPtr call_escaped = &escaped_stub;
 
-    PgrObsConfig cfg{};
+    PgsObsConfig cfg{};
     cfg.version = 1; cfg.size = sizeof(cfg);
     cfg.object_get_class = (void *)&obj_class; cfg.field_get_value = (void *)&field_get;
     cfg.gchandle_new = (void *)&gc_new; cfg.gchandle_get_target = (void *)&gc_target; cfg.gchandle_free = (void *)&gc_free;
@@ -183,7 +183,7 @@ int main(int argc, char **argv) {
     cfg.thread_current = (void *)&fake_thread_current; // appended attachment probe (168-byte config)
     if (api->install(&cfg) || api->install(&cfg)) return 4; // install + idempotent repeat
 
-    PgrObsSample s{};
+    PgsObsSample s{};
 
     // (A) No policy armed: passthrough returns the RAW original result, nothing rooted/applied.
     g_next_response = &g_resp_success;
@@ -265,9 +265,9 @@ int main(int argc, char **argv) {
     // (J2) Observe-only (Catch preview without Quick catch): the outcome is confirmed and the ball
     //      animation is left alone; any mode other than 0/1/2 is refused.
     sleep_ms(1050);
-    if (api->update(3, 2500, gettid(), nullptr) != PGR_OBS_ERR_BAD_ARG) return 81;
+    if (api->update(3, 2500, gettid(), nullptr) != PGS_OBS_ERR_BAD_ARG) return 81;
     api->update(2, 2500, gettid(), nullptr);
-    { PgrObsSample k{}; api->sample(&k); const auto before = k.confirmed; const int ac = stub_applied;
+    { PgsObsSample k{}; api->sample(&k); const auto before = k.confirmed; const int ac = stub_applied;
       g_next_response = &g_resp_preview; call_btxu(&g_ball, &method_obj);
       api->sample(&k);
       if (k.confirmed != before + 1 || stub_applied != ac) return 82; }
@@ -339,12 +339,12 @@ int main(int argc, char **argv) {
     // (Q) Multi-event ring (H2): several events between two polls are all retained (not collapsed to
     //     a single slot); event_head advances and the newest ring slot carries the matching seq.
     api->update(1, 2500, gettid(), nullptr); sleep_ms(1050);
-    { PgrObsSample before{}; api->sample(&before);
+    { PgsObsSample before{}; api->sample(&before);
       g_next_response = &g_resp_q1; call_btxu(&g_ball, &method_obj);   // confirmed + applied = 2 events
       g_next_response = &g_resp_q2; call_btxu(&g_ball, &method_obj);   // confirmed + applied = 2 events
-      PgrObsSample after{}; api->sample(&after);
+      PgsObsSample after{}; api->sample(&after);
       if (after.event_head < before.event_head + 2) return 51;        // nothing lost to a single slot
-      const PgrObsEvent &newest = after.events[after.event_head % PGR_OBS_EVENT_RING];
+      const PgsObsEvent &newest = after.events[after.event_head % PGS_OBS_EVENT_RING];
       if (newest.seq != after.event_head) return 52; }                // ring slot stamped with its seq
 
     // Drain the seen handles accumulated by L..Q and confirm the roots balance to zero.
@@ -372,14 +372,14 @@ int main(int argc, char **argv) {
     api->stop(gettid());api->tick(gettid());sleep_ms(1050);
     api->update(1,2500,gettid(),nullptr);g_ball.bread=1;g_next_response=&g_resp_flee;
     {int before=stub_applied;call_btxu(&g_ball,&method_obj);
-     api->sample(&s);if(stub_applied!=before||s.reason!=PGR_OBS_R_SPECIAL)return 70;}
-    const auto *max_bridge=static_cast<const PgrObsApi3*>(core->query_feature(49,3));
+     api->sample(&s);if(stub_applied!=before||s.reason!=PGS_OBS_R_SPECIAL)return 70;}
+    const auto *max_bridge=static_cast<const PgsObsApi3*>(core->query_feature(49,3));
     if(!max_bridge||max_bridge->size!=16)return 71;
-    if(max_bridge->register_max(&fld_max_speed,&stub_max,gettid()+1)!=PGR_OBS_ERR_BAD_ARG)return 72;
-    if(max_bridge->register_max(nullptr,&stub_max,gettid())!=PGR_OBS_ERR_BAD_CONFIG)return 73;
+    if(max_bridge->register_max(&fld_max_speed,&stub_max,gettid()+1)!=PGS_OBS_ERR_BAD_ARG)return 72;
+    if(max_bridge->register_max(nullptr,&stub_max,gettid())!=PGS_OBS_ERR_BAD_CONFIG)return 73;
     if(max_bridge->register_max(&fld_max_speed,&stub_max,gettid())||
        max_bridge->register_max(&fld_max_speed,&stub_max,gettid()))return 74;
-    if(max_bridge->register_max(&fld_status,&stub_max,gettid())!=PGR_OBS_ERR_BAD_CONFIG)return 75;
+    if(max_bridge->register_max(&fld_status,&stub_max,gettid())!=PGS_OBS_ERR_BAD_CONFIG)return 75;
     for(auto *response:{&g_resp_success_moved,&g_resp_escape,&g_resp_flee}){
      g_next_response=response;int before=max_applied;
      if(call_btxu(&g_ball,&method_obj)!=response||max_applied!=before+1||max_received!=0.7f)return 76;
@@ -388,7 +388,7 @@ int main(int argc, char **argv) {
     if(stub_last_reason!=13)return 77;
     max_baseline=0;
     {int before=max_applied;call_btxu(&g_ball,&method_obj);api->sample(&s);
-     if(max_applied!=before||s.reason!=PGR_OBS_R_MAX_SPEED)return 78;}
+     if(max_applied!=before||s.reason!=PGS_OBS_R_MAX_SPEED)return 78;}
     max_baseline=0.7f;g_next_response=&g_resp_missed;
     {int before=max_applied;call_btxu(&g_ball,&method_obj);if(max_applied!=before)return 79;}
     api->stop(gettid());api->tick(gettid());g_ball.bread=0;
@@ -406,11 +406,11 @@ int main(int argc, char **argv) {
 
     // API2 sole-owner berry filter works independently of the (now faulted/off)
     // speed gate, with rooted receiver refresh and exact HOLD/pass originals.
-    const auto *bridge=static_cast<const PgrObsApi2*>(core->query_feature(49,2));
+    const auto *bridge=static_cast<const PgsObsApi2*>(core->query_feature(49,2));
     if(!bridge||bridge->size!=24||bridge->filter_ready())return 63;
-    if(bridge->register_filter(berry_filter,gettid()+1)!=PGR_OBS_ERR_BAD_ARG)return 64;
+    if(bridge->register_filter(berry_filter,gettid()+1)!=PGS_OBS_ERR_BAD_ARG)return 64;
     if(bridge->register_filter(berry_filter,gettid())||bridge->register_filter(berry_filter,gettid())||!bridge->filter_ready())return 65;
-    if(bridge->register_filter(other_berry_filter,gettid())!=PGR_OBS_ERR_BAD_CONFIG)return 66;
+    if(bridge->register_filter(other_berry_filter,gettid())!=PGS_OBS_ERR_BAD_CONFIG)return 66;
     berry_filter_hold=1;
     {int original=orig_btxu_calls;if(call_btxu(&g_ball,&method_obj)||orig_btxu_calls!=original||berry_filter_calls!=1||roots)return 67;}
     berry_filter_hold=0;g_next_response=&g_resp_n;

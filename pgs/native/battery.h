@@ -15,5 +15,5 @@
 //                   off too (they are separate objects, not part of the ground cover).
 // The game's own value is remembered before the first change (and again whenever the game changes it)
 // and put back when the setting is turned off, the config goes stale, or the module stops.
-void pgr_battery_tick(uint64_t tid, const PgrSharedMetadataOutput *metadata);
-void pgr_battery_stop(uint64_t tid);
+void pgs_battery_tick(uint64_t tid, const PgsSharedMetadataOutput *metadata);
+void pgs_battery_stop(uint64_t tid);

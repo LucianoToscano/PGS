@@ -25,13 +25,13 @@
 // Everything is resolved by name with reflection; no hooks and no fixed addresses. Managed objects
 // are rooted only within a tick.
 namespace {
-using namespace pgr_auto_rocket;
+using namespace pgs_auto_rocket;
 
 struct Failure {std::string where;};
 void require(bool ok,const char *where){if(!ok)throw Failure{where};}
 template<class F>F fn(const void *p){require(p!=nullptr,"missing runtime export");return reinterpret_cast<F>(const_cast<void*>(p));}
 
-PgrBootBinding boot{};
+PgsBootBinding boot{};
 uint64_t owner=0;bool busy=false,ready=false;
 
 int64_t clock_ms(){timespec t{};clock_gettime(CLOCK_BOOTTIME,&t);return int64_t(t.tv_sec)*1000+t.tv_nsec/1000000;}
@@ -51,9 +51,9 @@ struct Root {
 void *klass(void *o){require(o,"null object");return fn<void*(*)(void*)>(boot.runtime.object_get_class)(o);}
 void *cls(const char *ns,const char *name){
  static std::map<std::string,void*> cache;std::string key=std::string(ns)+"."+name;auto it=cache.find(key);if(it!=cache.end())return it->second;
- const auto *api=static_cast<const PgrMetaApi*>(pgs_runtime_metadata_api(1));require(api,"metadata API");
- PgrMetaClassQuery q{};q.version=1;q.size=sizeof(q);q.name_space=ns;q.name=name;q.canonical_match=PGR_MD_MATCH_EXACT;
- PgrMetaClassResult out{};require(api->resolve_class(&q,&out)==0,name);return cache[key]=const_cast<void*>(out.klass);
+ const auto *api=static_cast<const PgsMetaApi*>(pgs_runtime_metadata_api(1));require(api,"metadata API");
+ PgsMetaClassQuery q{};q.version=1;q.size=sizeof(q);q.name_space=ns;q.name=name;q.canonical_match=PGS_MD_MATCH_EXACT;
+ PgsMetaClassResult out{};require(api->resolve_class(&q,&out)==0,name);return cache[key]=const_cast<void*>(out.klass);
 }
 std::string typename_of(void *type){char *p=fn<char*(*)(void*)>(boot.meta.type_get_name)(type);require(p,"type name");std::string s=p;fn<void(*)(void*)>(boot.meta.mem_free)(p);return s;}
 void *field_info(void *k,const char *name){void *f=fn<void*(*)(void*,const char*)>(boot.meta.class_get_field_from_name)(k,name);require(f,name);require(!(fn<int(*)(void*)>(boot.meta.field_get_flags)(f)&0x10),name);return f;}
@@ -116,12 +116,12 @@ Root live(void *k){
 }
 
 // --- Transport ------------------------------------------------------------------------------
-const PgrRuntimeTransportApi *transport(){return static_cast<const PgrRuntimeTransportApi*>(pgs_runtime_transport_api(1));}
+const PgsRuntimeTransportApi *transport(){return static_cast<const PgsRuntimeTransportApi*>(pgs_runtime_transport_api(1));}
 struct Permission {bool coherent=false,empty=false,valid=false,foreground=false,map_ready=false,coords=false;double lat=0,lon=0;Command command;};
 Permission read_permission(){
  Permission p;auto tr=transport();
  if(!tr||!tr->sample||!tr->get_string||!tr->get_bool||!tr->get_double)return p;
- PgrRuntimeTransportSample a{},z{};if(tr->sample(&a)||!a.snapshot_fresh||a.fault)return p;
+ PgsRuntimeTransportSample a{},z{};if(tr->sample(&a)||!a.snapshot_fresh||a.fault)return p;
  char raw[256]{};uint32_t n=0;int fg=0,map=0,hl=0,ho=0;double lat=0,lon=0;
  if(tr->get_string(12,raw,sizeof(raw),&n)||n>=sizeof(raw))return p;
  if(tr->get_bool(3,&fg)||tr->get_bool(16,&map)||tr->get_double(0,&lat,&hl)||tr->get_double(1,&lon,&ho))return p;
@@ -172,7 +172,7 @@ DisplayTypes display_types;bool display_types_ready=false;
 
 void emit(const std::string &json){
  auto tr=transport();if(!tr||!tr->emit)return;
- PgrRuntimeTransportString s[]={{"auto-rocket",11},{json.c_str(),uint32_t(json.size())}};tr->emit(19,nullptr,0,s,2);
+ PgsRuntimeTransportString s[]={{"auto-rocket",11},{json.c_str(),uint32_t(json.size())}};tr->emit(19,nullptr,0,s,2);
 }
 std::string quote(const std::string &s){std::string o="\"";for(unsigned char c:s){if(c=='"'||c=='\\')o+='\\';if(c>=32)o+=char(c);}return o+"\"";}
 void status(const char *phase,const std::string &message,const std::string &extra=""){
@@ -273,10 +273,10 @@ bool encounter_open(){
 }
 bool battle_open(){return bool(live(cls("Niantic.Holoholo.Combat.UI","CombatVNextGuiController")));}
 bool vgp_busy(){
- auto api=static_cast<const PgrVgpControllerApi*>(pgs_vgp_controller_api(1));
+ auto api=static_cast<const PgsVgpControllerApi*>(pgs_vgp_controller_api(1));
  if(!api||!api->sample)return false;
- PgrVgpControllerSample sample{};sample.version=1;sample.size=sizeof(sample);
- return api->sample(&sample)==0&&sample.phase!=PGR_VGC_PH_NONE;
+ PgsVgpControllerSample sample{};sample.version=1;sample.size=sizeof(sample);
+ return api->sample(&sample)==0&&sample.phase!=PGS_VGC_PH_NONE;
 }
 // A leader battle uses a Rocket Radar, and the game asks first in its generic modal ("Use" / "Cancel",
 // ModalButton.UseCancelButtons = OK, Cancel). Only on a leader stop, once per dialog: its own
@@ -386,7 +386,7 @@ void step_travel(const Permission &p,int64_t now){
  enter(Stage::Heal,now);
 }
 void step_heal(int64_t now){
- if(pgr_heal_busy()&&now-session.stage_ms<kHealWaitMs){if(session.message!="Healing before the battle")status("healing","Healing before the battle");return;}
+ if(pgs_heal_busy()&&now-session.stage_ms<kHealWaitMs){if(session.message!="Healing before the battle")status("healing","Healing before the battle");return;}
  enter(Stage::Open,now);
 }
 void step_open(const Permission &p,int64_t now){
@@ -521,7 +521,7 @@ bool stop_point(){return session.stage==Stage::Scan||session.stage==Stage::Trave
 
 }  // namespace
 
-bool pgr_auto_rocket_tick(uint64_t tid,const PgrSharedMetadataOutput*){
+bool pgs_auto_rocket_tick(uint64_t tid,const PgsSharedMetadataOutput*){
  if(busy||!tid||tid!=uint64_t(gettid()))return session.active;
  if(owner&&owner!=tid)return session.active;
  struct Guard{Guard(){busy=true;}~Guard(){busy=false;}}guard;
@@ -545,7 +545,7 @@ bool pgr_auto_rocket_tick(uint64_t tid,const PgrSharedMetadataOutput*){
  }
  if(!p.coords)return true;
  try{
-  if(!ready){auto api=static_cast<const PgrBootApi*>(pgs_runtime_bootstrap_api(1));boot.version=1;boot.size=sizeof(boot);require(api&&api->snapshot(&boot)==0,"Runtime unavailable");ready=true;}
+  if(!ready){auto api=static_cast<const PgsBootApi*>(pgs_runtime_bootstrap_api(1));boot.version=1;boot.size=sizeof(boot);require(api&&api->snapshot(&boot)==0,"Runtime unavailable");ready=true;}
   if(session.stop_requested&&stop_point()){finish("stopped","Stopped after "+battles_text(session.battles));return false;}
   step(p,now);
   heartbeat(now);
@@ -555,13 +555,13 @@ bool pgr_auto_rocket_tick(uint64_t tid,const PgrSharedMetadataOutput*){
  }catch(...){finish("error","Auto Rocket stopped: native failure");}
  return session.active;
 }
-void pgr_auto_rocket_stop(uint64_t){if(session.active)finish("stopped","Stopped");}
-extern "C" int pgr_auto_rocket_keeps_catches(){
+void pgs_auto_rocket_stop(uint64_t){if(session.active)finish("stopped","Stopped");}
+extern "C" int pgs_auto_rocket_keeps_catches(){
  return session.active&&!session.command.transfer?1:0;
 }
-bool pgr_auto_rocket_between_battles(){
+bool pgs_auto_rocket_between_battles(){
  return session.active&&(session.stage==Stage::Scan||session.stage==Stage::Travel||session.stage==Stage::Settle);
 }
-bool pgr_auto_rocket_vgp_window(){
- return pgr_auto_rocket_between_battles()&&session.command.walk&&!session.vgp_closed;
+bool pgs_auto_rocket_vgp_window(){
+ return pgs_auto_rocket_between_battles()&&session.command.walk&&!session.vgp_closed;
 }

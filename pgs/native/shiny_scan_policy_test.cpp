@@ -3,7 +3,7 @@
 #include <cstdio>
 #include <string>
 
-using namespace pgr_shiny_scan;
+using namespace pgs_shiny_scan;
 static int checks = 0, failures = 0;
 #define CHECK(x) do { ++checks; if (!(x)) { ++failures; std::printf("FAIL line %d: %s\n", __LINE__, #x); } } while (0)
 

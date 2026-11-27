@@ -1,4 +1,4 @@
-"""Verify PGS source aliases without altering the installed native ABI."""
+"""Verify retired source names and the original LP64 type/value contract."""
 from collections import defaultdict
 import json
 from pathlib import Path
@@ -20,101 +20,82 @@ def aliases():
 
 
 class PgsNativeAliasesTests(unittest.TestCase):
-    def test_source_alias_contract(self):
+    def test_retired_source_names_and_canonical_declarations(self):
         inventory = aliases()
-        self.assertTrue(inventory)
-        old_names, new_names = set(), set()
+        self.assertGreaterEqual(len(inventory), 113)
+        names = set()
         for entry in inventory:
             old, new = entry["old"], entry["new"]
             with self.subTest(alias=new):
-                self.assertNotIn(old, old_names)
-                self.assertNotIn(new, new_names)
-                old_names.add(old)
-                new_names.add(new)
-                self.assertGreater(entry["migrated_uses"], 0)
+                self.assertTrue(entry["retired"])
+                self.assertNotIn(old, names)
+                names.add(old)
                 path = ROOT / entry["header"]
                 self.assertTrue(path.resolve().is_relative_to(NATIVE.resolve()))
                 source = path.read_text(encoding="utf-8", errors="surrogateescape")
-                if entry["kind"] == "constant":
-                    self.assertTrue(old.startswith("PGRAZOR_"))
-                    self.assertEqual(new, "PGS_" + old[8:])
-                    pattern = r"(?m)^[ \t]*#[ \t]*define[ \t]+" + re.escape(old) + r"[ \t]+" + re.escape(new) + r"[ \t]*$"
-                elif entry["kind"] == "enumerator":
-                    self.assertTrue(old.startswith("PGRAZOR_"))
-                    self.assertEqual(new, "PGS_" + old[8:])
-                    pattern = r"\b" + re.escape(old) + r"\s*=\s*" + re.escape(new) + r"\s*,"
-                    self.assertNotRegex(source, r"(?m)^\s*#\s*define\s+" + re.escape(old) + r"\b")
-                else:
-                    self.assertEqual(entry["kind"], "type")
-                    self.assertTrue(old.startswith("pgrazor_"))
-                    self.assertEqual(new, "pgs_" + old[8:])
-                    pattern = r"\btypedef\s+" + re.escape(new) + r"\s+" + re.escape(old) + r"\s*;"
-                self.assertRegex(source, pattern)
+                self.assertNotRegex(source, r"\b" + re.escape(old) + r"\b")
+                self.assertRegex(source, r"\b" + re.escape(new) + r"\b")
+                self.assertTrue(entry["abi_before"])
 
     @unittest.skipUnless(sys.platform.startswith("linux") and COMPILER,
-                         "Native alias compilation requires a Linux C++17 compiler")
-    def test_all_aliases_have_identical_type_or_constant_value(self):
+                         "Native ABI baseline compilation requires Linux C++17")
+    def test_canonical_types_and_constants_keep_original_abi(self):
         by_header = defaultdict(list)
         for entry in aliases():
             by_header[entry["header"]].append(entry)
         for header, entries in sorted(by_header.items()):
             with self.subTest(header=header):
-                name = (ROOT / header).relative_to(NATIVE).as_posix()
-                code = ['#include <type_traits>', '#include "' + name + '"']
+                code = ['#include <type_traits>', '#include "' + Path(header).name + '"']
                 for entry in entries:
-                    old, new = entry["old"], entry["new"]
+                    name, facts = entry["new"], entry["abi_before"]
                     if entry["kind"] == "type":
-                        code.append("static_assert(std::is_same_v<" + old + ", " + new + ">);")
+                        code.extend([f"static_assert(sizeof({name}) == {facts['size']});",
+                                     f"static_assert(alignof({name}) == {facts['align']});"])
                     else:
-                        code.append("static_assert((" + old + ") == (" + new + "));")
+                        value = facts["value"]
+                        self.assertRegex(value, r"^-?[0-9]+(?:\.[0-9]+)?(?:[eE][+-]?[0-9]+)?$")
+                        code.append(f"static_assert(static_cast<long double>({name}) == static_cast<long double>({value}L));")
                         if entry["kind"] == "enumerator":
-                            code.append("static_assert(std::is_same_v<decltype(" + old + "), decltype(" + new + ")>);")
-                            code.extend(["#ifdef " + old, "#error legacy enumerator became a macro", "#endif"])
-                result = subprocess.run(
-                    [COMPILER, "-std=c++17", "-fsyntax-only", "-x", "c++",
-                     "-I" + str(NATIVE), "-"],
-                    input="\n".join(code) + "\n", text=True,
-                    capture_output=True, timeout=60
-                )
-                self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
-
+                            code.append(f"static_assert(std::is_enum_v<decltype({name})>);")
+                run = subprocess.run([COMPILER, "-std=c++17", "-fsyntax-only", "-x", "c++",
+                                      "-I", str(NATIVE), "-"], input="\n".join(code)+"\n",
+                                     text=True, capture_output=True, timeout=60)
+                self.assertEqual(run.returncode, 0, run.stdout + run.stderr)
 
     @unittest.skipUnless(sys.platform.startswith("linux") and COMPILER,
-                         "Native getter forwarding requires a Linux C++17 compiler")
-    def test_private_getters_forward_the_same_version_and_pointer(self):
-        # Synthetic implementations verify source alias behavior without a game,
-        # external native library, hooks, or a device.
+                         "Native getter declarations require Linux C++17")
+    def test_private_canonical_getter_declarations_link(self):
         names = ("runtime_metadata", "runtime_bootstrap", "runtime_transport",
-                 "unity_scheduler", "shared_host", "accounts",
-                 "adventure_sync", "account_host")
+                 "unity_scheduler", "shared_host", "accounts", "adventure_sync", "account_host")
         code = ['#include <type_traits>']
-        code.extend('#include "' + name + '.h"' for name in names)
+        code.extend('#include "'+name+'.h"' for name in names)
         assertions = []
         for name in names:
-            old, new = "pgrazor_" + name + "_api", "pgs_" + name + "_api"
+            new = "pgs_"+name+"_api"
             typ = "pgs_accounts_api_v1_t" if name == "accounts" else "unsigned"
             ret = "const pgs_accounts_api_v1_t*" if name == "accounts" else "const void*"
-            primary = old if name == "account_host" else new
-            code.append('extern "C" ' + ret + ' ' + primary +
-                        '(uint32_t version) { static ' + typ +
-                        ' value{}; return version == 1 ? &value : nullptr; }')
-            code.append('static_assert(std::is_same_v<decltype(&' + old +
-                        '), decltype(&' + new + ')>);')
-            assertions.append('if (!' + new + '(1) || ' + new + '(1) != ' +
-                              old + '(1) || ' + new + '(0) || ' +
-                              new + '(2)) return 1;')
-        code.extend(['int main() {', *assertions, 'return 0; }'])
-        with tempfile.TemporaryDirectory(prefix="pgs-getter-aliases-") as work:
-            executable = Path(work) / "forwarding"
-            result = subprocess.run(
-                [COMPILER, "-std=c++17", "-x", "c++", "-I", str(NATIVE),
-                 "-", "-o", str(executable)],
-                input="\n".join(code) + "\n", text=True,
-                capture_output=True, timeout=60)
-            self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
-            run = subprocess.run([str(executable)], capture_output=True,
-                                 text=True, timeout=10)
-            self.assertEqual(run.returncode, 0, run.stdout + run.stderr)
+            code.append(f'extern "C" {ret} {new}(uint32_t version) {{ static {typ} value{{}}; return version == 1 ? &value : nullptr; }}')
+            code.append(f"static_assert(std::is_same_v<decltype(&{new}), {ret}(*)(uint32_t)>);")
+            assertions.append(f"if (!{new}(1) || {new}(0) || {new}(2)) return 1;")
+        code.extend(["int main(){", *assertions, "return 0; }"])
+        with tempfile.TemporaryDirectory(prefix="pgs-getters-") as work:
+            exe = Path(work)/"getters"
+            built = subprocess.run([COMPILER,"-std=c++17","-x","c++","-I",str(NATIVE),"-","-o",str(exe)],
+                                   input="\n".join(code)+"\n",text=True,capture_output=True,timeout=60)
+            self.assertEqual(built.returncode,0,built.stdout+built.stderr)
+            run = subprocess.run([str(exe)],capture_output=True,text=True,timeout=10)
+            self.assertEqual(run.returncode,0,run.stdout+run.stderr)
+
+    def test_private_native_legacy_names_do_not_return(self):
+        for path in NATIVE.rglob("*"):
+            if not path.is_file() or path.suffix not in {".h",".hpp",".cpp",".c",".cc",".inc"}:
+                continue
+            data = path.read_bytes()
+            # Only the public factory spelling and the icon-source notice are retained.
+            if path.name == "pvp_icons.h":
+                continue
+            data = data.replace(b"pgrazor_native_api",b"")
+            self.assertNotRegex(data,rb"(?i)pgrazor",str(path.relative_to(ROOT)))
 
 
 if __name__ == "__main__":

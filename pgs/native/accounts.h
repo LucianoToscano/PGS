@@ -112,7 +112,6 @@ typedef struct pgs_accounts_config_v1 {
   int32_t promise_succeeded_value;
   int32_t promise_failed_value;
 } pgs_accounts_config_v1_t;
-typedef pgs_accounts_config_v1_t pgrazor_accounts_config_v1_t;
 
 typedef struct pgs_account_event_v1 {
   uint64_t seq;
@@ -127,7 +126,6 @@ typedef struct pgs_account_event_v1 {
   uint16_t id[PGS_ACCOUNTS_MAX_UTF16];
   uint16_t name[PGS_ACCOUNTS_MAX_UTF16];
 } pgs_account_event_v1_t;
-typedef pgs_account_event_v1_t pgrazor_account_event_v1_t;
 
 static_assert(sizeof(pgs_account_event_v1_t) == 1056, "event POD layout mismatch");
 
@@ -151,7 +149,6 @@ typedef struct pgs_account_snapshot_v1 {
   uint16_t id[PGS_ACCOUNTS_MAX_UTF16];
   uint16_t name[PGS_ACCOUNTS_MAX_UTF16];
 } pgs_account_snapshot_v1_t;
-typedef pgs_account_snapshot_v1_t pgrazor_account_snapshot_v1_t;
 
 static_assert(sizeof(pgs_account_snapshot_v1_t) == 1080, "snapshot POD layout mismatch");
 
@@ -165,7 +162,6 @@ typedef struct pgs_accounts_api_v1 {
   void (*api_sample)(pgs_account_snapshot_v1_t* out_snapshot);
   size_t (*api_drain)(pgs_account_event_v1_t* out_events, size_t max_events);
 } pgs_accounts_api_v1_t;
-typedef pgs_accounts_api_v1_t pgrazor_accounts_api_v1_t;
 
 #if defined(__LP64__) || UINTPTR_MAX == 0xffffffffffffffffULL
 static_assert(sizeof(void*) == 8, "LP64 ABI required");
@@ -179,16 +175,9 @@ static_assert(sizeof(pgs_accounts_api_v1_t) == 32, "ILP32 api table layout misma
 #endif
 
 const pgs_accounts_api_v1_t* pgs_accounts_api(uint32_t version);
-// Compatibility for older source consumers; the PGS name is the primary hidden getter.
-static inline const pgs_accounts_api_v1_t* pgrazor_accounts_api(uint32_t version) {
-    return pgs_accounts_api(version);
-}
 
 #ifdef __cplusplus
 }
 #endif
-
-// Compatibility for the preserved account-host source.
-#include "account_source_compat.h"
 
 #endif  // PGS_ACCOUNTS_H_

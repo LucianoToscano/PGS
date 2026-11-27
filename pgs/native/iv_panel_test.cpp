@@ -43,7 +43,7 @@ void *next_method(const void *,void **iterator) {
 const char *method_name(void *value) { return static_cast<Method*>(value)->name; }
 const void *method_param(void *,unsigned index) { return index==0?"System.Type":"System.Boolean"; }
 char *type_name(const void *value) { return strdup(static_cast<const char*>(value)); }
-int resolve(const PgrMetaClassQuery *query,PgrMetaClassResult *out) {
+int resolve(const PgsMetaClassQuery *query,PgsMetaClassResult *out) {
  if (!std::strcmp(query->name,"Canvas")) out->klass=&canvas_class;
  else if (!std::strcmp(query->name,"Component")) out->klass=&component_class;
  else if (!std::strcmp(query->name,"GameObject")) out->klass=&game_object_class;
@@ -51,7 +51,7 @@ int resolve(const PgrMetaClassQuery *query,PgrMetaClassResult *out) {
  else return -1;
  return 0;
 }
-PgrMetaApi metadata{};
+PgsMetaApi metadata{};
 Object *go(Object *o) { return o->game_object?o->game_object:o; }
 void *managed(void *value,void *self,void **args,void **exception) {
  *exception=nullptr;const char *name=static_cast<Method*>(value)->name;
@@ -94,7 +94,7 @@ static void *fixture_symbol(void *,const char *name) {
 extern "C" const void *pgs_runtime_metadata_api(uint32_t) { return &metadata; }
 extern "C" const void *pgs_runtime_bootstrap_api(uint32_t) { return nullptr; }
 extern "C" const void *pgs_runtime_transport_api(uint32_t) { return nullptr; }
-void pgr_iv_display_set_panel_hooks(const PgrIvPanelHooks *) {}
+void pgs_iv_display_set_panel_hooks(const PgsIvPanelHooks *) {}
 
 int main() {
  metadata.resolve_class=resolve;

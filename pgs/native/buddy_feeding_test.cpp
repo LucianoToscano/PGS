@@ -89,17 +89,17 @@ static void field_get(void *o, void *f, void *out) {
 }
 
 // Real hooked targets (NOP-padded so Dobby has room). call_* go through the trampoline.
-#define PGR_NOP8() asm volatile("nop; nop; nop; nop; nop; nop; nop; nop;")
+#define PGS_NOP8() asm volatile("nop; nop; nop; nop; nop; nop; nop; nop;")
 __attribute__((noinline)) void *target_feed(void *self, int32_t item, int32_t count, void *method) {
-    PGR_NOP8(); ++g_feed_target_calls; (void)self; (void)item; (void)count; (void)method; return &g_promise;
+    PGS_NOP8(); ++g_feed_target_calls; (void)self; (void)item; (void)count; (void)method; return &g_promise;
 }
 __attribute__((noinline)) void target_result(void *self, void *proto, void *method) {
-    PGR_NOP8(); ++g_result_target_calls; (void)self; (void)proto; (void)method;
+    PGS_NOP8(); ++g_result_target_calls; (void)self; (void)proto; (void)method;
 }
 void *(*volatile call_feed)(void *, int32_t, int32_t, void *) = &target_feed;
 void  (*volatile call_result)(void *, void *, void *) = &target_result;
 
-#ifdef PGR_BUDDY_HOST_TEST
+#ifdef PGS_BUDDY_HOST_TEST
 // The host fixture exercises the production state machine with deterministic
 // time and direct function-pointer hooks. The Android mode above still verifies
 // the real core registry and Dobby trampolines on an explicitly selected device.
@@ -210,7 +210,7 @@ static void repoll(uint64_t tid) { g_api->tick(0, 2500, tid); }
 static int scenario(int which) {
     const uint64_t tid = static_cast<uint64_t>(gettid());
     pgs_buddy_config_v1 cfg = make_config();
-    if (g_api->install(&cfg) != PGR_BUDDY_OK) return 90;
+    if (g_api->install(&cfg) != PGS_BUDDY_OK) return 90;
 
     switch (which) {
     case 0: { // happy sync result -> BERRY_FED, result consumed once, roots balanced
@@ -221,7 +221,7 @@ static int scenario(int which) {
         g_api->tick(701, 2500, tid);                       // section-1 consume (no repoll needed)
         s = snap();
         if (s.result_serial != 1) return 2;                // consumed exactly once
-        if (s.status != PGR_BUDDY_STATUS_BERRY_FED) return 3;
+        if (s.status != PGS_BUDDY_STATUS_BERRY_FED) return 3;
         if (s.owned_roots != 1 || g_roots != 1) return 4;  // pending dropped; only the service root
         return 0;
     }
@@ -231,7 +231,7 @@ static int scenario(int which) {
         g_api->tick(701, 2500, tid);                       // consume -> BERRY_FED, feeds=1
         g_remaining = 300;                                 // buddy now fed
         repoll(tid); g_api->tick(701, 2500, tid);          // re-poll -> FED, re-armed
-        if (snap().status != PGR_BUDDY_STATUS_FED) return 1;
+        if (snap().status != PGS_BUDDY_STATUS_FED) return 1;
         g_remaining = 0;                                   // hungry again
         repoll(tid); g_api->tick(701, 2500, tid);          // issue a second feed + capture
         if (snap().feed_request_serial != 2) return 2;     // re-armed and fed again
@@ -242,7 +242,7 @@ static int scenario(int which) {
         g_api->tick(701, 2500, tid);
         pgs_buddy_sample_v1 s = snap();
         if (s.feed_request_serial != 0 || g_feed_target_calls != 0) return 1;
-        if (s.status != PGR_BUDDY_STATUS_OUT_OF_STOCK) return 2;
+        if (s.status != PGS_BUDDY_STATUS_OUT_OF_STOCK) return 2;
         if (s.owned_roots != 1 || g_roots != 1) return 3;
         return 0;
     }
@@ -262,7 +262,7 @@ static int scenario(int which) {
         g_api->tick(701, 2500, tid);
         g_api->tick(701, 2500, tid);                       // consume the failure
         pgs_buddy_sample_v1 s = snap();
-        if (s.status != PGR_BUDDY_STATUS_FEED_FAILED || s.detail != 7) return 1;
+        if (s.status != PGS_BUDDY_STATUS_FEED_FAILED || s.detail != 7) return 1;
         const uint64_t issued = s.feed_request_serial;
         g_api->tick(701, 2500, tid);                       // poll-gated / blocked -> no retry
         if (snap().feed_request_serial != issued) return 2;
@@ -305,7 +305,7 @@ static int scenario(int which) {
         g_remaining = 0; g_count = 5;
         g_api->tick(701, 2500, tid + 1);
         if (snap().feed_request_serial != 0 || g_roots != 0) return 1;
-        if (snap().status != PGR_BUDDY_STATUS_NONE) return 2;
+        if (snap().status != PGS_BUDDY_STATUS_NONE) return 2;
         return 0;
     }
     case 9: case 10: case 11: {
@@ -323,7 +323,7 @@ static int scenario(int which) {
         pthread_join(th,nullptr);
         if(snap().feed_request_serial || g_roots!=1) return 1;
         auto changed=make_config(); changed.success=7;
-        if(g_api->install(&changed)!=PGR_BUDDY_ERR_ALREADY_BOUND) return 2;
+        if(g_api->install(&changed)!=PGS_BUDDY_ERR_ALREADY_BOUND) return 2;
         g_api->clear(tid); return g_roots||g_bad_free?3:0;
     }
     case 13: {
@@ -336,7 +336,7 @@ static int scenario(int which) {
         g_missing_stats = true;
         g_api->tick(701,2500,tid);
         auto waiting = snap();
-        if (waiting.status != PGR_BUDDY_STATUS_WAIT_HUNGER || waiting.fault_serial) return 1;
+        if (waiting.status != PGS_BUDDY_STATUS_WAIT_HUNGER || waiting.fault_serial) return 1;
         if (waiting.feed_request_serial || g_feed_target_calls || g_roots != 1) return 2;
         g_missing_stats = false;
         g_sync_result = true;
@@ -347,14 +347,14 @@ static int scenario(int which) {
         g_api->tick(701,2500,tid);
         if (snap().feed_request_serial != 1 || g_feed_target_calls != 1) return 4;
         g_api->tick(701,2500,tid);
-        if (snap().status != PGR_BUDDY_STATUS_BERRY_FED || snap().result_serial != 1) return 5;
+        if (snap().status != PGS_BUDDY_STATUS_BERRY_FED || snap().result_serial != 1) return 5;
         g_api->clear(tid);
         return g_roots || snap().owned_roots || g_bad_free ? 6 : 0;
     }
     case 15: { // Managed getter exceptions remain faults, not missing-data waits.
         g_stats_exception = true;
         g_api->tick(701,2500,tid);
-        if (snap().status != PGR_BUDDY_STATUS_ERROR || snap().fault_serial != 1) return 1;
+        if (snap().status != PGS_BUDDY_STATUS_ERROR || snap().fault_serial != 1) return 1;
         if (snap().feed_request_serial || g_feed_target_calls) return 2;
         g_api->clear(tid);
         return g_roots || snap().owned_roots || g_bad_free ? 3 : 0;
@@ -377,16 +377,16 @@ static int scenario(int which) {
         if (which == 17) {
             g_remaining = 300; ++g_proto.buddy_id; // another buddy cannot settle our request
             wait_poll(); g_api->tick(701,2500,tid);
-            if (snap().status == PGR_BUDDY_STATUS_FED || snap().result_serial) return 5;
+            if (snap().status == PGS_BUDDY_STATUS_FED || snap().result_serial) return 5;
             --g_proto.buddy_id;
             g_remaining = std::numeric_limits<float>::quiet_NaN();
             wait_poll(); g_api->tick(701,2500,tid);
-            if (snap().status != PGR_BUDDY_STATUS_ERROR || !snap().fault_serial) return 6;
+            if (snap().status != PGS_BUDDY_STATUS_ERROR || !snap().fault_serial) return 6;
         }
         g_remaining = 300;
         wait_poll(); g_api->tick(701,2500,tid);
         auto fed = snap();
-        if (fed.status != PGR_BUDDY_STATUS_FED) return 7;
+        if (fed.status != PGS_BUDDY_STATUS_FED) return 7;
         if (fed.feed_request_serial != 1 || fed.result_serial || g_feed_target_calls != calls) return 8;
         if (fed.owned_roots != 1 || g_roots != 1 || g_bad_free) return 9;
         g_remaining = 0;
@@ -401,7 +401,7 @@ static int scenario(int which) {
 }
 
 int main(int argc, char **argv) {
-#ifdef PGR_BUDDY_HOST_TEST
+#ifdef PGS_BUDDY_HOST_TEST
     (void)argc; (void)argv;
     if (pgs_buddy_feeding_api(99) != nullptr) { std::puts("FAIL exact-version"); return 3; }
     g_api = static_cast<const pgs_buddy_api_v1 *>(pgs_buddy_feeding_api(1));
@@ -419,15 +419,15 @@ int main(int argc, char **argv) {
     // Config validation (parent process; these all fail before any hook is attempted).
     pgs_buddy_config_v1 c = make_config();
     pgs_buddy_config_v1 bad;
-    if (g_api->install(nullptr) != PGR_BUDDY_ERR_NULL_ARG) { std::puts("FAIL null"); return 5; }
+    if (g_api->install(nullptr) != PGS_BUDDY_ERR_NULL_ARG) { std::puts("FAIL null"); return 5; }
     bad = c; bad.version = 2;
-    if (g_api->install(&bad) != PGR_BUDDY_ERR_BAD_CONFIG) { std::puts("FAIL version"); return 5; }
+    if (g_api->install(&bad) != PGS_BUDDY_ERR_BAD_CONFIG) { std::puts("FAIL version"); return 5; }
     bad = c; bad.size = sizeof(c) - 1;
-    if (g_api->install(&bad) != PGR_BUDDY_ERR_BAD_CONFIG) { std::puts("FAIL size"); return 5; }
+    if (g_api->install(&bad) != PGS_BUDDY_ERR_BAD_CONFIG) { std::puts("FAIL size"); return 5; }
     bad = c; bad.m_feed = nullptr;
-    if (g_api->install(&bad) != PGR_BUDDY_ERR_BAD_CONFIG) { std::puts("FAIL missing"); return 5; }
+    if (g_api->install(&bad) != PGS_BUDDY_ERR_BAD_CONFIG) { std::puts("FAIL missing"); return 5; }
     bad = c; bad.result_address = bad.feed_address;
-    if (g_api->install(&bad) != PGR_BUDDY_ERR_DUP_HOOK) { std::puts("FAIL dup"); return 5; }
+    if (g_api->install(&bad) != PGS_BUDDY_ERR_DUP_HOOK) { std::puts("FAIL dup"); return 5; }
 
     const int cases = 18;
     for (int i = 0; i < cases; ++i) {

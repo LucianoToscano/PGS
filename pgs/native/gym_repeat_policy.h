@@ -22,7 +22,7 @@
 // a timeout ends the session. A cleared gym ends the loop successfully on the gym
 // screen with no further Battle press and no forced Back. Live gym state ends the
 // loop; there is no fixed round count and there are no blind retries.
-namespace pgr_gym_repeat {
+namespace pgs_gym_repeat {
 
 enum State : int {
     ST_IDLE = 0,    // no session armed
@@ -232,4 +232,4 @@ inline const char *end_reason_label(EndReason r) {
     }
 }
 
-} // namespace pgr_gym_repeat
+} // namespace pgs_gym_repeat

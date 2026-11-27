@@ -32,9 +32,9 @@ extern int pgs_hook(void*,void*,void**);
 #include <vector>
 
 // encounter_host.cpp: the shared caught-Pokemon transfer hand-off (adopts all four handles on 1).
-extern "C" int pgr_research_transfer_caught(uint64_t,uint64_t,uint64_t,uint64_t,uint64_t,uint64_t,int);
+extern "C" int pgs_research_transfer_caught(uint64_t,uint64_t,uint64_t,uint64_t,uint64_t,uint64_t,int);
 // auto_rocket.cpp (weak: a build without Auto Rocket has no session keeping its catches).
-extern "C" int pgr_auto_rocket_keeps_catches() __attribute__((weak));
+extern "C" int pgs_auto_rocket_keeps_catches() __attribute__((weak));
 
 // Auto-Raid runs on the proven Unity main thread. Java owns explicit session tokens,
 // settings and movement; this controller owns discovery, authorized local pass selection,
@@ -47,7 +47,7 @@ extern "C" int pgr_auto_rocket_keeps_catches() __attribute__((weak));
 
 namespace {
 
-using namespace pgr_shared_meta;
+using namespace pgs_shared_meta;
 
 struct Failure {
     std::string where;
@@ -63,8 +63,8 @@ F fn(const void* p) {
     return reinterpret_cast<F>(const_cast<void*>(p));
 }
 
-PgrBootBinding boot{};
-const PgrSharedMetadataOutput* md = nullptr;
+PgsBootBinding boot{};
+const PgsSharedMetadataOutput* md = nullptr;
 uint64_t owner = 0;
 bool busy = false;
 bool boot_ready = false;
@@ -149,8 +149,8 @@ struct Root {
     explicit operator bool() const { return get() != nullptr; }
 };
 
-const PgrRuntimeTransportApi* transport() {
-    return static_cast<const PgrRuntimeTransportApi*>(pgs_runtime_transport_api(1));
+const PgsRuntimeTransportApi* transport() {
+    return static_cast<const PgsRuntimeTransportApi*>(pgs_runtime_transport_api(1));
 }
 
 std::string json_quote(const std::string& s) {
@@ -164,9 +164,9 @@ std::string json_quote(const std::string& s) {
 }
 
 void emit_raw_event(const std::string& json) {
-    const PgrRuntimeTransportApi* tr = transport();
+    const PgsRuntimeTransportApi* tr = transport();
     if (!tr || !tr->emit) return;
-    PgrRuntimeTransportString strs[2] = {
+    PgsRuntimeTransportString strs[2] = {
         {"auto-raid", 9},
         {json.c_str(), static_cast<uint32_t>(json.size())},
     };
@@ -184,15 +184,15 @@ struct TransportPermission {
     double latitude = 0.0;
     double longitude = 0.0;
     int64_t cooldown_ms = 0;
-    pgr_auto_raid::Command command{};
+    pgs_auto_raid::Command command{};
 };
 
 TransportPermission read_permission() {
     TransportPermission p{};
-    const PgrRuntimeTransportApi* tr = transport();
+    const PgsRuntimeTransportApi* tr = transport();
     if (!tr || !tr->sample || !tr->get_string || !tr->get_bool || !tr->get_double) return p;
 
-    PgrRuntimeTransportSample a{}, z{};
+    PgsRuntimeTransportSample a{}, z{};
     if (tr->sample(&a) != 0 || !a.snapshot_fresh || a.fault) return p;
 
     char raw[1280]{};
@@ -218,7 +218,7 @@ TransportPermission read_permission() {
     p.snapshot_coherent = true;
     p.foreground        = (active_flag == 1);
     p.item_access       = (ready_flag == 1);
-    p.has_coords        = (has_lat == 1 && has_lon == 1 && pgr_auto_raid::valid_coordinates(lat, lon));
+    p.has_coords        = (has_lat == 1 && has_lon == 1 && pgs_auto_raid::valid_coordinates(lat, lon));
     p.latitude          = lat;
     p.longitude         = lon;
 
@@ -227,7 +227,7 @@ TransportPermission read_permission() {
         return p;
     }
 
-    if (!pgr_auto_raid::parse_command(raw, raw_len, p.command)) {
+    if (!pgs_auto_raid::parse_command(raw, raw_len, p.command)) {
         return p;
     }
 
@@ -258,7 +258,7 @@ struct ActiveSession {
     bool active = false;
     bool stop_requested = false;
     RaidStage stage = RaidStage::Idle;
-    pgr_auto_raid::Command command{};
+    pgs_auto_raid::Command command{};
     int64_t cooldown_ms = 0;
     std::string account;
 
@@ -269,7 +269,7 @@ struct ActiveSession {
     double anchor_lon = 0.0;
 
     // Selected raid target
-    pgr_auto_raid::RaidCandidate target{};
+    pgs_auto_raid::RaidCandidate target{};
     std::string target_key;
     Root target_gym;
 
@@ -291,7 +291,7 @@ struct ActiveSession {
     bool berry_prepared = false;
 
     // Pass verification state
-    pgr_auto_raid::PassSelectionResult pass_decision{};
+    pgs_auto_raid::PassSelectionResult pass_decision{};
     int modal_cycle_attempts = 0;
     bool join_invoked = false;
 
@@ -336,14 +336,14 @@ struct ActiveSession {
         active = false;
         stop_requested = false;
         stage = RaidStage::Idle;
-        command = pgr_auto_raid::Command{};
+        command = pgs_auto_raid::Command{};
         cooldown_ms = 0;
         account.clear();
         has_anchor = returned_to_anchor = false;
         anchor_lat = anchor_lon = 0.0;
-        target = pgr_auto_raid::RaidCandidate{};
+        target = pgs_auto_raid::RaidCandidate{};
         target_key.clear();
-        pass_decision = pgr_auto_raid::PassSelectionResult{};
+        pass_decision = pgs_auto_raid::PassSelectionResult{};
         modal_cycle_attempts = 0;
         join_invoked = false;
         stage_started_ms = 0;
@@ -364,7 +364,7 @@ struct ActiveSession {
     }
 };
 
-pgr_auto_raid::SessionTracker tracker{};
+pgs_auto_raid::SessionTracker tracker{};
 ActiveSession session{};
 
 void emit_status(uint64_t token, const char* phase, const std::string& message, int completed) {
@@ -440,7 +440,7 @@ struct RuntimeAdapter {
     bool (*ensure_ready)() = nullptr;
     std::string (*read_account_id)() = nullptr;
     int64_t (*read_game_time_ms)() = nullptr;
-    void (*scan_gyms)(std::vector<pgr_auto_raid::RaidCandidate>& out_candidates,
+    void (*scan_gyms)(std::vector<pgs_auto_raid::RaidCandidate>& out_candidates,
                       std::vector<Root>& out_gym_roots) = nullptr;
     bool (*is_gym_alive)(void* gym) = nullptr;
     void (*click_gym_poi)(void* gym) = nullptr;
@@ -449,12 +449,12 @@ struct RuntimeAdapter {
                                    bool raid_is_free,
                                    bool& out_ticket_used,
                                    bool& out_remote_used,
-                                   std::vector<pgr_auto_raid::EntryCostOption>& out_options) = nullptr;
+                                   std::vector<pgs_auto_raid::EntryCostOption>& out_options) = nullptr;
     void (*press_approach_join)(void* approach_ui) = nullptr;
     void (*exit_raid_or_gym)(void* approach_ui, void* raid_state, void* gym_root_state) = nullptr;
     bool (*inspect_ticket_modal)(void* approach_ui,
                                  Root& out_modal,
-                                 pgr_auto_raid::EntryCostOption& out_selected_cost,
+                                 pgs_auto_raid::EntryCostOption& out_selected_cost,
                                  bool& out_coin_flag) = nullptr;
     void (*cycle_modal_currency)(void* modal) = nullptr;
     void (*confirm_modal_ticket)(void* modal) = nullptr;
@@ -513,15 +513,15 @@ void* resolve_class_optional(const char* ns, const char* name) {
     auto it = cache.find(key);
     if (it != cache.end()) return it->second;
 
-    const auto* api = static_cast<const PgrMetaApi*>(pgs_runtime_metadata_api(1));
+    const auto* api = static_cast<const PgsMetaApi*>(pgs_runtime_metadata_api(1));
     require(api != nullptr, "metadata API unavailable");
-    PgrMetaClassQuery q{};
+    PgsMetaClassQuery q{};
     q.version = 1;
     q.size = sizeof(q);
     q.name_space = ns;
     q.name = name;
-    q.canonical_match = PGR_MD_MATCH_EXACT;
-    PgrMetaClassResult out{};
+    q.canonical_match = PGS_MD_MATCH_EXACT;
+    PgsMetaClassResult out{};
     if (api->resolve_class(&q, &out) != 0 || !out.klass) {
         return nullptr;
     }
@@ -821,7 +821,7 @@ void transition_stage(RaidStage next_stage, int64_t now_ms, const char* phase = 
 void handle_raid_completion(bool caught_shiny, const std::string& summary_msg, int64_t now_ms) {
     const auto cont = tracker.record_completion(session.command, session.target_key, caught_shiny);
     session.release_roots();
-    session.target = pgr_auto_raid::RaidCandidate{};
+    session.target = pgs_auto_raid::RaidCandidate{};
     session.target_key.clear();
     session.join_invoked = false;
     session.resolve_confirmed = false;
@@ -829,11 +829,11 @@ void handle_raid_completion(bool caught_shiny, const std::string& summary_msg, i
     session.throws_made = 0;
     session.uncertain_action = false;
 
-    if (cont == pgr_auto_raid::SessionContinuation::DoneShinyCaught) {
+    if (cont == pgs_auto_raid::SessionContinuation::DoneShinyCaught) {
         finish_session("done", "Shiny raid boss caught; Auto-Raid complete");
         return;
     }
-    if (cont == pgr_auto_raid::SessionContinuation::DoneMaxRaids) {
+    if (cont == pgs_auto_raid::SessionContinuation::DoneMaxRaids) {
         finish_session("done", "Completed maximum configured raids (" +
                                    std::to_string(tracker.completed_raids) + ")");
         return;
@@ -866,7 +866,7 @@ void step_leave(const TransportPermission& perm, int64_t now_ms) {
     if (perm.item_access && adapter().map_ready()) {
         const std::string message = session.leave_message;
         session.release_roots();
-        session.target = pgr_auto_raid::RaidCandidate{};
+        session.target = pgs_auto_raid::RaidCandidate{};
         session.target_key.clear();
         if (session.stop_requested) {
             finish_session("stopped", "Auto-Raid stopped by user");
@@ -885,7 +885,7 @@ void step_leave(const TransportPermission& perm, int64_t now_ms) {
 
 void handle_raid_loss(const std::string& reason, int64_t now_ms) {
     const auto cont = tracker.record_loss(session.target_key, now_ms);
-    if (cont == pgr_auto_raid::SessionContinuation::StopConsecutiveLosses) {
+    if (cont == pgs_auto_raid::SessionContinuation::StopConsecutiveLosses) {
         adapter().exit_raid_or_gym(session.approach_ui.get(), session.raid_state.get(), session.gym_root_state.get());
         finish_session("error", "Stopped after 2 consecutive raid losses (" + reason + ")");
         return;
@@ -894,7 +894,7 @@ void handle_raid_loss(const std::string& reason, int64_t now_ms) {
 }
 
 void quarantine_and_rescan(const std::string& reason, int64_t now_ms,
-                           int64_t retry_ms = pgr_auto_raid::SessionTracker::kDefaultQuarantineMs) {
+                           int64_t retry_ms = pgs_auto_raid::SessionTracker::kDefaultQuarantineMs) {
     tracker.quarantine_raid(session.target_key, now_ms, retry_ms);
     begin_leave(reason, now_ms);
 }
@@ -929,22 +929,22 @@ void step_scan(const TransportPermission& perm, int64_t now_ms) {
         session.anchor_lon = perm.longitude;
     }
 
-    std::vector<pgr_auto_raid::RaidCandidate> candidates;
+    std::vector<pgs_auto_raid::RaidCandidate> candidates;
     std::vector<Root> gym_roots;
     adapter().scan_gyms(candidates, gym_roots);
 
     const int64_t game_now_ms = adapter().read_game_time_ms();
     double dist_m = 0.0;
     size_t beyond = 0;
-    const int idx = pgr_auto_raid::select_nearest_raid(
+    const int idx = pgs_auto_raid::select_nearest_raid(
         candidates, session.command, tracker, perm.latitude, perm.longitude, game_now_ms, &dist_m,
-        pgr_auto_raid::kDefaultMinRemainingRaidMs, now_ms, session.anchor_lat, session.anchor_lon, &beyond);
+        pgs_auto_raid::kDefaultMinRemainingRaidMs, now_ms, session.anchor_lat, session.anchor_lon, &beyond);
 
     if (idx < 0 || static_cast<size_t>(idx) >= candidates.size()) {
         // The game only loads gyms around the player, so look again from the start point once
         // before waiting for a new raid inside the limit.
         if (session.command.radius_m > 0 && !session.returned_to_anchor &&
-            pgr_auto_raid::haversine_meters(perm.latitude, perm.longitude, session.anchor_lat, session.anchor_lon) > kAnchorReturnM) {
+            pgs_auto_raid::haversine_meters(perm.latitude, perm.longitude, session.anchor_lat, session.anchor_lon) > kAnchorReturnM) {
             session.returned_to_anchor = true;
             session.stage_started_ms = now_ms;
             emit_travel(session.command.token, ++tracker.travel_seq, session.anchor_lat, session.anchor_lon,
@@ -955,7 +955,7 @@ void step_scan(const TransportPermission& perm, int64_t now_ms) {
             size_t active=0, eggs=0, complete=0, eligible=0;
             for(const auto& c:candidates){
                 active+=c.is_raid_boss_active;eggs+=c.is_raid_egg_active;complete+=c.is_complete;
-                eligible+=pgr_auto_raid::is_raid_candidate_eligible(c,session.command,game_now_ms);
+                eligible+=pgs_auto_raid::is_raid_candidate_eligible(c,session.command,game_now_ms);
             }
             const std::string message="Scanning: "+std::to_string(candidates.size())+" gyms, "+
                         std::to_string(active)+" active raids, "+std::to_string(eggs)+" eggs, "+
@@ -980,7 +980,7 @@ void step_scan(const TransportPermission& perm, int64_t now_ms) {
 
     session.returned_to_anchor = false;
     session.target = candidates[static_cast<size_t>(idx)];
-    session.target_key = pgr_auto_raid::make_raid_key(session.target.fort_id, session.target.raid_seed);
+    session.target_key = pgs_auto_raid::make_raid_key(session.target.fort_id, session.target.raid_seed);
     if (static_cast<size_t>(idx) < gym_roots.size()) {
         session.target_gym = std::move(gym_roots[static_cast<size_t>(idx)]);
     }
@@ -1013,9 +1013,9 @@ void step_travel(const TransportPermission& perm, int64_t now_ms) {
         return;
     }
 
-    const double dist_m = pgr_auto_raid::haversine_meters(
+    const double dist_m = pgs_auto_raid::haversine_meters(
         perm.latitude, perm.longitude, session.target.latitude, session.target.longitude);
-    if (dist_m > pgr_auto_raid::kLocalGymInteractionRangeM) {
+    if (dist_m > pgs_auto_raid::kLocalGymInteractionRangeM) {
         maybe_emit_heartbeat(now_ms);
         return;
     }
@@ -1035,7 +1035,7 @@ void step_travel(const TransportPermission& perm, int64_t now_ms) {
 
     // Re-verify raid has not expired while traveling/cooling down.
     const int64_t game_now_ms = adapter().read_game_time_ms();
-    if (!pgr_auto_raid::is_raid_candidate_eligible(session.target, session.command, game_now_ms, 15000)) {
+    if (!pgs_auto_raid::is_raid_candidate_eligible(session.target, session.command, game_now_ms, 15000)) {
         quarantine_and_rescan("Target raid expired before entry; scanning for next raid", now_ms);
         return;
     }
@@ -1096,36 +1096,36 @@ void step_verify_pass(int64_t now_ms) {
 
     bool ticket_used = false;
     bool remote_used = false;
-    std::vector<pgr_auto_raid::EntryCostOption> options;
+    std::vector<pgs_auto_raid::EntryCostOption> options;
     if (!adapter().inspect_approach_costs(
             session.approach_ui.get(), session.target.is_free, ticket_used, remote_used, options)) {
         maybe_emit_heartbeat(now_ms);
         return;
     }
 
-    session.pass_decision = pgr_auto_raid::evaluate_pass_selection(
+    session.pass_decision = pgs_auto_raid::evaluate_pass_selection(
         session.command, ticket_used, remote_used, session.target.is_free, options);
 
     switch (session.pass_decision.status) {
-        case pgr_auto_raid::PassDecisionStatus::RejoinAlreadyPaid:
+        case pgs_auto_raid::PassDecisionStatus::RejoinAlreadyPaid:
             session.join_invoked = true;
             adapter().press_approach_join(session.approach_ui.get());
             session.lobby_entered_ms = now_ms;
             transition_stage(RaidStage::Lobby, now_ms, "lobby", "Rejoining paid local raid lobby");
             return;
 
-        case pgr_auto_raid::PassDecisionStatus::SelectFreePass:
-        case pgr_auto_raid::PassDecisionStatus::SelectPremiumPass:
+        case pgs_auto_raid::PassDecisionStatus::SelectFreePass:
+        case pgs_auto_raid::PassDecisionStatus::SelectPremiumPass:
             session.join_invoked = true;
             session.modal_cycle_attempts = 0;
             adapter().press_approach_join(session.approach_ui.get());
             transition_stage(RaidStage::ConfirmModalPass, now_ms, "approaching",
-                             session.pass_decision.status == pgr_auto_raid::PassDecisionStatus::SelectFreePass
+                             session.pass_decision.status == pgs_auto_raid::PassDecisionStatus::SelectFreePass
                                  ? "Selecting Free Daily Raid Pass"
                                  : "Selecting Premium Battle Pass");
             return;
 
-        case pgr_auto_raid::PassDecisionStatus::NoAllowedPassAvailable:
+        case pgs_auto_raid::PassDecisionStatus::NoAllowedPassAvailable:
             // A gym opened without a daily pass awards one a moment after its raid screen opens
             // ("You received a free raid pass!"), so look again briefly before giving up.
             if (session.command.free_pass && now_ms - session.stage_started_ms < kPassAwardWaitMs) {
@@ -1141,17 +1141,17 @@ void step_verify_pass(int64_t now_ms) {
             finish_session("stopped", "Out of allowed raid passes; Auto-Raid finished");
             return;
 
-        case pgr_auto_raid::PassDecisionStatus::ForbiddenRemotePass:
+        case pgs_auto_raid::PassDecisionStatus::ForbiddenRemotePass:
             adapter().exit_raid_or_gym(session.approach_ui.get(), session.raid_state.get(), session.gym_root_state.get());
             finish_session("error", "Refused raid entry: Remote Raid Pass is forbidden");
             return;
 
-        case pgr_auto_raid::PassDecisionStatus::ForbiddenShopPurchase:
+        case pgs_auto_raid::PassDecisionStatus::ForbiddenShopPurchase:
             adapter().exit_raid_or_gym(session.approach_ui.get(), session.raid_state.get(), session.gym_root_state.get());
             finish_session("error", "Refused raid entry: shop/coin pass purchase is forbidden");
             return;
 
-        case pgr_auto_raid::PassDecisionStatus::UnsupportedOrAmbiguous:
+        case pgs_auto_raid::PassDecisionStatus::UnsupportedOrAmbiguous:
         default:
             adapter().exit_raid_or_gym(session.approach_ui.get(), session.raid_state.get(), session.gym_root_state.get());
             finish_session("error", "Refused raid entry: unsupported or ambiguous raid entry cost");
@@ -1189,7 +1189,7 @@ void step_confirm_modal_pass(int64_t now_ms) {
     }
     session.last_step_ms = now_ms;
 
-    pgr_auto_raid::EntryCostOption modal_cost{};
+    pgs_auto_raid::EntryCostOption modal_cost{};
     bool coin_flag = false;
     if (!adapter().inspect_ticket_modal(
             session.approach_ui.get(), session.ticket_modal, modal_cost, coin_flag)) {
@@ -1197,7 +1197,7 @@ void step_confirm_modal_pass(int64_t now_ms) {
         return;
     }
 
-    if (pgr_auto_raid::verify_modal_selected_cost(
+    if (pgs_auto_raid::verify_modal_selected_cost(
             session.command,
             session.pass_decision.expected_cost_kind,
             modal_cost,
@@ -1243,7 +1243,7 @@ void step_lobby(int64_t now_ms) {
 
     const int64_t lobby_elapsed_ms = std::max<int64_t>(0, now_ms - session.lobby_entered_ms);
     require(current_players>=0&&current_players<=100,"Raid lobby player count invalid");
-    const auto dec = pgr_auto_raid::evaluate_lobby_decision(
+    const auto dec = pgs_auto_raid::evaluate_lobby_decision(
         session.command,
         session.stop_requested,
         battle_started,
@@ -1253,18 +1253,18 @@ void step_lobby(int64_t now_ms) {
         countdown_ms);
 
     switch (dec) {
-        case pgr_auto_raid::LobbyDecision::EnterBattle:
+        case pgs_auto_raid::LobbyDecision::EnterBattle:
             session.uncertain_action = false;
             transition_stage(RaidStage::Battle, now_ms, "battle", "Raid battle started");
             return;
 
-        case pgr_auto_raid::LobbyDecision::LeaveStopRequested:
+        case pgs_auto_raid::LobbyDecision::LeaveStopRequested:
             adapter().leave_lobby(session.lobby_ui.get(), session.raid_state.get());
             adapter().exit_raid_or_gym(session.approach_ui.get(), session.raid_state.get(), session.gym_root_state.get());
             finish_session("stopped", "Left raid lobby before battle start");
             return;
 
-        case pgr_auto_raid::LobbyDecision::LeaveUnderMin: {
+        case pgs_auto_raid::LobbyDecision::LeaveUnderMin: {
             adapter().leave_lobby(session.lobby_ui.get(), session.raid_state.get());
             tracker.quarantine_raid(session.target_key, now_ms, kUnderMinRetryMs);
             begin_leave(
@@ -1275,8 +1275,8 @@ void step_lobby(int64_t now_ms) {
             return;
         }
 
-        case pgr_auto_raid::LobbyDecision::WaitForPlayers:
-        case pgr_auto_raid::LobbyDecision::StayReady:
+        case pgs_auto_raid::LobbyDecision::WaitForPlayers:
+        case pgs_auto_raid::LobbyDecision::StayReady:
         default:
             if (now_ms - session.last_heartbeat_ms >= kHeartbeatIntervalMs) {
                 emit_status(session.command.token, "lobby",
@@ -1291,7 +1291,7 @@ void step_lobby(int64_t now_ms) {
 void step_resolve(int64_t now_ms);
 
 void step_battle(int64_t now_ms) {
-    int battle_status = pgr_auto_raid::BATTLE_STATUS_ACTIVE;
+    int battle_status = pgs_auto_raid::BATTLE_STATUS_ACTIVE;
     bool advanced = false;
     if (adapter().poll_resolve_state(session.resolve_ui, battle_status, advanced)) {
         transition_stage(RaidStage::Resolve, now_ms, "rewards", "Raid battle finished; resolving outcome");
@@ -1334,16 +1334,16 @@ void step_resolve(int64_t now_ms) {
     }
     session.last_step_ms = now_ms;
 
-    int battle_status = pgr_auto_raid::BATTLE_STATUS_UNSET;
+    int battle_status = pgs_auto_raid::BATTLE_STATUS_UNSET;
     bool advanced = false;
     if (!adapter().poll_resolve_state(session.resolve_ui, battle_status, advanced)) {
         maybe_emit_heartbeat(now_ms);
         return;
     }
 
-    if (battle_status == pgr_auto_raid::BATTLE_STATUS_DEFEAT ||
-        battle_status == pgr_auto_raid::BATTLE_STATUS_TIMED_OUT) {
-        handle_raid_loss(battle_status == pgr_auto_raid::BATTLE_STATUS_TIMED_OUT ? "timed out" : "defeat",
+    if (battle_status == pgs_auto_raid::BATTLE_STATUS_DEFEAT ||
+        battle_status == pgs_auto_raid::BATTLE_STATUS_TIMED_OUT) {
+        handle_raid_loss(battle_status == pgs_auto_raid::BATTLE_STATUS_TIMED_OUT ? "timed out" : "defeat",
                          now_ms);
         return;
     }
@@ -1378,7 +1378,7 @@ void step_encounter(uint64_t tid, int64_t now_ms) {
     if (session.berry_promise) {
         int result = BerryRefused;
         const int rc = adapter().poll_berry_promise(session.berry_promise.get(), tid, result);
-        if (rc == PGR_VR_PENDING) {
+        if (rc == PGS_VR_PENDING) {
             if (now_ms - session.promise_started_ms >= kPromiseTimeoutMs)
                 finish_session("error", "Berry request timed out; check the encounter (not retried)");
             else maybe_emit_heartbeat(now_ms);
@@ -1386,7 +1386,7 @@ void step_encounter(uint64_t tid, int64_t now_ms) {
         }
         session.berry_promise.reset();
         session.uncertain_action = false;
-        if (rc != PGR_VR_DONE || result == BerryRefused) {
+        if (rc != PGS_VR_DONE || result == BerryRefused) {
             finish_session("error", "Berry request failed; check the encounter (not retried)");
             return;
         }
@@ -1403,7 +1403,7 @@ void step_encounter(uint64_t tid, int64_t now_ms) {
     if (session.pending_promise) {
         int catch_status = 0;
         const int rc = adapter().poll_catch_promise(session.pending_promise.get(), tid, catch_status);
-        if (rc == PGR_VR_PENDING) {
+        if (rc == PGS_VR_PENDING) {
             if (now_ms - session.promise_started_ms >= kPromiseTimeoutMs) {
                 session.pending_promise.reset();
                 session.uncertain_action = false;
@@ -1417,7 +1417,7 @@ void step_encounter(uint64_t tid, int64_t now_ms) {
         session.uncertain_action = false;
         session.last_step_ms = now_ms;
 
-        if (rc != PGR_VR_DONE) {
+        if (rc != PGS_VR_DONE) {
             finish_session("error", "Catch request failed; check the game before restarting (not retried)");
             return;
         }
@@ -1477,7 +1477,7 @@ void step_encounter(uint64_t tid, int64_t now_ms) {
             return;
         }
         session.berry_wait_started_ms = 0;
-        const int item = stock.active ? 0 : pgr_auto_raid::select_raid_berry(session.command.berry_mode,
+        const int item = stock.active ? 0 : pgs_auto_raid::select_raid_berry(session.command.berry_mode,
             (session.berry_unavailable & 1u) ? 0 : stock.razz,
             (session.berry_unavailable & 2u) ? 0 : stock.golden);
         emit_raw_event("{\"token\":"+json_quote(std::to_string(session.command.token))+
@@ -1612,7 +1612,7 @@ bool step_controller(uint64_t tid) {
 
 } // namespace
 
-bool pgr_auto_raid_tick(uint64_t tid, const PgrSharedMetadataOutput* metadata) {
+bool pgs_auto_raid_tick(uint64_t tid, const PgsSharedMetadataOutput* metadata) {
     if (busy || tid == 0 || tid != static_cast<uint64_t>(gettid()) || (owner != 0 && owner != tid)) {
         return session.active;
     }
@@ -1647,7 +1647,7 @@ bool pgr_auto_raid_tick(uint64_t tid, const PgrSharedMetadataOutput* metadata) {
     }
 }
 
-void pgr_auto_raid_stop(uint64_t tid) {
+void pgs_auto_raid_stop(uint64_t tid) {
     if (tid == 0 || (owner != 0 && owner != tid) || tid != static_cast<uint64_t>(gettid())) {
         return;
     }
@@ -1663,13 +1663,13 @@ void pgr_auto_raid_stop(uint64_t tid) {
 }
 
 
-void pgr_auto_throw_tick(uint64_t tid,const PgrSharedMetadataOutput* metadata,bool raid_owns_game) {
+void pgs_auto_throw_tick(uint64_t tid,const PgsSharedMetadataOutput* metadata,bool raid_owns_game) {
     if(busy||!tid||tid!=static_cast<uint64_t>(gettid())||(owner&&owner!=tid))return;
     struct Guard {Guard(){busy=true;}~Guard(){busy=false;}} guard;
     owner=tid;md=metadata;
     try {
         if(!boot_ready){
-            const auto* api=static_cast<const PgrBootApi*>(pgs_runtime_bootstrap_api(1));
+            const auto* api=static_cast<const PgsBootApi*>(pgs_runtime_bootstrap_api(1));
             boot.version=1;boot.size=sizeof(boot);
             if(!md||!api||api->snapshot(&boot)!=0)return;
             boot_ready=true;
@@ -1678,39 +1678,39 @@ void pgr_auto_throw_tick(uint64_t tid,const PgrSharedMetadataOutput* metadata,bo
     } catch(const Failure& f){throw_block(f.where);}
     catch(...){throw_block("Unexpected native failure; no automatic retry");}
 }
-void pgr_auto_throw_enter(void* interaction) {
+void pgs_auto_throw_enter(void* interaction) {
     if(!boot_ready||!interaction||owner!=static_cast<uint64_t>(gettid()))return;
     if(manual_throw.interaction.get()==interaction)return;
     ++manual_throw_generation;manual_throw=ManualThrowSession{};
     manual_throw.interaction=Root(interaction);manual_throw.next_ms=clock_ms()+1200;
 }
-void pgr_auto_throw_exit(void* interaction) {
+void pgs_auto_throw_exit(void* interaction) {
     if(!boot_ready||owner!=static_cast<uint64_t>(gettid()))return;
     if(manual_throw.interaction.get()==interaction){++manual_throw_generation;manual_throw=ManualThrowSession{};}
 }
-void pgr_auto_throw_stop() {
+void pgs_auto_throw_stop() {
     if(owner&&owner==static_cast<uint64_t>(gettid())){++manual_throw_generation;manual_throw=ManualThrowSession{};}
 }
-bool pgr_auto_throw_pending() {return manual_throw.uncertain&&!manual_throw.blocked;}
+bool pgs_auto_throw_pending() {return manual_throw.uncertain&&!manual_throw.blocked;}
 // catch_observers.cpp: a Max Battle catch thrown by hand, confirmed caught; handed to the transfer rules
 // on the next Auto throw tick, like Auto throw's own Max catches.
-extern "C" void pgr_queue_caught_transfer(void* response) {
+extern "C" void pgs_queue_caught_transfer(void* response) {
     if(!boot_ready||!response||owner!=static_cast<uint64_t>(gettid()))return;
     try{if(queue_caught_transfer(response,clock_ms()))throw_event("transfer","Max Battle catch queued for the transfer rules");}
     catch(...){}
 }
 
-void pgr_map_auto_throw_tick(uint64_t tid,const PgrSharedMetadataOutput* metadata,bool blocked) {
+void pgs_map_auto_throw_tick(uint64_t tid,const PgsSharedMetadataOutput* metadata,bool blocked) {
     if(!tid||tid!=uint64_t(gettid())||(owner&&owner!=tid)||busy)return;
     owner=tid;md=metadata;map_gate=!blocked;
     struct Guard{Guard(){busy=true;}~Guard(){busy=false;}} guard;
     try{
-        if(!boot_ready){auto api=static_cast<const PgrBootApi*>(pgs_runtime_bootstrap_api(1));boot.version=1;boot.size=sizeof(boot);if(!api||api->snapshot(&boot)!=0)return;boot_ready=true;}
+        if(!boot_ready){auto api=static_cast<const PgsBootApi*>(pgs_runtime_bootstrap_api(1));boot.version=1;boot.size=sizeof(boot);if(!api||api->snapshot(&boot)!=0)return;boot_ready=true;}
         if(map_mode_on(map_permission()))map_install_hook();
         step_map_auto_throw(tid,blocked||!map_command_free(),map_vgp_busy());
     }catch(const Failure& f){map_block(f.where);}catch(...){map_block("Unexpected native failure; not retried");}
 }
-bool pgr_map_auto_throw_active(){return map_tap_active();}
+bool pgs_map_auto_throw_active(){return map_tap_active();}
 // After the catch the target is gone; the marker is hidden while the transfer hand-off finishes.
-void* pgr_map_auto_throw_target(){return owner==uint64_t(gettid())&&map_tap_active()&&map_tap.phase!=MapTapTransfer?map_tap.target.get():nullptr;}
-void pgr_map_auto_throw_stop(){if(owner==uint64_t(gettid())){map_gate=false;if(map_tap.target)map_block("Runtime stopped; no retry");}}
+void* pgs_map_auto_throw_target(){return owner==uint64_t(gettid())&&map_tap_active()&&map_tap.phase!=MapTapTransfer?map_tap.target.get():nullptr;}
+void pgs_map_auto_throw_stop(){if(owner==uint64_t(gettid())){map_gate=false;if(map_tap.target)map_block("Runtime stopped; no retry");}}

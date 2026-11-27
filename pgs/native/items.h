@@ -50,56 +50,43 @@ static_assert(sizeof(void *) == 8, "items native ABI requires LP64");
 
 // Table + config + rules + sample ABI version. The getter answers an exact match only.
 #define PGS_ITEMS_API_VERSION 1u
-#define PGRAZOR_ITEMS_API_VERSION PGS_ITEMS_API_VERSION
 
 // Bounds (fail closed on overflow). Mirror the JS limits exactly where they exist.
 #define PGS_ITEMS_MAX_LIST     2048u   // JS: count<0||count>2048 throws
-#define PGRAZOR_ITEMS_MAX_LIST PGS_ITEMS_MAX_LIST
 #define PGS_ITEMS_MAX_ROWS     1024u   // distinct catalog rows retained (display only)
-#define PGRAZOR_ITEMS_MAX_ROWS PGS_ITEMS_MAX_ROWS
 #define PGS_ITEMS_MAX_RULES    512u    // user cap entries accepted per snapshot
-#define PGRAZOR_ITEMS_MAX_RULES PGS_ITEMS_MAX_RULES
 #define PGS_ITEMS_MAX_BLOCKED  512u    // ids paused until a settings/generation change (definite rejections)
-#define PGRAZOR_ITEMS_MAX_BLOCKED PGS_ITEMS_MAX_BLOCKED
 #define PGS_ITEMS_MAX_QUAR     512u    // ids permanently quarantined after an UNCERTAIN outcome
-#define PGRAZOR_ITEMS_MAX_QUAR PGS_ITEMS_MAX_QUAR
 #define PGS_ITEMS_MAX_QTY      100000  // JS: quantity>100000 skipped / current>100000 abort
-#define PGRAZOR_ITEMS_MAX_QTY PGS_ITEMS_MAX_QTY
 #define PGS_ITEMS_MAX_EVENTS   64u     // bounded request/confirm/error queue; overflow fails closed
-#define PGRAZOR_ITEMS_MAX_EVENTS PGS_ITEMS_MAX_EVENTS
 
 // Timers, milliseconds (CLOCK_BOOTTIME). Mirror the JS now+3000 / now+15000 / now+1000.
 #define PGS_ITEMS_POLL_MS      3000u   // catalog re-poll cadence
-#define PGRAZOR_ITEMS_POLL_MS PGS_ITEMS_POLL_MS
 #define PGS_ITEMS_BACKOFF_MS   15000u  // error / timeout / manual-interference back-off
-#define PGRAZOR_ITEMS_BACKOFF_MS PGS_ITEMS_BACKOFF_MS
 #define PGS_ITEMS_CONFIRM_MS   15000u  // recycle confirmation deadline (now+15000)
-#define PGRAZOR_ITEMS_CONFIRM_MS PGS_ITEMS_CONFIRM_MS
 #define PGS_ITEMS_SETTLE_MS    1000u   // next poll after a confirmed/failed result (now+1000)
-#define PGRAZOR_ITEMS_SETTLE_MS PGS_ITEMS_SETTLE_MS
 #define PGS_ITEMS_MAX_LEASE_MS 2500u   // per-tick authorization lease cap (residual)
-#define PGRAZOR_ITEMS_MAX_LEASE_MS PGS_ITEMS_MAX_LEASE_MS
 
 // Status codes returned by every table function. 0 == success.
 enum {
-    PGR_ITEMS_OK               = 0,
-    PGR_ITEMS_ERR_NULL_ARG     = 1,  /* required pointer argument was null */
-    PGR_ITEMS_ERR_BAD_CONFIG   = 2,  /* header/size/pointer/literal invalid */
-    PGR_ITEMS_ERR_ALREADY_BOUND= 3,  /* install() repeated with a different config */
-    PGR_ITEMS_ERR_DUP_HOOK     = 4,  /* two hook addresses collide */
-    PGR_ITEMS_ERR_HOOK         = 5,  /* Dobby could not hook/publish one of the five sites */
-    PGR_ITEMS_ERR_NOT_INSTALLED= 6,  /* operation needs a successful install() */
-    PGR_ITEMS_ERR_NO_CLOCK     = 7,  /* CLOCK_BOOTTIME was unavailable at install */
-    PGR_ITEMS_ERR_BAD_RULES    = 8   /* rules snapshot header/size/count invalid */
+    PGS_ITEMS_OK               = 0,
+    PGS_ITEMS_ERR_NULL_ARG     = 1,  /* required pointer argument was null */
+    PGS_ITEMS_ERR_BAD_CONFIG   = 2,  /* header/size/pointer/literal invalid */
+    PGS_ITEMS_ERR_ALREADY_BOUND= 3,  /* install() repeated with a different config */
+    PGS_ITEMS_ERR_DUP_HOOK     = 4,  /* two hook addresses collide */
+    PGS_ITEMS_ERR_HOOK         = 5,  /* Dobby could not hook/publish one of the five sites */
+    PGS_ITEMS_ERR_NOT_INSTALLED= 6,  /* operation needs a successful install() */
+    PGS_ITEMS_ERR_NO_CLOCK     = 7,  /* CLOCK_BOOTTIME was unavailable at install */
+    PGS_ITEMS_ERR_BAD_RULES    = 8   /* rules snapshot header/size/count invalid */
 };
 
 // Error reason codes surfaced in sample.last_error_code (adapter -> exact JS strings).
 enum {
-    PGR_ITEMS_REASON_NONE    = 0,
-    PGR_ITEMS_REASON_TIMEOUT = 1,  /* "Timed out; item paused until app restart" */
-    PGR_ITEMS_REASON_REJECTED= 2,  /* "Game rejected recycling; item paused until settings change" */
-    PGR_ITEMS_REASON_NATIVE  = 3,  /* generic orchestration fault (reason:native) */
-    PGR_ITEMS_REASON_LOOKUP  = 4   /* service/filter lookup failed (item-lookup-error) */
+    PGS_ITEMS_REASON_NONE    = 0,
+    PGS_ITEMS_REASON_TIMEOUT = 1,  /* "Timed out; item paused until app restart" */
+    PGS_ITEMS_REASON_REJECTED= 2,  /* "Game rejected recycling; item paused until settings change" */
+    PGS_ITEMS_REASON_NATIVE  = 3,  /* generic orchestration fault (reason:native) */
+    PGS_ITEMS_REASON_LOOKUP  = 4   /* service/filter lookup failed (item-lookup-error) */
 };
 
 // One published catalog row (POD; read back through catalog()).
@@ -107,32 +94,29 @@ typedef struct pgs_item_row {
     int32_t id;     /* Holoholo.Rpc.Item enum value (>0) */
     int32_t count;  /* current quantity (0..PGS_ITEMS_MAX_QTY) */
 } pgs_item_row;
-typedef pgs_item_row pgrazor_item_row;
 
 // Event kinds carried by the bounded request/confirm/error queue (drain()). Each event owns its
 // own id/amount so asynchronous records can never be misattributed by a shared "last_*" field.
 enum {
-    PGR_ITEMS_EV_REQUEST = 1,  /* item-transfer-requested: aux == kept cap */
-    PGR_ITEMS_EV_CONFIRM = 2,  /* item-transfer-confirmed: aux == 0 */
-    PGR_ITEMS_EV_ERROR   = 3   /* item-transfer-error / item-lookup-error: aux == PGR_ITEMS_REASON_* */
+    PGS_ITEMS_EV_REQUEST = 1,  /* item-transfer-requested: aux == kept cap */
+    PGS_ITEMS_EV_CONFIRM = 2,  /* item-transfer-confirmed: aux == 0 */
+    PGS_ITEMS_EV_ERROR   = 3   /* item-transfer-error / item-lookup-error: aux == PGS_ITEMS_REASON_* */
 };
 
 // One queued telemetry event (POD; FIFO; drained and consumed by drain()). The adapter maps each
 // to the exact JS item-* event in order. A reused id never shares another event's amount.
 typedef struct pgs_item_event {
-    uint32_t kind;    /* PGR_ITEMS_EV_* */
+    uint32_t kind;    /* PGS_ITEMS_EV_* */
     int32_t  id;      /* item id for this event */
     int32_t  amount;  /* recycled amount for this event */
     int32_t  aux;     /* REQUEST: kept cap; ERROR: reason code; CONFIRM: 0 */
 } pgs_item_event;
-typedef pgs_item_event pgrazor_item_event;
 
 // One user cap rule (POD; packed into the rules snapshot by the adapter).
 typedef struct pgs_item_cap {
     int32_t id;     /* item id */
     int32_t cap;    /* keep-at-most quantity; auto-recycle the surplus */
 } pgs_item_cap;
-typedef pgs_item_cap pgrazor_item_cap;
 
 // Per-tick rules snapshot (immutable config stays separate). The adapter rebuilds this from
 // s.itemRules / s.itemEnabled / s.itemEpoch and bumps generation whenever the serialized
@@ -147,7 +131,6 @@ typedef struct pgs_items_rules_v1 {
     uint64_t epoch;                /* s.itemEpoch (recorded in pending; vestigial, kept for parity) */
     pgs_item_cap entries[PGS_ITEMS_MAX_RULES];
 } pgs_items_rules_v1;
-typedef pgs_items_rules_v1 pgrazor_items_rules_v1;
 
 // Install-time configuration, packed by the JS adapter after its metadata validation. Fixed
 // LP64 layout (8-byte fields; see the static_asserts in items.cpp). has_lookup gates the
@@ -238,7 +221,6 @@ typedef struct pgs_items_config_v1 {
     int32_t success;               /* IResponse.Result == Success literal */
     int32_t reserved1;             /* 0; keeps the config 8-byte aligned (size 432) */
 } pgs_items_config_v1;
-typedef pgs_items_config_v1 pgrazor_items_config_v1;
 
 // Pull-only telemetry snapshot (56 bytes). The two *_serial fields are edge-triggered (the
 // adapter re-emits bag-ready / catalog on a transition). Per-event request/confirm/error data is
@@ -260,7 +242,6 @@ typedef struct pgs_items_sample_v1 {
     uint32_t catalog_count;        /* current number of catalog rows */
     uint32_t reserved;             /* 0 */
 } pgs_items_sample_v1;
-typedef pgs_items_sample_v1 pgrazor_items_sample_v1;
 
 /*
  * install(config): validate and publish the immutable config once for the process lifetime,
@@ -270,7 +251,6 @@ typedef pgs_items_sample_v1 pgrazor_items_sample_v1;
  * a published trampoline). NO_CLOCK if CLOCK_BOOTTIME is unavailable. No managed call here.
  */
 typedef int (*pgs_items_install_fn)(const pgs_items_config_v1 *config);
-typedef pgs_items_install_fn pgrazor_items_install_fn;
 
 /*
  * tick(rules, force_poll, remaining_lease_ms, proven_tid): one orchestration pass. Runs ONLY
@@ -287,7 +267,6 @@ typedef pgs_items_install_fn pgrazor_items_install_fn;
  */
 typedef int (*pgs_items_tick_fn)(const pgs_items_rules_v1 *rules, uint32_t force_poll,
                                      uint64_t remaining_lease_ms, uint64_t proven_tid);
-typedef pgs_items_tick_fn pgrazor_items_tick_fn;
 
 /*
  * clear(proven_tid): Unity-thread-only teardown for stop/detach. RELEASES every durable GC root
@@ -298,18 +277,15 @@ typedef pgs_items_tick_fn pgrazor_items_tick_fn;
  * defers the free to the pass epilogue. Returns OK or NOT_INSTALLED.
  */
 typedef int (*pgs_items_clear_fn)(uint64_t proven_tid);
-typedef pgs_items_clear_fn pgrazor_items_clear_fn;
 
 /* sample(out): copy the latest telemetry snapshot. Safe from any thread; never frees. */
 typedef int (*pgs_items_sample_fn)(pgs_items_sample_v1 *out);
-typedef pgs_items_sample_fn pgrazor_items_sample_fn;
 
 /*
  * catalog(out, max, written): copy up to `max` catalog rows into `out`, writing the count into
  * *written. Safe from any thread; never frees. Returns OK, NOT_INSTALLED or NULL_ARG.
  */
 typedef int (*pgs_items_catalog_fn)(pgs_item_row *out, uint32_t max, uint32_t *written);
-typedef pgs_items_catalog_fn pgrazor_items_catalog_fn;
 
 /*
  * drain(out, max, written): copy up to `max` queued request/confirm/error events into `out` in
@@ -319,7 +295,6 @@ typedef pgs_items_catalog_fn pgrazor_items_catalog_fn;
  * Returns OK, NOT_INSTALLED or NULL_ARG.
  */
 typedef int (*pgs_items_drain_fn)(pgs_item_event *out, uint32_t max, uint32_t *written);
-typedef pgs_items_drain_fn pgrazor_items_drain_fn;
 
 /*
  * service_handle(): the current durable service GC handle (an il2cpp gchandle, pointer-sized) or
@@ -328,7 +303,6 @@ typedef pgs_items_drain_fn pgrazor_items_drain_fn;
  * clear(). Safe from any thread; never creates or frees a handle.
  */
 typedef void *(*pgs_items_service_handle_fn)(void);
-typedef pgs_items_service_handle_fn pgrazor_items_service_handle_fn;
 
 /*
  * service_acquire(): return a NEW, INDEPENDENTLY OWNED il2cpp gchandle rooting the current service
@@ -339,7 +313,6 @@ typedef pgs_items_service_handle_fn pgrazor_items_service_handle_fn;
  * from any other thread or before the Unity identity latches).
  */
 typedef void *(*pgs_items_service_acquire_fn)(void);
-typedef pgs_items_service_acquire_fn pgrazor_items_service_acquire_fn;
 
 // Ordered, read-only table advertised by the getter (72 bytes: header + 8 pointers).
 typedef struct pgs_items_api_v1 {
@@ -354,7 +327,6 @@ typedef struct pgs_items_api_v1 {
     pgs_items_drain_fn           drain;
     pgs_items_service_acquire_fn service_acquire;
 } pgs_items_api_v1;
-typedef pgs_items_api_v1 pgrazor_items_api_v1;
 
 /*
  * Hidden getter (NOT exported by the version script). The coordinator registers it in the core

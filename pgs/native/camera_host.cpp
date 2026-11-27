@@ -23,7 +23,7 @@
 
 namespace {
 
-using namespace pgr_camera_schema;
+using namespace pgs_camera_schema;
 
 typedef void *(*Il2CppDomainGetFn)(void);
 typedef void *(*Il2CppThreadCurrentFn)(void);
@@ -104,9 +104,9 @@ struct HostState {
   void *core_handle = nullptr;
 
   bool configured = false;
-  PgrCameraHostConfig cfg = {};
-  PgrMetaExports boot_meta_exports = {};
-  PgrCameraMetaExtra boot_meta_extra = {};
+  PgsCameraHostConfig cfg = {};
+  PgsMetaExports boot_meta_exports = {};
+  PgsCameraMetaExtra boot_meta_extra = {};
 
   bool active = false;
   bool ready = false;
@@ -143,13 +143,13 @@ struct HostState {
   uint32_t raw_matches = 0;
   uint32_t matches = 0;
   uint32_t threads_count = 0;
-  ThreadEntry threads[PGR_CH_THREADS_MAX] = {};
+  ThreadEntry threads[PGS_CH_THREADS_MAX] = {};
   uint64_t owner_tid = 0;
   uint64_t observed_generation = 0;
 
   uint32_t sample_count = 0;
   uint32_t sample_attempts = 0;
-  int32_t last_error = PGR_CH_OK;
+  int32_t last_error = PGS_CH_OK;
   char reason[64] = {};
   char sample_error[64] = {};
   FailureRecord sample_failure = {};
@@ -166,7 +166,7 @@ struct HostState {
   double last_clock_ms = 0.0;
   int32_t local_world_map_layer = -1;
 
-  PgrCameraMetaOutput meta = {};
+  PgsCameraMetaOutput meta = {};
   void *hooked_getter_target = nullptr;
   std::atomic<MainCameraGetterFn> orig_getter{nullptr};
   bool hook_poisoned = false;
@@ -175,12 +175,12 @@ struct HostState {
 
   SampleRecord latest_sample = {};
   UnavailableRecord pending_unavailable = {};
-  SampleRecord bounded_queue[PGR_CH_SAMPLES_MAX] = {};
+  SampleRecord bounded_queue[PGS_CH_SAMPLES_MAX] = {};
   uint32_t bounded_head = 0;
   uint32_t bounded_count = 0;
   char last_bounded_reading[160] = {};
 
-  PgrCameraHostEvent events[PGR_CH_EVENT_QUEUE_MAX] = {};
+  PgsCameraHostEvent events[PGS_CH_EVENT_QUEUE_MAX] = {};
   uint32_t event_head = 0;
   uint32_t event_count = 0;
 };
@@ -198,7 +198,7 @@ struct StateGuard {
 bool revoked(){return g_state.stopping||g_state.stop_requested.load(std::memory_order_acquire);}
 
 
-#if defined(PGR_CAMERA_HOST_STANDALONE_TEST)
+#if defined(PGS_CAMERA_HOST_STANDALONE_TEST)
 typedef int (*StandaloneHookFn)(void *target, void *replacement,
                                 void **original);
 typedef int (*StandaloneUnhookFn)(void *target);
@@ -230,72 +230,72 @@ const pgs_native_api_v2 *resolve_native_api() {
       return static_cast<const pgs_native_api_v2 *>(fn(2u));
     }
   }
-#if !defined(PGR_CAMERA_HOST_STANDALONE_TEST)
+#if !defined(PGS_CAMERA_HOST_STANDALONE_TEST)
   return static_cast<const pgs_native_api_v2 *>(pgs_native_api(2u));
 #else
   return nullptr;
 #endif
 }
 
-const PgrCameraMetaApi *resolve_metadata_api() {
-#if !defined(PGR_CAMERA_HOST_STANDALONE_TEST)
-  const void *direct = pgs_camera_metadata_api(PGR_CAM_API_VERSION);
-  if (direct != nullptr) return static_cast<const PgrCameraMetaApi *>(direct);
+const PgsCameraMetaApi *resolve_metadata_api() {
+#if !defined(PGS_CAMERA_HOST_STANDALONE_TEST)
+  const void *direct = pgs_camera_metadata_api(PGS_CAM_API_VERSION);
+  if (direct != nullptr) return static_cast<const PgsCameraMetaApi *>(direct);
 #endif
   const pgs_native_api_v2 *native = resolve_native_api();
   if (native != nullptr && native->query_feature != nullptr) {
-    return static_cast<const PgrCameraMetaApi *>(
-        native->query_feature(PGR_CAM_FEATURE_ID, PGR_CAM_API_VERSION));
+    return static_cast<const PgsCameraMetaApi *>(
+        native->query_feature(PGS_CAM_FEATURE_ID, PGS_CAM_API_VERSION));
   }
   return nullptr;
 }
 
-const PgrCameraSamplerApi *resolve_sampler_api() {
-#if !defined(PGR_CAMERA_HOST_STANDALONE_TEST)
-  const void *direct = pgs_camera_sampler_api(PGR_CS_API_VERSION);
+const PgsCameraSamplerApi *resolve_sampler_api() {
+#if !defined(PGS_CAMERA_HOST_STANDALONE_TEST)
+  const void *direct = pgs_camera_sampler_api(PGS_CS_API_VERSION);
   if (direct != nullptr) {
-    return static_cast<const PgrCameraSamplerApi *>(direct);
+    return static_cast<const PgsCameraSamplerApi *>(direct);
   }
 #endif
   const pgs_native_api_v2 *native = resolve_native_api();
   if (native != nullptr && native->query_feature != nullptr) {
-    return static_cast<const PgrCameraSamplerApi *>(
-        native->query_feature(PGR_CS_FEATURE_ID, PGR_CS_API_VERSION));
+    return static_cast<const PgsCameraSamplerApi *>(
+        native->query_feature(PGS_CS_FEATURE_ID, PGS_CS_API_VERSION));
   }
   return nullptr;
 }
 
-const PgrRuntimeTransportApi *resolve_transport_api() {
-#if !defined(PGR_CAMERA_HOST_STANDALONE_TEST)
+const PgsRuntimeTransportApi *resolve_transport_api() {
+#if !defined(PGS_CAMERA_HOST_STANDALONE_TEST)
   const void *direct =
-      pgs_runtime_transport_api(PGR_TRANSPORT_API_VERSION);
+      pgs_runtime_transport_api(PGS_TRANSPORT_API_VERSION);
   if (direct != nullptr) {
-    return static_cast<const PgrRuntimeTransportApi *>(direct);
+    return static_cast<const PgsRuntimeTransportApi *>(direct);
   }
 #endif
   const pgs_native_api_v2 *native = resolve_native_api();
   if (native != nullptr && native->query_feature != nullptr) {
-    return static_cast<const PgrRuntimeTransportApi *>(native->query_feature(
-        PGR_TRANSPORT_FEATURE_ID, PGR_TRANSPORT_API_VERSION));
+    return static_cast<const PgsRuntimeTransportApi *>(native->query_feature(
+        PGS_TRANSPORT_FEATURE_ID, PGS_TRANSPORT_API_VERSION));
   }
   return nullptr;
 }
 
-const PgrBootApi *resolve_bootstrap_api() {
-#if !defined(PGR_CAMERA_HOST_STANDALONE_TEST)
-  const void *direct = pgs_runtime_bootstrap_api(PGR_BOOT_API_VERSION);
-  if (direct != nullptr) return static_cast<const PgrBootApi *>(direct);
+const PgsBootApi *resolve_bootstrap_api() {
+#if !defined(PGS_CAMERA_HOST_STANDALONE_TEST)
+  const void *direct = pgs_runtime_bootstrap_api(PGS_BOOT_API_VERSION);
+  if (direct != nullptr) return static_cast<const PgsBootApi *>(direct);
 #endif
   const pgs_native_api_v2 *native = resolve_native_api();
   if (native != nullptr && native->query_feature != nullptr) {
-    return static_cast<const PgrBootApi *>(
-        native->query_feature(PGR_BOOT_FEATURE_ID, PGR_BOOT_API_VERSION));
+    return static_cast<const PgsBootApi *>(
+        native->query_feature(PGS_BOOT_FEATURE_ID, PGS_BOOT_API_VERSION));
   }
   return nullptr;
 }
 
 int call_hook(void *target, void *replacement, void **original) {
-#if !defined(PGR_CAMERA_HOST_STANDALONE_TEST)
+#if !defined(PGS_CAMERA_HOST_STANDALONE_TEST)
   return pgs_hook(target, replacement, original);
 #else
   if (g_standalone_hook != nullptr) {
@@ -303,7 +303,7 @@ int call_hook(void *target, void *replacement, void **original) {
   }
   if (g_state.core_handle != nullptr) {
     auto fn = reinterpret_cast<StandaloneHookFn>(
-        dlsym(g_state.core_handle, "pgrazor_hook"));
+        dlsym(g_state.core_handle, "pgs_hook"));
     if (fn != nullptr) return fn(target, replacement, original);
   }
   return -1;
@@ -393,8 +393,8 @@ double fallback_now_ms() {
 uint64_t remaining_lease_ms(double now) {
   if (!std::isfinite(now) || g_state.lease_until_ms <= now) return 0;
   double diff = g_state.lease_until_ms - now;
-  if (diff > static_cast<double>(PGR_CH_CONTINUOUS_LEASE_MS)) {
-    return PGR_CH_CONTINUOUS_LEASE_MS;
+  if (diff > static_cast<double>(PGS_CH_CONTINUOUS_LEASE_MS)) {
+    return PGS_CH_CONTINUOUS_LEASE_MS;
   }
   uint64_t ms = static_cast<uint64_t>(std::ceil(diff));
   return ms == 0 ? 1 : ms;
@@ -410,13 +410,13 @@ uint32_t total_active_depth() {
 
 const char *vector_fields_name(uint32_t code) {
   switch (code) {
-    case PGR_CAM_VF_EXPORTS_UNAVAILABLE:
+    case PGS_CAM_VF_EXPORTS_UNAVAILABLE:
       return "exports-unavailable";
-    case PGR_CAM_VF_CLASS_UNAVAILABLE:
+    case PGS_CAM_VF_CLASS_UNAVAILABLE:
       return "class-unavailable";
-    case PGR_CAM_VF_SIGNATURE_MISMATCH:
+    case PGS_CAM_VF_SIGNATURE_MISMATCH:
       return "signature-mismatch";
-    case PGR_CAM_VF_VERIFIED:
+    case PGS_CAM_VF_VERIFIED:
       return "verified";
     default:
       return "exports-unavailable";
@@ -477,35 +477,35 @@ void append_json_str(char *dst, size_t cap, size_t *pos, const char *s) {
 
 uint64_t remaining_lease_ms(double now);
 bool transport_current(){
- if(!(g_state.cfg.flags&PGR_CH_FLAG_USE_TRANSPORT))return true;
- const auto rt=resolve_transport_api();PgrRuntimeTransportSample sample{};
+ if(!(g_state.cfg.flags&PGS_CH_FLAG_USE_TRANSPORT))return true;
+ const auto rt=resolve_transport_api();PgsRuntimeTransportSample sample{};
  return rt&&rt->sample(&sample)==0&&sample.snapshot_fresh&&!sample.fault&&sample.snapshot_seq==g_state.transport_sequence&&sample.generation==g_state.transport_generation;
 }
-void transport_result(int rc){if(rc!=0){g_state.last_error=PGR_CH_ERR_INTERNAL;g_state.stop_requested.store(true,std::memory_order_release);g_state.lease_until_ms=0;}}
+void transport_result(int rc){if(rc!=0){g_state.last_error=PGS_CH_ERR_INTERNAL;g_state.stop_requested.store(true,std::memory_order_release);g_state.lease_until_ms=0;}}
 void emit_transport_string(uint32_t opcode, const char *s0) {
-  if ((g_state.cfg.flags & PGR_CH_FLAG_USE_TRANSPORT) == 0) return;
-  const PgrRuntimeTransportApi *rt = resolve_transport_api();
+  if ((g_state.cfg.flags & PGS_CH_FLAG_USE_TRANSPORT) == 0) return;
+  const PgsRuntimeTransportApi *rt = resolve_transport_api();
   if (!rt || !rt->emit) return;
   const char *txt = s0 ? s0 : "";
-  PgrRuntimeTransportString s = {txt, static_cast<uint32_t>(strlen(txt))};
+  PgsRuntimeTransportString s = {txt, static_cast<uint32_t>(strlen(txt))};
   transport_result(rt->emit(opcode, nullptr, 0, &s, 1));
 }
 
 void emit_transport_bool(uint32_t opcode, bool val) {
-  if ((g_state.cfg.flags & PGR_CH_FLAG_USE_TRANSPORT) == 0) return;
-  const PgrRuntimeTransportApi *rt = resolve_transport_api();
+  if ((g_state.cfg.flags & PGS_CH_FLAG_USE_TRANSPORT) == 0) return;
+  const PgsRuntimeTransportApi *rt = resolve_transport_api();
   if (!rt || !rt->emit) return;
   int64_t scalars[1] = {val ? 1 : 0};
   transport_result(rt->emit(opcode, scalars, 1, nullptr, 0));
 }
 
 void emit_transport_event(const char *channel, const char *json) {
-  if ((g_state.cfg.flags & PGR_CH_FLAG_USE_TRANSPORT) == 0) return;
-  const PgrRuntimeTransportApi *rt = resolve_transport_api();
+  if ((g_state.cfg.flags & PGS_CH_FLAG_USE_TRANSPORT) == 0) return;
+  const PgsRuntimeTransportApi *rt = resolve_transport_api();
   if (!rt || !rt->emit) return;
   const char *ch = channel ? channel : "camera-probe";
   const char *js = json ? json : "{}";
-  PgrRuntimeTransportString strings[2] = {
+  PgsRuntimeTransportString strings[2] = {
       {ch, static_cast<uint32_t>(strlen(ch))},
       {js, static_cast<uint32_t>(strlen(js))},
   };
@@ -514,8 +514,8 @@ void emit_transport_event(const char *channel, const char *json) {
 
 void emit_transport_heading(double yaw_degrees, int32_t camera_id,
                             bool map_visible, double time_ms) {
-  if ((g_state.cfg.flags & PGR_CH_FLAG_USE_TRANSPORT) == 0) return;
-  const PgrRuntimeTransportApi *rt = resolve_transport_api();
+  if ((g_state.cfg.flags & PGS_CH_FLAG_USE_TRANSPORT) == 0) return;
+  const PgsRuntimeTransportApi *rt = resolve_transport_api();
   if (!rt || !rt->emit) return;
   if (!std::isfinite(yaw_degrees) || camera_id == 0 ||
       !std::isfinite(time_ms) || time_ms < 0.0) {
@@ -538,36 +538,36 @@ void emit_transport_heading(double yaw_degrees, int32_t camera_id,
 }
 
 void sync_transport_demand(double now) {
- if(!(g_state.cfg.flags&PGR_CH_FLAG_USE_TRANSPORT))return;
- const auto rt=resolve_transport_api();PgrRuntimeTransportSample before{},after{};int steering=0,buddy=0,pulse=0;
+ if(!(g_state.cfg.flags&PGS_CH_FLAG_USE_TRANSPORT))return;
+ const auto rt=resolve_transport_api();PgsRuntimeTransportSample before{},after{};int steering=0,buddy=0,pulse=0;
  bool fresh=rt&&rt->sample(&before)==0&&before.snapshot_fresh&&!before.fault;
  if(fresh)fresh=rt->get_bool(kTransportBoolCameraSteering,&steering)==0&&rt->get_bool(kTransportBoolBuddySampling,&buddy)==0&&rt->take_pulse(kTransportPulseCameraSample,&pulse)==0;
  if(fresh)fresh=rt->sample(&after)==0&&after.snapshot_fresh&&!after.fault&&before.snapshot_seq==after.snapshot_seq&&before.generation==after.generation;
- if(before.fault||after.fault){g_state.last_error=PGR_CH_ERR_INTERNAL;g_state.stop_requested.store(true,std::memory_order_release);}
+ if(before.fault||after.fault){g_state.last_error=PGS_CH_ERR_INTERNAL;g_state.stop_requested.store(true,std::memory_order_release);}
  if(!fresh){g_state.lease_until_ms=0;g_state.transport_sequence=g_state.transport_generation=0;g_state.latest_sample.valid=false;return;}
  g_state.transport_sequence=after.snapshot_seq;g_state.transport_generation=after.generation;
- if(steering>0||buddy>0||pulse>0)g_state.lease_until_ms=now+PGR_CH_CONTINUOUS_LEASE_MS;
+ if(steering>0||buddy>0||pulse>0)g_state.lease_until_ms=now+PGS_CH_CONTINUOUS_LEASE_MS;
  else if(g_state.transport_boolean_demand||!g_state.continuous)g_state.lease_until_ms=0;
  g_state.transport_boolean_demand=steering>0||buddy>0;
 }
 
-void push_event(const PgrCameraHostEvent &ev) {
-  if(g_state.cfg.flags&PGR_CH_FLAG_USE_TRANSPORT){
+void push_event(const PgsCameraHostEvent &ev) {
+  if(g_state.cfg.flags&PGS_CH_FLAG_USE_TRANSPORT){
     // Same Control routing as embedded-agent: continuous samples publish typed
     // heading57 plus throttled camera-heading below. Every other kind, including
     // all bounded/passive events, publishes camera-probe19 exactly once.
-    if(ev.kind!=PGR_CH_EVENT_CAMERA_SAMPLE||!g_state.continuous)
+    if(ev.kind!=PGS_CH_EVENT_CAMERA_SAMPLE||!g_state.continuous)
       emit_transport_event("camera-probe",ev.json);
     return;
   }
-  if (g_state.event_count < PGR_CH_EVENT_QUEUE_MAX) {
+  if (g_state.event_count < PGS_CH_EVENT_QUEUE_MAX) {
     uint32_t idx =
-        (g_state.event_head + g_state.event_count) % PGR_CH_EVENT_QUEUE_MAX;
+        (g_state.event_head + g_state.event_count) % PGS_CH_EVENT_QUEUE_MAX;
     g_state.events[idx] = ev;
     g_state.event_count++;
   } else {
     g_state.events[g_state.event_head] = ev;
-    g_state.event_head = (g_state.event_head + 1) % PGR_CH_EVENT_QUEUE_MAX;
+    g_state.event_head = (g_state.event_head + 1) % PGS_CH_EVENT_QUEUE_MAX;
   }
 }
 
@@ -575,10 +575,10 @@ void enqueue_signature_events() {
   uint32_t count = g_state.sample_camera ? kTargetCount : (kTargetCount - 1u);
   for (uint32_t i = 0; i < count; ++i) {
     const TargetSpec &spec = kTargets[i];
-    PgrCameraHostEvent ev = {};
-    ev.version = PGR_CH_API_VERSION;
+    PgsCameraHostEvent ev = {};
+    ev.version = PGS_CH_API_VERSION;
     ev.size = sizeof(ev);
-    ev.kind = PGR_CH_EVENT_SIGNATURE;
+    ev.kind = PGS_CH_EVENT_SIGNATURE;
     copy_str(ev.kind_name, sizeof(ev.kind_name), "signature");
     snprintf(ev.json, sizeof(ev.json),
              "{\"kind\":\"signature\",\"type\":\"signature\",\"className\":"
@@ -591,10 +591,10 @@ void enqueue_signature_events() {
 }
 
 void enqueue_sampler_ready_event() {
-  PgrCameraHostEvent ev = {};
-  ev.version = PGR_CH_API_VERSION;
+  PgsCameraHostEvent ev = {};
+  ev.version = PGS_CH_API_VERSION;
   ev.size = sizeof(ev);
-  ev.kind = PGR_CH_EVENT_SAMPLER_READY;
+  ev.kind = PGS_CH_EVENT_SAMPLER_READY;
   copy_str(ev.kind_name, sizeof(ev.kind_name), "native-camera-sampler-ready");
   snprintf(ev.json, sizeof(ev.json),
            "{\"kind\":\"native-camera-sampler-ready\",\"type\":"
@@ -603,10 +603,10 @@ void enqueue_sampler_ready_event() {
 }
 
 void enqueue_ready_event() {
-  PgrCameraHostEvent ev = {};
-  ev.version = PGR_CH_API_VERSION;
+  PgsCameraHostEvent ev = {};
+  ev.version = PGS_CH_API_VERSION;
   ev.size = sizeof(ev);
-  ev.kind = PGR_CH_EVENT_READY;
+  ev.kind = PGS_CH_EVENT_READY;
   ev.world_map_layer = g_state.cfg.expected_layer;
   copy_str(ev.kind_name, sizeof(ev.kind_name), "ready");
 
@@ -634,7 +634,7 @@ void enqueue_ready_event() {
              "\"observeMs\":%u,\"vectorFields\":\"%s\",\"attempts\":%u,"
              "\"executeTasksMethod\":\"0x%llx\",\"sampleCamera\":%s,"
              "\"continuous\":false,\"exports\":[\"il2cpp_runtime_invoke\"]}",
-             stage, PGR_CH_OBSERVE_MS, vf_str, g_state.attempts,
+             stage, PGS_CH_OBSERVE_MS, vf_str, g_state.attempts,
              static_cast<unsigned long long>(
                  reinterpret_cast<uintptr_t>(g_state.meta.execute)),
              g_state.sample_camera ? "true" : "false");
@@ -643,10 +643,10 @@ void enqueue_ready_event() {
 }
 
 void enqueue_sampler_error_event(const FailureRecord &f) {
-  PgrCameraHostEvent ev = {};
-  ev.version = PGR_CH_API_VERSION;
+  PgsCameraHostEvent ev = {};
+  ev.version = PGS_CH_API_VERSION;
   ev.size = sizeof(ev);
-  ev.kind = PGR_CH_EVENT_SAMPLER_ERROR;
+  ev.kind = PGS_CH_EVENT_SAMPLER_ERROR;
   ev.tid = f.tid;
   ev.sample_index = f.sample_attempt;
   copy_str(ev.kind_name, sizeof(ev.kind_name), "sampler-error");
@@ -700,10 +700,10 @@ void format_summary_fields(char *dst, size_t cap, size_t *pos,
 }
 
 void enqueue_thread_summary_event(uint64_t observed_ms) {
-  PgrCameraHostEvent ev = {};
-  ev.version = PGR_CH_API_VERSION;
+  PgsCameraHostEvent ev = {};
+  ev.version = PGS_CH_API_VERSION;
   ev.size = sizeof(ev);
-  ev.kind = PGR_CH_EVENT_THREAD_SUMMARY;
+  ev.kind = PGS_CH_EVENT_THREAD_SUMMARY;
   ev.time_ms = static_cast<double>(observed_ms);
   copy_str(ev.kind_name, sizeof(ev.kind_name), "thread-summary");
 
@@ -732,10 +732,10 @@ void drain_samples() {
       if (!g_state.unavailable_reported) {
         double delivered_at = fallback_now_ms();
         g_state.unavailable_reported = true;
-        PgrCameraHostEvent ev = {};
-        ev.version = PGR_CH_API_VERSION;
+        PgsCameraHostEvent ev = {};
+        ev.version = PGS_CH_API_VERSION;
         ev.size = sizeof(ev);
-        ev.kind = PGR_CH_EVENT_CAMERA_UNAVAILABLE;
+        ev.kind = PGS_CH_EVENT_CAMERA_UNAVAILABLE;
         ev.tid = u.tid;
         ev.time_ms = u.time_ms;
         ev.age_ms = delivered_at - u.time_ms;
@@ -778,11 +778,11 @@ void drain_samples() {
       }
       g_state.unavailable_reported = false;
 
-      PgrCameraHostEvent ev = {};
-      ev.version = PGR_CH_API_VERSION;
+      PgsCameraHostEvent ev = {};
+      ev.version = PGS_CH_API_VERSION;
       ev.size = sizeof(ev);
-      ev.kind = PGR_CH_EVENT_CAMERA_SAMPLE;
-      ev.flags = r.map_visible ? PGR_CH_EVFLAG_MAP_VISIBLE : 0u;
+      ev.kind = PGS_CH_EVENT_CAMERA_SAMPLE;
+      ev.flags = r.map_visible ? PGS_CH_EVFLAG_MAP_VISIBLE : 0u;
       ev.sample_index = r.sample_index;
       ev.camera_id = r.camera_id;
       ev.culling_mask = r.culling_mask;
@@ -813,7 +813,7 @@ void drain_samples() {
                              r.time_ms);
       if (!g_state.has_heading_log ||
           r.time_ms - g_state.last_heading_log_ms >=
-              static_cast<double>(PGR_CH_HEADING_LOG_INTERVAL_MS)) {
+              static_cast<double>(PGS_CH_HEADING_LOG_INTERVAL_MS)) {
         g_state.has_heading_log = true;
         g_state.last_heading_log_ms = r.time_ms;
         emit_transport_event("camera-heading", ev.json);
@@ -824,7 +824,7 @@ void drain_samples() {
 
   while (g_state.bounded_count > 0) {
     SampleRecord r = g_state.bounded_queue[g_state.bounded_head];
-    g_state.bounded_head = (g_state.bounded_head + 1) % PGR_CH_SAMPLES_MAX;
+    g_state.bounded_head = (g_state.bounded_head + 1) % PGS_CH_SAMPLES_MAX;
     g_state.bounded_count--;
 
     double delivered_at = 0.0;
@@ -832,10 +832,10 @@ void drain_samples() {
       break;
     }
 
-    PgrCameraHostEvent ev = {};
-    ev.version = PGR_CH_API_VERSION;
+    PgsCameraHostEvent ev = {};
+    ev.version = PGS_CH_API_VERSION;
     ev.size = sizeof(ev);
-    ev.kind = PGR_CH_EVENT_CAMERA_SAMPLE;
+    ev.kind = PGS_CH_EVENT_CAMERA_SAMPLE;
     ev.sample_index = r.sample_index;
     ev.camera_id = r.camera_id;
     ev.tid = r.tid;
@@ -943,7 +943,7 @@ void finish_observation(const char *override_status,
       final_reason = "execute-tasks-not-observed";
     } else if (g_state.threads_count != 1) {
       final_reason = "multiple-matching-threads";
-    } else if (g_state.matches < PGR_CH_MIN_MATCHES) {
+    } else if (g_state.matches < PGS_CH_MIN_MATCHES) {
       final_reason = "insufficient-matching-calls";
     } else if (total_active_depth() > 0) {
       final_reason = "invocation-still-active";
@@ -959,17 +959,17 @@ void finish_observation(const char *override_status,
   }
 
   if(!g_state.last_error){
-    if(strcmp(final_status,"error")==0)g_state.last_error=PGR_CH_ERR_INTERNAL;
-    else if(strcmp(final_status,"unavailable")==0)g_state.last_error=PGR_CH_UNAVAILABLE;
+    if(strcmp(final_status,"error")==0)g_state.last_error=PGS_CH_ERR_INTERNAL;
+    else if(strcmp(final_status,"unavailable")==0)g_state.last_error=PGS_CH_UNAVAILABLE;
   }
   copy_str(g_state.reason, sizeof(g_state.reason), final_reason);
 
-  PgrCameraHostEvent ev = {};
-  ev.version = PGR_CH_API_VERSION;
+  PgsCameraHostEvent ev = {};
+  ev.version = PGS_CH_API_VERSION;
   ev.size = sizeof(ev);
-  ev.kind = PGR_CH_EVENT_FINISHED;
+  ev.kind = PGS_CH_EVENT_FINISHED;
   ev.flags = (strcmp(final_status, "complete") == 0)
-                 ? PGR_CH_EVFLAG_STATUS_COMPLETE
+                 ? PGS_CH_EVFLAG_STATUS_COMPLETE
                  : 0u;
   ev.tid = candidate_tid;
   ev.time_ms = now;
@@ -1065,23 +1065,23 @@ void record_failure(const char *stage, const char *error_name,
 
 const char *map_sampler_unavailable_reason(uint32_t code) {
   switch (code) {
-    case PGR_CS_REASON_OFF:
+    case PGS_CS_REASON_OFF:
       return "off";
-    case PGR_CS_REASON_LEASE:
+    case PGS_CS_REASON_LEASE:
       return "lease-expired";
-    case PGR_CS_REASON_THREAD:
+    case PGS_CS_REASON_THREAD:
       return "owner-thread-unavailable";
-    case PGR_CS_REASON_NON_MAP_RIG:
+    case PGS_CS_REASON_NON_MAP_RIG:
       return "non-map-rig";
-    case PGR_CS_REASON_NULL_CAMERA:
+    case PGS_CS_REASON_NULL_CAMERA:
       return "camera-getter-returned-null";
-    case PGR_CS_REASON_CAMERA_MISMATCH:
+    case PGS_CS_REASON_CAMERA_MISMATCH:
       return "camera-mismatch";
-    case PGR_CS_REASON_NULL_TRANSFORM:
+    case PGS_CS_REASON_NULL_TRANSFORM:
       return "camera-transform-unavailable";
-    case PGR_CS_REASON_MAP_HIDDEN:
+    case PGS_CS_REASON_MAP_HIDDEN:
       return "map-hidden";
-    case PGR_CS_REASON_VERTICAL:
+    case PGS_CS_REASON_VERTICAL:
       return "vertical-forward-vector";
     default:
       return "camera-unavailable";
@@ -1090,21 +1090,21 @@ const char *map_sampler_unavailable_reason(uint32_t code) {
 
 const char *map_sampler_fault_reason(uint32_t code) {
   switch (code) {
-    case PGR_CS_REASON_CLOCK:
+    case PGS_CS_REASON_CLOCK:
       return "invalid-boot-clock";
-    case PGR_CS_REASON_GCHANDLE:
+    case PGS_CS_REASON_GCHANDLE:
       return "gc-handle-allocation-failed";
-    case PGR_CS_REASON_MANAGED:
+    case PGS_CS_REASON_MANAGED:
       return "managed-getter-exception";
-    case PGR_CS_REASON_METADATA:
+    case PGS_CS_REASON_METADATA:
       return "runtime-class-mismatch";
-    case PGR_CS_REASON_LAYER:
+    case PGS_CS_REASON_LAYER:
       return "world-map-layer-mismatch";
-    case PGR_CS_REASON_NONFINITE:
+    case PGS_CS_REASON_NONFINITE:
       return "nonfinite-forward-vector";
-    case PGR_CS_REASON_VERTICAL:
+    case PGS_CS_REASON_VERTICAL:
       return "vertical-forward-vector";
-    case PGR_CS_REASON_BUSY:
+    case PGS_CS_REASON_BUSY:
       return "reentrant";
     default:
       return "native-sampler-error";
@@ -1118,7 +1118,7 @@ void execute_sample_locked(uint64_t tid, void *rig_receiver,
       revoked() || g_state.sampling.load(std::memory_order_acquire) != 0 ||
       g_state.sample_error[0] != '\0' || g_state.sample_done ||
       g_state.overflow || g_state.threads_count != 1 ||
-      g_state.matches < PGR_CH_MIN_MATCHES) {
+      g_state.matches < PGS_CH_MIN_MATCHES) {
     return;
   }
   if (g_state.continuous != is_continuous_call) return;
@@ -1142,16 +1142,16 @@ void execute_sample_locked(uint64_t tid, void *rig_receiver,
   } else {
     if (g_state.has_sample_started &&
         (now - g_state.sample_started_at_ms >=
-             static_cast<double>(PGR_CH_SAMPLE_MS) ||
-         g_state.sample_count >= PGR_CH_SAMPLES_MAX)) {
+             static_cast<double>(PGS_CH_SAMPLE_MS) ||
+         g_state.sample_count >= PGS_CH_SAMPLES_MAX)) {
       g_state.sample_done = true;
       return;
     }
   }
 
   double min_interval =
-      g_state.continuous ? static_cast<double>(PGR_CH_CONTINUOUS_INTERVAL_MS)
-                         : static_cast<double>(PGR_CH_SAMPLE_INTERVAL_MS);
+      g_state.continuous ? static_cast<double>(PGS_CH_CONTINUOUS_INTERVAL_MS)
+                         : static_cast<double>(PGS_CH_SAMPLE_INTERVAL_MS);
   if (g_state.has_sampled && (now - g_state.last_sample_at_ms) < min_interval) {
     return;
   }
@@ -1176,19 +1176,19 @@ void execute_sample_locked(uint64_t tid, void *rig_receiver,
   // local test seam override is active.
   if (g_state.continuous && g_state.sampler_installed &&
       !g_state.use_local_continuous) {
-    const PgrCameraSamplerApi *sampler = resolve_sampler_api();
+    const PgsCameraSamplerApi *sampler = resolve_sampler_api();
     if (sampler && sampler->sample) {
       uint64_t rem = remaining_lease_ms(now);
-      PgrCameraSamplerRequest req = {};
-      req.version = PGR_CS_REQUEST_VERSION;
+      PgsCameraSamplerRequest req = {};
+      req.version = PGS_CS_REQUEST_VERSION;
       req.size = sizeof(req);
       req.tid = tid;
       req.remaining_ms = rem;
       req.rig = rig_receiver;
       req.camera = returned_camera;
 
-      PgrCameraSamplerOutput out = {};
-      out.version = PGR_CS_OUTPUT_VERSION;
+      PgsCameraSamplerOutput out = {};
+      out.version = PGS_CS_OUTPUT_VERSION;
       out.size = sizeof(out);
 
       int rc = sampler->sample(&req, &out);
@@ -1196,7 +1196,7 @@ void execute_sample_locked(uint64_t tid, void *rig_receiver,
           (g_state.cfg.clock_fn != nullptr) ? now : out.time_ms;
 
       if(revoked()||!transport_current()||!remaining_lease_ms(fallback_now_ms())||idle_getter_generation(tid)!=sample_generation){g_state.sampling.store(0,std::memory_order_release);g_state.latest_sample.valid=false;return;}
-      if (rc == PGR_CS_SAMPLE && out.status == PGR_CS_SAMPLE) {
+      if (rc == PGS_CS_SAMPLE && out.status == PGS_CS_SAMPLE) {
         if (!revoked() && g_state.active &&
             g_state.sample_error[0] == '\0') {
           g_state.sample_count++;
@@ -1213,11 +1213,11 @@ void execute_sample_locked(uint64_t tid, void *rig_receiver,
           g_state.latest_sample.z = out.z;
           g_state.latest_sample.yaw_degrees = out.yaw;
         }
-      } else if (rc == PGR_CS_UNAVAILABLE && out.status == PGR_CS_UNAVAILABLE) {
+      } else if (rc == PGS_CS_UNAVAILABLE && out.status == PGS_CS_UNAVAILABLE) {
         if (!revoked() && g_state.active &&
             g_state.sample_error[0] == '\0' &&
-            out.reason != PGR_CS_REASON_OFF &&
-            out.reason != PGR_CS_REASON_LEASE) {
+            out.reason != PGS_CS_REASON_OFF &&
+            out.reason != PGS_CS_REASON_LEASE) {
           g_state.latest_sample.valid = false;
           g_state.pending_unavailable.valid = true;
           g_state.pending_unavailable.time_ms = sample_time;
@@ -1225,7 +1225,7 @@ void execute_sample_locked(uint64_t tid, void *rig_receiver,
           g_state.pending_unavailable.culling_mask = out.mask;
           g_state.pending_unavailable.world_map_layer = out.layer;
           g_state.pending_unavailable.has_mask =
-              (out.reason == PGR_CS_REASON_MAP_HIDDEN);
+              (out.reason == PGS_CS_REASON_MAP_HIDDEN);
           copy_str(g_state.pending_unavailable.reason,
                    sizeof(g_state.pending_unavailable.reason),
                    map_sampler_unavailable_reason(out.reason));
@@ -1253,8 +1253,8 @@ void execute_sample_locked(uint64_t tid, void *rig_receiver,
 
   // Bounded diagnostic sampling (and local continuous fallback when test seams
   // are active).
-  const PgrCameraMetaExtra *ex = g_state.cfg.meta_extra;
-  const PgrMetaExports *me = g_state.cfg.meta_exports;
+  const PgsCameraMetaExtra *ex = g_state.cfg.meta_extra;
+  const PgsMetaExports *me = g_state.cfg.meta_exports;
   auto thread_current =
       reinterpret_cast<Il2CppThreadCurrentFn>(g_state.cfg.thread_current);
   auto runtime_invoke =
@@ -1591,7 +1591,7 @@ void execute_sample_locked(uint64_t tid, void *rig_receiver,
       built_sample.y = coords[1];
       built_sample.z = coords[2];
       built_sample.yaw_degrees = yaw_degrees;
-      if (!g_state.continuous && g_state.sample_count >= PGR_CH_SAMPLES_MAX) {
+      if (!g_state.continuous && g_state.sample_count >= PGS_CH_SAMPLES_MAX) {
         g_state.sample_done = true;
       }
     } while (false);
@@ -1646,9 +1646,9 @@ void execute_sample_locked(uint64_t tid, void *rig_receiver,
     } else if (built_sample.valid) {
       if (g_state.continuous) {
         g_state.latest_sample = built_sample;
-      } else if (g_state.bounded_count < PGR_CH_SAMPLES_MAX) {
+      } else if (g_state.bounded_count < PGS_CH_SAMPLES_MAX) {
         uint32_t idx =
-            (g_state.bounded_head + g_state.bounded_count) % PGR_CH_SAMPLES_MAX;
+            (g_state.bounded_head + g_state.bounded_count) % PGS_CH_SAMPLES_MAX;
         g_state.bounded_queue[idx] = built_sample;
         g_state.bounded_count++;
       }
@@ -1669,11 +1669,11 @@ void execute_sample_locked(uint64_t tid, void *rig_receiver,
 }
 
 uint64_t idle_getter_generation(uint64_t tid) {
- const PgrUnitySchedulerApi3 *scheduler=nullptr;
-#if !defined(PGR_CAMERA_HOST_STANDALONE_TEST)
- scheduler=static_cast<const PgrUnitySchedulerApi3*>(pgs_unity_scheduler_api(3));
+ const PgsUnitySchedulerApi3 *scheduler=nullptr;
+#if !defined(PGS_CAMERA_HOST_STANDALONE_TEST)
+ scheduler=static_cast<const PgsUnitySchedulerApi3*>(pgs_unity_scheduler_api(3));
 #else
- auto core=resolve_native_api();if(core&&core->query_feature)scheduler=static_cast<const PgrUnitySchedulerApi3*>(core->query_feature(48,3));
+ auto core=resolve_native_api();if(core&&core->query_feature)scheduler=static_cast<const PgsUnitySchedulerApi3*>(core->query_feature(48,3));
 #endif
  // Only an actually observed getter on the proven attached Unity owner may
  // sample. ExecuteTasks and this host's subscriber work are excluded, matching
@@ -1684,8 +1684,8 @@ uint64_t idle_getter_generation(uint64_t tid) {
     total_active_depth()!=0||scheduler->executing_generation(tid)!=0)return 0;
  auto thread=reinterpret_cast<Il2CppThreadCurrentFn>(g_state.cfg.thread_current);
  if(!thread||!thread())return 0;
- PgrUnitySchedulerSnapshot snapshot{};
- if(scheduler->snapshot(&snapshot)!=PGR_US_OK||!snapshot.installed||snapshot.poisoned||
+ PgsUnitySchedulerSnapshot snapshot{};
+ if(scheduler->snapshot(&snapshot)!=PGS_US_OK||!snapshot.installed||snapshot.poisoned||
     snapshot.owner_tid<=0||uint64_t(snapshot.owner_tid)!=tid||!snapshot.generation||
     snapshot.generation!=g_state.observed_generation||scheduler->valid(snapshot.generation)!=1)return 0;
  return snapshot.generation;
@@ -1698,7 +1698,7 @@ void *hook_get_main_camera(void *rig,const void *method_info) {
   const uint64_t tid=current_tid(), generation=idle_getter_generation(tid);
   const bool eligible=g_state.active&&g_state.ready&&g_state.continuous&&!revoked()&&
     !g_state.sampling.load()&&!g_state.sample_error[0]&&!g_state.overflow&&!tls_getter_depth&&
-    !g_state.in_subscriber_pulse&&generation&&g_state.matches>=PGR_CH_MIN_MATCHES&&
+    !g_state.in_subscriber_pulse&&generation&&g_state.matches>=PGS_CH_MIN_MATCHES&&
     g_state.threads_count==1&&g_state.owner_tid==tid&&rig;
   if(!eligible)return original(rig,method_info);
   const auto ex=g_state.cfg.meta_extra;
@@ -1716,13 +1716,13 @@ void *hook_get_main_camera(void *rig,const void *method_info) {
   return roots.camera?get(roots.camera):returned;
 }
 
-void populate_config_from_bootstrap(PgrCameraHostConfig *cfg) {
-  const PgrBootApi *rb = resolve_bootstrap_api();
+void populate_config_from_bootstrap(PgsCameraHostConfig *cfg) {
+  const PgsBootApi *rb = resolve_bootstrap_api();
   if (!rb || !rb->snapshot) return;
-  PgrBootBinding b = {};
-  b.version = PGR_BOOT_BINDING_VERSION;
+  PgsBootBinding b = {};
+  b.version = PGS_BOOT_BINDING_VERSION;
   b.size = sizeof(b);
-  if (rb->snapshot(&b) != PGR_BOOT_OK) return;
+  if (rb->snapshot(&b) != PGS_BOOT_OK) return;
 
   if (!cfg->module_base) cfg->module_base = b.module_base;
   if (cfg->module_size == 0) cfg->module_size = b.module_size;
@@ -1737,9 +1737,9 @@ void populate_config_from_bootstrap(PgrCameraHostConfig *cfg) {
   }
 
   if (!cfg->meta_extra) {
-    PgrCameraMetaExtra &ex = g_state.boot_meta_extra;
+    PgsCameraMetaExtra &ex = g_state.boot_meta_extra;
     memset(&ex, 0, sizeof(ex));
-    ex.version = PGR_CAM_EXTRA_VERSION;
+    ex.version = PGS_CAM_EXTRA_VERSION;
     ex.size = sizeof(ex);
     if (b.handle != nullptr) {
       ex.image_get_name = dlsym(b.handle, "il2cpp_image_get_name");
@@ -1756,28 +1756,28 @@ void populate_config_from_bootstrap(PgrCameraHostConfig *cfg) {
 
     uint32_t present = 0;
     if (b.meta.class_get_field_from_name)
-      present |= PGR_CAM_EXP_CLASS_GET_FIELD_FROM_NAME;
-    if (b.meta.field_get_type) present |= PGR_CAM_EXP_FIELD_GET_TYPE;
-    if (b.meta.field_get_parent) present |= PGR_CAM_EXP_FIELD_GET_PARENT;
-    if (b.meta.field_get_flags) present |= PGR_CAM_EXP_FIELD_GET_FLAGS;
-    if (ex.runtime_invoke) present |= PGR_CAM_EXP_RUNTIME_INVOKE;
-    if (ex.object_get_class) present |= PGR_CAM_EXP_OBJECT_GET_CLASS;
-    if (ex.object_unbox) present |= PGR_CAM_EXP_OBJECT_UNBOX;
-    if (ex.gchandle_new) present |= PGR_CAM_EXP_GCHANDLE_NEW;
-    if (ex.gchandle_get_target) present |= PGR_CAM_EXP_GCHANDLE_GET_TARGET;
-    if (ex.gchandle_free) present |= PGR_CAM_EXP_GCHANDLE_FREE;
-    if (ex.field_get_value) present |= PGR_CAM_EXP_FIELD_GET_VALUE;
-    if (ex.get_corlib) present |= PGR_CAM_EXP_GET_CORLIB;
+      present |= PGS_CAM_EXP_CLASS_GET_FIELD_FROM_NAME;
+    if (b.meta.field_get_type) present |= PGS_CAM_EXP_FIELD_GET_TYPE;
+    if (b.meta.field_get_parent) present |= PGS_CAM_EXP_FIELD_GET_PARENT;
+    if (b.meta.field_get_flags) present |= PGS_CAM_EXP_FIELD_GET_FLAGS;
+    if (ex.runtime_invoke) present |= PGS_CAM_EXP_RUNTIME_INVOKE;
+    if (ex.object_get_class) present |= PGS_CAM_EXP_OBJECT_GET_CLASS;
+    if (ex.object_unbox) present |= PGS_CAM_EXP_OBJECT_UNBOX;
+    if (ex.gchandle_new) present |= PGS_CAM_EXP_GCHANDLE_NEW;
+    if (ex.gchandle_get_target) present |= PGS_CAM_EXP_GCHANDLE_GET_TARGET;
+    if (ex.gchandle_free) present |= PGS_CAM_EXP_GCHANDLE_FREE;
+    if (ex.field_get_value) present |= PGS_CAM_EXP_FIELD_GET_VALUE;
+    if (ex.get_corlib) present |= PGS_CAM_EXP_GET_CORLIB;
     if (b.meta.class_is_assignable_from)
-      present |= PGR_CAM_EXP_CLASS_IS_ASSIGNABLE_FROM;
-    if (b.meta.class_is_valuetype) present |= PGR_CAM_EXP_CLASS_IS_VALUETYPE;
-    if (b.meta.class_value_size) present |= PGR_CAM_EXP_CLASS_VALUE_SIZE;
+      present |= PGS_CAM_EXP_CLASS_IS_ASSIGNABLE_FROM;
+    if (b.meta.class_is_valuetype) present |= PGS_CAM_EXP_CLASS_IS_VALUETYPE;
+    if (b.meta.class_value_size) present |= PGS_CAM_EXP_CLASS_VALUE_SIZE;
     if (b.meta.debug_get_method_info)
-      present |= PGR_CAM_EXP_DEBUG_GET_METHOD_INFO;
-    if (b.meta.method_is_generic) present |= PGR_CAM_EXP_METHOD_IS_GENERIC;
-    if (b.meta.method_is_inflated) present |= PGR_CAM_EXP_METHOD_IS_INFLATED;
-    if (b.meta.method_get_param) present |= PGR_CAM_EXP_METHOD_GET_PARAM;
-    if (ex.string_new) present |= PGR_CAM_EXP_STRING_NEW;
+      present |= PGS_CAM_EXP_DEBUG_GET_METHOD_INFO;
+    if (b.meta.method_is_generic) present |= PGS_CAM_EXP_METHOD_IS_GENERIC;
+    if (b.meta.method_is_inflated) present |= PGS_CAM_EXP_METHOD_IS_INFLATED;
+    if (b.meta.method_get_param) present |= PGS_CAM_EXP_METHOD_GET_PARAM;
+    if (ex.string_new) present |= PGS_CAM_EXP_STRING_NEW;
     ex.present = present;
 
     cfg->meta_extra = &g_state.boot_meta_extra;
@@ -1785,9 +1785,9 @@ void populate_config_from_bootstrap(PgrCameraHostConfig *cfg) {
 }
 
 int attempt_prepare(double now) {
-  if (!g_state.active || g_state.ready || revoked()) return PGR_CH_OK;
+  if (!g_state.active || g_state.ready || revoked()) return PGS_CH_OK;
 
-  if ((g_state.cfg.flags & PGR_CH_FLAG_USE_BOOTSTRAP) != 0) {
+  if ((g_state.cfg.flags & PGS_CH_FLAG_USE_BOOTSTRAP) != 0) {
     populate_config_from_bootstrap(&g_state.cfg);
   }
 
@@ -1800,22 +1800,22 @@ int attempt_prepare(double now) {
     if (!g_state.continuous) {
       double elapsed =
           now >= g_state.started_at_ms ? (now - g_state.started_at_ms) : 0.0;
-      if (g_state.attempts >= PGR_CH_ATTEMPTS_MAX ||
-          elapsed + static_cast<double>(PGR_CH_RETRY_MS) >
-              static_cast<double>(PGR_CH_PREPARE_MS)) {
+      if (g_state.attempts >= PGS_CH_ATTEMPTS_MAX ||
+          elapsed + static_cast<double>(PGS_CH_RETRY_MS) >
+              static_cast<double>(PGS_CH_PREPARE_MS)) {
         finish_observation("unavailable", "library-not-loaded", nullptr, false,
                            true);
-        return PGR_CH_UNAVAILABLE;
+        return PGS_CH_UNAVAILABLE;
       }
     }
-    return PGR_CH_RETRY;
+    return PGS_CH_RETRY;
   }
 
   if (!g_state.cfg.meta_exports || !g_state.cfg.meta_extra ||
       !g_state.cfg.thread_current || !g_state.cfg.meta_extra->image_get_name) {
     finish_observation("error", "missing-il2cpp-exports",
                        "Error: Missing export il2cpp", false, false);
-    return PGR_CH_ERR_MISSING_EXPORT;
+    return PGS_CH_ERR_MISSING_EXPORT;
   }
 
   const void *domain = g_state.cfg.domain;
@@ -1829,39 +1829,39 @@ int attempt_prepare(double now) {
     if (!g_state.continuous) {
       double elapsed =
           now >= g_state.started_at_ms ? (now - g_state.started_at_ms) : 0.0;
-      if (g_state.attempts >= PGR_CH_ATTEMPTS_MAX ||
-          elapsed + static_cast<double>(PGR_CH_RETRY_MS) >
-              static_cast<double>(PGR_CH_PREPARE_MS)) {
+      if (g_state.attempts >= PGS_CH_ATTEMPTS_MAX ||
+          elapsed + static_cast<double>(PGS_CH_RETRY_MS) >
+              static_cast<double>(PGS_CH_PREPARE_MS)) {
         finish_observation("unavailable", "domain-not-ready", nullptr, false,
                            true);
-        return PGR_CH_UNAVAILABLE;
+        return PGS_CH_UNAVAILABLE;
       }
     }
-    return PGR_CH_RETRY;
+    return PGS_CH_RETRY;
   }
 
   auto thread_current =
       reinterpret_cast<Il2CppThreadCurrentFn>(g_state.cfg.thread_current);
   // Preparation belongs to an already-attached Unity owner. Retry without
   // attaching a background thread or changing managed thread identity.
-  if(thread_current()==nullptr)return PGR_CH_RETRY;
+  if(thread_current()==nullptr)return PGS_CH_RETRY;
 
-  const PgrCameraMetaApi *meta_api = resolve_metadata_api();
+  const PgsCameraMetaApi *meta_api = resolve_metadata_api();
   if (!meta_api || !meta_api->resolve) {
     finish_observation("error", "native-camera-metadata-missing",
                        "Error: native-camera-metadata-missing", false, false);
-    return PGR_CH_ERR_INTERNAL;
+    return PGS_CH_ERR_INTERNAL;
   }
 
   // Feature 59 requires real OS gettid() for owner_tid during resolve().
   uint64_t real_os_tid =
       static_cast<uint64_t>(static_cast<pid_t>(syscall(SYS_gettid)));
 
-  PgrCameraMetaConfig mcfg = {};
-  mcfg.version = PGR_CAM_CFG_VERSION;
+  PgsCameraMetaConfig mcfg = {};
+  mcfg.version = PGS_CAM_CFG_VERSION;
   mcfg.size = sizeof(mcfg);
-  mcfg.binding.version = PGR_MD_CONFIG_VERSION;
-  mcfg.binding.size = sizeof(PgrMetaBindConfig);
+  mcfg.binding.version = PGS_MD_CONFIG_VERSION;
+  mcfg.binding.size = sizeof(PgsMetaBindConfig);
   mcfg.binding.exports = g_state.cfg.meta_exports;
   mcfg.binding.module_base = g_state.cfg.module_base;
   mcfg.binding.module_size = g_state.cfg.module_size;
@@ -1874,54 +1874,54 @@ int attempt_prepare(double now) {
   mcfg.sample_camera = g_state.sample_camera ? 1u : 0u;
   mcfg.continuous = g_state.continuous ? 1u : 0u;
 
-  PgrCameraMetaOutput out = {};
-  out.version = PGR_CAM_OUT_VERSION;
+  PgsCameraMetaOutput out = {};
+  out.version = PGS_CAM_OUT_VERSION;
   out.size = sizeof(out);
   int rc = meta_api->resolve(&mcfg, &out);
-  if(revoked())return PGR_CH_RETRY;
+  if(revoked())return PGS_CH_RETRY;
 
   if (rc < 0) {
     const char *r =
         out.reason[0] != '\0' ? out.reason : "native-camera-metadata-error";
     finish_observation("error", r, r, false, false);
-    return PGR_CH_UNAVAILABLE;
+    return PGS_CH_UNAVAILABLE;
   }
-  if (rc == PGR_CAM_UNAVAILABLE) {
+  if (rc == PGS_CAM_UNAVAILABLE) {
     const char *r = out.reason[0] != '\0' ? out.reason : "unavailable";
     finish_observation("unavailable", r, nullptr, false, false);
-    return PGR_CH_UNAVAILABLE;
+    return PGS_CH_UNAVAILABLE;
   }
-  if (rc == PGR_CAM_RETRY) {
+  if (rc == PGS_CAM_RETRY) {
     const char *r = out.reason[0] != '\0' ? out.reason : "runtime-not-ready";
     copy_str(g_state.reason, sizeof(g_state.reason), r);
     if (!g_state.continuous) {
       double elapsed =
           now >= g_state.started_at_ms ? (now - g_state.started_at_ms) : 0.0;
-      if (g_state.attempts >= PGR_CH_ATTEMPTS_MAX ||
-          elapsed + static_cast<double>(PGR_CH_RETRY_MS) >
-              static_cast<double>(PGR_CH_PREPARE_MS)) {
+      if (g_state.attempts >= PGS_CH_ATTEMPTS_MAX ||
+          elapsed + static_cast<double>(PGS_CH_RETRY_MS) >
+              static_cast<double>(PGS_CH_PREPARE_MS)) {
         finish_observation("unavailable", r, nullptr, false, true);
-        return PGR_CH_UNAVAILABLE;
+        return PGS_CH_UNAVAILABLE;
       }
     }
-    return PGR_CH_RETRY;
+    return PGS_CH_RETRY;
   }
 
   g_state.meta = out;
   g_state.reason[0] = '\0';
 
   if (g_state.sample_camera && g_state.continuous) {
-    const PgrCameraSamplerApi *sampler = resolve_sampler_api();
-    const PgrCameraMetaExtra *ex = g_state.cfg.meta_extra;
-    const PgrMetaExports *me = g_state.cfg.meta_exports;
+    const PgsCameraSamplerApi *sampler = resolve_sampler_api();
+    const PgsCameraMetaExtra *ex = g_state.cfg.meta_extra;
+    const PgsMetaExports *me = g_state.cfg.meta_exports;
     if (!sampler || !sampler->install || !ex || !me) {
       finish_observation("unavailable", "native-camera-sampler-unavailable",
                          nullptr, false, false);
-      return PGR_CH_ERR_INTERNAL;
+      return PGS_CH_ERR_INTERNAL;
     }
 
-    PgrCameraSamplerConfig scfg = {};
-    scfg.version = PGR_CS_CONFIG_VERSION;
+    PgsCameraSamplerConfig scfg = {};
+    scfg.version = PGS_CS_CONFIG_VERSION;
     scfg.size = sizeof(scfg);
     scfg.runtime_invoke = ex->runtime_invoke;
     scfg.object_get_class = ex->object_get_class;
@@ -1958,45 +1958,45 @@ int attempt_prepare(double now) {
     if (s_rc == 0) {
       g_state.sampler_installed = true;
       g_state.use_local_continuous =
-          ((g_state.cfg.flags & PGR_CH_FLAG_LOCAL_CONTINUOUS_SAMPLER) != 0) ||
+          ((g_state.cfg.flags & PGS_CH_FLAG_LOCAL_CONTINUOUS_SAMPLER) != 0) ||
           (g_state.cfg.tid_fn != nullptr);
-    } else if (s_rc == PGR_CS_ERR_RECONFIG &&
+    } else if (s_rc == PGS_CS_ERR_RECONFIG &&
                g_state.cfg.seg_query != nullptr) {
       g_state.sampler_installed = true;
       g_state.use_local_continuous = true;
     } else {
       finish_observation("unavailable", "native-camera-sampler-install",
                          nullptr, false, false);
-      return PGR_CH_ERR_INTERNAL;
+      return PGS_CH_ERR_INTERNAL;
     }
-    if(revoked())return PGR_CH_RETRY;
+    if(revoked())return PGS_CH_RETRY;
     enqueue_sampler_ready_event();
 
     void *target_code = const_cast<void *>(out.get_main_camera_address);
-    if ((g_state.cfg.flags & PGR_CH_FLAG_FIXTURE_HOOK_OVERRIDE) != 0 &&
+    if ((g_state.cfg.flags & PGS_CH_FLAG_FIXTURE_HOOK_OVERRIDE) != 0 &&
         g_state.cfg.seg_query != nullptr &&
         g_state.cfg.fixture_getter_code != nullptr) {
       target_code = g_state.cfg.fixture_getter_code;
     }
 
-    if(g_state.hook_poisoned){finish_observation("error","hook-install-failed",nullptr,false,false);return PGR_CH_ERR_HOOK_FAILED;}
+    if(g_state.hook_poisoned){finish_observation("error","hook-install-failed",nullptr,false,false);return PGS_CH_ERR_HOOK_FAILED;}
     if(g_state.hook_installed){
-      if(target_code!=g_state.hooked_getter_target){finish_observation("error","hook-target-changed",nullptr,false,false);return PGR_CH_ERR_RESTART_REQUIRED;}
+      if(target_code!=g_state.hooked_getter_target){finish_observation("error","hook-target-changed",nullptr,false,false);return PGS_CH_ERR_RESTART_REQUIRED;}
     }else if(target_code){
       void *orig=nullptr;const int hook_rc=call_hook(target_code,reinterpret_cast<void*>(&hook_get_main_camera),&orig);
       if(orig){g_state.orig_getter.store(reinterpret_cast<MainCameraGetterFn>(orig),std::memory_order_release);g_state.hooked_getter_target=target_code;g_state.hook_installed=true;}
-      if(hook_rc||!orig){g_state.hook_poisoned=true;finish_observation("error","hook-install-failed",nullptr,false,false);return PGR_CH_ERR_HOOK_FAILED;}
-    }else {finish_observation("error","hook-target-missing",nullptr,false,false);return PGR_CH_ERR_HOOK_FAILED;}
+      if(hook_rc||!orig){g_state.hook_poisoned=true;finish_observation("error","hook-install-failed",nullptr,false,false);return PGS_CH_ERR_HOOK_FAILED;}
+    }else {finish_observation("error","hook-target-missing",nullptr,false,false);return PGS_CH_ERR_HOOK_FAILED;}
 
   }
 
-  if(revoked())return PGR_CH_RETRY;
+  if(revoked())return PGS_CH_RETRY;
   g_state.ready = true;
   g_state.observed_at_ms = now;
   g_state.last_poll_at_ms = now;
   enqueue_signature_events();
   enqueue_ready_event();
-  return PGR_CH_OK;
+  return PGS_CH_OK;
 }
 
 void poll_and_maintain(double now, bool force_poll) {
@@ -2006,15 +2006,15 @@ void poll_and_maintain(double now, bool force_poll) {
   if (!g_state.ready) {
     if (!g_state.has_prepared ||
         (now - g_state.last_prepare_at_ms) >=
-            static_cast<double>(PGR_CH_RETRY_MS)) {
+            static_cast<double>(PGS_CH_RETRY_MS)) {
       attempt_prepare(now);
     }
     return;
   }
 
   double poll_interval =
-      g_state.continuous ? static_cast<double>(PGR_CH_CONTINUOUS_INTERVAL_MS)
-                         : static_cast<double>(PGR_CH_POLL_MS);
+      g_state.continuous ? static_cast<double>(PGS_CH_CONTINUOUS_INTERVAL_MS)
+                         : static_cast<double>(PGS_CH_POLL_MS);
   if (force_poll || (now - g_state.last_poll_at_ms) >= poll_interval) {
     g_state.last_poll_at_ms = now;
     drain_samples();
@@ -2029,13 +2029,13 @@ void poll_and_maintain(double now, bool force_poll) {
 
   if (g_state.has_sample_started &&
       (now - g_state.sample_started_at_ms) >=
-          static_cast<double>(PGR_CH_SAMPLE_MS)) {
+          static_cast<double>(PGS_CH_SAMPLE_MS)) {
     g_state.sample_done = true;
   }
 
   double elapsed =
       now >= g_state.observed_at_ms ? (now - g_state.observed_at_ms) : 0.0;
-  if (elapsed >= static_cast<double>(PGR_CH_OBSERVE_MS) || g_state.overflow ||
+  if (elapsed >= static_cast<double>(PGS_CH_OBSERVE_MS) || g_state.overflow ||
       g_state.sample_error[0] != '\0' || g_state.sample_done) {
     finish_observation(nullptr, nullptr, nullptr, true, false);
   }
@@ -2045,7 +2045,7 @@ ThreadEntry *find_or_add_thread(uint64_t tid) {
   for (uint32_t i = 0; i < g_state.threads_count; ++i) {
     if (g_state.threads[i].tid == tid) return &g_state.threads[i];
   }
-  if (g_state.threads_count >= PGR_CH_THREADS_MAX) {
+  if (g_state.threads_count >= PGS_CH_THREADS_MAX) {
     g_state.overflow = true;
     return nullptr;
   }
@@ -2062,34 +2062,34 @@ ThreadEntry *find_or_add_thread(uint64_t tid) {
   return e;
 }
 
-int api_configure(const PgrCameraHostConfig *config) {
-  StateGuard guard;if(!guard.entered)return PGR_CH_RETRY;
-  if(g_state.hook_installed){if(config&&memcmp(config,&g_state.cfg,sizeof(*config))==0)return PGR_CH_OK;return PGR_CH_ERR_RESTART_REQUIRED;}
+int api_configure(const PgsCameraHostConfig *config) {
+  StateGuard guard;if(!guard.entered)return PGS_CH_RETRY;
+  if(g_state.hook_installed){if(config&&memcmp(config,&g_state.cfg,sizeof(*config))==0)return PGS_CH_OK;return PGS_CH_ERR_RESTART_REQUIRED;}
   if (config == nullptr) {
     g_state.cfg = {};
-    g_state.cfg.version = PGR_CH_API_VERSION;
-    g_state.cfg.size = sizeof(PgrCameraHostConfig);
-    g_state.cfg.flags = PGR_CH_FLAG_USE_BOOTSTRAP | PGR_CH_FLAG_USE_TRANSPORT;
-    g_state.cfg.expected_layer = PGR_CS_WORLD_MAP_LAYER;
+    g_state.cfg.version = PGS_CH_API_VERSION;
+    g_state.cfg.size = sizeof(PgsCameraHostConfig);
+    g_state.cfg.flags = PGS_CH_FLAG_USE_BOOTSTRAP | PGS_CH_FLAG_USE_TRANSPORT;
+    g_state.cfg.expected_layer = PGS_CS_WORLD_MAP_LAYER;
     populate_config_from_bootstrap(&g_state.cfg);
     g_state.configured = true;
-    return PGR_CH_OK;
+    return PGS_CH_OK;
   }
-  if (config->version != PGR_CH_API_VERSION ||
-      config->size != sizeof(PgrCameraHostConfig) || config->reserved0 != 0) {
-    return PGR_CH_ERR_VERSION;
+  if (config->version != PGS_CH_API_VERSION ||
+      config->size != sizeof(PgsCameraHostConfig) || config->reserved0 != 0) {
+    return PGS_CH_ERR_VERSION;
   }
   g_state.cfg = *config;
   if (g_state.cfg.expected_layer <= 0) {
-    g_state.cfg.expected_layer = PGR_CS_WORLD_MAP_LAYER;
+    g_state.cfg.expected_layer = PGS_CS_WORLD_MAP_LAYER;
   }
-  if ((g_state.cfg.flags & PGR_CH_FLAG_USE_BOOTSTRAP) != 0) {
+  if ((g_state.cfg.flags & PGS_CH_FLAG_USE_BOOTSTRAP) != 0) {
     populate_config_from_bootstrap(&g_state.cfg);
   }
   g_state.configured = true;
   g_state.continuous_ever_started = false;
   g_state.local_world_map_layer = -1;
-  return PGR_CH_OK;
+  return PGS_CH_OK;
 }
 
 void reset_session_state(double now, bool clear_events) {
@@ -2127,7 +2127,7 @@ void reset_session_state(double now, bool clear_events) {
 
   g_state.sample_count = 0;
   g_state.sample_attempts = 0;
-  g_state.last_error = PGR_CH_OK;
+  g_state.last_error = PGS_CH_OK;
   g_state.reason[0] = '\0';
   g_state.sample_error[0] = '\0';
   g_state.sample_failure = {};
@@ -2157,22 +2157,22 @@ void reset_session_state(double now, bool clear_events) {
   }
 }
 
-int api_start(const PgrCameraHostOptions *options) {
-  StateGuard guard;if(!guard.entered)return PGR_CH_RETRY;
-  if(g_state.sampling.load()||g_state.getter_depth.load())return PGR_CH_RETRY;
-  if (!options) return PGR_CH_ERR_INVALID_ARG;
-  if (options->version != PGR_CH_API_VERSION ||
-      options->size != sizeof(PgrCameraHostOptions)) {
-    return PGR_CH_ERR_VERSION;
+int api_start(const PgsCameraHostOptions *options) {
+  StateGuard guard;if(!guard.entered)return PGS_CH_RETRY;
+  if(g_state.sampling.load()||g_state.getter_depth.load())return PGS_CH_RETRY;
+  if (!options) return PGS_CH_ERR_INVALID_ARG;
+  if (options->version != PGS_CH_API_VERSION ||
+      options->size != sizeof(PgsCameraHostOptions)) {
+    return PGS_CH_ERR_VERSION;
   }
   if (!g_state.configured) {
     api_configure(nullptr);
   }
   if (options->enabled == 0) {
-    return PGR_CH_OK;
+    return PGS_CH_OK;
   }
   if (g_state.active) {
-    return PGR_CH_ERR_ALREADY_RUNNING;
+    return PGS_CH_ERR_ALREADY_RUNNING;
   }
 
   double now = options->now_ms != 0 ? static_cast<double>(options->now_ms)
@@ -2186,12 +2186,12 @@ int api_start(const PgrCameraHostOptions *options) {
   if (g_state.continuous && !g_state.sample_camera) {
     finish_observation("unavailable", "continuous-requires-camera-sampling",
                        nullptr, false, false);
-    return PGR_CH_UNAVAILABLE;
+    return PGS_CH_UNAVAILABLE;
   }
   if (g_state.continuous && g_state.continuous_ever_started) {
     finish_observation("unavailable", "continuous-restart-required", nullptr,
                        false, false);
-    return PGR_CH_ERR_RESTART_REQUIRED;
+    return PGS_CH_ERR_RESTART_REQUIRED;
   }
   if (g_state.continuous) {
     g_state.continuous_ever_started = true;
@@ -2199,8 +2199,8 @@ int api_start(const PgrCameraHostOptions *options) {
 
   if (options->sample_requested != 0) {
     uint32_t lease = options->lease_ms != 0 ? options->lease_ms
-                                            : PGR_CH_CONTINUOUS_LEASE_MS;
-    if (lease > PGR_CH_CONTINUOUS_LEASE_MS) lease = PGR_CH_CONTINUOUS_LEASE_MS;
+                                            : PGS_CH_CONTINUOUS_LEASE_MS;
+    if (lease > PGS_CH_CONTINUOUS_LEASE_MS) lease = PGS_CH_CONTINUOUS_LEASE_MS;
     g_state.lease_until_ms = now + static_cast<double>(lease);
   }
 
@@ -2213,12 +2213,12 @@ int api_start(const PgrCameraHostOptions *options) {
   return attempt_prepare(now);
 }
 
-int api_set_options(const PgrCameraHostOptions *options) {
-  StateGuard guard;if(!guard.entered)return PGR_CH_RETRY;
-  if (!options) return PGR_CH_ERR_INVALID_ARG;
-  if (options->version != PGR_CH_API_VERSION ||
-      options->size != sizeof(PgrCameraHostOptions)) {
-    return PGR_CH_ERR_VERSION;
+int api_set_options(const PgsCameraHostOptions *options) {
+  StateGuard guard;if(!guard.entered)return PGS_CH_RETRY;
+  if (!options) return PGS_CH_ERR_INVALID_ARG;
+  if (options->version != PGS_CH_API_VERSION ||
+      options->size != sizeof(PgsCameraHostOptions)) {
+    return PGS_CH_ERR_VERSION;
   }
 
   double now = options->now_ms != 0 ? static_cast<double>(options->now_ms)
@@ -2227,41 +2227,41 @@ int api_set_options(const PgrCameraHostOptions *options) {
     if (g_state.active) {
       finish_observation("cancelled", "stopped", nullptr, false, false);
     }
-    return PGR_CH_OK;
+    return PGS_CH_OK;
   }
 
   if (!g_state.active) {
     return api_start(options);
   }
 
-  if ((options->flags & PGR_CH_OPT_REQUEST_FAILED) != 0) {
+  if ((options->flags & PGS_CH_OPT_REQUEST_FAILED) != 0) {
     if (g_state.sample_error[0] == '\0') {
       copy_str(g_state.sample_error, sizeof(g_state.sample_error),
                "sampling-request-failed");
     }
   }
-  if ((options->flags & PGR_CH_OPT_CLEAR_LEASE) != 0 ||
+  if ((options->flags & PGS_CH_OPT_CLEAR_LEASE) != 0 ||
       options->sample_requested == 0) {
     g_state.lease_until_ms = 0.0;
   }
   if (options->sample_requested != 0) {
     uint32_t lease = options->lease_ms != 0 ? options->lease_ms
-                                            : PGR_CH_CONTINUOUS_LEASE_MS;
-    if (lease > PGR_CH_CONTINUOUS_LEASE_MS) lease = PGR_CH_CONTINUOUS_LEASE_MS;
+                                            : PGS_CH_CONTINUOUS_LEASE_MS;
+    if (lease > PGS_CH_CONTINUOUS_LEASE_MS) lease = PGS_CH_CONTINUOUS_LEASE_MS;
     g_state.lease_until_ms = now + static_cast<double>(lease);
   }
 
-  if ((options->flags & PGR_CH_OPT_FORCE_POLL) != 0) {
+  if ((options->flags & PGS_CH_OPT_FORCE_POLL) != 0) {
     poll_and_maintain(now, true);
   }
-  return PGR_CH_OK;
+  return PGS_CH_OK;
 }
 
 int api_on_execute_enter(uint64_t tid, uint32_t is_execute_tasks) {
-  StateGuard guard;if(!guard.entered)return PGR_CH_RETRY;
+  StateGuard guard;if(!guard.entered)return PGS_CH_RETRY;
   if (!g_state.active || !g_state.ready || revoked() ||
       g_state.overflow || g_state.sample_error[0] != '\0') {
-    return PGR_CH_OK;
+    return PGS_CH_OK;
   }
   if (tid == 0) tid = current_tid();
   g_state.explicit_execute_tracking = true;
@@ -2272,35 +2272,35 @@ int api_on_execute_enter(uint64_t tid, uint32_t is_execute_tasks) {
       copy_str(g_state.sample_error, sizeof(g_state.sample_error),
                "multiple-matching-threads");
     }
-    return PGR_CH_OK;
+    return PGS_CH_OK;
   }
 
   if(g_state.calls<UINT32_MAX)++g_state.calls;
-  if (!g_state.continuous && g_state.calls > PGR_CH_CALLS_MAX) {
+  if (!g_state.continuous && g_state.calls > PGS_CH_CALLS_MAX) {
     g_state.overflow = true;
-    return PGR_CH_OK;
+    return PGS_CH_OK;
   }
   if (is_execute_tasks == 0) {
-    return PGR_CH_OK;
+    return PGS_CH_OK;
   }
 
   if(g_state.raw_matches<UINT32_MAX)++g_state.raw_matches;
   ThreadEntry *e = find_or_add_thread(tid);
-  if (!e) return PGR_CH_OK;
+  if (!e) return PGS_CH_OK;
 
   if (e->depth == 0) {
     if(g_state.matches<UINT32_MAX)++g_state.matches;
     if(e->count<UINT32_MAX)++e->count;
   }
   e->depth++;
-  return PGR_CH_OK;
+  return PGS_CH_OK;
 }
 
 int api_on_execute_leave(uint64_t tid, uint32_t is_execute_tasks) {
-  StateGuard guard;if(!guard.entered)return PGR_CH_RETRY;
-  if (!g_state.active || !g_state.ready) return PGR_CH_OK;
+  StateGuard guard;if(!guard.entered)return PGS_CH_RETRY;
+  if (!g_state.active || !g_state.ready) return PGS_CH_OK;
   if (tid == 0) tid = current_tid();
-  if (is_execute_tasks == 0) return PGR_CH_OK;
+  if (is_execute_tasks == 0) return PGS_CH_OK;
 
   ThreadEntry *target = nullptr;
   for (uint32_t i = 0; i < g_state.threads_count; ++i) {
@@ -2309,73 +2309,73 @@ int api_on_execute_leave(uint64_t tid, uint32_t is_execute_tasks) {
       break;
     }
   }
-  if (!target || target->depth == 0) return PGR_CH_OK;
+  if (!target || target->depth == 0) return PGS_CH_OK;
 
   target->depth--;
   if (target->depth == 0 && !g_state.continuous) {
     execute_sample_locked(tid, nullptr, nullptr, false);
   }
-  return PGR_CH_OK;
+  return PGS_CH_OK;
 }
 
 int api_on_main_camera_getter(void *rig, void *returned_camera, uint64_t tid) {
-  StateGuard guard;if(!guard.entered)return PGR_CH_RETRY;
+  StateGuard guard;if(!guard.entered)return PGS_CH_RETRY;
   if (tid == 0) tid = current_tid();
   if (g_state.getter_depth.load(std::memory_order_acquire) != 0 ||
       tls_getter_depth != 0) {
-    return PGR_CH_OK;
+    return PGS_CH_OK;
   }
   execute_sample_locked(tid, rig, returned_camera, true);
-  return PGR_CH_OK;
+  return PGS_CH_OK;
 }
 
 int api_tick(uint64_t tid) {
   (void)tid;
-  StateGuard guard;if(!guard.entered)return PGR_CH_RETRY;
+  StateGuard guard;if(!guard.entered)return PGS_CH_RETRY;
   double now = fallback_now_ms();
   sync_transport_demand(now);
   poll_and_maintain(now, true);
-  return g_state.event_count > 0 ? PGR_CH_HAS_EVENT : PGR_CH_OK;
+  return g_state.event_count > 0 ? PGS_CH_HAS_EVENT : PGS_CH_OK;
 }
 
-int api_next_event(PgrCameraHostEvent *out_event) {
-  if (!out_event) return PGR_CH_ERR_INVALID_ARG;
-  if (out_event->version != PGR_CH_API_VERSION ||
-      out_event->size != sizeof(PgrCameraHostEvent)) {
-    return PGR_CH_ERR_VERSION;
+int api_next_event(PgsCameraHostEvent *out_event) {
+  if (!out_event) return PGS_CH_ERR_INVALID_ARG;
+  if (out_event->version != PGS_CH_API_VERSION ||
+      out_event->size != sizeof(PgsCameraHostEvent)) {
+    return PGS_CH_ERR_VERSION;
   }
-  StateGuard guard;if(!guard.entered)return PGR_CH_RETRY;
+  StateGuard guard;if(!guard.entered)return PGS_CH_RETRY;
   if (g_state.event_count == 0) {
-    out_event->kind = PGR_CH_EVENT_NONE;
-    return PGR_CH_OK;
+    out_event->kind = PGS_CH_EVENT_NONE;
+    return PGS_CH_OK;
   }
   *out_event = g_state.events[g_state.event_head];
-  g_state.event_head = (g_state.event_head + 1) % PGR_CH_EVENT_QUEUE_MAX;
+  g_state.event_head = (g_state.event_head + 1) % PGS_CH_EVENT_QUEUE_MAX;
   g_state.event_count--;
-  return PGR_CH_HAS_EVENT;
+  return PGS_CH_HAS_EVENT;
 }
 
 int api_stop(const char *reason) {
   g_state.stop_requested.store(true,std::memory_order_release);
-  StateGuard guard;if(!guard.entered)return PGR_CH_OK;
-  if (!g_state.active) return PGR_CH_OK;
+  StateGuard guard;if(!guard.entered)return PGS_CH_OK;
+  if (!g_state.active) return PGS_CH_OK;
   const char *r =
       (reason != nullptr && reason[0] != '\0') ? reason : "cancelled";
   finish_observation("cancelled", r, nullptr, false, false);
-  return PGR_CH_OK;
+  return PGS_CH_OK;
 }
 
-int api_sample(PgrCameraHostSample *out_sample) {
-  if (!out_sample) return PGR_CH_ERR_INVALID_ARG;
-  if (out_sample->version != PGR_CH_API_VERSION ||
-      out_sample->size != sizeof(PgrCameraHostSample)) {
-    return PGR_CH_ERR_VERSION;
+int api_sample(PgsCameraHostSample *out_sample) {
+  if (!out_sample) return PGS_CH_ERR_INVALID_ARG;
+  if (out_sample->version != PGS_CH_API_VERSION ||
+      out_sample->size != sizeof(PgsCameraHostSample)) {
+    return PGS_CH_ERR_VERSION;
   }
-  StateGuard guard;if(!guard.entered)return PGR_CH_RETRY;
+  StateGuard guard;if(!guard.entered)return PGS_CH_RETRY;
   double now = fallback_now_ms();
   memset(out_sample, 0, sizeof(*out_sample));
-  out_sample->version = PGR_CH_API_VERSION;
-  out_sample->size = sizeof(PgrCameraHostSample);
+  out_sample->version = PGS_CH_API_VERSION;
+  out_sample->size = sizeof(PgsCameraHostSample);
   out_sample->active = g_state.active ? 1 : 0;
   out_sample->ready = g_state.ready ? 1 : 0;
   out_sample->stopping = revoked() ? 1 : 0;
@@ -2411,16 +2411,16 @@ int api_sample(PgrCameraHostSample *out_sample) {
     copy_str(out_sample->failure_message, sizeof(out_sample->failure_message),
              g_state.sample_failure.message);
   }
-  return PGR_CH_OK;
+  return PGS_CH_OK;
 }
 
-bool valid_pulse(const PgrUnityPulse *p){
+bool valid_pulse(const PgsUnityPulse *p){
  if(!p||p->reserved||p->tid<=0||uint64_t(p->tid)!=current_tid())return false;
- const auto core=resolve_native_api();const auto scheduler=core&&core->query_feature?static_cast<const PgrUnitySchedulerApi*>(core->query_feature(48,2)):nullptr;
+ const auto core=resolve_native_api();const auto scheduler=core&&core->query_feature?static_cast<const PgsUnitySchedulerApi*>(core->query_feature(48,2)):nullptr;
  auto thread=reinterpret_cast<Il2CppThreadCurrentFn>(g_state.cfg.thread_current);
  return scheduler&&scheduler->valid(p->generation)==1&&thread&&thread();
 }
-void api_on_unity_begin(void *ctx, const PgrUnityPulse *pulse) {
+void api_on_unity_begin(void *ctx, const PgsUnityPulse *pulse) {
   (void)ctx;
   StateGuard guard;if(!guard.entered)return;
   if(!valid_pulse(pulse))return;
@@ -2435,7 +2435,7 @@ void api_on_unity_begin(void *ctx, const PgrUnityPulse *pulse) {
   if (g_state.active && !g_state.ready && !revoked()) {
     if (!g_state.has_prepared ||
         (now - g_state.last_prepare_at_ms) >=
-            static_cast<double>(PGR_CH_RETRY_MS)) {
+            static_cast<double>(PGS_CH_RETRY_MS)) {
       attempt_prepare(now);
     }
   }
@@ -2443,7 +2443,7 @@ void api_on_unity_begin(void *ctx, const PgrUnityPulse *pulse) {
   if (g_state.active && g_state.ready && !revoked() &&
       !g_state.explicit_execute_tracking) {
     if(g_state.calls<UINT32_MAX)++g_state.calls;
-    if (!g_state.continuous && g_state.calls > PGR_CH_CALLS_MAX) {
+    if (!g_state.continuous && g_state.calls > PGS_CH_CALLS_MAX) {
       g_state.overflow = true;
     } else {
       if(g_state.raw_matches<UINT32_MAX)++g_state.raw_matches;
@@ -2456,7 +2456,7 @@ void api_on_unity_begin(void *ctx, const PgrUnityPulse *pulse) {
   }
 }
 
-void api_on_unity_end(void *ctx, const PgrUnityPulse *pulse) {
+void api_on_unity_end(void *ctx, const PgsUnityPulse *pulse) {
   (void)ctx;
   StateGuard guard;if(!guard.entered)return;
   if(!valid_pulse(pulse))return;
@@ -2483,9 +2483,9 @@ void api_bind_core_handle(void *lib_handle) {
   g_state.core_handle = lib_handle;
 }
 
-const PgrCameraHostApi kApi = {
-    .version = PGR_CH_API_VERSION,
-    .size = sizeof(PgrCameraHostApi),
+const PgsCameraHostApi kApi = {
+    .version = PGS_CH_API_VERSION,
+    .size = sizeof(PgsCameraHostApi),
     .configure = api_configure,
     .start = api_start,
     .set_options = api_set_options,
@@ -2504,6 +2504,6 @@ const PgrCameraHostApi kApi = {
 }  // namespace
 
 const void *pgs_camera_host_api(uint32_t version) {
-  if (version != PGR_CH_API_VERSION) return nullptr;
+  if (version != PGS_CH_API_VERSION) return nullptr;
   return &kApi;
 }

@@ -25,7 +25,7 @@ struct Root {
 int gui,interaction,state,pokemon,ball,bag,promise,response,probability;
 union Box {bool b;int i;} boxed;
 bool fresh=true,foreground=true,coherent=true,ownership=true,ready=true,in_play=false,photo=false,full_bread=false;
-int selected=1,stock=10,active_berry=0,attempts=0,polls=0,completions=0,last_completion=0,rearm=0,result=2,poll_rc=PGR_VR_PENDING;
+int selected=1,stock=10,active_berry=0,attempts=0,polls=0,completions=0,last_completion=0,rearm=0,result=2,poll_rc=PGS_VR_PENDING;
 int64_t now=10000;
 constexpr int64_t kPromiseTimeoutMs=15000,kThrowCadenceMs=1200;
 int g_berry_success=1,g_berry_active_exists=3,g_berry_no_stock=2;
@@ -33,12 +33,12 @@ std::string settings="C3|1|1|75|0|0|1|0",account="account";
 std::string json_quote(const std::string& s){return "\""+s+"\"";}
 int64_t clock_ms(){return now;}
 unsigned sample_count=0;
-int sample(PgrRuntimeTransportSample* out){*out={};out->snapshot_fresh=fresh;out->snapshot_seq=coherent?1:++sample_count;return 0;}
+int sample(PgsRuntimeTransportSample* out){*out={};out->snapshot_fresh=fresh;out->snapshot_seq=coherent?1:++sample_count;return 0;}
 int get_string(uint32_t slot,char* out,uint32_t cap,uint32_t* len){assert(slot==15&&cap>settings.size());*len=settings.size();std::memcpy(out,settings.data(),*len);return 0;}
 int get_bool(uint32_t slot,int* out){assert(slot==3);*out=foreground;return 0;}
-int emit(uint32_t,const int64_t*,uint32_t,const PgrRuntimeTransportString*,uint32_t){return 0;}
-PgrRuntimeTransportApi tr{};
-const PgrRuntimeTransportApi* transport(){return &tr;}
+int emit(uint32_t,const int64_t*,uint32_t,const PgsRuntimeTransportString*,uint32_t){return 0;}
+PgsRuntimeTransportApi tr{};
+const PgsRuntimeTransportApi* transport(){return &tr;}
 void* resolve_class(const char*,const char*){return &gui;}
 void* obj_klass(void* o){return o;}
 std::string pokemon_class="WildMapPokemon";
@@ -71,18 +71,18 @@ void* call_obj(void* o,const char* method,int=0,void** args=nullptr){
  if(n=="EncounterStateComplete"){assert(o==&state);++completions;last_completion=*static_cast<int*>(args[0]);return nullptr;}
  throw Failure{"Unexpected fixture call: "+n};
 }
-void pgr_catch_chance_enter(void* o){assert(o==&interaction);++rearm;}
+void pgs_catch_chance_enter(void* o){assert(o==&interaction);++rearm;}
 bool real_ensure_berry_ready(){return true;}
 void* require_map_method(void*,const char*,int,const char*,const char*,const char*){return nullptr;}
 void* invoke_method(void*,void*,void**){return &promise;}
-int rewrite_throw(void* b,PgrThrowValue* v){assert(b==&ball);v->radius=0.5f;v->bullseye=1;v->spinning=0;return 0;}
-PgrThrowApi throws_api{1,sizeof(PgrThrowApi),nullptr,nullptr,nullptr,rewrite_throw};
+int rewrite_throw(void* b,PgsThrowValue* v){assert(b==&ball);v->radius=0.5f;v->bullseye=1;v->spinning=0;return 0;}
+PgsThrowApi throws_api{1,sizeof(PgsThrowApi),nullptr,nullptr,nullptr,rewrite_throw};
 const void* pgs_throws_api(uint32_t){return &throws_api;}
-Root submit_auto_throw(Root& s,Root& p,const PgrThrowValue& v){assert(s.get()==&state&&p.get()==&pokemon&&v.item==selected&&v.radius==0.5f&&v.bullseye==1&&v.spinning==0&&v.missed==0);++attempts;return Root(&promise);}
-int poll_auto_throw(Root& p,uint64_t,Root& value,int& status){assert(p.get()==&promise);++polls;if(poll_rc==PGR_VR_DONE){value=Root(&response);status=result;}return poll_rc;}
+Root submit_auto_throw(Root& s,Root& p,const PgsThrowValue& v){assert(s.get()==&state&&p.get()==&pokemon&&v.item==selected&&v.radius==0.5f&&v.bullseye==1&&v.spinning==0&&v.missed==0);++attempts;return Root(&promise);}
+int poll_auto_throw(Root& p,uint64_t,Root& value,int& status){assert(p.get()==&promise);++polls;if(poll_rc==PGS_VR_DONE){value=Root(&response);status=result;}return poll_rc;}
 const void* pgs_vgp_results_api(uint32_t){return nullptr;}
 int rocket_keeps=0,transfers=0,transfer_rc=1;
-int pgr_auto_rocket_keeps_catches(){return rocket_keeps;}
+int pgs_auto_rocket_keeps_catches(){return rocket_keeps;}
 #include "auto_throw_controller.inc"
 int map_real_transfer(void* r,uint64_t){assert(r==&response);++transfers;return transfer_rc;}
 std::string obj_class_name(void* o){return o==&pokemon?pokemon_class:"CatchPokemonOutProto";}
@@ -90,7 +90,7 @@ void reset(){
  manual_throw=ManualThrowSession{};rocket_transfer_response.reset();recent_transfer_response.reset();assert(roots.empty());manual_throw.interaction=Root(&interaction);
  rocket_keeps=transfers=0;transfer_rc=1;pokemon_class="WildMapPokemon";full_bread=false;
  fresh=foreground=coherent=ownership=ready=true;in_play=photo=false;selected=1;stock=10;active_berry=0;
- attempts=polls=completions=rearm=0;poll_rc=PGR_VR_PENDING;result=2;now=10000;account="account";
+ attempts=polls=completions=rearm=0;poll_rc=PGS_VR_PENDING;result=2;now=10000;account="account";
  settings="C3|1|1|75|0|0|1|0";
 }
 void tick(bool raid=false){now+=1300;try{step_manual_throw(1,raid);}catch(const Failure& f){throw_block(f.where);}}
@@ -101,20 +101,20 @@ int main(){
  reset();active_berry=705;settings="C3|1|1|75|705|0|1|0";tick();assert(attempts==1); // Berry already active must NOT block throwing.
  reset();tick(true);assert(!attempts);tick();assert(attempts==1);
  for(int i=0;i<5;i++)tick();assert(attempts==1&&polls==5); // pending never resubmits
- poll_rc=PGR_VR_DONE;result=2;active_berry=701;tick();assert(attempts==1&&active_berry==0&&rearm==1);
+ poll_rc=PGS_VR_DONE;result=2;active_berry=701;tick();assert(attempts==1&&active_berry==0&&rearm==1);
  tick();assert(attempts==2);result=1;tick();assert(completions==1&&last_completion==1);tick();assert(attempts==2);
- reset();tick();poll_rc=PGR_VR_DONE;result=3;tick();assert(completions==1&&last_completion==3);
- reset();selected=5;tick();stock=0;poll_rc=PGR_VR_DONE;result=2;tick();assert(completions==1&&last_completion==3);
+ reset();tick();poll_rc=PGS_VR_DONE;result=3;tick();assert(completions==1&&last_completion==3);
+ reset();selected=5;tick();stock=0;poll_rc=PGS_VR_DONE;result=2;tick();assert(completions==1&&last_completion==3);
  reset();tick();now+=15001;tick();assert(manual_throw.blocked&&attempts==1);tick();assert(attempts==1);
- reset();tick();poll_rc=PGR_VR_REJECTED;tick();assert(manual_throw.blocked&&attempts==1);
- reset();tick();poll_rc=PGR_VR_DONE;result=0;tick();assert(manual_throw.blocked&&attempts==1);
+ reset();tick();poll_rc=PGS_VR_REJECTED;tick();assert(manual_throw.blocked&&attempts==1);
+ reset();tick();poll_rc=PGS_VR_DONE;result=0;tick();assert(manual_throw.blocked&&attempts==1);
  for(int loss=0;loss<5;loss++){
   reset();tick();if(loss==0)foreground=false;if(loss==1)fresh=false;if(loss==2)coherent=false;if(loss==3)ownership=false;if(loss==4)account="changed";
   tick();assert(manual_throw.blocked&&attempts==1&&polls==0);
   foreground=fresh=coherent=ownership=true;account="account";tick();assert(attempts==1);
  }
  reset();tick();settings="C3|1|1|75|0|0|0|0";tick();assert(attempts==1&&polls==1);
- poll_rc=PGR_VR_DONE;result=2;tick();tick();assert(attempts==1); // off drains result, no next throw
+ poll_rc=PGS_VR_DONE;result=2;tick();tick();assert(attempts==1); // off drains result, no next throw
  for(int wait=0;wait<6;wait++){
   reset();if(wait==0)in_play=true;if(wait==1)photo=true;if(wait==2)ready=false;if(wait==3)selected=4;if(wait==4)stock=0;if(wait==5)settings="C3|1|1|75|0|0|1|100";
   tick();tick();assert(attempts==0&&!manual_throw.blocked);
@@ -122,15 +122,15 @@ int main(){
  // A reward Pokemon collected from a menu is never thrown at or completed by Auto Throw.
  reset();pokemon_class="QuestMapPokemon";tick();tick();assert(!attempts&&!completions&&manual_throw.blocked);pokemon_class="WildMapPokemon";
  // A caught Pokemon is handed to the transfer rules once storage lists it (Auto Throw skips the summary).
- reset();selected=5;pokemon_class="IncidentMapPokemon";tick();poll_rc=PGR_VR_DONE;result=1;transfer_rc=0;tick();assert(completions==1&&transfers==0&&rocket_transfer_response);
+ reset();selected=5;pokemon_class="IncidentMapPokemon";tick();poll_rc=PGS_VR_DONE;result=1;transfer_rc=0;tick();assert(completions==1&&transfers==0&&rocket_transfer_response);
  tick();assert(transfers==1);transfer_rc=1;tick();assert(transfers==2&&!rocket_transfer_response);tick();assert(transfers==2);
- reset();selected=5;pokemon_class="IncidentMapPokemon";tick();poll_rc=PGR_VR_DONE;result=1;transfer_rc=0;tick();now+=15001;tick();assert(!rocket_transfer_response);
- reset();tick();poll_rc=PGR_VR_DONE;result=1;tick();tick();assert(transfers==1&&!rocket_transfer_response);  // a wild catch
- reset();selected=5;pokemon_class="RaidMapPokemon";tick();poll_rc=PGR_VR_DONE;result=1;tick();tick();assert(transfers==1);  // a raid catch
- reset();full_bread=true;selected=5;pokemon_class="RaidMapPokemon";tick();poll_rc=PGR_VR_DONE;result=1;tick();tick();assert(transfers==1&&!rocket_transfer_response);  // a Max Battle catch
- reset();rocket_keeps=1;selected=5;pokemon_class="IncidentMapPokemon";tick();poll_rc=PGR_VR_DONE;result=1;tick();tick();assert(completions==1&&transfers==0);  // Auto Rocket keeping everything
- reset();selected=5;pokemon_class="RaidMapPokemon";tick();poll_rc=PGR_VR_DONE;result=3;tick();tick();assert(transfers==0);  // fled: nothing to hand off
- reset();tick();poll_rc=PGR_VR_DONE;result=2;tick();tick();assert(transfers==0);  // broke free: nothing to hand off
+ reset();selected=5;pokemon_class="IncidentMapPokemon";tick();poll_rc=PGS_VR_DONE;result=1;transfer_rc=0;tick();now+=15001;tick();assert(!rocket_transfer_response);
+ reset();tick();poll_rc=PGS_VR_DONE;result=1;tick();tick();assert(transfers==1&&!rocket_transfer_response);  // a wild catch
+ reset();selected=5;pokemon_class="RaidMapPokemon";tick();poll_rc=PGS_VR_DONE;result=1;tick();tick();assert(transfers==1);  // a raid catch
+ reset();full_bread=true;selected=5;pokemon_class="RaidMapPokemon";tick();poll_rc=PGS_VR_DONE;result=1;tick();tick();assert(transfers==1&&!rocket_transfer_response);  // a Max Battle catch
+ reset();rocket_keeps=1;selected=5;pokemon_class="IncidentMapPokemon";tick();poll_rc=PGS_VR_DONE;result=1;tick();tick();assert(completions==1&&transfers==0);  // Auto Rocket keeping everything
+ reset();selected=5;pokemon_class="RaidMapPokemon";tick();poll_rc=PGS_VR_DONE;result=3;tick();tick();assert(transfers==0);  // fled: nothing to hand off
+ reset();tick();poll_rc=PGS_VR_DONE;result=2;tick();tick();assert(transfers==0);  // broke free: nothing to hand off
  // The catch observer (hand throws) feeds the same queue; the same response is queued once.
  reset();assert(queue_caught_transfer(&response,now)&&!queue_caught_transfer(&response,now));tick();assert(transfers==1&&!rocket_transfer_response);
  assert(!queue_caught_transfer(&response,now));  // already handed off once

@@ -34,51 +34,51 @@ void set_position(void *self,float value,int axis,const void *method){
  if(self&&self==refresh_scroll&&axis==1&&value==1.0f)return;
  original_position(self,value,axis,method);
 }
-const void *resolve(const PgrMetaApi *api,const char *ns,const char *name){
- PgrMetaClassQuery q{1,sizeof(q),ns,name,nullptr,PGR_MD_MATCH_EXACT,0};
- PgrMetaClassResult out{};
+const void *resolve(const PgsMetaApi *api,const char *ns,const char *name){
+ PgsMetaClassQuery q{1,sizeof(q),ns,name,nullptr,PGS_MD_MATCH_EXACT,0};
+ PgsMetaClassResult out{};
  return api->resolve_class(&q,&out)==0?out.klass:nullptr;
 }
-bool method(const PgrMetaApi *api,const void *owner,const char *name,const char *p0,const char *p1,PgrMetaMethodResult &out){
+bool method(const PgsMetaApi *api,const void *owner,const char *name,const char *p0,const char *p1,PgsMetaMethodResult &out){
  if(!owner)return false;
- PgrMetaMethodQuery q{};q.version=1;q.size=sizeof(q);q.owner=owner;q.name=name;
- q.return_type="System.Void";q.return_match=PGR_MD_MATCH_EXACT;
- q.param_count=p1?2:1;q.param_types[0]=p0;q.param_match[0]=p1?PGR_MD_MATCH_EXACT:PGR_MD_MATCH_SUFFIX;
- if(p1){q.param_types[1]=p1;q.param_match[1]=PGR_MD_MATCH_EXACT;}
+ PgsMetaMethodQuery q{};q.version=1;q.size=sizeof(q);q.owner=owner;q.name=name;
+ q.return_type="System.Void";q.return_match=PGS_MD_MATCH_EXACT;
+ q.param_count=p1?2:1;q.param_types[0]=p0;q.param_match[0]=p1?PGS_MD_MATCH_EXACT:PGS_MD_MATCH_SUFFIX;
+ if(p1){q.param_types[1]=p1;q.param_match[1]=PGS_MD_MATCH_EXACT;}
  return api->validate_method(&q,&out)==0;
 }
 }
-void pgr_profile_scroll_install(){
+void pgs_profile_scroll_install(){
  if(installed)return;
- const auto *bootstrap=static_cast<const PgrBootApi*>(pgs_runtime_bootstrap_api(1));
- PgrBootBinding b{};b.version=1;b.size=sizeof(b);
+ const auto *bootstrap=static_cast<const PgsBootApi*>(pgs_runtime_bootstrap_api(1));
+ PgsBootBinding b{};b.version=1;b.size=sizeof(b);
  if(!bootstrap||bootstrap->snapshot(&b)!=0)return;
- const auto *api=static_cast<const PgrMetaApi*>(pgs_runtime_metadata_api(1));
+ const auto *api=static_cast<const PgsMetaApi*>(pgs_runtime_metadata_api(1));
  if(!api)return;
  installed=true; // Optional: unsupported metadata must not disable gameplay.
  const void *page=resolve(api,"Niantic.Holoholo.UI","PlayerProfilePage");
  const void *base=resolve(api,"Niantic.Holoholo.UI","GUISubPageBase");
  const void *scroll=resolve(api,"Niantic.Holoholo.Widget","ScrollRectBase");
- PgrMetaMethodResult update{},position{};
- PgrMetaFieldQuery fq{1,sizeof(fq),base,PGR_GAME_PROFILE_SCROLL_CPP_SCROLLRECT_NAME,PGR_GAME_PROFILE_SCROLL_CPP_SCROLLRECT_OFFSET,0x50,0,PGR_MD_FIELD_REF,0,"Niantic.Holoholo.Widget.ScrollRectEx",PGR_MD_MATCH_EXACT,0};
- PgrMetaFieldResult field{};
+ PgsMetaMethodResult update{},position{};
+ PgsMetaFieldQuery fq{1,sizeof(fq),base,PGS_GAME_PROFILE_SCROLL_CPP_SCROLLRECT_NAME,PGS_GAME_PROFILE_SCROLL_CPP_SCROLLRECT_OFFSET,0x50,0,PGS_MD_FIELD_REF,0,"Niantic.Holoholo.Widget.ScrollRectEx",PGS_MD_MATCH_EXACT,0};
+ PgsMetaFieldResult field{};
  bool ok=page&&base&&scroll&&api->validate_field(&fq,&field)==0&&
-  method(api,page,PGR_GAME_PROFILE_SCROLL_CPP_PLAYER_INFO_UPDATE_NAME,"PlayerInfo",nullptr,update)&&method(api,scroll,PGR_GAME_PROFILE_SCROLL_CPP_SCROLL_POSITION_NAME,"System.Single","System.Int32",position);
+  method(api,page,PGS_GAME_PROFILE_SCROLL_CPP_PLAYER_INFO_UPDATE_NAME,"PlayerInfo",nullptr,update)&&method(api,scroll,PGS_GAME_PROFILE_SCROLL_CPP_SCROLL_POSITION_NAME,"System.Single","System.Int32",position);
  if(ok){
   auto param=reinterpret_cast<void*(*)(const void*,uint32_t)>(b.meta.method_get_param)(update.method,0);
   auto klass=reinterpret_cast<void*(*)(void*)>(b.meta.class_from_type)(param);
   int align=0;
   ok=klass&&reinterpret_cast<int(*)(void*,int*)>(b.meta.class_value_size)(klass,&align)==32&&align==8;
-  const char *names[]={"<PlayerProto>k__BackingField","<PlayerStats>k__BackingField",PGR_GAME_PROFILE_SCROLL_CPP_PLAYER_INFO_DAYS_NAME,"<PlayerDay>k__BackingField"};
+  const char *names[]={"<PlayerProto>k__BackingField","<PlayerStats>k__BackingField",PGS_GAME_PROFILE_SCROLL_CPP_PLAYER_INFO_DAYS_NAME,"<PlayerDay>k__BackingField"};
   for(unsigned i=0;ok&&i<4;i++){
-   PgrMetaFieldQuery q{1,sizeof(q),klass,names[i],PGR_GAME_PROFILE_SCROLL_CPP_PLAYER_INFO_FIRST_FIELD_OFFSET+i*8,0x50,0,i==3?PGR_MD_FIELD_VALUE:PGR_MD_FIELD_REF,i==3?8u:0u,i==3?"System.Int64":nullptr,i==3?PGR_MD_MATCH_EXACT:PGR_MD_MATCH_ANY,0};
-   PgrMetaFieldResult out{};ok=api->validate_field(&q,&out)==0;
+   PgsMetaFieldQuery q{1,sizeof(q),klass,names[i],PGS_GAME_PROFILE_SCROLL_CPP_PLAYER_INFO_FIRST_FIELD_OFFSET+i*8,0x50,0,i==3?PGS_MD_FIELD_VALUE:PGS_MD_FIELD_REF,i==3?8u:0u,i==3?"System.Int64":nullptr,i==3?PGS_MD_MATCH_EXACT:PGS_MD_MATCH_ANY,0};
+   PgsMetaFieldResult out{};ok=api->validate_field(&q,&out)==0;
   }
  }
  void *update_code=nullptr,*position_code=nullptr;
  if(ok){
   memcpy(&update_code,update.method,sizeof(void*));memcpy(&position_code,position.method,sizeof(void*));
-  PgrMetaCodeQuery a{1,sizeof(a),update_code,16,nullptr,0,0},c{1,sizeof(c),position_code,16,nullptr,0,0};
+  PgsMetaCodeQuery a{1,sizeof(a),update_code,16,nullptr,0,0},c{1,sizeof(c),position_code,16,nullptr,0,0};
   ok=api->validate_code(&a)==0&&api->validate_code(&c)==0;
  }
  if(ok){

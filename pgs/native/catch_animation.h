@@ -68,7 +68,7 @@
 // Config v1: 8-byte header then 12 pointers in table order (104 bytes). The il2cpp
 // primitives are real module exports; the three MethodInfo* and three il2cpp classes
 // were resolved and validated by the caller. No ball metadata is needed here.
-struct PgrSpeedConfig {          // 104 bytes
+struct PgsSpeedConfig {          // 104 bytes
     uint32_t version, size;      // 0   { version==1, size==sizeof }
     void *runtime_invoke;        // 8   void* (*)(void* method, void* obj, void** params, void** exc)
     void *gchandle_new;          // 16  void* (*)(void* obj, int pinned)
@@ -86,7 +86,7 @@ struct PgrSpeedConfig {          // 104 bytes
 
 // Pull-only telemetry. The adapter turns serial transitions into the existing
 // speed-* event names; no native->JS callback is ever made.
-struct PgrSpeedSample {          // 32 bytes
+struct PgsSpeedSample {          // 32 bytes
     uint32_t owned;              // 0   1 while an attempt holds the animator speed
     uint32_t fault;             // 4   latched restore/apply/root fault
     uint32_t action;            // 8   last event code (see catch_animation.cpp)
@@ -97,14 +97,14 @@ struct PgrSpeedSample {          // 32 bytes
     float    readback;          // 28  speed read back after the last write
 };
 
-struct PgrSpeedApi {             // 56 bytes: ordered, read-only table (V1, ordinary ball)
+struct PgsSpeedApi {             // 56 bytes: ordered, read-only table (V1, ordinary ball)
     uint32_t version, size;      // 0   { version==1, size==sizeof }
-    int (*install)(const PgrSpeedConfig *config);
+    int (*install)(const PgsSpeedConfig *config);
     int (*update)(int allowed, uint64_t lease_ms, uint64_t unity_tid);
     int (*apply)(void *animator, void *response);
     int (*complete)(void *response, int32_t reason);
     int (*tick)(uint64_t proven_tid);
-    int (*sample)(PgrSpeedSample *out);
+    int (*sample)(PgsSpeedSample *out);
 };
 
 // V2 appends the Dynamax / Max-ball entry point. The V1 table above is unchanged;
@@ -113,12 +113,12 @@ struct PgrSpeedApi {             // 56 bytes: ordered, read-only table (V1, ordi
 // the shared apply engine with the Max baseline + active-tick reset enabled. Like
 // apply(), it returns OK even when it skips (gate closed / concurrent / destroyed /
 // non-standard baseline); the caller reads sample().owned/action to learn the result.
-struct PgrSpeedApi2 {            // 16 bytes: ordered, read-only table (V2, Max ball)
+struct PgsSpeedApi2 {            // 16 bytes: ordered, read-only table (V2, Max ball)
     uint32_t version, size;      // 0   { version==2, size==sizeof }
     int (*apply_max)(void *animator, void *response, float expected_max_speed);
 };
 
 // Hidden getter. NOT exported by the version script; the coordinator registers it in
-// the core getter registry under feature id 8. Answers version 1 with PgrSpeedApi and
-// version 2 with PgrSpeedApi2 on an exact match; any other version returns nullptr.
+// the core getter registry under feature id 8. Answers version 1 with PgsSpeedApi and
+// version 2 with PgsSpeedApi2 on an exact match; any other version returns nullptr.
 const void *pgs_catch_animation_api(uint32_t version);

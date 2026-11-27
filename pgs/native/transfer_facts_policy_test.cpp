@@ -6,15 +6,15 @@
 #include "transfer_policy.h"
 
 namespace {
-PgrTransferInput policyInput(const PgrTransferFactsOut &out,uint32_t protect){
-  PgrTransferInput v{};v.version=1;v.size=sizeof(v);
+PgsTransferInput policyInput(const PgsTransferFactsOut &out,uint32_t protect){
+  PgsTransferInput v{};v.version=1;v.size=sizeof(v);
   v.attack=out.attack;v.defense=out.defense;v.stamina=out.stamina;v.species=out.species;
   v.protect=protect;v.known=out.known;v.flags=out.flags;
   return v;
 }
-PgrTransferFactsOut readFacts(FakePokemon &pk,uint32_t protect){
-  const auto req=make_request(&pk,protect);PgrTransferFactsOut out{};
-  assert(g_api->inspect(&req,&out)==PGR_TF_VALID);
+PgsTransferFactsOut readFacts(FakePokemon &pk,uint32_t protect){
+  const auto req=make_request(&pk,protect);PgsTransferFactsOut out{};
+  assert(g_api->inspect(&req,&out)==PGS_TF_VALID);
   assert(out.known==255&&out.caught_id==pk.id&&g_handles.empty());return out;
 }
 void resetPolicyFixture(){assert(g_handles.empty());reset_flags();g_size_val=12;}
@@ -24,10 +24,10 @@ int main(int argc,char **argv){
   assert(argc==2);void *lib=dlopen(argv[1],RTLD_NOW|RTLD_LOCAL);assert(lib);
   const auto get=reinterpret_cast<GetApiFn>(dlsym(lib,"pgs_native_api"));assert(get);
   const auto *core=static_cast<const pgs_native_api_v2*>(get(2));assert(core);
-  g_api=static_cast<const PgrTransferFactsApi*>(core->query_feature(35,1));
-  const auto *policy=static_cast<const PgrTransferApi*>(core->query_feature(4,1));
+  g_api=static_cast<const PgsTransferFactsApi*>(core->query_feature(35,1));
+  const auto *policy=static_cast<const PgsTransferApi*>(core->query_feature(4,1));
   assert(g_api&&g_api->size==24&&policy&&policy->version==1&&policy->size==16);
-  auto cfg=make_config();assert(g_api->install(&cfg)==PGR_TF_OK);
+  auto cfg=make_config();assert(g_api->install(&cfg)==PGS_TF_OK);
 
   resetPolicyFixture();
   {auto display=make_display();auto pk=make_pokemon(&display);
@@ -73,8 +73,8 @@ int main(int argc,char **argv){
   // An unsuccessful read cannot manufacture eligibility by supplying zeroed IVs/flags with known=0.
   resetPolicyFixture();
   {auto display=make_display();auto pk=make_pokemon(&display);auto req=make_request(&pk,0);
-   req.lease_ms=0;PgrTransferFactsOut out{};
-   assert(g_api->inspect(&req,&out)==PGR_TF_OK&&out.known==0);
+   req.lease_ms=0;PgsTransferFactsOut out{};
+   assert(g_api->inspect(&req,&out)==PGS_TF_OK&&out.known==0);
    auto input=policyInput(out,0);assert(policy->decide(&input)!=0);
    req.lease_ms=2000;pk.favorite=2;
    assert(g_api->inspect(&req,&out)<0&&out.known==0);

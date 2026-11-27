@@ -16,6 +16,24 @@ public class SettingsBackupRulesTest {
     public static void main(String[] args)throws Exception{
         SettingsBackupRules.validate(valid());
         SettingsBackupRules.validate(valid().put("format","PGS settings"));
+        JSONObject legacy=valid();
+        JSONObject normalized=SettingsBackupRules.canonicalPreferences(legacy);
+        if(!normalized.has("pgs-overlays")||!legacy.getJSONObject("preferences").has("pgrazor-overlays")||normalized.has("pgrazor-overlays"))
+            throw new AssertionError("Legacy backup scope normalization failed");
+        JSONObject modern=valid().put("format","PGS settings").put("version",2).put("preferences",
+            new JSONObject().put("pgs-overlays",new JSONObject().put("vgp.fx",0.8)));
+        SettingsBackupRules.validate(modern);
+        if(!SettingsBackupRules.canonicalPreferences(modern).has("pgs-overlays"))throw new AssertionError("PGS scope lost");
+        rejects(valid().put("format","PGS settings").put("version",2));
+        rejects(valid().put("version",2));
+        rejects(valid().put("format","PGS settings").put("preferences",new JSONObject().put("pgs-overlays",new JSONObject())));
+        rejects(new JSONObject(modern.toString()).put("format","PGRazor settings"));
+        JSONObject mixed=new JSONObject(modern.toString());
+        mixed.getJSONObject("preferences").put("pgrazor-overlays",new JSONObject());
+        rejects(mixed);
+        JSONObject badModern=new JSONObject(modern.toString());
+        badModern.getJSONObject("preferences").getJSONObject("pgs-overlays").put("vgp.fx",1.2);
+        rejects(badModern);
         rejects(valid().put("format","unrecognized"));
         // Old exported backups continue to import without changing preferences or losing data.
         JSONObject oldLanguage=valid();SettingsBackupRules.validate(oldLanguage);

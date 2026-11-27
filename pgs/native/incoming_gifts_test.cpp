@@ -51,7 +51,7 @@ FakeBox *box_bool(bool v) {
 }
 
 // ----- runtime shims ----------------------------------------------------------------
-const PgrIncomingGiftsApi *g_api = nullptr;
+const PgsIncomingGiftsApi *g_api = nullptr;
 uint64_t g_owner = 0;
 int g_open_invokes = 0;
 bool g_open_throws = false;
@@ -86,7 +86,7 @@ uintptr_t fake_gc_new(void *obj, int) {
     // A reentrant READY nested inside the durable-root gc_new of an outer READY (the "READY during
     // gc_new of READY" case): the outer arm must drop its own root and let this newer arm win.
     g_rearm_on_new = false;
-    g_api->observe(PGR_GIFT_OBSERVE_READY, g_rearm_gui, g_owner);
+    g_api->observe(PGS_GIFT_OBSERVE_READY, g_rearm_gui, g_owner);
   }
   if (g_disable_on_seq_new && obj != nullptr && *static_cast<void **>(obj) == &cls_sequence) {
     // A disable+reenable straddling the sequence allocation: because the gen is pinned BEFORE the
@@ -112,7 +112,7 @@ void fake_gc_free(uintptr_t h) {
     // case). The erase already happened, so the re-arm allocates a fresh handle. Gated on the freed
     // object so a stop test fires on the teardown free, not an earlier boxed-bool free.
     g_rearm_on_free = false;
-    g_api->observe(PGR_GIFT_OBSERVE_READY, g_rearm_gui, g_owner);
+    g_api->observe(PGS_GIFT_OBSERVE_READY, g_rearm_gui, g_owner);
   }
 }
 void *fake_obj_class(void *obj) { return obj ? *static_cast<void **>(obj) : nullptr; }
@@ -132,8 +132,8 @@ void fake_field_get(void *obj, void *field, void *out) {
       // Reentrant CLOSE+READY mid-lookup of the sequence state: the final epoch/automated recheck
       // before the field_set must abort the skip (never mutate a replacement sequence).
       g_close_ready_on_seq_state = false;
-      g_api->observe(PGR_GIFT_OBSERVE_CLOSE, g_cur_gui, g_owner);
-      if (g_rearm_gui != nullptr) g_api->observe(PGR_GIFT_OBSERVE_READY, g_rearm_gui, g_owner);
+      g_api->observe(PGS_GIFT_OBSERVE_CLOSE, g_cur_gui, g_owner);
+      if (g_rearm_gui != nullptr) g_api->observe(PGS_GIFT_OBSERVE_READY, g_rearm_gui, g_owner);
     }
     *static_cast<int32_t *>(out) = static_cast<FakeSequence *>(obj)->state; return;
   }
@@ -156,8 +156,8 @@ void *fake_runtime_invoke(const void *method, void *obj, void **params, void **e
       // Reentrant CLOSE of the owned GUI then a fresh READY, both DURING the initial alive getter.
       // The outer tick pass must abandon (epoch changed) WITHOUT clearing the freshly-armed slot.
       g_close_ready_on_alive = false;
-      g_api->observe(PGR_GIFT_OBSERVE_CLOSE, g_cur_gui, g_owner);
-      if (g_rearm_gui != nullptr) g_api->observe(PGR_GIFT_OBSERVE_READY, g_rearm_gui, g_owner);
+      g_api->observe(PGS_GIFT_OBSERVE_CLOSE, g_cur_gui, g_owner);
+      if (g_rearm_gui != nullptr) g_api->observe(PGS_GIFT_OBSERVE_READY, g_rearm_gui, g_owner);
     }
     if (g_relocate_on_alive && params[0] == g_cur_gui && g_reloc_storage != nullptr) {
       // Moving GC: copy the owned GUI to a new address and repoint its root, then poison the stale
@@ -177,7 +177,7 @@ void *fake_runtime_invoke(const void *method, void *obj, void **params, void **e
     if (g_close_on_active && g_cur_gui != nullptr) {
       // Reentrant CLOSE of the owned GUI mid-tick: the final gc_get refresh must see the slot gone.
       g_close_on_active = false;
-      g_api->observe(PGR_GIFT_OBSERVE_CLOSE, g_cur_gui, g_owner);
+      g_api->observe(PGS_GIFT_OBSERVE_CLOSE, g_cur_gui, g_owner);
     }
     return box_bool(static_cast<FakeSelectable *>(obj)->active != 0);
   }
@@ -191,10 +191,10 @@ void *fake_runtime_invoke(const void *method, void *obj, void **params, void **e
   return nullptr;
 }
 
-PgrIncomingGiftsConfig make_config() {
-  PgrIncomingGiftsConfig c{};
+PgsIncomingGiftsConfig make_config() {
+  PgsIncomingGiftsConfig c{};
   c.version = 1;
-  c.size = sizeof(PgrIncomingGiftsConfig);
+  c.size = sizeof(PgsIncomingGiftsConfig);
   c.gchandle_new = reinterpret_cast<void *>(&fake_gc_new);
   c.gchandle_get_target = reinterpret_cast<void *>(&fake_gc_get);
   c.gchandle_free = reinterpret_cast<void *>(&fake_gc_free);
@@ -230,23 +230,23 @@ PgrIncomingGiftsConfig make_config() {
 
 uint64_t this_tid() { return static_cast<uint64_t>(static_cast<pid_t>(::gettid())); }
 
-PgrIncomingGiftsSample take_sample() {
-  PgrIncomingGiftsSample s{};
-  assert(g_api->sample(&s) == PGR_GIFT_OK);
-  assert(s.version == 1 && s.size == sizeof(PgrIncomingGiftsSample));
+PgsIncomingGiftsSample take_sample() {
+  PgsIncomingGiftsSample s{};
+  assert(g_api->sample(&s) == PGS_GIFT_OK);
+  assert(s.version == 1 && s.size == sizeof(PgsIncomingGiftsSample));
   return s;
 }
 
-std::vector<PgrIncomingGiftsEvent> drain_all() {
-  std::vector<PgrIncomingGiftsEvent> out;
-  PgrIncomingGiftsEvent e{};
+std::vector<PgsIncomingGiftsEvent> drain_all() {
+  std::vector<PgsIncomingGiftsEvent> out;
+  PgsIncomingGiftsEvent e{};
   int r;
   while ((r = g_api->drain(&e)) == 1) out.push_back(e);
   assert(r == 0);
   return out;
 }
 
-bool saw(const std::vector<PgrIncomingGiftsEvent> &v, uint32_t kind, uint32_t reason) {
+bool saw(const std::vector<PgsIncomingGiftsEvent> &v, uint32_t kind, uint32_t reason) {
   for (const auto &e : v)
     if (e.kind == kind && e.reason == reason) return true;
   return false;
@@ -255,7 +255,7 @@ bool saw(const std::vector<PgrIncomingGiftsEvent> &v, uint32_t kind, uint32_t re
 // Sleep just past the 100 ms attempt throttle, then run one owner-thread tick.
 void act_tick() {
   usleep(110000);
-  assert(g_api->tick(g_owner, 0) == PGR_GIFT_OK);
+  assert(g_api->tick(g_owner, 0) == PGS_GIFT_OK);
 }
 
 FakeGui make_ready_gui(FakeString *sender, FakeDetails *details, FakeSelectable *button) {
@@ -284,125 +284,125 @@ int main(int argc, char **argv) {
   const auto *core = static_cast<const pgs_native_api_v2 *>(getter(2));
   assert(core && core->size == 48);
   assert(core->query_feature(17, 99) == nullptr);  // exact version only
-  const auto *api = static_cast<const PgrIncomingGiftsApi *>(core->query_feature(17, 1));
-  assert(api != nullptr && api->version == 1 && api->size == sizeof(PgrIncomingGiftsApi));
+  const auto *api = static_cast<const PgsIncomingGiftsApi *>(core->query_feature(17, 1));
+  assert(api != nullptr && api->version == 1 && api->size == sizeof(PgsIncomingGiftsApi));
   g_api = api;
 
   std::printf("ABI sizes: config=%zu sample=%zu event=%zu table=%zu\n",
-              sizeof(PgrIncomingGiftsConfig), sizeof(PgrIncomingGiftsSample),
-              sizeof(PgrIncomingGiftsEvent), sizeof(PgrIncomingGiftsApi));
-  assert(sizeof(PgrIncomingGiftsConfig) == 240 && sizeof(PgrIncomingGiftsSample) == 88 &&
-         sizeof(PgrIncomingGiftsEvent) == 16 && sizeof(PgrIncomingGiftsApi) == 64);
+              sizeof(PgsIncomingGiftsConfig), sizeof(PgsIncomingGiftsSample),
+              sizeof(PgsIncomingGiftsEvent), sizeof(PgsIncomingGiftsApi));
+  assert(sizeof(PgsIncomingGiftsConfig) == 240 && sizeof(PgsIncomingGiftsSample) == 88 &&
+         sizeof(PgsIncomingGiftsEvent) == 16 && sizeof(PgsIncomingGiftsApi) == 64);
 
   const uint64_t tid = this_tid();
   g_owner = tid;
-  PgrIncomingGiftsConfig cfg = make_config();
+  PgsIncomingGiftsConfig cfg = make_config();
 
   // 1. Validation + not-installed.
-  assert(api->install(nullptr) == PGR_GIFT_ERR_INVALID_ARG);
-  PgrIncomingGiftsConfig bad = cfg;
+  assert(api->install(nullptr) == PGS_GIFT_ERR_INVALID_ARG);
+  PgsIncomingGiftsConfig bad = cfg;
   bad.version = 2;
-  assert(api->install(&bad) == PGR_GIFT_ERR_BAD_VERSION);
-  bad = cfg; bad.size = sizeof(PgrIncomingGiftsConfig) - 1;
-  assert(api->install(&bad) == PGR_GIFT_ERR_BAD_SIZE);
+  assert(api->install(&bad) == PGS_GIFT_ERR_BAD_VERSION);
+  bad = cfg; bad.size = sizeof(PgsIncomingGiftsConfig) - 1;
+  assert(api->install(&bad) == PGS_GIFT_ERR_BAD_SIZE);
   bad = cfg; bad.f_seq_state = nullptr;
-  assert(api->install(&bad) == PGR_GIFT_ERR_MISSING_PTR);
-  assert(api->update(1, 2000) == PGR_GIFT_ERR_NOT_INSTALLED);
-  assert(api->observe(PGR_GIFT_OBSERVE_READY, &cfg, tid) == PGR_GIFT_ERR_NOT_INSTALLED);
-  assert(api->tick(tid, 0) == PGR_GIFT_ERR_NOT_INSTALLED);
+  assert(api->install(&bad) == PGS_GIFT_ERR_MISSING_PTR);
+  assert(api->update(1, 2000) == PGS_GIFT_ERR_NOT_INSTALLED);
+  assert(api->observe(PGS_GIFT_OBSERVE_READY, &cfg, tid) == PGS_GIFT_ERR_NOT_INSTALLED);
+  assert(api->tick(tid, 0) == PGS_GIFT_ERR_NOT_INSTALLED);
   assert(api->is_open(tid) == 0);
 
   // Install, idempotent re-install, reconfig mismatch.
-  assert(api->install(&cfg) == PGR_GIFT_OK);
-  assert(api->install(&cfg) == PGR_GIFT_OK);
+  assert(api->install(&cfg) == PGS_GIFT_OK);
+  assert(api->install(&cfg) == PGS_GIFT_OK);
   bad = cfg; bad.state_open = 9;
-  assert(api->install(&bad) == PGR_GIFT_ERR_RECONFIG_MISMATCH);
+  assert(api->install(&bad) == PGS_GIFT_ERR_RECONFIG_MISMATCH);
 
   // 2. READY arms the slot and latches the owner.
   FakeString sender; FakeDetails details; FakeSelectable button;
   FakeGui gui = make_ready_gui(&sender, &details, &button);
-  assert(api->observe(PGR_GIFT_OBSERVE_READY, &gui, tid) == PGR_GIFT_OK);
-  PgrIncomingGiftsSample s = take_sample();
+  assert(api->observe(PGS_GIFT_OBSERVE_READY, &gui, tid) == PGS_GIFT_OK);
+  PgsIncomingGiftsSample s = take_sample();
   assert(s.owned == 1 && s.dialog_serial == 1 && s.root_count >= 1 && s.attempted == 0);
   assert(api->is_open(tid) == 1);  // currentState == STATE_OPEN
 
   // 3. Wait-reason progression: AUTO_OFF, FOREGROUND, OPENING, DETAILS, BUTTON, then ISSUED.
-  assert(api->update(0, 2000) == PGR_GIFT_OK);  // auto-open off
+  assert(api->update(0, 2000) == PGS_GIFT_OK);  // auto-open off
   act_tick();
-  assert(saw(drain_all(), PGR_GIFT_EVENT_WAIT, PGR_GIFT_WAIT_AUTO_OFF));
+  assert(saw(drain_all(), PGS_GIFT_EVENT_WAIT, PGS_GIFT_WAIT_AUTO_OFF));
 
-  assert(api->update(1, 0) == PGR_GIFT_OK);  // lease 0 -> foreground wait
+  assert(api->update(1, 0) == PGS_GIFT_OK);  // lease 0 -> foreground wait
   act_tick();
-  assert(saw(drain_all(), PGR_GIFT_EVENT_WAIT, PGR_GIFT_WAIT_FOREGROUND));
+  assert(saw(drain_all(), PGS_GIFT_EVENT_WAIT, PGS_GIFT_WAIT_FOREGROUND));
 
-  assert(api->update(1, 2000) == PGR_GIFT_OK);
+  assert(api->update(1, 2000) == PGS_GIFT_OK);
   gui.current_state = 1;  // not STATE_OPEN
   act_tick();
-  assert(saw(drain_all(), PGR_GIFT_EVENT_WAIT, PGR_GIFT_WAIT_OPENING));
+  assert(saw(drain_all(), PGS_GIFT_EVENT_WAIT, PGS_GIFT_WAIT_OPENING));
   gui.current_state = kStateOpen;
 
   sender.len = 0;  // invalid sender -> details wait
-  assert(api->update(1, 2000) == PGR_GIFT_OK);
+  assert(api->update(1, 2000) == PGS_GIFT_OK);
   act_tick();
-  assert(saw(drain_all(), PGR_GIFT_EVENT_WAIT, PGR_GIFT_WAIT_DETAILS));
+  assert(saw(drain_all(), PGS_GIFT_EVENT_WAIT, PGS_GIFT_WAIT_DETAILS));
   sender.len = 5;
 
   button.active = 0;  // button not active -> button wait
-  assert(api->update(1, 2000) == PGR_GIFT_OK);
+  assert(api->update(1, 2000) == PGS_GIFT_OK);
   act_tick();
-  assert(saw(drain_all(), PGR_GIFT_EVENT_WAIT, PGR_GIFT_WAIT_BUTTON));
+  assert(saw(drain_all(), PGS_GIFT_EVENT_WAIT, PGS_GIFT_WAIT_BUTTON));
   button.active = 1;
 
   // Everything ready -> exactly one automated open invoke + ISSUED.
-  assert(api->update(1, 2000) == PGR_GIFT_OK);
+  assert(api->update(1, 2000) == PGS_GIFT_OK);
   g_open_invokes = 0;
   act_tick();
   s = take_sample();
   assert(g_open_invokes == 1 && s.issued_serial == 1 && s.attempted == 1 && s.automated == 1);
-  assert(saw(drain_all(), PGR_GIFT_EVENT_ISSUED, 0));
+  assert(saw(drain_all(), PGS_GIFT_EVENT_ISSUED, 0));
 
   // 4. No duplicate: a second acting tick does not re-invoke (attempted latched).
-  assert(api->update(1, 2000) == PGR_GIFT_OK);
+  assert(api->update(1, 2000) == PGS_GIFT_OK);
   act_tick();
   assert(g_open_invokes == 1);
 
   // 5. Sequence skip (automated): state 0 + success + same GUI -> state 3.
   FakeResponse resp{&cls_open_out, kOpenSuccess};
   FakeSequence seq{&cls_sequence, &gui, &resp, 0};
-  assert(api->update(1, 2000) == PGR_GIFT_OK);
-  assert(api->observe(PGR_GIFT_OBSERVE_SEQUENCE, &seq, tid) == PGR_GIFT_OK);
-  assert(seq.state == PGR_GIFT_STATE_SKIP && take_sample().skip_serial == 1);
-  assert(saw(drain_all(), PGR_GIFT_EVENT_SKIP, 0));
+  assert(api->update(1, 2000) == PGS_GIFT_OK);
+  assert(api->observe(PGS_GIFT_OBSERVE_SEQUENCE, &seq, tid) == PGS_GIFT_OK);
+  assert(seq.state == PGS_GIFT_STATE_SKIP && take_sample().skip_serial == 1);
+  assert(saw(drain_all(), PGS_GIFT_EVENT_SKIP, 0));
 
   // Identity / response / state guards: none of these skip.
   FakeGui other_gui = make_ready_gui(&sender, &details, &button);
   seq = FakeSequence{&cls_sequence, &other_gui, &resp, 0};  // different GUI
-  assert(api->observe(PGR_GIFT_OBSERVE_SEQUENCE, &seq, tid) == PGR_GIFT_OK);
+  assert(api->observe(PGS_GIFT_OBSERVE_SEQUENCE, &seq, tid) == PGS_GIFT_OK);
   assert(seq.state == 0);
   seq = FakeSequence{&cls_sequence, &gui, &resp, 0}; resp.result = kOpenSuccess + 1;  // not success
-  assert(api->observe(PGR_GIFT_OBSERVE_SEQUENCE, &seq, tid) == PGR_GIFT_OK);
+  assert(api->observe(PGS_GIFT_OBSERVE_SEQUENCE, &seq, tid) == PGS_GIFT_OK);
   assert(seq.state == 0);
   resp.result = kOpenSuccess;
   seq = FakeSequence{&cls_sequence, &gui, &resp, 1};  // state already advanced
-  assert(api->observe(PGR_GIFT_OBSERVE_SEQUENCE, &seq, tid) == PGR_GIFT_OK);
+  assert(api->observe(PGS_GIFT_OBSERVE_SEQUENCE, &seq, tid) == PGS_GIFT_OK);
   assert(seq.state == 1);
   FakeResponse wrong{&cls_other, kOpenSuccess};
   seq = FakeSequence{&cls_sequence, &gui, &wrong, 0};  // wrong response class
-  assert(api->observe(PGR_GIFT_OBSERVE_SEQUENCE, &seq, tid) == PGR_GIFT_OK);
+  assert(api->observe(PGS_GIFT_OBSERVE_SEQUENCE, &seq, tid) == PGS_GIFT_OK);
   assert(seq.state == 0);
   drain_all();
 
   // 6. Manual open does NOT skip the animation. Close + fresh READY, press Open manually.
-  assert(api->observe(PGR_GIFT_OBSERVE_CLOSE, &gui, tid) == PGR_GIFT_OK);
+  assert(api->observe(PGS_GIFT_OBSERVE_CLOSE, &gui, tid) == PGS_GIFT_OK);
   assert(take_sample().owned == 0);
   FakeGui gui2 = make_ready_gui(&sender, &details, &button);
-  assert(api->observe(PGR_GIFT_OBSERVE_READY, &gui2, tid) == PGR_GIFT_OK);
-  assert(api->observe(PGR_GIFT_OBSERVE_OPEN, &gui2, tid) == PGR_GIFT_OK);  // USER pressed Open
+  assert(api->observe(PGS_GIFT_OBSERVE_READY, &gui2, tid) == PGS_GIFT_OK);
+  assert(api->observe(PGS_GIFT_OBSERVE_OPEN, &gui2, tid) == PGS_GIFT_OK);  // USER pressed Open
   s = take_sample();
   assert(s.owned == 1 && s.attempted == 1 && s.automated == 0);  // manual: not automated
   FakeSequence mseq{&cls_sequence, &gui2, &resp, 0};
-  assert(api->update(1, 2000) == PGR_GIFT_OK);
-  assert(api->observe(PGR_GIFT_OBSERVE_SEQUENCE, &mseq, tid) == PGR_GIFT_OK);
+  assert(api->update(1, 2000) == PGS_GIFT_OK);
+  assert(api->observe(PGS_GIFT_OBSERVE_SEQUENCE, &mseq, tid) == PGS_GIFT_OK);
   assert(mseq.state == 0);  // manual open: animation NOT skipped
   // A tick does not auto-invoke a manually-opened dialog.
   g_open_invokes = 0;
@@ -413,17 +413,17 @@ int main(int argc, char **argv) {
   // 7. Same-GUI READY dedup: a repeated READY on the live GUI must NOT reset attempted/automated
   //    and must NOT bump dialog_serial.
   uint64_t dialog_before = take_sample().dialog_serial;
-  assert(api->observe(PGR_GIFT_OBSERVE_READY, &gui2, tid) == PGR_GIFT_OK);  // same live GUI
+  assert(api->observe(PGS_GIFT_OBSERVE_READY, &gui2, tid) == PGS_GIFT_OK);  // same live GUI
   s = take_sample();
   assert(s.attempted == 1 && s.dialog_serial == dialog_before);
 
   // 8. CLOSE + new READY permits a new gift (owner-thread cleanup + re-arm).
-  assert(api->observe(PGR_GIFT_OBSERVE_CLOSE, &gui2, tid) == PGR_GIFT_OK);
+  assert(api->observe(PGS_GIFT_OBSERVE_CLOSE, &gui2, tid) == PGS_GIFT_OK);
   assert(take_sample().owned == 0);
   FakeGui gui3 = make_ready_gui(&sender, &details, &button);
-  assert(api->observe(PGR_GIFT_OBSERVE_READY, &gui3, tid) == PGR_GIFT_OK);
+  assert(api->observe(PGS_GIFT_OBSERVE_READY, &gui3, tid) == PGS_GIFT_OK);
   assert(take_sample().attempted == 0);
-  assert(api->update(1, 2000) == PGR_GIFT_OK);
+  assert(api->update(1, 2000) == PGS_GIFT_OK);
   g_open_invokes = 0;
   act_tick();
   assert(g_open_invokes == 1 && take_sample().issued_serial == 2);
@@ -431,31 +431,31 @@ int main(int argc, char **argv) {
 
   // 9. Reentrant disable DURING a getter revokes the attempt (no invoke, attempt not latched) and
   //    a later re-enable retries. Close + fresh READY first.
-  assert(api->observe(PGR_GIFT_OBSERVE_CLOSE, &gui3, tid) == PGR_GIFT_OK);
+  assert(api->observe(PGS_GIFT_OBSERVE_CLOSE, &gui3, tid) == PGS_GIFT_OK);
   FakeGui gui4 = make_ready_gui(&sender, &details, &button);
-  assert(api->observe(PGR_GIFT_OBSERVE_READY, &gui4, tid) == PGR_GIFT_OK);
-  assert(api->update(1, 2000) == PGR_GIFT_OK);
+  assert(api->observe(PGS_GIFT_OBSERVE_READY, &gui4, tid) == PGS_GIFT_OK);
+  assert(api->update(1, 2000) == PGS_GIFT_OK);
   g_open_invokes = 0;
   g_active_disables = true;  // the m_active getter disables mid-tick
   act_tick();
   s = take_sample();
   assert(g_open_invokes == 0 && s.attempted == 0);  // revoked before the invoke, retry allowed
-  assert(api->update(1, 2000) == PGR_GIFT_OK);
+  assert(api->update(1, 2000) == PGS_GIFT_OK);
   act_tick();
   assert(g_open_invokes == 1 && take_sample().attempted == 1);
   drain_all();
 
   // 10. A failing open invoke latches the attempt (no auto-retry) and surfaces an ERROR.
-  assert(api->observe(PGR_GIFT_OBSERVE_CLOSE, &gui4, tid) == PGR_GIFT_OK);
+  assert(api->observe(PGS_GIFT_OBSERVE_CLOSE, &gui4, tid) == PGS_GIFT_OK);
   FakeGui gui5 = make_ready_gui(&sender, &details, &button);
-  assert(api->observe(PGR_GIFT_OBSERVE_READY, &gui5, tid) == PGR_GIFT_OK);
-  assert(api->update(1, 2000) == PGR_GIFT_OK);
+  assert(api->observe(PGS_GIFT_OBSERVE_READY, &gui5, tid) == PGS_GIFT_OK);
+  assert(api->update(1, 2000) == PGS_GIFT_OK);
   g_open_invokes = 0;
   g_open_throws = true;
   act_tick();
   assert(g_open_invokes == 1 && take_sample().attempted == 1);
-  assert(saw(drain_all(), PGR_GIFT_EVENT_ERROR, PGR_GIFT_ERR_REASON_INVOKE));
-  assert(api->update(1, 2000) == PGR_GIFT_OK);
+  assert(saw(drain_all(), PGS_GIFT_EVENT_ERROR, PGS_GIFT_ERR_REASON_INVOKE));
+  assert(api->update(1, 2000) == PGS_GIFT_OK);
   act_tick();
   assert(g_open_invokes == 1);  // uncertain invoke: never retried
   g_open_throws = false;
@@ -463,20 +463,20 @@ int main(int argc, char **argv) {
   // 11. Wrong thread cannot steal the owner nor drive the controller.
   std::thread([&]() {
     FakeGui fg = make_ready_gui(&sender, &details, &button);
-    assert(g_api->observe(PGR_GIFT_OBSERVE_READY, &fg, this_tid()) == PGR_GIFT_OK);  // not owner
-    assert(g_api->tick(this_tid(), 0) == PGR_GIFT_OK);  // no-op off the owner thread
+    assert(g_api->observe(PGS_GIFT_OBSERVE_READY, &fg, this_tid()) == PGS_GIFT_OK);  // not owner
+    assert(g_api->tick(this_tid(), 0) == PGS_GIFT_OK);  // no-op off the owner thread
     assert(g_api->is_open(this_tid()) == 0);
   }).join();
   // A proven_tid that does not match the real caller is also ignored.
-  assert(api->observe(PGR_GIFT_OBSERVE_OPEN, &gui5, tid + 1) == PGR_GIFT_OK);
+  assert(api->observe(PGS_GIFT_OBSERVE_OPEN, &gui5, tid + 1) == PGS_GIFT_OK);
 
   // 12. A reentrant stopping tick during a getter must REVOKE IMMEDIATELY and DEFER the teardown to
   //     the outermost frame: the outer pass issues no Open, and once it unwinds the slot is cleared
   //     and every root is gone (owned 0, root_count 0, all handles freed).
-  assert(api->observe(PGR_GIFT_OBSERVE_CLOSE, &gui5, tid) == PGR_GIFT_OK);
+  assert(api->observe(PGS_GIFT_OBSERVE_CLOSE, &gui5, tid) == PGS_GIFT_OK);
   FakeGui gui6 = make_ready_gui(&sender, &details, &button);
-  assert(api->observe(PGR_GIFT_OBSERVE_READY, &gui6, tid) == PGR_GIFT_OK);
-  assert(api->update(1, 2000) == PGR_GIFT_OK);
+  assert(api->observe(PGS_GIFT_OBSERVE_READY, &gui6, tid) == PGS_GIFT_OK);
+  assert(api->update(1, 2000) == PGS_GIFT_OK);
   g_open_invokes = 0;
   g_alive_nested_tick = true;  // the is_alive getter re-enters tick(stopping) once
   act_tick();
@@ -492,22 +492,22 @@ int main(int argc, char **argv) {
   FakeString s13a; FakeDetails d13a; FakeSelectable b13a;
   FakeGui gui13a = make_ready_gui(&s13a, &d13a, &b13a);
   FakeGui gui13b = make_ready_gui(&s13a, &d13a, &b13a);
-  assert(api->observe(PGR_GIFT_OBSERVE_READY, &gui13a, tid) == PGR_GIFT_OK);
+  assert(api->observe(PGS_GIFT_OBSERVE_READY, &gui13a, tid) == PGS_GIFT_OK);
   const uint64_t dialog13 = take_sample().dialog_serial;
   g_rearm_gui = &gui13b;
   g_rearm_on_free = true;  // the CLOSE's root free re-arms gui13b from inside gchandle_free
-  assert(api->observe(PGR_GIFT_OBSERVE_CLOSE, &gui13a, tid) == PGR_GIFT_OK);
+  assert(api->observe(PGS_GIFT_OBSERVE_CLOSE, &gui13a, tid) == PGS_GIFT_OK);
   s = take_sample();
   assert(s.owned == 1 && s.root_count == 1);        // the re-armed slot survived the outer clear
   assert(s.dialog_serial == dialog13 + 1);          // gui13b armed a fresh dialog
   assert(g_live.size() == 1);                       // old handle freed, new handle held
   assert(s.attempted == 0);                         // the re-armed slot is fresh (not latched)
   // The surviving slot is usable: it can still auto-open.
-  assert(api->update(1, 2000) == PGR_GIFT_OK);
+  assert(api->update(1, 2000) == PGS_GIFT_OK);
   g_open_invokes = 0;
   act_tick();
   assert(g_open_invokes == 1);
-  assert(api->observe(PGR_GIFT_OBSERVE_CLOSE, &gui13b, tid) == PGR_GIFT_OK);
+  assert(api->observe(PGS_GIFT_OBSERVE_CLOSE, &gui13b, tid) == PGS_GIFT_OK);
   s = take_sample();
   assert(s.owned == 0 && s.root_count == 0);
   g_rearm_gui = nullptr;
@@ -517,8 +517,8 @@ int main(int argc, char **argv) {
   //     refresh the slot is gone, so the Open is never invoked and no ISSUED is emitted.
   FakeString s14; FakeDetails d14; FakeSelectable b14;
   FakeGui gui14 = make_ready_gui(&s14, &d14, &b14);
-  assert(api->observe(PGR_GIFT_OBSERVE_READY, &gui14, tid) == PGR_GIFT_OK);
-  assert(api->update(1, 2000) == PGR_GIFT_OK);
+  assert(api->observe(PGS_GIFT_OBSERVE_READY, &gui14, tid) == PGS_GIFT_OK);
+  assert(api->update(1, 2000) == PGS_GIFT_OK);
   g_open_invokes = 0;
   const uint64_t issued14 = take_sample().issued_serial;
   g_cur_gui = &gui14;
@@ -527,7 +527,7 @@ int main(int argc, char **argv) {
   s = take_sample();
   assert(g_open_invokes == 0 && s.owned == 0);   // pass abandoned, slot closed under us
   assert(s.issued_serial == issued14);           // no ISSUED without an actual invoke
-  assert(!saw(drain_all(), PGR_GIFT_EVENT_ISSUED, 0));
+  assert(!saw(drain_all(), PGS_GIFT_EVENT_ISSUED, 0));
   assert(g_live.empty());
   g_cur_gui = nullptr;
 
@@ -539,14 +539,14 @@ int main(int argc, char **argv) {
   FakeGui gui15 = make_ready_gui(&s15, &d15, &b15);
   FakeGui reloc15{};
   g_reloc_storage = &reloc15;
-  assert(api->observe(PGR_GIFT_OBSERVE_READY, &gui15, tid) == PGR_GIFT_OK);
-  assert(api->update(1, 2000) == PGR_GIFT_OK);
+  assert(api->observe(PGS_GIFT_OBSERVE_READY, &gui15, tid) == PGS_GIFT_OK);
+  assert(api->update(1, 2000) == PGS_GIFT_OK);
   g_open_invokes = 0;
   g_cur_gui = &gui15;
   g_relocate_on_alive = true;  // op_Implicit relocates the GUI object once
   act_tick();
   assert(g_open_invokes == 1);  // followed the relocation via the durable root
-  assert(api->observe(PGR_GIFT_OBSERVE_CLOSE, g_cur_gui, tid) == PGR_GIFT_OK);
+  assert(api->observe(PGS_GIFT_OBSERVE_CLOSE, g_cur_gui, tid) == PGS_GIFT_OK);
   assert(take_sample().owned == 0);
   g_cur_gui = nullptr;
   g_reloc_storage = nullptr;
@@ -559,18 +559,18 @@ int main(int argc, char **argv) {
   FakeGui gui16old = make_ready_gui(&s16, &d16, &b16);
   FakeGui gui16a = make_ready_gui(&s16, &d16, &b16);
   FakeGui gui16b = make_ready_gui(&s16, &d16, &b16);
-  assert(api->observe(PGR_GIFT_OBSERVE_READY, &gui16old, tid) == PGR_GIFT_OK);
+  assert(api->observe(PGS_GIFT_OBSERVE_READY, &gui16old, tid) == PGS_GIFT_OK);
   const uint64_t dialog16 = take_sample().dialog_serial;
   g_rearm_new_target = &gui16a;  // the outer READY's durable gc_new
   g_rearm_gui = &gui16b;         // the reentrant newer arm
   g_rearm_on_new = true;
-  assert(api->observe(PGR_GIFT_OBSERVE_READY, &gui16a, tid) == PGR_GIFT_OK);
+  assert(api->observe(PGS_GIFT_OBSERVE_READY, &gui16a, tid) == PGS_GIFT_OK);
   s = take_sample();
   assert(s.owned == 1 && s.root_count == 1);     // exactly the newer slot is held
   assert(s.dialog_serial == dialog16 + 1);       // gui16b armed one fresh dialog; gui16a dropped
   assert(g_live.size() == 1);                    // old + the stale outer root freed; newer held
   assert(api->is_open(tid) == 1);                // the surviving slot is the live gui16b
-  assert(api->observe(PGR_GIFT_OBSERVE_CLOSE, &gui16b, tid) == PGR_GIFT_OK);
+  assert(api->observe(PGS_GIFT_OBSERVE_CLOSE, &gui16b, tid) == PGS_GIFT_OK);
   s = take_sample();
   assert(s.owned == 0 && s.root_count == 0 && g_live.empty());
   g_rearm_new_target = nullptr;
@@ -583,8 +583,8 @@ int main(int argc, char **argv) {
   FakeString s17; FakeDetails d17; FakeSelectable b17;
   FakeGui gui17 = make_ready_gui(&s17, &d17, &b17);
   FakeGui gui17r = make_ready_gui(&s17, &d17, &b17);
-  assert(api->observe(PGR_GIFT_OBSERVE_READY, &gui17, tid) == PGR_GIFT_OK);
-  assert(api->update(1, 2000) == PGR_GIFT_OK);
+  assert(api->observe(PGS_GIFT_OBSERVE_READY, &gui17, tid) == PGS_GIFT_OK);
+  assert(api->update(1, 2000) == PGS_GIFT_OK);
   g_open_invokes = 0;
   g_alive_nested_tick = true;   // the is_alive getter re-enters tick(stopping) once
   g_rearm_gui = &gui17r;
@@ -606,8 +606,8 @@ int main(int argc, char **argv) {
   FakeString s18; FakeDetails d18; FakeSelectable b18;
   FakeGui gui18 = make_ready_gui(&s18, &d18, &b18);
   FakeGui gui18n = make_ready_gui(&s18, &d18, &b18);
-  assert(api->observe(PGR_GIFT_OBSERVE_READY, &gui18, tid) == PGR_GIFT_OK);
-  assert(api->update(1, 2000) == PGR_GIFT_OK);
+  assert(api->observe(PGS_GIFT_OBSERVE_READY, &gui18, tid) == PGS_GIFT_OK);
+  assert(api->update(1, 2000) == PGS_GIFT_OK);
   g_open_invokes = 0;
   g_cur_gui = &gui18;
   g_rearm_gui = &gui18n;
@@ -618,7 +618,7 @@ int main(int argc, char **argv) {
   assert(s.owned == 1 && s.root_count == 1);     // the freshly-armed slot survived
   assert(g_live.size() == 1);                    // gui18 freed; gui18n held
   assert(s.attempted == 0);                      // the new slot is fresh
-  assert(api->observe(PGR_GIFT_OBSERVE_CLOSE, &gui18n, tid) == PGR_GIFT_OK);
+  assert(api->observe(PGS_GIFT_OBSERVE_CLOSE, &gui18n, tid) == PGS_GIFT_OK);
   s = take_sample();
   assert(s.owned == 0 && s.root_count == 0 && g_live.empty());
   g_cur_gui = nullptr;
@@ -631,12 +631,12 @@ int main(int argc, char **argv) {
   FakeString s19; FakeDetails d19; FakeSelectable b19;
   FakeGui gui19 = make_ready_gui(&s19, &d19, &b19);
   FakeGui reloc19{};
-  assert(api->observe(PGR_GIFT_OBSERVE_READY, &gui19, tid) == PGR_GIFT_OK);
+  assert(api->observe(PGS_GIFT_OBSERVE_READY, &gui19, tid) == PGS_GIFT_OK);
   g_cur_gui = &gui19;
   g_reloc_storage = &reloc19;
   g_relocate_on_alive = true;
   assert(api->is_open(tid) == 1);                // followed the relocation via the durable root
-  assert(api->observe(PGR_GIFT_OBSERVE_CLOSE, g_cur_gui, tid) == PGR_GIFT_OK);
+  assert(api->observe(PGS_GIFT_OBSERVE_CLOSE, g_cur_gui, tid) == PGS_GIFT_OK);
   assert(take_sample().owned == 0 && g_live.empty());
   g_cur_gui = nullptr;
   g_reloc_storage = nullptr;
@@ -645,7 +645,7 @@ int main(int argc, char **argv) {
   //     teardown runs at its own frame (the latch is held across the free), leaving no slot/roots.
   FakeString s20; FakeDetails d20; FakeSelectable b20;
   FakeGui gui20 = make_ready_gui(&s20, &d20, &b20);
-  assert(api->observe(PGR_GIFT_OBSERVE_READY, &gui20, tid) == PGR_GIFT_OK);
+  assert(api->observe(PGS_GIFT_OBSERVE_READY, &gui20, tid) == PGS_GIFT_OK);
   g_alive_nested_tick = true;    // is_alive re-enters tick(stopping) once
   assert(api->is_open(tid) == 0);                // abandoned under the latched stop
   s = take_sample();
@@ -658,18 +658,18 @@ int main(int argc, char **argv) {
   //     pinned apply -- the skip is NOT written even though auto-open is on again by the time we act.
   FakeString s21; FakeDetails d21; FakeSelectable b21;
   FakeGui gui21 = make_ready_gui(&s21, &d21, &b21);
-  assert(api->observe(PGR_GIFT_OBSERVE_READY, &gui21, tid) == PGR_GIFT_OK);
-  assert(api->update(1, 2000) == PGR_GIFT_OK);
+  assert(api->observe(PGS_GIFT_OBSERVE_READY, &gui21, tid) == PGS_GIFT_OK);
+  assert(api->update(1, 2000) == PGS_GIFT_OK);
   g_open_invokes = 0;
   act_tick();                                    // latch automated via one real issue
   assert(take_sample().automated == 1);
   drain_all();
   FakeResponse resp21{&cls_open_out, kOpenSuccess};
   FakeSequence seq21{&cls_sequence, &gui21, &resp21, 0};
-  assert(api->update(1, 2000) == PGR_GIFT_OK);
+  assert(api->update(1, 2000) == PGS_GIFT_OK);
   const uint64_t skip21 = take_sample().skip_serial;
   g_disable_on_seq_new = true;   // disable+reenable inside the sequence gc_new
-  assert(api->observe(PGR_GIFT_OBSERVE_SEQUENCE, &seq21, tid) == PGR_GIFT_OK);
+  assert(api->observe(PGS_GIFT_OBSERVE_SEQUENCE, &seq21, tid) == PGS_GIFT_OK);
   assert(seq21.state == 0);                      // revoked by the straddling gen bump: no skip
   assert(take_sample().skip_serial == skip21);
   g_disable_on_seq_new = false;
@@ -681,17 +681,17 @@ int main(int argc, char **argv) {
   FakeGui gui22n = make_ready_gui(&s22, &d22, &b22);
   FakeResponse resp22{&cls_open_out, kOpenSuccess};
   FakeSequence seq22{&cls_sequence, &gui21, &resp22, 0};
-  assert(api->update(1, 2000) == PGR_GIFT_OK);
+  assert(api->update(1, 2000) == PGS_GIFT_OK);
   const uint64_t skip22 = take_sample().skip_serial;
   g_cur_gui = &gui21;            // the sequence's current owned GUI
   g_rearm_gui = &gui22n;         // the replacement armed mid-lookup
   g_close_ready_on_seq_state = true;
-  assert(api->observe(PGR_GIFT_OBSERVE_SEQUENCE, &seq22, tid) == PGR_GIFT_OK);
+  assert(api->observe(PGS_GIFT_OBSERVE_SEQUENCE, &seq22, tid) == PGS_GIFT_OK);
   assert(seq22.state == 0);                      // aborted: never skipped on stale ownership
   assert(take_sample().skip_serial == skip22);
   s = take_sample();
   assert(s.owned == 1);                          // the replacement slot (gui22n) is owned
-  assert(api->observe(PGR_GIFT_OBSERVE_CLOSE, &gui22n, tid) == PGR_GIFT_OK);
+  assert(api->observe(PGS_GIFT_OBSERVE_CLOSE, &gui22n, tid) == PGS_GIFT_OK);
   s = take_sample();
   assert(s.owned == 0 && s.root_count == 0 && g_live.empty());
   g_cur_gui = nullptr;
@@ -702,25 +702,25 @@ int main(int argc, char **argv) {
   // 23. FIFO overflow fails closed: more than CAP skip records latch the fault and surface an
   //     OVERFLOW error; no further issue happens while faulted.
   FakeGui gui7 = make_ready_gui(&sender, &details, &button);
-  assert(api->observe(PGR_GIFT_OBSERVE_READY, &gui7, tid) == PGR_GIFT_OK);
-  assert(api->update(1, 2000) == PGR_GIFT_OK);
+  assert(api->observe(PGS_GIFT_OBSERVE_READY, &gui7, tid) == PGS_GIFT_OK);
+  assert(api->update(1, 2000) == PGS_GIFT_OK);
   // Latch automated via one real issue.
   g_open_invokes = 0;
   act_tick();
   assert(take_sample().automated == 1);
   drain_all();
   FakeResponse r2{&cls_open_out, kOpenSuccess};
-  for (int i = 0; i < PGR_GIFT_EVENT_CAP + 8; ++i) {
+  for (int i = 0; i < PGS_GIFT_EVENT_CAP + 8; ++i) {
     FakeSequence sq{&cls_sequence, &gui7, &r2, 0};
-    assert(api->update(1, 2000) == PGR_GIFT_OK);
-    api->observe(PGR_GIFT_OBSERVE_SEQUENCE, &sq, tid);
+    assert(api->update(1, 2000) == PGS_GIFT_OK);
+    api->observe(PGS_GIFT_OBSERVE_SEQUENCE, &sq, tid);
   }
   s = take_sample();
-  assert(s.overflow == 1 && s.fault == 1 && s.pending_events == PGR_GIFT_EVENT_CAP);
+  assert(s.overflow == 1 && s.fault == 1 && s.pending_events == PGS_GIFT_EVENT_CAP);
   auto records = drain_all();
-  assert(records.size() == PGR_GIFT_EVENT_CAP);
-  assert(records.back().kind == PGR_GIFT_EVENT_ERROR &&
-         records.back().reason == PGR_GIFT_ERR_REASON_OVERFLOW);
+  assert(records.size() == PGS_GIFT_EVENT_CAP);
+  assert(records.back().kind == PGS_GIFT_EVENT_ERROR &&
+         records.back().reason == PGS_GIFT_ERR_REASON_OVERFLOW);
 
   std::printf("incoming_gifts_test passed: ABI sizes, validation/idempotence, ready/wait reasons, "
               "on-off+foreground, single automated open, no duplicate, sequence skip + identity "

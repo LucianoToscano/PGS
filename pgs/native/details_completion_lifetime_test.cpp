@@ -22,8 +22,8 @@ uintptr_t serial=0x1000;int allocations=0,failAllocation=0,clicks=0,aliveCalls=0
 bool failedAllocation=false,moveInputs=false,moveBoxes=false,throwClick=false,gone=false;
 bool badPostClass=false,badPostAliveClass=false,destroyDuringItem=false,badListDuringCount=false;
 uint32_t moveMethods=0; // alive=1/count=2/item=4/click=8, each relocates once to a distinct scene
-const PgrDetailsCompletionApi *api=nullptr;uint64_t owner=0,token=0;
-PgrDetailsCompletionRequest req{};
+const PgsDetailsCompletionApi *api=nullptr;uint64_t owner=0,token=0;
+PgsDetailsCompletionRequest req{};
 void wire(Scene &s){s.gui.a=&s.data;s.gui.b=&s.action;s.view.a=&s.response;s.data.a=&s.action;s.data.b=&s.list;
  s.action.a=&s.view;s.list.a=&s.pokemon;}
 void relocate(){
@@ -86,8 +86,8 @@ void reset(){
  req.pokemon=borrow(&s.pokemon);req.dismissed=borrow(&s.action);
  assert(api->update(1,2500,7,owner)==0);token=0;assert(api->acquire(7,owner,&token)==0&&token);
 }
-PgrDetailsCompletionConfig config(){
- PgrDetailsCompletionConfig c{};c.version=1;c.size=sizeof(c);
+PgsDetailsCompletionConfig config(){
+ PgsDetailsCompletionConfig c{};c.version=1;c.size=sizeof(c);
  c.object_get_class=reinterpret_cast<void*>(klass);c.field_get_value=reinterpret_cast<void*>(field);
  c.runtime_invoke=reinterpret_cast<void*>(invoke);c.object_unbox=reinterpret_cast<void*>(unbox);
  c.gc_new=reinterpret_cast<void*>(gcNew);c.gc_get=reinterpret_cast<void*>(gcGet);c.gc_free=reinterpret_cast<void*>(gcFree);
@@ -97,29 +97,29 @@ PgrDetailsCompletionConfig config(){
  c.f_delegate_target=&fTarget;c.f_gui_data=&fData;c.f_gui_callback=&fGuiCallback;c.f_data_callback=&fDataCallback;
  c.f_post=&fPost;c.f_index=&fIndex;c.f_list=&fList;c.success_literal=3;c.state_open=2;return c;
 }
-PgrDetailsCompletionOutput complete(int expected=1){PgrDetailsCompletionOutput o{};assert(api->complete(&req,token,&o)==expected);balanced();return o;}
+PgsDetailsCompletionOutput complete(int expected=1){PgsDetailsCompletionOutput o{};assert(api->complete(&req,token,&o)==expected);balanced();return o;}
 }
 int main(int argc,char **argv){
  assert(argc==2);void *lib=dlopen(argv[1],RTLD_NOW|RTLD_LOCAL);assert(lib);
  auto get=reinterpret_cast<const void*(*)(uint32_t)>(dlsym(lib,"pgs_native_api"));assert(get);
  auto *core=static_cast<const pgs_native_api_v2*>(get(2));assert(core);
- api=static_cast<const PgrDetailsCompletionApi*>(core->query_feature(37,1));assert(api&&api->size==64);
- assert(sizeof(PgrDetailsCompletionConfig)==272&&sizeof(req)==80);owner=gettid();auto cfg=config();assert(api->install(&cfg)==0);
+ api=static_cast<const PgsDetailsCompletionApi*>(core->query_feature(37,1));assert(api&&api->size==64);
+ assert(sizeof(PgsDetailsCompletionConfig)==272&&sizeof(req)==80);owner=gettid();auto cfg=config();assert(api->install(&cfg)==0);
  reset();assert(api->validate(&req)==1&&targetReads>=2);balanced();
- allocations=0;auto out=complete();assert(clicks==1&&(out.flags&PGR_DC_FLAG_AFTER_KNOWN)&&out.after==3);
+ allocations=0;auto out=complete();assert(clicks==1&&(out.flags&PGS_DC_FLAG_AFTER_KNOWN)&&out.after==3);
  const int completeRoots=allocations;
  reset();scenes[0].action.a=&scenes[0].gui;assert(api->validate(&req)==0&&clicks==0);balanced();
  // Alive, count, item and click each relocate ALL objects; native/host roots follow them while old
  // addresses are poisoned. Scalars and boxed values additionally move during their own root creation.
  reset();moveInputs=true;moveBoxes=true;moveMethods=15;
- out=complete();assert(sceneIndex==5&&clicks==1&&out.after==3&&!(out.flags&PGR_DC_FLAG_GONE));
+ out=complete();assert(sceneIndex==5&&clicks==1&&out.after==3&&!(out.flags&PGS_DC_FLAG_GONE));
  reset();scenes[0].gui.value=1;assert(api->validate(&req)==1);out=complete(0);assert(clicks==0);
- for(int n=1;n<=completeRoots;n++){reset();failAllocation=n;PgrDetailsCompletionOutput o{};
-  api->complete(&req,token,&o);assert(failedAllocation&&clicks<=1);balanced();assert(!(o.flags&PGR_DC_FLAG_GONE));}
+ for(int n=1;n<=completeRoots;n++){reset();failAllocation=n;PgsDetailsCompletionOutput o{};
+  api->complete(&req,token,&o);assert(failedAllocation&&clicks<=1);balanced();assert(!(o.flags&PGS_DC_FLAG_GONE));}
  for(bool duringAlive:{false,true}){reset();badPostClass=!duringAlive;badPostAliveClass=duringAlive;
-  out=complete();assert(clicks==1&&(out.flags&PGR_DC_FLAG_INVOKED));
-  assert(!(out.flags&PGR_DC_FLAG_AFTER_KNOWN)&&!(out.flags&PGR_DC_FLAG_GONE));}
- reset();throwClick=true;out=complete(PGR_DC_ERR_MANAGED);assert(clicks==1&&(out.flags&PGR_DC_FLAG_INVOKED));
+  out=complete();assert(clicks==1&&(out.flags&PGS_DC_FLAG_INVOKED));
+  assert(!(out.flags&PGS_DC_FLAG_AFTER_KNOWN)&&!(out.flags&PGS_DC_FLAG_GONE));}
+ reset();throwClick=true;out=complete(PGS_DC_ERR_MANAGED);assert(clicks==1&&(out.flags&PGS_DC_FLAG_INVOKED));
  // A list getter invalidating its class must not lead to another virtual call or unsafe field read.
  reset();badListDuringCount=true;out=complete(0);assert(clicks==0);
  // Likewise a destroyed GUI after item() cannot pass the final pre-click liveness proof.

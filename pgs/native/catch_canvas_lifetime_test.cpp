@@ -20,7 +20,7 @@ Heap heaps[24]; int generation=0;
 Gui unrelated{&detailsClass, 6};
 std::map<uintptr_t,void*> handles;
 uintptr_t nextHandle=100, hostHandle=0;
-const PgrCatchCanvasApi *api=nullptr;
+const PgsCatchCanvasApi *api=nullptr;
 uint64_t owner=0, activeToken=0;
 int invokes=0, originals=0, moves=0, foreignResult=0, busyResult=0;
 void *lastSelf=nullptr, *lastMethod=nullptr; bool lastVisible=true;
@@ -77,7 +77,7 @@ void *invoke(const void *method,void *object,void **params,void **exception){
  const uint8_t value=*static_cast<uint8_t*>(params[0]);assert(value<=1);
  callSetter(object,value!=0,const_cast<void*>(method));return nullptr;
 }
-PgrCatchCanvasSample sample(){PgrCatchCanvasSample s{};assert(api->sample(&s)==0);return s;}
+PgsCatchCanvasSample sample(){PgsCatchCanvasSample s{};assert(api->sample(&s)==0);return s;}
 void arm(uint64_t epoch){assert(api->update(1,2500,epoch,owner)==0);}
 uint64_t hide(uint64_t epoch){
  uint64_t token=0;assert(api->hide_opening(reinterpret_cast<void*>(hostHandle),epoch,owner,&token)==1);
@@ -92,9 +92,9 @@ int main(int argc,char **argv){
  auto get=reinterpret_cast<const void*(*)(uint32_t)>(dlsym(lib,"pgs_native_api"));
  auto core=get?static_cast<const pgs_native_api_v2*>(get(2)):nullptr;
  assert(core&&core->query_feature(39,99)==nullptr);
- api=static_cast<const PgrCatchCanvasApi*>(core->query_feature(39,1));
+ api=static_cast<const PgsCatchCanvasApi*>(core->query_feature(39,1));
  assert(api&&api->version==1&&api->size==72);
- PgrCatchCanvasConfig c{};c.version=1;c.size=sizeof(c);
+ PgsCatchCanvasConfig c{};c.version=1;c.size=sizeof(c);
  c.object_get_class=reinterpret_cast<void*>(&objectClass);c.field_get_value=reinterpret_cast<void*>(&fieldGet);
  c.runtime_invoke=reinterpret_cast<void*>(&invoke);c.object_unbox=reinterpret_cast<void*>(&unbox);
  c.gc_new=reinterpret_cast<void*>(&gcNew);c.gc_get=reinterpret_cast<void*>(&gcGet);c.gc_free=reinterpret_cast<void*>(&gcFree);

@@ -27,7 +27,7 @@
 #include <sys/wait.h>
 #include <unistd.h>
 #include <thread>
-#ifndef PGR_BERRY_DIRECT_TEST
+#ifndef PGS_BERRY_DIRECT_TEST
 #include "pgs_native_api.h"
 #include <dlfcn.h>
 static const pgs_native_api_v2 *loaded_core = nullptr;
@@ -84,7 +84,7 @@ void *obj_class(void *o) { return o ? *static_cast<void **>(o) : nullptr; }
 void *object_unbox(void *o) { return &static_cast<Box *>(o)->v; }
 
 // ---- scenario knobs / observations -------------------------------------------------
-const pgr_berry_api_v1 *g_api = nullptr;
+const pgs_berry_api_v1 *g_api = nullptr;
 bool    g_bread = false, g_can = true, g_photo = false, g_alive = true;
 int32_t g_ball_type = 1;
 int32_t g_stock[2048];       // quantity by item id
@@ -171,9 +171,9 @@ void *runtime_invoke(void *method, void *obj, void **params, void **exc) {
   return nullptr;
 }
 
-pgr_berry_config_v1 make_config() {
-  pgr_berry_config_v1 c{};
-  c.version = PGR_BERRY_API_VERSION; c.size = sizeof(c);
+pgs_berry_config_v1 make_config() {
+  pgs_berry_config_v1 c{};
+  c.version = PGS_BERRY_API_VERSION; c.size = sizeof(c);
   c.gchandle_new = (void *)&gc_new; c.gchandle_get_target = (void *)&gc_target; c.gchandle_free = (void *)&gc_free;
   c.object_get_class = (void *)&obj_class; c.object_unbox = (void *)&object_unbox; c.object_new = (void *)&object_new;
   c.runtime_invoke = (void *)&runtime_invoke; c.field_get_value = (void *)&field_get;
@@ -189,7 +189,7 @@ pgr_berry_config_v1 make_config() {
   return c;
 }
 
-pgr_berry_sample_v1 snap() { pgr_berry_sample_v1 s{}; g_api->sample(&s); return s; }
+pgs_berry_sample_v1 snap() { pgs_berry_sample_v1 s{}; g_api->sample(&s); return s; }
 
 // Arm the priority list + a live lease on the proven thread.
 void arm(const int32_t *ids, uint32_t n, uint64_t tid) { g_api->update(ids, n, 2500, tid); }
@@ -197,8 +197,8 @@ void arm(const int32_t *ids, uint32_t n, uint64_t tid) { g_api->update(ids, n, 2
 int scenario(int which) {
   const uint64_t tid = static_cast<uint64_t>(gettid());
   for (int i = 0; i < 2048; ++i) g_stock[i] = 0;
-  pgr_berry_config_v1 cfg = make_config();
-  if (g_api->install(&cfg) != PGR_BERRY_OK) return 90;
+  pgs_berry_config_v1 cfg = make_config();
+  if (g_api->install(&cfg) != PGS_BERRY_OK) return 90;
   // Latch the permanent Unity owner (the realistic first heartbeat) so the managed entry points
   // are live. Case 12 deliberately tests the pre-latch inert behaviour and binds its own owner.
   if (which != 12) g_api->tick(tid, 0);
@@ -215,17 +215,17 @@ int scenario(int which) {
     arm(ids3, 3, tid);
     const uint64_t first = 0x1122334455667788ull, second = 0x00000000000000AAull;  // not drop, not master
     void *method = reinterpret_cast<void *>(0xDEADBEEF);
-    if (g_api->submit(&ball, first, second, method, tid) != PGR_BERRY_HOLD) return 1;
+    if (g_api->submit(&ball, first, second, method, tid) != PGS_BERRY_HOLD) return 1;
     g_api->tick(tid, 0);                               // no stock -> preflight queues a misc resume
-    pgr_berry_resume_v1 out{};
+    pgs_berry_resume_v1 out{};
     uint64_t ticket = g_api->begin_resume(tid, &out);
     if (ticket == 0) return 2;
     if (out.ball != &ball || out.first != first || out.second != second || out.method != method) return 3;
-    if (out.cause != PGR_BERRY_RESUME_MISC) return 4;
+    if (out.cause != PGS_BERRY_RESUME_MISC) return 4;
     // A second begin_resume before finish must NOT hand out another ticket (single outstanding).
-    pgr_berry_resume_v1 out2{};
+    pgs_berry_resume_v1 out2{};
     if (g_api->begin_resume(tid, &out2) != 0) return 7;
-    if (g_api->finish_resume(ticket, tid) != PGR_BERRY_OK) return 5;
+    if (g_api->finish_resume(ticket, tid) != PGS_BERRY_OK) return 5;
     if (g_live_roots != 1) return 6;                   // only the scope root remains
     return 0;
   }
@@ -240,19 +240,19 @@ int scenario(int which) {
   }
   case 2: {  // bypass: duplicate ball HOLD, MasterBall/ball-drop PASS, photo preflight resume
     g_api->observe_enter(&scope, tid); arm(ids3, 3, tid);
-    if (g_api->submit(&ball, 1, 0, nullptr, tid) != PGR_BERRY_HOLD) return 1;
-    if (g_api->submit(&ball, 1, 0, nullptr, tid) != PGR_BERRY_HOLD) return 2;  // same held ball
+    if (g_api->submit(&ball, 1, 0, nullptr, tid) != PGS_BERRY_HOLD) return 1;
+    if (g_api->submit(&ball, 1, 0, nullptr, tid) != PGS_BERRY_HOLD) return 2;  // same held ball
     Obj other{&c_pokeball};
-    if (g_api->submit(&other, 1, 0, nullptr, tid) != PGR_BERRY_PASS) return 3; // different ball
+    if (g_api->submit(&other, 1, 0, nullptr, tid) != PGS_BERRY_PASS) return 3; // different ball
     // MasterBall (first==4) and ball-drop ((second>>16)&0xff != 0) pass through on a fresh site.
     g_api->observe_enter(&scope, tid); arm(ids3, 3, tid);
-    if (g_api->submit(&ball, 4, 0, nullptr, tid) != PGR_BERRY_PASS) return 4;
-    if (g_api->submit(&ball, 1, 0x10000, nullptr, tid) != PGR_BERRY_PASS) return 5;
+    if (g_api->submit(&ball, 4, 0, nullptr, tid) != PGS_BERRY_PASS) return 4;
+    if (g_api->submit(&ball, 1, 0x10000, nullptr, tid) != PGS_BERRY_PASS) return 5;
     // photo mode -> queued but preflight resumes without feeding.
     g_api->observe_enter(&scope, tid); arm(ids3, 3, tid); g_stock[701] = 9; g_photo = true;
     g_api->submit(&ball, 1, 0, nullptr, tid);
     g_api->tick(tid, 0);
-    pgr_berry_resume_v1 out{};
+    pgs_berry_resume_v1 out{};
     if (g_api->begin_resume(tid, &out) == 0 || g_direct_calls != 0) return 6;
     return 0;
   }
@@ -261,9 +261,9 @@ int scenario(int which) {
     g_api->submit(&ball, 1, 0, nullptr, tid);
     g_api->tick(tid, 0);                               // issue feed; result fires synchronously
     g_api->tick(tid, 0);                               // next pass sees done -> queue DONE resume
-    pgr_berry_resume_v1 out{};
+    pgs_berry_resume_v1 out{};
     uint64_t ticket = g_api->begin_resume(tid, &out);
-    if (ticket == 0 || out.cause != PGR_BERRY_RESUME_DONE) return 1;
+    if (ticket == 0 || out.cause != PGS_BERRY_RESUME_DONE) return 1;
     g_api->finish_resume(ticket, tid);
     if (g_live_roots != 1) return 2;
     return 0;
@@ -274,7 +274,7 @@ int scenario(int which) {
     g_api->tick(tid, 0);                               // feed issued, awaiting result
     // Can't advance CLOCK_BOOTTIME by 8 s in a unit test; assert the deadline path indirectly:
     // without a result the tick leaves it pending (no resume yet).
-    pgr_berry_resume_v1 out{};
+    pgs_berry_resume_v1 out{};
     if (g_api->begin_resume(tid, &out) != 0) return 1; // nothing queued while waiting
     return 0;
   }
@@ -282,9 +282,9 @@ int scenario(int which) {
     g_api->observe_enter(&scope, tid); arm(ids3, 3, tid);
     g_api->submit(&ball, 1, 0, nullptr, tid);
     g_api->tick(tid, 1);                               // stopping -> queue a STOP resume
-    pgr_berry_resume_v1 out{};
+    pgs_berry_resume_v1 out{};
     uint64_t ticket = g_api->begin_resume(tid, &out);
-    if (ticket == 0 || out.cause != PGR_BERRY_RESUME_STOP) return 1;
+    if (ticket == 0 || out.cause != PGS_BERRY_RESUME_STOP) return 1;
     g_api->finish_resume(ticket, tid);
     // Exit path: queue then exit cancels without a submit (no resume claimable).
     g_api->observe_enter(&scope, tid); arm(ids3, 3, tid);
@@ -298,7 +298,7 @@ int scenario(int which) {
   }
   case 6: {  // wrong thread: submit PASS, tick no-op
     g_api->observe_enter(&scope, tid); arm(ids3, 3, tid);
-    if (g_api->submit(&ball, 1, 0, nullptr, tid + 1) != PGR_BERRY_PASS) return 1;
+    if (g_api->submit(&ball, 1, 0, nullptr, tid + 1) != PGS_BERRY_PASS) return 1;
     g_api->tick(tid + 1, 0);
     if (snap().overlay_busy != 0) return 2;
     return 0;
@@ -310,7 +310,7 @@ int scenario(int which) {
     Scope scope2{&c_scope, &bag, &ui};
     g_api->observe_enter(&scope2, tid);                // berryClear at enter
     if (snap().overlay_busy != 0) return 2;
-    pgr_berry_resume_v1 out{};
+    pgs_berry_resume_v1 out{};
     if (g_api->begin_resume(tid, &out) != 0) return 3;
     return 0;
   }
@@ -320,7 +320,7 @@ int scenario(int which) {
     Obj relocated{&c_pokeball};
     gc_move(&ball, &relocated);                        // GC relocates the ball
     g_api->tick(tid, 0);                               // no stock -> resume
-    pgr_berry_resume_v1 out{};
+    pgs_berry_resume_v1 out{};
     uint64_t ticket = g_api->begin_resume(tid, &out);
     if (ticket == 0 || out.ball != &relocated || out.first != 0xAAAA) return 1;
     g_api->finish_resume(ticket, tid);
@@ -331,13 +331,13 @@ int scenario(int which) {
     g_api->submit(&ball, 1, 0, nullptr, tid);
     g_api->tick(tid, 0);                               // request throws -> failed + resume
     if (snap().failed != 1 || snap().fault_serial == 0) return 1;
-    pgr_berry_resume_v1 out{};
+    pgs_berry_resume_v1 out{};
     uint64_t ticket = g_api->begin_resume(tid, &out);
     if (ticket == 0) return 2;
     g_api->finish_resume(ticket, tid);
     // After failed, a fresh submit in the same encounter passes through.
     Obj ball2{&c_pokeball};
-    if (g_api->submit(&ball2, 1, 0, nullptr, tid) != PGR_BERRY_PASS) return 3;
+    if (g_api->submit(&ball2, 1, 0, nullptr, tid) != PGS_BERRY_PASS) return 3;
     return 0;
   }
   case 10: {  // FIFO overflow fails closed: still releases a claimed throw, then blocks a NEW feed
@@ -346,7 +346,7 @@ int scenario(int which) {
     g_api->observe_enter(&scope, tid); arm(ids3, 3, tid);
     g_api->submit(&ball, 0x55, 0, nullptr, tid);       // queue a throw (held)
     g_api->tick(tid, 0);                               // no stock -> queue a resume
-    pgr_berry_resume_v1 out{};
+    pgs_berry_resume_v1 out{};
     uint64_t ticket = g_api->begin_resume(tid, &out);  // JS claims the released throw
     if (ticket == 0 || out.first != 0x55) return 1;
     // (2) Flood the FIFO past its cap via throwaway enters (each emits an overlay event). These
@@ -354,15 +354,15 @@ int scenario(int which) {
     for (int i = 0; i < 300; ++i) { Scope sc{&c_scope, &bag, &ui}; g_api->observe_enter(&sc, tid); }
     if (snap().dropped_events == 0) return 2;          // overflow observed (fail-closed latched)
     // (3) The already-claimed throw still finishes -- overflow never strands a held/claimed throw.
-    if (g_api->finish_resume(ticket, tid) != PGR_BERRY_OK) return 3;
+    if (g_api->finish_resume(ticket, tid) != PGS_BERRY_OK) return 3;
     if (snap().resume_serial != 1 || snap().overlay_busy != 0) return 4;
     // (4) With the frame released and telemetry STILL fail-closed (FIFO never drained), a NEW
     //     submit is blocked: PASS, no fresh hold, no feed queued.
     g_api->observe_enter(&scope, tid); arm(ids3, 3, tid); g_stock[701] = 9;
     Obj ball2{&c_pokeball};
-    if (g_api->submit(&ball2, 1, 0, nullptr, tid) != PGR_BERRY_PASS) return 5;  // fail-closed hold block
+    if (g_api->submit(&ball2, 1, 0, nullptr, tid) != PGS_BERRY_PASS) return 5;  // fail-closed hold block
     if (snap().overlay_busy != 0) return 6;            // nothing held
-    pgr_berry_resume_v1 out2{};
+    pgs_berry_resume_v1 out2{};
     if (g_api->begin_resume(tid, &out2) != 0) return 7;  // and nothing to resume
     return 0;
   }
@@ -370,11 +370,11 @@ int scenario(int which) {
     g_api->observe_enter(&scope, tid); arm(ids3, 3, tid);
     g_api->submit(&ball, 1, 0, nullptr, tid);
     g_api->tick(tid, 0);
-    pgr_berry_resume_v1 out{};
+    pgs_berry_resume_v1 out{};
     uint64_t ticket = g_api->begin_resume(tid, &out);
     if (ticket == 0) return 1;
-    if (g_api->finish_resume(ticket, tid) != PGR_BERRY_OK) return 2;
-    if (g_api->finish_resume(ticket, tid) != PGR_BERRY_ERR_BAD_TOKEN) return 3; // no replay/free
+    if (g_api->finish_resume(ticket, tid) != PGS_BERRY_OK) return 2;
+    if (g_api->finish_resume(ticket, tid) != PGS_BERRY_ERR_BAD_TOKEN) return 3; // no replay/free
     if (g_live_roots != 1) return 4;                   // scope only
     return 0;
   }
@@ -382,18 +382,18 @@ int scenario(int which) {
     // Before any tick the owner is unlatched: a self-reported tid cannot drive the machine.
     g_api->observe_enter(&scope, tid);                 // no owner yet -> no-op (scope not rooted)
     arm(ids3, 3, tid);
-    if (g_api->submit(&ball, 1, 0, nullptr, tid) != PGR_BERRY_PASS) return 1;  // inert -> PASS
+    if (g_api->submit(&ball, 1, 0, nullptr, tid) != PGS_BERRY_PASS) return 1;  // inert -> PASS
     if (snap().overlay_busy != 0 || g_live_roots != 0) return 2;               // nothing held/rooted
     // Latch the owner, then a correctly-proven call works.
     g_api->tick(tid, 0);
     g_api->observe_enter(&scope, tid); arm(ids3, 3, tid);
-    if (g_api->submit(&ball, 1, 0, nullptr, tid) != PGR_BERRY_HOLD) return 3;
+    if (g_api->submit(&ball, 1, 0, nullptr, tid) != PGS_BERRY_HOLD) return 3;
     // A call naming a DIFFERENT (non-owner) tid is rejected even though it names a tid.
     Obj other{&c_pokeball};
-    if (g_api->submit(&other, 1, 0, nullptr, tid + 1) != PGR_BERRY_PASS) return 4;
-    pgr_berry_resume_v1 out{};
+    if (g_api->submit(&other, 1, 0, nullptr, tid + 1) != PGS_BERRY_PASS) return 4;
+    pgs_berry_resume_v1 out{};
     if (g_api->begin_resume(tid + 1, &out) != 0) return 5;       // off-owner begin inert
-    if (g_api->finish_resume(1, tid + 1) != PGR_BERRY_ERR_BAD_TOKEN) return 6;
+    if (g_api->finish_resume(1, tid + 1) != PGS_BERRY_ERR_BAD_TOKEN) return 6;
     return 0;
   }
   case 13: {  // reentrant exit DURING a preflight getter: no feed, no stranded roots, no submit
@@ -403,7 +403,7 @@ int scenario(int which) {
     g_api->tick(tid, 0);                               // CanUseBerry getter re-enters observe_exit
     if (!g_reenter_fired) return 1;                    // the reentry actually fired
     if (g_direct_calls != 0 || snap().request_serial != 0) return 2;  // never fed the closed scope
-    pgr_berry_resume_v1 out{};
+    pgs_berry_resume_v1 out{};
     if (g_api->begin_resume(tid, &out) != 0) return 3; // the attempt was cancelled, not resumed
     if (g_live_roots != 0) return 4;                   // ball + scope roots all freed (no leak)
     return 0;
@@ -416,10 +416,10 @@ int scenario(int which) {
     g_api->tick(tid, 0);                               // first quantity(701) re-enters update x2
     if (!g_reenter_fired) return 1;
     if (snap().request_serial != 0 || g_direct_calls != 0) return 3;
-    pgr_berry_resume_v1 out{}; const auto ticket=g_api->begin_resume(tid,&out);
+    pgs_berry_resume_v1 out{}; const auto ticket=g_api->begin_resume(tid,&out);
     if (!ticket || out.ball!=&ball || out.first!=1) return 4;
     if (g_api->begin_resume(tid,&out)!=0) return 5;
-    if (g_api->finish_resume(ticket,tid)!=PGR_BERRY_OK) return 6;
+    if (g_api->finish_resume(ticket,tid)!=PGS_BERRY_OK) return 6;
     return 0;
   }
   case 15: {  // result token bound to generation: stale cross-encounter, nested, and replay reject
@@ -436,9 +436,9 @@ int scenario(int which) {
     uint64_t tok2 = g_api->result_begin(&g_cb_pool, tid);
     if (tok2 == 0 || tok2 == tok1) return 2;           // distinct generation token
     if (g_api->result_begin(&g_cb_pool, tid) != 0) return 3;              // nested begin rejected
-    if (g_api->result_end(tok1, tid) != PGR_BERRY_ERR_BAD_TOKEN) return 4; // stale generation
-    if (g_api->result_end(tok2, tid) != PGR_BERRY_OK) return 5;           // the live token latches
-    if (g_api->result_end(tok2, tid) != PGR_BERRY_ERR_BAD_TOKEN) return 6; // replay consumed once
+    if (g_api->result_end(tok1, tid) != PGS_BERRY_ERR_BAD_TOKEN) return 4; // stale generation
+    if (g_api->result_end(tok2, tid) != PGS_BERRY_OK) return 5;           // the live token latches
+    if (g_api->result_end(tok2, tid) != PGS_BERRY_ERR_BAD_TOKEN) return 6; // replay consumed once
     return 0;
   }
   case 16: {  // begin_resume cancellation: exit mid-claim -> no ticket, no submit, roots freed
@@ -447,7 +447,7 @@ int scenario(int which) {
     g_api->tick(tid, 0);                               // queue a resume (unclaimed)
     // Arm a one-shot exit DURING begin_resume's liveness invoke (m_alive).
     g_reenter_method = &m_alive; g_reenter_mode = 1; g_reenter_scope = &scope; g_reenter_fired = false;
-    pgr_berry_resume_v1 out{};
+    pgs_berry_resume_v1 out{};
     uint64_t ticket = g_api->begin_resume(tid, &out);  // scope dies mid-claim -> cancel, no submit
     if (!g_reenter_fired) return 1;
     if (ticket != 0) return 2;                         // never a claim ticket on a dead encounter
@@ -460,7 +460,7 @@ int scenario(int which) {
     g_api->submit(&ball, 1, 0, nullptr, tid);
     g_api->tick(tid, 0);                               // queue a resume
     int before = g_live_roots;                         // scope + queued ball (+callback none here)
-    pgr_berry_resume_v1 out{};
+    pgs_berry_resume_v1 out{};
     uint64_t ticket = g_api->begin_resume(tid, &out);
     if (ticket == 0) return 1;
     // While JS holds the ticket (and would be calling the original), the ball root is KEPT.
@@ -469,7 +469,7 @@ int scenario(int which) {
     // An exit now does NOT free the claimed frame (deferred to finish); roots unchanged.
     g_api->observe_exit(&scope, tid);
     if (g_live_roots != 1) return 4;                   // scope freed; the claimed ball root remains
-    if (g_api->finish_resume(ticket, tid) != PGR_BERRY_OK) return 5;
+    if (g_api->finish_resume(ticket, tid) != PGS_BERRY_OK) return 5;
     if (g_live_roots != 0) return 6;                   // only now is the claimed ball root freed
     return 0;
   }
@@ -480,7 +480,7 @@ int scenario(int which) {
       g_api->observe_exit(&scope,foreign); decision=g_api->submit(&ball,1,0,nullptr,foreign);
       g_api->tick(foreign,1);
     }); other.join();
-    if (decision!=PGR_BERRY_PASS || g_live_roots!=1) return 1;
+    if (decision!=PGS_BERRY_PASS || g_live_roots!=1) return 1;
     g_api->observe_exit(&scope,tid); return g_live_roots?2:0;
   }
   case 19: { // nested STOP during preflight never feeds, but releases the held throw once
@@ -489,7 +489,7 @@ int scenario(int which) {
     g_reenter_method=&m_quantity;g_reenter_mode=3;g_reenter_fired=false;
     g_api->tick(tid,0);
     if (!g_reenter_fired || g_direct_calls || snap().request_serial) return 1;
-    pgr_berry_resume_v1 out{};const auto ticket=g_api->begin_resume(tid,&out);
+    pgs_berry_resume_v1 out{};const auto ticket=g_api->begin_resume(tid,&out);
     if (!ticket || out.ball!=&ball) return 2;
     g_api->finish_resume(ticket,tid);g_api->tick(tid,1);
     return g_live_roots?3:0;
@@ -499,10 +499,10 @@ int scenario(int which) {
     g_api->submit(&ball,1,0,nullptr,tid);g_api->tick(tid,0);
     if (g_direct_calls!=1) return 1;
     usleep(8100000);g_api->tick(tid,0);
-    pgr_berry_resume_v1 out{};const auto ticket=g_api->begin_resume(tid,&out);
-    if (!ticket || out.cause!=PGR_BERRY_RESUME_TIMEOUT || g_direct_calls!=1) return 2;
+    pgs_berry_resume_v1 out{};const auto ticket=g_api->begin_resume(tid,&out);
+    if (!ticket || out.cause!=PGS_BERRY_RESUME_TIMEOUT || g_direct_calls!=1) return 2;
     g_api->finish_resume(ticket,tid);arm(ids3,3,tid);
-    if (g_api->submit(&ball,1,0,nullptr,tid)!=PGR_BERRY_PASS) return 3;
+    if (g_api->submit(&ball,1,0,nullptr,tid)!=PGS_BERRY_PASS) return 3;
     g_api->observe_exit(&scope,tid);return g_live_roots?4:0;
   }
   case 21: { // replacement during the initial alive getter preserves new scope and cancels old throw
@@ -512,14 +512,14 @@ int scenario(int which) {
     g_reenter_method=&m_alive;g_reenter_mode=4;g_reenter_fired=false;
     g_api->tick(tid,0);
     if (!g_reenter_fired || g_direct_calls || g_live_roots!=1) return 1;
-    pgr_berry_resume_v1 out{};if(g_api->begin_resume(tid,&out))return 2;
+    pgs_berry_resume_v1 out{};if(g_api->begin_resume(tid,&out))return 2;
     g_api->observe_exit(&replacement,tid);return g_live_roots?3:0;
   }
   case 22: { // relocating a ball while temporary roots are freed must refresh the exported pointer
     g_api->observe_enter(&scope,tid);arm(ids3,3,tid);
     g_api->submit(&ball,1,0,nullptr,tid);g_api->tick(tid,0);
     Obj moved{&c_pokeball};g_move_on_free=&ball;g_move_destination=&moved;
-    pgr_berry_resume_v1 out{};const auto ticket=g_api->begin_resume(tid,&out);
+    pgs_berry_resume_v1 out{};const auto ticket=g_api->begin_resume(tid,&out);
     if(!ticket||out.ball!=&moved)return 1;
     g_api->finish_resume(ticket,tid);g_api->observe_exit(&scope,tid);return g_live_roots?2:0;
   }
@@ -528,7 +528,7 @@ int scenario(int which) {
     g_api->submit(&ball,1,0,nullptr,tid);g_arm_callback_target=which==23?1:2;
     g_api->tick(tid,0);
     if(g_arm_callback_target||g_target_trigger||g_direct_calls||snap().request_serial)return 1;
-    pgr_berry_resume_v1 out{};const auto ticket=g_api->begin_resume(tid,&out);
+    pgs_berry_resume_v1 out{};const auto ticket=g_api->begin_resume(tid,&out);
     if(!ticket||out.ball!=&ball)return 2;
     g_api->finish_resume(ticket,tid);g_api->observe_exit(&scope,tid);return g_live_roots?3:0;
   }
@@ -539,7 +539,7 @@ int scenario(int which) {
 }  // namespace
 
 int main(int argc, char **argv) {
-#ifndef PGR_BERRY_DIRECT_TEST
+#ifndef PGS_BERRY_DIRECT_TEST
   if(argc!=2){std::puts("Expected native core library path");return 2;}
   void *library=dlopen(argv[1],RTLD_NOW|RTLD_LOCAL);
   if(!library){std::puts(dlerror());return 2;}
@@ -548,19 +548,19 @@ int main(int argc, char **argv) {
   loaded_core=get?static_cast<const pgs_native_api_v2 *>(get(2)):nullptr;
   if(!loaded_core||loaded_core->version!=2||loaded_core->size!=sizeof(*loaded_core)||!loaded_core->query_feature)return 2;
 #endif
-  g_api = static_cast<const pgr_berry_api_v1 *>(pgs_encounter_berries_api(1));
-  if (!g_api || g_api->size != sizeof(pgr_berry_api_v1)) { std::puts("FAIL table"); return 2; }
+  g_api = static_cast<const pgs_berry_api_v1 *>(pgs_encounter_berries_api(1));
+  if (!g_api || g_api->size != sizeof(pgs_berry_api_v1)) { std::puts("FAIL table"); return 2; }
   if (pgs_encounter_berries_api(99) != nullptr) { std::puts("FAIL exact-version"); return 2; }
 
   // Config validation (parent process; no hooks are ever installed).
-  pgr_berry_config_v1 c = make_config(), bad;
-  if (g_api->install(nullptr) != PGR_BERRY_ERR_NULL_ARG) { std::puts("FAIL null"); return 3; }
+  pgs_berry_config_v1 c = make_config(), bad;
+  if (g_api->install(nullptr) != PGS_BERRY_ERR_NULL_ARG) { std::puts("FAIL null"); return 3; }
   bad = c; bad.version = 2;
-  if (g_api->install(&bad) != PGR_BERRY_ERR_BAD_CONFIG) { std::puts("FAIL version"); return 3; }
+  if (g_api->install(&bad) != PGS_BERRY_ERR_BAD_CONFIG) { std::puts("FAIL version"); return 3; }
   bad = c; bad.m_direct = nullptr;
-  if (g_api->install(&bad) != PGR_BERRY_ERR_BAD_CONFIG) { std::puts("FAIL missing"); return 3; }
+  if (g_api->install(&bad) != PGS_BERRY_ERR_BAD_CONFIG) { std::puts("FAIL missing"); return 3; }
   bad = c; bad.reserved0 = 1;
-  if (g_api->install(&bad) != PGR_BERRY_ERR_BAD_CONFIG) { std::puts("FAIL reserved"); return 3; }
+  if (g_api->install(&bad) != PGS_BERRY_ERR_BAD_CONFIG) { std::puts("FAIL reserved"); return 3; }
 
   const int cases = 25;
   for (int i = 0; i < cases; ++i) {

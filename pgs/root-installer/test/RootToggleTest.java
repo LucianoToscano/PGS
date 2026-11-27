@@ -36,9 +36,9 @@ public final class RootToggleTest {
         values.remove("MODDISABLED"); values.put("MODREMOVE","1");
         check(!RootModuleState.parse(values,true).canToggle());
         check(RootModuleState.parse(values,true).rebootNeeded);
-        check(RootToggleCommand.confirmed(false,"PGRAZOR_TOGGLE_OK=off\r\n"));
-        check(!RootToggleCommand.confirmed(true,"PGRAZOR_TOGGLE_OK=off\n"));
-        check(!RootToggleCommand.confirmed(false,"not PGRAZOR_TOGGLE_OK=off"));
+        check(RootToggleCommand.confirmed(false,"PGS_TOGGLE_OK=off\r\n"));
+        check(!RootToggleCommand.confirmed(true,"PGS_TOGGLE_OK=off\n"));
+        check(!RootToggleCommand.confirmed(false,"not PGS_TOGGLE_OK=off"));
         check(RootToggleCommand.injectionOffFromProbe("MODOFF=1\n"));
         check(!RootToggleCommand.injectionOffFromProbe("MODOFF=10\n"));
         System.out.println("PASS root toggle state");

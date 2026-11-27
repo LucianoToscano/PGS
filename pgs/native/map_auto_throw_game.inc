@@ -7,10 +7,10 @@ MapTapFn map_original=nullptr;
 void* map_wild_class=nullptr;
 
 bool map_vgp_busy(){
-    auto api=static_cast<const PgrVgpControllerApi*>(pgs_vgp_controller_api(1));
+    auto api=static_cast<const PgsVgpControllerApi*>(pgs_vgp_controller_api(1));
     if(!api||!api->sample)return true;
-    PgrVgpControllerSample sample{};sample.version=1;sample.size=sizeof(sample);
-    return api->sample(&sample)!=0||sample.phase!=PGR_VGC_PH_NONE;
+    PgsVgpControllerSample sample{};sample.version=1;sample.size=sizeof(sample);
+    return api->sample(&sample)!=0||sample.phase!=PGS_VGC_PH_NONE;
 }
 bool map_command_free(){
     auto tr=transport();char command[1280]{};uint32_t n=0;
@@ -32,7 +32,7 @@ void map_bind_kind(MapKind& k){
     auto get_field=fn<void*(*)(void*,const char*)>(boot.meta.class_get_field_from_name);
     auto field_type=fn<void*(*)(void*)>(boot.meta.field_get_type);
     if(k.klass==map_wild_class){
-        k.f_response=find_field_by_name_checked(map_wild_class,PGR_GAME_SMART_CATCH_BINDING_CPP_EMBS_NAME,"Holoholo.Rpc.EncounterOutProto");
+        k.f_response=find_field_by_name_checked(map_wild_class,PGS_GAME_SMART_CATCH_BINDING_CPP_EMBS_NAME,"Holoholo.Rpc.EncounterOutProto");
     }else{
         auto fields=fn<void*(*)(void*,void**)>(exp_sym("class_get_fields"));
         auto flags=fn<int(*)(void*)>(boot.meta.field_get_flags);
@@ -98,12 +98,12 @@ Root map_real_encounter(void* raw){
     return Root(invoke_method(kind.m_encounter,target.get()));
 }
 int map_poll_response(void* promise,uint64_t tid,Root& response){
-    Root hold(promise);auto api=static_cast<const PgrVgpResultsApi*>(pgs_vgp_results_api(1));
-    require(api&&api->poll,"Promise observer unavailable");PgrVgpResultsResult out{};
-    int rc=api->poll(hold.get(),PGR_VR_PHASE_ENCOUNTER,tid,&out);response.h=out.value_handle;return rc;
+    Root hold(promise);auto api=static_cast<const PgsVgpResultsApi*>(pgs_vgp_results_api(1));
+    require(api&&api->poll,"Promise observer unavailable");PgsVgpResultsResult out{};
+    int rc=api->poll(hold.get(),PGS_VR_PHASE_ENCOUNTER,tid,&out);response.h=out.value_handle;return rc;
 }
 int map_real_poll_encounter(void* promise,uint64_t tid,Root& response){
-    Root wrapper;int rc=map_poll_response(promise,tid,wrapper);if(rc!=PGR_VR_DONE)return rc;
+    Root wrapper;int rc=map_poll_response(promise,tid,wrapper);if(rc!=PGS_VR_DONE)return rc;
     require(wrapper&&obj_class_name(wrapper.get())=="PokemonEncounterResponse","Unexpected encounter response");
     const MapKind& kind=map_kind(obj_klass(map_tap.target.get()));require(kind.ok,"Unsupported map Pokemon");
     response=Root(read_field_val<void*>(map_tap.target.get(),kind.f_response));require(bool(response),"Map encounter response missing");
@@ -135,24 +135,24 @@ Root map_real_berry(void* raw,int berry){
     require(bool(promise),"Berry returned no promise; outcome unknown");return promise;
 }
 int map_real_poll_berry(void* promise,uint64_t tid,Root& response,int& status){
-    int rc=map_poll_response(promise,tid,response);if(rc!=PGR_VR_DONE)return rc;
+    int rc=map_poll_response(promise,tid,response);if(rc!=PGS_VR_DONE)return rc;
     require(response&&obj_class_name(response.get())=="UseItemEncounterOutProto","Unexpected berry response");
     const int raw=read_field_val<int>(response.get(),find_field_by_name_checked(obj_klass(response.get()),"Status"));
     status=raw==g_berry_success||raw==g_berry_active_exists?1:raw==g_berry_no_stock?2:0;
     if(status==1)require(map_real_active_berry(response.get())>0,"Berry response omitted effect");return rc;
 }
-bool map_real_value(PgrThrowValue& value){return pgr_map_throw_value(&value);}
-int map_real_ball(void* raw,void* raw_response,const PgrCatchChanceOptions& cfg,const PgrThrowValue& value){
+bool map_real_value(PgsThrowValue& value){return pgs_map_throw_value(&value);}
+int map_real_ball(void* raw,void* raw_response,const PgsCatchChanceOptions& cfg,const PgsThrowValue& value){
     Root target(raw),response(raw_response);
     if(cfg.autoball&&cfg.safari){
         const int safari=item_literal_opt("WildBall");
         Root display(call_obj(target.get(),"get_PokemonDisplay"));
         if(display&&safari>5){
             bool mighty=read_field_val<bool>(display.get(),find_field_by_name_checked(obj_klass(display.get()),"IsStrongPokemon","System.Boolean"));
-            if(mighty&&map_stock(safari)>0&&pgr_catch_chance_offers_ball(response.get(),safari))return safari;
+            if(mighty&&map_stock(safari)>0&&pgs_catch_chance_offers_ball(response.get(),safari))return safari;
         }
     }
-    double base[4]{};const bool rates=pgr_catch_chance_base(response.get(),base);
+    double base[4]{};const bool rates=pgs_catch_chance_base(response.get(),base);
     int best=0;double best_chance=-1;
     // Server probabilities after a berry already include its effect.
     const double mult=(value.bullseye?2.0-value.radius:1.0)*(value.spinning?1.7:1.0);
@@ -166,9 +166,9 @@ int map_real_ball(void* raw,void* raw_response,const PgrCatchChanceOptions& cfg,
     }
     return best;
 }
-Root map_real_capture(void* raw,const PgrThrowValue& value){
+Root map_real_capture(void* raw,const PgsThrowValue& value){
     Root target(raw);
-    require(value.item==1||value.item==2||value.item==3||pgr_is_inventory_safari_ball(value.item),"Unsupported map catch ball");
+    require(value.item==1||value.item==2||value.item==3||pgs_is_inventory_safari_ball(value.item),"Unsupported map catch ball");
     require(map_stock(value.item)>0,"Selected ball no longer available");
     void* method=require_map_method(obj_klass(target.get()),"TryCapture",2,
         "Niantic.Promises.IPromise<Holoholo.Rpc.CatchPokemonOutProto>",
@@ -187,7 +187,7 @@ int map_real_transfer(void* raw_response,uint64_t tid){
     if(rc==PGS_VX_OK)return 0;
     if(rc!=PGS_VX_SUCCESS)return -1;
     auto tr=transport();int keep_all=0;if(!tr||tr->get_bool(35,&keep_all)!=0)keep_all=1;
-    if(pgr_research_transfer_caught(out.caught_id,response.h,bag.h,out.pokemon_handle,out.gm_handle,tid,keep_all==1?1:0)){
+    if(pgs_research_transfer_caught(out.caught_id,response.h,bag.h,out.pokemon_handle,out.gm_handle,tid,keep_all==1?1:0)){
         response.h=0;bag.h=0;return 1;
     }
     auto free_handle=fn<void(*)(uintptr_t)>(boot.runtime.gchandle_free);
@@ -229,11 +229,11 @@ void map_install_hook(){
     require_map_method(map_wild_class,"SendEncounterRequest",0,"Niantic.Promises.IPromise<Niantic.Holoholo.Map.PokemonEncounterResponse>");
     require_map_method(map_wild_class,"TryCapture",2,"Niantic.Promises.IPromise<Holoholo.Rpc.CatchPokemonOutProto>","Niantic.Holoholo.Encounter.PokeballThrow","Holoholo.Rpc.ARPlusEncounterValuesProto");
     void* base=resolve_class("Niantic.Holoholo.Map","MapPokemon");
-    g_pgr_vgp_marker_map_pokemon.store(base,std::memory_order_release);
+    g_pgs_vgp_marker_map_pokemon.store(base,std::memory_order_release);
     void* method=require_map_method(base,"OnTap",2,"System.Void","System.Object","System.EventArgs");
     void* code=nullptr;std::memcpy(&code,method,sizeof(code));
-    auto api=static_cast<const PgrMetaApi*>(pgs_runtime_metadata_api(1));
-    PgrMetaCodeQuery query{1,sizeof(query),code,16,nullptr,0,0};require(api&&api->validate_code(&query)==0,"Map tap code validation failed");
+    auto api=static_cast<const PgsMetaApi*>(pgs_runtime_metadata_api(1));
+    PgsMetaCodeQuery query{1,sizeof(query),code,16,nullptr,0,0};require(api&&api->validate_code(&query)==0,"Map tap code validation failed");
     require(pgs_hook(code,reinterpret_cast<void*>(map_tap_hook),reinterpret_cast<void**>(&map_original))==0&&map_original,"Map tap hook unavailable");
     map_hook_ready=true;map_event("ready","Map tap catch hook installed");
 }

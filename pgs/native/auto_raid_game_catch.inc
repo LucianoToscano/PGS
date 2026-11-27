@@ -146,7 +146,7 @@ Root real_submit_raid_throw(void* state, void* pokemon, int ball) {
             && unity_obj_alive(pokemon),"Raid catch owner unavailable");
     require(ball>0 && (ball==g_premier_ball || ball==g_beast_ball),"Raid ball not authorized");
     require(unbox_val<int32_t>(call_obj(state,"get_RaidBallCount",0))>0,"No bonus balls remain; check encounter");
-    Root promise=submit_auto_throw(session.coord_encounter,session.raid_map_pokemon,pgr_raid_throw_value(ball));
+    Root promise=submit_auto_throw(session.coord_encounter,session.raid_map_pokemon,pgs_raid_throw_value(ball));
     emit_raw_event("{\"token\":"+json_quote(std::to_string(session.command.token))+
         ",\"phase\":\"throw\",\"throw\":"+std::to_string(session.throws_made)+
         ",\"ball\":"+std::to_string(ball)+",\"grade\":\"excellent\",\"curve\":true,\"alwaysHit\":true,\"missed\":false,\"reticle\":0.1}");
@@ -233,12 +233,12 @@ Root real_submit_raid_berry(void* state,void* pokemon,int item) {
 
 int real_poll_berry_promise(void* promise,uint64_t tid,int& result) {
     result=BerryRefused;
-    const auto* vr=static_cast<const PgrVgpResultsApi*>(pgs_vgp_results_api(1));
+    const auto* vr=static_cast<const PgsVgpResultsApi*>(pgs_vgp_results_api(1));
     require(vr && vr->poll,"Raid berry promise observer unavailable");
-    PgrVgpResultsResult response{};
-    const int rc=vr->poll(promise,PGR_VR_PHASE_ENCOUNTER,tid,&response);
+    PgsVgpResultsResult response{};
+    const int rc=vr->poll(promise,PGS_VR_PHASE_ENCOUNTER,tid,&response);
     Root value;value.h=response.value_handle;
-    if(rc!=PGR_VR_DONE)return rc;
+    if(rc!=PGS_VR_DONE)return rc;
     require(value && obj_class_name(value.get())=="UseItemEncounterOutProto","Unexpected raid berry response");
     void* k=obj_klass(value.get());
     const int status=read_field_val<int32_t>(value.get(),find_field_by_name_checked(k,"Status"));
@@ -273,18 +273,18 @@ void finish_owned_raid_encounter(bool caught){
 
 int real_poll_catch_promise(void* promise, uint64_t tid, int& out_catch_status) {
     out_catch_status = 0;
-    const auto* vr = static_cast<const PgrVgpResultsApi*>(pgs_vgp_results_api(1));
+    const auto* vr = static_cast<const PgsVgpResultsApi*>(pgs_vgp_results_api(1));
     require(vr != nullptr && vr->poll != nullptr, "Promise observer API unavailable");
 
     // Phase 2 classifies an exact CatchPokemonOutProto and reads its Status via the installed
     // RESP.Status FieldInfo; falls back to the verified Status field if not classified.
-    PgrVgpResultsResult res{};
-    const int rc = vr->poll(promise, PGR_VR_PHASE_CATCH, tid, &res);
-    if (rc == PGR_VR_PENDING) return PGR_VR_PENDING;
+    PgsVgpResultsResult res{};
+    const int rc = vr->poll(promise, PGS_VR_PHASE_CATCH, tid, &res);
+    if (rc == PGS_VR_PENDING) return PGS_VR_PENDING;
 
     Root val;
     val.h = res.value_handle; // adopt the single rooted completed value exactly once
-    if (rc != PGR_VR_DONE || !val) return PGR_VR_REJECTED;
+    if (rc != PGS_VR_DONE || !val) return PGS_VR_REJECTED;
 
     require(obj_class_name(val.get())=="CatchPokemonOutProto","Unexpected raid catch response");
     out_catch_status=read_field_val<int32_t>(val.get(),const_cast<void*>(md->fields[kStatusFieldIndex]));
@@ -302,7 +302,7 @@ int real_poll_catch_promise(void* promise, uint64_t tid, int& out_catch_status) 
              balls==0){
         finish_owned_raid_encounter(false);out_catch_status=3;
     }
-    return PGR_VR_DONE;
+    return PGS_VR_DONE;
 }
 
 void real_close_encounter_summary(){

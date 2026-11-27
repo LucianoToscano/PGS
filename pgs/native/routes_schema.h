@@ -5,7 +5,7 @@
 #include <stddef.h>
 #include <stdint.h>
 
-namespace pgr_routes_schema {
+namespace pgs_routes_schema {
 struct ClassSpec {const char *key,*name_space,*name,*canonical;};
 struct FieldSpec {uint32_t owner;const char *name;uint64_t offset;uint32_t kind;const char *type_name;uint32_t value_size;};
 struct MethodSpec {const char *key;uint32_t owner;const char *name,*return_type;uint32_t param_count;const char *param0;};
@@ -78,4 +78,4 @@ inline constexpr MethodSpec kMethods[] = {
   {"requestNearby",2u,"RequestNearbyRoutes",nullptr,0u,nullptr}, // 17
 };
 inline constexpr size_t kMethodCount=sizeof(kMethods)/sizeof(kMethods[0]);
-} // namespace pgr_routes_schema
+} // namespace pgs_routes_schema

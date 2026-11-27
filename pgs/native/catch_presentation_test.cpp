@@ -26,8 +26,8 @@ int main(int argc,char **argv) {
     auto get=reinterpret_cast<const void *(*)(uint32_t)>(dlsym(lib,"pgs_native_api"));
     auto core=get?static_cast<const pgs_native_api_v2 *>(get(2)):nullptr;
     if(!core||core->size!=48||core->query_feature(99,1)||core->query_feature(3,99))return 3;
-    auto api=static_cast<const PgrCatchApi *>(core->query_feature(3,1));if(!api||api->size!=40)return 4;
-    PgrCatchConfig config{1,sizeof(config),reinterpret_cast<void *>(&show),root_object,free_object,
+    auto api=static_cast<const PgsCatchApi *>(core->query_feature(3,1));if(!api||api->size!=40)return 4;
+    PgsCatchConfig config{1,sizeof(config),reinterpret_cast<void *>(&show),root_object,free_object,
         target_object,object_class,&view_class,&action_class,&pokemon_class};
     if(api->install(&config)!=0||api->install(&config)==0)return 5;
     FakeObject service{},response{},pokemon{&pokemon_class,{}},action{&action_class,{}},view{&view_class,{}};
@@ -45,7 +45,7 @@ int main(int argc,char **argv) {
     put(&pokemon,0x20,uint64_t(42));
     call(&service,&pokemon,0xab01,0xcd00,17,&action,nullptr,nullptr,0xef01,0x9901,0xaa00,nullptr);
     if(forwards!=2||roots!=4)return 10;
-    PgrCatchCapture out{};
+    PgsCatchCapture out{};
     if(api->end(&out)!=1||roots!=3||out.service!=&service||out.pokemon!=&pokemon||out.callback!=&action||
        out.confirm!=1||out.persist!=0||out.hide_ar!=1||out.post!=1||out.suppress!=0||out.open_hyper_training!=17)return 11;
     free_object(out.service);free_object(out.pokemon);free_object(out.callback);

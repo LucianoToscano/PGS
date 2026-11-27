@@ -5,18 +5,18 @@
 
 // Published only after reading the game's named WildBall enum literal. This is
 // the inventory ball, not WildBallPremier (supplied by special encounters).
-inline std::atomic<int> pgr_safari_inventory_item{0};
-inline bool pgr_is_inventory_safari_ball(int item) {
-    return item > 0 && item == pgr_safari_inventory_item.load();
+inline std::atomic<int> pgs_safari_inventory_item{0};
+inline bool pgs_is_inventory_safari_ball(int item) {
+    return item > 0 && item == pgs_safari_inventory_item.load();
 }
 
-struct PgrCatchChanceOptions {
+struct PgsCatchChanceOptions {
     bool valid=false, show=false, autoball=false, safari=false, autothrow=false, onmap=false, preview=false;
     long long cooldown_ms=0;
     int target=75, berry=0;
 };
-inline PgrCatchChanceOptions pgr_parse_catch_chance(const char *s) {
-    PgrCatchChanceOptions c;
+inline PgsCatchChanceOptions pgs_parse_catch_chance(const char *s) {
+    PgsCatchChanceOptions c;
     if (!s) return c;
     int show=0, automatic=0, target=0, berry=0, safari=0, throwing=0, onmap=0, preview=0, end=0;
     long long cooldown=0;
@@ -51,7 +51,7 @@ inline PgrCatchChanceOptions pgr_parse_catch_chance(const char *s) {
 }
 
 // A separate preference augments Auto Ball; it never enables Auto Ball itself.
-inline bool pgr_manual_safari_pick(bool automatic, bool preference, bool mighty,
+inline bool pgs_manual_safari_pick(bool automatic, bool preference, bool mighty,
                                   bool allowed, int stock, int resolved_item) {
     return automatic && preference && mighty && allowed && stock>0 && resolved_item>0;
 }

@@ -48,7 +48,7 @@ void reset(){
  int next=-1;std::memcpy(entry_array+0x24,&next,4);void *p=&orb;std::memcpy(entry_array+0x30,&p,8);
  fail=false;move=false;
 }
-void check(int expected){assert(pgr_max_orb_direction(&state,nullptr)==expected);assert(roots.empty()&&allocated==freed);}
+void check(int expected){assert(pgs_max_orb_direction(&state,nullptr)==expected);assert(roots.empty()&&allocated==freed);}
 }
 const void *pgs_runtime_transport_api(uint32_t){return nullptr;}
 const void *pgs_runtime_bootstrap_api(uint32_t){return nullptr;}

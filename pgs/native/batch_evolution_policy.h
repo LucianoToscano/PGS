@@ -1,5 +1,5 @@
-#ifndef PGR_BATCH_EVOLUTION_POLICY_H
-#define PGR_BATCH_EVOLUTION_POLICY_H
+#ifndef PGS_BATCH_EVOLUTION_POLICY_H
+#define PGS_BATCH_EVOLUTION_POLICY_H
 
 #include <cstddef>
 #include <cstdint>
@@ -7,7 +7,7 @@
 #include <map>
 #include <string>
 
-namespace pgr_evolution {
+namespace pgs_evolution {
 
 struct Command {
     uint64_t token=0;
@@ -123,6 +123,6 @@ struct Budget {
     }
 };
 
-} // namespace pgr_evolution
+} // namespace pgs_evolution
 
 #endif

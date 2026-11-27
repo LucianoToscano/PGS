@@ -21,9 +21,9 @@ jobs:
       PGS_BUILD_TOOLS: '36.0.0'
       PGS_ANDROID_PLATFORM: android-36
       PGS_VERSION: v0.0.2
-      PGRAZOR_KEY_ALIAS: ${{ secrets.PGS_KEY_ALIAS || secrets.PGRAZOR_KEY_ALIAS }}
-      PGRAZOR_STORE_PASSWORD: ${{ secrets.PGS_STORE_PASSWORD || secrets.PGRAZOR_STORE_PASSWORD }}
-      PGRAZOR_KEY_PASSWORD: ${{ secrets.PGS_KEY_PASSWORD || secrets.PGRAZOR_KEY_PASSWORD }}
+      PGS_KEY_ALIAS: ${{ secrets.PGS_KEY_ALIAS || secrets.PGRAZOR_KEY_ALIAS }}
+      PGS_STORE_PASSWORD: ${{ secrets.PGS_STORE_PASSWORD || secrets.PGRAZOR_STORE_PASSWORD }}
+      PGS_KEY_PASSWORD: ${{ secrets.PGS_KEY_PASSWORD || secrets.PGRAZOR_KEY_PASSWORD }}
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
         with:
@@ -86,7 +86,7 @@ jobs:
           path.write_bytes(base64.b64decode(os.environ['SIGNING_KEY_B64'], validate=True))
           path.chmod(0o600)
           PY
-          printf 'PGRAZOR_KEYSTORE=%s/pgs-v0.0.2-release.jks\n' "$RUNNER_TEMP" >> "$GITHUB_ENV"
+          printf 'PGS_KEYSTORE=%s/pgs-v0.0.2-release.jks\n' "$RUNNER_TEMP" >> "$GITHUB_ENV"
       - name: Compile all current PGS Java controls and module DEX
         shell: bash
         run: |

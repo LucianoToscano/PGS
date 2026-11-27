@@ -12,10 +12,10 @@
 #include "pgs_native_api.h"
 #include <dlfcn.h>
 
-static_assert(sizeof(PgrRoutesServicesConfig) == 96, "config 96");
-static_assert(sizeof(PgrRoutesServicesRequest) == 32, "request 32");
-static_assert(sizeof(PgrRoutesServicesOutput) == 40, "output 40");
-static_assert(sizeof(PgrRoutesServicesApi) == 48, "table 48");
+static_assert(sizeof(PgsRoutesServicesConfig) == 96, "config 96");
+static_assert(sizeof(PgsRoutesServicesRequest) == 32, "request 32");
+static_assert(sizeof(PgsRoutesServicesOutput) == 40, "output 40");
+static_assert(sizeof(PgsRoutesServicesApi) == 48, "table 48");
 
 namespace {
 
@@ -77,9 +77,9 @@ extern "C" __attribute__((noinline)) bool fixture_ir_orig_impl(void *self, const
 void *kAddrReq = reinterpret_cast<void *>(&fixture_req_orig_impl);
 void *kAddrIr = reinterpret_cast<void *>(&fixture_ir_orig_impl);
 
-void make_config(PgrRoutesServicesConfig *c) {
+void make_config(PgsRoutesServicesConfig *c) {
   std::memset(c, 0, sizeof(*c));
-  c->version = PGR_RS_CONFIG_VERSION;
+  c->version = PGS_RS_CONFIG_VERSION;
   c->size = sizeof(*c);
   c->object_get_class = reinterpret_cast<void *>(&fake_object_get_class);
   c->field_get_value = reinterpret_cast<void *>(&fake_field_get_value);
@@ -94,12 +94,12 @@ void make_config(PgrRoutesServicesConfig *c) {
   c->addr_in_range_of_end = kAddrIr;
 }
 
-const PgrRoutesServicesApi *loaded = nullptr;
-const PgrRoutesServicesApi *api() { return loaded; }
+const PgsRoutesServicesApi *loaded = nullptr;
+const PgsRoutesServicesApi *api() { return loaded; }
 
-void make_request(PgrRoutesServicesRequest *r, uint64_t tid, uint64_t residual, uint64_t gen) {
+void make_request(PgsRoutesServicesRequest *r, uint64_t tid, uint64_t residual, uint64_t gen) {
   std::memset(r, 0, sizeof(*r));
-  r->version = PGR_RS_REQUEST_VERSION;
+  r->version = PGS_RS_REQUEST_VERSION;
   r->size = sizeof(*r);
   r->tid = tid;
   r->residual_ms = residual;
@@ -125,22 +125,22 @@ int main(int argc, char **argv) {
   auto get = reinterpret_cast<const void *(*)(uint32_t)>(dlsym(library, "pgs_native_api"));
   auto core = get ? static_cast<const pgs_native_api_v2 *>(get(2)) : nullptr;
   assert(core && core->query_feature(45, 99) == nullptr);
-  loaded = static_cast<const PgrRoutesServicesApi *>(core->query_feature(45, 1));
-  assert(loaded && loaded->size == sizeof(PgrRoutesServicesApi));
+  loaded = static_cast<const PgsRoutesServicesApi *>(core->query_feature(45, 1));
+  assert(loaded && loaded->size == sizeof(PgsRoutesServicesApi));
 
   // install() validates header, places both hooks, is idempotent, rejects reconfig.
   {
-    PgrRoutesServicesConfig c;
+    PgsRoutesServicesConfig c;
     make_config(&c);
     assert(api()->install(&c) == 0);            // install() success == 0 (NOT status OK 1)
     assert(api()->install(&c) == 0);            // idempotent, same config
-    PgrRoutesServicesConfig c2 = c;
+    PgsRoutesServicesConfig c2 = c;
     c2.f_routes_dica = reinterpret_cast<void *>(&kThread);
-    assert(api()->install(&c2) == PGR_RS_ERR_RECONFIG);
-    PgrRoutesServicesConfig bad;
+    assert(api()->install(&c2) == PGS_RS_ERR_RECONFIG);
+    PgsRoutesServicesConfig bad;
     make_config(&bad);
     bad.class_routes = nullptr;
-    assert(api()->install(&bad) == PGR_RS_ERR_MISSING_PTR);
+    assert(api()->install(&bad) == PGS_RS_ERR_MISSING_PTR);
   }
 
   const uint64_t tid = self_tid();
@@ -155,10 +155,10 @@ int main(int argc, char **argv) {
     void *ret = call_request_nearby(&routesA);  // owner not yet latched + heartbeat 0
     assert(ret == &g_req_return);               // return preserved
     assert(g_req_calls.load() == 1);            // original chained exactly once
-    PgrRoutesServicesRequest r; make_request(&r, tid, 2500, api()->generation());
-    PgrRoutesServicesOutput out;
-    assert(api()->poll(&r, &out) == PGR_RS_OK);
-    assert(!(out.flags & PGR_RS_FLAG_ROUTES_PRESENT));  // nothing captured before owner/heartbeat
+    PgsRoutesServicesRequest r; make_request(&r, tid, 2500, api()->generation());
+    PgsRoutesServicesOutput out;
+    assert(api()->poll(&r, &out) == PGS_RS_OK);
+    assert(!(out.flags & PGS_RS_FLAG_ROUTES_PRESENT));  // nothing captured before owner/heartbeat
   }
 
   // Now poll latched the owner + armed the heartbeat. A capture + commit publishes a borrowed handle.
@@ -167,25 +167,25 @@ int main(int argc, char **argv) {
     void *ret = call_request_nearby(&routesA);
     assert(ret == &g_req_return && g_req_calls.load() == 1);
     assert(g_last_req_receiver == &routesA);  // re-resolved receiver == the same object
-    PgrRoutesServicesRequest r; make_request(&r, tid, 2500, api()->generation());
-    PgrRoutesServicesOutput out;
-    assert(api()->poll(&r, &out) == PGR_RS_OK);
-    assert(out.flags & PGR_RS_FLAG_ROUTES_PRESENT);
-    assert(out.flags & PGR_RS_FLAG_ROUTES_REPLACED);
+    PgsRoutesServicesRequest r; make_request(&r, tid, 2500, api()->generation());
+    PgsRoutesServicesOutput out;
+    assert(api()->poll(&r, &out) == PGS_RS_OK);
+    assert(out.flags & PGS_RS_FLAG_ROUTES_PRESENT);
+    assert(out.flags & PGS_RS_FLAG_ROUTES_REPLACED);
     assert(out.routes_handle != 0);
     // dica derivation produced the consumption service authoritatively.
-    assert(out.flags & PGR_RS_FLAG_CONSUMPTION_PRESENT);
-    assert(out.flags & PGR_RS_FLAG_CONSUMPTION_FROM_DICA);
+    assert(out.flags & PGS_RS_FLAG_CONSUMPTION_PRESENT);
+    assert(out.flags & PGS_RS_FLAG_CONSUMPTION_FROM_DICA);
     assert(out.consumption_handle != 0);
     assert(fake_gchandle_get_target(out.routes_handle) == &routesA);
     assert(fake_gchandle_get_target(out.consumption_handle) == &consC);
 
     // Host BORROWS the handles: it must never free them and they stay live across a second poll.
     uint64_t borrowed_routes = out.routes_handle;
-    PgrRoutesServicesOutput out2;
-    assert(api()->poll(&r, &out2) == PGR_RS_OK);
+    PgsRoutesServicesOutput out2;
+    assert(api()->poll(&r, &out2) == PGS_RS_OK);
     assert(out2.routes_handle == borrowed_routes);                 // stable, not replaced
-    assert(!(out2.flags & PGR_RS_FLAG_ROUTES_REPLACED));
+    assert(!(out2.flags & PGS_RS_FLAG_ROUTES_REPLACED));
     assert(fake_gchandle_get_target(borrowed_routes) == &routesA);  // still live
   }
 
@@ -194,10 +194,10 @@ int main(int argc, char **argv) {
     int live_before = g_live_handles;
     call_request_nearby(&routesA);
     call_request_nearby(&routesA);
-    PgrRoutesServicesRequest r; make_request(&r, tid, 2500, api()->generation());
-    PgrRoutesServicesOutput out;
-    assert(api()->poll(&r, &out) == PGR_RS_OK);
-    assert(!(out.flags & PGR_RS_FLAG_ROUTES_REPLACED));
+    PgsRoutesServicesRequest r; make_request(&r, tid, 2500, api()->generation());
+    PgsRoutesServicesOutput out;
+    assert(api()->poll(&r, &out) == PGS_RS_OK);
+    assert(!(out.flags & PGS_RS_FLAG_ROUTES_REPLACED));
     assert(g_live_handles == live_before);  // no leak, no net new root
   }
 
@@ -206,17 +206,17 @@ int main(int argc, char **argv) {
     FakeObj routesB; routesB.klass = &kRoutesClass;
     FakeObj consD;   consD.klass = &kConsumptionClass;
     routesB.dica = &consD;
-    PgrRoutesServicesRequest r; make_request(&r, tid, 2500, api()->generation());
-    PgrRoutesServicesOutput before;
-    assert(api()->poll(&r, &before) == PGR_RS_OK);
+    PgsRoutesServicesRequest r; make_request(&r, tid, 2500, api()->generation());
+    PgsRoutesServicesOutput before;
+    assert(api()->poll(&r, &before) == PGS_RS_OK);
     uint64_t old_routes = before.routes_handle, old_cons = before.consumption_handle;
 
     call_request_nearby(&routesB);  // hook only sets pending; active unchanged until poll
     assert(fake_gchandle_get_target(old_routes) == &routesA);  // old active still valid mid-capture
 
-    PgrRoutesServicesOutput out;
-    assert(api()->poll(&r, &out) == PGR_RS_OK);
-    assert(out.flags & PGR_RS_FLAG_ROUTES_REPLACED);
+    PgsRoutesServicesOutput out;
+    assert(api()->poll(&r, &out) == PGS_RS_OK);
+    assert(out.flags & PGS_RS_FLAG_ROUTES_REPLACED);
     assert(fake_gchandle_get_target(out.routes_handle) == &routesB);
     assert(fake_gchandle_get_target(out.consumption_handle) == &consD);  // dica re-derived (no stale)
     assert(fake_gchandle_get_target(old_routes) == nullptr);  // old active freed by poll
@@ -225,48 +225,48 @@ int main(int argc, char **argv) {
 
   // Consumption capture via get_InRangeOfEnd before any routes service exists.
   {
-    PgrRoutesServicesRequest rdrain; make_request(&rdrain, tid, 0, api()->generation());
-    assert(api()->drain(&rdrain) == PGR_RS_OK);  // clear everything first
+    PgsRoutesServicesRequest rdrain; make_request(&rdrain, tid, 0, api()->generation());
+    assert(api()->drain(&rdrain) == PGS_RS_OK);  // clear everything first
     assert(g_live_handles == 0);
 
     FakeObj cons; cons.klass = &kConsumptionClass;
-    PgrRoutesServicesRequest r; make_request(&r, tid, 2500, api()->generation());
-    PgrRoutesServicesOutput arm;
-    assert(api()->poll(&r, &arm) == PGR_RS_OK);  // arm heartbeat / latch owner
+    PgsRoutesServicesRequest r; make_request(&r, tid, 2500, api()->generation());
+    PgsRoutesServicesOutput arm;
+    assert(api()->poll(&r, &arm) == PGS_RS_OK);  // arm heartbeat / latch owner
     bool b = call_in_range(&cons);
     assert(b == true && g_ir_calls.load() >= 1 && g_last_ir_receiver == &cons);
-    PgrRoutesServicesOutput out;
-    assert(api()->poll(&r, &out) == PGR_RS_OK);
-    assert(out.flags & PGR_RS_FLAG_CONSUMPTION_PRESENT);
-    assert(!(out.flags & PGR_RS_FLAG_CONSUMPTION_FROM_DICA));  // hook-captured, no routes/dica yet
+    PgsRoutesServicesOutput out;
+    assert(api()->poll(&r, &out) == PGS_RS_OK);
+    assert(out.flags & PGS_RS_FLAG_CONSUMPTION_PRESENT);
+    assert(!(out.flags & PGS_RS_FLAG_CONSUMPTION_FROM_DICA));  // hook-captured, no routes/dica yet
     assert(fake_gchandle_get_target(out.consumption_handle) == &cons);
   }
 
   // revoke(): any-thread atomic invalidation. A pending captured under the old generation is dropped by the
   // next poll; no managed work, frees nothing itself; capture cannot revive without a fresh heartbeat.
   {
-    PgrRoutesServicesRequest rdrain; make_request(&rdrain, tid, 0, api()->generation());
-    assert(api()->drain(&rdrain) == PGR_RS_OK);
+    PgsRoutesServicesRequest rdrain; make_request(&rdrain, tid, 0, api()->generation());
+    assert(api()->drain(&rdrain) == PGS_RS_OK);
     assert(g_live_handles == 0);
 
     FakeObj routes; routes.klass = &kRoutesClass;
-    PgrRoutesServicesRequest r; make_request(&r, tid, 2500, api()->generation());
-    PgrRoutesServicesOutput arm; assert(api()->poll(&r, &arm) == PGR_RS_OK);
+    PgsRoutesServicesRequest r; make_request(&r, tid, 2500, api()->generation());
+    PgsRoutesServicesOutput arm; assert(api()->poll(&r, &arm) == PGS_RS_OK);
     call_request_nearby(&routes);        // pending captured under current generation
     uint64_t newgen = api()->revoke();   // bump + clear heartbeat
     int live_after_revoke = g_live_handles;
     (void)live_after_revoke;             // revoke frees nothing
 
     // A stale-generation poll is a benign SKIP; it must not commit the pending.
-    PgrRoutesServicesOutput stale;
-    assert(api()->poll(&r, &stale) == PGR_RS_SKIP);
+    PgsRoutesServicesOutput stale;
+    assert(api()->poll(&r, &stale) == PGS_RS_SKIP);
     // A fresh-generation poll drops the stale pending (captured under the prior gen) without committing.
-    PgrRoutesServicesRequest r2; make_request(&r2, tid, 2500, newgen);
-    PgrRoutesServicesOutput out;
-    assert(api()->poll(&r2, &out) == PGR_RS_OK);
-    assert(!(out.flags & PGR_RS_FLAG_ROUTES_PRESENT));
-    PgrRoutesServicesRequest rd; make_request(&rd, tid, 0, api()->generation());
-    assert(api()->drain(&rd) == PGR_RS_OK);
+    PgsRoutesServicesRequest r2; make_request(&r2, tid, 2500, newgen);
+    PgsRoutesServicesOutput out;
+    assert(api()->poll(&r2, &out) == PGS_RS_OK);
+    assert(!(out.flags & PGS_RS_FLAG_ROUTES_PRESENT));
+    PgsRoutesServicesRequest rd; make_request(&rd, tid, 0, api()->generation());
+    assert(api()->drain(&rd) == PGS_RS_OK);
     assert(g_live_handles == 0);
   }
 
@@ -277,30 +277,30 @@ int main(int argc, char **argv) {
     g_req_calls = 0;
     call_request_nearby(&routes);          // no live heartbeat -> capture nothing
     assert(g_req_calls.load() == 1);       // original still chained exactly once
-    PgrRoutesServicesRequest r; make_request(&r, tid, 2500, api()->generation());
-    PgrRoutesServicesOutput out;
-    assert(api()->poll(&r, &out) == PGR_RS_OK);  // re-arms heartbeat, but nothing was pending
-    assert(!(out.flags & PGR_RS_FLAG_ROUTES_PRESENT));
+    PgsRoutesServicesRequest r; make_request(&r, tid, 2500, api()->generation());
+    PgsRoutesServicesOutput out;
+    assert(api()->poll(&r, &out) == PGS_RS_OK);  // re-arms heartbeat, but nothing was pending
+    assert(!(out.flags & PGS_RS_FLAG_ROUTES_PRESENT));
   }
 
   // Foreign-thread poll / drain are benign SKIPs that free nothing; a foreign-thread hook never captures.
   {
     FakeObj routes; routes.klass = &kRoutesClass; routes.dica = &consC;
-    PgrRoutesServicesRequest r; make_request(&r, tid, 2500, api()->generation());
-    PgrRoutesServicesOutput arm; assert(api()->poll(&r, &arm) == PGR_RS_OK);
+    PgsRoutesServicesRequest r; make_request(&r, tid, 2500, api()->generation());
+    PgsRoutesServicesOutput arm; assert(api()->poll(&r, &arm) == PGS_RS_OK);
     call_request_nearby(&routes);
-    PgrRoutesServicesOutput committed; assert(api()->poll(&r, &committed) == PGR_RS_OK);
-    assert(committed.flags & PGR_RS_FLAG_ROUTES_PRESENT);
+    PgsRoutesServicesOutput committed; assert(api()->poll(&r, &committed) == PGS_RS_OK);
+    assert(committed.flags & PGS_RS_FLAG_ROUTES_PRESENT);
 
     std::thread foreign([&]() {
       // Foreign poll: tid != real gettid() for this thread -> SKIP.
-      PgrRoutesServicesRequest fr; make_request(&fr, tid, 2500, api()->generation());
-      PgrRoutesServicesOutput fo;
-      assert(api()->poll(&fr, &fo) == PGR_RS_SKIP);
+      PgsRoutesServicesRequest fr; make_request(&fr, tid, 2500, api()->generation());
+      PgsRoutesServicesOutput fo;
+      assert(api()->poll(&fr, &fo) == PGS_RS_SKIP);
       // Foreign drain frees nothing.
-      PgrRoutesServicesRequest fd; make_request(&fd, self_tid(), 0, api()->generation());
+      PgsRoutesServicesRequest fd; make_request(&fd, self_tid(), 0, api()->generation());
       // self_tid() here is the foreign thread's tid, not the latched owner -> SKIP.
-      assert(api()->drain(&fd) == PGR_RS_SKIP);
+      assert(api()->drain(&fd) == PGS_RS_SKIP);
       // Foreign hook invocation: gate fails, captures nothing, chains original once.
       g_req_calls = 0;
       void *ret = call_request_nearby(&routes);
@@ -308,8 +308,8 @@ int main(int argc, char **argv) {
     });
     foreign.join();
     assert(committed.routes_handle != 0 && fake_gchandle_get_target(committed.routes_handle) != nullptr);
-    PgrRoutesServicesRequest rd; make_request(&rd, tid, 0, api()->generation());
-    assert(api()->drain(&rd) == PGR_RS_OK);
+    PgsRoutesServicesRequest rd; make_request(&rd, tid, 0, api()->generation());
+    assert(api()->drain(&rd) == PGS_RS_OK);
     assert(g_live_handles == 0);
   }
 

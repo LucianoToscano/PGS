@@ -36,20 +36,20 @@
 //   * The cross-thread sample() reads atomic owned/attempted/automated mirrors (published on the
 //     owner thread) rather than the owner-thread Slot fields, so there is no data race.
 
-static_assert(sizeof(PgrIncomingGiftsConfig) == 240, "config must be 240 bytes");
-static_assert(sizeof(PgrIncomingGiftsSample) == 88, "sample must be 88 bytes");
-static_assert(sizeof(PgrIncomingGiftsEvent) == 16, "event must be 16 bytes");
-static_assert(sizeof(PgrIncomingGiftsApi) == 64, "table must be 64 bytes");
-static_assert(offsetof(PgrIncomingGiftsConfig, gchandle_new) == 8, "layout");
-static_assert(offsetof(PgrIncomingGiftsConfig, m_open) == 8 + 10 * 8, "layout");
-static_assert(offsetof(PgrIncomingGiftsConfig, class_open_gui) == 8 + 14 * 8, "layout");
-static_assert(offsetof(PgrIncomingGiftsConfig, f_current_state) == 8 + 20 * 8, "layout");
-static_assert(offsetof(PgrIncomingGiftsConfig, state_open) == 8 + 28 * 8, "layout");
-static_assert(offsetof(PgrIncomingGiftsConfig, open_success) == 8 + 28 * 8 + 4, "layout");
+static_assert(sizeof(PgsIncomingGiftsConfig) == 240, "config must be 240 bytes");
+static_assert(sizeof(PgsIncomingGiftsSample) == 88, "sample must be 88 bytes");
+static_assert(sizeof(PgsIncomingGiftsEvent) == 16, "event must be 16 bytes");
+static_assert(sizeof(PgsIncomingGiftsApi) == 64, "table must be 64 bytes");
+static_assert(offsetof(PgsIncomingGiftsConfig, gchandle_new) == 8, "layout");
+static_assert(offsetof(PgsIncomingGiftsConfig, m_open) == 8 + 10 * 8, "layout");
+static_assert(offsetof(PgsIncomingGiftsConfig, class_open_gui) == 8 + 14 * 8, "layout");
+static_assert(offsetof(PgsIncomingGiftsConfig, f_current_state) == 8 + 20 * 8, "layout");
+static_assert(offsetof(PgsIncomingGiftsConfig, state_open) == 8 + 28 * 8, "layout");
+static_assert(offsetof(PgsIncomingGiftsConfig, open_success) == 8 + 28 * 8 + 4, "layout");
 
 namespace {
 
-constexpr uint64_t kMaxLeaseMs = PGR_GIFT_MAX_LEASE_MS;
+constexpr uint64_t kMaxLeaseMs = PGS_GIFT_MAX_LEASE_MS;
 
 // --- il2cpp runtime ABI typedefs ---------------------------------------------------
 using GcNew = uintptr_t (*)(void *obj, int pinned);
@@ -66,10 +66,10 @@ using StringChars = uint16_t *(*)(void *str);
 // --- lifetime / publication --------------------------------------------------------
 std::mutex g_install_mutex;
 std::mutex g_state_mutex;
-PgrIncomingGiftsConfig g_cfg{};
+PgsIncomingGiftsConfig g_cfg{};
 std::atomic<bool> g_installed{false};
 bool g_install_attempted = false;
-int g_install_error = PGR_GIFT_ERR_NOT_INSTALLED;
+int g_install_error = PGS_GIFT_ERR_NOT_INSTALLED;
 
 // Permanent Unity owner, latched once from a genuine on-thread observe()/tick().
 std::atomic<uint64_t> g_owner_tid{0};
@@ -95,11 +95,11 @@ bool g_fault = false;         // latched on FIFO overflow (fail-closed: no furth
 
 uint64_t g_issued_serial = 0, g_wait_serial = 0, g_error_serial = 0, g_skip_serial = 0,
          g_dialog_serial = 0, g_last_tid = 0;
-uint32_t g_last_wait_reason = PGR_GIFT_WAIT_NONE;
+uint32_t g_last_wait_reason = PGS_GIFT_WAIT_NONE;
 bool g_overflow = false;
 
 // Bounded FIFO of event records (reason codes only). Guarded by g_state_mutex.
-PgrIncomingGiftsEvent g_fifo[PGR_GIFT_EVENT_CAP];
+PgsIncomingGiftsEvent g_fifo[PGS_GIFT_EVENT_CAP];
 uint32_t g_fifo_head = 0, g_fifo_count = 0;
 
 // --- owner-thread-only slot --------------------------------------------------------
@@ -262,7 +262,7 @@ bool is_alive(void *obj) {
 bool valid_sender(void *str) {
   if (!is_exact(str, g_cfg.class_string)) return false;
   int n = reinterpret_cast<StringLen>(g_cfg.string_length)(str);
-  return n >= PGR_GIFT_SENDER_MIN && n <= PGR_GIFT_SENDER_MAX;
+  return n >= PGS_GIFT_SENDER_MIN && n <= PGS_GIFT_SENDER_MAX;
 }
 
 // giftButton: the Selectable must be present, alive, active-and-enabled and interactable. Root it
@@ -309,13 +309,13 @@ uint64_t pin_gen() {
 // JS order (mask checked before lease). A fault, a generation mismatch (revoked) or a non-owner
 // also fails, reported as FOREGROUND (the neutral "not ready" reason).
 bool gate_open(uint64_t pinned_gen, uint64_t tid, uint32_t *wait) {
-  *wait = PGR_GIFT_WAIT_FOREGROUND;
+  *wait = PGS_GIFT_WAIT_FOREGROUND;
   uint64_t now = 0;
   if (!read_boottime_ms(&now)) return false;
   std::lock_guard<std::mutex> lock(g_state_mutex);
   if (g_fault) return false;
   if (!(g_mask & 1u)) {
-    *wait = PGR_GIFT_WAIT_AUTO_OFF;
+    *wait = PGS_GIFT_WAIT_AUTO_OFF;
     return false;
   }
   if (g_gen != pinned_gen) return false;
@@ -329,27 +329,27 @@ bool gate_open(uint64_t pinned_gen, uint64_t tid, uint32_t *wait) {
 void push_event(uint32_t kind, uint32_t reason, uint64_t tid) {
   std::lock_guard<std::mutex> lock(g_state_mutex);
   g_last_tid = tid;
-  if (kind == PGR_GIFT_EVENT_WAIT) {
+  if (kind == PGS_GIFT_EVENT_WAIT) {
     ++g_wait_serial;
     g_last_wait_reason = reason;
-  } else if (kind == PGR_GIFT_EVENT_ISSUED) {
+  } else if (kind == PGS_GIFT_EVENT_ISSUED) {
     ++g_issued_serial;
-  } else if (kind == PGR_GIFT_EVENT_ERROR) {
+  } else if (kind == PGS_GIFT_EVENT_ERROR) {
     ++g_error_serial;
-  } else if (kind == PGR_GIFT_EVENT_SKIP) {
+  } else if (kind == PGS_GIFT_EVENT_SKIP) {
     ++g_skip_serial;
   }
-  if (g_fifo_count >= PGR_GIFT_EVENT_CAP) {
+  if (g_fifo_count >= PGS_GIFT_EVENT_CAP) {
     // Fail closed: drop the newcomer, latch the fault, and overwrite the newest slot with an
     // OVERFLOW error so a drain surfaces it. No further issue happens while g_fault is set.
     g_overflow = true;
     g_fault = true;
-    uint32_t last = (g_fifo_head + g_fifo_count - 1) % PGR_GIFT_EVENT_CAP;
-    g_fifo[last] = PgrIncomingGiftsEvent{PGR_GIFT_EVENT_ERROR, PGR_GIFT_ERR_REASON_OVERFLOW, tid};
+    uint32_t last = (g_fifo_head + g_fifo_count - 1) % PGS_GIFT_EVENT_CAP;
+    g_fifo[last] = PgsIncomingGiftsEvent{PGS_GIFT_EVENT_ERROR, PGS_GIFT_ERR_REASON_OVERFLOW, tid};
     return;
   }
-  uint32_t idx = (g_fifo_head + g_fifo_count) % PGR_GIFT_EVENT_CAP;
-  g_fifo[idx] = PgrIncomingGiftsEvent{kind, reason, tid};
+  uint32_t idx = (g_fifo_head + g_fifo_count) % PGS_GIFT_EVENT_CAP;
+  g_fifo[idx] = PgsIncomingGiftsEvent{kind, reason, tid};
   ++g_fifo_count;
 }
 
@@ -360,7 +360,7 @@ void emit_wait(uint32_t reason, uint64_t tid) {
     std::lock_guard<std::mutex> lock(g_state_mutex);
     if (g_last_wait_reason == reason) return;
   }
-  push_event(PGR_GIFT_EVENT_WAIT, reason, tid);
+  push_event(PGS_GIFT_EVENT_WAIT, reason, tid);
 }
 
 // --- owner latching ----------------------------------------------------------------
@@ -405,7 +405,7 @@ void observe_ready(void *gui, uint64_t tid) {
   const bool had_slot = g_slot.gui_root != 0;
   uintptr_t new_root = hold_durable(gui);
   if (new_root == 0) {
-    push_event(PGR_GIFT_EVENT_ERROR, PGR_GIFT_ERR_REASON_GCHANDLE, tid);
+    push_event(PGS_GIFT_EVENT_ERROR, PGS_GIFT_ERR_REASON_GCHANDLE, tid);
     return;
   }
   // A reentrant event advanced the epoch during the allocation itself: a newer arm (or close) won.
@@ -433,8 +433,8 @@ void observe_ready(void *gui, uint64_t tid) {
   g_slot.automated = false;
   uint64_t now = 0;
   if (read_boottime_ms(&now)) {
-    g_slot.deadline_ms = now + PGR_GIFT_DEADLINE_MS;
-    g_slot.next_ms = now + PGR_GIFT_THROTTLE_MS;
+    g_slot.deadline_ms = now + PGS_GIFT_DEADLINE_MS;
+    g_slot.next_ms = now + PGS_GIFT_THROTTLE_MS;
   } else {
     g_slot.deadline_ms = 0;
     g_slot.next_ms = 0;
@@ -444,7 +444,7 @@ void observe_ready(void *gui, uint64_t tid) {
     std::lock_guard<std::mutex> lock(g_state_mutex);
     ++g_dialog_serial;
     g_last_tid = tid;
-    g_last_wait_reason = PGR_GIFT_WAIT_NONE;  // a fresh dialog clears the last wait
+    g_last_wait_reason = PGS_GIFT_WAIT_NONE;  // a fresh dialog clears the last wait
   }
 }
 
@@ -482,7 +482,7 @@ void observe_sequence(void *obj, uint64_t tid) {
 
   uintptr_t seq_root = gc_new()(obj, 0);
   if (seq_root == 0) {
-    push_event(PGR_GIFT_EVENT_ERROR, PGR_GIFT_ERR_REASON_GCHANDLE, tid);
+    push_event(PGS_GIFT_EVENT_ERROR, PGS_GIFT_ERR_REASON_GCHANDLE, tid);
     return;
   }
   uint32_t wait;
@@ -524,7 +524,7 @@ void observe_sequence(void *obj, uint64_t tid) {
         o = gc_get()(seq_root);
         if (o != nullptr && !g_pending_stop && g_slot_epoch == pass_epoch && g_slot.gui_root != 0 &&
             g_slot.automated && gate_open(pinned, tid, &wait)) {
-          int32_t three = PGR_GIFT_STATE_SKIP;
+          int32_t three = PGS_GIFT_STATE_SKIP;
           field_set()(o, g_cfg.f_seq_state, &three);
           skipped = true;
         }
@@ -532,46 +532,46 @@ void observe_sequence(void *obj, uint64_t tid) {
     }
   }
   gc_free()(seq_root);
-  if (skipped) push_event(PGR_GIFT_EVENT_SKIP, PGR_GIFT_ERR_REASON_NONE, tid);
+  if (skipped) push_event(PGS_GIFT_EVENT_SKIP, PGS_GIFT_ERR_REASON_NONE, tid);
 }
 
 // --- public API --------------------------------------------------------------------
-bool validate_config(const PgrIncomingGiftsConfig *c, int *rc) {
+bool validate_config(const PgsIncomingGiftsConfig *c, int *rc) {
   if (c == nullptr) {
-    *rc = PGR_GIFT_ERR_INVALID_ARG;
+    *rc = PGS_GIFT_ERR_INVALID_ARG;
     return false;
   }
-  if (c->version != PGR_GIFT_CONFIG_VERSION) {
-    *rc = PGR_GIFT_ERR_BAD_VERSION;
+  if (c->version != PGS_GIFT_CONFIG_VERSION) {
+    *rc = PGS_GIFT_ERR_BAD_VERSION;
     return false;
   }
-  if (c->size != sizeof(PgrIncomingGiftsConfig)) {
-    *rc = PGR_GIFT_ERR_BAD_SIZE;
+  if (c->size != sizeof(PgsIncomingGiftsConfig)) {
+    *rc = PGS_GIFT_ERR_BAD_SIZE;
     return false;
   }
   void *const *ptrs = reinterpret_cast<void *const *>(&c->gchandle_new);
   for (int i = 0; i < 28; ++i) {
     if (ptrs[i] == nullptr) {
-      *rc = PGR_GIFT_ERR_MISSING_PTR;
+      *rc = PGS_GIFT_ERR_MISSING_PTR;
       return false;
     }
   }
-  *rc = PGR_GIFT_OK;
+  *rc = PGS_GIFT_OK;
   return true;
 }
 
-int api_install(const PgrIncomingGiftsConfig *config) {
-  int rc = PGR_GIFT_OK;
+int api_install(const PgsIncomingGiftsConfig *config) {
+  int rc = PGS_GIFT_OK;
   if (!validate_config(config, &rc)) return rc;
 
   uint64_t probe = 0;
-  if (!read_boottime_ms(&probe)) return PGR_GIFT_ERR_CLOCK_FAILURE;
+  if (!read_boottime_ms(&probe)) return PGS_GIFT_ERR_CLOCK_FAILURE;
 
   std::lock_guard<std::mutex> install_lock(g_install_mutex);
   if (g_installed.load(std::memory_order_acquire)) {
     std::lock_guard<std::mutex> state_lock(g_state_mutex);
-    if (std::memcmp(&g_cfg, config, sizeof(*config)) != 0) return PGR_GIFT_ERR_RECONFIG_MISMATCH;
-    return PGR_GIFT_OK;
+    if (std::memcmp(&g_cfg, config, sizeof(*config)) != 0) return PGS_GIFT_ERR_RECONFIG_MISMATCH;
+    return PGS_GIFT_OK;
   }
   if (g_install_attempted) return g_install_error;
   g_install_attempted = true;
@@ -587,11 +587,11 @@ int api_install(const PgrIncomingGiftsConfig *config) {
   publish_slot();
   // No hook is installed; the host's existing Gum observation forwards events via observe().
   g_installed.store(true, std::memory_order_release);
-  return g_install_error = PGR_GIFT_OK;
+  return g_install_error = PGS_GIFT_OK;
 }
 
 int api_update(uint32_t mask, uint64_t remaining_lease_ms) {
-  if (!g_installed.load(std::memory_order_acquire)) return PGR_GIFT_ERR_NOT_INSTALLED;
+  if (!g_installed.load(std::memory_order_acquire)) return PGS_GIFT_ERR_NOT_INSTALLED;
   uint64_t now = 0;
   const bool clock_ok = read_boottime_ms(&now);
   std::lock_guard<std::mutex> lock(g_state_mutex);
@@ -599,7 +599,7 @@ int api_update(uint32_t mask, uint64_t remaining_lease_ms) {
     g_mask = 0;
     g_lease_until_ms = 0;
     ++g_gen;  // forced disable revokes any in-flight apply
-    return PGR_GIFT_ERR_CLOCK_FAILURE;
+    return PGS_GIFT_ERR_CLOCK_FAILURE;
   }
   const uint64_t clamped = remaining_lease_ms > kMaxLeaseMs ? kMaxLeaseMs : remaining_lease_ms;
   const bool allow = clamped > 0;
@@ -612,47 +612,47 @@ int api_update(uint32_t mask, uint64_t remaining_lease_ms) {
   // (mask bit 1 clear) from FOREGROUND (bit set but the lease dead) -- mirroring incomingTick.
   g_mask = mask;
   g_lease_until_ms = allow ? now + clamped : 0;
-  return PGR_GIFT_OK;
+  return PGS_GIFT_OK;
 }
 
 int api_observe(uint32_t kind, void *obj, uint64_t proven_tid) {
-  if (!g_installed.load(std::memory_order_acquire)) return PGR_GIFT_ERR_NOT_INSTALLED;
+  if (!g_installed.load(std::memory_order_acquire)) return PGS_GIFT_ERR_NOT_INSTALLED;
   const uint64_t tid = current_tid();
-  if (proven_tid == 0 || tid != proven_tid || obj == nullptr) return PGR_GIFT_OK;
-  if (!owner_ready(tid)) return PGR_GIFT_OK;  // not the proven owner: ignore
+  if (proven_tid == 0 || tid != proven_tid || obj == nullptr) return PGS_GIFT_OK;
+  if (!owner_ready(tid)) return PGS_GIFT_OK;  // not the proven owner: ignore
 
   g_active_depth.fetch_add(1, std::memory_order_relaxed);
   switch (kind) {
-    case PGR_GIFT_OBSERVE_READY:
+    case PGS_GIFT_OBSERVE_READY:
       observe_ready(obj, tid);
       break;
-    case PGR_GIFT_OBSERVE_OPEN:
+    case PGS_GIFT_OBSERVE_OPEN:
       observe_open(obj);
       break;
-    case PGR_GIFT_OBSERVE_CLOSE:
+    case PGS_GIFT_OBSERVE_CLOSE:
       observe_close(obj);
       break;
-    case PGR_GIFT_OBSERVE_SEQUENCE:
+    case PGS_GIFT_OBSERVE_SEQUENCE:
       observe_sequence(obj, tid);
       break;
     default:
       break;
   }
   leave_frame();
-  return PGR_GIFT_OK;
+  return PGS_GIFT_OK;
 }
 
 int api_tick(uint64_t proven_tid, int stopping) {
-  if (!g_installed.load(std::memory_order_acquire)) return PGR_GIFT_ERR_NOT_INSTALLED;
+  if (!g_installed.load(std::memory_order_acquire)) return PGS_GIFT_ERR_NOT_INSTALLED;
   const uint64_t tid = current_tid();
   const uint64_t owner = g_owner_tid.load(std::memory_order_acquire);
-  if (owner == 0 || tid != owner || proven_tid == 0 || tid != proven_tid) return PGR_GIFT_OK;
+  if (owner == 0 || tid != owner || proven_tid == 0 || tid != proven_tid) return PGS_GIFT_OK;
   if (g_active_depth.load(std::memory_order_relaxed) != 0) {
     // Reentrant tick on the owner thread (inside an outer frame's managed call). A STOP revokes
     // immediately -- it latches the teardown so the outer pass issues nothing more -- but defers the
     // root free to the outermost frame. A non-stopping nested tick is a plain no-op.
     if (stopping != 0) g_pending_stop = true;
-    return PGR_GIFT_OK;
+    return PGS_GIFT_OK;
   }
 
   g_active_depth.fetch_add(1, std::memory_order_relaxed);
@@ -666,7 +666,7 @@ int api_tick(uint64_t proven_tid, int stopping) {
 
   if (g_slot.gui_root == 0) {
     leave_frame();  // if pending_stop, this clears the (empty) slot and the latch
-    return PGR_GIFT_OK;  // no owned dialog (JS incomingTick early-returns on !r.gui)
+    return PGS_GIFT_OK;  // no owned dialog (JS incomingTick early-returns on !r.gui)
   }
 
   // Pin the revocation generation AND the slot epoch BEFORE the first managed getter. A reentrant
@@ -684,23 +684,23 @@ int api_tick(uint64_t proven_tid, int stopping) {
     // A reentrant arm/close/stop won during the getters: abandon WITHOUT clearing (the slot may be a
     // freshly-armed newer one). A pending stop is torn down by leave_frame's deferred free.
     leave_frame();
-    return PGR_GIFT_OK;
+    return PGS_GIFT_OK;
   }
   if (stop || !clock_ok || now > g_slot.deadline_ms || dead) {
     // The dead/expired result applies to the slot we snapshotted (epoch unchanged). On a stop, the
     // deferred teardown in leave_frame performs the free with the latch held.
     if (!stop) clear_slot();
     leave_frame();
-    return PGR_GIFT_OK;
+    return PGS_GIFT_OK;
   }
 
   if (g_slot.attempted || now < g_slot.next_ms) {
     leave_frame();
-    return PGR_GIFT_OK;
+    return PGS_GIFT_OK;
   }
-  g_slot.next_ms = now + PGR_GIFT_THROTTLE_MS;
+  g_slot.next_ms = now + PGS_GIFT_THROTTLE_MS;
 
-  uint32_t wait = PGR_GIFT_WAIT_NONE;
+  uint32_t wait = PGS_GIFT_WAIT_NONE;
   bool done = false;
 
   if (!gate_open(pinned, tid, &wait)) {
@@ -710,7 +710,7 @@ int api_tick(uint64_t proven_tid, int stopping) {
   if (!done) {
     gui = gc_get()(g_slot.gui_root);
     if (gui == nullptr || !gift_open(gui)) {
-      emit_wait(PGR_GIFT_WAIT_OPENING, tid);
+      emit_wait(PGS_GIFT_WAIT_OPENING, tid);
       done = true;
     }
   }
@@ -729,14 +729,14 @@ int api_tick(uint64_t proven_tid, int stopping) {
       }
     }
     if (!details_ok) {
-      emit_wait(PGR_GIFT_WAIT_DETAILS, tid);
+      emit_wait(PGS_GIFT_WAIT_DETAILS, tid);
       done = true;
     }
   }
   if (!done) {
     gui = gc_get()(g_slot.gui_root);
     if (gui == nullptr || !gift_button(gui)) {
-      emit_wait(PGR_GIFT_WAIT_BUTTON, tid);
+      emit_wait(PGS_GIFT_WAIT_BUTTON, tid);
       done = true;
     }
   }
@@ -759,19 +759,19 @@ int api_tick(uint64_t proven_tid, int stopping) {
       if (invoke_void(g_cfg.m_open, gui, nullptr, &threw)) {
         // The invoke completed: announce the issue (the adapter sets the legacy opened/checked
         // flags + 'Opening gift' status).
-        push_event(PGR_GIFT_EVENT_ISSUED, PGR_GIFT_ERR_REASON_NONE, tid);
+        push_event(PGS_GIFT_EVENT_ISSUED, PGS_GIFT_ERR_REASON_NONE, tid);
       } else {
-        push_event(PGR_GIFT_EVENT_ERROR, PGR_GIFT_ERR_REASON_INVOKE, tid);
+        push_event(PGS_GIFT_EVENT_ERROR, PGS_GIFT_ERR_REASON_INVOKE, tid);
       }
     }
   }
 
   leave_frame();
-  return PGR_GIFT_OK;
+  return PGS_GIFT_OK;
 }
 
-int api_sample(PgrIncomingGiftsSample *out) {
-  if (out == nullptr) return PGR_GIFT_ERR_INVALID_ARG;
+int api_sample(PgsIncomingGiftsSample *out) {
+  if (out == nullptr) return PGS_GIFT_ERR_INVALID_ARG;
   const uint32_t roots = root_count();
   // Owned/attempted/automated come from the atomic mirrors (published on the owner thread), never
   // from g_slot -- reading the owner-thread Slot from another thread would be a data race.
@@ -779,8 +779,8 @@ int api_sample(PgrIncomingGiftsSample *out) {
   const uint32_t attempted = g_m_attempted.load(std::memory_order_relaxed);
   const uint32_t automated = g_m_automated.load(std::memory_order_relaxed);
   std::lock_guard<std::mutex> lock(g_state_mutex);
-  out->version = PGR_GIFT_SAMPLE_VERSION;
-  out->size = sizeof(PgrIncomingGiftsSample);
+  out->version = PGS_GIFT_SAMPLE_VERSION;
+  out->size = sizeof(PgsIncomingGiftsSample);
   out->issued_serial = g_issued_serial;
   out->wait_serial = g_wait_serial;
   out->error_serial = g_error_serial;
@@ -795,15 +795,15 @@ int api_sample(PgrIncomingGiftsSample *out) {
   out->overflow = g_overflow ? 1u : 0u;
   out->last_wait_reason = g_last_wait_reason;
   out->pending_events = g_fifo_count;
-  return PGR_GIFT_OK;
+  return PGS_GIFT_OK;
 }
 
-int api_drain(PgrIncomingGiftsEvent *out) {
-  if (out == nullptr) return PGR_GIFT_ERR_INVALID_ARG;
+int api_drain(PgsIncomingGiftsEvent *out) {
+  if (out == nullptr) return PGS_GIFT_ERR_INVALID_ARG;
   std::lock_guard<std::mutex> lock(g_state_mutex);
   if (g_fifo_count == 0) return 0;
   *out = g_fifo[g_fifo_head];
-  g_fifo_head = (g_fifo_head + 1) % PGR_GIFT_EVENT_CAP;
+  g_fifo_head = (g_fifo_head + 1) % PGS_GIFT_EVENT_CAP;
   --g_fifo_count;
   return 1;
 }
@@ -834,8 +834,8 @@ int api_is_open(uint64_t proven_tid) {
   return result;
 }
 
-const PgrIncomingGiftsApi kApiTable = {
-    PGR_GIFT_API_VERSION, static_cast<uint32_t>(sizeof(PgrIncomingGiftsApi)),
+const PgsIncomingGiftsApi kApiTable = {
+    PGS_GIFT_API_VERSION, static_cast<uint32_t>(sizeof(PgsIncomingGiftsApi)),
     &api_install,         &api_update,
     &api_observe,         &api_tick,
     &api_sample,          &api_drain,
@@ -845,6 +845,6 @@ const PgrIncomingGiftsApi kApiTable = {
 }  // namespace
 
 extern "C" const void *pgs_incoming_gifts_api(uint32_t version) {
-  if (version != PGR_GIFT_API_VERSION) return nullptr;
+  if (version != PGS_GIFT_API_VERSION) return nullptr;
   return &kApiTable;
 }

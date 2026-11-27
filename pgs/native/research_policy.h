@@ -5,7 +5,7 @@
 #include <set>
 #include <string>
 // Pure field research policy: the Java wire config and the per-quest decision. No game calls.
-namespace pgr_research {
+namespace pgs_research {
 constexpr size_t kMaxTemplates=300,kMaxTemplateBytes=96;
 struct Config {bool valid=false,remove=false,claim=false,catch_encounters=false;std::set<std::string> templates;};
 // Template ids are the game's quest template keys, e.g. CHALLENGE_CATCH_EASY_POKEMON.
@@ -42,4 +42,4 @@ inline Action decide(const Quest &q,const Config &c,int challenge,int active){
 // later each time: 30 s after the first failure, 2 min after the second, then never. Repeating a
 // removal is harmless; claims are never repeated.
 inline uint64_t remove_retry_ms(int failed_attempts){return failed_attempts==1?30000:failed_attempts==2?120000:0;}
-}  // namespace pgr_research
+}  // namespace pgs_research

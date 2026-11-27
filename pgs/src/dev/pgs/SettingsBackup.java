@@ -16,7 +16,7 @@ import org.json.*;
 /** User-selected, bounded backups. Never enumerates account or game storage. */
 final class SettingsBackup {
     private static final int EXPORT=71, IMPORT=72, LIMIT=512*1024;
-    // The version-1 JSON keys stay compatible with existing backups.
+    // New exports use version 2 and logical PGS scope names. The reader also accepts version 1.
     private static final String[] SCOPES={"pgs-map","pgs-overlays","pgs-saved-places-v1","pgs-livefeed"};
     private static final String[][] KEYS={{"Stops","Gyms","Raids"},{"cooldown.fx","cooldown.fy","vgp.fx","vgp.fy","transfer.fx","transfer.fy","gym-feed.fx","gym-feed.fy","local-time.fx","local-time.fy"},{"places"},{"category","radius","minIv","myShinies","filters_v1","filter_presets_v1"}};
     private final Activity activity;
@@ -84,12 +84,12 @@ final class SettingsBackup {
     }
     boolean isBusy(){return busy;}
     private static synchronized JSONObject snapshot(Context context)throws Exception{
-        JSONObject result=new JSONObject();result.put("format","PGS settings");result.put("version",1);result.put("speedKmh",Control.engine.speedKmh);
+        JSONObject result=new JSONObject();result.put("format","PGS settings");result.put("version",2);result.put("speedKmh",Control.engine.speedKmh);
         JSONObject settings=new JSONObject();Properties p=Control.exportSettings();
         for(String key:SettingsBackupRules.SETTINGS)if(p.containsKey(key))settings.put(key,p.getProperty(key));result.put("settings",settings);
         JSONObject prefs=new JSONObject();for(int i=0;i<SCOPES.length;i++){
             Map<String,?> all=AccountProfiles.preferences(context,SCOPES[i]).getAll();JSONObject group=new JSONObject();
-            for(String key:KEYS[i])if(all.containsKey(key))group.put(key,all.get(key));prefs.put(AccountProfileStore.legacyStorageName(SCOPES[i]),group);
+            for(String key:KEYS[i])if(all.containsKey(key))group.put(key,all.get(key));prefs.put(SCOPES[i],group);
         }result.put("preferences",prefs);SettingsBackupRules.validate(result);return result;
     }
     private static void writeGroup(Context c,String scope,JSONObject data,String[] keys)throws Exception{
@@ -102,13 +102,13 @@ final class SettingsBackup {
         }if(!edit.commit())throw new IOException("Could not save settings");
     }
     private static synchronized void restore(Context context,JSONObject document)throws Exception{
-        SettingsBackupRules.validate(document);JSONObject previous=snapshot(context),prefs=document.getJSONObject("preferences");
+        SettingsBackupRules.validate(document);JSONObject previous=snapshot(context),prefs=SettingsBackupRules.canonicalPreferences(document);
         Properties props=new Properties();JSONObject settings=document.getJSONObject("settings");for(String key:SettingsBackupRules.SETTINGS)if(settings.has(key))props.setProperty(key,settings.getString(key));
         try{
-            for(int i=0;i<SCOPES.length;i++)if(prefs.has(AccountProfileStore.legacyStorageName(SCOPES[i])))writeGroup(context,SCOPES[i],prefs.getJSONObject(AccountProfileStore.legacyStorageName(SCOPES[i])),KEYS[i]);
+            for(int i=0;i<SCOPES.length;i++)if(prefs.has(SCOPES[i]))writeGroup(context,SCOPES[i],prefs.getJSONObject(SCOPES[i]),KEYS[i]);
             Control.importSettings((android.app.Application)context.getApplicationContext(),props,document.getDouble("speedKmh"));
         }catch(Exception error){
-            JSONObject old=previous.getJSONObject("preferences");for(int i=0;i<SCOPES.length;i++)try{writeGroup(context,SCOPES[i],old.getJSONObject(AccountProfileStore.legacyStorageName(SCOPES[i])),KEYS[i]);}catch(Exception rollback){error.addSuppressed(rollback);}
+            JSONObject old=previous.getJSONObject("preferences");for(int i=0;i<SCOPES.length;i++)try{writeGroup(context,SCOPES[i],old.getJSONObject(SCOPES[i]),KEYS[i]);}catch(Exception rollback){error.addSuppressed(rollback);}
             throw error;
         }
     }

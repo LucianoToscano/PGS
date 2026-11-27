@@ -22,15 +22,12 @@ extern "C" {
 
 /* Current version shared by both PGS and compatibility factories. */
 #define PGS_NATIVE_API_VERSION 1u
-#define PGRAZOR_NATIVE_API_VERSION PGS_NATIVE_API_VERSION
 
 /* Fixed radius floor (metres) applied while the spawn policy is active. */
 #define PGS_SPAWN_FLOOR 80.0
-#define PGRAZOR_SPAWN_FLOOR PGS_SPAWN_FLOOR
 
 /* Maximum accepted lease for a single policy window, in milliseconds. */
 #define PGS_MAX_LEASE_MS 2500u
-#define PGRAZOR_MAX_LEASE_MS PGS_MAX_LEASE_MS
 
 /* Status codes returned by every table function. 0 == success. */
 enum {
@@ -44,17 +41,6 @@ enum {
     PGS_ERR_SELFTEST = 7,        /* a self-check assertion failed */
     PGS_ERR_UNSUPPORTED_VERSION = 8 /* reserved for negotiation callers */
 };
-
-/* Compatibility aliases for legacy C/C++ source consumers. */
-#define PGRAZOR_OK PGS_OK
-#define PGRAZOR_ERR_NULL_ARG PGS_ERR_NULL_ARG
-#define PGRAZOR_ERR_ALREADY_BOUND PGS_ERR_ALREADY_BOUND
-#define PGRAZOR_ERR_HOOK_FAILED PGS_ERR_HOOK_FAILED
-#define PGRAZOR_ERR_BAD_LEASE PGS_ERR_BAD_LEASE
-#define PGRAZOR_ERR_NO_CLOCK PGS_ERR_NO_CLOCK
-#define PGRAZOR_ERR_NOT_INSTALLED PGS_ERR_NOT_INSTALLED
-#define PGRAZOR_ERR_SELFTEST PGS_ERR_SELFTEST
-#define PGRAZOR_ERR_UNSUPPORTED_VERSION PGS_ERR_UNSUPPORTED_VERSION
 
 /* Telemetry snapshot of the spawn getter. Pull-only: the native layer never calls back into JS. */
 typedef struct pgs_spawn_snapshot {
@@ -71,7 +57,6 @@ typedef struct pgs_spawn_snapshot {
  * The hook is never removed; see update(..., enabled=0) to disable its effect.
  */
 typedef int (*pgs_install_fn)(void *address);
-typedef pgs_install_fn pgrazor_install_fn;
 
 /*
  * update(enabled, allowed, lease_ms): arm or clear the policy window.
@@ -82,11 +67,9 @@ typedef pgs_install_fn pgrazor_install_fn;
  * The floor only applies while enabled && allowed && now < deadline.
  */
 typedef int (*pgs_update_fn)(int enabled, int allowed, uint64_t lease_ms);
-typedef pgs_update_fn pgrazor_update_fn;
 
 /* sample(out): copy the latest telemetry snapshot. Does not clear counters. */
 typedef int (*pgs_sample_fn)(pgs_spawn_snapshot *out);
-typedef pgs_sample_fn pgrazor_sample_fn;
 
 /*
  * selftest(): run the self-contained Dobby hook self-check against an own function
@@ -94,7 +77,6 @@ typedef pgs_sample_fn pgrazor_sample_fn;
  * NEVER run automatically in production. Returns PGS_OK or PGS_ERR_SELFTEST.
  */
 typedef int (*pgs_selftest_fn)(void);
-typedef pgs_selftest_fn pgrazor_selftest_fn;
 
 /* Ordered, read-only function table. Header first; function pointers in fixed order. */
 typedef struct pgs_native_api_v1 {
@@ -108,7 +90,6 @@ typedef struct pgs_native_api_v1 {
 
 /* v1 remains available unchanged. v2 appends independent feature discovery. */
 typedef const void *(*pgs_query_feature_fn)(uint32_t id, uint32_t version);
-typedef pgs_query_feature_fn pgrazor_query_feature_fn;
 typedef struct pgs_native_api_v2 {
     uint32_t version;
     uint32_t size;
@@ -130,10 +111,6 @@ const void *pgs_native_api(uint32_t version);
 /* Required compatibility export for existing Android clients. */
 const void *pgrazor_native_api(uint32_t version);
 
-/* PGS source types retain the exact legacy ABI layout. */
-typedef pgs_spawn_snapshot pgrazor_spawn_snapshot;
-typedef pgs_native_api_v1 pgrazor_native_api_v1;
-typedef pgs_native_api_v2 pgrazor_native_api_v2;
 
 #ifdef __cplusplus
 } /* extern "C" */

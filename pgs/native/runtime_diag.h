@@ -15,11 +15,11 @@
 // Heartbeat ceiling for a latched negative failure: re-announce at most this
 // often. A terminal fault (scheduler hook poisoned) keeps re-emitting at this
 // cadence because the overlay otherwise waits on readiness forever.
-#define PGR_RTD_HEARTBEAT_MS 15000ull
+#define PGS_RTD_HEARTBEAT_MS 15000ull
 
-// Bootstrap (feature54 PgrBootStatus) -> stable token. Keep in sync with
+// Bootstrap (feature54 PgsBootStatus) -> stable token. Keep in sync with
 // runtime_bootstrap.h; an unknown code is reported, never silently dropped.
-static inline const char *pgr_rtd_boot_reason(int status) {
+static inline const char *pgs_rtd_boot_reason(int status) {
   switch (status) {
     case 0:   return "ok";
     case 1:   return "not-ready";       // library/domain not up yet (retriable)
@@ -40,11 +40,11 @@ static inline const char *pgr_rtd_boot_reason(int status) {
   }
 }
 
-// Unity scheduler (feature48 PgrUnitySchedulerStatus) install result -> token.
+// Unity scheduler (feature48 PgsUnitySchedulerStatus) install result -> token.
 // "hook-failed" is the status==-3 the user log shows: the Dobby patch on the
 // il2cpp runtime_invoke/convert prologue could not be installed, so the single
 // post-ExecuteTasks scheduler never starts and every native host stays gray.
-static inline const char *pgr_rtd_sched_reason(int status) {
+static inline const char *pgs_rtd_sched_reason(int status) {
   switch (status) {
     case 0:  return "ok";
     case -1: return "bad-config";
@@ -57,8 +57,8 @@ static inline const char *pgr_rtd_sched_reason(int status) {
   }
 }
 
-// Scheduler hook-install failure stage (PgrUnitySchedulerFailStage) -> token.
-static inline const char *pgr_rtd_sched_stage(uint32_t stage) {
+// Scheduler hook-install failure stage (PgsUnitySchedulerFailStage) -> token.
+static inline const char *pgs_rtd_sched_stage(uint32_t stage) {
   switch (stage) {
     case 0: return "none";
     case 1: return "config";
@@ -74,7 +74,7 @@ static inline const char *pgr_rtd_sched_stage(uint32_t stage) {
 // buf. Returns the byte length written (excluding NUL), or 0 on bad args or
 // truncation. The caller may append ",\"field\":..." pairs and MUST close with
 // '}'. Bounded to cap; never writes past it.
-static inline int pgr_rtd_base_json(char *buf, int cap, const char *stage,
+static inline int pgs_rtd_base_json(char *buf, int cap, const char *stage,
                                     const char *reason, int32_t status, int32_t detail) {
   if (!buf || cap <= 0) return 0;
   int n = snprintf(buf, (size_t)cap,
@@ -85,7 +85,7 @@ static inline int pgr_rtd_base_json(char *buf, int cap, const char *stage,
 }
 
 // De-dup / heartbeat throttle. Zero-initialize (have==0) before first use.
-struct PgrStartupThrottle {
+struct PgsStartupThrottle {
   char stage[24];
   char reason[32];
   int32_t status;
@@ -96,18 +96,18 @@ struct PgrStartupThrottle {
 
 // Decide whether to emit the (stage,reason,status,detail) diagnostic now, and
 // record it when the answer is yes. Emits on ANY change of the tuple; for an
-// unchanged LATCHED negative status re-emits once per PGR_RTD_HEARTBEAT_MS; an
+// unchanged LATCHED negative status re-emits once per PGS_RTD_HEARTBEAT_MS; an
 // unchanged non-negative status is suppressed. now_ms==0 (no usable clock)
 // disables only the time-based heartbeat, never change detection. NOT
 // thread-safe: the caller serializes access to a single throttle instance.
-static inline int pgr_rtd_should_emit(struct PgrStartupThrottle *t, const char *stage,
+static inline int pgs_rtd_should_emit(struct PgsStartupThrottle *t, const char *stage,
                                       const char *reason, int32_t status, int32_t detail,
                                       uint64_t now_ms) {
   if (!t || !stage || !reason) return 0;
   const int same = t->have && status == t->status && detail == t->detail &&
                    strcmp(t->stage, stage) == 0 && strcmp(t->reason, reason) == 0;
   const int heartbeat = status < 0 && now_ms &&
-                        (t->last_ms == 0 || now_ms - t->last_ms >= PGR_RTD_HEARTBEAT_MS);
+                        (t->last_ms == 0 || now_ms - t->last_ms >= PGS_RTD_HEARTBEAT_MS);
   const int emit = !same || heartbeat;
   if (emit) {
     snprintf(t->stage, sizeof(t->stage), "%s", stage);

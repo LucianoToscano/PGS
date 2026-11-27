@@ -10,9 +10,9 @@
 #include <unistd.h>
 #include <map>
 #include <sys/wait.h>
-using namespace pgr_shared_meta;
+using namespace pgs_shared_meta;
 namespace {
-int class_tokens[160]{},handle_tokens[PGR_OPT_HANDLE_COUNT]{};int calls=0,original_calls=0;bool is_attached=true;
+int class_tokens[160]{},handle_tokens[PGS_OPT_HANDLE_COUNT]{};int calls=0,original_calls=0;bool is_attached=true;
 struct Object{void *klass;unsigned char bytes[16];} boxed_bool{&class_tokens[6],{1}},map_type{&class_tokens[19],{}};
 std::map<uintptr_t,void*> handles;uintptr_t next_root=10;
 void *thread_current(){return is_attached?&class_tokens[0]:nullptr;}
@@ -58,24 +58,24 @@ __attribute__((noinline)) void feed_result(void*,void*,void*){PAD;++original_cal
 }
 int inventory_run(int argc,char **argv){
  assert(argc==2);void *lib=dlopen(argv[1],RTLD_NOW|RTLD_LOCAL);if(!lib)puts(dlerror());assert(lib);auto get=reinterpret_cast<const void*(*)(uint32_t)>(dlsym(lib,"pgs_native_api"));assert(get);
- auto core=static_cast<const pgs_native_api_v2*>(get(2));auto api=static_cast<const PgrInventoryHostApi*>(core->query_feature(65,1));assert(api&&api->size==96&&!core->query_feature(65,3));
- auto cleanup=static_cast<const PgrInventoryCleanupApi*>(core->query_feature(65,2));
+ auto core=static_cast<const pgs_native_api_v2*>(get(2));auto api=static_cast<const PgsInventoryHostApi*>(core->query_feature(65,1));assert(api&&api->size==96&&!core->query_feature(65,3));
+ auto cleanup=static_cast<const PgsInventoryCleanupApi*>(core->query_feature(65,2));
  assert(cleanup&&cleanup->version==2&&cleanup->size==sizeof(*cleanup));
  assert(cleanup->request()==0&&!cleanup->pending(1));
- PgrSharedMetadataOutput md{};md.version=2;md.size=sizeof(md);for(unsigned i=0;i<kClassCount;++i)md.classes[i]=&class_tokens[i];for(unsigned i=0;i<kOptClassCount;++i)md.opt_classes[i]=&class_tokens[i+7];
- for(unsigned i=0;i<PGR_OPT_HANDLE_COUNT;++i)md.opt_handles[i]=&handle_tokens[i];
+ PgsSharedMetadataOutput md{};md.version=2;md.size=sizeof(md);for(unsigned i=0;i<kClassCount;++i)md.classes[i]=&class_tokens[i];for(unsigned i=0;i<kOptClassCount;++i)md.opt_classes[i]=&class_tokens[i+7];
+ for(unsigned i=0;i<PGS_OPT_HANDLE_COUNT;++i)md.opt_handles[i]=&handle_tokens[i];
  md.optional[OPT_ITEMS]=md.optional[OPT_ITEMS_LOOKUP]=md.optional[OPT_BUDDY]=md.optional[OPT_INCUBATOR]=1;
  md.opt_handles[H_IT_INIT_CODE]=reinterpret_cast<void*>(init);md.opt_handles[H_IT_LIST_CODE]=reinterpret_cast<void*>(list);md.opt_handles[H_IT_RECYCLE_CODE]=reinterpret_cast<void*>(recycle);
  md.opt_handles[H_IT_RESULT_CODE]=reinterpret_cast<void*>(result);md.opt_handles[H_IT_ERROR_CODE]=reinterpret_cast<void*>(error);md.opt_handles[H_BD_M_FEED_CODE]=reinterpret_cast<void*>(feed);md.opt_handles[H_BD_M_RESULT_CODE]=reinterpret_cast<void*>(feed_result);
  md.methods[5]=&class_tokens[159];md.opt_ints[I_ITEMS_SUCCESS]=1;md.opt_ints[I_INC_UNLIMITED]=901;md.opt_ints[I_INC_SPECIAL]=1;
- PgrInventoryRuntime rt{};
+ PgsInventoryRuntime rt{};
  rt.boot.runtime_invoke=reinterpret_cast<void*>(invoke);rt.boot.thread_current=reinterpret_cast<void*>(thread_current);rt.boot.gchandle_new=reinterpret_cast<void*>(gc_new);rt.boot.gchandle_get_target=reinterpret_cast<void*>(gc_get);rt.boot.gchandle_free=reinterpret_cast<void*>(gc_free);
  rt.boot.object_get_class=reinterpret_cast<void*>(object_class);rt.boot.object_unbox=reinterpret_cast<void*>(unbox);rt.boot.field_get_value=reinterpret_cast<void*>(field_get);rt.boot.field_set_value=reinterpret_cast<void*>(field_set);rt.boot.field_static_get_value=reinterpret_cast<void*>(static_get);rt.boot.string_chars=reinterpret_cast<void*>(string_chars);
  rt.string_length=reinterpret_cast<void*>(string_length);rt.object_get_virtual_method=reinterpret_cast<void*>(virtual_method);rt.class_get_type=reinterpret_cast<void*>(type);rt.type_get_object=reinterpret_cast<void*>(type_obj);rt.runtime_class_init=reinterpret_cast<void*>(class_init);rt.method_get_object=reinterpret_cast<void*>(reflection);
- PgrInventoryHostConfig cfg{1,sizeof(cfg),0,0,&md,&rt};auto bad=cfg;bad.flags=2;assert(api->configure(&bad)==-2);assert(api->configure(&cfg)==0);
- PgrInventoryHostOptions p{};p.version=1;p.size=sizeof(p);p.lease_ms=1500;p.item_rules="701:10;705:20";assert(api->update(&p)==0);assert(cleanup->request()==0&&!cleanup->pending(1));
+ PgsInventoryHostConfig cfg{1,sizeof(cfg),0,0,&md,&rt};auto bad=cfg;bad.flags=2;assert(api->configure(&bad)==-2);assert(api->configure(&cfg)==0);
+ PgsInventoryHostOptions p{};p.version=1;p.size=sizeof(p);p.lease_ms=1500;p.item_rules="701:10;705:20";assert(api->update(&p)==0);assert(cleanup->request()==0&&!cleanup->pending(1));
  assert(api->tick(gettid()+1)==-5);assert(api->tick(gettid())==0);assert(api->tick(gettid())==0);assert(api->tick(gettid())==0);
- PgrInventoryHostSample s{};assert(api->sample(&s)==0);assert((s.capabilities&7)==7&&!s.ready&&s.roots==0);assert(calls==0);
+ PgsInventoryHostSample s{};assert(api->sample(&s)==0);assert((s.capabilities&7)==7&&!s.ready&&s.roots==0);assert(calls==0);
  // Real7 Dobby-installed leaf sites still chain their manual originals exactly once.
  decltype(&init) volatile init_call=&init;decltype(&feed) volatile feed_call=&feed;init_call(nullptr,nullptr);feed_call(nullptr,701,1,nullptr);assert(original_calls==2);
  // Actual65 must forward Silver Pinap708 to actual12. The real buddy module then
@@ -91,7 +91,7 @@ int inventory_run(int argc,char **argv){
  // The leaf leaves its prior status unchanged when FindObjectOfType returns null.
  // WAIT_MAP is specifically the zero-lease path, not an absent-map diagnostic.
  auto invalid=p;invalid.lease_ms=2501;assert(api->update(&invalid)==-2);assert(api->tick(gettid())==0);
- bool waiting=false;PgrInventoryHostEvent e{};while(api->next_event(&e)==0)if(strstr(e.json,"Waiting for the map"))waiting=true;assert(waiting);
+ bool waiting=false;PgsInventoryHostEvent e{};while(api->next_event(&e)==0)if(strstr(e.json,"Waiting for the map"))waiting=true;assert(waiting);
  // Actual65 cleanup tickets drive actual14, including unchanged empty passes and pending RPCs.
  item_world=true;item_service.klass=const_cast<void*>(md.opt_classes[OC_ISERVICE]);item_bag.klass=const_cast<void*>(md.opt_classes[OC_IBAG]);
  item_row.klass=const_cast<void*>(md.opt_handles[H_IT_DK]);item_callback.klass=const_cast<void*>(md.opt_handles[H_IT_CB]);
@@ -124,11 +124,11 @@ int inventory_run(int argc,char **argv){
 // Full gift orchestration in a fresh process, including the actual48 execution
 // inspector and all nine65 Dobby-owned observer/replacement methods.
 namespace social_fixture {
-int classes[160]{},tokens[PGR_OPT_HANDLE_COUNT]{},current_state_token,alive_token,execute_token;
+int classes[160]{},tokens[PGS_OPT_HANDLE_COUNT]{},current_state_token,alive_token,execute_token;
 struct Obj {void *klass=nullptr;alignas(8) unsigned char value[8]{};std::map<int,uint64_t> fields;uint16_t chars[32]{};int length=0;};
 Obj profile,panel,data,friend_obj,player,text,button,open_gui,details,response,sequence,service,rpc,sticker_service,gift,sticker,sticker_text,sticker_list,iterable,enumerator,nia,callback,send_response,bool_box,int_box,promise;
 std::map<uintptr_t,Obj*> live;uintptr_t root_serial=100;int originals[9]{},open_calls=0,send_calls=0,reserves=0,returns=0,work=0,enum_moves=0;uint8_t sequence_return=0;
-const PgrInventoryHostApi *host=nullptr;
+const PgsInventoryHostApi *host=nullptr;
 void *k(unsigned n){return &classes[n+7];}void *h(unsigned n){return &tokens[n];}
 void *thread(){return &classes[0];}void *new_root(void *o,int){if(!o)return nullptr;live[++root_serial]=static_cast<Obj*>(o);return reinterpret_cast<void*>(root_serial);}
 void *get_root(void *r){auto i=live.find(reinterpret_cast<uintptr_t>(r));return i==live.end()?nullptr:i->second;}void free_root(void *r){assert(live.erase(reinterpret_cast<uintptr_t>(r))==1);}
@@ -184,7 +184,7 @@ __attribute__((noinline)) void *invoke(const void *method,void *self,void **args
 }
 __attribute__((noinline)) void *convert(const void *m,void *self,void **args,int,void **exc){SPAD;return invoke(m,self,args,exc);}
 decltype(&invoke) volatile call_invoke=invoke;
-int verify(const PgrUnitySchedulerConfig *cfg){return cfg->execute_tasks==&execute_token?1:0;}
+int verify(const PgsUnitySchedulerConfig *cfg){return cfg->execute_tasks==&execute_token?1:0;}
 void pulse(int action=0){work=action;void *exc=nullptr;call_invoke(&execute_token,nullptr,nullptr,&exc);assert(!exc);}
 void pause_ms(unsigned ms){usleep(ms*1000);}
 void initialize(){
@@ -197,16 +197,16 @@ void initialize(){
  ref(open_gui,H_GF_F_OPEN_DETAILS,details);ref(details,H_GF_F_SENDER,text);ref(open_gui,H_GF_F_OPEN_BTN,button);ref(sequence,H_GF_F_SEQ_GUI,open_gui);ref(sequence,H_GF_F_SEQ_RESP,response);scalar(sequence,H_GF_F_SEQ_STATE,0);scalar(response,H_GF_F_OPEN_RESULT,5);
 }
 int run(const char *library){
- void *lib=dlopen(library,RTLD_NOW|RTLD_LOCAL);assert(lib);auto get=reinterpret_cast<const void*(*)(uint32_t)>(dlsym(lib,"pgs_native_api"));assert(get);auto core=static_cast<const pgs_native_api_v2*>(get(2));host=static_cast<const PgrInventoryHostApi*>(core->query_feature(65,1));assert(host);
- initialize();PgrSharedMetadataOutput md{};md.version=2;md.size=sizeof(md);for(unsigned i=0;i<kClassCount;++i)md.classes[i]=&classes[i];for(unsigned i=0;i<kOptClassCount;++i)md.opt_classes[i]=k(i);for(unsigned i=0;i<PGR_OPT_HANDLE_COUNT;++i)md.opt_handles[i]=h(i);md.fields[1]=&current_state_token;md.methods[5]=&alive_token;md.optional[OPT_GIFTS]=1;
+ void *lib=dlopen(library,RTLD_NOW|RTLD_LOCAL);assert(lib);auto get=reinterpret_cast<const void*(*)(uint32_t)>(dlsym(lib,"pgs_native_api"));assert(get);auto core=static_cast<const pgs_native_api_v2*>(get(2));host=static_cast<const PgsInventoryHostApi*>(core->query_feature(65,1));assert(host);
+ initialize();PgsSharedMetadataOutput md{};md.version=2;md.size=sizeof(md);for(unsigned i=0;i<kClassCount;++i)md.classes[i]=&classes[i];for(unsigned i=0;i<kOptClassCount;++i)md.opt_classes[i]=k(i);for(unsigned i=0;i<PGS_OPT_HANDLE_COUNT;++i)md.opt_handles[i]=h(i);md.fields[1]=&current_state_token;md.methods[5]=&alive_token;md.optional[OPT_GIFTS]=1;
  md.opt_ints[I_GIFT_OPEN_SUCCESS]=5;md.opt_ints[I_GIFT_SEND_SUCCESS]=1;md.opt_ints[I_GIFT_CHECK_SUCCESS]=7;
  md.opt_handles[H_GF_M_PROF_OPEN_CODE]=reinterpret_cast<void*>(prof_open);md.opt_handles[H_GF_M_PROF_CLOSE_CODE]=reinterpret_cast<void*>(prof_close);md.opt_handles[H_GF_M_OPEN_READY_CODE]=reinterpret_cast<void*>(ready);md.opt_handles[H_GF_M_OPEN_CODE]=reinterpret_cast<void*>(manual_open);md.opt_handles[H_GF_M_OPEN_CLOSE_CODE]=reinterpret_cast<void*>(close);md.opt_handles[H_GF_M_SEQ_CODE]=reinterpret_cast<void*>(seq);md.opt_handles[H_GF_M_RPC_RESULT_CODE]=reinterpret_cast<void*>(result);md.opt_handles[H_GF_M_RPC_FINALLY_CODE]=reinterpret_cast<void*>(final);md.opt_handles[H_GF_M_CHOOSE_CODE]=reinterpret_cast<void*>(choose);
- PgrInventoryRuntime rt{};rt.boot.runtime_invoke=reinterpret_cast<void*>(invoke);rt.boot.thread_current=reinterpret_cast<void*>(thread);rt.boot.gchandle_new=reinterpret_cast<void*>(new_root);rt.boot.gchandle_get_target=reinterpret_cast<void*>(get_root);rt.boot.gchandle_free=reinterpret_cast<void*>(free_root);rt.boot.object_get_class=reinterpret_cast<void*>(object_class);rt.boot.object_unbox=reinterpret_cast<void*>(unbox);rt.boot.field_get_value=reinterpret_cast<void*>(read);rt.boot.field_set_value=reinterpret_cast<void*>(write);rt.boot.string_chars=reinterpret_cast<void*>(chars);rt.string_length=reinterpret_cast<void*>(length);rt.object_get_virtual_method=reinterpret_cast<void*>(virtual_method);
- PgrInventoryHostConfig config{1,sizeof(config),0,0,&md,&rt};assert(host->configure(&config)==0);
- PgrInventoryHostOptions p{};p.version=1;p.size=sizeof(p);p.gift_mask=7;p.gift_allowed=1;p.lease_ms=2500;assert(host->update(&p)==0);assert(host->update(&p)==0);
- const auto *scheduler=static_cast<const PgrUnitySchedulerApi*>(core->query_feature(48,2));assert(scheduler);
- PgrUnitySchedulerConfig cfg{};cfg.version=2;cfg.size=sizeof(cfg);cfg.runtime_invoke=reinterpret_cast<void*>(invoke);cfg.runtime_invoke_convert_args=reinterpret_cast<void*>(convert);cfg.execute_tasks=&execute_token;cfg.thread_current=thread;cfg.verify_metadata=verify;cfg.expected_owner_tid=gettid();cfg.exclusive_owner=1;cfg.subscriber_count=1;cfg.subscribers[0].end=host->on_unity_pulse;
- assert(scheduler->install(&cfg)==0);assert(scheduler->activate());pulse();pulse();pulse();PgrInventoryHostSample gauge{};assert(host->sample(&gauge)==0&&(gauge.capabilities&56)==56);
+ PgsInventoryRuntime rt{};rt.boot.runtime_invoke=reinterpret_cast<void*>(invoke);rt.boot.thread_current=reinterpret_cast<void*>(thread);rt.boot.gchandle_new=reinterpret_cast<void*>(new_root);rt.boot.gchandle_get_target=reinterpret_cast<void*>(get_root);rt.boot.gchandle_free=reinterpret_cast<void*>(free_root);rt.boot.object_get_class=reinterpret_cast<void*>(object_class);rt.boot.object_unbox=reinterpret_cast<void*>(unbox);rt.boot.field_get_value=reinterpret_cast<void*>(read);rt.boot.field_set_value=reinterpret_cast<void*>(write);rt.boot.string_chars=reinterpret_cast<void*>(chars);rt.string_length=reinterpret_cast<void*>(length);rt.object_get_virtual_method=reinterpret_cast<void*>(virtual_method);
+ PgsInventoryHostConfig config{1,sizeof(config),0,0,&md,&rt};assert(host->configure(&config)==0);
+ PgsInventoryHostOptions p{};p.version=1;p.size=sizeof(p);p.gift_mask=7;p.gift_allowed=1;p.lease_ms=2500;assert(host->update(&p)==0);assert(host->update(&p)==0);
+ const auto *scheduler=static_cast<const PgsUnitySchedulerApi*>(core->query_feature(48,2));assert(scheduler);
+ PgsUnitySchedulerConfig cfg{};cfg.version=2;cfg.size=sizeof(cfg);cfg.runtime_invoke=reinterpret_cast<void*>(invoke);cfg.runtime_invoke_convert_args=reinterpret_cast<void*>(convert);cfg.execute_tasks=&execute_token;cfg.thread_current=thread;cfg.verify_metadata=verify;cfg.expected_owner_tid=gettid();cfg.exclusive_owner=1;cfg.subscriber_count=1;cfg.subscribers[0].end=host->on_unity_pulse;
+ assert(scheduler->install(&cfg)==0);assert(scheduler->activate());pulse();pulse();pulse();PgsInventoryHostSample gauge{};assert(host->sample(&gauge)==0&&(gauge.capabilities&56)==56);
  std::thread foreign([]{call_prof_open(&profile,nullptr);});foreign.join();
  assert(originals[0]==1&&live.empty());originals[0]=0;
  // Normal Unity UI callbacks occur outside ExecuteTasks. They must be captured
@@ -218,9 +218,9 @@ int run(const char *library){
  call_close(&open_gui,nullptr);assert(originals[4]==1);
  call_choose(&panel,nullptr);assert(originals[8]==0&&send_calls==0);
  pulse();pulse();assert(send_calls==1&&reserves==1&&returns==1&&originals[6]==1&&originals[7]==1);
- unsigned permissions=0;bool issued=false,confirmed=false,skipped=false;PgrInventoryHostEvent event{};while(host->next_event(&event)==0){if(strstr(event.json,"gift-permission")){++permissions;assert(strstr(event.json,"\"mask\":7")&&strstr(event.json,"\"allowed\":true"));}if(strstr(event.json,"gift-bundled-request"))issued=true;if(strstr(event.json,"gift-bundled-result")&&strstr(event.json,"\"success\":true"))confirmed=true;if(strstr(event.json,"gift-presentation-skipped"))skipped=true;}assert(issued&&confirmed&&skipped&&permissions==1);
+ unsigned permissions=0;bool issued=false,confirmed=false,skipped=false;PgsInventoryHostEvent event{};while(host->next_event(&event)==0){if(strstr(event.json,"gift-permission")){++permissions;assert(strstr(event.json,"\"mask\":7")&&strstr(event.json,"\"allowed\":true"));}if(strstr(event.json,"gift-bundled-request"))issued=true;if(strstr(event.json,"gift-bundled-result")&&strstr(event.json,"\"success\":true"))confirmed=true;if(strstr(event.json,"gift-presentation-skipped"))skipped=true;}assert(issued&&confirmed&&skipped&&permissions==1);
  call_prof_close(&profile,nullptr);assert(originals[1]==1);
- PgrUnitySchedulerSnapshot scheduler_state{};assert(scheduler->snapshot(&scheduler_state)==0);
+ PgsUnitySchedulerSnapshot scheduler_state{};assert(scheduler->snapshot(&scheduler_state)==0);
  assert(scheduler->revoke(scheduler_state.generation)==0);call_prof_open(&profile,nullptr);
  assert(host->sample(&gauge)==0&&gauge.roots==0&&live.empty());
  assert(scheduler->activate());pulse();

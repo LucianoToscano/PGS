@@ -3,14 +3,14 @@
 
 // SendEncounterRequest resolves a presentation wrapper. The raw RPC response is
 // stored on WildMapPokemon; it is not the promise's resolved value.
-struct PgrSmartEncounterBinding {
+struct PgsSmartEncounterBinding {
  void *wild_class,*wrapper_class,*response_class;
  void *map_response_field,*status_field,*pokemon_field;
  int32_t success;
  void *(*object_class)(void*);
  void (*read_field)(void*,void*,void*);
 };
-inline int pgr_smart_validate_encounter(const PgrSmartEncounterBinding &b,void *target,void *wrapper){
+inline int pgs_smart_validate_encounter(const PgsSmartEncounterBinding &b,void *target,void *wrapper){
  if(!target||!wrapper||b.object_class(target)!=b.wild_class||b.object_class(wrapper)!=b.wrapper_class)return -11;
  void *response=nullptr;b.read_field(target,b.map_response_field,&response);
  if(!response)return 0;

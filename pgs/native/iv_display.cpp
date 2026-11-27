@@ -20,23 +20,23 @@
 // exactly once on the owner thread. No mutex is ever held across a managed call, a GC
 // handle call, or an original trampoline.
 
-static_assert(sizeof(PgrIvDisplayConfig) == 640, "config must be 640 bytes");
-static_assert(sizeof(PgrIvDisplaySample) == 656, "sample must be 656 bytes");
-static_assert(sizeof(PgrIvDisplayApi) == 64, "table must be 64 bytes");
-static_assert(offsetof(PgrIvDisplayConfig, gchandle_new) == 8, "layout");
-static_assert(offsetof(PgrIvDisplayConfig, m_get_level) == 8 + 13 * 8, "layout");
-static_assert(offsetof(PgrIvDisplayConfig, setup_address) == 8 + 37 * 8, "layout");
-static_assert(offsetof(PgrIvDisplayConfig, class_plate) == 8 + 39 * 8, "layout");
-static_assert(offsetof(PgrIvDisplayConfig, f_plate_text) == 8 + 57 * 8, "layout");
-static_assert(offsetof(PgrIvDisplayConfig, f_panel_gm) == 8 + 76 * 8, "layout");
-static_assert(offsetof(PgrIvDisplayConfig, overflow_value) == 8 + 77 * 8, "layout");
-static_assert(offsetof(PgrIvDisplayConfig, external_catch_observer) == 8 + 77 * 8 + 8, "layout");
-static_assert(offsetof(PgrIvDisplayConfig, reserved) == 8 + 77 * 8 + 12, "layout");
+static_assert(sizeof(PgsIvDisplayConfig) == 640, "config must be 640 bytes");
+static_assert(sizeof(PgsIvDisplaySample) == 656, "sample must be 656 bytes");
+static_assert(sizeof(PgsIvDisplayApi) == 64, "table must be 64 bytes");
+static_assert(offsetof(PgsIvDisplayConfig, gchandle_new) == 8, "layout");
+static_assert(offsetof(PgsIvDisplayConfig, m_get_level) == 8 + 13 * 8, "layout");
+static_assert(offsetof(PgsIvDisplayConfig, setup_address) == 8 + 37 * 8, "layout");
+static_assert(offsetof(PgsIvDisplayConfig, class_plate) == 8 + 39 * 8, "layout");
+static_assert(offsetof(PgsIvDisplayConfig, f_plate_text) == 8 + 57 * 8, "layout");
+static_assert(offsetof(PgsIvDisplayConfig, f_panel_gm) == 8 + 76 * 8, "layout");
+static_assert(offsetof(PgsIvDisplayConfig, overflow_value) == 8 + 77 * 8, "layout");
+static_assert(offsetof(PgsIvDisplayConfig, external_catch_observer) == 8 + 77 * 8 + 8, "layout");
+static_assert(offsetof(PgsIvDisplayConfig, reserved) == 8 + 77 * 8 + 12, "layout");
 
 namespace {
 
-constexpr uint64_t kMaxLeaseMs = PGR_IV_MAX_LEASE_MS;
-constexpr int kLabelCap = PGR_IV_LABEL_CAP;
+constexpr uint64_t kMaxLeaseMs = PGS_IV_MAX_LEASE_MS;
+constexpr int kLabelCap = PGS_IV_LABEL_CAP;
 
 // --- il2cpp runtime ABI typedefs ---------------------------------------------------
 using GcNew = uintptr_t (*)(void *obj, int pinned);
@@ -61,15 +61,15 @@ using OwnedFn = void (*)(void *self, void *proto, const void *method);
 // --- lifetime / publication --------------------------------------------------------
 std::mutex g_install_mutex;
 std::mutex g_state_mutex;
-PgrIvDisplayConfig g_cfg{};
+PgsIvDisplayConfig g_cfg{};
 bool g_outline_available = false;
 std::atomic<bool> g_installed{false};
 bool g_install_attempted = false;
-int g_install_error = PGR_IV_ERR_NOT_INSTALLED;
+int g_install_error = PGS_IV_ERR_NOT_INSTALLED;
 std::atomic<SetupFn> g_orig_setup{nullptr};
 std::atomic<OwnedFn> g_orig_owned{nullptr};
 // Light-panel IV line (iv_panel.cpp); null = re-text the CP label as before.
-std::atomic<const PgrIvPanelHooks *> g_panel_hooks{nullptr};
+std::atomic<const PgsIvPanelHooks *> g_panel_hooks{nullptr};
 
 // Permanent Unity owner, latched once from a genuine on-thread hook observation.
 std::atomic<uint64_t> g_owner_tid{0};
@@ -97,11 +97,11 @@ int g_owned_fault = 0;
 uint64_t g_catch_serial = 0, g_owned_serial = 0, g_position_serial = 0, g_encounter_serial = 0;
 uint64_t g_encounter_id = 0, g_last_tid = 0;
 double g_latitude = 0.0, g_longitude = 0.0;
-uint32_t g_catch_notice = PGR_IV_NOTICE_NONE, g_owned_notice = PGR_IV_NOTICE_NONE;
-int32_t g_catch_level_half = PGR_IV_LEVEL_UNKNOWN, g_owned_level_half = PGR_IV_LEVEL_UNKNOWN;
+uint32_t g_catch_notice = PGS_IV_NOTICE_NONE, g_owned_notice = PGS_IV_NOTICE_NONE;
+int32_t g_catch_level_half = PGS_IV_LEVEL_UNKNOWN, g_owned_level_half = PGS_IV_LEVEL_UNKNOWN;
 int32_t g_catch_atk = -1, g_catch_def = -1, g_catch_sta = -1, g_catch_cp = -1;
 int32_t g_owned_atk = -1, g_owned_def = -1, g_owned_sta = -1, g_owned_cp = -1;
-uint32_t g_catch_reason = PGR_IV_REASON_NONE, g_owned_reason = PGR_IV_REASON_NONE;
+uint32_t g_catch_reason = PGS_IV_REASON_NONE, g_owned_reason = PGS_IV_REASON_NONE;
 char g_catch_label[kLabelCap] = {0};
 char g_owned_label[kLabelCap] = {0};
 
@@ -118,7 +118,7 @@ struct Record {
   bool panel;  // applied as the light-panel line (restore hides it; the label is untouched)
   int32_t level_half;
   int atk, def, sta;
-  PgrPvpBest pvp;  // ranks to show; all 0 = none
+  PgsPvpBest pvp;  // ranks to show; all 0 = none
   uint64_t panel_until, panel_next;  // re-place the panel until then (the screen is still laying out)
   bool outline_created;
   bool outline_enabled;  // snapshotted enabled state (restore target)
@@ -130,7 +130,7 @@ struct Record {
 };
 Record g_catch_rec{};
 std::atomic<bool> g_catch_present{false};
-Record g_owned_recs[PGR_IV_MAX_OWNED]{};
+Record g_owned_recs[PGS_IV_MAX_OWNED]{};
 std::atomic<uint32_t> g_owned_count{0};
 
 // Owner-thread-only context for the apply currently in flight: the channel it targets and
@@ -202,10 +202,10 @@ FieldGet field_get() { return reinterpret_cast<FieldGet>(g_cfg.field_get_value);
 Assignable assignable() { return reinterpret_cast<Assignable>(g_cfg.class_is_assignable_from); }
 
 // Runtime error context for a single capture/render operation. `ok` latches false on the
-// first failure; `reason` carries the PgrIvReason the adapter surfaces as iv-*-unavailable.
+// first failure; `reason` carries the PgsIvReason the adapter surfaces as iv-*-unavailable.
 struct Ctx {
   bool ok = true;
-  uint32_t reason = PGR_IV_REASON_NONE;
+  uint32_t reason = PGS_IV_REASON_NONE;
   void fail(uint32_t r) {
     if (ok) {
       ok = false;
@@ -305,7 +305,7 @@ void *invoke(void *method, void *obj, void **params, Ctx &c) {
   void *exc = nullptr;
   void *r = invoke_fn()(method, obj, params, &exc);
   if (exc != nullptr) {
-    c.fail(PGR_IV_REASON_INVOKE_EXCEPTION);
+    c.fail(PGS_IV_REASON_INVOKE_EXCEPTION);
     return nullptr;
   }
   return r;
@@ -317,23 +317,23 @@ bool boxed_read(void *method, void *obj, void **params, void *klass, void *out, 
   void *r = invoke(method, obj, params, c);
   if (!c.ok) return false;
   if (r == nullptr) {
-    c.fail(PGR_IV_REASON_BOX_MISMATCH);
+    c.fail(PGS_IV_REASON_BOX_MISMATCH);
     return false;
   }
   ScopedRoot root;
   root.acquire(r);
   if (!root.ok()) {
-    c.fail(PGR_IV_REASON_GCHANDLE);
+    c.fail(PGS_IV_REASON_GCHANDLE);
     return false;
   }
   void *bt = root.target();
   if (bt == nullptr || obj_class()(bt) != klass) {
-    c.fail(PGR_IV_REASON_BOX_MISMATCH);
+    c.fail(PGS_IV_REASON_BOX_MISMATCH);
     return false;
   }
   void *data = unbox()(bt);
   if (data == nullptr) {
-    c.fail(PGR_IV_REASON_BOX_MISMATCH);
+    c.fail(PGS_IV_REASON_BOX_MISMATCH);
     return false;
   }
   std::memcpy(out, data, size);
@@ -354,7 +354,7 @@ bool boxed_bool(void *method, void *obj, void **params, Ctx &c) {
   uint8_t v = 0;
   if (!boxed_read(method, obj, params, g_cfg.class_bool, &v, sizeof(v), c)) return false;
   if (v > 1) {
-    c.fail(PGR_IV_REASON_BOX_MISMATCH);
+    c.fail(PGS_IV_REASON_BOX_MISMATCH);
     return false;
   }
   return v == 1;
@@ -406,17 +406,17 @@ bool get_text(void *text_obj, char *out, size_t cap, Ctx &c) {
   ScopedRoot root;
   root.acquire(r);
   if (!root.ok()) {
-    c.fail(PGR_IV_REASON_GCHANDLE);
+    c.fail(PGS_IV_REASON_GCHANDLE);
     return false;
   }
   void *s = root.target();
   if (s == nullptr || obj_class()(s) != g_cfg.class_string) {
-    c.fail(PGR_IV_REASON_STRING);
+    c.fail(PGS_IV_REASON_STRING);
     return false;
   }
   int n = reinterpret_cast<StringLen>(g_cfg.string_length)(s);
   if (n < 0 || n > 512) {
-    c.fail(PGR_IV_REASON_STRING);
+    c.fail(PGS_IV_REASON_STRING);
     return false;
   }
   if (n == 0) return true;
@@ -425,7 +425,7 @@ bool get_text(void *text_obj, char *out, size_t cap, Ctx &c) {
   s = root.target();
   uint16_t *chars = s != nullptr ? reinterpret_cast<StringChars>(g_cfg.string_chars)(s) : nullptr;
   if (chars == nullptr) {
-    c.fail(PGR_IV_REASON_STRING);
+    c.fail(PGS_IV_REASON_STRING);
     return false;
   }
   utf16_to_utf8(chars, n, out, cap);
@@ -478,7 +478,7 @@ void iv_color(int attack, int defense, int stamina, bool valid, char iv[16], cha
 }
 
 void fmt_level(int32_t level_half, char out[8]) {
-  if (level_half == PGR_IV_LEVEL_UNKNOWN) {
+  if (level_half == PGS_IV_LEVEL_UNKNOWN) {
     std::snprintf(out, 8, "--");
     return;
   }
@@ -527,20 +527,20 @@ void publish_catch_label(const char *full, int32_t level_half, int a, int d, int
                          uint64_t tid) {
   std::lock_guard<std::mutex> lock(g_state_mutex);
   ++g_catch_serial;
-  g_catch_notice = PGR_IV_NOTICE_LABEL;
+  g_catch_notice = PGS_IV_NOTICE_LABEL;
   g_catch_level_half = level_half;
   g_catch_atk = a;
   g_catch_def = d;
   g_catch_sta = s;
   g_catch_cp = cp;
-  g_catch_reason = PGR_IV_REASON_NONE;
+  g_catch_reason = PGS_IV_REASON_NONE;
   std::snprintf(g_catch_label, kLabelCap, "%s", full);
   g_last_tid = tid;
 }
 void publish_catch_pending(uint32_t reason, uint64_t tid) {
   std::lock_guard<std::mutex> lock(g_state_mutex);
   ++g_catch_serial;
-  g_catch_notice = PGR_IV_NOTICE_PENDING;
+  g_catch_notice = PGS_IV_NOTICE_PENDING;
   g_catch_reason = reason;
   g_last_tid = tid;
 }
@@ -548,7 +548,7 @@ void publish_catch_unavailable(uint32_t reason, uint64_t tid) {
   std::lock_guard<std::mutex> lock(g_state_mutex);
   g_catch_fault = 1;
   ++g_catch_serial;
-  g_catch_notice = PGR_IV_NOTICE_UNAVAILABLE;
+  g_catch_notice = PGS_IV_NOTICE_UNAVAILABLE;
   g_catch_reason = reason;
   g_last_tid = tid;
 }
@@ -556,20 +556,20 @@ void publish_owned_label(const char *full, int32_t level_half, int a, int d, int
                          uint64_t tid) {
   std::lock_guard<std::mutex> lock(g_state_mutex);
   ++g_owned_serial;
-  g_owned_notice = PGR_IV_NOTICE_LABEL;
+  g_owned_notice = PGS_IV_NOTICE_LABEL;
   g_owned_level_half = level_half;
   g_owned_atk = a;
   g_owned_def = d;
   g_owned_sta = s;
   g_owned_cp = cp;
-  g_owned_reason = PGR_IV_REASON_NONE;
+  g_owned_reason = PGS_IV_REASON_NONE;
   std::snprintf(g_owned_label, kLabelCap, "%s", full);
   g_last_tid = tid;
 }
 void publish_owned_pending(uint32_t reason, uint64_t tid) {
   std::lock_guard<std::mutex> lock(g_state_mutex);
   ++g_owned_serial;
-  g_owned_notice = PGR_IV_NOTICE_PENDING;
+  g_owned_notice = PGS_IV_NOTICE_PENDING;
   g_owned_reason = reason;
   g_last_tid = tid;
 }
@@ -577,7 +577,7 @@ void publish_owned_unavailable(uint32_t reason, uint64_t tid) {
   std::lock_guard<std::mutex> lock(g_state_mutex);
   g_owned_fault = 1;
   ++g_owned_serial;
-  g_owned_notice = PGR_IV_NOTICE_UNAVAILABLE;
+  g_owned_notice = PGS_IV_NOTICE_UNAVAILABLE;
   g_owned_reason = reason;
   g_last_tid = tid;
 }
@@ -629,7 +629,7 @@ bool check_apply_gate(Ctx &c) {
   }
   uint64_t now = 0;
   if (!read_boottime_ms(&now)) {
-    c.fail(PGR_IV_REASON_CLOCK);
+    c.fail(PGS_IV_REASON_CLOCK);
     return false;
   }
   std::lock_guard<std::mutex> lock(g_state_mutex);
@@ -645,7 +645,7 @@ bool check_apply_gate(Ctx &c) {
 
 // Re-resolve a durable GC root's current target immediately before an instance call: a prior
 // managed call may have moved the object, leaving any cached raw pointer stale.
-void *refresh_durable(uintptr_t root, Ctx &c, uint32_t reason = PGR_IV_REASON_GCHANDLE) {
+void *refresh_durable(uintptr_t root, Ctx &c, uint32_t reason = PGS_IV_REASON_GCHANDLE) {
   if (!c.ok) return nullptr;
   void *obj = root != 0 ? gc_get()(root) : nullptr;
   if (obj == nullptr) c.fail(reason);
@@ -655,7 +655,7 @@ void *refresh_durable(uintptr_t root, Ctx &c, uint32_t reason = PGR_IV_REASON_GC
 // Gated int/enum/bool setter: re-check the apply gate, then re-resolve the receiver.
 void set_i32_rooted(void *method, uintptr_t root, int32_t value, Ctx &c) {
   if (!check_apply_gate(c)) return;
-  void *obj = refresh_durable(root, c, PGR_IV_REASON_RENDER);
+  void *obj = refresh_durable(root, c, PGS_IV_REASON_RENDER);
   if (obj == nullptr || !check_apply_gate(c)) return;
   set_i32(method, obj, value, c);
 }
@@ -666,20 +666,20 @@ void set_text_rooted(uintptr_t text_root, const char *utf8, Ctx &c) {
   if (!c.ok) return;
   void *s = reinterpret_cast<StringNew>(g_cfg.string_new)(utf8);
   if (s == nullptr) {
-    c.fail(PGR_IV_REASON_STRING);
+    c.fail(PGS_IV_REASON_STRING);
     return;
   }
   ScopedRoot root;
   root.acquire(s);
   if (!root.ok()) {
-    c.fail(PGR_IV_REASON_GCHANDLE);
+    c.fail(PGS_IV_REASON_GCHANDLE);
     return;
   }
   if (!check_apply_gate(c)) return;
-  void *text_obj = refresh_durable(text_root, c, PGR_IV_REASON_RENDER);
+  void *text_obj = refresh_durable(text_root, c, PGS_IV_REASON_RENDER);
   void *str_obj = root.target();
   if (text_obj == nullptr || str_obj == nullptr) {
-    if (str_obj == nullptr) c.fail(PGR_IV_REASON_STRING);
+    if (str_obj == nullptr) c.fail(PGS_IV_REASON_STRING);
     return;
   }
   if (!check_apply_gate(c)) return;
@@ -729,7 +729,7 @@ void prepare_outline(Record &r) {
       reinterpret_cast<ClassType>(g_cfg.class_get_type)(g_cfg.class_outline));
   type_root.acquire(type);
   if (!c.ok || go == nullptr || type == nullptr || !go_root.ok() || !type_root.ok())
-    c.fail(PGR_IV_REASON_OUTLINE_UNAVAILABLE);
+    c.fail(PGS_IV_REASON_OUTLINE_UNAVAILABLE);
   // Resolve or (if absent AND the apply gate is still open) add the component. AddComponent is
   // a mutation: never add an Outline while the channel is disabled/revoked.
   bool created = false;
@@ -739,40 +739,40 @@ void prepare_outline(Record &r) {
     if (c.ok && effect == nullptr) {
       Ctx gate_c;
       if (!check_apply_gate(gate_c)) {
-        c.fail(PGR_IV_REASON_OUTLINE_UNAVAILABLE);
+        c.fail(PGS_IV_REASON_OUTLINE_UNAVAILABLE);
       } else {
         params[0] = type_root.target();
         void *go_obj = go_root.target();
         if (go_obj != nullptr && params[0] != nullptr && check_apply_gate(gate_c)) {
           effect = invoke(g_cfg.m_outline_addcomponent, go_obj, params, c);
           created = true;
-        } else c.fail(PGR_IV_REASON_OUTLINE_UNAVAILABLE);
+        } else c.fail(PGS_IV_REASON_OUTLINE_UNAVAILABLE);
       }
     }
     if (c.ok && effect != nullptr && obj_class()(effect) == g_cfg.class_outline) {
       r.outline = hold_durable(effect);
       if (r.outline != 0) {
         r.outline_created = created;
-        void *eff = refresh_durable(r.outline, c, PGR_IV_REASON_OUTLINE_UNAVAILABLE);
+        void *eff = refresh_durable(r.outline, c, PGS_IV_REASON_OUTLINE_UNAVAILABLE);
         r.outline_enabled =
             created ? false
                     : (eff != nullptr ? boxed_bool(g_cfg.m_outline_getenabled, eff, nullptr, c)
                                       : false);
-        eff = refresh_durable(r.outline, c, PGR_IV_REASON_OUTLINE_UNAVAILABLE);
+        eff = refresh_durable(r.outline, c, PGS_IV_REASON_OUTLINE_UNAVAILABLE);
         if (eff != nullptr)
           boxed_read(g_cfg.m_outline_colorget, eff, nullptr, g_cfg.class_color, r.outline_color,
                      sizeof(r.outline_color), c);
-        eff = refresh_durable(r.outline, c, PGR_IV_REASON_OUTLINE_UNAVAILABLE);
+        eff = refresh_durable(r.outline, c, PGS_IV_REASON_OUTLINE_UNAVAILABLE);
         if (eff != nullptr)
           boxed_read(g_cfg.m_outline_distanceget, eff, nullptr, g_cfg.class_vector2,
                      r.outline_distance, sizeof(r.outline_distance), c);
         if (c.ok && created) {
-          eff = refresh_durable(r.outline, c, PGR_IV_REASON_OUTLINE_UNAVAILABLE);
+          eff = refresh_durable(r.outline, c, PGS_IV_REASON_OUTLINE_UNAVAILABLE);
           if (eff != nullptr) set_i32(g_cfg.m_outline_setenabled, eff, 0, c);
         }
       }
     } else if (c.ok) {
-      c.fail(PGR_IV_REASON_OUTLINE_UNAVAILABLE);
+      c.fail(PGS_IV_REASON_OUTLINE_UNAVAILABLE);
     }
   }
   if (!c.ok) {
@@ -799,9 +799,9 @@ void render(Record &r, bool enabled, Ctx &c) {
   if (enabled) {
     // Gate once up front; if already revoked nothing is mutated and applied stays false.
     if (!check_apply_gate(c)) return;
-    const PgrIvPanelHooks *ph = g_panel_hooks.load(std::memory_order_acquire);
+    const PgsIvPanelHooks *ph = g_panel_hooks.load(std::memory_order_acquire);
     if (ph != nullptr && ph->available()) {
-      void *obj = refresh_durable(r.text, c, PGR_IV_REASON_RENDER);
+      void *obj = refresh_durable(r.text, c, PGS_IV_REASON_RENDER);
       if (obj == nullptr || !check_apply_gate(c)) return;
       if (ph->show(r.owned, obj, r.level_half, r.atk, r.def, r.sta, &r.pvp)) {
         r.applied = true;
@@ -836,7 +836,7 @@ void render(Record &r, bool enabled, Ctx &c) {
     g_apply_scope = ApplyScope{};
     void *obj = gc_get()(r.text);
     if (r.panel) {
-      const PgrIvPanelHooks *ph = g_panel_hooks.load(std::memory_order_acquire);
+      const PgsIvPanelHooks *ph = g_panel_hooks.load(std::memory_order_acquire);
       if (obj != nullptr && ph != nullptr) ph->hide(obj);
       r.panel = false;
       r.applied = false;
@@ -955,7 +955,7 @@ void evict_oldest_owned() {
 // Snapshot the authentic UI state, build the overlay and apply/restore per the gate. On
 // any error the partial record's roots are freed and the channel faults.
 void capture_overlay(bool is_catch, void *text_obj, int32_t cp, int32_t level_half, int atk,
-                     int def, int sta, uint64_t tid, const PgrPvpBest &pvp,
+                     int def, int sta, uint64_t tid, const PgsPvpBest &pvp,
                      const ScopedRoot *source_panel = nullptr, const ScopedRoot *source_proto = nullptr,
                      float cpmul = 0, float addcpmul = 0) {
   // Use the generation pinned at hook entry, including an explicitly disabled zero value.
@@ -972,7 +972,7 @@ void capture_overlay(bool is_catch, void *text_obj, int32_t cp, int32_t level_ha
   ScopedRoot incoming_root;
   incoming_root.acquire(text_obj);
   if (!incoming_root.ok()) {
-    publish_unavailable(is_catch, PGR_IV_REASON_GCHANDLE, tid);
+    publish_unavailable(is_catch, PGS_IV_REASON_GCHANDLE, tid);
     return;
   }
 
@@ -992,7 +992,7 @@ void capture_overlay(bool is_catch, void *text_obj, int32_t cp, int32_t level_ha
   r.text = hold_durable(incoming_root.target());
   incoming_root.reset();
   if (r.text == 0) {
-    publish_unavailable(is_catch, PGR_IV_REASON_GCHANDLE, tid);
+    publish_unavailable(is_catch, PGS_IV_REASON_GCHANDLE, tid);
     return;
   }
   if (!is_catch && source_panel && source_proto) {
@@ -1000,7 +1000,7 @@ void capture_overlay(bool is_catch, void *text_obj, int32_t cp, int32_t level_ha
     r.source_proto = hold_durable(source_proto->target());
     if (!r.source_panel || !r.source_proto) {
       free_record(r);
-      publish_owned_unavailable(PGR_IV_REASON_GCHANDLE, tid);
+      publish_owned_unavailable(PGS_IV_REASON_GCHANDLE, tid);
       return;
     }
   }
@@ -1008,10 +1008,10 @@ void capture_overlay(bool is_catch, void *text_obj, int32_t cp, int32_t level_ha
   // Every managed read below re-resolves the Text from r.text first: the prior managed call
   // may have moved it.
   char original[kLabelCap];
-  void *cur = refresh_durable(r.text, c, PGR_IV_REASON_STRING);
+  void *cur = refresh_durable(r.text, c, PGS_IV_REASON_STRING);
   if (cur == nullptr || !get_text(cur, original, sizeof(original), c) || !c.ok) {
     free_record(r);
-    publish_unavailable(is_catch, c.reason ? c.reason : PGR_IV_REASON_STRING, tid);
+    publish_unavailable(is_catch, c.reason ? c.reason : PGS_IV_REASON_STRING, tid);
     return;
   }
   std::snprintf(r.original, kLabelCap, "%s", original);
@@ -1044,7 +1044,7 @@ void capture_overlay(bool is_catch, void *text_obj, int32_t cp, int32_t level_ha
   // gated/revocable). apply_gen == 0 => born-revoked (captured while disabled/expired).
   g_apply_scope = ApplyScope{true, is_catch, apply_gen, apply_gen == 0};
   // The light panel needs no Outline on the game's label.
-  const PgrIvPanelHooks *panel_hooks = g_panel_hooks.load(std::memory_order_acquire);
+  const PgsIvPanelHooks *panel_hooks = g_panel_hooks.load(std::memory_order_acquire);
   if (!is_catch && (panel_hooks == nullptr || !panel_hooks->available())) prepare_outline(r);
 
   // Re-check the residual lease / revocation generation AFTER the managed getters and root
@@ -1053,14 +1053,14 @@ void capture_overlay(bool is_catch, void *text_obj, int32_t cp, int32_t level_ha
   if (!c.ok) {
     g_apply_scope = ApplyScope{};
     drop_record(r);
-    publish_unavailable(is_catch, c.reason ? c.reason : PGR_IV_REASON_CLOCK, tid);
+    publish_unavailable(is_catch, c.reason ? c.reason : PGS_IV_REASON_CLOCK, tid);
     return;
   }
   render(r, enabled, c);
   g_apply_scope = ApplyScope{};
   if (!c.ok) {
     drop_record(r);
-    publish_unavailable(is_catch, c.reason ? c.reason : PGR_IV_REASON_RENDER, tid);
+    publish_unavailable(is_catch, c.reason ? c.reason : PGS_IV_REASON_RENDER, tid);
     return;
   }
   // Commit the record (kept even when un-applied, so a later enable can apply it).
@@ -1068,7 +1068,7 @@ void capture_overlay(bool is_catch, void *text_obj, int32_t cp, int32_t level_ha
     g_catch_rec = r;
     g_catch_present = true;
   } else {
-    if (g_owned_count >= PGR_IV_MAX_OWNED) evict_oldest_owned();
+    if (g_owned_count >= PGS_IV_MAX_OWNED) evict_oldest_owned();
     g_owned_recs[g_owned_count++] = r;
   }
   if (is_catch)
@@ -1079,11 +1079,11 @@ void capture_overlay(bool is_catch, void *text_obj, int32_t cp, int32_t level_ha
 
 // GameMaster half-level resolution; identical search and tolerances to the JS.
 int32_t resolve_level(void *gm, float cpmul, float addcpmul, Ctx &c) {
-  int32_t level_half = PGR_IV_LEVEL_UNKNOWN;
+  int32_t level_half = PGS_IV_LEVEL_UNKNOWN;
   float mult = cpmul + addcpmul;  // float32 add == Math.fround(double sum)
   if (!(std::isfinite(mult) && mult > 0.0f)) return level_half;
   if (gm == nullptr) {
-    c.fail(PGR_IV_REASON_STATS_NOT_POPULATED);
+    c.fail(PGS_IV_REASON_STATS_NOT_POPULATED);
     return level_half;
   }
   // Root gm locally and re-resolve its target before each invoke: these are two or three
@@ -1091,7 +1091,7 @@ int32_t resolve_level(void *gm, float cpmul, float addcpmul, Ctx &c) {
   ScopedRoot gm_root;
   gm_root.acquire(gm);
   if (!gm_root.ok()) {
-    c.fail(PGR_IV_REASON_GCHANDLE);
+    c.fail(PGS_IV_REASON_GCHANDLE);
     return level_half;
   }
   float mul_arg = mult;
@@ -1128,8 +1128,8 @@ void *interface_pokemon(void *map, Ctx &c) {
   static bool resolved = false;
   if (!resolved) {
     resolved = true;
-    const auto *api = static_cast<const PgrBootApi *>(pgs_runtime_bootstrap_api(1));
-    PgrBootBinding b{};
+    const auto *api = static_cast<const PgsBootApi *>(pgs_runtime_bootstrap_api(1));
+    PgsBootBinding b{};
     b.version = 1;
     b.size = sizeof(b);
     if (api != nullptr && api->snapshot != nullptr && api->snapshot(&b) == 0 && b.handle != nullptr &&
@@ -1159,11 +1159,11 @@ void capture_catch(void *plate, void *map, uint64_t tid) {
   } else if (void *response = field_ptr(map, g_cfg.f_map_response); response != nullptr) {
     response_root.acquire(response);
     if (!response_root.ok()) {
-      publish_catch_unavailable(PGR_IV_REASON_GCHANDLE, tid);
+      publish_catch_unavailable(PGS_IV_REASON_GCHANDLE, tid);
       return;
     }
     if (obj_class()(response) != g_cfg.class_encounter_out) {
-      publish_catch_unavailable(PGR_IV_REASON_RESPONSE_CLASS, tid);
+      publish_catch_unavailable(PGS_IV_REASON_RESPONSE_CLASS, tid);
       return;
     }
     void *wh = field_ptr(response, g_cfg.f_response_wild);
@@ -1172,15 +1172,15 @@ void capture_catch(void *plate, void *map, uint64_t tid) {
     wh_root.acquire(wh);
     mh_root.acquire(mh);
     if (!wh_root.ok() || !mh_root.ok()) {
-      publish_catch_unavailable(PGR_IV_REASON_GCHANDLE, tid);
+      publish_catch_unavailable(PGS_IV_REASON_GCHANDLE, tid);
       return;
     }
     if (obj_class()(wh) != g_cfg.class_wild_proto || obj_class()(mh) != g_cfg.class_wild_proto) {
-      publish_catch_unavailable(PGR_IV_REASON_RESPONSE_CLASS, tid);
+      publish_catch_unavailable(PGS_IV_REASON_RESPONSE_CLASS, tid);
       return;
     }
     if (field_u64(wh, g_cfg.f_wild_id) != field_u64(mh, g_cfg.f_wild_id)) {
-      publish_catch_pending(PGR_IV_REASON_ENCOUNTER_ID_MISMATCH, tid);
+      publish_catch_pending(PGS_IV_REASON_ENCOUNTER_ID_MISMATCH, tid);
       return;
     }
     pokemon = field_ptr(wh, g_cfg.f_wild_pokemon);
@@ -1191,11 +1191,11 @@ void capture_catch(void *plate, void *map, uint64_t tid) {
     if (tappable != nullptr) {
       th_root.acquire(tappable);
       if (!th_root.ok()) {
-        publish_catch_unavailable(PGR_IV_REASON_GCHANDLE, tid);
+        publish_catch_unavailable(PGS_IV_REASON_GCHANDLE, tid);
         return;
       }
       if (obj_class()(tappable) != g_cfg.class_tappable) {
-        publish_catch_unavailable(PGR_IV_REASON_RESPONSE_CLASS, tid);
+        publish_catch_unavailable(PGS_IV_REASON_RESPONSE_CLASS, tid);
         return;
       }
       pokemon = field_ptr(tappable, g_cfg.f_tappable_pokemon);
@@ -1204,11 +1204,11 @@ void capture_catch(void *plate, void *map, uint64_t tid) {
   if (pokemon == nullptr) return;
   pokemon_root.acquire(pokemon);
   if (!pokemon_root.ok()) {
-    publish_catch_unavailable(PGR_IV_REASON_GCHANDLE, tid);
+    publish_catch_unavailable(PGS_IV_REASON_GCHANDLE, tid);
     return;
   }
   if (obj_class()(pokemon) != g_cfg.class_pokemon) {
-    publish_catch_unavailable(PGR_IV_REASON_POKEMON_CLASS, tid);
+    publish_catch_unavailable(PGS_IV_REASON_POKEMON_CLASS, tid);
     return;
   }
 
@@ -1219,7 +1219,7 @@ void capture_catch(void *plate, void *map, uint64_t tid) {
   float cpmul = field_f32(pokemon, g_cfg.f_cpmul);
   float addcpmul = field_f32(pokemon, g_cfg.f_addcpmul);
   if (cp <= 0 || !(std::isfinite(cpmul) && cpmul > 0.0f)) {
-    publish_catch_pending(PGR_IV_REASON_STATS_NOT_POPULATED, tid);
+    publish_catch_pending(PGS_IV_REASON_STATS_NOT_POPULATED, tid);
     return;
   }
 
@@ -1227,11 +1227,11 @@ void capture_catch(void *plate, void *map, uint64_t tid) {
   ScopedRoot text_root;
   text_root.acquire(text_obj);
   if (text_obj == nullptr || !text_root.ok()) {
-    publish_catch_unavailable(PGR_IV_REASON_GCHANDLE, tid);
+    publish_catch_unavailable(PGS_IV_REASON_GCHANDLE, tid);
     return;
   }
   if (assignable()(g_cfg.class_text, obj_class()(text_obj)) == 0) {
-    publish_catch_unavailable(PGR_IV_REASON_TEXT_CLASS, tid);
+    publish_catch_unavailable(PGS_IV_REASON_TEXT_CLASS, tid);
     return;
   }
 
@@ -1244,8 +1244,8 @@ void capture_catch(void *plate, void *map, uint64_t tid) {
     return;
   }
   // The PvP rank is worked out only when this screen's format shows it.
-  PgrPvpBest pvp{};
-  if (pgr_pvp_best) pgr_pvp_best(pokemon, PGR_PVP_ENCOUNTER, atk, def, sta, tid, &pvp);
+  PgsPvpBest pvp{};
+  if (pgs_pvp_best) pgs_pvp_best(pokemon, PGS_PVP_ENCOUNTER, atk, def, sta, tid, &pvp);
   capture_overlay(true, text_obj, cp, level_half, atk, def, sta, tid, pvp);
 }
 
@@ -1253,7 +1253,7 @@ void capture_owned(const ScopedRoot &panel_root, const ScopedRoot &proto_root, u
   Ctx c;
   if (!is_exact(proto_root.target(), g_cfg.class_pokemon)) return;
   if (field_ptr(panel_root.target(), g_cfg.f_panel_displayed) != proto_root.target()) {
-    publish_owned_unavailable(PGR_IV_REASON_OWNED_IDENTITY, tid);
+    publish_owned_unavailable(PGS_IV_REASON_OWNED_IDENTITY, tid);
     return;
   }
 
@@ -1264,7 +1264,7 @@ void capture_owned(const ScopedRoot &panel_root, const ScopedRoot &proto_root, u
   float cpmul = field_f32(proto_root.target(), g_cfg.f_cpmul);
   float addcpmul = field_f32(proto_root.target(), g_cfg.f_addcpmul);
   if (cp <= 0 || !(std::isfinite(cpmul) && cpmul > 0.0f)) {
-    publish_owned_pending(PGR_IV_REASON_STATS_NOT_POPULATED, tid);
+    publish_owned_pending(PGS_IV_REASON_STATS_NOT_POPULATED, tid);
     return;
   }
 
@@ -1272,11 +1272,11 @@ void capture_owned(const ScopedRoot &panel_root, const ScopedRoot &proto_root, u
   ScopedRoot text_root;
   text_root.acquire(text_obj);
   if (text_obj == nullptr || !text_root.ok()) {
-    publish_owned_unavailable(PGR_IV_REASON_GCHANDLE, tid);
+    publish_owned_unavailable(PGS_IV_REASON_GCHANDLE, tid);
     return;
   }
   if (assignable()(g_cfg.class_text, obj_class()(text_root.target())) == 0) {
-    publish_owned_unavailable(PGR_IV_REASON_TEXT_CLASS, tid);
+    publish_owned_unavailable(PGS_IV_REASON_TEXT_CLASS, tid);
     return;
   }
 
@@ -1288,8 +1288,8 @@ void capture_owned(const ScopedRoot &panel_root, const ScopedRoot &proto_root, u
     publish_owned_unavailable(c.reason, tid);
     return;
   }
-  PgrPvpBest pvp{};
-  if (pgr_pvp_best) pgr_pvp_best(proto_root.target(), PGR_PVP_DETAILS, atk, def, sta, tid, &pvp);
+  PgsPvpBest pvp{};
+  if (pgs_pvp_best) pgs_pvp_best(proto_root.target(), PGS_PVP_DETAILS, atk, def, sta, tid, &pvp);
   capture_overlay(false, text_root.target(), cp, level_half, atk, def, sta, tid, pvp,
                   &panel_root, &proto_root, cpmul, addcpmul);
 }
@@ -1394,7 +1394,7 @@ uint64_t catch_begin(void *self, void *map_pokemon, uint64_t tid) {
   if (f.do_capture)
     drop_catch();
   else
-    publish_catch_unavailable(PGR_IV_REASON_GCHANDLE, tid);
+    publish_catch_unavailable(PGS_IV_REASON_GCHANDLE, tid);
   publish_encounter(tid);
   return token;
 }
@@ -1405,10 +1405,10 @@ uint64_t catch_begin(void *self, void *map_pokemon, uint64_t tid) {
 // active_depth. A mismatched/duplicate token, a foreign thread, or a non-owner caller is rejected
 // without stealing, clearing or freeing the live frame.
 int catch_end(uint64_t token, uint64_t tid) {
-  if (token == 0) return PGR_IV_ERR_INVALID_ARG;
+  if (token == 0) return PGS_IV_ERR_INVALID_ARG;
   // Only the latched owner may complete a frame; a foreign thread only reads to reject itself.
-  if (g_owner_tid.load(std::memory_order_acquire) != tid) return PGR_IV_ERR_INVALID_ARG;
-  if (!g_catch_frame.active || g_catch_frame.token != token || g_catch_frame.tid != tid) return PGR_IV_ERR_INVALID_ARG;
+  if (g_owner_tid.load(std::memory_order_acquire) != tid) return PGS_IV_ERR_INVALID_ARG;
+  if (!g_catch_frame.active || g_catch_frame.token != token || g_catch_frame.tid != tid) return PGS_IV_ERR_INVALID_ARG;
   CatchFrame f = g_catch_frame;
   g_catch_frame = CatchFrame{}; // retire token before any reentrant managed call or free
 
@@ -1432,7 +1432,7 @@ int catch_end(uint64_t token, uint64_t tid) {
   free_temp(f.plate_root);
   g_catch_frame = CatchFrame{};
   g_active_depth.fetch_sub(1, std::memory_order_relaxed);
-  return PGR_IV_OK;
+  return PGS_IV_OK;
 }
 
 void hook_setup(void *self, void *map_pokemon, int32_t weather, const void *method) {
@@ -1477,7 +1477,7 @@ void hook_owned(void *self, void *proto, const void *method) {
     proto_root.acquire(proto);
     do_capture = panel_root.ok() && proto_root.ok();
     // onEnter: drop any existing overlay for this panel's label before the native refresh.
-    if (!do_capture) publish_owned_unavailable(PGR_IV_REASON_GCHANDLE, tid);
+    if (!do_capture) publish_owned_unavailable(PGS_IV_REASON_GCHANDLE, tid);
     if (do_capture) drop_owned_panel(panel_root);
     void *panel_obj = do_capture ? panel_root.target() : nullptr;
     void *existing = panel_obj != nullptr ? field_ptr(panel_obj, g_cfg.f_panel_cptext) : nullptr;
@@ -1521,17 +1521,17 @@ bool required_index(int i) {
   return true;
 }
 
-bool validate_config(const PgrIvDisplayConfig *c, int *out_rc) {
+bool validate_config(const PgsIvDisplayConfig *c, int *out_rc) {
   if (c == nullptr) {
-    *out_rc = PGR_IV_ERR_INVALID_ARG;
+    *out_rc = PGS_IV_ERR_INVALID_ARG;
     return false;
   }
-  if (c->version != PGR_IV_CONFIG_VERSION) {
-    *out_rc = PGR_IV_ERR_BAD_VERSION;
+  if (c->version != PGS_IV_CONFIG_VERSION) {
+    *out_rc = PGS_IV_ERR_BAD_VERSION;
     return false;
   }
-  if (c->size != sizeof(PgrIvDisplayConfig)) {
-    *out_rc = PGR_IV_ERR_BAD_SIZE;
+  if (c->size != sizeof(PgsIvDisplayConfig)) {
+    *out_rc = PGS_IV_ERR_BAD_SIZE;
     return false;
   }
   void *const *ptrs = reinterpret_cast<void *const *>(&c->gchandle_new);
@@ -1539,38 +1539,38 @@ bool validate_config(const PgrIvDisplayConfig *c, int *out_rc) {
   for (int i = 0; i < 77; ++i) {
     if (ptrs[i] == nullptr) {
       if (required_index(i)) {
-        *out_rc = PGR_IV_ERR_MISSING_PTR;
+        *out_rc = PGS_IV_ERR_MISSING_PTR;
         return false;
       }
       outline_all = false;
     }
   }
   if (c->setup_address == c->owned_update_address) {
-    *out_rc = PGR_IV_ERR_DUPLICATE_TARGET;
+    *out_rc = PGS_IV_ERR_DUPLICATE_TARGET;
     return false;
   }
   if (c->external_catch_observer > 1 || c->reserved != 0) {
-    *out_rc = PGR_IV_ERR_INVALID_ARG;
+    *out_rc = PGS_IV_ERR_INVALID_ARG;
     return false;
   }
   g_outline_available = outline_all;
-  *out_rc = PGR_IV_OK;
+  *out_rc = PGS_IV_OK;
   return true;
 }
 
-int api_install(const PgrIvDisplayConfig *config) {
-  int rc = PGR_IV_OK;
+int api_install(const PgsIvDisplayConfig *config) {
+  int rc = PGS_IV_OK;
   if (!validate_config(config, &rc)) return rc;
 
   uint64_t probe = 0;
-  if (!read_boottime_ms(&probe)) return PGR_IV_ERR_CLOCK_FAILURE;
+  if (!read_boottime_ms(&probe)) return PGS_IV_ERR_CLOCK_FAILURE;
 
   std::lock_guard<std::mutex> install_lock(g_install_mutex);
 
   if (g_installed.load(std::memory_order_acquire)) {
     std::lock_guard<std::mutex> state_lock(g_state_mutex);
-    if (std::memcmp(&g_cfg, config, sizeof(*config)) != 0) return PGR_IV_ERR_RECONFIG_MISMATCH;
-    return PGR_IV_OK;
+    if (std::memcmp(&g_cfg, config, sizeof(*config)) != 0) return PGS_IV_ERR_RECONFIG_MISMATCH;
+    return PGS_IV_OK;
   }
   if (g_install_attempted) return g_install_error;
   g_install_attempted = true;
@@ -1595,7 +1595,7 @@ int api_install(const PgrIvDisplayConfig *config) {
     if (pgs_hook(config->setup_address, reinterpret_cast<void *>(&hook_setup), &orig_setup) !=
             0 ||
         orig_setup == nullptr) {
-      return g_install_error = PGR_IV_ERR_HOOK_SETUP;
+      return g_install_error = PGS_IV_ERR_HOOK_SETUP;
     }
     g_orig_setup.store(reinterpret_cast<SetupFn>(orig_setup), std::memory_order_release);
   }
@@ -1604,18 +1604,18 @@ int api_install(const PgrIvDisplayConfig *config) {
   if (pgs_hook(config->owned_update_address, reinterpret_cast<void *>(&hook_owned),
                    &orig_owned) != 0 ||
       orig_owned == nullptr) {
-    return g_install_error = PGR_IV_ERR_HOOK_OWNED;
+    return g_install_error = PGS_IV_ERR_HOOK_OWNED;
   }
   g_orig_owned.store(reinterpret_cast<OwnedFn>(orig_owned), std::memory_order_release);
 
   g_installed.store(true, std::memory_order_release);
-  return g_install_error = PGR_IV_OK;
+  return g_install_error = PGS_IV_OK;
 }
 
 // --- update / disable --------------------------------------------------------------
 int api_update(int catch_enabled, int owned_enabled, uint64_t remaining_lease_ms,
                uint64_t proven_tid) {
-  if (!g_installed.load(std::memory_order_acquire)) return PGR_IV_ERR_NOT_INSTALLED;
+  if (!g_installed.load(std::memory_order_acquire)) return PGS_IV_ERR_NOT_INSTALLED;
   uint64_t now = 0;
   const bool clock_ok = read_boottime_ms(&now);
 
@@ -1635,7 +1635,7 @@ int api_update(int catch_enabled, int owned_enabled, uint64_t remaining_lease_ms
     g_lease_until_ms = 0;
     ++g_catch_apply_gen;  // a forced disable revokes any in-flight apply
     ++g_owned_apply_gen;
-    return PGR_IV_ERR_CLOCK_FAILURE;
+    return PGS_IV_ERR_CLOCK_FAILURE;
   }
   const uint64_t clamped = remaining_lease_ms > kMaxLeaseMs ? kMaxLeaseMs : remaining_lease_ms;
   const bool allow = clamped > 0 && proven_tid != 0 && !wrong_thread;
@@ -1650,11 +1650,11 @@ int api_update(int catch_enabled, int owned_enabled, uint64_t remaining_lease_ms
   g_catch_enabled = next_catch;
   g_owned_enabled = next_owned;
   g_lease_until_ms = allow ? now + clamped : 0;
-  return wrong_thread ? PGR_IV_ERR_INVALID_ARG : PGR_IV_OK;
+  return wrong_thread ? PGS_IV_ERR_INVALID_ARG : PGS_IV_OK;
 }
 
 int api_disable(void) {
-  if (!g_installed.load(std::memory_order_acquire)) return PGR_IV_ERR_NOT_INSTALLED;
+  if (!g_installed.load(std::memory_order_acquire)) return PGS_IV_ERR_NOT_INSTALLED;
   g_stop_serial.fetch_add(1, std::memory_order_acq_rel);
   std::lock_guard<std::mutex> lock(g_state_mutex);
   g_catch_enabled = false;
@@ -1662,7 +1662,7 @@ int api_disable(void) {
   g_lease_until_ms = 0;
   ++g_catch_apply_gen;  // revoke any in-flight apply; the next owner-thread tick restores
   ++g_owned_apply_gen;
-  return PGR_IV_OK;  // never frees here; the next owner-thread tick restores
+  return PGS_IV_OK;  // never frees here; the next owner-thread tick restores
 }
 
 // --- tick --------------------------------------------------------------------------
@@ -1672,18 +1672,18 @@ int api_disable(void) {
 void relayout(Record &r, uint64_t now) {
   if (!r.panel || !r.applied || !now || now >= r.panel_until || now < r.panel_next) return;
   r.panel_next = now + 150;
-  const PgrIvPanelHooks *ph = g_panel_hooks.load(std::memory_order_acquire);
+  const PgsIvPanelHooks *ph = g_panel_hooks.load(std::memory_order_acquire);
   void *obj = r.text ? gc_get()(r.text) : nullptr;
   if (ph != nullptr && obj != nullptr) ph->show(r.owned, obj, r.level_half, r.atk, r.def, r.sta, &r.pvp);
 }
 
 int api_tick(uint64_t proven_tid, int stopping) {
-  if (!g_installed.load(std::memory_order_acquire)) return PGR_IV_ERR_NOT_INSTALLED;
+  if (!g_installed.load(std::memory_order_acquire)) return PGS_IV_ERR_NOT_INSTALLED;
   const uint64_t tid = current_tid();
   const uint64_t owner = g_owner_tid.load(std::memory_order_acquire);
-  if (owner == 0 || tid != owner || proven_tid == 0 || tid != proven_tid) return PGR_IV_OK;
+  if (owner == 0 || tid != owner || proven_tid == 0 || tid != proven_tid) return PGS_IV_OK;
   if (stopping) g_stop_serial.fetch_add(1, std::memory_order_acq_rel);
-  if (g_active_depth.load(std::memory_order_relaxed) != 0) return PGR_IV_OK;  // nested tick
+  if (g_active_depth.load(std::memory_order_relaxed) != 0) return PGS_IV_OK;  // nested tick
 
   g_active_depth.fetch_add(1, std::memory_order_relaxed);
   uint64_t now = 0;
@@ -1707,7 +1707,7 @@ int api_tick(uint64_t proven_tid, int stopping) {
       if (rc.ok && en) relayout(g_catch_rec, now);
       g_apply_scope = ApplyScope{};
       if (!rc.ok) {
-        publish_catch_unavailable(rc.reason ? rc.reason : PGR_IV_REASON_RENDER, tid);
+        publish_catch_unavailable(rc.reason ? rc.reason : PGS_IV_REASON_RENDER, tid);
         drop_catch();
       }
     }
@@ -1737,7 +1737,7 @@ int api_tick(uint64_t proven_tid, int stopping) {
     if (rc.ok && en) relayout(g_owned_recs[i], now);
     g_apply_scope = ApplyScope{};
     if (!rc.ok) {
-      publish_owned_unavailable(rc.reason ? rc.reason : PGR_IV_REASON_RENDER, tid);
+      publish_owned_unavailable(rc.reason ? rc.reason : PGS_IV_REASON_RENDER, tid);
       Record r = g_owned_recs[i];
       for (uint32_t j = i; j + 1 < g_owned_count; ++j) g_owned_recs[j] = g_owned_recs[j + 1];
       --g_owned_count;
@@ -1750,15 +1750,15 @@ int api_tick(uint64_t proven_tid, int stopping) {
 
   if (!stop && clock_ok) refresh_owned_stats(now, tid);
   g_active_depth.fetch_sub(1, std::memory_order_relaxed);
-  return PGR_IV_OK;
+  return PGS_IV_OK;
 }
 
 // --- sample ------------------------------------------------------------------------
-int api_sample(PgrIvDisplaySample *out) {
-  if (out == nullptr) return PGR_IV_ERR_INVALID_ARG;
+int api_sample(PgsIvDisplaySample *out) {
+  if (out == nullptr) return PGS_IV_ERR_INVALID_ARG;
   std::lock_guard<std::mutex> lock(g_state_mutex);
-  out->version = PGR_IV_SAMPLE_VERSION;
-  out->size = sizeof(PgrIvDisplaySample);
+  out->version = PGS_IV_SAMPLE_VERSION;
+  out->size = sizeof(PgsIvDisplaySample);
   out->catch_serial = g_catch_serial;
   out->owned_serial = g_owned_serial;
   out->position_serial = g_position_serial;
@@ -1770,7 +1770,7 @@ int api_sample(PgrIvDisplaySample *out) {
   out->owned_root_count = owned_root_count();
   out->catch_active = g_catch_present ? 1u : 0u;
   out->owned_count = g_owned_count;
-  out->fault = (g_catch_fault ? PGR_IV_FAULT_CATCH : 0) | (g_owned_fault ? PGR_IV_FAULT_OWNED : 0);
+  out->fault = (g_catch_fault ? PGS_IV_FAULT_CATCH : 0) | (g_owned_fault ? PGS_IV_FAULT_OWNED : 0);
   out->catch_notice = g_catch_notice;
   out->catch_level_half = g_catch_level_half;
   out->catch_attack = g_catch_atk;
@@ -1787,7 +1787,7 @@ int api_sample(PgrIvDisplaySample *out) {
   out->owned_reason = g_owned_reason;
   std::memcpy(out->catch_label, g_catch_label, kLabelCap);
   std::memcpy(out->owned_label, g_owned_label, kLabelCap);
-  return PGR_IV_OK;
+  return PGS_IV_OK;
 }
 
 // --- external-observer catch pass --------------------------------------------------
@@ -1811,15 +1811,15 @@ uint64_t api_begin_catch(void *self, void *map_pokemon, uint64_t proven_tid, voi
 }
 
 int api_end_catch(uint64_t token, uint64_t proven_tid) {
-  if (!g_installed.load(std::memory_order_acquire)) return PGR_IV_ERR_NOT_INSTALLED;
-  if (g_cfg.external_catch_observer == 0) return PGR_IV_ERR_INVALID_ARG;
+  if (!g_installed.load(std::memory_order_acquire)) return PGS_IV_ERR_NOT_INSTALLED;
+  if (g_cfg.external_catch_observer == 0) return PGS_IV_ERR_INVALID_ARG;
   const uint64_t tid = current_tid();
-  if (proven_tid == 0 || tid != proven_tid) return PGR_IV_ERR_INVALID_ARG;
+  if (proven_tid == 0 || tid != proven_tid) return PGS_IV_ERR_INVALID_ARG;
   return catch_end(token, tid);
 }
 
-const PgrIvDisplayApi kApiTable = {
-    PGR_IV_API_VERSION, static_cast<uint32_t>(sizeof(PgrIvDisplayApi)),
+const PgsIvDisplayApi kApiTable = {
+    PGS_IV_API_VERSION, static_cast<uint32_t>(sizeof(PgsIvDisplayApi)),
     &api_install,       &api_update,
     &api_tick,          &api_sample,
     &api_disable,       &api_begin_catch,
@@ -1828,11 +1828,11 @@ const PgrIvDisplayApi kApiTable = {
 
 }  // namespace
 
-void pgr_iv_display_set_panel_hooks(const PgrIvPanelHooks *hooks) {
+void pgs_iv_display_set_panel_hooks(const PgsIvPanelHooks *hooks) {
   g_panel_hooks.store(hooks, std::memory_order_release);
 }
 
 extern "C" const void *pgs_iv_display_api(uint32_t version) {
-  if (version != PGR_IV_API_VERSION) return nullptr;
+  if (version != PGS_IV_API_VERSION) return nullptr;
   return &kApiTable;
 }

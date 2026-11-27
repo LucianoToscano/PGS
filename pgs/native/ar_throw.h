@@ -1,6 +1,6 @@
 #pragma once
 #include <cstdint>
-#include "throws.h"   // PgrThrowValue (the verified 12-byte PokeballThrow by-value)
+#include "throws.h"   // PgsThrowValue (the verified 12-byte PokeballThrow by-value)
 
 // PGS native module: AR+ catch metadata injection (feature id 5).
 //
@@ -19,11 +19,11 @@
 // Verified game ABI of TryCapture on ARM64:
 //   managed-IPromise* TryCapture(void* self, PokeballThrow byValue,
 //                                ARPlusEncounterValuesProto* values, MethodInfo*)
-// PokeballThrow is the same packed 12-byte value modeled by PgrThrowValue in throws.h;
-// we declare the hooked function as void*(void*, PgrThrowValue, void*, void*) so the C++
+// PokeballThrow is the same packed 12-byte value modeled by PgsThrowValue in throws.h;
+// we declare the hooked function as void*(void*, PgsThrowValue, void*, void*) so the C++
 // ABI marshals it exactly as the game does. Never hand-split the value.
 
-struct PgrArThrowConfig {        // 112 bytes: 8-byte header then 13 pointers
+struct PgsArThrowConfig {        // 112 bytes: 8-byte header then 13 pointers
     uint32_t version, size;      // 0   { version==1, size==sizeof }
     void *capture_code;          // 8   hook target: TryCapture
     void *wild_class;            // 16  the wild-encounter class the self must derive from
@@ -40,16 +40,16 @@ struct PgrArThrowConfig {        // 112 bytes: 8-byte header then 13 pointers
     void *field_frightened;      // 104 FieldInfo* PokemonFrightened (bool)
 };
 
-struct PgrArThrowSample {        // 16 bytes: pull-only telemetry snapshot
+struct PgsArThrowSample {        // 16 bytes: pull-only telemetry snapshot
     uint64_t applied;            // 0  encounters this layer re-valued
     uint64_t errors;             // 8  alloc/root failures that forwarded the original args
 };
 
-struct PgrArThrowApi {           // 32 bytes: ordered, read-only table
+struct PgsArThrowApi {           // 32 bytes: ordered, read-only table
     uint32_t version, size;      // 0  { version==1, size==sizeof }
-    int (*install)(const PgrArThrowConfig *config);
+    int (*install)(const PgsArThrowConfig *config);
     int (*update)(int enabled, int allowed, uint64_t lease_ms, uint64_t unity_tid);
-    int (*sample)(PgrArThrowSample *out);
+    int (*sample)(PgsArThrowSample *out);
 };
 
 // Hidden getter. NOT exported by the version script; the coordinator registers it in the
@@ -58,8 +58,8 @@ const void *pgs_ar_throw_api(uint32_t version);
 
 // AR+ values for the next throws: proximity (meters, closer is smaller) and awareness, both
 // above zero. Called by ar_values.cpp; out-of-range values are ignored.
-void pgr_ar_throw_set_values(float proximity, float awareness);
+void pgs_ar_throw_set_values(float proximity, float awareness);
 
 // GC handle of the last AR+ throw's catch promise (IPromise<CatchPokemonOutProto>), or null. The
 // caller owns and frees the handle.
-void *pgr_ar_throw_take_promise();
+void *pgs_ar_throw_take_promise();

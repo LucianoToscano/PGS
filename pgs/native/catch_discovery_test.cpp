@@ -100,9 +100,9 @@ void *fake_invoke(const void *method, void *obj, void **args, void **exc) {
   return nullptr;
 }
 
-PgrCatchDiscoveryConfig make_config() {
-  PgrCatchDiscoveryConfig c{};
-  c.version = PGR_CD_CONFIG_VERSION;
+PgsCatchDiscoveryConfig make_config() {
+  PgsCatchDiscoveryConfig c{};
+  c.version = PGS_CD_CONFIG_VERSION;
   c.size = sizeof(c);
   c.object_get_class = reinterpret_cast<void *>(&fake_obj_class);
   c.runtime_invoke = reinterpret_cast<void *>(&fake_invoke);
@@ -144,15 +144,15 @@ void relocate(void *from, void *to) {
   for (auto &e : g_handles) if (e.second == from) e.second = to;
 }
 
-const PgrCatchDiscoveryApi *g_api = nullptr;
+const PgsCatchDiscoveryApi *g_api = nullptr;
 
 // Mint a borrowed GC handle for the layer (the host would hold this; native duplicates it). Returns the
 // handle id written into request->layer. The test frees it after the call.
 uintptr_t borrow(void *obj) { return fake_gc_new(obj, 0); }
 
-PgrCatchDiscoveryRequest make_request(uint64_t tid, uint64_t remaining, void *layer) {
-  PgrCatchDiscoveryRequest r{};
-  r.version = PGR_CD_REQUEST_VERSION;
+PgsCatchDiscoveryRequest make_request(uint64_t tid, uint64_t remaining, void *layer) {
+  PgsCatchDiscoveryRequest r{};
+  r.version = PGS_CD_REQUEST_VERSION;
   r.size = sizeof(r);
   r.tid = tid;
   r.remaining_ms = remaining;
@@ -171,56 +171,56 @@ int main(int argc, char **argv) {
   const auto *core = static_cast<const pgs_native_api_v2 *>(getter(2));
   assert(core && core->size == 48);
   assert(core->query_feature(40, 99) == nullptr);
-  const auto *api = static_cast<const PgrCatchDiscoveryApi *>(core->query_feature(40, 1));
-  assert(api && api->version == 1 && api->size == sizeof(PgrCatchDiscoveryApi));
+  const auto *api = static_cast<const PgsCatchDiscoveryApi *>(core->query_feature(40, 1));
+  assert(api && api->version == 1 && api->size == sizeof(PgsCatchDiscoveryApi));
   g_api = api;
 
   // 0. ABI layout: fixed config/request/output/table sizes and field offsets.
   std::printf("ABI sizes: config=%zu request=%zu output=%zu table=%zu\n",
-              sizeof(PgrCatchDiscoveryConfig), sizeof(PgrCatchDiscoveryRequest),
-              sizeof(PgrCatchDiscoveryOutput), sizeof(PgrCatchDiscoveryApi));
-  assert(sizeof(PgrCatchDiscoveryConfig) == 104 && sizeof(PgrCatchDiscoveryRequest) == 32 &&
-         sizeof(PgrCatchDiscoveryOutput) == 144 && sizeof(PgrCatchDiscoveryApi) == 40);
-  assert(offsetof(PgrCatchDiscoveryConfig, m_find) == 96);
-  assert(offsetof(PgrCatchDiscoveryRequest, tid) == 8 && offsetof(PgrCatchDiscoveryRequest, remaining_ms) == 16 &&
-         offsetof(PgrCatchDiscoveryRequest, layer) == 24);
-  assert(offsetof(PgrCatchDiscoveryOutput, count) == 8 && offsetof(PgrCatchDiscoveryOutput, handles) == 16);
-  assert(PGR_CD_CONFIG_VERSION == 1 && PGR_CD_MAX_CANDIDATES == 16);
+              sizeof(PgsCatchDiscoveryConfig), sizeof(PgsCatchDiscoveryRequest),
+              sizeof(PgsCatchDiscoveryOutput), sizeof(PgsCatchDiscoveryApi));
+  assert(sizeof(PgsCatchDiscoveryConfig) == 104 && sizeof(PgsCatchDiscoveryRequest) == 32 &&
+         sizeof(PgsCatchDiscoveryOutput) == 144 && sizeof(PgsCatchDiscoveryApi) == 40);
+  assert(offsetof(PgsCatchDiscoveryConfig, m_find) == 96);
+  assert(offsetof(PgsCatchDiscoveryRequest, tid) == 8 && offsetof(PgsCatchDiscoveryRequest, remaining_ms) == 16 &&
+         offsetof(PgsCatchDiscoveryRequest, layer) == 24);
+  assert(offsetof(PgsCatchDiscoveryOutput, count) == 8 && offsetof(PgsCatchDiscoveryOutput, handles) == 16);
+  assert(PGS_CD_CONFIG_VERSION == 1 && PGS_CD_MAX_CANDIDATES == 16);
 
   const uint64_t tid = this_tid();
-  PgrCatchDiscoveryConfig cfg = make_config();
-  PgrCatchDiscoveryOutput out{};
+  PgsCatchDiscoveryConfig cfg = make_config();
+  PgsCatchDiscoveryOutput out{};
 
   // 1. install validation + not-installed + idempotence + reconfig.
-  assert(api->install(nullptr) == PGR_CD_ERR_NULL_ARG);
-  { PgrCatchDiscoveryConfig b = cfg; b.version = 2; assert(api->install(&b) == PGR_CD_ERR_BAD_VERSION); }
-  { PgrCatchDiscoveryConfig b = cfg; b.size = sizeof(cfg) - 1; assert(api->install(&b) == PGR_CD_ERR_BAD_SIZE); }
-  { PgrCatchDiscoveryConfig b = cfg; b.m_find = nullptr; assert(api->install(&b) == PGR_CD_ERR_MISSING_PTR); }
-  { PgrCatchDiscoveryConfig b = cfg; b.object_get_class = nullptr; assert(api->install(&b) == PGR_CD_ERR_MISSING_PTR); }
-  { PgrCatchDiscoveryConfig b = cfg; b.class_layer = nullptr; assert(api->install(&b) == PGR_CD_ERR_MISSING_PTR); }
+  assert(api->install(nullptr) == PGS_CD_ERR_NULL_ARG);
+  { PgsCatchDiscoveryConfig b = cfg; b.version = 2; assert(api->install(&b) == PGS_CD_ERR_BAD_VERSION); }
+  { PgsCatchDiscoveryConfig b = cfg; b.size = sizeof(cfg) - 1; assert(api->install(&b) == PGS_CD_ERR_BAD_SIZE); }
+  { PgsCatchDiscoveryConfig b = cfg; b.m_find = nullptr; assert(api->install(&b) == PGS_CD_ERR_MISSING_PTR); }
+  { PgsCatchDiscoveryConfig b = cfg; b.object_get_class = nullptr; assert(api->install(&b) == PGS_CD_ERR_MISSING_PTR); }
+  { PgsCatchDiscoveryConfig b = cfg; b.class_layer = nullptr; assert(api->install(&b) == PGS_CD_ERR_MISSING_PTR); }
   {
-    PgrCatchDiscoveryRequest r = make_request(tid, 2000, reinterpret_cast<void *>(0x1));
-    assert(api->top(&r, &out) == PGR_CD_ERR_NOT_INSTALLED);
+    PgsCatchDiscoveryRequest r = make_request(tid, 2000, reinterpret_cast<void *>(0x1));
+    assert(api->top(&r, &out) == PGS_CD_ERR_NOT_INSTALLED);
     assert(out.version == 1 && out.size == sizeof(out) && out.count == 0 && out.handles[0] == nullptr);
-    assert(api->scene(&r, &out) == PGR_CD_ERR_NOT_INSTALLED);
+    assert(api->scene(&r, &out) == PGS_CD_ERR_NOT_INSTALLED);
   }
   assert(api->install(&cfg) == 0);
   assert(api->install(&cfg) == 0);  // idempotent
-  { PgrCatchDiscoveryConfig b = cfg; b.class_layer = &cls_details; assert(api->install(&b) == PGR_CD_ERR_RECONFIG); }
+  { PgsCatchDiscoveryConfig b = cfg; b.class_layer = &cls_details; assert(api->install(&b) == PGS_CD_ERR_RECONFIG); }
 
   // 2. Owner / lease gate: no managed work, output initialised, no handles. (A failed owner check never
   // latches; a closed-lease call with the real tid DOES latch the owner to this thread.)
   reset();
   {
-    PgrCatchDiscoveryRequest bad = make_request(tid + 7, 2000, reinterpret_cast<void *>(0x1));
-    assert(api->top(&bad, &out) == PGR_CD_SKIP && g_invokes == 0);
-    PgrCatchDiscoveryRequest zero = make_request(0, 2000, reinterpret_cast<void *>(0x1));
-    assert(api->top(&zero, &out) == PGR_CD_SKIP && g_invokes == 0);
-    PgrCatchDiscoveryRequest closed = make_request(tid, 0, reinterpret_cast<void *>(0x1));
-    assert(api->top(&closed, &out) == PGR_CD_SKIP && g_invokes == 0);        // latches owner, lease closed
-    assert(api->scene(&closed, &out) == PGR_CD_SKIP && g_invokes == 0);
-    assert(api->top(nullptr, &out) == PGR_CD_ERR_NULL_ARG);
-    assert(api->top(&closed, nullptr) == PGR_CD_ERR_NULL_ARG);
+    PgsCatchDiscoveryRequest bad = make_request(tid + 7, 2000, reinterpret_cast<void *>(0x1));
+    assert(api->top(&bad, &out) == PGS_CD_SKIP && g_invokes == 0);
+    PgsCatchDiscoveryRequest zero = make_request(0, 2000, reinterpret_cast<void *>(0x1));
+    assert(api->top(&zero, &out) == PGS_CD_SKIP && g_invokes == 0);
+    PgsCatchDiscoveryRequest closed = make_request(tid, 0, reinterpret_cast<void *>(0x1));
+    assert(api->top(&closed, &out) == PGS_CD_SKIP && g_invokes == 0);        // latches owner, lease closed
+    assert(api->scene(&closed, &out) == PGS_CD_SKIP && g_invokes == 0);
+    assert(api->top(nullptr, &out) == PGS_CD_ERR_NULL_ARG);
+    assert(api->top(&closed, nullptr) == PGS_CD_ERR_NULL_ARG);
     assert(g_handles.empty());
   }
 
@@ -228,14 +228,14 @@ int main(int argc, char **argv) {
   reset();
   {
     uintptr_t layer = borrow(&g_layer);
-    PgrCatchDiscoveryRequest r = make_request(tid, 2000, reinterpret_cast<void *>(layer));
-    assert(api->top(&r, &out) == PGR_CD_OK);
+    PgsCatchDiscoveryRequest r = make_request(tid, 2000, reinterpret_cast<void *>(layer));
+    assert(api->top(&r, &out) == PGS_CD_OK);
     assert(out.count == 1 && out.handles[0] != nullptr && out.version == 1 && out.size == sizeof(out));
     assert(fake_gc_get(reinterpret_cast<uintptr_t>(out.handles[0])) == &g_details);
     assert(g_handles.size() == 2);  // the borrowed layer + the one transferred candidate
-    assert(api->release(&out) == PGR_CD_OK);
+    assert(api->release(&out) == PGS_CD_OK);
     assert(out.count == 0 && out.handles[0] == nullptr);
-    assert(api->release(&out) == PGR_CD_OK);  // release is repeat-safe
+    assert(api->release(&out) == PGS_CD_OK);  // release is repeat-safe
     fake_gc_free(layer);
     assert(g_handles.empty());
   }
@@ -245,8 +245,8 @@ int main(int argc, char **argv) {
     reset();
     g_ret_top = which == 0 ? nullptr : static_cast<void *>(&g_nonDetails);
     uintptr_t layer = borrow(&g_layer);
-    PgrCatchDiscoveryRequest r = make_request(tid, 2000, reinterpret_cast<void *>(layer));
-    assert(api->top(&r, &out) == PGR_CD_SKIP && out.count == 0 && out.handles[0] == nullptr);
+    PgsCatchDiscoveryRequest r = make_request(tid, 2000, reinterpret_cast<void *>(layer));
+    assert(api->top(&r, &out) == PGS_CD_SKIP && out.count == 0 && out.handles[0] == nullptr);
     fake_gc_free(layer);
     assert(g_handles.empty());
   }
@@ -255,8 +255,8 @@ int main(int argc, char **argv) {
   reset();
   {
     uintptr_t layer = borrow(&g_badLayer);
-    PgrCatchDiscoveryRequest r = make_request(tid, 2000, reinterpret_cast<void *>(layer));
-    assert(api->top(&r, &out) == PGR_CD_ERR_METADATA && g_invokes == 0 && out.count == 0);
+    PgsCatchDiscoveryRequest r = make_request(tid, 2000, reinterpret_cast<void *>(layer));
+    assert(api->top(&r, &out) == PGS_CD_ERR_METADATA && g_invokes == 0 && out.count == 0);
     fake_gc_free(layer);
     assert(g_handles.empty());
   }
@@ -264,8 +264,8 @@ int main(int argc, char **argv) {
   // top: null layer argument -> NULL_ARG (top requires the borrowed layer handle).
   reset();
   {
-    PgrCatchDiscoveryRequest r = make_request(tid, 2000, nullptr);
-    assert(api->top(&r, &out) == PGR_CD_ERR_NULL_ARG && out.count == 0);
+    PgsCatchDiscoveryRequest r = make_request(tid, 2000, nullptr);
+    assert(api->top(&r, &out) == PGS_CD_ERR_NULL_ARG && out.count == 0);
     assert(g_handles.empty());
   }
 
@@ -274,8 +274,8 @@ int main(int argc, char **argv) {
   {
     g_throw_method = &m_top;
     uintptr_t layer = borrow(&g_layer);
-    PgrCatchDiscoveryRequest r = make_request(tid, 2000, reinterpret_cast<void *>(layer));
-    assert(api->top(&r, &out) == PGR_CD_ERR_MANAGED && out.count == 0 && out.handles[0] == nullptr);
+    PgsCatchDiscoveryRequest r = make_request(tid, 2000, reinterpret_cast<void *>(layer));
+    assert(api->top(&r, &out) == PGS_CD_ERR_MANAGED && out.count == 0 && out.handles[0] == nullptr);
     fake_gc_free(layer);
     assert(g_handles.empty());
   }
@@ -285,8 +285,8 @@ int main(int argc, char **argv) {
   {
     uintptr_t layer = borrow(&g_layer);
     g_gcnew_fail = g_gcnew_calls + 1;  // next gchandle_new (the layer duplicate) fails
-    PgrCatchDiscoveryRequest r = make_request(tid, 2000, reinterpret_cast<void *>(layer));
-    assert(api->top(&r, &out) == PGR_CD_ERR_GCHANDLE && out.count == 0);
+    PgsCatchDiscoveryRequest r = make_request(tid, 2000, reinterpret_cast<void *>(layer));
+    assert(api->top(&r, &out) == PGS_CD_ERR_GCHANDLE && out.count == 0);
     g_gcnew_fail = 0;
     fake_gc_free(layer);
     assert(g_handles.empty());
@@ -295,13 +295,13 @@ int main(int argc, char **argv) {
   // 4. scene: valid array of 3 Details -> three owned handles in order.
   reset();
   {
-    PgrCatchDiscoveryRequest r = make_request(tid, 2000, nullptr);  // scene ignores layer
-    assert(api->scene(&r, &out) == PGR_CD_OK && out.count == 3);
+    PgsCatchDiscoveryRequest r = make_request(tid, 2000, nullptr);  // scene ignores layer
+    assert(api->scene(&r, &out) == PGS_CD_OK && out.count == 3);
     assert(fake_gc_get(reinterpret_cast<uintptr_t>(out.handles[0])) == &g_d0 &&
            fake_gc_get(reinterpret_cast<uintptr_t>(out.handles[1])) == &g_d1 &&
            fake_gc_get(reinterpret_cast<uintptr_t>(out.handles[2])) == &g_d2);
     assert(g_handles.size() == 3);
-    assert(api->release(&out) == PGR_CD_OK && out.count == 0);
+    assert(api->release(&out) == PGS_CD_OK && out.count == 0);
     assert(g_handles.empty());
   }
 
@@ -309,14 +309,14 @@ int main(int argc, char **argv) {
   reset();
   {
     g_ret_array = nullptr;
-    PgrCatchDiscoveryRequest r = make_request(tid, 2000, nullptr);
-    assert(api->scene(&r, &out) == PGR_CD_SKIP && out.count == 0 && g_handles.empty());
+    PgsCatchDiscoveryRequest r = make_request(tid, 2000, nullptr);
+    assert(api->scene(&r, &out) == PGS_CD_SKIP && out.count == 0 && g_handles.empty());
   }
   reset();
   {
     g_array.length = 0;
-    PgrCatchDiscoveryRequest r = make_request(tid, 2000, nullptr);
-    assert(api->scene(&r, &out) == PGR_CD_OK && out.count == 0 && out.handles[0] == nullptr);
+    PgsCatchDiscoveryRequest r = make_request(tid, 2000, nullptr);
+    assert(api->scene(&r, &out) == PGS_CD_OK && out.count == 0 && out.handles[0] == nullptr);
     assert(g_handles.empty());  // nothing transferred
   }
 
@@ -324,10 +324,10 @@ int main(int argc, char **argv) {
   reset();
   {
     g_array.length = 1;
-    PgrCatchDiscoveryRequest r = make_request(tid, 2000, nullptr);
-    assert(api->scene(&r, &out) == PGR_CD_OK && out.count == 1);
+    PgsCatchDiscoveryRequest r = make_request(tid, 2000, nullptr);
+    assert(api->scene(&r, &out) == PGS_CD_OK && out.count == 1);
     assert(fake_gc_get(reinterpret_cast<uintptr_t>(out.handles[0])) == &g_d0);
-    assert(api->release(&out) == PGR_CD_OK);
+    assert(api->release(&out) == PGS_CD_OK);
     assert(g_handles.empty());
   }
   reset();
@@ -335,38 +335,38 @@ int main(int argc, char **argv) {
     static FakeObj full[16];
     for (int i = 0; i < 16; ++i) { full[i].klass = &cls_details; g_array.data[i] = &full[i]; }
     g_array.length = 16;
-    PgrCatchDiscoveryRequest r = make_request(tid, 2000, nullptr);
-    assert(api->scene(&r, &out) == PGR_CD_OK && out.count == 16);
+    PgsCatchDiscoveryRequest r = make_request(tid, 2000, nullptr);
+    assert(api->scene(&r, &out) == PGS_CD_OK && out.count == 16);
     for (int i = 0; i < 16; ++i) assert(fake_gc_get(reinterpret_cast<uintptr_t>(out.handles[i])) == &full[i]);
     assert(g_handles.size() == 16);
-    assert(api->release(&out) == PGR_CD_OK && g_handles.empty());
+    assert(api->release(&out) == PGS_CD_OK && g_handles.empty());
   }
 
   // scene: 17 elements -> rejected (never truncated).
   reset();
   {
-    g_array.length = PGR_CD_MAX_CANDIDATES + 1;
-    PgrCatchDiscoveryRequest r = make_request(tid, 2000, nullptr);
-    assert(api->scene(&r, &out) == PGR_CD_ERR_BAD_COUNT && out.count == 0 && g_handles.empty());
+    g_array.length = PGS_CD_MAX_CANDIDATES + 1;
+    PgsCatchDiscoveryRequest r = make_request(tid, 2000, nullptr);
+    assert(api->scene(&r, &out) == PGS_CD_ERR_BAD_COUNT && out.count == 0 && g_handles.empty());
   }
 
   // scene: null elements are skipped (not counted); remaining Details are packed contiguously.
   reset();
   {
     g_array.data[1] = nullptr;  // middle slot null
-    PgrCatchDiscoveryRequest r = make_request(tid, 2000, nullptr);
-    assert(api->scene(&r, &out) == PGR_CD_OK && out.count == 2);
+    PgsCatchDiscoveryRequest r = make_request(tid, 2000, nullptr);
+    assert(api->scene(&r, &out) == PGS_CD_OK && out.count == 2);
     assert(fake_gc_get(reinterpret_cast<uintptr_t>(out.handles[0])) == &g_d0 &&
            fake_gc_get(reinterpret_cast<uintptr_t>(out.handles[1])) == &g_d2);
-    assert(api->release(&out) == PGR_CD_OK && g_handles.empty());
+    assert(api->release(&out) == PGS_CD_OK && g_handles.empty());
   }
 
   // scene: a nonnull wrong-class element (from a typed query) is a metadata fault; all roots released.
   reset();
   {
     g_d1.klass = &cls_other;
-    PgrCatchDiscoveryRequest r = make_request(tid, 2000, nullptr);
-    assert(api->scene(&r, &out) == PGR_CD_ERR_METADATA && out.count == 0 && g_handles.empty());
+    PgsCatchDiscoveryRequest r = make_request(tid, 2000, nullptr);
+    assert(api->scene(&r, &out) == PGS_CD_ERR_METADATA && out.count == 0 && g_handles.empty());
   }
 
   // scene: wrong array object class is irrelevant to the walk, but the element scan still proves Details;
@@ -374,8 +374,8 @@ int main(int argc, char **argv) {
   reset();
   {
     g_throw_method = &m_find;
-    PgrCatchDiscoveryRequest r = make_request(tid, 2000, nullptr);
-    assert(api->scene(&r, &out) == PGR_CD_ERR_MANAGED && out.count == 0 && g_handles.empty());
+    PgsCatchDiscoveryRequest r = make_request(tid, 2000, nullptr);
+    assert(api->scene(&r, &out) == PGS_CD_ERR_MANAGED && out.count == 0 && g_handles.empty());
   }
 
   // 5. relocation inside array_length: element reads use the re-resolved array base.
@@ -387,10 +387,10 @@ int main(int argc, char **argv) {
       g_array.klass = &cls_other;
       g_array.data[0] = reinterpret_cast<void *>(0xdeadbeef);  // poison the stale slot
     };
-    PgrCatchDiscoveryRequest r = make_request(tid, 2000, nullptr);
-    assert(api->scene(&r, &out) == PGR_CD_OK && out.count == 3);
+    PgsCatchDiscoveryRequest r = make_request(tid, 2000, nullptr);
+    assert(api->scene(&r, &out) == PGS_CD_OK && out.count == 3);
     assert(fake_gc_get(reinterpret_cast<uintptr_t>(out.handles[0])) == &g_d0);  // from relocated array
-    assert(api->release(&out) == PGR_CD_OK && g_handles.empty());
+    assert(api->release(&out) == PGS_CD_OK && g_handles.empty());
   }
 
   // 6. gchandle_new failure at each scene allocation (type root then the three candidate roots) ->
@@ -398,10 +398,10 @@ int main(int argc, char **argv) {
   for (int n = 1; n <= 8; ++n) {
     reset();
     g_gcnew_fail = n;
-    PgrCatchDiscoveryRequest r = make_request(tid, 2000, nullptr);
+    PgsCatchDiscoveryRequest r = make_request(tid, 2000, nullptr);
     int rc = api->scene(&r, &out);
     if (n <= g_gcnew_calls) { assert(rc < 0); assert(out.count == 0); }
-    else { assert(rc == PGR_CD_OK); assert(api->release(&out) == PGR_CD_OK); }
+    else { assert(rc == PGS_CD_OK); assert(api->release(&out) == PGS_CD_OK); }
     assert(g_handles.empty());
   }
 
@@ -409,8 +409,8 @@ int main(int argc, char **argv) {
   reset();
   {
     g_oneshot_arrlen = []() { ::usleep(4000); };  // blow past the 1 ms lease before publication
-    PgrCatchDiscoveryRequest r = make_request(tid, 1, nullptr);
-    assert(api->scene(&r, &out) == PGR_CD_SKIP && out.count == 0 && g_handles.empty());
+    PgsCatchDiscoveryRequest r = make_request(tid, 1, nullptr);
+    assert(api->scene(&r, &out) == PGS_CD_SKIP && out.count == 0 && g_handles.empty());
   }
 
   // 8. reentrancy: a nested discovery call fired inside TopGui is refused busy; the outer still succeeds.
@@ -419,14 +419,14 @@ int main(int argc, char **argv) {
     int nested = 99;
     g_oneshot_on = &m_top;
     g_oneshot = [&]() {
-      PgrCatchDiscoveryOutput inner{};
-      PgrCatchDiscoveryRequest ri = make_request(this_tid(), 2000, nullptr);
+      PgsCatchDiscoveryOutput inner{};
+      PgsCatchDiscoveryRequest ri = make_request(this_tid(), 2000, nullptr);
       nested = g_api->scene(&ri, &inner);
     };
     uintptr_t layer = borrow(&g_layer);
-    PgrCatchDiscoveryRequest r = make_request(tid, 2000, reinterpret_cast<void *>(layer));
-    assert(api->top(&r, &out) == PGR_CD_OK && nested == PGR_CD_ERR_BUSY);
-    assert(api->release(&out) == PGR_CD_OK);
+    PgsCatchDiscoveryRequest r = make_request(tid, 2000, reinterpret_cast<void *>(layer));
+    assert(api->top(&r, &out) == PGS_CD_OK && nested == PGS_CD_ERR_BUSY);
+    assert(api->release(&out) == PGS_CD_OK);
     fake_gc_free(layer);
     assert(g_handles.empty());
   }
@@ -436,12 +436,12 @@ int main(int argc, char **argv) {
   {
     int worker_rc = 123;
     std::thread worker([&]() {
-      PgrCatchDiscoveryOutput wout{};
-      PgrCatchDiscoveryRequest wr = make_request(this_tid(), 2000, nullptr);
+      PgsCatchDiscoveryOutput wout{};
+      PgsCatchDiscoveryRequest wr = make_request(this_tid(), 2000, nullptr);
       worker_rc = g_api->scene(&wr, &wout);
     });
     worker.join();
-    assert(worker_rc == PGR_CD_SKIP && g_handles.empty());  // owner mismatch -> benign refuse
+    assert(worker_rc == PGS_CD_SKIP && g_handles.empty());  // owner mismatch -> benign refuse
   }
 
   puts("PASS catch discovery: ABI (config 104 / request 32 / output 144 / table 40) + offsets, "

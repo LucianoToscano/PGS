@@ -58,7 +58,7 @@ array from a shared byte fingerprint. Cycles, missing references, invalid values
 and conflicting generated names are rejected.
 
 Keep keys stable when the game's obfuscated names change. Change the `value`, not
-the key used by feature code. Search for the generated `PGR_GAME_...` symbol to
+the key used by feature code. Search for the generated `PGS_GAME_...` symbol to
 find its consumers. When adding a binding, add a descriptive entry and reference
 its generated symbol in source; keep timers, distances and user settings out of
 the profile. Do not mechanically alias unrelated methods just because their

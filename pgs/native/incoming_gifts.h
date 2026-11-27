@@ -72,67 +72,67 @@ extern "C" {
 
 static_assert(sizeof(void *) == 8, "IncomingGifts native ABI requires LP64");
 
-enum PgrIncomingGiftsInfo {
-  PGR_GIFT_FEATURE_ID = 17,
-  PGR_GIFT_API_VERSION = 1,
-  PGR_GIFT_CONFIG_VERSION = 1,
-  PGR_GIFT_SAMPLE_VERSION = 1,
-  PGR_GIFT_EVENT_VERSION = 1,
-  PGR_GIFT_MAX_LEASE_MS = 2500,  // residual foreground lease ceiling
-  PGR_GIFT_DEADLINE_MS = 30000,  // per-open-lifecycle deadline (JS incomingGift.deadline)
-  PGR_GIFT_THROTTLE_MS = 100,    // attempt throttle (JS incomingGift.next)
-  PGR_GIFT_EVENT_CAP = 32,       // bounded FIFO depth; overflow fails closed
-  PGR_GIFT_SENDER_MIN = 1,       // valid sender string length window (JS giftText)
-  PGR_GIFT_SENDER_MAX = 256,
-  PGR_GIFT_STATE_SKIP = 3        // value written to the sequence state to skip the animation
+enum PgsIncomingGiftsInfo {
+  PGS_GIFT_FEATURE_ID = 17,
+  PGS_GIFT_API_VERSION = 1,
+  PGS_GIFT_CONFIG_VERSION = 1,
+  PGS_GIFT_SAMPLE_VERSION = 1,
+  PGS_GIFT_EVENT_VERSION = 1,
+  PGS_GIFT_MAX_LEASE_MS = 2500,  // residual foreground lease ceiling
+  PGS_GIFT_DEADLINE_MS = 30000,  // per-open-lifecycle deadline (JS incomingGift.deadline)
+  PGS_GIFT_THROTTLE_MS = 100,    // attempt throttle (JS incomingGift.next)
+  PGS_GIFT_EVENT_CAP = 32,       // bounded FIFO depth; overflow fails closed
+  PGS_GIFT_SENDER_MIN = 1,       // valid sender string length window (JS giftText)
+  PGS_GIFT_SENDER_MAX = 256,
+  PGS_GIFT_STATE_SKIP = 3        // value written to the sequence state to skip the animation
 };
 
 // install()/update()/observe()/tick()/sample()/drain()/is_open() status codes.
-enum PgrIncomingGiftsStatus {
-  PGR_GIFT_OK = 0,
-  PGR_GIFT_ERR_INVALID_ARG = -1,
-  PGR_GIFT_ERR_BAD_VERSION = -2,
-  PGR_GIFT_ERR_BAD_SIZE = -3,
-  PGR_GIFT_ERR_MISSING_PTR = -4,
-  PGR_GIFT_ERR_NOT_INSTALLED = -6,
-  PGR_GIFT_ERR_RECONFIG_MISMATCH = -9,
-  PGR_GIFT_ERR_CLOCK_FAILURE = -10
+enum PgsIncomingGiftsStatus {
+  PGS_GIFT_OK = 0,
+  PGS_GIFT_ERR_INVALID_ARG = -1,
+  PGS_GIFT_ERR_BAD_VERSION = -2,
+  PGS_GIFT_ERR_BAD_SIZE = -3,
+  PGS_GIFT_ERR_MISSING_PTR = -4,
+  PGS_GIFT_ERR_NOT_INSTALLED = -6,
+  PGS_GIFT_ERR_RECONFIG_MISMATCH = -9,
+  PGS_GIFT_ERR_CLOCK_FAILURE = -10
 };
 
 // observe() kinds.
-enum PgrIncomingGiftsObserve {
-  PGR_GIFT_OBSERVE_READY = 1,
-  PGR_GIFT_OBSERVE_OPEN = 2,
-  PGR_GIFT_OBSERVE_CLOSE = 3,
-  PGR_GIFT_OBSERVE_SEQUENCE = 4
+enum PgsIncomingGiftsObserve {
+  PGS_GIFT_OBSERVE_READY = 1,
+  PGS_GIFT_OBSERVE_OPEN = 2,
+  PGS_GIFT_OBSERVE_CLOSE = 3,
+  PGS_GIFT_OBSERVE_SEQUENCE = 4
 };
 
 // drain() event record kind. DIALOG (the READY arrival) is surfaced only as a serial in the
 // sample, because the JS gift-dialog event also carries bundled profile state; the adapter emits
 // it directly from ready(). The FIFO carries the reason-coded events the inline block emitted.
-enum PgrIncomingGiftsEventKind {
-  PGR_GIFT_EVENT_WAIT = 1,    // -> gift-wait {reason, mask}
-  PGR_GIFT_EVENT_ISSUED = 2,  // -> onIssued() + gift-status 'Opening gift'
-  PGR_GIFT_EVENT_ERROR = 3,   // -> gift-error {reason}
-  PGR_GIFT_EVENT_SKIP = 4     // -> gift-presentation-skipped {kindOfGift:'received'}
+enum PgsIncomingGiftsEventKind {
+  PGS_GIFT_EVENT_WAIT = 1,    // -> gift-wait {reason, mask}
+  PGS_GIFT_EVENT_ISSUED = 2,  // -> onIssued() + gift-status 'Opening gift'
+  PGS_GIFT_EVENT_ERROR = 3,   // -> gift-error {reason}
+  PGS_GIFT_EVENT_SKIP = 4     // -> gift-presentation-skipped {kindOfGift:'received'}
 };
 
-// Wait reasons (PGR_GIFT_EVENT_WAIT.reason), mapped back to the exact JS strings by the adapter.
-enum PgrIncomingGiftsWait {
-  PGR_GIFT_WAIT_NONE = 0,
-  PGR_GIFT_WAIT_AUTO_OFF = 1,     // 'Auto open is off'
-  PGR_GIFT_WAIT_FOREGROUND = 2,   // 'Waiting for foreground readiness'
-  PGR_GIFT_WAIT_OPENING = 3,      // 'Waiting for dialog to finish opening'
-  PGR_GIFT_WAIT_DETAILS = 4,      // 'Waiting for incoming gift details'
-  PGR_GIFT_WAIT_BUTTON = 5        // 'Waiting for Open button'
+// Wait reasons (PGS_GIFT_EVENT_WAIT.reason), mapped back to the exact JS strings by the adapter.
+enum PgsIncomingGiftsWait {
+  PGS_GIFT_WAIT_NONE = 0,
+  PGS_GIFT_WAIT_AUTO_OFF = 1,     // 'Auto open is off'
+  PGS_GIFT_WAIT_FOREGROUND = 2,   // 'Waiting for foreground readiness'
+  PGS_GIFT_WAIT_OPENING = 3,      // 'Waiting for dialog to finish opening'
+  PGS_GIFT_WAIT_DETAILS = 4,      // 'Waiting for incoming gift details'
+  PGS_GIFT_WAIT_BUTTON = 5        // 'Waiting for Open button'
 };
 
-// Error reasons (PGR_GIFT_EVENT_ERROR.reason).
-enum PgrIncomingGiftsError {
-  PGR_GIFT_ERR_REASON_NONE = 0,
-  PGR_GIFT_ERR_REASON_INVOKE = 1,    // the OnOpenClick invoke threw
-  PGR_GIFT_ERR_REASON_GCHANDLE = 2,  // a GC root could not be allocated
-  PGR_GIFT_ERR_REASON_OVERFLOW = 3   // the FIFO overflowed (fail-closed)
+// Error reasons (PGS_GIFT_EVENT_ERROR.reason).
+enum PgsIncomingGiftsError {
+  PGS_GIFT_ERR_REASON_NONE = 0,
+  PGS_GIFT_ERR_REASON_INVOKE = 1,    // the OnOpenClick invoke threw
+  PGS_GIFT_ERR_REASON_GCHANDLE = 2,  // a GC root could not be allocated
+  PGS_GIFT_ERR_REASON_OVERFLOW = 3   // the FIFO overflowed (fail-closed)
 };
 
 // Fixed LP64 config: 8-byte header + 28 pointers (224) + two int32 enum literals (8) = 240.
@@ -140,9 +140,9 @@ enum PgrIncomingGiftsError {
 // il2cpp export, MethodInfo*, Il2CppClass* or FieldInfo*. The native layer re-checks the header
 // and rejects any null pointer (all 28 are required). No hook address is carried -- this module
 // installs nothing.
-struct PgrIncomingGiftsConfig {
-  uint32_t version;  // == PGR_GIFT_CONFIG_VERSION
-  uint32_t size;     // == sizeof(PgrIncomingGiftsConfig)
+struct PgsIncomingGiftsConfig {
+  uint32_t version;  // == PGS_GIFT_CONFIG_VERSION
+  uint32_t size;     // == sizeof(PgsIncomingGiftsConfig)
 
   // il2cpp runtime exports (indices 0..9 in the adapter's flat array).
   void *gchandle_new;        // void* (void* obj, int pinned)
@@ -185,13 +185,13 @@ struct PgrIncomingGiftsConfig {
   int32_t open_success;  // gifts.openSuccess (OpenGiftOutProto.Result Success literal)
 };
 
-static_assert(sizeof(PgrIncomingGiftsConfig) == 240,
-              "PgrIncomingGiftsConfig must remain 240 bytes on LP64");
+static_assert(sizeof(PgsIncomingGiftsConfig) == 240,
+              "PgsIncomingGiftsConfig must remain 240 bytes on LP64");
 
 // Fixed LP64 telemetry gauge (88 bytes). Pull-only; the native layer never calls JS.
-struct PgrIncomingGiftsSample {
-  uint32_t version;          // == PGR_GIFT_SAMPLE_VERSION
-  uint32_t size;             // == sizeof(PgrIncomingGiftsSample)
+struct PgsIncomingGiftsSample {
+  uint32_t version;          // == PGS_GIFT_SAMPLE_VERSION
+  uint32_t size;             // == sizeof(PgsIncomingGiftsSample)
   uint64_t issued_serial;    // bumps on each auto-issued open
   uint64_t wait_serial;      // bumps on each wait-reason change
   uint64_t error_serial;     // bumps on each error
@@ -204,29 +204,29 @@ struct PgrIncomingGiftsSample {
   uint32_t automated;        // 1 when WE issued the open (sequence skip eligible)
   uint32_t fault;            // 1 once latched (FIFO overflow)
   uint32_t overflow;         // 1 if the FIFO ever overflowed
-  uint32_t last_wait_reason; // PgrIncomingGiftsWait of the latest wait
+  uint32_t last_wait_reason; // PgsIncomingGiftsWait of the latest wait
   uint32_t pending_events;   // records currently queued in the FIFO
 };
 
-static_assert(sizeof(PgrIncomingGiftsSample) == 88,
-              "PgrIncomingGiftsSample must remain 88 bytes on LP64");
+static_assert(sizeof(PgsIncomingGiftsSample) == 88,
+              "PgsIncomingGiftsSample must remain 88 bytes on LP64");
 
-// Fixed LP64 drain record (16 bytes). reason is a code (PgrIncomingGiftsWait /
-// PgrIncomingGiftsError); it is NEVER a sender string or friend id.
-struct PgrIncomingGiftsEvent {
-  uint32_t kind;    // PgrIncomingGiftsEventKind
+// Fixed LP64 drain record (16 bytes). reason is a code (PgsIncomingGiftsWait /
+// PgsIncomingGiftsError); it is NEVER a sender string or friend id.
+struct PgsIncomingGiftsEvent {
+  uint32_t kind;    // PgsIncomingGiftsEventKind
   uint32_t reason;  // wait/error reason code (0 for ISSUED/SKIP)
   uint64_t tid;     // owner tid that produced the record
 };
 
-static_assert(sizeof(PgrIncomingGiftsEvent) == 16,
-              "PgrIncomingGiftsEvent must remain 16 bytes on LP64");
+static_assert(sizeof(PgsIncomingGiftsEvent) == 16,
+              "PgsIncomingGiftsEvent must remain 16 bytes on LP64");
 
 // Fixed LP64 table: 8-byte header + 7 function pointers = 64 bytes.
-struct PgrIncomingGiftsApi {
-  uint32_t version;  // == PGR_GIFT_API_VERSION
-  uint32_t size;     // == sizeof(PgrIncomingGiftsApi)
-  int (*install)(const PgrIncomingGiftsConfig *config);
+struct PgsIncomingGiftsApi {
+  uint32_t version;  // == PGS_GIFT_API_VERSION
+  uint32_t size;     // == sizeof(PgsIncomingGiftsApi)
+  int (*install)(const PgsIncomingGiftsConfig *config);
   // Arm/clear the auto-open gate and the residual lease. Carries no tid (the owner is latched by
   // observe()/tick()); a bit-1 mask enables auto-open. remaining_lease_ms is clamped to 2500.
   int (*update)(uint32_t mask, uint64_t remaining_lease_ms);
@@ -236,17 +236,17 @@ struct PgrIncomingGiftsApi {
   // One owner-thread attempt pass (incomingTick). stopping != 0 clears the owned root regardless
   // of the lease. Off the owner thread it is a no-op (never frees).
   int (*tick)(uint64_t proven_tid, int stopping);
-  int (*sample)(PgrIncomingGiftsSample *out_sample);
+  int (*sample)(PgsIncomingGiftsSample *out_sample);
   // Pop one FIFO record into *out. Returns 1 when a record was written, 0 when empty, or a
   // negative status on error. Any thread.
-  int (*drain)(PgrIncomingGiftsEvent *out);
+  int (*drain)(PgsIncomingGiftsEvent *out);
   // 1 if the owned GUI is alive and currentState == STATE_OPEN, else 0. Owner thread only (does
   // managed work); off the owner thread or with no slot it returns 0.
   int (*is_open)(uint64_t proven_tid);
 };
 
-static_assert(sizeof(PgrIncomingGiftsApi) == 64,
-              "PgrIncomingGiftsApi must remain a 64-byte version-1 table");
+static_assert(sizeof(PgsIncomingGiftsApi) == 64,
+              "PgsIncomingGiftsApi must remain a 64-byte version-1 table");
 
 // Standard feature getter. Returns the static const 64-byte table when `version` == 1, else NULL.
 // The coordinator registers it in query_feature as case 17.

@@ -72,7 +72,7 @@
 
 namespace {
 
-using namespace pgr_shared_meta;
+using namespace pgs_shared_meta;
 
 static uint64_t current_os_tid() {
 #if defined(__BIONIC__)
@@ -125,8 +125,8 @@ static uint32_t g_event_count = 0;
 // Resolved IL2CPP Exports & Host State
 // ============================================================================
 struct ResolvedExports {
-  PgrMetaExports meta;
-  PgrSharedMetaExtraExports extra;
+  PgsMetaExports meta;
+  PgsSharedMetaExtraExports extra;
   void *(*thread_current)(void);
   void *(*runtime_invoke)(const void *method, void *obj, void **params, void **exc);
   void *(*object_get_class)(void *obj);
@@ -160,11 +160,11 @@ static bool g_installed = false;
 static bool g_stopped = false;
 static uint64_t g_owner_tid = 0;
 
-static PgrEncounterHostConfig g_cfg = {};
+static PgsEncounterHostConfig g_cfg = {};
 static ResolvedExports g_exp = {};
-static PgrSharedMetadataOutput g_md = {};
-static PgrEncounterHostOptions g_opts = {};
-static PgrEncounterHostSample g_sample = {PGR_EH_API_VERSION, sizeof(PgrEncounterHostSample), 0, 0, 0, 0, 0, 0, 0, 0, 0};
+static PgsSharedMetadataOutput g_md = {};
+static PgsEncounterHostOptions g_opts = {};
+static PgsEncounterHostSample g_sample = {PGS_EH_API_VERSION, sizeof(PgsEncounterHostSample), 0, 0, 0, 0, 0, 0, 0, 0, 0};
 
 static uint32_t g_active_caps = 0;
 static uint64_t g_lease_deadline_ms = 0;
@@ -184,22 +184,22 @@ static int32_t g_keep_species[2000] = {};
 static uint32_t g_keep_species_count = 0;
 
 // Leaf API pointers
-static const pgr_berry_api_v1 *g_berries = nullptr;
+static const pgs_berry_api_v1 *g_berries = nullptr;
 static const PgsMapPoiApi *g_map_poi = nullptr;
-static const PgrVgpPolicyApi *g_vp = nullptr;
-static const PgrVgpActionsApi *g_va = nullptr;
-static const PgrVgpMarkerApi *g_vmk = nullptr;
-static const PgrVgpCandidateApi *g_vc = nullptr;
-static const PgrVgpResultsApi *g_vr = nullptr;
-static const PgrVgpDiscoveryApi *g_vd = nullptr;
-static const PgrVgpMaintenanceApi *g_vm = nullptr;
+static const PgsVgpPolicyApi *g_vp = nullptr;
+static const PgsVgpActionsApi *g_va = nullptr;
+static const PgsVgpMarkerApi *g_vmk = nullptr;
+static const PgsVgpCandidateApi *g_vc = nullptr;
+static const PgsVgpResultsApi *g_vr = nullptr;
+static const PgsVgpDiscoveryApi *g_vd = nullptr;
+static const PgsVgpMaintenanceApi *g_vm = nullptr;
 static const PgsVgpAuxApi *g_vx = nullptr;
-static const PgrVgpControllerApi *g_vgc = nullptr;
-static const PgrTransferApi *g_tp = nullptr;
-static const PgrTransferExecApi *g_tx = nullptr;
-static const PgrTransferFactsApi *g_tf = nullptr;
+static const PgsVgpControllerApi *g_vgc = nullptr;
+static const PgsTransferApi *g_tp = nullptr;
+static const PgsTransferExecApi *g_tx = nullptr;
+static const PgsTransferFactsApi *g_tf = nullptr;
 // Feature61 is the sole owner of executor23 updates, cleanup and event routing.
-struct TransferBroker { uint32_t version,size; int(*ready)(); int(*submit)(const PgrTransferExecRequest*,uint64_t*); int(*next_event)(PgrTransferExecEvent*); };
+struct TransferBroker { uint32_t version,size; int(*ready)(); int(*submit)(const PgsTransferExecRequest*,uint64_t*); int(*next_event)(PgsTransferExecEvent*); };
 static const TransferBroker *g_broker = nullptr;
 static void *g_berry_status_field = nullptr;
 static void *g_berry_response_class = nullptr;
@@ -208,7 +208,7 @@ static bool g_direct_transport = false;
 // Heap-allocated 294,928-byte MapPOI output buffer (never on stack)
 static PgsMapPoiOutput *g_map_poi_out = nullptr;
 
-// VGP -> Transfer active handoff state (4 owned GC handles from PGR_VGC_EV_TRANSFER_READY)
+// VGP -> Transfer active handoff state (4 owned GC handles from PGS_VGC_EV_TRANSFER_READY)
 struct ActiveVgpTransfer {
   bool active;
   uint64_t vgc_token;
@@ -228,8 +228,8 @@ static inline void *md_c(int i) { return const_cast<void *>(g_md.classes[i]); }
 static inline void *md_f(int i) { return const_cast<void *>(g_md.fields[i]); }
 static inline void *md_m(int i) { return const_cast<void *>(g_md.methods[i]); }
 
-static PgrThrowValue unpack_throw_value(uint64_t first, uint64_t second) {
-  PgrThrowValue tv = {};
+static PgsThrowValue unpack_throw_value(uint64_t first, uint64_t second) {
+  PgsThrowValue tv = {};
   uint32_t low = static_cast<uint32_t>(first & 0xFFFFFFFFULL);
   uint32_t high = static_cast<uint32_t>((first >> 32) & 0xFFFFFFFFULL);
   tv.item = static_cast<int32_t>(low);
@@ -241,7 +241,7 @@ static PgrThrowValue unpack_throw_value(uint64_t first, uint64_t second) {
   return tv;
 }
 
-static void pack_throw_value(const PgrThrowValue &tv, uint64_t *first, uint64_t *second) {
+static void pack_throw_value(const PgsThrowValue &tv, uint64_t *first, uint64_t *second) {
   uint32_t low = static_cast<uint32_t>(tv.item);
   uint32_t high = 0;
   memcpy(&high, &tv.radius, sizeof(float));
@@ -256,27 +256,27 @@ static void pack_throw_value(const PgrThrowValue &tv, uint64_t *first, uint64_t 
 // ============================================================================
 // Transport & Event Emission Helpers
 // ============================================================================
-static const PgrRuntimeTransportApi *transport_api() {
-  const auto *t = static_cast<const PgrRuntimeTransportApi *>(
-      pgs_runtime_transport_api(PGR_TRANSPORT_API_VERSION));
+static const PgsRuntimeTransportApi *transport_api() {
+  const auto *t = static_cast<const PgsRuntimeTransportApi *>(
+      pgs_runtime_transport_api(PGS_TRANSPORT_API_VERSION));
   return t;
 }
 
 static void transport_emit_op(uint32_t op, const uint64_t *scalars, uint32_t sc_cnt,
                               const char *const *strings, uint32_t st_cnt) {
-  const PgrRuntimeTransportApi *t = transport_api();
+  const PgsRuntimeTransportApi *t = transport_api();
   if (!t || !t->emit) return;
-  int64_t sc_vals[PGR_TRANSPORT_MAX_SCALARS] = {};
-  PgrRuntimeTransportString st_vals[PGR_TRANSPORT_MAX_STR_ARGS] = {};
-  for (uint32_t i = 0; i < sc_cnt && i < PGR_TRANSPORT_MAX_SCALARS; ++i) {
+  int64_t sc_vals[PGS_TRANSPORT_MAX_SCALARS] = {};
+  PgsRuntimeTransportString st_vals[PGS_TRANSPORT_MAX_STR_ARGS] = {};
+  for (uint32_t i = 0; i < sc_cnt && i < PGS_TRANSPORT_MAX_SCALARS; ++i) {
     sc_vals[i] = static_cast<int64_t>(scalars[i]);
   }
-  for (uint32_t i = 0; i < st_cnt && i < PGR_TRANSPORT_MAX_STR_ARGS; ++i) {
+  for (uint32_t i = 0; i < st_cnt && i < PGS_TRANSPORT_MAX_STR_ARGS; ++i) {
     const char *s = strings[i] ? strings[i] : "";
     st_vals[i].ptr = s;
     st_vals[i].len = static_cast<uint32_t>(strlen(s));
   }
-  if (t->emit(op, sc_cnt ? sc_vals : nullptr, sc_cnt, st_cnt ? st_vals : nullptr, st_cnt) != PGR_TRANSPORT_OK && g_direct_transport)
+  if (t->emit(op, sc_cnt ? sc_vals : nullptr, sc_cnt, st_cnt ? st_vals : nullptr, st_cnt) != PGS_TRANSPORT_OK && g_direct_transport)
     g_stop_requested.store(true,std::memory_order_release);
 }
 
@@ -366,14 +366,14 @@ static void notify_vgp_target(int visible, double x, double y, int is_spin) {
 static void tick_map_catch_marker(uint64_t tid, uint64_t now_ms, uint64_t lease_ms) {
   static uint64_t last_ms = 0;
   static bool shown = false;
-  void *target = pgr_map_auto_throw_target();
+  void *target = pgs_map_auto_throw_target();
   if (!target || !g_vmk || !g_vmk->project) {
     if (shown) { shown = false; notify_vgp_target(0, 0.0, 0.0, 0); }
     return;
   }
   if (now_ms - last_ms < 100) return;
   last_ms = now_ms;
-  PgrVgpMarkerResult r{};
+  PgsVgpMarkerResult r{};
   const int rc = g_vmk->project(target, lease_ms, tid, &r);
   const bool visible = rc == 1 && r.visible && isfinite(r.x) && isfinite(r.y);
   if (visible) { shown = true; notify_vgp_target(1, r.x, r.y, 0); }
@@ -398,12 +398,12 @@ static const char *transfer_reason(int code){static const char *reasons[]={"","k
 // Why VGP/VGP+ kept the last catch, as shown in the VGP status line.
 static char g_vgp_kept_text[96] = "Kept: protected";
 static void set_vgp_kept(const char *why){snprintf(g_vgp_kept_text,sizeof(g_vgp_kept_text),"Kept: %s",why);}
-static uint32_t g_keep_iv = 0; // PgrTransferInput.keep_iv from string slot 25; 0 = the original 90%.
+static uint32_t g_keep_iv = 0; // PgsTransferInput.keep_iv from string slot 25; 0 = the original 90%.
 static const char *kept_label(int code){
   static char iv_label[16];
   switch(code){
     case 1:return "Keep All is on";case 4:return "on your keep list";case 8:return "favorite";
-    case 9:snprintf(iv_label,sizeof(iv_label),"IV %d%%+",pgr_transfer_keep_iv_percent(g_keep_iv));return iv_label;case 10:return "legendary / mythical";case 11:return "shiny";
+    case 9:snprintf(iv_label,sizeof(iv_label),"IV %d%%+",pgs_transfer_keep_iv_percent(g_keep_iv));return iv_label;case 10:return "legendary / mythical";case 11:return "shiny";
     case 12:return "event";case 13:return "background";case 14:return "XXS";case 15:return "XXL";
     case 19:return "0% IV";case 20:return "costume";case 21:return "shadow";case 22:return "Dynamax";case 23:return "Gigantamax";
     default:return "could not be checked";
@@ -465,7 +465,7 @@ class PinnedArg {
 
 class IvFrameGuard {
  public:
-  IvFrameGuard(const PgrQuickballHostApi *qb, uint64_t tok, uint64_t tid)
+  IvFrameGuard(const PgsQuickballHostApi *qb, uint64_t tok, uint64_t tid)
       : qb_(qb), tok_(tok), tid_(tid) {}
   ~IvFrameGuard() {
     if (tok_ != 0 && qb_ && qb_->end_catch) {
@@ -477,7 +477,7 @@ class IvFrameGuard {
   IvFrameGuard &operator=(const IvFrameGuard &) = delete;
 
  private:
-  const PgrQuickballHostApi *qb_;
+  const PgsQuickballHostApi *qb_;
   uint64_t tok_;
   uint64_t tid_;
 };
@@ -514,10 +514,10 @@ static void hook_berry_enter(void *scope, void *method_info) {
   struct Frame { Frame(){++g_hook_frames;} ~Frame(){--g_hook_frames;} } frame;
   PinnedArg pin_scope(scope);
   uint64_t tid = pin_scope.valid() ? proven_unity_tid() : 0;
-  if (tid != 0 && !g_stopped && g_berries && (g_active_caps & PGR_EH_CAP_BERRIES)) {
+  if (tid != 0 && !g_stopped && g_berries && (g_active_caps & PGS_EH_CAP_BERRIES)) {
     g_berries->observe_enter(pin_scope.get(), tid);
   }
-  if (tid != 0 && !g_stopped) {pgr_catch_chance_enter(pin_scope.get());pgr_auto_throw_enter(pin_scope.get());}
+  if (tid != 0 && !g_stopped) {pgs_catch_chance_enter(pin_scope.get());pgs_auto_throw_enter(pin_scope.get());}
   if (g_orig_berry_enter) {
     g_orig_berry_enter(pin_scope.get(), method_info);
   }
@@ -529,10 +529,10 @@ static void hook_berry_exit(void *scope, void *method_info) {
   struct Frame { Frame(){++g_hook_frames;} ~Frame(){--g_hook_frames;} } frame;
   PinnedArg pin_scope(scope);
   uint64_t tid = pin_scope.valid() ? proven_unity_tid() : 0;
-  if (tid != 0 && !g_stopped && g_berries && (g_active_caps & PGR_EH_CAP_BERRIES)) {
+  if (tid != 0 && !g_stopped && g_berries && (g_active_caps & PGS_EH_CAP_BERRIES)) {
     g_berries->observe_exit(pin_scope.get(), tid);
   }
-  if (tid != 0 && !g_stopped) {pgr_catch_chance_exit(pin_scope.get());pgr_auto_throw_exit(pin_scope.get());}
+  if (tid != 0 && !g_stopped) {pgs_catch_chance_exit(pin_scope.get());pgs_auto_throw_exit(pin_scope.get());}
   if (g_orig_berry_exit) {
     g_orig_berry_exit(pin_scope.get(), method_info);
   }
@@ -546,7 +546,7 @@ static void hook_berry_result(void *callback, void *response, void *method_info)
   PinnedArg pin_resp(response);
   uint64_t tid = pin_cb.valid() && pin_resp.valid() ? proven_unity_tid() : 0;
   uint64_t tok = 0;
-  if (tid != 0 && !g_stopped && g_berries && (g_active_caps & PGR_EH_CAP_BERRIES)) {
+  if (tid != 0 && !g_stopped && g_berries && (g_active_caps & PGS_EH_CAP_BERRIES)) {
     tok = g_berries->result_begin(pin_cb.get(), tid);
     void *resp_now = pin_resp.get();
     if (resp_now != nullptr) {
@@ -577,7 +577,7 @@ static void hook_berry_error(void *callback, void *error_str, void *method_info)
   PinnedArg pin_err(error_str);
   uint64_t tid = pin_cb.valid() && pin_err.valid() ? proven_unity_tid() : 0;
   uint64_t tok = 0;
-  if (tid != 0 && !g_stopped && g_berries && (g_active_caps & PGR_EH_CAP_BERRIES)) {
+  if (tid != 0 && !g_stopped && g_berries && (g_active_caps & PGS_EH_CAP_BERRIES)) {
     tok = g_berries->result_begin(pin_cb.get(), tid);
   }
   if (g_orig_berry_error) {
@@ -594,19 +594,19 @@ static void hook_pokeball_submit(void *ball, uint64_t first, uint64_t second, vo
   StateGuard state;
   if (!state || !g_installed || g_stopped || g_stop_requested.load(std::memory_order_acquire) || !proven_unity_tid()) { if (g_orig_pokeball_submit) g_orig_pokeball_submit(ball, first, second, method_info); return; }
   struct Frame { Frame(){++g_hook_frames;} ~Frame(){--g_hook_frames;} } frame;
-  if (pgr_auto_throw_pending()) return; // A direct capture is already awaiting its result.
+  if (pgs_auto_throw_pending()) return; // A direct capture is already awaiting its result.
   PinnedArg pin_ball(ball);
   uint64_t tid = pin_ball.valid() ? proven_unity_tid() : 0;
-  if (tid != 0 && !g_stopped && g_berries && (g_active_caps & PGR_EH_CAP_BERRIES)) {
+  if (tid != 0 && !g_stopped && g_berries && (g_active_caps & PGS_EH_CAP_BERRIES)) {
     int dec = g_berries->submit(pin_ball.get(), first, second, method_info, tid);
-    if (dec == PGR_BERRY_HOLD) {
+    if (dec == PGS_BERRY_HOLD) {
       return;
     }
   }
-  const auto *qb = static_cast<const PgrQuickballHostApi *>(
+  const auto *qb = static_cast<const PgsQuickballHostApi *>(
       pgs_quickball_host_api(1));
   if (tid && qb && qb->rewrite_submit) {
-    PgrThrowValue tv = unpack_throw_value(first, second);
+    PgsThrowValue tv = unpack_throw_value(first, second);
     qb->rewrite_submit(pin_ball.get(), &tv);
     pack_throw_value(tv, &first, &second);
   }
@@ -619,10 +619,10 @@ static void hook_pokeball_submit(void *ball, uint64_t first, uint64_t second, vo
 static int berry_hold_filter(void *ball, uint64_t tid) {
   StateGuard state;
   if (!state || !g_installed || g_stopped || g_stop_requested.load(std::memory_order_acquire) ||
-      !tid || tid!=proven_unity_tid() || !g_berries || !(g_active_caps&PGR_EH_CAP_BERRIES)) return 0;
-  return g_berries->peek_held(ball,tid)==PGR_BERRY_HOLD ? 1 : 0;
+      !tid || tid!=proven_unity_tid() || !g_berries || !(g_active_caps&PGS_EH_CAP_BERRIES)) return 0;
+  return g_berries->peek_held(ball,tid)==PGS_BERRY_HOLD ? 1 : 0;
 }
-using BerryFilterApi = PgrObsApi2;
+using BerryFilterApi = PgsObsApi2;
 
 static void hook_nameplate_set_pokemon_ui(void *self, void *map_pokemon, int32_t weather, void *method_info) {
   StateGuard state;
@@ -633,11 +633,11 @@ static void hook_nameplate_set_pokemon_ui(void *self, void *map_pokemon, int32_t
   PinnedArg pin_pokemon(map_pokemon);
   uint64_t tid = pin_self.valid() && pin_pokemon.valid() ? proven_unity_tid() : 0;
 
-  if (tid != 0 && !g_stopped && g_vgc && (g_active_caps & PGR_EH_CAP_VGP)) {
+  if (tid != 0 && !g_stopped && g_vgc && (g_active_caps & PGS_EH_CAP_VGP)) {
     g_vgc->observe(pin_self.get(), pin_pokemon.get(), tid);
   }
 
-  const auto *qb = static_cast<const PgrQuickballHostApi *>(
+  const auto *qb = static_cast<const PgsQuickballHostApi *>(
       pgs_quickball_host_api(1));
   uint64_t iv_tok = 0;
   if (tid != 0 && !g_stopped && qb && qb->begin_catch) {
@@ -661,7 +661,7 @@ static void hook_nameplate_set_pokemon_ui(void *self, void *map_pokemon, int32_t
 // Proxy Items API for VGP Controller (Feature 33 -> Feature 65 / Feature 14)
 // ============================================================================
 static void *proxy_items_service_acquire(void) {
-  const auto *inv = static_cast<const PgrInventoryHostApi *>(
+  const auto *inv = static_cast<const PgsInventoryHostApi *>(
       pgs_inventory_host_api(1));
   if (inv && inv->acquire_item_service) {
     void *h = inv->acquire_item_service();
@@ -717,7 +717,7 @@ static void *resolve_rpc_field(void *bag_class,void *rpc_class){
   auto value=reinterpret_cast<bool(*)(void*)>(g_exp.meta.class_is_valuetype);
   auto accepts=reinterpret_cast<bool(*)(void*,void*)>(g_exp.meta.class_is_assignable_from);
   for(unsigned i=0;bag_class&&i<16;++i,bag_class=parent(bag_class)){
-    void *f=field(bag_class,PGR_GAME_ENCOUNTER_HOST_CPP_ERHP_NAME);if(!f)continue;void *k=klass(type(f));
+    void *f=field(bag_class,PGS_GAME_ENCOUNTER_HOST_CPP_ERHP_NAME);if(!f)continue;void *k=klass(type(f));
     if(offset(f)<16||offset(f)>512||!k||value(k)||!accepts(k,rpc_class))return nullptr;
     return f;
   }return nullptr;
@@ -736,7 +736,7 @@ static void clear_active_vgp_transfer() {
   memset(&g_vgp_transfer, 0, sizeof(g_vgp_transfer));
 }
 
-static void handle_vgp_transfer_ready(const PgrVgpControllerOut &out, uint64_t tid, uint64_t lease_ms, int keep_all = 0, bool honor_keep_all = false) {
+static void handle_vgp_transfer_ready(const PgsVgpControllerOut &out, uint64_t tid, uint64_t lease_ms, int keep_all = 0, bool honor_keep_all = false) {
   clear_active_vgp_transfer();
   g_vgp_transfer.response_handle = reinterpret_cast<void *>(static_cast<uintptr_t>(out.response_handle));
   g_vgp_transfer.bag_handle = reinterpret_cast<void *>(static_cast<uintptr_t>(out.bag_handle));
@@ -745,11 +745,11 @@ static void handle_vgp_transfer_ready(const PgrVgpControllerOut &out, uint64_t t
   g_vgp_transfer.vgc_token = out.transfer_token;
   g_vgp_transfer.caught_id = out.caught_id;
 
-  if (!(g_active_caps & PGR_EH_CAP_TRANSFER) || !g_tf || !g_tp || !g_broker ||
+  if (!(g_active_caps & PGS_EH_CAP_TRANSFER) || !g_tf || !g_tp || !g_broker ||
       !g_opts.auto_transfer_allowed) {
     set_vgp_kept("auto-transfer is off");
     if (g_vgc && out.transfer_token != 0) {
-      g_vgc->transfer_feedback(out.transfer_token, PGR_VGC_FB_KEPT, tid);
+      g_vgc->transfer_feedback(out.transfer_token, PGS_VGC_FB_KEPT, tid);
     }
     clear_active_vgp_transfer();
     return;
@@ -761,8 +761,8 @@ static void handle_vgp_transfer_ready(const PgrVgpControllerOut &out, uint64_t t
   void *gm_obj = g_exp.gchandle_get_target ? g_exp.gchandle_get_target(g_vgp_transfer.gm_handle) : nullptr;
   uint32_t protect_mask = g_opts.transfer_protect >= 0 ? static_cast<uint32_t>(g_opts.transfer_protect&2047) : 2047u;
 
-  PgrTransferFactsRequest req = {};
-  req.version = PGR_TF_REQUEST_VERSION;
+  PgsTransferFactsRequest req = {};
+  req.version = PGS_TF_REQUEST_VERSION;
   req.size = sizeof(req);
   req.owner_tid = tid;
   req.lease_ms = lease_ms > 0 ? lease_ms : 2500;
@@ -771,20 +771,20 @@ static void handle_vgp_transfer_ready(const PgrVgpControllerOut &out, uint64_t t
   req.gm = gm_obj;
   req.protect = protect_mask;
 
-  PgrTransferFactsOut tf_out = {};
+  PgsTransferFactsOut tf_out = {};
   int ins_rc = g_tf->inspect(&req, &tf_out);
-  if (ins_rc != PGR_TF_VALID) {
+  if (ins_rc != PGS_TF_VALID) {
     emit_eventf("transfer-error", "{\"id\":\"%llu\",\"reason\":\"facts-%d\"}",
                 static_cast<unsigned long long>(out.caught_id), ins_rc);
     char reason[64];snprintf(reason,sizeof(reason),"facts-%d",ins_rc);notify_transfer_error(reason);
     if (g_vgc && out.transfer_token != 0) {
-      g_vgc->transfer_feedback(out.transfer_token, PGR_VGC_FB_FAILED, tid);
+      g_vgc->transfer_feedback(out.transfer_token, PGS_VGC_FB_FAILED, tid);
     }
     clear_active_vgp_transfer();
     return;
   }
 
-  PgrTransferInput tp_in = {};
+  PgsTransferInput tp_in = {};
   tp_in.version = 1;
   tp_in.size = sizeof(tp_in);
   tp_in.attack = tf_out.attack;
@@ -801,21 +801,21 @@ static void handle_vgp_transfer_ready(const PgrVgpControllerOut &out, uint64_t t
 
   int reason_code = g_tp->decide(&tp_in);
   // PvP keep runs only when every other rule would transfer.
-  if (reason_code == 0 && pgr_pvp_keep) {
+  if (reason_code == 0 && pgs_pvp_keep) {
     char pvp[96];
-    const int kept = pgr_pvp_keep(pk_obj, tf_out.attack, tf_out.defense, tf_out.stamina, tf_out.species, tid, pvp, sizeof(pvp));
+    const int kept = pgs_pvp_keep(pk_obj, tf_out.attack, tf_out.defense, tf_out.stamina, tf_out.species, tid, pvp, sizeof(pvp));
     if (kept > 0) {
       emit_eventf("transfer-kept", "{\"id\":\"%llu\",\"species\":%d,\"reasonCode\":18,\"pvp\":\"%s\"}",
                   static_cast<unsigned long long>(out.caught_id), tf_out.species, pvp);
       char text[128];snprintf(text,sizeof(text),"Kept: %s",pvp);notify_transfer_result(text);set_vgp_kept(pvp);
-      if (g_vgc && out.transfer_token != 0) g_vgc->transfer_feedback(out.transfer_token, PGR_VGC_FB_KEPT, tid);
+      if (g_vgc && out.transfer_token != 0) g_vgc->transfer_feedback(out.transfer_token, PGS_VGC_FB_KEPT, tid);
       clear_active_vgp_transfer();
       return;
     }
   }
   if (reason_code < 0) {
     if (g_vgc && out.transfer_token != 0) {
-      g_vgc->transfer_feedback(out.transfer_token, PGR_VGC_FB_FAILED, tid);
+      g_vgc->transfer_feedback(out.transfer_token, PGS_VGC_FB_FAILED, tid);
     }
     clear_active_vgp_transfer();
     return;
@@ -828,7 +828,7 @@ static void handle_vgp_transfer_ready(const PgrVgpControllerOut &out, uint64_t t
     char text[128];snprintf(text,sizeof(text),"Kept: %s",transfer_reason(reason_code));notify_transfer_result(text);
     set_vgp_kept(kept_label(reason_code));
     if (g_vgc && out.transfer_token != 0) {
-      g_vgc->transfer_feedback(out.transfer_token, PGR_VGC_FB_KEPT, tid);
+      g_vgc->transfer_feedback(out.transfer_token, PGS_VGC_FB_KEPT, tid);
     }
     clear_active_vgp_transfer();
     return;
@@ -840,8 +840,8 @@ static void handle_vgp_transfer_ready(const PgrVgpControllerOut &out, uint64_t t
   void *bag_obj = g_exp.gchandle_get_target ? g_exp.gchandle_get_target(g_vgp_transfer.bag_handle) : nullptr;
   pk_obj = g_exp.gchandle_get_target ? g_exp.gchandle_get_target(g_vgp_transfer.pokemon_handle) : nullptr;
 
-  PgrTransferExecRequest tx_req = {};
-  tx_req.version = PGR_TX_REQUEST_VERSION;
+  PgsTransferExecRequest tx_req = {};
+  tx_req.version = PGS_TX_REQUEST_VERSION;
   tx_req.size = sizeof(tx_req);
   tx_req.captured_id = out.caught_id;
   tx_req.epoch = g_transfer_epoch;
@@ -850,27 +850,27 @@ static void handle_vgp_transfer_ready(const PgrVgpControllerOut &out, uint64_t t
   tx_req.pokemon = pk_obj;
   tx_req.input = tp_in;
 
-  if (int offered = pgr_evolve_transfer_offer(&tx_req, honor_keep_all)) {
+  if (int offered = pgs_evolve_transfer_offer(&tx_req, honor_keep_all)) {
     // 1: queued to evolve and then transfer; anything else: Evolve first left it in storage.
     if (offered == 1) snprintf(g_vgp_kept_text, sizeof(g_vgp_kept_text), "Queued to evolve, then transfer");
     else set_vgp_kept("Evolve first skipped it");
-    if (g_vgc && out.transfer_token) g_vgc->transfer_feedback(out.transfer_token,PGR_VGC_FB_KEPT,tid);
+    if (g_vgc && out.transfer_token) g_vgc->transfer_feedback(out.transfer_token,PGS_VGC_FB_KEPT,tid);
     clear_active_vgp_transfer();return;
   }
   uint64_t tx_tok = 0;
   int sub_rc = g_broker->submit(&tx_req, &tx_tok);
   if(sub_rc==0 && !tx_tok){
     notify_transfer_result("Kept: settings-changed");set_vgp_kept("settings changed");
-    if(g_vgc && out.transfer_token)g_vgc->transfer_feedback(out.transfer_token,PGR_VGC_FB_KEPT,tid);
+    if(g_vgc && out.transfer_token)g_vgc->transfer_feedback(out.transfer_token,PGS_VGC_FB_KEPT,tid);
     clear_active_vgp_transfer();return;
   }
-  if (sub_rc != PGR_TX_ISSUED || tx_tok == 0) {
+  if (sub_rc != PGS_TX_ISSUED || tx_tok == 0) {
     char reason[64];snprintf(reason,sizeof(reason),"submit-%d",sub_rc);notify_transfer_error(reason);
     emit_eventf("transfer-error",
                 "{\"id\":\"%llu\",\"species\":%d,\"reason\":\"submit-%d\"}",
                 static_cast<unsigned long long>(out.caught_id), tf_out.species, sub_rc);
     if (g_vgc && out.transfer_token != 0) {
-      g_vgc->transfer_feedback(out.transfer_token, PGR_VGC_FB_FAILED, tid);
+      g_vgc->transfer_feedback(out.transfer_token, PGS_VGC_FB_FAILED, tid);
     }
     clear_active_vgp_transfer();
     return;
@@ -883,16 +883,16 @@ static void handle_vgp_transfer_ready(const PgrVgpControllerOut &out, uint64_t t
   emit_eventf("transfer-requested", "{\"id\":\"%llu\",\"species\":%d}",
               static_cast<unsigned long long>(out.caught_id), tf_out.species);
   if (g_vgc && out.transfer_token != 0) {
-    g_vgc->transfer_feedback(out.transfer_token, PGR_VGC_FB_REQUESTED, tid);
+    g_vgc->transfer_feedback(out.transfer_token, PGS_VGC_FB_REQUESTED, tid);
   }
 }
 
 // Research encounter catches share the single VGP transfer slot and are handed over only while no
 // transfer is in flight. Returns 1 when it adopted all four OWNED handles; 0 leaves them with the caller.
-extern "C" int pgr_research_transfer_caught(uint64_t caught_id, uint64_t response, uint64_t bag,
+extern "C" int pgs_research_transfer_caught(uint64_t caught_id, uint64_t response, uint64_t bag,
                                             uint64_t pokemon, uint64_t gm, uint64_t tid, int keep_all) {
   if (!caught_id || !response || !bag || !pokemon || !gm || g_vgp_transfer.active) return 0;
-  PgrVgpControllerOut out = {};
+  PgsVgpControllerOut out = {};
   out.caught_id = caught_id;
   out.response_handle = response;
   out.bag_handle = bag;
@@ -903,11 +903,11 @@ extern "C" int pgr_research_transfer_caught(uint64_t caught_id, uint64_t respons
 }
 
 static void pump_transfer_events(uint64_t tid, int stopping) {
-  if (!g_broker || !(g_active_caps & PGR_EH_CAP_TRANSFER) || stopping) return;
-  PgrTransferExecEvent ev = {};
+  if (!g_broker || !(g_active_caps & PGS_EH_CAP_TRANSFER) || stopping) return;
+  PgsTransferExecEvent ev = {};
   while (g_broker->next_event(&ev) == 1) {
-    if (ev.kind == PGR_TX_EVENT_COMPLETE || ev.kind == PGR_TX_EVENT_TIMEOUT) {
-      bool ok = (ev.kind == PGR_TX_EVENT_COMPLETE) && ((ev.aux & 1) != 0);
+    if (ev.kind == PGS_TX_EVENT_COMPLETE || ev.kind == PGS_TX_EVENT_TIMEOUT) {
+      bool ok = (ev.kind == PGS_TX_EVENT_COMPLETE) && ((ev.aux & 1) != 0);
       uint64_t cid = (g_vgp_transfer.active && g_vgp_transfer.tx_token == ev.token)
                          ? g_vgp_transfer.caught_id
                          : 0ULL;
@@ -918,7 +918,7 @@ static void pump_transfer_events(uint64_t tid, int stopping) {
         notify_transfer_result("Transferred newly caught Pokemon");
         notify_transfer_outcome("transferred");
       } else {
-        notify_transfer_error(ev.kind==PGR_TX_EVENT_TIMEOUT?"response-timeout":"server-result");
+        notify_transfer_error(ev.kind==PGS_TX_EVENT_TIMEOUT?"response-timeout":"server-result");
         emit_eventf("transfer-error",
                     "{\"id\":\"%llu\",\"token\":%llu,\"kind\":%u}",
                     static_cast<unsigned long long>(cid),
@@ -927,7 +927,7 @@ static void pump_transfer_events(uint64_t tid, int stopping) {
       if (g_vgp_transfer.active && g_vgp_transfer.tx_token == ev.token) {
         if (g_vgc && g_vgp_transfer.vgc_token != 0) {
           g_vgc->transfer_feedback(g_vgp_transfer.vgc_token,
-                                   ok ? PGR_VGC_FB_SUCCESS : PGR_VGC_FB_FAILED, tid);
+                                   ok ? PGS_VGC_FB_SUCCESS : PGS_VGC_FB_FAILED, tid);
         }
         clear_active_vgp_transfer();
       }
@@ -959,17 +959,17 @@ static const char *berry_name_for_id(int32_t id) {
 
 static const char *berry_error_reason_str(int32_t aux) {
   switch (aux) {
-    case PGR_BERRY_REASON_TIMEOUT:
+    case PGS_BERRY_REASON_TIMEOUT:
       return "Berry response timed out; submitting catch without retry";
-    case PGR_BERRY_REASON_CALLBACK_READBACK:
+    case PGS_BERRY_REASON_CALLBACK_READBACK:
       return "Berry callback field readback mismatch";
-    case PGR_BERRY_REASON_REQUEST_FAULT:
+    case PGS_BERRY_REASON_REQUEST_FAULT:
       return "Managed exception issuing berry feed request";
-    case PGR_BERRY_REASON_BALLTYPE_FAULT:
+    case PGS_BERRY_REASON_BALLTYPE_FAULT:
       return "Managed exception reading BallType";
-    case PGR_BERRY_REASON_INVENTORY:
+    case PGS_BERRY_REASON_INVENTORY:
       return "Berry bag quantity lookup failed";
-    case PGR_BERRY_REASON_GCHANDLE:
+    case PGS_BERRY_REASON_GCHANDLE:
       return "Berry GC handle allocation failed";
     default:
       return "Berry error";
@@ -977,7 +977,7 @@ static const char *berry_error_reason_str(int32_t aux) {
 }
 
 static void notify_inventory_poll() {
-  const auto *inv = static_cast<const PgrInventoryHostApi *>(
+  const auto *inv = static_cast<const PgsInventoryHostApi *>(
       pgs_inventory_host_api(1));
   if (inv && inv->request_item_poll) {
     inv->request_item_poll();
@@ -985,18 +985,18 @@ static void notify_inventory_poll() {
 }
 
 static void pump_berry_events_and_resume(uint64_t tid, int stopping) {
-  if (!g_berries || !(g_active_caps & PGR_EH_CAP_BERRIES)) return;
+  if (!g_berries || !(g_active_caps & PGS_EH_CAP_BERRIES)) return;
 
   g_berries->tick(tid, stopping);
 
-  pgr_berry_resume_v1 res = {};
+  pgs_berry_resume_v1 res = {};
   uint64_t ticket = g_berries->begin_resume(tid, &res);
   if (ticket != 0) {
-    if (res.cause == PGR_BERRY_RESUME_DONE) {
+    if (res.cause == PGS_BERRY_RESUME_DONE) {
       notify_inventory_poll();
     }
     struct ResumeFinishGuard {
-      const pgr_berry_api_v1 *api;
+      const pgs_berry_api_v1 *api;
       uint64_t t;
       uint64_t owner;
       ~ResumeFinishGuard() {
@@ -1009,10 +1009,10 @@ static void pump_berry_events_and_resume(uint64_t tid, int stopping) {
     PinnedArg resumed_ball(res.ball);
     uint64_t first = res.first;
     uint64_t second = res.second;
-    const auto *qb = static_cast<const PgrQuickballHostApi *>(
+    const auto *qb = static_cast<const PgsQuickballHostApi *>(
         pgs_quickball_host_api(1));
     if (resumed_ball.valid() && qb && qb->rewrite_submit) {
-      PgrThrowValue tv = unpack_throw_value(first, second);
+      PgsThrowValue tv = unpack_throw_value(first, second);
       qb->rewrite_submit(resumed_ball.get(), &tv);
       pack_throw_value(tv, &first, &second);
     }
@@ -1022,14 +1022,14 @@ static void pump_berry_events_and_resume(uint64_t tid, int stopping) {
     g_sample.berry_resume_serial++;
   }
 
-  pgr_berry_event_v1 ev = {};
+  pgs_berry_event_v1 ev = {};
   while (g_berries->next_event(&ev) == 1) {
     switch (ev.code) {
-      case PGR_BERRY_EVT_READY:
+      case PGS_BERRY_EVT_READY:
         emit_eventf("berry-ready", "{\"ready\":%s}", ev.aux ? "true" : "false");
         notify_berry_ready(ev.aux ? 1 : 0);
         break;
-      case PGR_BERRY_EVT_ENCOUNTER: {
+      case PGS_BERRY_EVT_ENCOUNTER: {
         int active = ((ev.aux & 1) != 0 && (ev.aux & 4) != 0) ? 1 : 0;
         int busy = ((ev.aux & 2) != 0) ? 1 : 0;
         emit_eventf("encounter-berry", "{\"active\":%s,\"busy\":%s}",
@@ -1037,28 +1037,28 @@ static void pump_berry_events_and_resume(uint64_t tid, int stopping) {
         notify_encounter_berry(active, busy);
         break;
       }
-      case PGR_BERRY_EVT_COOLDOWN_ENC: {
+      case PGS_BERRY_EVT_COOLDOWN_ENC: {
         int active = ev.aux ? 1 : 0;
         emit_eventf("cooldown-encounter", "{\"active\":%s}", active ? "true" : "false");
         notify_cooldown_encounter(active);
         break;
       }
-      case PGR_BERRY_EVT_ACTION: {
+      case PGS_BERRY_EVT_ACTION: {
         const char *act = (ev.aux == 0) ? "Ball throw"
                                         : ((ev.aux == 1) ? "Ball drop" : "Berry feeding");
         emit_eventf("cooldown-action", "{\"action\":\"%s\"}", act);
         notify_cooldown_action(act);
         break;
       }
-      case PGR_BERRY_EVT_IMPACT_QUEUED:
+      case PGS_BERRY_EVT_IMPACT_QUEUED:
         emit_eventf("berry-impact-queued", "{\"id\":%d,\"name\":\"%s\"}",
                     ev.id, berry_name_for_id(ev.id));
         break;
-      case PGR_BERRY_EVT_FEED_REQUESTED:
+      case PGS_BERRY_EVT_FEED_REQUESTED:
         emit_eventf("berry-feed-requested", "{\"id\":%d,\"name\":\"%s\"}",
                     ev.id, berry_name_for_id(ev.id));
         break;
-      case PGR_BERRY_EVT_ERROR:
+      case PGS_BERRY_EVT_ERROR:
         emit_eventf("berry-error", "{\"id\":%d,\"name\":\"%s\",\"reason\":\"%s\"}",
                     ev.id, berry_name_for_id(ev.id), berry_error_reason_str(ev.aux));
         break;
@@ -1086,19 +1086,19 @@ static const char *vgp_status_string(uint32_t code) {
 }
 
 static void tick_vgp_controller(uint64_t tid, uint64_t now_ms, uint64_t lease_ms) {
-  if (!g_vgc || !(g_active_caps & PGR_EH_CAP_VGP)) return;
+  if (!g_vgc || !(g_active_caps & PGS_EH_CAP_VGP)) return;
 
   pump_transfer_events(tid, 0);
 
   // Incense spawns join VGP once their metadata validates; retried every 5 s until then.
   static uint64_t incense_retry_at = 0;
   if (g_opts.vgp_allowed && g_opts.vgp_enabled && now_ms >= incense_retry_at) {
-    if (pgr_vgp_incense_bind(tid) == 1) incense_retry_at = now_ms + 5000;
+    if (pgs_vgp_incense_bind(tid) == 1) incense_retry_at = now_ms + 5000;
     else incense_retry_at = UINT64_MAX;
   }
 
-  PgrVgpControllerTick in = {};
-  in.version = PGR_VGC_TICK_VERSION;
+  PgsVgpControllerTick in = {};
+  in.version = PGS_VGC_TICK_VERSION;
   in.size = sizeof(in);
   in.owner = tid;
   in.epoch = g_vgp_epoch;
@@ -1106,7 +1106,7 @@ static void tick_vgp_controller(uint64_t tid, uint64_t now_ms, uint64_t lease_ms
   in.allowed_ms = (g_opts.vgp_allowed && g_opts.vgp_enabled && lease_ms > 0)
                       ? lease_ms
                       : 0;
-  const auto *cleanup = static_cast<const PgrInventoryCleanupApi *>(pgs_inventory_host_api(2));
+  const auto *cleanup = static_cast<const PgsInventoryCleanupApi *>(pgs_inventory_host_api(2));
   if (!g_opts.item_transfer_enabled || !g_opts.item_access_allowed ||
       !cleanup || !cleanup->pending || !cleanup->pending(g_vgp_cleanup_ticket))
     g_vgp_cleanup_until_ms = 0;
@@ -1119,20 +1119,20 @@ static void tick_vgp_controller(uint64_t tid, uint64_t now_ms, uint64_t lease_ms
             (g_opts.vgp_spin_allowed ? 2u : 0u);
 
   uint32_t flags = 0;
-  if (g_opts.vgp_map_visible) flags |= PGR_VGC_TF_MAP_VISIBLE;
-  if ((g_active_caps & PGR_EH_CAP_TRANSFER) && g_opts.auto_transfer_allowed) {
-    flags |= PGR_VGC_TF_TRANSFER_ENABLED;
+  if (g_opts.vgp_map_visible) flags |= PGS_VGC_TF_MAP_VISIBLE;
+  if ((g_active_caps & PGS_EH_CAP_TRANSFER) && g_opts.auto_transfer_allowed) {
+    flags |= PGS_VGC_TF_TRANSFER_ENABLED;
   }
   if (g_opts.item_transfer_enabled && g_opts.item_access_allowed) {
-    flags |= PGR_VGC_TF_ITEM_ENABLED;
+    flags |= PGS_VGC_TF_ITEM_ENABLED;
   }
-  const auto *quick=static_cast<const PgrQuickballHostApi*>(pgs_quickball_host_api(1));
-  PgrQuickballHostSample quick_state{1,sizeof(quick_state)};
+  const auto *quick=static_cast<const PgsQuickballHostApi*>(pgs_quickball_host_api(1));
+  PgsQuickballHostSample quick_state{1,sizeof(quick_state)};
   if (quick && quick->sample && quick->sample(&quick_state)==0 && quick_state.ready && !quick_state.stopping)
-    flags |= PGR_VGC_TF_MANUAL_READY;
+    flags |= PGS_VGC_TF_MANUAL_READY;
   in.flags = flags;
 
-  PgrVgpControllerOut out = {};
+  PgsVgpControllerOut out = {};
   int rc = g_vgc->tick(&in, &out);
   static int last_tick_error=0;
   if (rc < 0) {
@@ -1146,30 +1146,30 @@ static void tick_vgp_controller(uint64_t tid, uint64_t now_ms, uint64_t lease_ms
 
   if (static_cast<int32_t>(out.status) != g_last_vgp_status) {
     g_last_vgp_status = static_cast<int32_t>(out.status);
-    const char *st = out.status == PGR_VGC_ST_KEPT ? g_vgp_kept_text : vgp_status_string(out.status);
+    const char *st = out.status == PGS_VGC_ST_KEPT ? g_vgp_kept_text : vgp_status_string(out.status);
     emit_eventf("vgp-status", "{\"message\":\"%s\",\"code\":%u,\"error\":%d,\"allowed\":%s,\"enabled\":%s,\"leaseMs\":%llu,\"mapVisible\":%s,\"manualReady\":%s,\"manualError\":%d,\"phase\":%u,\"mask\":%u,\"capabilities\":%u}",
         st,out.status,out.error,g_opts.vgp_allowed?"true":"false",g_opts.vgp_enabled?"true":"false",
         (unsigned long long)lease_ms,g_opts.vgp_map_visible?"true":"false",
-        (flags&PGR_VGC_TF_MANUAL_READY)?"true":"false",quick_state.error?quick_state.error:quick_state.metadata_error,
+        (flags&PGS_VGC_TF_MANUAL_READY)?"true":"false",quick_state.error?quick_state.error:quick_state.metadata_error,
         out.phase,in.mask,g_active_caps);
     notify_vgp_status(st);
     // A later keep that reports no reason of its own must not repeat this one.
-    if (out.status == PGR_VGC_ST_KEPT) set_vgp_kept("not transferred");
+    if (out.status == PGS_VGC_ST_KEPT) set_vgp_kept("not transferred");
   }
 
-  if (out.flags & PGR_VGC_EV_CATCH_ISSUED) {
+  if (out.flags & PGS_VGC_EV_CATCH_ISSUED) {
     emit_event("vgp-request", "{\"action\":\"catch\"}");
     emit_event("cooldown-action", "{\"action\":\"VGP ball throw\"}");
     notify_cooldown_action("VGP ball throw");
   }
-  if(out.flags & PGR_VGC_EV_SMART_BERRY){
+  if(out.flags & PGS_VGC_EV_SMART_BERRY){
     emit_event("cooldown-action","{\"action\":\"Smart catch berry\"}");
     notify_cooldown_action("Smart catch berry");
   }
-  if (out.flags & PGR_VGC_EV_SPIN_ISSUED) {
+  if (out.flags & PGS_VGC_EV_SPIN_ISSUED) {
     emit_event("vgp-request", "{\"action\":\"spin\"}");
   }
-  if (out.flags & PGR_VGC_EV_CATCH_RESULT) {
+  if (out.flags & PGS_VGC_EV_CATCH_RESULT) {
     bool ok = out.success != 0;
     emit_eventf("vgp-result",
                 "{\"action\":\"catch\",\"success\":%s,\"status\":%d,\"retryMs\":%llu}",
@@ -1177,7 +1177,7 @@ static void tick_vgp_controller(uint64_t tid, uint64_t now_ms, uint64_t lease_ms
                 static_cast<unsigned long long>(out.retry_ms));
     notify_vgp_result(ok ? 1 : 0, "catch");
   }
-  if (out.flags & PGR_VGC_EV_SPIN_RESULT) {
+  if (out.flags & PGS_VGC_EV_SPIN_RESULT) {
     bool ok = out.success != 0;
     emit_eventf("vgp-result",
                 "{\"action\":\"spin\",\"success\":%s,\"status\":%d,\"retryMs\":%llu}",
@@ -1186,20 +1186,20 @@ static void tick_vgp_controller(uint64_t tid, uint64_t now_ms, uint64_t lease_ms
     notify_vgp_result(ok ? 1 : 0, "spin");
 
   }
-  if (out.flags & PGR_VGC_EV_ITEM_CLEANUP) {
-    const auto *cleanup = static_cast<const PgrInventoryCleanupApi *>(pgs_inventory_host_api(2));
+  if (out.flags & PGS_VGC_EV_ITEM_CLEANUP) {
+    const auto *cleanup = static_cast<const PgsInventoryCleanupApi *>(pgs_inventory_host_api(2));
     g_vgp_cleanup_ticket = g_opts.item_transfer_enabled && g_opts.item_access_allowed &&
         cleanup && cleanup->request ? cleanup->request() : 0;
     g_vgp_cleanup_until_ms = g_vgp_cleanup_ticket ? now_ms + 20000ULL : 0;
   }
-  if (out.flags & PGR_VGC_EV_TRANSFER_CANCEL) {
+  if (out.flags & PGS_VGC_EV_TRANSFER_CANCEL) {
     clear_active_vgp_transfer();
   }
-  if (out.flags & PGR_VGC_EV_TRANSFER_READY) {
+  if (out.flags & PGS_VGC_EV_TRANSFER_READY) {
     handle_vgp_transfer_ready(out, tid, lease_ms);
   }
-  if (out.flags & PGR_VGC_EV_MARKER_UPDATE) {
-    const int phase = (out.phase == PGR_VGC_PH_SPIN) ? 1 : 0;
+  if (out.flags & PGS_VGC_EV_MARKER_UPDATE) {
+    const int phase = (out.phase == PGS_VGC_PH_SPIN) ? 1 : 0;
     // setVgpTarget below carries every position; the log keeps phase changes plus a 2 s heartbeat.
     if (phase != g_marker_log_phase || now_ms - g_marker_log_ms >= 2000) {
       g_marker_log_phase = phase;
@@ -1208,8 +1208,8 @@ static void tick_vgp_controller(uint64_t tid, uint64_t now_ms, uint64_t lease_ms
                   out.marker_x, out.marker_y, phase ? "spin" : "catch");
     }
     notify_vgp_target(out.marker_visible && isfinite(out.marker_x) && isfinite(out.marker_y), out.marker_x, out.marker_y,
-                      out.phase == PGR_VGC_PH_SPIN ? 1 : 0);
-  } else if (out.flags & PGR_VGC_EV_MARKER_HIDE) {
+                      out.phase == PGS_VGC_PH_SPIN ? 1 : 0);
+  } else if (out.flags & PGS_VGC_EV_MARKER_HIDE) {
     g_marker_log_phase = -1;
     emit_event("vgp-marker", "{\"visible\":false}");
     notify_vgp_target(0, 0.0, 0.0, 0);
@@ -1259,7 +1259,7 @@ static size_t utf16_to_escaped_json(const uint16_t *src, uint32_t len, char *dst
 }
 
 static void tick_map_poi(uint64_t tid, uint64_t now_ms, uint64_t lease_ms) {
-  if (!g_map_poi || !(g_active_caps & PGR_EH_CAP_MAP_POI) || !g_map_poi_out) return;
+  if (!g_map_poi || !(g_active_caps & PGS_EH_CAP_MAP_POI) || !g_map_poi_out) return;
   if (!g_opts.map_poi_allowed || lease_ms == 0) return;
   if (g_last_map_poi_ms != 0 && (now_ms - g_last_map_poi_ms) < 2000ULL) return;
   g_last_map_poi_ms = now_ms;
@@ -1377,35 +1377,35 @@ static int32_t resolve_berry_token(const char *tok, size_t len) {
 }
 
 static void sync_from_transport(uint64_t tid) {
-  const PgrRuntimeTransportApi *t = transport_api();
+  const PgsRuntimeTransportApi *t = transport_api();
   if (!t || !t->sample || !t->get_bool || !t->get_int || !t->get_double || !t->get_string) return;
 
-  PgrRuntimeTransportSample start = {PGR_TRANSPORT_SAMPLE_VERSION, sizeof(start)};
-  if (t->sample(&start) != PGR_TRANSPORT_OK || start.snapshots_accepted == 0) {
+  PgsRuntimeTransportSample start = {PGS_TRANSPORT_SAMPLE_VERSION, sizeof(start)};
+  if (t->sample(&start) != PGS_TRANSPORT_OK || start.snapshots_accepted == 0) {
     if (!g_direct_transport) return;
     start = {};
   }
   bool fresh = (start.snapshot_fresh != 0 && start.fault == 0);
   int active = 0;
-  if (fresh && t->get_bool(3, &active) != PGR_TRANSPORT_OK) {
+  if (fresh && t->get_bool(3, &active) != PGS_TRANSPORT_OK) {
     fresh = false;
   }
 
   auto bval = [&](uint32_t idx) -> int {
     int v = 0;
-    return (fresh && t->get_bool(idx, &v) == PGR_TRANSPORT_OK && v != 0) ? 1 : 0;
+    return (fresh && t->get_bool(idx, &v) == PGS_TRANSPORT_OK && v != 0) ? 1 : 0;
   };
   auto ival = [&](uint32_t idx) -> int32_t {
     int32_t v = 0;
-    return (fresh && t->get_int(idx, &v) == PGR_TRANSPORT_OK) ? v : 0;
+    return (fresh && t->get_int(idx, &v) == PGS_TRANSPORT_OK) ? v : 0;
   };
   auto dval = [&](uint32_t idx, double fallback) -> double {
     double v = fallback;
     int has = 0;
-    return (fresh && t->get_double(idx, &v, &has) == PGR_TRANSPORT_OK && has) ? v : fallback;
+    return (fresh && t->get_double(idx, &v, &has) == PGS_TRANSPORT_OK && has) ? v : fallback;
   };
 
-  PgrEncounterHostOptions next_opts = g_opts;
+  PgsEncounterHostOptions next_opts = g_opts;
   next_opts.berries_allowed = (active > 0 && bval(7) > 0) ? 1u : 0u;
   next_opts.auto_transfer_allowed = (active > 0 && bval(5) > 0) ? 1u : 0u;
   next_opts.item_access_allowed = (active > 0 && bval(16) > 0) ? 1u : 0u;
@@ -1426,7 +1426,7 @@ static void sync_from_transport(uint64_t tid) {
   // Parse berry priority string[2]
   char prio_buf[128] = {};
   uint32_t prio_len = 0;
-  if (fresh && t->get_string(2, prio_buf, sizeof(prio_buf) - 1, &prio_len) == PGR_TRANSPORT_OK) {
+  if (fresh && t->get_string(2, prio_buf, sizeof(prio_buf) - 1, &prio_len) == PGS_TRANSPORT_OK) {
     if (prio_len < sizeof(prio_buf)) prio_buf[prio_len] = '\0';
     { // Parse every coherent poll; a prior stale snapshot may have cleared options.
       snprintf(g_last_berry_prio_str, sizeof(g_last_berry_prio_str), "%s", prio_buf);
@@ -1456,7 +1456,7 @@ static void sync_from_transport(uint64_t tid) {
   // noncanonical leading zeros, overflow and truncation rather than preserving stale policy.
   char keep_buf[10000] = {};uint32_t keep_len=0, pending_count=0;
   int32_t pending_ids[2000]={};bool seen[2001]={};
-  bool policy_valid=fresh && t->get_string(4,keep_buf,sizeof(keep_buf),&keep_len)==PGR_TRANSPORT_OK && keep_len<sizeof(keep_buf);
+  bool policy_valid=fresh && t->get_string(4,keep_buf,sizeof(keep_buf),&keep_len)==PGS_TRANSPORT_OK && keep_len<sizeof(keep_buf);
   if(policy_valid){
     size_t i=0;
     while(i<keep_len){
@@ -1474,16 +1474,16 @@ static void sync_from_transport(uint64_t tid) {
 
   // Keep-IV cutoff, string slot 25. A missing or malformed value falls back to the original 90%.
   char keep_iv_buf[16] = {};uint32_t keep_iv_len=0, pending_keep_iv=0;
-  if(fresh && t->get_string(25,keep_iv_buf,sizeof(keep_iv_buf),&keep_iv_len)==PGR_TRANSPORT_OK && keep_iv_len<sizeof(keep_iv_buf))
-    pending_keep_iv=pgr_transfer_keep_iv_parse(keep_iv_buf,keep_iv_len);
+  if(fresh && t->get_string(25,keep_iv_buf,sizeof(keep_iv_buf),&keep_iv_len)==PGS_TRANSPORT_OK && keep_iv_len<sizeof(keep_iv_buf))
+    pending_keep_iv=pgs_transfer_keep_iv_parse(keep_iv_buf,keep_iv_len);
 
-  PgrRuntimeTransportSample end = {PGR_TRANSPORT_SAMPLE_VERSION, sizeof(end)};
-  if (!fresh || t->sample(&end) != PGR_TRANSPORT_OK || end.snapshot_fresh == 0 ||
+  PgsRuntimeTransportSample end = {PGS_TRANSPORT_SAMPLE_VERSION, sizeof(end)};
+  if (!fresh || t->sample(&end) != PGS_TRANSPORT_OK || end.snapshot_fresh == 0 ||
       end.fault != 0 || end.snapshot_seq != start.snapshot_seq ||
       end.generation != start.generation) {
     next_opts = {};
-    next_opts.version = PGR_EH_API_VERSION;
-    next_opts.size = sizeof(PgrEncounterHostOptions);
+    next_opts.version = PGS_EH_API_VERSION;
+    next_opts.size = sizeof(PgsEncounterHostOptions);
     next_opts.transfer_protect = 2047;
     next_opts.lease_remaining_ms = 0ULL;
     g_opts = next_opts;
@@ -1500,7 +1500,7 @@ static void sync_from_transport(uint64_t tid) {
     g_lease_deadline_ms = active > 0 ? (monotonic_ms() + 2500ULL) : 0ULL;
   }
 
-  if (g_berries && (g_active_caps & PGR_EH_CAP_BERRIES)) {
+  if (g_berries && (g_active_caps & PGS_EH_CAP_BERRIES)) {
     uint32_t cnt = g_opts.berries_allowed ? g_opts.berry_priority_count : 0u;
     uint64_t lease = (g_opts.berries_allowed && cnt > 0) ? g_opts.lease_remaining_ms : 0ULL;
     g_berries->update(cnt ? g_opts.berry_priority_ids : nullptr, cnt, lease, tid);
@@ -1523,17 +1523,17 @@ static void sync_from_transport(uint64_t tid) {
 // Leaf Installation Helpers
 // ============================================================================
 static int install_berries_leaf() {
-  if (g_md.optional[OPT_BERRIES] != PGR_SHARED_OPT_AVAILABLE ||
-      g_md.optional[OPT_ITEMS] != PGR_SHARED_OPT_AVAILABLE) {
-    return PGR_EH_ERR_METADATA;
+  if (g_md.optional[OPT_BERRIES] != PGS_SHARED_OPT_AVAILABLE ||
+      g_md.optional[OPT_ITEMS] != PGS_SHARED_OPT_AVAILABLE) {
+    return PGS_EH_ERR_METADATA;
   }
-  const auto *api = static_cast<const pgr_berry_api_v1 *>(
-      pgs_encounter_berries_api(PGR_BERRY_API_VERSION));
-  if (!api || !api->install) return PGR_EH_ERR_LEAF;
+  const auto *api = static_cast<const pgs_berry_api_v1 *>(
+      pgs_encounter_berries_api(PGS_BERRY_API_VERSION));
+  if (!api || !api->install) return PGS_EH_ERR_LEAF;
 
   if (!g_exp.meta.method_get_param || !g_exp.meta.class_from_type || !g_exp.extra.class_get_fields ||
       !g_exp.meta.field_get_offset || !g_exp.meta.field_get_flags || !g_exp.meta.field_get_type ||
-      !g_exp.meta.class_is_enum || !g_exp.meta.class_value_size) return PGR_EH_ERR_METADATA;
+      !g_exp.meta.class_is_enum || !g_exp.meta.class_value_size) return PGS_EH_ERR_METADATA;
   auto from_type=reinterpret_cast<void*(*)(void*)>(g_exp.meta.class_from_type);
   auto param=reinterpret_cast<void*(*)(void*,uint32_t)>(g_exp.meta.method_get_param);
   g_berry_response_class=from_type(param(md_h(H_BR_M_RESULT),0));
@@ -1546,17 +1546,17 @@ static int install_berries_leaf() {
   void *iter=nullptr;
   for(unsigned i=0;g_berry_response_class && i<128;++i){
     void *f=fields(g_berry_response_class,&iter);if(!f)break;
-    if(offset(f)!=PGR_GAME_ENCOUNTER_HOST_CPP_BOXED_VALUE_OFFSET || (flags(f)&0x10))continue;
+    if(offset(f)!=PGS_GAME_ENCOUNTER_HOST_CPP_BOXED_VALUE_OFFSET || (flags(f)&0x10))continue;
     void *klass=from_type(type(f));int align=0;
-    if(!klass || !is_enum(klass) || size(klass,&align)!=4 || g_berry_status_field) return PGR_EH_ERR_METADATA;
+    if(!klass || !is_enum(klass) || size(klass,&align)!=4 || g_berry_status_field) return PGS_EH_ERR_METADATA;
     g_berry_status_field=f;
   }
-  if(!g_berry_status_field) return PGR_EH_ERR_METADATA;
+  if(!g_berry_status_field) return PGS_EH_ERR_METADATA;
   void *class_ball_type = derived_return_class(md_h(H_BR_M_BALL_TYPE));
   if (!class_ball_type) class_ball_type = md_k(OC_ITEM);
 
-  pgr_berry_config_v1 bcfg = {};
-  bcfg.version = PGR_BERRY_API_VERSION;
+  pgs_berry_config_v1 bcfg = {};
+  bcfg.version = PGS_BERRY_API_VERSION;
   bcfg.size = sizeof(bcfg);
   bcfg.gchandle_new = reinterpret_cast<void *>(g_exp.gchandle_new);
   bcfg.gchandle_get_target = reinterpret_cast<void *>(g_exp.gchandle_get_target);
@@ -1597,23 +1597,23 @@ static int install_berries_leaf() {
   bcfg.class_ball_type = class_ball_type;
 
   int rc = api->install(&bcfg);
-  if (rc != PGR_BERRY_OK) return PGR_EH_ERR_LEAF;
+  if (rc != PGS_BERRY_OK) return PGS_EH_ERR_LEAF;
   g_berries = api;
   //18 only latches its owner on tick; latch before publishing encounter observers.
-  if(g_berries->tick(g_owner_tid,0)!=PGR_BERRY_OK)return PGR_EH_ERR_LEAF;
-  return PGR_EH_OK;
+  if(g_berries->tick(g_owner_tid,0)!=PGS_BERRY_OK)return PGS_EH_ERR_LEAF;
+  return PGS_EH_OK;
 }
 
 static void map_poi_incident_fields(PgsMapPoiConfig *cfg);
 static int install_map_poi_leaf(bool *out_has_extra) {
   if (out_has_extra) *out_has_extra = false;
-  if (g_md.optional[OPT_MAP_POI] != PGR_SHARED_OPT_AVAILABLE ||
-      g_md.optional[OPT_VGP] != PGR_SHARED_OPT_AVAILABLE) {
-    return PGR_EH_ERR_METADATA;
+  if (g_md.optional[OPT_MAP_POI] != PGS_SHARED_OPT_AVAILABLE ||
+      g_md.optional[OPT_VGP] != PGS_SHARED_OPT_AVAILABLE) {
+    return PGS_EH_ERR_METADATA;
   }
   const auto *api = static_cast<const PgsMapPoiApi *>(
       pgs_map_poi_api(PGS_MP_API_VERSION));
-  if (!api || !api->install) return PGR_EH_ERR_LEAF;
+  if (!api || !api->install) return PGS_EH_ERR_LEAF;
 
   PgsMapPoiConfig mcfg = {};
   mcfg.version = PGS_MP_CONFIG_VERSION;
@@ -1654,7 +1654,7 @@ static int install_map_poi_leaf(bool *out_has_extra) {
   mcfg.f_hidden = md_h(H_MP_HIDDEN);
 
   bool has_extra = false;
-  if (g_md.optional[OPT_MAP_POI_EXTRA] == PGR_SHARED_OPT_AVAILABLE) {
+  if (g_md.optional[OPT_MAP_POI_EXTRA] == PGS_SHARED_OPT_AVAILABLE) {
     void *m_team = md_h(H_MPE_TEAM_M);
     void *c_team = derived_return_class(m_team);
     if (m_team && c_team) {
@@ -1688,15 +1688,15 @@ static int install_map_poi_leaf(bool *out_has_extra) {
   map_poi_incident_fields(&mcfg);
 
   int rc = api->install(&mcfg);
-  if (rc != 0) return PGR_EH_ERR_LEAF;
+  if (rc != 0) return PGS_EH_ERR_LEAF;
 
   if (!g_map_poi_out) {
     g_map_poi_out = static_cast<PgsMapPoiOutput *>(calloc(1, sizeof(PgsMapPoiOutput)));
-    if (!g_map_poi_out) return PGR_EH_ERR_LEAF;
+    if (!g_map_poi_out) return PGS_EH_ERR_LEAF;
   }
   g_map_poi = api;
   if (out_has_extra) *out_has_extra = has_extra;
-  return PGR_EH_OK;
+  return PGS_EH_OK;
 }
 
 // Optional stop incident group for the map scan (Team GO Rocket invasions etc.), resolved by name with
@@ -1747,46 +1747,46 @@ static int install_transfer_leaves() {
   auto broker = static_cast<const TransferBroker*>(pgs_shared_host_api(2));
   if (!broker || broker->version!=2 || broker->size!=sizeof(TransferBroker) ||
       !broker->ready || !broker->submit || !broker->next_event || broker->ready()!=1)
-    return PGR_EH_RETRY;
-  g_tp=static_cast<const PgrTransferApi*>(pgs_transfer_policy_api(1));
-  g_tf=static_cast<const PgrTransferFactsApi*>(pgs_transfer_facts_api(PGR_TF_API_VERSION));
-  if(!g_tp || !g_tf) return PGR_EH_ERR_LEAF;
+    return PGS_EH_RETRY;
+  g_tp=static_cast<const PgsTransferApi*>(pgs_transfer_policy_api(1));
+  g_tf=static_cast<const PgsTransferFactsApi*>(pgs_transfer_facts_api(PGS_TF_API_VERSION));
+  if(!g_tp || !g_tf) return PGS_EH_ERR_LEAF;
   g_broker=broker;
-  return PGR_EH_OK;
+  return PGS_EH_OK;
 }
 
 static int install_vgp_leaves(bool *out_has_marker) {
   const auto *items=static_cast<const pgs_items_api_v1*>(pgs_items_api(PGS_ITEMS_API_VERSION));
-  if(!items || items->version!=PGS_ITEMS_API_VERSION || items->size!=sizeof(*items))return PGR_EH_ERR_LEAF;
+  if(!items || items->version!=PGS_ITEMS_API_VERSION || items->size!=sizeof(*items))return PGS_EH_ERR_LEAF;
   kProxyItemsApi=*items;kProxyItemsApi.service_handle=&proxy_items_service_handle;kProxyItemsApi.service_acquire=&proxy_items_service_acquire;
   if (out_has_marker) *out_has_marker = false;
-  if (g_md.optional[OPT_VGP] != PGR_SHARED_OPT_AVAILABLE ||
-      g_md.optional[OPT_ITEMS] != PGR_SHARED_OPT_AVAILABLE ||
-      g_md.optional[OPT_ITEMS_LOOKUP] != PGR_SHARED_OPT_AVAILABLE) {
-    return PGR_EH_ERR_METADATA;
+  if (g_md.optional[OPT_VGP] != PGS_SHARED_OPT_AVAILABLE ||
+      g_md.optional[OPT_ITEMS] != PGS_SHARED_OPT_AVAILABLE ||
+      g_md.optional[OPT_ITEMS_LOOKUP] != PGS_SHARED_OPT_AVAILABLE) {
+    return PGS_EH_ERR_METADATA;
   }
 
-  const auto *vp = static_cast<const PgrVgpPolicyApi *>(
-      pgs_vgp_policy_api(PGR_VP_API_VERSION));
-  const auto *va = static_cast<const PgrVgpActionsApi *>(
-      pgs_vgp_actions_api(PGR_VA_API_VERSION));
-  const auto *vc = static_cast<const PgrVgpCandidateApi *>(
-      pgs_vgp_candidates_api(PGR_VC_API_VERSION));
-  const auto *vr = static_cast<const PgrVgpResultsApi *>(
-      pgs_vgp_results_api(PGR_VR_API_VERSION));
-  const auto *vd = static_cast<const PgrVgpDiscoveryApi *>(
-      pgs_vgp_discovery_api(PGR_VD_API_VERSION));
-  const auto *vm = static_cast<const PgrVgpMaintenanceApi *>(
-      pgs_vgp_maintenance_api(PGR_VM_API_VERSION));
+  const auto *vp = static_cast<const PgsVgpPolicyApi *>(
+      pgs_vgp_policy_api(PGS_VP_API_VERSION));
+  const auto *va = static_cast<const PgsVgpActionsApi *>(
+      pgs_vgp_actions_api(PGS_VA_API_VERSION));
+  const auto *vc = static_cast<const PgsVgpCandidateApi *>(
+      pgs_vgp_candidates_api(PGS_VC_API_VERSION));
+  const auto *vr = static_cast<const PgsVgpResultsApi *>(
+      pgs_vgp_results_api(PGS_VR_API_VERSION));
+  const auto *vd = static_cast<const PgsVgpDiscoveryApi *>(
+      pgs_vgp_discovery_api(PGS_VD_API_VERSION));
+  const auto *vm = static_cast<const PgsVgpMaintenanceApi *>(
+      pgs_vgp_maintenance_api(PGS_VM_API_VERSION));
   const auto *vx = static_cast<const PgsVgpAuxApi *>(
       pgs_vgp_aux_api(PGS_VX_API_VERSION));
-  const auto *vgc = static_cast<const PgrVgpControllerApi *>(
-      pgs_vgp_controller_api(PGR_VGC_API_VERSION));
-  if (!vp || !va || !vc || !vr || !vd || !vm || !vx || !vgc) return PGR_EH_ERR_LEAF;
+  const auto *vgc = static_cast<const PgsVgpControllerApi *>(
+      pgs_vgp_controller_api(PGS_VGC_API_VERSION));
+  if (!vp || !va || !vc || !vr || !vd || !vm || !vx || !vgc) return PGS_EH_ERR_LEAF;
 
   // 1. Feature 25: VGP Policy
-  PgrVgpPolicyConfig vp_cfg = {};
-  vp_cfg.version = PGR_VP_CONFIG_VERSION;
+  PgsVgpPolicyConfig vp_cfg = {};
+  vp_cfg.version = PGS_VP_CONFIG_VERSION;
   vp_cfg.size = sizeof(vp_cfg);
   vp_cfg.scan_interval_ms = 2500;
   vp_cfg.catch_seen_ms = 30000;
@@ -1801,15 +1801,15 @@ static int install_vgp_leaves(bool *out_has_marker) {
   vp_cfg.status_terminal[2] = -1;
   vp_cfg.status_terminal[3] = -1;
   vp_cfg.status_retry[0] = g_md.opt_ints[I_VGP_CS_ESCAPE];
-  pgr_vgp_smart_escape_status(g_md.opt_ints[I_VGP_CS_ESCAPE]);
+  pgs_vgp_smart_escape_status(g_md.opt_ints[I_VGP_CS_ESCAPE]);
   vp_cfg.status_retry[1] = g_md.opt_ints[I_VGP_CS_MISSED];
   vp_cfg.status_retry[2] = g_md.opt_ints[I_VGP_CS_ITEM_REPL];
   vp_cfg.status_retry[3] = -1;
-  if (vp->install(&vp_cfg) != 0) return PGR_EH_ERR_LEAF;
+  if (vp->install(&vp_cfg) != 0) return PGS_EH_ERR_LEAF;
 
   // 2. Feature 26: VGP Actions
-  PgrVgpActionsConfig va_cfg = {};
-  va_cfg.version = PGR_VA_CONFIG_VERSION;
+  PgsVgpActionsConfig va_cfg = {};
+  va_cfg.version = PGS_VA_CONFIG_VERSION;
   va_cfg.size = sizeof(va_cfg);
   va_cfg.gchandle_new = reinterpret_cast<void *>(g_exp.gchandle_new);
   va_cfg.gchandle_get_target = reinterpret_cast<void *>(g_exp.gchandle_get_target);
@@ -1836,15 +1836,15 @@ static int install_vgp_leaves(bool *out_has_marker) {
   va_cfg.f_req_target_lat = md_h(H_VGP_F_TARGET_LAT);
   va_cfg.f_req_target_lon = md_h(H_VGP_F_TARGET_LON);
   va_cfg.class_stop = md_k(OC_VGP_STOP);
-  if (va->install(&va_cfg) != 0) return PGR_EH_ERR_LEAF;
+  if (va->install(&va_cfg) != 0) return PGS_EH_ERR_LEAF;
 
   // 3. Feature 29: VGP Candidates
   void *class_latlng = derived_return_class(md_h(H_VGP_M_LOCATION));
   void *class_uint64 = derived_return_class(md_h(H_VGP_M_ID));
   if (!class_uint64) class_uint64 = const_cast<void *>(g_md.field_type_classes[0]);
 
-  PgrVgpCandidateConfig vc_cfg = {};
-  vc_cfg.version = PGR_VC_CONFIG_VERSION;
+  PgsVgpCandidateConfig vc_cfg = {};
+  vc_cfg.version = PGS_VC_CONFIG_VERSION;
   vc_cfg.size = sizeof(vc_cfg);
   vc_cfg.gchandle_new = reinterpret_cast<void *>(g_exp.gchandle_new);
   vc_cfg.gchandle_get_target = reinterpret_cast<void *>(g_exp.gchandle_get_target);
@@ -1870,11 +1870,11 @@ static int install_vgp_leaves(bool *out_has_marker) {
   vc_cfg.class_bool = md_c(6);
   vc_cfg.class_latlng = class_latlng;
   vc_cfg.class_uint64 = class_uint64;
-  if (vc->install(&vc_cfg) != 0) return PGR_EH_ERR_LEAF;
+  if (vc->install(&vc_cfg) != 0) return PGS_EH_ERR_LEAF;
 
   // 4. Feature 30: VGP Results
-  PgrVgpResultsConfig vr_cfg = {};
-  vr_cfg.version = PGR_VR_CONFIG_VERSION;
+  PgsVgpResultsConfig vr_cfg = {};
+  vr_cfg.version = PGS_VR_CONFIG_VERSION;
   vr_cfg.size = sizeof(vr_cfg);
   vr_cfg.gchandle_new = reinterpret_cast<void *>(g_exp.gchandle_new);
   vr_cfg.gchandle_get_target = reinterpret_cast<void *>(g_exp.gchandle_get_target);
@@ -1899,7 +1899,7 @@ static int install_vgp_leaves(bool *out_has_marker) {
   vr_cfg.f_spin_result = md_h(H_VGP_F_RESULT);
   vr_cfg.catch_success = g_md.success;
   vr_cfg.spin_success = g_md.opt_ints[I_VGP_SPIN_SUCCESS];
-  if (vr->install(&vr_cfg) != 0) return PGR_EH_ERR_LEAF;
+  if (vr->install(&vr_cfg) != 0) return PGS_EH_ERR_LEAF;
 
   // 5. Feature 31: VGP Discovery
   void *class_item_service = derived_field_parent(md_h(H_IT_BAG));
@@ -1908,8 +1908,8 @@ static int install_vgp_leaves(bool *out_has_marker) {
   void *class_container = derived_return_class(md_h(H_IL_CONTAINER_M));
   if (!class_container) class_container = md_k(OC_DICONTAINER);
 
-  PgrVgpDiscoveryConfig vd_cfg = {};
-  vd_cfg.version = PGR_VD_CONFIG_VERSION;
+  PgsVgpDiscoveryConfig vd_cfg = {};
+  vd_cfg.version = PGS_VD_CONFIG_VERSION;
   vd_cfg.size = sizeof(vd_cfg);
   vd_cfg.gchandle_new = reinterpret_cast<void *>(g_exp.gchandle_new);
   vd_cfg.gchandle_get_target = reinterpret_cast<void *>(g_exp.gchandle_get_target);
@@ -1944,11 +1944,11 @@ static int install_vgp_leaves(bool *out_has_marker) {
   vd_cfg.class_container = class_container;
   vd_cfg.f_item_bag = md_h(H_IT_BAG);
   vd_cfg.class_is_assignable_from = reinterpret_cast<void *>(g_exp.meta.class_is_assignable_from);
-  if (vd->install(&vd_cfg) != 0) return PGR_EH_ERR_LEAF;
+  if (vd->install(&vd_cfg) != 0) return PGS_EH_ERR_LEAF;
 
   // 6. Feature 32: VGP Maintenance
-  PgrVgpMaintenanceConfig vm_cfg = {};
-  vm_cfg.version = PGR_VM_CONFIG_VERSION;
+  PgsVgpMaintenanceConfig vm_cfg = {};
+  vm_cfg.version = PGS_VM_CONFIG_VERSION;
   vm_cfg.size = sizeof(vm_cfg);
   vm_cfg.gchandle_new = reinterpret_cast<void *>(g_exp.gchandle_new);
   vm_cfg.gchandle_get_target = reinterpret_cast<void *>(g_exp.gchandle_get_target);
@@ -1971,7 +1971,7 @@ static int install_vgp_leaves(bool *out_has_marker) {
   vm_cfg.class_stop = md_k(OC_VGP_STOP);
   vm_cfg.class_spin_result = md_k(OC_SPINRESULT);
   vm_cfg.spin_success = g_md.opt_ints[I_VGP_SPIN_SUCCESS];
-  if (vm->install(&vm_cfg) != 0) return PGR_EH_ERR_LEAF;
+  if (vm->install(&vm_cfg) != 0) return PGS_EH_ERR_LEAF;
 
   // 7. Feature 34: VGP Aux
   void *f_rpc = resolve_rpc_field(md_k(OC_IBAG), md_k(OC_VGP_RPC));
@@ -2010,16 +2010,16 @@ static int install_vgp_leaves(bool *out_has_marker) {
   vx_cfg.f_pokemon_id = md_h(H_DET_ID);
   vx_cfg.f_bag_gm = md_h(H_VGP_F_BAG_GM);
   vx_cfg.m_get_pokemon = md_h(H_TR_GET_M);
-  if (vx->install(&vx_cfg) != 0) return PGR_EH_ERR_LEAF;
+  if (vx->install(&vx_cfg) != 0) return PGS_EH_ERR_LEAF;
 
   // 8. Optional Feature 28: VGP Marker
-  const PgrVgpMarkerApi *vmk = static_cast<const PgrVgpMarkerApi*>(pgs_vgp_marker_api(1));
+  const PgsVgpMarkerApi *vmk = static_cast<const PgsVgpMarkerApi*>(pgs_vgp_marker_api(1));
   bool has_marker = false;
-  if (g_md.optional[OPT_VGP_MARKER] == PGR_SHARED_OPT_AVAILABLE) {
-    const auto *mk = static_cast<const PgrVgpMarkerApi *>(
+  if (g_md.optional[OPT_VGP_MARKER] == PGS_SHARED_OPT_AVAILABLE) {
+    const auto *mk = static_cast<const PgsVgpMarkerApi *>(
         pgs_vgp_marker_api(1));
     if (mk && mk->install) {
-      PgrVgpMarkerConfig mk_cfg = {};
+      PgsVgpMarkerConfig mk_cfg = {};
       mk_cfg.version = 1;
       mk_cfg.size = sizeof(mk_cfg);
       mk_cfg.gc_new = reinterpret_cast<void *>(g_exp.gchandle_new);
@@ -2051,16 +2051,16 @@ static int install_vgp_leaves(bool *out_has_marker) {
   }
 
   // 9. Feature 33: VGP Controller
-  PgrVgpControllerConfig vgc_cfg = {};
-  vgc_cfg.version = PGR_VGC_CONFIG_VERSION;
+  PgsVgpControllerConfig vgc_cfg = {};
+  vgc_cfg.version = PGS_VGC_CONFIG_VERSION;
   vgc_cfg.size = sizeof(vgc_cfg);
-  vgc_cfg.policy_table = const_cast<PgrVgpPolicyApi *>(vp);
-  vgc_cfg.actions_table = const_cast<PgrVgpActionsApi *>(va);
-  vgc_cfg.candidates_table = const_cast<PgrVgpCandidateApi *>(vc);
-  vgc_cfg.results_table = const_cast<PgrVgpResultsApi *>(vr);
-  vgc_cfg.discovery_table = const_cast<PgrVgpDiscoveryApi *>(vd);
-  vgc_cfg.maintenance_table = const_cast<PgrVgpMaintenanceApi *>(vm);
-  vgc_cfg.marker_table = const_cast<PgrVgpMarkerApi *>(vmk);
+  vgc_cfg.policy_table = const_cast<PgsVgpPolicyApi *>(vp);
+  vgc_cfg.actions_table = const_cast<PgsVgpActionsApi *>(va);
+  vgc_cfg.candidates_table = const_cast<PgsVgpCandidateApi *>(vc);
+  vgc_cfg.results_table = const_cast<PgsVgpResultsApi *>(vr);
+  vgc_cfg.discovery_table = const_cast<PgsVgpDiscoveryApi *>(vd);
+  vgc_cfg.maintenance_table = const_cast<PgsVgpMaintenanceApi *>(vm);
+  vgc_cfg.marker_table = const_cast<PgsVgpMarkerApi *>(vmk);
   vgc_cfg.items_table = const_cast<pgs_items_api_v1 *>(&kProxyItemsApi);
   vgc_cfg.aux_table = const_cast<PgsVgpAuxApi *>(vx);
   vgc_cfg.gc_new = reinterpret_cast<void *>(g_exp.gchandle_new);
@@ -2074,7 +2074,7 @@ static int install_vgp_leaves(bool *out_has_marker) {
   vgc_cfg.class_nameplate = md_k(OC_VGP_NAMEPLATE);
   vgc_cfg.class_bool = md_c(6);
   vgc_cfg.rpc_id = g_md.opt_ints[I_VGP_RPC_ID];
-  if (vgc->install(&vgc_cfg) != 0) return PGR_EH_ERR_LEAF;
+  if (vgc->install(&vgc_cfg) != 0) return PGS_EH_ERR_LEAF;
 
   g_vp = vp;
   g_va = va;
@@ -2086,7 +2086,7 @@ static int install_vgp_leaves(bool *out_has_marker) {
   g_vmk = vmk;
   g_vgc = vgc;
   if (out_has_marker) *out_has_marker = has_marker;
-  return PGR_EH_OK;
+  return PGS_EH_OK;
 }
 
 // ============================================================================
@@ -2101,37 +2101,37 @@ static void rollback_hooks() {
 }
 
 static int install_one_hook(void *target, void *replacement, void **orig_out) {
-  if (!target || !replacement || !orig_out || g_hook_poisoned || g_hooked_count >= 7) return PGR_EH_ERR_HOOK;
+  if (!target || !replacement || !orig_out || g_hook_poisoned || g_hooked_count >= 7) return PGS_EH_ERR_HOOK;
   for (uint32_t i = 0; i < g_hooked_count; ++i) {
-    if (g_hooked_addrs[i] == target) return *orig_out ? PGR_EH_OK : PGR_EH_ERR_HOOK;
+    if (g_hooked_addrs[i] == target) return *orig_out ? PGS_EH_OK : PGS_EH_ERR_HOOK;
   }
   const int rc = pgs_hook(target, replacement, orig_out);
   if (*orig_out) g_hooked_addrs[g_hooked_count++] = target;
-  if (rc != 0 || !*orig_out) { rollback_hooks(); return PGR_EH_ERR_HOOK; }
-  return PGR_EH_OK;
+  if (rc != 0 || !*orig_out) { rollback_hooks(); return PGS_EH_ERR_HOOK; }
+  return PGS_EH_OK;
 }
 
 // ============================================================================
 // API Implementation
 // ============================================================================
-static int api_configure(const PgrEncounterHostConfig *config) {
-  StateGuard state; if (!state) return PGR_EH_RETRY;
-  if (g_hook_poisoned) return PGR_EH_ERR_HOOK;
+static int api_configure(const PgsEncounterHostConfig *config) {
+  StateGuard state; if (!state) return PGS_EH_RETRY;
+  if (g_hook_poisoned) return PGS_EH_ERR_HOOK;
   if (g_installed) {
 
-    return PGR_EH_OK;
+    return PGS_EH_OK;
   }
 
   ResolvedExports exp = {};
-  PgrSharedMetadataOutput md = {};
-  PgrEncounterHostConfig local_cfg = {};
+  PgsSharedMetadataOutput md = {};
+  PgsEncounterHostConfig local_cfg = {};
   bool have_md = false;
 
   if (config != nullptr) {
-    if (config->version != PGR_EH_API_VERSION ||
-        config->size != sizeof(PgrEncounterHostConfig)) {
+    if (config->version != PGS_EH_API_VERSION ||
+        config->size != sizeof(PgsEncounterHostConfig)) {
 
-      return PGR_EH_ERR_BAD_CONFIG;
+      return PGS_EH_ERR_BAD_CONFIG;
     }
     local_cfg = *config;
     if (config->metadata_config.binding.exports) {
@@ -2159,25 +2159,25 @@ static int api_configure(const PgrEncounterHostConfig *config) {
 
     if (config->resolved_metadata) {
       if (config->resolved_metadata->version != 2u ||
-          config->resolved_metadata->size != sizeof(PgrSharedMetadataOutput)) {
+          config->resolved_metadata->size != sizeof(PgsSharedMetadataOutput)) {
 
-        return PGR_EH_ERR_METADATA;
+        return PGS_EH_ERR_METADATA;
       }
       md = *config->resolved_metadata;
       have_md = true;
     }
   } else {
-    local_cfg.version = PGR_EH_API_VERSION;
-    local_cfg.size = sizeof(PgrEncounterHostConfig);
+    local_cfg.version = PGS_EH_API_VERSION;
+    local_cfg.size = sizeof(PgsEncounterHostConfig);
   }
 
   // Fill any missing runtime/meta exports from Feature 54 (runtime_bootstrap) if available.
-  const auto *boot = static_cast<const PgrBootApi *>(
-      pgs_runtime_bootstrap_api(PGR_BOOT_API_VERSION));
-  PgrBootBinding b = {};
-  b.version = PGR_BOOT_BINDING_VERSION;
-  b.size = sizeof(PgrBootBinding);
-  if (boot && boot->snapshot && boot->snapshot(&b) == PGR_BOOT_OK && b.status == PGR_BOOT_OK) {
+  const auto *boot = static_cast<const PgsBootApi *>(
+      pgs_runtime_bootstrap_api(PGS_BOOT_API_VERSION));
+  PgsBootBinding b = {};
+  b.version = PGS_BOOT_BINDING_VERSION;
+  b.size = sizeof(PgsBootBinding);
+  if (boot && boot->snapshot && boot->snapshot(&b) == PGS_BOOT_OK && b.status == PGS_BOOT_OK) {
     if (!exp.meta.domain_get) exp.meta = b.meta;
     if (!exp.thread_current) {
       exp.thread_current = reinterpret_cast<decltype(exp.thread_current)>(b.runtime.thread_current);
@@ -2224,8 +2224,8 @@ static int api_configure(const PgrEncounterHostConfig *config) {
     if (b.handle) {
       auto sym = [&](const char *n) {
         void *p=dlsym(b.handle,n);
-        const auto *mdapi=static_cast<const PgrMetaApi*>(pgs_runtime_metadata_api(1));
-        PgrMetaCodeQuery q{1,sizeof(q),p,4,nullptr,0,0};
+        const auto *mdapi=static_cast<const PgsMetaApi*>(pgs_runtime_metadata_api(1));
+        PgsMetaCodeQuery q{1,sizeof(q),p,4,nullptr,0,0};
         return p && mdapi && mdapi->validate_code(&q)==0 ? p : nullptr;
       };
       if (!exp.field_set_value_object) {
@@ -2256,31 +2256,31 @@ static int api_configure(const PgrEncounterHostConfig *config) {
   // Resolve Feature 56 metadata if not already provided: first check Feature 61 shared_host,
   // then fall back to Feature 56 pgs_shared_metadata_api(2)->resolve().
   if (!have_md) {
-    const auto *sh = static_cast<const PgrSharedHostApi *>(pgs_shared_host_api(1));
-    const PgrSharedMetadataOutput *sh_md = (sh && sh->metadata) ? sh->metadata() : nullptr;
-    if (sh_md && sh_md->version == 2u && sh_md->size == sizeof(PgrSharedMetadataOutput)) {
+    const auto *sh = static_cast<const PgsSharedHostApi *>(pgs_shared_host_api(1));
+    const PgsSharedMetadataOutput *sh_md = (sh && sh->metadata) ? sh->metadata() : nullptr;
+    if (sh_md && sh_md->version == 2u && sh_md->size == sizeof(PgsSharedMetadataOutput)) {
       md = *sh_md;
       have_md = true;
     }
   }
   if (!have_md) {
-    const auto *sm = static_cast<const PgrSharedMetadataApi *>(
+    const auto *sm = static_cast<const PgsSharedMetadataApi *>(
         pgs_shared_metadata_api(2u));
     if (!sm || !sm->resolve) {
 
-      return PGR_EH_ERR_METADATA;
+      return PGS_EH_ERR_METADATA;
     }
-    PgrSharedMetadataConfig mcfg = {};
+    PgsSharedMetadataConfig mcfg = {};
     if (config && config->metadata_config.version == 2u &&
-        config->metadata_config.size == sizeof(PgrSharedMetadataConfig) &&
+        config->metadata_config.size == sizeof(PgsSharedMetadataConfig) &&
         config->metadata_config.binding.exports != nullptr) {
       mcfg = config->metadata_config;
       if (!mcfg.extra) mcfg.extra = &exp.extra;
     } else {
       mcfg.version = 2u;
-      mcfg.size = sizeof(PgrSharedMetadataConfig);
-      mcfg.binding.version = PGR_MD_CONFIG_VERSION;
-      mcfg.binding.size = sizeof(PgrMetaBindConfig);
+      mcfg.size = sizeof(PgsSharedMetadataConfig);
+      mcfg.binding.version = PGS_MD_CONFIG_VERSION;
+      mcfg.binding.size = sizeof(PgsMetaBindConfig);
       mcfg.binding.exports = &exp.meta;
       mcfg.binding.module_base = b.module_base;
       mcfg.binding.module_size = b.module_size;
@@ -2288,9 +2288,9 @@ static int api_configure(const PgrEncounterHostConfig *config) {
       mcfg.owner_tid = current_os_tid();
       mcfg.extra = &exp.extra;
     }
-    if (sm->resolve(&mcfg, &md) != PGR_SHARED_OK) {
+    if (sm->resolve(&mcfg, &md) != PGS_SHARED_OK) {
 
-      return PGR_EH_ERR_METADATA;
+      return PGS_EH_ERR_METADATA;
     }
   }
 
@@ -2299,10 +2299,10 @@ static int api_configure(const PgrEncounterHostConfig *config) {
       !exp.field_set_value || !exp.field_set_value_object || !exp.gchandle_new ||
       !exp.gchandle_get_target || !exp.gchandle_free) {
 
-    return PGR_EH_ERR_BAD_CONFIG;
+    return PGS_EH_ERR_BAD_CONFIG;
   }
 
-  if (!exp.thread_current()) return PGR_EH_RETRY;
+  if (!exp.thread_current()) return PGS_EH_RETRY;
   g_owner_tid = current_os_tid();
   g_direct_transport = config == nullptr;
   g_cfg = local_cfg;
@@ -2310,25 +2310,25 @@ static int api_configure(const PgrEncounterHostConfig *config) {
   g_md = md;
   g_configured = true;
 
-  return PGR_EH_OK;
+  return PGS_EH_OK;
 }
 
 static int api_install(void) {
-  StateGuard state; if (!state) return PGR_EH_RETRY;
-  if (g_hook_poisoned) return PGR_EH_ERR_HOOK;
+  StateGuard state; if (!state) return PGS_EH_RETRY;
+  if (g_hook_poisoned) return PGS_EH_ERR_HOOK;
   if (g_installed) {
 
-    return PGR_EH_OK;
+    return PGS_EH_OK;
   }
   if (!g_configured) {
 
     int cfg_rc = api_configure(nullptr);
-    if (cfg_rc != PGR_EH_OK) return cfg_rc;
+    if (cfg_rc != PGS_EH_OK) return cfg_rc;
 
   }
   if (monotonic_ms() == 0) {
 
-    return PGR_EH_ERR_NO_CLOCK;
+    return PGS_EH_ERR_NO_CLOCK;
   }
 
   uint32_t req_mask = g_cfg.capability_mask ? g_cfg.capability_mask : 0x7Fu;
@@ -2336,20 +2336,20 @@ static int api_install(void) {
   uint32_t active_caps = 0;
 
   // Register before publishing any63 hooks:49 owns the shared btxu trampoline.
-  if(req_mask&PGR_EH_CAP_BERRIES){
+  if(req_mask&PGS_EH_CAP_BERRIES){
     auto f=static_cast<const BerryFilterApi*>(pgs_catch_observers_api(2));
-    if(!f || f->version!=2 || f->size!=sizeof(BerryFilterApi) || !f->register_filter) return PGR_EH_RETRY;
+    if(!f || f->version!=2 || f->size!=sizeof(BerryFilterApi) || !f->register_filter) return PGS_EH_RETRY;
     int rc=f->register_filter(&berry_hold_filter,g_owner_tid);
-    if(rc!=0) return rc==6?PGR_EH_RETRY:PGR_EH_ERR_HOOK;
+    if(rc!=0) return rc==6?PGS_EH_RETRY:PGS_EH_ERR_HOOK;
   }
 
   // 1. Berries (Feature 18)
-  if (req_mask & PGR_EH_CAP_BERRIES) {
+  if (req_mask & PGS_EH_CAP_BERRIES) {
     int rc = install_berries_leaf();
-    if (rc == PGR_EH_OK) {
-      active_caps |= PGR_EH_CAP_BERRIES;
-      if (g_md.optional[OPT_ITEMS] == PGR_SHARED_OPT_AVAILABLE) {
-        active_caps |= PGR_EH_CAP_ITEMS;
+    if (rc == PGS_EH_OK) {
+      active_caps |= PGS_EH_CAP_BERRIES;
+      if (g_md.optional[OPT_ITEMS] == PGS_SHARED_OPT_AVAILABLE) {
+        active_caps |= PGS_EH_CAP_ITEMS;
       }
       emit_event("berry-ready", "{\"ready\":true}");
       notify_berry_ready(1);
@@ -2363,12 +2363,12 @@ static int api_install(void) {
   }
 
   // 2. MapPOI (Feature 42)
-  if (req_mask & PGR_EH_CAP_MAP_POI) {
+  if (req_mask & PGS_EH_CAP_MAP_POI) {
     bool has_extra = false;
     int rc = install_map_poi_leaf(&has_extra);
-    if (rc == PGR_EH_OK) {
-      active_caps |= PGR_EH_CAP_MAP_POI;
-      if (has_extra) active_caps |= PGR_EH_CAP_MAP_POI_EXTRA;
+    if (rc == PGS_EH_OK) {
+      active_caps |= PGS_EH_CAP_MAP_POI;
+      if (has_extra) active_caps |= PGS_EH_CAP_MAP_POI_EXTRA;
     } else if (require_all) {
 
       return rc;
@@ -2376,10 +2376,10 @@ static int api_install(void) {
   }
 
   // 3. Auto-Transfer (Features 4, 23, 35, 57)
-  if (req_mask & PGR_EH_CAP_TRANSFER) {
+  if (req_mask & PGS_EH_CAP_TRANSFER) {
     int rc = install_transfer_leaves();
-    if (rc == PGR_EH_OK) {
-      active_caps |= PGR_EH_CAP_TRANSFER;
+    if (rc == PGS_EH_OK) {
+      active_caps |= PGS_EH_CAP_TRANSFER;
     } else if (require_all) {
 
       return rc;
@@ -2387,12 +2387,12 @@ static int api_install(void) {
   }
 
   // 4. VGP (Features 25..34)
-  if (req_mask & PGR_EH_CAP_VGP) {
+  if (req_mask & PGS_EH_CAP_VGP) {
     bool has_marker = false;
     int rc = install_vgp_leaves(&has_marker);
-    if (rc == PGR_EH_OK) {
-      active_caps |= PGR_EH_CAP_VGP | PGR_EH_CAP_ITEMS;
-      if (has_marker) active_caps |= PGR_EH_CAP_VGP_MARKER;
+    if (rc == PGS_EH_OK) {
+      active_caps |= PGS_EH_CAP_VGP | PGS_EH_CAP_ITEMS;
+      if (has_marker) active_caps |= PGS_EH_CAP_VGP_MARKER;
       emit_event("vgp-ready", "{\"ready\":true,\"reason\":\"\"}");
       notify_vgp_ready(1, "");
     } else if (require_all) {
@@ -2406,42 +2406,42 @@ static int api_install(void) {
 
   // 5. Install Dobby hooks (using *_CODE handles!)
   uint32_t qb_shared_mask = 0;
-  if (active_caps & PGR_EH_CAP_BERRIES) {
+  if (active_caps & PGS_EH_CAP_BERRIES) {
     if (install_one_hook(md_h(H_BR_M_ENTER_CODE),
                          reinterpret_cast<void *>(&hook_berry_enter),
-                         reinterpret_cast<void **>(&g_orig_berry_enter)) != PGR_EH_OK ||
+                         reinterpret_cast<void **>(&g_orig_berry_enter)) != PGS_EH_OK ||
         install_one_hook(md_h(H_BR_M_EXIT_CODE),
                          reinterpret_cast<void *>(&hook_berry_exit),
-                         reinterpret_cast<void **>(&g_orig_berry_exit)) != PGR_EH_OK ||
+                         reinterpret_cast<void **>(&g_orig_berry_exit)) != PGS_EH_OK ||
         install_one_hook(md_h(H_BR_M_RESULT_CODE),
                          reinterpret_cast<void *>(&hook_berry_result),
-                         reinterpret_cast<void **>(&g_orig_berry_result)) != PGR_EH_OK ||
+                         reinterpret_cast<void **>(&g_orig_berry_result)) != PGS_EH_OK ||
         install_one_hook(md_h(H_BR_M_ERROR_CODE),
                          reinterpret_cast<void *>(&hook_berry_error),
-                         reinterpret_cast<void **>(&g_orig_berry_error)) != PGR_EH_OK ||
+                         reinterpret_cast<void **>(&g_orig_berry_error)) != PGS_EH_OK ||
         install_one_hook(md_h(H_BR_M_SUBMIT_CODE),
                          reinterpret_cast<void *>(&hook_pokeball_submit),
-                         reinterpret_cast<void **>(&g_orig_pokeball_submit)) != PGR_EH_OK) {
+                         reinterpret_cast<void **>(&g_orig_pokeball_submit)) != PGS_EH_OK) {
       rollback_hooks();
 
-      return PGR_EH_ERR_HOOK;
+      return PGS_EH_ERR_HOOK;
     }
-    qb_shared_mask |= PGR_QBH_SUBMIT;
+    qb_shared_mask |= PGS_QBH_SUBMIT;
   }
 
-  if (active_caps & PGR_EH_CAP_VGP) {
+  if (active_caps & PGS_EH_CAP_VGP) {
     if (install_one_hook(md_h(H_VGP_M_MANUAL_UI_CODE),
                          reinterpret_cast<void *>(&hook_nameplate_set_pokemon_ui),
-                         reinterpret_cast<void **>(&g_orig_nameplate_ui)) != PGR_EH_OK) {
+                         reinterpret_cast<void **>(&g_orig_nameplate_ui)) != PGS_EH_OK) {
       rollback_hooks();
 
-      return PGR_EH_ERR_HOOK;
+      return PGS_EH_ERR_HOOK;
     }
-    qb_shared_mask |= PGR_QBH_NAMEPLATE;
+    qb_shared_mask |= PGS_QBH_NAMEPLATE;
   }
 
   if (qb_shared_mask != 0) {
-    const auto *qb = static_cast<const PgrQuickballHostApi *>(
+    const auto *qb = static_cast<const PgsQuickballHostApi *>(
         pgs_quickball_host_api(1));
     if (qb && qb->shared_sites) {
       qb->shared_sites(qb_shared_mask);
@@ -2455,28 +2455,28 @@ static int api_install(void) {
   g_sample.installed = 1;
   g_sample.active_capabilities = active_caps;
 
-  return PGR_EH_OK;
+  return PGS_EH_OK;
 }
 
-static int api_update_options(const PgrEncounterHostOptions *options, uint64_t proven_tid) {
-  if (!options) return PGR_EH_ERR_NULL_ARG;
-  if (options->version != PGR_EH_API_VERSION ||
-      options->size != sizeof(PgrEncounterHostOptions)) {
-    return PGR_EH_ERR_BAD_CONFIG;
+static int api_update_options(const PgsEncounterHostOptions *options, uint64_t proven_tid) {
+  if (!options) return PGS_EH_ERR_NULL_ARG;
+  if (options->version != PGS_EH_API_VERSION ||
+      options->size != sizeof(PgsEncounterHostOptions)) {
+    return PGS_EH_ERR_BAD_CONFIG;
   }
-  StateGuard state; if (!state) return PGR_EH_RETRY;
+  StateGuard state; if (!state) return PGS_EH_RETRY;
   if (!g_installed) {
 
-    return PGR_EH_ERR_NOT_INSTALLED;
+    return PGS_EH_ERR_NOT_INSTALLED;
   }
   uint64_t tid = proven_unity_tid();
-  if (!tid || (proven_tid && proven_tid != tid)) return PGR_EH_RETRY;
+  if (!tid || (proven_tid && proven_tid != tid)) return PGS_EH_RETRY;
   g_opts = *options;
   uint64_t lease = options->lease_remaining_ms > 2500ULL ? 2500ULL : options->lease_remaining_ms;
   g_opts.lease_remaining_ms = lease;
   g_lease_deadline_ms = lease > 0 ? (monotonic_ms() + lease) : 0ULL;
 
-  if (g_berries && (g_active_caps & PGR_EH_CAP_BERRIES)) {
+  if (g_berries && (g_active_caps & PGS_EH_CAP_BERRIES)) {
     uint32_t cnt = (options->berries_allowed && options->berry_priority_count <= 3)
                        ? options->berry_priority_count
                        : 0u;
@@ -2496,40 +2496,40 @@ static int api_update_options(const PgrEncounterHostOptions *options, uint64_t p
     g_vgp_epoch++;
   }
 
-  return PGR_EH_OK;
+  return PGS_EH_OK;
 }
 
 static int api_set_keep_species(const int32_t *species_ids, uint32_t count) {
-  if (count > 0 && !species_ids) return PGR_EH_ERR_NULL_ARG;
-  if (count > 2000) return PGR_EH_ERR_BAD_CONFIG;
-  StateGuard state; if (!state) return PGR_EH_RETRY;
+  if (count > 0 && !species_ids) return PGS_EH_ERR_NULL_ARG;
+  if (count > 2000) return PGS_EH_ERR_BAD_CONFIG;
+  StateGuard state; if (!state) return PGS_EH_RETRY;
   g_keep_species_count = count;
   for (uint32_t i = 0; i < count; ++i) {
     g_keep_species[i] = species_ids[i];
   }
   g_transfer_epoch++;
 
-  return PGR_EH_OK;
+  return PGS_EH_OK;
 }
 
 static int api_stop(uint64_t proven_tid);
 static int api_tick(uint64_t proven_tid) {
   if (g_stop_requested.load(std::memory_order_acquire)) return api_stop(proven_tid);
-  StateGuard state; if (!state) return PGR_EH_RETRY;
+  StateGuard state; if (!state) return PGS_EH_RETRY;
   if (!g_installed) {
 
-    return PGR_EH_ERR_NOT_INSTALLED;
+    return PGS_EH_ERR_NOT_INSTALLED;
   }
   if (g_stopped) {
-    return PGR_EH_OK;
+    return PGS_EH_OK;
   }
   uint64_t os_tid = proven_unity_tid();
   if (os_tid == 0 || (proven_tid != 0 && proven_tid != os_tid)) {
 
-    return PGR_EH_OK;
+    return PGS_EH_OK;
   }
 
-  if (g_ticking || g_hook_frames) return PGR_EH_RETRY;
+  if (g_ticking || g_hook_frames) return PGS_EH_RETRY;
   struct TickFrame {TickFrame(){g_ticking=true;} ~TickFrame(){g_ticking=false;}} tickframe;
   // Sync settings from Feature 52 transport if active.
   sync_from_transport(os_tid);
@@ -2541,129 +2541,129 @@ static int api_tick(uint64_t proven_tid) {
   g_sample.tick_serial++;
 
   // Observe before automatic gameplay work; revoke before opening the manual encounter.
-  pgr_profile_scroll_install();
-  pgr_menu_visibility_tick(now);
-  const bool map_block=pgr_map_auto_throw_active();
-  const bool raid_block=map_block||pgr_auto_raid_tick(os_tid,&g_md);
+  pgs_profile_scroll_install();
+  pgs_menu_visibility_tick(now);
+  const bool map_block=pgs_map_auto_throw_active();
+  const bool raid_block=map_block||pgs_auto_raid_tick(os_tid,&g_md);
   // Auto Rocket owns the map between its battles; healing and boosts still run, and Auto throw
   // catches its shadow Pokemon.
-  const bool rocket_block=!raid_block&&pgr_auto_rocket_tick(os_tid,&g_md);
-  const bool bird_block=!raid_block&&!rocket_block&&pgr_incense_guard_tick(os_tid,&g_md);
+  const bool rocket_block=!raid_block&&pgs_auto_rocket_tick(os_tid,&g_md);
+  const bool bird_block=!raid_block&&!rocket_block&&pgs_incense_guard_tick(os_tid,&g_md);
   // A walking Auto Rocket session lets VGP+ catch and spin between stops (Java allows it only then).
-  const bool rocket_vgp_block=rocket_block&&!pgr_auto_rocket_vgp_window();
+  const bool rocket_vgp_block=rocket_block&&!pgs_auto_rocket_vgp_window();
   if(bird_block||rocket_vgp_block||(raid_block&&!map_block)){g_opts.vgp_enabled=0;if(g_vgc&&g_last_vgp_enabled){g_vgc->revoke();clear_active_vgp_transfer();g_last_vgp_enabled=false;++g_vgp_epoch;}}
   // Publish exclusive ownership before the bird guard can invoke OnTap.
-  pgr_map_auto_throw_tick(os_tid,&g_md,(!map_block&&raid_block)||bird_block||rocket_block);
+  pgs_map_auto_throw_tick(os_tid,&g_md,(!map_block&&raid_block)||bird_block||rocket_block);
   tick_map_catch_marker(os_tid, now, rem_lease);
-  if(!raid_block&&!rocket_block)pgr_incense_guard_open(os_tid);
+  if(!raid_block&&!rocket_block)pgs_incense_guard_open(os_tid);
   // 1. Berries tick, resume & event drain
   pump_berry_events_and_resume(os_tid, 0);
 
   // 2. VGP controller tick & transfer handoff
-  if(!map_block&&!pgr_map_auto_throw_active())tick_vgp_controller(os_tid, now, rem_lease);
+  if(!map_block&&!pgs_map_auto_throw_active())tick_vgp_controller(os_tid, now, rem_lease);
 
   // 3. MapPOI snapshot scan
   tick_map_poi(os_tid, now, rem_lease);
   if(!raid_block&&!rocket_block){
-    pgr_gift_batch_tick(os_tid, &g_md);
-    pgr_research_tick(os_tid, &g_md);
-    pgr_session_stats_tick(os_tid, &g_md);
-    pgr_route_gift_tick(os_tid, &g_md);
+    pgs_gift_batch_tick(os_tid, &g_md);
+    pgs_research_tick(os_tid, &g_md);
+    pgs_session_stats_tick(os_tid, &g_md);
+    pgs_route_gift_tick(os_tid, &g_md);
   }
-  pgr_storage_iv_tick(os_tid, &g_md);
-  pgr_cutscene_skip_tick(os_tid, &g_md);
-  pgr_rocket_swap_tick(os_tid);
-  pgr_smart_battle_tick(os_tid, &g_md);
-  pgr_ar_values_tick(os_tid, &g_md);
-  pgr_catch_chance_tick(os_tid, &g_md);
-  pgr_auto_throw_tick(os_tid, &g_md, raid_block);
+  pgs_storage_iv_tick(os_tid, &g_md);
+  pgs_cutscene_skip_tick(os_tid, &g_md);
+  pgs_rocket_swap_tick(os_tid);
+  pgs_smart_battle_tick(os_tid, &g_md);
+  pgs_ar_values_tick(os_tid, &g_md);
+  pgs_catch_chance_tick(os_tid, &g_md);
+  pgs_auto_throw_tick(os_tid, &g_md, raid_block);
   if(!raid_block&&!rocket_block){
-    pgr_remote_gym_tick(os_tid, &g_md);
-    pgr_gym_tick(os_tid, &g_md);
-    pgr_evolution_tick(os_tid, &g_md);
+    pgs_remote_gym_tick(os_tid, &g_md);
+    pgs_gym_tick(os_tid, &g_md);
+    pgs_evolution_tick(os_tid, &g_md);
   }
   // Evolve-first catches queued by Auto Rocket are worked through between its battles.
-  if(!raid_block&&(!rocket_block||pgr_auto_rocket_between_battles()))pgr_evolve_transfer_tick(os_tid, &g_md);
+  if(!raid_block&&(!rocket_block||pgs_auto_rocket_between_battles()))pgs_evolve_transfer_tick(os_tid, &g_md);
   if(!raid_block){
-    pgr_heal_tick(os_tid, &g_md);
-    pgr_auto_boost_tick(os_tid, &g_md);
+    pgs_heal_tick(os_tid, &g_md);
+    pgs_auto_boost_tick(os_tid, &g_md);
   }
   if(!raid_block&&!rocket_block){
-    pgr_shundo_tick(os_tid, &g_md);
-    pgr_shiny_scan_tick(os_tid, &g_md);
+    pgs_shundo_tick(os_tid, &g_md);
+    pgs_shiny_scan_tick(os_tid, &g_md);
   }
-  pgr_battery_tick(os_tid, &g_md);
-  if(!raid_block)pgr_buddy_emotion_tick(os_tid, &g_md);
+  pgs_battery_tick(os_tid, &g_md);
+  if(!raid_block)pgs_buddy_emotion_tick(os_tid, &g_md);
 
 
-  return PGR_EH_OK;
+  return PGS_EH_OK;
 }
 
 static int api_stop(uint64_t proven_tid) {
   g_stop_requested.store(true, std::memory_order_release);
-  StateGuard state; if (!state) return PGR_EH_RETRY;
+  StateGuard state; if (!state) return PGS_EH_RETRY;
   if (!g_installed) {
 
-    return PGR_EH_ERR_NOT_INSTALLED;
+    return PGS_EH_ERR_NOT_INSTALLED;
   }
-  if (g_stopped) return PGR_EH_OK;
-  if (g_hook_frames || g_ticking) return PGR_EH_RETRY;
+  if (g_stopped) return PGS_EH_OK;
+  if (g_hook_frames || g_ticking) return PGS_EH_RETRY;
   uint64_t tid = proven_unity_tid();
-  if (!tid || (proven_tid && proven_tid != tid)) return PGR_EH_RETRY;
+  if (!tid || (proven_tid && proven_tid != tid)) return PGS_EH_RETRY;
   g_stopped = true;
   if (tid != 0) {
-    pgr_auto_raid_stop(tid);
-    pgr_auto_rocket_stop(tid);
-    pgr_map_auto_throw_stop();
-    if (g_berries && (g_active_caps & PGR_EH_CAP_BERRIES)) {
+    pgs_auto_raid_stop(tid);
+    pgs_auto_rocket_stop(tid);
+    pgs_map_auto_throw_stop();
+    if (g_berries && (g_active_caps & PGS_EH_CAP_BERRIES)) {
       g_berries->update(nullptr, 0, 0, tid);
       pump_berry_events_and_resume(tid, 1);
     }
-    if (g_vgc && (g_active_caps & PGR_EH_CAP_VGP)) {
-      pgr_gift_batch_stop();
-      pgr_research_stop();
-      pgr_route_gift_stop();
-      pgr_storage_iv_stop();
-      pgr_cutscene_skip_stop(tid);
-      pgr_rocket_swap_stop();
-      pgr_smart_battle_stop(tid);
-      pgr_catch_chance_stop();
-  pgr_auto_throw_stop();
-      pgr_remote_gym_stop(tid);
-      pgr_incense_guard_stop(tid);
-      pgr_gym_stop(tid);
-      pgr_evolution_stop(tid);
-      pgr_evolve_transfer_stop(tid);
-      pgr_heal_stop(tid);pgr_auto_boost_stop(tid);
-      pgr_shundo_stop(tid);
-      pgr_shiny_scan_stop(tid);
-      pgr_battery_stop(tid);
-      pgr_buddy_emotion_stop(tid);
+    if (g_vgc && (g_active_caps & PGS_EH_CAP_VGP)) {
+      pgs_gift_batch_stop();
+      pgs_research_stop();
+      pgs_route_gift_stop();
+      pgs_storage_iv_stop();
+      pgs_cutscene_skip_stop(tid);
+      pgs_rocket_swap_stop();
+      pgs_smart_battle_stop(tid);
+      pgs_catch_chance_stop();
+  pgs_auto_throw_stop();
+      pgs_remote_gym_stop(tid);
+      pgs_incense_guard_stop(tid);
+      pgs_gym_stop(tid);
+      pgs_evolution_stop(tid);
+      pgs_evolve_transfer_stop(tid);
+      pgs_heal_stop(tid);pgs_auto_boost_stop(tid);
+      pgs_shundo_stop(tid);
+      pgs_shiny_scan_stop(tid);
+      pgs_battery_stop(tid);
+      pgs_buddy_emotion_stop(tid);
       g_vgc->stop(tid);
       notify_vgp_target(0, 0.0, 0.0, 0);
     }
-    if (g_tx && (g_active_caps & PGR_EH_CAP_TRANSFER)) {
+    if (g_tx && (g_active_caps & PGS_EH_CAP_TRANSFER)) {
       pump_transfer_events(tid, 1);
     }
     clear_active_vgp_transfer();
   }
 
-  return PGR_EH_OK;
+  return PGS_EH_OK;
 }
 
-static int api_sample(PgrEncounterHostSample *out) {
-  if (!out) return PGR_EH_ERR_NULL_ARG;
-  if (out->version != PGR_EH_API_VERSION || out->size != sizeof(PgrEncounterHostSample)) {
-    return PGR_EH_ERR_BAD_CONFIG;
+static int api_sample(PgsEncounterHostSample *out) {
+  if (!out) return PGS_EH_ERR_NULL_ARG;
+  if (out->version != PGS_EH_API_VERSION || out->size != sizeof(PgsEncounterHostSample)) {
+    return PGS_EH_ERR_BAD_CONFIG;
   }
-  StateGuard state; if (!state) return PGR_EH_RETRY;
+  StateGuard state; if (!state) return PGS_EH_RETRY;
   *out = g_sample;
 
-  return PGR_EH_OK;
+  return PGS_EH_OK;
 }
 
 static int api_poll_event(char *type_buf, uint32_t type_cap, char *json_buf, uint32_t json_cap) {
-  if (!type_buf || type_cap == 0 || !json_buf || json_cap == 0) return PGR_EH_ERR_NULL_ARG;
+  if (!type_buf || type_cap == 0 || !json_buf || json_cap == 0) return PGS_EH_ERR_NULL_ARG;
   pthread_mutex_lock(&g_event_mu);
   if (g_event_count == 0) {
     pthread_mutex_unlock(&g_event_mu);
@@ -2678,9 +2678,9 @@ static int api_poll_event(char *type_buf, uint32_t type_cap, char *json_buf, uin
   return 1;
 }
 
-static const PgrEncounterHostApi kEncounterHostApi = {
-    PGR_EH_API_VERSION,
-    sizeof(PgrEncounterHostApi),
+static const PgsEncounterHostApi kEncounterHostApi = {
+    PGS_EH_API_VERSION,
+    sizeof(PgsEncounterHostApi),
     &api_configure,
     &api_install,
     &api_update_options,
@@ -2694,6 +2694,6 @@ static const PgrEncounterHostApi kEncounterHostApi = {
 }  // namespace
 
 extern "C" const void *pgs_encounter_host_api(uint32_t version) {
-  if (version != PGR_EH_API_VERSION) return nullptr;
+  if (version != PGS_EH_API_VERSION) return nullptr;
   return &kEncounterHostApi;
 }

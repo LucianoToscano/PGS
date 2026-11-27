@@ -50,83 +50,83 @@ extern "C" {
 
 static_assert(sizeof(void *) == 8, "Rocket combat native ABI requires LP64");
 
-enum PgrRocketCombatInfo {
-  PGR_RC_FEATURE_ID   = 21,
-  PGR_RC_API_VERSION  = 1,
-  PGR_RC_MAX_CHARGES  = 4,    // vNext charge-candidate cap (exact source: list.length<4)
-  PGR_RC_EVENT_CAP    = 64,   // bounded telemetry FIFO depth (fail-closed on overflow)
-  PGR_RC_CLOSED_STATE = 3     // GuiController.currentState closed scalar (literal, source: ===3)
+enum PgsRocketCombatInfo {
+  PGS_RC_FEATURE_ID   = 21,
+  PGS_RC_API_VERSION  = 1,
+  PGS_RC_MAX_CHARGES  = 4,    // vNext charge-candidate cap (exact source: list.length<4)
+  PGS_RC_EVENT_CAP    = 64,   // bounded telemetry FIFO depth (fail-closed on overflow)
+  PGS_RC_CLOSED_STATE = 3     // GuiController.currentState closed scalar (literal, source: ===3)
 };
 
 // observe() kinds. aux carries the shield-prompt bool for SHIELD_PROMPT, else ignored.
-enum PgrRocketCombatObserve {
-  PGR_RC_OBS_SCOPE_EXIT    = 0,  // obj=scope; rocketClear when it is the live scope
-  PGR_RC_OBS_SCOPE_ENTER   = 1,  // obj=scope (InvasionCombatState); rocketClear + set + arm 20
-  PGR_RC_OBS_UI_UPDATE     = 2,  // obj=CombatUI (UpdateActionsUI live-update); replace legacy ui
-  PGR_RC_OBS_UI_CLOSE      = 3,  // obj=CombatUI (HandleDismiss); drop ui by identity
-  PGR_RC_OBS_VNEXT_UPDATE  = 4,  // obj=CombatVNextGuiController; replace vNext gui
-  PGR_RC_OBS_VNEXT_CLOSE   = 5,  // obj=vNext gui; drop vui + charges by identity
-  PGR_RC_OBS_CHARGE        = 6,  // obj=ChargeAttackDisplayVNext; prune/dedupe/append (<=4)
-  PGR_RC_OBS_SHIELD_PROMPT = 7,  // obj=ShieldModalGuiController, aux=prompt bool; open shield
-  PGR_RC_OBS_SHIELD_MANUAL = 8,  // obj=shield modal (ShieldUiClicked); mark used + notify 20
-  PGR_RC_OBS_SHIELD_CLOSE  = 9   // obj=shield modal (HandleDismiss); drop shield by identity
+enum PgsRocketCombatObserve {
+  PGS_RC_OBS_SCOPE_EXIT    = 0,  // obj=scope; rocketClear when it is the live scope
+  PGS_RC_OBS_SCOPE_ENTER   = 1,  // obj=scope (InvasionCombatState); rocketClear + set + arm 20
+  PGS_RC_OBS_UI_UPDATE     = 2,  // obj=CombatUI (UpdateActionsUI live-update); replace legacy ui
+  PGS_RC_OBS_UI_CLOSE      = 3,  // obj=CombatUI (HandleDismiss); drop ui by identity
+  PGS_RC_OBS_VNEXT_UPDATE  = 4,  // obj=CombatVNextGuiController; replace vNext gui
+  PGS_RC_OBS_VNEXT_CLOSE   = 5,  // obj=vNext gui; drop vui + charges by identity
+  PGS_RC_OBS_CHARGE        = 6,  // obj=ChargeAttackDisplayVNext; prune/dedupe/append (<=4)
+  PGS_RC_OBS_SHIELD_PROMPT = 7,  // obj=ShieldModalGuiController, aux=prompt bool; open shield
+  PGS_RC_OBS_SHIELD_MANUAL = 8,  // obj=shield modal (ShieldUiClicked); mark used + notify 20
+  PGS_RC_OBS_SHIELD_CLOSE  = 9   // obj=shield modal (HandleDismiss); drop shield by identity
 };
 
 // Table status codes. 0 == success.
-enum PgrRocketCombatStatus {
-  PGR_RC_OK               = 0,
-  PGR_RC_ERR_NULL_ARG     = 1,
-  PGR_RC_ERR_BAD_CONFIG   = 2,
-  PGR_RC_ERR_ALREADY_BOUND = 3,
-  PGR_RC_ERR_NOT_INSTALLED = 4,
-  PGR_RC_ERR_NO_CLOCK     = 5,
-  PGR_RC_ERR_NO_POLICY    = 6   // feature 20 action table (pgs_rocket_actions_api) unavailable
+enum PgsRocketCombatStatus {
+  PGS_RC_OK               = 0,
+  PGS_RC_ERR_NULL_ARG     = 1,
+  PGS_RC_ERR_BAD_CONFIG   = 2,
+  PGS_RC_ERR_ALREADY_BOUND = 3,
+  PGS_RC_ERR_NOT_INSTALLED = 4,
+  PGS_RC_ERR_NO_CLOCK     = 5,
+  PGS_RC_ERR_NO_POLICY    = 6   // feature 20 action table (pgs_rocket_actions_api) unavailable
 };
 
 // Bounded-FIFO event codes drained by next_event(). Carry only action / source / reason; never
 // an account identifier. The adapter reproduces the exact rocket-* event names/reasons verbatim.
-enum PgrRocketCombatEventCode {
-  PGR_RC_EVT_NONE   = 0,
-  PGR_RC_EVT_READY  = 1,  // native-rocket-combat-ready (aux=1)
-  PGR_RC_EVT_SCOPE  = 2,  // rocket-scope        (aux=active 1/0)
-  PGR_RC_EVT_UI     = 3,  // rocket-ui           (aux=PgrRocketCombatUiSource)
-  PGR_RC_EVT_ACTION = 4,  // rocket-action       (id=PgrRocketCombatAction, aux bit0=accepted, bit1=vnext)
-  PGR_RC_EVT_GATE   = 5,  // rocket-attack-gate  (id=PgrRocketCombatGate)
-  PGR_RC_EVT_ERROR  = 6   // rocket-error        (managed-invoke fault)
+enum PgsRocketCombatEventCode {
+  PGS_RC_EVT_NONE   = 0,
+  PGS_RC_EVT_READY  = 1,  // native-rocket-combat-ready (aux=1)
+  PGS_RC_EVT_SCOPE  = 2,  // rocket-scope        (aux=active 1/0)
+  PGS_RC_EVT_UI     = 3,  // rocket-ui           (aux=PgsRocketCombatUiSource)
+  PGS_RC_EVT_ACTION = 4,  // rocket-action       (id=PgsRocketCombatAction, aux bit0=accepted, bit1=vnext)
+  PGS_RC_EVT_GATE   = 5,  // rocket-attack-gate  (id=PgsRocketCombatGate)
+  PGS_RC_EVT_ERROR  = 6   // rocket-error        (managed-invoke fault)
 };
 
 // rocket-ui "source" values carried in the event aux.
-enum PgrRocketCombatUiSource {
-  PGR_RC_UI_LIVE  = 0,  // "live-update"
-  PGR_RC_UI_VNEXT = 1   // "vnext-update"
+enum PgsRocketCombatUiSource {
+  PGS_RC_UI_LIVE  = 0,  // "live-update"
+  PGS_RC_UI_VNEXT = 1   // "vnext-update"
 };
 
 // rocket-action kinds carried in the event id.
-enum PgrRocketCombatAction {
-  PGR_RC_ACT_SHIELD  = 0,  // "shield"
-  PGR_RC_ACT_CHARGED = 1,  // "charged"
-  PGR_RC_ACT_QUICK   = 2   // "quick"
+enum PgsRocketCombatAction {
+  PGS_RC_ACT_SHIELD  = 0,  // "shield"
+  PGS_RC_ACT_CHARGED = 1,  // "charged"
+  PGS_RC_ACT_QUICK   = 2   // "quick"
 };
 
 // rocket-attack-gate reason codes carried in the event id. The director-type-name detail that the
 // JS gate string carried ("director:<typeName>") is NOT reproduced -- see the module limitations.
-enum PgrRocketCombatGate {
-  PGR_RC_GATE_NONE       = 0,  // cleared (not emitted)
-  PGR_RC_GATE_WAIT_UI    = 1,  // "waiting-for-battle-ui"
-  PGR_RC_GATE_DIRECTOR   = 2,  // "director-unexpected"  (JS: "director:<typeName>")
-  PGR_RC_GATE_INACTIVE   = 3,  // "battle-not-active"
-  PGR_RC_GATE_ACTIVE     = 4,  // "active"
-  PGR_RC_GATE_VN_BLOCKED = 5,  // "vnext-input-blocked"
-  PGR_RC_GATE_VN_NOFAST  = 6,  // "vnext-fast-input-disabled"
-  PGR_RC_GATE_VN_ACTIVE  = 7   // "vnext-active"
+enum PgsRocketCombatGate {
+  PGS_RC_GATE_NONE       = 0,  // cleared (not emitted)
+  PGS_RC_GATE_WAIT_UI    = 1,  // "waiting-for-battle-ui"
+  PGS_RC_GATE_DIRECTOR   = 2,  // "director-unexpected"  (JS: "director:<typeName>")
+  PGS_RC_GATE_INACTIVE   = 3,  // "battle-not-active"
+  PGS_RC_GATE_ACTIVE     = 4,  // "active"
+  PGS_RC_GATE_VN_BLOCKED = 5,  // "vnext-input-blocked"
+  PGS_RC_GATE_VN_NOFAST  = 6,  // "vnext-fast-input-disabled"
+  PGS_RC_GATE_VN_ACTIVE  = 7   // "vnext-active"
 };
 
 // Install-time configuration (fixed LP64 layout, 344 bytes). Every pointer is an already-validated
 // il2cpp export / MethodInfo* / FieldInfo* / Il2CppClass*; the native layer re-checks and rejects
 // any null. See the static_asserts in rocket_combat.cpp for the authoritative offsets/sizes.
-typedef struct pgr_rocket_combat_config_v1 {
-  uint32_t version;  // == PGR_RC_API_VERSION
-  uint32_t size;     // == sizeof(pgr_rocket_combat_config_v1)
+typedef struct pgs_rocket_combat_config_v1 {
+  uint32_t version;  // == PGS_RC_API_VERSION
+  uint32_t size;     // == sizeof(pgs_rocket_combat_config_v1)
 
   // il2cpp runtime exports (pointer-sized ABI).                                   offset
   void *gchandle_new;         // void* (void* obj, int pinned) -> handle              8
@@ -188,65 +188,65 @@ typedef struct pgr_rocket_combat_config_v1 {
   uint32_t reserved0;    // must be 0                                                332
   uint32_t reserved1;    // must be 0                                                336
   uint32_t reserved2;    // must be 0                                                340
-} pgr_rocket_combat_config_v1;  // 344 bytes
+} pgs_rocket_combat_config_v1;  // 344 bytes
 
 // Pull-only telemetry snapshot (64 bytes). Safe from any thread; never frees. The adapter builds
 // its rocketState facade (state truthiness + failed, for the battle-19 mutual-exclusion gate and
 // the minigame-6 gate) and the owned_roots finish guard from this.
-typedef struct pgr_rocket_combat_sample_v1 {
-  uint32_t version;       // == PGR_RC_API_VERSION
-  uint32_t size;          // == sizeof(pgr_rocket_combat_sample_v1)
+typedef struct pgs_rocket_combat_sample_v1 {
+  uint32_t version;       // == PGS_RC_API_VERSION
+  uint32_t size;          // == sizeof(pgs_rocket_combat_sample_v1)
   uint32_t scope_active;  // a Rocket scope is held (1) / absent (0)  -> rocketState.state truthy
   uint32_t failed;        // encounter fault latch (cleared on the next scope enter)
   uint32_t ui_active;     // a legacy CombatUI OR vNext gui is held (1/0)
   uint32_t charges;       // live vNext charge-candidate root count
   uint32_t shield;        // a shield modal is held (1/0)
-  int32_t  gate;          // last attack-gate reason (PgrRocketCombatGate, -1 none)
+  int32_t  gate;          // last attack-gate reason (PgsRocketCombatGate, -1 none)
   uint64_t action_serial; // bumped on each action issued
   uint64_t scope_serial;  // bumped on each scope enter
   uint32_t fault_serial;  // bumped on each managed-invoke fault
   uint32_t dropped_events;// FIFO overflow count (fail-closed: blocks new actions until drained)
   uint32_t owned_roots;   // durable GC roots + active frames (coordinator finish guard; nonzero in cleanup)
   uint32_t reserved;      // 0
-} pgr_rocket_combat_sample_v1;
+} pgs_rocket_combat_sample_v1;
 
 // Bounded-FIFO event record (16 bytes). Drained in strict order by next_event().
-typedef struct pgr_rocket_combat_event_v1 {
-  uint32_t code;      // PgrRocketCombatEventCode
+typedef struct pgs_rocket_combat_event_v1 {
+  uint32_t code;      // PgsRocketCombatEventCode
   int32_t  id;        // action / gate reason (or 0)
   int32_t  aux;       // active / ui-source / action flags
   int32_t  reserved;  // 0
-} pgr_rocket_combat_event_v1;
+} pgs_rocket_combat_event_v1;
 
 /* install(config): validate + publish the config once; also resolve the feature-20 action table
  * (pgs_rocket_actions_api(1)). A repeat of the identical config is OK; a different one returns
  * ALREADY_BOUND. BAD_CONFIG on header/size/pointer/literal problems; NO_CLOCK if CLOCK_BOOTTIME is
  * unavailable; NO_POLICY if feature 20 is not linked in. Installs NO hooks. */
-typedef int (*pgr_rocket_combat_install_fn)(const pgr_rocket_combat_config_v1 *config);
+typedef int (*pgs_rocket_combat_install_fn)(const pgs_rocket_combat_config_v1 *config);
 
 /* update(mask, lease_ms, proven_tid): refresh the per-tick policy gate (the rocketMask bits 1/2/4
  * and a residual lease clamped to feature 20's cap, turned into an absolute CLOCK_BOOTTIME
  * deadline) and forward the same mask/lease into feature 20. A foreign thread (once the owner is
  * latched) can only disarm. Any thread. */
-typedef int (*pgr_rocket_combat_update_fn)(uint32_t mask, uint64_t lease_ms, uint64_t proven_tid);
+typedef int (*pgs_rocket_combat_update_fn)(uint32_t mask, uint64_t lease_ms, uint64_t proven_tid);
 
 /* observe(kind, obj, aux, proven_tid): forward one Gum-watcher observation (see
- * PgrRocketCombatObserve). Performs the exact-class identity checks itself; a mismatch is a silent
+ * PgsRocketCombatObserve). Performs the exact-class identity checks itself; a mismatch is a silent
  * no-op. Owner thread only (inert otherwise). */
-typedef int (*pgr_rocket_combat_observe_fn)(uint32_t kind, void *obj, int32_t aux,
+typedef int (*pgs_rocket_combat_observe_fn)(uint32_t kind, void *obj, int32_t aux,
                                             uint64_t proven_tid);
 
 /* begin_ui(obj, proven_tid): the legacy CombatUI Initialize onEnter. Returns a nonzero token iff a
  * Rocket scope is held and obj is exactly CombatUI; else 0. Roots obj into a pending slot WITHOUT
  * publishing it, binding the current scope epoch. The token is invalidated by any live UI
  * replacement/close or a newer begin_ui so a late onLeave can never overwrite a replacement UI. */
-typedef uint64_t (*pgr_rocket_combat_begin_ui_fn)(void *obj, uint64_t proven_tid);
+typedef uint64_t (*pgs_rocket_combat_begin_ui_fn)(void *obj, uint64_t proven_tid);
 
 /* end_ui(token, obj, proven_tid): the matching onLeave, called AFTER the original ran. Publishes
  * the pending UI as the live ui iff the token is still the latest pending token, its scope epoch is
  * unchanged, and the token still identifies the rooted pending object. The obj argument is reserved and ignored. A stale / replayed / superseded token is dropped
  * (its pending root freed) without touching the live ui. */
-typedef int (*pgr_rocket_combat_end_ui_fn)(uint64_t token, void *obj, uint64_t proven_tid);
+typedef int (*pgs_rocket_combat_end_ui_fn)(uint64_t token, void *obj, uint64_t proven_tid);
 
 /* tick(proven_tid, stopping): one owner-thread rocketTick pass -- shield-first, then the vNext or
  * legacy charged/quick decision, each gated by a fresh feature-20 begin()/claim() ticket and a
@@ -254,27 +254,27 @@ typedef int (*pgr_rocket_combat_end_ui_fn)(uint64_t token, void *obj, uint64_t p
  * claim and invoke). stopping != 0 disarms feature 20 and clears the Rocket state (deferred to the
  * outermost frame if a nested tick/observer arrives inside a managed getter). Off the proven thread
  * it is a no-op. */
-typedef int (*pgr_rocket_combat_tick_fn)(uint64_t proven_tid, int stopping);
+typedef int (*pgs_rocket_combat_tick_fn)(uint64_t proven_tid, int stopping);
 
 /* sample(out): copy the telemetry snapshot. Any thread; never frees. */
-typedef int (*pgr_rocket_combat_sample_fn)(pgr_rocket_combat_sample_v1 *out);
+typedef int (*pgs_rocket_combat_sample_fn)(pgs_rocket_combat_sample_v1 *out);
 
 /* next_event(out): dequeue one FIFO event (returns 1) or report empty (returns 0). Owner thread. */
-typedef int (*pgr_rocket_combat_next_event_fn)(pgr_rocket_combat_event_v1 *out);
+typedef int (*pgs_rocket_combat_next_event_fn)(pgs_rocket_combat_event_v1 *out);
 
 // Ordered, read-only table (8-byte header + 8 function pointers = 72 bytes).
-typedef struct pgr_rocket_combat_api_v1 {
-  uint32_t version;  // == PGR_RC_API_VERSION
-  uint32_t size;     // == sizeof(pgr_rocket_combat_api_v1)
-  pgr_rocket_combat_install_fn    install;
-  pgr_rocket_combat_update_fn     update;
-  pgr_rocket_combat_observe_fn    observe;
-  pgr_rocket_combat_begin_ui_fn   begin_ui;
-  pgr_rocket_combat_end_ui_fn     end_ui;
-  pgr_rocket_combat_tick_fn       tick;
-  pgr_rocket_combat_sample_fn     sample;
-  pgr_rocket_combat_next_event_fn next_event;
-} pgr_rocket_combat_api_v1;
+typedef struct pgs_rocket_combat_api_v1 {
+  uint32_t version;  // == PGS_RC_API_VERSION
+  uint32_t size;     // == sizeof(pgs_rocket_combat_api_v1)
+  pgs_rocket_combat_install_fn    install;
+  pgs_rocket_combat_update_fn     update;
+  pgs_rocket_combat_observe_fn    observe;
+  pgs_rocket_combat_begin_ui_fn   begin_ui;
+  pgs_rocket_combat_end_ui_fn     end_ui;
+  pgs_rocket_combat_tick_fn       tick;
+  pgs_rocket_combat_sample_fn     sample;
+  pgs_rocket_combat_next_event_fn next_event;
+} pgs_rocket_combat_api_v1;
 
 /* Hidden getter. NOT exported by the version script. The coordinator registers it in query_feature
  * under feature id 21; it answers only on an exact version match. The returned table lives for the

@@ -3,7 +3,7 @@
 
 // PvP stat-product ranks from the bundled PvPoke snapshot (pvp_data.h). Pure arithmetic: no managed
 // calls, no allocation, no cache. One rank costs one pass over the 4096 IV combinations.
-namespace pgr_pvp {
+namespace pgs_pvp {
 
 constexpr int kLeagues = 3;            // 0 Great (1500), 1 Ultra (2500), 2 Master (no cap)
 constexpr int kMaxLevelIndex = 98;     // level 50 (index 0 = level 1, steps of half a level)
@@ -52,4 +52,4 @@ bool keep(int index, bool shadow, int attack, int defense, int stamina, double m
 // "P2|great|ultra|master|meta" (ranks, 0 = off); false (and settings off) on anything else.
 bool parse(const char *text, unsigned length, Settings *out);
 
-}  // namespace pgr_pvp
+}  // namespace pgs_pvp

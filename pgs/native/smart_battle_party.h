@@ -3,7 +3,7 @@
 #include <cstdio>
 #include <string>
 
-namespace pgr_smart_party {
+namespace pgs_smart_party {
 struct HealingPolicy { bool on=false; int threshold=50; };
 
 inline HealingPolicy healing_policy(const char *settings) {

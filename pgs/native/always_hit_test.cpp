@@ -42,7 +42,7 @@ struct Ball {
 int roots = 0, applied_hits = 0, orig_coll = 0, orig_trig = 0;
 bool invoke_throws = false;
 uint8_t mk_last_missed = 0; void *mk_last_self = nullptr, *mk_last_method = nullptr;
-PgrAlwaysHitValue mk_ret{};
+PgsAlwaysHitValue mk_ret{};
 void *coll_self = nullptr, *coll_arg = nullptr, *coll_method = nullptr;
 
 void *obj_class(void *o) { return *static_cast<void **>(o); } // klass is each struct's first field
@@ -79,7 +79,7 @@ __attribute__((noinline)) void collision(void *self, void *arg, void *method) {
 __attribute__((noinline)) void trigger(void *self, void *arg, void *method) {
     PAD; (void)self; (void)arg; (void)method; ++orig_trig;
 }
-__attribute__((noinline)) PgrAlwaysHitValue make_throw(void *self, uint8_t missed, void *method) {
+__attribute__((noinline)) PgsAlwaysHitValue make_throw(void *self, uint8_t missed, void *method) {
     PAD; mk_last_self = self; mk_last_missed = missed; mk_last_method = method; return mk_ret;
 }
 __attribute__((noinline)) void launch(void *self)  { PAD; (void)self; }
@@ -91,10 +91,10 @@ int main(int argc, char **argv) {
     if (!lib) { std::puts(dlerror()); return 2; }
     auto getter = reinterpret_cast<const void *(*)(uint32_t)>(dlsym(lib, "pgs_native_api"));
     auto core = getter ? static_cast<const pgs_native_api_v2 *>(getter(2)) : nullptr;
-    auto api  = core ? static_cast<const PgrAlwaysHitApi *>(core->query_feature(7, 1)) : nullptr;
+    auto api  = core ? static_cast<const PgsAlwaysHitApi *>(core->query_feature(7, 1)) : nullptr;
     if (!api || api->size != 40) return 3; // 40-byte table incl. tick
 
-    PgrAlwaysHitConfig cfg{
+    PgsAlwaysHitConfig cfg{
         1, sizeof(cfg),
         (void *)&launch, (void *)&release, (void *)&collision, (void *)&trigger, (void *)&make_throw,
         &ball_class, &machine_class, &action_class,
@@ -118,7 +118,7 @@ int main(int argc, char **argv) {
     if (orig_coll != 1 || coll_self != &ball || coll_arg != &arg_obj || coll_method != &method_obj ||
         applied_hits || roots) return 5;
     mk_ret = {2, 1.5f, 1, 0, 1, 0x7e};
-    PgrAlwaysHitValue r = call_mk(&ball, 0xab, &invoke_method);
+    PgsAlwaysHitValue r = call_mk(&ball, 0xab, &invoke_method);
     if (mk_last_self != &ball || mk_last_missed != 0xab || mk_last_method != &invoke_method) return 6;
     if (r.item != 2 || r.radius != 1.5f || r.bullseye != 1 || r.spinning != 0 || r.missed != 1 || r.pad != 0x7e)
         return 7; // all struct bits incl. missed preserved while gate is closed
@@ -172,12 +172,12 @@ int main(int argc, char **argv) {
 
     // (E) makeThrow normalisation: only missed 1 -> 0 when permitted; every other bit verbatim.
     mk_ret = {3, 2.25f, 1, 1, 1, 0x5a};
-    PgrAlwaysHitValue rn = call_mk(&ball, 1, &invoke_method);
+    PgsAlwaysHitValue rn = call_mk(&ball, 1, &invoke_method);
     if (mk_last_missed != 1 || mk_last_method != &invoke_method) return 20;
     if (rn.item != 3 || rn.radius != 2.25f || rn.bullseye != 1 || rn.spinning != 1 || rn.missed != 0 || rn.pad != 0x5a)
         return 21;
     mk_ret.missed = 0;
-    PgrAlwaysHitValue rz = call_mk(&ball, 0, &invoke_method);
+    PgsAlwaysHitValue rz = call_mk(&ball, 0, &invoke_method);
     if (rz.missed != 0) return 22; // already clear -> unchanged, not counted
 
     // (F) Gate: wrong thread, invalid lease, off, expiry each pass the original through.
@@ -215,7 +215,7 @@ int main(int argc, char **argv) {
     call_coll(&ball, &arg_obj, &method_obj);
     if (orig_coll != oc + 1 || roots != 0) return 30; // fault stays latched; root already retired
 
-    PgrAlwaysHitSample s{}; api->sample(&s);
+    PgsAlwaysHitSample s{}; api->sample(&s);
     if (s.applied != 4 || s.normalized != 1 || s.errors != 1) return 33;
 
     std::puts("PASS native Always Hit: ABI/forwarding, single-apply dedupe, launch/release rearm, "

@@ -2,7 +2,7 @@
 #include <cassert>
 #include <cstdio>
 #include <cstring>
-using namespace pgr_auto_rocket;
+using namespace pgs_auto_rocket;
 
 static bool parse(const char* s, Command& c) { return parse_command(s, std::strlen(s), c); }
 

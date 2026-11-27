@@ -45,45 +45,45 @@ extern "C" {
 
 static_assert(sizeof(void *) == 8, "VgpActions native ABI requires LP64");
 
-enum PgrVgpActionsInfo {
-  PGR_VA_FEATURE_ID      = 26,
-  PGR_VA_API_VERSION     = 1,
-  PGR_VA_CONFIG_VERSION  = 1,
-  PGR_VA_TARGET_VERSION  = 1,
-  PGR_VA_SPIN_VERSION    = 1,
-  PGR_VA_SAMPLE_VERSION  = 1,
-  PGR_VA_MAX_LEASE_MS    = 2500,  // residual foreground lease ceiling (JS vgpLease gate)
-  PGR_VA_MASK_CATCH      = 1,     // update() mask bit: encounter + capture enabled (JS vgpMask & 1)
-  PGR_VA_MASK_SPIN       = 2,     // update() mask bit: spin enabled               (JS vgpMask & 2)
-  PGR_VA_BALL_RED        = 1      // PokeballThrow ball id (red Poke Ball)
+enum PgsVgpActionsInfo {
+  PGS_VA_FEATURE_ID      = 26,
+  PGS_VA_API_VERSION     = 1,
+  PGS_VA_CONFIG_VERSION  = 1,
+  PGS_VA_TARGET_VERSION  = 1,
+  PGS_VA_SPIN_VERSION    = 1,
+  PGS_VA_SAMPLE_VERSION  = 1,
+  PGS_VA_MAX_LEASE_MS    = 2500,  // residual foreground lease ceiling (JS vgpLease gate)
+  PGS_VA_MASK_CATCH      = 1,     // update() mask bit: encounter + capture enabled (JS vgpMask & 1)
+  PGS_VA_MASK_SPIN       = 2,     // update() mask bit: spin enabled               (JS vgpMask & 2)
+  PGS_VA_BALL_RED        = 1      // PokeballThrow ball id (red Poke Ball)
 };
 
 // encounter()/capture()/spin() return 1 ISSUED (*out_handle set, ownership transferred), 0 REFUSED
 // (gate/busy/thread, *out_handle 0, NOT invoked), or a negative error. install()/update()/stop()/
-// sample() return PGR_VA_OK (0) or a negative error.
-enum PgrVgpActionsStatus {
-  PGR_VA_ISSUED            = 1,   // action invoked, promise rooted, *out_handle set (owned by caller)
-  PGR_VA_OK                = 0,   // generic success / action: refused (gate/busy/thread), NOT invoked
-  PGR_VA_ERR_NULL_ARG      = -1,
-  PGR_VA_ERR_BAD_VERSION   = -2,
-  PGR_VA_ERR_BAD_SIZE      = -3,
-  PGR_VA_ERR_MISSING_PTR   = -4,
-  PGR_VA_ERR_NOT_INSTALLED = -6,
-  PGR_VA_ERR_RECONFIG      = -9,
-  PGR_VA_ERR_CLOCK_FAILURE = -10,
-  PGR_VA_ERR_IDENTITY      = -11,  // target/fort/rpc/request class mismatch, or coords non-finite/range
-  PGR_VA_ERR_GCHANDLE      = -12,  // a root / request allocation failed BEFORE the action (fail closed)
-  PGR_VA_ERR_MANAGED       = -13,  // a managed invoke (ctor / action) threw
-  PGR_VA_ERR_UNCERTAIN     = -14   // the action was invoked but its promise could not be rooted: NO retry
+// sample() return PGS_VA_OK (0) or a negative error.
+enum PgsVgpActionsStatus {
+  PGS_VA_ISSUED            = 1,   // action invoked, promise rooted, *out_handle set (owned by caller)
+  PGS_VA_OK                = 0,   // generic success / action: refused (gate/busy/thread), NOT invoked
+  PGS_VA_ERR_NULL_ARG      = -1,
+  PGS_VA_ERR_BAD_VERSION   = -2,
+  PGS_VA_ERR_BAD_SIZE      = -3,
+  PGS_VA_ERR_MISSING_PTR   = -4,
+  PGS_VA_ERR_NOT_INSTALLED = -6,
+  PGS_VA_ERR_RECONFIG      = -9,
+  PGS_VA_ERR_CLOCK_FAILURE = -10,
+  PGS_VA_ERR_IDENTITY      = -11,  // target/fort/rpc/request class mismatch, or coords non-finite/range
+  PGS_VA_ERR_GCHANDLE      = -12,  // a root / request allocation failed BEFORE the action (fail closed)
+  PGS_VA_ERR_MANAGED       = -13,  // a managed invoke (ctor / action) threw
+  PGS_VA_ERR_UNCERTAIN     = -14   // the action was invoked but its promise could not be rooted: NO retry
 };
 
 // Fixed LP64 config (208 bytes): 8-byte header + 25 validated il2cpp pointers. Every pointer is an
 // already-validated export / MethodInfo* / Il2CppClass* / FieldInfo* packed by the host straight off
 // p.vgp; the native layer re-checks the header and rejects any null. No hook address; the inflated
 // SendRpc MethodInfo* is NOT here (it is caller-resolved and passed per spin()).
-struct PgrVgpActionsConfig {
-  uint32_t version;  // == PGR_VA_CONFIG_VERSION
-  uint32_t size;     // == sizeof(PgrVgpActionsConfig)
+struct PgsVgpActionsConfig {
+  uint32_t version;  // == PGS_VA_CONFIG_VERSION
+  uint32_t size;     // == sizeof(PgsVgpActionsConfig)
 
   // il2cpp runtime exports.
   void *gchandle_new;         // uintptr_t (void* obj, int pinned)
@@ -119,28 +119,28 @@ struct PgrVgpActionsConfig {
   void *class_stop;       // PokestopMapObject, distinct from a wild Pokemon
 };
 
-static_assert(sizeof(PgrVgpActionsConfig) == 208,
-              "PgrVgpActionsConfig must remain 208 bytes on LP64");
+static_assert(sizeof(PgsVgpActionsConfig) == 208,
+              "PgsVgpActionsConfig must remain 208 bytes on LP64");
 
 // Fixed LP64 target request (32 bytes) for encounter()/capture(). target is a raw managed pointer the
 // caller keeps rooted for the synchronous call; native also roots it on entry.
-struct PgrVgpActionsTarget {
-  uint32_t version;  // == PGR_VA_TARGET_VERSION
-  uint32_t size;     // == sizeof(PgrVgpActionsTarget)
+struct PgsVgpActionsTarget {
+  uint32_t version;  // == PGS_VA_TARGET_VERSION
+  uint32_t size;     // == sizeof(PgsVgpActionsTarget)
   uint64_t epoch;    // caller's current epoch; must equal the armed epoch at the gate
   uint64_t tid;      // proven owner tid (must equal the current OS tid)
   void *target;      // VGP wild map pokemon
 };
 
-static_assert(sizeof(PgrVgpActionsTarget) == 32,
-              "PgrVgpActionsTarget must remain 32 bytes on LP64");
+static_assert(sizeof(PgsVgpActionsTarget) == 32,
+              "PgsVgpActionsTarget must remain 32 bytes on LP64");
 
 // Fixed LP64 spin request (80 bytes). target/fort/rpc are raw managed pointers rooted by native on
 // entry; closed_method is the caller-resolved inflated SendRpc MethodInfo* (validated non-null, never
 // reflected by native). lat/lon are the player coordinates (finite, |lat|<=90, |lon|<=180).
-struct PgrVgpActionsSpin {
-  uint32_t version;      // == PGR_VA_SPIN_VERSION
-  uint32_t size;         // == sizeof(PgrVgpActionsSpin)
+struct PgsVgpActionsSpin {
+  uint32_t version;      // == PGS_VA_SPIN_VERSION
+  uint32_t size;         // == sizeof(PgsVgpActionsSpin)
   uint64_t epoch;        // caller's current epoch; must equal the armed epoch at the gate
   uint64_t tid;          // proven owner tid (must equal the current OS tid)
   int32_t rpc_id;        // FortSearch rpc id (SendRpc param 0)
@@ -153,13 +153,13 @@ struct PgrVgpActionsSpin {
   void *closed_method;   // inflated SendRpc MethodInfo* (caller-resolved, non-null)
 };
 
-static_assert(sizeof(PgrVgpActionsSpin) == 80,
-              "PgrVgpActionsSpin must remain 80 bytes on LP64");
+static_assert(sizeof(PgsVgpActionsSpin) == 80,
+              "PgsVgpActionsSpin must remain 80 bytes on LP64");
 
 // Fixed LP64 telemetry gauge (72 bytes). Pull-only; the native layer never calls JS.
-struct PgrVgpActionsSample {
-  uint32_t version;          // == PGR_VA_SAMPLE_VERSION
-  uint32_t size;             // == sizeof(PgrVgpActionsSample)
+struct PgsVgpActionsSample {
+  uint32_t version;          // == PGS_VA_SAMPLE_VERSION
+  uint32_t size;             // == sizeof(PgsVgpActionsSample)
   uint64_t encounter_serial; // bumps on each ISSUED encounter()
   uint64_t capture_serial;   // bumps on each ISSUED capture()
   uint64_t spin_serial;      // bumps on each ISSUED spin()
@@ -171,35 +171,35 @@ struct PgrVgpActionsSample {
   uint32_t busy;             // 1 while an action is in flight
 };
 
-static_assert(sizeof(PgrVgpActionsSample) == 72,
-              "PgrVgpActionsSample must remain 72 bytes on LP64");
+static_assert(sizeof(PgsVgpActionsSample) == 72,
+              "PgsVgpActionsSample must remain 72 bytes on LP64");
 
 // Fixed LP64 table: 8-byte header + 7 function pointers = 64 bytes.
-struct PgrVgpActionsApi {
-  uint32_t version;  // == PGR_VA_API_VERSION
-  uint32_t size;     // == sizeof(PgrVgpActionsApi)
-  int (*install)(const PgrVgpActionsConfig *config);
+struct PgsVgpActionsApi {
+  uint32_t version;  // == PGS_VA_API_VERSION
+  uint32_t size;     // == sizeof(PgsVgpActionsApi)
+  int (*install)(const PgsVgpActionsConfig *config);
   // Refresh the gate: mask (bit1 catch / bit2 spin), a residual lease clamped to 2500 ms, and the
   // caller's epoch. Carries proven_tid; once the owner is latched a foreign thread can only revoke
   // (mask forced to 0). A disable / re-arm bumps the revocation generation. Any thread.
   int (*update)(uint32_t mask, uint64_t remaining_lease_ms, uint64_t epoch, uint64_t proven_tid);
-  // SendEncounterRequest on the target. Requires mask bit1. Returns PGR_VA_ISSUED (*out_handle set), 0
+  // SendEncounterRequest on the target. Requires mask bit1. Returns PGS_VA_ISSUED (*out_handle set), 0
   // (refused), or a negative error. Owner thread only.
-  int (*encounter)(const PgrVgpActionsTarget *request, uintptr_t *out_handle);
+  int (*encounter)(const PgsVgpActionsTarget *request, uintptr_t *out_handle);
   // TryCapture with the fixed red-ball PokeballThrow and null AR metadata. Requires mask bit1. Returns
-  // PGR_VA_ISSUED / 0 / negative. Owner thread only.
-  int (*capture)(const PgrVgpActionsTarget *request, uintptr_t *out_handle);
+  // PGS_VA_ISSUED / 0 / negative. Owner thread only.
+  int (*capture)(const PgsVgpActionsTarget *request, uintptr_t *out_handle);
   // Construct the FortSearch request and invoke the caller-resolved SendRpc. Requires mask bit2.
-  // Returns PGR_VA_ISSUED / 0 / negative. Owner thread only.
-  int (*spin)(const PgrVgpActionsSpin *request, uintptr_t *out_handle);
+  // Returns PGS_VA_ISSUED / 0 / negative. Owner thread only.
+  int (*spin)(const PgsVgpActionsSpin *request, uintptr_t *out_handle);
   // Immediate revoke from any thread (bumps the generation, clears the mask). A later update() re-arms;
   // stop() never re-arms. No managed work; no deadlock with an in-flight action.
   int (*stop)(uint64_t proven_tid);
-  int (*sample)(PgrVgpActionsSample *out_sample);
+  int (*sample)(PgsVgpActionsSample *out_sample);
 };
 
-static_assert(sizeof(PgrVgpActionsApi) == 64,
-              "PgrVgpActionsApi must remain a 64-byte version-1 table");
+static_assert(sizeof(PgsVgpActionsApi) == 64,
+              "PgsVgpActionsApi must remain a 64-byte version-1 table");
 
 // Hidden getter. NOT exported by the version script; the coordinator registers it in query_feature
 // under feature id 26 and answers only on an exact version match.
@@ -207,13 +207,13 @@ const void *pgs_vgp_actions_api(uint32_t version);
 
 // Compiled smart-catch extension; same lease/epoch/owner gates as API1 capture.
 // Internal only: no changes to the versioned feature table used by existing clients.
-int pgr_vgp_capture_selected(const PgrVgpActionsTarget *request, int ball,
+int pgs_vgp_capture_selected(const PgsVgpActionsTarget *request, int ball,
                              int grade, int curve, uintptr_t *out_handle);
-struct PgrVgpSmartActionsApi {
+struct PgsVgpSmartActionsApi {
   uint32_t version,size;
-  int (*capture_selected)(const PgrVgpActionsTarget *,int,int,int,uintptr_t *);
+  int (*capture_selected)(const PgsVgpActionsTarget *,int,int,int,uintptr_t *);
 };
-static_assert(sizeof(PgrVgpSmartActionsApi)==16,"Smart capture API2 ABI");
+static_assert(sizeof(PgsVgpSmartActionsApi)==16,"Smart capture API2 ABI");
 
 #ifdef __cplusplus
 }

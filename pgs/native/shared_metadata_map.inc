@@ -2,8 +2,8 @@
 // Compiled descriptors for the existing spawn, VGP and map prepare boundaries.
 // Included inside shared_metadata.cpp's private namespace.
 int do_spawn(Ctx &c) {
-  constexpr unsigned char pro[]=PGR_GAME_SHARED_METADATA_MAP_INC_PRO_FINGERPRINT;
-  return check_method(c,c.out->opt_classes[OC_SPAWN],PGR_GAME_SHARED_METADATA_MAP_INC_H_SP_CODE_NAME,"System.Double",0,nullptr,nullptr,false,false,PGR_GAME_SHARED_METADATA_MAP_INC_PRO_RVA,pro,sizeof(pro),&c.out->opt_handles[H_SP_METHOD],&c.out->opt_handles[H_SP_CODE]);
+  constexpr unsigned char pro[]=PGS_GAME_SHARED_METADATA_MAP_INC_PRO_FINGERPRINT;
+  return check_method(c,c.out->opt_classes[OC_SPAWN],PGS_GAME_SHARED_METADATA_MAP_INC_H_SP_CODE_NAME,"System.Double",0,nullptr,nullptr,false,false,PGS_GAME_SHARED_METADATA_MAP_INC_PRO_RVA,pro,sizeof(pro),&c.out->opt_handles[H_SP_METHOD],&c.out->opt_handles[H_SP_CODE]);
 }
 
 int map_method(Ctx &c,OptHandle slot,OptClassId owner,const char *name,const char *ret,
@@ -24,21 +24,21 @@ int do_vgp_marker(Ctx &c) {
 void nested_optional(Ctx &c,OptionalId slot,int (*fn)(Ctx&)) {
   char previous[kReasonMax];std::memcpy(previous,c.reason,sizeof(previous));
   c.reason[0]=0;const int rc=fn(c);
-  c.out->optional[slot]=rc?PGR_SHARED_OPT_UNAVAILABLE:PGR_SHARED_OPT_AVAILABLE;
+  c.out->optional[slot]=rc?PGS_SHARED_OPT_UNAVAILABLE:PGS_SHARED_OPT_AVAILABLE;
   c.out->optional_error[slot]=rc;
   if(rc)std::snprintf(c.out->optional_reason[slot],kReasonMax,"%s",c.reason);
   std::memcpy(c.reason,previous,sizeof(previous));
 }
 
 int do_vgp(Ctx &c) {
-  if(c.out->optional[OPT_ITEMS]!=PGR_SHARED_OPT_AVAILABLE)return set_err(c,PGR_MD_ERR_NOT_FOUND,"vgp-dependencies");
-  for(int i=OC_VGP_CAMERA;i<=OC_VGP_TYPE;++i)if(!c.out->opt_classes[i])return set_err(c,PGR_MD_ERR_NOT_FOUND,"vgp-dependencies");
+  if(c.out->optional[OPT_ITEMS]!=PGS_SHARED_OPT_AVAILABLE)return set_err(c,PGS_MD_ERR_NOT_FOUND,"vgp-dependencies");
+  for(int i=OC_VGP_CAMERA;i<=OC_VGP_TYPE;++i)if(!c.out->opt_classes[i])return set_err(c,PGS_MD_ERR_NOT_FOUND,"vgp-dependencies");
   auto H=c.out->opt_handles;auto K=c.out->opt_classes;int rc;
   if((rc=check_method_ex(c,K[OC_VGP_WILD],"SendEncounterRequest",nullptr,pred_vgp_encounter_resp,0,nullptr,false,false,0,nullptr,0,&H[H_VGP_M_ENCOUNTER])))return rc;
   MParam capture[]={{"Niantic.Holoholo.Encounter.PokeballThrow",nullptr},{"Holoholo.Rpc.ARPlusEncounterValuesProto",nullptr}};
   if((rc=check_method_ex(c,K[OC_VGP_POKEMON],"TryCapture",nullptr,pred_vgp_capture_resp,2,capture,false,false,0,nullptr,0,&H[H_VGP_M_CAPTURE])))return rc;
-  constexpr unsigned char manual[]=PGR_GAME_SHARED_METADATA_MAP_INC_MANUAL_FINGERPRINT;
-  if((rc=check_method(c,K[OC_VGP_NAMEPLATE],"SetPokemonUI","System.Void",2,"Niantic.Holoholo.Map.IMapPokemon","Niantic.Rpc.GameplayWeatherProto.Types.WeatherCondition",false,false,PGR_GAME_SHARED_METADATA_MAP_INC_MANUAL_RVA,manual,sizeof(manual),&H[H_VGP_M_MANUAL_UI],&H[H_VGP_M_MANUAL_UI_CODE])))return rc;
+  constexpr unsigned char manual[]=PGS_GAME_SHARED_METADATA_MAP_INC_MANUAL_FINGERPRINT;
+  if((rc=check_method(c,K[OC_VGP_NAMEPLATE],"SetPokemonUI","System.Void",2,"Niantic.Holoholo.Map.IMapPokemon","Niantic.Rpc.GameplayWeatherProto.Types.WeatherCondition",false,false,PGS_GAME_SHARED_METADATA_MAP_INC_MANUAL_RVA,manual,sizeof(manual),&H[H_VGP_M_MANUAL_UI],&H[H_VGP_M_MANUAL_UI_CODE])))return rc;
   struct M {OptHandle slot;OptClassId owner;const char *name,*ret,*arg;};
   const M methods[]={
     {H_VGP_M_LOCATION,OC_VGP_POKEMON,"get_Location","Niantic.LatLng",nullptr},
@@ -65,67 +65,67 @@ int do_vgp(Ctx &c) {
   auto ret=reinterpret_cast<const void *(*)(const void*)>(c.core->method_get_return_type);
   void *iter=nullptr;
   for(unsigned i=0;i<256;++i){const void *m=next(c.out->classes[4],&iter);if(!m)break;std::string n,p,r;
-    if(!read_utf8(name(m),&n))return set_err(c,PGR_MD_ERR_NAME_TOO_LONG,"name-limit");
+    if(!read_utf8(name(m),&n))return set_err(c,PGS_MD_ERR_NAME_TOO_LONG,"name-limit");
     if(n!="FindObjectsOfType"||generic(m)||count(m)!=1)continue;
-    if(!get_type_name(c,param(m,0),&p))return set_err(c,PGR_MD_ERR_NULL_TYPE_NAME,"null-type-name");
+    if(!get_type_name(c,param(m,0),&p))return set_err(c,PGS_MD_ERR_NULL_TYPE_NAME,"null-type-name");
     if(p!="System.Type")continue;
-    if(!get_type_name(c,ret(m),&r))return set_err(c,PGR_MD_ERR_NULL_TYPE_NAME,"null-type-name");
+    if(!get_type_name(c,ret(m),&r))return set_err(c,PGS_MD_ERR_NULL_TYPE_NAME,"null-type-name");
     if(r=="UnityEngine.Object[]"){H[H_VGP_M_FIND_ALL]=m;break;}}
-  if(!H[H_VGP_M_FIND_ALL])return set_err(c,PGR_MD_ERR_NOT_FOUND,"vgp-find-objects");
+  if(!H[H_VGP_M_FIND_ALL])return set_err(c,PGS_MD_ERR_NOT_FOUND,"vgp-find-objects");
   struct F {OptHandle slot;OptClassId owner;const char *name;uint64_t off;const char *type;};
   const F fields[]={
-    {H_VGP_F_FORT_ID,OC_VGP_FORT,"FortId",PGR_GAME_SHARED_METADATA_MAP_INC_FORTID__OFFSET,"System.String"},
-    {H_VGP_F_FORT_LAT,OC_VGP_FORT,"Latitude",PGR_GAME_SHARED_METADATA_MAP_INC_LATITUDE__OFFSET,"System.Double"},
-    {H_VGP_F_FORT_LON,OC_VGP_FORT,"Longitude",PGR_GAME_SHARED_METADATA_MAP_INC_LONGITUDE__OFFSET,"System.Double"},
-    {H_VGP_F_ID,OC_VGP_REQUEST,"Id",PGR_GAME_SHARED_METADATA_MAP_INC_ID__OFFSET,"System.String"},
-    {H_VGP_F_LAT,OC_VGP_REQUEST,"PlayerLatDegrees",PGR_GAME_SHARED_METADATA_MAP_INC_PLAYERLATDEGREES__OFFSET,"System.Double"},
-    {H_VGP_F_LON,OC_VGP_REQUEST,"PlayerLngDegrees",PGR_GAME_SHARED_METADATA_MAP_INC_PLAYERLNGDEGREES__OFFSET,"System.Double"},
-    {H_VGP_F_TARGET_LAT,OC_VGP_REQUEST,"FortLatDegrees",PGR_GAME_SHARED_METADATA_MAP_INC_FORTLATDEGREES__OFFSET,"System.Double"},
-    {H_VGP_F_TARGET_LON,OC_VGP_REQUEST,"FortLngDegrees",PGR_GAME_SHARED_METADATA_MAP_INC_FORTLNGDEGREES__OFFSET,"System.Double"},
-    {H_VGP_F_UNTIL,OC_SPINRESULT,"CooldownComplete",PGR_GAME_SHARED_METADATA_MAP_INC_COOLDOWNCOMPLETE__OFFSET,"System.Int64"},
-    {H_VGP_F_BAG_GM,OC_BAG,PGR_GAME_SHARED_METADATA_MAP_INC_H_VGP_F_BAG_GM_NAME,PGR_GAME_SHARED_METADATA_MAP_INC_H_VGP_F_BAG_GM_OFFSET,"IGameMasterData"}};
+    {H_VGP_F_FORT_ID,OC_VGP_FORT,"FortId",PGS_GAME_SHARED_METADATA_MAP_INC_FORTID__OFFSET,"System.String"},
+    {H_VGP_F_FORT_LAT,OC_VGP_FORT,"Latitude",PGS_GAME_SHARED_METADATA_MAP_INC_LATITUDE__OFFSET,"System.Double"},
+    {H_VGP_F_FORT_LON,OC_VGP_FORT,"Longitude",PGS_GAME_SHARED_METADATA_MAP_INC_LONGITUDE__OFFSET,"System.Double"},
+    {H_VGP_F_ID,OC_VGP_REQUEST,"Id",PGS_GAME_SHARED_METADATA_MAP_INC_ID__OFFSET,"System.String"},
+    {H_VGP_F_LAT,OC_VGP_REQUEST,"PlayerLatDegrees",PGS_GAME_SHARED_METADATA_MAP_INC_PLAYERLATDEGREES__OFFSET,"System.Double"},
+    {H_VGP_F_LON,OC_VGP_REQUEST,"PlayerLngDegrees",PGS_GAME_SHARED_METADATA_MAP_INC_PLAYERLNGDEGREES__OFFSET,"System.Double"},
+    {H_VGP_F_TARGET_LAT,OC_VGP_REQUEST,"FortLatDegrees",PGS_GAME_SHARED_METADATA_MAP_INC_FORTLATDEGREES__OFFSET,"System.Double"},
+    {H_VGP_F_TARGET_LON,OC_VGP_REQUEST,"FortLngDegrees",PGS_GAME_SHARED_METADATA_MAP_INC_FORTLNGDEGREES__OFFSET,"System.Double"},
+    {H_VGP_F_UNTIL,OC_SPINRESULT,"CooldownComplete",PGS_GAME_SHARED_METADATA_MAP_INC_COOLDOWNCOMPLETE__OFFSET,"System.Int64"},
+    {H_VGP_F_BAG_GM,OC_BAG,PGS_GAME_SHARED_METADATA_MAP_INC_H_VGP_F_BAG_GM_NAME,PGS_GAME_SHARED_METADATA_MAP_INC_H_VGP_F_BAG_GM_OFFSET,"IGameMasterData"}};
   for(const auto &f:fields)if((rc=typed_field(c,K[f.owner],f.name,f.off,f.type,"vgp-field-type",&H[f.slot])))return rc;
   const void *spin=nullptr,*caught=nullptr;
-  if((rc=enum_i32_field(c,K[OC_SPINRESULT],PGR_GAME_SHARED_METADATA_MAP_INC_H_VGP_F_RESULT_NAME,PGR_GAME_SHARED_METADATA_MAP_INC_H_VGP_F_RESULT_OFFSET,&H[H_VGP_F_RESULT],&spin)))return rc;
-  if((rc=enum_i32_field(c,c.out->classes[3],PGR_GAME_SHARED_METADATA_MAP_INC_H_VGP_F_CATCH_STATUS_NAME,PGR_GAME_SHARED_METADATA_MAP_INC_H_VGP_F_CATCH_STATUS_OFFSET,&H[H_VGP_F_CATCH_STATUS],&caught)))return rc;
+  if((rc=enum_i32_field(c,K[OC_SPINRESULT],PGS_GAME_SHARED_METADATA_MAP_INC_H_VGP_F_RESULT_NAME,PGS_GAME_SHARED_METADATA_MAP_INC_H_VGP_F_RESULT_OFFSET,&H[H_VGP_F_RESULT],&spin)))return rc;
+  if((rc=enum_i32_field(c,c.out->classes[3],PGS_GAME_SHARED_METADATA_MAP_INC_H_VGP_F_CATCH_STATUS_NAME,PGS_GAME_SHARED_METADATA_MAP_INC_H_VGP_F_CATCH_STATUS_OFFSET,&H[H_VGP_F_CATCH_STATUS],&caught)))return rc;
   if((rc=enum_literal(c,spin,"Success",false,"vgp-enum",&c.out->opt_ints[I_VGP_SPIN_SUCCESS])))return rc;
   if((rc=enum_literal(c,K[OC_VGP_METHOD],"FortSearch",false,"vgp-enum",&c.out->opt_ints[I_VGP_RPC_ID])))return rc;
   const char *states[]={"CatchSuccess","CatchEscape","CatchFlee","CatchMissed","CatchError","CatchItemReplacement"};
   for(unsigned i=0;i<6;++i)if((rc=enum_literal(c,caught,states[i],false,"vgp-enum",&c.out->opt_ints[I_VGP_CS_SUCCESS+i])))return rc;
   H[H_VGP_EXP_PARENT]=c.ex->class_get_parent;H[H_VGP_EXP_ARRAY]=c.ex->array_new;
   H[H_VGP_EXP_BARRIER]=c.ex->gc_wbarrier_set_field;H[H_VGP_EXP_UNREFLECT]=c.ex->method_get_from_reflection;
-  for(int i=H_VGP_EXP_PARENT;i<=H_VGP_EXP_UNREFLECT;++i)if(!H[i])return set_err(c,PGR_MD_ERR_MISSING_EXPORT,"vgp-export");
+  for(int i=H_VGP_EXP_PARENT;i<=H_VGP_EXP_UNREFLECT;++i)if(!H[i])return set_err(c,PGS_MD_ERR_MISSING_EXPORT,"vgp-export");
   nested_optional(c,OPT_VGP_MARKER,do_vgp_marker);return 0;
 }
 
 int map_field(Ctx &c,const void *owner,const char *name,const char *type,const void **out,const char *alternative=nullptr) {
-  if(!owner)return set_err(c,PGR_MD_ERR_NOT_FOUND,"map-field",name);
+  if(!owner)return set_err(c,PGS_MD_ERR_NOT_FOUND,"map-field",name);
   auto lookup=reinterpret_cast<const void *(*)(const void*,const char*)>(c.core->class_get_field_from_name);
   auto flags=reinterpret_cast<uint32_t (*)(const void*)>(c.core->field_get_flags);
   auto ft=reinterpret_cast<const void *(*)(const void*)>(c.core->field_get_type);
   const void *f=lookup(owner,name);std::string actual;
-  if(!f||(flags(f)&16)||!get_type_name(c,ft(f),&actual)||(actual!=type&&(!alternative||actual!=alternative)))return set_err(c,PGR_MD_ERR_TYPE,"map-field",name);
+  if(!f||(flags(f)&16)||!get_type_name(c,ft(f),&actual)||(actual!=type&&(!alternative||actual!=alternative)))return set_err(c,PGS_MD_ERR_TYPE,"map-field",name);
   *out=f;return 0;
 }
 const void *map_field_class(Ctx &c,const void *field) {
   return reinterpret_cast<const void *(*)(const void*)>(c.core->class_from_type)(reinterpret_cast<const void *(*)(const void*)>(c.core->field_get_type)(field));
 }
-int map_enum(Ctx &c,const void *klass,PgrSharedEnumEntry *out,uint32_t *length,uint32_t cap) {
+int map_enum(Ctx &c,const void *klass,PgsSharedEnumEntry *out,uint32_t *length,uint32_t cap) {
   bool complete=false;
   struct PublishOnlyComplete {uint32_t *count;bool &complete;~PublishOnlyComplete(){if(!complete)*count=0;}} publication{length,complete};
   auto is_enum=reinterpret_cast<bool (*)(const void*)>(c.core->class_is_enum);
   auto base=reinterpret_cast<const void *(*)(const void*)>(c.core->class_enum_basetype);
   std::string type;
-  if(!klass||!is_enum(klass)||!get_type_name(c,base(klass),&type)||type!="System.Int32")return set_err(c,PGR_MD_ERR_TYPE,"enum-basetype");
-  if(!c.ex->class_get_fields||!c.ex->field_get_name)return set_err(c,PGR_MD_ERR_MISSING_EXPORT,"map-enum-export");
+  if(!klass||!is_enum(klass)||!get_type_name(c,base(klass),&type)||type!="System.Int32")return set_err(c,PGS_MD_ERR_TYPE,"enum-basetype");
+  if(!c.ex->class_get_fields||!c.ex->field_get_name)return set_err(c,PGS_MD_ERR_MISSING_EXPORT,"map-enum-export");
   auto next=reinterpret_cast<const void *(*)(const void*,void**)>(c.ex->class_get_fields);
   auto flags=reinterpret_cast<uint32_t (*)(const void*)>(c.core->field_get_flags);
   auto name=reinterpret_cast<const char *(*)(const void*)>(c.ex->field_get_name);
   auto read=reinterpret_cast<void (*)(const void*,void*)>(c.ex->field_static_get_value);
   *length=0;void *iter=nullptr;
   for(unsigned i=0;i<4096;++i){const void *f=next(klass,&iter);if(!f)break;if((flags(f)&0x8050)!=0x8050)continue;
-    int32_t value=0;read(f,&value);std::string text;if(!read_utf8(name(f),&text)||text.size()>=sizeof(out[0].name))return set_err(c,PGR_MD_ERR_NAME_TOO_LONG,"map-enum-name");
-    uint32_t pos=0;while(pos<*length&&out[pos].value!=value)++pos;if(pos>=cap)return set_err(c,PGR_MD_ERR_LIMIT,"map-enum-limit");
+    int32_t value=0;read(f,&value);std::string text;if(!read_utf8(name(f),&text)||text.size()>=sizeof(out[0].name))return set_err(c,PGS_MD_ERR_NAME_TOO_LONG,"map-enum-name");
+    uint32_t pos=0;while(pos<*length&&out[pos].value!=value)++pos;if(pos>=cap)return set_err(c,PGS_MD_ERR_LIMIT,"map-enum-limit");
     if(pos==*length)++*length;out[pos].value=value;std::memcpy(out[pos].name,text.c_str(),text.size()+1);
   }complete=true;return 0;
 }
@@ -148,9 +148,9 @@ int do_map_poi_extra(Ctx &c) {
   return 0;
 }
 int do_map_poi(Ctx &c) {
-  if(c.out->optional[OPT_VGP]!=PGR_SHARED_OPT_AVAILABLE)return set_err(c,PGR_MD_ERR_NOT_FOUND,"map-dependencies");
+  if(c.out->optional[OPT_VGP]!=PGS_SHARED_OPT_AVAILABLE)return set_err(c,PGS_MD_ERR_NOT_FOUND,"map-dependencies");
   auto H=c.out->opt_handles;auto K=c.out->opt_classes;int rc;
-  if(!K[OC_MAP_GYM]||!K[OC_RAID_INFO])return set_err(c,PGR_MD_ERR_NOT_FOUND,"map-classes");
+  if(!K[OC_MAP_GYM]||!K[OC_RAID_INFO])return set_err(c,PGS_MD_ERR_NOT_FOUND,"map-classes");
   H[H_MP_GYM]=K[OC_MAP_GYM];H[H_MP_RAID]=K[OC_RAID_INFO];
   if((rc=map_field(c,K[OC_VGP_FORT],"RaidInfo","Holoholo.Rpc.RaidInfoProto",&H[H_MP_INFO])))return rc;
   if((rc=map_field(c,K[OC_RAID_INFO],"RaidEndMs","System.Int64",&H[H_MP_END],"System.UInt64")))return rc;

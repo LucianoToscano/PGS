@@ -18,11 +18,11 @@
 // WildMapPokemon.SendEncounterRequest for the check and the encounter response the game keeps on the map
 // Pokemon for the answer. Only while the game is active and the map is showing.
 namespace {
-using namespace pgr_shiny_scan;
-using namespace pgr_shared_meta;
+using namespace pgs_shiny_scan;
+using namespace pgs_shared_meta;
 struct Failure {const char *where;};
 void require(bool ok,const char *where){if(!ok)throw Failure{where};}
-PgrBootBinding boot{};const PgrSharedMetadataOutput *md=nullptr;
+PgsBootBinding boot{};const PgsSharedMetadataOutput *md=nullptr;
 bool initialized=false,busy=false,faulted=false;uint64_t owner=0;
 uint64_t clock_ms(){timespec t{};clock_gettime(CLOCK_BOOTTIME,&t);return uint64_t(t.tv_sec)*1000+t.tv_nsec/1000000;}
 template<class F>F fn(const void *p){require(p,"missing runtime export");return reinterpret_cast<F>(const_cast<void*>(p));}
@@ -40,9 +40,9 @@ struct Root {
 void *klass(void *o){require(o,"null object");return fn<void*(*)(void*)>(boot.runtime.object_get_class)(o);}
 void *cls(const char *ns,const char *name){
  static std::map<std::string,void*> cache;const std::string key=std::string(ns)+"."+name;auto it=cache.find(key);if(it!=cache.end())return it->second;
- const auto *api=static_cast<const PgrMetaApi*>(pgs_runtime_metadata_api(1));require(api,"metadata API");
- PgrMetaClassQuery q{};q.version=1;q.size=sizeof(q);q.name_space=ns;q.name=name;q.canonical_match=PGR_MD_MATCH_EXACT;
- PgrMetaClassResult out{};require(api->resolve_class(&q,&out)==0,name);return cache[key]=const_cast<void*>(out.klass);
+ const auto *api=static_cast<const PgsMetaApi*>(pgs_runtime_metadata_api(1));require(api,"metadata API");
+ PgsMetaClassQuery q{};q.version=1;q.size=sizeof(q);q.name_space=ns;q.name=name;q.canonical_match=PGS_MD_MATCH_EXACT;
+ PgsMetaClassResult out{};require(api->resolve_class(&q,&out)==0,name);return cache[key]=const_cast<void*>(out.klass);
 }
 std::string typename_of(void *type){char *p=fn<char*(*)(void*)>(boot.meta.type_get_name)(type);require(p,"type name");std::string s=p;fn<void(*)(void*)>(boot.meta.mem_free)(p);return s;}
 void *method(void *k,const char *name,int count){
@@ -80,11 +80,11 @@ size_t offset_by_type(void *wild_class,const char *type){
  require(found==1&&offset>=0x10&&offset<0x1000,type);return offset;
 }
 std::string quote(const std::string &s){std::string out="\"";for(unsigned char c:s){if(c=='"'||c=='\\')out+='\\';if(c>=32)out+=char(c);}return out+'"';}
-const PgrRuntimeTransportApi *transport(){return static_cast<const PgrRuntimeTransportApi*>(pgs_runtime_transport_api(1));}
+const PgsRuntimeTransportApi *transport(){return static_cast<const PgsRuntimeTransportApi*>(pgs_runtime_transport_api(1));}
 
 struct Config {Command command;bool valid=false,active=false,map=false;double lat=0,lon=0;};
 Config configured(){
- Config c;auto tr=transport();PgrRuntimeTransportSample a{};static char s[4200];uint32_t n=0;
+ Config c;auto tr=transport();PgsRuntimeTransportSample a{};static char s[4200];uint32_t n=0;
  if(!tr||tr->sample(&a)||!a.snapshot_fresh||a.fault||tr->get_string(23,s,sizeof(s)-1,&n)||n>=sizeof(s))return c;
  if(!parse_command(s,n,c.command))return c;
  int active=0,ready=0,map=0,has_lat=0,has_lon=0;tr->get_bool(3,&active);tr->get_bool(16,&ready);tr->get_bool(38,&map);
@@ -113,7 +113,7 @@ struct State {
 void event(const std::string &body){
  auto tr=transport();if(!tr)return;
  const std::string json="{\"session\":"+std::to_string(st.session)+","+body+"}";
- PgrRuntimeTransportString s[]={{"shiny-scan",10},{json.c_str(),uint32_t(json.size())}};tr->emit(19,nullptr,0,s,2);
+ PgsRuntimeTransportString s[]={{"shiny-scan",10},{json.c_str(),uint32_t(json.size())}};tr->emit(19,nullptr,0,s,2);
 }
 void status(const std::string &message,uint64_t now,bool force=false){
  if(message==st.status||(!force&&now-st.status_at<kStatusMs))return;
@@ -172,8 +172,8 @@ void mark(uint64_t now){
   if(!st.gone_told){st.gone_told=true;event("\"phase\":\"gone\",\"id\":\""+std::to_string(st.shiny_id)+"\"");}
   return;
  }
- const auto *api=static_cast<const PgrVgpMarkerApi*>(pgs_vgp_marker_api(1));
- PgrVgpMarkerResult r{};r.version=1;r.size=sizeof(r);
+ const auto *api=static_cast<const PgsVgpMarkerApi*>(pgs_vgp_marker_api(1));
+ PgsVgpMarkerResult r{};r.version=1;r.size=sizeof(r);
  const bool visible=api&&api->project&&api->project(wild,2500,owner,&r)==1&&r.visible&&std::isfinite(r.x)&&std::isfinite(r.y);
  if(!visible){if(st.marked)show_mark(false,0,0);return;}
  // Without a head point the symbol goes a little above the Pokemon's feet.
@@ -217,7 +217,7 @@ int literal(void *k,const char *name){void *f=fn<void*(*)(void*,const char*)>(bo
 std::string field_type(void *o,const char *name){return typename_of(fn<void*(*)(void*)>(boot.meta.field_get_type)(field_info(o,name)));}
 template<class T>void put(void *o,const char *name,const char *type,T value){require(field_type(o,name)==type,name);fn<void(*)(void*,void*,void*)>(boot.runtime.field_set_value)(o,field_info(o,name),&value);}
 void put_object(void *o,const char *name,const char *type,void *value){require(field_type(o,name)==type,name);fn<void(*)(void*,void*,void*)>(exp("field_set_value_object"))(o,field_info(o,name),value);}
-void cooldown(const char *action){auto tr=transport();if(!tr)return;PgrRuntimeTransportString s[]={{action,uint32_t(std::strlen(action))}};tr->emit(17,nullptr,0,s,1);}
+void cooldown(const char *action){auto tr=transport();if(!tr)return;PgsRuntimeTransportString s[]={{action,uint32_t(std::strlen(action))}};tr->emit(17,nullptr,0,s,1);}
 void catch_event(const char *result,const std::string &message){
  event(std::string("\"phase\":\"catch\",\"result\":\"")+result+"\",\"species\":"+std::to_string(st.species)+",\"throws\":"+std::to_string(st.throws)+",\"message\":"+quote(message));
 }
@@ -300,12 +300,12 @@ void catch_step(const Config &c,uint64_t now){
   st.throws=0;st.step=C_BERRY;st.catch_next=now;catch_event("throwing","Catching");
  }
  if(st.step==C_BERRY_WAIT||st.step==C_THROW_WAIT){
-  auto vr=static_cast<const PgrVgpResultsApi*>(pgs_vgp_results_api(1));require(vr,"response polling unavailable");
-  PgrVgpResultsResult out{};const int rc=vr->poll(st.promise.get(),PGR_VR_PHASE_ENCOUNTER,owner,&out);Root value;value.h=out.value_handle;
-  if(rc==PGR_VR_PENDING&&now-st.catch_since<=(st.step==C_BERRY_WAIT?kBerryMs:kThrowMs))return;
+  auto vr=static_cast<const PgsVgpResultsApi*>(pgs_vgp_results_api(1));require(vr,"response polling unavailable");
+  PgsVgpResultsResult out{};const int rc=vr->poll(st.promise.get(),PGS_VR_PHASE_ENCOUNTER,owner,&out);Root value;value.h=out.value_handle;
+  if(rc==PGS_VR_PENDING&&now-st.catch_since<=(st.step==C_BERRY_WAIT?kBerryMs:kThrowMs))return;
   st.promise.reset();
   if(st.step==C_BERRY_WAIT){throw_ball(now);return;}  // the throw goes ahead either way
-  if(rc!=PGR_VR_DONE||!value){catch_event("failed",rc==PGR_VR_PENDING?"No answer to the throw":"Throw failed");st.step=C_NONE;st.throws=0;return;}
+  if(rc!=PGS_VR_DONE||!value){catch_event("failed",rc==PGS_VR_PENDING?"No answer to the throw":"Throw failed");st.step=C_NONE;st.throws=0;return;}
   read_catch(value,now);return;
  }
  if(st.step==C_BERRY&&now>=st.catch_next&&c.active){
@@ -378,7 +378,7 @@ void scan(const Config &c,uint64_t now){
 void drop_pending(){for(const auto &p:st.pending)failed(p.id,true,"Stopped before it answered");st.pending.clear();}
 }  // namespace
 
-void pgr_shiny_scan_tick(uint64_t tid,const PgrSharedMetadataOutput *metadata){
+void pgs_shiny_scan_tick(uint64_t tid,const PgsSharedMetadataOutput *metadata){
  if(busy||faulted||!tid||tid!=uint64_t(gettid())||(owner&&owner!=tid))return;
  struct Guard{Guard(){busy=true;}~Guard(){busy=false;}}guard;
  const Config c=configured();const uint64_t now=clock_ms();
@@ -388,7 +388,7 @@ void pgr_shiny_scan_tick(uint64_t tid,const PgrSharedMetadataOutput *metadata){
   if(!c.valid||(!c.command.on&&!c.command.count&&st.step==C_NONE))return;
   if(c.command.session==st.stopped_session)return;
   if(!initialized){
-   auto api=static_cast<const PgrBootApi*>(pgs_runtime_bootstrap_api(1));boot.version=1;boot.size=sizeof(boot);
+   auto api=static_cast<const PgsBootApi*>(pgs_runtime_bootstrap_api(1));boot.version=1;boot.size=sizeof(boot);
    require(api&&api->snapshot(&boot)==0,"runtime unavailable");md=metadata;owner=tid;initialized=true;
   }
   require(fn<void*(*)()>(boot.runtime.thread_current)()!=nullptr,"owner thread not attached");
@@ -410,7 +410,7 @@ void pgr_shiny_scan_tick(uint64_t tid,const PgrSharedMetadataOutput *metadata){
   event("\"phase\":\"error\",\"message\":"+quote(std::string("Shiny Scanner stopped: ")+f.where));
  }catch(...){faulted=true;st.pending.clear();event("\"phase\":\"error\",\"message\":\"Shiny Scanner stopped after an unexpected error\"");}
 }
-void pgr_shiny_scan_stop(uint64_t tid){
+void pgs_shiny_scan_stop(uint64_t tid){
  if(!initialized||tid!=owner||tid!=uint64_t(gettid()))return;
  st.pending.clear();st.marked=false;release();st.items.reset();st.berry_reflection.reset();st.catch_reflection.reset();st.berry_method=st.catch_method=nullptr;st.seen.clear();st.counted.clear();st.pace=Pace{};st.status.clear();st.next_scan=0;
 }

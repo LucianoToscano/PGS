@@ -38,13 +38,13 @@ int main(int argc,char **argv){
  assert(argc==2);void *lib=dlopen(argv[1],RTLD_NOW|RTLD_LOCAL);assert(lib);
  auto load=reinterpret_cast<const void *(*)(uint32_t)>(dlsym(lib,"pgs_native_api"));assert(load);
  auto *core=static_cast<const pgs_native_api_v2*>(load(2));assert(core);
- assert(!core->query_feature(28,2));auto *api=static_cast<const PgrVgpMarkerApi*>(core->query_feature(28,1));
+ assert(!core->query_feature(28,2));auto *api=static_cast<const PgsVgpMarkerApi*>(core->query_feature(28,1));
  assert(api&&api->version==1&&api->size==24);
- PgrVgpMarkerConfig cfg{1,sizeof(cfg),reinterpret_cast<void*>(root),reinterpret_cast<void*>(get),reinterpret_cast<void*>(release),
+ PgsVgpMarkerConfig cfg{1,sizeof(cfg),reinterpret_cast<void*>(root),reinterpret_cast<void*>(get),reinterpret_cast<void*>(release),
   reinterpret_cast<void*>(klass),reinterpret_cast<void*>(invoke),reinterpret_cast<void*>(unbox),reinterpret_cast<void*>(assign),
   &ma,&mc,&mt,&mp,&mproj,&mw,&mh,&kb,&ki,&kv,&kc,&kt,&kw,&ks};
  assert(api->install(nullptr)<0);assert(api->install(&cfg)==0);assert(api->install(&cfg)==0);
- const uint64_t tid=gettid();PgrVgpMarkerResult out{};
+ const uint64_t tid=gettid();PgsVgpMarkerResult out{};
  auto run=[&]{int rc=api->project(&target,2500,tid,&out);assert(roots.empty());return rc;};
  reset();assert(run()==1&&out.visible&&std::abs(out.x-.25)<1e-9&&std::abs(out.y-.75)<1e-9);
  reset();assert(api->project(&target,0,tid,&out)==0&&!out.visible&&invokes==0);

@@ -55,44 +55,44 @@ extern "C" {
 
 static_assert(sizeof(void *) == 8, "SummaryCompletion native ABI requires LP64");
 
-enum PgrSummaryCompletionInfo {
-  PGR_SC_FEATURE_ID      = 36,
-  PGR_SC_API_VERSION     = 1,
-  PGR_SC_CONFIG_VERSION  = 1,
-  PGR_SC_REQUEST_VERSION = 1,
-  PGR_SC_OUTPUT_VERSION  = 1,
-  PGR_SC_SAMPLE_VERSION  = 1,
-  PGR_SC_MAX_LEASE_MS    = 2500,  // residual foreground lease ceiling (JS allowedUntil gate)
+enum PgsSummaryCompletionInfo {
+  PGS_SC_FEATURE_ID      = 36,
+  PGS_SC_API_VERSION     = 1,
+  PGS_SC_CONFIG_VERSION  = 1,
+  PGS_SC_REQUEST_VERSION = 1,
+  PGS_SC_OUTPUT_VERSION  = 1,
+  PGS_SC_SAMPLE_VERSION  = 1,
+  PGS_SC_MAX_LEASE_MS    = 2500,  // residual foreground lease ceiling (JS allowedUntil gate)
   // GuiController currentState while its open transition runs. GuiController.Dismiss ignores only
   // states 0 (closed) and 3 (dismissing) and has its own branch for a still-opening GUI, so a hidden
   // summary can be dismissed without waiting for HandleOpenComplete.
-  PGR_SC_STATE_OPENING   = 1
+  PGS_SC_STATE_OPENING   = 1
 };
 
 // validate() returns 1 VALID / 0 INVALID / negative error. complete() returns 1 DONE (invoked, no
 // throw) / 0 REFUSED (gate/token/validation, NOT invoked) / negative error. acquire() returns
-// PGR_SC_OK with *out_token set to a nonzero token, or 0 when refused. Every other function returns
-// PGR_SC_OK or a negative error.
-enum PgrSummaryCompletionStatus {
-  PGR_SC_DONE              = 1,   // complete(): Dismiss invoked, no throw / validate(): valid
-  PGR_SC_OK                = 0,   // generic success / complete(): refused / validate(): invalid
-  PGR_SC_ERR_NULL_ARG      = -1,
-  PGR_SC_ERR_BAD_VERSION   = -2,
-  PGR_SC_ERR_BAD_SIZE      = -3,
-  PGR_SC_ERR_MISSING_PTR   = -4,
-  PGR_SC_ERR_NOT_INSTALLED = -6,
-  PGR_SC_ERR_RECONFIG      = -9,
-  PGR_SC_ERR_CLOCK_FAILURE = -10,
-  PGR_SC_ERR_MANAGED       = -11  // Dismiss threw; invoked stays true and host never retries it
+// PGS_SC_OK with *out_token set to a nonzero token, or 0 when refused. Every other function returns
+// PGS_SC_OK or a negative error.
+enum PgsSummaryCompletionStatus {
+  PGS_SC_DONE              = 1,   // complete(): Dismiss invoked, no throw / validate(): valid
+  PGS_SC_OK                = 0,   // generic success / complete(): refused / validate(): invalid
+  PGS_SC_ERR_NULL_ARG      = -1,
+  PGS_SC_ERR_BAD_VERSION   = -2,
+  PGS_SC_ERR_BAD_SIZE      = -3,
+  PGS_SC_ERR_MISSING_PTR   = -4,
+  PGS_SC_ERR_NOT_INSTALLED = -6,
+  PGS_SC_ERR_RECONFIG      = -9,
+  PGS_SC_ERR_CLOCK_FAILURE = -10,
+  PGS_SC_ERR_MANAGED       = -11  // Dismiss threw; invoked stays true and host never retries it
 };
 
 // Fixed LP64 config (168 bytes): 8-byte header + 19 validated il2cpp pointers + 2 int32. Every pointer
 // is an already-validated export / Il2CppClass* / FieldInfo* / MethodInfo* packed by the host off
 // p.module / classes / fields / methods; native re-checks the header and rejects any null. No hook
 // address -- feature 36 installs no hook.
-struct PgrSummaryCompletionConfig {
-  uint32_t version;  // == PGR_SC_CONFIG_VERSION
-  uint32_t size;     // == sizeof(PgrSummaryCompletionConfig)
+struct PgsSummaryCompletionConfig {
+  uint32_t version;  // == PGS_SC_CONFIG_VERSION
+  uint32_t size;     // == sizeof(PgsSummaryCompletionConfig)
 
   // il2cpp runtime exports.
   void *object_get_class;  // void* (void* obj)
@@ -127,16 +127,16 @@ struct PgrSummaryCompletionConfig {
   int32_t state_open;      // STATE_OPEN (GuiController currentState == 2)
 };
 
-static_assert(sizeof(PgrSummaryCompletionConfig) == 168,
-              "PgrSummaryCompletionConfig must remain 168 bytes on LP64");
+static_assert(sizeof(PgsSummaryCompletionConfig) == 168,
+              "PgsSummaryCompletionConfig must remain 168 bytes on LP64");
 
 // Fixed LP64 request (72 bytes). The last five void* values are opaque borrowed GC HANDLE IDs, not
 // managed object addresses. Caller retains them for the call; state is OPTIONAL (null when not
 // captured). expected_key is the 8-byte CapturedPokemonId written verbatim (little-endian decimal
 // bytes), compared byte-for-byte and never numerically converted.
-struct PgrSummaryCompletionRequest {
-  uint32_t version;         // == PGR_SC_REQUEST_VERSION
-  uint32_t size;            // == sizeof(PgrSummaryCompletionRequest)
+struct PgsSummaryCompletionRequest {
+  uint32_t version;         // == PGS_SC_REQUEST_VERSION
+  uint32_t size;            // == sizeof(PgsSummaryCompletionRequest)
   uint8_t  expected_key[8]; // proven caught id (nonzero); 8 raw bytes, never numerically converted
   uint64_t epoch;           // caller's current epoch; must equal the armed epoch at the gate
   uint64_t tid;             // proven owner tid (must equal the current OS tid)
@@ -147,35 +147,35 @@ struct PgrSummaryCompletionRequest {
   void *dismissed;          // borrowed handle -> captured System.Action
 };
 
-static_assert(sizeof(PgrSummaryCompletionRequest) == 72,
-              "PgrSummaryCompletionRequest must remain 72 bytes on LP64");
+static_assert(sizeof(PgsSummaryCompletionRequest) == 72,
+              "PgsSummaryCompletionRequest must remain 72 bytes on LP64");
 
-// complete() output flags (in PgrSummaryCompletionOutput.flags).
-enum PgrSummaryCompletionFlags {
-  PGR_SC_FLAG_INVOKED      = 1u << 0, // Dismiss was invoked (committed past the final gate)
-  PGR_SC_FLAG_GONE         = 1u << 1, // the GUI is gone after the invoke (class mismatch or not alive)
-  PGR_SC_FLAG_AFTER_KNOWN  = 1u << 2, // 'after' holds a read currentState
-  PGR_SC_FLAG_BEFORE_KNOWN = 1u << 3  // 'before' holds the validated pre-invoke currentState
+// complete() output flags (in PgsSummaryCompletionOutput.flags).
+enum PgsSummaryCompletionFlags {
+  PGS_SC_FLAG_INVOKED      = 1u << 0, // Dismiss was invoked (committed past the final gate)
+  PGS_SC_FLAG_GONE         = 1u << 1, // the GUI is gone after the invoke (class mismatch or not alive)
+  PGS_SC_FLAG_AFTER_KNOWN  = 1u << 2, // 'after' holds a read currentState
+  PGS_SC_FLAG_BEFORE_KNOWN = 1u << 3  // 'before' holds the validated pre-invoke currentState
 };
 
 // Fixed LP64 output (24 bytes). complete() always fills this (even on refusal / error) so the host
 // learns invoked/before/after/gone and can never double-invoke. 'status' mirrors the return value.
-struct PgrSummaryCompletionOutput {
-  uint32_t version; // == PGR_SC_OUTPUT_VERSION
-  uint32_t size;    // == sizeof(PgrSummaryCompletionOutput)
-  uint32_t flags;   // PgrSummaryCompletionFlags bits
+struct PgsSummaryCompletionOutput {
+  uint32_t version; // == PGS_SC_OUTPUT_VERSION
+  uint32_t size;    // == sizeof(PgsSummaryCompletionOutput)
+  uint32_t flags;   // PgsSummaryCompletionFlags bits
   int32_t  status;  // mirrors the complete() return code
-  int32_t  before;  // pre-invoke currentState (valid iff PGR_SC_FLAG_BEFORE_KNOWN)
-  int32_t  after;   // post-invoke currentState (valid iff PGR_SC_FLAG_AFTER_KNOWN)
+  int32_t  before;  // pre-invoke currentState (valid iff PGS_SC_FLAG_BEFORE_KNOWN)
+  int32_t  after;   // post-invoke currentState (valid iff PGS_SC_FLAG_AFTER_KNOWN)
 };
 
-static_assert(sizeof(PgrSummaryCompletionOutput) == 24,
-              "PgrSummaryCompletionOutput must remain 24 bytes on LP64");
+static_assert(sizeof(PgsSummaryCompletionOutput) == 24,
+              "PgsSummaryCompletionOutput must remain 24 bytes on LP64");
 
 // Fixed LP64 telemetry gauge (72 bytes). Pull-only; the native layer never calls JS.
-struct PgrSummaryCompletionSample {
-  uint32_t version;          // == PGR_SC_SAMPLE_VERSION
-  uint32_t size;             // == sizeof(PgrSummaryCompletionSample)
+struct PgsSummaryCompletionSample {
+  uint32_t version;          // == PGS_SC_SAMPLE_VERSION
+  uint32_t size;             // == sizeof(PgsSummaryCompletionSample)
   uint64_t validate_ok;      // bumps on each VALID validate()
   uint64_t validate_fail;    // bumps on each INVALID validate()
   uint64_t complete_ok;      // bumps on each DONE complete() (Dismiss invoked, no throw)
@@ -187,14 +187,14 @@ struct PgrSummaryCompletionSample {
   uint32_t fault;            // reserved; 0 in v1
 };
 
-static_assert(sizeof(PgrSummaryCompletionSample) == 72,
-              "PgrSummaryCompletionSample must remain 72 bytes on LP64");
+static_assert(sizeof(PgsSummaryCompletionSample) == 72,
+              "PgsSummaryCompletionSample must remain 72 bytes on LP64");
 
 // Fixed LP64 table: 8-byte header + 7 function pointers = 64 bytes.
-struct PgrSummaryCompletionApi {
-  uint32_t version;  // == PGR_SC_API_VERSION
-  uint32_t size;     // == sizeof(PgrSummaryCompletionApi)
-  int (*install)(const PgrSummaryCompletionConfig *config);
+struct PgsSummaryCompletionApi {
+  uint32_t version;  // == PGS_SC_API_VERSION
+  uint32_t size;     // == sizeof(PgsSummaryCompletionApi)
+  int (*install)(const PgsSummaryCompletionConfig *config);
   // Refresh the gate: enabled, a residual lease clamped to 2500 ms, and the caller's current epoch.
   // Carries proven_tid; once the owner is latched a foreign thread can only revoke (enabled -> 0).
   // Any thread.
@@ -202,26 +202,26 @@ struct PgrSummaryCompletionApi {
   // Summary identity validation. Returns 1 valid / 0 invalid / negative error. Reads managed fields
   // and invokes op_Implicit (alive); owner thread only (0 off-owner). Does NOT gate on the lease,
   // consume a token, or invoke Dismiss.
-  int (*validate)(const PgrSummaryCompletionRequest *request);
+  int (*validate)(const PgsSummaryCompletionRequest *request);
   // Issue one monotonic request token for a single completion attempt. *out_token is a nonzero token
   // when armed (gate live), on the owner thread, and not busy; otherwise 0. Owner thread only.
   int (*acquire)(uint64_t epoch, uint64_t proven_tid, uint64_t *out_token);
   // One owner-thread completion. Re-checks the gate + that token is the latest issued and unconsumed,
   // CONSUMES it and marks busy BEFORE anything, re-validates the identity, re-checks the generation,
   // then runtime_invokes Dismiss exactly once and reads the postcondition. Always fills *out. Returns
-  // PGR_SC_DONE (invoked, no throw), PGR_SC_OK (refused: gate/token/busy/validation, NOT invoked), or
-  // PGR_SC_ERR_MANAGED (Dismiss threw; invoked still reported). Never invokes
+  // PGS_SC_DONE (invoked, no throw), PGS_SC_OK (refused: gate/token/busy/validation, NOT invoked), or
+  // PGS_SC_ERR_MANAGED (Dismiss threw; invoked still reported). Never invokes
   // twice on retry or reentrancy. Owner thread only.
-  int (*complete)(const PgrSummaryCompletionRequest *request, uint64_t token,
-                  PgrSummaryCompletionOutput *out);
+  int (*complete)(const PgsSummaryCompletionRequest *request, uint64_t token,
+                  PgsSummaryCompletionOutput *out);
   // Immediate revoke from any thread (bumps the generation, disables the gate). A later update()
   // re-arms. No managed work; no deadlock with an in-flight Dismiss.
   int (*stop)(uint64_t proven_tid);
-  int (*sample)(PgrSummaryCompletionSample *out_sample);
+  int (*sample)(PgsSummaryCompletionSample *out_sample);
 };
 
-static_assert(sizeof(PgrSummaryCompletionApi) == 64,
-              "PgrSummaryCompletionApi must remain a 64-byte version-1 table");
+static_assert(sizeof(PgsSummaryCompletionApi) == 64,
+              "PgsSummaryCompletionApi must remain a 64-byte version-1 table");
 
 // Hidden getter. NOT exported by the version script; the coordinator registers it in query_feature
 // under feature id 36 and answers only on an exact version match.

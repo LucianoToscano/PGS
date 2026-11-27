@@ -16,11 +16,11 @@
 // settings' close-proximity and low-awareness thresholds and hands the hook half of each, so the
 // values sit inside the game's own bonus range. Until then the hook keeps its small defaults.
 namespace {
-using namespace pgr_shared_meta;
+using namespace pgs_shared_meta;
 struct Failure {const char *where;};
 void require(bool ok,const char *where){if(!ok)throw Failure{where};}
 template<class F>F fn(void *p){require(p,"missing runtime export");return reinterpret_cast<F>(p);}
-PgrBootBinding boot{};const PgrSharedMetadataOutput *md=nullptr;
+PgsBootBinding boot{};const PgsSharedMetadataOutput *md=nullptr;
 uint64_t owner=0,next_try=0;bool busy=false,ready=false,done=false;int tries=0;
 constexpr uint64_t kRetryMs=5000;constexpr int kMaxTries=60;
 uint64_t clock_ms(){timespec t{};clock_gettime(CLOCK_BOOTTIME,&t);return uint64_t(t.tv_sec)*1000+t.tv_nsec/1000000;}
@@ -36,9 +36,9 @@ struct Root {
 };
 void *klass(void *o){require(o,"null object");return fn<void*(*)(void*)>(boot.runtime.object_get_class)(o);}
 void *cls(const char *ns,const char *name){
- const auto *api=static_cast<const PgrMetaApi*>(pgs_runtime_metadata_api(1));require(api,"metadata API");
- PgrMetaClassQuery q{};q.version=1;q.size=sizeof(q);q.name_space=ns;q.name=name;q.canonical_match=PGR_MD_MATCH_EXACT;
- PgrMetaClassResult out{};require(api->resolve_class(&q,&out)==0,name);return const_cast<void*>(out.klass);
+ const auto *api=static_cast<const PgsMetaApi*>(pgs_runtime_metadata_api(1));require(api,"metadata API");
+ PgsMetaClassQuery q{};q.version=1;q.size=sizeof(q);q.name_space=ns;q.name=name;q.canonical_match=PGS_MD_MATCH_EXACT;
+ PgsMetaClassResult out{};require(api->resolve_class(&q,&out)==0,name);return const_cast<void*>(out.klass);
 }
 void *method(void *o,const char *name,int count){void *m=fn<void*(*)(void*,const char*,int)>(boot.meta.class_get_method_from_name)(klass(o),name,count);require(m,name);return m;}
 void *invoke(void *m,void *o,void **args=nullptr){void *ex=nullptr;void *v=fn<void*(*)(void*,void*,void**,void**)>(boot.runtime.runtime_invoke)(m,o,args,&ex);require(!ex,"managed call failed");return v;}
@@ -51,8 +51,8 @@ Root resolve(const char *ns,const char *name){
  Root container(invoke(h(H_IL_CONTAINER_M),map.get()));if(!container)return {};
  Root target=type_object(cls(ns,name));void *resolve_args[]={target.get()};return Root(invoke(h(H_IL_RESOLVE_M),container.get(),resolve_args));
 }
-const PgrRuntimeTransportApi *transport(){return static_cast<const PgrRuntimeTransportApi*>(pgs_runtime_transport_api(1));}
-void event(const std::string &json){auto tr=transport();if(!tr)return;PgrRuntimeTransportString strings[]={{"ar-values",9},{json.c_str(),uint32_t(json.size())}};tr->emit(19,nullptr,0,strings,2);}
+const PgsRuntimeTransportApi *transport(){return static_cast<const PgsRuntimeTransportApi*>(pgs_runtime_transport_api(1));}
+void event(const std::string &json){auto tr=transport();if(!tr)return;PgsRuntimeTransportString strings[]={{"ar-values",9},{json.c_str(),uint32_t(json.size())}};tr->emit(19,nullptr,0,strings,2);}
 
 // IGameMasterData.Get<EncounterSettingsProto>(), closed once through reflection.
 Root encounter_settings(void *gm){
@@ -80,7 +80,7 @@ float number(void *o,const char *name){
  const std::string getter=std::string("get_")+name;return unbox<float>(call(o,getter.c_str()));
 }
 void step(){
- if(!ready){auto api=static_cast<const PgrBootApi*>(pgs_runtime_bootstrap_api(1));boot.version=1;boot.size=sizeof(boot);require(md&&api&&api->snapshot(&boot)==0,"Runtime unavailable");ready=true;}
+ if(!ready){auto api=static_cast<const PgsBootApi*>(pgs_runtime_bootstrap_api(1));boot.version=1;boot.size=sizeof(boot);require(md&&api&&api->snapshot(&boot)==0,"Runtime unavailable");ready=true;}
  Root gm=resolve("","IGameMasterData");require(bool(gm),"game master");
  if(!unbox<bool>(call(gm.get(),"get_IsReady")))return;  // try again later
  Root settings=encounter_settings(gm.get());require(bool(settings),"encounter settings");
@@ -89,7 +89,7 @@ void step(){
  const float close_mult=number(settings.get(),"ArCloseProximityMultiplier");
  const float low_mult=number(settings.get(),"ArLowAwarenessMaxMultiplier");
  const float penalty=number(settings.get(),"ArAwarenessPenaltyThreshold");
- if(close>0&&low>0)pgr_ar_throw_set_values(close*0.5f,low*0.5f);
+ if(close>0&&low>0)pgs_ar_throw_set_values(close*0.5f,low*0.5f);
  event("{\"phase\":\"ready\",\"closeProximityThreshold\":"+std::to_string(close)+",\"lowAwarenessThreshold\":"+std::to_string(low)+
   ",\"closeProximityMultiplier\":"+std::to_string(close_mult)+",\"lowAwarenessMaxMultiplier\":"+std::to_string(low_mult)+
   ",\"awarenessPenaltyThreshold\":"+std::to_string(penalty)+",\"applied\":"+(close>0&&low>0?"true":"false")+"}");
@@ -118,20 +118,20 @@ void report_catch(void *response){
  event("{\"phase\":\"catch\",\"status\":\""+status+"\",\"arPlusBonus\":"+(bonus?"true":"false")+",\"activities\":\""+activities+"\"}");
 }
 void poll_catch(uint64_t tid){
- if(!promise){promise=reinterpret_cast<uintptr_t>(pgr_ar_throw_take_promise());promise_since=clock_ms();if(!promise)return;}
- auto api=static_cast<const PgrVgpResultsApi*>(pgs_vgp_results_api(1));
+ if(!promise){promise=reinterpret_cast<uintptr_t>(pgs_ar_throw_take_promise());promise_since=clock_ms();if(!promise)return;}
+ auto api=static_cast<const PgsVgpResultsApi*>(pgs_vgp_results_api(1));
  void *target=fn<void*(*)(uintptr_t)>(boot.runtime.gchandle_get_target)(promise);
- PgrVgpResultsResult out{};const int rc=api&&target?api->poll(target,PGR_VR_PHASE_ENCOUNTER,tid,&out):PGR_VR_DONE;
+ PgsVgpResultsResult out{};const int rc=api&&target?api->poll(target,PGS_VR_PHASE_ENCOUNTER,tid,&out):PGS_VR_DONE;
  if(rc==0&&clock_ms()-promise_since<20000)return;
  fn<void(*)(uintptr_t)>(boot.runtime.gchandle_free)(promise);promise=0;
  Root result;result.h=out.value_handle;
- if(rc==PGR_VR_DONE&&result)report_catch(result.get());
+ if(rc==PGS_VR_DONE&&result)report_catch(result.get());
  else event("{\"phase\":\"catch\",\"status\":\"unknown\",\"poll\":"+std::to_string(rc)+",\"state\":"+std::to_string(out.state)+
   ",\"promise\":"+(target?"true":"false")+",\"api\":"+(api?"true":"false")+"}");
 }
 }  // namespace
 
-void pgr_ar_values_tick(uint64_t tid,const PgrSharedMetadataOutput *metadata){
+void pgs_ar_values_tick(uint64_t tid,const PgsSharedMetadataOutput *metadata){
  if(busy||!tid||tid!=uint64_t(gettid())||(owner&&owner!=tid))return;
  struct Guard{Guard(){busy=true;}~Guard(){busy=false;}}guard;owner=tid;md=metadata;
  if(ready){

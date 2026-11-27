@@ -33,7 +33,7 @@ int m_listCount, m_listItem, m_wpCount, m_wpItem;
 int f_didn, f_nearbyRoutes, f_id, f_name, f_reversible, f_distance, f_stats, f_waypoints, f_startPoi,
     f_endPoi, f_anchorWp, f_lat, f_lon, f_cooldown;
 
-struct FakeString { void *klass; uint16_t chars[PGR_RD_NAME_MAX]; int32_t len; };
+struct FakeString { void *klass; uint16_t chars[PGS_RD_NAME_MAX]; int32_t len; };
 struct FakeWaypoint { void *klass; double lat, lon; };
 struct FakeAnchor { void *klass; void *waypoint; };
 struct FakeStats { void *klass; int64_t cooldown; };
@@ -49,7 +49,7 @@ struct FakeBox { void *klass; int32_t val; };
 
 FakeString make_string(const char *ascii) {
   FakeString s{&cls_string, {}, 0};
-  for (int i = 0; ascii[i] && i < PGR_RD_NAME_MAX; ++i) { s.chars[s.len] = static_cast<uint16_t>(ascii[i]); ++s.len; }
+  for (int i = 0; ascii[i] && i < PGS_RD_NAME_MAX; ++i) { s.chars[s.len] = static_cast<uint16_t>(ascii[i]); ++s.len; }
   return s;
 }
 
@@ -132,8 +132,8 @@ void *fake_invoke(const void *method, void *self, void **params, void **exc) {
   return nullptr;
 }
 
-PgrRoutesDiscoveryConfig make_config() {
-  PgrRoutesDiscoveryConfig c{};
+PgsRoutesDiscoveryConfig make_config() {
+  PgsRoutesDiscoveryConfig c{};
   c.version = 1; c.size = sizeof(c);
   c.runtime_invoke = (void *)&fake_invoke; c.object_get_class = (void *)&fake_obj_class;
   c.field_get_value = (void *)&fake_field_get; c.object_unbox = (void *)&fake_unbox;
@@ -154,23 +154,23 @@ PgrRoutesDiscoveryConfig make_config() {
 }
 
 uint64_t this_tid() { return static_cast<uint64_t>(static_cast<pid_t>(::gettid())); }
-const PgrRoutesDiscoveryApi *g_api = nullptr;
+const PgsRoutesDiscoveryApi *g_api = nullptr;
 
-PgrRoutesDiscoveryRequest req(uint64_t tid, uint64_t residual, uint64_t svc, uint32_t index) {
-  PgrRoutesDiscoveryRequest r{}; r.version = 1; r.size = sizeof(r); r.tid = tid; r.residual_ms = residual;
+PgsRoutesDiscoveryRequest req(uint64_t tid, uint64_t residual, uint64_t svc, uint32_t index) {
+  PgsRoutesDiscoveryRequest r{}; r.version = 1; r.size = sizeof(r); r.tid = tid; r.residual_ms = residual;
   r.generation = g_api->generation(); r.service_handle = svc; r.index = index; return r;
 }
-PgrRoutesDiscoveryLookup lk(uint64_t tid, uint64_t residual, uint64_t svc, const char *id) {
-  PgrRoutesDiscoveryLookup l{}; l.version = 1; l.size = sizeof(l); l.tid = tid; l.residual_ms = residual;
+PgsRoutesDiscoveryLookup lk(uint64_t tid, uint64_t residual, uint64_t svc, const char *id) {
+  PgsRoutesDiscoveryLookup l{}; l.version = 1; l.size = sizeof(l); l.tid = tid; l.residual_ms = residual;
   l.generation = g_api->generation(); l.service_handle = svc;
-  for (int i = 0; id[i] && i < PGR_RD_ID_MAX; ++i) { l.id[i] = (uint16_t)id[i]; ++l.id_length; }
+  for (int i = 0; id[i] && i < PGS_RD_ID_MAX; ++i) { l.id[i] = (uint16_t)id[i]; ++l.id_length; }
   return l;
 }
 
 void reset_invoke() { g_invokes = 0; g_throw_token = nullptr; g_oneshot = nullptr; g_oneshot_method = nullptr; g_gcnew_fail = 0; g_gcnew_calls = 0; g_wide_count = false; }
-void drain(uint64_t tid, uint64_t svc) { auto r = req(tid, 0, svc, 0); assert(g_api->drain(&r) == PGR_RD_OK); }
+void drain(uint64_t tid, uint64_t svc) { auto r = req(tid, 0, svc, 0); assert(g_api->drain(&r) == PGS_RD_OK); }
 
-bool id_is(const PgrRoutesDiscoveryRoute &h, const char *expect) {
+bool id_is(const PgsRoutesDiscoveryRoute &h, const char *expect) {
   int n = 0; while (expect[n]) ++n;
   if ((int)h.id_length != n) return false;
   for (int i = 0; i < n; ++i) if (h.id[i] != (uint16_t)expect[i]) return false;
@@ -187,34 +187,34 @@ int main(int argc, char **argv) {
   const auto *core = static_cast<const pgs_native_api_v2 *>(getter(2));
   assert(core && core->query_feature);
   assert(core->query_feature(44, 99) == nullptr);
-  const auto *api = static_cast<const PgrRoutesDiscoveryApi *>(core->query_feature(44, 1));
-  assert(api && api->version == 1 && api->size == sizeof(PgrRoutesDiscoveryApi));
+  const auto *api = static_cast<const PgsRoutesDiscoveryApi *>(core->query_feature(44, 1));
+  assert(api && api->version == 1 && api->size == sizeof(PgsRoutesDiscoveryApi));
   g_api = api;
 
   std::printf("ABI sizes: config=%zu request=%zu lookup=%zu route=%zu output=%zu points=%zu table=%zu\n",
-              sizeof(PgrRoutesDiscoveryConfig), sizeof(PgrRoutesDiscoveryRequest), sizeof(PgrRoutesDiscoveryLookup),
-              sizeof(PgrRoutesDiscoveryRoute), sizeof(PgrRoutesDiscoveryOutput), sizeof(PgrRoutesDiscoveryPoints),
-              sizeof(PgrRoutesDiscoveryApi));
-  assert(sizeof(PgrRoutesDiscoveryConfig) == 312 && sizeof(PgrRoutesDiscoveryRequest) == 48 &&
-         sizeof(PgrRoutesDiscoveryLookup) == 304 && sizeof(PgrRoutesDiscoveryRoute) == 832 &&
-         sizeof(PgrRoutesDiscoveryOutput) == 83216 && sizeof(PgrRoutesDiscoveryPoints) == 80016 &&
-         sizeof(PgrRoutesDiscoveryApi) == 64);
+              sizeof(PgsRoutesDiscoveryConfig), sizeof(PgsRoutesDiscoveryRequest), sizeof(PgsRoutesDiscoveryLookup),
+              sizeof(PgsRoutesDiscoveryRoute), sizeof(PgsRoutesDiscoveryOutput), sizeof(PgsRoutesDiscoveryPoints),
+              sizeof(PgsRoutesDiscoveryApi));
+  assert(sizeof(PgsRoutesDiscoveryConfig) == 312 && sizeof(PgsRoutesDiscoveryRequest) == 48 &&
+         sizeof(PgsRoutesDiscoveryLookup) == 304 && sizeof(PgsRoutesDiscoveryRoute) == 832 &&
+         sizeof(PgsRoutesDiscoveryOutput) == 83216 && sizeof(PgsRoutesDiscoveryPoints) == 80016 &&
+         sizeof(PgsRoutesDiscoveryApi) == 64);
 
   const uint64_t tid = this_tid();
-  PgrRoutesDiscoveryConfig cfg = make_config();
-  static PgrRoutesDiscoveryOutput out;    // 83 KB: never on the stack
-  static PgrRoutesDiscoveryPoints pts;     // 80 KB: never on the stack
+  PgsRoutesDiscoveryConfig cfg = make_config();
+  static PgsRoutesDiscoveryOutput out;    // 83 KB: never on the stack
+  static PgsRoutesDiscoveryPoints pts;     // 80 KB: never on the stack
 
   // 1. install validation / not-installed / idempotent / reconfig.
   assert(api->generation() == 1);
-  assert(api->install(nullptr) == PGR_RD_ERR_NULL_ARG);
-  { auto bad = cfg; bad.version = 2; assert(api->install(&bad) == PGR_RD_ERR_BAD_VERSION); }
-  { auto bad = cfg; bad.size = sizeof(cfg) - 1; assert(api->install(&bad) == PGR_RD_ERR_BAD_SIZE); }
-  { auto bad = cfg; bad.m_listItem = nullptr; assert(api->install(&bad) == PGR_RD_ERR_MISSING_PTR); }
-  { auto r = req(tid, 2000, 0, 0); assert(api->discover(&r, &out) == PGR_RD_ERR_NOT_INSTALLED && out.status == PGR_RD_ERR_NOT_INSTALLED); }
+  assert(api->install(nullptr) == PGS_RD_ERR_NULL_ARG);
+  { auto bad = cfg; bad.version = 2; assert(api->install(&bad) == PGS_RD_ERR_BAD_VERSION); }
+  { auto bad = cfg; bad.size = sizeof(cfg) - 1; assert(api->install(&bad) == PGS_RD_ERR_BAD_SIZE); }
+  { auto bad = cfg; bad.m_listItem = nullptr; assert(api->install(&bad) == PGS_RD_ERR_MISSING_PTR); }
+  { auto r = req(tid, 2000, 0, 0); assert(api->discover(&r, &out) == PGS_RD_ERR_NOT_INSTALLED && out.status == PGS_RD_ERR_NOT_INSTALLED); }
   assert(api->install(&cfg) == 0);
   assert(api->install(&cfg) == 0);  // idempotent
-  { auto bad = cfg; bad.class_shared = &cls_nearby; assert(api->install(&bad) == PGR_RD_ERR_RECONFIG); }
+  { auto bad = cfg; bad.class_shared = &cls_nearby; assert(api->install(&bad) == PGS_RD_ERR_RECONFIG); }
 
   // Fake scene: two routes. route-a: 3 points, name, stats, start + end anchors, reversible. route-b: 2
   // points, no name/stats/anchors, not reversible.
@@ -236,28 +236,28 @@ int main(int argc, char **argv) {
   //    resolves to the cached proto; borrowed host handle never freed; module roots balanced after drain.
   { reset_invoke();
     auto r = req(tid, 2000, hRoutes, 0);
-    assert(api->discover(&r, &out) == PGR_RD_OK && out.status == PGR_RD_OK && out.count == 2);
+    assert(api->discover(&r, &out) == PGS_RD_OK && out.status == PGS_RD_OK && out.count == 2);
     const auto &a = out.routes[0];
     assert(id_is(a, "route-a") && a.name_length == 5 && a.point_count == 3);
-    assert(a.flags == (PGR_RD_FLAG_REVERSIBLE | PGR_RD_FLAG_HAS_START | PGR_RD_FLAG_HAS_END));
+    assert(a.flags == (PGS_RD_FLAG_REVERSIBLE | PGS_RD_FLAG_HAS_START | PGS_RD_FLAG_HAS_END));
     assert(a.distance_meters == 1234.0 && a.cooldown_finish_ms == 99.0);
     assert(a.start_lat == 11 && a.start_lon == 12 && a.end_lat == 13 && a.end_lon == 14);
     const auto &b = out.routes[1];
     assert(id_is(b, "route-b") && b.name_length == 0 && b.point_count == 2 && b.flags == 0 && b.cooldown_finish_ms == 0.0);
     // points()
     auto pr = req(tid, 2000, hRoutes, 0);
-    assert(api->points(&pr, 0, &pts) == PGR_RD_OK && pts.count == 3);
+    assert(api->points(&pr, 0, &pts) == PGS_RD_OK && pts.count == 3);
     assert(pts.points[0].lat == 1 && pts.points[2].lon == 6);
     pr = req(tid, 2000, hRoutes, 1);
-    assert(api->points(&pr, 1, &pts) == PGR_RD_OK && pts.count == 2 && pts.points[1].lat == 9);
+    assert(api->points(&pr, 1, &pts) == PGS_RD_OK && pts.count == 2 && pts.points[1].lat == 9);
     // points() out of range
-    pr = req(tid, 2000, hRoutes, 9); assert(api->points(&pr, 9, &pts) == PGR_RD_ERR_BAD_INDEX);
+    pr = req(tid, 2000, hRoutes, 9); assert(api->points(&pr, 9, &pts) == PGS_RD_ERR_BAD_INDEX);
     // lookup()
     { auto l = lk(tid, 2000, hRoutes, "route-a"); uint64_t h = 0;
-      assert(api->lookup(&l, &h) == PGR_RD_OK && h != 0);
+      assert(api->lookup(&l, &h) == PGS_RD_OK && h != 0);
       assert(fake_gc_get(static_cast<uintptr_t>(h)) == &shA); }
-    { auto l = lk(tid, 2000, hRoutes, "route-b"); uint64_t h = 0; assert(api->lookup(&l, &h) == PGR_RD_OK && h != 0); }
-    { auto l = lk(tid, 2000, hRoutes, "route-z"); uint64_t h = 7; assert(api->lookup(&l, &h) == PGR_RD_SKIP && h == 0); }
+    { auto l = lk(tid, 2000, hRoutes, "route-b"); uint64_t h = 0; assert(api->lookup(&l, &h) == PGS_RD_OK && h != 0); }
+    { auto l = lk(tid, 2000, hRoutes, "route-z"); uint64_t h = 7; assert(api->lookup(&l, &h) == PGS_RD_SKIP && h == 0); }
     assert(module_roots() > 0);  // the cache retains proto + service roots
     drain(tid, hRoutes);
     assert(module_roots() == 0 && g_handles.count(hRoutes) == 1);  // only the borrowed host handle remains
@@ -267,9 +267,9 @@ int main(int argc, char **argv) {
   { reset_invoke();
     FakeRoutes routes2{&cls_routes, &nearby};
     const uintptr_t hRoutes2 = insert_host(&routes2);
-    auto r = req(tid, 2000, hRoutes, 0); assert(api->discover(&r, &out) == PGR_RD_OK && out.count == 2);
+    auto r = req(tid, 2000, hRoutes, 0); assert(api->discover(&r, &out) == PGS_RD_OK && out.count == 2);
     auto l = lk(tid, 2000, hRoutes2, "route-a"); uint64_t h = 5;
-    assert(api->lookup(&l, &h) == PGR_RD_SKIP && h == 0);  // bound service != request service
+    assert(api->lookup(&l, &h) == PGS_RD_SKIP && h == 0);  // bound service != request service
     drain(tid, hRoutes);
     g_handles.erase(hRoutes2); g_host.erase(&routes2);
   }
@@ -279,21 +279,21 @@ int main(int argc, char **argv) {
   { reset_invoke();
     FakeShared dupA{&cls_shared, &idA, nullptr, 0, 0, nullptr, &wpsB, nullptr, nullptr};
     list.items = {&shA, &dupA, &shB};
-    auto r = req(tid, 2000, hRoutes, 0); assert(api->discover(&r, &out) == PGR_RD_OK && out.count == 2);  // dup dropped
+    auto r = req(tid, 2000, hRoutes, 0); assert(api->discover(&r, &out) == PGS_RD_OK && out.count == 2);  // dup dropped
     assert(id_is(out.routes[0], "route-a") && id_is(out.routes[1], "route-b"));
     list.items = {&shA};  // route-b removed
-    r = req(tid, 2000, hRoutes, 0); assert(api->discover(&r, &out) == PGR_RD_OK && out.count == 1 && id_is(out.routes[0], "route-a"));
-    { auto l = lk(tid, 2000, hRoutes, "route-b"); uint64_t h = 1; assert(api->lookup(&l, &h) == PGR_RD_SKIP && h == 0); }
+    r = req(tid, 2000, hRoutes, 0); assert(api->discover(&r, &out) == PGS_RD_OK && out.count == 1 && id_is(out.routes[0], "route-a"));
+    { auto l = lk(tid, 2000, hRoutes, "route-b"); uint64_t h = 1; assert(api->lookup(&l, &h) == PGS_RD_SKIP && h == 0); }
     list.items = {&shA, &shB};
     drain(tid, hRoutes); assert(module_roots() == 0);
   }
 
   // 5. valid EMPTY snapshot clears the cache (null nearby / empty list).
   { reset_invoke();
-    auto r = req(tid, 2000, hRoutes, 0); assert(api->discover(&r, &out) == PGR_RD_OK && out.count == 2);
+    auto r = req(tid, 2000, hRoutes, 0); assert(api->discover(&r, &out) == PGS_RD_OK && out.count == 2);
     void *saved = routes.nearby; routes.nearby = nullptr;  // didn null -> empty snapshot
-    r = req(tid, 2000, hRoutes, 0); assert(api->discover(&r, &out) == PGR_RD_OK && out.count == 0);
-    { auto l = lk(tid, 2000, hRoutes, "route-a"); uint64_t h = 2; assert(api->lookup(&l, &h) == PGR_RD_SKIP && h == 0); }
+    r = req(tid, 2000, hRoutes, 0); assert(api->discover(&r, &out) == PGS_RD_OK && out.count == 0);
+    { auto l = lk(tid, 2000, hRoutes, "route-a"); uint64_t h = 2; assert(api->lookup(&l, &h) == PGS_RD_SKIP && h == 0); }
     routes.nearby = saved;
     drain(tid, hRoutes); assert(module_roots() == 0);
   }
@@ -305,20 +305,20 @@ int main(int argc, char **argv) {
     FakeShared shShort{&cls_shared, &idB, nullptr, 0, 0, nullptr, &oneWp, nullptr, nullptr};
     FakeString idEmpty = make_string("");
     FakeShared shEmptyId{&cls_shared, &idEmpty, nullptr, 1, 0, nullptr, &wpsB, nullptr, nullptr};
-    FakeString idLong; idLong.klass = &cls_string; idLong.len = PGR_RD_ID_MAX + 1; for (int i = 0; i < idLong.len; ++i) idLong.chars[i % PGR_RD_NAME_MAX] = 'x';
+    FakeString idLong; idLong.klass = &cls_string; idLong.len = PGS_RD_ID_MAX + 1; for (int i = 0; i < idLong.len; ++i) idLong.chars[i % PGS_RD_NAME_MAX] = 'x';
     FakeShared shLongId{&cls_shared, &idLong, nullptr, 1, 0, nullptr, &wpsB, nullptr, nullptr};
     FakeShared shBadBool{&cls_shared, &idB, nullptr, 2, 0, nullptr, &wpsB, nullptr, nullptr};  // reversible byte 2
     list.items = {&shA, &shShort, &shEmptyId, &shLongId, &shBadBool};
-    auto r = req(tid, 2000, hRoutes, 0); assert(api->discover(&r, &out) == PGR_RD_OK && out.count == 1 && id_is(out.routes[0], "route-a"));
+    auto r = req(tid, 2000, hRoutes, 0); assert(api->discover(&r, &out) == PGS_RD_OK && out.count == 1 && id_is(out.routes[0], "route-a"));
     // wrong-class waypoint element is skipped as a point, route still admitted.
     FakeWaypoint bad; bad.klass = &cls_poison; bad.lat = 0; bad.lon = 0;
     FakeRepeated mixed{&cls_other, {&wb0, &bad, &wb1}};
     FakeShared shMixed{&cls_shared, &idB, nullptr, 0, 0, nullptr, &mixed, nullptr, nullptr};
     list.items = {&shMixed};
-    r = req(tid, 2000, hRoutes, 0); assert(api->discover(&r, &out) == PGR_RD_OK && out.count == 1 && out.routes[0].point_count == 2);
+    r = req(tid, 2000, hRoutes, 0); assert(api->discover(&r, &out) == PGS_RD_OK && out.count == 1 && out.routes[0].point_count == 2);
     // non-Int32 count box -> whole discover is a metadata fault (fail closed, no publish).
     list.items = {&shB}; g_wide_count = true;
-    r = req(tid, 2000, hRoutes, 0); assert(api->discover(&r, &out) == PGR_RD_ERR_GCHANDLE && out.count == 0);
+    r = req(tid, 2000, hRoutes, 0); assert(api->discover(&r, &out) == PGS_RD_ERR_GCHANDLE && out.count == 0);
     g_wide_count = false;
     list.items = {&shA, &shB};
     drain(tid, hRoutes); assert(module_roots() == 0);
@@ -328,10 +328,10 @@ int main(int argc, char **argv) {
   //    that route.
   { reset_invoke();
     g_throw_token = &m_listCount;
-    auto r = req(tid, 2000, hRoutes, 0); assert(api->discover(&r, &out) == PGR_RD_ERR_MANAGED && out.count == 0);
+    auto r = req(tid, 2000, hRoutes, 0); assert(api->discover(&r, &out) == PGS_RD_ERR_MANAGED && out.count == 0);
     reset_invoke();
     g_throw_token = &m_wpCount;  // first route's wpCount throws -> route-a skipped, route-b admitted
-    r = req(tid, 2000, hRoutes, 0); assert(api->discover(&r, &out) == PGR_RD_OK && out.count == 1 && id_is(out.routes[0], "route-b"));
+    r = req(tid, 2000, hRoutes, 0); assert(api->discover(&r, &out) == PGS_RD_OK && out.count == 1 && id_is(out.routes[0], "route-b"));
     drain(tid, hRoutes); assert(module_roots() == 0);
   }
 
@@ -347,8 +347,8 @@ int main(int argc, char **argv) {
       shA.klass = &cls_poison;  // a stale read of the original would fail the class check
     };
     auto r = req(tid, 2000, hRoutes, 0);
-    assert(api->discover(&r, &out) == PGR_RD_OK && out.count == 1 && id_is(out.routes[0], "route-a") && out.routes[0].point_count == 3);
-    { auto l = lk(tid, 2000, hRoutes, "route-a"); uint64_t h = 0; assert(api->lookup(&l, &h) == PGR_RD_OK && fake_gc_get((uintptr_t)h) == &shadow); }
+    assert(api->discover(&r, &out) == PGS_RD_OK && out.count == 1 && id_is(out.routes[0], "route-a") && out.routes[0].point_count == 3);
+    { auto l = lk(tid, 2000, hRoutes, "route-a"); uint64_t h = 0; assert(api->lookup(&l, &h) == PGS_RD_OK && fake_gc_get((uintptr_t)h) == &shadow); }
     shA.klass = &cls_shared; list.items = {&shA, &shB};
     drain(tid, hRoutes); assert(module_roots() == 0);
   }
@@ -356,8 +356,8 @@ int main(int argc, char **argv) {
   // 9. lease / owner / thread gates: residual 0, detached thread, and a wrong tid refuse with NO managed
   //    work (no invoke after a blocked lease).
   { reset_invoke();
-    auto r = req(tid, 0, hRoutes, 0); assert(api->discover(&r, &out) == PGR_RD_SKIP && g_invokes == 0);
-    g_thread = nullptr; r = req(tid, 2000, hRoutes, 0); assert(api->discover(&r, &out) == PGR_RD_SKIP && g_invokes == 0);
+    auto r = req(tid, 0, hRoutes, 0); assert(api->discover(&r, &out) == PGS_RD_SKIP && g_invokes == 0);
+    g_thread = nullptr; r = req(tid, 2000, hRoutes, 0); assert(api->discover(&r, &out) == PGS_RD_SKIP && g_invokes == 0);
     g_thread = reinterpret_cast<void *>(0x7700);
     assert(module_roots() == 0);
   }
@@ -366,37 +366,37 @@ int main(int argc, char **argv) {
   //     lookup/points stamped with the new generation is refused (cache published under the old gen), and a
   //     stale-generation request is refused regardless of residual. drain still reclaims the roots.
   { reset_invoke();
-    auto r = req(tid, 2000, hRoutes, 0); assert(api->discover(&r, &out) == PGR_RD_OK && out.count == 2);
+    auto r = req(tid, 2000, hRoutes, 0); assert(api->discover(&r, &out) == PGS_RD_OK && out.count == 2);
     const uint64_t g0 = api->generation();
     assert(api->revoke() == g0 + 1 && api->generation() == g0 + 1);
-    { auto l = lk(tid, 2000, hRoutes, "route-a"); uint64_t h = 3; assert(api->lookup(&l, &h) == PGR_RD_SKIP && h == 0); }
-    { auto pr = req(tid, 2000, hRoutes, 0); assert(api->points(&pr, 0, &pts) == PGR_RD_SKIP); }
+    { auto l = lk(tid, 2000, hRoutes, "route-a"); uint64_t h = 3; assert(api->lookup(&l, &h) == PGS_RD_SKIP && h == 0); }
+    { auto pr = req(tid, 2000, hRoutes, 0); assert(api->points(&pr, 0, &pts) == PGS_RD_SKIP); }
     // a stale-generation discover refuses even with a full lease.
-    { auto sr = req(tid, 2000, hRoutes, 0); sr.generation = g0; assert(api->discover(&sr, &out) == PGR_RD_SKIP); }
+    { auto sr = req(tid, 2000, hRoutes, 0); sr.generation = g0; assert(api->discover(&sr, &out) == PGS_RD_SKIP); }
     // re-discover with the current generation republishes and the cache works again.
-    r = req(tid, 2000, hRoutes, 0); assert(api->discover(&r, &out) == PGR_RD_OK && out.count == 2);
-    { auto l = lk(tid, 2000, hRoutes, "route-a"); uint64_t h = 0; assert(api->lookup(&l, &h) == PGR_RD_OK && h != 0); }
+    r = req(tid, 2000, hRoutes, 0); assert(api->discover(&r, &out) == PGS_RD_OK && out.count == 2);
+    { auto l = lk(tid, 2000, hRoutes, "route-a"); uint64_t h = 0; assert(api->lookup(&l, &h) == PGS_RD_OK && h != 0); }
     drain(tid, hRoutes); assert(module_roots() == 0);
   }
 
   // 11. off-owner thread: a foreign tid is refused and frees nothing; the owner cache is untouched.
   { reset_invoke();
-    auto r = req(tid, 2000, hRoutes, 0); assert(api->discover(&r, &out) == PGR_RD_OK && out.count == 2);
+    auto r = req(tid, 2000, hRoutes, 0); assert(api->discover(&r, &out) == PGS_RD_OK && out.count == 2);
     std::thread([&]() {
-      PgrRoutesDiscoveryOutput o{};
+      PgsRoutesDiscoveryOutput o{};
       auto fr = req(this_tid(), 2000, hRoutes, 0);  // this_tid() here is the foreign worker tid
-      assert(g_api->discover(&fr, &o) == PGR_RD_SKIP && o.count == 0);
+      assert(g_api->discover(&fr, &o) == PGS_RD_SKIP && o.count == 0);
       auto dr = req(this_tid(), 0, hRoutes, 0);
-      assert(g_api->drain(&dr) == PGR_RD_SKIP);  // off-owner drain frees nothing
+      assert(g_api->drain(&dr) == PGS_RD_SKIP);  // off-owner drain frees nothing
     }).join();
-    { auto l = lk(tid, 2000, hRoutes, "route-a"); uint64_t h = 0; assert(api->lookup(&l, &h) == PGR_RD_OK && h != 0); }  // cache intact
+    { auto l = lk(tid, 2000, hRoutes, "route-a"); uint64_t h = 0; assert(api->lookup(&l, &h) == PGS_RD_OK && h != 0); }  // cache intact
     drain(tid, hRoutes); assert(module_roots() == 0);
   }
 
   // 12. root-allocation failure fails closed (no publish); the previous (empty) cache is retained.
   { reset_invoke();
     g_gcnew_calls = 0; g_gcnew_fail = 1;  // the service-binding root fails
-    auto r = req(tid, 2000, hRoutes, 0); assert(api->discover(&r, &out) == PGR_RD_ERR_GCHANDLE && out.count == 0);
+    auto r = req(tid, 2000, hRoutes, 0); assert(api->discover(&r, &out) == PGS_RD_ERR_GCHANDLE && out.count == 0);
     assert(module_roots() == 0);
   }
 

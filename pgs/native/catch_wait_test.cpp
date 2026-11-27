@@ -9,9 +9,9 @@
 #include <map>
 #include <functional>
 namespace cw {
-using namespace pgr_catch_wait_schema;
-const PgrCatchWaitApi *api;
-PgrBootBinding binding{};PgrCatchWaitConfig config{};
+using namespace pgs_catch_wait_schema;
+const PgsCatchWaitApi *api;
+PgsBootBinding binding{};PgsCatchWaitConfig config{};
 FClass klass[5]{};FType types[5]{};
 FType int_type{"System.Int32",nullptr},bool_type{"System.Boolean",nullptr},float_type{"System.Single",nullptr},void_type{"System.Void",nullptr};
 FField field[7],literal;FMethod methods[4];
@@ -38,7 +38,7 @@ void static_get(const void *f,void *out){assert(f==&literal);*static_cast<int32_
 const char *class_name(const void *k){return k==&klass[0]?"edc":"other";}
 void *nested_class(const void *k,void **it){if(k!=&klass[1]||*it)return nullptr;*it=&klass[0];return &klass[0];}
 const void *declaring(const void *k){return k==&klass[0]?&klass[1]:nullptr;}
-int segment(void *,const void *p,uint64_t n,PgrMetaSegment *out){*out={};auto a=reinterpret_cast<uintptr_t>(p),b=reinterpret_cast<uintptr_t>(module);
+int segment(void *,const void *p,uint64_t n,PgsMetaSegment *out){*out={};auto a=reinterpret_cast<uintptr_t>(p),b=reinterpret_cast<uintptr_t>(module);
  if(a>=b&&a-b<=module_size&&n<=module_size-(a-b)){out->found=out->readable=out->host_exec=1;out->seg_base=module;out->seg_size=module_size;}return 0;}
 template<class T>void put(Object &o,size_t off,T value){std::memcpy(o.bytes+off,&value,sizeof(value));}
 float duration(){float out;std::memcpy(&out,wait_object.bytes+0x10,4);return out;}
@@ -71,12 +71,12 @@ void setup(){
  binding.runtime.field_get_value=reinterpret_cast<void *>(field_get);binding.runtime.field_set_value=reinterpret_cast<void *>(field_set);binding.runtime.field_static_get_value=reinterpret_cast<void *>(static_get);
  config={1,sizeof(config),&binding,reinterpret_cast<void *>(class_name),segment,nullptr,reinterpret_cast<void *>(cw_move)};reset_objects();
 }
-PgrCatchWaitSample sample(){PgrCatchWaitSample s{};assert(api->sample(&s)==0);return s;}
+PgsCatchWaitSample sample(){PgsCatchWaitSample s{};assert(api->sample(&s)==0);return s;}
 void invoke(){unsigned before=original_calls;assert(call(&coroutine,&method_token)==original_result);assert(original_calls==before+1&&seen_self==&coroutine&&seen_method==&method_token);assert(roots.empty()&&makes==frees);}
 void install(){assert(api->install(&config)==0);assert(sample().ready==1);}
 void run(const char *name,const std::function<void()> &fn){pid_t p=fork();assert(p>=0);if(!p){setup();fn();std::_Exit(0);}int status;assert(waitpid(p,&status,0)==p);if(!WIFEXITED(status)||WEXITSTATUS(status)){std::fprintf(stderr,"FAIL catch_wait %s\n",name);std::abort();}}
 }
-int main(int argc,char **argv){using namespace cw;assert(argc==2);auto lib=dlopen(argv[1],RTLD_NOW|RTLD_LOCAL);assert(lib);auto get=reinterpret_cast<GetApiFn>(dlsym(lib,"pgs_native_api"));assert(get);auto core=static_cast<const pgs_native_api_v2 *>(get(2));assert(core);assert(!core->query_feature(58,2));api=static_cast<const PgrCatchWaitApi *>(core->query_feature(58,1));assert(api&&api->size==48);
+int main(int argc,char **argv){using namespace cw;assert(argc==2);auto lib=dlopen(argv[1],RTLD_NOW|RTLD_LOCAL);assert(lib);auto get=reinterpret_cast<GetApiFn>(dlsym(lib,"pgs_native_api"));assert(get);auto core=static_cast<const pgs_native_api_v2 *>(get(2));assert(core);assert(!core->query_feature(58,2));api=static_cast<const PgsCatchWaitApi *>(core->query_feature(58,1));assert(api&&api->size==48);
  run("bootstrap not ready",[]{assert(api->install(nullptr)==1&&!sample().ready);});
  run("bad config",[]{auto bad=config;bad.size--;assert(api->install(&bad)<0);});
  run("field offset",[]{field[0].offset++;assert(api->install(&config)<0);});
@@ -88,7 +88,7 @@ int main(int argc,char **argv){using namespace cw;assert(argc==2);auto lib=dlope
  run("generic method",[]{methods[0].generic=true;assert(api->install(&config)<0);});
  run("method return",[]{methods[0].ret=&void_type;assert(api->install(&config)<0);});
  run("code fingerprint",[]{module[0xabfa35c]^=1;assert(api->install(&config)<0);});
- run("success off on stop",[]{install();invoke();assert(duration()==5.0f&&sample().observed==1&&sample().shortened==0);assert(api->update(1,2500)==0);invoke();assert(std::fabs(duration()-0.1f)<1e-6&&sample().shortened==1);PgrCatchWaitEvent e{};assert(api->next_event(&e)==1&&e.kind==1&&e.status==73);assert(api->stop()==0);reset_objects();invoke();assert(duration()==5.0f&&api->update(1,2500)<0);});
+ run("success off on stop",[]{install();invoke();assert(duration()==5.0f&&sample().observed==1&&sample().shortened==0);assert(api->update(1,2500)==0);invoke();assert(std::fabs(duration()-0.1f)<1e-6&&sample().shortened==1);PgsCatchWaitEvent e{};assert(api->next_event(&e)==1&&e.kind==1&&e.status==73);assert(api->stop()==0);reset_objects();invoke();assert(duration()==5.0f&&api->update(1,2500)<0);});
  run("failed status",[]{install();api->update(1,2500);put(response,0x30,int32_t(74));invoke();assert(duration()==5.0f&&sample().observed==0);});
  run("non yield",[]{install();api->update(1,2500);original_result=0;invoke();assert(sample().observed==0);original_result=1;put(coroutine,0x10,int32_t(6));invoke();assert(sample().observed==0);});
  run("bad branch",[]{install();api->update(1,2500);put(coroutine,0x60,uint8_t(2));invoke();assert(sample().fault&&duration()==5.0f);});

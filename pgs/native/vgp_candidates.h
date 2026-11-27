@@ -30,13 +30,13 @@
 // stop. No raw managed pointer is reused across a managed call (relocating collector); the FortId
 // string is rooted BEFORE any further allocation and its address re-fetched before the length/char
 // copy. inspect() runs managed calls only on the proven Unity owner thread and only inside a short
-// residual lease (clamped to PGR_VC_MAX_LEASE_MS); the host re-checks expiry / stopping after the
+// residual lease (clamped to PGS_VC_MAX_LEASE_MS); the host re-checks expiry / stopping after the
 // call and frees the fort handle itself if it then drops the candidate.
 //
 // Outcomes:
-//   inspect() returns PGR_VC_ELIGIBLE (1)  -> out.eligible == 1, out.key / out.key_len set,
+//   inspect() returns PGS_VC_ELIGIBLE (1)  -> out.eligible == 1, out.key / out.key_len set,
 //                                             out.fort_handle set iff action == spin.
-//                     PGR_VC_NOT (0)        -> out.eligible == 0, out.reason one of the soft reasons
+//                     PGS_VC_NOT (0)        -> out.eligible == 0, out.reason one of the soft reasons
 //                                             below, out.fort_handle == 0 (candidate skipped, benign).
 //                     a negative error      -> a conservative failure (bad thread, managed throw,
 //                                             value class/size anomaly, root failure, bad coords).
@@ -48,48 +48,48 @@ extern "C" {
 
 static_assert(sizeof(void *) == 8, "VgpCandidates native ABI requires LP64");
 
-enum PgrVgpCandidateInfo {
-  PGR_VC_FEATURE_ID     = 29,
-  PGR_VC_API_VERSION    = 1,
-  PGR_VC_CONFIG_VERSION = 1,
-  PGR_VC_REQUEST_VERSION = 1,
-  PGR_VC_RESULT_VERSION = 1,
-  PGR_VC_MAX_LEASE_MS   = 2500,  // residual foreground lease ceiling (JS vgpLease gate)
-  PGR_VC_ACTION_CATCH   = 0,     // target == VGP wild map pokemon
-  PGR_VC_ACTION_SMART_CATCH = 2, // loaded visible wild; encounter determines usable range
-  PGR_VC_ACTION_SPIN    = 1,     // target == VGP stop map object
-  PGR_VC_MAX_FORT_UNITS = 256,   // accepted FortId length in UTF-16 code units (JS 1..256)
-  PGR_VC_KEY_CAPACITY   = 1040   // out.key bytes: 1 prefix + <=1024 UTF-8 + NUL, rounded to 8
+enum PgsVgpCandidateInfo {
+  PGS_VC_FEATURE_ID     = 29,
+  PGS_VC_API_VERSION    = 1,
+  PGS_VC_CONFIG_VERSION = 1,
+  PGS_VC_REQUEST_VERSION = 1,
+  PGS_VC_RESULT_VERSION = 1,
+  PGS_VC_MAX_LEASE_MS   = 2500,  // residual foreground lease ceiling (JS vgpLease gate)
+  PGS_VC_ACTION_CATCH   = 0,     // target == VGP wild map pokemon
+  PGS_VC_ACTION_SMART_CATCH = 2, // loaded visible wild; encounter determines usable range
+  PGS_VC_ACTION_SPIN    = 1,     // target == VGP stop map object
+  PGS_VC_MAX_FORT_UNITS = 256,   // accepted FortId length in UTF-16 code units (JS 1..256)
+  PGS_VC_KEY_CAPACITY   = 1040   // out.key bytes: 1 prefix + <=1024 UTF-8 + NUL, rounded to 8
 };
 
 // inspect() status (return value).
-enum PgrVgpCandidateStatus {
-  PGR_VC_ELIGIBLE          = 1,
-  PGR_VC_NOT               = 0,
-  PGR_VC_ERR_NULL_ARG      = -1,
-  PGR_VC_ERR_BAD_VERSION   = -2,
-  PGR_VC_ERR_BAD_SIZE      = -3,
-  PGR_VC_ERR_MISSING_PTR   = -4,   // install(): a required config pointer was null
-  PGR_VC_ERR_NOT_INSTALLED = -6,
-  PGR_VC_ERR_RECONFIG      = -9,   // install(): a different config at an already-installed table
-  PGR_VC_ERR_CLOCK_FAILURE = -10,
-  PGR_VC_ERR_THREAD        = -11,  // owner_tid 0 / not the calling OS thread
-  PGR_VC_ERR_GCHANDLE      = -12,  // a temporary root or the fort handle could not be allocated
-  PGR_VC_ERR_MANAGED       = -13,  // a managed getter threw
-  PGR_VC_ERR_METADATA      = -14,  // a returned value had the wrong class (bool/latlng/uint64)
-  PGR_VC_ERR_BAD_ACTION    = -15,  // action not catch/spin
-  PGR_VC_ERR_COORDS        = -16   // player lat/lon non-finite or out of range
+enum PgsVgpCandidateStatus {
+  PGS_VC_ELIGIBLE          = 1,
+  PGS_VC_NOT               = 0,
+  PGS_VC_ERR_NULL_ARG      = -1,
+  PGS_VC_ERR_BAD_VERSION   = -2,
+  PGS_VC_ERR_BAD_SIZE      = -3,
+  PGS_VC_ERR_MISSING_PTR   = -4,   // install(): a required config pointer was null
+  PGS_VC_ERR_NOT_INSTALLED = -6,
+  PGS_VC_ERR_RECONFIG      = -9,   // install(): a different config at an already-installed table
+  PGS_VC_ERR_CLOCK_FAILURE = -10,
+  PGS_VC_ERR_THREAD        = -11,  // owner_tid 0 / not the calling OS thread
+  PGS_VC_ERR_GCHANDLE      = -12,  // a temporary root or the fort handle could not be allocated
+  PGS_VC_ERR_MANAGED       = -13,  // a managed getter threw
+  PGS_VC_ERR_METADATA      = -14,  // a returned value had the wrong class (bool/latlng/uint64)
+  PGS_VC_ERR_BAD_ACTION    = -15,  // action not catch/spin
+  PGS_VC_ERR_COORDS        = -16   // player lat/lon non-finite or out of range
 };
 
-// out.reason when inspect() returns PGR_VC_NOT (benign skip). PGR_VC_REASON_NONE accompanies an
+// out.reason when inspect() returns PGS_VC_NOT (benign skip). PGS_VC_REASON_NONE accompanies an
 // eligible result. The host maps these to its scan counters / status.
-enum PgrVgpCandidateReason {
-  PGR_VC_REASON_NONE         = 0,
-  PGR_VC_REASON_INVALID      = 1,  // not the exact wild/stop class, not alive, or lease expired mid-call
-  PGR_VC_REASON_MANUAL       = 2,  // catch: identical to the manual-encounter target
-  PGR_VC_REASON_HIDDEN       = 3,  // catch: VisibleOnMap == false
-  PGR_VC_REASON_OUT_OF_RANGE = 4,  // catch: location outside the 40 m catch radius
-  PGR_VC_REASON_INELIGIBLE   = 5   // spin: predicate false, wrong fort class, or null/malformed FortId
+enum PgsVgpCandidateReason {
+  PGS_VC_REASON_NONE         = 0,
+  PGS_VC_REASON_INVALID      = 1,  // not the exact wild/stop class, not alive, or lease expired mid-call
+  PGS_VC_REASON_MANUAL       = 2,  // catch: identical to the manual-encounter target
+  PGS_VC_REASON_HIDDEN       = 3,  // catch: VisibleOnMap == false
+  PGS_VC_REASON_OUT_OF_RANGE = 4,  // catch: location outside the 40 m catch radius
+  PGS_VC_REASON_INELIGIBLE   = 5   // spin: predicate false, wrong fort class, or null/malformed FortId
 };
 
 // Fixed LP64 config (200 bytes): 8-byte header + 24 validated il2cpp pointers. Every pointer is an
@@ -97,9 +97,9 @@ enum PgrVgpCandidateReason {
 // the native layer re-checks the header and rejects any null. No hook address. The virtual getters are
 // the BASE MethodInfo* (resolved per object with object_get_virtual_method); location / id / alive are
 // invoked directly (non-virtual).
-struct PgrVgpCandidateConfig {
-  uint32_t version;  // == PGR_VC_CONFIG_VERSION
-  uint32_t size;     // == sizeof(PgrVgpCandidateConfig)
+struct PgsVgpCandidateConfig {
+  uint32_t version;  // == PGS_VC_CONFIG_VERSION
+  uint32_t size;     // == sizeof(PgsVgpCandidateConfig)
 
   // il2cpp runtime exports.
   void *gchandle_new;            // uintptr_t (void* obj, int pinned)
@@ -136,17 +136,17 @@ struct PgrVgpCandidateConfig {
   void *class_uint64;  // System.UInt64 (value size 8)
 };
 
-static_assert(sizeof(PgrVgpCandidateConfig) == 200,
-              "PgrVgpCandidateConfig must remain 200 bytes on LP64");
+static_assert(sizeof(PgsVgpCandidateConfig) == 200,
+              "PgsVgpCandidateConfig must remain 200 bytes on LP64");
 
 // Fixed LP64 request (64 bytes). target / manual are raw managed pointers the caller keeps rooted for
 // the synchronous call; native also roots them. manual may be null (no manual exclusion). lat/lon are
 // the player coordinates (finite, |lat|<=90, |lon|<=180). owner_tid is the proven Unity owner tid
 // (must equal the current OS tid). lease_ms is the residual foreground lease (clamped MAX_LEASE_MS).
-struct PgrVgpCandidateRequest {
-  uint32_t version;    // == PGR_VC_REQUEST_VERSION
-  uint32_t size;       // == sizeof(PgrVgpCandidateRequest)
-  uint32_t action;     // normal catch, smart catch, or spin (PGR_VC_ACTION_*)
+struct PgsVgpCandidateRequest {
+  uint32_t version;    // == PGS_VC_REQUEST_VERSION
+  uint32_t size;       // == sizeof(PgsVgpCandidateRequest)
+  uint32_t action;     // normal catch, smart catch, or spin (PGS_VC_ACTION_*)
   uint32_t reserved;   // 0
   uint64_t owner_tid;  // proven Unity owner tid
   uint64_t lease_ms;   // residual foreground lease (ms)
@@ -156,39 +156,39 @@ struct PgrVgpCandidateRequest {
   void    *manual;     // manual-encounter target, or null (catch only)
 };
 
-static_assert(sizeof(PgrVgpCandidateRequest) == 64,
-              "PgrVgpCandidateRequest must remain 64 bytes on LP64");
+static_assert(sizeof(PgsVgpCandidateRequest) == 64,
+              "PgsVgpCandidateRequest must remain 64 bytes on LP64");
 
 // Fixed LP64 result (1072 bytes). Always fully initialised by inspect() before any early return.
-struct PgrVgpCandidateResult {
-  uint32_t version;      // == PGR_VC_RESULT_VERSION
-  uint32_t size;         // == sizeof(PgrVgpCandidateResult)
+struct PgsVgpCandidateResult {
+  uint32_t version;      // == PGS_VC_RESULT_VERSION
+  uint32_t size;         // == sizeof(PgsVgpCandidateResult)
   int32_t  eligible;     // 1 eligible, 0 otherwise
-  int32_t  reason;       // PgrVgpCandidateReason
+  int32_t  reason;       // PgsVgpCandidateReason
   uint32_t key_len;      // key bytes written (excluding the NUL); 0 unless eligible
   uint32_t reserved;     // 0
   uint64_t fort_handle;  // OWNED GC handle (uintptr) on an eligible spin; 0 otherwise
-  char     key[PGR_VC_KEY_CAPACITY];  // 's'/'p' prefix + payload, NUL-terminated
+  char     key[PGS_VC_KEY_CAPACITY];  // 's'/'p' prefix + payload, NUL-terminated
 };
 
-static_assert(sizeof(PgrVgpCandidateResult) == 1072,
-              "PgrVgpCandidateResult must remain 1072 bytes on LP64");
+static_assert(sizeof(PgsVgpCandidateResult) == 1072,
+              "PgsVgpCandidateResult must remain 1072 bytes on LP64");
 
 // Fixed LP64 table: 8-byte header + 2 function pointers = 24 bytes.
-struct PgrVgpCandidateApi {
-  uint32_t version;  // == PGR_VC_API_VERSION
-  uint32_t size;     // == sizeof(PgrVgpCandidateApi)
+struct PgsVgpCandidateApi {
+  uint32_t version;  // == PGS_VC_API_VERSION
+  uint32_t size;     // == sizeof(PgsVgpCandidateApi)
   // install(config): bind the validated runtime once for the process lifetime. Idempotent for an
-  // identical config; a different config returns PGR_VC_ERR_RECONFIG. Any null required pointer or a
+  // identical config; a different config returns PGS_VC_ERR_RECONFIG. Any null required pointer or a
   // bad header is rejected (fail closed). No hook is installed.
-  int (*install)(const PgrVgpCandidateConfig *config);
-  // inspect(request, out): evaluate ONE candidate. Returns PGR_VC_ELIGIBLE / PGR_VC_NOT / negative.
+  int (*install)(const PgsVgpCandidateConfig *config);
+  // inspect(request, out): evaluate ONE candidate. Returns PGS_VC_ELIGIBLE / PGS_VC_NOT / negative.
   // out is always fully initialised. Owner thread only.
-  int (*inspect)(const PgrVgpCandidateRequest *request, PgrVgpCandidateResult *out);
+  int (*inspect)(const PgsVgpCandidateRequest *request, PgsVgpCandidateResult *out);
 };
 
-static_assert(sizeof(PgrVgpCandidateApi) == 24,
-              "PgrVgpCandidateApi must remain a 24-byte version-1 table");
+static_assert(sizeof(PgsVgpCandidateApi) == 24,
+              "PgsVgpCandidateApi must remain a 24-byte version-1 table");
 
 // Hidden getter. NOT exported by the version script; the coordinator registers it in query_feature
 // under feature id 29 and answers only on an exact version match.

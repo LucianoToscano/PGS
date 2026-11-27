@@ -31,10 +31,10 @@ int main(int argc,char **argv){
  void *lib=dlopen(argv[1],RTLD_NOW|RTLD_LOCAL);assert(lib);
  auto getter=reinterpret_cast<GetApiFn>(dlsym(lib,"pgs_native_api"));assert(getter);
  auto *core=static_cast<const pgs_native_api_v2 *>(getter(2));assert(core);
- g_api=static_cast<const PgrTransferExecApi *>(core->query_feature(23,1));assert(g_api);
- auto *observers=static_cast<const PgrTransferObserversApi *>(core->query_feature(57,1));assert(observers);
+ g_api=static_cast<const PgsTransferExecApi *>(core->query_feature(23,1));assert(g_api);
+ auto *observers=static_cast<const PgsTransferObserversApi *>(core->query_feature(57,1));assert(observers);
  auto config=make_config();assert(g_api->install(&config)==0);g_owner=this_tid();
- PgrTransferObserversConfig c{1,sizeof(c),reinterpret_cast<void *>(observed_result),reinterpret_cast<void *>(observed_error),
+ PgsTransferObserversConfig c{1,sizeof(c),reinterpret_cast<void *>(observed_result),reinterpret_cast<void *>(observed_error),
   reinterpret_cast<void *>(attached),reinterpret_cast<void *>(fake_gc_new),reinterpret_cast<void *>(fake_gc_get),reinterpret_cast<void *>(fake_gc_free)};
  assert(observers->install(&c)==0);
  for(unsigned scenario=0;scenario<4;scenario++){
@@ -43,15 +43,15 @@ int main(int argc,char **argv){
   auto request=make_req(s,s.pk.id,base_input(),1,g_owner);uint64_t token=0;
   callback_calls=0;
   if(scenario==2){g_oneshot_method=&m_release;g_oneshot=[&](){deliver(false,s);};}
-  assert(g_api->submit(&request,&token)==PGR_TX_ISSUED&&token);
+  assert(g_api->submit(&request,&token)==PGS_TX_ISSUED&&token);
   if(scenario!=2){
    throw_original=scenario==3;
    try{deliver(scenario==1,s);assert(!throw_original);}catch(int value){assert(throw_original&&value==73);}
    throw_original=false;
   }
   assert(callback_calls==1);
-  const auto events=drain_all();assert(saw(events,PGR_TX_EVENT_REQUEST));
-  if(scenario==3)assert(!saw(events,PGR_TX_EVENT_COMPLETE));
+  const auto events=drain_all();assert(saw(events,PGS_TX_EVENT_REQUEST));
+  if(scenario==3)assert(!saw(events,PGS_TX_EVENT_COMPLETE));
   else assert(saw_complete(events,scenario!=1));
   assert(take_sample().pending==0&&take_sample().open_tickets==0&&g_live.empty());
  }

@@ -8,7 +8,7 @@
 #include <string>
 #include <vector>
 #include "batch_evolution.cpp"
-bool pgr_evolve_transfer_busy(){return false;}
+bool pgs_evolve_transfer_busy(){return false;}
 
 namespace {
 std::map<uintptr_t,void*> roots;
@@ -49,7 +49,7 @@ Field result_field{"Result","EvolutionResult"},success_field{"Success","Evolutio
 Field evolved_field{"EvolvedPokemon","Holoholo.Rpc.PokemonProto"};
 Field id_field{"id_","System.UInt64"},species_field{"pokemonId_","System.Int32"};
 Field xp_field{"ExpAwarded","System.Int32"},award_field{"CandyAwarded","System.Int32"};
-int result_code=1,poll_code=PGR_VR_DONE;
+int result_code=1,poll_code=PGS_VR_DONE;
 std::string config="1|42|2|Evolve";
 bool live=true,ready=true,fresh=true,fault=false,sequence_change=false;
 int sample_count=0,slot9_reads=0,slot16_reads=0,slot11_reads=0;
@@ -223,7 +223,7 @@ char* type_name(void* type){
     size_t n=strlen(name)+1;char* copy=static_cast<char*>(malloc(n));assert(copy);memcpy(copy,name,n);return copy;
 }
 void type_free(void* p){free(p);}
-int resolve_class(const PgrMetaClassQuery* q,PgrMetaClassResult* out){
+int resolve_class(const PgsMetaClassQuery* q,PgsMetaClassResult* out){
     assert(q&&out);
     if(!strcmp(q->name_space,"Holoholo.Rpc")&&!strcmp(q->name,"EvolvePokemonOutProto"))out->klass=&response_class;
     else if(!strcmp(q->name_space,"Holoholo.Rpc")&&!strcmp(q->name,"PokemonProto"))out->klass=&evolved_class;
@@ -231,7 +231,7 @@ int resolve_class(const PgrMetaClassQuery* q,PgrMetaClassResult* out){
     else return -1;
     out->version=1;out->size=sizeof(*out);return 0;
 }
-int sample(PgrRuntimeTransportSample* out){
+int sample(PgsRuntimeTransportSample* out){
     *out={};out->snapshot_fresh=fresh;out->fault=fault;
     out->snapshot_seq=100+(sequence_change?sample_count:0);++sample_count;return 0;
 }
@@ -246,19 +246,19 @@ int get_string(uint32_t slot,char* out,uint32_t capacity,uint32_t* len){
     *len=static_cast<uint32_t>(config.size());memcpy(out,config.data(),*len);return 0;
 }
 int emit(uint32_t opcode,const int64_t* scalars,uint32_t scalar_count,
-         const PgrRuntimeTransportString* strings,uint32_t count){
+         const PgsRuntimeTransportString* strings,uint32_t count){
     assert(opcode==19&&!scalars&&!scalar_count&&count==2);
     assert(std::string(strings[0].ptr,strings[0].len)=="batch-evolution");
     events.emplace_back(strings[1].ptr,strings[1].len);return 0;
 }
-int poll(void* promise,uint32_t phase,uint64_t tid,PgrVgpResultsResult* out){
+int poll(void* promise,uint32_t phase,uint64_t tid,PgsVgpResultsResult* out){
     assert(promise==&promise_object&&phase==1&&tid==owner);++polls;*out={};
-    if(poll_code==PGR_VR_DONE){out->version=1;out->size=sizeof(*out);out->value_handle=root_new(&response_object,0);}
+    if(poll_code==PGS_VR_DONE){out->version=1;out->size=sizeof(*out);out->value_handle=root_new(&response_object,0);}
     return poll_code;
 }
-PgrRuntimeTransportApi transport{};
-PgrVgpResultsApi results{1,sizeof(PgrVgpResultsApi),nullptr,poll,nullptr};
-PgrMetaApi metadata{};
+PgsRuntimeTransportApi transport{};
+PgsVgpResultsApi results{1,sizeof(PgsVgpResultsApi),nullptr,poll,nullptr};
+PgsMetaApi metadata{};
 
 void fixture(){
     assert(roots.empty());next_handle=1;allocations=frees=polls=0;events.clear();
@@ -269,7 +269,7 @@ void fixture(){
     original_present=true;replacement_present=false;original_species=replacement_species=2;
     candy_balance=9;original_lookups=replacement_lookups=0;uncertain.clear();
     config="1|42|2|Evolve";live=ready=fresh=true;fault=sequence_change=false;
-    sample_count=slot9_reads=slot16_reads=slot11_reads=0;result_code=1;poll_code=PGR_VR_DONE;
+    sample_count=slot9_reads=slot16_reads=slot11_reads=0;result_code=1;poll_code=PGS_VR_DONE;
     transport={};transport.sample=sample;transport.get_bool=get_bool;
     transport.get_string=get_string;transport.emit=emit;
     metadata={};metadata.resolve_class=resolve_class;
@@ -350,13 +350,13 @@ int main(){
     assert(events[0].find("\"candyCost\":36,\"itemCount\":1")!=std::string::npos);
     batch.promise.reset();assert(roots.empty()&&allocations==frees);
 
-    fixture();poll_code=PGR_VR_PENDING;
+    fixture();poll_code=PGS_VR_PENDING;
     poll_request();poll_request();assert(polls==2&&batch.promise&&!batch.await_inventory&&events.empty());
     batch.since=clock_ms()-15001;
     bool timed_out=false;try{poll_request();}catch(const Failure& e){timed_out=!strcmp(e.where,"evolution response timed out; inspect before retrying");}
     assert(timed_out&&polls==3);batch.promise.reset();assert(roots.empty()&&allocations==frees);
 
-    fixture();poll_code=PGR_VR_REJECTED;
+    fixture();poll_code=PGS_VR_REJECTED;
     bool rejected=false;try{poll_request();}catch(const Failure& e){rejected=!strcmp(e.where,"evolution request failed; inspect before retrying");}
     assert(rejected&&polls==1&&!batch.promise&&roots.empty()&&allocations==frees);
 
@@ -496,9 +496,9 @@ int main(){
     finish_inventory_fixture();
 
     fixture();batch.promise.reset();initialized=false;config="1|43|0|Evolve";
-    pgr_evolution_tick(owner,nullptr);
+    pgs_evolution_tick(owner,nullptr);
     assert(!initialized&&batch.token==43&&batch.phase=="stopped"&&events.size()==1);
-    pgr_evolution_tick(owner,nullptr);assert(events.size()==1&&polls==0);
+    pgs_evolution_tick(owner,nullptr);assert(events.size()==1&&polls==0);
     assert(roots.empty()&&allocations==frees);
     std::puts("PASS: batch evolution permissions, inventory confirmation, tag removal and stop drain");
 }

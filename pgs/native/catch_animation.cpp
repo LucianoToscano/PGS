@@ -12,22 +12,22 @@
 // invokes report failure through the runtime_invoke exception out-param and a bool
 // out-param, never a C++ throw.
 
-static_assert(sizeof(PgrSpeedConfig) == 104, "PgrSpeedConfig must be 104 bytes");
-static_assert(sizeof(PgrSpeedSample) == 32,  "PgrSpeedSample must be 32 bytes");
-static_assert(sizeof(PgrSpeedApi)    == 56,  "PgrSpeedApi must be 56 bytes");
-static_assert(sizeof(PgrSpeedApi2)   == 16,  "PgrSpeedApi2 must be 16 bytes");
-static_assert(offsetof(PgrSpeedConfig, runtime_invoke)      == 8,  "layout: runtime_invoke");
-static_assert(offsetof(PgrSpeedConfig, gchandle_new)        == 16, "layout: gchandle_new");
-static_assert(offsetof(PgrSpeedConfig, gchandle_get_target) == 24, "layout: gchandle_get_target");
-static_assert(offsetof(PgrSpeedConfig, gchandle_free)       == 32, "layout: gchandle_free");
-static_assert(offsetof(PgrSpeedConfig, object_get_class)    == 40, "layout: object_get_class");
-static_assert(offsetof(PgrSpeedConfig, object_unbox)        == 48, "layout: object_unbox");
-static_assert(offsetof(PgrSpeedConfig, method_get_speed)    == 56, "layout: method_get_speed");
-static_assert(offsetof(PgrSpeedConfig, method_set_speed)    == 64, "layout: method_set_speed");
-static_assert(offsetof(PgrSpeedConfig, method_alive)        == 72, "layout: method_alive");
-static_assert(offsetof(PgrSpeedConfig, class_single)        == 80, "layout: class_single");
-static_assert(offsetof(PgrSpeedConfig, class_bool)          == 88, "layout: class_bool");
-static_assert(offsetof(PgrSpeedConfig, class_animator)      == 96, "layout: class_animator");
+static_assert(sizeof(PgsSpeedConfig) == 104, "PgsSpeedConfig must be 104 bytes");
+static_assert(sizeof(PgsSpeedSample) == 32,  "PgsSpeedSample must be 32 bytes");
+static_assert(sizeof(PgsSpeedApi)    == 56,  "PgsSpeedApi must be 56 bytes");
+static_assert(sizeof(PgsSpeedApi2)   == 16,  "PgsSpeedApi2 must be 16 bytes");
+static_assert(offsetof(PgsSpeedConfig, runtime_invoke)      == 8,  "layout: runtime_invoke");
+static_assert(offsetof(PgsSpeedConfig, gchandle_new)        == 16, "layout: gchandle_new");
+static_assert(offsetof(PgsSpeedConfig, gchandle_get_target) == 24, "layout: gchandle_get_target");
+static_assert(offsetof(PgsSpeedConfig, gchandle_free)       == 32, "layout: gchandle_free");
+static_assert(offsetof(PgsSpeedConfig, object_get_class)    == 40, "layout: object_get_class");
+static_assert(offsetof(PgsSpeedConfig, object_unbox)        == 48, "layout: object_unbox");
+static_assert(offsetof(PgsSpeedConfig, method_get_speed)    == 56, "layout: method_get_speed");
+static_assert(offsetof(PgsSpeedConfig, method_set_speed)    == 64, "layout: method_set_speed");
+static_assert(offsetof(PgsSpeedConfig, method_alive)        == 72, "layout: method_alive");
+static_assert(offsetof(PgsSpeedConfig, class_single)        == 80, "layout: class_single");
+static_assert(offsetof(PgsSpeedConfig, class_bool)          == 88, "layout: class_bool");
+static_assert(offsetof(PgsSpeedConfig, class_animator)      == 96, "layout: class_animator");
 
 namespace {
 
@@ -53,7 +53,7 @@ constexpr float    kMaxSpeedCap = 2.0f; // expected Max game speed must be in (0
 
 // --- lifetime / publication -------------------------------------------------------
 std::mutex        g_install_mutex;      // serialises install() + config publication
-PgrSpeedConfig    g_config{};           // validated copy, published under install mutex
+PgsSpeedConfig    g_config{};           // validated copy, published under install mutex
 std::atomic<bool> g_installed{false};
 
 // --- policy window (armed by update) ----------------------------------------------
@@ -321,7 +321,7 @@ void max_poll() {
 }
 
 // --- config validation ------------------------------------------------------------
-bool config_ok(const PgrSpeedConfig *c) {
+bool config_ok(const PgsSpeedConfig *c) {
     const void *const *ptrs = reinterpret_cast<const void *const *>(&c->runtime_invoke);
     for (int i = 0; i < 12; ++i) if (ptrs[i] == nullptr) return false;
     // Three distinct methods and three distinct classes.
@@ -333,10 +333,10 @@ bool config_ok(const PgrSpeedConfig *c) {
 }
 
 // --- C API table functions --------------------------------------------------------
-int api_install(const PgrSpeedConfig *config) {
+int api_install(const PgsSpeedConfig *config) {
     if (config == nullptr) return ERR_NULL;
     std::lock_guard<std::mutex> lock(g_install_mutex);
-    if (config->version != 1 || config->size != sizeof(PgrSpeedConfig) || !config_ok(config))
+    if (config->version != 1 || config->size != sizeof(PgsSpeedConfig) || !config_ok(config))
         return ERR_BAD_CONFIG; // invalid config never writes
     if (g_installed.load(std::memory_order_acquire)) {
         // Process-lifetime config: an identical repeat is a no-op success; a different
@@ -484,7 +484,7 @@ int api_tick(uint64_t proven_tid) {
     return OK;
 }
 
-int api_sample(PgrSpeedSample *out) {
+int api_sample(PgsSpeedSample *out) {
     if (out == nullptr) return ERR_NULL;
     out->serial   = g_serial.load(std::memory_order_acquire);
     out->owned    = g_owned.load(std::memory_order_relaxed);
@@ -497,8 +497,8 @@ int api_sample(PgrSpeedSample *out) {
     return OK;
 }
 
-const PgrSpeedApi g_api = {
-    1, sizeof(PgrSpeedApi),
+const PgsSpeedApi g_api = {
+    1, sizeof(PgsSpeedApi),
     &api_install,
     &api_update,
     &api_apply,
@@ -508,8 +508,8 @@ const PgrSpeedApi g_api = {
 };
 
 // V2: appends only apply_max. install/update/complete/tick/sample stay on the V1 table.
-const PgrSpeedApi2 g_api2 = {
-    2, sizeof(PgrSpeedApi2),
+const PgsSpeedApi2 g_api2 = {
+    2, sizeof(PgsSpeedApi2),
     &api_apply_max,
 };
 

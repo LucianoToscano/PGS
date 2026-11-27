@@ -78,7 +78,7 @@ def render(template, values, bindings=None):
         if kind == 'binding' and bindings is not None:
             if not isinstance(value, str) or not re.fullmatch(r'[A-Za-z][A-Za-z0-9_]*\.[A-Za-z][A-Za-z0-9_]*', value):
                 raise ValueError('Invalid binding reference')
-            return definitions['PGR_GAME_' + value.replace('.', '_').upper()]
+            return definitions['PGS_GAME_' + value.replace('.', '_').upper()]
         if kind == 'integer' and type(value) is int and 0 <= value < 2**64:
             return hex(value)
         if kind == 'string' and isinstance(value, str) and re.fullmatch(r'[A-Za-z0-9_<>.]+', value):

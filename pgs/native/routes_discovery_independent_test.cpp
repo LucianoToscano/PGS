@@ -27,13 +27,13 @@
 #include <vector>
 
 // The test re-asserts the frozen ABI sizes independently of the header's own static_asserts.
-static_assert(sizeof(PgrRoutesDiscoveryConfig) == 312, "config 312");
-static_assert(sizeof(PgrRoutesDiscoveryRequest) == 48, "request 48");
-static_assert(sizeof(PgrRoutesDiscoveryLookup) == 304, "lookup 304");
-static_assert(sizeof(PgrRoutesDiscoveryRoute) == 832, "route 832");
-static_assert(sizeof(PgrRoutesDiscoveryOutput) == 83216, "output 83216");
-static_assert(sizeof(PgrRoutesDiscoveryPoints) == 80016, "points 80016");
-static_assert(sizeof(PgrRoutesDiscoveryApi) == 64, "table 64");
+static_assert(sizeof(PgsRoutesDiscoveryConfig) == 312, "config 312");
+static_assert(sizeof(PgsRoutesDiscoveryRequest) == 48, "request 48");
+static_assert(sizeof(PgsRoutesDiscoveryLookup) == 304, "lookup 304");
+static_assert(sizeof(PgsRoutesDiscoveryRoute) == 832, "route 832");
+static_assert(sizeof(PgsRoutesDiscoveryOutput) == 83216, "output 83216");
+static_assert(sizeof(PgsRoutesDiscoveryPoints) == 80016, "points 80016");
+static_assert(sizeof(PgsRoutesDiscoveryApi) == 64, "table 64");
 
 namespace {
 
@@ -69,7 +69,7 @@ int generation = 0, moves = 0, managed = 0, listItemCalls = 0, wpItemCalls = 0;
 std::map<uintptr_t, void *> roots;
 uintptr_t serial = 100, hostService = 0, hostServiceB = 0;
 
-const PgrRoutesDiscoveryApi *api = nullptr;
+const PgsRoutesDiscoveryApi *api = nullptr;
 const char *mode = nullptr;
 
 // Scenario knobs.
@@ -80,8 +80,8 @@ bool cleanupFired = false;
 uintptr_t cleanupTarget=0, lookupRevokeTarget=0;
 int reentryResult = 999;
 
-PgrRoutesDiscoveryOutput g_out;   // 83 KB; reused + zeroed per discover()
-PgrRoutesDiscoveryPoints g_pts;   // 80 KB; reused + zeroed per points()
+PgsRoutesDiscoveryOutput g_out;   // 83 KB; reused + zeroed per discover()
+PgsRoutesDiscoveryPoints g_pts;   // 80 KB; reused + zeroed per points()
 
 Object *obj(int i) { return &gens[generation]->object[i]; }
 int index(void *p) {
@@ -107,7 +107,7 @@ void move() {
   ++moves;
 }
 
-PgrRoutesDiscoveryRequest discReq();  // fwd
+PgsRoutesDiscoveryRequest discReq();  // fwd
 
 // --- fake il2cpp callbacks ------------------------------------------------------------------------------
 uintptr_t gcNew(void *p, int pinned) { assert(!pinned); index(p); auto h = ++serial; roots[h] = p; move(); return h; }
@@ -120,7 +120,7 @@ void gcFree(uintptr_t h) {
     if (cleanupAction == CLEAN_REENTER) {
       auto r = discReq();
       int before = managed;
-      static PgrRoutesDiscoveryOutput nested;  // separate buffer; reentrant call must refuse before any work
+      static PgsRoutesDiscoveryOutput nested;  // separate buffer; reentrant call must refuse before any work
       std::memset(&nested, 0, sizeof(nested));
       reentryResult = api->discover(&r, &nested);
       assert(managed == before && "reentrant discover must refuse BEFORE any managed work");
@@ -188,9 +188,9 @@ void *invoke(const void *method, void *recv, void **args, void **exc) {
 }
 
 // --- request / lookup builders --------------------------------------------------------------------------
-PgrRoutesDiscoveryRequest discReq() {
-  PgrRoutesDiscoveryRequest r{};
-  r.version = PGR_RD_REQUEST_VERSION;
+PgsRoutesDiscoveryRequest discReq() {
+  PgsRoutesDiscoveryRequest r{};
+  r.version = PGS_RD_REQUEST_VERSION;
   r.size = sizeof(r);
   r.tid = static_cast<uint64_t>(gettid());
   r.residual_ms = 2500;
@@ -198,9 +198,9 @@ PgrRoutesDiscoveryRequest discReq() {
   r.service_handle = hostService;
   return r;
 }
-PgrRoutesDiscoveryLookup lookupReq(const char *id, uint64_t svc) {
-  PgrRoutesDiscoveryLookup l{};
-  l.version = PGR_RD_LOOKUP_VERSION;
+PgsRoutesDiscoveryLookup lookupReq(const char *id, uint64_t svc) {
+  PgsRoutesDiscoveryLookup l{};
+  l.version = PGS_RD_LOOKUP_VERSION;
   l.size = sizeof(l);
   l.tid = static_cast<uint64_t>(gettid());
   l.residual_ms = 2500;
@@ -211,14 +211,14 @@ PgrRoutesDiscoveryLookup lookupReq(const char *id, uint64_t svc) {
   for (int i = 0; i < n; i++) l.id[i] = static_cast<uint16_t>(id[i]);
   return l;
 }
-bool idEq(const PgrRoutesDiscoveryRoute &r, const char *s) {
+bool idEq(const PgsRoutesDiscoveryRoute &r, const char *s) {
   size_t n = std::strlen(s);
   if (r.id_length != n) return false;
   for (size_t i = 0; i < n; i++)
     if (r.id[i] != static_cast<uint16_t>(s[i])) return false;
   return true;
 }
-int doDiscover(PgrRoutesDiscoveryRequest &r) {
+int doDiscover(PgsRoutesDiscoveryRequest &r) {
   std::memset(&g_out, 0, sizeof(g_out));
   inDiscover = true;
   int rc = api->discover(&r, &g_out);
@@ -263,8 +263,8 @@ void setupGraph() {
   for (int i = 0; i < 4; i++) obj(NAME0)->text[i] = static_cast<uint16_t>("Name"[i]);
 }
 void installConfig() {
-  PgrRoutesDiscoveryConfig c{};
-  c.version = PGR_RD_CONFIG_VERSION;
+  PgsRoutesDiscoveryConfig c{};
+  c.version = PGS_RD_CONFIG_VERSION;
   c.size = sizeof(c);
   c.runtime_invoke = reinterpret_cast<void *>(&invoke);
   c.object_get_class = reinterpret_cast<void *>(&objectClass);
@@ -312,7 +312,7 @@ void cleanupRoots() {
   detached = false;
   auto d = discReq();  // drain ignores lease + generation; needs owner tid + attached only
   int dr = api->drain(&d);
-  assert(dr == PGR_RD_OK);
+  assert(dr == PGS_RD_OK);
   gcFree(hostService);
   gcFree(hostServiceB);
   assert(roots.empty() && "a GC root (temporary, staging, or cache) was leaked");
@@ -327,15 +327,15 @@ int scenario(const char *name) {
   hostServiceB = gcNew(obj(SERVICE_B), 0);
 
   if (std::strcmp(name,"revoke-old-cache-cleanup")==0 || std::strcmp(name,"lookup-revoke")==0 || std::strcmp(name,"points-zero-lease")==0) {
-    auto r=discReq(); assert(doDiscover(r)==PGR_RD_OK && g_out.count==1);
-    auto l=lookupReq("route-a",hostService); uint64_t h=0; assert(api->lookup(&l,&h)==PGR_RD_OK && h);
+    auto r=discReq(); assert(doDiscover(r)==PGS_RD_OK && g_out.count==1);
+    auto l=lookupReq("route-a",hostService); uint64_t h=0; assert(api->lookup(&l,&h)==PGS_RD_OK && h);
     if(std::strcmp(name,"revoke-old-cache-cleanup")==0){
       cleanupTarget=h;cleanupAction=CLEAN_REVOKE;cleanupFired=false;
-      assert(doDiscover(r)==PGR_RD_SKIP && g_out.count==0 && cleanupFired);
-      l=lookupReq("route-a",hostService);h=0;assert(api->lookup(&l,&h)==PGR_RD_SKIP && h==0);
+      assert(doDiscover(r)==PGS_RD_SKIP && g_out.count==0 && cleanupFired);
+      l=lookupReq("route-a",hostService);h=0;assert(api->lookup(&l,&h)==PGS_RD_SKIP && h==0);
     } else if(std::strcmp(name,"lookup-revoke")==0){
-      lookupRevokeTarget=h;h=0;assert(api->lookup(&l,&h)==PGR_RD_SKIP && h==0);
-    } else {r.residual_ms=0;assert(api->points(&r,0,&g_pts)==PGR_RD_SKIP && g_pts.count==0);}
+      lookupRevokeTarget=h;h=0;assert(api->lookup(&l,&h)==PGS_RD_SKIP && h==0);
+    } else {r.residual_ms=0;assert(api->points(&r,0,&g_pts)==PGS_RD_SKIP && g_pts.count==0);}
     cleanupRoots();pass(name);return 0;
   }
 
@@ -343,42 +343,42 @@ int scenario(const char *name) {
   //      only a fresh discover() republishes.
   if (std::strcmp(name, "revoke-no-revive") == 0) {
     auto r = discReq();
-    assert(doDiscover(r) == PGR_RD_OK && g_out.count == 1 && idEq(g_out.routes[0], "route-a"));
-    assert(g_out.routes[0].flags == (PGR_RD_FLAG_REVERSIBLE | PGR_RD_FLAG_HAS_START | PGR_RD_FLAG_HAS_END));
+    assert(doDiscover(r) == PGS_RD_OK && g_out.count == 1 && idEq(g_out.routes[0], "route-a"));
+    assert(g_out.routes[0].flags == (PGS_RD_FLAG_REVERSIBLE | PGS_RD_FLAG_HAS_START | PGS_RD_FLAG_HAS_END));
     assert(g_out.routes[0].point_count == 2 && g_out.routes[0].distance_meters == 1500.0);
     int rc = 0;
-    assert(doLookup("route-a", hostService, &rc) != 0 && rc == PGR_RD_OK);
+    assert(doLookup("route-a", hostService, &rc) != 0 && rc == PGS_RD_OK);
     api->revoke();                                   // off-tick revoke invalidates the published generation
     uint64_t h = doLookup("route-a", hostService, &rc);  // stamped with the NEW generation + a fresh lease
-    assert(h == 0 && rc == PGR_RD_SKIP && "revoked cache must not be lookup-able even on the new generation");
+    assert(h == 0 && rc == PGS_RD_SKIP && "revoked cache must not be lookup-able even on the new generation");
     r = discReq();
-    assert(doDiscover(r) == PGR_RD_OK && g_out.count == 1);  // fresh discovery republishes under new gen
-    assert(doLookup("route-a", hostService, &rc) != 0 && rc == PGR_RD_OK);
+    assert(doDiscover(r) == PGS_RD_OK && g_out.count == 1);  // fresh discovery republishes under new gen
+    assert(doLookup("route-a", hostService, &rc) != 0 && rc == PGS_RD_OK);
     cleanupRoots(); pass(name); return 0;
   }
 
   // ---- a cache bound to service A refuses a lookup presented against service B (no new discovery needed).
   if (std::strcmp(name, "service-mismatch") == 0) {
     auto r = discReq();
-    assert(doDiscover(r) == PGR_RD_OK && g_out.count == 1);
+    assert(doDiscover(r) == PGS_RD_OK && g_out.count == 1);
     int rc = 0;
     uint64_t h = doLookup("route-a", hostServiceB, &rc);
-    assert(h == 0 && rc == PGR_RD_SKIP && "lookup through a different RoutesService must refuse");
-    assert(doLookup("route-a", hostService, &rc) != 0 && rc == PGR_RD_OK);  // correct service still resolves
+    assert(h == 0 && rc == PGS_RD_SKIP && "lookup through a different RoutesService must refuse");
+    assert(doLookup("route-a", hostService, &rc) != 0 && rc == PGS_RD_OK);  // correct service still resolves
     cleanupRoots(); pass(name); return 0;
   }
 
   // ---- a VALID EMPTY same-service snapshot clears the old cache (old route root freed, id no longer found).
   if (std::strcmp(name, "empty-clears") == 0) {
     auto r = discReq();
-    assert(doDiscover(r) == PGR_RD_OK && g_out.count == 1);
+    assert(doDiscover(r) == PGS_RD_OK && g_out.count == 1);
     int rc = 0;
-    assert(doLookup("route-a", hostService, &rc) != 0 && rc == PGR_RD_OK);
+    assert(doLookup("route-a", hostService, &rc) != 0 && rc == PGS_RD_OK);
     listCount = 0;                                   // same service, empty snapshot
     r = discReq();
-    assert(doDiscover(r) == PGR_RD_OK && g_out.count == 0);
+    assert(doDiscover(r) == PGS_RD_OK && g_out.count == 0);
     uint64_t h = doLookup("route-a", hostService, &rc);
-    assert(h == 0 && rc == PGR_RD_SKIP && "empty snapshot must drop the previously cached route");
+    assert(h == 0 && rc == PGS_RD_SKIP && "empty snapshot must drop the previously cached route");
     cleanupRoots(); pass(name); return 0;  // cleanupRoots proves the old route root was freed (no leak)
   }
 
@@ -387,10 +387,10 @@ int scenario(const char *name) {
     cleanupAction = CLEAN_REVOKE;
     auto r = discReq();
     int rc0 = doDiscover(r);
-    assert(cleanupFired && rc0 == PGR_RD_SKIP && g_out.status == PGR_RD_SKIP && g_out.count == 0);
+    assert(cleanupFired && rc0 == PGS_RD_SKIP && g_out.status == PGS_RD_SKIP && g_out.count == 0);
     int rc = 0;
     uint64_t h = doLookup("route-a", hostService, &rc);
-    assert(h == 0 && rc == PGR_RD_SKIP && "no cache may be published when revoke lands during cleanup");
+    assert(h == 0 && rc == PGS_RD_SKIP && "no cache may be published when revoke lands during cleanup");
     cleanupRoots(); pass(name); return 0;  // staging roots (incl. the bound service root) must be freed
   }
 
@@ -400,10 +400,10 @@ int scenario(const char *name) {
     cleanupAction = CLEAN_REENTER;
     auto r = discReq();
     int rc0 = doDiscover(r);
-    assert(cleanupFired && reentryResult == PGR_RD_ERR_BUSY && "reentry during cleanup must return BUSY");
-    assert(rc0 == PGR_RD_OK && g_out.count == 1);   // outer scan is unaffected by the refused reentry
+    assert(cleanupFired && reentryResult == PGS_RD_ERR_BUSY && "reentry during cleanup must return BUSY");
+    assert(rc0 == PGS_RD_OK && g_out.count == 1);   // outer scan is unaffected by the refused reentry
     int rc = 0;
-    assert(doLookup("route-a", hostService, &rc) != 0 && rc == PGR_RD_OK);
+    assert(doLookup("route-a", hostService, &rc) != 0 && rc == PGS_RD_OK);
     cleanupRoots(); pass(name); return 0;
   }
 
@@ -411,12 +411,12 @@ int scenario(const char *name) {
   //      frees) and never touches the host service handle.
   if (std::strcmp(name, "moving-lookup") == 0) {
     auto r = discReq();
-    assert(doDiscover(r) == PGR_RD_OK && g_out.count == 1);
+    assert(doDiscover(r) == PGS_RD_OK && g_out.count == 1);
     move();                                          // a full GC cycle between discover() and lookup()
     size_t before = roots.size();
     int rc = 0;
     uint64_t h = doLookup("route-a", hostService, &rc);
-    assert(rc == PGR_RD_OK && h != 0 && h != hostService && h != hostServiceB);
+    assert(rc == PGS_RD_OK && h != 0 && h != hostService && h != hostServiceB);
     assert(roots.size() == before && "lookup must neither allocate nor free a root");
     assert(gcGet(hostService) != nullptr && "lookup must not free the borrowed host service handle");
     assert(gcGet(h) == obj(ROUTE0) && "borrowed handle must resolve to the relocated cached proto");
@@ -435,12 +435,12 @@ int scenario(const char *name) {
     else if (std::strcmp(name, "admit-many-waypoints") == 0) wpCount = 6000;          // > 5000 -> skip route
     else { std::printf("FAIL unknown admit case %s\n", name); return 5; }
     auto r = discReq();
-    assert(doDiscover(r) == PGR_RD_OK && g_out.count == 0 && "an invalid route must not be admitted");
+    assert(doDiscover(r) == PGS_RD_OK && g_out.count == 0 && "an invalid route must not be admitted");
     if (std::strcmp(name, "admit-few-waypoints") == 0 || std::strcmp(name, "admit-many-waypoints") == 0)
       assert(wpItemCalls == 0 && "an out-of-range waypoint count must skip the route without walking it");
     int rc = 0;
     uint64_t h = doLookup("route-a", hostService, &rc);
-    assert(h == 0 && rc == PGR_RD_SKIP && "an un-admitted route must not be lookup-able");
+    assert(h == 0 && rc == PGS_RD_SKIP && "an un-admitted route must not be lookup-able");
     cleanupRoots(); pass(name); return 0;
   }
 
@@ -452,23 +452,23 @@ int scenario(const char *name) {
     obj(WP0)->lat = 200.0;        // |lat| > 90
     obj(WP1)->lat = NAN;          // non-finite
     auto r = discReq();
-    assert(doDiscover(r)==PGR_RD_OK && g_out.count==0);
-    int rc=0;assert(doLookup("route-a",hostService,&rc)==0 && rc==PGR_RD_SKIP);
+    assert(doDiscover(r)==PGS_RD_OK && g_out.count==0);
+    int rc=0;assert(doLookup("route-a",hostService,&rc)==0 && rc==PGS_RD_SKIP);
     pass(name);
     cleanupRoots(); return 0;
   }
 
   // ---- a List count above the ceiling must TRUNCATE (bounded walk), matching JS readDiscovery, never an
-  //      unbounded walk. (The header defines PGR_RD_ERR_BAD_COUNT but the contract/JS want a clamp; both
+  //      unbounded walk. (The header defines PGS_RD_ERR_BAD_COUNT but the contract/JS want a clamp; both
   //      satisfy the bounded-walk invariant, which is the safety property asserted here.)
   if (std::strcmp(name, "count-truncate") == 0) {
     listCount = 150;
     distinctIds = true;
     auto r = discReq();
     int rc = doDiscover(r);
-    assert(listItemCalls <= PGR_RD_MAX_ROUTES && "the route walk must be bounded by PGR_RD_MAX_ROUTES");
-    assert(g_out.count <= PGR_RD_MAX_ROUTES);
-    assert(rc==PGR_RD_OK && g_out.count==PGR_RD_MAX_ROUTES && listItemCalls==PGR_RD_MAX_ROUTES);
+    assert(listItemCalls <= PGS_RD_MAX_ROUTES && "the route walk must be bounded by PGS_RD_MAX_ROUTES");
+    assert(g_out.count <= PGS_RD_MAX_ROUTES);
+    assert(rc==PGS_RD_OK && g_out.count==PGS_RD_MAX_ROUTES && listItemCalls==PGS_RD_MAX_ROUTES);
     std::printf("count-truncate observed: status=%d count=%u itemCalls=%d\n", rc, g_out.count, listItemCalls);
     cleanupRoots(); pass(name); return 0;
   }
@@ -477,9 +477,9 @@ int scenario(const char *name) {
   if (std::strcmp(name, "throw-list") == 0) {
     throwList = true;
     auto r = discReq();
-    assert(doDiscover(r) == PGR_RD_ERR_MANAGED && g_out.count == 0);
+    assert(doDiscover(r) == PGS_RD_ERR_MANAGED && g_out.count == 0);
     int rc = 0;
-    assert(doLookup("route-a", hostService, &rc) == 0 && rc == PGR_RD_SKIP);
+    assert(doLookup("route-a", hostService, &rc) == 0 && rc == PGS_RD_SKIP);
     cleanupRoots(); pass(name); return 0;
   }
 
@@ -487,9 +487,9 @@ int scenario(const char *name) {
   if (std::strcmp(name, "throw-waypoint") == 0) {
     throwWp = true;
     auto r = discReq();
-    assert(doDiscover(r) == PGR_RD_OK && g_out.count == 0);
+    assert(doDiscover(r) == PGS_RD_OK && g_out.count == 0);
     int rc = 0;
-    assert(doLookup("route-a", hostService, &rc) == 0 && rc == PGR_RD_SKIP);
+    assert(doLookup("route-a", hostService, &rc) == 0 && rc == PGS_RD_SKIP);
     cleanupRoots(); pass(name); return 0;
   }
 
@@ -497,21 +497,21 @@ int scenario(const char *name) {
   //      revoke (no managed work in any case).
   if (std::strcmp(name, "points-basic") == 0) {
     auto r = discReq();
-    assert(doDiscover(r) == PGR_RD_OK && g_out.count == 1 && g_out.routes[0].point_count == 2);
+    assert(doDiscover(r) == PGS_RD_OK && g_out.count == 1 && g_out.routes[0].point_count == 2);
     int before = managed;
     r = discReq(); r.index = 0;
     std::memset(&g_pts, 0, sizeof(g_pts));
-    assert(api->points(&r, 0, &g_pts) == PGR_RD_OK && g_pts.count == 2);
+    assert(api->points(&r, 0, &g_pts) == PGS_RD_OK && g_pts.count == 2);
     assert(g_pts.points[0].lat == 10.0 && g_pts.points[0].lon == 20.0);
     assert(g_pts.points[1].lat == 11.0 && g_pts.points[1].lon == 21.0);
     r = discReq(); r.index = 5;
     std::memset(&g_pts, 0, sizeof(g_pts));
-    assert(api->points(&r, 5, &g_pts) == PGR_RD_ERR_BAD_INDEX && g_pts.count == 0);
+    assert(api->points(&r, 5, &g_pts) == PGS_RD_ERR_BAD_INDEX && g_pts.count == 0);
     assert(managed == before && "points() must perform no managed work");
     api->revoke();
     r = discReq(); r.index = 0;
     std::memset(&g_pts, 0, sizeof(g_pts));
-    assert(api->points(&r, 0, &g_pts) == PGR_RD_SKIP && g_pts.count == 0);  // generation gate after revoke
+    assert(api->points(&r, 0, &g_pts) == PGS_RD_SKIP && g_pts.count == 0);  // generation gate after revoke
     cleanupRoots(); pass(name); return 0;
   }
 
@@ -519,20 +519,20 @@ int scenario(const char *name) {
   if (std::strncmp(name, "guard-", 6) == 0) {
     if (std::strcmp(name, "guard-zero-lease") == 0) {
       auto r = discReq(); r.residual_ms = 0;
-      assert(doDiscover(r) == PGR_RD_SKIP && g_out.count == 0 && managed == 0);
+      assert(doDiscover(r) == PGS_RD_SKIP && g_out.count == 0 && managed == 0);
     } else if (std::strcmp(name, "guard-bad-generation") == 0) {
       auto r = discReq(); r.generation = api->generation() + 5;
-      assert(doDiscover(r) == PGR_RD_SKIP && managed == 0);
+      assert(doDiscover(r) == PGS_RD_SKIP && managed == 0);
     } else if (std::strcmp(name, "guard-foreign-tid") == 0) {
       auto r = discReq(); r.tid = static_cast<uint64_t>(gettid()) + 1;
-      assert(doDiscover(r) == PGR_RD_SKIP && managed == 0);
+      assert(doDiscover(r) == PGS_RD_SKIP && managed == 0);
     } else if (std::strcmp(name, "guard-detached") == 0) {
       detached = true;
       auto r = discReq();
-      assert(doDiscover(r) == PGR_RD_SKIP && managed == 0);
+      assert(doDiscover(r) == PGS_RD_SKIP && managed == 0);
     } else if (std::strcmp(name, "guard-drain-offowner") == 0) {
       auto r = discReq(); r.tid = static_cast<uint64_t>(gettid()) + 1;
-      assert(api->drain(&r) == PGR_RD_SKIP && "an off-owner drain must be a benign SKIP that frees nothing");
+      assert(api->drain(&r) == PGS_RD_SKIP && "an off-owner drain must be a benign SKIP that frees nothing");
     } else { std::printf("FAIL unknown guard %s\n", name); return 5; }
     cleanupRoots(); pass(name); return 0;
   }
@@ -569,7 +569,7 @@ int main(int argc, char **argv) {
   auto get = reinterpret_cast<const void *(*)(uint32_t)>(dlsym(library, "pgs_native_api"));
   auto core = get ? static_cast<const pgs_native_api_v2 *>(get(2)) : nullptr;
   assert(core && core->query_feature(44, 99) == nullptr);  // exact-version only
-  api = static_cast<const PgrRoutesDiscoveryApi *>(core->query_feature(44, 1));
-  assert(api && api->size == sizeof(PgrRoutesDiscoveryApi) && api->version == PGR_RD_API_VERSION);
+  api = static_cast<const PgsRoutesDiscoveryApi *>(core->query_feature(44, 1));
+  assert(api && api->size == sizeof(PgsRoutesDiscoveryApi) && api->version == PGS_RD_API_VERSION);
   return scenario(argv[2]);
 }

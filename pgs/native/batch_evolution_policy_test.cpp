@@ -4,7 +4,7 @@
 #include <iostream>
 #include <string>
 
-using namespace pgr_evolution;
+using namespace pgs_evolution;
 
 static void check(bool condition,const char* label) {
     if(!condition){std::cerr<<"FAILED: "<<label<<'\n';std::exit(1);}

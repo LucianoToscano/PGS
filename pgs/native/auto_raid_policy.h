@@ -1,5 +1,5 @@
-#ifndef PGR_AUTO_RAID_POLICY_H
-#define PGR_AUTO_RAID_POLICY_H
+#ifndef PGS_AUTO_RAID_POLICY_H
+#define PGS_AUTO_RAID_POLICY_H
 
 // Pure, host-independent policy and state rules for the native Auto-Raid module.
 // Contains only deterministic logic that can be unit-tested without an IL2CPP runtime:
@@ -20,7 +20,7 @@
 #include <string>
 #include <vector>
 
-namespace pgr_auto_raid {
+namespace pgs_auto_raid {
 
 enum TierMaskBit : int {
     TIER_ANY         = 0,
@@ -792,6 +792,6 @@ inline int select_nearest_raid(
     return best_idx;
 }
 
-} // namespace pgr_auto_raid
+} // namespace pgs_auto_raid
 
-#endif // PGR_AUTO_RAID_POLICY_H
+#endif // PGS_AUTO_RAID_POLICY_H

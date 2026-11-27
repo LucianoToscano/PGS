@@ -42,53 +42,46 @@ static_assert(sizeof(void *) == 8, "Buddy feeding native ABI requires LP64");
 
 // Table + config + sample ABI version. The getter answers an exact match only.
 #define PGS_BUDDY_API_VERSION 1u
-#define PGRAZOR_BUDDY_API_VERSION PGS_BUDDY_API_VERSION
 
 // Timers, milliseconds (CLOCK_BOOTTIME). Mirror the JS now+5000 / now+30000 / now+15000.
 #define PGS_BUDDY_POLL_MS        5000u
-#define PGRAZOR_BUDDY_POLL_MS PGS_BUDDY_POLL_MS
 #define PGS_BUDDY_FEED_MS        30000u  // feed-result confirmation deadline
-#define PGRAZOR_BUDDY_FEED_MS PGS_BUDDY_FEED_MS
 #define PGS_BUDDY_PROGRESS_MS    15000u  // hunger-update observation deadline
-#define PGRAZOR_BUDDY_PROGRESS_MS PGS_BUDDY_PROGRESS_MS
 #define PGS_BUDDY_MANUAL_MS      30000u  // back-off after a manual feed
-#define PGRAZOR_BUDDY_MANUAL_MS PGS_BUDDY_MANUAL_MS
 #define PGS_BUDDY_MAX_LEASE_MS   2500u   // per-tick authorization lease cap (residual)
-#define PGRAZOR_BUDDY_MAX_LEASE_MS PGS_BUDDY_MAX_LEASE_MS
 #define PGS_BUDDY_MAX_FEEDS      6       // berries per hunger cycle before pausing
-#define PGRAZOR_BUDDY_MAX_FEEDS PGS_BUDDY_MAX_FEEDS
 
 // Status codes surfaced through the sample. The adapter maps each to the exact JS string.
 // FED_REMAINING carries whole minutes in `detail`; FEED_FAILED carries the result value.
 enum {
-    PGR_BUDDY_STATUS_NONE         = 0,  /* initial; no event emitted */
-    PGR_BUDDY_STATUS_OFF          = 1,  /* "Off" */
-    PGR_BUDDY_STATUS_WAIT_MAP     = 2,  /* "Waiting for the map" */
-    PGR_BUDDY_STATUS_CHOOSE       = 3,  /* "Choose a buddy first" */
-    PGR_BUDDY_STATUS_WAIT_HUNGER  = 4,  /* "Waiting for buddy hunger data" */
-    PGR_BUDDY_STATUS_FED          = 5,  /* "Buddy fed - <detail> min remaining" */
-    PGR_BUDDY_STATUS_COOLDOWN     = 6,  /* "Waiting for buddy feeding cooldown" */
-    PGR_BUDDY_STATUS_PAUSED_SIX   = 7,  /* "Feeding paused after six berries; check your buddy" */
-    PGR_BUDDY_STATUS_OUT_OF_STOCK = 8,  /* "Selected berry is out of stock" */
-    PGR_BUDDY_STATUS_FEEDING      = 9,  /* "Feeding buddy" */
-    PGR_BUDDY_STATUS_BERRY_FED    = 10, /* "Berry fed; checking buddy hunger" */
-    PGR_BUDDY_STATUS_FEED_FAILED  = 11, /* "Buddy feed failed (result <detail>); toggle Off to retry" */
-    PGR_BUDDY_STATUS_TIMEOUT      = 12, /* "Buddy feed timed out; no automatic retry" */
-    PGR_BUDDY_STATUS_HUNGER_STALE = 13, /* "Hunger did not update; toggle Off to retry" */
-    PGR_BUDDY_STATUS_ERROR        = 14  /* "Buddy feeding paused: <reason>" */
+    PGS_BUDDY_STATUS_NONE         = 0,  /* initial; no event emitted */
+    PGS_BUDDY_STATUS_OFF          = 1,  /* "Off" */
+    PGS_BUDDY_STATUS_WAIT_MAP     = 2,  /* "Waiting for the map" */
+    PGS_BUDDY_STATUS_CHOOSE       = 3,  /* "Choose a buddy first" */
+    PGS_BUDDY_STATUS_WAIT_HUNGER  = 4,  /* "Waiting for buddy hunger data" */
+    PGS_BUDDY_STATUS_FED          = 5,  /* "Buddy fed - <detail> min remaining" */
+    PGS_BUDDY_STATUS_COOLDOWN     = 6,  /* "Waiting for buddy feeding cooldown" */
+    PGS_BUDDY_STATUS_PAUSED_SIX   = 7,  /* "Feeding paused after six berries; check your buddy" */
+    PGS_BUDDY_STATUS_OUT_OF_STOCK = 8,  /* "Selected berry is out of stock" */
+    PGS_BUDDY_STATUS_FEEDING      = 9,  /* "Feeding buddy" */
+    PGS_BUDDY_STATUS_BERRY_FED    = 10, /* "Berry fed; checking buddy hunger" */
+    PGS_BUDDY_STATUS_FEED_FAILED  = 11, /* "Buddy feed failed (result <detail>); toggle Off to retry" */
+    PGS_BUDDY_STATUS_TIMEOUT      = 12, /* "Buddy feed timed out; no automatic retry" */
+    PGS_BUDDY_STATUS_HUNGER_STALE = 13, /* "Hunger did not update; toggle Off to retry" */
+    PGS_BUDDY_STATUS_ERROR        = 14  /* "Buddy feeding paused: <reason>" */
 };
 
 // Status codes returned by every table function. 0 == success.
 enum {
-    PGR_BUDDY_OK            = 0,
-    PGR_BUDDY_ERR_NULL_ARG  = 1,  /* required pointer argument was null */
-    PGR_BUDDY_ERR_BAD_CONFIG= 2,  /* header/size/pointer/literal invalid */
-    PGR_BUDDY_ERR_ALREADY_BOUND = 3, /* install() repeated with a different config */
-    PGR_BUDDY_ERR_DUP_HOOK  = 4,  /* feed and result share a hook address */
-    PGR_BUDDY_ERR_HOOK_FEED = 5,  /* Dobby could not hook/publish Feed */
-    PGR_BUDDY_ERR_HOOK_RESULT = 6, /* Dobby could not hook/publish the result callback */
-    PGR_BUDDY_ERR_NOT_INSTALLED = 7, /* operation needs a successful install() */
-    PGR_BUDDY_ERR_NO_CLOCK  = 8   /* CLOCK_BOOTTIME was unavailable at install */
+    PGS_BUDDY_OK            = 0,
+    PGS_BUDDY_ERR_NULL_ARG  = 1,  /* required pointer argument was null */
+    PGS_BUDDY_ERR_BAD_CONFIG= 2,  /* header/size/pointer/literal invalid */
+    PGS_BUDDY_ERR_ALREADY_BOUND = 3, /* install() repeated with a different config */
+    PGS_BUDDY_ERR_DUP_HOOK  = 4,  /* feed and result share a hook address */
+    PGS_BUDDY_ERR_HOOK_FEED = 5,  /* Dobby could not hook/publish Feed */
+    PGS_BUDDY_ERR_HOOK_RESULT = 6, /* Dobby could not hook/publish the result callback */
+    PGS_BUDDY_ERR_NOT_INSTALLED = 7, /* operation needs a successful install() */
+    PGS_BUDDY_ERR_NO_CLOCK  = 8   /* CLOCK_BOOTTIME was unavailable at install */
 };
 
 // Install-time configuration, packed by the JS adapter after its metadata validation.
@@ -154,7 +147,6 @@ typedef struct pgs_buddy_config_v1 {
     int32_t success;               /* BuddyFeedingOutProto.Result == Success literal */
     int32_t reserved;              /* 0; keeps the config 8-byte aligned (size 352) */
 } pgs_buddy_config_v1;
-typedef pgs_buddy_config_v1 pgrazor_buddy_config_v1;
 
 // Pull-only telemetry snapshot (56 bytes). status_serial increments on each distinct
 // status transition; feed_request_serial once per issued Feed (counted at issuance, even
@@ -166,7 +158,7 @@ typedef pgs_buddy_config_v1 pgrazor_buddy_config_v1;
 typedef struct pgs_buddy_sample_v1 {
     uint32_t version;              /* == PGS_BUDDY_API_VERSION */
     uint32_t size;                 /* == sizeof(pgs_buddy_sample_v1) */
-    uint32_t status;               /* one of PGR_BUDDY_STATUS_* */
+    uint32_t status;               /* one of PGS_BUDDY_STATUS_* */
     uint32_t status_serial;        /* bumped on each status change */
     int32_t  detail;               /* minutes (FED) or result value (FEED_FAILED) */
     uint32_t reserved;             /* 0 */
@@ -176,7 +168,6 @@ typedef struct pgs_buddy_sample_v1 {
     uint32_t fault_serial;         /* bumped on each fail-closed error */
     uint32_t owned_roots;          /* durable roots plus active owner frames (conservative finish guard) */
 } pgs_buddy_sample_v1;
-typedef pgs_buddy_sample_v1 pgrazor_buddy_sample_v1;
 
 /*
  * install(config): validate and publish the config once for the process lifetime, then
@@ -186,7 +177,6 @@ typedef pgs_buddy_sample_v1 pgrazor_buddy_sample_v1;
  * attempt latches for the process lifetime and never unhooks a published trampoline).
  */
 typedef int (*pgs_buddy_install_fn)(const pgs_buddy_config_v1 *config);
-typedef pgs_buddy_install_fn pgrazor_buddy_install_fn;
 
 /*
  * tick(berry, remaining_lease_ms, proven_tid): one orchestration pass. Runs the full feed
@@ -200,7 +190,6 @@ typedef pgs_buddy_install_fn pgrazor_buddy_install_fn;
  */
 typedef int (*pgs_buddy_tick_fn)(int32_t berry, uint64_t remaining_lease_ms,
                                      uint64_t proven_tid);
-typedef pgs_buddy_tick_fn pgrazor_buddy_tick_fn;
 
 /*
  * clear(proven_tid): Unity-thread-only teardown for stop/detach. RELEASES the durable GC
@@ -211,11 +200,9 @@ typedef pgs_buddy_tick_fn pgrazor_buddy_tick_fn;
  * NOT_INSTALLED.
  */
 typedef int (*pgs_buddy_clear_fn)(uint64_t proven_tid);
-typedef pgs_buddy_clear_fn pgrazor_buddy_clear_fn;
 
 /* sample(out): copy the latest telemetry snapshot. Safe from any thread; never frees. */
 typedef int (*pgs_buddy_sample_fn)(pgs_buddy_sample_v1 *out);
-typedef pgs_buddy_sample_fn pgrazor_buddy_sample_fn;
 
 // Ordered, read-only table advertised by the getter (40 bytes: header + 4 pointers).
 typedef struct pgs_buddy_api_v1 {
@@ -226,7 +213,6 @@ typedef struct pgs_buddy_api_v1 {
     pgs_buddy_clear_fn   clear;
     pgs_buddy_sample_fn  sample;
 } pgs_buddy_api_v1;
-typedef pgs_buddy_api_v1 pgrazor_buddy_api_v1;
 
 /*
  * Hidden getter (NOT exported by the version script). The coordinator registers it in the

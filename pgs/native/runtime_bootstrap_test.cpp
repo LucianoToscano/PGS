@@ -62,8 +62,8 @@ void *last_detached = nullptr;
 bool reenter = false;       // domain_get seam reenters probe to prove BUSY / no deadlock
 
 const pgs_native_api_v2 *core = nullptr;
-const PgrBootApi *api = nullptr;
-PgrBootConfig base_config{};
+const PgsBootApi *api = nullptr;
+PgsBootConfig base_config{};
 
 unsigned names_allocated = 0, names_freed = 0;
 
@@ -75,17 +75,17 @@ void *f_domain_get() {
   if (reenter) {
     reenter = false;
     // Same-thread reentry through a managed callback: must return BUSY, never deadlock.
-    PgrBootBinding b;
+    PgsBootBinding b;
     std::memset(&b, 0xa5, sizeof(b));
-    assert(api->probe(&base_config, &b) == PGR_BOOT_ERR_BUSY);
-    assert(b.status == PGR_BOOT_ERR_BUSY && b.handle == nullptr && b.execute_tasks == nullptr);
+    assert(api->probe(&base_config, &b) == PGS_BOOT_ERR_BUSY);
+    assert(b.status == PGS_BOOT_ERR_BUSY && b.handle == nullptr && b.execute_tasks == nullptr);
     // Concurrent thread during the same managed callback: also BUSY (serialized, non-blocking).
     std::thread other([] {
-      PgrBootBinding c;
+      PgsBootBinding c;
       std::memset(&c, 0xa5, sizeof(c));
-      assert(api->probe(&base_config, &c) == PGR_BOOT_ERR_BUSY && c.status == PGR_BOOT_ERR_BUSY);
+      assert(api->probe(&base_config, &c) == PGS_BOOT_ERR_BUSY && c.status == PGS_BOOT_ERR_BUSY);
       // snapshot is also guarded and must not deadlock while the outer probe holds entry.
-      assert(api->snapshot(&c) == PGR_BOOT_ERR_BUSY);
+      assert(api->snapshot(&c) == PGS_BOOT_ERR_BUSY);
     });
     other.join();
     ++reentries;
@@ -157,7 +157,7 @@ int seam_module(void *, const char *soname, const void **base, uint64_t *size) {
   return 0;
 }
 const void *seam_metadata(void *, uint32_t version) { return core->query_feature(47, version); }
-int seam_segment(void *, const void *address, uint64_t length, PgrMetaSegment *out) {
+int seam_segment(void *, const void *address, uint64_t length, PgsMetaSegment *out) {
   *out = {};
   uintptr_t a = reinterpret_cast<uintptr_t>(address), base = reinterpret_cast<uintptr_t>(module_base);
   if (a < base || a - base > module_size || !length || length > module_size - (a - base)) return 0;
@@ -222,8 +222,8 @@ void build_fixture() {
   map("il2cpp_thread_attach", reinterpret_cast<void *>(f_thread_attach));
   map("il2cpp_thread_detach", reinterpret_cast<void *>(f_thread_detach));
 
-  base_config.version = PGR_BOOT_CONFIG_VERSION;
-  base_config.size = sizeof(PgrBootConfig);
+  base_config.version = PGS_BOOT_CONFIG_VERSION;
+  base_config.size = sizeof(PgsBootConfig);
   base_config.soname = "libil2cpp.so";
   base_config.dlopen_fn = seam_dlopen;
   base_config.dlsym_fn = seam_dlsym;
@@ -235,14 +235,14 @@ void build_fixture() {
   // exec_* left null -> compiled defaults (UnityEngine.UnitySynchronizationContext.ExecuteTasks)
 }
 
-bool cleared(const PgrBootBinding &b, int status, int detail) {
-  return b.version == PGR_BOOT_BINDING_VERSION && b.size == sizeof(PgrBootBinding) &&
+bool cleared(const PgsBootBinding &b, int status, int detail) {
+  return b.version == PGS_BOOT_BINDING_VERSION && b.size == sizeof(PgsBootBinding) &&
          b.status == status && b.detail == detail && b.flags == 0 && b.handle == nullptr &&
          b.module_base == nullptr && b.execute_tasks == nullptr && b.domain == nullptr;
 }
 
-PgrBootBinding probe() {
-  PgrBootBinding b;
+PgsBootBinding probe() {
+  PgsBootBinding b;
   std::memset(&b, 0xa5, sizeof(b));
   int rc = api->probe(&base_config, &b);
   assert(rc == b.status);
@@ -250,13 +250,13 @@ PgrBootBinding probe() {
 }
 
 void expect_fail(int status, int detail) {
-  PgrBootBinding b = probe();
+  PgsBootBinding b = probe();
   assert(b.status == status && b.detail == detail && cleared(b, status, detail));
 }
 
-void assert_success(const PgrBootBinding &b, bool attached_expected) {
-  assert(b.status == PGR_BOOT_OK && b.detail == 0 && b.version == PGR_BOOT_BINDING_VERSION &&
-         b.size == sizeof(PgrBootBinding));
+void assert_success(const PgsBootBinding &b, bool attached_expected) {
+  assert(b.status == PGS_BOOT_OK && b.detail == 0 && b.version == PGS_BOOT_BINDING_VERSION &&
+         b.size == sizeof(PgsBootBinding));
   assert(b.handle == &fake_handle && b.module_base == module_base && b.module_size == module_size);
   assert(b.domain == &domain_token && b.execute_tasks == &execute_tasks);
   assert(b.meta.domain_get == reinterpret_cast<void *>(f_domain_get));
@@ -295,22 +295,22 @@ int main(int argc, char **argv) {
   core = static_cast<const pgs_native_api_v2 *>(get(2));
   assert(core && core->query_feature);
   assert(!core->query_feature(54, 2)); // exact-version only
-  api = static_cast<const PgrBootApi *>(core->query_feature(54, 1));
+  api = static_cast<const PgsBootApi *>(core->query_feature(54, 1));
   assert(api && api->version == 1 && api->size == 24 && api->probe && api->snapshot);
   assert(core->query_feature(47, 1)); // feature 47 must be registered for the metadata seam
   build_fixture();
 
   // 1. Full success (no compiled-address identity), snapshot, idempotent replay.
   run("success + snapshot + replay", [] {
-    PgrBootBinding b = probe();
+    PgsBootBinding b = probe();
     assert_success(b, /*attached*/ true); // thread_current null at start -> attach+detach once
     assert(attach_calls == 1 && detach_calls == 1 && last_detached == &thread_token);
-    PgrBootBinding s;
+    PgsBootBinding s;
     std::memset(&s, 0xa5, sizeof(s));
-    assert(api->snapshot(&s) == PGR_BOOT_OK);
+    assert(api->snapshot(&s) == PGS_BOOT_OK);
     assert(std::memcmp(&s, &b, sizeof(s)) == 0);
     unsigned a0 = attach_calls;
-    PgrBootBinding again = probe(); // replay does not re-dlopen / re-attach
+    PgsBootBinding again = probe(); // replay does not re-dlopen / re-attach
     assert(std::memcmp(&again, &b, sizeof(b)) == 0 && attach_calls == a0);
   });
 
@@ -319,7 +319,7 @@ int main(int argc, char **argv) {
     base_config.exec_code_rva = EXEC_RVA;
     base_config.exec_prologue = PROLOGUE;
     base_config.exec_prologue_len = sizeof(PROLOGUE);
-    PgrBootBinding b = probe();
+    PgsBootBinding b = probe();
     assert_success(b, true);
     assert(b.execute_tasks_code == module_base + EXEC_RVA);
   });
@@ -327,12 +327,12 @@ int main(int argc, char **argv) {
   // 3. NOT_READY is retriable and latches nothing: library absent, then domain down, then success.
   run("NOT_READY retries then success", [] {
     loaded = false;
-    PgrBootBinding b = probe();
-    assert(b.status == PGR_BOOT_NOT_READY && cleared(b, PGR_BOOT_NOT_READY, 0));
+    PgsBootBinding b = probe();
+    assert(b.status == PGS_BOOT_NOT_READY && cleared(b, PGS_BOOT_NOT_READY, 0));
     loaded = true;
     domain_up = false;
     b = probe();
-    assert(b.status == PGR_BOOT_NOT_READY && cleared(b, PGR_BOOT_NOT_READY, 0));
+    assert(b.status == PGS_BOOT_NOT_READY && cleared(b, PGS_BOOT_NOT_READY, 0));
     assert(attach_calls == 0); // never attached while domain down
     domain_up = true;
     b = probe();
@@ -342,7 +342,7 @@ int main(int argc, char **argv) {
   // 4. Reentry + concurrency during a managed callback: BUSY, no deadlock, outer still succeeds.
   run("reentry/concurrency BUSY", [] {
     reenter = true;
-    PgrBootBinding b = probe();
+    PgsBootBinding b = probe();
     assert(reentries == 1);
     assert_success(b, true);
   });
@@ -350,12 +350,12 @@ int main(int argc, char **argv) {
   // 5. Missing export fails closed and the precise status replays.
   run("missing export poison + replay", [] {
     missing_name = "il2cpp_runtime_invoke";
-    expect_fail(PGR_BOOT_ERR_MISSING_EXPORT, 0);
+    expect_fail(PGS_BOOT_ERR_MISSING_EXPORT, 0);
     missing_name = nullptr; // even with the export now present, the owner stays poisoned
-    expect_fail(PGR_BOOT_ERR_MISSING_EXPORT, 0);
-    PgrBootBinding s;
+    expect_fail(PGS_BOOT_ERR_MISSING_EXPORT, 0);
+    PgsBootBinding s;
     std::memset(&s, 0xa5, sizeof(s));
-    assert(api->snapshot(&s) == PGR_BOOT_ERR_MISSING_EXPORT && cleared(s, PGR_BOOT_ERR_MISSING_EXPORT, 0));
+    assert(api->snapshot(&s) == PGS_BOOT_ERR_MISSING_EXPORT && cleared(s, PGS_BOOT_ERR_MISSING_EXPORT, 0));
   });
 
   // 6. Invalid module range (overflow) fails closed.
@@ -366,26 +366,26 @@ int main(int argc, char **argv) {
       *size = 8;
       return 0;
     };
-    expect_fail(PGR_BOOT_ERR_MODULE_RANGE, 0);
+    expect_fail(PGS_BOOT_ERR_MODULE_RANGE, 0);
   });
 
   // 7. Absent/incompatible feature 47 fails closed.
   run("no metadata poison", [] {
     base_config.metadata_fn = [](void *, uint32_t) -> const void * { return nullptr; };
-    expect_fail(PGR_BOOT_ERR_NO_METADATA, 0);
+    expect_fail(PGS_BOOT_ERR_NO_METADATA, 0);
   });
 
   // 8. Thread attach failure (domain up but attach returns null) fails closed.
   run("thread attach poison", [] {
     attach_result = nullptr;
-    expect_fail(PGR_BOOT_ERR_THREAD, 0);
+    expect_fail(PGS_BOOT_ERR_THREAD, 0);
     assert(attach_calls == 1 && detach_calls == 0);
   });
 
   // 9. Already-attached thread: probe must not attach or detach.
   run("already attached thread", [] {
     thread_attached = true;
-    PgrBootBinding b = probe();
+    PgsBootBinding b = probe();
     assert_success(b, /*attached*/ false);
     assert(attach_calls == 0 && detach_calls == 0);
   });
@@ -393,32 +393,32 @@ int main(int argc, char **argv) {
   // 10. feature 47 bind mismatch surfaces as ERR_BIND with the precise detail. Pre-bind 47 with a
   //     DIFFERENT module range so feature 54's compatible-config bind is rejected.
   run("bind mismatch poison", [] {
-    const PgrMetaApi *md = static_cast<const PgrMetaApi *>(core->query_feature(47, 1));
-    PgrMetaExports e{};
+    const PgsMetaApi *md = static_cast<const PgsMetaApi *>(core->query_feature(47, 1));
+    PgsMetaExports e{};
     void *stub = reinterpret_cast<void *>(&unused_stub);
-    for (size_t i = 0; i < sizeof(PgrMetaExports) / sizeof(void *); ++i)
+    for (size_t i = 0; i < sizeof(PgsMetaExports) / sizeof(void *); ++i)
       reinterpret_cast<void **>(&e)[i] = stub;
-    PgrMetaBindConfig bc{};
-    bc.version = PGR_MD_CONFIG_VERSION;
+    PgsMetaBindConfig bc{};
+    bc.version = PGS_MD_CONFIG_VERSION;
     bc.size = sizeof(bc);
     bc.exports = &e;
     bc.module_base = module_base + module_size; // different base than feature 54 will present
     bc.module_size = module_size;
     bc.seg_query = seam_segment;
-    assert(md->bind(&bc) == PGR_MD_OK);
-    expect_fail(PGR_BOOT_ERR_BIND, PGR_MD_ERR_BOUND_MISMATCH);
+    assert(md->bind(&bc) == PGS_MD_OK);
+    expect_fail(PGS_BOOT_ERR_BIND, PGS_MD_ERR_BOUND_MISMATCH);
   });
 
   // 11. Duplicate class across images -> ERR_RESOLVE(DUPLICATE).
   run("duplicate class poison", [] {
     duplicate = true;
-    expect_fail(PGR_BOOT_ERR_RESOLVE, PGR_MD_ERR_DUPLICATE);
+    expect_fail(PGS_BOOT_ERR_RESOLVE, PGS_MD_ERR_DUPLICATE);
   });
 
   // 12. Non-static ExecuteTasks -> ERR_RESOLVE(STATIC).
   run("non-static method poison", [] {
     execute_tasks.flags = 0; // clear METHOD_ATTRIBUTE_STATIC
-    expect_fail(PGR_BOOT_ERR_RESOLVE, PGR_MD_ERR_STATIC);
+    expect_fail(PGS_BOOT_ERR_RESOLVE, PGS_MD_ERR_STATIC);
   });
 
   // 13. Prologue mismatch at the pinned code address -> ERR_RESOLVE(PROLOGUE).
@@ -427,7 +427,7 @@ int main(int argc, char **argv) {
     base_config.exec_prologue = PROLOGUE;
     base_config.exec_prologue_len = sizeof(PROLOGUE);
     module_base[EXEC_RVA] ^= 1;
-    expect_fail(PGR_BOOT_ERR_RESOLVE, PGR_MD_ERR_PROLOGUE);
+    expect_fail(PGS_BOOT_ERR_RESOLVE, PGS_MD_ERR_PROLOGUE);
   });
 
   // 14. Code address outside the module range -> ERR_RESOLVE(CODE_RANGE) via the pinned-address check.
@@ -435,70 +435,70 @@ int main(int argc, char **argv) {
     base_config.exec_code_rva = module_size + 0x1000; // valid against base, outside the module span
     base_config.exec_prologue = PROLOGUE;
     base_config.exec_prologue_len = sizeof(PROLOGUE);
-    expect_fail(PGR_BOOT_ERR_RESOLVE, PGR_MD_ERR_CODE_RANGE);
+    expect_fail(PGS_BOOT_ERR_RESOLVE, PGS_MD_ERR_CODE_RANGE);
   });
 
   // 15. Config faults do NOT poison (caller programming errors) and give precise status.
   run("config faults, no poison", [] {
-    PgrBootBinding b;
+    PgsBootBinding b;
     std::memset(&b, 0xa5, sizeof(b));
-    assert(api->probe(nullptr, &b) == PGR_BOOT_ERR_NULL_ARG && cleared(b, PGR_BOOT_ERR_NULL_ARG, 0));
-    auto bad = [&](std::function<void(PgrBootConfig &)> mut, int status) {
-      PgrBootConfig c = base_config;
+    assert(api->probe(nullptr, &b) == PGS_BOOT_ERR_NULL_ARG && cleared(b, PGS_BOOT_ERR_NULL_ARG, 0));
+    auto bad = [&](std::function<void(PgsBootConfig &)> mut, int status) {
+      PgsBootConfig c = base_config;
       mut(c);
-      PgrBootBinding o;
+      PgsBootBinding o;
       std::memset(&o, 0xa5, sizeof(o));
       assert(api->probe(&c, &o) == status && cleared(o, status, 0));
     };
-    bad([](PgrBootConfig &c) { c.version = 2; }, PGR_BOOT_ERR_BAD_VERSION);
-    bad([](PgrBootConfig &c) { c.size -= 1; }, PGR_BOOT_ERR_BAD_SIZE);
-    bad([](PgrBootConfig &c) { c.reserved = 2; }, PGR_BOOT_ERR_BAD_CONFIG);
-    bad([](PgrBootConfig &c) { c.exec_code_rva = EXEC_RVA; }, PGR_BOOT_ERR_BAD_CONFIG); // rva, no prologue
-    bad([](PgrBootConfig &c) { c.exec_prologue = PROLOGUE; c.exec_prologue_len = sizeof(PROLOGUE); },
-        PGR_BOOT_ERR_BAD_CONFIG); // prologue, no rva
+    bad([](PgsBootConfig &c) { c.version = 2; }, PGS_BOOT_ERR_BAD_VERSION);
+    bad([](PgsBootConfig &c) { c.size -= 1; }, PGS_BOOT_ERR_BAD_SIZE);
+    bad([](PgsBootConfig &c) { c.reserved = 2; }, PGS_BOOT_ERR_BAD_CONFIG);
+    bad([](PgsBootConfig &c) { c.exec_code_rva = EXEC_RVA; }, PGS_BOOT_ERR_BAD_CONFIG); // rva, no prologue
+    bad([](PgsBootConfig &c) { c.exec_prologue = PROLOGUE; c.exec_prologue_len = sizeof(PROLOGUE); },
+        PGS_BOOT_ERR_BAD_CONFIG); // prologue, no rva
     // None of the above latched: a clean config now succeeds.
     assert_success(probe(), true);
     // Null out argument.
-    assert(api->probe(&base_config, nullptr) == PGR_BOOT_ERR_NULL_ARG);
-    assert(api->snapshot(nullptr) == PGR_BOOT_ERR_NULL_ARG);
+    assert(api->probe(&base_config, nullptr) == PGS_BOOT_ERR_NULL_ARG);
+    assert(api->snapshot(nullptr) == PGS_BOOT_ERR_NULL_ARG);
   });
 
   // 16. snapshot before any probe is a clean NOT_READY with no dl*/il2cpp calls.
   run("snapshot before probe", [] {
-    PgrBootBinding s;
+    PgsBootBinding s;
     std::memset(&s, 0xa5, sizeof(s));
-    assert(api->snapshot(&s) == PGR_BOOT_NOT_READY && cleared(s, PGR_BOOT_NOT_READY, 0));
+    assert(api->snapshot(&s) == PGS_BOOT_NOT_READY && cleared(s, PGS_BOOT_NOT_READY, 0));
     assert(attach_calls == 0 && names_allocated == 0);
   });
 
   run("render caller must already be attached", [] {
     base_config.reserved=1;
-    PgrBootBinding b=probe();
-    assert(b.status==PGR_BOOT_NOT_READY && attach_calls==0 && detach_calls==0);
-    PgrBootConfig changed=base_config; changed.reserved=0;
-    assert(api->probe(&changed,&b)==PGR_BOOT_ERR_BAD_CONFIG);
+    PgsBootBinding b=probe();
+    assert(b.status==PGS_BOOT_NOT_READY && attach_calls==0 && detach_calls==0);
+    PgsBootConfig changed=base_config; changed.reserved=0;
+    assert(api->probe(&changed,&b)==PGS_BOOT_ERR_BAD_CONFIG);
     thread_attached=true;
     assert_success(probe(),false);
     assert(attach_calls==0 && detach_calls==0);
   });
   run("ready immutable config and output copy", [] {
     assert_success(probe(), true);
-    PgrBootBinding b{};
-    PgrBootConfig c=base_config;
+    PgsBootBinding b{};
+    PgsBootConfig c=base_config;
     c.exec_method="Other";
-    assert(api->probe(&c,&b)==PGR_BOOT_ERR_BAD_CONFIG && cleared(b,PGR_BOOT_ERR_BAD_CONFIG,0));
+    assert(api->probe(&c,&b)==PGS_BOOT_ERR_BAD_CONFIG && cleared(b,PGS_BOOT_ERR_BAD_CONFIG,0));
     c=base_config; c.version=2;
-    assert(api->probe(&c,&b)==PGR_BOOT_ERR_BAD_VERSION);
-    assert(api->probe(nullptr,&b)==PGR_BOOT_ERR_NULL_ARG);
+    assert(api->probe(&c,&b)==PGS_BOOT_ERR_BAD_VERSION);
+    assert(api->probe(nullptr,&b)==PGS_BOOT_ERR_NULL_ARG);
     b=probe(); b.execute_tasks=nullptr; b.meta.domain_get=nullptr;
-    assert(api->snapshot(&b)==PGR_BOOT_OK); assert_success(b,true);
+    assert(api->snapshot(&b)==PGS_BOOT_OK); assert_success(b,true);
     assert(attach_calls==1 && detach_calls==1);
   });
   run("not ready immutable config", [] {
-    domain_up=false; PgrBootBinding b=probe();
-    assert(b.status==PGR_BOOT_NOT_READY);
-    PgrBootConfig c=base_config; c.soname="other.so";
-    assert(api->probe(&c,&b)==PGR_BOOT_ERR_BAD_CONFIG && cleared(b,PGR_BOOT_ERR_BAD_CONFIG,0));
+    domain_up=false; PgsBootBinding b=probe();
+    assert(b.status==PGS_BOOT_NOT_READY);
+    PgsBootConfig c=base_config; c.soname="other.so";
+    assert(api->probe(&c,&b)==PGS_BOOT_ERR_BAD_CONFIG && cleared(b,PGS_BOOT_ERR_BAD_CONFIG,0));
     domain_up=true; assert_success(probe(),true);
   });
   run("ready prologue contents immutable", [] {
@@ -506,8 +506,8 @@ int main(int argc, char **argv) {
     base_config.exec_code_rva=EXEC_RVA; base_config.exec_prologue=bytes;
     base_config.exec_prologue_len=sizeof(bytes);
     assert_success(probe(),true);
-    bytes[0]^=1; PgrBootBinding b{};
-    assert(api->probe(&base_config,&b)==PGR_BOOT_ERR_BAD_CONFIG);
+    bytes[0]^=1; PgsBootBinding b{};
+    assert(api->probe(&base_config,&b)==PGS_BOOT_ERR_BAD_CONFIG);
     bytes[0]^=1; assert_success(probe(),true);
   });
 

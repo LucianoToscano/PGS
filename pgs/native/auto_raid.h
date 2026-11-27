@@ -12,7 +12,7 @@
 // Returns true while Auto-Raid owns or reserves gameplay automation so other autonomous map jobs
 // (such as incense_guard / shundo) pause until Auto-Raid is idle or stopped.
 
-struct PgrSharedMetadataOutput;
+struct PgsSharedMetadataOutput;
 
-bool pgr_auto_raid_tick(uint64_t tid, const PgrSharedMetadataOutput* metadata);
-void pgr_auto_raid_stop(uint64_t tid);
+bool pgs_auto_raid_tick(uint64_t tid, const PgsSharedMetadataOutput* metadata);
+void pgs_auto_raid_stop(uint64_t tid);

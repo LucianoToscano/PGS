@@ -2,11 +2,11 @@
 // Orchestration Host (pgs/native/combat_host.{h,cpp}).
 //
 // Exercises Feature 66 (API 1) end-to-end against real leaves (6, 19, 20, 21) and Dobby:
-//   * Feature 56 (`PgrSharedMetadataOutput`, 67304B) validation & leaf configuration
+//   * Feature 56 (`PgsSharedMetadataOutput`, 67304B) validation & leaf configuration
 //   * Truthful capability reporting (`0x1F`: Rocket Minigame 6 + Rocket Actions 20 +
 //     Rocket Combat 21 + Battles 19 + Shared `H_RK_VN_OBSERVE_CODE` site)
 //   * Shared Site (`ChargeAttackDisplayVNext.ObserveBattleState`): single Dobby hook
-//     fanning out to BOTH Rocket Combat (`PGR_RC_OBS_CHARGE`) and Battles (`PGS_BATTLE_OBS_CHARGE`)
+//     fanning out to BOTH Rocket Combat (`PGS_RC_OBS_CHARGE`) and Battles (`PGS_BATTLE_OBS_CHARGE`)
 //   * Raid Battle (mode 0): scope enter/exit, vNext gesture, Raid warning dodge cue,
 //     Raid fast attack (transport subprocess), and manual swap picker blocking
 //   * Gym Battle (mode 1): scope enter/exit, legacy gesture, legacy charge (`Vector3` by value),
@@ -41,13 +41,13 @@
 
 namespace {
 
-using namespace pgr_shared_meta;
+using namespace pgs_shared_meta;
 
 uint64_t self_tid() {
     return static_cast<uint64_t>(static_cast<pid_t>(gettid()));
 }
 
-#define PGR_NOP_PAD \
+#define PGS_NOP_PAD \
     __asm__ volatile( \
         "nop\n\tnop\n\tnop\n\tnop\n\tnop\n\tnop\n\tnop\n\tnop\n\t" \
         "nop\n\tnop\n\tnop\n\tnop\n\tnop\n\tnop\n\tnop\n\tnop\n\t" \
@@ -109,130 +109,130 @@ void set_i32(FakeObj *o, size_t off, int32_t v);
 // --- 10 Rocket Combat Hook Targets ------------------------------------------------
 extern "C" __attribute__((noinline, aligned(16)))
 void target_rk_enter(void *self, void *a1, void *a2, void *info) {
-    PGR_NOP_PAD; (void)self; (void)a1; (void)a2; (void)info;
+    PGS_NOP_PAD; (void)self; (void)a1; (void)a2; (void)info;
     g_rk_enter_calls.fetch_add(1);
 }
 extern "C" __attribute__((noinline, aligned(16)))
 void target_rk_exit(void *self, void *info) {
-    PGR_NOP_PAD; (void)self; (void)info;
+    PGS_NOP_PAD; (void)self; (void)info;
     g_rk_exit_calls.fetch_add(1);
 }
 extern "C" __attribute__((noinline, aligned(16)))
 void target_rk_ui_init(void *self, void *data, void *info) {
-    PGR_NOP_PAD; (void)self; (void)data; (void)info;
+    PGS_NOP_PAD; (void)self; (void)data; (void)info;
     g_rk_ui_init_calls.fetch_add(1);
     if(g_throw_ui) throw 601;
 }
 extern "C" __attribute__((noinline, aligned(16)))
 void target_rk_ui_update(void *self, uint8_t flag, void *info) {
-    PGR_NOP_PAD; (void)self; (void)flag; (void)info;
+    PGS_NOP_PAD; (void)self; (void)flag; (void)info;
     g_rk_ui_update_calls.fetch_add(1);
 }
 extern "C" __attribute__((noinline, aligned(16)))
 void target_rk_ui_close(void *self, void *info) {
-    PGR_NOP_PAD; (void)self; (void)info;
+    PGS_NOP_PAD; (void)self; (void)info;
     g_rk_ui_close_calls.fetch_add(1);
 }
 extern "C" __attribute__((noinline, aligned(16)))
 void target_rk_vn_update(void *self, void *state, void *info) {
-    PGR_NOP_PAD; (void)self; (void)state; (void)info;
+    PGS_NOP_PAD; (void)self; (void)state; (void)info;
     g_rk_vn_update_calls.fetch_add(1);
 }
 extern "C" __attribute__((noinline, aligned(16)))
 void target_rk_vn_close(void *self, void *info) {
-    PGR_NOP_PAD; (void)self; (void)info;
+    PGS_NOP_PAD; (void)self; (void)info;
     g_rk_vn_close_calls.fetch_add(1);
 }
 extern "C" __attribute__((noinline, aligned(16)))
 void target_rk_prompt(void *self, uint8_t show, void *info) {
-    PGR_NOP_PAD; (void)self; (void)show; (void)info;
+    PGS_NOP_PAD; (void)self; (void)show; (void)info;
     g_rk_prompt_calls.fetch_add(1);
 }
 extern "C" __attribute__((noinline, aligned(16)))
 void target_rk_shield(void *self, void *info) {
-    PGR_NOP_PAD; (void)self; (void)info;
+    PGS_NOP_PAD; (void)self; (void)info;
     g_rk_shield_calls.fetch_add(1);
 }
 extern "C" __attribute__((noinline, aligned(16)))
 void target_rk_shield_close(void *self, void *info) {
-    PGR_NOP_PAD; (void)self; (void)info;
+    PGS_NOP_PAD; (void)self; (void)info;
     g_rk_shield_close_calls.fetch_add(1);
 }
 
 // --- 1 Shared Hook Target (`ChargeAttackDisplayVNext.ObserveBattleState`) ---------
 extern "C" __attribute__((noinline, aligned(16)))
 void target_shared_vn_observe(void *self, void *state, void *info) {
-    PGR_NOP_PAD; (void)self; (void)state; (void)info;
+    PGS_NOP_PAD; (void)self; (void)state; (void)info;
     g_shared_vn_observe_calls.fetch_add(1);
 }
 
 // --- 4 Rocket Minigame Hook Targets (hooked by Feature 6 `install()`) -------------
 extern "C" __attribute__((noinline, aligned(16)))
 void target_mn_update(void *self, int64_t dt, void *info) {
-    PGR_NOP_PAD; (void)self; (void)dt; (void)info;
+    PGS_NOP_PAD; (void)self; (void)dt; (void)info;
     g_mn_update_calls.fetch_add(1);
 }
 extern "C" __attribute__((noinline, aligned(16)))
 void target_mn_exit(void *self, void *info) {
-    PGR_NOP_PAD; (void)self; (void)info;
+    PGS_NOP_PAD; (void)self; (void)info;
     g_mn_exit_calls.fetch_add(1);
 }
 extern "C" __attribute__((noinline, aligned(16)))
 void target_mn_hide(void *self, void *info) {
-    PGR_NOP_PAD; (void)self; (void)info;
+    PGS_NOP_PAD; (void)self; (void)info;
     g_mn_hide_calls.fetch_add(1);
 }
 extern "C" __attribute__((noinline, aligned(16)))
 void target_mn_destroy(void *self, void *info) {
-    PGR_NOP_PAD; (void)self; (void)info;
+    PGS_NOP_PAD; (void)self; (void)info;
     g_mn_destroy_calls.fetch_add(1);
 }
 
 // --- 30 Battle Hook Targets -------------------------------------------------------
 extern "C" __attribute__((noinline, aligned(16)))
 void target_bt_sc0_enter(void *self, void *a1, void *a2, void *info) {
-    PGR_NOP_PAD; (void)self; (void)a1; (void)a2; (void)info;
+    PGS_NOP_PAD; (void)self; (void)a1; (void)a2; (void)info;
     g_capture_args[0]=self;g_capture_args[1]=a1;g_capture_args[2]=a2;
     g_bt_sc0_enter_calls.fetch_add(1);
 }
 extern "C" __attribute__((noinline, aligned(16)))
 void target_bt_sc0_exit(void *self, void *info) {
-    PGR_NOP_PAD; (void)self; (void)info;
+    PGS_NOP_PAD; (void)self; (void)info;
     g_bt_sc0_exit_calls.fetch_add(1);
 }
 extern "C" __attribute__((noinline, aligned(16)))
 void target_bt_sc1_enter(void *self, void *info) {
-    PGR_NOP_PAD; (void)self; (void)info;
+    PGS_NOP_PAD; (void)self; (void)info;
     g_bt_sc1_enter_calls.fetch_add(1);
 }
 extern "C" __attribute__((noinline, aligned(16)))
 void target_bt_sc1_exit(void *self, void *info) {
-    PGR_NOP_PAD; (void)self; (void)info;
+    PGS_NOP_PAD; (void)self; (void)info;
     g_bt_sc1_exit_calls.fetch_add(1);
 }
 extern "C" __attribute__((noinline, aligned(16)))
 void target_bt_sc2_enter(void *self, void *a1, void *a2, void *info) {
-    PGR_NOP_PAD; (void)self; (void)a1; (void)a2; (void)info;
+    PGS_NOP_PAD; (void)self; (void)a1; (void)a2; (void)info;
     g_bt_sc2_enter_calls.fetch_add(1);
 }
 extern "C" __attribute__((noinline, aligned(16)))
 void target_bt_sc2_exit(void *self, void *info) {
-    PGR_NOP_PAD; (void)self; (void)info;
+    PGS_NOP_PAD; (void)self; (void)info;
     g_bt_sc2_exit_calls.fetch_add(1);
 }
 
 #define DEFINE_SW_TARGETS(IDX) \
     extern "C" __attribute__((noinline, aligned(16))) \
     void target_bt_sw##IDX##_open(void *self, void *info) { \
-        PGR_NOP_PAD; (void)self; (void)info; g_bt_sw_calls.fetch_add(1); \
+        PGS_NOP_PAD; (void)self; (void)info; g_bt_sw_calls.fetch_add(1); \
     } \
     extern "C" __attribute__((noinline, aligned(16))) \
     void target_bt_sw##IDX##_cl0(void *self, void *info) { \
-        PGR_NOP_PAD; (void)self; (void)info; g_bt_sw_calls.fetch_add(1); \
+        PGS_NOP_PAD; (void)self; (void)info; g_bt_sw_calls.fetch_add(1); \
     } \
     extern "C" __attribute__((noinline, aligned(16))) \
     void target_bt_sw##IDX##_cl1(void *self, void *info) { \
-        PGR_NOP_PAD; (void)self; (void)info; g_bt_sw_calls.fetch_add(1); \
+        PGS_NOP_PAD; (void)self; (void)info; g_bt_sw_calls.fetch_add(1); \
     }
 
 DEFINE_SW_TARGETS(0)
@@ -241,64 +241,64 @@ DEFINE_SW_TARGETS(2)
 
 extern "C" __attribute__((noinline, aligned(16)))
 void target_bt_enable(void *self, void *info) {
-    PGR_NOP_PAD; (void)self; (void)info; g_bt_gest_calls.fetch_add(1);
+    PGS_NOP_PAD; (void)self; (void)info; g_bt_gest_calls.fetch_add(1);
 }
 extern "C" __attribute__((noinline, aligned(16)))
 void target_bt_buttons(void *self, void *a1, void *info) {
-    PGR_NOP_PAD; (void)self; (void)a1; (void)info; g_bt_gest_calls.fetch_add(1);
+    PGS_NOP_PAD; (void)self; (void)a1; (void)info; g_bt_gest_calls.fetch_add(1);
 }
 extern "C" __attribute__((noinline, aligned(16)))
 void target_bt_leg_enable(void *self, void *info) {
-    PGR_NOP_PAD; (void)self; (void)info; g_bt_gest_calls.fetch_add(1);
+    PGS_NOP_PAD; (void)self; (void)info; g_bt_gest_calls.fetch_add(1);
 }
 extern "C" __attribute__((noinline, aligned(16)))
 void target_bt_leg_buttons(void *self, void *a1, void *info) {
-    PGR_NOP_PAD; (void)self; (void)a1; (void)info; g_bt_gest_calls.fetch_add(1);
+    PGS_NOP_PAD; (void)self; (void)a1; (void)info; g_bt_gest_calls.fetch_add(1);
 }
 extern "C" __attribute__((noinline, aligned(16)))
 void target_bt_disable(void *self, void *info) {
-    PGR_NOP_PAD; (void)self; (void)info; g_bt_gest_calls.fetch_add(1);
+    PGS_NOP_PAD; (void)self; (void)info; g_bt_gest_calls.fetch_add(1);
 }
 extern "C" __attribute__((noinline, aligned(16)))
 void target_bt_leg_disable(void *self, void *info) {
-    PGR_NOP_PAD; (void)self; (void)info; g_bt_gest_calls.fetch_add(1);
+    PGS_NOP_PAD; (void)self; (void)info; g_bt_gest_calls.fetch_add(1);
 }
 extern "C" __attribute__((noinline, aligned(16)))
 void target_bt_destroy(void *self, void *info) {
-    PGR_NOP_PAD; (void)self; (void)info; g_bt_gest_calls.fetch_add(1);
+    PGS_NOP_PAD; (void)self; (void)info; g_bt_gest_calls.fetch_add(1);
 }
 
 extern "C" __attribute__((noinline, aligned(16)))
 void target_bt_leg_init(void *self, void *p1, void *p2, TestVec3 pos, void *info) {
-    PGR_NOP_PAD; (void)self; (void)p1; (void)p2; (void)info;
+    PGS_NOP_PAD; (void)self; (void)p1; (void)p2; (void)info;
     g_last_leg_init_pos = pos;
     g_bt_leg_init_calls.fetch_add(1);
 }
 extern "C" __attribute__((noinline, aligned(16)))
 void target_bt_max_refresh(void *self, void *data, void *info) {
-    PGR_NOP_PAD; (void)self; (void)data; (void)info;
+    PGS_NOP_PAD; (void)self; (void)data; (void)info;
     g_bt_max_widget_calls.fetch_add(1);
 }
 extern "C" __attribute__((noinline, aligned(16)))
 void target_bt_max_cleanup(void *self, void *info) {
-    PGR_NOP_PAD; (void)self; (void)info;
+    PGS_NOP_PAD; (void)self; (void)info;
     g_bt_max_widget_calls.fetch_add(1);
 }
 
 extern "C" __attribute__((noinline, aligned(16)))
 void target_bt_raid_warn(void *self, void *info) {
-    PGR_NOP_PAD; (void)self; (void)info;
+    PGS_NOP_PAD; (void)self; (void)info;
     g_bt_raid_warn_calls.fetch_add(1);
 }
 extern "C" __attribute__((noinline, aligned(16)))
 void target_bt_max_warn(void *self, float sec, void *info) {
-    PGR_NOP_PAD; (void)self; (void)info;
+    PGS_NOP_PAD; (void)self; (void)info;
     g_last_max_warn_sec = sec;
     g_bt_max_warn_calls.fetch_add(1);
 }
 extern "C" __attribute__((noinline, aligned(16)))
 uint8_t target_bt_gym_warn(void *self, void *info) {
-    PGR_NOP_PAD; (void)info;
+    PGS_NOP_PAD; (void)info;
     g_bt_gym_warn_calls.fetch_add(1);
     if(g_throw_gym) throw 602;
     // Complete the eligible warning iterator, returning false (0).
@@ -307,19 +307,19 @@ uint8_t target_bt_gym_warn(void *self, void *info) {
 }
 extern "C" __attribute__((noinline, aligned(16)))
 void target_bt_leg_fast(void *self, void *sender, void *args, void *info) {
-    PGR_NOP_PAD; (void)self; (void)sender; (void)args; (void)info;
+    PGS_NOP_PAD; (void)self; (void)sender; (void)args; (void)info;
     g_bt_leg_fast_calls.fetch_add(1);
 }
 extern "C" __attribute__((noinline, aligned(16)))
 void target_bt_leg_charge(void *self, void *info) {
-    PGR_NOP_PAD; (void)self; (void)info;
+    PGS_NOP_PAD; (void)self; (void)info;
     g_bt_leg_charge_calls.fetch_add(1);
 }
 
 // Dummy code pointers for non-hooked methods whose `_CODE` handles exist in Feature 56
 extern "C" __attribute__((noinline, aligned(16)))
 void dummy_code_target(void *self, void *info) {
-    PGR_NOP_PAD; (void)self; (void)info;
+    PGS_NOP_PAD; (void)self; (void)info;
 }
 
 // --- Synthetic IL2CPP Runtime & Managed Objects -----------------------------------
@@ -552,7 +552,7 @@ void *box_bool(bool v) {
 
 int g_execute_token=0,g_execute_mode=0;
 __attribute__((noinline,aligned(16))) void *fake_runtime_invoke(const void *method, void *obj, void **params, void **exc) {
-    PGR_NOP_PAD;
+    PGS_NOP_PAD;
     if (exc) *exc = nullptr;
     if(method==&g_execute_token){
         if(g_execute_mode==1){call_target_bt_sc0_enter(&g_raid_scope,nullptr,nullptr,nullptr);call_target_bt_enable(&g_raid_gesture,nullptr);}
@@ -673,18 +673,18 @@ __attribute__((noinline,aligned(16))) void *fake_runtime_invoke(const void *meth
     return nullptr;
 }
 
-__attribute__((noinline,aligned(16))) void *fake_convert(const void *m,void *o,void **p,int32_t,void **e){PGR_NOP_PAD;return fake_runtime_invoke(m,o,p,e);}
+__attribute__((noinline,aligned(16))) void *fake_convert(const void *m,void *o,void **p,int32_t,void **e){PGS_NOP_PAD;return fake_runtime_invoke(m,o,p,e);}
 decltype(&fake_runtime_invoke) volatile call_invoke=&fake_runtime_invoke;
-int verify_scheduler(const PgrUnitySchedulerConfig *c){return c->execute_tasks==&g_execute_token;}
+int verify_scheduler(const PgsUnitySchedulerConfig *c){return c->execute_tasks==&g_execute_token;}
 void execute(){void *exc=nullptr;assert(!call_invoke(&g_execute_token,nullptr,nullptr,&exc));assert(!exc);}
-const PgrRuntimeTransportApi *g_transport=nullptr;
+const PgsRuntimeTransportApi *g_transport=nullptr;
 uint64_t g_snapshot_sequence=0;
 void settings(bool battle,bool rocket,bool adjacent){
-    uint8_t frame[PGR_TRANSPORT_SNAPSHOT_FIXED + 4 * PGR_TRANSPORT_STRINGS]{};auto u32=[&](size_t o,uint32_t v){memcpy(frame+o,&v,4);};
-    u32(0,PGR_TRANSPORT_SNAPSHOT_MAGIC);u32(4,PGR_TRANSPORT_FRAME_VERSION);u32(8,sizeof(frame));
+    uint8_t frame[PGS_TRANSPORT_SNAPSHOT_FIXED + 4 * PGS_TRANSPORT_STRINGS]{};auto u32=[&](size_t o,uint32_t v){memcpy(frame+o,&v,4);};
+    u32(0,PGS_TRANSPORT_SNAPSHOT_MAGIC);u32(4,PGS_TRANSPORT_FRAME_VERSION);u32(8,sizeof(frame));
     ++g_snapshot_sequence;memcpy(frame+16,&g_snapshot_sequence,8);
     frame[32+3]=1;frame[32+6]=battle;frame[32+26]=rocket;frame[32+7]=adjacent;frame[32+27]=adjacent;
-    u32(PGR_TRANSPORT_OFF_INTS,1023);u32(PGR_TRANSPORT_OFF_INTS+6*4,7);uint8_t out[65536];uint32_t used=0;
+    u32(PGS_TRANSPORT_OFF_INTS,1023);u32(PGS_TRANSPORT_OFF_INTS+6*4,7);uint8_t out[65536];uint32_t used=0;
     assert(g_transport->exchange(frame,sizeof(frame),out,sizeof(out),&used)==0);
 }
 struct DrainedEvent {
@@ -694,9 +694,9 @@ struct DrainedEvent {
     std::string json;
 };
 
-std::vector<DrainedEvent> drain_all(const PgrCombatHostApi *host) {
+std::vector<DrainedEvent> drain_all(const PgsCombatHostApi *host) {
     std::vector<DrainedEvent> out;
-    PgrCombatHostEvent ev{};
+    PgsCombatHostEvent ev{};
     char buf[4096]{};
     while (host->next_event(&ev, buf, sizeof(buf)) == 1) {
         out.push_back(DrainedEvent{ev.kind, ev.code0, ev.code1, std::string(buf, ev.json_len)});
@@ -720,22 +720,22 @@ int main(int argc, char **argv) {
     void *lib=dlopen(argv[1],RTLD_NOW|RTLD_LOCAL);if(!lib)puts(dlerror());assert(lib);
     auto entry=reinterpret_cast<const void*(*)(uint32_t)>(dlsym(lib,"pgs_native_api"));assert(entry);
     const auto *core=static_cast<const pgs_native_api_v2*>(entry(2));assert(core);
-    const auto *host=static_cast<const PgrCombatHostApi*>(core->query_feature(66,1));
+    const auto *host=static_cast<const PgsCombatHostApi*>(core->query_feature(66,1));
     assert(host != nullptr);
-    assert(host->version == PGR_COMBAT_HOST_API_VERSION);
-    assert(host->size == sizeof(PgrCombatHostApi));
+    assert(host->version == PGS_COMBAT_HOST_API_VERSION);
+    assert(host->size == sizeof(PgsCombatHostApi));
 
     const uint64_t tid = self_tid();
     if(transport_mode){
-        g_transport=static_cast<const PgrRuntimeTransportApi*>(core->query_feature(52,1));assert(g_transport);
-        PgrRuntimeTransportConfig tc{1,sizeof(tc),2500,2048,65536,1048576,0,0};assert(g_transport->install(&tc)==0);settings(true,true,false);
+        g_transport=static_cast<const PgsRuntimeTransportApi*>(core->query_feature(52,1));assert(g_transport);
+        PgsRuntimeTransportConfig tc{1,sizeof(tc),2500,2048,65536,1048576,0,0};assert(g_transport->install(&tc)==0);settings(true,true,false);
     }
 
-    // --- 1. Populate Synthetic Feature 56 (`PgrSharedMetadataOutput`) --------------
-    static PgrSharedMetadataOutput md{};
+    // --- 1. Populate Synthetic Feature 56 (`PgsSharedMetadataOutput`) --------------
+    static PgsSharedMetadataOutput md{};
     std::memset(&md, 0, sizeof(md));
     md.version        = 2u;
-    md.size           = sizeof(PgrSharedMetadataOutput);
+    md.size           = sizeof(PgsSharedMetadataOutput);
     md.success        = 1;
     md.caught_id_size = 8;
 
@@ -747,8 +747,8 @@ int main(int argc, char **argv) {
     md.fields[1] = &g_fields[0];
     md.methods[5] = &g_methods[M_ALIVE];
 
-    md.optional[OPT_ROCKET]  = PGR_SHARED_OPT_AVAILABLE;
-    md.optional[OPT_BATTLES] = PGR_SHARED_OPT_AVAILABLE;
+    md.optional[OPT_ROCKET]  = PGS_SHARED_OPT_AVAILABLE;
+    md.optional[OPT_BATTLES] = PGS_SHARED_OPT_AVAILABLE;
 
     md.opt_ints[I_BAT_STATUS_ACTIVE] = 2;
     md.opt_ints[I_BAT_STATUS_UNSET]  = 0;
@@ -984,11 +984,11 @@ int main(int argc, char **argv) {
     md.opt_handles[H_BT_M_PRESS]              = &g_methods[M_BT_PRESS];
 
     // --- 2. Configure Feature 66 (`combat_host`) -----------------------------------
-    PgrCombatHostConfig cfg{};
-    cfg.version             = PGR_COMBAT_HOST_API_VERSION;
+    PgsCombatHostConfig cfg{};
+    cfg.version             = PGS_COMBAT_HOST_API_VERSION;
     cfg.size                = sizeof(cfg);
-    cfg.flags               = PGR_CBH_CFG_REQUIRE_BATTLES | PGR_CBH_CFG_REQUIRE_ROCKET;
-    if(transport_mode)cfg.flags|=PGR_CBH_CFG_USE_TRANSPORT;
+    cfg.flags               = PGS_CBH_CFG_REQUIRE_BATTLES | PGS_CBH_CFG_REQUIRE_ROCKET;
+    if(transport_mode)cfg.flags|=PGS_CBH_CFG_USE_TRANSPORT;
     cfg.metadata            = &md;
     cfg.thread_current      = reinterpret_cast<uintptr_t>(fake_thread_current);
     cfg.gchandle_new        = reinterpret_cast<uintptr_t>(fake_gc_new);
@@ -1001,26 +1001,26 @@ int main(int argc, char **argv) {
     cfg.owner_tid           = tid;
 
     int rc = host->configure(&cfg);
-    assert(rc == PGR_CBH_OK);
+    assert(rc == PGS_CBH_OK);
 
-    PgrCombatHostSample s{};
-    assert(host->sample(&s) == PGR_CBH_OK);
+    PgsCombatHostSample s{};
+    assert(host->sample(&s) == PGS_CBH_OK);
     assert(s.ready == 1);
     assert(s.failed == 0);
-    assert(s.capabilities == (PGR_CBH_CAP_ROCKET_MINIGAME |
-                              PGR_CBH_CAP_ROCKET_ACTIONS |
-                              PGR_CBH_CAP_ROCKET_COMBAT |
-                              PGR_CBH_CAP_BATTLES |
-                              PGR_CBH_CAP_SHARED_VNEXT_OBSERVE));
+    assert(s.capabilities == (PGS_CBH_CAP_ROCKET_MINIGAME |
+                              PGS_CBH_CAP_ROCKET_ACTIONS |
+                              PGS_CBH_CAP_ROCKET_COMBAT |
+                              PGS_CBH_CAP_BATTLES |
+                              PGS_CBH_CAP_SHARED_VNEXT_OBSERVE));
     assert(s.installed_hooks == 45); // 10 Rocket + 30 Battle + 1 Shared + 4 Minigame
     assert(s.owner_tid == tid);
 
     auto init_evs = drain_all(host);
     if(transport_mode)assert(init_evs.empty());else{
-    assert(has_event(init_evs, PGR_CBH_EV_ROCKET_MINIGAME_READY, "\"available\":true"));
-    assert(has_event(init_evs, PGR_CBH_EV_ROCKET_COMBAT_READY, "\"available\":true"));
-    assert(has_event(init_evs, PGR_CBH_EV_BATTLES_READY, "\"available\":true"));
-    assert(has_event(init_evs, PGR_CBH_EV_HOST_READY, "\"available\":true"));
+    assert(has_event(init_evs, PGS_CBH_EV_ROCKET_MINIGAME_READY, "\"available\":true"));
+    assert(has_event(init_evs, PGS_CBH_EV_ROCKET_COMBAT_READY, "\"available\":true"));
+    assert(has_event(init_evs, PGS_CBH_EV_BATTLES_READY, "\"available\":true"));
+    assert(has_event(init_evs, PGS_CBH_EV_HOST_READY, "\"available\":true"));
     }
 
     // --- 3. Initialize Synthetic Managed Object Graph ------------------------------
@@ -1071,19 +1071,19 @@ int main(int argc, char **argv) {
     // Rocket objects
     set_ptr(&g_rk_state, 0, md.opt_classes[OC_ROCKET]);
     set_ptr(&g_rk_ui, 0, md.opt_classes[OC_RUI]);
-    set_i32(&g_rk_ui, 0x70, PGR_CBH_STATE_OPEN);
+    set_i32(&g_rk_ui, 0x70, PGS_CBH_STATE_OPEN);
     set_ptr(&g_rk_ui, 0x50, &g_rk_charge1); // f_first
     set_ptr(&g_rk_director, 0, md.opt_classes[OC_RDIR]);
     set_ptr(&g_rk_charge1, 0, md.opt_classes[OC_RCHARGE]);
     set_u8(&g_rk_charge1, 0x60, 0); // f_charged
     set_u8(&g_rk_charge1, 0x61, 1); // f_input
     set_ptr(&g_rk_shield, 0, md.opt_classes[OC_RSHIELD]);
-    set_i32(&g_rk_shield, 0x70, PGR_CBH_STATE_OPEN);
+    set_i32(&g_rk_shield, 0x70, PGS_CBH_STATE_OPEN);
     set_i32(&g_rk_shield, 0x64, 2); // f_shields = 2
     set_ptr(&g_rk_shield, 0x68, &g_rk_shield_btn);
 
     set_ptr(&g_rk_vui, 0, md.opt_classes[OC_RVUI]);
-    set_i32(&g_rk_vui, 0x70, PGR_CBH_STATE_OPEN);
+    set_i32(&g_rk_vui, 0x70, PGS_CBH_STATE_OPEN);
     set_ptr(&g_rk_vui, 0x20, &g_rk_vgest);
     set_ptr(&g_rk_vgest, 0, md.opt_classes[OC_RVGEST]);
     set_u8(&g_rk_vgest, 0x28, 1); // f_vnext_enabled
@@ -1094,20 +1094,20 @@ int main(int argc, char **argv) {
     set_u8(&g_mini_challenge, 0x48, 1); // running = 1
 
     // Arm both Battle (all 1023 bits) and Rocket (all 7 bits) leases
-    PgrCombatHostOptions opts{};
-    opts.version         = PGR_COMBAT_HOST_API_VERSION;
+    PgsCombatHostOptions opts{};
+    opts.version         = PGS_COMBAT_HOST_API_VERSION;
     opts.size            = sizeof(opts);
-    opts.flags           = PGR_CBH_OPT_ACTIVE | PGR_CBH_OPT_BATTLES_ALLOWED | PGR_CBH_OPT_ROCKET_ALLOWED;
-    opts.battle_mask     = PGR_CBH_BATTLE_MASK_ALL;
-    opts.rocket_mask     = PGR_CBH_ROCKET_MASK_ALL;
-    opts.battle_lease_ms = PGR_CBH_MAX_LEASE_MS;
-    opts.rocket_lease_ms = PGR_CBH_MAX_LEASE_MS;
+    opts.flags           = PGS_CBH_OPT_ACTIVE | PGS_CBH_OPT_BATTLES_ALLOWED | PGS_CBH_OPT_ROCKET_ALLOWED;
+    opts.battle_mask     = PGS_CBH_BATTLE_MASK_ALL;
+    opts.rocket_mask     = PGS_CBH_ROCKET_MASK_ALL;
+    opts.battle_lease_ms = PGS_CBH_MAX_LEASE_MS;
+    opts.rocket_lease_ms = PGS_CBH_MAX_LEASE_MS;
     opts.epoch           = 1;
-    assert(host->update(&opts) == PGR_CBH_OK);
+    assert(host->update(&opts) == PGS_CBH_OK);
 
     if(transport_mode){
-        const auto *scheduler=static_cast<const PgrUnitySchedulerApi3*>(core->query_feature(48,3));assert(scheduler);
-        PgrUnitySchedulerConfig sc{};sc.version=2;sc.size=sizeof(sc);sc.runtime_invoke=reinterpret_cast<void*>(fake_runtime_invoke);
+        const auto *scheduler=static_cast<const PgsUnitySchedulerApi3*>(core->query_feature(48,3));assert(scheduler);
+        PgsUnitySchedulerConfig sc{};sc.version=2;sc.size=sizeof(sc);sc.runtime_invoke=reinterpret_cast<void*>(fake_runtime_invoke);
         sc.runtime_invoke_convert_args=reinterpret_cast<void*>(fake_convert);sc.execute_tasks=&g_execute_token;sc.thread_current=fake_thread_current;
         sc.verify_metadata=verify_scheduler;sc.expected_owner_tid=tid;sc.exclusive_owner=1;sc.subscriber_count=1;sc.subscribers[0].end=host->on_unity_pulse;
         assert(scheduler->install(&sc)==0);const auto generation=scheduler->activate();assert(generation);
@@ -1127,7 +1127,7 @@ int main(int argc, char **argv) {
         g_execute_mode=4;execute();
         // More events than the diagnostic queue capacity, regularly drained by52.
         for(int n=0;n<300;++n){g_execute_mode=1;execute();g_execute_mode=2;execute();settings(true,true,false);}
-        PgrRuntimeTransportSample ts{};assert(g_transport->sample(&ts)==0&&ts.events_emitted>600&&ts.events_dropped==0&&!ts.fault);
+        PgsRuntimeTransportSample ts{};assert(g_transport->sample(&ts)==0&&ts.events_emitted>600&&ts.events_dropped==0&&!ts.fault);
         assert(drain_all(host).empty());assert(scheduler->revoke(generation)==0);
         call_target_bt_sc0_enter(&g_raid_scope,nullptr,nullptr,nullptr);
         assert(host->sample(&s)==0&&!s.battle_scope_active&&g_live_gc_handles==0);
@@ -1155,25 +1155,25 @@ int main(int argc, char **argv) {
     // Trigger Raid warning -> dodge cue -> dodge action on tick
     call_target_bt_raid_warn(&g_raid_warn, nullptr);
     assert(g_bt_raid_warn_calls.load() == 1);
-    assert(host->tick(tid) == PGR_CBH_OK);
+    assert(host->tick(tid) == PGS_CBH_OK);
     assert(g_raid_dodge_invokes == 1);
 
     auto raid_evs = drain_all(host);
-    assert(has_event(raid_evs, PGR_CBH_EV_BATTLE_SCOPE, "\"mode\":0,\"active\":true"));
-    assert(has_event(raid_evs, PGR_CBH_EV_BATTLE_INPUT, "\"mode\":0,\"legacy\":false"));
-    assert(has_event(raid_evs, PGR_CBH_EV_BATTLE_DODGE_CUE, "\"mode\":0"));
-    assert(has_event(raid_evs, PGR_CBH_EV_BATTLE_ACTION, "\"mode\":0,\"action\":\"dodge\""));
+    assert(has_event(raid_evs, PGS_CBH_EV_BATTLE_SCOPE, "\"mode\":0,\"active\":true"));
+    assert(has_event(raid_evs, PGS_CBH_EV_BATTLE_INPUT, "\"mode\":0,\"legacy\":false"));
+    assert(has_event(raid_evs, PGS_CBH_EV_BATTLE_DODGE_CUE, "\"mode\":0"));
+    assert(has_event(raid_evs, PGS_CBH_EV_BATTLE_ACTION, "\"mode\":0,\"action\":\"dodge\""));
 
     // Swap picker open blocks attacks
     g_swap_showing = true;
     call_target_bt_sw1_open(&g_raid_swap, nullptr);
-    assert(host->sample(&s) == PGR_CBH_OK);
+    assert(host->sample(&s) == PGS_CBH_OK);
     assert(s.battle_swap_blocked == 1);
     g_swap_showing = false;
     call_target_bt_sw1_cl0(&g_raid_swap, nullptr);
 
     call_target_bt_sc0_exit(&g_raid_scope, nullptr);
-    assert(host->sample(&s) == PGR_CBH_OK);
+    assert(host->sample(&s) == PGS_CBH_OK);
     assert(s.battle_scope_active == 0);
     assert(s.battle_roots == 0);
     drain_all(host);
@@ -1193,24 +1193,24 @@ int main(int argc, char **argv) {
     drain_all(host);const int gym_roots=g_live_gc_handles;g_throw_gym=true;
     try{call_target_bt_gym_warn(&g_gym_iter,nullptr);assert(false);}catch(int e){assert(e==602);}g_throw_gym=false;
     assert(g_live_gc_handles==gym_roots);assert(host->sample(&s)==0&&!s.active_frames);
-    assert(!has_event(drain_all(host),PGR_CBH_EV_BATTLE_DODGE_CUE));
+    assert(!has_event(drain_all(host),PGS_CBH_EV_BATTLE_DODGE_CUE));
     int32_t mv = call_target_bt_gym_warn(&g_gym_iter, nullptr);
     assert(mv == 0);
-    assert(host->tick(tid) == PGR_CBH_OK);
+    assert(host->tick(tid) == PGS_CBH_OK);
     assert(g_leg_dodge_invokes == 1);
 
     // Direct manual tap on legacy charge button during Gym battle emits "Gym battle" cooldown-action
     call_target_bt_leg_charge(&g_leg_charge, nullptr);
     call_target_bt_leg_fast(&g_gym_gesture, &g_tap_obj, nullptr, nullptr);
     auto gym_evs = drain_all(host);
-    assert(has_event(gym_evs, PGR_CBH_EV_BATTLE_DODGE_CUE, "\"mode\":1"));
-    assert(has_event(gym_evs, PGR_CBH_EV_BATTLE_ACTION, "\"mode\":1,\"action\":\"dodge\""));
-    assert(has_event(gym_evs, PGR_CBH_EV_COOLDOWN_ACTION, "\"action\":\"Gym battle\""));
-    assert(host->sample(&s) == PGR_CBH_OK);
+    assert(has_event(gym_evs, PGS_CBH_EV_BATTLE_DODGE_CUE, "\"mode\":1"));
+    assert(has_event(gym_evs, PGS_CBH_EV_BATTLE_ACTION, "\"mode\":1,\"action\":\"dodge\""));
+    assert(has_event(gym_evs, PGS_CBH_EV_COOLDOWN_ACTION, "\"action\":\"Gym battle\""));
+    assert(host->sample(&s) == PGS_CBH_OK);
     assert(s.gym_cooldown_serial >= 2);
 
     call_target_bt_sc1_exit(&g_gym_scope, nullptr);
-    assert(host->sample(&s) == PGR_CBH_OK);
+    assert(host->sample(&s) == PGS_CBH_OK);
     assert(s.battle_scope_active == 0);
     assert(s.battle_roots == 0);
     drain_all(host);
@@ -1218,19 +1218,19 @@ int main(int argc, char **argv) {
     // --- 6. Scenario C: Max / Dynamax Battle (Mode 2) ------------------------------
     call_target_bt_sc2_enter(&g_max_scope, nullptr, nullptr, nullptr);
     call_target_bt_max_refresh(&g_max_widget, nullptr, nullptr);
-    assert(host->tick(tid) == PGR_CBH_OK);
+    assert(host->tick(tid) == PGS_CBH_OK);
     assert(g_max_press_invokes == 1);
 
     call_target_bt_max_warn(&g_max_warn, 0.625f, nullptr);
     assert(std::fabs(g_last_max_warn_sec - 0.625f) < 1e-5f);
     auto max_evs = drain_all(host);
-    assert(has_event(max_evs, PGR_CBH_EV_BATTLE_INPUT, "\"source\":\"scope\""));
-    assert(has_event(max_evs, PGR_CBH_EV_BATTLE_ACTION, "\"mode\":2,\"action\":\"max-attack\""));
-    assert(has_event(max_evs, PGR_CBH_EV_BATTLE_DODGE_CUE, "\"mode\":2"));
+    assert(has_event(max_evs, PGS_CBH_EV_BATTLE_INPUT, "\"source\":\"scope\""));
+    assert(has_event(max_evs, PGS_CBH_EV_BATTLE_ACTION, "\"mode\":2,\"action\":\"max-attack\""));
+    assert(has_event(max_evs, PGS_CBH_EV_BATTLE_DODGE_CUE, "\"mode\":2"));
 
     call_target_bt_max_cleanup(&g_max_widget, nullptr);
     call_target_bt_sc2_exit(&g_max_scope, nullptr);
-    assert(host->sample(&s) == PGR_CBH_OK);
+    assert(host->sample(&s) == PGS_CBH_OK);
     assert(s.battle_scope_active == 0);
     assert(s.battle_roots == 0);
     drain_all(host);
@@ -1241,7 +1241,7 @@ int main(int argc, char **argv) {
     try{call_target_rk_ui_init(&g_rk_ui,nullptr,nullptr);assert(false);}catch(int e){assert(e==601);}g_throw_ui=false;
     assert(g_live_gc_handles==ui_roots);assert(host->sample(&s)==0&&!s.active_frames&&!s.rocket_ui_active);
     call_target_rk_ui_init(&g_rk_ui, nullptr, nullptr);
-    assert(host->sample(&s) == PGR_CBH_OK && s.rocket_ui_active == 1);
+    assert(host->sample(&s) == PGS_CBH_OK && s.rocket_ui_active == 1);
     // begin/end initialization publishes silently; live-update telemetry occurs
     // only when UpdateActionsUI adopts an uncaptured UI.
     call_target_rk_ui_close(&g_rk_ui, nullptr);
@@ -1251,26 +1251,26 @@ int main(int argc, char **argv) {
 
     // Director not yet active -> hold gate ("battle-not-active", rocket_gate == 1)
     g_rk_dir_active = false;
-    assert(host->tick(tid) == PGR_CBH_OK);
-    assert(host->sample(&s) == PGR_CBH_OK);
+    assert(host->tick(tid) == PGS_CBH_OK);
+    assert(host->sample(&s) == PGS_CBH_OK);
     assert(s.rocket_scope_active == 1);
     assert(s.rocket_ui_active == 1);
     assert(s.rocket_gate == 1);
 
     // Director becomes active -> combat-ready ("active", rocket_gate == 2) + quick tap
     g_rk_dir_active = true;
-    assert(host->tick(tid) == PGR_CBH_OK);
+    assert(host->tick(tid) == PGS_CBH_OK);
     assert(g_rk_fast_invokes >= 1);
-    assert(host->sample(&s) == PGR_CBH_OK);
+    assert(host->sample(&s) == PGS_CBH_OK);
     assert(s.rocket_gate == 2);
 
     // Shield prompt -> auto shield click on next tick
     call_target_rk_prompt(&g_rk_shield, 1, nullptr);
-    assert(host->sample(&s) == PGR_CBH_OK);
+    assert(host->sample(&s) == PGS_CBH_OK);
     assert(s.rocket_shield_active == 1);
     // Real feature20 enforces a 150ms cooldown after the preceding quick action.
     usleep(170000);
-    assert(host->tick(tid) == PGR_CBH_OK);
+    assert(host->tick(tid) == PGS_CBH_OK);
     assert(g_rk_shield_invokes == 1);
 
     // Rocket Particle Minigame (Feature 6): UpdateMinigame scales collider by 1000x
@@ -1305,25 +1305,25 @@ int main(int argc, char **argv) {
     assert(g_mini_go_active == 0);
 
     auto rk_evs = drain_all(host);
-    assert(has_event(rk_evs, PGR_CBH_EV_ROCKET_SCOPE, "\"active\":true"));
-    assert(has_event(rk_evs, PGR_CBH_EV_ROCKET_UI, "\"source\":\"live-update\""));
-    assert(has_event(rk_evs, PGR_CBH_EV_ROCKET_ATTACK_GATE, "\"reason\":\"battle-not-active\""));
-    assert(has_event(rk_evs, PGR_CBH_EV_ROCKET_ATTACK_GATE, "\"reason\":\"active\""));
-    assert(has_event(rk_evs, PGR_CBH_EV_ROCKET_ACTION, "\"action\":\"quick\""));
-    assert(has_event(rk_evs, PGR_CBH_EV_ROCKET_ACTION, "\"action\":\"shield\""));
-    assert(has_event(rk_evs, PGR_CBH_EV_ROCKET_SCOPE, "\"active\":false"));
+    assert(has_event(rk_evs, PGS_CBH_EV_ROCKET_SCOPE, "\"active\":true"));
+    assert(has_event(rk_evs, PGS_CBH_EV_ROCKET_UI, "\"source\":\"live-update\""));
+    assert(has_event(rk_evs, PGS_CBH_EV_ROCKET_ATTACK_GATE, "\"reason\":\"battle-not-active\""));
+    assert(has_event(rk_evs, PGS_CBH_EV_ROCKET_ATTACK_GATE, "\"reason\":\"active\""));
+    assert(has_event(rk_evs, PGS_CBH_EV_ROCKET_ACTION, "\"action\":\"quick\""));
+    assert(has_event(rk_evs, PGS_CBH_EV_ROCKET_ACTION, "\"action\":\"shield\""));
+    assert(has_event(rk_evs, PGS_CBH_EV_ROCKET_SCOPE, "\"active\":false"));
 
     // --- 8. Scheduler 48 `on_unity_pulse` + `revoke()` + `stop(tid)` Cleanup -------
-    assert(host->sample(&s) == PGR_CBH_OK);
+    assert(host->sample(&s) == PGS_CBH_OK);
     const uint64_t ticks_before = s.ticks;
-    PgrUnityPulse pulse{1, 1, static_cast<int32_t>(tid), 0};
+    PgsUnityPulse pulse{1, 1, static_cast<int32_t>(tid), 0};
     host->on_unity_pulse(nullptr, &pulse);
-    assert(host->sample(&s) == PGR_CBH_OK);
+    assert(host->sample(&s) == PGS_CBH_OK);
     assert(s.ticks == ticks_before + 1);
 
-    assert(host->revoke() == PGR_CBH_OK);
-    assert(host->stop(tid) == PGR_CBH_OK);
-    assert(host->sample(&s) == PGR_CBH_OK);
+    assert(host->revoke() == PGS_CBH_OK);
+    assert(host->stop(tid) == PGS_CBH_OK);
+    assert(host->sample(&s) == PGS_CBH_OK);
     assert(s.stopping == 1);
     assert(s.roots == 0);
     assert(s.battle_roots == 0);

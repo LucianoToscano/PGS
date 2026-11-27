@@ -9,6 +9,7 @@ import os
 import struct
 import tempfile
 import unittest
+from unittest.mock import patch
 import zipfile
 from pathlib import Path
 
@@ -92,6 +93,32 @@ class ChecksumTests(unittest.TestCase):
             (extracted / '.pgrazor-verified').write_text(nb.DOBBY_SHA256, encoding='utf-8')
             with self.assertRaisesRegex(RuntimeError, 'No download attempted'):
                 nb.ensure_dobby(tmp, download=False)
+
+    def test_verified_legacy_cache_gets_pgs_marker(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            vendor = nb._vendor_dir(tmp)
+            vendor.mkdir(parents=True)
+            name = 'Dobby-' + nb.DOBBY_COMMIT
+            archive = vendor / ('dobby-' + nb.DOBBY_COMMIT + '.zip')
+            with zipfile.ZipFile(archive, 'w') as zf:
+                zf.writestr(name + '/fixture.txt', b'fixture')
+            extracted = vendor / name
+            extracted.mkdir()
+            source = extracted / 'fixture.txt'
+            source.write_bytes(b'tampered')
+            legacy = extracted / '.pgrazor-verified'
+            current = extracted / '.pgs-verified'
+            legacy.write_text('legacy', encoding='utf-8')
+            with patch.object(nb, 'DOBBY_SHA256', nb.sha256(archive)):
+                with self.assertRaisesRegex(RuntimeError, 'source cache changed'):
+                    nb.ensure_dobby(tmp, download=False)
+                self.assertTrue(legacy.is_file())
+                self.assertFalse(current.exists())
+                source.write_bytes(b'fixture')
+                self.assertEqual(nb.ensure_dobby(tmp, download=False), extracted)
+                self.assertFalse(legacy.exists())
+                self.assertEqual(current.read_text(encoding='utf-8'), nb.DOBBY_SHA256)
+                self.assertEqual(nb.ensure_dobby(tmp, download=False), extracted)
 
 
 class ZipSafetyTests(unittest.TestCase):

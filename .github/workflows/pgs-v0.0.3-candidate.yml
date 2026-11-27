@@ -66,32 +66,32 @@ jobs:
           python -B tools/check.py
       - name: Configure existing signer path
         shell: bash
-        run: echo "PGRAZOR_KEYSTORE=$RUNNER_TEMP/pgs-v003-validation.jks" >> "$GITHUB_ENV"
+        run: echo "PGS_KEYSTORE=$RUNNER_TEMP/pgs-v003-validation.jks" >> "$GITHUB_ENV"
       - name: Validate configured private input and load existing key
         env:
           GITHUB_TOKEN: ${{ github.token }}
-          PGRAZOR_INPUT_URL: ${{ secrets.PGS_INPUT_URL || secrets.PGRAZOR_INPUT_URL }}
-          PGRAZOR_KEYSTORE_BASE64: ${{ secrets.PGS_KEYSTORE_BASE64 || secrets.PGRAZOR_KEYSTORE_BASE64 }}
+          PGS_INPUT_URL: ${{ secrets.PGS_INPUT_URL || secrets.PGRAZOR_INPUT_URL }}
+          PGS_KEYSTORE_BASE64: ${{ secrets.PGS_KEYSTORE_BASE64 || secrets.PGRAZOR_KEYSTORE_BASE64 }}
         shell: bash
         run: |
           set -euo pipefail
           umask 077
-          test -n "$PGRAZOR_INPUT_URL"
-          test -n "$PGRAZOR_KEYSTORE_BASE64"
+          test -n "$PGS_INPUT_URL"
+          test -n "$PGS_KEYSTORE_BASE64"
           python -B tools/private_input.py
       - name: Build and verify complete candidate in runner only
         env:
-          PGRAZOR_KEY_ALIAS: ${{ secrets.PGS_KEY_ALIAS || secrets.PGRAZOR_KEY_ALIAS }}
-          PGRAZOR_STORE_PASSWORD: ${{ secrets.PGS_STORE_PASSWORD || secrets.PGRAZOR_STORE_PASSWORD }}
-          PGRAZOR_KEY_PASSWORD: ${{ secrets.PGS_KEY_PASSWORD || secrets.PGRAZOR_KEY_PASSWORD }}
+          PGS_KEY_ALIAS: ${{ secrets.PGS_KEY_ALIAS || secrets.PGRAZOR_KEY_ALIAS }}
+          PGS_STORE_PASSWORD: ${{ secrets.PGS_STORE_PASSWORD || secrets.PGRAZOR_STORE_PASSWORD }}
+          PGS_KEY_PASSWORD: ${{ secrets.PGS_KEY_PASSWORD || secrets.PGRAZOR_KEY_PASSWORD }}
         shell: bash
         run: |
           set -euo pipefail
           umask 077
-          test -f "$PGRAZOR_KEYSTORE"
-          test -n "$PGRAZOR_KEY_ALIAS"
-          test -n "$PGRAZOR_STORE_PASSWORD"
-          test -n "$PGRAZOR_KEY_PASSWORD"
+          test -f "$PGS_KEYSTORE"
+          test -n "$PGS_KEY_ALIAS"
+          test -n "$PGS_STORE_PASSWORD"
+          test -n "$PGS_KEY_PASSWORD"
           python -B pgs/nonroot.py --apk pgs/input/game.apkm
           mapfile -t reports < <(find pgs/build/nonroot -mindepth 2 -maxdepth 2 -name report.json -type f)
           test "${#reports[@]}" = 1

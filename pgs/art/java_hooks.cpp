@@ -9,7 +9,7 @@
 #include "art_symbols.h"
 namespace {
 bool initialized=false;
-PgrArtSymbols symbols;
+PgsArtSymbols symbols;
 std::mutex hooks;
 // Dobby decodes and backs up the target's first instructions before its own RWX
 // patch window. Android 10 maps ARM64 libart code execute-only, so that read
@@ -109,7 +109,7 @@ extern "C" JNIEXPORT jint JNICALL JNI_OnLoad(JavaVM *vm,void *){
    info.inline_unhooker=[](void *target){return DobbyDestroy(target)==0;};
    info.art_symbol_resolver=[](std::string_view name){return symbols.find(name);};
    info.art_symbol_prefix_resolver=[](std::string_view prefix){return symbols.find(prefix,true);};
-   info.generated_class_name="PgrMethod_";info.generated_source_name="";
+   info.generated_class_name="PgsMethod_";info.generated_source_name="";
    initialized=lsplant::Init(env,info);
   }
  }catch(...){initialized=false;}

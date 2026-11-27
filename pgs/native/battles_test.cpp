@@ -1,6 +1,6 @@
 // Standalone focused test of the native battle controller (feature 19). Like the hook-less berry
 // sibling, this module installs NO Dobby/Gum hooks. By default the harness loads the compiled
-// library and queries feature 19; PGR_BATTLE_DIRECT_TEST allows isolated direct linking.
+// library and queries feature 19; PGS_BATTLE_DIRECT_TEST allows isolated direct linking.
 // It drives a compact fake IL2CPP (runtime_invoke over the battle methods, boxed
 // bool returns, field get) through a proper handle table (a "GC move" relocates an object while
 // its handle stays valid) and forks per scenario for clean process-lifetime state.
@@ -23,7 +23,7 @@
 #include <sys/wait.h>
 #include <unistd.h>
 #include <thread>
-#ifndef PGR_BATTLE_DIRECT_TEST
+#ifndef PGS_BATTLE_DIRECT_TEST
 #include "pgs_native_api.h"
 #include <dlfcn.h>
 static const pgs_native_api_v2 *loaded_core=nullptr;
@@ -568,7 +568,7 @@ int scenario(int which) {
 }  // namespace
 
 int main(int argc,char **argv) {
-#ifndef PGR_BATTLE_DIRECT_TEST
+#ifndef PGS_BATTLE_DIRECT_TEST
   if(argc!=2)return 80;
   void *lib=dlopen(argv[1],RTLD_NOW);if(!lib)return 81;
   auto get=reinterpret_cast<const void *(*)(uint32_t)>(dlsym(lib,"pgs_native_api"));

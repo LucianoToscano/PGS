@@ -1,13 +1,13 @@
 // Feature 59 (API 1): every camera-probe discover() metadata decision/descriptor is COMPILED.
 // This adapter only marshals the validated module/export boundary (the 31 feature47 il2cpp metadata
-// exports + the PgrCameraMetaExtra export/presence block + the real module range + the attached
+// exports + the PgsCameraMetaExtra export/presence block + the real module range + the attached
 // thread accessor + domain/mode flags) and maps the fixed-versioned output handles and status codes
 // back into the exact discover() return shape ({execute, events, vectorFields, sample}, {retry}, or
 // {unavailable}). It performs NO metadata validation and NO business logic: a negative native status
 // throws with no fallback.
 (function(root){
  'use strict';
- // feature47's 31 il2cpp metadata exports in fixed PgrMetaExports slot order.
+ // feature47's 31 il2cpp metadata exports in fixed PgsMetaExports slot order.
  // Slots with bit -2 are unused feature47-only dependencies, optional without a presence bit.
  // Slots with bit >= 0 are camera-optional (vector-field, sampleCamera, or continuous gates) and are
  // resolved via opt() so native resolve() can classify their absence with the exact camera-probe reason.
@@ -44,7 +44,7 @@
   ['class_get_nested_types',-2],
   ['class_get_declaring_type',-2]
  ];
- // Optional exports in PgrCameraMetaExtra: [name, offsetInExtra, bitIndex].
+ // Optional exports in PgsCameraMetaExtra: [name, offsetInExtra, bitIndex].
  const EXTRA_OPT_EXPORTS=[
   ['get_corlib',16,11],
   ['runtime_invoke',24,4],

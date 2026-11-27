@@ -12,7 +12,7 @@
 // Null return means pilot absent; any install/update error after selection fails
 // closed without falling back to Gum hooks.
 
-struct PgrSpinCameraConfig {
+struct PgsSpinCameraConfig {
     uint32_t version;
     uint32_t size;
     // Raw IL2CPP runtime exports (LP64 pointer-sized GC handle ABI).
@@ -38,16 +38,16 @@ struct PgrSpinCameraConfig {
     void *owner_field;        // iterator.<>4__this (0x28, SPLINE)
     void *state_field;        // iterator.djjp      (0x10, System.Int32)
 };
-static_assert(sizeof(PgrSpinCameraConfig) == 152,
-              "PgrSpinCameraConfig layout must match the JS adapter writer");
+static_assert(sizeof(PgsSpinCameraConfig) == 152,
+              "PgsSpinCameraConfig layout must match the JS adapter writer");
 
-struct PgrSpinCameraSample {
+struct PgsSpinCameraSample {
     uint32_t version;
     uint32_t size;
     uint32_t fast_serial;
     uint32_t error_serial;
     uint32_t last_phase;        // 0 = none, 1 = 'in', 2 = 'out'
-    uint32_t last_error;        // PgrSpinCameraError code
+    uint32_t last_error;        // PgsSpinCameraError code
     uint32_t active_roots_mask; // bit 0 = 'in' rooted, bit 1 = 'out' rooted
     uint32_t fault;             // 1 if hook/runtime fault latched
     float last_original_speed;
@@ -57,36 +57,36 @@ struct PgrSpinCameraSample {
     uint64_t exit_count;
     uint64_t prune_count;
 };
-static_assert(sizeof(PgrSpinCameraSample) == 72,
-              "PgrSpinCameraSample layout must match the JS adapter reader");
+static_assert(sizeof(PgsSpinCameraSample) == 72,
+              "PgsSpinCameraSample layout must match the JS adapter reader");
 
-enum PgrSpinCameraStatus {
-    PGR_SCAM_OK = 0,
-    PGR_SCAM_ERR_NULL_ARG = 1,
-    PGR_SCAM_ERR_BAD_CONFIG = 2,
-    PGR_SCAM_ERR_ALREADY_BOUND = 3,
-    PGR_SCAM_ERR_HOOK_FAILED = 4,
-    PGR_SCAM_ERR_CLOCK_FAILED = 5
+enum PgsSpinCameraStatus {
+    PGS_SCAM_OK = 0,
+    PGS_SCAM_ERR_NULL_ARG = 1,
+    PGS_SCAM_ERR_BAD_CONFIG = 2,
+    PGS_SCAM_ERR_ALREADY_BOUND = 3,
+    PGS_SCAM_ERR_HOOK_FAILED = 4,
+    PGS_SCAM_ERR_CLOCK_FAILED = 5
 };
 
-enum PgrSpinCameraRuntimeError {
-    PGR_SCAM_RTERR_NONE = 0,
-    PGR_SCAM_RTERR_GCHANDLE_ENTER = 1,
-    PGR_SCAM_RTERR_GCHANDLE_ITER = 2,
-    PGR_SCAM_RTERR_CLOCK = 3,
-    PGR_SCAM_RTERR_REENTRANT_OVERFLOW = 4
+enum PgsSpinCameraRuntimeError {
+    PGS_SCAM_RTERR_NONE = 0,
+    PGS_SCAM_RTERR_GCHANDLE_ENTER = 1,
+    PGS_SCAM_RTERR_GCHANDLE_ITER = 2,
+    PGS_SCAM_RTERR_CLOCK = 3,
+    PGS_SCAM_RTERR_REENTRANT_OVERFLOW = 4
 };
 
-struct PgrSpinCameraApi {
+struct PgsSpinCameraApi {
     uint32_t version;
     uint32_t size;
-    int (*install)(const PgrSpinCameraConfig *config);
+    int (*install)(const PgsSpinCameraConfig *config);
     int (*update)(int allowed, uint64_t remaining_lease_ms, uint64_t proven_tid, uint64_t epoch);
     int (*tick)(uint64_t proven_tid);
-    int (*sample)(PgrSpinCameraSample *out);
+    int (*sample)(PgsSpinCameraSample *out);
 };
-static_assert(sizeof(PgrSpinCameraApi) == 40,
-              "PgrSpinCameraApi must stay a 40-byte version-1 table");
+static_assert(sizeof(PgsSpinCameraApi) == 40,
+              "PgsSpinCameraApi must stay a 40-byte version-1 table");
 
 #ifdef __cplusplus
 extern "C" {

@@ -130,10 +130,10 @@ int main(int argc, char **argv) {
     auto get = reinterpret_cast<const void *(*)(uint32_t)>(dlsym(lib, "pgs_native_api"));
     auto core = get ? static_cast<const pgs_native_api_v2 *>(get(2)) : nullptr;
     if (!core || core->size != 48 || core->query_feature(6, 99) || core->query_feature(99, 1)) return 3;
-    auto api = static_cast<const PgrRocketMiniApi *>(core->query_feature(6, 1));
+    auto api = static_cast<const PgsRocketMiniApi *>(core->query_feature(6, 1));
     if (!api || api->version != 1 || api->size != 40) return 4;
 
-    PgrRocketMiniConfig cfg{};
+    PgsRocketMiniConfig cfg{};
     cfg.version = 1; cfg.size = sizeof(cfg);
     cfg.update_addr = (void *)&t_update; cfg.exit_addr = (void *)&t_exit;
     cfg.hide_addr = (void *)&t_hide; cfg.destroy_addr = (void *)&t_destroy;
@@ -148,7 +148,7 @@ int main(int argc, char **argv) {
     cfg.runtime_invoke = &fake_invoke; cfg.field_get_value = &fake_field_get;
 
     // Install is process-lifetime and idempotent for an identical config.
-    if (api->install(&cfg) != PGR_RMINI_OK || api->install(&cfg) != PGR_RMINI_OK) return 5;
+    if (api->install(&cfg) != PGS_RMINI_OK || api->install(&cfg) != PGS_RMINI_OK) return 5;
 
     void *method = &transform_m; // any non-null MethodInfo* stand-in for the hook arg
     GameObject goA{VEC, 1, 0};  Transform trA{VEC, 1, {2.f, -3.f, 0.5f}};

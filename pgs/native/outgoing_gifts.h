@@ -27,85 +27,85 @@ extern "C" {
 
 static_assert(sizeof(void *) == 8, "OutgoingGifts native ABI requires LP64");
 
-enum PgrOutgoingGiftsInfo {
-  PGR_OG_FEATURE_ID      = 22,
-  PGR_OG_API_VERSION     = 1,
-  PGR_OG_CONFIG_VERSION  = 1,
-  PGR_OG_SAMPLE_VERSION  = 1,
-  PGR_OG_EVENT_VERSION   = 1,
-  PGR_OG_MAX_LEASE_MS    = 2500,   // residual foreground lease ceiling (queue/reserve/send gate)
-  PGR_OG_TXN_TIMEOUT_MS  = 30000,  // issued-transaction quarantine deadline (JS r.deadline = now+30000)
-  PGR_OG_EVENT_CAP       = 32,     // bounded FIFO depth; overflow fails closed
-  PGR_OG_ID_MAX          = 256,    // recipient/callback id length window (JS giftText 1..256)
-  PGR_OG_STICKER_SCAN_MAX = 4096,  // sticker inventory scan bound (JS count>4096 throws)
-  PGR_OG_RESERVE_COUNT   = 1,      // ReserveStickers / ReturnReservedStickers count
-  PGR_OG_MASK_SEND       = 2,      // giftMask bit: bundled send enabled
-  PGR_OG_MASK_STICKER    = 4       // giftMask bit: attach a sticker
+enum PgsOutgoingGiftsInfo {
+  PGS_OG_FEATURE_ID      = 22,
+  PGS_OG_API_VERSION     = 1,
+  PGS_OG_CONFIG_VERSION  = 1,
+  PGS_OG_SAMPLE_VERSION  = 1,
+  PGS_OG_EVENT_VERSION   = 1,
+  PGS_OG_MAX_LEASE_MS    = 2500,   // residual foreground lease ceiling (queue/reserve/send gate)
+  PGS_OG_TXN_TIMEOUT_MS  = 30000,  // issued-transaction quarantine deadline (JS r.deadline = now+30000)
+  PGS_OG_EVENT_CAP       = 32,     // bounded FIFO depth; overflow fails closed
+  PGS_OG_ID_MAX          = 256,    // recipient/callback id length window (JS giftText 1..256)
+  PGS_OG_STICKER_SCAN_MAX = 4096,  // sticker inventory scan bound (JS count>4096 throws)
+  PGS_OG_RESERVE_COUNT   = 1,      // ReserveStickers / ReturnReservedStickers count
+  PGS_OG_MASK_SEND       = 2,      // giftMask bit: bundled send enabled
+  PGS_OG_MASK_STICKER    = 4       // giftMask bit: attach a sticker
 };
 
 // install()/update()/observe()/tick()/sample()/next_event() status codes (queue() returns 0/1).
-enum PgrOutgoingGiftsStatus {
-  PGR_OG_OK                 = 0,
-  PGR_OG_ERR_INVALID_ARG    = -1,
-  PGR_OG_ERR_BAD_VERSION    = -2,
-  PGR_OG_ERR_BAD_SIZE       = -3,
-  PGR_OG_ERR_MISSING_PTR    = -4,
-  PGR_OG_ERR_NOT_INSTALLED  = -6,
-  PGR_OG_ERR_RECONFIG       = -9,
-  PGR_OG_ERR_CLOCK_FAILURE  = -10
+enum PgsOutgoingGiftsStatus {
+  PGS_OG_OK                 = 0,
+  PGS_OG_ERR_INVALID_ARG    = -1,
+  PGS_OG_ERR_BAD_VERSION    = -2,
+  PGS_OG_ERR_BAD_SIZE       = -3,
+  PGS_OG_ERR_MISSING_PTR    = -4,
+  PGS_OG_ERR_NOT_INSTALLED  = -6,
+  PGS_OG_ERR_RECONFIG       = -9,
+  PGS_OG_ERR_CLOCK_FAILURE  = -10
 };
 
 // observe() kinds. RPC_RESULT carries (callback, response); RPC_FINALLY carries (callback, null);
 // PROFILE_CLOSE carries (profile) and cancels an unissued transaction.
-enum PgrOutgoingGiftsObserve {
-  PGR_OG_OBSERVE_PROFILE_CLOSE = 0,
-  PGR_OG_OBSERVE_RPC_RESULT    = 1,
-  PGR_OG_OBSERVE_RPC_FINALLY   = 2
+enum PgsOutgoingGiftsObserve {
+  PGS_OG_OBSERVE_PROFILE_CLOSE = 0,
+  PGS_OG_OBSERVE_RPC_RESULT    = 1,
+  PGS_OG_OBSERVE_RPC_FINALLY   = 2
 };
 
 // queue() result.
-enum PgrOutgoingGiftsQueue {
-  PGR_OG_QUEUE_ORIGINAL = 0,  // not eligible: the host runs the original OnGiftClick
-  PGR_OG_QUEUE_HANDLED  = 1    // handled (queued, blocked, already-pending, or error)
+enum PgsOutgoingGiftsQueue {
+  PGS_OG_QUEUE_ORIGINAL = 0,  // not eligible: the host runs the original OnGiftClick
+  PGS_OG_QUEUE_HANDLED  = 1    // handled (queued, blocked, already-pending, or error)
 };
 
 // next_event() record kinds. Codes/ints only -- never a player/gift/sticker id string.
-enum PgrOutgoingGiftsEventKind {
-  PGR_OG_EVENT_STATUS  = 1,  // id=PgrOutgoingGiftsMsg, aux=result int (FAILED_RESULT only) -> gift-status
-  PGR_OG_EVENT_REQUEST = 2,  // aux=sticker(1/0)                                             -> gift-bundled-request
-  PGR_OG_EVENT_RESULT  = 3,  // id=result, aux bit0=success, bit1=result known               -> gift-bundled-result
-  PGR_OG_EVENT_ERROR   = 4   // id=PgrOutgoingGiftsError                                     -> gift-error
+enum PgsOutgoingGiftsEventKind {
+  PGS_OG_EVENT_STATUS  = 1,  // id=PgsOutgoingGiftsMsg, aux=result int (FAILED_RESULT only) -> gift-status
+  PGS_OG_EVENT_REQUEST = 2,  // aux=sticker(1/0)                                             -> gift-bundled-request
+  PGS_OG_EVENT_RESULT  = 3,  // id=result, aux bit0=success, bit1=result known               -> gift-bundled-result
+  PGS_OG_EVENT_ERROR   = 4   // id=PgsOutgoingGiftsError                                     -> gift-error
 };
 
-// Status message codes (PGR_OG_EVENT_STATUS.id). The adapter reproduces the exact JS strings.
-enum PgrOutgoingGiftsMsg {
-  PGR_OG_MSG_PREPARING      = 1,  // 'Preparing gift'
-  PGR_OG_MSG_NOT_AVAILABLE  = 2,  // 'Gift sending is not available for this friend yet'
-  PGR_OG_MSG_NO_GIFTS       = 3,  // 'No gifts available'
-  PGR_OG_MSG_SENDING        = 4,  // 'Sending gift'
-  PGR_OG_MSG_SENT           = 5,  // 'Gift sent'
-  PGR_OG_MSG_FAILED_NULL    = 6,  // 'Gift send failed; no automatic retry'   (result == null)
-  PGR_OG_MSG_FAILED_RESULT  = 7,  // 'Gift send failed (result N)'            (aux = N)
-  PGR_OG_MSG_PENDING        = 8,  // 'Gift result pending; no automatic retry'
-  PGR_OG_MSG_UNCERTAIN      = 9,  // 'Gift result uncertain; no automatic retry'
-  PGR_OG_MSG_ALREADY        = 10  // 'Gift send already pending'
+// Status message codes (PGS_OG_EVENT_STATUS.id). The adapter reproduces the exact JS strings.
+enum PgsOutgoingGiftsMsg {
+  PGS_OG_MSG_PREPARING      = 1,  // 'Preparing gift'
+  PGS_OG_MSG_NOT_AVAILABLE  = 2,  // 'Gift sending is not available for this friend yet'
+  PGS_OG_MSG_NO_GIFTS       = 3,  // 'No gifts available'
+  PGS_OG_MSG_SENDING        = 4,  // 'Sending gift'
+  PGS_OG_MSG_SENT           = 5,  // 'Gift sent'
+  PGS_OG_MSG_FAILED_NULL    = 6,  // 'Gift send failed; no automatic retry'   (result == null)
+  PGS_OG_MSG_FAILED_RESULT  = 7,  // 'Gift send failed (result N)'            (aux = N)
+  PGS_OG_MSG_PENDING        = 8,  // 'Gift result pending; no automatic retry'
+  PGS_OG_MSG_UNCERTAIN      = 9,  // 'Gift result uncertain; no automatic retry'
+  PGS_OG_MSG_ALREADY        = 10  // 'Gift send already pending'
 };
 
-// Error reason codes (PGR_OG_EVENT_ERROR.id). Map onto JS 'gift-error' reasons; the coordinator
+// Error reason codes (PGS_OG_EVENT_ERROR.id). Map onto JS 'gift-error' reasons; the coordinator
 // adapter reconstructs the bundled-send / bundled-trigger / sticker-release prefixes.
-enum PgrOutgoingGiftsError {
-  PGR_OG_ERR_NONE            = 0,
-  PGR_OG_ERR_RECIPIENT       = 1,   // gift-recipient-missing (trigger)
-  PGR_OG_ERR_SERVICE_TYPE    = 2,   // gift-service-type
-  PGR_OG_ERR_INVENTORY       = 3,   // gift-inventory-missing / -result / -entry
-  PGR_OG_ERR_GIFT_ID_ZERO    = 4,   // gift-id-zero
-  PGR_OG_ERR_NIA             = 5,   // gift-nia-service / gift-nia-id
-  PGR_OG_ERR_STICKER_SVC     = 6,   // gift-sticker-service / sticker-inventory-type/-size
-  PGR_OG_ERR_STICKER_ID      = 7,   // gift-sticker-id
-  PGR_OG_ERR_GCHANDLE        = 8,   // a GC root could not be allocated
-  PGR_OG_ERR_INVOKE          = 9,   // a managed invoke threw (send path)
-  PGR_OG_ERR_STICKER_RELEASE = 10,  // ReturnReservedStickers threw during cleanup
-  PGR_OG_ERR_OVERFLOW        = 11   // FIFO overflow (fail-closed)
+enum PgsOutgoingGiftsError {
+  PGS_OG_ERR_NONE            = 0,
+  PGS_OG_ERR_RECIPIENT       = 1,   // gift-recipient-missing (trigger)
+  PGS_OG_ERR_SERVICE_TYPE    = 2,   // gift-service-type
+  PGS_OG_ERR_INVENTORY       = 3,   // gift-inventory-missing / -result / -entry
+  PGS_OG_ERR_GIFT_ID_ZERO    = 4,   // gift-id-zero
+  PGS_OG_ERR_NIA             = 5,   // gift-nia-service / gift-nia-id
+  PGS_OG_ERR_STICKER_SVC     = 6,   // gift-sticker-service / sticker-inventory-type/-size
+  PGS_OG_ERR_STICKER_ID      = 7,   // gift-sticker-id
+  PGS_OG_ERR_GCHANDLE        = 8,   // a GC root could not be allocated
+  PGS_OG_ERR_INVOKE          = 9,   // a managed invoke threw (send path)
+  PGS_OG_ERR_STICKER_RELEASE = 10,  // ReturnReservedStickers threw during cleanup
+  PGS_OG_ERR_OVERFLOW        = 11   // FIFO overflow (fail-closed)
 };
 
 // Fixed LP64 config (488 bytes): 8-byte header + 59 validated il2cpp pointers + 2 int32 literals.
@@ -113,9 +113,9 @@ enum PgrOutgoingGiftsError {
 // the JS adapter straight off p.gifts; the native layer re-checks the header and rejects any null.
 // No hook address is carried. See the static_asserts in outgoing_gifts.cpp for the authoritative
 // offsets.
-struct PgrOutgoingGiftsConfig {
-  uint32_t version;  // == PGR_OG_CONFIG_VERSION
-  uint32_t size;     // == sizeof(PgrOutgoingGiftsConfig)
+struct PgsOutgoingGiftsConfig {
+  uint32_t version;  // == PGS_OG_CONFIG_VERSION
+  uint32_t size;     // == sizeof(PgsOutgoingGiftsConfig)
 
   // il2cpp runtime exports.
   void *gchandle_new;              // uintptr_t (void* obj, int pinned)
@@ -189,13 +189,13 @@ struct PgrOutgoingGiftsConfig {
   int32_t send_success;     // gifts.sendSuccess  (SendGiftOutProto.Result Success)
 };
 
-static_assert(sizeof(PgrOutgoingGiftsConfig) == 488,
-              "PgrOutgoingGiftsConfig must remain 488 bytes on LP64");
+static_assert(sizeof(PgsOutgoingGiftsConfig) == 488,
+              "PgsOutgoingGiftsConfig must remain 488 bytes on LP64");
 
 // Fixed LP64 telemetry gauge (88 bytes). Pull-only; the native layer never calls JS.
-struct PgrOutgoingGiftsSample {
-  uint32_t version;         // == PGR_OG_SAMPLE_VERSION
-  uint32_t size;            // == sizeof(PgrOutgoingGiftsSample)
+struct PgsOutgoingGiftsSample {
+  uint32_t version;         // == PGS_OG_SAMPLE_VERSION
+  uint32_t size;            // == sizeof(PgsOutgoingGiftsSample)
   uint64_t request_serial;  // bumps on each issued send (gift-bundled-request)
   uint64_t result_serial;   // bumps on each completed result (gift-bundled-result)
   uint64_t error_serial;    // bumps on each error
@@ -213,45 +213,45 @@ struct PgrOutgoingGiftsSample {
   uint32_t reserved;        // 0
 };
 
-static_assert(sizeof(PgrOutgoingGiftsSample) == 88,
-              "PgrOutgoingGiftsSample must remain 88 bytes on LP64");
+static_assert(sizeof(PgsOutgoingGiftsSample) == 88,
+              "PgsOutgoingGiftsSample must remain 88 bytes on LP64");
 
 // Fixed LP64 drain record (16 bytes). id/aux are codes/ints only, never an id string.
-struct PgrOutgoingGiftsEvent {
-  uint32_t kind;      // PgrOutgoingGiftsEventKind
+struct PgsOutgoingGiftsEvent {
+  uint32_t kind;      // PgsOutgoingGiftsEventKind
   int32_t  id;        // status msg / error reason / result value
   int32_t  aux;       // sticker / success / result int
   int32_t  reserved;  // 0
 };
 
-static_assert(sizeof(PgrOutgoingGiftsEvent) == 16,
-              "PgrOutgoingGiftsEvent must remain 16 bytes on LP64");
+static_assert(sizeof(PgsOutgoingGiftsEvent) == 16,
+              "PgsOutgoingGiftsEvent must remain 16 bytes on LP64");
 
 // Fixed LP64 table: 8-byte header + 7 function pointers = 64 bytes.
-struct PgrOutgoingGiftsApi {
-  uint32_t version;  // == PGR_OG_API_VERSION
-  uint32_t size;     // == sizeof(PgrOutgoingGiftsApi)
-  int (*install)(const PgrOutgoingGiftsConfig *config);
+struct PgsOutgoingGiftsApi {
+  uint32_t version;  // == PGS_OG_API_VERSION
+  uint32_t size;     // == sizeof(PgsOutgoingGiftsApi)
+  int (*install)(const PgsOutgoingGiftsConfig *config);
   // Refresh the policy gate: mask bits 2(send)/4(sticker) and a residual lease clamped to 2500 ms.
   // Carries proven_tid; a foreign thread (once the owner is latched) can only disarm. Any thread.
   int (*update)(uint32_t mask, uint64_t remaining_lease_ms, uint64_t proven_tid);
-  // sendReplacement eligibility (OnGiftClick). Returns PGR_OG_QUEUE_ORIGINAL (0) to let the host run
-  // the original, or PGR_OG_QUEUE_HANDLED (1) when queued / blocked / already-pending / errored.
+  // sendReplacement eligibility (OnGiftClick). Returns PGS_OG_QUEUE_ORIGINAL (0) to let the host run
+  // the original, or PGS_OG_QUEUE_HANDLED (1) when queued / blocked / already-pending / errored.
   // Owner thread only; off the owner thread or during cleanup it returns 0 (original runs).
   int (*queue)(void *panel, void *profile, uint64_t proven_tid);
-  // Forward one synchronous observation (see PgrOutgoingGiftsObserve) on the proven Unity owner.
+  // Forward one synchronous observation (see PgsOutgoingGiftsObserve) on the proven Unity owner.
   int (*observe)(uint32_t kind, void *obj, void *arg, uint64_t proven_tid);
   // One owner-thread bundledTick pass: complete / quarantine an issued txn, else build+issue the
   // pending one. stopping != 0 cancels the transaction (returning any reserved sticker). No-op off
   // the owner thread (never frees).
   int (*tick)(uint64_t proven_tid, int stopping);
-  int (*sample)(PgrOutgoingGiftsSample *out_sample);
+  int (*sample)(PgsOutgoingGiftsSample *out_sample);
   // Pop one FIFO record (returns 1), report empty (0), or a negative status. Any thread.
-  int (*next_event)(PgrOutgoingGiftsEvent *out);
+  int (*next_event)(PgsOutgoingGiftsEvent *out);
 };
 
-static_assert(sizeof(PgrOutgoingGiftsApi) == 64,
-              "PgrOutgoingGiftsApi must remain a 64-byte version-1 table");
+static_assert(sizeof(PgsOutgoingGiftsApi) == 64,
+              "PgsOutgoingGiftsApi must remain a 64-byte version-1 table");
 
 // Hidden getter. NOT exported by the version script; the coordinator registers it in query_feature
 // under feature id 22 and answers only on an exact version match.

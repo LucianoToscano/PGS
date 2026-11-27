@@ -54,29 +54,29 @@ extern "C" {
 
 static_assert(sizeof(void *) == 8, "RoutesTracking native ABI requires LP64");
 
-enum PgrRoutesTrackingInfo {
-  PGR_RT_FEATURE_ID          = 50,
-  PGR_RT_API_VERSION         = 1,
-  PGR_RT_CONFIG_VERSION      = 1,
-  PGR_RT_PTR_COUNT           = 5,     // config pointer slots 0..4, all mandatory (non-null)
-  PGR_RT_WAYPOINT_LAT_OFFSET = PGR_GAME_ROUTES_TRACKING_H_PGR_RT_WAYPOINT_LAT_OFFSET,  // expected RouteWaypointProto.LatDegrees byte offset (fields.txt L501)
-  PGR_RT_WAYPOINT_LNG_OFFSET = PGR_GAME_ROUTES_TRACKING_H_PGR_RT_WAYPOINT_LNG_OFFSET,  // expected RouteWaypointProto.LngDegrees byte offset (fields.txt L502)
-  PGR_RT_MAX_FIELD_OFFSET    = PGR_GAME_ROUTES_TRACKING_H_PGR_RT_MAX_FIELD_OFFSET // sanity ceiling on the validated field offsets
+enum PgsRoutesTrackingInfo {
+  PGS_RT_FEATURE_ID          = 50,
+  PGS_RT_API_VERSION         = 1,
+  PGS_RT_CONFIG_VERSION      = 1,
+  PGS_RT_PTR_COUNT           = 5,     // config pointer slots 0..4, all mandatory (non-null)
+  PGS_RT_WAYPOINT_LAT_OFFSET = PGS_GAME_ROUTES_TRACKING_H_PGS_RT_WAYPOINT_LAT_OFFSET,  // expected RouteWaypointProto.LatDegrees byte offset (fields.txt L501)
+  PGS_RT_WAYPOINT_LNG_OFFSET = PGS_GAME_ROUTES_TRACKING_H_PGS_RT_WAYPOINT_LNG_OFFSET,  // expected RouteWaypointProto.LngDegrees byte offset (fields.txt L502)
+  PGS_RT_MAX_FIELD_OFFSET    = PGS_GAME_ROUTES_TRACKING_H_PGS_RT_MAX_FIELD_OFFSET // sanity ceiling on the validated field offsets
 };
 
 // install() returns 0 on success; negatives are faults. installed() returns 1/0.
-enum PgrRoutesTrackingStatus {
-  PGR_RT_OK               = 0,
-  PGR_RT_FAULT            = -1,
-  PGR_RT_ERR_NULL_ARG     = -2,
-  PGR_RT_ERR_BAD_VERSION  = -3,
-  PGR_RT_ERR_BAD_SIZE     = -4,
-  PGR_RT_ERR_MISSING_PTR  = -5,  // a mandatory config pointer was null
-  PGR_RT_ERR_BAD_OFFSET   = -6,  // lat/lng offset not 8-aligned, out of range, or equal
-  PGR_RT_ERR_DUP_ADDR     = -7,  // two hook addresses coincide
-  PGR_RT_ERR_RECONFIG     = -9,  // a different config at an already-installed table
-  PGR_RT_ERR_HOOK         = -12, // a Dobby hook failed to install (rolled back, fail-closed)
-  PGR_RT_ERR_NO_OBSERVERS = -13  // feature 46 routes_observers API unavailable / version mismatch
+enum PgsRoutesTrackingStatus {
+  PGS_RT_OK               = 0,
+  PGS_RT_FAULT            = -1,
+  PGS_RT_ERR_NULL_ARG     = -2,
+  PGS_RT_ERR_BAD_VERSION  = -3,
+  PGS_RT_ERR_BAD_SIZE     = -4,
+  PGS_RT_ERR_MISSING_PTR  = -5,  // a mandatory config pointer was null
+  PGS_RT_ERR_BAD_OFFSET   = -6,  // lat/lng offset not 8-aligned, out of range, or equal
+  PGS_RT_ERR_DUP_ADDR     = -7,  // two hook addresses coincide
+  PGS_RT_ERR_RECONFIG     = -9,  // a different config at an already-installed table
+  PGS_RT_ERR_HOOK         = -12, // a Dobby hook failed to install (rolled back, fail-closed)
+  PGS_RT_ERR_NO_OBSERVERS = -13  // feature 46 routes_observers API unavailable / version mismatch
 };
 
 // Fixed LP64 config (64 bytes): 8-byte header + 5 pointers + 2 validated offsets + 2 reserved u32.
@@ -84,9 +84,9 @@ enum PgrRoutesTrackingStatus {
 // MethodInfo/resolver owner+executable checks) BEFORE calling install(); the native side never
 // re-checks a patched prologue. install() publishes the config immutably: an identical config is
 // idempotent (0); a different one is rejected (RECONFIG).
-struct PgrRoutesTrackingConfig {
-  uint32_t version;           // off 0  == PGR_RT_CONFIG_VERSION
-  uint32_t size;              // off 4  == sizeof(PgrRoutesTrackingConfig)
+struct PgsRoutesTrackingConfig {
+  uint32_t version;           // off 0  == PGS_RT_CONFIG_VERSION
+  uint32_t size;              // off 4  == sizeof(PgsRoutesTrackingConfig)
   void *object_get_class;     // off 8  il2cpp_object_get_class(obj) -> Il2CppClass* (nonallocating)
   void *class_waypoint;       // off 16 Il2CppClass* Holoholo.Rpc.RouteWaypointProto (exact arg check)
   void *addr_tracking;        // off 24 live RoutesLocationService.CheckTrackingErrorStatus
@@ -98,26 +98,26 @@ struct PgrRoutesTrackingConfig {
   uint32_t reserved1;         // off 60 0 in v1
 };
 
-static_assert(sizeof(PgrRoutesTrackingConfig) == 64, "PgrRoutesTrackingConfig must remain 64 bytes on LP64");
-static_assert(offsetof(PgrRoutesTrackingConfig, object_get_class) == 8, "slot 0");
-static_assert(offsetof(PgrRoutesTrackingConfig, addr_tracking) == 24, "slot 2");
-static_assert(offsetof(PgrRoutesTrackingConfig, addr_location_icall) == 40, "slot 4");
-static_assert(offsetof(PgrRoutesTrackingConfig, lat_offset) == 48, "lat offset field");
-static_assert(offsetof(PgrRoutesTrackingConfig, lng_offset) == 52, "lng offset field");
+static_assert(sizeof(PgsRoutesTrackingConfig) == 64, "PgsRoutesTrackingConfig must remain 64 bytes on LP64");
+static_assert(offsetof(PgsRoutesTrackingConfig, object_get_class) == 8, "slot 0");
+static_assert(offsetof(PgsRoutesTrackingConfig, addr_tracking) == 24, "slot 2");
+static_assert(offsetof(PgsRoutesTrackingConfig, addr_location_icall) == 40, "slot 4");
+static_assert(offsetof(PgsRoutesTrackingConfig, lat_offset) == 48, "lat offset field");
+static_assert(offsetof(PgsRoutesTrackingConfig, lng_offset) == 52, "lng offset field");
 
 // Fixed LP64 table: 8-byte header + 2 function pointers = 24 bytes.
-struct PgrRoutesTrackingApi {
-  uint32_t version;  // == PGR_RT_API_VERSION
-  uint32_t size;     // == sizeof(PgrRoutesTrackingApi)
+struct PgsRoutesTrackingApi {
+  uint32_t version;  // == PGS_RT_API_VERSION
+  uint32_t size;     // == sizeof(PgsRoutesTrackingApi)
   // Verify + publish the immutable config and install the THREE Dobby hooks ONCE for the process
-  // lifetime. Idempotent for an identical config; a different config returns PGR_RT_ERR_RECONFIG. A
-  // partial hook install is rolled back and latched (PGR_RT_ERR_HOOK). Requires the feature-46 API.
-  int (*install)(const PgrRoutesTrackingConfig *config);
+  // lifetime. Idempotent for an identical config; a different config returns PGS_RT_ERR_RECONFIG. A
+  // partial hook install is rolled back and latched (PGS_RT_ERR_HOOK). Requires the feature-46 API.
+  int (*install)(const PgsRoutesTrackingConfig *config);
   // 1 once install() has fully succeeded (the coordinator may now skip the legacy Gum attaches); else 0.
   int (*installed)(void);
 };
 
-static_assert(sizeof(PgrRoutesTrackingApi) == 24, "PgrRoutesTrackingApi must remain a 24-byte version-1 table");
+static_assert(sizeof(PgsRoutesTrackingApi) == 24, "PgsRoutesTrackingApi must remain a 24-byte version-1 table");
 
 // Hidden getter. NOT exported by the version script; the coordinator registers it in query_feature under
 // feature id 50 and answers only on an exact version match.

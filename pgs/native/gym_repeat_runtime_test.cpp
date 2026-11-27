@@ -21,7 +21,7 @@ extern "C" void *fixture_symbol(void *, const char *);
 #undef dlsym
 #undef clock_gettime
 
-using namespace pgr_gym_repeat;
+using namespace pgs_gym_repeat;
 
 namespace {
 
@@ -38,8 +38,8 @@ std::map<uintptr_t, void *> handles;
 uintptr_t handle_next = 0;
 int live_handles = 0;
 
-PgrSharedMetadataOutput fixture_md{};
-PgrBootBinding fixture_boot{};
+PgsSharedMetadataOutput fixture_md{};
+PgsBootBinding fixture_boot{};
 
 // Transport state.
 int tr_enabled = 1, tr_active = 1, tr_battles = 1;
@@ -155,10 +155,10 @@ void *field_type(void *p){return klass_of(static_cast<F*>(p)->type);}
 char *type_name(void *p){return strdup(static_cast<K*>(p)->name.c_str());}
 void static_value(void *p,void *out){auto n=static_cast<F*>(p)->name;*static_cast<int*>(out)=n=="LEAVE_GYM"?0:n=="LEAVE_BATTLE"?1:2;}
 
-int resolve_class(const PgrMetaClassQuery *q, PgrMetaClassResult *out) {
+int resolve_class(const PgsMetaClassQuery *q, PgsMetaClassResult *out) {
     *out = {}; out->klass = klass_of(std::string(q->name_space) + "." + q->name); out->type = out->klass; return 0;
 }
-int validate_method(const PgrMetaMethodQuery *q, PgrMetaMethodResult *out) {
+int validate_method(const PgsMetaMethodQuery *q, PgsMetaMethodResult *out) {
     *out = {};
     if(fail_validation)return -1;
     void *code = nullptr;
@@ -178,19 +178,19 @@ int validate_method(const PgrMetaMethodQuery *q, PgrMetaMethodResult *out) {
 }
 
 // --- fake transport ---------------------------------------------------------------
-int tr_sample(PgrRuntimeTransportSample *out) { *out = {}; out->snapshot_fresh = tr_fresh; out->fault = 0; out->snapshot_seq = tr_seq; out->generation=tr_generation; return 0; }
+int tr_sample(PgsRuntimeTransportSample *out) { *out = {}; out->snapshot_fresh = tr_fresh; out->fault = 0; out->snapshot_seq = tr_seq; out->generation=tr_generation; return 0; }
 int tr_bool(uint32_t id, int *out) { *out = id == 40 ? tr_enabled : id == 3 ? tr_active : id == 6 ? tr_battles : id==38 ? tr_map : 0; return 0; }
 int tr_double(uint32_t, double *out, int *has) { *out = 0; if (has) *has = 1; return 0; }
-int tr_emit(uint32_t, const int64_t *, uint32_t, const PgrRuntimeTransportString *s, uint32_t n) {
+int tr_emit(uint32_t, const int64_t *, uint32_t, const PgsRuntimeTransportString *s, uint32_t n) {
     if (n) statuses.emplace_back(s[0].ptr, s[0].len);
     return 0;
 }
 
-PgrBootApi boot_api{};
-PgrMetaApi meta_api{};
-PgrRuntimeTransportApi transport_api{};
+PgsBootApi boot_api{};
+PgsMetaApi meta_api{};
+PgsRuntimeTransportApi transport_api{};
 
-int boot_snapshot(PgrBootBinding *out) { *out = fixture_boot; return 0; }
+int boot_snapshot(PgsBootBinding *out) { *out = fixture_boot; return 0; }
 
 // fixture exports resolved via dlsym.
 void *type_get_object(void *k) { return k; }
@@ -198,7 +198,7 @@ int string_length(void *o) { return int(static_cast<O *>(o)->text.size()); }
 void *object_get_virtual_method(void *, void *m) { return m; }
 size_t array_length(void *o) { return o==&badge_array ? (badge_present?1:0) : 1; }
 
-const PgrGymRepeatApi *api = nullptr;
+const PgsGymRepeatApi *api = nullptr;
 
 void reset_world() {
     classes.clear(); methods.clear(); fields.clear(); objects.clear();
@@ -264,12 +264,12 @@ void noop4(void *, void *, int32_t, void *) {}
 
 void configure() {
     reset_world();
-    PgrGymRepeatConfig cfg{};
-    cfg.version = PGR_GYM_REPEAT_API_VERSION;
+    PgsGymRepeatConfig cfg{};
+    cfg.version = PGS_GYM_REPEAT_API_VERSION;
     cfg.size = sizeof(cfg);
     cfg.owner_tid = uint64_t(gettid());
     cfg.metadata = &fixture_md;
-    assert(api->configure(&cfg) == PGR_GR_OK);
+    assert(api->configure(&cfg) == PGS_GR_OK);
 }
 
 void fire2(int *code, void *self) {
@@ -278,8 +278,8 @@ void fire2(int *code, void *self) {
     reinterpret_cast<void (*)(void *, void *)>(it->second)(self, nullptr);
 }
 void fire_results(void *self,void *frame,int32_t exit=1){reinterpret_cast<FnResults>(hooks.at(&code_re))(self,frame,exit,nullptr);}
-void tick(){assert(api->tick(self_tid())==PGR_GR_OK);}
-int state(){PgrGymRepeatSample s{};api->sample(&s);return s.state;}
+void tick(){assert(api->tick(self_tid())==PGS_GR_OK);}
+int state(){PgsGymRepeatSample s{};api->sample(&s);return s.state;}
 void reset_session(){
  api->stop(self_tid());assert(live_handles==0);fixture_now+=100000;tr_enabled=tr_active=tr_battles=1;tr_fresh=true;tr_map=0;friendly=neutral=battle_disabled=false;in_range=button_ready=true;sync_screens=true;delay_open=false;g_complete=true;g_fainted=false;g_heal=0;player_id="ACCOUNT_A";g_fort_id="GYM_A";on_player_read={};
  gym_heal_result=0;gym_heal_calls=baseline_calls=0;
@@ -311,9 +311,9 @@ int pgs_hook(void *address, void *replacement, void **original) {
     *original = address == &code_re ? reinterpret_cast<void*>(noop4) : reinterpret_cast<void*>(noop2);
     return fail_hook_at && int(hooks.size())==fail_hook_at ? -1 : 0;
 }
-int pgr_heal_busy() { return g_heal; }
-void pgr_heal_gym_baseline(uint64_t tid,const PgrSharedMetadataOutput *metadata){assert(tid==self_tid()&&metadata==&fixture_md);++baseline_calls;}
-int pgr_heal_gym_tick(uint64_t tid,const PgrSharedMetadataOutput *metadata,uint64_t token,bool (*ready)()){
+int pgs_heal_busy() { return g_heal; }
+void pgs_heal_gym_baseline(uint64_t tid,const PgsSharedMetadataOutput *metadata){assert(tid==self_tid()&&metadata==&fixture_md);++baseline_calls;}
+int pgs_heal_gym_tick(uint64_t tid,const PgsSharedMetadataOutput *metadata,uint64_t token,bool (*ready)()){
  assert(tid==self_tid()&&metadata==&fixture_md&&token==policy.won_at);assert(ready&&ready());++gym_heal_calls;return gym_heal_result;
 }
 void *fixture_symbol(void *, const char *n) {
@@ -327,10 +327,10 @@ void *fixture_symbol(void *, const char *n) {
 
 extern "C" int fixture_clock(clockid_t,struct timespec *t){t->tv_sec=fixture_now/1000;t->tv_nsec=(fixture_now%1000)*1000000;return 0;}
 int main(){
- api=static_cast<const PgrGymRepeatApi*>(pgs_gym_repeat_api(1));
- reset_world();PgrGymRepeatConfig cfg{1,sizeof(cfg),self_tid(),&fixture_md};fail_validation=true;
- assert(api->configure(&cfg)==PGR_GR_ERR_BINDING&&hooks.empty()&&!g_ready.load());fail_validation=false;fail_hook_at=3;
- assert(api->configure(&cfg)==PGR_GR_ERR_BINDING&&!g_ready.load()&&hooks.size()==3);
+ api=static_cast<const PgsGymRepeatApi*>(pgs_gym_repeat_api(1));
+ reset_world();PgsGymRepeatConfig cfg{1,sizeof(cfg),self_tid(),&fixture_md};fail_validation=true;
+ assert(api->configure(&cfg)==PGS_GR_ERR_BINDING&&hooks.empty()&&!g_ready.load());fail_validation=false;fail_hook_at=3;
+ assert(api->configure(&cfg)==PGS_GR_ERR_BINDING&&!g_ready.load()&&hooks.size()==3);
  fire2(&code_ao,approach_ui);assert(live_handles==0&&state()==ST_IDLE); // partial hook calls only original
  for(auto &slot:g_orig)slot.store(nullptr);g_installed_hooks=0;fail_hook_at=0;configure();assert(hooks.size()==6);
  tick();fire2(&code_ao,approach_ui);tick();assert(state()==ST_IDLE&&live_handles==0);

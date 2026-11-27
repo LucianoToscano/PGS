@@ -118,9 +118,9 @@ void *fake_invoke(void *method, void *obj, void **args, void **exc) {
   return nullptr;
 }
 
-PgrVgpMaintenanceConfig make_config() {
-  PgrVgpMaintenanceConfig c{};
-  c.version = PGR_VM_CONFIG_VERSION;
+PgsVgpMaintenanceConfig make_config() {
+  PgsVgpMaintenanceConfig c{};
+  c.version = PGS_VM_CONFIG_VERSION;
   c.size = sizeof(c);
   c.gchandle_new = reinterpret_cast<void *>(&fake_gc_new);
   c.gchandle_get_target = reinterpret_cast<void *>(&fake_gc_get);
@@ -177,7 +177,7 @@ void relocate(void *from, void *to) {
   for (auto &e : g_handles) if (e.second == from) e.second = to;
 }
 
-const PgrVgpMaintenanceApi *g_api = nullptr;
+const PgsVgpMaintenanceApi *g_api = nullptr;
 
 }  // namespace
 
@@ -190,81 +190,81 @@ int main(int argc, char **argv) {
   const auto *core = static_cast<const pgs_native_api_v2 *>(getter(2));
   assert(core && core->size == 48);
   assert(core->query_feature(32, 99) == nullptr);
-  const auto *api = static_cast<const PgrVgpMaintenanceApi *>(core->query_feature(32, 1));
-  assert(api && api->version == 1 && api->size == sizeof(PgrVgpMaintenanceApi));
+  const auto *api = static_cast<const PgsVgpMaintenanceApi *>(core->query_feature(32, 1));
+  assert(api && api->version == 1 && api->size == sizeof(PgsVgpMaintenanceApi));
   g_api = api;
 
   // 0. ABI layout: fixed config/table sizes and the published trailing-field offsets.
   std::printf("ABI sizes: config=%zu table=%zu\n",
-              sizeof(PgrVgpMaintenanceConfig), sizeof(PgrVgpMaintenanceApi));
-  assert(sizeof(PgrVgpMaintenanceConfig) == 176 && sizeof(PgrVgpMaintenanceApi) == 32);
-  assert(PGR_VM_CONFIG_VERSION == 1 && PGR_VM_API_VERSION == 1);
-  assert(offsetof(PgrVgpMaintenanceConfig, spin_success) == 168 &&
-         offsetof(PgrVgpMaintenanceConfig, reserved) == 172);
+              sizeof(PgsVgpMaintenanceConfig), sizeof(PgsVgpMaintenanceApi));
+  assert(sizeof(PgsVgpMaintenanceConfig) == 176 && sizeof(PgsVgpMaintenanceApi) == 32);
+  assert(PGS_VM_CONFIG_VERSION == 1 && PGS_VM_API_VERSION == 1);
+  assert(offsetof(PgsVgpMaintenanceConfig, spin_success) == 168 &&
+         offsetof(PgsVgpMaintenanceConfig, reserved) == 172);
 
   const uint64_t tid = this_tid();
-  PgrVgpMaintenanceConfig cfg = make_config();
+  PgsVgpMaintenanceConfig cfg = make_config();
   int32_t count = -99;
 
   // 1. install validation + not-installed + idempotence + reconfig.
-  assert(api->install(nullptr) == PGR_VM_ERR_NULL_ARG);
-  { PgrVgpMaintenanceConfig b = cfg; b.version = 2; assert(api->install(&b) == PGR_VM_ERR_BAD_VERSION); }
-  { PgrVgpMaintenanceConfig b = cfg; b.size = sizeof(cfg) - 1; assert(api->install(&b) == PGR_VM_ERR_BAD_SIZE); }
-  { PgrVgpMaintenanceConfig b = cfg; b.f_until = nullptr; assert(api->install(&b) == PGR_VM_ERR_MISSING_PTR); }
-  { PgrVgpMaintenanceConfig b = cfg; b.gchandle_new = nullptr; assert(api->install(&b) == PGR_VM_ERR_MISSING_PTR); }
-  { PgrVgpMaintenanceConfig b = cfg; b.class_spin_result = nullptr; assert(api->install(&b) == PGR_VM_ERR_MISSING_PTR); }
-  assert(api->balls(&g_service, tid, 2000, &count) == PGR_VM_ERR_NOT_INSTALLED && count == 0);
-  assert(api->cooldown(&g_stop, &g_spin, tid, 2000) == PGR_VM_ERR_NOT_INSTALLED);
+  assert(api->install(nullptr) == PGS_VM_ERR_NULL_ARG);
+  { PgsVgpMaintenanceConfig b = cfg; b.version = 2; assert(api->install(&b) == PGS_VM_ERR_BAD_VERSION); }
+  { PgsVgpMaintenanceConfig b = cfg; b.size = sizeof(cfg) - 1; assert(api->install(&b) == PGS_VM_ERR_BAD_SIZE); }
+  { PgsVgpMaintenanceConfig b = cfg; b.f_until = nullptr; assert(api->install(&b) == PGS_VM_ERR_MISSING_PTR); }
+  { PgsVgpMaintenanceConfig b = cfg; b.gchandle_new = nullptr; assert(api->install(&b) == PGS_VM_ERR_MISSING_PTR); }
+  { PgsVgpMaintenanceConfig b = cfg; b.class_spin_result = nullptr; assert(api->install(&b) == PGS_VM_ERR_MISSING_PTR); }
+  assert(api->balls(&g_service, tid, 2000, &count) == PGS_VM_ERR_NOT_INSTALLED && count == 0);
+  assert(api->cooldown(&g_stop, &g_spin, tid, 2000) == PGS_VM_ERR_NOT_INSTALLED);
   assert(api->install(&cfg) == 0);
   assert(api->install(&cfg) == 0);  // idempotent
-  { PgrVgpMaintenanceConfig b = cfg; b.class_stop = &cls_other; assert(api->install(&b) == PGR_VM_ERR_RECONFIG); }
-  { PgrVgpMaintenanceConfig b = cfg; b.spin_success = g_spinSuccess + 1; assert(api->install(&b) == PGR_VM_ERR_RECONFIG); }
+  { PgsVgpMaintenanceConfig b = cfg; b.class_stop = &cls_other; assert(api->install(&b) == PGS_VM_ERR_RECONFIG); }
+  { PgsVgpMaintenanceConfig b = cfg; b.spin_success = g_spinSuccess + 1; assert(api->install(&b) == PGS_VM_ERR_RECONFIG); }
 
   // 2. Owner / lease gate: no managed work, no handles, out_count initialised.
   reset();
   count = -99;
-  assert(api->balls(&g_service, tid + 7, 2000, &count) == PGR_VM_SKIP && g_invokes == 0 && count == 0);
-  assert(api->balls(&g_service, 0, 2000, &count) == PGR_VM_SKIP && g_invokes == 0);
-  assert(api->balls(&g_service, tid, 0, &count) == PGR_VM_SKIP && g_invokes == 0);  // closed lease
-  assert(api->balls(nullptr, tid, 2000, &count) == PGR_VM_ERR_NULL_ARG && g_invokes == 0);
-  assert(api->balls(&g_service, tid, 2000, nullptr) == PGR_VM_ERR_NULL_ARG);
-  assert(api->cooldown(&g_stop, &g_spin, tid + 7, 2000) == PGR_VM_SKIP && g_invokes == 0);
-  assert(api->cooldown(&g_stop, &g_spin, 0, 2000) == PGR_VM_SKIP && g_invokes == 0);
-  assert(api->cooldown(&g_stop, &g_spin, tid, 0) == PGR_VM_SKIP && g_invokes == 0);  // closed lease
-  assert(api->cooldown(nullptr, &g_spin, tid, 2000) == PGR_VM_ERR_NULL_ARG && g_invokes == 0);
-  assert(api->cooldown(&g_stop, nullptr, tid, 2000) == PGR_VM_ERR_NULL_ARG && g_invokes == 0);
+  assert(api->balls(&g_service, tid + 7, 2000, &count) == PGS_VM_SKIP && g_invokes == 0 && count == 0);
+  assert(api->balls(&g_service, 0, 2000, &count) == PGS_VM_SKIP && g_invokes == 0);
+  assert(api->balls(&g_service, tid, 0, &count) == PGS_VM_SKIP && g_invokes == 0);  // closed lease
+  assert(api->balls(nullptr, tid, 2000, &count) == PGS_VM_ERR_NULL_ARG && g_invokes == 0);
+  assert(api->balls(&g_service, tid, 2000, nullptr) == PGS_VM_ERR_NULL_ARG);
+  assert(api->cooldown(&g_stop, &g_spin, tid + 7, 2000) == PGS_VM_SKIP && g_invokes == 0);
+  assert(api->cooldown(&g_stop, &g_spin, 0, 2000) == PGS_VM_SKIP && g_invokes == 0);
+  assert(api->cooldown(&g_stop, &g_spin, tid, 0) == PGS_VM_SKIP && g_invokes == 0);  // closed lease
+  assert(api->cooldown(nullptr, &g_spin, tid, 2000) == PGS_VM_ERR_NULL_ARG && g_invokes == 0);
+  assert(api->cooldown(&g_stop, nullptr, tid, 2000) == PGS_VM_ERR_NULL_ARG && g_invokes == 0);
   assert(g_handles.empty());
 
   // 3. balls success: count read, no retained handles. Zero is a valid count.
   reset();
-  assert(api->balls(&g_service, tid, 2000, &count) == PGR_VM_OK && count == 5 && g_handles.empty());
+  assert(api->balls(&g_service, tid, 2000, &count) == PGS_VM_OK && count == 5 && g_handles.empty());
   reset();
   g_balls = 0;
-  assert(api->balls(&g_service, tid, 2000, &count) == PGR_VM_OK && count == 0 && g_handles.empty());
+  assert(api->balls(&g_service, tid, 2000, &count) == PGS_VM_OK && count == 0 && g_handles.empty());
 
   // 4. balls: negative count fails closed; a non-Int32 box is a metadata error.
   reset();
   g_balls = -1;
-  assert(api->balls(&g_service, tid, 2000, &count) == PGR_VM_ERR_NEG_COUNT && count == 0 && g_handles.empty());
+  assert(api->balls(&g_service, tid, 2000, &count) == PGS_VM_ERR_NEG_COUNT && count == 0 && g_handles.empty());
   reset();
   { Int32Box wrong{&cls_other, 3}; g_count_box = &wrong;
-    assert(api->balls(&g_service, tid, 2000, &count) == PGR_VM_ERR_METADATA && count == 0 && g_handles.empty()); }
+    assert(api->balls(&g_service, tid, 2000, &count) == PGS_VM_ERR_METADATA && count == 0 && g_handles.empty()); }
 
   // 5. balls: wrong service / item-bag class is a metadata error; a null item-bag field is a benign skip.
   reset();
   g_service.klass = &cls_other;
-  assert(api->balls(&g_service, tid, 2000, &count) == PGR_VM_ERR_METADATA && g_invokes == 0 && g_handles.empty());
+  assert(api->balls(&g_service, tid, 2000, &count) == PGS_VM_ERR_METADATA && g_invokes == 0 && g_handles.empty());
   reset();
   g_itemBag.klass = &cls_other;
-  assert(api->balls(&g_service, tid, 2000, &count) == PGR_VM_ERR_METADATA && g_invokes == 0 && g_handles.empty());
+  assert(api->balls(&g_service, tid, 2000, &count) == PGS_VM_ERR_METADATA && g_invokes == 0 && g_handles.empty());
   reset();
   g_service.itemBag = nullptr;
-  assert(api->balls(&g_service, tid, 2000, &count) == PGR_VM_SKIP && count == 0 && g_handles.empty());
+  assert(api->balls(&g_service, tid, 2000, &count) == PGS_VM_SKIP && count == 0 && g_handles.empty());
 
   // 6. balls: a managed throw from GetItemCount -> ERR_MANAGED, roots freed, no count written.
   reset();
   g_throw_method = &m_itemCount;
-  assert(api->balls(&g_service, tid, 2000, &count) == PGR_VM_ERR_MANAGED && count == 0 && g_handles.empty());
+  assert(api->balls(&g_service, tid, 2000, &count) == PGS_VM_ERR_MANAGED && count == 0 && g_handles.empty());
 
   // 7. balls: gchandle_new failure at each allocation -> negative, never a false OK, roots freed.
   for (int n = 1; n <= 3; ++n) {
@@ -283,54 +283,54 @@ int main(int argc, char **argv) {
     relocate(&g_itemBag, &g_moved_itemBag);
     g_itemBag.klass = &cls_other;  // poison the stale storage so a stale read would fail loudly
   };
-  assert(api->balls(&g_service, tid, 2000, &count) == PGR_VM_OK && count == 5 && g_handles.empty());
+  assert(api->balls(&g_service, tid, 2000, &count) == PGS_VM_OK && count == 5 && g_handles.empty());
 
   // 9. balls: lease expiry discovered after the read -> benign SKIP, fresh-clock gate, no count.
   reset();
   g_oneshot_on = &m_itemCount;
   g_oneshot = []() { ::usleep(4000); };  // blow past the 1 ms lease before the final clock sample
-  assert(api->balls(&g_service, tid, 1, &count) == PGR_VM_SKIP && count == 0 && g_handles.empty());
+  assert(api->balls(&g_service, tid, 1, &count) == PGS_VM_SKIP && count == 0 && g_handles.empty());
 
   // 10. cooldown success: alive, successful result -> setter invoked exactly once on the stop with until.
   reset();
   g_spin.until = 123456789;
-  assert(api->cooldown(&g_stop, &g_spin, tid, 2000) == PGR_VM_OK);
+  assert(api->cooldown(&g_stop, &g_spin, tid, 2000) == PGS_VM_OK);
   assert(g_setter_calls == 1 && g_setter_obj == &g_stop && g_setter_until == 123456789 && g_handles.empty());
 
   // Full 64 bits of until survive the field read and reach the setter unmodified.
   reset();
   g_spin.until = static_cast<int64_t>(0x7FEEDDCCBBAA9988ULL);
-  assert(api->cooldown(&g_stop, &g_spin, tid, 2000) == PGR_VM_OK);
+  assert(api->cooldown(&g_stop, &g_spin, tid, 2000) == PGS_VM_OK);
   assert(g_setter_until == static_cast<int64_t>(0x7FEEDDCCBBAA9988ULL) && g_handles.empty());
 
   // 11. cooldown: a non-success result applies nothing (benign skip); alive is never consulted.
   reset();
   g_spin.result = g_spinSuccess + 1;
-  assert(api->cooldown(&g_stop, &g_spin, tid, 2000) == PGR_VM_SKIP && g_setter_calls == 0 && g_handles.empty());
+  assert(api->cooldown(&g_stop, &g_spin, tid, 2000) == PGS_VM_SKIP && g_setter_calls == 0 && g_handles.empty());
 
   // 12. cooldown: a dead stop (op_Implicit false) applies nothing (benign skip).
   reset();
   g_boolBox.v = 0;
-  assert(api->cooldown(&g_stop, &g_spin, tid, 2000) == PGR_VM_SKIP && g_setter_calls == 0 && g_handles.empty());
+  assert(api->cooldown(&g_stop, &g_spin, tid, 2000) == PGS_VM_SKIP && g_setter_calls == 0 && g_handles.empty());
 
   // 13. cooldown: wrong stop / response class, and a non-Boolean alive box, are metadata errors.
   reset();
   g_stop.klass = &cls_other;
-  assert(api->cooldown(&g_stop, &g_spin, tid, 2000) == PGR_VM_ERR_METADATA && g_invokes == 0 && g_handles.empty());
+  assert(api->cooldown(&g_stop, &g_spin, tid, 2000) == PGS_VM_ERR_METADATA && g_invokes == 0 && g_handles.empty());
   reset();
   g_spin.klass = &cls_other;
-  assert(api->cooldown(&g_stop, &g_spin, tid, 2000) == PGR_VM_ERR_METADATA && g_invokes == 0 && g_handles.empty());
+  assert(api->cooldown(&g_stop, &g_spin, tid, 2000) == PGS_VM_ERR_METADATA && g_invokes == 0 && g_handles.empty());
   reset();
   { BoolBox wrong{&cls_other, 1}; g_alive_box = &wrong;
-    assert(api->cooldown(&g_stop, &g_spin, tid, 2000) == PGR_VM_ERR_METADATA && g_setter_calls == 0 && g_handles.empty()); }
+    assert(api->cooldown(&g_stop, &g_spin, tid, 2000) == PGS_VM_ERR_METADATA && g_setter_calls == 0 && g_handles.empty()); }
 
   // 14. cooldown: a managed throw from op_Implicit or from the setter -> ERR_MANAGED, roots freed.
   reset();
   g_throw_method = &m_alive;
-  assert(api->cooldown(&g_stop, &g_spin, tid, 2000) == PGR_VM_ERR_MANAGED && g_setter_calls == 0 && g_handles.empty());
+  assert(api->cooldown(&g_stop, &g_spin, tid, 2000) == PGS_VM_ERR_MANAGED && g_setter_calls == 0 && g_handles.empty());
   reset();
   g_throw_method = &m_cooldownResolved;
-  assert(api->cooldown(&g_stop, &g_spin, tid, 2000) == PGR_VM_ERR_MANAGED && g_handles.empty());
+  assert(api->cooldown(&g_stop, &g_spin, tid, 2000) == PGS_VM_ERR_MANAGED && g_handles.empty());
 
   // 15. cooldown: gchandle_new failure at each allocation -> negative, setter never fires, roots freed.
   for (int n = 1; n <= 3; ++n) {
@@ -351,7 +351,7 @@ int main(int argc, char **argv) {
     relocate(&g_stop, &g_moved_stop);
     g_stop.klass = &cls_other;  // poison the stale storage
   };
-  assert(api->cooldown(&g_stop, &g_spin, tid, 2000) == PGR_VM_OK);
+  assert(api->cooldown(&g_stop, &g_spin, tid, 2000) == PGS_VM_OK);
   assert(g_vmethod_obj == &g_moved_stop && g_setter_obj == &g_moved_stop && g_setter_until == 42);
   assert(g_handles.empty());
 
@@ -359,14 +359,14 @@ int main(int argc, char **argv) {
   reset();
   g_oneshot_on = &m_alive;
   g_oneshot = []() { ::usleep(4000); };  // blow past the 1 ms lease before the pre-setter clock gate
-  assert(api->cooldown(&g_stop, &g_spin, tid, 1) == PGR_VM_SKIP && g_setter_calls == 0 && g_handles.empty());
+  assert(api->cooldown(&g_stop, &g_spin, tid, 1) == PGS_VM_SKIP && g_setter_calls == 0 && g_handles.empty());
 
   // An exact Boolean box still must contain a canonical 0/1 value.
   for (uint8_t invalid : {uint8_t(2), uint8_t(255)}) {
     reset();
     BoolBox malformed{&cls_bool, invalid};
     g_alive_box = &malformed;
-    assert(api->cooldown(&g_stop, &g_spin, tid, 2000) == PGR_VM_ERR_METADATA);
+    assert(api->cooldown(&g_stop, &g_spin, tid, 2000) == PGS_VM_ERR_METADATA);
     assert(g_setter_calls == 0 && g_handles.empty());
   }
 
@@ -376,7 +376,7 @@ int main(int argc, char **argv) {
   reset();
   g_oneshot_on = &m_cooldownResolved;
   g_oneshot = []() { ::usleep(60000); };
-  assert(api->cooldown(&g_stop, &g_spin, tid, 30) == PGR_VM_OK && g_setter_calls == 1 && g_handles.empty());
+  assert(api->cooldown(&g_stop, &g_spin, tid, 30) == PGS_VM_OK && g_setter_calls == 1 && g_handles.empty());
 
   // 19. Reentrancy: a nested maintenance call fired inside GetItemCount is refused busy; outer succeeds.
   reset();
@@ -386,7 +386,7 @@ int main(int argc, char **argv) {
     int32_t inner = 0;
     nested = g_api->balls(&g_service, this_tid(), 2000, &inner);
   };
-  assert(api->balls(&g_service, tid, 2000, &count) == PGR_VM_OK && nested == PGR_VM_ERR_BUSY && g_handles.empty());
+  assert(api->balls(&g_service, tid, 2000, &count) == PGS_VM_OK && nested == PGS_VM_ERR_BUSY && g_handles.empty());
 
   puts("PASS VGP maintenance: ABI (config 176 / table 32) + spin_success/reserved offsets, "
        "install/validation/idempotence/reconfig, owner/lease gate (no managed work), balls count "

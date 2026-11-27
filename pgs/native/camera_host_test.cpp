@@ -20,8 +20,8 @@
 #include "hook_engine.h"
 #include "dobby.h"
 static const pgs_native_api_v2 *fixture_core=nullptr;
-int fixture_resolve(const PgrCameraMetaConfig*,PgrCameraMetaOutput*);
-static const PgrCameraMetaApi fixture_metadata{1,sizeof(PgrCameraMetaApi),sizeof(PgrCameraMetaConfig),sizeof(PgrCameraMetaOutput),fixture_resolve};
+int fixture_resolve(const PgsCameraMetaConfig*,PgsCameraMetaOutput*);
+static const PgsCameraMetaApi fixture_metadata{1,sizeof(PgsCameraMetaApi),sizeof(PgsCameraMetaConfig),sizeof(PgsCameraMetaOutput),fixture_resolve};
 const void *fixture_core_api(uint32_t v){return v==2?fixture_core:nullptr;}
 const void *fixture_metadata_api(uint32_t){return &fixture_metadata;}
 const void *fixture_sampler_api(uint32_t v){return fixture_core->query_feature(41,v);}
@@ -56,7 +56,7 @@ int fixture_unhook(void *target){return DobbyDestroy(target);}
 
 namespace {
 
-using namespace pgr_camera_schema;
+using namespace pgs_camera_schema;
 
 struct Class;
 struct Type {
@@ -120,16 +120,16 @@ constexpr uint64_t kGcFreeRva = 0x2800ULL;
 constexpr uint64_t kGcFreeBodyRva = 0x2900ULL;
 
 constexpr uint32_t kAllOptionalExports =
-    PGR_CAM_EXP_CLASS_GET_FIELD_FROM_NAME | PGR_CAM_EXP_FIELD_GET_TYPE |
-    PGR_CAM_EXP_FIELD_GET_PARENT | PGR_CAM_EXP_FIELD_GET_FLAGS |
-    PGR_CAM_EXP_RUNTIME_INVOKE | PGR_CAM_EXP_OBJECT_GET_CLASS |
-    PGR_CAM_EXP_OBJECT_UNBOX | PGR_CAM_EXP_GCHANDLE_NEW |
-    PGR_CAM_EXP_GCHANDLE_GET_TARGET | PGR_CAM_EXP_GCHANDLE_FREE |
-    PGR_CAM_EXP_FIELD_GET_VALUE | PGR_CAM_EXP_GET_CORLIB |
-    PGR_CAM_EXP_CLASS_IS_ASSIGNABLE_FROM | PGR_CAM_EXP_CLASS_IS_VALUETYPE |
-    PGR_CAM_EXP_CLASS_VALUE_SIZE | PGR_CAM_EXP_DEBUG_GET_METHOD_INFO |
-    PGR_CAM_EXP_METHOD_IS_GENERIC | PGR_CAM_EXP_METHOD_IS_INFLATED |
-    PGR_CAM_EXP_METHOD_GET_PARAM | PGR_CAM_EXP_STRING_NEW;
+    PGS_CAM_EXP_CLASS_GET_FIELD_FROM_NAME | PGS_CAM_EXP_FIELD_GET_TYPE |
+    PGS_CAM_EXP_FIELD_GET_PARENT | PGS_CAM_EXP_FIELD_GET_FLAGS |
+    PGS_CAM_EXP_RUNTIME_INVOKE | PGS_CAM_EXP_OBJECT_GET_CLASS |
+    PGS_CAM_EXP_OBJECT_UNBOX | PGS_CAM_EXP_GCHANDLE_NEW |
+    PGS_CAM_EXP_GCHANDLE_GET_TARGET | PGS_CAM_EXP_GCHANDLE_FREE |
+    PGS_CAM_EXP_FIELD_GET_VALUE | PGS_CAM_EXP_GET_CORLIB |
+    PGS_CAM_EXP_CLASS_IS_ASSIGNABLE_FROM | PGS_CAM_EXP_CLASS_IS_VALUETYPE |
+    PGS_CAM_EXP_CLASS_VALUE_SIZE | PGS_CAM_EXP_DEBUG_GET_METHOD_INFO |
+    PGS_CAM_EXP_METHOD_IS_GENERIC | PGS_CAM_EXP_METHOD_IS_INFLATED |
+    PGS_CAM_EXP_METHOD_GET_PARAM | PGS_CAM_EXP_STRING_NEW;
 
 std::vector<std::unique_ptr<Type>> g_types;
 std::vector<std::unique_ptr<Class>> g_extra_classes;
@@ -198,8 +198,8 @@ bool g_getter_from_clock = false;
 uint64_t g_fake_tid = 0;
 
 using MainCameraGetterFn=void *(*)(void*,const void*);
-const PgrCameraHostApi *g_host=nullptr;
-const PgrUnitySchedulerApi3 *g_scheduler=nullptr;
+const PgsCameraHostApi *g_host=nullptr;
+const PgsUnitySchedulerApi3 *g_scheduler=nullptr;
 uint64_t g_generation=0;
 unsigned g_getter_calls=0;bool g_getter_throws=false,g_execute_getter=true;
 const void *g_expected_info=reinterpret_cast<void*>(0x776655);
@@ -488,11 +488,11 @@ __attribute__((noinline,optnone)) void *fake_runtime_invoke(const void *method, 
 }
 
 __attribute__((noinline,optnone)) void *fake_convert(const void *m,void *o,void **p,int32_t,void **e){asm volatile(".rept 32; nop; .endr" ::: "memory");return fake_runtime_invoke(m,o,p,e);}
-int verify_scheduler(const PgrUnitySchedulerConfig *c){return c&&c->version==2&&c->execute_tasks==g_slot_methods[M_EXECUTE_TASKS]&&c->runtime_invoke==reinterpret_cast<void*>(fake_runtime_invoke)&&c->runtime_invoke_convert_args==reinterpret_cast<void*>(fake_convert)&&c->exclusive_owner==1;}
+int verify_scheduler(const PgsUnitySchedulerConfig *c){return c&&c->version==2&&c->execute_tasks==g_slot_methods[M_EXECUTE_TASKS]&&c->runtime_invoke==reinterpret_cast<void*>(fake_runtime_invoke)&&c->runtime_invoke_convert_args==reinterpret_cast<void*>(fake_convert)&&c->exclusive_owner==1;}
 void run_execute(){using Fn=decltype(&fake_runtime_invoke);Fn volatile invoke=&fake_runtime_invoke;void *exception=nullptr;assert(invoke(g_slot_methods[M_EXECUTE_TASKS],nullptr,nullptr,&exception)==nullptr&&!exception);}
 
 int fake_seg_query(void *, const void *addr, uint64_t size,
-                   PgrMetaSegment *out) {
+                   PgsMetaSegment *out) {
   *out = {};
   uintptr_t a = reinterpret_cast<uintptr_t>(addr);
   uintptr_t base = reinterpret_cast<uintptr_t>(g_module_base);
@@ -539,12 +539,12 @@ void restore_module_fingerprints() {
   write_u32(kGcFreeBodyRva + kGcFreeTailOff, kGcFreeTail[0]);
   write_u32(kGcFreeBodyRva + kGcFreeTailOff + 4u, kGcFreeTail[1]);
 
-  write_u32(PGR_CAM_MAIN_CAMERA_RVA, kGetMainCameraWords[0]);
-  write_u32(PGR_CAM_MAIN_CAMERA_RVA + 4u, kGetMainCameraWords[1]);
+  write_u32(PGS_CAM_MAIN_CAMERA_RVA, kGetMainCameraWords[0]);
+  write_u32(PGS_CAM_MAIN_CAMERA_RVA + 4u, kGetMainCameraWords[1]);
 }
 
-PgrMetaExports g_meta_exports = {};
-PgrCameraMetaExtra g_meta_extra = {};
+PgsMetaExports g_meta_exports = {};
+PgsCameraMetaExtra g_meta_extra = {};
 
 void build_universe() {
   g_types.clear();
@@ -612,7 +612,7 @@ void build_universe() {
           t.is_static, 0, nullptr, nullptr);
   }
   add_m(M_GET_MAIN_CAMERA, C_STACK, "get_MainCamera", "UnityEngine.Camera", 0,
-        0, nullptr, g_module_base + PGR_CAM_MAIN_CAMERA_RVA);
+        0, nullptr, g_module_base + PGS_CAM_MAIN_CAMERA_RVA);
   add_m(M_GET_CULLING_MASK, C_CAMERA, "get_cullingMask", "System.Int32", 0, 0,
         nullptr, nullptr);
   add_m(M_NAME_TO_LAYER, C_LAYERMASK, "NameToLayer", "System.Int32", 1, 1,
@@ -653,7 +653,7 @@ void build_universe() {
   };
 
   g_meta_extra = {};
-  g_meta_extra.version = PGR_CAM_EXTRA_VERSION;
+  g_meta_extra.version = PGS_CAM_EXTRA_VERSION;
   g_meta_extra.size = sizeof(g_meta_extra);
   g_meta_extra.image_get_name = reinterpret_cast<void *>(&fake_image_get_name);
   g_meta_extra.get_corlib = reinterpret_cast<void *>(&fake_get_corlib);
@@ -717,11 +717,11 @@ void reset_fixture() {
   g_fake_tid = static_cast<uint64_t>(static_cast<pid_t>(syscall(SYS_gettid)));
 }
 
-PgrCameraHostConfig make_host_config(uint32_t extra_flags = 0) {
-  PgrCameraHostConfig cfg = {};
-  cfg.version = PGR_CH_API_VERSION;
+PgsCameraHostConfig make_host_config(uint32_t extra_flags = 0) {
+  PgsCameraHostConfig cfg = {};
+  cfg.version = PGS_CH_API_VERSION;
   cfg.size = sizeof(cfg);
-  cfg.flags = PGR_CH_FLAG_FIXTURE_HOOK_OVERRIDE | extra_flags;
+  cfg.flags = PGS_CH_FLAG_FIXTURE_HOOK_OVERRIDE | extra_flags;
   cfg.expected_layer = 13;
   cfg.module_base = g_module_base;
   cfg.module_size = g_module_size;
@@ -742,15 +742,15 @@ PgrCameraHostConfig make_host_config(uint32_t extra_flags = 0) {
   return cfg;
 }
 
-std::vector<PgrCameraHostEvent> drain_all(const PgrCameraHostApi *api) {
-  std::vector<PgrCameraHostEvent> out;
+std::vector<PgsCameraHostEvent> drain_all(const PgsCameraHostApi *api) {
+  std::vector<PgsCameraHostEvent> out;
   for (;;) {
-    PgrCameraHostEvent ev = {};
-    ev.version = PGR_CH_API_VERSION;
+    PgsCameraHostEvent ev = {};
+    ev.version = PGS_CH_API_VERSION;
     ev.size = sizeof(ev);
     int rc = api->next_event(&ev);
     assert(rc >= 0);
-    if (rc == 0 || ev.kind == PGR_CH_EVENT_NONE) break;
+    if (rc == 0 || ev.kind == PGS_CH_EVENT_NONE) break;
     out.push_back(ev);
   }
   return out;
@@ -758,8 +758,8 @@ std::vector<PgrCameraHostEvent> drain_all(const PgrCameraHostApi *api) {
 
 }  // namespace
 
-int fixture_resolve(const PgrCameraMetaConfig *cfg,PgrCameraMetaOutput *out){
- assert(cfg&&out&&cfg->owner_tid==uint64_t(gettid()));*out={};out->version=1;out->size=sizeof(*out);out->vector_fields=PGR_CAM_VF_VERIFIED;out->target_count=5;
+int fixture_resolve(const PgsCameraMetaConfig *cfg,PgsCameraMetaOutput *out){
+ assert(cfg&&out&&cfg->owner_tid==uint64_t(gettid()));*out={};out->version=1;out->size=sizeof(*out);out->vector_fields=PGS_CAM_VF_VERIFIED;out->target_count=5;
  for(unsigned i=0;i<kClassCount;++i)out->classes[i]=&g_classes[i];
  for(unsigned i=0;i<kFieldCount;++i)out->fields[i]=g_vec_fields[i];
  for(unsigned i=0;i<kMethodCount;++i)out->methods[i]=g_slot_methods[i];
@@ -782,10 +782,10 @@ int main(int argc, char **argv) {
   assert(core != nullptr && core->query_feature != nullptr);
 
   fixture_core=core;
-  const auto *actual=static_cast<const PgrCameraHostApi *>(core->query_feature(64u,1u));assert(actual&&actual->size==112);
-  const auto *api=static_cast<const PgrCameraHostApi *>(fixture_host_api(1));
-  assert(api->version == PGR_CH_API_VERSION);
-  assert(api->size == sizeof(PgrCameraHostApi));
+  const auto *actual=static_cast<const PgsCameraHostApi *>(core->query_feature(64u,1u));assert(actual&&actual->size==112);
+  const auto *api=static_cast<const PgsCameraHostApi *>(fixture_host_api(1));
+  assert(api->version == PGS_CH_API_VERSION);
+  assert(api->size == sizeof(PgsCameraHostApi));
 
   // Map synthetic 256 MiB module with active pages around debug/GC/getter RVAs.
   const size_t page = static_cast<size_t>(sysconf(_SC_PAGESIZE));
@@ -796,7 +796,7 @@ int main(int argc, char **argv) {
   g_module_base = static_cast<unsigned char *>(mapped);
   uintptr_t low_end = (kGcFreeBodyRva + 0x1000ULL + page - 1) & ~(page - 1);
   assert(mprotect(g_module_base, low_end, PROT_READ | PROT_WRITE) == 0);
-  uintptr_t get_page = PGR_CAM_MAIN_CAMERA_RVA & ~(page - 1);
+  uintptr_t get_page = PGS_CAM_MAIN_CAMERA_RVA & ~(page - 1);
   assert(mprotect(g_module_base + get_page, page * 2,
                   PROT_READ | PROT_WRITE) == 0);
 
@@ -805,29 +805,29 @@ int main(int argc, char **argv) {
 
   // Bind Feature 47 once with the canonical exports & segment resolver.
   const auto *md47 =
-      static_cast<const PgrMetaApi *>(core->query_feature(47u, 1u));
+      static_cast<const PgsMetaApi *>(core->query_feature(47u, 1u));
   assert(md47 != nullptr);
-  PgrMetaBindConfig bind_cfg = {};
-  bind_cfg.version = PGR_MD_CONFIG_VERSION;
+  PgsMetaBindConfig bind_cfg = {};
+  bind_cfg.version = PGS_MD_CONFIG_VERSION;
   bind_cfg.size = sizeof(bind_cfg);
   bind_cfg.exports = &g_meta_exports;
   bind_cfg.module_base = g_module_base;
   bind_cfg.module_size = g_module_size;
   bind_cfg.seg_query = &fake_seg_query;
-  assert(md47->bind(&bind_cfg) == PGR_MD_OK);
+  assert(md47->bind(&bind_cfg) == PGS_MD_OK);
 
 
   assert(!core->query_feature(64,0)&&!core->query_feature(64,2));
-  PgrCameraHostConfig cfg=make_host_config();const bool bounded=argc>2&&std::strcmp(argv[2],"bounded")==0;const bool transport_mode=argc>2&&std::strcmp(argv[2],"transport")==0;
-  const auto transport=static_cast<const PgrRuntimeTransportApi*>(core->query_feature(52,1));
-  if(transport_mode){PgrRuntimeTransportConfig c{1,sizeof(c),1000,256,10000,65536,0,0};assert(transport->install(&c)==0);cfg.flags|=PGR_CH_FLAG_USE_TRANSPORT;}
-  PgrCameraHostConfig bad=cfg;bad.version=2;assert(api->configure(&bad)==PGR_CH_ERR_VERSION);assert(actual->configure(&bad)==PGR_CH_ERR_VERSION);
-  assert(api->configure(&cfg)==0);assert(api->start(nullptr)==PGR_CH_ERR_INVALID_ARG);
-  g_host=api;g_scheduler=static_cast<const PgrUnitySchedulerApi3*>(core->query_feature(48,3));assert(g_scheduler);
-  PgrUnitySchedulerConfig scheduler{};scheduler.version=2;scheduler.size=sizeof(scheduler);scheduler.runtime_invoke=reinterpret_cast<void*>(fake_runtime_invoke);scheduler.runtime_invoke_convert_args=reinterpret_cast<void*>(fake_convert);scheduler.execute_tasks=g_slot_methods[M_EXECUTE_TASKS];scheduler.thread_current=fake_thread_current;scheduler.verify_metadata=verify_scheduler;scheduler.expected_owner_tid=gettid();scheduler.exclusive_owner=1;scheduler.subscriber_count=1;scheduler.subscribers[0]={api->on_unity_begin,api->on_unity_end,nullptr};
+  PgsCameraHostConfig cfg=make_host_config();const bool bounded=argc>2&&std::strcmp(argv[2],"bounded")==0;const bool transport_mode=argc>2&&std::strcmp(argv[2],"transport")==0;
+  const auto transport=static_cast<const PgsRuntimeTransportApi*>(core->query_feature(52,1));
+  if(transport_mode){PgsRuntimeTransportConfig c{1,sizeof(c),1000,256,10000,65536,0,0};assert(transport->install(&c)==0);cfg.flags|=PGS_CH_FLAG_USE_TRANSPORT;}
+  PgsCameraHostConfig bad=cfg;bad.version=2;assert(api->configure(&bad)==PGS_CH_ERR_VERSION);assert(actual->configure(&bad)==PGS_CH_ERR_VERSION);
+  assert(api->configure(&cfg)==0);assert(api->start(nullptr)==PGS_CH_ERR_INVALID_ARG);
+  g_host=api;g_scheduler=static_cast<const PgsUnitySchedulerApi3*>(core->query_feature(48,3));assert(g_scheduler);
+  PgsUnitySchedulerConfig scheduler{};scheduler.version=2;scheduler.size=sizeof(scheduler);scheduler.runtime_invoke=reinterpret_cast<void*>(fake_runtime_invoke);scheduler.runtime_invoke_convert_args=reinterpret_cast<void*>(fake_convert);scheduler.execute_tasks=g_slot_methods[M_EXECUTE_TASKS];scheduler.thread_current=fake_thread_current;scheduler.verify_metadata=verify_scheduler;scheduler.expected_owner_tid=gettid();scheduler.exclusive_owner=1;scheduler.subscriber_count=1;scheduler.subscribers[0]={api->on_unity_begin,api->on_unity_end,nullptr};
   assert(g_scheduler->install(&scheduler)==0);g_generation=g_scheduler->activate();assert(g_generation);
-  PgrCameraHostOptions opts{1,sizeof(opts),1,1,uint8_t(!bounded),1,250,0,0,0};assert(api->start(&opts)==0);drain_all(api);
-  auto sample=[&](){PgrCameraHostSample v{};v.version=1;v.size=sizeof(v);assert(api->sample(&v)==0);return v;};
+  PgsCameraHostOptions opts{1,sizeof(opts),1,1,uint8_t(!bounded),1,250,0,0,0};assert(api->start(&opts)==0);drain_all(api);
+  auto sample=[&](){PgsCameraHostSample v{};v.version=1;v.size=sizeof(v);assert(api->sample(&v)==0);return v;};
   auto renew=[&](){g_fake_now_ms+=bounded?500:100;opts.now_ms=uint64_t(g_fake_now_ms);assert(api->set_options(&opts)==0);};
   if(bounded){
    g_execute_getter=false;for(unsigned i=0;i<30&&sample().active;++i){renew();run_execute();}
@@ -847,8 +847,8 @@ int main(int argc, char **argv) {
    puts("PASS continuous camera invalidates vertical heading and recovers next valid sample without restart");return 0;
   }
   if(argc>2&&std::strcmp(argv[2],"longrun")==0){
-   for(unsigned i=0;i<PGR_CH_CALLS_MAX+10;++i){renew();run_execute();}
-   assert(sample().active&&!g_state.overflow&&sample().calls>PGR_CH_CALLS_MAX);
+   for(unsigned i=0;i<PGS_CH_CALLS_MAX+10;++i){renew();run_execute();}
+   assert(sample().active&&!g_state.overflow&&sample().calls>PGS_CH_CALLS_MAX);
    renew();natural_getter();assert(sample().sample_count>0&&g_handles.empty());
    g_state.calls=g_state.raw_matches=g_state.matches=UINT32_MAX;
    renew();natural_getter();assert(sample().active&&sample().calls==UINT32_MAX&&sample().matches==UINT32_MAX);
@@ -856,12 +856,12 @@ int main(int argc, char **argv) {
    api->on_execute_enter(gettid(),1);api->on_execute_leave(gettid(),1);
    assert(!g_state.overflow&&g_state.calls==UINT32_MAX);
    // Diagnostic mode still has its strict observation budget.
-   g_state.continuous=false;g_state.calls=PGR_CH_CALLS_MAX;
+   g_state.continuous=false;g_state.calls=PGS_CH_CALLS_MAX;
    api->on_execute_enter(gettid(),1);assert(g_state.overflow);
    puts("PASS continuous camera survives 200000 calls and counter saturation; diagnostic budget retained");return 0;
   }
   if(transport_mode){
-   uint64_t seq=0;unsigned heading_actions=0,telemetry_actions=0,heading_logs=0;auto frame=[&](bool enabled){std::vector<uint8_t> bytes(PGR_TRANSPORT_SNAPSHOT_FIXED+4*PGR_TRANSPORT_STRINGS,0);auto set=[&](size_t at,uint32_t v){memcpy(bytes.data()+at,&v,4);};set(0,PGR_TRANSPORT_SNAPSHOT_MAGIC);set(4,PGR_TRANSPORT_FRAME_VERSION);set(8,bytes.size());++seq;memcpy(bytes.data()+16,&seq,8);bytes[32+10]=enabled;uint32_t length=0;std::vector<uint8_t> output(65536);assert(transport->exchange(bytes.data(),bytes.size(),output.data(),output.size(),&length)==0);
+   uint64_t seq=0;unsigned heading_actions=0,telemetry_actions=0,heading_logs=0;auto frame=[&](bool enabled){std::vector<uint8_t> bytes(PGS_TRANSPORT_SNAPSHOT_FIXED+4*PGS_TRANSPORT_STRINGS,0);auto set=[&](size_t at,uint32_t v){memcpy(bytes.data()+at,&v,4);};set(0,PGS_TRANSPORT_SNAPSHOT_MAGIC);set(4,PGS_TRANSPORT_FRAME_VERSION);set(8,bytes.size());++seq;memcpy(bytes.data()+16,&seq,8);bytes[32+10]=enabled;uint32_t length=0;std::vector<uint8_t> output(65536);assert(transport->exchange(bytes.data(),bytes.size(),output.data(),output.size(),&length)==0);
     auto read=[&](size_t at){uint32_t v;memcpy(&v,output.data()+at,4);return v;};size_t at=32;for(unsigned n=0;n<read(12);++n){uint32_t op=read(at),ns=read(at+4),nt=read(at+8);at+=12+8*ns;heading_actions+=op==57;telemetry_actions+=op==19;for(unsigned j=0;j<nt;++j){uint32_t size=read(at);if(op==19&&j==0&&size==14&&memcmp(output.data()+at+4,"camera-heading",14)==0)++heading_logs;at+=4+size;}}assert(at==length);
    };
    frame(true);for(unsigned i=0;i<3;++i){renew();run_execute();}renew();natural_getter();assert(sample().sample_count==1);assert(g_handles.empty());
@@ -874,12 +874,12 @@ int main(int argc, char **argv) {
    // A newer52 snapshot arriving during41 allocation invalidates publication.
    frame(true);bool changed=false;g_on_invoke=[&](){if(!changed){changed=true;frame(false);}};renew();natural_getter();g_on_invoke=nullptr;assert(changed&&sample().sample_count==samples);
    // Queue saturation is terminal and never permits an unreported heading.
-   frame(true);PgrRuntimeTransportString message{"fill",4};int fill=0;while(transport->emit(21,nullptr,0,&message,1)==0)++fill;assert(fill>0);
+   frame(true);PgsRuntimeTransportString message{"fill",4};int fill=0;while(transport->emit(21,nullptr,0,&message,1)==0)++fill;assert(fill>0);
    renew();natural_getter();api->tick(gettid());assert(sample().stopping&&g_handles.empty());
    puts("PASS64 actual52 sustained131 headings/no adapter queue, coherent settings, OFF/stale gates, mid-sample snapshot revocation, queue backpressure stop");return 0;
   }
   // No fabricated manual or subscriber pulse authorizes continuous sampling.
-  PgrUnityPulse invalid{g_generation+1,1,gettid(),0};api->on_unity_begin(nullptr,&invalid);api->on_unity_end(nullptr,&invalid);assert(sample().matches==0);
+  PgsUnityPulse invalid{g_generation+1,1,gettid(),0};api->on_unity_begin(nullptr,&invalid);api->on_unity_end(nullptr,&invalid);assert(sample().matches==0);
   // Warmup and subsequent getter calls inside original ExecuteTasks never sample.
   for(int i=0;i<4;++i){renew();run_execute();}assert(sample().sample_count==0);
   int before=g_invokes;
@@ -906,7 +906,7 @@ int main(int argc, char **argv) {
   bool stopped_once=false;g_on_invoke=[&](){if(!stopped_once){stopped_once=true;std::thread stopper([&](){assert(api->stop("foreign-stop")==0);});stopper.join();}};
   renew();natural_getter();g_on_invoke=nullptr;api->tick(gettid());assert(stopped_once&&!sample().active&&g_handles.empty());
   unsigned original_calls=g_getter_calls;call_getter();assert(g_getter_calls==original_calls+1&&sample().hook_installed);
-  assert(api->start(&opts)==PGR_CH_ERR_RESTART_REQUIRED);assert(g_handles.empty());
+  assert(api->start(&opts)==PGS_CH_ERR_RESTART_REQUIRED);assert(g_handles.empty());
   puts("PASS actual64 ABI+compiled64 source+real41 +real48 API3/Dobby: idle Unity getter boundary, in-ExecuteTasks/subscriber exclusion, generation and attachment gates, pinned roots, relocation refresh, original exception, revoke, foreign stop, permanent passthrough");
   if(argc==2)for(const char *mode:{"bounded","transport","vertical"}){pid_t child=fork();assert(child>=0);if(!child){execl(argv[0],argv[0],argv[1],mode,static_cast<char*>(nullptr));_exit(127);}int status=0;assert(waitpid(child,&status,0)==child&&WIFEXITED(status)&&WEXITSTATUS(status)==0);}
   return 0;

@@ -33,16 +33,16 @@
 //
 // btyb (makeThrow) returns the game's 12-byte PokeballThrow BY VALUE. Its il2cpp
 // metadata declares ONE managed parameter, System.Boolean, so the verified native ABI is
-//   PgrThrowValue btyb(void* self, uint8_t missedArg, void* methodInfo)
+//   PgsThrowValue btyb(void* self, uint8_t missedArg, void* methodInfo)
 // i.e. THREE native parameters, not the (self, MethodInfo) pair named in the original
 // task brief. See always_hit.cpp for the coordinator-facing blocker note. Modelling it
 // as a by-value struct return lets the C++ ABI place {item,radius} in x0 and the three
 // Boolean bytes + pad in x1 exactly as the game does, so clearing `missed` here is the
 // same bit operation as the old `x1 & 0xff00ffff` register edit. Never hand-split it.
 
-// 12-byte packed PokeballThrow; identical layout to PgrThrowValue in throws.h. Redefined
+// 12-byte packed PokeballThrow; identical layout to PgsThrowValue in throws.h. Redefined
 // here under a feature-local name so this header is self-contained for the coordinator.
-struct PgrAlwaysHitValue {   // 12 bytes, 4-byte aligned
+struct PgsAlwaysHitValue {   // 12 bytes, 4-byte aligned
     int32_t item;            // 0  regular/Premier or metadata-resolved inventory Safari item
     float   radius;          // 4  reticle radius (untouched by this layer)
     uint8_t bullseye;        // 8  0/1 (untouched)
@@ -51,7 +51,7 @@ struct PgrAlwaysHitValue {   // 12 bytes, 4-byte aligned
     uint8_t pad;             // 11 preserved verbatim
 };
 
-struct PgrAlwaysHitConfig {  // 192 bytes: 8-byte header then 23 pointers in table order
+struct PgsAlwaysHitConfig {  // 192 bytes: 8-byte header then 23 pointers in table order
     uint32_t version, size;  // 0   { version==1, size==sizeof }
     void *code_launch;       // 8   instrument target: Launch (reads x0/rdi only)
     void *code_release;      // 16  instrument target: EndDrag (reads x0/rdi only)
@@ -78,17 +78,17 @@ struct PgrAlwaysHitConfig {  // 192 bytes: 8-byte header then 23 pointers in tab
     void *field_pokemon;     // 184 FieldInfo* IEncounterPokemon reference
 };
 
-struct PgrAlwaysHitSample {  // 24 bytes: pull-only telemetry snapshot
+struct PgsAlwaysHitSample {  // 24 bytes: pull-only telemetry snapshot
     uint64_t applied;        // 0  HitPokemon actions invoked
     uint64_t normalized;     // 8  makeThrow "missed" bytes cleared
     uint64_t errors;         // 16 managed-exception / root failures that latched the fault
 };
 
-struct PgrAlwaysHitApi {     // 40 bytes: ordered, read-only table
+struct PgsAlwaysHitApi {     // 40 bytes: ordered, read-only table
     uint32_t version, size;  // 0  { version==1, size==sizeof }
-    int (*install)(const PgrAlwaysHitConfig *config);
+    int (*install)(const PgsAlwaysHitConfig *config);
     int (*update)(int enabled, int allowed, uint64_t lease_ms, uint64_t unity_tid);
-    int (*sample)(PgrAlwaysHitSample *out);
+    int (*sample)(PgsAlwaysHitSample *out);
     int (*tick)(uint64_t proven_tid);
 };
 

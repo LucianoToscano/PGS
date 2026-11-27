@@ -19,5 +19,5 @@
 // catches it exactly as if they had tapped it; once it has left the map it is thrown at directly, a
 // Golden Razz (or Razz) Berry and then excellent curveballs with the best ball on hand (never a Master
 // Ball), through the game's catch request.
-void pgr_shiny_scan_tick(uint64_t tid, const PgrSharedMetadataOutput *metadata);
-void pgr_shiny_scan_stop(uint64_t tid);
+void pgs_shiny_scan_tick(uint64_t tid, const PgsSharedMetadataOutput *metadata);
+void pgs_shiny_scan_stop(uint64_t tid);

@@ -37,7 +37,7 @@
 #include <string>
 #include <vector>
 
-using namespace pgr_auto_raid;
+using namespace pgs_auto_raid;
 
 // ----------------------------- tiny harness --------------------------------
 static int g_checks = 0;

@@ -89,7 +89,7 @@ void *fake_runtime_invoke(const void *method, void *obj, void **params, void **e
   return nullptr;
 }
 
-#define PGR_NOP8() asm volatile("nop; nop; nop; nop; nop; nop; nop; nop;")
+#define PGS_NOP8() asm volatile("nop; nop; nop; nop; nop; nop; nop; nop;")
 
 // Records of what the originals received, to prove the ABI forwards verbatim.
 struct TapLog { int count = 0; void *self = nullptr, *sender = nullptr, *ea = nullptr, *method = nullptr; };
@@ -109,7 +109,7 @@ void (*volatile call_tap)(void *, void *, void *, void *) = nullptr;
 uint8_t (*volatile call_position)(void *, TestFloat2, void *, void *) = nullptr;
 
 __attribute__((noinline)) void target_tap(void *self, void *sender, void *ea, void *method) {
-  PGR_NOP8();
+  PGS_NOP8();
   ++g_tap_log.count;
   g_tap_log.self = self; g_tap_log.sender = sender; g_tap_log.ea = ea; g_tap_log.method = method;
   if (g_tap_drives_position > 0) {
@@ -119,7 +119,7 @@ __attribute__((noinline)) void target_tap(void *self, void *sender, void *ea, vo
 }
 
 __attribute__((noinline)) uint8_t target_position(void *self, TestFloat2 pos, void *out, void *method) {
-  PGR_NOP8();
+  PGS_NOP8();
   ++g_pos_log.count;
   g_pos_log.self = self; g_pos_log.out = out; g_pos_log.method = method;
   g_pos_log.x = pos.x; g_pos_log.y = pos.y;

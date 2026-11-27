@@ -15,12 +15,12 @@
 #include <time.h>
 #include <unistd.h>
 #include <android/log.h>
-extern "C" void pgr_vgp_discovery_loaded_method(void *method);
+extern "C" void pgs_vgp_discovery_loaded_method(void *method);
 
 // See .artifacts/advanced-features/smart-binding-notes.txt for the exact descriptor provenance and the
 // three field/method slots whose offset could not be pinned from the research artifact (resolved by name
 // with a parent/kind structural check, fail-closed). This file owns ONLY the binding glue; the helper
-// contract (PgrSmartBinding layout, pgr_smart_bind) and the Java/controller plumbing are owned elsewhere.
+// contract (PgsSmartBinding layout, pgs_smart_bind) and the Java/controller plumbing are owned elsewhere.
 
 namespace {
 
@@ -33,7 +33,7 @@ void diagnostic(const char *name,int rc){
  __android_log_print(ANDROID_LOG_WARN,"PGSSmartCatch","Binding %s: %d",name,rc);
 }
 
-// Module-local pointers used ONLY by pgr_smart_spawn_fresh (NOT part of PgrSmartBinding, which the helper
+// Module-local pointers used ONLY by pgs_smart_spawn_fresh (NOT part of PgsSmartBinding, which the helper
 // worker owns). Populated by a successful ensure_bound; read-only thereafter.
 struct SpawnFreshState {
   uint64_t owner = 0;
@@ -51,16 +51,16 @@ void *encounter_class=nullptr,*encounter_status=nullptr,*encounter_pokemon=nullp
 void *encounter_wrapper=nullptr,*map_encounter=nullptr;
 int32_t encounter_success=0;
 
-const PgrBootApi *bootstrap_api() {
-  const auto *api = static_cast<const PgrBootApi *>(pgs_runtime_bootstrap_api(PGR_BOOT_API_VERSION));
-  if (!api || api->version != PGR_BOOT_API_VERSION || api->size != sizeof(PgrBootApi) || !api->snapshot)
+const PgsBootApi *bootstrap_api() {
+  const auto *api = static_cast<const PgsBootApi *>(pgs_runtime_bootstrap_api(PGS_BOOT_API_VERSION));
+  if (!api || api->version != PGS_BOOT_API_VERSION || api->size != sizeof(PgsBootApi) || !api->snapshot)
     return nullptr;
   return api;
 }
 
-const PgrMetaApi *metadata_api() {
-  const auto *api = static_cast<const PgrMetaApi *>(pgs_runtime_metadata_api(PGR_MD_API_VERSION));
-  if (!api || api->version != PGR_MD_API_VERSION || api->size != sizeof(PgrMetaApi) ||
+const PgsMetaApi *metadata_api() {
+  const auto *api = static_cast<const PgsMetaApi *>(pgs_runtime_metadata_api(PGS_MD_API_VERSION));
+  if (!api || api->version != PGS_MD_API_VERSION || api->size != sizeof(PgsMetaApi) ||
       !api->resolve_class || !api->validate_field || !api->validate_method)
     return nullptr;
   return api;
@@ -74,15 +74,15 @@ bool on_owner_thread(uint64_t owner, void *thread_current) {
 }
 
 // resolve_class(ns,name) with the ns.name EXACT canonical default. *out gets the Il2CppClass*.
-int resolve_class(const PgrMetaApi *md, const char *ns, const char *name, void **out) {
-  PgrMetaClassQuery q{};
-  q.version = PGR_MD_QUERY_VERSION;
+int resolve_class(const PgsMetaApi *md, const char *ns, const char *name, void **out) {
+  PgsMetaClassQuery q{};
+  q.version = PGS_MD_QUERY_VERSION;
   q.size = sizeof(q);
   q.name_space = ns;
   q.name = name;
   q.canonical = nullptr;  // null -> ns.name EXACT
-  q.canonical_match = PGR_MD_MATCH_EXACT;
-  PgrMetaClassResult r{};
+  q.canonical_match = PGS_MD_MATCH_EXACT;
+  PgsMetaClassResult r{};
   int rc = md->resolve_class(&q, &r);
   if (rc) {diagnostic(name,rc);return rc;}
   *out = const_cast<void *>(r.klass);
@@ -90,11 +90,11 @@ int resolve_class(const PgrMetaApi *md, const char *ns, const char *name, void *
 }
 
 // validate_field at an EXACT offset. type_class (the field's type class, e.g. the enum class) is optional.
-int validate_field(const PgrMetaApi *md, const void *owner, const char *name, uint64_t offset,
+int validate_field(const PgsMetaApi *md, const void *owner, const char *name, uint64_t offset,
                    uint32_t kind, uint32_t value_size, const char *type_name, void **out,
                    void **type_class) {
-  PgrMetaFieldQuery q{};
-  q.version = PGR_MD_QUERY_VERSION;
+  PgsMetaFieldQuery q{};
+  q.version = PGS_MD_QUERY_VERSION;
   q.size = sizeof(q);
   q.owner = owner;
   q.name = name;
@@ -102,8 +102,8 @@ int validate_field(const PgrMetaApi *md, const void *owner, const char *name, ui
   q.kind = kind;
   q.value_size = value_size;
   q.type_name = type_name;
-  q.type_match = type_name ? PGR_MD_MATCH_EXACT : PGR_MD_MATCH_ANY;
-  PgrMetaFieldResult r{};
+  q.type_match = type_name ? PGS_MD_MATCH_EXACT : PGS_MD_MATCH_ANY;
+  PgsMetaFieldResult r{};
   int rc = md->validate_field(&q, &r);
   if (rc) {diagnostic(name,rc);return rc;}
   *out = const_cast<void *>(r.field);
@@ -114,32 +114,32 @@ int validate_field(const PgrMetaApi *md, const void *owner, const char *name, ui
 // Structural by-name field resolve for the slots whose exact offset is not pinned by the research
 // artifact. This is still real runtime metadata (NOT a guessed address): the field must exist on the
 // owner and its parent must equal the owner. See smart-binding-notes.txt.
-int resolve_field_byname(const PgrBootRuntimeExports &, const PgrMetaExports &ex, const void *owner,
+int resolve_field_byname(const PgsBootRuntimeExports &, const PgsMetaExports &ex, const void *owner,
                          const char *name, void **out) {
   auto by_name = reinterpret_cast<void *(*)(const void *, const char *)>(ex.class_get_field_from_name);
   auto parent = reinterpret_cast<void *(*)(const void *)>(ex.field_get_parent);
-  if (!owner || !by_name || !parent) return PGR_SMARTBIND_ERR_FIELD;
+  if (!owner || !by_name || !parent) return PGS_SMARTBIND_ERR_FIELD;
   void *f = by_name(owner, name);
-  if (!f || parent(f) != owner) return PGR_SMARTBIND_ERR_FIELD;
+  if (!f || parent(f) != owner) return PGS_SMARTBIND_ERR_FIELD;
   *out = f;
   return 0;
 }
 
-int validate_method(const PgrMetaApi *md, const void *owner, const char *name, const char *return_type,
+int validate_method(const PgsMetaApi *md, const void *owner, const char *name, const char *return_type,
                     uint32_t param_count, const char *param0, uint32_t is_static, void **out,const char *param1=nullptr) {
-  PgrMetaMethodQuery q{};
-  q.version = PGR_MD_QUERY_VERSION;
+  PgsMetaMethodQuery q{};
+  q.version = PGS_MD_QUERY_VERSION;
   q.size = sizeof(q);
   q.owner = owner;
   q.name = name;
   q.return_type = return_type;
-  q.return_match = return_type ? PGR_MD_MATCH_EXACT : PGR_MD_MATCH_ANY;
+  q.return_match = return_type ? PGS_MD_MATCH_EXACT : PGS_MD_MATCH_ANY;
   q.param_count = param_count;
-  if (param_count >= 1) { q.param_types[0] = param0; q.param_match[0] = param0 ? PGR_MD_MATCH_EXACT : PGR_MD_MATCH_ANY; }
-  if (param_count >= 2) { q.param_types[1] = param1; q.param_match[1] = param1 ? PGR_MD_MATCH_EXACT : PGR_MD_MATCH_ANY; }
+  if (param_count >= 1) { q.param_types[0] = param0; q.param_match[0] = param0 ? PGS_MD_MATCH_EXACT : PGS_MD_MATCH_ANY; }
+  if (param_count >= 2) { q.param_types[1] = param1; q.param_match[1] = param1 ? PGS_MD_MATCH_EXACT : PGS_MD_MATCH_ANY; }
   q.is_static = is_static;
   q.allow_inflated = 0;
-  PgrMetaMethodResult r{};
+  PgsMetaMethodResult r{};
   int rc = md->validate_method(&q, &r);
   if (rc) {diagnostic(name,rc);return rc;}
   *out = const_cast<void *>(r.method);
@@ -149,7 +149,7 @@ int validate_method(const PgrMetaApi *md, const void *owner, const char *name, c
 // Read a static enum literal value (field_static_get_value on a validated public-static-literal field),
 // mirroring quickball_metadata read_enum_literal. No guessed RPC id: the value comes straight from the
 // bound game image. Returns true and writes *out on success.
-bool read_enum_literal(const PgrMetaExports &ex, const PgrBootRuntimeExports &rt, const void *owner,
+bool read_enum_literal(const PgsMetaExports &ex, const PgsBootRuntimeExports &rt, const void *owner,
                        const char *lit, int32_t *out) {
   auto by_name = reinterpret_cast<void *(*)(const void *, const char *)>(ex.class_get_field_from_name);
   auto parent = reinterpret_cast<void *(*)(const void *)>(ex.field_get_parent);
@@ -172,11 +172,11 @@ bool capture_base(void *target,uint64_t owner,double base[4]){
   auto klass=reinterpret_cast<void*(*)(void*)>(g_fresh.object_get_class);
   auto read=reinterpret_cast<void(*)(void*,void*,void*)>(g_fresh.field_get_value);
   void *target_class=klass(target);
-  const PgrVgpIncense *incense=pgr_vgp_kind(target_class);
+  const PgsVgpIncense *incense=pgs_vgp_kind(target_class);
   if(target_class!=g_fresh.class_wildmap&&!incense)return false;
   void *response=nullptr;read(target,incense?incense->f_response:map_encounter,&response);
   if(!response||klass(response)!=(incense?incense->class_response:encounter_class))return false;
-  return pgr_catch_chance_base(response,base);
+  return pgs_catch_chance_base(response,base);
 }
 
 bool safari_offered(void *target,uint64_t owner,int item){
@@ -184,11 +184,11 @@ bool safari_offered(void *target,uint64_t owner,int item){
   auto klass=reinterpret_cast<void*(*)(void*)>(g_fresh.object_get_class);
   auto read=reinterpret_cast<void(*)(void*,void*,void*)>(g_fresh.field_get_value);
   void *target_class=klass(target);
-  const PgrVgpIncense *incense=pgr_vgp_kind(target_class);
+  const PgsVgpIncense *incense=pgs_vgp_kind(target_class);
   if(target_class!=g_fresh.class_wildmap&&!incense)return false;
   void *response=nullptr;read(target,incense?incense->f_response:map_encounter,&response);
   if(!response||klass(response)!=(incense?incense->class_response:encounter_class))return false;
-  return pgr_catch_chance_offers_ball(response,item);
+  return pgs_catch_chance_offers_ball(response,item);
 }
 
 int64_t now_ms() {
@@ -199,28 +199,28 @@ int64_t now_ms() {
 
 }  // namespace
 
-int pgr_smart_ensure_bound(uint64_t owner) {
+int pgs_smart_ensure_bound(uint64_t owner) {
   std::unique_lock<std::mutex> lock(g_bind_mutex, std::try_to_lock);
-  if (!lock.owns_lock()) return PGR_SMARTBIND_ERR_BUSY;
+  if (!lock.owns_lock()) return PGS_SMARTBIND_ERR_BUSY;
 
-  const PgrBootApi *boot = bootstrap_api();
-  if (!boot) return PGR_SMARTBIND_ERR_NO_BOOTSTRAP;
-  const PgrMetaApi *md = metadata_api();
-  if (!md) return PGR_SMARTBIND_ERR_NO_METADATA;
+  const PgsBootApi *boot = bootstrap_api();
+  if (!boot) return PGS_SMARTBIND_ERR_NO_BOOTSTRAP;
+  const PgsMetaApi *md = metadata_api();
+  if (!md) return PGS_SMARTBIND_ERR_NO_METADATA;
 
   // Pull-only snapshot: never binds/mutates. NOT_READY is a positive, retriable state.
-  PgrBootBinding snap{};
-  snap.version = PGR_BOOT_BINDING_VERSION;
+  PgsBootBinding snap{};
+  snap.version = PGS_BOOT_BINDING_VERSION;
   snap.size = sizeof(snap);
   int brc = boot->snapshot(&snap);
-  if (brc == PGR_BOOT_NOT_READY) return PGR_SMARTBIND_NOT_READY;
-  if (brc != PGR_BOOT_OK) return PGR_SMARTBIND_ERR_NO_BOOTSTRAP;
+  if (brc == PGS_BOOT_NOT_READY) return PGS_SMARTBIND_NOT_READY;
+  if (brc != PGS_BOOT_OK) return PGS_SMARTBIND_ERR_NO_BOOTSTRAP;
 
-  const PgrMetaExports &ex = snap.meta;
-  const PgrBootRuntimeExports &rt = snap.runtime;
-  if (!snap.handle) return PGR_SMARTBIND_ERR_EXPORT;
-  if (!on_owner_thread(owner, rt.thread_current)) return PGR_SMARTBIND_ERR_OWNER;
-  if(g_bound)return owner==g_fresh.owner?PGR_SMARTBIND_OK:PGR_SMARTBIND_ERR_OWNER;
+  const PgsMetaExports &ex = snap.meta;
+  const PgsBootRuntimeExports &rt = snap.runtime;
+  if (!snap.handle) return PGS_SMARTBIND_ERR_EXPORT;
+  if (!on_owner_thread(owner, rt.thread_current)) return PGS_SMARTBIND_ERR_OWNER;
+  if(g_bound)return owner==g_fresh.owner?PGS_SMARTBIND_OK:PGS_SMARTBIND_ERR_OWNER;
 
   // Reflection exports the bootstrap table does not carry: dlsym from the SAME live handle (no fabricated
   // pointer). Every one is mandatory for the helper.
@@ -230,8 +230,8 @@ int pgr_smart_ensure_bound(uint64_t owner) {
   void *gc_wbarrier_set_field  = ::dlsym(snap.handle, "il2cpp_gc_wbarrier_set_field");
   void *method_from_reflection = ::dlsym(snap.handle, "il2cpp_method_get_from_reflection");
 
-  PgrSmartBinding b{};
-  b.version = PGR_SMART_BINDING_VERSION;
+  PgsSmartBinding b{};
+  b.version = PGS_SMART_BINDING_VERSION;
   b.size = sizeof(b);
 
   // --- il2cpp runtime exports (snapshot) ---
@@ -259,10 +259,10 @@ int pgr_smart_ensure_bound(uint64_t owner) {
   b.method_is_inflated         = ex.method_is_inflated;
 
   // Fail closed on a dlsym miss. The snapshot slots are guaranteed non-null by the feature 54 contract on
-  // PGR_BOOT_OK; only these dlsym'd reflection/runtime exports can come back null on an unsupported build.
+  // PGS_BOOT_OK; only these dlsym'd reflection/runtime exports can come back null on an unsupported build.
   if (!field_set_value_object || !method_get_object || !type_get_object || !gc_wbarrier_set_field ||
       !method_from_reflection)
-    return PGR_SMARTBIND_ERR_EXPORT;
+    return PGS_SMARTBIND_ERR_EXPORT;
 
   // --- classes (feature 47 resolve_class; ns/name from the research artifact + shared_metadata) ---
   if (resolve_class(md, "Niantic.Holoholo.Map", "WildMapPokemon", &b.class_wildmap) ||
@@ -277,53 +277,53 @@ int pgr_smart_ensure_bound(uint64_t owner) {
       resolve_class(md, "System", "Boolean", &b.class_bool) ||
       resolve_class(md, "System", "UInt64", &b.class_ulong) ||
       resolve_class(md, "System", "String", &b.class_string))
-    return PGR_SMARTBIND_ERR_CLASS;
+    return PGS_SMARTBIND_ERR_CLASS;
 
   // Method enum (RPC id source) + WildPokemonProto (spawn-freshness source).
   void *class_method_enum = nullptr;
   void *class_wild_proto = nullptr;
   if (resolve_class(md, "Holoholo.Rpc", "Method", &class_method_enum) ||
       resolve_class(md, "Holoholo.Rpc", "WildPokemonProto", &class_wild_proto))
-    return PGR_SMARTBIND_ERR_CLASS;
+    return PGS_SMARTBIND_ERR_CLASS;
 
   // --- fields (offsets confirmed from catch-evolution-metadata.txt unless noted) ---
   void *status_enum_class = nullptr;
-  if (validate_field(md, b.class_pokemon_proto, PGR_GAME_SMART_CATCH_BINDING_CPP_POKEMONID__NAME, PGR_GAME_SMART_CATCH_BINDING_CPP_POKEMONID__OFFSET, PGR_MD_FIELD_VALUE, 4, "System.Int32", &b.f_proto_id, nullptr) ||
-      validate_field(md, b.class_pokemon_proto, PGR_GAME_SMART_CATCH_BINDING_CPP_CP__NAME, PGR_GAME_SMART_CATCH_BINDING_CPP_CP__OFFSET, PGR_MD_FIELD_VALUE, 4, "System.Int32", &b.f_proto_cp, nullptr) ||
-      validate_field(md, b.class_pokemon_proto, PGR_GAME_SMART_CATCH_BINDING_CPP_INDIVIDUALATTACK__NAME, PGR_GAME_SMART_CATCH_BINDING_CPP_INDIVIDUALATTACK__OFFSET, PGR_MD_FIELD_VALUE, 4, "System.Int32", &b.f_proto_atk, nullptr) ||
-      validate_field(md, b.class_pokemon_proto, PGR_GAME_SMART_CATCH_BINDING_CPP_INDIVIDUALDEFENSE__NAME, PGR_GAME_SMART_CATCH_BINDING_CPP_INDIVIDUALDEFENSE__OFFSET, PGR_MD_FIELD_VALUE, 4, "System.Int32", &b.f_proto_def, nullptr) ||
-      validate_field(md, b.class_pokemon_proto, PGR_GAME_SMART_CATCH_BINDING_CPP_INDIVIDUALSTAMINA__NAME, PGR_GAME_SMART_CATCH_BINDING_CPP_INDIVIDUALSTAMINA__OFFSET, PGR_MD_FIELD_VALUE, 4, "System.Int32", &b.f_proto_sta, nullptr) ||
-      validate_field(md, b.class_pokemon_proto, PGR_GAME_SMART_CATCH_BINDING_CPP_CPMULTIPLIER__NAME, PGR_GAME_SMART_CATCH_BINDING_CPP_CPMULTIPLIER__OFFSET, PGR_MD_FIELD_VALUE, 4, "System.Single", &b.f_proto_cpmul, nullptr) ||
-      validate_field(md, b.class_pokemon_proto, PGR_GAME_SMART_CATCH_BINDING_CPP_ADDITIONALCPMULTIPLIER__NAME, PGR_GAME_SMART_CATCH_BINDING_CPP_ADDITIONALCPMULTIPLIER__OFFSET, PGR_MD_FIELD_VALUE, 4, "System.Single", &b.f_proto_addcpmul, nullptr) ||
-      validate_field(md, b.class_pokemon_proto, PGR_GAME_SMART_CATCH_BINDING_CPP_POKEMONDISPLAY__NAME, PGR_GAME_SMART_CATCH_BINDING_CPP_POKEMONDISPLAY__OFFSET, PGR_MD_FIELD_REF, 0, "Holoholo.Rpc.PokemonDisplayProto", &b.f_proto_display, nullptr) ||
-      validate_field(md, b.class_use_item_req, PGR_GAME_SMART_CATCH_BINDING_CPP_ITEM_NAME, PGR_GAME_SMART_CATCH_BINDING_CPP_ITEM_OFFSET, PGR_MD_FIELD_ENUM_I32, 4, nullptr, &b.f_req_item, nullptr) ||
-      validate_field(md, b.class_use_item_req, PGR_GAME_SMART_CATCH_BINDING_CPP_ENCOUNTERID_NAME, PGR_GAME_SMART_CATCH_BINDING_CPP_ENCOUNTERID_OFFSET, PGR_MD_FIELD_VALUE, 8, "System.UInt64", &b.f_req_encid, nullptr) ||
-      validate_field(md, b.class_use_item_req, PGR_GAME_SMART_CATCH_BINDING_CPP_SPAWNPOINTGUID_NAME, PGR_GAME_SMART_CATCH_BINDING_CPP_SPAWNPOINTGUID_OFFSET, PGR_MD_FIELD_REF, 0, "System.String", &b.f_req_spawn, nullptr) ||
-      validate_field(md, b.class_use_item_out, PGR_GAME_SMART_CATCH_BINDING_CPP_STATUS_NAME, PGR_GAME_SMART_CATCH_BINDING_CPP_STATUS_OFFSET, PGR_MD_FIELD_ENUM_I32, 4, nullptr, &b.f_out_status, &status_enum_class))
-    return PGR_SMARTBIND_ERR_FIELD;
+  if (validate_field(md, b.class_pokemon_proto, PGS_GAME_SMART_CATCH_BINDING_CPP_POKEMONID__NAME, PGS_GAME_SMART_CATCH_BINDING_CPP_POKEMONID__OFFSET, PGS_MD_FIELD_VALUE, 4, "System.Int32", &b.f_proto_id, nullptr) ||
+      validate_field(md, b.class_pokemon_proto, PGS_GAME_SMART_CATCH_BINDING_CPP_CP__NAME, PGS_GAME_SMART_CATCH_BINDING_CPP_CP__OFFSET, PGS_MD_FIELD_VALUE, 4, "System.Int32", &b.f_proto_cp, nullptr) ||
+      validate_field(md, b.class_pokemon_proto, PGS_GAME_SMART_CATCH_BINDING_CPP_INDIVIDUALATTACK__NAME, PGS_GAME_SMART_CATCH_BINDING_CPP_INDIVIDUALATTACK__OFFSET, PGS_MD_FIELD_VALUE, 4, "System.Int32", &b.f_proto_atk, nullptr) ||
+      validate_field(md, b.class_pokemon_proto, PGS_GAME_SMART_CATCH_BINDING_CPP_INDIVIDUALDEFENSE__NAME, PGS_GAME_SMART_CATCH_BINDING_CPP_INDIVIDUALDEFENSE__OFFSET, PGS_MD_FIELD_VALUE, 4, "System.Int32", &b.f_proto_def, nullptr) ||
+      validate_field(md, b.class_pokemon_proto, PGS_GAME_SMART_CATCH_BINDING_CPP_INDIVIDUALSTAMINA__NAME, PGS_GAME_SMART_CATCH_BINDING_CPP_INDIVIDUALSTAMINA__OFFSET, PGS_MD_FIELD_VALUE, 4, "System.Int32", &b.f_proto_sta, nullptr) ||
+      validate_field(md, b.class_pokemon_proto, PGS_GAME_SMART_CATCH_BINDING_CPP_CPMULTIPLIER__NAME, PGS_GAME_SMART_CATCH_BINDING_CPP_CPMULTIPLIER__OFFSET, PGS_MD_FIELD_VALUE, 4, "System.Single", &b.f_proto_cpmul, nullptr) ||
+      validate_field(md, b.class_pokemon_proto, PGS_GAME_SMART_CATCH_BINDING_CPP_ADDITIONALCPMULTIPLIER__NAME, PGS_GAME_SMART_CATCH_BINDING_CPP_ADDITIONALCPMULTIPLIER__OFFSET, PGS_MD_FIELD_VALUE, 4, "System.Single", &b.f_proto_addcpmul, nullptr) ||
+      validate_field(md, b.class_pokemon_proto, PGS_GAME_SMART_CATCH_BINDING_CPP_POKEMONDISPLAY__NAME, PGS_GAME_SMART_CATCH_BINDING_CPP_POKEMONDISPLAY__OFFSET, PGS_MD_FIELD_REF, 0, "Holoholo.Rpc.PokemonDisplayProto", &b.f_proto_display, nullptr) ||
+      validate_field(md, b.class_use_item_req, PGS_GAME_SMART_CATCH_BINDING_CPP_ITEM_NAME, PGS_GAME_SMART_CATCH_BINDING_CPP_ITEM_OFFSET, PGS_MD_FIELD_ENUM_I32, 4, nullptr, &b.f_req_item, nullptr) ||
+      validate_field(md, b.class_use_item_req, PGS_GAME_SMART_CATCH_BINDING_CPP_ENCOUNTERID_NAME, PGS_GAME_SMART_CATCH_BINDING_CPP_ENCOUNTERID_OFFSET, PGS_MD_FIELD_VALUE, 8, "System.UInt64", &b.f_req_encid, nullptr) ||
+      validate_field(md, b.class_use_item_req, PGS_GAME_SMART_CATCH_BINDING_CPP_SPAWNPOINTGUID_NAME, PGS_GAME_SMART_CATCH_BINDING_CPP_SPAWNPOINTGUID_OFFSET, PGS_MD_FIELD_REF, 0, "System.String", &b.f_req_spawn, nullptr) ||
+      validate_field(md, b.class_use_item_out, PGS_GAME_SMART_CATCH_BINDING_CPP_STATUS_NAME, PGS_GAME_SMART_CATCH_BINDING_CPP_STATUS_OFFSET, PGS_MD_FIELD_ENUM_I32, 4, nullptr, &b.f_out_status, &status_enum_class))
+    return PGS_SMARTBIND_ERR_FIELD;
 
   // PokemonDisplayProto.shiny_ and the ItemBagImpl rpc-service field (cynr): offsets NOT pinned by the
   // artifact, so resolve structurally by name (parent==owner). Fail-closed. See smart-binding-notes.txt.
-  if (validate_field(md,b.class_display_proto,PGR_GAME_SMART_CATCH_BINDING_CPP_SHINY_NAME,PGR_GAME_SMART_CATCH_BINDING_CPP_SHINY_OFFSET,PGR_MD_FIELD_VALUE,1,"System.Boolean",&b.f_display_shiny,nullptr) ||
-      validate_field(md,b.class_item_bag,PGR_GAME_SMART_CATCH_BINDING_CPP_ERHP_NAME,PGR_GAME_SMART_CATCH_BINDING_CPP_ERHP_OFFSET,PGR_MD_FIELD_REF,0,"Niantic.Holoholo.Rpc.IRpcHandler",&b.f_bag_rpc,nullptr))
-    return PGR_SMARTBIND_ERR_FIELD;
+  if (validate_field(md,b.class_display_proto,PGS_GAME_SMART_CATCH_BINDING_CPP_SHINY_NAME,PGS_GAME_SMART_CATCH_BINDING_CPP_SHINY_OFFSET,PGS_MD_FIELD_VALUE,1,"System.Boolean",&b.f_display_shiny,nullptr) ||
+      validate_field(md,b.class_item_bag,PGS_GAME_SMART_CATCH_BINDING_CPP_ERHP_NAME,PGS_GAME_SMART_CATCH_BINDING_CPP_ERHP_OFFSET,PGS_MD_FIELD_REF,0,"Niantic.Holoholo.Rpc.IRpcHandler",&b.f_bag_rpc,nullptr))
+    return PGS_SMARTBIND_ERR_FIELD;
 
   // --- methods ---
   if (validate_method(md, b.class_wildmap, "get_EncounterId", "System.UInt64", 0, nullptr, 0, &b.m_get_encounter_id) ||
       validate_method(md, b.class_wildmap, "get_SpawnPointId", "System.String", 0, nullptr, 0, &b.m_get_spawn_id) ||
       validate_method(md, b.class_use_item_req, ".ctor", "System.Void", 0, nullptr, 0, &b.m_req_ctor))
-    return PGR_SMARTBIND_ERR_METHOD;
+    return PGS_SMARTBIND_ERR_METHOD;
   // IItemBag.GetItemCount(Item)->int: name/arity structurally resolved (overload/return not pinned here).
   {
-    if(validate_method(md,b.class_item_bag,"GetItemCount","System.Int32",1,"Holoholo.Rpc.Item",0,&b.m_item_count))return PGR_SMARTBIND_ERR_METHOD;
+    if(validate_method(md,b.class_item_bag,"GetItemCount","System.Int32",1,"Holoholo.Rpc.Item",0,&b.m_item_count))return PGS_SMARTBIND_ERR_METHOD;
   }
 
   // --- runtime enum literals (NO guessed RPC id) ---
   int32_t rpc_id = 0, status_success = 0;
   if (!read_enum_literal(ex, rt, class_method_enum, "UseItemEncounter", &rpc_id))
-    return PGR_SMARTBIND_ERR_LITERAL;
+    return PGS_SMARTBIND_ERR_LITERAL;
   if (!read_enum_literal(ex, rt, status_enum_class, "Success", &status_success))
-    return PGR_SMARTBIND_ERR_LITERAL;
+    return PGS_SMARTBIND_ERR_LITERAL;
   b.rpc_id = rpc_id;
   b.status_success = status_success;
 
@@ -338,27 +338,27 @@ int pgr_smart_ensure_bound(uint64_t owner) {
   if(resolve_class(md,"","GameMasterData",&b.class_gm)||
      resolve_class(md,"System","Single",&b.class_single)||
      resolve_class(md,"Niantic.Holoholo","GameMasterDataExt_PlayerLevelSettings",&levels)||
-     validate_field(md,b.class_item_bag,PGR_GAME_SMART_CATCH_BINDING_CPP_ERHO_NAME,PGR_GAME_SMART_CATCH_BINDING_CPP_ERHO_OFFSET,PGR_MD_FIELD_REF,0,"IGameMasterData",&b.f_bag_gm,nullptr)||
+     validate_field(md,b.class_item_bag,PGS_GAME_SMART_CATCH_BINDING_CPP_ERHO_NAME,PGS_GAME_SMART_CATCH_BINDING_CPP_ERHO_OFFSET,PGS_MD_FIELD_REF,0,"IGameMasterData",&b.f_bag_gm,nullptr)||
      validate_method(md,levels,"GetPokemonLevelOfCpMultiplier","System.Int32",2,"IGameMasterData",1,&b.m_gm_level,"System.Single")||
      validate_method(md,levels,"CpMultiplierAtLevel","System.Single",2,"IGameMasterData",1,&b.m_gm_mult,"System.Int32"))
-    return PGR_SMARTBIND_ERR_METHOD;
+    return PGS_SMARTBIND_ERR_METHOD;
 
-  // Latch the spawn-freshness pointers (field-validated below) for pgr_smart_spawn_fresh.
+  // Latch the spawn-freshness pointers (field-validated below) for pgs_smart_spawn_fresh.
   void *f_wild_proto = nullptr, *f_last = nullptr, *f_hidden = nullptr;
-  if (validate_field(md, b.class_wildmap, PGR_GAME_SMART_CATCH_BINDING_CPP_EMBR_NAME, PGR_GAME_SMART_CATCH_BINDING_CPP_EMBR_OFFSET, PGR_MD_FIELD_REF, 0, "Holoholo.Rpc.WildPokemonProto", &f_wild_proto, nullptr) ||
-      validate_field(md, class_wild_proto, PGR_GAME_SMART_CATCH_BINDING_CPP_LASTMODIFIEDMS_NAME, PGR_GAME_SMART_CATCH_BINDING_CPP_LASTMODIFIEDMS_OFFSET, PGR_MD_FIELD_VALUE, 8, "System.Int64", &f_last, nullptr) ||
-      validate_field(md, class_wild_proto, PGR_GAME_SMART_CATCH_BINDING_CPP_TIMETILLHIDDENMS_NAME, PGR_GAME_SMART_CATCH_BINDING_CPP_TIMETILLHIDDENMS_OFFSET, PGR_MD_FIELD_VALUE, 4, "System.Int32", &f_hidden, nullptr))
-    return PGR_SMARTBIND_ERR_FIELD;
+  if (validate_field(md, b.class_wildmap, PGS_GAME_SMART_CATCH_BINDING_CPP_EMBR_NAME, PGS_GAME_SMART_CATCH_BINDING_CPP_EMBR_OFFSET, PGS_MD_FIELD_REF, 0, "Holoholo.Rpc.WildPokemonProto", &f_wild_proto, nullptr) ||
+      validate_field(md, class_wild_proto, PGS_GAME_SMART_CATCH_BINDING_CPP_LASTMODIFIEDMS_NAME, PGS_GAME_SMART_CATCH_BINDING_CPP_LASTMODIFIEDMS_OFFSET, PGS_MD_FIELD_VALUE, 8, "System.Int64", &f_last, nullptr) ||
+      validate_field(md, class_wild_proto, PGS_GAME_SMART_CATCH_BINDING_CPP_TIMETILLHIDDENMS_NAME, PGS_GAME_SMART_CATCH_BINDING_CPP_TIMETILLHIDDENMS_OFFSET, PGS_MD_FIELD_VALUE, 4, "System.Int32", &f_hidden, nullptr))
+    return PGS_SMARTBIND_ERR_FIELD;
   // Post-encounter PokemonProto path (WildMapPokemon -> EncounterOutProto -> WildPokemonProto -> PokemonProto).
   void *f_wild_pokemon = nullptr, *encounter_enum = nullptr;
   if (resolve_class(md, "Holoholo.Rpc", "EncounterOutProto", &encounter_class) ||
       resolve_class(md, "Niantic.Holoholo.Map", "PokemonEncounterResponse", &encounter_wrapper) ||
-      validate_field(md, b.class_wildmap, PGR_GAME_SMART_CATCH_BINDING_CPP_EMBS_NAME, PGR_GAME_SMART_CATCH_BINDING_CPP_EMBS_OFFSET, PGR_MD_FIELD_REF, 0, "Holoholo.Rpc.EncounterOutProto", &map_encounter, nullptr) ||
-      validate_field(md, encounter_class, PGR_GAME_SMART_CATCH_BINDING_CPP_STATUS_NAME, PGR_GAME_SMART_CATCH_BINDING_CPP_STATUS_OFFSET_2, PGR_MD_FIELD_ENUM_I32, 4, nullptr, &encounter_status, &encounter_enum) ||
-      validate_field(md, encounter_class, PGR_GAME_SMART_CATCH_BINDING_CPP_POKEMON_NAME, PGR_GAME_SMART_CATCH_BINDING_CPP_POKEMON_OFFSET, PGR_MD_FIELD_REF, 0, "Holoholo.Rpc.WildPokemonProto", &encounter_pokemon, nullptr) ||
-      validate_field(md, class_wild_proto, PGR_GAME_SMART_CATCH_BINDING_CPP_POKEMON_NAME, PGR_GAME_SMART_CATCH_BINDING_CPP_WILD_POKEMON_OFFSET, PGR_MD_FIELD_REF, 0, "Holoholo.Rpc.PokemonProto", &f_wild_pokemon, nullptr) ||
+      validate_field(md, b.class_wildmap, PGS_GAME_SMART_CATCH_BINDING_CPP_EMBS_NAME, PGS_GAME_SMART_CATCH_BINDING_CPP_EMBS_OFFSET, PGS_MD_FIELD_REF, 0, "Holoholo.Rpc.EncounterOutProto", &map_encounter, nullptr) ||
+      validate_field(md, encounter_class, PGS_GAME_SMART_CATCH_BINDING_CPP_STATUS_NAME, PGS_GAME_SMART_CATCH_BINDING_CPP_STATUS_OFFSET_2, PGS_MD_FIELD_ENUM_I32, 4, nullptr, &encounter_status, &encounter_enum) ||
+      validate_field(md, encounter_class, PGS_GAME_SMART_CATCH_BINDING_CPP_POKEMON_NAME, PGS_GAME_SMART_CATCH_BINDING_CPP_POKEMON_OFFSET, PGS_MD_FIELD_REF, 0, "Holoholo.Rpc.WildPokemonProto", &encounter_pokemon, nullptr) ||
+      validate_field(md, class_wild_proto, PGS_GAME_SMART_CATCH_BINDING_CPP_POKEMON_NAME, PGS_GAME_SMART_CATCH_BINDING_CPP_WILD_POKEMON_OFFSET, PGS_MD_FIELD_REF, 0, "Holoholo.Rpc.PokemonProto", &f_wild_pokemon, nullptr) ||
       !read_enum_literal(ex, rt, encounter_enum, "EncounterSuccess", &encounter_success))
-    return PGR_SMARTBIND_ERR_FIELD;
+    return PGS_SMARTBIND_ERR_FIELD;
 
   b.class_encounter_out = encounter_class;
   b.class_wild_proto = class_wild_proto;
@@ -366,14 +366,14 @@ int pgr_smart_ensure_bound(uint64_t owner) {
   b.f_response_wild = encounter_pokemon;
   b.f_wild_pokemon = f_wild_pokemon;
 
-  int rc=pgr_smart_bind(&b);
-  if(rc!=PGR_SMART_OK)return PGR_SMARTBIND_ERR_BIND;
+  int rc=pgs_smart_bind(&b);
+  if(rc!=PGS_SMART_OK)return PGS_SMARTBIND_ERR_BIND;
 
   void *unity_object=nullptr,*find_loaded=nullptr;
   if(resolve_class(md,"UnityEngine","Object",&unity_object)||
      validate_method(md,unity_object,"FindObjectsOfType","UnityEngine.Object[]",2,"System.Type",1,&find_loaded,"System.Boolean"))
-    return PGR_SMARTBIND_ERR_METHOD;
-  pgr_vgp_discovery_loaded_method(find_loaded);
+    return PGS_SMARTBIND_ERR_METHOD;
+  pgs_vgp_discovery_loaded_method(find_loaded);
 
   g_fresh.owner = owner;
   g_fresh.class_wildmap = b.class_wildmap;
@@ -386,7 +386,7 @@ int pgr_smart_ensure_bound(uint64_t owner) {
   g_fresh.object_get_class = rt.object_get_class;
   g_fresh.field_get_value = rt.field_get_value;
   g_bound = true;
-  pgr_smart_set_capture_source(capture_base);
+  pgs_smart_set_capture_source(capture_base);
   // Optional event support: resolve names and field types without adding a
   // mandatory game-version offset that could disable all ordinary VGP+ catches.
   void *item_enum=nullptr,*strong=nullptr;int32_t wild_ball=0;
@@ -397,18 +397,18 @@ int pgr_smart_ensure_bound(uint64_t owner) {
     auto offset=reinterpret_cast<size_t(*)(void*)>(ex.field_get_offset);
     auto flags=reinterpret_cast<int(*)(void*)>(ex.field_get_flags);
     safari_ok=offset&&flags&&!(flags(strong)&0x10)&&
-      validate_field(md,b.class_display_proto,"IsStrongPokemon",offset(strong),PGR_MD_FIELD_VALUE,1,"System.Boolean",&strong,nullptr)==0;
+      validate_field(md,b.class_display_proto,"IsStrongPokemon",offset(strong),PGS_MD_FIELD_VALUE,1,"System.Boolean",&strong,nullptr)==0;
   }
-  if(safari_ok)pgr_smart_set_safari_source(strong,wild_ball,safari_offered);
+  if(safari_ok)pgs_smart_set_safari_source(strong,wild_ball,safari_offered);
   __android_log_print(ANDROID_LOG_INFO,"PGSSmartCatch","Mighty Safari binding %s (inventory ball=%d)",safari_ok?"ready":"unavailable; normal balls retained",safari_ok?wild_ball:0);
   __android_log_print(ANDROID_LOG_INFO,"PGSSmartCatch","Native catch binding ready (level rules and berry RPC validated)");
-  return PGR_SMARTBIND_OK;
+  return PGS_SMARTBIND_OK;
 }
 
 namespace {
 std::mutex g_incense_mutex;
 int g_incense_rc = 1;  // 1 not tried / not ready, 0 bound, negative failed for this process
-PgrVgpIncense g_kinds[kPgrVgpKinds]{};
+PgsVgpIncense g_kinds[kPgsVgpKinds]{};
 int g_kind_count = 0;
 // Map spawn kinds besides wild and incense that VGP+ catches. Each must pass the same checks as map
 // tap-to-catch: the wild encounter call, one stored *EncounterOutProto with a known success value and a
@@ -416,16 +416,16 @@ int g_kind_count = 0;
 const char *const kExtraKinds[] = {"TroyDiskMapPlacePokemon", "StationMapPokemon", "RouteMapPokemon",
                                    "DailyEncounterMapPokemon"};
 
-void publish_kind(const PgrVgpIncense &v) {
-  if (g_kind_count >= kPgrVgpKinds) return;
+void publish_kind(const PgsVgpIncense &v) {
+  if (g_kind_count >= kPgsVgpKinds) return;
   g_kinds[g_kind_count] = v;
-  g_pgr_vgp_kinds[g_kind_count].store(&g_kinds[g_kind_count], std::memory_order_release);
-  if (!g_pgr_vgp_incense.load(std::memory_order_acquire))
-    g_pgr_vgp_incense.store(&g_kinds[g_kind_count], std::memory_order_release);
+  g_pgs_vgp_kinds[g_kind_count].store(&g_kinds[g_kind_count], std::memory_order_release);
+  if (!g_pgs_vgp_incense.load(std::memory_order_acquire))
+    g_pgs_vgp_incense.store(&g_kinds[g_kind_count], std::memory_order_release);
   ++g_kind_count;
 }
 
-std::string type_text(const PgrBootBinding &snap, void *type) {
+std::string type_text(const PgsBootBinding &snap, void *type) {
   auto name = reinterpret_cast<char *(*)(void *)>(snap.meta.type_get_name);
   auto release = reinterpret_cast<void (*)(void *)>(snap.meta.mem_free);
   char *text = type && name ? name(type) : nullptr;
@@ -435,7 +435,7 @@ std::string type_text(const PgrBootBinding &snap, void *type) {
 }
 
 // The named instance method on klass or an ancestor up to base whose return type contains `ret`.
-void *kind_method(const PgrBootBinding &snap, void *klass, void *base, const char *method, int argc, const char *ret) {
+void *kind_method(const PgsBootBinding &snap, void *klass, void *base, const char *method, int argc, const char *ret) {
   auto get = reinterpret_cast<void *(*)(void *, const char *, int)>(snap.meta.class_get_method_from_name);
   auto parent = reinterpret_cast<void *(*)(void *)>(::dlsym(snap.handle, "il2cpp_class_get_parent"));
   auto returns = reinterpret_cast<void *(*)(void *)>(snap.meta.method_get_return_type);
@@ -448,8 +448,8 @@ void *kind_method(const PgrBootBinding &snap, void *klass, void *base, const cha
 }
 
 // Validates one spawn kind by name; empty on success, else why it is left out.
-std::string bind_kind(const PgrBootBinding &snap, const PgrMetaApi *md, void *base, const char *name, PgrVgpIncense *out) {
-  PgrVgpIncense v{};
+std::string bind_kind(const PgsBootBinding &snap, const PgsMetaApi *md, void *base, const char *name, PgsVgpIncense *out) {
+  PgsVgpIncense v{};
   v.base = base;
   if (resolve_class(md, "Niantic.Holoholo.Map", name, &v.klass) || !v.klass) return "class missing";
   auto assignable = reinterpret_cast<bool (*)(void *, void *)>(snap.meta.class_is_assignable_from);
@@ -499,24 +499,24 @@ std::string bind_kind(const PgrBootBinding &snap, const PgrMetaApi *md, void *ba
   *out = v;
   return "";
 }
-int bind_incense(const PgrBootBinding &snap, const PgrMetaApi *md, PgrVgpIncense &v);
+int bind_incense(const PgsBootBinding &snap, const PgsMetaApi *md, PgsVgpIncense &v);
 }
 
-int pgr_vgp_incense_bind(uint64_t owner) {
+int pgs_vgp_incense_bind(uint64_t owner) {
   std::unique_lock<std::mutex> lock(g_incense_mutex, std::try_to_lock);
   if (!lock.owns_lock()) return 1;
   if (g_incense_rc <= 0) return g_incense_rc;
-  const PgrBootApi *boot = bootstrap_api();
-  const PgrMetaApi *md = metadata_api();
+  const PgsBootApi *boot = bootstrap_api();
+  const PgsMetaApi *md = metadata_api();
   if (!boot || !md) return 1;
-  PgrBootBinding snap{};
-  snap.version = PGR_BOOT_BINDING_VERSION;
+  PgsBootBinding snap{};
+  snap.version = PGS_BOOT_BINDING_VERSION;
   snap.size = sizeof(snap);
-  if (boot->snapshot(&snap) != PGR_BOOT_OK || !snap.handle) return 1;
+  if (boot->snapshot(&snap) != PGS_BOOT_OK || !snap.handle) return 1;
   if (!on_owner_thread(owner, snap.runtime.thread_current)) return 1;
   // Incense keeps its pinned checks; the other kinds are validated by name. One kind failing leaves the
   // rest (and wild spawns) working.
-  PgrVgpIncense v{};
+  PgsVgpIncense v{};
   const int incense_rc = bind_incense(snap, md, v);
   if (incense_rc == 0) {
     publish_kind(v);
@@ -525,10 +525,10 @@ int pgr_vgp_incense_bind(uint64_t owner) {
   void *base = nullptr, *wild = nullptr;
   if (resolve_class(md, "Niantic.Holoholo.Map", "MapPokemon", &base) == 0 && base &&
       resolve_class(md, "Niantic.Holoholo.Map", "WildMapPokemon", &wild) == 0 && wild)
-    g_pgr_vgp_wild_destroy.store(kind_method(snap, wild, base, "Destroy", 0, "System.Void"), std::memory_order_release);
+    g_pgs_vgp_wild_destroy.store(kind_method(snap, wild, base, "Destroy", 0, "System.Void"), std::memory_order_release);
   if (base) {
     for (const char *name : kExtraKinds) {
-      PgrVgpIncense kind{};
+      PgsVgpIncense kind{};
       const std::string why = bind_kind(snap, md, base, name, &kind);
       if (why.empty()) {
         publish_kind(kind);
@@ -539,30 +539,30 @@ int pgr_vgp_incense_bind(uint64_t owner) {
       }
     }
   }
-  g_incense_rc = g_kind_count ? 0 : (incense_rc < 0 ? incense_rc : PGR_SMARTBIND_ERR_CLASS);
+  g_incense_rc = g_kind_count ? 0 : (incense_rc < 0 ? incense_rc : PGS_SMARTBIND_ERR_CLASS);
   return g_incense_rc;
 }
 
 namespace {
-int bind_incense(const PgrBootBinding &snap, const PgrMetaApi *md, PgrVgpIncense &v) {
+int bind_incense(const PgsBootBinding &snap, const PgsMetaApi *md, PgsVgpIncense &v) {
   auto fail = [](int rc, const char *what) {
     __android_log_print(ANDROID_LOG_WARN, "PGSSmartCatch", "Incense VGP support unavailable (%s)", what);
     return rc;
   };
   auto parent = reinterpret_cast<void *(*)(void *)>(::dlsym(snap.handle, "il2cpp_class_get_parent"));
-  if (!parent) return fail(PGR_SMARTBIND_ERR_EXPORT, "class parent export");
+  if (!parent) return fail(PGS_SMARTBIND_ERR_EXPORT, "class parent export");
   void *wild = nullptr, *result_enum = nullptr;
   if (resolve_class(md, "Niantic.Holoholo.Map", "IncenseMapPokemon", &v.klass) ||
       resolve_class(md, "Niantic.Holoholo.Map", "MapPokemon", &v.base) ||
       resolve_class(md, "Niantic.Holoholo.Map", "WildMapPokemon", &wild) ||
       resolve_class(md, "Holoholo.Rpc", "IncenseEncounterOutProto", &v.class_response))
-    return fail(PGR_SMARTBIND_ERR_CLASS, "classes");
+    return fail(PGS_SMARTBIND_ERR_CLASS, "classes");
   // One scene query must cover both spawn kinds, so both must derive directly from MapPokemon.
-  if (parent(v.klass) != v.base || parent(wild) != v.base) return fail(PGR_SMARTBIND_ERR_CLASS, "class hierarchy");
+  if (parent(v.klass) != v.base || parent(wild) != v.base) return fail(PGS_SMARTBIND_ERR_CLASS, "class hierarchy");
   if (validate_method(md, v.klass, "get_EncounterId", "System.UInt64", 0, nullptr, 0, &v.m_id) ||
       validate_method(md, v.klass, "get_SpawnPointId", "System.String", 0, nullptr, 0, &v.m_spawn) ||
       validate_method(md, v.klass, "SendEncounterRequest", nullptr, 0, nullptr, 0, &v.m_encounter))
-    return fail(PGR_SMARTBIND_ERR_METHOD, "methods");
+    return fail(PGS_SMARTBIND_ERR_METHOD, "methods");
   {
     // Same return check as the wild SendEncounterRequest in shared metadata (generic name formatting varies).
     auto ret = reinterpret_cast<void *(*)(void *)>(snap.meta.method_get_return_type);
@@ -572,40 +572,40 @@ int bind_incense(const PgrBootBinding &snap, const PgrMetaApi *md, PgrVgpIncense
     char *text = type && name ? name(type) : nullptr;
     const bool ok = text && std::strstr(text, "<Niantic.Holoholo.Map.PokemonEncounterResponse>");
     if (text && release) release(text);
-    if (!ok) return fail(PGR_SMARTBIND_ERR_METHOD, "encounter return type");
+    if (!ok) return fail(PGS_SMARTBIND_ERR_METHOD, "encounter return type");
   }
-  if (validate_field(md, v.klass, PGR_GAME_SMART_CATCH_BINDING_CPP_EMSG_NAME, PGR_GAME_SMART_CATCH_BINDING_CPP_EMSG_OFFSET,
-                     PGR_MD_FIELD_REF, 0, "Holoholo.Rpc.IncenseEncounterOutProto", &v.f_response, nullptr) ||
-      validate_field(md, v.class_response, "Result", PGR_GAME_SMART_CATCH_BINDING_CPP_INCENSE_RESULT_OFFSET,
-                     PGR_MD_FIELD_ENUM_I32, 4, nullptr, &v.f_result, &result_enum) ||
-      validate_field(md, v.class_response, "Pokemon", PGR_GAME_SMART_CATCH_BINDING_CPP_INCENSE_POKEMON_OFFSET,
-                     PGR_MD_FIELD_REF, 0, "Holoholo.Rpc.PokemonProto", &v.f_pokemon, nullptr))
-    return fail(PGR_SMARTBIND_ERR_FIELD, "fields");
+  if (validate_field(md, v.klass, PGS_GAME_SMART_CATCH_BINDING_CPP_EMSG_NAME, PGS_GAME_SMART_CATCH_BINDING_CPP_EMSG_OFFSET,
+                     PGS_MD_FIELD_REF, 0, "Holoholo.Rpc.IncenseEncounterOutProto", &v.f_response, nullptr) ||
+      validate_field(md, v.class_response, "Result", PGS_GAME_SMART_CATCH_BINDING_CPP_INCENSE_RESULT_OFFSET,
+                     PGS_MD_FIELD_ENUM_I32, 4, nullptr, &v.f_result, &result_enum) ||
+      validate_field(md, v.class_response, "Pokemon", PGS_GAME_SMART_CATCH_BINDING_CPP_INCENSE_POKEMON_OFFSET,
+                     PGS_MD_FIELD_REF, 0, "Holoholo.Rpc.PokemonProto", &v.f_pokemon, nullptr))
+    return fail(PGS_SMARTBIND_ERR_FIELD, "fields");
   if (!read_enum_literal(snap.meta, snap.runtime, result_enum, "IncenseEncounterSuccess", &v.success))
-    return fail(PGR_SMARTBIND_ERR_LITERAL, "result literal");
+    return fail(PGS_SMARTBIND_ERR_LITERAL, "result literal");
   v.m_destroy = kind_method(snap, v.klass, v.base, "Destroy", 0, "System.Void");  // optional: leftover removal
   return 0;
 }
 }  // namespace
 
-int pgr_smart_spawn_fresh(void *rootedWild, uint64_t owner) {
+int pgs_smart_spawn_fresh(void *rootedWild, uint64_t owner) {
   std::unique_lock<std::mutex> lock(g_bind_mutex, std::try_to_lock);
-  if (!lock.owns_lock()) return PGR_SMARTBIND_ERR_IDENTITY;  // fail closed, never block a managed frame
-  if (!g_bound || !rootedWild || owner == 0 || owner != g_fresh.owner) return PGR_SMARTBIND_ERR_IDENTITY;
-  if (owner != static_cast<uint64_t>(gettid())) return PGR_SMARTBIND_ERR_IDENTITY;
+  if (!lock.owns_lock()) return PGS_SMARTBIND_ERR_IDENTITY;  // fail closed, never block a managed frame
+  if (!g_bound || !rootedWild || owner == 0 || owner != g_fresh.owner) return PGS_SMARTBIND_ERR_IDENTITY;
+  if (owner != static_cast<uint64_t>(gettid())) return PGS_SMARTBIND_ERR_IDENTITY;
 
   auto get_class = reinterpret_cast<void *(*)(void *)>(g_fresh.object_get_class);
   auto get_value = reinterpret_cast<void (*)(void *, void *, void *)>(g_fresh.field_get_value);
-  if (!get_class || !get_value) return PGR_SMARTBIND_ERR_IDENTITY;
+  if (!get_class || !get_value) return PGS_SMARTBIND_ERR_IDENTITY;
 
   // Incense spawns follow the player for the incense's lifetime and carry no despawn window.
-  if (pgr_vgp_incense_class(get_class(rootedWild))) return PGR_SMARTBIND_FRESH_PASS;
+  if (pgs_vgp_incense_class(get_class(rootedWild))) return PGS_SMARTBIND_FRESH_PASS;
   // Exact-class identity: a wrong class or missing proto is a malformed identity failure.
-  if (get_class(rootedWild) != g_fresh.class_wildmap) return PGR_SMARTBIND_ERR_IDENTITY;
+  if (get_class(rootedWild) != g_fresh.class_wildmap) return PGS_SMARTBIND_ERR_IDENTITY;
 
   void *wild_proto = nullptr;
   get_value(rootedWild, g_fresh.f_wild_proto, &wild_proto);
-  if (!wild_proto) return PGR_SMARTBIND_ERR_IDENTITY;
+  if (!wild_proto) return PGS_SMARTBIND_ERR_IDENTITY;
 
   int64_t last_modified = 0;
   int32_t time_till_hidden = 0;
@@ -613,27 +613,27 @@ int pgr_smart_spawn_fresh(void *rootedWild, uint64_t owner) {
   get_value(wild_proto, g_fresh.f_time_till_hidden, &time_till_hidden);
 
   // Unknown lifetime (no hidden window) is allowed through: we never fabricate a despawn time.
-  if (time_till_hidden <= 0) return PGR_SMARTBIND_FRESH_PASS;
+  if (time_till_hidden <= 0) return PGS_SMARTBIND_FRESH_PASS;
 
   const int64_t now = now_ms();
-  if (now < 0) return PGR_SMARTBIND_FRESH_PASS;  // clock unavailable -> do not filter (fail open to PASS)
+  if (now < 0) return PGS_SMARTBIND_FRESH_PASS;  // clock unavailable -> do not filter (fail open to PASS)
   const int64_t hidden_at = last_modified + time_till_hidden;  // server epoch ms
   const int64_t remaining = hidden_at - now;
-  return remaining < PGR_SMARTBIND_FRESH_MIN_MS ? PGR_SMARTBIND_FRESH_FILTER : PGR_SMARTBIND_FRESH_PASS;
+  return remaining < PGS_SMARTBIND_FRESH_MIN_MS ? PGS_SMARTBIND_FRESH_FILTER : PGS_SMARTBIND_FRESH_PASS;
 }
 
-int pgr_smart_map_species(void *rootedWild, uint64_t owner) {
+int pgs_smart_map_species(void *rootedWild, uint64_t owner) {
   std::unique_lock<std::mutex> lock(g_bind_mutex, std::try_to_lock);
   if (!lock.owns_lock()) return 0;  // unknown; the encounter check still applies
-  if (!g_bound || !rootedWild || owner == 0 || owner != g_fresh.owner) return PGR_SMARTBIND_ERR_IDENTITY;
-  if (owner != static_cast<uint64_t>(gettid())) return PGR_SMARTBIND_ERR_IDENTITY;
+  if (!g_bound || !rootedWild || owner == 0 || owner != g_fresh.owner) return PGS_SMARTBIND_ERR_IDENTITY;
+  if (owner != static_cast<uint64_t>(gettid())) return PGS_SMARTBIND_ERR_IDENTITY;
   auto get_class = reinterpret_cast<void *(*)(void *)>(g_fresh.object_get_class);
   auto get_value = reinterpret_cast<void (*)(void *, void *, void *)>(g_fresh.field_get_value);
   void *klass = get_class(rootedWild);
   // Incense spawns carry no map proto; their species is checked after the encounter.
-  if (pgr_vgp_incense_class(klass) || !g_fresh.f_wild_pokemon) return 0;
-  if (klass != g_fresh.class_wildmap) return PGR_SMARTBIND_ERR_IDENTITY;
-  // Plain field reads with no managed call or allocation in between, as in pgr_smart_spawn_fresh.
+  if (pgs_vgp_incense_class(klass) || !g_fresh.f_wild_pokemon) return 0;
+  if (klass != g_fresh.class_wildmap) return PGS_SMARTBIND_ERR_IDENTITY;
+  // Plain field reads with no managed call or allocation in between, as in pgs_smart_spawn_fresh.
   void *wild_proto = nullptr, *pokemon = nullptr;
   get_value(rootedWild, g_fresh.f_wild_proto, &wild_proto);
   if (!wild_proto) return 0;
@@ -644,14 +644,14 @@ int pgr_smart_map_species(void *rootedWild, uint64_t owner) {
   return species >= 1 && species <= 2000 ? species : 0;
 }
 
-int pgr_smart_encounter_success(void *target,void *response,uint64_t owner){
- if(!g_bound||owner!=g_fresh.owner||owner!=uint64_t(gettid())||!response)return PGR_SMARTBIND_ERR_IDENTITY;
+int pgs_smart_encounter_success(void *target,void *response,uint64_t owner){
+ if(!g_bound||owner!=g_fresh.owner||owner!=uint64_t(gettid())||!response)return PGS_SMARTBIND_ERR_IDENTITY;
  auto klass=reinterpret_cast<void*(*)(void*)>(g_fresh.object_get_class);
  auto read=reinterpret_cast<void(*)(void*,void*,void*)>(g_fresh.field_get_value);
- if(const PgrVgpIncense *i=target?pgr_vgp_kind(klass(target)):nullptr){
-  PgrSmartEncounterBinding b{i->klass,encounter_wrapper,i->class_response,i->f_response,i->f_result,i->f_pokemon,i->success,klass,read};
-  return pgr_smart_validate_encounter(b,target,response);
+ if(const PgsVgpIncense *i=target?pgs_vgp_kind(klass(target)):nullptr){
+  PgsSmartEncounterBinding b{i->klass,encounter_wrapper,i->class_response,i->f_response,i->f_result,i->f_pokemon,i->success,klass,read};
+  return pgs_smart_validate_encounter(b,target,response);
  }
- PgrSmartEncounterBinding b{g_fresh.class_wildmap,encounter_wrapper,encounter_class,map_encounter,encounter_status,encounter_pokemon,encounter_success,klass,read};
- return pgr_smart_validate_encounter(b,target,response);
+ PgsSmartEncounterBinding b{g_fresh.class_wildmap,encounter_wrapper,encounter_class,map_encounter,encounter_status,encounter_pokemon,encounter_success,klass,read};
+ return pgs_smart_validate_encounter(b,target,response);
 }

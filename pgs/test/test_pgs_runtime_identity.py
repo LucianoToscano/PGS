@@ -66,6 +66,12 @@ class PgsRuntimeIdentityTests(unittest.TestCase):
                 with self.assertRaisesRegex(ValueError, "already contains PGS classes"):
                     nonroot.rewrite_apk(source, Path(folder) / "output.apk", base=True)
 
+    def test_dex_bridge_uses_pgs_prefix_and_rejects_legacy_input(self):
+        bridge = (ROOT / "tools/dex_bridge/BridgeRewriter.java").read_text(encoding="utf-8")
+        self.assertIn('PREFIX="$pgs$original$"', bridge)
+        self.assertIn('LEGACY_PREFIX="$pgrazor$original$"', bridge)
+        self.assertIn('!m.getName().startsWith(PREFIX)&&!m.getName().startsWith(LEGACY_PREFIX)', bridge)
+
     def test_installed_identity_and_historical_repack_are_preserved(self):
         self.assertEqual(pgs_update.GAME_PACKAGE, "com.nianticlabs.pokemongo")
         self.assertEqual(pgs_update.PGS_SIGNER, "d95c6bdfcbd91dc5c9cde698487c88e4994771a475e4efde4567b8d5f44e96cf")

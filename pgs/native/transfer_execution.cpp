@@ -31,21 +31,21 @@
 //     cleanup is latched. The seen quarantine persists across a stop (no uncertain release is resent).
 //   * sample() reads atomic mirrors published on the owner thread.
 
-static_assert(sizeof(PgrTransferExecConfig) == 144, "config must be 144 bytes");
-static_assert(sizeof(PgrTransferExecRequest) == 104, "request must be 104 bytes");
-static_assert(sizeof(PgrTransferExecSample) == 88, "sample must be 88 bytes");
-static_assert(sizeof(PgrTransferExecEvent) == 24, "event must be 24 bytes");
-static_assert(sizeof(PgrTransferExecApi) == 72, "table must be 72 bytes");
-static_assert(offsetof(PgrTransferExecConfig, gchandle_new) == 8, "layout");
-static_assert(offsetof(PgrTransferExecConfig, m_get) == 56, "layout");
-static_assert(offsetof(PgrTransferExecConfig, class_bag) == 72, "layout");
-static_assert(offsetof(PgrTransferExecConfig, f_id) == 104, "layout");
-static_assert(offsetof(PgrTransferExecConfig, success_literal) == 136, "layout");
-static_assert(offsetof(PgrTransferExecRequest, input) == 48, "layout");
+static_assert(sizeof(PgsTransferExecConfig) == 144, "config must be 144 bytes");
+static_assert(sizeof(PgsTransferExecRequest) == 104, "request must be 104 bytes");
+static_assert(sizeof(PgsTransferExecSample) == 88, "sample must be 88 bytes");
+static_assert(sizeof(PgsTransferExecEvent) == 24, "event must be 24 bytes");
+static_assert(sizeof(PgsTransferExecApi) == 72, "table must be 72 bytes");
+static_assert(offsetof(PgsTransferExecConfig, gchandle_new) == 8, "layout");
+static_assert(offsetof(PgsTransferExecConfig, m_get) == 56, "layout");
+static_assert(offsetof(PgsTransferExecConfig, class_bag) == 72, "layout");
+static_assert(offsetof(PgsTransferExecConfig, f_id) == 104, "layout");
+static_assert(offsetof(PgsTransferExecConfig, success_literal) == 136, "layout");
+static_assert(offsetof(PgsTransferExecRequest, input) == 48, "layout");
 
 namespace {
 
-constexpr uint64_t kMaxLeaseMs = PGR_TX_MAX_LEASE_MS;
+constexpr uint64_t kMaxLeaseMs = PGS_TX_MAX_LEASE_MS;
 
 // --- il2cpp runtime ABI typedefs ---------------------------------------------------
 using GcNew = uintptr_t (*)(void *obj, int pinned);
@@ -58,11 +58,11 @@ using FieldGet = void (*)(void *obj, void *field, void *out);
 // --- lifetime / publication --------------------------------------------------------
 std::mutex g_install_mutex;
 std::mutex g_state_mutex;
-PgrTransferExecConfig g_cfg{};
-const PgrTransferApi *g_policy = nullptr;  // feature-4 transfer_policy, resolved once at install
+PgsTransferExecConfig g_cfg{};
+const PgsTransferApi *g_policy = nullptr;  // feature-4 transfer_policy, resolved once at install
 std::atomic<bool> g_installed{false};
 bool g_install_attempted = false;
-int g_install_error = PGR_TX_ERR_NOT_INSTALLED;
+int g_install_error = PGS_TX_ERR_NOT_INSTALLED;
 
 // Permanent Unity owner, latched once from a genuine on-thread submit()/observe/tick().
 std::atomic<uint64_t> g_owner_tid{0};
@@ -86,7 +86,7 @@ bool g_overflow = false;
 uint64_t g_request_serial = 0, g_complete_serial = 0, g_timeout_serial = 0, g_error_serial = 0,
          g_token_serial = 0, g_last_tid = 0, g_last_token = 0;
 
-PgrTransferExecEvent g_fifo[PGR_TX_EVENT_CAP];
+PgsTransferExecEvent g_fifo[PGS_TX_EVENT_CAP];
 uint32_t g_fifo_head = 0, g_fifo_count = 0;
 
 // --- owner-thread reentrancy guards ------------------------------------------------
@@ -94,7 +94,7 @@ std::atomic<bool> g_pending_stop{false};
 std::atomic<bool> g_cleaning{false};
 
 // --- process-wide captured-id quarantine (owner-thread only) -----------------------
-uint64_t g_seen[PGR_TX_SEEN_MAX];
+uint64_t g_seen[PGS_TX_SEEN_MAX];
 uint32_t g_seen_count = 0;
 
 // --- bounded pending transactions (owner-thread only) ------------------------------
@@ -111,7 +111,7 @@ struct Txn {
   bool uncertain = false;  // release threw / null promise
   bool timed_out = false;
 };
-Txn g_pending[PGR_TX_PENDING_MAX];
+Txn g_pending[PGS_TX_PENDING_MAX];
 uint32_t g_pending_count = 0;
 
 // --- bounded observe_begin/observe_end tickets (owner-thread only) ------------------
@@ -121,7 +121,7 @@ struct TicketSlot {
   bool success = false;
   uint64_t nonce = 0;
 };
-TicketSlot g_tickets[PGR_TX_TICKET_SLOTS];
+TicketSlot g_tickets[PGS_TX_TICKET_SLOTS];
 uint64_t g_ticket_nonce = 0;
 uint32_t g_ticket_open = 0;
 
@@ -195,16 +195,16 @@ void push_event(uint32_t kind, int32_t id, uint64_t token, int32_t aux, uint64_t
   std::lock_guard<std::mutex> lock(g_state_mutex);
   g_last_tid = tid;
   g_last_token = token;
-  if (kind == PGR_TX_EVENT_REQUEST) ++g_request_serial;
-  else if (kind == PGR_TX_EVENT_COMPLETE) { ++g_complete_serial; if (!(aux & 1)) ++g_error_serial; }
-  else if (kind == PGR_TX_EVENT_TIMEOUT) ++g_timeout_serial;
-  if (g_fifo_count >= PGR_TX_EVENT_CAP) {
+  if (kind == PGS_TX_EVENT_REQUEST) ++g_request_serial;
+  else if (kind == PGS_TX_EVENT_COMPLETE) { ++g_complete_serial; if (!(aux & 1)) ++g_error_serial; }
+  else if (kind == PGS_TX_EVENT_TIMEOUT) ++g_timeout_serial;
+  if (g_fifo_count >= PGS_TX_EVENT_CAP) {
     g_overflow = true;
     g_fault = true;  // fail closed: no further issue while faulted
     return;
   }
-  uint32_t idx = (g_fifo_head + g_fifo_count) % PGR_TX_EVENT_CAP;
-  g_fifo[idx] = PgrTransferExecEvent{kind, id, token, aux, 0};
+  uint32_t idx = (g_fifo_head + g_fifo_count) % PGS_TX_EVENT_CAP;
+  g_fifo[idx] = PgsTransferExecEvent{kind, id, token, aux, 0};
   ++g_fifo_count;
 }
 
@@ -241,7 +241,7 @@ bool seen_contains(uint64_t id) {
   return false;
 }
 void seen_add(uint64_t id) {
-  if (g_seen_count < PGR_TX_SEEN_MAX && !seen_contains(id)) g_seen[g_seen_count++] = id;
+  if (g_seen_count < PGS_TX_SEEN_MAX && !seen_contains(id)) g_seen[g_seen_count++] = id;
 }
 
 // --- pending table (owner thread) --------------------------------------------------
@@ -267,7 +267,7 @@ int find_pending_match(uint64_t cb_id, void *cb_pokemon, void *cb_bag) {
 // double-free. The seen quarantine is NOT touched.
 void collect_and_free(bool only_finished) {
   g_cleaning.store(true);
-  uintptr_t handles[PGR_TX_PENDING_MAX * 3];
+  uintptr_t handles[PGS_TX_PENDING_MAX * 3];
   uint32_t hc = 0;
   uint32_t w = 0;
   for (uint32_t r = 0; r < g_pending_count; ++r) {
@@ -307,7 +307,7 @@ void leave_frame() {
 // --- ticket slots ------------------------------------------------------------------
 uint64_t ticket_alloc(uint64_t token, bool success) {
   if (g_ticket_nonce >= ((uint64_t{1} << 45) - 1)) return 0;
-  for (int i = 0; i < PGR_TX_TICKET_SLOTS; ++i) {
+  for (int i = 0; i < PGS_TX_TICKET_SLOTS; ++i) {
     if (!g_tickets[i].in_use) {
       g_tickets[i].in_use = true;
       g_tickets[i].token = token;
@@ -325,7 +325,7 @@ uint64_t ticket_alloc(uint64_t token, bool success) {
 int ticket_consume(uint64_t ticket, uint64_t *out_token, bool *out_success) {
   if (ticket == 0) return -1;
   uint32_t idx = static_cast<uint32_t>(ticket & 0xFF);
-  if (idx == 0 || idx > PGR_TX_TICKET_SLOTS) return -1;
+  if (idx == 0 || idx > PGS_TX_TICKET_SLOTS) return -1;
   int i = static_cast<int>(idx - 1);
   uint64_t nonce = ticket >> 8;
   if (!g_tickets[i].in_use || g_tickets[i].nonce != nonce) return -1;
@@ -341,24 +341,24 @@ int ticket_consume(uint64_t ticket, uint64_t *out_token, bool *out_success) {
 // --- submit ------------------------------------------------------------------------
 // Runs inside an active owner frame. Locals bag_root/pokemon_root are dropped at the single exit; on
 // the success path their ownership is moved into the transaction (locals zeroed) before the invoke.
-int do_submit(const PgrTransferExecRequest *req, uint64_t tid, uint64_t *out_token) {
+int do_submit(const PgsTransferExecRequest *req, uint64_t tid, uint64_t *out_token) {
   uintptr_t bag_root = 0, pokemon_root = 0;
-  int rc = PGR_TX_OK;
+  int rc = PGS_TX_OK;
   const uint64_t generation = pin_generation();
   if (!gate_live(req->epoch, tid, generation) || g_policy->decide(&req->input) != 0 ||
-      seen_contains(req->captured_id) || g_seen_count >= PGR_TX_SEEN_MAX) return PGR_TX_OK;
+      seen_contains(req->captured_id) || g_seen_count >= PGS_TX_SEEN_MAX) return PGS_TX_OK;
 
-  if (req->captured_id == 0) { rc = PGR_TX_ERR_IDENTITY; goto done; }
+  if (req->captured_id == 0) { rc = PGS_TX_ERR_IDENTITY; goto done; }
 
   bag_root = hold(req->bag);
   pokemon_root = hold(req->pokemon);
-  if (bag_root == 0 || pokemon_root == 0) { rc = PGR_TX_ERR_GCHANDLE; goto done; }  // fail closed, no release
+  if (bag_root == 0 || pokemon_root == 0) { rc = PGS_TX_ERR_GCHANDLE; goto done; }  // fail closed, no release
 
   {
     void *bag = gc_get()(bag_root);
     void *pokemon = gc_get()(pokemon_root);
-    if (!is_exact(bag, g_cfg.class_bag) || !is_exact(pokemon, g_cfg.class_pokemon)) { rc = PGR_TX_ERR_IDENTITY; goto done; }
-    if (field_u64(gc_get()(pokemon_root), g_cfg.f_id) != req->captured_id) { rc = PGR_TX_ERR_IDENTITY; goto done; }
+    if (!is_exact(bag, g_cfg.class_bag) || !is_exact(pokemon, g_cfg.class_pokemon)) { rc = PGS_TX_ERR_IDENTITY; goto done; }
+    if (field_u64(gc_get()(pokemon_root), g_cfg.f_id) != req->captured_id) { rc = PGS_TX_ERR_IDENTITY; goto done; }
 
     // Current bag identity: bag.GetPokemon(id) must be the SAME rooted pokemon with the SAME id.
     uint64_t id = req->captured_id;
@@ -369,7 +369,7 @@ int do_submit(const PgrTransferExecRequest *req, uint64_t tid, uint64_t *out_tok
     void *pk = gc_get()(pokemon_root);
     if (exc != nullptr || current == nullptr || current != pk || !is_exact(current, g_cfg.class_pokemon) ||
         field_u64(current, g_cfg.f_id) != req->captured_id) {
-      rc = PGR_TX_ERR_IDENTITY;
+      rc = PGS_TX_ERR_IDENTITY;
       goto done;
     }
 
@@ -378,15 +378,15 @@ int do_submit(const PgrTransferExecRequest *req, uint64_t tid, uint64_t *out_tok
     void *release_pokemon = gc_get()(pokemon_root);
     void *release_bag = gc_get()(bag_root);
     uint64_t now = 0;
-    if (!read_boottime_ms(&now)) { rc = PGR_TX_ERR_CLOCK_FAILURE; goto done; }
+    if (!read_boottime_ms(&now)) { rc = PGS_TX_ERR_CLOCK_FAILURE; goto done; }
     if (!release_pokemon || !release_bag || g_policy->decide(&req->input) != 0 ||
         !gate_live(req->epoch, tid, generation) || seen_contains(req->captured_id) ||
-        g_seen_count >= PGR_TX_SEEN_MAX) goto done;
+        g_seen_count >= PGS_TX_SEEN_MAX) goto done;
     {
       std::lock_guard<std::mutex> lock(g_state_mutex);
-      if (g_pending_count >= PGR_TX_PENDING_MAX || g_fifo_count >= PGR_TX_EVENT_CAP ||
+      if (g_pending_count >= PGS_TX_PENDING_MAX || g_fifo_count >= PGS_TX_EVENT_CAP ||
           g_token_serial >= ((uint64_t{1} << 53) - 1)) {
-        g_overflow = true; g_fault = true; rc = PGR_TX_ERR_OVERFLOW; goto done;
+        g_overflow = true; g_fault = true; rc = PGS_TX_ERR_OVERFLOW; goto done;
       }
     }
 
@@ -400,13 +400,13 @@ int do_submit(const PgrTransferExecRequest *req, uint64_t tid, uint64_t *out_tok
     t.token = token;
     t.captured_id = req->captured_id;
     t.epoch = req->epoch;
-    t.deadline_ms = now + PGR_TX_TIMEOUT_MS;
+    t.deadline_ms = now + PGS_TX_TIMEOUT_MS;
     t.bag_root = bag_root;
     t.pokemon_root = pokemon_root;
     bag_root = pokemon_root = 0;  // ownership moved to the transaction
     *out_token = token;
     publish();
-    push_event(PGR_TX_EVENT_REQUEST, 0, token, 0, tid);
+    push_event(PGS_TX_EVENT_REQUEST, 0, token, 0, tid);
 
     // Issue the release. A synchronous result/error callback may fire inside this invoke; the observers
     // only set flags + emit a record (the reap is deferred to leave_frame), so the slot below is safe
@@ -424,7 +424,7 @@ int do_submit(const PgrTransferExecRequest *req, uint64_t tid, uint64_t *out_tok
         if (!g_pending[idx].promise_root) g_pending[idx].uncertain = true;
       }
     }
-    rc = PGR_TX_ISSUED;
+    rc = PGS_TX_ISSUED;
   }
 
 done:
@@ -470,35 +470,35 @@ void do_observe_end(uint64_t ticket, uint64_t tid) {
   g_pending[idx].finished = true;
   g_pending[idx].success = success;
   publish();
-  push_event(PGR_TX_EVENT_COMPLETE, 0, token, success ? 1 : 0, tid);
+  push_event(PGS_TX_EVENT_COMPLETE, 0, token, success ? 1 : 0, tid);
 }
 
 // --- public API --------------------------------------------------------------------
-bool validate_config(const PgrTransferExecConfig *c, int *rc) {
-  if (c == nullptr) { *rc = PGR_TX_ERR_NULL_ARG; return false; }
-  if (c->version != PGR_TX_CONFIG_VERSION) { *rc = PGR_TX_ERR_BAD_VERSION; return false; }
-  if (c->size != sizeof(PgrTransferExecConfig)) { *rc = PGR_TX_ERR_BAD_SIZE; return false; }
+bool validate_config(const PgsTransferExecConfig *c, int *rc) {
+  if (c == nullptr) { *rc = PGS_TX_ERR_NULL_ARG; return false; }
+  if (c->version != PGS_TX_CONFIG_VERSION) { *rc = PGS_TX_ERR_BAD_VERSION; return false; }
+  if (c->size != sizeof(PgsTransferExecConfig)) { *rc = PGS_TX_ERR_BAD_SIZE; return false; }
   void *const *ptrs = reinterpret_cast<void *const *>(&c->gchandle_new);
   for (int i = 0; i < 16; ++i) {
-    if (ptrs[i] == nullptr) { *rc = PGR_TX_ERR_MISSING_PTR; return false; }
+    if (ptrs[i] == nullptr) { *rc = PGS_TX_ERR_MISSING_PTR; return false; }
   }
-  *rc = PGR_TX_OK;
+  *rc = PGS_TX_OK;
   return true;
 }
 
-int api_install(const PgrTransferExecConfig *config) {
-  int rc = PGR_TX_OK;
+int api_install(const PgsTransferExecConfig *config) {
+  int rc = PGS_TX_OK;
   if (!validate_config(config, &rc)) return rc;
   uint64_t probe = 0;
-  if (!read_boottime_ms(&probe)) return PGR_TX_ERR_CLOCK_FAILURE;
-  const PgrTransferApi *policy = static_cast<const PgrTransferApi *>(pgs_transfer_policy_api(1));
-  if (policy == nullptr || policy->decide == nullptr) return PGR_TX_ERR_NO_POLICY;
+  if (!read_boottime_ms(&probe)) return PGS_TX_ERR_CLOCK_FAILURE;
+  const PgsTransferApi *policy = static_cast<const PgsTransferApi *>(pgs_transfer_policy_api(1));
+  if (policy == nullptr || policy->decide == nullptr) return PGS_TX_ERR_NO_POLICY;
 
   std::lock_guard<std::mutex> install_lock(g_install_mutex);
   if (g_installed.load(std::memory_order_acquire)) {
     std::lock_guard<std::mutex> state_lock(g_state_mutex);
-    if (std::memcmp(&g_cfg, config, sizeof(*config)) != 0) return PGR_TX_ERR_RECONFIG;
-    return PGR_TX_OK;
+    if (std::memcmp(&g_cfg, config, sizeof(*config)) != 0) return PGS_TX_ERR_RECONFIG;
+    return PGS_TX_OK;
   }
   if (g_install_attempted) return g_install_error;
   g_install_attempted = true;
@@ -516,11 +516,11 @@ int api_install(const PgrTransferExecConfig *config) {
   g_seen_count = 0;
   publish();
   g_installed.store(true, std::memory_order_release);
-  return g_install_error = PGR_TX_OK;
+  return g_install_error = PGS_TX_OK;
 }
 
 int api_update(int enabled, uint64_t remaining, uint64_t epoch, uint64_t proven_tid) {
-  if (!g_installed.load(std::memory_order_acquire)) return PGR_TX_ERR_NOT_INSTALLED;
+  if (!g_installed.load(std::memory_order_acquire)) return PGS_TX_ERR_NOT_INSTALLED;
   uint64_t now = 0;
   const bool clock_ok = read_boottime_ms(&now);
   std::lock_guard<std::mutex> lock(g_state_mutex);
@@ -533,28 +533,28 @@ int api_update(int enabled, uint64_t remaining, uint64_t epoch, uint64_t proven_
     g_enabled = 0;
     g_lease_until_ms = 0;
     if (on_owner) g_epoch = epoch;  // the owner may record a new epoch even while disabling
-    return clock_ok ? PGR_TX_OK : PGR_TX_ERR_CLOCK_FAILURE;
+    return clock_ok ? PGS_TX_OK : PGS_TX_ERR_CLOCK_FAILURE;
   }
   remaining = remaining > kMaxLeaseMs ? kMaxLeaseMs : remaining;
   if (!g_enabled || g_epoch != epoch || !remaining || !g_lease_until_ms || now >= g_lease_until_ms) ++g_gen;
   g_enabled = 1;
   g_lease_until_ms = remaining ? now + remaining : 0;
   g_epoch = epoch;
-  return PGR_TX_OK;
+  return PGS_TX_OK;
 }
 
-int api_submit(const PgrTransferExecRequest *request, uint64_t *out_token) {
+int api_submit(const PgsTransferExecRequest *request, uint64_t *out_token) {
   if (out_token != nullptr) *out_token = 0;
-  if (!g_installed.load(std::memory_order_acquire)) return PGR_TX_ERR_NOT_INSTALLED;
-  if (request == nullptr || out_token == nullptr) return PGR_TX_ERR_NULL_ARG;
-  if (request->version != PGR_TX_REQUEST_VERSION) return PGR_TX_ERR_BAD_VERSION;
-  if (request->size != sizeof(PgrTransferExecRequest)) return PGR_TX_ERR_BAD_SIZE;
+  if (!g_installed.load(std::memory_order_acquire)) return PGS_TX_ERR_NOT_INSTALLED;
+  if (request == nullptr || out_token == nullptr) return PGS_TX_ERR_NULL_ARG;
+  if (request->version != PGS_TX_REQUEST_VERSION) return PGS_TX_ERR_BAD_VERSION;
+  if (request->size != sizeof(PgsTransferExecRequest)) return PGS_TX_ERR_BAD_SIZE;
 
   const uint64_t tid = current_tid();
-  if (request->tid == 0 || tid != request->tid) return PGR_TX_OK;  // wrong thread: refused
-  if (!owner_ready(tid)) return PGR_TX_OK;
-  if (g_pending_stop.load() || g_cleaning.load()) return PGR_TX_OK;  // stop / cleanup rearm denied
-  if (g_active_depth.load(std::memory_order_relaxed) != 0) return PGR_TX_OK;  // no reentrant submit
+  if (request->tid == 0 || tid != request->tid) return PGS_TX_OK;  // wrong thread: refused
+  if (!owner_ready(tid)) return PGS_TX_OK;
+  if (g_pending_stop.load() || g_cleaning.load()) return PGS_TX_OK;  // stop / cleanup rearm denied
+  if (g_active_depth.load(std::memory_order_relaxed) != 0) return PGS_TX_OK;  // no reentrant submit
 
   g_active_depth.fetch_add(1, std::memory_order_relaxed);
   int rc = do_submit(request, tid, out_token);
@@ -575,19 +575,19 @@ uint64_t api_observe_begin(void *callback, void *response, int is_error, uint64_
 }
 
 int api_observe_end(uint64_t ticket, uint64_t proven_tid) {
-  if (!g_installed.load(std::memory_order_acquire)) return PGR_TX_ERR_NOT_INSTALLED;
+  if (!g_installed.load(std::memory_order_acquire)) return PGS_TX_ERR_NOT_INSTALLED;
   const uint64_t tid = current_tid();
-  if (proven_tid == 0 || tid != proven_tid) return PGR_TX_OK;
-  if (!owner_ready(tid)) return PGR_TX_OK;
+  if (proven_tid == 0 || tid != proven_tid) return PGS_TX_OK;
+  if (!owner_ready(tid)) return PGS_TX_OK;
 
   g_active_depth.fetch_add(1, std::memory_order_relaxed);
   do_observe_end(ticket, tid);
   leave_frame();
-  return PGR_TX_OK;
+  return PGS_TX_OK;
 }
 
 int api_tick(uint64_t proven_tid, int stopping) {
-  if (!g_installed.load(std::memory_order_acquire)) return PGR_TX_ERR_NOT_INSTALLED;
+  if (!g_installed.load(std::memory_order_acquire)) return PGS_TX_ERR_NOT_INSTALLED;
   if (stopping) {
     std::lock_guard<std::mutex> lock(g_state_mutex);
     g_pending_stop.store(true);
@@ -596,14 +596,14 @@ int api_tick(uint64_t proven_tid, int stopping) {
     ++g_gen;
   }
   const uint64_t tid = current_tid();
-  if (proven_tid == 0 || tid != proven_tid || !owner_ready(tid)) return PGR_TX_OK;  // revoke latched; no teardown off-owner
+  if (proven_tid == 0 || tid != proven_tid || !owner_ready(tid)) return PGS_TX_OK;  // revoke latched; no teardown off-owner
   if (g_active_depth.load(std::memory_order_relaxed) != 0) {
     if (stopping) g_pending_stop.store(true);  // defer teardown to the outermost frame
-    return PGR_TX_OK;
+    return PGS_TX_OK;
   }
 
   g_active_depth.fetch_add(1, std::memory_order_relaxed);
-  if (g_pending_stop.load()) { leave_frame(); return PGR_TX_OK; }  // teardown happens in leave_frame
+  if (g_pending_stop.load()) { leave_frame(); return PGS_TX_OK; }  // teardown happens in leave_frame
 
   uint64_t now = 0;
   if (read_boottime_ms(&now)) {
@@ -611,23 +611,23 @@ int api_tick(uint64_t proven_tid, int stopping) {
       Txn &t = g_pending[i];
       if (!t.finished && !t.timed_out && now >= t.deadline_ms) {
         t.timed_out = true;  // uncertain, once; the request is retained until a callback or a stop
-        push_event(PGR_TX_EVENT_TIMEOUT, 0, t.token, 0, tid);
+        push_event(PGS_TX_EVENT_TIMEOUT, 0, t.token, 0, tid);
       }
     }
   }
   leave_frame();  // reaps completed transactions
-  return PGR_TX_OK;
+  return PGS_TX_OK;
 }
 
-int api_sample(PgrTransferExecSample *out) {
-  if (out == nullptr) return PGR_TX_ERR_NULL_ARG;
+int api_sample(PgsTransferExecSample *out) {
+  if (out == nullptr) return PGS_TX_ERR_NULL_ARG;
   const uint32_t roots = root_total();
   const uint32_t pending = g_m_pending.load(std::memory_order_relaxed);
   const uint32_t seen = g_m_seen.load(std::memory_order_relaxed);
   const uint32_t tickets = g_m_tickets.load(std::memory_order_relaxed);
   std::lock_guard<std::mutex> lock(g_state_mutex);
-  out->version = PGR_TX_SAMPLE_VERSION;
-  out->size = sizeof(PgrTransferExecSample);
+  out->version = PGS_TX_SAMPLE_VERSION;
+  out->size = sizeof(PgsTransferExecSample);
   out->request_serial = g_request_serial;
   out->complete_serial = g_complete_serial;
   out->timeout_serial = g_timeout_serial;
@@ -642,21 +642,21 @@ int api_sample(PgrTransferExecSample *out) {
   out->pending_events = g_fifo_count;
   out->open_tickets = tickets;
   out->reserved = 0;
-  return PGR_TX_OK;
+  return PGS_TX_OK;
 }
 
-int api_next_event(PgrTransferExecEvent *out) {
-  if (out == nullptr) return PGR_TX_ERR_NULL_ARG;
+int api_next_event(PgsTransferExecEvent *out) {
+  if (out == nullptr) return PGS_TX_ERR_NULL_ARG;
   std::lock_guard<std::mutex> lock(g_state_mutex);
   if (g_fifo_count == 0) return 0;
   *out = g_fifo[g_fifo_head];
-  g_fifo_head = (g_fifo_head + 1) % PGR_TX_EVENT_CAP;
+  g_fifo_head = (g_fifo_head + 1) % PGS_TX_EVENT_CAP;
   --g_fifo_count;
   return 1;
 }
 
-const PgrTransferExecApi kApiTable = {
-    PGR_TX_API_VERSION, static_cast<uint32_t>(sizeof(PgrTransferExecApi)),
+const PgsTransferExecApi kApiTable = {
+    PGS_TX_API_VERSION, static_cast<uint32_t>(sizeof(PgsTransferExecApi)),
     &api_install,       &api_update,
     &api_submit,        &api_observe_begin,
     &api_observe_end,   &api_tick,
@@ -666,6 +666,6 @@ const PgrTransferExecApi kApiTable = {
 }  // namespace
 
 extern "C" const void *pgs_transfer_execution_api(uint32_t version) {
-  if (version != PGR_TX_API_VERSION) return nullptr;
+  if (version != PGS_TX_API_VERSION) return nullptr;
   return &kApiTable;
 }

@@ -8,7 +8,7 @@
 #include <string>
 #include <vector>
 
-namespace pgr_auto_rocket {
+namespace pgs_auto_rocket {
 
 // "T1|token|running|targets|maxBattles|walk|transfer|cooldownMs|radiusM"
 //  targets: 0 grunts only, 1 grunts and leaders. transfer: 0 keep every catch, 1 apply the transfer rules.
@@ -130,4 +130,4 @@ inline int select_target(const std::vector<Candidate>& candidates, double lat, d
 
 constexpr int kMaxLossesInRow = 2;
 
-}  // namespace pgr_auto_rocket
+}  // namespace pgs_auto_rocket

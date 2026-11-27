@@ -30,40 +30,40 @@ extern "C" {
 
 static_assert(sizeof(void *) == 8, "CatchCanvas native ABI requires LP64");
 
-enum PgrCatchCanvasInfo {
-  PGR_CANVAS_FEATURE_ID     = 39,
-  PGR_CANVAS_API_VERSION    = 1,
-  PGR_CANVAS_CONFIG_VERSION = 1,
-  PGR_CANVAS_SAMPLE_VERSION = 1,
-  PGR_CANVAS_MAX_LEASE_MS   = 2500, // residual foreground lease ceiling (JS allowedUntil gate)
-  PGR_CANVAS_MAX_SLOTS      = 8     // bounded owned opening-details roots
+enum PgsCatchCanvasInfo {
+  PGS_CANVAS_FEATURE_ID     = 39,
+  PGS_CANVAS_API_VERSION    = 1,
+  PGS_CANVAS_CONFIG_VERSION = 1,
+  PGS_CANVAS_SAMPLE_VERSION = 1,
+  PGS_CANVAS_MAX_LEASE_MS   = 2500, // residual foreground lease ceiling (JS allowedUntil gate)
+  PGS_CANVAS_MAX_SLOTS      = 8     // bounded owned opening-details roots
 };
 
 // hide_opening()/hide_dismissed() return 1 HIDDEN (managed set-false invoked, no throw) / 0 OK (refused
 // by gate/identity/overflow, nothing invoked) / negative error. Every other function returns
-// PGR_CANVAS_OK or a negative error. (Prefix PGR_CANVAS_; PGR_CC_ already belongs to feature 24.)
-enum PgrCatchCanvasStatus {
-  PGR_CANVAS_HIDDEN            = 1,  // managed set-false invoked without a throw
-  PGR_CANVAS_OK               = 0,  // generic success / refused
-  PGR_CANVAS_ERR_NULL_ARG     = -1,
-  PGR_CANVAS_ERR_BAD_VERSION  = -2,
-  PGR_CANVAS_ERR_BAD_SIZE     = -3,
-  PGR_CANVAS_ERR_MISSING_PTR  = -4,
-  PGR_CANVAS_ERR_NOT_INSTALLED = -6,
-  PGR_CANVAS_ERR_RECONFIG     = -9,
-  PGR_CANVAS_ERR_CLOCK_FAILURE = -10,
-  PGR_CANVAS_ERR_HOOK_FAILED  = -11,
-  PGR_CANVAS_ERR_OWNER = -12, // release refused; caller retains token
-  PGR_CANVAS_ERR_BUSY = -13 // release deferred; caller retains token
+// PGS_CANVAS_OK or a negative error. (Prefix PGS_CANVAS_; PGS_CC_ already belongs to feature 24.)
+enum PgsCatchCanvasStatus {
+  PGS_CANVAS_HIDDEN            = 1,  // managed set-false invoked without a throw
+  PGS_CANVAS_OK               = 0,  // generic success / refused
+  PGS_CANVAS_ERR_NULL_ARG     = -1,
+  PGS_CANVAS_ERR_BAD_VERSION  = -2,
+  PGS_CANVAS_ERR_BAD_SIZE     = -3,
+  PGS_CANVAS_ERR_MISSING_PTR  = -4,
+  PGS_CANVAS_ERR_NOT_INSTALLED = -6,
+  PGS_CANVAS_ERR_RECONFIG     = -9,
+  PGS_CANVAS_ERR_CLOCK_FAILURE = -10,
+  PGS_CANVAS_ERR_HOOK_FAILED  = -11,
+  PGS_CANVAS_ERR_OWNER = -12, // release refused; caller retains token
+  PGS_CANVAS_ERR_BUSY = -13 // release deferred; caller retains token
 };
 
 // Fixed LP64 config (128 bytes): 8-byte header + 14 validated il2cpp pointers + int32 state_open +
 // reserved. Every pointer is an already-validated export / Il2CppClass* / FieldInfo* / MethodInfo* /
 // hook address packed by the host off p.module / classes / fields / methods / p.catchCanvas; native
 // re-checks the header and rejects any null. Pointer order is the shared contract's canonical layout.
-struct PgrCatchCanvasConfig {
-  uint32_t version;  // == PGR_CANVAS_CONFIG_VERSION
-  uint32_t size;     // == sizeof(PgrCatchCanvasConfig)
+struct PgsCatchCanvasConfig {
+  uint32_t version;  // == PGS_CANVAS_CONFIG_VERSION
+  uint32_t size;     // == sizeof(PgsCatchCanvasConfig)
 
   // il2cpp runtime exports (slots 0-6).
   void *object_get_class;  // 0: void* (void* obj)
@@ -89,15 +89,15 @@ struct PgrCatchCanvasConfig {
   uint32_t reserved0;      // reserved; 0 in v1
 };
 
-static_assert(sizeof(PgrCatchCanvasConfig) == 128,
-              "PgrCatchCanvasConfig must remain 128 bytes on LP64");
+static_assert(sizeof(PgsCatchCanvasConfig) == 128,
+              "PgsCatchCanvasConfig must remain 128 bytes on LP64");
 
 // Fixed LP64 telemetry gauge (40 bytes). Pull-only; the native layer never calls JS. 'owned' is the
 // current number of live hidden opening-details roots; 'fault' latches only on a real install/runtime
 // clock failure (never on an identity refusal); the counters are monotonic.
-struct PgrCatchCanvasSample {
-  uint32_t version;       // == PGR_CANVAS_SAMPLE_VERSION  (@0)
-  uint32_t size;          // == sizeof(PgrCatchCanvasSample) (@4)
+struct PgsCatchCanvasSample {
+  uint32_t version;       // == PGS_CANVAS_SAMPLE_VERSION  (@0)
+  uint32_t size;          // == sizeof(PgsCatchCanvasSample) (@4)
   uint32_t owned;         // live owned opening-details roots (@8)
   uint32_t fault;         // install/clock fault latch (@12)
   uint64_t masked_count;  // hook true->false masks (@16)
@@ -105,16 +105,16 @@ struct PgrCatchCanvasSample {
   uint64_t restore_count; // managed set-true restorations (@32)
 };
 
-static_assert(sizeof(PgrCatchCanvasSample) == 40,
-              "PgrCatchCanvasSample must remain 40 bytes on LP64");
+static_assert(sizeof(PgsCatchCanvasSample) == 40,
+              "PgsCatchCanvasSample must remain 40 bytes on LP64");
 
 // Fixed LP64 table: 8-byte header + 8 function pointers = 72 bytes. Functions in the canonical order.
-struct PgrCatchCanvasApi {
-  uint32_t version;  // == PGR_CANVAS_API_VERSION
-  uint32_t size;     // == sizeof(PgrCatchCanvasApi)
+struct PgsCatchCanvasApi {
+  uint32_t version;  // == PGS_CANVAS_API_VERSION
+  uint32_t size;     // == sizeof(PgsCatchCanvasApi)
   // Install the config and the single set_CanvasGroupVisible hook. Immutable + idempotent; a partial
   // hook failure faults closed and is never retried; the original is published atomically.
-  int (*install)(const PgrCatchCanvasConfig *config);
+  int (*install)(const PgsCatchCanvasConfig *config);
   // Refresh the gate: enabled, a residual lease clamped to 2500 ms, the caller's current epoch and
   // proven_tid. Arming requires the verified owner thread; a foreign thread/disable only revokes. Any
   // thread. Never frees or restores a root.
@@ -140,42 +140,42 @@ struct PgrCatchCanvasApi {
   // Immediate revoke from any thread (disables the gate, bumps the generation). No managed work and the
   // original is NOT detached: the hook stays installed and passes through safely.
   int (*stop)();
-  int (*sample)(PgrCatchCanvasSample *out);
+  int (*sample)(PgsCatchCanvasSample *out);
 };
 
-static_assert(sizeof(PgrCatchCanvasApi) == 72,
-              "PgrCatchCanvasApi must remain a 72-byte version-1 table");
+static_assert(sizeof(PgsCatchCanvasApi) == 72,
+              "PgsCatchCanvasApi must remain a 72-byte version-1 table");
 
 // API2 is a separate immutable native observer registration table; API1 is unchanged.
 // filter MUST be a pure, nonallocating predicate (no managed invocation/GC). on_enter
 // runs BEFORE the original setter, with the receiver rooted by39; it may allocate.
 // The original receives the refreshed receiver and preserves39 masking. Both callbacks
 // must remain valid for process lifetime. No locks are held across either callback.
-struct PgrCatchCanvasObserver {
+struct PgsCatchCanvasObserver {
  uint32_t version,size;
  int (*filter)(void *context,void *receiver,uint64_t tid);
  void (*on_enter)(void *context,void *receiver,uint64_t tid);
  void *context;
 };
-struct PgrCatchCanvasApi2 {
+struct PgsCatchCanvasApi2 {
  uint32_t version,size;
- int (*subscribe)(const PgrCatchCanvasObserver *);
+ int (*subscribe)(const PgsCatchCanvasObserver *);
 };
-static_assert(sizeof(PgrCatchCanvasObserver)==32,"observer ABI");
-static_assert(sizeof(PgrCatchCanvasApi2)==16,"observer table ABI");
+static_assert(sizeof(PgsCatchCanvasObserver)==32,"observer ABI");
+static_assert(sizeof(PgsCatchCanvasApi2)==16,"observer table ABI");
 
 // API3 masks native alpha writes, including inlined Unity transition setters.
 // Only groups belonging to live, owned canvas slots on the Unity owner thread match.
-struct PgrCatchCanvasAlphaConfig {
+struct PgsCatchCanvasAlphaConfig {
  uint32_t version,size;
  void *address,*root_group_field,*cached_ptr_field,*group_class;
 };
-struct PgrCatchCanvasApi3 {
+struct PgsCatchCanvasApi3 {
  uint32_t version,size;
- int (*install_alpha)(const PgrCatchCanvasAlphaConfig *);
+ int (*install_alpha)(const PgsCatchCanvasAlphaConfig *);
 };
-static_assert(sizeof(PgrCatchCanvasAlphaConfig)==40,"alpha config ABI");
-static_assert(sizeof(PgrCatchCanvasApi3)==16,"alpha table ABI");
+static_assert(sizeof(PgsCatchCanvasAlphaConfig)==40,"alpha config ABI");
+static_assert(sizeof(PgsCatchCanvasApi3)==16,"alpha table ABI");
 
 // Hidden getter. NOT exported by the version script; the coordinator registers it in query_feature
 // under feature id 39 and answers only on an exact version match.

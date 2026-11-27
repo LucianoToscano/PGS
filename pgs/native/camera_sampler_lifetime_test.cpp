@@ -20,7 +20,7 @@ struct Object {void *klass;int32_t integer;float x,y,z;};
 struct Heap {Object objects[NOBJECTS];};
 Heap heaps[256];int generation=0,moves=0,invokes=0,newCalls=0;
 std::map<uintptr_t,void*> handles;uintptr_t serial=100;
-const PgrCameraSamplerApi *api=nullptr;PgrCameraSamplerOutput *outerOutput=nullptr;
+const PgsCameraSamplerApi *api=nullptr;PgsCameraSamplerOutput *outerOutput=nullptr;
 bool reenterCleanup=false,sleepCleanup=false,sleepMain=false,sleepFirstRoot=false,finalPhase=false,slept=false;
 bool checkedRig=false;int firstRoot=-1,nestedResult=0;
 Object *object(int i){return &heaps[generation].objects[i];}
@@ -31,7 +31,7 @@ void move(){
  for(auto &o:old.objects)o.klass=&poisonClass;++moves;
 }
 void sleepMs(int ms){timespec t{ms/1000,(ms%1000)*1000000L};nanosleep(&t,nullptr);slept=true;}
-PgrCameraSamplerRequest request(uint64_t remaining){PgrCameraSamplerRequest r{};r.version=1;r.size=sizeof(r);r.tid=static_cast<uint64_t>(gettid());r.remaining_ms=remaining;r.rig=object(RIG);r.camera=object(CAMERA);return r;}
+PgsCameraSamplerRequest request(uint64_t remaining){PgsCameraSamplerRequest r{};r.version=1;r.size=sizeof(r);r.tid=static_cast<uint64_t>(gettid());r.remaining_ms=remaining;r.rig=object(RIG);r.camera=object(CAMERA);return r;}
 uintptr_t gcNew(void *p,int pinned){
  assert(!pinned);const int i=index(p);assert(checkedRig);
  if(newCalls++==0){firstRoot=i;assert(i==CAMERA);}
@@ -44,8 +44,8 @@ void gcFree(uintptr_t h){
  assert(handles.erase(h)==1);
  if(outerOutput){assert(outerOutput->status==0&&outerOutput->camera_id==0&&outerOutput->x==0&&outerOutput->yaw==0);}
  if(reenterCleanup){reenterCleanup=false;const int before=invokes;
-  auto r=request(2500);PgrCameraSamplerOutput nested{};
-  nestedResult=api->sample(&r,&nested);assert(nestedResult==PGR_CS_ERR_BUSY&&nested.status==nestedResult&&invokes==before);
+  auto r=request(2500);PgsCameraSamplerOutput nested{};
+  nestedResult=api->sample(&r,&nested);assert(nestedResult==PGS_CS_ERR_BUSY&&nested.status==nestedResult&&invokes==before);
  }
  if(sleepCleanup&&finalPhase){sleepCleanup=false;sleepMs(250);}
  move();
@@ -68,7 +68,7 @@ void *invoke(const void *method,void *receiver,void **params,void **exception){
  }
  move();return object(result);
 }
-int sample(uint64_t remaining,PgrCameraSamplerOutput &out){
+int sample(uint64_t remaining,PgsCameraSamplerOutput &out){
  checkedRig=false;newCalls=0;firstRoot=-1;finalPhase=false;
  auto r=request(remaining);outerOutput=&out;const int rc=api->sample(&r,&out);outerOutput=nullptr;
  assert(out.status==rc&&handles.empty());return rc;
@@ -78,8 +78,8 @@ int main(int argc,char **argv){
  if(argc!=2)return 1;void *lib=dlopen(argv[1],RTLD_NOW|RTLD_LOCAL);if(!lib){std::puts(dlerror());return 2;}
  auto get=reinterpret_cast<const void*(*)(uint32_t)>(dlsym(lib,"pgs_native_api"));
  auto core=get?static_cast<const pgs_native_api_v2*>(get(2)):nullptr;assert(core&&core->query_feature(41,99)==nullptr);
- api=static_cast<const PgrCameraSamplerApi*>(core->query_feature(41,1));assert(api&&api->size==24&&api->version==1);
- PgrCameraSamplerConfig c{};c.version=1;c.size=sizeof(c);
+ api=static_cast<const PgsCameraSamplerApi*>(core->query_feature(41,1));assert(api&&api->size==24&&api->version==1);
+ PgsCameraSamplerConfig c{};c.version=1;c.size=sizeof(c);
  c.runtime_invoke=reinterpret_cast<void*>(&invoke);c.object_get_class=reinterpret_cast<void*>(&objectClass);c.class_is_assignable_from=reinterpret_cast<void*>(&assignable);
  c.field_get_value=reinterpret_cast<void*>(&fieldGet);c.object_unbox=reinterpret_cast<void*>(&unbox);
  c.gchandle_new=reinterpret_cast<void*>(&gcNew);c.gchandle_get_target=reinterpret_cast<void*>(&gcGet);c.gchandle_free=reinterpret_cast<void*>(&gcFree);
@@ -91,22 +91,22 @@ int main(int argc,char **argv){
  for(int i=0;i<NOBJECTS;i++)object(i)->klass=classes[i];
  object(VECTOR)->x=1;object(VECTOR)->y=0;object(VECTOR)->z=0;
  object(LAYER)->integer=13;object(MASK)->integer=8192;object(ID)->integer=1234;
- PgrCameraSamplerOutput out{};reenterCleanup=true;
- assert(sample(2500,out)==PGR_CS_SAMPLE&&firstRoot==CAMERA&&nestedResult==PGR_CS_ERR_BUSY);
+ PgsCameraSamplerOutput out{};reenterCleanup=true;
+ assert(sample(2500,out)==PGS_CS_SAMPLE&&firstRoot==CAMERA&&nestedResult==PGS_CS_ERR_BUSY);
  assert(out.camera_id==1234&&out.mask==8192&&out.layer==13&&out.x==1&&out.y==0&&out.z==0&&std::fabs(out.yaw-90)<1e-8&&moves>10);
  out={};slept=false;sleepFirstRoot=true;int allocationBefore=invokes;
- assert(sample(100,out)==PGR_CS_UNAVAILABLE&&slept&&out.reason==PGR_CS_REASON_LEASE);
+ assert(sample(100,out)==PGS_CS_UNAVAILABLE&&slept&&out.reason==PGS_CS_REASON_LEASE);
  assert(invokes==allocationBefore); // the first natural-camera root exhausted the window
  out={};slept=false;sleepCleanup=true;
- assert(sample(200,out)==PGR_CS_UNAVAILABLE&&slept&&out.reason==PGR_CS_REASON_LEASE);
+ assert(sample(200,out)==PGS_CS_UNAVAILABLE&&slept&&out.reason==PGS_CS_REASON_LEASE);
  assert(!out.camera_id&&!out.mask&&!out.layer&&out.x==0&&out.yaw==0);
  out={};slept=false;sleepMain=true;const int before=invokes;
- assert(sample(100,out)==PGR_CS_UNAVAILABLE&&slept&&out.reason==PGR_CS_REASON_LEASE);
+ assert(sample(100,out)==PGS_CS_UNAVAILABLE&&slept&&out.reason==PGS_CS_REASON_LEASE);
  assert(invokes==before+1); // no further managed reads after the expired get_main
  auto bad=request(2500);bad.version=99;out={};const int rc=api->sample(&bad,&out);
- assert(rc==PGR_CS_ERR_BAD_VERSION&&out.status==rc&&handles.empty());
+ assert(rc==PGS_CS_ERR_BAD_VERSION&&out.status==rc&&handles.empty());
  object(CAMERA)->klass=&poisonClass;out={};
- assert(sample(2500,out)==PGR_CS_ERR_METADATA&&out.status==PGR_CS_ERR_METADATA);
+ assert(sample(2500,out)==PGS_CS_ERR_METADATA&&out.status==PGS_CS_ERR_METADATA);
  std::puts("PASS native camera lifetime: moving raw inputs/roots, direct args, cleanup busy+expiry, between-call lease, output status");
  return 0;
 }

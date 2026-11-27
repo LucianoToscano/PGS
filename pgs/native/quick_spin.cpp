@@ -104,8 +104,8 @@ std::mutex g_state_mutex;
 
 std::atomic<bool> g_installed{false};
 bool g_install_attempted = false; // install mutex; partially installed hooks stay alive
-int g_install_error = PGR_QUICK_SPIN_ERR_NOT_INSTALLED;
-PgrQuickSpinConfig g_bound_config{};
+int g_install_error = PGS_QUICK_SPIN_ERR_NOT_INSTALLED;
+PgsQuickSpinConfig g_bound_config{};
 std::atomic<EnterHookFn> g_orig_enter{nullptr};
 std::atomic<ExitHookFn> g_orig_exit{nullptr};
 std::atomic<ResultHookFn> g_orig_result{nullptr};
@@ -138,7 +138,7 @@ uint32_t g_closed_serial = 0;
 uint32_t g_error_serial = 0;
 uint32_t g_cooldown_serial = 0;
 int32_t g_last_result = 0;
-uint32_t g_last_error_code = PGR_QUICK_SPIN_RUNTIME_NONE;
+uint32_t g_last_error_code = PGS_QUICK_SPIN_RUNTIME_NONE;
 int32_t g_last_gui_state = 0;
 uint64_t g_last_opened_ms = 0;
 uint64_t g_last_tid = 0;
@@ -253,7 +253,7 @@ class UnityCallScope {
   explicit UnityCallScope(uint64_t tid) : active_(false) {
     std::lock_guard<std::mutex> lock(g_state_mutex);
     if (g_call_depth >= kMaxReentrantDepth) {
-      publish_error_locked(PGR_QUICK_SPIN_RUNTIME_REENTRANT_OVERFLOW, 0, tid);
+      publish_error_locked(PGS_QUICK_SPIN_RUNTIME_REENTRANT_OVERFLOW, 0, tid);
       detach_record_locked();
       return;
     }
@@ -348,23 +348,23 @@ bool invoke_unboxed_bool(const ResolvedConfig &cfg, const void *method, void *ob
   }
   ScopedTempRoot boxed_root(cfg, boxed);
   if (boxed_root.handle() == 0) {
-    *out_err = PGR_QUICK_SPIN_RUNTIME_GCHANDLE_TEMP_FAILED;
+    *out_err = PGS_QUICK_SPIN_RUNTIME_GCHANDLE_TEMP_FAILED;
     return false;
   }
   void *target = boxed_root.target();
   if (target == nullptr || cfg.object_get_class(target) != cfg.bool_class) {
-    *out_err = PGR_QUICK_SPIN_RUNTIME_BOOL_TYPE_MISMATCH;
+    *out_err = PGS_QUICK_SPIN_RUNTIME_BOOL_TYPE_MISMATCH;
     return false;
   }
   void *raw = cfg.object_unbox(target);
   if (raw == nullptr) {
-    *out_err = PGR_QUICK_SPIN_RUNTIME_BOOL_TYPE_MISMATCH;
+    *out_err = PGS_QUICK_SPIN_RUNTIME_BOOL_TYPE_MISMATCH;
     return false;
   }
   const uint8_t value = *static_cast<const uint8_t *>(raw);
-  if (value > 1) { *out_err = PGR_QUICK_SPIN_RUNTIME_BOOL_TYPE_MISMATCH; return false; }
+  if (value > 1) { *out_err = PGS_QUICK_SPIN_RUNTIME_BOOL_TYPE_MISMATCH; return false; }
   *out_value = value == 1U;
-  *out_err = PGR_QUICK_SPIN_RUNTIME_NONE;
+  *out_err = PGS_QUICK_SPIN_RUNTIME_NONE;
   return true;
 }
 
@@ -390,9 +390,9 @@ void hook_enter(void *self, const void *method) {
     }
   }
 
-  pgr_interaction_owner::Phase observer(6);
-  pgr_interaction_owner::Pins pins(observer.wanted(),reinterpret_cast<void*>(cfg.gchandle_new),reinterpret_cast<void*>(cfg.gchandle_get_target),reinterpret_cast<void*>(cfg.gchandle_free),self);
-  pgr_interaction_owner::AbortBeforeRoots unwind{observer};
+  pgs_interaction_owner::Phase observer(6);
+  pgs_interaction_owner::Pins pins(observer.wanted(),reinterpret_cast<void*>(cfg.gchandle_new),reinterpret_cast<void*>(cfg.gchandle_get_target),reinterpret_cast<void*>(cfg.gchandle_free),self);
+  pgs_interaction_owner::AbortBeforeRoots unwind{observer};
   self=pins.at(0);
   auto invoke_original=[&](){
     if(pins.valid)observer.enter(pins.at(0));
@@ -418,7 +418,7 @@ void hook_enter(void *self, const void *method) {
     uintptr_t state_handle = cfg.gchandle_new(self, false);
     if (state_handle == 0) {
       std::lock_guard<std::mutex> lock(g_state_mutex);
-      publish_error_locked(PGR_QUICK_SPIN_RUNTIME_GCHANDLE_STATE_FAILED, 0, tid);
+      publish_error_locked(PGS_QUICK_SPIN_RUNTIME_GCHANDLE_STATE_FAILED, 0, tid);
       detach_record_locked();
     } else {
       bool keep_handle = false;
@@ -477,9 +477,9 @@ void hook_exit(void *self, const void *method) {
     }
   }
 
-  pgr_interaction_owner::Phase observer(7);
-  pgr_interaction_owner::Pins pins(observer.wanted(),reinterpret_cast<void*>(cfg.gchandle_new),reinterpret_cast<void*>(cfg.gchandle_get_target),reinterpret_cast<void*>(cfg.gchandle_free),self);
-  pgr_interaction_owner::AbortBeforeRoots unwind{observer};
+  pgs_interaction_owner::Phase observer(7);
+  pgs_interaction_owner::Pins pins(observer.wanted(),reinterpret_cast<void*>(cfg.gchandle_new),reinterpret_cast<void*>(cfg.gchandle_get_target),reinterpret_cast<void*>(cfg.gchandle_free),self);
+  pgs_interaction_owner::AbortBeforeRoots unwind{observer};
   self=pins.at(0);
   auto invoke_original=[&](){
     if(pins.valid)observer.enter(pins.at(0));
@@ -531,9 +531,9 @@ void hook_result(void *self, void *proto, const void *method) {
     }
   }
 
-  pgr_interaction_owner::Phase observer(13);
-  pgr_interaction_owner::Pins pins(observer.wanted(),reinterpret_cast<void*>(cfg.gchandle_new),reinterpret_cast<void*>(cfg.gchandle_get_target),reinterpret_cast<void*>(cfg.gchandle_free),self,proto);
-  pgr_interaction_owner::AbortBeforeRoots unwind{observer};
+  pgs_interaction_owner::Phase observer(13);
+  pgs_interaction_owner::Pins pins(observer.wanted(),reinterpret_cast<void*>(cfg.gchandle_new),reinterpret_cast<void*>(cfg.gchandle_get_target),reinterpret_cast<void*>(cfg.gchandle_free),self,proto);
+  pgs_interaction_owner::AbortBeforeRoots unwind{observer};
   self=pins.at(0);proto=pins.at(1);
   auto invoke_original=[&](){
     if(pins.valid)observer.enter(pins.at(0),pins.at(1));
@@ -653,17 +653,17 @@ void hook_spin(void *self, float speed, const void *method) {
 // Install.
 // ---------------------------------------------------------------------------
 
-bool validate_config(const PgrQuickSpinConfig *config, int *out_rc) {
+bool validate_config(const PgsQuickSpinConfig *config, int *out_rc) {
   if (config == nullptr) {
-    *out_rc = PGR_QUICK_SPIN_ERR_INVALID_ARG;
+    *out_rc = PGS_QUICK_SPIN_ERR_INVALID_ARG;
     return false;
   }
-  if (config->version != PGR_QUICK_SPIN_CONFIG_VERSION) {
-    *out_rc = PGR_QUICK_SPIN_ERR_BAD_VERSION;
+  if (config->version != PGS_QUICK_SPIN_CONFIG_VERSION) {
+    *out_rc = PGS_QUICK_SPIN_ERR_BAD_VERSION;
     return false;
   }
-  if (config->size != sizeof(PgrQuickSpinConfig)) {
-    *out_rc = PGR_QUICK_SPIN_ERR_BAD_SIZE;
+  if (config->size != sizeof(PgsQuickSpinConfig)) {
+    *out_rc = PGS_QUICK_SPIN_ERR_BAD_SIZE;
     return false;
   }
   void *const ptrs[] = {
@@ -680,7 +680,7 @@ bool validate_config(const PgrQuickSpinConfig *config, int *out_rc) {
   };
   for (void *p : ptrs) {
     if (p == nullptr) {
-      *out_rc = PGR_QUICK_SPIN_ERR_MISSING_PTR;
+      *out_rc = PGS_QUICK_SPIN_ERR_MISSING_PTR;
       return false;
     }
   }
@@ -689,16 +689,16 @@ bool validate_config(const PgrQuickSpinConfig *config, int *out_rc) {
   for (size_t i = 0; i < 4; ++i) {
     for (size_t j = i + 1; j < 4; ++j) {
       if (hooks[i] == hooks[j]) {
-        *out_rc = PGR_QUICK_SPIN_ERR_DUPLICATE_TARGET;
+        *out_rc = PGS_QUICK_SPIN_ERR_DUPLICATE_TARGET;
         return false;
       }
     }
   }
-  *out_rc = PGR_QUICK_SPIN_OK;
+  *out_rc = PGS_QUICK_SPIN_OK;
   return true;
 }
 
-ResolvedConfig resolve_config(const PgrQuickSpinConfig *c) {
+ResolvedConfig resolve_config(const PgsQuickSpinConfig *c) {
   ResolvedConfig r{};
   r.success_value = c->success_value;
   r.state_open_value = c->state_open_value;
@@ -733,15 +733,15 @@ ResolvedConfig resolve_config(const PgrQuickSpinConfig *c) {
   return r;
 }
 
-int api_install(const PgrQuickSpinConfig *config) {
-  int validation_rc = PGR_QUICK_SPIN_OK;
+int api_install(const PgsQuickSpinConfig *config) {
+  int validation_rc = PGS_QUICK_SPIN_OK;
   if (!validate_config(config, &validation_rc)) {
     return validation_rc;
   }
 
   uint64_t boot_probe = 0;
   if (!read_boottime_ms(&boot_probe)) {
-    return PGR_QUICK_SPIN_ERR_CLOCK_FAILURE;
+    return PGS_QUICK_SPIN_ERR_CLOCK_FAILURE;
   }
 
   std::lock_guard<std::mutex> install_lock(g_install_mutex);
@@ -752,9 +752,9 @@ int api_install(const PgrQuickSpinConfig *config) {
     // but the four hook addresses may never be rebound.
     std::lock_guard<std::mutex> state_lock(g_state_mutex);
     if (std::memcmp(&g_bound_config, config, sizeof(*config)) != 0) {
-      return PGR_QUICK_SPIN_ERR_RECONFIG_ADDRESS_MISMATCH;
+      return PGS_QUICK_SPIN_ERR_RECONFIG_ADDRESS_MISMATCH;
     }
-    return PGR_QUICK_SPIN_OK;
+    return PGS_QUICK_SPIN_OK;
   }
   if (g_install_attempted) return g_install_error;
   g_install_attempted = true;
@@ -778,7 +778,7 @@ int api_install(const PgrQuickSpinConfig *config) {
   if (pgs_hook(resolved.enter_address, reinterpret_cast<void *>(&hook_enter),
                    &orig_enter) != 0 ||
       orig_enter == nullptr) {
-    return g_install_error = PGR_QUICK_SPIN_ERR_HOOK_ENTER;
+    return g_install_error = PGS_QUICK_SPIN_ERR_HOOK_ENTER;
   }
   g_orig_enter.store(reinterpret_cast<EnterHookFn>(orig_enter), std::memory_order_release);
 
@@ -786,7 +786,7 @@ int api_install(const PgrQuickSpinConfig *config) {
   if (pgs_hook(resolved.exit_address, reinterpret_cast<void *>(&hook_exit),
                    &orig_exit) != 0 ||
       orig_exit == nullptr) {
-    return g_install_error = PGR_QUICK_SPIN_ERR_HOOK_EXIT;
+    return g_install_error = PGS_QUICK_SPIN_ERR_HOOK_EXIT;
   }
   g_orig_exit.store(reinterpret_cast<ExitHookFn>(orig_exit), std::memory_order_release);
 
@@ -794,7 +794,7 @@ int api_install(const PgrQuickSpinConfig *config) {
   if (pgs_hook(resolved.result_address, reinterpret_cast<void *>(&hook_result),
                    &orig_result) != 0 ||
       orig_result == nullptr) {
-    return g_install_error = PGR_QUICK_SPIN_ERR_HOOK_RESULT;
+    return g_install_error = PGS_QUICK_SPIN_ERR_HOOK_RESULT;
   }
   g_orig_result.store(reinterpret_cast<ResultHookFn>(orig_result), std::memory_order_release);
 
@@ -802,12 +802,12 @@ int api_install(const PgrQuickSpinConfig *config) {
   if (pgs_hook(resolved.spin_address, reinterpret_cast<void *>(&hook_spin),
                    &orig_spin) != 0 ||
       orig_spin == nullptr) {
-    return g_install_error = PGR_QUICK_SPIN_ERR_HOOK_SPIN;
+    return g_install_error = PGS_QUICK_SPIN_ERR_HOOK_SPIN;
   }
   g_orig_spin.store(reinterpret_cast<SpinHookFn>(orig_spin), std::memory_order_release);
 
   g_installed.store(true, std::memory_order_release);
-  return g_install_error = PGR_QUICK_SPIN_OK;
+  return g_install_error = PGS_QUICK_SPIN_OK;
 }
 
 // ---------------------------------------------------------------------------
@@ -818,7 +818,7 @@ int api_install(const PgrQuickSpinConfig *config) {
 int api_update(int enabled, uint64_t remaining_lease_ms, uint64_t proven_tid,
                uint64_t epoch) {
   if (!g_installed.load(std::memory_order_acquire)) {
-    return PGR_QUICK_SPIN_ERR_NOT_INSTALLED;
+    return PGS_QUICK_SPIN_ERR_NOT_INSTALLED;
   }
 
   uint64_t now_ms = 0;
@@ -838,7 +838,7 @@ int api_update(int enabled, uint64_t remaining_lease_ms, uint64_t proven_tid,
     if (!clock_ok) {
       g_enabled = false;
       g_lease_until_ms = 0;
-      publish_error_locked(PGR_QUICK_SPIN_RUNTIME_CLOCK_BOOTTIME_FAILED, 0, proven_tid);
+      publish_error_locked(PGS_QUICK_SPIN_RUNTIME_CLOCK_BOOTTIME_FAILED, 0, proven_tid);
       detach_record_locked();
     } else {
       const uint64_t clamped =
@@ -854,19 +854,19 @@ int api_update(int enabled, uint64_t remaining_lease_ms, uint64_t proven_tid,
   }
 
   drain_retired_if_owner_idle();
-  return wrong_thread ? PGR_QUICK_SPIN_ERR_INVALID_ARG : clock_ok ? PGR_QUICK_SPIN_OK : PGR_QUICK_SPIN_ERR_CLOCK_FAILURE;
+  return wrong_thread ? PGS_QUICK_SPIN_ERR_INVALID_ARG : clock_ok ? PGS_QUICK_SPIN_OK : PGS_QUICK_SPIN_ERR_CLOCK_FAILURE;
 }
 
 int api_clear(void) {
   if (!g_installed.load(std::memory_order_acquire)) {
-    return PGR_QUICK_SPIN_ERR_NOT_INSTALLED;
+    return PGS_QUICK_SPIN_ERR_NOT_INSTALLED;
   }
   {
     std::lock_guard<std::mutex> lock(g_state_mutex);
     detach_record_locked();
   }
   drain_retired_if_owner_idle();
-  return PGR_QUICK_SPIN_OK;
+  return PGS_QUICK_SPIN_OK;
 }
 
 // ---------------------------------------------------------------------------
@@ -876,33 +876,33 @@ int api_clear(void) {
 
 int api_tick(uint64_t proven_tid, uint64_t tick_number, uint64_t opener_depth) {
   if (!g_installed.load(std::memory_order_acquire)) {
-    return PGR_QUICK_SPIN_ERR_NOT_INSTALLED;
+    return PGS_QUICK_SPIN_ERR_NOT_INSTALLED;
   }
 
   // Only the real verified Unity thread may advance tick state or act on a record.
   const uint64_t caller_tid = current_tid();
   if (proven_tid == 0 || caller_tid != proven_tid) {
-    return PGR_QUICK_SPIN_OK;
+    return PGS_QUICK_SPIN_OK;
   }
   {
     std::lock_guard<std::mutex> lock(g_state_mutex);
     const uint64_t owner = g_owner_tid.load(std::memory_order_acquire);
     if (g_proven_tid != proven_tid || (owner && owner != proven_tid) || g_call_depth != 0)
-      return PGR_QUICK_SPIN_OK;
+      return PGS_QUICK_SPIN_OK;
     latch_owner_locked(proven_tid);
   }
 
   UnityCallScope call_scope(proven_tid);
   if (!call_scope.ok()) {
-    return PGR_QUICK_SPIN_OK;
+    return PGS_QUICK_SPIN_OK;
   }
 
   uint64_t now_ms = 0;
   if (!read_boottime_ms(&now_ms)) {
     std::lock_guard<std::mutex> lock(g_state_mutex);
-    publish_error_locked(PGR_QUICK_SPIN_RUNTIME_CLOCK_BOOTTIME_FAILED, 0, proven_tid);
+    publish_error_locked(PGS_QUICK_SPIN_RUNTIME_CLOCK_BOOTTIME_FAILED, 0, proven_tid);
     detach_record_locked();
-    return PGR_QUICK_SPIN_ERR_CLOCK_FAILURE;
+    return PGS_QUICK_SPIN_ERR_CLOCK_FAILURE;
   }
 
   ResolvedConfig cfg{};
@@ -910,23 +910,23 @@ int api_tick(uint64_t proven_tid, uint64_t tick_number, uint64_t opener_depth) {
   {
     std::lock_guard<std::mutex> lock(g_state_mutex);
     if (g_proven_tid != 0 && g_proven_tid != proven_tid) {
-      return PGR_QUICK_SPIN_OK;
+      return PGS_QUICK_SPIN_OK;
     }
     g_proven_tid = proven_tid;
     latch_owner_locked(proven_tid);
     g_last_tick_number = tick_number;
 
     if (!g_record.active) {
-      return PGR_QUICK_SPIN_OK;
+      return PGS_QUICK_SPIN_OK;
     }
     if (!spin_permitted_locked(now_ms) || g_record.epoch != g_epoch ||
         now_ms >= g_record.deadline_ms) {
       detach_record_locked();
-      return PGR_QUICK_SPIN_OK;
+      return PGS_QUICK_SPIN_OK;
     }
     if (opener_depth != 0 || !g_record.enter_complete ||
         tick_number <= g_record.enter_tick) {
-      return PGR_QUICK_SPIN_OK;
+      return PGS_QUICK_SPIN_OK;
     }
     cfg = g_cfg;
     snap = g_record;
@@ -936,7 +936,7 @@ int api_tick(uint64_t proven_tid, uint64_t tick_number, uint64_t opener_depth) {
 
   auto clear_if_same_gen = [&](uint32_t err_code, int32_t result_val) {
     std::lock_guard<std::mutex> lock(g_state_mutex);
-    if (err_code != PGR_QUICK_SPIN_RUNTIME_NONE) {
+    if (err_code != PGS_QUICK_SPIN_RUNTIME_NONE) {
       publish_error_locked(err_code, result_val, proven_tid);
     }
     if (g_record.active && g_record.generation == gen) {
@@ -949,7 +949,7 @@ int api_tick(uint64_t proven_tid, uint64_t tick_number, uint64_t opener_depth) {
   auto recheck = [&](uint64_t *out_now) -> bool {
     uint64_t check_now = 0;
     if (!read_boottime_ms(&check_now)) {
-      clear_if_same_gen(PGR_QUICK_SPIN_RUNTIME_CLOCK_BOOTTIME_FAILED, 0);
+      clear_if_same_gen(PGS_QUICK_SPIN_RUNTIME_CLOCK_BOOTTIME_FAILED, 0);
       return false;
     }
     std::lock_guard<std::mutex> lock(g_state_mutex);
@@ -968,102 +968,102 @@ int api_tick(uint64_t proven_tid, uint64_t tick_number, uint64_t opener_depth) {
   void *state_obj = cfg.gchandle_get_target(snap.state_handle);
   if (state_obj == nullptr ||
       cfg.object_get_class(state_obj) != cfg.spin_state_class) {
-    clear_if_same_gen(PGR_QUICK_SPIN_RUNTIME_NONE, 0);
-    return PGR_QUICK_SPIN_OK;
+    clear_if_same_gen(PGS_QUICK_SPIN_RUNTIME_NONE, 0);
+    return PGS_QUICK_SPIN_OK;
   }
 
   void *gui_obj = nullptr;
   cfg.field_get_value(state_obj, cfg.gui_field, &gui_obj);
   if (gui_obj == nullptr) {
-    return PGR_QUICK_SPIN_OK;  // gui not materialised yet; try again next tick
+    return PGS_QUICK_SPIN_OK;  // gui not materialised yet; try again next tick
   }
   if (cfg.object_get_class(gui_obj) != cfg.spin_gui_class) {
-    clear_if_same_gen(PGR_QUICK_SPIN_RUNTIME_NONE, 0);
-    return PGR_QUICK_SPIN_OK;
+    clear_if_same_gen(PGS_QUICK_SPIN_RUNTIME_NONE, 0);
+    return PGS_QUICK_SPIN_OK;
   }
 
   ScopedTempRoot gui_root(cfg, gui_obj);
   if (gui_root.handle() == 0) {
-    clear_if_same_gen(PGR_QUICK_SPIN_RUNTIME_GCHANDLE_GUI_FAILED, 0);
-    return PGR_QUICK_SPIN_OK;
+    clear_if_same_gen(PGS_QUICK_SPIN_RUNTIME_GCHANDLE_GUI_FAILED, 0);
+    return PGS_QUICK_SPIN_OK;
   }
 
-  if (!recheck(&now_ms)) return PGR_QUICK_SPIN_OK;
+  if (!recheck(&now_ms)) return PGS_QUICK_SPIN_OK;
 
   void *rooted_gui = gui_root.target();
   if (rooted_gui == nullptr) {
-    clear_if_same_gen(PGR_QUICK_SPIN_RUNTIME_NONE, 0);
-    return PGR_QUICK_SPIN_OK;
+    clear_if_same_gen(PGS_QUICK_SPIN_RUNTIME_NONE, 0);
+    return PGS_QUICK_SPIN_OK;
   }
 
   void *alive_args[1] = {rooted_gui};
   bool gui_alive = false;
-  uint32_t bool_err = PGR_QUICK_SPIN_RUNTIME_NONE;
+  uint32_t bool_err = PGS_QUICK_SPIN_RUNTIME_NONE;
   if (!invoke_unboxed_bool(cfg, cfg.alive_method, nullptr, alive_args,
-                           PGR_QUICK_SPIN_RUNTIME_ALIVE_EXCEPTION, &gui_alive,
+                           PGS_QUICK_SPIN_RUNTIME_ALIVE_EXCEPTION, &gui_alive,
                            &bool_err)) {
     clear_if_same_gen(bool_err, 0);
-    return PGR_QUICK_SPIN_OK;
+    return PGS_QUICK_SPIN_OK;
   }
   if (!gui_alive) {
-    clear_if_same_gen(PGR_QUICK_SPIN_RUNTIME_NONE, 0);
-    return PGR_QUICK_SPIN_OK;
+    clear_if_same_gen(PGS_QUICK_SPIN_RUNTIME_NONE, 0);
+    return PGS_QUICK_SPIN_OK;
   }
 
-  if (!recheck(&now_ms)) return PGR_QUICK_SPIN_OK;
+  if (!recheck(&now_ms)) return PGS_QUICK_SPIN_OK;
   rooted_gui = gui_root.target();
   if (rooted_gui == nullptr) {
-    clear_if_same_gen(PGR_QUICK_SPIN_RUNTIME_NONE, 0);
-    return PGR_QUICK_SPIN_OK;
+    clear_if_same_gen(PGS_QUICK_SPIN_RUNTIME_NONE, 0);
+    return PGS_QUICK_SPIN_OK;
   }
 
   // If we already pinned a gui on a previous tick, it must still be the same one.
   if (snap.gui_handle != 0) {
     void *expected_gui = cfg.gchandle_get_target(snap.gui_handle);
     if (expected_gui != rooted_gui) {
-      clear_if_same_gen(PGR_QUICK_SPIN_RUNTIME_NONE, 0);
-      return PGR_QUICK_SPIN_OK;
+      clear_if_same_gen(PGS_QUICK_SPIN_RUNTIME_NONE, 0);
+      return PGS_QUICK_SPIN_OK;
     }
   }
 
   int32_t gui_state = 0;
   cfg.field_get_value(rooted_gui, cfg.current_state_field, &gui_state);
   if (gui_state != kGuiStateOpening && gui_state != cfg.state_open_value) {
-    return PGR_QUICK_SPIN_OK;
+    return PGS_QUICK_SPIN_OK;
   }
 
   // Re-snapshot in case a result callback fired between the gate above and here.
   {
     std::lock_guard<std::mutex> lock(g_state_mutex);
     if (!g_record.active || g_record.generation != gen) {
-      return PGR_QUICK_SPIN_OK;
+      return PGS_QUICK_SPIN_OK;
     }
     snap = g_record;
   }
 
   if (snap.has_result) {
     if (gui_state != cfg.state_open_value || tick_number <= snap.result_tick) {
-      return PGR_QUICK_SPIN_OK;
+      return PGS_QUICK_SPIN_OK;
     }
     if (snap.result_value == cfg.success_value) {
-      if (!recheck(&now_ms)) return PGR_QUICK_SPIN_OK;
+      if (!recheck(&now_ms)) return PGS_QUICK_SPIN_OK;
       {
         std::lock_guard<std::mutex> lock(g_state_mutex);
         if (!g_record.active || g_record.generation != gen || g_record.closed) {
-          return PGR_QUICK_SPIN_OK;
+          return PGS_QUICK_SPIN_OK;
         }
         g_record.closed = true;
       }
       rooted_gui = gui_root.target();
       if (rooted_gui == nullptr) {
-        clear_if_same_gen(PGR_QUICK_SPIN_RUNTIME_NONE, 0);
-        return PGR_QUICK_SPIN_OK;
+        clear_if_same_gen(PGS_QUICK_SPIN_RUNTIME_NONE, 0);
+        return PGS_QUICK_SPIN_OK;
       }
       void *exc = nullptr;
       cfg.runtime_invoke(cfg.close_method, rooted_gui, nullptr, &exc);
       if (exc != nullptr) {
-        clear_if_same_gen(PGR_QUICK_SPIN_RUNTIME_CLOSE_EXCEPTION, 0);
-        return PGR_QUICK_SPIN_OK;
+        clear_if_same_gen(PGS_QUICK_SPIN_RUNTIME_CLOSE_EXCEPTION, 0);
+        return PGS_QUICK_SPIN_OK;
       }
       uint64_t done_ms = now_ms;
       read_boottime_ms(&done_ms);
@@ -1076,82 +1076,82 @@ int api_tick(uint64_t proven_tid, uint64_t tick_number, uint64_t opener_depth) {
           detach_record_locked();
         }
       }
-      return PGR_QUICK_SPIN_OK;
+      return PGS_QUICK_SPIN_OK;
     }
     // Non-success result: surface it and drop the record.
-    clear_if_same_gen(PGR_QUICK_SPIN_RUNTIME_RESULT_NON_SUCCESS, snap.result_value);
-    return PGR_QUICK_SPIN_OK;
+    clear_if_same_gen(PGS_QUICK_SPIN_RUNTIME_RESULT_NON_SUCCESS, snap.result_value);
+    return PGS_QUICK_SPIN_OK;
   }
 
   if (snap.sent) {
-    return PGR_QUICK_SPIN_OK;  // request already issued; wait for the result
+    return PGS_QUICK_SPIN_OK;  // request already issued; wait for the result
   }
 
   // No result yet and not sent: walk SpinState -> Gesture -> Spinner, gated on
   // IsActive / CanSpin, then issue Spin(360) + request.
   state_obj = cfg.gchandle_get_target(snap.state_handle);
   if (state_obj == nullptr) {
-    clear_if_same_gen(PGR_QUICK_SPIN_RUNTIME_NONE, 0);
-    return PGR_QUICK_SPIN_OK;
+    clear_if_same_gen(PGS_QUICK_SPIN_RUNTIME_NONE, 0);
+    return PGS_QUICK_SPIN_OK;
   }
 
   void *gesture_obj = nullptr;
   cfg.field_get_value(state_obj, cfg.gesture_field, &gesture_obj);
   if (gesture_obj == nullptr ||
       cfg.object_get_class(gesture_obj) != cfg.gesture_class) {
-    return PGR_QUICK_SPIN_OK;
+    return PGS_QUICK_SPIN_OK;
   }
 
   ScopedTempRoot gesture_root(cfg, gesture_obj);
   if (gesture_root.handle() == 0) {
-    clear_if_same_gen(PGR_QUICK_SPIN_RUNTIME_GCHANDLE_TEMP_FAILED, 0);
-    return PGR_QUICK_SPIN_OK;
+    clear_if_same_gen(PGS_QUICK_SPIN_RUNTIME_GCHANDLE_TEMP_FAILED, 0);
+    return PGS_QUICK_SPIN_OK;
   }
 
-  if (!recheck(&now_ms)) return PGR_QUICK_SPIN_OK;
+  if (!recheck(&now_ms)) return PGS_QUICK_SPIN_OK;
   void *rooted_gesture = gesture_root.target();
-  if (rooted_gesture == nullptr) return PGR_QUICK_SPIN_OK;
+  if (rooted_gesture == nullptr) return PGS_QUICK_SPIN_OK;
 
   bool is_active = false;
   if (!invoke_unboxed_bool(cfg, cfg.active_method, rooted_gesture, nullptr,
-                           PGR_QUICK_SPIN_RUNTIME_ACTIVE_EXCEPTION, &is_active,
+                           PGS_QUICK_SPIN_RUNTIME_ACTIVE_EXCEPTION, &is_active,
                            &bool_err)) {
     clear_if_same_gen(bool_err, 0);
-    return PGR_QUICK_SPIN_OK;
+    return PGS_QUICK_SPIN_OK;
   }
-  if (!is_active) return PGR_QUICK_SPIN_OK;
+  if (!is_active) return PGS_QUICK_SPIN_OK;
 
-  if (!recheck(&now_ms)) return PGR_QUICK_SPIN_OK;
+  if (!recheck(&now_ms)) return PGS_QUICK_SPIN_OK;
   rooted_gesture = gesture_root.target();
-  if (rooted_gesture == nullptr) return PGR_QUICK_SPIN_OK;
+  if (rooted_gesture == nullptr) return PGS_QUICK_SPIN_OK;
 
   void *spinner_obj = nullptr;
   cfg.field_get_value(rooted_gesture, cfg.spinner_field, &spinner_obj);
   if (spinner_obj == nullptr ||
       cfg.object_get_class(spinner_obj) != cfg.spinner_class) {
-    return PGR_QUICK_SPIN_OK;
+    return PGS_QUICK_SPIN_OK;
   }
 
   ScopedTempRoot spinner_root(cfg, spinner_obj);
   if (spinner_root.handle() == 0) {
-    clear_if_same_gen(PGR_QUICK_SPIN_RUNTIME_GCHANDLE_TEMP_FAILED, 0);
-    return PGR_QUICK_SPIN_OK;
+    clear_if_same_gen(PGS_QUICK_SPIN_RUNTIME_GCHANDLE_TEMP_FAILED, 0);
+    return PGS_QUICK_SPIN_OK;
   }
 
-  if (!recheck(&now_ms)) return PGR_QUICK_SPIN_OK;
+  if (!recheck(&now_ms)) return PGS_QUICK_SPIN_OK;
   void *rooted_spinner = spinner_root.target();
-  if (rooted_spinner == nullptr) return PGR_QUICK_SPIN_OK;
+  if (rooted_spinner == nullptr) return PGS_QUICK_SPIN_OK;
 
   bool can_spin = false;
   if (!invoke_unboxed_bool(cfg, cfg.can_method, rooted_spinner, nullptr,
-                           PGR_QUICK_SPIN_RUNTIME_CAN_EXCEPTION, &can_spin,
+                           PGS_QUICK_SPIN_RUNTIME_CAN_EXCEPTION, &can_spin,
                            &bool_err)) {
     clear_if_same_gen(bool_err, 0);
-    return PGR_QUICK_SPIN_OK;
+    return PGS_QUICK_SPIN_OK;
   }
-  if (!can_spin) return PGR_QUICK_SPIN_OK;
+  if (!can_spin) return PGS_QUICK_SPIN_OK;
 
-  if (!recheck(&now_ms)) return PGR_QUICK_SPIN_OK;
+  if (!recheck(&now_ms)) return PGS_QUICK_SPIN_OK;
 
   // Mark sent, promote the gui temp root to the persistent record root, and set the
   // 12s request deadline BEFORE invoking Spin(360)/request, so a synchronous result
@@ -1160,7 +1160,7 @@ int api_tick(uint64_t proven_tid, uint64_t tick_number, uint64_t opener_depth) {
     std::lock_guard<std::mutex> lock(g_state_mutex);
     if (!record_matches_and_permitted_locked(gen, now_ms) || g_record.sent ||
         g_record.has_result) {
-      return PGR_QUICK_SPIN_OK;
+      return PGS_QUICK_SPIN_OK;
     }
     queue_retired_locked(g_record.gui_handle);
     g_record.gui_handle = gui_root.detach_locked();  // no nested lock: detach_locked
@@ -1170,8 +1170,8 @@ int api_tick(uint64_t proven_tid, uint64_t tick_number, uint64_t opener_depth) {
 
   rooted_spinner = spinner_root.target();
   if (rooted_spinner == nullptr) {
-    clear_if_same_gen(PGR_QUICK_SPIN_RUNTIME_SPIN_EXCEPTION, 0);
-    return PGR_QUICK_SPIN_OK;
+    clear_if_same_gen(PGS_QUICK_SPIN_RUNTIME_SPIN_EXCEPTION, 0);
+    return PGS_QUICK_SPIN_OK;
   }
 
   float speed = 360.0f;
@@ -1179,17 +1179,17 @@ int api_tick(uint64_t proven_tid, uint64_t tick_number, uint64_t opener_depth) {
   void *spin_exc = nullptr;
   cfg.runtime_invoke(cfg.spin_method, rooted_spinner, spin_args, &spin_exc);
   if (spin_exc != nullptr) {
-    clear_if_same_gen(PGR_QUICK_SPIN_RUNTIME_SPIN_EXCEPTION, 0);
-    return PGR_QUICK_SPIN_OK;
+    clear_if_same_gen(PGS_QUICK_SPIN_RUNTIME_SPIN_EXCEPTION, 0);
+    return PGS_QUICK_SPIN_OK;
   }
 
-  if (!recheck(&now_ms)) return PGR_QUICK_SPIN_OK;
+  if (!recheck(&now_ms)) return PGS_QUICK_SPIN_OK;
 
   bool result_already_arrived = false;
   {
     std::lock_guard<std::mutex> lock(g_state_mutex);
     if (!g_record.active || g_record.generation != gen) {
-      return PGR_QUICK_SPIN_OK;
+      return PGS_QUICK_SPIN_OK;
     }
     result_already_arrived = g_record.has_result;
     g_last_gui_state = gui_state;
@@ -1203,31 +1203,31 @@ int api_tick(uint64_t proven_tid, uint64_t tick_number, uint64_t opener_depth) {
   if (!result_already_arrived) {
     rooted_spinner = spinner_root.target();
     if (rooted_spinner == nullptr) {
-      clear_if_same_gen(PGR_QUICK_SPIN_RUNTIME_REQUEST_EXCEPTION, 0);
-      return PGR_QUICK_SPIN_OK;
+      clear_if_same_gen(PGS_QUICK_SPIN_RUNTIME_REQUEST_EXCEPTION, 0);
+      return PGS_QUICK_SPIN_OK;
     }
     void *req_exc = nullptr;
     cfg.runtime_invoke(cfg.request_method, rooted_spinner, nullptr, &req_exc);
     if (req_exc != nullptr) {
-      clear_if_same_gen(PGR_QUICK_SPIN_RUNTIME_REQUEST_EXCEPTION, 0);
-      return PGR_QUICK_SPIN_OK;
+      clear_if_same_gen(PGS_QUICK_SPIN_RUNTIME_REQUEST_EXCEPTION, 0);
+      return PGS_QUICK_SPIN_OK;
     }
   }
 
-  return PGR_QUICK_SPIN_OK;
+  return PGS_QUICK_SPIN_OK;
 }
 
 // ---------------------------------------------------------------------------
 // Sample: pure pull. Never frees handles, never calls back into JS.
 // ---------------------------------------------------------------------------
 
-int api_sample(PgrQuickSpinSample *out_sample) {
+int api_sample(PgsQuickSpinSample *out_sample) {
   if (out_sample == nullptr) {
-    return PGR_QUICK_SPIN_ERR_INVALID_ARG;
+    return PGS_QUICK_SPIN_ERR_INVALID_ARG;
   }
   std::lock_guard<std::mutex> lock(g_state_mutex);
-  out_sample->version = PGR_QUICK_SPIN_SAMPLE_VERSION;
-  out_sample->size = sizeof(PgrQuickSpinSample);
+  out_sample->version = PGS_QUICK_SPIN_SAMPLE_VERSION;
+  out_sample->size = sizeof(PgsQuickSpinSample);
   out_sample->owned_root_count = owned_root_count_locked();
   out_sample->request_serial = g_request_serial;
   out_sample->closed_serial = g_closed_serial;
@@ -1239,12 +1239,12 @@ int api_sample(PgrQuickSpinSample *out_sample) {
   out_sample->last_opened_ms = g_last_opened_ms;
   out_sample->last_tid = g_last_tid;
   out_sample->active_generation = g_record.active ? g_record.generation : 0ULL;
-  return PGR_QUICK_SPIN_OK;
+  return PGS_QUICK_SPIN_OK;
 }
 
-const PgrQuickSpinApi kApiTable = {
-    PGR_QUICK_SPIN_API_VERSION,
-    static_cast<uint32_t>(sizeof(PgrQuickSpinApi)),
+const PgsQuickSpinApi kApiTable = {
+    PGS_QUICK_SPIN_API_VERSION,
+    static_cast<uint32_t>(sizeof(PgsQuickSpinApi)),
     &api_install,
     &api_update,
     &api_tick,
@@ -1255,6 +1255,6 @@ const PgrQuickSpinApi kApiTable = {
 }  // namespace
 
 extern "C" const void *pgs_quick_spin_api(uint32_t version) {
-  if (version != PGR_QUICK_SPIN_API_VERSION) return nullptr;
+  if (version != PGS_QUICK_SPIN_API_VERSION) return nullptr;
   return &kApiTable;
 }

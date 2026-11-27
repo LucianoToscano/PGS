@@ -91,7 +91,7 @@ public class RetiredAuthTest {
         self.assertNotIn("contents: write", flow)
         self.assertNotIn("gh release create", flow)
         self.assertNotIn("--google-browser-login", flow)
-        self.assertIn("test -f \"$PGRAZOR_KEYSTORE\"", flow)
+        self.assertIn("test -f \"$PGS_KEYSTORE\"", flow)
         self.assertIn("= 2026111605", flow)
         self.assertIn("d['version_code']==2026111606", flow)
         upload = flow.split("name: Upload verification receipts only", 1)[1].split("      - name:", 1)[0]

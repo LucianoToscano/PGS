@@ -44,23 +44,23 @@ void regression_free(uintptr_t handle) {
     request_target(obj, reinterpret_cast<void *>(0x1234));
   }
 }
-PgrRoutesServicesOutput poll_now(int expected = PGR_RS_OK) {
-  PgrRoutesServicesRequest r; make_request(&r,self_tid(),2500,api()->generation());
-  PgrRoutesServicesOutput out{};
+PgsRoutesServicesOutput poll_now(int expected = PGS_RS_OK) {
+  PgsRoutesServicesRequest r; make_request(&r,self_tid(),2500,api()->generation());
+  PgsRoutesServicesOutput out{};
   assert(api()->poll(&r,&out) == expected);
   assert(out.status == expected);
   return out;
 }
 void drain_all() {
-  PgrRoutesServicesRequest r; make_request(&r,self_tid(),0,api()->generation());
-  assert(api()->drain(&r) == PGR_RS_OK && g_live_handles == 0);
+  PgsRoutesServicesRequest r; make_request(&r,self_tid(),0,api()->generation());
+  assert(api()->drain(&r) == PGS_RS_OK && g_live_handles == 0);
 }
 void setup_library(const char *path) {
   void *library=dlopen(path,RTLD_NOW|RTLD_LOCAL);assert(library);
   auto get=reinterpret_cast<const void *(*)(uint32_t)>(dlsym(library,"pgs_native_api"));
   auto core=get?static_cast<const pgs_native_api_v2 *>(get(2)):nullptr;assert(core);
-  loaded=static_cast<const PgrRoutesServicesApi *>(core->query_feature(45,1));assert(loaded);
-  PgrRoutesServicesConfig c;make_config(&c);
+  loaded=static_cast<const PgsRoutesServicesApi *>(core->query_feature(45,1));assert(loaded);
+  PgsRoutesServicesConfig c;make_config(&c);
   c.gchandle_new=reinterpret_cast<void *>(&regression_new);
   c.gchandle_free=reinterpret_cast<void *>(&regression_free);
   c.addr_request_nearby=reinterpret_cast<void *>(&request_target);
@@ -72,7 +72,7 @@ int scenario(const char *name) {
   FakeObj routesA{&kRoutesClass,&consA},routesB{&kRoutesClass,&consB};
   if (!std::strcmp(name,"detached-owner")) {
     g_thread_attached=false;
-    std::thread t([]{poll_now(PGR_RS_SKIP);});t.join();
+    std::thread t([]{poll_now(PGS_RS_SKIP);});t.join();
     g_thread_attached=true;poll_now();
     request_target(&routesA,nullptr);assert(poll_now().routes_handle);
   } else if (!std::strcmp(name,"moving-pending")) {
@@ -93,18 +93,18 @@ int scenario(const char *name) {
   } else if (!std::strcmp(name,"replacement-null-dikx")) {
     poll_now();request_target(&routesA,nullptr);auto old=poll_now();assert(old.consumption_handle);
     routesB.dica=nullptr;request_target(&routesB,nullptr);auto out=poll_now();
-    assert(out.routes_handle && !out.consumption_handle && !(out.flags&PGR_RS_FLAG_CONSUMPTION_PRESENT));
+    assert(out.routes_handle && !out.consumption_handle && !(out.flags&PGS_RS_FLAG_CONSUMPTION_PRESENT));
     assert(!fake_gchandle_get_target(old.consumption_handle));
   } else if (!std::strcmp(name,"revoke-cleanup")) {
     poll_now();request_target(&routesA,nullptr);poll_now();request_target(&routesB,nullptr);
-    revoke_on_free=true;auto out=poll_now(PGR_RS_SKIP);
+    revoke_on_free=true;auto out=poll_now(PGS_RS_SKIP);
     assert(!out.routes_handle&&!out.consumption_handle);
     const auto allocated=g_handle_targets.size();request_target(&routesA,nullptr);
     assert(g_handle_targets.size()==allocated && "revoked heartbeat must not capture");
     out=poll_now();assert(!out.routes_handle&&!out.consumption_handle);
   } else if (!std::strcmp(name,"revoke-derivation")) {
     poll_now();request_target(&routesA,nullptr);revoke_on_new=true;
-    auto out=poll_now(PGR_RS_SKIP);assert(!out.routes_handle&&!out.consumption_handle);
+    auto out=poll_now(PGS_RS_SKIP);assert(!out.routes_handle&&!out.consumption_handle);
     const auto allocated=g_handle_targets.size();request_target(&routesB,nullptr);
     assert(g_handle_targets.size()==allocated);
   } else if (!std::strcmp(name,"cleanup-reentry")) {

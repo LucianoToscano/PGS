@@ -25,15 +25,15 @@
 // is freed before return; NO raw managed pointer is reused across a managed call (relocating collector) --
 // receivers are re-resolved from their roots. Both entry points run managed work only on the proven Unity
 // owner thread (owner must equal the current OS tid) and only inside a short residual lease (clamped to
-// PGR_VM_MAX_LEASE_MS). balls re-samples a fresh monotonic clock AFTER its reads and only commits a
+// PGS_VM_MAX_LEASE_MS). balls re-samples a fresh monotonic clock AFTER its reads and only commits a
 // positive count if the lease is still open. cooldown re-checks owner/lease once more after its managed
 // resolves and BEFORE the setter invocation; once the setter has been invoked without a managed throw it
 // reports success even if the clock expired during the invocation -- the local setter already ran.
 //
 // Outcomes (shared sign convention):
-//   PGR_VM_OK (1)   -> balls: *out_count set to the current count (0 is valid). cooldown: the setter was
+//   PGS_VM_OK (1)   -> balls: *out_count set to the current count (0 is valid). cooldown: the setter was
 //                      invoked without a managed throw.
-//   PGR_VM_SKIP (0) -> benign host skip: closed/expired lease, owner mismatch (incl. owner 0), a not-ready
+//   PGS_VM_SKIP (0) -> benign host skip: closed/expired lease, owner mismatch (incl. owner 0), a not-ready
 //                      null item-bag field; cooldown: the spin result was not success, or the stop was no
 //                      longer alive. No managed side effect was applied.
 //   negative        -> conservative failure the host surfaces as a VGP pause (no legacy fallback): bad
@@ -46,30 +46,30 @@ extern "C" {
 
 static_assert(sizeof(void *) == 8, "VgpMaintenance native ABI requires LP64");
 
-enum PgrVgpMaintenanceInfo {
-  PGR_VM_FEATURE_ID     = 32,
-  PGR_VM_API_VERSION    = 1,
-  PGR_VM_CONFIG_VERSION = 1,
-  PGR_VM_MAX_LEASE_MS   = 2500,  // residual foreground lease ceiling (JS vgpLease gate)
-  PGR_VM_BALL_ITEM_ID   = 1      // GetItemCount argument: red Poke Ball
+enum PgsVgpMaintenanceInfo {
+  PGS_VM_FEATURE_ID     = 32,
+  PGS_VM_API_VERSION    = 1,
+  PGS_VM_CONFIG_VERSION = 1,
+  PGS_VM_MAX_LEASE_MS   = 2500,  // residual foreground lease ceiling (JS vgpLease gate)
+  PGS_VM_BALL_ITEM_ID   = 1      // GetItemCount argument: red Poke Ball
 };
 
 // Entry-point return codes (positive success, 0 benign skip, negative conservative failure).
-enum PgrVgpMaintenanceStatus {
-  PGR_VM_OK                = 1,
-  PGR_VM_SKIP              = 0,
-  PGR_VM_ERR_NULL_ARG      = -1,
-  PGR_VM_ERR_BAD_VERSION   = -2,
-  PGR_VM_ERR_BAD_SIZE      = -3,
-  PGR_VM_ERR_MISSING_PTR   = -4,   // install(): a required config pointer was null
-  PGR_VM_ERR_NOT_INSTALLED = -6,
-  PGR_VM_ERR_RECONFIG      = -9,   // install(): a different config at an already-installed table
-  PGR_VM_ERR_CLOCK_FAILURE = -10,
-  PGR_VM_ERR_BUSY          = -11,  // a reentrant call while another was in progress (defensive)
-  PGR_VM_ERR_GCHANDLE      = -12,  // a temporary root could not be allocated / a receiver was collected
-  PGR_VM_ERR_MANAGED       = -13,  // a managed call threw
-  PGR_VM_ERR_METADATA      = -14,  // a resolved object had the wrong class, or a box was not Int32/Boolean
-  PGR_VM_ERR_NEG_COUNT     = -16   // balls(): the Int32 count came back negative (fail closed)
+enum PgsVgpMaintenanceStatus {
+  PGS_VM_OK                = 1,
+  PGS_VM_SKIP              = 0,
+  PGS_VM_ERR_NULL_ARG      = -1,
+  PGS_VM_ERR_BAD_VERSION   = -2,
+  PGS_VM_ERR_BAD_SIZE      = -3,
+  PGS_VM_ERR_MISSING_PTR   = -4,   // install(): a required config pointer was null
+  PGS_VM_ERR_NOT_INSTALLED = -6,
+  PGS_VM_ERR_RECONFIG      = -9,   // install(): a different config at an already-installed table
+  PGS_VM_ERR_CLOCK_FAILURE = -10,
+  PGS_VM_ERR_BUSY          = -11,  // a reentrant call while another was in progress (defensive)
+  PGS_VM_ERR_GCHANDLE      = -12,  // a temporary root could not be allocated / a receiver was collected
+  PGS_VM_ERR_MANAGED       = -13,  // a managed call threw
+  PGS_VM_ERR_METADATA      = -14,  // a resolved object had the wrong class, or a box was not Int32/Boolean
+  PGS_VM_ERR_NEG_COUNT     = -16   // balls(): the Int32 count came back negative (fail closed)
 };
 
 // Fixed LP64 config (176 bytes): 8-byte header + 20 validated il2cpp pointers in the EXACT order below,
@@ -79,9 +79,9 @@ enum PgrVgpMaintenanceStatus {
 // NON-virtually (m_alive is the static UnityEngine.Object.op_Implicit(Object) overload, taking the stop as
 // its argument); m_cooldown is the BASE SetCooldownTime MethodInfo* resolved per stop with
 // object_get_virtual_method. The field offsets of this struct are the published contract: never reorder.
-struct PgrVgpMaintenanceConfig {
-  uint32_t version;  // == PGR_VM_CONFIG_VERSION
-  uint32_t size;     // == sizeof(PgrVgpMaintenanceConfig)
+struct PgsVgpMaintenanceConfig {
+  uint32_t version;  // == PGS_VM_CONFIG_VERSION
+  uint32_t size;     // == sizeof(PgsVgpMaintenanceConfig)
 
   // [0..7] il2cpp runtime exports.
   void *gchandle_new;              // 0 uintptr_t (void* obj, int pinned)
@@ -115,28 +115,28 @@ struct PgrVgpMaintenanceConfig {
   uint32_t reserved;      // off 172 0
 };
 
-static_assert(sizeof(PgrVgpMaintenanceConfig) == 176,
-              "PgrVgpMaintenanceConfig must remain 176 bytes on LP64");
+static_assert(sizeof(PgsVgpMaintenanceConfig) == 176,
+              "PgsVgpMaintenanceConfig must remain 176 bytes on LP64");
 
 // Fixed LP64 table: 8-byte header + 3 function pointers = 32 bytes.
-struct PgrVgpMaintenanceApi {
-  uint32_t version;  // == PGR_VM_API_VERSION
-  uint32_t size;     // == sizeof(PgrVgpMaintenanceApi)
+struct PgsVgpMaintenanceApi {
+  uint32_t version;  // == PGS_VM_API_VERSION
+  uint32_t size;     // == sizeof(PgsVgpMaintenanceApi)
   // install(config): bind the validated runtime once for the process lifetime. Idempotent for an
-  // identical config; a different config returns PGR_VM_ERR_RECONFIG. Any null required pointer or a
+  // identical config; a different config returns PGS_VM_ERR_RECONFIG. Any null required pointer or a
   // bad header is rejected (fail closed). No hook is installed.
-  int (*install)(const PgrVgpMaintenanceConfig *config);
+  int (*install)(const PgsVgpMaintenanceConfig *config);
   // balls(svc, owner, lease_ms, out_count): read the current red Poke Ball count off the service's item
   // bag. *out_count is always initialised to 0 before any early return; set to the (>=0) count only on
-  // PGR_VM_OK. Owner thread only.
+  // PGS_VM_OK. Owner thread only.
   int (*balls)(void *svc, uint64_t owner, uint64_t lease_ms, int32_t *out_count);
   // cooldown(stop, response, owner, lease_ms): apply the local post-spin cooldown setter for a
   // successful, still-alive stop. No output beyond the return code. Owner thread only.
   int (*cooldown)(void *stop, void *response, uint64_t owner, uint64_t lease_ms);
 };
 
-static_assert(sizeof(PgrVgpMaintenanceApi) == 32,
-              "PgrVgpMaintenanceApi must remain a 32-byte version-1 table");
+static_assert(sizeof(PgsVgpMaintenanceApi) == 32,
+              "PgsVgpMaintenanceApi must remain a 32-byte version-1 table");
 
 // Hidden getter. NOT exported by the version script; the coordinator registers it in query_feature under
 // feature id 32 and answers only on an exact version match.

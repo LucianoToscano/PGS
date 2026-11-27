@@ -126,29 +126,29 @@ static void field_get(void *o, void *f, void *out) {
 }
 
 // Real hooked targets (NOP-padded so Dobby has room). call_* go through the trampoline.
-#define PGR_NOP8() asm volatile("nop; nop; nop; nop; nop; nop; nop; nop;")
-__attribute__((noinline)) void target_init(void *self, void *method) { PGR_NOP8(); (void)self; (void)method; }
+#define PGS_NOP8() asm volatile("nop; nop; nop; nop; nop; nop; nop; nop;")
+__attribute__((noinline)) void target_init(void *self, void *method) { PGS_NOP8(); (void)self; (void)method; }
 __attribute__((noinline)) void *target_list(void *self, void *p0, int32_t p1, void *p2, void *p3, void *p4, void *method) {
-    PGR_NOP8(); (void)self; (void)p0; (void)p1; (void)p2; (void)p3; (void)p4; (void)method; return &g_list;
+    PGS_NOP8(); (void)self; (void)p0; (void)p1; (void)p2; (void)p3; (void)p4; (void)method; return &g_list;
 }
 __attribute__((noinline)) void *target_recycle(void *self, void *data, int32_t count, void *expiry, void *method) {
-    PGR_NOP8(); ++g_recycle_calls; g_last_recycle_id = data ? static_cast<Data*>(data)->id : 0;
+    PGS_NOP8(); ++g_recycle_calls; g_last_recycle_id = data ? static_cast<Data*>(data)->id : 0;
     g_last_recycle_amount = count; (void)self; (void)expiry; (void)method; return &g_promise;
 }
 __attribute__((noinline)) void target_result(void *self, void *resp, void *method) {
-    PGR_NOP8(); (void)self; (void)resp; (void)method;
+    PGS_NOP8(); (void)self; (void)resp; (void)method;
     // A stop (clear) delivered from INSIDE the original result callback must not let the hook
     // confirm this (or any) request afterwards.
     if (g_result_action == 1) { g_result_action = 0; g_api->clear(static_cast<uint64_t>(gettid())); }
 }
-__attribute__((noinline)) void target_error(void *self, void *str, void *method) { PGR_NOP8(); (void)self; (void)str; (void)method; }
+__attribute__((noinline)) void target_error(void *self, void *str, void *method) { PGS_NOP8(); (void)self; (void)str; (void)method; }
 void  (*volatile call_init)(void *, void *) = &target_init;
 void *(*volatile call_list)(void *, void *, int32_t, void *, void *, void *, void *) = &target_list;
 void *(*volatile call_recycle)(void *, void *, int32_t, void *, void *) = &target_recycle;
 void  (*volatile call_result)(void *, void *, void *) = &target_result;
 void  (*volatile call_error)(void *, void *, void *) = &target_error;
 
-#ifdef PGR_ITEMS_HOST_TEST
+#ifdef PGS_ITEMS_HOST_TEST
 // Host mode links the real items module. Only clock and hook installation are
 // substituted; Android mode below still validates the core's Dobby trampolines.
 static uint64_t host_clock_ns = 1000000000;
@@ -283,12 +283,12 @@ static pgs_items_sample_v1 snap() { pgs_items_sample_v1 s{}; g_api->sample(&s); 
 // Drain the module's FIFO event queue into the per-kind tallies.
 static void pump_events() {
     pgs_item_event buf[PGS_ITEMS_MAX_EVENTS]; uint32_t w = 0;
-    while (g_api->drain(buf, PGS_ITEMS_MAX_EVENTS, &w) == PGR_ITEMS_OK && w > 0) {
+    while (g_api->drain(buf, PGS_ITEMS_MAX_EVENTS, &w) == PGS_ITEMS_OK && w > 0) {
         for (uint32_t i = 0; i < w; ++i) {
             const pgs_item_event &e = buf[i];
-            if (e.kind == PGR_ITEMS_EV_REQUEST) { ++ev_req; last_req_id = e.id; last_req_amount = e.amount; last_req_keep = e.aux; }
-            else if (e.kind == PGR_ITEMS_EV_CONFIRM) { ++ev_con; last_con_id = e.id; last_con_amount = e.amount; }
-            else if (e.kind == PGR_ITEMS_EV_ERROR) { ++ev_err; last_err_id = e.id; last_err_reason = e.aux; }
+            if (e.kind == PGS_ITEMS_EV_REQUEST) { ++ev_req; last_req_id = e.id; last_req_amount = e.amount; last_req_keep = e.aux; }
+            else if (e.kind == PGS_ITEMS_EV_CONFIRM) { ++ev_con; last_con_id = e.id; last_con_amount = e.amount; }
+            else if (e.kind == PGS_ITEMS_EV_ERROR) { ++ev_err; last_err_id = e.id; last_err_reason = e.aux; }
         }
         if (w < PGS_ITEMS_MAX_EVENTS) break;
     }
@@ -298,7 +298,7 @@ static void pump_events() {
 static int scenario(int which) {
     const uint64_t tid = static_cast<uint64_t>(gettid());
     pgs_items_config_v1 cfg = make_config(true);
-    if (g_api->install(&cfg) != PGR_ITEMS_OK) return 90;
+    if (g_api->install(&cfg) != PGS_ITEMS_OK) return 90;
 
     switch (which) {
     case 0: { // over-cap + synchronous success result consumed once; roots balanced to 3
@@ -366,7 +366,7 @@ static int scenario(int which) {
         g_sync_result = true; g_result_status = 7; g_current = 50;  // not success(1)
         pgs_items_rules_v1 r = make_rules(true, 1);
         g_api->tick(&r, 0, 2500, tid); pump_events();
-        if (ev_err != 1 || last_err_reason != PGR_ITEMS_REASON_REJECTED) return 1;
+        if (ev_err != 1 || last_err_reason != PGS_ITEMS_REASON_REJECTED) return 1;
         if (ev_con != 0) return 2;
         g_api->tick(&r, 1, 2500, tid); pump_events();      // blocked id -> no retry (same generation)
         if (ev_req != 1 || g_recycle_calls != 1) return 3;
@@ -409,8 +409,8 @@ static int scenario(int which) {
     }
     case 9: { // immutable-config rebind refusal + idempotent re-install
         pgs_items_config_v1 changed = make_config(true); changed.success = 7;
-        if (g_api->install(&changed) != PGR_ITEMS_ERR_ALREADY_BOUND) return 1;
-        if (g_api->install(&cfg) != PGR_ITEMS_OK) return 2;  // identical config is idempotent
+        if (g_api->install(&changed) != PGS_ITEMS_ERR_ALREADY_BOUND) return 1;
+        if (g_api->install(&cfg) != PGS_ITEMS_OK) return 2;  // identical config is idempotent
         return 0;
     }
     case 10: { // nested tick, STILL enabled but a new epoch, revokes the in-flight selection
@@ -472,7 +472,7 @@ static int scenario(int which) {
         timespec t{16, 0}; nanosleep(&t, nullptr);         // past the 15s confirmation deadline
         r = make_rules(false, 2);
         g_api->tick(&r, 0, 0, tid); pump_events(); // timeout still serviced while disabled/off lease
-        if (ev_err == 0 || last_err_reason != PGR_ITEMS_REASON_TIMEOUT) return 2;
+        if (ev_err == 0 || last_err_reason != PGS_ITEMS_REASON_TIMEOUT) return 2;
         if (ev_req != 1 || g_recycle_calls != 1) return 3; // quarantined id -> no resubmit
         return 0;
     }
@@ -705,7 +705,7 @@ static int scenario(int which) {
 }
 
 int main(int argc, char **argv) {
-#ifdef PGR_ITEMS_HOST_TEST
+#ifdef PGS_ITEMS_HOST_TEST
     (void)argc; (void)argv;
     const bool slow = true; // deterministic time also exercises confirmation expiry
     if (pgs_items_api(99) != nullptr) { std::puts("FAIL exact-version"); return 3; }
@@ -724,17 +724,17 @@ int main(int argc, char **argv) {
 
     // Config validation (parent process; all fail before any hook is attempted).
     pgs_items_config_v1 c = make_config(true), bad;
-    if (g_api->install(nullptr) != PGR_ITEMS_ERR_NULL_ARG) { std::puts("FAIL null"); return 5; }
+    if (g_api->install(nullptr) != PGS_ITEMS_ERR_NULL_ARG) { std::puts("FAIL null"); return 5; }
     bad = c; bad.version = 2;
-    if (g_api->install(&bad) != PGR_ITEMS_ERR_BAD_CONFIG) { std::puts("FAIL version"); return 5; }
+    if (g_api->install(&bad) != PGS_ITEMS_ERR_BAD_CONFIG) { std::puts("FAIL version"); return 5; }
     bad = c; bad.size = sizeof(c) - 1;
-    if (g_api->install(&bad) != PGR_ITEMS_ERR_BAD_CONFIG) { std::puts("FAIL size"); return 5; }
+    if (g_api->install(&bad) != PGS_ITEMS_ERR_BAD_CONFIG) { std::puts("FAIL size"); return 5; }
     bad = c; bad.m_recycle = nullptr;
-    if (g_api->install(&bad) != PGR_ITEMS_ERR_BAD_CONFIG) { std::puts("FAIL missing-core"); return 5; }
+    if (g_api->install(&bad) != PGS_ITEMS_ERR_BAD_CONFIG) { std::puts("FAIL missing-core"); return 5; }
     bad = c; bad.func_type = nullptr;  // has_lookup set, a lookup pointer null -> BAD_CONFIG
-    if (g_api->install(&bad) != PGR_ITEMS_ERR_BAD_CONFIG) { std::puts("FAIL missing-lookup"); return 5; }
+    if (g_api->install(&bad) != PGS_ITEMS_ERR_BAD_CONFIG) { std::puts("FAIL missing-lookup"); return 5; }
     bad = c; bad.result_address = bad.error_address;
-    if (g_api->install(&bad) != PGR_ITEMS_ERR_DUP_HOOK) { std::puts("FAIL dup"); return 5; }
+    if (g_api->install(&bad) != PGS_ITEMS_ERR_DUP_HOOK) { std::puts("FAIL dup"); return 5; }
 
     const int cases = 34;
     for (int i = 0; i < cases; ++i) {

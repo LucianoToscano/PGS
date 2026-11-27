@@ -13,9 +13,35 @@ public final class SettingsBackupRules {
     }
     private static void integer(Object o,int max,String label)throws JSONException{double n=number(o,0,max,label);require(n==Math.rint(n),"Invalid "+label);}
     private static void bool(Object o,String label)throws JSONException{require(o instanceof Boolean,"Invalid "+label);}
+    private static int backupVersion(JSONObject root)throws JSONException{
+        double version=number(root.get("version"),1,2,"backup version");
+        require(version==1||version==2,"Unsupported settings backup");
+        String format=root.optString("format");
+        require("PGS settings".equals(format)||(version==1&&"PGRazor settings".equals(format)),"Unsupported settings backup");
+        return (int)version;
+    }
+    /** Resolve historical JSON scope names without changing the document or stored preferences. */
+    public static JSONObject canonicalPreferences(JSONObject root)throws JSONException{
+        int version=backupVersion(root);
+        JSONObject prefs=root.getJSONObject("preferences"),normalized=new JSONObject();
+        for(Iterator<String> it=prefs.keys();it.hasNext();){
+            String raw=it.next(),scope=raw;
+            if(version==1){
+                switch(raw){
+                    case "pgrazor-map": scope="pgs-map"; break;
+                    case "pgrazor-overlays": scope="pgs-overlays"; break;
+                    case "pgrazor-saved-places-v1": scope="pgs-saved-places-v1"; break;
+                    case "pgrazor-livefeed": scope="pgs-livefeed"; break;
+                    default: throw new JSONException("Unknown version-1 settings group");
+                }
+            }
+            require(Arrays.asList("pgs-map","pgs-overlays","pgs-saved-places-v1","pgs-livefeed").contains(scope)&&!normalized.has(scope),"Unknown or duplicate settings group");
+            normalized.put(scope,prefs.getJSONObject(raw));
+        }
+        return normalized;
+    }
     public static void validate(JSONObject root)throws JSONException{
-        require("PGS settings".equals(root.optString("format")) || "PGRazor settings".equals(root.optString("format")),"Unsupported settings backup");
-        require(number(root.get("version"),1,1,"backup version")==1,"Unsupported settings backup");
+        JSONObject preferences=canonicalPreferences(root);
         double speed=number(root.get("speedKmh"),0,30,"speed");require(speed==0||speed>=0.5,"Invalid speed");
         JSONObject settings=root.getJSONObject("settings");Set<String> allowed=new HashSet<>(Arrays.asList(SETTINGS));
         for(Iterator<String> it=settings.keys();it.hasNext();){String key=it.next();require(allowed.contains(key),"Unknown setting: "+key);Object raw=settings.get(key);require(raw instanceof String,"Invalid setting: "+key);String value=(String)raw;
@@ -68,13 +94,11 @@ public final class SettingsBackupRules {
             int max=key.equals("battleOptions")?1023:key.equals("transferProtect")?2047:key.equals("transferProtectSplit")||key.equals("transferProtectShadow")||key.equals("transferProtectMax")?1:key.equals("grade")?3:key.equals("mapTap")?3:key.equals("storageIv")||key.equals("storageIvFormat")||key.equals("ivCatchFormat")||key.equals("ivOwnedFormat")?4:7;
             require(n>=0&&n<=max,"Invalid "+key);
         }
-        JSONObject preferences=root.getJSONObject("preferences");
         for(Iterator<String> it=preferences.keys();it.hasNext();){String scope=it.next();JSONObject group=preferences.getJSONObject(scope);
-            require(Arrays.asList("pgrazor-map","pgrazor-overlays","pgrazor-saved-places-v1","pgrazor-livefeed").contains(scope),"Unknown settings group");
             for(Iterator<String> keys=group.keys();keys.hasNext();){String key=keys.next();Object value=group.get(key);
-                if(scope.equals("pgrazor-map")){require(Arrays.asList("Stops","Gyms","Raids").contains(key),"Unknown map setting");bool(value,key);}
-                else if(scope.equals("pgrazor-overlays")){require(Arrays.asList("cooldown.fx","cooldown.fy","vgp.fx","vgp.fy","transfer.fx","transfer.fy","gym-feed.fx","gym-feed.fy","local-time.fx","local-time.fy").contains(key),"Unknown overlay setting");number(value,0,1,key);}
-                else if(scope.equals("pgrazor-saved-places-v1")){require(key.equals("places")&&value instanceof String,"Invalid favorites");places((String)value);}
+                if(scope.equals("pgs-map")){require(Arrays.asList("Stops","Gyms","Raids").contains(key),"Unknown map setting");bool(value,key);}
+                else if(scope.equals("pgs-overlays")){require(Arrays.asList("cooldown.fx","cooldown.fy","vgp.fx","vgp.fy","transfer.fx","transfer.fy","gym-feed.fx","gym-feed.fy","local-time.fx","local-time.fy").contains(key),"Unknown overlay setting");number(value,0,1,key);}
+                else if(scope.equals("pgs-saved-places-v1")){require(key.equals("places")&&value instanceof String,"Invalid favorites");places((String)value);}
                 else if(key.equals("category"))integer(value,5,key);
                 else if(key.equals("radius"))integer(value,3,key);
                 else if(key.equals("minIv"))integer(value,3,key);

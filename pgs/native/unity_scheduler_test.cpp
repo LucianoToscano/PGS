@@ -10,12 +10,12 @@
 // Real dlopen production registry + real Dobby fixture entrypoints. Coordinator
 // must register feature48 and link unity_scheduler.cpp before executing harness.
 namespace {
-const PgrUnitySchedulerApi *api;
-const PgrUnitySchedulerApi3 *api3;
+const PgsUnitySchedulerApi *api;
+const PgsUnitySchedulerApi3 *api3;
 int execute_token,other_token,result_token,exception_token,thread_token,obj_token,arg_token;
 thread_local bool attached=true;
-PgrUnityInvoke volatile call_invoke;
-PgrUnityConvert volatile call_convert;
+PgsUnityInvoke volatile call_invoke;
+PgsUnityConvert volatile call_convert;
 uint64_t generation=0;
 int calls=0,convert_calls=0,begins=0,ends=0;
 bool nested_original=false,nested_callback=false,revoke_callback=false;
@@ -29,7 +29,7 @@ const void *seen_method=nullptr;void *seen_object=nullptr;void **seen_args=nullp
 void **seen_exception=nullptr;int32_t seen_count=0;
 std::vector<int> order;
 void *thread_current(){return attached?&thread_token:nullptr;}
-int verify(const PgrUnitySchedulerConfig *c){return c->execute_tasks==&execute_token?1:0;}
+int verify(const PgsUnitySchedulerConfig *c){return c->execute_tasks==&execute_token?1:0;}
 #define NOPS() asm volatile("nop; nop; nop; nop; nop; nop; nop; nop;")
 __attribute__((noinline)) void *fixture_invoke(const void *method,void *object,void **args,void **exception){
  NOPS();++calls;seen_method=method;seen_object=object;seen_args=args;seen_exception=exception;
@@ -51,53 +51,53 @@ __attribute__((noinline)) void *fixture_convert(const void *method,void *object,
  if(exception)*exception=(method!=&execute_token||managed_exception)?&exception_token:nullptr;
  return (method!=&execute_token||unexpected_result)?&result_token:nullptr;
 }
-void begin(void *,const PgrUnityPulse *p){
+void begin(void *,const PgsUnityPulse *p){
  assert(api3->executing_generation(gettid())==0);
  assert(p->generation==generation&&p->tid==gettid()&&attached&&p->reserved==0);
  assert(api->valid(p->generation)==1);++begins;order.push_back(1);
  if(nested_callback){nested_callback=false;void *e=nullptr;assert(call_invoke(&execute_token,nullptr,nullptr,&e)==nullptr);assert(e==nullptr);}
  if(revoke_callback){revoke_callback=false;assert(api->revoke(p->generation)==0);}
 }
-void end(void *,const PgrUnityPulse *p){assert(api3->executing_generation(gettid())==0);assert(api->valid(p->generation)==1);++ends;order.push_back(2);}
+void end(void *,const PgsUnityPulse *p){assert(api3->executing_generation(gettid())==0);assert(api->valid(p->generation)==1);++ends;order.push_back(2);}
 void invoke(){void *e=nullptr;assert(call_invoke(&execute_token,nullptr,nullptr,&e)==nullptr);assert(e==nullptr);}
 }
 int main(int argc,char **argv){
  assert(argc==2);void *library=dlopen(argv[1],RTLD_NOW|RTLD_LOCAL);assert(library);
  auto get=reinterpret_cast<const void *(*)(uint32_t)>(dlsym(library,"pgs_native_api"));assert(get);
  const auto *core=static_cast<const pgs_native_api_v2 *>(get(2));assert(core&&core->query_feature);
- assert(!core->query_feature(48,1));api=static_cast<const PgrUnitySchedulerApi *>(core->query_feature(48,2));
+ assert(!core->query_feature(48,1));api=static_cast<const PgsUnitySchedulerApi *>(core->query_feature(48,2));
  assert(api&&api->version==2&&api->size==sizeof(*api));assert(!api->activate());
- api3=static_cast<const PgrUnitySchedulerApi3 *>(core->query_feature(48,3));
+ api3=static_cast<const PgsUnitySchedulerApi3 *>(core->query_feature(48,3));
  assert(api3&&api3->version==3&&api3->size==56&&api3->size==sizeof(*api3));
  assert(api3->executing_generation(gettid())==0);
- auto api4=static_cast<const PgrUnitySchedulerApi4 *>(core->query_feature(48,4));
+ auto api4=static_cast<const PgsUnitySchedulerApi4 *>(core->query_feature(48,4));
  assert(api4&&api4->version==4&&api4->size==64&&api4->size==sizeof(*api4));
- assert(api4->diagnostics(nullptr)==PGR_US_BAD_CONFIG);
- PgrUnitySchedulerDiag diag{};
- assert(!api4->diagnostics(&diag)&&diag.version==4&&diag.size==sizeof(diag)&&!diag.installed&&!diag.poisoned&&diag.failed_stage==PGR_US_STAGE_NONE);
- PgrUnitySchedulerConfig c{};c.version=2;c.size=sizeof(c);
+ assert(api4->diagnostics(nullptr)==PGS_US_BAD_CONFIG);
+ PgsUnitySchedulerDiag diag{};
+ assert(!api4->diagnostics(&diag)&&diag.version==4&&diag.size==sizeof(diag)&&!diag.installed&&!diag.poisoned&&diag.failed_stage==PGS_US_STAGE_NONE);
+ PgsUnitySchedulerConfig c{};c.version=2;c.size=sizeof(c);
  c.runtime_invoke=reinterpret_cast<void *>(&fixture_invoke);c.runtime_invoke_convert_args=reinterpret_cast<void *>(&fixture_convert);
  c.execute_tasks=&execute_token;c.thread_current=thread_current;c.verify_metadata=verify;
  c.expected_owner_tid=gettid();c.subscriber_count=1;c.subscribers[0]={begin,end,nullptr};
- assert(api->install(&c)==PGR_US_BAD_CONFIG);c.exclusive_owner=1;
- auto bad=c;bad.version=1;assert(api->install(&bad)==PGR_US_BAD_CONFIG);
- bad=c;bad.execute_tasks=&other_token;assert(api->install(&bad)==PGR_US_BAD_CONFIG);
- bad=c;bad.runtime_invoke_convert_args=bad.runtime_invoke;assert(api->install(&bad)==PGR_US_BAD_CONFIG);
- bad=c;bad.subscriber_count=17;assert(api->install(&bad)==PGR_US_BAD_CONFIG);
- bad=c;bad.reserved=1;assert(api->install(&bad)==PGR_US_BAD_CONFIG);
+ assert(api->install(&c)==PGS_US_BAD_CONFIG);c.exclusive_owner=1;
+ auto bad=c;bad.version=1;assert(api->install(&bad)==PGS_US_BAD_CONFIG);
+ bad=c;bad.execute_tasks=&other_token;assert(api->install(&bad)==PGS_US_BAD_CONFIG);
+ bad=c;bad.runtime_invoke_convert_args=bad.runtime_invoke;assert(api->install(&bad)==PGS_US_BAD_CONFIG);
+ bad=c;bad.subscriber_count=17;assert(api->install(&bad)==PGS_US_BAD_CONFIG);
+ bad=c;bad.reserved=1;assert(api->install(&bad)==PGS_US_BAD_CONFIG);
  // No hooked target is running during install/rollback (required contract).
  call_invoke=fixture_invoke;call_convert=fixture_convert;
  // The &other_token verify rejection above latched the VERIFY stage; a successful
  // install clears it to NONE/installed so a feature70 diagnostic reports a true
  // hook outcome (the resolved invoke/convert veneer bodies handed to Dobby).
  assert(api->install(&c)==0);assert(api->install(&c)==0);
- {PgrUnitySchedulerDiag d{};assert(!api4->diagnostics(&d)&&d.installed&&!d.poisoned&&d.failed_stage==PGR_US_STAGE_NONE&&d.last_result==PGR_US_OK&&d.invoke_body&&d.convert_body);}
- bad=c;bad.subscribers[0].context=&other_token;assert(api->install(&bad)==PGR_US_REBIND);
+ {PgsUnitySchedulerDiag d{};assert(!api4->diagnostics(&d)&&d.installed&&!d.poisoned&&d.failed_stage==PGS_US_STAGE_NONE&&d.last_result==PGS_US_OK&&d.invoke_body&&d.convert_body);}
+ bad=c;bad.subscribers[0].context=&other_token;assert(api->install(&bad)==PGS_US_REBIND);
  invoke();assert(calls==1&&begins==0&&ends==0);
  generation=api->activate();assert(generation);
  // Wrong OS thread cannot claim permanent owner, even if attached.
  std::thread wrong([]{invoke();});wrong.join();
- PgrUnitySchedulerSnapshot s{};assert(api->snapshot(&s)==0&&s.owner_tid==0&&s.sequence==0);
+ PgsUnitySchedulerSnapshot s{};assert(api->snapshot(&s)==0&&s.owner_tid==0&&s.sequence==0);
  attached=false;invoke();attached=true;assert(api->snapshot(&s)==0&&s.owner_tid==0&&s.sequence==0);
  order.clear();invoke();assert((order==std::vector<int>{3,1,2}));assert(begins==1&&ends==1);
  assert(api->snapshot(&s)==0&&s.owner_tid==gettid()&&s.sequence==1);
@@ -116,9 +116,9 @@ int main(int argc,char **argv){
  order.clear();nested_original=true;invoke();assert((order==std::vector<int>{3,4,1,2})&&begins==4&&ends==4);
  // Original finishes first; revocation during begin skips remaining post work.
  order.clear();revoke_callback=true;invoke();assert((order==std::vector<int>{3,1})&&begins==5&&ends==4);
- assert(api->valid(generation)==0&&api->revoke(generation)==PGR_US_STALE);
+ assert(api->valid(generation)==0&&api->revoke(generation)==PGS_US_STALE);
  const auto old=generation;generation=api->activate();assert(generation>old);
- assert(api->revoke(old)==PGR_US_STALE&&api->valid(generation)==1);invoke();assert(begins==6&&ends==5);
+ assert(api->revoke(old)==PGS_US_STALE&&api->valid(generation)==1);invoke();assert(begins==6&&ends==5);
  // Losing runtime attach proof after latch suppresses dispatch without relatching.
  attached=false;invoke();attached=true;assert(begins==6);
  assert(api->revoke(generation)==0);invoke();assert(begins==6);

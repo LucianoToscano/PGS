@@ -34,72 +34,72 @@ extern "C" {
 
 static_assert(sizeof(void *) == 8, "RoutesObservers native ABI requires LP64");
 
-enum PgrRoutesObserversInfo {
-  PGR_RO_FEATURE_ID        = 46,
-  PGR_RO_API_VERSION       = 1,
-  PGR_RO_CONFIG_VERSION    = 1,
-  PGR_RO_REQUEST_VERSION   = 1,
-  PGR_RO_COMPLETING_VERSION= 1,
-  PGR_RO_OUTPUT_VERSION    = 1,
-  PGR_RO_MAX_LEASE_MS      = 2500,  // lease ceiling (CLOCK_BOOTTIME); mirrors quick-close foreground lease
-  PGR_RO_REWARD_CAPTURE_MS = 15000, // reward/rating Initialize capture window from rewardAt
-  PGR_RO_COMPLETING_MS     = 30000, // bjan correlation window from completing.at
-  PGR_RO_WAYPOINT_MS       = 10000, // waypoint event throttle
-  PGR_RO_UI_SETTLE_MS      = 100,   // pendingUi minimum age before a dismissal decision
-  PGR_RO_UI_MAX_MS         = 10000, // pendingUi maximum age before it is dropped
-  PGR_RO_COMPLETION_MS     = 3000,  // completion reported to the snapshot after rewardAt + this
-  PGR_RO_ID_MAX            = 128,   // UTF16 route-id length ceiling (routes.js id length 1..128)
-  PGR_RO_PENDING_UI_MAX    = 4,     // pendingUi queue ceiling (routes.js pendingUi.length>=4)
-  PGR_RO_MAX_EVENTS        = 8,     // events drained per poll()
-  PGR_RO_PTR_COUNT         = 22,    // config pointer slots 0..21, all mandatory (non-null)
-  PGR_RO_PROGRESS_STATUS_OFFSET = PGR_GAME_ROUTES_OBSERVERS_H_PGR_RO_PROGRESS_STATUS_OFFSET, // ProgressRouteOutProto.Status (int32)
-  PGR_RO_GUI_STATE_OFFSET       = PGR_GAME_ROUTES_OBSERVERS_H_PGR_RO_GUI_STATE_OFFSET, // GuiController.currentState (int32)
-  PGR_RO_GUI_STATE_DISMISSED    = 2,    // currentState value that permits Dismiss()
-  PGR_RO_COMPLETION_SUCCESS     = 1     // bjan progress Status success branch
+enum PgsRoutesObserversInfo {
+  PGS_RO_FEATURE_ID        = 46,
+  PGS_RO_API_VERSION       = 1,
+  PGS_RO_CONFIG_VERSION    = 1,
+  PGS_RO_REQUEST_VERSION   = 1,
+  PGS_RO_COMPLETING_VERSION= 1,
+  PGS_RO_OUTPUT_VERSION    = 1,
+  PGS_RO_MAX_LEASE_MS      = 2500,  // lease ceiling (CLOCK_BOOTTIME); mirrors quick-close foreground lease
+  PGS_RO_REWARD_CAPTURE_MS = 15000, // reward/rating Initialize capture window from rewardAt
+  PGS_RO_COMPLETING_MS     = 30000, // bjan correlation window from completing.at
+  PGS_RO_WAYPOINT_MS       = 10000, // waypoint event throttle
+  PGS_RO_UI_SETTLE_MS      = 100,   // pendingUi minimum age before a dismissal decision
+  PGS_RO_UI_MAX_MS         = 10000, // pendingUi maximum age before it is dropped
+  PGS_RO_COMPLETION_MS     = 3000,  // completion reported to the snapshot after rewardAt + this
+  PGS_RO_ID_MAX            = 128,   // UTF16 route-id length ceiling (routes.js id length 1..128)
+  PGS_RO_PENDING_UI_MAX    = 4,     // pendingUi queue ceiling (routes.js pendingUi.length>=4)
+  PGS_RO_MAX_EVENTS        = 8,     // events drained per poll()
+  PGS_RO_PTR_COUNT         = 22,    // config pointer slots 0..21, all mandatory (non-null)
+  PGS_RO_PROGRESS_STATUS_OFFSET = PGS_GAME_ROUTES_OBSERVERS_H_PGS_RO_PROGRESS_STATUS_OFFSET, // ProgressRouteOutProto.Status (int32)
+  PGS_RO_GUI_STATE_OFFSET       = PGS_GAME_ROUTES_OBSERVERS_H_PGS_RO_GUI_STATE_OFFSET, // GuiController.currentState (int32)
+  PGS_RO_GUI_STATE_DISMISSED    = 2,    // currentState value that permits Dismiss()
+  PGS_RO_COMPLETION_SUCCESS     = 1     // bjan progress Status success branch
 };
 
 // Entry-point return == out.status (poll): 1 OK / 0 SKIP (benign gate) / negative fault. install()
 // returns 0 on success; negatives are faults. The lite entries return 1 (acted) / 0 (did not).
-enum PgrRoutesObserversStatus {
-  PGR_RO_OK                = 1,
-  PGR_RO_SKIP              = 0,
-  PGR_RO_OK_INSTALL        = 0,   // install() success (alias of 0)
-  PGR_RO_FAULT             = -1,
-  PGR_RO_ERR_NULL_ARG      = -2,
-  PGR_RO_ERR_BAD_VERSION   = -3,
-  PGR_RO_ERR_BAD_SIZE      = -4,
-  PGR_RO_ERR_MISSING_PTR   = -5,  // install(): a mandatory config pointer was null
-  PGR_RO_ERR_NOT_INSTALLED = -6,
-  PGR_RO_ERR_RECONFIG      = -9,  // install(): a different config at an already-installed table
-  PGR_RO_ERR_CLOCK         = -10,
-  PGR_RO_ERR_BUSY          = -11, // reentrant poll/drain refused (defensive)
-  PGR_RO_ERR_HOOK          = -12  // a Dobby hook failed to install (rolled back, fail-closed)
+enum PgsRoutesObserversStatus {
+  PGS_RO_OK                = 1,
+  PGS_RO_SKIP              = 0,
+  PGS_RO_OK_INSTALL        = 0,   // install() success (alias of 0)
+  PGS_RO_FAULT             = -1,
+  PGS_RO_ERR_NULL_ARG      = -2,
+  PGS_RO_ERR_BAD_VERSION   = -3,
+  PGS_RO_ERR_BAD_SIZE      = -4,
+  PGS_RO_ERR_MISSING_PTR   = -5,  // install(): a mandatory config pointer was null
+  PGS_RO_ERR_NOT_INSTALLED = -6,
+  PGS_RO_ERR_RECONFIG      = -9,  // install(): a different config at an already-installed table
+  PGS_RO_ERR_CLOCK         = -10,
+  PGS_RO_ERR_BUSY          = -11, // reentrant poll/drain refused (defensive)
+  PGS_RO_ERR_HOOK          = -12  // a Dobby hook failed to install (rolled back, fail-closed)
 };
 
 // poll() out.flags.
-enum PgrRoutesObserversFlags {
-  PGR_RO_FLAG_COMPLETION_READY = 1  // completion set && boottime-rewardAt>=COMPLETION_MS && pendingUi empty
+enum PgsRoutesObserversFlags {
+  PGS_RO_FLAG_COMPLETION_READY = 1  // completion set && boottime-rewardAt>=COMPLETION_MS && pendingUi empty
 };
 
-// Event type (PgrRoutesObserversEvent.type).
-enum PgrRoutesObserversEventType {
-  PGR_RO_EV_TRACKING_STATUS    = 1, // i0 = tracking ret code
-  PGR_RO_EV_WAYPOINT           = 2, // f0 = lat, f1 = lon
-  PGR_RO_EV_REWARD_CONFIRMED   = 3, // i0 = seq, id = route id
-  PGR_RO_EV_REWARD_REJECTED    = 4, // i0 = progress status, id = route id
-  PGR_RO_EV_RESULT_DISMISSED   = 5, // aux = screen (0 reward, 1 rating)
-  PGR_RO_EV_RESULT_DISMISS_ERR = 6  // aux = screen
+// Event type (PgsRoutesObserversEvent.type).
+enum PgsRoutesObserversEventType {
+  PGS_RO_EV_TRACKING_STATUS    = 1, // i0 = tracking ret code
+  PGS_RO_EV_WAYPOINT           = 2, // f0 = lat, f1 = lon
+  PGS_RO_EV_REWARD_CONFIRMED   = 3, // i0 = seq, id = route id
+  PGS_RO_EV_REWARD_REJECTED    = 4, // i0 = progress status, id = route id
+  PGS_RO_EV_RESULT_DISMISSED   = 5, // aux = screen (0 reward, 1 rating)
+  PGS_RO_EV_RESULT_DISMISS_ERR = 6  // aux = screen
 };
 
-enum PgrRoutesObserversScreen { PGR_RO_SCREEN_REWARD = 0, PGR_RO_SCREEN_RATING = 1 };
+enum PgsRoutesObserversScreen { PGS_RO_SCREEN_REWARD = 0, PGS_RO_SCREEN_RATING = 1 };
 
 // Fixed LP64 config (184 bytes): 8-byte header + 22 pointers in the EXACT slot order below. Every
 // pointer is an already-validated il2cpp export / Il2CppClass* / MethodInfo* / FieldInfo* / live code
 // address packed by the host from routes.js metadata. All are MANDATORY (non-null). Reordering is
 // forbidden. install() publishes the config immutably: identical config idempotent (0); different rejected.
-struct PgrRoutesObserversConfig {
-  uint32_t version;  // == PGR_RO_CONFIG_VERSION
-  uint32_t size;     // == sizeof(PgrRoutesObserversConfig)
+struct PgsRoutesObserversConfig {
+  uint32_t version;  // == PGS_RO_CONFIG_VERSION
+  uint32_t size;     // == sizeof(PgsRoutesObserversConfig)
 
   // il2cpp runtime exports (slots 0-8).
   void *runtime_invoke;        // 0  void*     (MethodInfo*, obj, void** params, void** exc)
@@ -134,33 +134,33 @@ struct PgrRoutesObserversConfig {
   void *addr_completion_resp;  // 21 RouteConsumptionService.bjan(ProgressRouteOutProto)
 };
 
-static_assert(sizeof(PgrRoutesObserversConfig) == 184, "PgrRoutesObserversConfig must remain 184 bytes on LP64");
-static_assert(offsetof(PgrRoutesObserversConfig, runtime_invoke) == 8, "config body start (slot 0)");
-static_assert(offsetof(PgrRoutesObserversConfig, class_consumption) == 80, "slot 9");       // 8 + 9*8
-static_assert(offsetof(PgrRoutesObserversConfig, m_current_route) == 128, "slot 15");       // 8 + 15*8
-static_assert(offsetof(PgrRoutesObserversConfig, f_play_route) == 144, "slot 17");          // 8 + 17*8
-static_assert(offsetof(PgrRoutesObserversConfig, addr_reward_init) == 160, "slot 19");      // 8 + 19*8
-static_assert(offsetof(PgrRoutesObserversConfig, addr_completion_resp) == 176, "slot 21");  // 8 + 21*8
+static_assert(sizeof(PgsRoutesObserversConfig) == 184, "PgsRoutesObserversConfig must remain 184 bytes on LP64");
+static_assert(offsetof(PgsRoutesObserversConfig, runtime_invoke) == 8, "config body start (slot 0)");
+static_assert(offsetof(PgsRoutesObserversConfig, class_consumption) == 80, "slot 9");       // 8 + 9*8
+static_assert(offsetof(PgsRoutesObserversConfig, m_current_route) == 128, "slot 15");       // 8 + 15*8
+static_assert(offsetof(PgsRoutesObserversConfig, f_play_route) == 144, "slot 17");          // 8 + 17*8
+static_assert(offsetof(PgsRoutesObserversConfig, addr_reward_init) == 160, "slot 19");      // 8 + 19*8
+static_assert(offsetof(PgsRoutesObserversConfig, addr_completion_resp) == 176, "slot 21");  // 8 + 21*8
 
 // Fixed LP64 request (32 bytes) for poll / clear_completing / drain.
-struct PgrRoutesObserversRequest {
-  uint32_t version;     // off 0  == PGR_RO_REQUEST_VERSION
-  uint32_t size;        // off 4  == sizeof(PgrRoutesObserversRequest)
+struct PgsRoutesObserversRequest {
+  uint32_t version;     // off 0  == PGS_RO_REQUEST_VERSION
+  uint32_t size;        // off 4  == sizeof(PgsRoutesObserversRequest)
   uint64_t tid;         // off 8  proven owner tid
   uint64_t residual_ms; // off 16 lease window; clamped, 0 refuses (drain ignores the lease)
   uint64_t generation;  // off 24 revocation token (== generation() at stamp)
 };
 
-static_assert(sizeof(PgrRoutesObserversRequest) == 32, "PgrRoutesObserversRequest must remain 32 bytes on LP64");
-static_assert(offsetof(PgrRoutesObserversRequest, tid) == 8, "request tid");
-static_assert(offsetof(PgrRoutesObserversRequest, residual_ms) == 16, "request residual");
-static_assert(offsetof(PgrRoutesObserversRequest, generation) == 24, "request generation");
+static_assert(sizeof(PgsRoutesObserversRequest) == 32, "PgsRoutesObserversRequest must remain 32 bytes on LP64");
+static_assert(offsetof(PgsRoutesObserversRequest, tid) == 8, "request tid");
+static_assert(offsetof(PgsRoutesObserversRequest, residual_ms) == 16, "request residual");
+static_assert(offsetof(PgsRoutesObserversRequest, generation) == 24, "request generation");
 
 // Fixed LP64 set_completing input (312 bytes). consumption_handle is a BORROWED feature-45 GC handle;
 // this module stores its id to re-resolve the bjan receiver later and NEVER frees it.
-struct PgrRoutesObserversCompleting {
-  uint32_t version;           // off 0  == PGR_RO_COMPLETING_VERSION
-  uint32_t size;              // off 4  == sizeof(PgrRoutesObserversCompleting)
+struct PgsRoutesObserversCompleting {
+  uint32_t version;           // off 0  == PGS_RO_COMPLETING_VERSION
+  uint32_t size;              // off 4  == sizeof(PgsRoutesObserversCompleting)
   uint64_t tid;               // off 8  proven owner tid
   uint64_t residual_ms;       // off 16 lease window; clamped, 0 refuses
   uint64_t generation;        // off 24 revocation token
@@ -168,74 +168,74 @@ struct PgrRoutesObserversCompleting {
   uint64_t seq;               // off 40 the complete command sequence
   uint32_t id_length;         // off 48 UTF16 units in id (1..128)
   uint32_t reserved;          // off 52 0 in v1
-  uint16_t id[PGR_RO_ID_MAX]; // off 56 requested route id (UTF16, not NUL terminated)
+  uint16_t id[PGS_RO_ID_MAX]; // off 56 requested route id (UTF16, not NUL terminated)
 };
 
-static_assert(sizeof(PgrRoutesObserversCompleting) == 312, "PgrRoutesObserversCompleting must remain 312 bytes on LP64");
-static_assert(offsetof(PgrRoutesObserversCompleting, consumption_handle) == 32, "completing handle");
-static_assert(offsetof(PgrRoutesObserversCompleting, seq) == 40, "completing seq");
-static_assert(offsetof(PgrRoutesObserversCompleting, id_length) == 48, "completing id length");
-static_assert(offsetof(PgrRoutesObserversCompleting, id) == 56, "completing id");
+static_assert(sizeof(PgsRoutesObserversCompleting) == 312, "PgsRoutesObserversCompleting must remain 312 bytes on LP64");
+static_assert(offsetof(PgsRoutesObserversCompleting, consumption_handle) == 32, "completing handle");
+static_assert(offsetof(PgsRoutesObserversCompleting, seq) == 40, "completing seq");
+static_assert(offsetof(PgsRoutesObserversCompleting, id_length) == 48, "completing id length");
+static_assert(offsetof(PgsRoutesObserversCompleting, id) == 56, "completing id");
 
 // One drained observer event (296 bytes).
-struct PgrRoutesObserversEvent {
-  uint32_t type;              // off 0  PgrRoutesObserversEventType
+struct PgsRoutesObserversEvent {
+  uint32_t type;              // off 0  PgsRoutesObserversEventType
   uint32_t aux;               // off 4  screen for dismiss events
   int64_t  i0;                // off 8  tracking code / reward seq / reject status
   double   f0;                // off 16 waypoint lat
   double   f1;                // off 24 waypoint lon
   uint32_t id_length;         // off 32 UTF16 units in id (reward events; else 0)
   uint32_t reserved;          // off 36 0 in v1
-  uint16_t id[PGR_RO_ID_MAX]; // off 40 route id (reward events)
+  uint16_t id[PGS_RO_ID_MAX]; // off 40 route id (reward events)
 };
 
-static_assert(sizeof(PgrRoutesObserversEvent) == 296, "PgrRoutesObserversEvent must remain 296 bytes on LP64");
-static_assert(offsetof(PgrRoutesObserversEvent, i0) == 8, "event i0");
-static_assert(offsetof(PgrRoutesObserversEvent, f0) == 16, "event f0");
-static_assert(offsetof(PgrRoutesObserversEvent, id) == 40, "event id");
+static_assert(sizeof(PgsRoutesObserversEvent) == 296, "PgsRoutesObserversEvent must remain 296 bytes on LP64");
+static_assert(offsetof(PgsRoutesObserversEvent, i0) == 8, "event i0");
+static_assert(offsetof(PgsRoutesObserversEvent, f0) == 16, "event f0");
+static_assert(offsetof(PgsRoutesObserversEvent, id) == 40, "event id");
 
 // Fixed LP64 poll output (2672 bytes). Fully zeroed on entry; header re-stamped.
-struct PgrRoutesObserversOutput {
-  uint32_t version;              // off 0  == PGR_RO_OUTPUT_VERSION
-  uint32_t size;                 // off 4  == sizeof(PgrRoutesObserversOutput)
+struct PgsRoutesObserversOutput {
+  uint32_t version;              // off 0  == PGS_RO_OUTPUT_VERSION
+  uint32_t size;                 // off 4  == sizeof(PgsRoutesObserversOutput)
   int32_t  status;               // off 8  == the poll() return
-  uint32_t flags;                // off 12 PgrRoutesObserversFlags
+  uint32_t flags;                // off 12 PgsRoutesObserversFlags
   uint64_t generation;           // off 16 g_gen at publish
   uint64_t completion_seq;       // off 24 confirmed completion seq (valid with COMPLETION_READY)
   uint32_t completion_id_length; // off 32 UTF16 units in completion_id (1..128 with COMPLETION_READY)
-  uint32_t event_count;          // off 36 valid events in events[] (<= PGR_RO_MAX_EVENTS)
+  uint32_t event_count;          // off 36 valid events in events[] (<= PGS_RO_MAX_EVENTS)
   uint32_t dropped_events;       // off 40 events dropped since the previous poll (ring overflow)
   uint32_t reserved;             // off 44 0 in v1
-  uint16_t completion_id[PGR_RO_ID_MAX];       // off 48  confirmed completion route id
-  PgrRoutesObserversEvent events[PGR_RO_MAX_EVENTS]; // off 304
+  uint16_t completion_id[PGS_RO_ID_MAX];       // off 48  confirmed completion route id
+  PgsRoutesObserversEvent events[PGS_RO_MAX_EVENTS]; // off 304
 };
 
-static_assert(sizeof(PgrRoutesObserversOutput) == 2672, "PgrRoutesObserversOutput must remain 2672 bytes on LP64");
-static_assert(offsetof(PgrRoutesObserversOutput, status) == 8, "output status");
-static_assert(offsetof(PgrRoutesObserversOutput, completion_seq) == 24, "output completion seq");
-static_assert(offsetof(PgrRoutesObserversOutput, completion_id) == 48, "output completion id");
-static_assert(offsetof(PgrRoutesObserversOutput, events) == 304, "output events");
+static_assert(sizeof(PgsRoutesObserversOutput) == 2672, "PgsRoutesObserversOutput must remain 2672 bytes on LP64");
+static_assert(offsetof(PgsRoutesObserversOutput, status) == 8, "output status");
+static_assert(offsetof(PgsRoutesObserversOutput, completion_seq) == 24, "output completion seq");
+static_assert(offsetof(PgsRoutesObserversOutput, completion_id) == 48, "output completion id");
+static_assert(offsetof(PgsRoutesObserversOutput, events) == 304, "output events");
 
 // Fixed LP64 table: 8-byte header + 11 function pointers = 96 bytes.
-struct PgrRoutesObserversApi {
-  uint32_t version;  // == PGR_RO_API_VERSION
-  uint32_t size;     // == sizeof(PgrRoutesObserversApi)
+struct PgsRoutesObserversApi {
+  uint32_t version;  // == PGS_RO_API_VERSION
+  uint32_t size;     // == sizeof(PgsRoutesObserversApi)
   // Verify + publish the immutable config and install the three hooks ONCE for the process lifetime.
-  // Idempotent for an identical config; a different config returns PGR_RO_ERR_RECONFIG. A partial hook
-  // install is rolled back and latched (PGR_RO_ERR_HOOK).
-  int (*install)(const PgrRoutesObserversConfig *config);
+  // Idempotent for an identical config; a different config returns PGS_RO_ERR_RECONFIG. A partial hook
+  // install is rolled back and latched (PGS_RO_ERR_HOOK).
+  int (*install)(const PgsRoutesObserversConfig *config);
   // Current revocation generation (initially 1). The host stamps it onto each owner request.
   uint64_t (*generation)(void);
   // Atomically bump the generation and clear the lease deadline. Any thread; no managed work; no frees.
   uint64_t (*revoke)(void);
   // Owner-thread tick: refresh the lease, dismiss settled pendingUi, drain events, report completion.
-  int (*poll)(const PgrRoutesObserversRequest *request, PgrRoutesObserversOutput *out);
+  int (*poll)(const PgsRoutesObserversRequest *request, PgsRoutesObserversOutput *out);
   // Owner-thread: latch `completing` just before the complete invoke so the bjan hook can correlate it.
-  int (*set_completing)(const PgrRoutesObserversCompleting *completing);
+  int (*set_completing)(const PgsRoutesObserversCompleting *completing);
   // Owner-thread: clear `completing` when the complete action was refused/faulted (no bjan will arrive).
-  int (*clear_completing)(const PgrRoutesObserversRequest *request);
+  int (*clear_completing)(const PgsRoutesObserversRequest *request);
   // Owner-thread: free every pendingUi root and clear all result/tracking state (release / stopping).
-  int (*drain)(const PgrRoutesObserversRequest *request);
+  int (*drain)(const PgsRoutesObserversRequest *request);
   // Route-tracking enter: depth[tid]++ (tid must equal gettid()); returns 1 when counted.
   int (*tracking_enter)(uint64_t tid);
   // Route-tracking leave: depth[tid]--; queue TRACKING_STATUS when the code changed. Returns 1 when counted.
@@ -246,7 +246,7 @@ struct PgrRoutesObserversApi {
   int (*waypoint_observed)(uint64_t tid, double lat, double lon);
 };
 
-static_assert(sizeof(PgrRoutesObserversApi) == 96, "PgrRoutesObserversApi must remain a 96-byte version-1 table");
+static_assert(sizeof(PgsRoutesObserversApi) == 96, "PgsRoutesObserversApi must remain a 96-byte version-1 table");
 
 // Hidden getter. NOT exported by the version script; the coordinator registers it in query_feature under
 // feature id 46 and answers only on an exact version match.

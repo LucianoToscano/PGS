@@ -19,7 +19,7 @@
 #include <unistd.h>
 
 namespace {
-using namespace pgr_quickball_schema;
+using namespace pgs_quickball_schema;
 
 struct Class;
 struct Type { std::string name; Class *klass = nullptr; bool byref = false; };
@@ -39,9 +39,9 @@ constexpr uint64_t kGcGetBodyRva = kCallerCheckRva + 0x1700ULL;
 constexpr uint64_t kGcFreeRva = kCallerCheckRva + 0x1800ULL;
 constexpr uint64_t kGcFreeBodyRva = kCallerCheckRva + 0x1900ULL;
 constexpr uint32_t kAllOptionalExports =
-    PGR_QB_EXP_TYPE_IS_BYREF | PGR_QB_EXP_CLASS_GET_FIELDS | PGR_QB_EXP_STRING_LENGTH |
-    PGR_QB_EXP_STRING_CHARS | PGR_QB_EXP_OBJECT_NEW | PGR_QB_EXP_FIELD_SET_VALUE |
-    PGR_QB_EXP_OBJECT_GET_VIRTUAL | PGR_QB_EXP_STRING_NEW | PGR_QB_EXP_TYPE_GET_OBJECT;
+    PGS_QB_EXP_TYPE_IS_BYREF | PGS_QB_EXP_CLASS_GET_FIELDS | PGS_QB_EXP_STRING_LENGTH |
+    PGS_QB_EXP_STRING_CHARS | PGS_QB_EXP_OBJECT_NEW | PGS_QB_EXP_FIELD_SET_VALUE |
+    PGS_QB_EXP_OBJECT_GET_VIRTUAL | PGS_QB_EXP_STRING_NEW | PGS_QB_EXP_TYPE_GET_OBJECT;
 
 std::vector<std::unique_ptr<Type>> types;
 std::vector<std::unique_ptr<Class>> extra_classes;
@@ -49,7 +49,7 @@ std::vector<std::unique_ptr<Field>> fields;
 std::vector<std::unique_ptr<Method>> methods;
 Class classes[kClassCount];
 Class *enum_class = nullptr, *dup_class = nullptr;
-Field *outcome_fields[PGR_QB_OUTCOME_MAX]{};
+Field *outcome_fields[PGS_QB_OUTCOME_MAX]{};
 Field *overflow_field = nullptr, *alignment_field = nullptr, *scheduler_current_field = nullptr;
 Method *get_bool_int = nullptr, *get_integer_int = nullptr;
 Type *vec3_byref_type = nullptr;
@@ -61,9 +61,9 @@ int dup_index = -1, hide_index = -1;  // optional-class ambiguity / absence inje
 unsigned thread_checks = 0, detach_at = 0, names_allocated = 0, names_freed = 0, reentries = 0;
 unsigned char *module_base = nullptr;
 uint64_t module_size = 0;
-const PgrQuickballMetaApi *api = nullptr;
-PgrQuickballMetaConfig config{};
-PgrQuickballExtra extra_cfg{};
+const PgsQuickballMetaApi *api = nullptr;
+PgsQuickballMetaConfig config{};
+PgsQuickballExtra extra_cfg{};
 
 Type *new_type(const std::string &name, Class *klass, bool byref = false) {
   types.emplace_back(new Type{name, klass, byref});
@@ -80,11 +80,11 @@ Type *type(const char *name) {
   return new_class(name)->type;
 }
 
-bool zero(const PgrQuickballMetaOutput &o);
+bool zero(const PgsQuickballMetaOutput &o);
 void *domain_get() {
   if (reenter) {  // a metadata callback reentering resolve() must get BUSY with cleared output.
     reenter = false;
-    PgrQuickballMetaOutput out;
+    PgsQuickballMetaOutput out;
     std::memset(&out, 0xa5, sizeof(out));
     assert(api->resolve(&config, &out) == -27 && zero(out));
     ++reentries;
@@ -170,15 +170,15 @@ void *enumerate_fields(void *owner, void **iter) {
 void *enumerate_empty(void *, void **) { return nullptr; }
 void *declaring(void *) { return nullptr; }
 void *thread_current() { ++thread_checks; return attached && (!detach_at || thread_checks < detach_at) ? &thread_token : nullptr; }
-int segment(void *, const void *address, uint64_t length, PgrMetaSegment *out) {
+int segment(void *, const void *address, uint64_t length, PgsMetaSegment *out) {
   *out = {};
   uintptr_t a = reinterpret_cast<uintptr_t>(address), base = reinterpret_cast<uintptr_t>(module_base);
   if (a < base || a - base > module_size || !length || length > module_size - (a - base)) return 0;
   out->found = out->readable = out->host_exec = out->writable = 1;
   out->seg_base = module_base; out->seg_size = module_size; return 0;
 }
-PgrMetaExports exports() {
-  PgrMetaExports e{};
+PgsMetaExports exports() {
+  PgsMetaExports e{};
   e.domain_get = reinterpret_cast<void *>(domain_get);
   e.domain_get_assemblies = reinterpret_cast<void *>(domain_assemblies);
   e.assembly_get_image = reinterpret_cast<void *>(assembly_image);
@@ -258,7 +258,7 @@ void build_fixture() {
   assert(!std::strcmp(kClasses[C_BALL].canonical, "Niantic.Holoholo.Encounter.Pokeball"));
   assert(!std::strcmp(kClasses[C_RESPONSE].canonical, "Holoholo.Rpc.CatchPokemonOutProto"));
   assert(kFields[0].owner == C_BALL && kFields[0].offset == 0xb0);
-  assert(kFields[2].owner == C_RESPONSE && !std::strcmp(kFields[2].name, "Status") && kFields[2].kind == PGR_MD_FIELD_ENUM_I32);
+  assert(kFields[2].owner == C_RESPONSE && !std::strcmp(kFields[2].name, "Status") && kFields[2].kind == PGS_MD_FIELD_ENUM_I32);
   assert(kMethods[1].owner == C_BALL && !std::strcmp(kMethods[1].name, "buna") && kMethods[1].rva == 0xac5d634ULL);
   assert(kMethods[4].is_static == 1 && !std::strcmp(kMethods[4].name, "op_Implicit"));
 
@@ -294,8 +294,8 @@ void build_fixture() {
     fields.emplace_back(new Field{&classes[s.owner], &classes[s.owner], s.name, t, s.required_mask, s.offset, 0});
   }
   // Status enum literals (CatchError=0, CatchSuccess=1, CatchEscape=2, CatchFlee=3, CatchMissed=4, CatchItemReplacement=5).
-  const int32_t literal_vals[PGR_QB_OUTCOME_MAX] = {0, 1, 2, 3, 4, 5};
-  for (size_t i = 0; i < PGR_QB_OUTCOME_MAX; i++) {
+  const int32_t literal_vals[PGS_QB_OUTCOME_MAX] = {0, 1, 2, 3, 4, 5};
+  for (size_t i = 0; i < PGS_QB_OUTCOME_MAX; i++) {
     fields.emplace_back(new Field{enum_class, enum_class, kOutcomeLiterals[i], enum_class->type, 0x8050u, 0, literal_vals[i]});
     outcome_fields[i] = fields.back().get();
   }
@@ -324,7 +324,7 @@ void build_fixture() {
                                     s.param_count, s.is_static ? 0x10u : 0u, false, false});
     if (s.prologue) {
       methods.back()->code = module_base + s.rva;
-      decode_hex(s.prologue, module_base + s.rva, PGR_MD_PROLOGUE_MAX);
+      decode_hex(s.prologue, module_base + s.rva, PGS_MD_PROLOGUE_MAX);
     }
   }
   // Animator overload candidates for GetBool / GetInteger (String distractors + Int32 matches).
@@ -339,16 +339,16 @@ void build_fixture() {
                                   classes[C_INT32].type, {classes[C_INT32].type, nullptr}, 1, 0, false, false});
   get_integer_int = methods.back().get();
 
-  unsigned char caller[PGR_MD_PROLOGUE_MAX];
+  unsigned char caller[PGS_MD_PROLOGUE_MAX];
   int clen = decode_hex(kCallerCheckPrologue, caller, sizeof(caller));
   std::memcpy(module_base + kCallerCheckRva, caller, clen);
   write_gc_handle_code();
 }
 
-bool zero(const PgrQuickballMetaOutput &o) { PgrQuickballMetaOutput e{}; return std::memcmp(&o, &e, sizeof(o)) == 0; }
+bool zero(const PgsQuickballMetaOutput &o) { PgsQuickballMetaOutput e{}; return std::memcmp(&o, &e, sizeof(o)) == 0; }
 
-PgrQuickballMetaOutput success() {
-  PgrQuickballMetaOutput out{};
+PgsQuickballMetaOutput success() {
+  PgsQuickballMetaOutput out{};
   assert(api->resolve(&config, &out) == 0 && out.version == 2 && out.size == sizeof(out));
   for (size_t i = 0; i < kClassCount; i++) { assert(out.classes[i] == &classes[i]); assert(out.class_conflict[i] == 0); }
   assert(out.enum_class == enum_class);
@@ -361,21 +361,21 @@ PgrQuickballMetaOutput success() {
   assert(out.trace_params_int == get_integer_int);
   assert(out.alwayshit_current == scheduler_current_field);
   assert(out.success == 1);
-  for (size_t i = 0; i < PGR_QB_OUTCOME_MAX; i++) assert(out.outcomes_values[i] == int32_t(i));
+  for (size_t i = 0; i < PGS_QB_OUTCOME_MAX; i++) assert(out.outcomes_values[i] == int32_t(i));
   assert(out.iv_overflow_value == 1 && out.iv_alignment_value == 4);
   for (uint32_t g = 0; g < kGroupCount; g++) { assert(out.groups[g].available == 1); assert(out.groups[g].reason[0] == '\0'); }
   assert(names_allocated == names_freed);
   return out;
 }
-void failure(int expected, const PgrQuickballMetaConfig *c = nullptr) {
-  PgrQuickballMetaOutput out;
+void failure(int expected, const PgsQuickballMetaConfig *c = nullptr) {
+  PgsQuickballMetaOutput out;
   std::memset(&out, 0xa5, sizeof(out));
   assert(api->resolve(c ? c : &config, &out) == expected);
   assert(zero(out) && names_allocated == names_freed);
 }
 // Resolve succeeds but a named optional group is unavailable with a reason substring.
-PgrQuickballMetaOutput group_down(uint32_t g, const char *needle) {
-  PgrQuickballMetaOutput out{};
+PgsQuickballMetaOutput group_down(uint32_t g, const char *needle) {
+  PgsQuickballMetaOutput out{};
   assert(api->resolve(&config, &out) == 0);
   assert(out.groups[g].available == 0 && std::strstr(out.groups[g].reason, needle));
   assert(names_allocated == names_freed);
@@ -399,13 +399,13 @@ int main(int argc, char **argv) {
   assert(get);
   auto *core = static_cast<const pgs_native_api_v2 *>(get(2));
   assert(core && core->query_feature && !core->query_feature(55, 1) && !core->query_feature(55, 3));
-  api = static_cast<const PgrQuickballMetaApi *>(core->query_feature(55, 2));
+  api = static_cast<const PgsQuickballMetaApi *>(core->query_feature(55, 2));
   assert(api && api->version == 2 && api->size == 24 && api->config_size == 96 &&
-         api->output_size == sizeof(PgrQuickballMetaOutput));
+         api->output_size == sizeof(PgsQuickballMetaOutput));
 
   build_fixture();
-  PgrMetaExports e = exports();
-  extra_cfg.version = 2; extra_cfg.size = sizeof(PgrQuickballExtra);
+  PgsMetaExports e = exports();
+  extra_cfg.version = 2; extra_cfg.size = sizeof(PgsQuickballExtra);
   extra_cfg.field_static_get_value = reinterpret_cast<void *>(field_static_get_value);
   extra_cfg.type_is_byref = reinterpret_cast<void *>(type_is_byref);
   extra_cfg.class_get_fields = reinterpret_cast<void *>(enumerate_fields);
@@ -416,7 +416,7 @@ int main(int argc, char **argv) {
   extra_cfg.reserved = 0;
 
   config.version = 2; config.size = sizeof(config);
-  config.binding.version = 1; config.binding.size = sizeof(PgrMetaBindConfig); config.binding.exports = &e;
+  config.binding.version = 1; config.binding.size = sizeof(PgsMetaBindConfig); config.binding.exports = &e;
   config.binding.module_base = module_base; config.binding.module_size = module_size; config.binding.seg_query = segment;
   config.thread_current = reinterpret_cast<void *>(thread_current); config.owner_tid = gettid();
   config.extra = &extra_cfg;
@@ -425,41 +425,41 @@ int main(int argc, char **argv) {
 
   // Envelope / attachment / extra block validation.
   { auto c = config; c.version = 1; failure(-2, &c); c = config; c.size--; failure(-2, &c); c = config; c.thread_current = nullptr; failure(-2, &c); }
-  { auto c = config; c.extra = nullptr; failure(PGR_QB_ERR_EXTRA_MISSING, &c); }
-  { auto x = extra_cfg; x.version = 1; auto c = config; c.extra = &x; failure(PGR_QB_ERR_EXTRA_MISSING, &c); }
-  { auto x = extra_cfg; x.field_static_get_value = nullptr; auto c = config; c.extra = &x; failure(PGR_QB_ERR_EXTRA_MISSING, &c); }
-  { auto x = extra_cfg; x.gchandle_new = nullptr; auto c = config; c.extra = &x; failure(PGR_QB_ERR_EXTRA_MISSING, &c); }
-  { PgrQuickballMetaOutput out; std::memset(&out, 0xa5, sizeof(out)); assert(api->resolve(nullptr, &out) == -2 && zero(out)); assert(api->resolve(&config, nullptr) == -1); }
+  { auto c = config; c.extra = nullptr; failure(PGS_QB_ERR_EXTRA_MISSING, &c); }
+  { auto x = extra_cfg; x.version = 1; auto c = config; c.extra = &x; failure(PGS_QB_ERR_EXTRA_MISSING, &c); }
+  { auto x = extra_cfg; x.field_static_get_value = nullptr; auto c = config; c.extra = &x; failure(PGS_QB_ERR_EXTRA_MISSING, &c); }
+  { auto x = extra_cfg; x.gchandle_new = nullptr; auto c = config; c.extra = &x; failure(PGS_QB_ERR_EXTRA_MISSING, &c); }
+  { PgsQuickballMetaOutput out; std::memset(&out, 0xa5, sizeof(out)); assert(api->resolve(nullptr, &out) == -2 && zero(out)); assert(api->resolve(&config, nullptr) == -1); }
   attached = false; failure(-30); attached = true;
   { auto c = config; c.owner_tid = 0; failure(-30, &c); c.owner_tid = config.owner_tid + 1; failure(-30, &c); }
   { std::thread foreign([] { failure(-30); }); foreign.join(); }
   thread_checks = 0; detach_at = 6; failure(-30); detach_at = 0; success();
 
   // Only class discovery readiness is retriable, never missing core members.
-  { hide_index=C_BALL; failure(PGR_QB_NOT_READY); hide_index=-1; success(); }
-  { assembly_count=0; failure(PGR_QB_NOT_READY); assembly_count=2; success(); }
-  { domain_ready=false; failure(PGR_QB_NOT_READY); domain_ready=true; success(); }
+  { hide_index=C_BALL; failure(PGS_QB_NOT_READY); hide_index=-1; success(); }
+  { assembly_count=0; failure(PGS_QB_NOT_READY); assembly_count=2; success(); }
+  { domain_ready=false; failure(PGS_QB_NOT_READY); domain_ready=true; success(); }
   { auto name=fields[0]->name; fields[0]->name="hidden-core-field";
-    failure(PGR_MD_ERR_NOT_FOUND); fields[0]->name=name; success(); }
+    failure(PGS_MD_ERR_NOT_FOUND); fields[0]->name=name; success(); }
   { int m=method_at("buna"); auto name=methods[m]->name; methods[m]->name="hidden-core-method";
-    failure(PGR_MD_ERR_NOT_FOUND); methods[m]->name=name; success(); }
+    failure(PGS_MD_ERR_NOT_FOUND); methods[m]->name=name; success(); }
 
   // Mandatory (CORE) structural + value + enum + GC pointer ABI faults are fatal.
-  { auto s = fields[0]->offset; fields[0]->offset++; failure(PGR_MD_ERR_OFFSET); fields[0]->offset = s; }
-  { auto s = fields[2]->flags; fields[2]->flags = 0x10; failure(PGR_MD_ERR_FLAGS); fields[2]->flags = s; }
-  { auto s = outcome_fields[1]->flags; outcome_fields[1]->flags = 0x10; failure(PGR_QB_ERR_SUCCESS_LIT); outcome_fields[1]->flags = s; }
-  { auto s = classes[C_SINGLE].size; classes[C_SINGLE].size = 8; failure(PGR_MD_ERR_SIZE); classes[C_SINGLE].size = s; }
-  { auto s = classes[C_BOOL].value; classes[C_BOOL].value = false; failure(PGR_MD_ERR_KIND); classes[C_BOOL].value = s; }
-  { module_base[kGcNewBodyRva + 0x384] ^= 1; failure(PGR_QB_ERR_GC_POINTER); module_base[kGcNewBodyRva + 0x384] ^= 1; }
-  { module_base[kGcFreeBodyRva + 24] ^= 1; failure(PGR_QB_ERR_GC_POINTER); module_base[kGcFreeBodyRva + 24] ^= 1; }
-  { int m = method_at("op_Implicit"); methods[m]->flags = 0; failure(PGR_MD_ERR_STATIC); methods[m]->flags = 0x10; }
-  { int m = method_at("buna"); methods[m]->generic = true; failure(PGR_MD_ERR_GENERIC); methods[m]->generic = false; }
-  { int m = method_at("buna"); methods[m]->inflated = true; failure(PGR_MD_ERR_INFLATED); methods[m]->inflated = false; }
-  { int m = method_at("set_speed"); auto s = methods[m]->params[0]; methods[m]->params[0] = classes[C_INT32].type; failure(PGR_MD_ERR_TYPE); methods[m]->params[0] = s; }
-  { int m = method_at("buna"); unsigned char *p = module_base + kMethods[m].rva; *p ^= 1; failure(PGR_MD_ERR_PROLOGUE); *p ^= 1; }
-  { module_base[kCallerCheckRva] ^= 1; failure(PGR_MD_ERR_PROLOGUE); module_base[kCallerCheckRva] ^= 1; }
+  { auto s = fields[0]->offset; fields[0]->offset++; failure(PGS_MD_ERR_OFFSET); fields[0]->offset = s; }
+  { auto s = fields[2]->flags; fields[2]->flags = 0x10; failure(PGS_MD_ERR_FLAGS); fields[2]->flags = s; }
+  { auto s = outcome_fields[1]->flags; outcome_fields[1]->flags = 0x10; failure(PGS_QB_ERR_SUCCESS_LIT); outcome_fields[1]->flags = s; }
+  { auto s = classes[C_SINGLE].size; classes[C_SINGLE].size = 8; failure(PGS_MD_ERR_SIZE); classes[C_SINGLE].size = s; }
+  { auto s = classes[C_BOOL].value; classes[C_BOOL].value = false; failure(PGS_MD_ERR_KIND); classes[C_BOOL].value = s; }
+  { module_base[kGcNewBodyRva + 0x384] ^= 1; failure(PGS_QB_ERR_GC_POINTER); module_base[kGcNewBodyRva + 0x384] ^= 1; }
+  { module_base[kGcFreeBodyRva + 24] ^= 1; failure(PGS_QB_ERR_GC_POINTER); module_base[kGcFreeBodyRva + 24] ^= 1; }
+  { int m = method_at("op_Implicit"); methods[m]->flags = 0; failure(PGS_MD_ERR_STATIC); methods[m]->flags = 0x10; }
+  { int m = method_at("buna"); methods[m]->generic = true; failure(PGS_MD_ERR_GENERIC); methods[m]->generic = false; }
+  { int m = method_at("buna"); methods[m]->inflated = true; failure(PGS_MD_ERR_INFLATED); methods[m]->inflated = false; }
+  { int m = method_at("set_speed"); auto s = methods[m]->params[0]; methods[m]->params[0] = classes[C_INT32].type; failure(PGS_MD_ERR_TYPE); methods[m]->params[0] = s; }
+  { int m = method_at("buna"); unsigned char *p = module_base + kMethods[m].rva; *p ^= 1; failure(PGS_MD_ERR_PROLOGUE); *p ^= 1; }
+  { module_base[kCallerCheckRva] ^= 1; failure(PGS_MD_ERR_PROLOGUE); module_base[kCallerCheckRva] ^= 1; }
   // Duplicate a MANDATORY class across images -> fatal DUPLICATE.
-  { Class *keep = dup_class; dup_class = new_class("Niantic.Holoholo.Encounter.Pokeball"); dup_index = C_BALL; failure(PGR_MD_ERR_DUPLICATE); dup_index = -1; dup_class = keep; }
+  { Class *keep = dup_class; dup_class = new_class("Niantic.Holoholo.Encounter.Pokeball"); dup_index = C_BALL; failure(PGS_MD_ERR_DUPLICATE); dup_index = -1; dup_class = keep; }
 
   // GROUP_OUTCOMES: duplicate literal value or missing literal disables only outcomes, never core.
   { int32_t s = outcome_fields[2]->static_val; outcome_fields[2]->static_val = outcome_fields[0]->static_val;
@@ -507,18 +507,18 @@ int main(int argc, char **argv) {
     overflow_field->flags = s; success(); }
 
   // Optional export presence bitmask gates.
-  { extra_cfg.present &= ~PGR_QB_EXP_STRING_LENGTH;
+  { extra_cfg.present &= ~PGS_QB_EXP_STRING_LENGTH;
     auto out = group_down(GROUP_TRACE_NAME, "trace-export:string");
     assert(out.groups[GROUP_IVTEXT].available == 0 && std::strstr(out.groups[GROUP_IVTEXT].reason, "iv-text-api"));
     assert(out.groups[GROUP_IVOWNED].available == 0);
     extra_cfg.present = kAllOptionalExports; success(); }
-  { extra_cfg.present &= ~PGR_QB_EXP_OBJECT_NEW;
+  { extra_cfg.present &= ~PGS_QB_EXP_OBJECT_NEW;
     group_down(GROUP_ARTHROWS, "ar-throw-api-unavailable");
     extra_cfg.present = kAllOptionalExports; success(); }
-  { extra_cfg.present &= ~PGR_QB_EXP_TYPE_GET_OBJECT;
+  { extra_cfg.present &= ~PGS_QB_EXP_TYPE_GET_OBJECT;
     group_down(GROUP_IVOUTLINE, "iv-outline-type-api");
     extra_cfg.present = kAllOptionalExports; success(); }
-  { extra_cfg.present &= ~PGR_QB_EXP_OBJECT_GET_VIRTUAL;
+  { extra_cfg.present &= ~PGS_QB_EXP_OBJECT_GET_VIRTUAL;
     auto out = group_down(GROUP_IV, "iv-export-unavailable");
     assert(out.groups[GROUP_IVTEXT].available == 0 && out.groups[GROUP_IVOWNED].available == 0);
     extra_cfg.present = kAllOptionalExports; success(); }
@@ -545,9 +545,9 @@ int main(int argc, char **argv) {
     assert(out.classes[C_MAPVIEW] == nullptr && out.class_conflict[C_MAPVIEW] == 1); dup_index = -1; success(); }
 
   // Module canonicalisation extent-diff guard (default resolver path, no fixture seg_query).
-  { auto c = config; c.binding.seg_query = nullptr; unsigned before = thread_checks; failure(PGR_MD_ERR_CODE_RANGE, &c); assert(thread_checks == before); }
+  { auto c = config; c.binding.seg_query = nullptr; unsigned before = thread_checks; failure(PGS_MD_ERR_CODE_RANGE, &c); assert(thread_checks == before); }
   { auto c = config; c.binding.module_base = reinterpret_cast<void *>(UINTPTR_MAX - 3); c.binding.module_size = 8;
-    unsigned before = thread_checks; failure(PGR_MD_ERR_CODE_RANGE, &c); assert(thread_checks == before); }
+    unsigned before = thread_checks; failure(PGS_MD_ERR_CODE_RANGE, &c); assert(thread_checks == before); }
 
   // Reentrant/concurrent call returns BUSY without touching the result (output cleared).
   reenter = true; success(); assert(reentries == 1); success();

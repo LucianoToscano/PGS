@@ -1,5 +1,5 @@
-Root invoke_auto_throw_capture(void* method,Root& target,const PgrThrowValue& requested) {
-    alignas(8) PgrThrowValue value=requested;void* args[]={&value,nullptr};
+Root invoke_auto_throw_capture(void* method,Root& target,const PgsThrowValue& requested) {
+    alignas(8) PgsThrowValue value=requested;void* args[]={&value,nullptr};
     Root promise(invoke_method(method,target.get(),args));
     require(bool(promise),"Capture returned no promise; outcome unknown (not retried)");return promise;
 }
@@ -7,7 +7,7 @@ Root invoke_auto_throw_capture(void* method,Root& target,const PgrThrowValue& re
 // Shared capture primitive, included in the encounter automation translation unit.
 // Callers own authorization, ball stock, encounter identity, berries and cadence.
 // All method signatures are checked BEFORE NotifyPokeballThrown spends a ball.
-Root submit_auto_throw(Root& state, Root& pokemon, const PgrThrowValue& requested) {
+Root submit_auto_throw(Root& state, Root& pokemon, const PgsThrowValue& requested) {
     int ball=requested.item;
     require(state && pokemon && ball>0,"Auto Throw owner unavailable");
     Root state_owner(state.get()),pokemon_owner(pokemon.get());
@@ -20,7 +20,7 @@ Root submit_auto_throw(Root& state, Root& pokemon, const PgrThrowValue& requeste
         "Niantic.Promises.IPromise<Holoholo.Rpc.CatchPokemonOutProto>",
         "Niantic.Holoholo.Encounter.PokeballThrow",overrides?nullptr:"Holoholo.Rpc.ARPlusEncounterValuesProto");
     void* thrown=require_map_method(obj_klass(state_owner.get()),"NotifyPokeballThrown",1,"System.Void","Holoholo.Rpc.Item");
-    alignas(8) PgrThrowValue value=requested;
+    alignas(8) PgsThrowValue value=requested;
     void* thrown_args[]={&ball};invoke_method(thrown,state_owner.get(),thrown_args);
     require(state.get()==state_owner.get() && pokemon.get()==pokemon_owner.get(),"Encounter exited while notifying throw; capture cancelled");
     // NotifyPokeballHit dispatches another capture request: never call it here.
@@ -28,12 +28,12 @@ Root submit_auto_throw(Root& state, Root& pokemon, const PgrThrowValue& requeste
 }
 
 int poll_auto_throw(Root& promise,uint64_t tid,Root& value,int& status) {
-    const auto* api=static_cast<const PgrVgpResultsApi*>(pgs_vgp_results_api(1));
+    const auto* api=static_cast<const PgsVgpResultsApi*>(pgs_vgp_results_api(1));
     require(api && api->poll,"Capture promise observer unavailable");
-    PgrVgpResultsResult result{};
-    const int rc=api->poll(promise.get(),PGR_VR_PHASE_CATCH,tid,&result);
+    PgsVgpResultsResult result{};
+    const int rc=api->poll(promise.get(),PGS_VR_PHASE_CATCH,tid,&result);
     value.h=result.value_handle;
-    if(rc!=PGR_VR_DONE)return rc;
+    if(rc!=PGS_VR_DONE)return rc;
     require(value && obj_class_name(value.get())=="CatchPokemonOutProto","Unexpected capture response");
     status=read_field_val<int32_t>(value.get(),find_field_by_name_checked(obj_klass(value.get()),"Status"));
     return rc;

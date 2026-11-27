@@ -114,7 +114,7 @@ def create_update(source: Path, destination: Path,
         raise ValueError("APK input SHA-256 differs from the verified PGS release")
     if cert_digests(source) != [PGS_SIGNER]:
         raise ValueError("The original PGS candidate uses a different certificate")
-    if not os.environ.get("PGRAZOR_KEYSTORE"):
+    if not build.signing_setting("KEYSTORE"):
         raise ValueError("PGS release keystore is mandatory; no development key allowed")
     with zipfile.ZipFile(source) as apk:
         original_names = apk.namelist()

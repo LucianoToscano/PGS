@@ -54,7 +54,7 @@ Gui &cur() { return g_guis[g_cur]; }
 BoolBox g_bool{&boolClass, 1};
 
 // ----- runtime shims ----------------------------------------------------------------
-const PgrCatchCanvasApi *g_api = nullptr;
+const PgsCatchCanvasApi *g_api = nullptr;
 uint64_t g_owner = 0;
 
 bool g_live = true;          // unboxed Boolean op_Implicit returns
@@ -111,13 +111,13 @@ bool g_observer_move=false;
 int observer_filter(void*,void *obj,uint64_t tid){return tid==g_owner&&fake_obj_class(obj)==&detailsClass?1:0;}
 void observer_enter(void*,void *obj,uint64_t tid){
  assert(tid==g_owner&&obj==&cur());++g_observer_calls;
- PgrCatchCanvasSample s{};assert(g_api->sample(&s)==0&&s.owned==1);
+ PgsCatchCanvasSample s{};assert(g_api->sample(&s)==0&&s.owned==1);
  if(g_observer_move){g_observer_move=false;relocate();}
 }
 
-#define PGR_NOP8() asm volatile("nop; nop; nop; nop; nop; nop; nop; nop;")
+#define PGS_NOP8() asm volatile("nop; nop; nop; nop; nop; nop; nop; nop;")
 __attribute__((noinline)) void target_set_canvas(void *self, bool visible, void *method_info) {
-  PGR_NOP8();
+  PGS_NOP8();
   ++g_canvas.count;
   g_canvas.last_self = self;
   g_canvas.last_mi = method_info;
@@ -150,8 +150,8 @@ void *fake_runtime_invoke(const void *method, void *obj, void **params, void **e
   return nullptr;
 }
 
-PgrCatchCanvasConfig make_config() {
-  PgrCatchCanvasConfig c{};
+PgsCatchCanvasConfig make_config() {
+  PgsCatchCanvasConfig c{};
   c.version = 1; c.size = sizeof(c);
   c.object_get_class = reinterpret_cast<void *>(&fake_obj_class);
   c.field_get_value = reinterpret_cast<void *>(&fake_field_get);
@@ -178,10 +178,10 @@ void *build_gui(void *klass = &detailsClass, int32_t state = kStateOpen) {
   return borrow(&g_guis[0]);
 }
 
-void arm(uint64_t epoch = 7) { assert(g_api->update(1, 2500, epoch, g_owner) == PGR_CANVAS_OK); }
+void arm(uint64_t epoch = 7) { assert(g_api->update(1, 2500, epoch, g_owner) == PGS_CANVAS_OK); }
 
-PgrCatchCanvasSample sample() {
-  PgrCatchCanvasSample s{}; assert(g_api->sample(&s) == PGR_CANVAS_OK);
+PgsCatchCanvasSample sample() {
+  PgsCatchCanvasSample s{}; assert(g_api->sample(&s) == PGS_CANVAS_OK);
   assert(s.version == 1 && s.size == sizeof(s)); return s;
 }
 
@@ -196,45 +196,45 @@ int main(int argc, char **argv) {
   const auto *core = static_cast<const pgs_native_api_v2 *>(getter(2));
   assert(core && core->size == sizeof(pgs_native_api_v2));
   assert(core->query_feature(39, 99) == nullptr);
-  const auto *api = static_cast<const PgrCatchCanvasApi *>(core->query_feature(39, 1));
-  assert(api != nullptr && api->version == 1 && api->size == sizeof(PgrCatchCanvasApi));
+  const auto *api = static_cast<const PgsCatchCanvasApi *>(core->query_feature(39, 1));
+  assert(api != nullptr && api->version == 1 && api->size == sizeof(PgsCatchCanvasApi));
   g_api = api;
 
   std::printf("ABI sizes: config=%zu sample=%zu table=%zu\n",
-              sizeof(PgrCatchCanvasConfig), sizeof(PgrCatchCanvasSample), sizeof(PgrCatchCanvasApi));
-  assert(sizeof(PgrCatchCanvasConfig) == 128 && sizeof(PgrCatchCanvasSample) == 40 &&
-         sizeof(PgrCatchCanvasApi) == 72);
-  assert(offsetof(PgrCatchCanvasConfig, state_open) == 120 &&
-         offsetof(PgrCatchCanvasConfig, reserved0) == 124);
+              sizeof(PgsCatchCanvasConfig), sizeof(PgsCatchCanvasSample), sizeof(PgsCatchCanvasApi));
+  assert(sizeof(PgsCatchCanvasConfig) == 128 && sizeof(PgsCatchCanvasSample) == 40 &&
+         sizeof(PgsCatchCanvasApi) == 72);
+  assert(offsetof(PgsCatchCanvasConfig, state_open) == 120 &&
+         offsetof(PgsCatchCanvasConfig, reserved0) == 124);
 
   const uint64_t tid = this_tid();
   g_owner = tid;
-  PgrCatchCanvasConfig cfg = make_config();
+  PgsCatchCanvasConfig cfg = make_config();
 
   // 1. Config validation, not-installed, idempotence, reconfig.
-  assert(api->install(nullptr) == PGR_CANVAS_ERR_NULL_ARG);
-  PgrCatchCanvasConfig bad = cfg; bad.version = 2;
-  assert(api->install(&bad) == PGR_CANVAS_ERR_BAD_VERSION);
-  bad = cfg; bad.size = sizeof(cfg) - 1; assert(api->install(&bad) == PGR_CANVAS_ERR_BAD_SIZE);
-  bad = cfg; bad.m_canvas = nullptr; assert(api->install(&bad) == PGR_CANVAS_ERR_MISSING_PTR);
-  bad = cfg; bad.canvas_address = nullptr; assert(api->install(&bad) == PGR_CANVAS_ERR_MISSING_PTR);
+  assert(api->install(nullptr) == PGS_CANVAS_ERR_NULL_ARG);
+  PgsCatchCanvasConfig bad = cfg; bad.version = 2;
+  assert(api->install(&bad) == PGS_CANVAS_ERR_BAD_VERSION);
+  bad = cfg; bad.size = sizeof(cfg) - 1; assert(api->install(&bad) == PGS_CANVAS_ERR_BAD_SIZE);
+  bad = cfg; bad.m_canvas = nullptr; assert(api->install(&bad) == PGS_CANVAS_ERR_MISSING_PTR);
+  bad = cfg; bad.canvas_address = nullptr; assert(api->install(&bad) == PGS_CANVAS_ERR_MISSING_PTR);
   { void *h = build_gui();
     uint64_t t = 7;
-    assert(api->hide_opening(h, 7, tid, &t) == PGR_CANVAS_ERR_NOT_INSTALLED && t == 0);
-    assert(api->update(1, 1000, 7, tid) == PGR_CANVAS_ERR_NOT_INSTALLED);
+    assert(api->hide_opening(h, 7, tid, &t) == PGS_CANVAS_ERR_NOT_INSTALLED && t == 0);
+    assert(api->update(1, 1000, 7, tid) == PGS_CANVAS_ERR_NOT_INSTALLED);
     g_handles.clear(); g_host.clear(); }
-  assert(api->install(&cfg) == PGR_CANVAS_OK);
-  assert(api->install(&cfg) == PGR_CANVAS_OK);  // idempotent
-  bad = cfg; bad.state_open = 9; assert(api->install(&bad) == PGR_CANVAS_ERR_RECONFIG);
+  assert(api->install(&cfg) == PGS_CANVAS_OK);
+  assert(api->install(&cfg) == PGS_CANVAS_OK);  // idempotent
+  bad = cfg; bad.state_open = 9; assert(api->install(&bad) == PGS_CANVAS_ERR_RECONFIG);
 
   // 2. hide_opening: HIDDEN, nonzero token, slot owned, managed set-false reached the setter unmasked.
   { void *h = build_gui(&detailsClass, kStateOpening);  // still opening: no STATE_OPEN gate
     arm();
     g_canvas = {};
     uint64_t t = 0;
-    assert(api->hide_opening(h, 7, tid, &t) == PGR_CANVAS_HIDDEN && t != 0);
+    assert(api->hide_opening(h, 7, tid, &t) == PGS_CANVAS_HIDDEN && t != 0);
     assert(g_canvas.count == 1 && g_canvas.last_visible == false && g_canvas.last_self == &cur());
-    PgrCatchCanvasSample s = sample();
+    PgsCatchCanvasSample s = sample();
     assert(s.owned == 1 && s.hide_count == 1 && s.fault == 0);
 
     // 3. Masking: a game set-true on this owned root is forced to false, chaining orig once with the
@@ -256,22 +256,22 @@ int main(int argc, char **argv) {
     // 4. Duplicate hide reuses the token with no redundant managed set.
     g_canvas = {};
     uint64_t t2 = 0;
-    assert(api->hide_opening(h, 7, tid, &t2) == PGR_CANVAS_HIDDEN && t2 == t);
+    assert(api->hide_opening(h, 7, tid, &t2) == PGS_CANVAS_HIDDEN && t2 == t);
     assert(g_canvas.count == 0 && sample().hide_count == 1);
 
     // 5. release while OPEN restores: slot removed BEFORE the set-true, so the hook does not re-hide.
     cur().state = kStateOpen;
     g_canvas = {};
-    assert(api->release(t, tid) == PGR_CANVAS_OK);
+    assert(api->release(t, tid) == PGS_CANVAS_OK);
     assert(g_canvas.count == 1 && g_canvas.last_visible == true);  // restored, not re-masked
     assert(sample().owned == 0 && sample().restore_count == 1);
-    assert(api->release(t, tid) == PGR_CANVAS_OK);                 // idempotent
-    assert(api->release(0, tid) == PGR_CANVAS_OK);                 // zero token idempotent
+    assert(api->release(t, tid) == PGS_CANVAS_OK);                 // idempotent
+    assert(api->release(0, tid) == PGS_CANVAS_OK);                 // zero token idempotent
     balanced(); }
 
   // 6. Unrelated GUI and foreign thread both pass through unmasked.
   { void *h = build_gui(); arm();
-    uint64_t t = 0; assert(api->hide_opening(h, 7, tid, &t) == PGR_CANVAS_HIDDEN);
+    uint64_t t = 0; assert(api->hide_opening(h, 7, tid, &t) == PGS_CANVAS_HIDDEN);
     Gui other{&detailsClass, kStateOpen};
     g_canvas = {};
     call_set_canvas(&other, true, &g_game_mi);               // not an owned root
@@ -279,88 +279,88 @@ int main(int argc, char **argv) {
     g_canvas = {};
     std::thread([&]() { call_set_canvas(&cur(), true, &g_game_mi); }).join();  // foreign thread
     assert(g_canvas.count == 1 && g_canvas.last_visible == true);  // never masked off the owner thread
-    assert(api->stop() == PGR_CANVAS_OK); assert(api->tick(tid) == PGR_CANVAS_OK); balanced(); }
+    assert(api->stop() == PGS_CANVAS_OK); assert(api->tick(tid) == PGS_CANVAS_OK); balanced(); }
 
   // 7. Mask only under a LIVE gate + matching epoch: an epoch change stops masking and tick prunes+
   //    restores the now-stale slot (OPEN).
   { void *h = build_gui(&detailsClass, kStateOpen); arm(7);
-    uint64_t t = 0; assert(api->hide_opening(h, 7, tid, &t) == PGR_CANVAS_HIDDEN);
-    assert(api->update(1, 2500, 8, tid) == PGR_CANVAS_OK);   // new epoch; slot epoch 7 now stale
+    uint64_t t = 0; assert(api->hide_opening(h, 7, tid, &t) == PGS_CANVAS_HIDDEN);
+    assert(api->update(1, 2500, 8, tid) == PGS_CANVAS_OK);   // new epoch; slot epoch 7 now stale
     g_canvas = {};
     call_set_canvas(&cur(), true, &g_game_mi);
     assert(g_canvas.last_visible == true);                   // epoch mismatch -> not masked
     g_canvas = {};
-    assert(api->tick(tid) == PGR_CANVAS_OK);
+    assert(api->tick(tid) == PGS_CANVAS_OK);
     assert(sample().owned == 0 && g_canvas.last_visible == true);  // pruned + restored
-    assert(api->stop() == PGR_CANVAS_OK); balanced(); }
+    assert(api->stop() == PGS_CANVAS_OK); balanced(); }
 
   // 8. Lease expiry and stop() each prune via tick; stop never blocks cleanup.
   { void *h = build_gui(&detailsClass, kStateOpen); arm();
-    uint64_t t = 0; assert(api->hide_opening(h, 7, tid, &t) == PGR_CANVAS_HIDDEN);
-    assert(api->update(1, 1, 7, tid) == PGR_CANVAS_OK);  // re-arm with a 1ms residual lease
+    uint64_t t = 0; assert(api->hide_opening(h, 7, tid, &t) == PGS_CANVAS_HIDDEN);
+    assert(api->update(1, 1, 7, tid) == PGS_CANVAS_OK);  // re-arm with a 1ms residual lease
     ::usleep(4000);
     g_canvas = {};
-    assert(api->tick(tid) == PGR_CANVAS_OK);
+    assert(api->tick(tid) == PGS_CANVAS_OK);
     assert(sample().owned == 0 && g_canvas.last_visible == true);  // expired -> pruned + restored
     balanced(); }
   { void *h = build_gui(&detailsClass, kStateOpen); arm();
-    uint64_t t = 0; assert(api->hide_opening(h, 7, tid, &t) == PGR_CANVAS_HIDDEN);
-    assert(api->stop() == PGR_CANVAS_OK);
+    uint64_t t = 0; assert(api->hide_opening(h, 7, tid, &t) == PGS_CANVAS_HIDDEN);
+    assert(api->stop() == PGS_CANVAS_OK);
     g_canvas = {};
-    assert(api->tick(tid) == PGR_CANVAS_OK);
+    assert(api->tick(tid) == PGS_CANVAS_OK);
     assert(sample().owned == 0 && g_canvas.last_visible == true); balanced(); }
 
   // 9. Non-OPEN is never restored: release/tick free the root without a set-true.
   { void *h = build_gui(&detailsClass, kStateOpen); arm();
-    uint64_t t = 0; assert(api->hide_opening(h, 7, tid, &t) == PGR_CANVAS_HIDDEN);
+    uint64_t t = 0; assert(api->hide_opening(h, 7, tid, &t) == PGS_CANVAS_HIDDEN);
     cur().state = kStateDismissed;  // advanced off OPEN before release
     const uint64_t restore_before = sample().restore_count;
     g_canvas = {};
-    assert(api->release(t, tid) == PGR_CANVAS_OK);
+    assert(api->release(t, tid) == PGS_CANVAS_OK);
     assert(g_canvas.count == 0 && sample().restore_count == restore_before && sample().owned == 0);
-    assert(api->stop() == PGR_CANVAS_OK); balanced(); }
+    assert(api->stop() == PGS_CANVAS_OK); balanced(); }
 
   // 10. Off-owner thread never hides, never frees.
   std::thread([&]() {
     void *h = build_gui(); arm();
     uint64_t t = 7;
-    assert(g_api->hide_opening(h, 7, this_tid() + 1, &t) == PGR_CANVAS_OK && t == 0);  // mismatched tid
-    assert(g_api->release(1, this_tid() + 1) == PGR_CANVAS_ERR_OWNER);
+    assert(g_api->hide_opening(h, 7, this_tid() + 1, &t) == PGS_CANVAS_OK && t == 0);  // mismatched tid
+    assert(g_api->release(1, this_tid() + 1) == PGS_CANVAS_ERR_OWNER);
   }).join();
   { // the thread above latched no owner of its own; clean its heap on the real owner.
-    assert(api->stop() == PGR_CANVAS_OK); g_handles.clear(); g_host.clear(); }
+    assert(api->stop() == PGS_CANVAS_OK); g_handles.clear(); g_host.clear(); }
 
   // 11. hide_dismissed (one-shot, no slot): SGUI/DGUI + alive + currentState == expected_after (!=OPEN).
   { void *h = build_gui(&summaryClass, kStateDismissed); arm();
     g_canvas = {};
-    assert(api->hide_dismissed(h, 7, tid, kStateDismissed) == PGR_CANVAS_HIDDEN);
+    assert(api->hide_dismissed(h, 7, tid, kStateDismissed) == PGS_CANVAS_HIDDEN);
     assert(g_canvas.count == 1 && g_canvas.last_visible == false);
     assert(sample().owned == 0 && sample().hide_count >= 1);  // never creates a persistent slot
     // STATE_OPEN expected_after is refused outright.
-    assert(api->hide_dismissed(h, 7, tid, kStateOpen) == PGR_CANVAS_OK);
+    assert(api->hide_dismissed(h, 7, tid, kStateOpen) == PGS_CANVAS_OK);
     // A currentState that does not match expected_after is refused.
-    assert(api->hide_dismissed(h, 7, tid, kStateDismissed + 1) == PGR_CANVAS_OK);
-    assert(api->stop() == PGR_CANVAS_OK); balanced(); }
+    assert(api->hide_dismissed(h, 7, tid, kStateDismissed + 1) == PGS_CANVAS_OK);
+    assert(api->stop() == PGS_CANVAS_OK); balanced(); }
 
   // 12. Slot overflow refuses the 9th hide and leaves its canvas visible.
   { assert(g_handles.size() == g_host.size()); g_handles.clear(); g_host.clear();
     arm();
-    void *held[PGR_CANVAS_MAX_SLOTS];
-    for (int i = 0; i < PGR_CANVAS_MAX_SLOTS; ++i) {
+    void *held[PGS_CANVAS_MAX_SLOTS];
+    for (int i = 0; i < PGS_CANVAS_MAX_SLOTS; ++i) {
       g_guis[i] = {&detailsClass, kStateOpen};
       uintptr_t hb = ++g_seq; g_handles[hb] = &g_guis[i]; g_host.insert(hb); held[i] = reinterpret_cast<void *>(hb);
-      uint64_t t = 0; assert(api->hide_opening(held[i], 7, tid, &t) == PGR_CANVAS_HIDDEN && t != 0);
+      uint64_t t = 0; assert(api->hide_opening(held[i], 7, tid, &t) == PGS_CANVAS_HIDDEN && t != 0);
     }
-    assert(sample().owned == PGR_CANVAS_MAX_SLOTS);
+    assert(sample().owned == PGS_CANVAS_MAX_SLOTS);
     Gui overflow{&detailsClass, kStateOpen};
     uintptr_t ho = ++g_seq; g_handles[ho] = &overflow; g_host.insert(ho);
     g_canvas = {};
     uint64_t t = 7;
-    assert(api->hide_opening(reinterpret_cast<void *>(ho), 7, tid, &t) == PGR_CANVAS_OK && t == 0);
+    assert(api->hide_opening(reinterpret_cast<void *>(ho), 7, tid, &t) == PGS_CANVAS_OK && t == 0);
     assert(g_canvas.count == 0);  // overflow: refused, canvas left visible
-    assert(api->stop() == PGR_CANVAS_OK); assert(api->tick(tid) == PGR_CANVAS_OK);
+    assert(api->stop() == PGS_CANVAS_OK); assert(api->tick(tid) == PGS_CANVAS_OK);
     // scenes[] were not relocated here, so every owned root pruned; only host handles remain.
-    for (int i = 0; i < PGR_CANVAS_MAX_SLOTS; ++i) (void)held[i];
+    for (int i = 0; i < PGS_CANVAS_MAX_SLOTS; ++i) (void)held[i];
     balanced(); }
 
   // 13. Moving GC inside the alive probe: hide_opening re-resolves its root and still hides once.
@@ -368,60 +368,60 @@ int main(int argc, char **argv) {
     g_move_alive = true;
     g_canvas = {};
     uint64_t t = 0;
-    assert(api->hide_opening(h, 7, tid, &t) == PGR_CANVAS_HIDDEN && t != 0 && g_cur == 1);
+    assert(api->hide_opening(h, 7, tid, &t) == PGS_CANVAS_HIDDEN && t != 0 && g_cur == 1);
     assert(g_canvas.count == 1 && g_canvas.last_visible == false && g_canvas.last_self == &cur());
-    assert(api->release(t, tid) == PGR_CANVAS_OK); balanced(); }
+    assert(api->release(t, tid) == PGS_CANVAS_OK); balanced(); }
 
   // 14. Managed set-false throws: refused, token zeroed, slot removed, roots balanced, no HIDDEN count.
   { void *h = build_gui(&detailsClass, kStateOpen); arm();
     const uint64_t hide_before = sample().hide_count;
     g_throw_canvas = true;
     uint64_t t = 7;
-    assert(api->hide_opening(h, 7, tid, &t) == PGR_CANVAS_OK && t == 0);
+    assert(api->hide_opening(h, 7, tid, &t) == PGS_CANVAS_OK && t == 0);
     assert(sample().hide_count == hide_before && sample().owned == 0);
     balanced();
     // alive reporting not-alive also refuses without hiding.
     h = build_gui(&detailsClass, kStateOpen); arm();
     g_live = false; t = 7;
-    assert(api->hide_opening(h, 7, tid, &t) == PGR_CANVAS_OK && t == 0 && sample().owned == 0);
+    assert(api->hide_opening(h, 7, tid, &t) == PGS_CANVAS_OK && t == 0 && sample().owned == 0);
     balanced(); }
 
-  const auto *alpha=static_cast<const PgrCatchCanvasApi3*>(core->query_feature(39,3));assert(alpha&&alpha->size==16);
-  PgrCatchCanvasAlphaConfig ac{1,sizeof(ac),reinterpret_cast<void*>(target_alpha),&f_root_group,&f_native_group,&groupClass};
+  const auto *alpha=static_cast<const PgsCatchCanvasApi3*>(core->query_feature(39,3));assert(alpha&&alpha->size==16);
+  PgsCatchCanvasAlphaConfig ac{1,sizeof(ac),reinterpret_cast<void*>(target_alpha),&f_root_group,&f_native_group,&groupClass};
   assert(alpha->install_alpha(&ac)==0&&alpha->install_alpha(&ac)==0);
   // 15. Successful summary opening uses the same mask and restores on release.
   { void *h = build_gui(&summaryClass, kStateOpen); arm();
     uint64_t t = 7;
-    assert(api->hide_opening(h, 7, tid, &t) == PGR_CANVAS_HIDDEN && t && sample().owned == 1);
+    assert(api->hide_opening(h, 7, tid, &t) == PGS_CANVAS_HIDDEN && t && sample().owned == 1);
     assert(!g_canvas.last_visible);
     const auto invokes=g_runtime_invoke_calls;
     call_alpha(&native_group_token,0.7f);assert(last_alpha==0.0f&&g_runtime_invoke_calls==invokes);
     call_alpha(&unrelated_native_group,0.7f);assert(last_alpha==0.7f);
     std::thread foreign([&](){call_alpha(&native_group_token,0.6f);assert(last_alpha==0.6f);});foreign.join();
-    assert(api->release(t, tid) == PGR_CANVAS_OK);
+    assert(api->release(t, tid) == PGS_CANVAS_OK);
     assert(g_canvas.last_visible && sample().owned == 0);call_alpha(&native_group_token,0.8f);assert(last_alpha==0.8f); balanced(); }
   // OFF revokes alpha masking immediately, before owner-thread cleanup.
   {void *h=build_gui(&summaryClass,kStateOpen);arm();uint64_t t=0;
-   assert(api->hide_opening(h,7,tid,&t)==PGR_CANVAS_HIDDEN);
+   assert(api->hide_opening(h,7,tid,&t)==PGS_CANVAS_HIDDEN);
    call_alpha(&native_group_token,1.0f);assert(last_alpha==0.0f);
    assert(api->stop()==0);call_alpha(&native_group_token,0.9f);assert(last_alpha==0.9f);
    assert(api->tick(tid)==0);assert(g_canvas.last_visible);balanced();}
   // Unrelated GUI classes must remain visible.
   { void *h = build_gui(&otherClass, kStateOpen); arm(); uint64_t t = 7;
-    assert(api->hide_opening(h, 7, tid, &t) == PGR_CANVAS_OK && t == 0 && sample().owned == 0);
-    assert(api->stop() == PGR_CANVAS_OK); balanced(); }
+    assert(api->hide_opening(h, 7, tid, &t) == PGS_CANVAS_OK && t == 0 && sample().owned == 0);
+    assert(api->stop() == PGS_CANVAS_OK); balanced(); }
 
-  { assert(api->stop() == PGR_CANVAS_OK); g_handles.clear(); g_host.clear(); }
+  { assert(api->stop() == PGS_CANVAS_OK); g_handles.clear(); g_host.clear(); }
   //16. Immutable native onEnter fan-out uses the SAME Dobby owner. Callback GC
   //relocates receiver; original sees refreshed identity exactly once. Its native
   //exception unwinds the39 temporary root and observed-frame gauge.
-  const auto *observer_api=static_cast<const PgrCatchCanvasApi2*>(core->query_feature(39,2));
+  const auto *observer_api=static_cast<const PgsCatchCanvasApi2*>(core->query_feature(39,2));
   assert(observer_api&&observer_api->version==2&&observer_api->size==16);
-  PgrCatchCanvasObserver observer{1,sizeof(observer),observer_filter,observer_enter,nullptr};
-  assert(observer_api->subscribe(nullptr)==PGR_CANVAS_ERR_NULL_ARG);
+  PgsCatchCanvasObserver observer{1,sizeof(observer),observer_filter,observer_enter,nullptr};
+  assert(observer_api->subscribe(nullptr)==PGS_CANVAS_ERR_NULL_ARG);
   assert(observer_api->subscribe(&observer)==0&&observer_api->subscribe(&observer)==0);
   auto changed_observer=observer;changed_observer.context=&g_canvas;
-  assert(observer_api->subscribe(&changed_observer)==PGR_CANVAS_ERR_RECONFIG);
+  assert(observer_api->subscribe(&changed_observer)==PGS_CANVAS_ERR_RECONFIG);
   {build_gui(&detailsClass,kStateOpen);g_canvas={};g_observer_move=true;
    call_set_canvas(&cur(),true,&g_game_mi);
    assert(g_observer_calls==1&&g_cur==1&&g_canvas.count==1&&g_canvas.last_self==&cur()&&g_canvas.last_visible&&g_canvas.last_mi==&g_game_mi);

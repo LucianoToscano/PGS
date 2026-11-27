@@ -21,13 +21,13 @@
 // encounter screen. Every request goes through the game's own quest services or RPC handler, one at a
 // time. The field research catalog (template, localized task text, reward) is published for the
 // settings list. Caught Pokemon go through the VGP transfer handoff, honoring Keep All.
-extern "C" int pgr_research_transfer_caught(uint64_t,uint64_t,uint64_t,uint64_t,uint64_t,uint64_t,int);
+extern "C" int pgs_research_transfer_caught(uint64_t,uint64_t,uint64_t,uint64_t,uint64_t,uint64_t,int);
 namespace {
-using namespace pgr_shared_meta;
+using namespace pgs_shared_meta;
 struct Failure {const char *where;};
 void require(bool ok,const char *where){if(!ok)throw Failure{where};}
 template<class F>F fn(void *p){require(p,"missing runtime export");return reinterpret_cast<F>(p);}
-PgrBootBinding boot{};const PgrSharedMetadataOutput *md=nullptr;
+PgsBootBinding boot{};const PgsSharedMetadataOutput *md=nullptr;
 uint64_t owner=0;bool busy=false,ready=false;
 constexpr uint64_t kScanMs=2000,kRetryMs=10000,kTimeoutMs=20000,kGapMs=1500,kWindowMs=600000;
 // Claims, removals and encounter catches all count; an event that hands out a task per stop needs room.
@@ -48,9 +48,9 @@ void *klass(void *o){require(o,"null object");return fn<void*(*)(void*)>(boot.ru
 std::string class_name(void *o){return fn<const char*(*)(void*)>(exp("class_get_name"))(klass(o));}
 void *cls(const char *ns,const char *name){
  static std::map<std::string,void*> cache;std::string key=std::string(ns)+"."+name;auto it=cache.find(key);if(it!=cache.end())return it->second;
- const auto *api=static_cast<const PgrMetaApi*>(pgs_runtime_metadata_api(1));require(api,"metadata API");
- PgrMetaClassQuery q{};q.version=1;q.size=sizeof(q);q.name_space=ns;q.name=name;q.canonical_match=PGR_MD_MATCH_EXACT;
- PgrMetaClassResult out{};require(api->resolve_class(&q,&out)==0,name);return cache[key]=const_cast<void*>(out.klass);
+ const auto *api=static_cast<const PgsMetaApi*>(pgs_runtime_metadata_api(1));require(api,"metadata API");
+ PgsMetaClassQuery q{};q.version=1;q.size=sizeof(q);q.name_space=ns;q.name=name;q.canonical_match=PGS_MD_MATCH_EXACT;
+ PgsMetaClassResult out{};require(api->resolve_class(&q,&out)==0,name);return cache[key]=const_cast<void*>(out.klass);
 }
 std::string typename_of(void *type){char *p=fn<char*(*)(void*)>(boot.meta.type_get_name)(type);require(p,"type name");std::string s=p;fn<void(*)(void*)>(boot.meta.mem_free)(p);return s;}
 void *field_info(void *o,const char *name){void *f=fn<void*(*)(void*,const char*)>(boot.meta.class_get_field_from_name)(klass(o),name);require(f,name);require(!(fn<int(*)(void*)>(boot.meta.field_get_flags)(f)&0x10),name);return f;}
@@ -97,18 +97,18 @@ Root resolve(const char *ns,const char *name){
 int count(void *list,unsigned cap){int n=unbox<int>(call(list,"get_Count"));require(n>=0&&unsigned(n)<=cap,"collection bound");return n;}
 Root item(void *list,int index){void *args[]={&index};return Root(call(list,"get_Item",1,args));}
 std::string quote(const std::string &s){std::string out="\"";for(unsigned char c:s){if(c=='"'||c=='\\')out+='\\';if(c>=32)out+=char(c);}return out+'"';}
-const PgrRuntimeTransportApi *transport(){return static_cast<const PgrRuntimeTransportApi*>(pgs_runtime_transport_api(1));}
-void event(const std::string &json){auto tr=transport();if(!tr)return;PgrRuntimeTransportString strings[]={{"research",8},{json.c_str(),uint32_t(json.size())}};tr->emit(19,nullptr,0,strings,2);}
+const PgsRuntimeTransportApi *transport(){return static_cast<const PgsRuntimeTransportApi*>(pgs_runtime_transport_api(1));}
+void event(const std::string &json){auto tr=transport();if(!tr)return;PgsRuntimeTransportString strings[]={{"research",8},{json.c_str(),uint32_t(json.size())}};tr->emit(19,nullptr,0,strings,2);}
 void status(const char *phase,const std::string &message,const std::string &templ=""){
  event("{\"kind\":\"research\",\"phase\":"+quote(phase)+",\"template\":"+quote(templ)+",\"message\":"+quote(message)+"}");}
 // The snapshot config, read between two equal fresh samples. Invalid or stale means no actions.
-pgr_research::Config config(){
- pgr_research::Config c;auto tr=transport();if(!tr)return c;PgrRuntimeTransportSample a{},z{};
+pgs_research::Config config(){
+ pgs_research::Config c;auto tr=transport();if(!tr)return c;PgsRuntimeTransportSample a{},z{};
  if(tr->sample(&a)||!a.snapshot_fresh||a.fault)return c;
- static char s[pgr_research::kMaxTemplates*(pgr_research::kMaxTemplateBytes+1)+16];uint32_t n=0;
+ static char s[pgs_research::kMaxTemplates*(pgs_research::kMaxTemplateBytes+1)+16];uint32_t n=0;
  if(tr->get_string(13,s,sizeof(s),&n)||n>=sizeof(s))return c;
  if(tr->sample(&z)||!z.snapshot_fresh||z.fault||a.snapshot_seq!=z.snapshot_seq)return c;
- pgr_research::Config parsed;if(n&&pgr_research::parse(s,n,parsed))c=parsed;return c;
+ pgs_research::Config parsed;if(n&&pgs_research::parse(s,n,parsed))c=parsed;return c;
 }
 // VGP+ ball, throw rating and curveball (transport slot 7: <version>;enabled;ball;berry;premium;cp;level;grade;curve;...).
 // The first nine fields are the same in versions 1 to 6 (see smart_catch.h); later fields such as VGP+
@@ -130,7 +130,7 @@ struct State {
  std::string enc_id;uint64_t enc_pokemon=0;int throws=0;Throw ball;
  std::set<std::string> enc_handled;  // waiting encounters already attempted; never attempted twice
  int challenge=-1,active=-1;
- Root promise;pgr_research::Action pending=pgr_research::NONE;std::string pending_templ;uint64_t since=0;
+ Root promise;pgs_research::Action pending=pgs_research::NONE;std::string pending_templ;uint64_t since=0;
  std::set<std::string> handled;      // quest instances requested (or given up on); not requested again
  std::string pending_id;std::map<std::string,int> failed;std::map<std::string,uint64_t> not_before;  // removal retries
  std::map<std::string,std::string> labels;  // template -> "task text|reward", localized once
@@ -199,17 +199,17 @@ std::string label(void *quest,const std::string &id,const std::string &templ,int
  std::string reward;try{reward=reward_label(quest,encounter);}catch(const Failure&){complete=false;}
  if(!tags.empty())reward+=(reward.empty()?"":" · ")+tags;
  const std::string out=std::string(1,tagged?'v':encounter?'e':'i')+task+"|"+reward;
- if(complete){if(st.labels.size()>=pgr_research::kMaxTemplates)st.labels.clear();st.labels[templ]=out;}
+ if(complete){if(st.labels.size()>=pgs_research::kMaxTemplates)st.labels.clear();st.labels[templ]=out;}
  return out;
 }
 // Active field research, read from the game's own quest cache.
-std::vector<pgr_research::Quest> field_research(){
+std::vector<pgs_research::Quest> field_research(){
  Root qp(call(st.quests.get(),"get_QuestsProto"));require(bool(qp)&&class_name(qp.get())=="QuestsProto","Quest list identity");
  Root list(object_field(qp.get(),"Quest","Niantic.Protobuf.Collections.RepeatedField<Holoholo.Rpc.QuestProto>"));require(bool(list),"Quest list");
- const int n=count(list.get(),kMaxQuests);std::vector<pgr_research::Quest> out;std::string catalog;
+ const int n=count(list.get(),kMaxQuests);std::vector<pgs_research::Quest> out;std::string catalog;
  for(int i=0;i<n;i++){
   Root q=item(list.get(),i);require(q&&class_name(q.get())=="QuestProto","Quest identity");
-  void *context_class=nullptr,*status_class=nullptr;pgr_research::Quest f;
+  void *context_class=nullptr,*status_class=nullptr;pgs_research::Quest f;
   f.context=enum_field(q.get(),"QuestContext","Holoholo.Rpc.QuestProto.Types.Context",&context_class);
   if(st.challenge<0)st.challenge=literal(context_class,"ChallengeQuest");
   if(f.context!=st.challenge)continue;
@@ -218,7 +218,7 @@ std::vector<pgr_research::Quest> field_research(){
   f.id=text(object_field(q.get(),"QuestId","System.String"));f.templ=text(object_field(q.get(),"TemplateId","System.String"));
   f.progress=field<int>(q.get(),"Progress","System.Int32");f.bonus=field<uint8_t>(q.get(),"IsBonusChallenge","System.Boolean")!=0;
   if(void *goal=object_field(q.get(),"Goal","Holoholo.Rpc.QuestGoalProto")){Root g(goal);f.target=field<int>(g.get(),"Target","System.Int32");}
-  bool valid=!f.templ.empty()&&f.templ.size()<=pgr_research::kMaxTemplateBytes;for(char c:f.templ)valid=valid&&pgr_research::template_char(c);
+  bool valid=!f.templ.empty()&&f.templ.size()<=pgs_research::kMaxTemplateBytes;for(char c:f.templ)valid=valid&&pgs_research::template_char(c);
   if(!valid)continue;
   if(!f.bonus){const std::string l=label(q.get(),f.id,f.templ,f.target);const auto bar=l.find('|');
    catalog+=(catalog.empty()?"":",")+std::string("{\"t\":")+quote(f.templ)+",\"d\":"+quote(l.substr(1,bar-1))+",\"r\":"+quote(l.substr(bar+1))+",\"c\":\""+l[0]+"\"}";}
@@ -227,10 +227,10 @@ std::vector<pgr_research::Quest> field_research(){
  if(catalog!=st.catalog){st.catalog=catalog;event("{\"kind\":\"research\",\"phase\":\"catalog\",\"tasks\":["+catalog+"]}");}
  return out;
 }
-void submit(const pgr_research::Quest &q,pgr_research::Action action){
+void submit(const pgs_research::Quest &q,pgs_research::Action action){
  Root id=managed_string(q.id);st.handled.insert(q.id);
  st.pending=action;st.pending_templ=q.templ;st.pending_id=q.id;st.since=clock_ms();++st.actions;
- if(action==pgr_research::CLAIM){
+ if(action==pgs_research::CLAIM){
   // The game's own claim path: no sub quest, no branch choice, a full stamp card is not bypassed.
   Root sub=managed_string("");bool exclusive=false,bypass=false;struct {uint8_t has;int32_t value;} choice{0,0};uint64_t pokemon=0;
   void *args[]={id.get(),sub.get(),&exclusive,&choice,&bypass,&pokemon};
@@ -239,24 +239,24 @@ void submit(const pgr_research::Quest &q,pgr_research::Action action){
  require(bool(st.promise),"Request outcome unknown; not retried");
 }
 void finish(bool ok,const std::string &message){
- const bool claim=st.pending==pgr_research::CLAIM;std::string msg=message;
- if(!ok&&st.pending==pgr_research::REMOVE&&!st.pending_id.empty()){
-  if(const uint64_t delay=pgr_research::remove_retry_ms(++st.failed[st.pending_id])){
+ const bool claim=st.pending==pgs_research::CLAIM;std::string msg=message;
+ if(!ok&&st.pending==pgs_research::REMOVE&&!st.pending_id.empty()){
+  if(const uint64_t delay=pgs_research::remove_retry_ms(++st.failed[st.pending_id])){
    st.handled.erase(st.pending_id);st.not_before[st.pending_id]=clock_ms()+delay;
    const auto cut=msg.find("; not retried");if(cut!=std::string::npos)msg.erase(cut);
    msg+="; retrying in "+std::to_string(delay/1000)+" s";
   }
  }
  status(ok?(claim?"claimed":"removed"):"error",msg,st.pending_templ);
- st.promise.reset();st.pending=pgr_research::NONE;st.pending_templ.clear();st.pending_id.clear();
+ st.promise.reset();st.pending=pgs_research::NONE;st.pending_templ.clear();st.pending_id.clear();
  st.next_action=clock_ms()+kGapMs;st.next_scan=0;
 }
 void poll(uint64_t tid){
- auto api=static_cast<const PgrVgpResultsApi*>(pgs_vgp_results_api(1));require(api,"Promise observer unavailable");
- PgrVgpResultsResult out{};const int rc=api->poll(st.promise.get(),1,tid,&out);Root result;result.h=out.value_handle;
- const bool claim=st.pending==pgr_research::CLAIM;
+ auto api=static_cast<const PgsVgpResultsApi*>(pgs_vgp_results_api(1));require(api,"Promise observer unavailable");
+ PgsVgpResultsResult out{};const int rc=api->poll(st.promise.get(),1,tid,&out);Root result;result.h=out.value_handle;
+ const bool claim=st.pending==pgs_research::CLAIM;
  if(!rc){if(clock_ms()-st.since>=kTimeoutMs)finish(false,"Request outcome unknown; not retried");return;}
- if(rc!=PGR_VR_DONE||!result){finish(false,claim?"Claim failed; not retried":"Removal failed; not retried");return;}
+ if(rc!=PGS_VR_DONE||!result){finish(false,claim?"Claim failed; not retried":"Removal failed; not retried");return;}
  require(class_name(result.get())==(claim?"CompleteQuestOutProto":"RemoveQuestOutProto"),"Quest response identity");
  void *k=nullptr;const int value=enum_field(result.get(),"Status",claim?"Holoholo.Rpc.CompleteQuestOutProto.Types.Status":"Holoholo.Rpc.RemoveQuestOutProto.Types.Status",&k);
  if(value==literal(k,"Success"))finish(true,claim?"Claimed field research reward":"Removed unwanted field research");
@@ -287,7 +287,7 @@ bool begin_encounter(){
   if(type!=literal(k,"ChallengeQuest"))continue;  // field research rewards only; weekly/party and other encounters stay manual
   Root pokemon(object_field(e.get(),"Pokemon","Holoholo.Rpc.PokemonProto"));require(bool(pokemon),"Encounter Pokemon");
   st.ball=throw_settings();if(!available_ball(st.ball.ball)){status("error","No Poké, Great or Ultra Balls left; encounters wait");st.next_action=clock_ms()+kRetryMs*6;return false;}
-  st.enc_handled.insert(id);st.enc_id=id;st.enc_pokemon=field<uint64_t>(pokemon.get(),PGR_GAME_SHARED_METADATA_CPP_H_DET_ID_NAME,"System.UInt64");require(st.enc_pokemon!=0,"Encounter id");
+  st.enc_handled.insert(id);st.enc_id=id;st.enc_pokemon=field<uint64_t>(pokemon.get(),PGS_GAME_SHARED_METADATA_CPP_H_DET_ID_NAME,"System.UInt64");require(st.enc_pokemon!=0,"Encounter id");
   st.encounter=std::move(e);st.throws=0;
   void *args[]={st.encounter.get()};st.promise=Root(call(st.rpc.get(),"BeginQuestEncounter",1,args));require(bool(st.promise),"Encounter outcome unknown; not retried");
   st.enc=E_BEGIN;st.since=clock_ms();++st.actions;return true;
@@ -297,7 +297,7 @@ bool begin_encounter(){
 // The game's typed RPC handler, closed over CatchPokemonProto -> CatchPokemonOutProto once.
 void *catch_sender(Root &rpc){
  Root bag=resolve("Niantic.Holoholo","IItemBag");require(bool(bag),"item bag unavailable");
- rpc=Root(field<void*>(bag.get(),PGR_GAME_GYM_RUNTIME_CPP_ERHP_NAME,"Niantic.Holoholo.Rpc.IRpcHandler"));require(bool(rpc),"RPC unavailable");
+ rpc=Root(field<void*>(bag.get(),PGS_GAME_GYM_RUNTIME_CPP_ERHP_NAME,"Niantic.Holoholo.Rpc.IRpcHandler"));require(bool(rpc),"RPC unavailable");
  if(st.send_method)return st.send_method;
  void *open=method(rpc.get(),"SendRpc",5);require(fn<bool(*)(void*)>(boot.meta.method_is_generic)(open),"generic RPC");
  Root reflected(fn<void*(*)(void*,void*)>(exp("method_get_object"))(open,klass(rpc.get())));
@@ -335,17 +335,17 @@ void transfer_caught(uint64_t tid){
  if(rc==PGS_VX_OK){if(clock_ms()-st.since>=kTransferMs)enc_done("Caught; transfer inventory update timed out",true);return;}
  if(rc!=PGS_VX_SUCCESS){enc_done("Caught; transfer skipped",true);return;}
  Root response(st.catch_response.get()),bag(st.pokemon_bag.get());
- if(pgr_research_transfer_caught(out.caught_id,response.h,bag.h,out.pokemon_handle,out.gm_handle,tid,keep_all()?1:0)){
+ if(pgs_research_transfer_caught(out.caught_id,response.h,bag.h,out.pokemon_handle,out.gm_handle,tid,keep_all()?1:0)){
   response.h=0;bag.h=0;enc_done("Caught research encounter; checking transfer rules",true);return;}
  fn<void(*)(uintptr_t)>(boot.runtime.gchandle_free)(out.pokemon_handle);fn<void(*)(uintptr_t)>(boot.runtime.gchandle_free)(out.gm_handle);
  if(clock_ms()-st.since>=kTransferMs)enc_done("Caught; transfer busy",true);
 }
 void poll_encounter(uint64_t tid){
  if(st.enc==E_TRANSFER){transfer_caught(tid);return;}
- auto api=static_cast<const PgrVgpResultsApi*>(pgs_vgp_results_api(1));require(api,"Promise observer unavailable");
- PgrVgpResultsResult out{};const int rc=api->poll(st.promise.get(),1,tid,&out);Root result;result.h=out.value_handle;
+ auto api=static_cast<const PgsVgpResultsApi*>(pgs_vgp_results_api(1));require(api,"Promise observer unavailable");
+ PgsVgpResultsResult out{};const int rc=api->poll(st.promise.get(),1,tid,&out);Root result;result.h=out.value_handle;
  if(!rc){if(clock_ms()-st.since>=kTimeoutMs)enc_done("Encounter outcome unknown; not retried",false);return;}
- if(rc!=PGR_VR_DONE||!result){enc_done(st.enc==E_BEGIN?"Encounter failed; not retried":"Catch failed; not retried",false);return;}
+ if(rc!=PGS_VR_DONE||!result){enc_done(st.enc==E_BEGIN?"Encounter failed; not retried":"Catch failed; not retried",false);return;}
  st.promise.reset();void *k=nullptr;
  if(st.enc==E_BEGIN){
   require(class_name(result.get())=="QuestEncounterOutProto","Encounter response identity");
@@ -361,7 +361,7 @@ void poll_encounter(uint64_t tid){
 }
 
 void step(uint64_t tid){
- if(!ready){auto api=static_cast<const PgrBootApi*>(pgs_runtime_bootstrap_api(1));boot.version=1;boot.size=sizeof(boot);require(md&&api&&api->snapshot(&boot)==0,"Runtime unavailable");ready=true;}
+ if(!ready){auto api=static_cast<const PgsBootApi*>(pgs_runtime_bootstrap_api(1));boot.version=1;boot.size=sizeof(boot);require(md&&api&&api->snapshot(&boot)==0,"Runtime unavailable");ready=true;}
  if(!services())return;
  if(st.enc!=E_IDLE){poll_encounter(tid);return;}
  if(st.promise){poll(tid);return;}
@@ -380,10 +380,10 @@ void step(uint64_t tid){
  // Claims first; one request at a time, each quest instance at most once. While the game is busy
  // completing an exclusive quest, claims wait but removals still go ahead.
  bool claims_wait=false;
- for(auto wanted:{pgr_research::CLAIM,pgr_research::REMOVE})
+ for(auto wanted:{pgs_research::CLAIM,pgs_research::REMOVE})
   for(const auto &q:quests)
-   if(!st.handled.count(q.id)&&!(st.not_before.count(q.id)&&now<st.not_before[q.id])&&pgr_research::decide(q,c,st.challenge,st.active)==wanted){
-    if(wanted==pgr_research::CLAIM){
+   if(!st.handled.count(q.id)&&!(st.not_before.count(q.id)&&now<st.not_before[q.id])&&pgs_research::decide(q,c,st.challenge,st.active)==wanted){
+    if(wanted==pgs_research::CLAIM){
      if(claims_wait)continue;
      if(unbox<bool>(call(st.quests.get(),"get_ExclusiveQuestCompletionInProgress"))){
       claims_wait=true;
@@ -399,14 +399,14 @@ void step(uint64_t tid){
  if(c.catch_encounters)begin_encounter();
 }
 }  // namespace
-void pgr_research_tick(uint64_t tid,const PgrSharedMetadataOutput *metadata){
+void pgs_research_tick(uint64_t tid,const PgsSharedMetadataOutput *metadata){
  if(busy||!tid||tid!=uint64_t(gettid())||(owner&&owner!=tid))return;
  struct Guard{Guard(){busy=true;}~Guard(){busy=false;}}guard;
  owner=tid;md=metadata;
  try{step(tid);}
  catch(const Failure &e){
-  if(st.enc!=E_IDLE)enc_done(e.where,false);else if(st.pending!=pgr_research::NONE)finish(false,e.where);else status("error",e.where);
+  if(st.enc!=E_IDLE)enc_done(e.where,false);else if(st.pending!=pgs_research::NONE)finish(false,e.where);else status("error",e.where);
   st.next_scan=clock_ms()+kRetryMs;
- }catch(...){st.promise.reset();st.pending=pgr_research::NONE;st.enc=E_IDLE;st.encounter.reset();st.catch_response.reset();status("error","Research stopped: native failure");st.next_scan=clock_ms()+kRetryMs;}
+ }catch(...){st.promise.reset();st.pending=pgs_research::NONE;st.enc=E_IDLE;st.encounter.reset();st.catch_response.reset();status("error","Research stopped: native failure");st.next_scan=clock_ms()+kRetryMs;}
 }
-void pgr_research_stop(){if(owner&&owner!=uint64_t(gettid()))return;if(!busy){st.promise.reset();st.pending=pgr_research::NONE;st.enc=E_IDLE;st.encounter.reset();st.catch_response.reset();}}
+void pgs_research_stop(){if(owner&&owner!=uint64_t(gettid()))return;if(!busy){st.promise.reset();st.pending=pgs_research::NONE;st.enc=E_IDLE;st.encounter.reset();st.catch_response.reset();}}

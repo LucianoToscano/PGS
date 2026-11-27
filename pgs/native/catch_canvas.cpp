@@ -17,22 +17,22 @@
 // becomes a fail-closed refusal. No mutex is held across runtime_invoke, a field read or a GC op; the
 // hook NEVER invokes a managed method or JS and NEVER latches the owner.
 
-static_assert(sizeof(PgrCatchCanvasConfig) == 128, "config must be 128 bytes");
-static_assert(sizeof(PgrCatchCanvasSample) == 40, "sample must be 40 bytes");
-static_assert(sizeof(PgrCatchCanvasApi) == 72, "table must be 72 bytes");
-static_assert(offsetof(PgrCatchCanvasConfig, object_get_class) == 8, "layout");
-static_assert(offsetof(PgrCatchCanvasConfig, class_summary) == 64, "layout");
-static_assert(offsetof(PgrCatchCanvasConfig, f_current_state) == 88, "layout");
-static_assert(offsetof(PgrCatchCanvasConfig, canvas_address) == 112, "layout");
-static_assert(offsetof(PgrCatchCanvasConfig, state_open) == 120, "layout");
-static_assert(offsetof(PgrCatchCanvasConfig, reserved0) == 124, "layout");
-static_assert(offsetof(PgrCatchCanvasSample, masked_count) == 16, "layout");
-static_assert(offsetof(PgrCatchCanvasSample, hide_count) == 24, "layout");
-static_assert(offsetof(PgrCatchCanvasSample, restore_count) == 32, "layout");
+static_assert(sizeof(PgsCatchCanvasConfig) == 128, "config must be 128 bytes");
+static_assert(sizeof(PgsCatchCanvasSample) == 40, "sample must be 40 bytes");
+static_assert(sizeof(PgsCatchCanvasApi) == 72, "table must be 72 bytes");
+static_assert(offsetof(PgsCatchCanvasConfig, object_get_class) == 8, "layout");
+static_assert(offsetof(PgsCatchCanvasConfig, class_summary) == 64, "layout");
+static_assert(offsetof(PgsCatchCanvasConfig, f_current_state) == 88, "layout");
+static_assert(offsetof(PgsCatchCanvasConfig, canvas_address) == 112, "layout");
+static_assert(offsetof(PgsCatchCanvasConfig, state_open) == 120, "layout");
+static_assert(offsetof(PgsCatchCanvasConfig, reserved0) == 124, "layout");
+static_assert(offsetof(PgsCatchCanvasSample, masked_count) == 16, "layout");
+static_assert(offsetof(PgsCatchCanvasSample, hide_count) == 24, "layout");
+static_assert(offsetof(PgsCatchCanvasSample, restore_count) == 32, "layout");
 
 namespace {
 
-constexpr uint64_t kMaxLeaseMs = PGR_CANVAS_MAX_LEASE_MS;
+constexpr uint64_t kMaxLeaseMs = PGS_CANVAS_MAX_LEASE_MS;
 constexpr int kConfigPtrCount = 14;  // validated pointers between the header and state_open
 constexpr uint64_t kTokenCeiling = (uint64_t{1} << 53) - 1;
 
@@ -52,14 +52,14 @@ enum { ALIVE_FALSE = 0, ALIVE_TRUE = 1, ALIVE_ERR = -1 };
 // --- lifetime / publication --------------------------------------------------------
 std::mutex g_install_mutex;
 std::mutex g_state_mutex;
-PgrCatchCanvasConfig g_cfg{};
+PgsCatchCanvasConfig g_cfg{};
 std::atomic<bool> g_installed{false};
 std::mutex g_observer_mutex;
-PgrCatchCanvasObserver g_observer{};
+PgsCatchCanvasObserver g_observer{};
 std::atomic<bool> g_observer_ready{false};
 std::atomic<uint32_t> g_observer_frames{0};
 bool g_install_attempted = false;
-int g_install_error = PGR_CANVAS_ERR_NOT_INSTALLED;
+int g_install_error = PGS_CANVAS_ERR_NOT_INSTALLED;
 
 // The original set_CanvasGroupVisible, published atomically before the bound address goes live.
 std::atomic<CanvasSetterFn> g_orig_canvas{nullptr};
@@ -81,7 +81,7 @@ struct Slot {
   uint64_t epoch = 0;
   uint64_t token = 0;
 };
-Slot g_slots[PGR_CANVAS_MAX_SLOTS]{};
+Slot g_slots[PGS_CANVAS_MAX_SLOTS]{};
 
 // --- telemetry mirrors (atomic so sample is lock-free) -----------------------------
 std::atomic<uint32_t> g_owned{0}, g_fault{0};
@@ -210,27 +210,27 @@ bool gate_live_locked(uint64_t req_epoch, uint64_t tid, uint64_t now) {
 // --- owner-thread-only slot helpers (no lock; owner thread serialises them) --------
 int find_slot_by_object(void *obj) {
   if (obj == nullptr) return -1;
-  for (int i = 0; i < PGR_CANVAS_MAX_SLOTS; ++i) {
+  for (int i = 0; i < PGS_CANVAS_MAX_SLOTS; ++i) {
     if (g_slots[i].handle != 0 && gc_get(g_slots[i].handle) == obj) return i;
   }
   return -1;
 }
 int find_slot_by_token(uint64_t token) {
   if (token == 0) return -1;
-  for (int i = 0; i < PGR_CANVAS_MAX_SLOTS; ++i) {
+  for (int i = 0; i < PGS_CANVAS_MAX_SLOTS; ++i) {
     if (g_slots[i].handle != 0 && g_slots[i].token == token) return i;
   }
   return -1;
 }
 int find_free_slot() {
-  for (int i = 0; i < PGR_CANVAS_MAX_SLOTS; ++i) {
+  for (int i = 0; i < PGS_CANVAS_MAX_SLOTS; ++i) {
     if (g_slots[i].handle == 0) return i;
   }
   return -1;
 }
 void refresh_owned() {
   uint32_t n = 0;
-  for (int i = 0; i < PGR_CANVAS_MAX_SLOTS; ++i) {
+  for (int i = 0; i < PGS_CANVAS_MAX_SLOTS; ++i) {
     if (g_slots[i].handle != 0) ++n;
   }
   g_owned.store(n, std::memory_order_relaxed);
@@ -313,7 +313,7 @@ void hook_set_canvas(void *self, bool visible, void *method_info) {
 
 using AlphaSetter = void (*)(void *,float);
 std::atomic<AlphaSetter> g_alpha_original{nullptr};
-PgrCatchCanvasAlphaConfig g_alpha{};
+PgsCatchCanvasAlphaConfig g_alpha{};
 std::mutex g_alpha_mutex;
 void hook_alpha(void *native_group,float value){
  auto original=g_alpha_original.load(std::memory_order_acquire);
@@ -321,7 +321,7 @@ void hook_alpha(void *native_group,float value){
  if(!original) return;
  const auto owner=g_owner_tid.load(std::memory_order_acquire);
  if(native_group&&owner&&current_tid()==owner){
-  for(int i=0;i<PGR_CANVAS_MAX_SLOTS;++i){
+  for(int i=0;i<PGS_CANVAS_MAX_SLOTS;++i){
    void *gui=g_slots[i].handle?gc_get(g_slots[i].handle):nullptr;
    if(!is_summary_or_details(gui)||!hook_should_mask(gui))continue;
    void *group=nullptr;field_get()(gui,g_alpha.root_group_field,&group);
@@ -332,44 +332,44 @@ void hook_alpha(void *native_group,float value){
  }
  original(native_group,value);
 }
-int install_alpha(const PgrCatchCanvasAlphaConfig *config){
- if(!config||config->version!=1||config->size!=sizeof(*config)||!config->address||!config->root_group_field||!config->cached_ptr_field||!config->group_class)return PGR_CANVAS_ERR_MISSING_PTR;
- if(!g_installed.load(std::memory_order_acquire))return PGR_CANVAS_ERR_NOT_INSTALLED;
+int install_alpha(const PgsCatchCanvasAlphaConfig *config){
+ if(!config||config->version!=1||config->size!=sizeof(*config)||!config->address||!config->root_group_field||!config->cached_ptr_field||!config->group_class)return PGS_CANVAS_ERR_MISSING_PTR;
+ if(!g_installed.load(std::memory_order_acquire))return PGS_CANVAS_ERR_NOT_INSTALLED;
  std::lock_guard<std::mutex> lock(g_alpha_mutex);
- if(g_alpha_original.load())return std::memcmp(config,&g_alpha,sizeof(g_alpha))?PGR_CANVAS_ERR_RECONFIG:0;
+ if(g_alpha_original.load())return std::memcmp(config,&g_alpha,sizeof(g_alpha))?PGS_CANVAS_ERR_RECONFIG:0;
  g_alpha=*config;void *original=nullptr;
  const int rc=pgs_hook(config->address,reinterpret_cast<void*>(hook_alpha),&original);
  if(rc||!original)return -10;
  g_alpha_original.store(reinterpret_cast<AlphaSetter>(original),std::memory_order_release);return 0;
 }
-const PgrCatchCanvasApi3 kApi3{3,sizeof(PgrCatchCanvasApi3),install_alpha};
+const PgsCatchCanvasApi3 kApi3{3,sizeof(PgsCatchCanvasApi3),install_alpha};
 
 // --- install -----------------------------------------------------------------------
-bool validate_config(const PgrCatchCanvasConfig *c, int *rc) {
-  if (c == nullptr) { *rc = PGR_CANVAS_ERR_NULL_ARG; return false; }
-  if (c->version != PGR_CANVAS_CONFIG_VERSION) { *rc = PGR_CANVAS_ERR_BAD_VERSION; return false; }
-  if (c->size != sizeof(PgrCatchCanvasConfig)) { *rc = PGR_CANVAS_ERR_BAD_SIZE; return false; }
+bool validate_config(const PgsCatchCanvasConfig *c, int *rc) {
+  if (c == nullptr) { *rc = PGS_CANVAS_ERR_NULL_ARG; return false; }
+  if (c->version != PGS_CANVAS_CONFIG_VERSION) { *rc = PGS_CANVAS_ERR_BAD_VERSION; return false; }
+  if (c->size != sizeof(PgsCatchCanvasConfig)) { *rc = PGS_CANVAS_ERR_BAD_SIZE; return false; }
   void *ptrs[kConfigPtrCount];
-  std::memcpy(ptrs,reinterpret_cast<const unsigned char*>(c)+offsetof(PgrCatchCanvasConfig,object_get_class),sizeof(ptrs));
+  std::memcpy(ptrs,reinterpret_cast<const unsigned char*>(c)+offsetof(PgsCatchCanvasConfig,object_get_class),sizeof(ptrs));
   for (int i = 0; i < kConfigPtrCount; ++i) {
-    if (ptrs[i] == nullptr) { *rc = PGR_CANVAS_ERR_MISSING_PTR; return false; }
+    if (ptrs[i] == nullptr) { *rc = PGS_CANVAS_ERR_MISSING_PTR; return false; }
   }
-  if (c->reserved0!=0) { *rc=PGR_CANVAS_ERR_BAD_SIZE; return false; }
-  *rc = PGR_CANVAS_OK;
+  if (c->reserved0!=0) { *rc=PGS_CANVAS_ERR_BAD_SIZE; return false; }
+  *rc = PGS_CANVAS_OK;
   return true;
 }
 
-int api_install(const PgrCatchCanvasConfig *config) {
-  int rc = PGR_CANVAS_OK;
+int api_install(const PgsCatchCanvasConfig *config) {
+  int rc = PGS_CANVAS_OK;
   if (!validate_config(config, &rc)) return rc;
   uint64_t probe = 0;
-  if (!read_boottime_ms(&probe)) { g_fault.store(1, std::memory_order_relaxed); return PGR_CANVAS_ERR_CLOCK_FAILURE; }
+  if (!read_boottime_ms(&probe)) { g_fault.store(1, std::memory_order_relaxed); return PGS_CANVAS_ERR_CLOCK_FAILURE; }
 
   std::lock_guard<std::mutex> install_lock(g_install_mutex);
   if (g_installed.load(std::memory_order_acquire)) {
     std::lock_guard<std::mutex> state_lock(g_state_mutex);
-    if (std::memcmp(&g_cfg, config, sizeof(*config)) != 0) return PGR_CANVAS_ERR_RECONFIG;
-    return PGR_CANVAS_OK;
+    if (std::memcmp(&g_cfg, config, sizeof(*config)) != 0) return PGS_CANVAS_ERR_RECONFIG;
+    return PGS_CANVAS_OK;
   }
   if (g_install_attempted) return g_install_error;  // never re-hook after a partial failure
   g_install_attempted = true;
@@ -390,16 +390,16 @@ int api_install(const PgrCatchCanvasConfig *config) {
   if (hook_rc != 0 || orig == nullptr) {
     if (hook_rc == 0) pgs_unhook(g_cfg.canvas_address);
     g_fault.store(1, std::memory_order_relaxed);
-    return g_install_error = PGR_CANVAS_ERR_HOOK_FAILED;
+    return g_install_error = PGS_CANVAS_ERR_HOOK_FAILED;
   }
   g_orig_canvas.store(reinterpret_cast<CanvasSetterFn>(orig), std::memory_order_release);
 
   g_installed.store(true, std::memory_order_release);
-  return g_install_error = PGR_CANVAS_OK;
+  return g_install_error = PGS_CANVAS_OK;
 }
 
 int api_update(int enabled, uint64_t remaining, uint64_t epoch, uint64_t proven_tid) {
-  if (!g_installed.load(std::memory_order_acquire)) return PGR_CANVAS_ERR_NOT_INSTALLED;
+  if (!g_installed.load(std::memory_order_acquire)) return PGS_CANVAS_ERR_NOT_INSTALLED;
   uint64_t now = 0;
   const bool clock_ok = read_boottime_ms(&now);
   std::lock_guard<std::mutex> lock(g_state_mutex);
@@ -412,29 +412,29 @@ int api_update(int enabled, uint64_t remaining, uint64_t epoch, uint64_t proven_
     g_lease_until_ms = 0;
     if (on_owner) g_epoch = epoch;  // the owner may record a new epoch even while disabling
     if (!clock_ok) g_fault.store(1, std::memory_order_relaxed);
-    return clock_ok ? PGR_CANVAS_OK : PGR_CANVAS_ERR_CLOCK_FAILURE;
+    return clock_ok ? PGS_CANVAS_OK : PGS_CANVAS_ERR_CLOCK_FAILURE;
   }
   remaining = remaining > kMaxLeaseMs ? kMaxLeaseMs : remaining;
   if (!g_enabled || g_epoch != epoch || !remaining || !g_lease_until_ms || now >= g_lease_until_ms) ++g_gen;
   g_enabled = 1;
   g_lease_until_ms = remaining ? now + remaining : 0;
   g_epoch = epoch;
-  return PGR_CANVAS_OK;
+  return PGS_CANVAS_OK;
 }
 
 int api_hide_opening(void *gui, uint64_t epoch, uint64_t tid, uint64_t *out_token) {
   if (out_token != nullptr) *out_token = 0;
-  if (!g_installed.load(std::memory_order_acquire)) return PGR_CANVAS_ERR_NOT_INSTALLED;
-  if (gui == nullptr || out_token == nullptr) return PGR_CANVAS_ERR_NULL_ARG;
+  if (!g_installed.load(std::memory_order_acquire)) return PGS_CANVAS_ERR_NOT_INSTALLED;
+  if (gui == nullptr || out_token == nullptr) return PGS_CANVAS_ERR_NULL_ARG;
   const uint64_t cur = current_tid();
-  if (tid == 0 || cur != tid || !owner_ready(tid)) return PGR_CANVAS_OK;  // off-owner: refused, no free
+  if (tid == 0 || cur != tid || !owner_ready(tid)) return PGS_CANVAS_OK;  // off-owner: refused, no free
   uint64_t now = 0;
-  if (!read_boottime_ms(&now)) { g_fault.store(1, std::memory_order_relaxed); return PGR_CANVAS_ERR_CLOCK_FAILURE; }
+  if (!read_boottime_ms(&now)) { g_fault.store(1, std::memory_order_relaxed); return PGS_CANVAS_ERR_CLOCK_FAILURE; }
 
   uint64_t generation;
   {
     std::lock_guard<std::mutex> lock(g_state_mutex);
-    if (g_busy || !gate_live_locked(epoch, tid, now)) return PGR_CANVAS_OK;  // reentrant / gate: refused
+    if (g_busy || !gate_live_locked(epoch, tid, now)) return PGS_CANVAS_OK;  // reentrant / gate: refused
     g_busy = true;
     generation = g_gen;
   }
@@ -442,20 +442,20 @@ int api_hide_opening(void *gui, uint64_t epoch, uint64_t tid, uint64_t *out_toke
 
   // Duplicate the borrowed GUI into an own root and resolve the object.
   Root g;
-  if (!g.duplicate(gui)) return PGR_CANVAS_OK;  // root failure: refused
+  if (!g.duplicate(gui)) return PGS_CANVAS_OK;  // root failure: refused
   void *obj = g.get();
 
-  if (!is_summary_or_details(obj)) return PGR_CANVAS_OK;
+  if (!is_summary_or_details(obj)) return PGS_CANVAS_OK;
   // Reuse: a slot already owning this GUI at the current epoch keeps its token with no redundant set.
   int existing = find_slot_by_object(obj);
   if (existing >= 0) {
     if (g_slots[existing].epoch == epoch) {
-      if (alive_state(g)!=ALIVE_TRUE || !is_summary_or_details(g.get())) return PGR_CANVAS_OK;
+      if (alive_state(g)!=ALIVE_TRUE || !is_summary_or_details(g.get())) return PGS_CANVAS_OK;
       uint64_t current=0;
       std::lock_guard<std::mutex> lock(g_state_mutex);
-      if (!read_boottime_ms(&current) || g_gen!=generation || !gate_live_locked(epoch,tid,current)) return PGR_CANVAS_OK;
+      if (!read_boottime_ms(&current) || g_gen!=generation || !gate_live_locked(epoch,tid,current)) return PGS_CANVAS_OK;
       *out_token = g_slots[existing].token;
-      return PGR_CANVAS_HIDDEN;
+      return PGS_CANVAS_HIDDEN;
     }
     // A stale same-GUI root (older epoch) is our own root on the owner thread: restore+free it and re-hide.
     restore_and_free(detach_slot(existing));
@@ -463,22 +463,22 @@ int api_hide_opening(void *gui, uint64_t epoch, uint64_t tid, uint64_t *out_toke
   }
 
   // Identity: exact SGUI/DGUI + Unity alive. No STATE_OPEN gate (this may run while the canvas is opening).
-  if (!is_summary_or_details(obj)) return PGR_CANVAS_OK;
-  if (alive_state(g) != ALIVE_TRUE) return PGR_CANVAS_OK;
+  if (!is_summary_or_details(obj)) return PGS_CANVAS_OK;
+  if (alive_state(g) != ALIVE_TRUE) return PGS_CANVAS_OK;
   obj = g.get();  // re-resolve after the managed alive probe
-  if (!is_summary_or_details(obj)) return PGR_CANVAS_OK;
+  if (!is_summary_or_details(obj)) return PGS_CANVAS_OK;
 
   // Final gate re-check: a racing stop()/epoch change (generation move) or an expired lease refuses.
   {
     uint64_t now2 = 0;
     std::lock_guard<std::mutex> lock(g_state_mutex);
-    if (!read_boottime_ms(&now2)) { g_fault.store(1, std::memory_order_relaxed); return PGR_CANVAS_ERR_CLOCK_FAILURE; }
-    if (g_gen != generation || !gate_live_locked(epoch, tid, now2)) return PGR_CANVAS_OK;
-    if (g_token_serial >= kTokenCeiling) return PGR_CANVAS_OK;  // fail closed near the ceiling
+    if (!read_boottime_ms(&now2)) { g_fault.store(1, std::memory_order_relaxed); return PGS_CANVAS_ERR_CLOCK_FAILURE; }
+    if (g_gen != generation || !gate_live_locked(epoch, tid, now2)) return PGS_CANVAS_OK;
+    if (g_token_serial >= kTokenCeiling) return PGS_CANVAS_OK;  // fail closed near the ceiling
   }
 
   const int idx = find_free_slot();
-  if (idx < 0) return PGR_CANVAS_OK;  // slot overflow: refuse, leave the canvas visible
+  if (idx < 0) return PGS_CANVAS_OK;  // slot overflow: refuse, leave the canvas visible
 
   // Insert the owned slot BEFORE the managed set-false so the hook keeps the canvas hidden.
   uint64_t token;
@@ -492,26 +492,26 @@ int api_hide_opening(void *gui, uint64_t epoch, uint64_t tid, uint64_t *out_toke
   if (!set_canvas(slot_obj, false)) {
     // Managed throw: remove the slot first (so the hook cannot re-hide), best-effort restore, free.
     restore_and_free(detach_slot(idx));
-    return PGR_CANVAS_OK;  // *out_token stays 0; the host leaves the canvas visible
+    return PGS_CANVAS_OK;  // *out_token stays 0; the host leaves the canvas visible
   }
   g_hide_count.fetch_add(1, std::memory_order_relaxed);
   *out_token = token;
-  return PGR_CANVAS_HIDDEN;
+  return PGS_CANVAS_HIDDEN;
 }
 
 int api_hide_dismissed(void *gui, uint64_t epoch, uint64_t tid, int32_t expected_after) {
-  if (!g_installed.load(std::memory_order_acquire)) return PGR_CANVAS_ERR_NOT_INSTALLED;
-  if (gui == nullptr) return PGR_CANVAS_ERR_NULL_ARG;
+  if (!g_installed.load(std::memory_order_acquire)) return PGS_CANVAS_ERR_NOT_INSTALLED;
+  if (gui == nullptr) return PGS_CANVAS_ERR_NULL_ARG;
   const uint64_t cur = current_tid();
-  if (tid == 0 || cur != tid || !owner_ready(tid)) return PGR_CANVAS_OK;  // off-owner: refused
-  if (expected_after == g_cfg.state_open) return PGR_CANVAS_OK;  // only hide once dismissal left STATE_OPEN
+  if (tid == 0 || cur != tid || !owner_ready(tid)) return PGS_CANVAS_OK;  // off-owner: refused
+  if (expected_after == g_cfg.state_open) return PGS_CANVAS_OK;  // only hide once dismissal left STATE_OPEN
   uint64_t now = 0;
-  if (!read_boottime_ms(&now)) { g_fault.store(1, std::memory_order_relaxed); return PGR_CANVAS_ERR_CLOCK_FAILURE; }
+  if (!read_boottime_ms(&now)) { g_fault.store(1, std::memory_order_relaxed); return PGS_CANVAS_ERR_CLOCK_FAILURE; }
 
   uint64_t generation;
   {
     std::lock_guard<std::mutex> lock(g_state_mutex);
-    if (g_busy || !gate_live_locked(epoch, tid, now)) return PGR_CANVAS_OK;
+    if (g_busy || !gate_live_locked(epoch, tid, now)) return PGS_CANVAS_OK;
     g_busy = true;
     generation = g_gen;
   }
@@ -519,53 +519,53 @@ int api_hide_dismissed(void *gui, uint64_t epoch, uint64_t tid, int32_t expected
 
   // One-shot: own a temporary root for the call only; never a persistent slot, never close().
   Root g;
-  if (!g.duplicate(gui)) return PGR_CANVAS_OK;
+  if (!g.duplicate(gui)) return PGS_CANVAS_OK;
   void *obj = g.get();
-  if (!is_summary_or_details(obj)) return PGR_CANVAS_OK;
-  if (alive_state(g) != ALIVE_TRUE) return PGR_CANVAS_OK;
+  if (!is_summary_or_details(obj)) return PGS_CANVAS_OK;
+  if (alive_state(g) != ALIVE_TRUE) return PGS_CANVAS_OK;
   obj = g.get();  // re-resolve after the alive probe
-  if (!is_summary_or_details(obj)) return PGR_CANVAS_OK;
+  if (!is_summary_or_details(obj)) return PGS_CANVAS_OK;
   // Re-read currentState after the alive probe: it must equal the host's proven non-OPEN postcondition.
-  if (field_i32(obj, g_cfg.f_current_state) != expected_after) return PGR_CANVAS_OK;
+  if (field_i32(obj, g_cfg.f_current_state) != expected_after) return PGS_CANVAS_OK;
 
   {
     uint64_t now2 = 0;
     std::lock_guard<std::mutex> lock(g_state_mutex);
-    if (!read_boottime_ms(&now2)) { g_fault.store(1, std::memory_order_relaxed); return PGR_CANVAS_ERR_CLOCK_FAILURE; }
-    if (g_gen != generation || !gate_live_locked(epoch, tid, now2)) return PGR_CANVAS_OK;
+    if (!read_boottime_ms(&now2)) { g_fault.store(1, std::memory_order_relaxed); return PGS_CANVAS_ERR_CLOCK_FAILURE; }
+    if (g_gen != generation || !gate_live_locked(epoch, tid, now2)) return PGS_CANVAS_OK;
   }
 
-  if (!set_canvas(g.get(), false)) return PGR_CANVAS_OK;  // managed throw: refused
+  if (!set_canvas(g.get(), false)) return PGS_CANVAS_OK;  // managed throw: refused
   g_hide_count.fetch_add(1, std::memory_order_relaxed);
-  return PGR_CANVAS_HIDDEN;
+  return PGS_CANVAS_HIDDEN;
 }
 
 int api_release(uint64_t token, uint64_t tid) {
-  if (!g_installed.load(std::memory_order_acquire)) return PGR_CANVAS_ERR_NOT_INSTALLED;
+  if (!g_installed.load(std::memory_order_acquire)) return PGS_CANVAS_ERR_NOT_INSTALLED;
   const uint64_t cur = current_tid();
-  if (tid == 0 || cur != tid || !owner_ready(tid)) return PGR_CANVAS_ERR_OWNER;  // caller must retain its token
-  if (token == 0) return PGR_CANVAS_OK;  // idempotent
+  if (tid == 0 || cur != tid || !owner_ready(tid)) return PGS_CANVAS_ERR_OWNER;  // caller must retain its token
+  if (token == 0) return PGS_CANVAS_OK;  // idempotent
   {
     std::lock_guard<std::mutex> lock(g_state_mutex);
-    if (g_busy) return PGR_CANVAS_ERR_BUSY;  // caller must retry cleanup after the live frame
+    if (g_busy) return PGS_CANVAS_ERR_BUSY;  // caller must retry cleanup after the live frame
     g_busy = true;
   }
   BusyExit busy_exit;
 
   const int idx = find_slot_by_token(token);  // ignores enable/lease; only the token matters
-  if (idx < 0) return PGR_CANVAS_OK;  // unknown token: idempotent
+  if (idx < 0) return PGS_CANVAS_OK;  // unknown token: idempotent
   // Remove the slot BEFORE restoring so the hook cannot re-hide; always free the own root.
   restore_and_free(detach_slot(idx));
-  return PGR_CANVAS_OK;
+  return PGS_CANVAS_OK;
 }
 
 int api_tick(uint64_t tid) {
-  if (!g_installed.load(std::memory_order_acquire)) return PGR_CANVAS_ERR_NOT_INSTALLED;
+  if (!g_installed.load(std::memory_order_acquire)) return PGS_CANVAS_ERR_NOT_INSTALLED;
   const uint64_t cur = current_tid();
-  if (tid == 0 || cur != tid || !owner_ready(tid)) return PGR_CANVAS_OK;  // foreign thread: no free
+  if (tid == 0 || cur != tid || !owner_ready(tid)) return PGS_CANVAS_OK;  // foreign thread: no free
   {
     std::lock_guard<std::mutex> lock(g_state_mutex);
-    if (g_busy) return PGR_CANVAS_OK;  // bounded, non-reentrant
+    if (g_busy) return PGS_CANVAS_OK;  // bounded, non-reentrant
     g_busy = true;
   }
   BusyExit busy_exit;
@@ -581,61 +581,61 @@ int api_tick(uint64_t tid) {
     armed_epoch = g_epoch;
     permitted = clock_ok && g_enabled && g_lease_until_ms != 0 && now < g_lease_until_ms;
   }
-  for (int i = 0; i < PGR_CANVAS_MAX_SLOTS; ++i) {
+  for (int i = 0; i < PGS_CANVAS_MAX_SLOTS; ++i) {
     if (g_slots[i].handle == 0) continue;
     if (!permitted || g_slots[i].epoch != armed_epoch) {
       restore_and_free(detach_slot(i));
     }
   }
-  return PGR_CANVAS_OK;
+  return PGS_CANVAS_OK;
 }
 
 int api_stop() {
-  if (!g_installed.load(std::memory_order_acquire)) return PGR_CANVAS_ERR_NOT_INSTALLED;
+  if (!g_installed.load(std::memory_order_acquire)) return PGS_CANVAS_ERR_NOT_INSTALLED;
   // Immediate revoke from any thread. Slots are freed/restored only on the owner thread via tick()/
   // release(); the original stays patched so the hook keeps passing through safely.
   std::lock_guard<std::mutex> lock(g_state_mutex);
   g_enabled = 0;
   g_lease_until_ms = 0;
   ++g_gen;
-  return PGR_CANVAS_OK;
+  return PGS_CANVAS_OK;
 }
 
-int api_sample(PgrCatchCanvasSample *out) {
-  if (out == nullptr) return PGR_CANVAS_ERR_NULL_ARG;
-  out->version = PGR_CANVAS_SAMPLE_VERSION;
-  out->size = sizeof(PgrCatchCanvasSample);
+int api_sample(PgsCatchCanvasSample *out) {
+  if (out == nullptr) return PGS_CANVAS_ERR_NULL_ARG;
+  out->version = PGS_CANVAS_SAMPLE_VERSION;
+  out->size = sizeof(PgsCatchCanvasSample);
   out->owned = g_owned.load(std::memory_order_relaxed)+g_observer_frames.load(std::memory_order_relaxed);
   out->fault = g_fault.load(std::memory_order_relaxed);
   out->masked_count = g_masked_count.load(std::memory_order_relaxed);
   out->hide_count = g_hide_count.load(std::memory_order_relaxed);
   out->restore_count = g_restore_count.load(std::memory_order_relaxed);
-  return PGR_CANVAS_OK;
+  return PGS_CANVAS_OK;
 }
 
-const PgrCatchCanvasApi kApiTable = {
-    PGR_CANVAS_API_VERSION, static_cast<uint32_t>(sizeof(PgrCatchCanvasApi)),
+const PgsCatchCanvasApi kApiTable = {
+    PGS_CANVAS_API_VERSION, static_cast<uint32_t>(sizeof(PgsCatchCanvasApi)),
     &api_install,  &api_update, &api_hide_opening, &api_hide_dismissed,
     &api_release,  &api_tick,   &api_stop,         &api_sample,
 };
 
-int api_subscribe(const PgrCatchCanvasObserver *observer){
- if(!observer)return PGR_CANVAS_ERR_NULL_ARG;
- if(observer->version!=1)return PGR_CANVAS_ERR_BAD_VERSION;
- if(observer->size!=sizeof(*observer))return PGR_CANVAS_ERR_BAD_SIZE;
- if(!observer->filter||!observer->on_enter)return PGR_CANVAS_ERR_MISSING_PTR;
- if(!g_installed.load(std::memory_order_acquire))return PGR_CANVAS_ERR_NOT_INSTALLED;
+int api_subscribe(const PgsCatchCanvasObserver *observer){
+ if(!observer)return PGS_CANVAS_ERR_NULL_ARG;
+ if(observer->version!=1)return PGS_CANVAS_ERR_BAD_VERSION;
+ if(observer->size!=sizeof(*observer))return PGS_CANVAS_ERR_BAD_SIZE;
+ if(!observer->filter||!observer->on_enter)return PGS_CANVAS_ERR_MISSING_PTR;
+ if(!g_installed.load(std::memory_order_acquire))return PGS_CANVAS_ERR_NOT_INSTALLED;
  std::lock_guard<std::mutex> lock(g_observer_mutex);
- if(g_observer_ready.load())return g_observer.filter==observer->filter&&g_observer.on_enter==observer->on_enter&&g_observer.context==observer->context?PGR_CANVAS_OK:PGR_CANVAS_ERR_RECONFIG;
- g_observer=*observer;g_observer_ready.store(true,std::memory_order_release);return PGR_CANVAS_OK;
+ if(g_observer_ready.load())return g_observer.filter==observer->filter&&g_observer.on_enter==observer->on_enter&&g_observer.context==observer->context?PGS_CANVAS_OK:PGS_CANVAS_ERR_RECONFIG;
+ g_observer=*observer;g_observer_ready.store(true,std::memory_order_release);return PGS_CANVAS_OK;
 }
-const PgrCatchCanvasApi2 kApi2{2,sizeof(PgrCatchCanvasApi2),api_subscribe};
+const PgsCatchCanvasApi2 kApi2{2,sizeof(PgsCatchCanvasApi2),api_subscribe};
 
 }  // namespace
 
 extern "C" const void *pgs_catch_canvas_api(uint32_t version) {
   if(version==3)return &kApi3;
   if(version==2)return &kApi2;
-  if (version != PGR_CANVAS_API_VERSION) return nullptr;
+  if (version != PGS_CANVAS_API_VERSION) return nullptr;
   return &kApiTable;
 }

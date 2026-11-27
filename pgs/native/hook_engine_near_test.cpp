@@ -17,11 +17,11 @@ static uintptr_t replacement(uintptr_t) { return 99; }
 // on that page and keeps 928 bytes (58 islands) in front of the code.
 namespace padding_check {
 constexpr uintptr_t base = 0x7000000000, begin = base + 0x45fd3a0, end = base + 0xe296c10;
-constexpr PgrPaddingRanges wide = pgr_padding_ranges(begin, end, 16384);
+constexpr PgsPaddingRanges wide = pgs_padding_ranges(begin, end, 16384);
 constexpr PgsPaddingRanges pgsWide = pgs_padding_ranges(begin, end, 16384);
 static_assert(pgsWide.before_lo == wide.before_lo && pgsWide.after_hi == wide.after_hi,
               "PGS padding aliases must preserve the legacy arithmetic");
-constexpr PgrPaddingRanges narrow = pgr_padding_ranges(begin, end, 4096);
+constexpr PgsPaddingRanges narrow = pgs_padding_ranges(begin, end, 4096);
 static_assert(wide.before_lo == base + 0x45fc000 && wide.before_hi == begin, "ELF-aligned lead");
 static_assert(narrow.before_lo == base + 0x45fd000 && narrow.before_hi == begin, "4K-aligned lead");
 static_assert(narrow.before_hi - narrow.before_lo == 928, "4K lead holds 58 islands");
@@ -34,7 +34,7 @@ static_assert(narrow.after_lo == end && narrow.after_hi == base + 0xe297000, "4K
 // slots it is 26 + 250.
 namespace padding_check_439 {
 constexpr uintptr_t base = 0x7000000000, begin = base + 0x46480e0, end = base + 0xe39b820;
-constexpr PgrPaddingRanges narrow = pgr_padding_ranges(begin, end, 4096);
+constexpr PgsPaddingRanges narrow = pgs_padding_ranges(begin, end, 4096);
 static_assert(narrow.before_hi - narrow.before_lo == 224, "0.439.0 lead");
 static_assert(narrow.after_hi - narrow.after_lo == 2016, "0.439.0 tail");
 static_assert((224 - 16) / 8 + (2016 - 16) / 8 == 276, "dispatched capacity");
@@ -43,9 +43,8 @@ static_assert((224 - 16) / 8 + (2016 - 16) / 8 == 276, "dispatched capacity");
 int main() {
     PgsHookDiag diag{};
     require(pgs_hook_diag(nullptr) == -1 && pgs_hook_diag(&diag) == 0 &&
-        pgrazor_hook_diag(&diag) == 0 &&
         diag.version == 1 && diag.size == sizeof(diag) && diag.failures == 0 &&
-        diag.reason == PGR_HOOK_REASON_NONE && diag.island_source == PGR_HOOK_ISLAND_NONE,
+        diag.reason == PGS_HOOK_REASON_NONE && diag.island_source == PGS_HOOK_ISLAND_NONE,
         "clean diagnostic before any hook");
 #if defined(__aarch64__)
     using Method = uintptr_t (*)(uintptr_t);
@@ -96,23 +95,23 @@ int main() {
         "all following bytes preserved");
     require(tiny(17) == 99 && reinterpret_cast<Method>(tiny_original)(17) == 17 &&
         neighbor(0) == 22, "tiny replacement and original");
-    require(pgrazor_hook(code + 3, reinterpret_cast<void *>(replacement), &getter_original) == 0,
+    require(pgs_hook(code + 3, reinterpret_cast<void *>(replacement), &getter_original) == 0,
         "hook eight-byte getter");
     require((code[3] & 0xfc000000u) == 0x14000000u && code[4] == pristine[4] &&
         code[5] == pristine[5] && code[6] == pristine[6], "getter neighbors preserved");
     require(getter(reinterpret_cast<uintptr_t>(object)) == 99 &&
         reinterpret_cast<Method>(getter_original)(reinterpret_cast<uintptr_t>(object)) == 42 &&
         after_getter(0) == 33, "getter replacement and original");
-    require(pgs_unhook(code + 3) == 0 && pgrazor_unhook(code) == 0, "unhook both");
+    require(pgs_unhook(code + 3) == 0 && pgs_unhook(code) == 0, "unhook both");
     require(std::memcmp(code, pristine, sizeof(pristine)) == 0, "restore original bytes");
     require(munmap(code, page) == 0, "unmap fixture");
-    require(pgrazor_hook_diag(&diag) == 0 && diag.failures == 0 &&
-        diag.island_source == PGR_HOOK_ISLAND_MMAP && diag.island_pages == 1,
+    require(pgs_hook_diag(&diag) == 0 && diag.failures == 0 &&
+        diag.island_source == PGS_HOOK_ISLAND_MMAP && diag.island_pages == 1,
         "successful hooks report an mmap island and no failure");
     void *unused = nullptr;
-    require(pgrazor_hook(nullptr, reinterpret_cast<void *>(replacement), &unused) == -1 &&
-        pgrazor_hook_diag(&diag) == 0 && diag.failures == 1 &&
-        diag.reason == PGR_HOOK_REASON_BAD_ARGS && diag.target == 0,
+    require(pgs_hook(nullptr, reinterpret_cast<void *>(replacement), &unused) == -1 &&
+        pgs_hook_diag(&diag) == 0 && diag.failures == 1 &&
+        diag.reason == PGS_HOOK_REASON_BAD_ARGS && diag.target == 0,
         "first failure is latched");
     std::puts("hook-engine-near: PASS");
 #else

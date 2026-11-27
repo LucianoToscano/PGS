@@ -24,79 +24,82 @@
 #include "spin_host.h"
 #include "transfer_observers.h"
 
+#if defined(PGS_INTERACTION_HOST_STANDALONE_TEST) && (defined(__GNUC__) || defined(__clang__))
+int pgs_hook(void *target, void *replacement, void **original) __attribute__((weak));
+int pgs_unhook(void *target) __attribute__((weak));
+#endif
+
 namespace {
 
 #if defined(__GNUC__) || defined(__clang__)
-#define PGR_WEAK __attribute__((weak))
+#define PGS_WEAK __attribute__((weak))
 #else
-#define PGR_WEAK
+#define PGS_WEAK
 #endif
 
-extern "C" const void *pgs_runtime_metadata_api(uint32_t version) PGR_WEAK;
-extern "C" const void *pgs_runtime_bootstrap_api(uint32_t version) PGR_WEAK;
-extern "C" const void *pgs_runtime_transport_api(uint32_t version) PGR_WEAK;
-extern "C" const void *pgs_unity_scheduler_api(uint32_t version) PGR_WEAK;
-extern "C" const void *pgs_shared_host_api(uint32_t version) PGR_WEAK;
-extern "C" const void *pgs_spin_host_api(uint32_t version) PGR_WEAK;
-extern "C" const void *pgs_catch_observers_api(uint32_t version) PGR_WEAK;
-extern "C" const void *pgs_transfer_observers_api(uint32_t version) PGR_WEAK;
-extern "C" int pgrazor_hook(void *target, void *replacement, void **original) PGR_WEAK;
-extern "C" int pgrazor_unhook(void *target) PGR_WEAK;
+extern "C" const void *pgs_runtime_metadata_api(uint32_t version) PGS_WEAK;
+extern "C" const void *pgs_runtime_bootstrap_api(uint32_t version) PGS_WEAK;
+extern "C" const void *pgs_runtime_transport_api(uint32_t version) PGS_WEAK;
+extern "C" const void *pgs_unity_scheduler_api(uint32_t version) PGS_WEAK;
+extern "C" const void *pgs_shared_host_api(uint32_t version) PGS_WEAK;
+extern "C" const void *pgs_spin_host_api(uint32_t version) PGS_WEAK;
+extern "C" const void *pgs_catch_observers_api(uint32_t version) PGS_WEAK;
+extern "C" const void *pgs_transfer_observers_api(uint32_t version) PGS_WEAK;
 
-static const PgrMetaApi *resolve_metadata_api() {
+static const PgsMetaApi *resolve_metadata_api() {
     if (pgs_runtime_metadata_api != nullptr) {
-        return static_cast<const PgrMetaApi *>(
-            pgs_runtime_metadata_api(PGR_MD_API_VERSION));
+        return static_cast<const PgsMetaApi *>(
+            pgs_runtime_metadata_api(PGS_MD_API_VERSION));
     }
-#if !defined(_WIN32) && defined(PGR_INTERACTION_HOST_STANDALONE_TEST)
+#if !defined(_WIN32) && defined(PGS_INTERACTION_HOST_STANDALONE_TEST)
     using Fn = const void *(*)(uint32_t);
     auto fn = reinterpret_cast<Fn>(dlsym(RTLD_DEFAULT, "pgs_runtime_metadata_api"));
     if (fn != nullptr) {
-        return static_cast<const PgrMetaApi *>(fn(PGR_MD_API_VERSION));
+        return static_cast<const PgsMetaApi *>(fn(PGS_MD_API_VERSION));
     }
 #endif
     return nullptr;
 }
 
-static const PgrBootApi *resolve_bootstrap_api() {
+static const PgsBootApi *resolve_bootstrap_api() {
     if (pgs_runtime_bootstrap_api != nullptr) {
-        return static_cast<const PgrBootApi *>(
-            pgs_runtime_bootstrap_api(PGR_BOOT_API_VERSION));
+        return static_cast<const PgsBootApi *>(
+            pgs_runtime_bootstrap_api(PGS_BOOT_API_VERSION));
     }
-#if !defined(_WIN32) && defined(PGR_INTERACTION_HOST_STANDALONE_TEST)
+#if !defined(_WIN32) && defined(PGS_INTERACTION_HOST_STANDALONE_TEST)
     using Fn = const void *(*)(uint32_t);
     auto fn = reinterpret_cast<Fn>(dlsym(RTLD_DEFAULT, "pgs_runtime_bootstrap_api"));
     if (fn != nullptr) {
-        return static_cast<const PgrBootApi *>(fn(PGR_BOOT_API_VERSION));
+        return static_cast<const PgsBootApi *>(fn(PGS_BOOT_API_VERSION));
     }
 #endif
     return nullptr;
 }
 
-static const PgrRuntimeTransportApi *resolve_transport_api() {
+static const PgsRuntimeTransportApi *resolve_transport_api() {
     if (pgs_runtime_transport_api != nullptr) {
-        return static_cast<const PgrRuntimeTransportApi *>(
-            pgs_runtime_transport_api(PGR_TRANSPORT_API_VERSION));
+        return static_cast<const PgsRuntimeTransportApi *>(
+            pgs_runtime_transport_api(PGS_TRANSPORT_API_VERSION));
     }
-#if !defined(_WIN32) && defined(PGR_INTERACTION_HOST_STANDALONE_TEST)
+#if !defined(_WIN32) && defined(PGS_INTERACTION_HOST_STANDALONE_TEST)
     using Fn = const void *(*)(uint32_t);
     auto fn = reinterpret_cast<Fn>(dlsym(RTLD_DEFAULT, "pgs_runtime_transport_api"));
     if (fn != nullptr) {
-        return static_cast<const PgrRuntimeTransportApi *>(fn(PGR_TRANSPORT_API_VERSION));
+        return static_cast<const PgsRuntimeTransportApi *>(fn(PGS_TRANSPORT_API_VERSION));
     }
 #endif
     return nullptr;
 }
 
-static const PgrUnitySchedulerApi *resolve_scheduler_api() {
+static const PgsUnitySchedulerApi *resolve_scheduler_api() {
     if (pgs_unity_scheduler_api != nullptr) {
         const void *p = pgs_unity_scheduler_api(2);
         if (p == nullptr) {
             p = pgs_unity_scheduler_api(3);
         }
-        return static_cast<const PgrUnitySchedulerApi *>(p);
+        return static_cast<const PgsUnitySchedulerApi *>(p);
     }
-#if !defined(_WIN32) && defined(PGR_INTERACTION_HOST_STANDALONE_TEST)
+#if !defined(_WIN32) && defined(PGS_INTERACTION_HOST_STANDALONE_TEST)
     using Fn = const void *(*)(uint32_t);
     auto fn = reinterpret_cast<Fn>(dlsym(RTLD_DEFAULT, "pgs_unity_scheduler_api"));
     if (fn != nullptr) {
@@ -104,21 +107,21 @@ static const PgrUnitySchedulerApi *resolve_scheduler_api() {
         if (p == nullptr) {
             p = fn(3);
         }
-        return static_cast<const PgrUnitySchedulerApi *>(p);
+        return static_cast<const PgsUnitySchedulerApi *>(p);
     }
 #endif
     return nullptr;
 }
 
-static const PgrSharedHostApi *resolve_shared_host_api() {
+static const PgsSharedHostApi *resolve_shared_host_api() {
     if (pgs_shared_host_api != nullptr) {
-        return static_cast<const PgrSharedHostApi *>(pgs_shared_host_api(1));
+        return static_cast<const PgsSharedHostApi *>(pgs_shared_host_api(1));
     }
-#if !defined(_WIN32) && defined(PGR_INTERACTION_HOST_STANDALONE_TEST)
+#if !defined(_WIN32) && defined(PGS_INTERACTION_HOST_STANDALONE_TEST)
     using Fn = const void *(*)(uint32_t);
     auto fn = reinterpret_cast<Fn>(dlsym(RTLD_DEFAULT, "pgs_shared_host_api"));
     if (fn != nullptr) {
-        return static_cast<const PgrSharedHostApi *>(fn(1));
+        return static_cast<const PgsSharedHostApi *>(fn(1));
     }
 #endif
     return nullptr;
@@ -128,7 +131,7 @@ static const PgsSpinHostApi *resolve_spin_host_api() {
     if (pgs_spin_host_api != nullptr) {
         return static_cast<const PgsSpinHostApi *>(pgs_spin_host_api(1));
     }
-#if !defined(_WIN32) && defined(PGR_INTERACTION_HOST_STANDALONE_TEST)
+#if !defined(_WIN32) && defined(PGS_INTERACTION_HOST_STANDALONE_TEST)
     using Fn = const void *(*)(uint32_t);
     auto fn = reinterpret_cast<Fn>(dlsym(RTLD_DEFAULT, "pgs_spin_host_api"));
     if (fn != nullptr) {
@@ -138,27 +141,27 @@ static const PgsSpinHostApi *resolve_spin_host_api() {
     return nullptr;
 }
 
-static const PgrObsApi *resolve_catch_observers_api() {
+static const PgsObsApi *resolve_catch_observers_api() {
     if (pgs_catch_observers_api != nullptr) {
-        return static_cast<const PgrObsApi *>(pgs_catch_observers_api(PGR_OBS_API_VERSION));
+        return static_cast<const PgsObsApi *>(pgs_catch_observers_api(PGS_OBS_API_VERSION));
     }
-#if !defined(_WIN32) && defined(PGR_INTERACTION_HOST_STANDALONE_TEST)
+#if !defined(_WIN32) && defined(PGS_INTERACTION_HOST_STANDALONE_TEST)
     using Fn = const void *(*)(uint32_t);
     auto fn = reinterpret_cast<Fn>(dlsym(RTLD_DEFAULT, "pgs_catch_observers_api"));
     if (fn != nullptr) {
-        return static_cast<const PgrObsApi *>(fn(PGR_OBS_API_VERSION));
+        return static_cast<const PgsObsApi *>(fn(PGS_OBS_API_VERSION));
     }
 #endif
     return nullptr;
 }
 
 static int call_pgs_hook(void *target, void *replacement, void **original) {
-    if (pgrazor_hook != nullptr) {
-        return pgrazor_hook(target, replacement, original);
+    if (pgs_hook != nullptr) {
+        return pgs_hook(target, replacement, original);
     }
-#if !defined(_WIN32) && defined(PGR_INTERACTION_HOST_STANDALONE_TEST)
+#if !defined(_WIN32) && defined(PGS_INTERACTION_HOST_STANDALONE_TEST)
     using Fn = int (*)(void *, void *, void **);
-    auto fn = reinterpret_cast<Fn>(dlsym(RTLD_DEFAULT, "pgrazor_hook"));
+    auto fn = reinterpret_cast<Fn>(dlsym(RTLD_DEFAULT, "pgs_hook"));
     if (fn != nullptr) {
         return fn(target, replacement, original);
     }
@@ -167,12 +170,12 @@ static int call_pgs_hook(void *target, void *replacement, void **original) {
 }
 
 static int call_pgs_unhook(void *target) {
-    if (pgrazor_unhook != nullptr) {
-        return pgrazor_unhook(target);
+    if (pgs_unhook != nullptr) {
+        return pgs_unhook(target);
     }
-#if !defined(_WIN32) && defined(PGR_INTERACTION_HOST_STANDALONE_TEST)
+#if !defined(_WIN32) && defined(PGS_INTERACTION_HOST_STANDALONE_TEST)
     using Fn = int (*)(void *);
-    auto fn = reinterpret_cast<Fn>(dlsym(RTLD_DEFAULT, "pgrazor_unhook"));
+    auto fn = reinterpret_cast<Fn>(dlsym(RTLD_DEFAULT, "pgs_unhook"));
     if (fn != nullptr) {
         return fn(target);
     }
@@ -181,10 +184,10 @@ static int call_pgs_unhook(void *target) {
 }
 
 /* Exact 20-word (80-byte) prologue for il2cpp_debug_get_method_info */
-static const uint32_t kDebugWords[PGR_IH_DEBUG_PROLOGUE_WORDS] = PGR_GAME_INTERACTION_HOST_CPP_KDEBUGWORDS_FINGERPRINT;
+static const uint32_t kDebugWords[PGS_IH_DEBUG_PROLOGUE_WORDS] = PGS_GAME_INTERACTION_HOST_CPP_KDEBUGWORDS_FINGERPRINT;
 
 /* Exact 8-word (32-byte) prologue for Pokeball::btxu at RVA 0xaccfdec */
-static const uint32_t kBtxuWords[PGR_IH_BTXU_PROLOGUE_WORDS] = PGR_GAME_INTERACTION_HOST_CPP_KBTXUWORDS_FINGERPRINT;
+static const uint32_t kBtxuWords[PGS_IH_BTXU_PROLOGUE_WORDS] = PGS_GAME_INTERACTION_HOST_CPP_KBTXUWORDS_FINGERPRINT;
 
 struct ClassDesc {
     const char *ns;
@@ -193,7 +196,7 @@ struct ClassDesc {
     bool exact_lookup_only;
 };
 
-static const ClassDesc kClasses[PGR_IH_CLASS_COUNT] = {
+static const ClassDesc kClasses[PGS_IH_CLASS_COUNT] = {
     {"Niantic.Holoholo.Encounter", "EncounterCaptureState",
      "Niantic.Holoholo.Encounter.EncounterCaptureState", false},
     {"Niantic.Holoholo.Pokestop", "PokestopState",
@@ -234,7 +237,7 @@ struct TargetDesc {
     uint32_t expected_byte_len;
 };
 
-static const TargetDesc kTargets[PGR_IH_TOTAL_TARGETS] = {
+static const TargetDesc kTargets[PGS_IH_TOTAL_TARGETS] = {
     /* 14 Required Targets (0..13) */
     {0, 0, "Niantic.Holoholo.Encounter.EncounterCaptureState", "EnterState",
      "System.Void", 0, nullptr, false, false, -1, 0, nullptr, 0},
@@ -256,13 +259,13 @@ static const TargetDesc kTargets[PGR_IH_TOTAL_TARGETS] = {
      "System.Void", 0, nullptr, false, false, -1, 0, nullptr, 0},
     {9, 3, "Niantic.Holoholo.Pokestop.PokestopResolveState", "ExitState",
      "System.Void", 0, nullptr, false, false, -1, 0, nullptr, 0},
-    {10, 0, "Niantic.Holoholo.Encounter.EncounterCaptureState", PGR_GAME_INTERACTION_HOST_CPP_BSWD_NAME,
+    {10, 0, "Niantic.Holoholo.Encounter.EncounterCaptureState", PGS_GAME_INTERACTION_HOST_CPP_BSWD_NAME,
      "System.Void", 1, "Holoholo.Rpc.CatchPokemonOutProto", false, false, 0, 0, nullptr, 0},
-    {11, 0, "Niantic.Holoholo.Encounter.EncounterCaptureState", PGR_GAME_INTERACTION_HOST_CPP_BSWF_NAME,
+    {11, 0, "Niantic.Holoholo.Encounter.EncounterCaptureState", PGS_GAME_INTERACTION_HOST_CPP_BSWF_NAME,
      "System.Void", 1, "Holoholo.Rpc.CatchPokemonOutProto", false, false, -1, 0, nullptr, 0},
     {12, 0, "Niantic.Holoholo.Encounter.EncounterCaptureState", "btdi",
      "System.Void", 1, "Holoholo.Rpc.CatchPokemonOutProto", false, false, -1, 0, nullptr, 0},
-    {13, 2, "Niantic.Holoholo.Pokestop.PokestopSpinnerInteractionState", PGR_GAME_INTERACTION_HOST_CPP_BGDC_NAME,
+    {13, 2, "Niantic.Holoholo.Pokestop.PokestopSpinnerInteractionState", PGS_GAME_INTERACTION_HOST_CPP_BGDC_NAME,
      "System.Void", 1, "Holoholo.Rpc.FortSearchOutProto", false, false, 1, 0, nullptr, 0},
 
     /* 6 Optional Targets (14..19) */
@@ -276,9 +279,9 @@ static const TargetDesc kTargets[PGR_IH_TOTAL_TARGETS] = {
      "System.Void", 0, nullptr, true, false, -1, 0, nullptr, 0},
     {18, 9, "Niantic.Holoholo.Encounter.EncounterSummaryState", "ExitState",
      "System.Void", 0, nullptr, true, false, -1, 0, nullptr, 0},
-    {19, 10, "Niantic.Holoholo.Encounter.Pokeball", PGR_GAME_INTERACTION_HOST_CPP_BTQU_NAME,
+    {19, 10, "Niantic.Holoholo.Encounter.Pokeball", PGS_GAME_INTERACTION_HOST_CPP_BTQU_NAME,
      "Holoholo.Rpc.CatchPokemonOutProto", 0, nullptr, true, true, 0,
-     PGR_IH_BTXU_RVA, kBtxuWords, PGR_IH_BTXU_PROLOGUE_BYTES},
+     PGS_IH_BTXU_RVA, kBtxuWords, PGS_IH_BTXU_PROLOGUE_BYTES},
 };
 
 struct ResultReaderSpecDesc {
@@ -290,7 +293,7 @@ struct ResultReaderSpecDesc {
     int32_t expected_align;
 };
 
-static const ResultReaderSpecDesc kResultSpecs[PGR_IH_RESULT_READER_SPECS] = {
+static const ResultReaderSpecDesc kResultSpecs[PGS_IH_RESULT_READER_SPECS] = {
     {5, "Holoholo.Rpc.CatchPokemonOutProto", "Status",
      "Holoholo.Rpc.CatchPokemonOutProto.Types.Status", 4, 4},
     {6, "Holoholo.Rpc.FortSearchOutProto", "Result",
@@ -311,7 +314,7 @@ struct ResultReaderState {
     char enum_type[96];
     char value_type[32];
     uint32_t literal_count;
-    EnumLiteralEntry literals[PGR_IH_LIMIT_ENUM_LITERALS];
+    EnumLiteralEntry literals[PGS_IH_LIMIT_ENUM_LITERALS];
     char error_reason[96];
 };
 
@@ -408,8 +411,8 @@ using HookRet0Fn = void *(*)(void *, const void *);
 
 struct HostState {
     bool configured;
-    PgrMetaExports meta_exports;
-    PgrInteractionHostConfig cfg;
+    PgsMetaExports meta_exports;
+    PgsInteractionHostConfig cfg;
 
     /* Scheduled metadata check state */
     bool scheduled;
@@ -420,7 +423,7 @@ struct HostState {
     bool running;
     bool stopping;
     bool deferred_cleanup_pending;
-    PgrInteractionHostOptions opts;
+    PgsInteractionHostOptions opts;
     int64_t prepare_started_ms;
     int64_t next_retry_ms;
     int64_t observe_started_ms;
@@ -448,9 +451,9 @@ struct HostState {
     uint32_t resolved_optional_mask;
     uint32_t ambiguous_target_mask;
     uintptr_t debug_rva;
-    ResolvedClassState classes[PGR_IH_CLASS_COUNT];
-    ResolvedTargetState targets[PGR_IH_TOTAL_TARGETS];
-    ResultReaderState result_specs[PGR_IH_RESULT_READER_SPECS];
+    ResolvedClassState classes[PGS_IH_CLASS_COUNT];
+    ResolvedTargetState targets[PGS_IH_TOTAL_TARGETS];
+    ResultReaderState result_specs[PGS_IH_RESULT_READER_SPECS];
 
     /* Runtime observation state */
     bool argument_readers_available;
@@ -465,22 +468,22 @@ struct HostState {
     uint32_t dropped_threads;
     uint32_t in_flight;
     uint32_t btxu_pending_polls;
-    int32_t threads[PGR_IH_LIMIT_THREADS];
-    uint32_t thread_depths[PGR_IH_LIMIT_THREADS];
-    uint32_t target_hits[PGR_IH_TOTAL_TARGETS];
-    uint32_t target_pending_polls[PGR_IH_TOTAL_TARGETS];
+    int32_t threads[PGS_IH_LIMIT_THREADS];
+    uint32_t thread_depths[PGS_IH_LIMIT_THREADS];
+    uint32_t target_hits[PGS_IH_TOTAL_TARGETS];
+    uint32_t target_pending_polls[PGS_IH_TOTAL_TARGETS];
     uint32_t slot_generation;
     InFlightSlot slots[kMaxInFlightSlots];
 
     /* Direct Dobby hook originals */
-    void *orig_targets[PGR_IH_TOTAL_TARGETS];
+    void *orig_targets[PGS_IH_TOTAL_TARGETS];
 
     /* Ring buffer of emitted events */
     uint64_t next_seq;
     uint32_t queue_head;
     uint32_t queue_count;
     uint32_t total_emitted_events;
-    PgrInteractionHostEvent queue[kEventQueueCapacity];
+    PgsInteractionHostEvent queue[kEventQueueCapacity];
 
     char reason[96];
     char last_diagnostic[160];
@@ -489,14 +492,14 @@ struct HostState {
 static HostState g_state;
 // Hook code and trampolines live for the process lifetime, independently of a
 // bounded diagnostic session. Dobby publishes the original before patch commit.
-static void *g_direct_originals[PGR_IH_TOTAL_TARGETS]{};
-static uintptr_t g_direct_codes[PGR_IH_TOTAL_TARGETS]{};
+static void *g_direct_originals[PGS_IH_TOTAL_TARGETS]{};
+static uintptr_t g_direct_codes[PGS_IH_TOTAL_TARGETS]{};
 static uint32_t g_direct_installed=0,g_direct_failed=0;
 static int32_t g_owner_tid=0;
 static std::atomic<uintptr_t> g_deferred_btxu_root{0};
 static std::atomic_flag g_btxu_busy=ATOMIC_FLAG_INIT;
 static bool g_transport_failed=false;
-static PgrInteractionHostEvent g_transport_event{};
+static PgsInteractionHostEvent g_transport_event{};
 
 #if !defined(_WIN32)
 static pthread_mutex_t g_mu = PTHREAD_MUTEX_INITIALIZER;
@@ -567,7 +570,7 @@ static void read_safe_string(const char *ptr, char *out, size_t out_cap) {
         out[0] = '\0';
         return;
     }
-    size_t limit = PGR_IH_LIMIT_NAME_BYTES;
+    size_t limit = PGS_IH_LIMIT_NAME_BYTES;
     if (out_cap - 1 < limit) {
         limit = out_cap - 1;
     }
@@ -584,21 +587,21 @@ static void read_safe_string(const char *ptr, char *out, size_t out_cap) {
 
 static const char *status_to_string(uint32_t status) {
     switch (status) {
-        case PGR_IH_STATUS_IDLE:
+        case PGS_IH_STATUS_IDLE:
             return "idle";
-        case PGR_IH_STATUS_SCHEDULED:
+        case PGS_IH_STATUS_SCHEDULED:
             return "scheduled";
-        case PGR_IH_STATUS_PREPARING:
+        case PGS_IH_STATUS_PREPARING:
             return "preparing";
-        case PGR_IH_STATUS_OBSERVING:
+        case PGS_IH_STATUS_OBSERVING:
             return "observing";
-        case PGR_IH_STATUS_COMPLETE:
+        case PGS_IH_STATUS_COMPLETE:
             return "complete";
-        case PGR_IH_STATUS_SKIPPED:
+        case PGS_IH_STATUS_SKIPPED:
             return "skipped";
-        case PGR_IH_STATUS_STOPPED:
+        case PGS_IH_STATUS_STOPPED:
             return "stopped";
-        case PGR_IH_STATUS_FAILED:
+        case PGS_IH_STATUS_FAILED:
         default:
             return "failed";
     }
@@ -606,26 +609,26 @@ static const char *status_to_string(uint32_t status) {
 
 static void emit_transport_diagnostic(const char *text) {
     copy_str(g_state.last_diagnostic, sizeof(g_state.last_diagnostic), text);
-    const PgrRuntimeTransportApi *rt = resolve_transport_api();
+    const PgsRuntimeTransportApi *rt = resolve_transport_api();
     if (rt != nullptr && rt->emit != nullptr && text != nullptr) {
-        PgrRuntimeTransportString s {text, static_cast<uint32_t>(strlen(text))};
-        int rc=rt->emit(PGR_IH_RT_ACT_DIAGNOSTIC, nullptr, 0, &s, 1);
-        if(rc!=PGR_TRANSPORT_OK&&rc!=PGR_TRANSPORT_ERR_NOT_INSTALLED)g_transport_failed=true;
+        PgsRuntimeTransportString s {text, static_cast<uint32_t>(strlen(text))};
+        int rc=rt->emit(PGS_IH_RT_ACT_DIAGNOSTIC, nullptr, 0, &s, 1);
+        if(rc!=PGS_TRANSPORT_OK&&rc!=PGS_TRANSPORT_ERR_NOT_INSTALLED)g_transport_failed=true;
     }
 }
 
 static void emit_transport_running(bool running) {
-    const PgrRuntimeTransportApi *rt = resolve_transport_api();
+    const PgsRuntimeTransportApi *rt = resolve_transport_api();
     if (rt != nullptr && rt->emit != nullptr) {
         int64_t val = running ? 1 : 0;
-        int rc=rt->emit(PGR_IH_RT_ACT_SET_RUNNING, &val, 1, nullptr, 0);
-        if(rc!=PGR_TRANSPORT_OK&&rc!=PGR_TRANSPORT_ERR_NOT_INSTALLED)g_transport_failed=true;
+        int rc=rt->emit(PGS_IH_RT_ACT_SET_RUNNING, &val, 1, nullptr, 0);
+        if(rc!=PGS_TRANSPORT_OK&&rc!=PGS_TRANSPORT_ERR_NOT_INSTALLED)g_transport_failed=true;
     }
 }
 
-static PgrInteractionHostEvent *alloc_event_slot(uint32_t type, const char *channel) {
-    PgrRuntimeTransportSample sample{};const auto *rt=resolve_transport_api();
-    const bool transported=rt&&rt->sample&&rt->sample(&sample)==PGR_TRANSPORT_OK;
+static PgsInteractionHostEvent *alloc_event_slot(uint32_t type, const char *channel) {
+    PgsRuntimeTransportSample sample{};const auto *rt=resolve_transport_api();
+    const bool transported=rt&&rt->sample&&rt->sample(&sample)==PGS_TRANSPORT_OK;
     uint32_t idx = (g_state.queue_head + g_state.queue_count) % kEventQueueCapacity;
     if (!transported&&g_state.queue_count == kEventQueueCapacity) {
         g_state.queue_head = (g_state.queue_head + 1) % kEventQueueCapacity;
@@ -633,7 +636,7 @@ static PgrInteractionHostEvent *alloc_event_slot(uint32_t type, const char *chan
     } else if(!transported) {
         ++g_state.queue_count;
     }
-    PgrInteractionHostEvent *ev = transported?&g_transport_event:&g_state.queue[idx];
+    PgsInteractionHostEvent *ev = transported?&g_transport_event:&g_state.queue[idx];
     memset(ev, 0, sizeof(*ev));
     ev->seq = ++g_state.next_seq;
     ev->ts_ms = now_ms();
@@ -646,27 +649,27 @@ static PgrInteractionHostEvent *alloc_event_slot(uint32_t type, const char *chan
     return ev;
 }
 
-static void publish_event(PgrInteractionHostEvent *ev, const char *fmt, ...) {
+static void publish_event(PgsInteractionHostEvent *ev, const char *fmt, ...) {
     va_list ap;
     va_start(ap, fmt);
     vsnprintf(ev->json, sizeof(ev->json), fmt, ap);
     va_end(ap);
 
-    const PgrRuntimeTransportApi *rt = resolve_transport_api();
+    const PgsRuntimeTransportApi *rt = resolve_transport_api();
     if (rt != nullptr && rt->emit != nullptr) {
-        PgrRuntimeTransportString strs[2] = {
+        PgsRuntimeTransportString strs[2] = {
             {ev->channel, static_cast<uint32_t>(strlen(ev->channel))},
             {ev->json, static_cast<uint32_t>(strlen(ev->json))},
         };
-        int rc=rt->emit(PGR_IH_RT_ACT_EVENT, nullptr, 0, strs, 2);
-        if(rc!=PGR_TRANSPORT_OK&&rc!=PGR_TRANSPORT_ERR_NOT_INSTALLED)g_transport_failed=true;
+        int rc=rt->emit(PGS_IH_RT_ACT_EVENT, nullptr, 0, strs, 2);
+        if(rc!=PGS_TRANSPORT_OK&&rc!=PGS_TRANSPORT_ERR_NOT_INSTALLED)g_transport_failed=true;
     }
 }
 
 /* Preparation is driven only by an already-attached proven owner. Never attach
  * a background diagnostics caller to the managed runtime. */
 struct ScopedIl2CppThread {
-    ScopedIl2CppThread(const PgrInteractionExtraExports &,void *){}
+    ScopedIl2CppThread(const PgsInteractionExtraExports &,void *){}
 };
 
 /* Scoped GC pin handle helper */
@@ -675,7 +678,7 @@ struct ScopedGcPin {
     FnGcHandleFree free_fn;
     uintptr_t handle;
 
-    ScopedGcPin(const PgrInteractionExtraExports &extra, void *obj)
+    ScopedGcPin(const PgsInteractionExtraExports &extra, void *obj)
         : get_fn(reinterpret_cast<FnGcHandleGetTarget>(extra.gchandle_get_target)),
           free_fn(reinterpret_cast<FnGcHandleFree>(extra.gchandle_free)),
           handle(0) {
@@ -715,7 +718,7 @@ static void unhook_direct_targets_locked() {
     // Retire observation only; a callback may still be returning through its
     // trampoline even after its event token has been consumed.
     g_state.hooked_direct_mask = g_direct_installed;
-    g_state.installed_target_mask &= ~PGR_IH_ALL_TARGETS_MASK;
+    g_state.installed_target_mask &= ~PGS_IH_ALL_TARGETS_MASK;
     g_state.deferred_cleanup_pending = false;
 }
 
@@ -724,9 +727,9 @@ static void unhook_direct_targets_locked() {
     static void hook_target_##IDX(void *self, const void *method) {                 \
         auto orig = reinterpret_cast<HookVoid0Fn>(__atomic_load_n(&g_direct_originals[IDX],__ATOMIC_ACQUIRE)); \
         if(!orig)__builtin_trap();                                                  \
-        pgr_interaction_owner::Phase phase(IDX);                                    \
-        pgr_interaction_owner::Pins pins(phase.wanted(),g_state.cfg.extra.gchandle_new,g_state.cfg.extra.gchandle_get_target,g_state.cfg.extra.gchandle_free,self); \
-        pgr_interaction_owner::AbortBeforeRoots cleanup{phase};                     \
+        pgs_interaction_owner::Phase phase(IDX);                                    \
+        pgs_interaction_owner::Pins pins(phase.wanted(),g_state.cfg.extra.gchandle_new,g_state.cfg.extra.gchandle_get_target,g_state.cfg.extra.gchandle_free,self); \
+        pgs_interaction_owner::AbortBeforeRoots cleanup{phase};                     \
         if(pins.valid)phase.enter(pins.at(0));                                      \
         orig(pins.at(0),method);phase.leave();                                      \
     }
@@ -735,9 +738,9 @@ static void unhook_direct_targets_locked() {
     static void hook_target_##IDX(void *self, void *arg0, const void *method) {     \
         auto orig = reinterpret_cast<HookVoid1Fn>(__atomic_load_n(&g_direct_originals[IDX],__ATOMIC_ACQUIRE)); \
         if(!orig)__builtin_trap();                                                  \
-        pgr_interaction_owner::Phase phase(IDX);                                    \
-        pgr_interaction_owner::Pins pins(phase.wanted(),g_state.cfg.extra.gchandle_new,g_state.cfg.extra.gchandle_get_target,g_state.cfg.extra.gchandle_free,self,arg0); \
-        pgr_interaction_owner::AbortBeforeRoots cleanup{phase};                     \
+        pgs_interaction_owner::Phase phase(IDX);                                    \
+        pgs_interaction_owner::Pins pins(phase.wanted(),g_state.cfg.extra.gchandle_new,g_state.cfg.extra.gchandle_get_target,g_state.cfg.extra.gchandle_free,self,arg0); \
+        pgs_interaction_owner::AbortBeforeRoots cleanup{phase};                     \
         if(pins.valid)phase.enter(pins.at(0),pins.at(1));                            \
         orig(pins.at(0),pins.at(1),method);phase.leave();                            \
     }
@@ -764,12 +767,12 @@ DEFINE_VOID0_HOOK(18)
 
 static void *hook_target_19(void *self, const void *method) {
     auto orig=reinterpret_cast<HookRet0Fn>(__atomic_load_n(&g_direct_originals[19],__ATOMIC_ACQUIRE));if(!orig)__builtin_trap();
-    pgr_interaction_owner::Phase phase(19);
+    pgs_interaction_owner::Phase phase(19);
     if(!phase.wanted()||g_deferred_btxu_root.load()||g_btxu_busy.test_and_set())return orig(self,method);
     struct Busy{~Busy(){g_btxu_busy.clear();}} busy;
     ScopedGcPin self_pin(g_state.cfg.extra,self);
     if(!self_pin.handle)return orig(self,method);
-    pgr_interaction_owner::AbortBeforeRoots cleanup{phase};
+    pgs_interaction_owner::AbortBeforeRoots cleanup{phase};
     phase.enter(self_pin.target(self));
     void *result=orig(self_pin.target(self),method);
     if(!result){phase.leave(nullptr);return nullptr;}
@@ -780,7 +783,7 @@ static void *hook_target_19(void *self, const void *method) {
     void *current=result_pin.target(result);result_pin.reset();return current;
 }
 
-static void *const kHookReplacements[PGR_IH_TOTAL_TARGETS] = {
+static void *const kHookReplacements[PGS_IH_TOTAL_TARGETS] = {
     reinterpret_cast<void *>(&hook_target_0),
     reinterpret_cast<void *>(&hook_target_1),
     reinterpret_cast<void *>(&hook_target_2),
@@ -875,7 +878,7 @@ enum InspectResultKind {
 };
 
 static InspectResultKind run_inspect_locked(char *out_reason, size_t reason_cap) {
-    const PgrMetaApi *meta = resolve_metadata_api();
+    const PgsMetaApi *meta = resolve_metadata_api();
     if (meta == nullptr) {
         copy_str(out_reason, reason_cap, "metadata-api-unavailable");
         return kInspectRetry;
@@ -913,19 +916,19 @@ static InspectResultKind run_inspect_locked(char *out_reason, size_t reason_cap)
     const void *debug_addr = g_state.cfg.debug_code_address != nullptr
                                  ? g_state.cfg.debug_code_address
                                  : g_state.meta_exports.debug_get_method_info;
-    PgrMetaCodeQuery dcq {};
-    dcq.version = PGR_MD_QUERY_VERSION;
+    PgsMetaCodeQuery dcq {};
+    dcq.version = PGS_MD_QUERY_VERSION;
     dcq.size = sizeof(dcq);
     dcq.address = debug_addr;
-    dcq.length = PGR_IH_DEBUG_PROLOGUE_BYTES;
+    dcq.length = PGS_IH_DEBUG_PROLOGUE_BYTES;
     dcq.prologue = kDebugWords;
-    dcq.prologue_len = PGR_IH_DEBUG_PROLOGUE_BYTES;
+    dcq.prologue_len = PGS_IH_DEBUG_PROLOGUE_BYTES;
     int rc = meta->validate_code(&dcq);
-    if (rc != PGR_MD_OK) {
+    if (rc != PGS_MD_OK) {
         uintptr_t a = reinterpret_cast<uintptr_t>(debug_addr);
         if ((a & 0x3u) != 0) {
             copy_str(out_reason, reason_cap, "debug-get-method-info-unaligned");
-        } else if (rc == PGR_MD_ERR_CODE_RANGE || rc == PGR_MD_ERR_SEGMENT) {
+        } else if (rc == PGS_MD_ERR_CODE_RANGE || rc == PGS_MD_ERR_SEGMENT) {
             copy_str(out_reason, reason_cap, "debug-get-method-info-not-in-module");
         } else {
             copy_str(out_reason, reason_cap, "debug-get-method-info-prologue-mismatch");
@@ -950,8 +953,8 @@ static InspectResultKind run_inspect_locked(char *out_reason, size_t reason_cap)
     memset(g_state.targets, 0, sizeof(g_state.targets));
 
     {
-        PgrInteractionHostEvent *ev =
-            alloc_event_slot(PGR_IH_EVT_METADATA_READY, "interaction-probe");
+        PgsInteractionHostEvent *ev =
+            alloc_event_slot(PGS_IH_EVT_METADATA_READY, "interaction-probe");
         publish_event(ev,
                       "{\"type\":\"metadata-ready\",\"attempt\":%u,\"assemblyCount\":%u,"
                       "\"debugGetMethodInfoRva\":\"0x%" PRIxPTR "\"}",
@@ -962,13 +965,13 @@ static InspectResultKind run_inspect_locked(char *out_reason, size_t reason_cap)
 
     int64_t scan_started_ms = now_ms();
     uint32_t max_assemblies = g_state.assemblies_total;
-    if (max_assemblies > PGR_IH_LIMIT_ASSEMBLIES) {
-        max_assemblies = PGR_IH_LIMIT_ASSEMBLIES;
+    if (max_assemblies > PGS_IH_LIMIT_ASSEMBLIES) {
+        max_assemblies = PGS_IH_LIMIT_ASSEMBLIES;
         g_state.truncated = true;
-        PgrInteractionHostEvent *ev = alloc_event_slot(PGR_IH_EVT_LIMIT, "interaction-probe");
+        PgsInteractionHostEvent *ev = alloc_event_slot(PGS_IH_EVT_LIMIT, "interaction-probe");
         publish_event(ev,
                       "{\"type\":\"limit\",\"reason\":\"assembly-limit\",\"limit\":%d,\"total\":%u}",
-                      PGR_IH_LIMIT_ASSEMBLIES,
+                      PGS_IH_LIMIT_ASSEMBLIES,
                       g_state.assemblies_total);
     }
 
@@ -1012,14 +1015,14 @@ static InspectResultKind run_inspect_locked(char *out_reason, size_t reason_cap)
         reinterpret_cast<FnDebugGetMethodInfo>(g_state.meta_exports.debug_get_method_info);
 
     for (uint32_t a = 0; a < max_assemblies; ++a) {
-        if (now_ms() - scan_started_ms >= PGR_IH_LIMIT_SCAN_MS) {
+        if (now_ms() - scan_started_ms >= PGS_IH_LIMIT_SCAN_MS) {
             g_state.truncated = true;
-            PgrInteractionHostEvent *ev = alloc_event_slot(PGR_IH_EVT_LIMIT, "interaction-probe");
+            PgsInteractionHostEvent *ev = alloc_event_slot(PGS_IH_EVT_LIMIT, "interaction-probe");
             publish_event(ev, "{\"type\":\"limit\",\"reason\":\"scan-time-limit\",\"limit\":%d}",
-                          PGR_IH_LIMIT_SCAN_MS);
+                          PGS_IH_LIMIT_SCAN_MS);
             break;
         }
-        if (g_state.classes_resolved == PGR_IH_CLASS_COUNT) {
+        if (g_state.classes_resolved == PGS_IH_CLASS_COUNT) {
             break;
         }
         void *assembly = assemblies[a];
@@ -1036,16 +1039,16 @@ static InspectResultKind run_inspect_locked(char *out_reason, size_t reason_cap)
             read_safe_string(img_get_name(image), image_name, sizeof(image_name));
         }
 
-        for (uint32_t c = 0; c < PGR_IH_CLASS_COUNT; ++c) {
+        for (uint32_t c = 0; c < PGS_IH_CLASS_COUNT; ++c) {
             if (g_state.classes[c].found) {
                 continue;
             }
-            if (g_state.lookups_used >= PGR_IH_LIMIT_LOOKUPS) {
+            if (g_state.lookups_used >= PGS_IH_LIMIT_LOOKUPS) {
                 g_state.truncated = true;
-                PgrInteractionHostEvent *ev =
-                    alloc_event_slot(PGR_IH_EVT_LIMIT, "interaction-probe");
+                PgsInteractionHostEvent *ev =
+                    alloc_event_slot(PGS_IH_EVT_LIMIT, "interaction-probe");
                 publish_event(ev, "{\"type\":\"limit\",\"reason\":\"lookup-limit\",\"limit\":%d}",
-                              PGR_IH_LIMIT_LOOKUPS);
+                              PGS_IH_LIMIT_LOOKUPS);
                 break;
             }
             ++g_state.lookups_used;
@@ -1078,8 +1081,8 @@ static InspectResultKind run_inspect_locked(char *out_reason, size_t reason_cap)
             ++g_state.classes_resolved;
 
             {
-                PgrInteractionHostEvent *ev =
-                    alloc_event_slot(PGR_IH_EVT_CLASS, "interaction-probe");
+                PgsInteractionHostEvent *ev =
+                    alloc_event_slot(PGS_IH_EVT_CLASS, "interaction-probe");
                 publish_event(ev,
                               "{\"type\":\"class\",\"className\":\"%s\",\"image\":\"%s\","
                               "\"flags\":%d,\"valueType\":%s,\"enumType\":%s,"
@@ -1095,32 +1098,32 @@ static InspectResultKind run_inspect_locked(char *out_reason, size_t reason_cap)
 
             /* Special case for Pokeball (class 10): exact btxu lookup via Feature 47 validate_method */
             if (kClasses[c].exact_lookup_only) {
-                ResolvedTargetState &ts = g_state.targets[PGR_IH_TGT_POKEBALL_BTXU];
+                ResolvedTargetState &ts = g_state.targets[PGS_IH_TGT_POKEBALL_BTXU];
                 ts.klass = klass;
-                PgrMetaMethodQuery mq {};
-                mq.version = PGR_MD_QUERY_VERSION;
+                PgsMetaMethodQuery mq {};
+                mq.version = PGS_MD_QUERY_VERSION;
                 mq.size = sizeof(mq);
                 mq.owner = klass;
-                mq.name = PGR_GAME_INTERACTION_HOST_CPP_BTQU_NAME;
+                mq.name = PGS_GAME_INTERACTION_HOST_CPP_BTQU_NAME;
                 mq.return_type = "Holoholo.Rpc.CatchPokemonOutProto";
-                mq.return_match = PGR_MD_MATCH_EXACT;
+                mq.return_match = PGS_MD_MATCH_EXACT;
                 mq.param_count = 0;
                 mq.is_static = 0;
                 mq.allow_inflated = 0;
-                mq.expected_code = reinterpret_cast<const void *>(mod_base + PGR_IH_BTXU_RVA);
+                mq.expected_code = reinterpret_cast<const void *>(mod_base + PGS_IH_BTXU_RVA);
                 mq.prologue = kBtxuWords;
-                mq.prologue_len = PGR_IH_BTXU_PROLOGUE_BYTES;
+                mq.prologue_len = PGS_IH_BTXU_PROLOGUE_BYTES;
 
-                PgrMetaMethodResult mres {};
+                PgsMetaMethodResult mres {};
                 int vrc = meta->validate_method(&mq, &mres);
-                if (vrc != PGR_MD_OK) {
-                    if (vrc == PGR_MD_ERR_NOT_FOUND) {
+                if (vrc != PGS_MD_OK) {
+                    if (vrc == PGS_MD_ERR_NOT_FOUND) {
                         copy_str(ts.unavail_reason, sizeof(ts.unavail_reason), "method-not-found");
-                    } else if (vrc == PGR_MD_ERR_TYPE) {
+                    } else if (vrc == PGS_MD_ERR_TYPE) {
                         copy_str(ts.unavail_reason, sizeof(ts.unavail_reason), "return-type-mismatch");
-                    } else if (vrc == PGR_MD_ERR_PROLOGUE) {
+                    } else if (vrc == PGS_MD_ERR_PROLOGUE) {
                         copy_str(ts.unavail_reason, sizeof(ts.unavail_reason), "prologue-mismatch");
-                    } else if (vrc == PGR_MD_ERR_CODE_RANGE || vrc == PGR_MD_ERR_SEGMENT) {
+                    } else if (vrc == PGS_MD_ERR_CODE_RANGE || vrc == PGS_MD_ERR_SEGMENT) {
                         copy_str(ts.unavail_reason, sizeof(ts.unavail_reason), "rva-or-code-mismatch");
                     } else {
                         copy_str(ts.unavail_reason, sizeof(ts.unavail_reason),
@@ -1135,10 +1138,10 @@ static InspectResultKind run_inspect_locked(char *out_reason, size_t reason_cap)
                 ts.rva = ts.code - mod_base;
                 ts.flags = mres.flags;
                 ts.iflags = mres.iflags;
-                g_state.resolved_optional_mask |= (1u << PGR_IH_TGT_POKEBALL_BTXU);
+                g_state.resolved_optional_mask |= (1u << PGS_IH_TGT_POKEBALL_BTXU);
 
-                PgrInteractionHostEvent *mev =
-                    alloc_event_slot(PGR_IH_EVT_METHOD, "interaction-probe");
+                PgsInteractionHostEvent *mev =
+                    alloc_event_slot(PGS_IH_EVT_METHOD, "interaction-probe");
                 publish_event(mev,
                               "{\"type\":\"method\",\"className\":\"%s\",\"name\":\"btqu\","
                               "\"returnType\":\"Holoholo.Rpc.CatchPokemonOutProto\","
@@ -1154,23 +1157,23 @@ static InspectResultKind run_inspect_locked(char *out_reason, size_t reason_cap)
                 field_get_offset != nullptr) {
                 void *f_iter = nullptr;
                 while (true) {
-                    if (now_ms() - scan_started_ms >= PGR_IH_LIMIT_SCAN_MS) {
+                    if (now_ms() - scan_started_ms >= PGS_IH_LIMIT_SCAN_MS) {
                         g_state.truncated = true;
-                        PgrInteractionHostEvent *ev =
-                            alloc_event_slot(PGR_IH_EVT_LIMIT, "interaction-probe");
+                        PgsInteractionHostEvent *ev =
+                            alloc_event_slot(PGS_IH_EVT_LIMIT, "interaction-probe");
                         publish_event(ev,
                                       "{\"type\":\"limit\",\"reason\":\"scan-time-limit\",\"limit\":%d}",
-                                      PGR_IH_LIMIT_SCAN_MS);
+                                      PGS_IH_LIMIT_SCAN_MS);
                         break;
                     }
-                    if (cs.field_count >= PGR_IH_LIMIT_FIELDS_PER_CLASS ||
-                        g_state.fields_emitted >= PGR_IH_LIMIT_FIELDS) {
+                    if (cs.field_count >= PGS_IH_LIMIT_FIELDS_PER_CLASS ||
+                        g_state.fields_emitted >= PGS_IH_LIMIT_FIELDS) {
                         g_state.truncated = true;
-                        const char *lreason = cs.field_count >= PGR_IH_LIMIT_FIELDS_PER_CLASS
+                        const char *lreason = cs.field_count >= PGS_IH_LIMIT_FIELDS_PER_CLASS
                                                   ? "class-field-limit"
                                                   : "total-field-limit";
-                        PgrInteractionHostEvent *ev =
-                            alloc_event_slot(PGR_IH_EVT_LIMIT, "interaction-probe");
+                        PgsInteractionHostEvent *ev =
+                            alloc_event_slot(PGS_IH_EVT_LIMIT, "interaction-probe");
                         publish_event(ev,
                                       "{\"type\":\"limit\",\"reason\":\"%s\",\"className\":\"%s\"}",
                                       lreason,
@@ -1190,8 +1193,8 @@ static InspectResultKind run_inspect_locked(char *out_reason, size_t reason_cap)
                     int32_t fflags = field_get_flags(field);
                     size_t foffset = field_get_offset(field);
 
-                    PgrInteractionHostEvent *fev =
-                        alloc_event_slot(PGR_IH_EVT_FIELD, "interaction-probe");
+                    PgsInteractionHostEvent *fev =
+                        alloc_event_slot(PGS_IH_EVT_FIELD, "interaction-probe");
                     publish_event(fev,
                                   "{\"type\":\"field\",\"className\":\"%s\",\"index\":%u,"
                                   "\"name\":\"%s\",\"fieldType\":\"%s\",\"flags\":%d,\"offset\":%zu}",
@@ -1210,23 +1213,23 @@ static InspectResultKind run_inspect_locked(char *out_reason, size_t reason_cap)
                 method_get_param != nullptr) {
                 void *m_iter = nullptr;
                 while (true) {
-                    if (now_ms() - scan_started_ms >= PGR_IH_LIMIT_SCAN_MS) {
+                    if (now_ms() - scan_started_ms >= PGS_IH_LIMIT_SCAN_MS) {
                         g_state.truncated = true;
-                        PgrInteractionHostEvent *ev =
-                            alloc_event_slot(PGR_IH_EVT_LIMIT, "interaction-probe");
+                        PgsInteractionHostEvent *ev =
+                            alloc_event_slot(PGS_IH_EVT_LIMIT, "interaction-probe");
                         publish_event(ev,
                                       "{\"type\":\"limit\",\"reason\":\"scan-time-limit\",\"limit\":%d}",
-                                      PGR_IH_LIMIT_SCAN_MS);
+                                      PGS_IH_LIMIT_SCAN_MS);
                         break;
                     }
-                    if (cs.method_count >= PGR_IH_LIMIT_METHODS_PER_CLASS ||
-                        g_state.methods_emitted >= PGR_IH_LIMIT_METHODS) {
+                    if (cs.method_count >= PGS_IH_LIMIT_METHODS_PER_CLASS ||
+                        g_state.methods_emitted >= PGS_IH_LIMIT_METHODS) {
                         g_state.truncated = true;
-                        const char *lreason = cs.method_count >= PGR_IH_LIMIT_METHODS_PER_CLASS
+                        const char *lreason = cs.method_count >= PGS_IH_LIMIT_METHODS_PER_CLASS
                                                   ? "class-method-limit"
                                                   : "total-method-limit";
-                        PgrInteractionHostEvent *ev =
-                            alloc_event_slot(PGR_IH_EVT_LIMIT, "interaction-probe");
+                        PgsInteractionHostEvent *ev =
+                            alloc_event_slot(PGS_IH_EVT_LIMIT, "interaction-probe");
                         publish_event(ev,
                                       "{\"type\":\"limit\",\"reason\":\"%s\",\"className\":\"%s\"}",
                                       lreason,
@@ -1252,11 +1255,11 @@ static InspectResultKind run_inspect_locked(char *out_reason, size_t reason_cap)
                     }
 
                     uint32_t pmax = pcount;
-                    if (pmax > PGR_IH_LIMIT_PARAMETERS) {
-                        pmax = PGR_IH_LIMIT_PARAMETERS;
+                    if (pmax > PGS_IH_LIMIT_PARAMETERS) {
+                        pmax = PGS_IH_LIMIT_PARAMETERS;
                         g_state.truncated = true;
-                        PgrInteractionHostEvent *ev =
-                            alloc_event_slot(PGR_IH_EVT_LIMIT, "interaction-probe");
+                        PgsInteractionHostEvent *ev =
+                            alloc_event_slot(PGS_IH_EVT_LIMIT, "interaction-probe");
                         publish_event(ev,
                                       "{\"type\":\"limit\",\"reason\":\"parameter-limit\","
                                       "\"className\":\"%s\",\"method\":\"%s\",\"total\":%u}",
@@ -1288,15 +1291,15 @@ static InspectResultKind run_inspect_locked(char *out_reason, size_t reason_cap)
                     uintptr_t m_rva = 0;
 
                     if (code_ptr != nullptr) {
-                        PgrMetaCodeQuery cq {};
-                        cq.version = PGR_MD_QUERY_VERSION;
+                        PgsMetaCodeQuery cq {};
+                        cq.version = PGS_MD_QUERY_VERSION;
                         cq.size = sizeof(cq);
                         cq.address = code_ptr;
                         cq.length = 4;
-                        if (meta->validate_code(&cq) == PGR_MD_OK) {
+                        if (meta->validate_code(&cq) == PGS_MD_OK) {
                             m_rva = code_addr - mod_base;
                             /* Match against targets 0..18 belonging to class c */
-                            for (uint32_t t = 0; t < PGR_IH_TOTAL_TARGETS - 1; ++t) {
+                            for (uint32_t t = 0; t < PGS_IH_TOTAL_TARGETS - 1; ++t) {
                                 const TargetDesc &td = kTargets[t];
                                 if (td.class_index != c) {
                                     continue;
@@ -1344,8 +1347,8 @@ static InspectResultKind run_inspect_locked(char *out_reason, size_t reason_cap)
                         }
                     }
 
-                    PgrInteractionHostEvent *mev =
-                        alloc_event_slot(PGR_IH_EVT_METHOD, "interaction-probe");
+                    PgsInteractionHostEvent *mev =
+                        alloc_event_slot(PGS_IH_EVT_METHOD, "interaction-probe");
                     publish_event(mev,
                                   "{\"type\":\"method\",\"className\":\"%s\",\"index\":%u,"
                                   "\"name\":\"%s\",\"returnType\":\"%s\",\"parameterCount\":%u,"
@@ -1359,27 +1362,27 @@ static InspectResultKind run_inspect_locked(char *out_reason, size_t reason_cap)
                 }
             }
         }
-        if (g_state.lookups_used >= PGR_IH_LIMIT_LOOKUPS) {
+        if (g_state.lookups_used >= PGS_IH_LIMIT_LOOKUPS) {
             break;
         }
     }
 
     uint32_t resolved_req_count = 0;
-    for (uint32_t t = 0; t < PGR_IH_REQUIRED_TARGETS; ++t) {
+    for (uint32_t t = 0; t < PGS_IH_REQUIRED_TARGETS; ++t) {
         if ((g_state.resolved_required_mask & (1u << t)) != 0) {
             ++resolved_req_count;
         }
     }
     uint32_t resolved_opt_count = 0;
-    for (uint32_t t = PGR_IH_REQUIRED_TARGETS; t < PGR_IH_TOTAL_TARGETS; ++t) {
+    for (uint32_t t = PGS_IH_REQUIRED_TARGETS; t < PGS_IH_TOTAL_TARGETS; ++t) {
         if ((g_state.resolved_optional_mask & (1u << t)) != 0) {
             ++resolved_opt_count;
         }
     }
 
     {
-        PgrInteractionHostEvent *ev =
-            alloc_event_slot(PGR_IH_EVT_METADATA_SUMMARY, "interaction-probe");
+        PgsInteractionHostEvent *ev =
+            alloc_event_slot(PGS_IH_EVT_METADATA_SUMMARY, "interaction-probe");
         publish_event(ev,
                       "{\"type\":\"metadata-summary\",\"attempt\":%u,\"assembliesScanned\":%u,"
                       "\"lookupsUsed\":%u,\"resolvedClasses\":%u,\"resolvedTargets\":%u,"
@@ -1390,22 +1393,22 @@ static InspectResultKind run_inspect_locked(char *out_reason, size_t reason_cap)
                       g_state.lookups_used,
                       g_state.classes_resolved,
                       resolved_req_count,
-                      PGR_IH_REQUIRED_TARGETS,
+                      PGS_IH_REQUIRED_TARGETS,
                       resolved_opt_count,
-                      PGR_IH_OPTIONAL_TARGETS,
+                      PGS_IH_OPTIONAL_TARGETS,
                       g_state.fields_emitted,
                       g_state.methods_emitted,
                       g_state.truncated ? "true" : "false");
     }
 
-    if (resolved_req_count == PGR_IH_REQUIRED_TARGETS &&
-        (g_state.ambiguous_target_mask & PGR_IH_REQUIRED_MASK) == 0 &&
+    if (resolved_req_count == PGS_IH_REQUIRED_TARGETS &&
+        (g_state.ambiguous_target_mask & PGS_IH_REQUIRED_MASK) == 0 &&
         !g_state.truncated) {
         copy_str(out_reason, reason_cap, "ok");
         return kInspectReady;
     }
 
-    if ((g_state.ambiguous_target_mask & PGR_IH_REQUIRED_MASK) != 0) {
+    if ((g_state.ambiguous_target_mask & PGS_IH_REQUIRED_MASK) != 0) {
         copy_str(out_reason, reason_cap, "ambiguous-targets");
     } else if (g_state.truncated) {
         copy_str(out_reason, reason_cap, "metadata-truncated");
@@ -1460,7 +1463,7 @@ static bool prepare_single_result_spec_locked(uint32_t spec_idx, ResultReaderSta
     void *matched_field = nullptr;
     uint32_t match_count = 0;
     uint32_t scanned = 0;
-    while (scanned < PGR_IH_LIMIT_FIELDS_PER_CLASS) {
+    while (scanned < PGS_IH_LIMIT_FIELDS_PER_CLASS) {
         void *f = class_get_fields(cs.klass, &iter);
         if (f == nullptr) {
             break;
@@ -1531,7 +1534,7 @@ static bool prepare_single_result_spec_locked(uint32_t spec_idx, ResultReaderSta
     char value_field_name[32] = {};
     char value_field_type[64] = {};
     while (true) {
-        if (e_scanned >= PGR_IH_LIMIT_ENUM_FIELDS) {
+        if (e_scanned >= PGS_IH_LIMIT_ENUM_FIELDS) {
             copy_str(rs.error_reason, sizeof(rs.error_reason), "enum-field-limit");
             return false;
         }
@@ -1554,7 +1557,7 @@ static bool prepare_single_result_spec_locked(uint32_t spec_idx, ResultReaderSta
         if ((ef_flags & 0x8050) != 0x8050 || !str_eq(ef_type, spec.field_type)) {
             continue;
         }
-        if (rs.literal_count >= PGR_IH_LIMIT_ENUM_LITERALS) {
+        if (rs.literal_count >= PGS_IH_LIMIT_ENUM_LITERALS) {
             copy_str(rs.error_reason, sizeof(rs.error_reason), "enum-literal-limit");
             return false;
         }
@@ -1595,8 +1598,8 @@ static void prepare_result_readers_locked() {
              "disabled-by-option");
 
     if (g_state.opts.read_results == 0) {
-        PgrInteractionHostEvent *ev =
-            alloc_event_slot(PGR_IH_EVT_RESULT_READ_AVAILABILITY, "interaction-probe");
+        PgsInteractionHostEvent *ev =
+            alloc_event_slot(PGS_IH_EVT_RESULT_READ_AVAILABILITY, "interaction-probe");
         ev->available = 0;
         copy_str(ev->result_name, sizeof(ev->result_name), "disabled-by-option");
         publish_event(ev,
@@ -1623,7 +1626,7 @@ static void prepare_result_readers_locked() {
     }
 
     /* Pokeball::btxu return reader depends only on Spec 0 (CatchPokemonOutProto.Status) + Target 19 */
-    if (s0 && g_state.targets[PGR_IH_TGT_POKEBALL_BTXU].resolved) {
+    if (s0 && g_state.targets[PGS_IH_TGT_POKEBALL_BTXU].resolved) {
         g_state.return_reader_available = true;
         copy_str(g_state.return_reader_reason, sizeof(g_state.return_reader_reason), "ok");
     } else {
@@ -1631,11 +1634,11 @@ static void prepare_result_readers_locked() {
         copy_str(g_state.return_reader_reason,
                  sizeof(g_state.return_reader_reason),
                  !s0 ? g_state.result_specs[0].error_reason
-                     : g_state.targets[PGR_IH_TGT_POKEBALL_BTXU].unavail_reason);
+                     : g_state.targets[PGS_IH_TGT_POKEBALL_BTXU].unavail_reason);
     }
 
-    PgrInteractionHostEvent *ev =
-        alloc_event_slot(PGR_IH_EVT_RESULT_READ_AVAILABILITY, "interaction-probe");
+    PgsInteractionHostEvent *ev =
+        alloc_event_slot(PGS_IH_EVT_RESULT_READ_AVAILABILITY, "interaction-probe");
     ev->available = g_state.argument_readers_available ? 1 : 0;
     copy_str(ev->result_name, sizeof(ev->result_name), g_state.arg_reader_reason);
     publish_event(ev,
@@ -1649,20 +1652,20 @@ static void prepare_result_readers_locked() {
 
 static uint32_t compute_effective_owned_mask_locked() {
     uint32_t mask = g_state.shared_owned_mask;
-    if ((g_state.cfg.flags & PGR_IH_CFG_NO_AUTO_SHARED_DETECT) == 0) {
-        const PgrObsApi *co = resolve_catch_observers_api();
+    if ((g_state.cfg.flags & PGS_IH_CFG_NO_AUTO_SHARED_DETECT) == 0) {
+        const PgsObsApi *co = resolve_catch_observers_api();
         if (co != nullptr && co->tick != nullptr) {
-            if (co->tick(0) == PGR_OBS_OK) {
-                mask |= PGR_IH_SHARED_MASK_49;
+            if (co->tick(0) == PGS_OBS_OK) {
+                mask |= PGS_IH_SHARED_MASK_49;
             }
         }
-        const PgrSharedHostApi *sh = resolve_shared_host_api();
+        const PgsSharedHostApi *sh = resolve_shared_host_api();
         if (sh != nullptr && sh->sample != nullptr) {
-            PgrSharedHostSample sh_s {};
+            PgsSharedHostSample sh_s {};
             sh_s.version = 1;
             sh_s.size = sizeof(sh_s);
             if (sh->sample(&sh_s) == 0 && sh_s.ready != 0) {
-                mask |= PGR_IH_SHARED_MASK_61;
+                mask |= PGS_IH_SHARED_MASK_61;
             }
         }
         const PgsSpinHostApi *sp = resolve_spin_host_api();
@@ -1672,38 +1675,38 @@ static uint32_t compute_effective_owned_mask_locked() {
             sp_s.size = sizeof(sp_s);
             if (sp->sample(&sp_s) == PGS_SPH_OK && sp_s.configured != 0) {
                 if ((sp_s.capabilities & PGS_SPH_CAMERA) != 0) {
-                    mask |= PGR_IH_SHARED_MASK_67_CAMERA;
+                    mask |= PGS_IH_SHARED_MASK_67_CAMERA;
                 }
                 if ((sp_s.capabilities & PGS_SPH_QUICK) != 0) {
-                    mask |= PGR_IH_SHARED_MASK_67_QUICK;
+                    mask |= PGS_IH_SHARED_MASK_67_QUICK;
                 }
             }
         }
     }
-    for (uint32_t t = 0; t < PGR_IH_TOTAL_TARGETS; ++t) {
+    for (uint32_t t = 0; t < PGS_IH_TOTAL_TARGETS; ++t) {
         if (g_state.targets[t].resolved &&
-            (g_state.targets[t].rva == PGR_IH_TR_RVA_ZLC ||
-             g_state.targets[t].rva == PGR_IH_TR_RVA_ZLD)) {
+            (g_state.targets[t].rva == PGS_IH_TR_RVA_ZLC ||
+             g_state.targets[t].rva == PGS_IH_TR_RVA_ZLD)) {
             mask |= (1u << t);
         }
     }
-    return mask & PGR_IH_ALL_TARGETS_MASK;
+    return mask & PGS_IH_ALL_TARGETS_MASK;
 }
 
 static const char *shared_owner_reason(uint32_t target_id) {
     if (g_state.targets[target_id].resolved &&
-        (g_state.targets[target_id].rva == PGR_IH_TR_RVA_ZLC ||
-         g_state.targets[target_id].rva == PGR_IH_TR_RVA_ZLD)) {
+        (g_state.targets[target_id].rva == PGS_IH_TR_RVA_ZLC ||
+         g_state.targets[target_id].rva == PGS_IH_TR_RVA_ZLD)) {
         return "hook-site-owned-by-feature-57";
     }
     uint32_t bit = 1u << target_id;
-    if ((bit & PGR_IH_SHARED_MASK_49) != 0) {
+    if ((bit & PGS_IH_SHARED_MASK_49) != 0) {
         return "hook-site-owned-by-feature-49";
     }
-    if ((bit & PGR_IH_SHARED_MASK_61) != 0) {
+    if ((bit & PGS_IH_SHARED_MASK_61) != 0) {
         return "hook-site-owned-by-feature-61";
     }
-    if ((bit & PGR_IH_SHARED_MASK_67) != 0) {
+    if ((bit & PGS_IH_SHARED_MASK_67) != 0) {
         return "hook-site-owned-by-feature-67";
     }
     return "hook-site-owned-by-external-feature";
@@ -1720,7 +1723,7 @@ static int start_observation_locked() {
     uint32_t unavailable_optional_count = 0;
     char first_required_failure[96] = {};
 
-    for (uint32_t t = 0; t < PGR_IH_TOTAL_TARGETS; ++t) {
+    for (uint32_t t = 0; t < PGS_IH_TOTAL_TARGETS; ++t) {
         const TargetDesc &td = kTargets[t];
         ResolvedTargetState &ts = g_state.targets[t];
         uint32_t bit = 1u << t;
@@ -1737,7 +1740,7 @@ static int start_observation_locked() {
             break;
         }
 
-        /* Never call pgrazor_hook on any target owned by Features 49, 57, 61, 67 */
+        /* Never call pgs_hook on any target owned by Features 49, 57, 61, 67 */
         if ((g_state.effective_owned_mask & bit) != 0) {
             if ((g_state.shared_integrated_mask & bit) != 0) {
                 g_state.installed_target_mask |= bit;
@@ -1747,7 +1750,7 @@ static int start_observation_locked() {
             const char *owner_reason = shared_owner_reason(t);
             copy_str(ts.unavail_reason, sizeof(ts.unavail_reason), owner_reason);
             if (td.optional_target ||
-                (g_state.opts.flags & PGR_IH_OPT_DEGRADE_UNATTESTED_SHARED) != 0) {
+                (g_state.opts.flags & PGS_IH_OPT_DEGRADE_UNATTESTED_SHARED) != 0) {
                 ++unavailable_optional_count;
                 continue;
             }
@@ -1784,8 +1787,8 @@ static int start_observation_locked() {
 
     if (first_required_failure[0] != '\0') {
         unhook_direct_targets_locked();
-        PgrInteractionHostEvent *ev =
-            alloc_event_slot(PGR_IH_EVT_OBSERVER_TARGET_AVAILABILITY, "interaction-probe");
+        PgsInteractionHostEvent *ev =
+            alloc_event_slot(PGS_IH_EVT_OBSERVER_TARGET_AVAILABILITY, "interaction-probe");
         ev->available = 0;
         copy_str(ev->result_name, sizeof(ev->result_name), first_required_failure);
         publish_event(ev,
@@ -1793,13 +1796,13 @@ static int start_observation_locked() {
                       "\"reason\":\"%s\",\"blockedSharedMask\":%u}",
                       first_required_failure,
                       g_state.blocked_shared_mask);
-        finish_observation_locked(PGR_IH_STATUS_FAILED, "observer-setup-failed");
-        return PGR_IH_ERR_HOOK;
+        finish_observation_locked(PGS_IH_STATUS_FAILED, "observer-setup-failed");
+        return PGS_IH_ERR_HOOK;
     }
 
     if (unavailable_optional_count > 0 || g_state.blocked_shared_mask != 0) {
-        PgrInteractionHostEvent *ev =
-            alloc_event_slot(PGR_IH_EVT_OBSERVER_TARGET_AVAILABILITY, "interaction-probe");
+        PgsInteractionHostEvent *ev =
+            alloc_event_slot(PGS_IH_EVT_OBSERVER_TARGET_AVAILABILITY, "interaction-probe");
         ev->available = 0;
         publish_event(ev,
                       "{\"type\":\"observer-target-availability\",\"available\":false,"
@@ -1808,36 +1811,36 @@ static int start_observation_locked() {
                       g_state.blocked_shared_mask);
     }
 
-    g_state.status = PGR_IH_STATUS_OBSERVING;
+    g_state.status = PGS_IH_STATUS_OBSERVING;
     g_state.observe_started_ms = now_ms();
-    g_state.observe_deadline_ms = g_state.observe_started_ms + PGR_IH_LIMIT_OBSERVE_MS;
+    g_state.observe_deadline_ms = g_state.observe_started_ms + PGS_IH_LIMIT_OBSERVE_MS;
     g_state.last_poll_ms = g_state.observe_started_ms;
 
     uint32_t installed_count = 0;
-    for (uint32_t t = 0; t < PGR_IH_TOTAL_TARGETS; ++t) {
+    for (uint32_t t = 0; t < PGS_IH_TOTAL_TARGETS; ++t) {
         if ((g_state.installed_target_mask & (1u << t)) != 0) {
             ++installed_count;
         }
     }
 
-    PgrInteractionHostEvent *ev =
-        alloc_event_slot(PGR_IH_EVT_OBSERVATION_READY, "interaction-probe");
+    PgsInteractionHostEvent *ev =
+        alloc_event_slot(PGS_IH_EVT_OBSERVATION_READY, "interaction-probe");
     ev->available = 1;
     publish_event(ev,
                   "{\"type\":\"observation-ready\",\"windowMs\":%d,\"maxEvents\":%d,"
                   "\"maxHits\":%d,\"maxThreads\":%d,\"readResults\":%s,"
                   "\"returnResultReads\":%s,\"targetCount\":%u}",
-                  PGR_IH_LIMIT_OBSERVE_MS,
-                  PGR_IH_LIMIT_EVENTS,
-                  PGR_IH_LIMIT_HITS,
-                  PGR_IH_LIMIT_THREADS,
+                  PGS_IH_LIMIT_OBSERVE_MS,
+                  PGS_IH_LIMIT_EVENTS,
+                  PGS_IH_LIMIT_HITS,
+                  PGS_IH_LIMIT_THREADS,
                   g_state.argument_readers_available ? "true" : "false",
                   g_state.return_reader_available ? "true" : "false",
                   installed_count);
 
     emit_transport_diagnostic(
         "Recording for 60s: catch normally, then spin a stop. Minimize this panel.");
-    return PGR_IH_OK;
+    return PGS_IH_OK;
 }
 
 static void finish_observation_locked(uint32_t final_status, const char *reason) {
@@ -1845,12 +1848,12 @@ static void finish_observation_locked(uint32_t final_status, const char *reason)
     copy_str(g_state.reason, sizeof(g_state.reason), reason);
 
     if (g_state.opts.observe_runtime != 0 &&
-        (final_status == PGR_IH_STATUS_COMPLETE || final_status == PGR_IH_STATUS_STOPPED ||
+        (final_status == PGS_IH_STATUS_COMPLETE || final_status == PGS_IH_STATUS_STOPPED ||
          g_state.observe_started_ms > 0)) {
         int64_t end_ms = now_ms();
         int64_t elapsed = g_state.observe_started_ms > 0 ? (end_ms - g_state.observe_started_ms) : 0;
-        PgrInteractionHostEvent *sev =
-            alloc_event_slot(PGR_IH_EVT_OBSERVATION_SUMMARY, "interaction-probe");
+        PgsInteractionHostEvent *sev =
+            alloc_event_slot(PGS_IH_EVT_OBSERVATION_SUMMARY, "interaction-probe");
         publish_event(sev,
                       "{\"type\":\"observation-summary\",\"reason\":\"%s\",\"elapsedMs\":%" PRId64 ","
                       "\"eventCount\":%u,\"hitCount\":%u,\"observedThreads\":%u,"
@@ -1878,7 +1881,7 @@ static void finish_observation_locked(uint32_t final_status, const char *reason)
     g_state.stopping = false;
 
     const char *st_str = status_to_string(final_status);
-    PgrInteractionHostEvent *fev = alloc_event_slot(PGR_IH_EVT_FINISHED, "interaction-probe");
+    PgsInteractionHostEvent *fev = alloc_event_slot(PGS_IH_EVT_FINISHED, "interaction-probe");
     publish_event(fev,
                   "{\"type\":\"finished\",\"status\":\"%s\",\"reason\":\"%s\","
                   "\"observeRuntime\":%s,\"readResults\":%s}",
@@ -1896,7 +1899,7 @@ static void finish_observation_locked(uint32_t final_status, const char *reason)
         } else {
             snprintf(diag, sizeof(diag), "Capture %s; see Run log", st_str);
         }
-    } else if (final_status == PGR_IH_STATUS_COMPLETE) {
+    } else if (final_status == PGS_IH_STATUS_COMPLETE) {
         copy_str(diag, sizeof(diag), "Ready to record catch and spin callbacks");
     } else {
         if (g_state.reason[0] != '\0') {
@@ -1914,8 +1917,8 @@ static void disable_arg_readers_locked(const char *reason) {
     }
     g_state.argument_readers_available = false;
     copy_str(g_state.arg_reader_reason, sizeof(g_state.arg_reader_reason), reason);
-    PgrInteractionHostEvent *ev =
-        alloc_event_slot(PGR_IH_EVT_RESULT_READ_AVAILABILITY, "interaction-probe");
+    PgsInteractionHostEvent *ev =
+        alloc_event_slot(PGS_IH_EVT_RESULT_READ_AVAILABILITY, "interaction-probe");
     ev->available = 0;
     ev->is_return_result = 0;
     copy_str(ev->result_name, sizeof(ev->result_name), reason);
@@ -1930,8 +1933,8 @@ static void disable_return_reader_locked(const char *reason) {
     }
     g_state.return_reader_available = false;
     copy_str(g_state.return_reader_reason, sizeof(g_state.return_reader_reason), reason);
-    PgrInteractionHostEvent *ev =
-        alloc_event_slot(PGR_IH_EVT_RESULT_READ_AVAILABILITY, "interaction-probe");
+    PgsInteractionHostEvent *ev =
+        alloc_event_slot(PGS_IH_EVT_RESULT_READ_AVAILABILITY, "interaction-probe");
     ev->available = 0;
     ev->is_return_result = 1;
     copy_str(ev->result_name, sizeof(ev->result_name), reason);
@@ -1949,7 +1952,7 @@ static void decode_result_object_locked(uint32_t target_id,
                                         int32_t *out_code,
                                         char *out_name,
                                         size_t out_name_cap) {
-    *out_status = PGR_IH_RES_NONE;
+    *out_status = PGS_IH_RES_NONE;
     *out_code = 0;
     if (out_name_cap > 0) {
         out_name[0] = '\0';
@@ -1976,7 +1979,7 @@ static void decode_result_object_locked(uint32_t target_id,
         } else {
             disable_arg_readers_locked("receiver-class-mismatch");
         }
-        *out_status = PGR_IH_RES_DISABLED;
+        *out_status = PGS_IH_RES_DISABLED;
         copy_str(out_name, out_name_cap, "receiver-class-mismatch");
         return;
     }
@@ -1987,13 +1990,13 @@ static void decode_result_object_locked(uint32_t target_id,
         } else {
             disable_arg_readers_locked("receiver-class-mismatch");
         }
-        *out_status = PGR_IH_RES_DISABLED;
+        *out_status = PGS_IH_RES_DISABLED;
         copy_str(out_name, out_name_cap, "receiver-class-mismatch");
         return;
     }
 
     if (msg_obj == nullptr) {
-        *out_status = PGR_IH_RES_NULL_ARG;
+        *out_status = PGS_IH_RES_NULL_ARG;
         return;
     }
     if ((reinterpret_cast<uintptr_t>(msg_obj) & 0x7u) != 0) {
@@ -2003,7 +2006,7 @@ static void decode_result_object_locked(uint32_t target_id,
         } else {
             disable_arg_readers_locked(err);
         }
-        *out_status = PGR_IH_RES_DISABLED;
+        *out_status = PGS_IH_RES_DISABLED;
         copy_str(out_name, out_name_cap, err);
         return;
     }
@@ -2016,14 +2019,14 @@ static void decode_result_object_locked(uint32_t target_id,
         } else {
             disable_arg_readers_locked(err);
         }
-        *out_status = PGR_IH_RES_DISABLED;
+        *out_status = PGS_IH_RES_DISABLED;
         copy_str(out_name, out_name_cap, err);
         return;
     }
 
     int32_t code = *reinterpret_cast<const int32_t *>(
         reinterpret_cast<const uint8_t *>(msg_obj) + rs.offset);
-    *out_status = PGR_IH_RES_DECODED;
+    *out_status = PGS_IH_RES_DECODED;
     *out_code = code;
     copy_str(out_name, out_name_cap, "UNKNOWN");
     for (uint32_t i = 0; i < rs.literal_count; ++i) {
@@ -2040,7 +2043,7 @@ static int find_or_add_thread_locked(int32_t tid) {
             return static_cast<int>(i);
         }
     }
-    if (g_state.thread_count >= PGR_IH_LIMIT_THREADS) {
+    if (g_state.thread_count >= PGS_IH_LIMIT_THREADS) {
         ++g_state.dropped_threads;
         return -1;
     }
@@ -2051,12 +2054,12 @@ static int find_or_add_thread_locked(int32_t tid) {
 }
 
 static uint64_t observe_enter_internal(uint32_t target_id, void *receiver, void *arg0) {
-    if (target_id >= PGR_IH_TOTAL_TARGETS) {
+    if (target_id >= PGS_IH_TOTAL_TARGETS) {
         return 0;
     }
     ScopedLock lock;
     auto current=reinterpret_cast<FnThreadCurrent>(g_state.cfg.extra.thread_current);
-    if (!current||!current()||g_transport_failed||!g_state.running || g_state.stopping || g_state.status != PGR_IH_STATUS_OBSERVING) {
+    if (!current||!current()||g_transport_failed||!g_state.running || g_state.stopping || g_state.status != PGS_IH_STATUS_OBSERVING) {
         return 0;
     }
     if ((g_state.installed_target_mask & (1u << target_id)) == 0) {
@@ -2069,26 +2072,26 @@ static uint64_t observe_enter_internal(uint32_t target_id, void *receiver, void 
 
     if (t_ms >= g_state.observe_deadline_ms) {
         finish_observation_locked(
-            PGR_IH_STATUS_COMPLETE,
+            PGS_IH_STATUS_COMPLETE,
             g_state.event_count > 0 ? "observation-complete" : "no-natural-calls");
         return 0;
     }
-    if (g_state.hit_count > PGR_IH_LIMIT_HITS) {
-        finish_observation_locked(PGR_IH_STATUS_COMPLETE, "hit-limit");
+    if (g_state.hit_count > PGS_IH_LIMIT_HITS) {
+        finish_observation_locked(PGS_IH_STATUS_COMPLETE, "hit-limit");
         return 0;
     }
 
     const TargetDesc &td = kTargets[target_id];
     uint32_t needed_events = td.read_return ? 2u : 1u;
-    if (g_state.event_count + g_state.reserved_events + 2u > PGR_IH_LIMIT_EVENTS) {
-        finish_observation_locked(PGR_IH_STATUS_COMPLETE, "event-limit");
+    if (g_state.event_count + g_state.reserved_events + 2u > PGS_IH_LIMIT_EVENTS) {
+        finish_observation_locked(PGS_IH_STATUS_COMPLETE, "event-limit");
         return 0;
     }
 
     int32_t tid = current_thread_id();
     int thread_idx = find_or_add_thread_locked(tid);
     if (thread_idx < 0) {
-        finish_observation_locked(PGR_IH_STATUS_COMPLETE, "thread-limit");
+        finish_observation_locked(PGS_IH_STATUS_COMPLETE, "thread-limit");
         return 0;
     }
 
@@ -2110,7 +2113,7 @@ static uint64_t observe_enter_internal(uint32_t target_id, void *receiver, void 
 
     /* For non-readReturn targets, emit the enter event immediately */
     if (!td.read_return) {
-        uint8_t res_status = PGR_IH_RES_NONE;
+        uint8_t res_status = PGS_IH_RES_NONE;
         int32_t res_code = 0;
         char res_name[64] = {};
 
@@ -2128,21 +2131,21 @@ static uint64_t observe_enter_internal(uint32_t target_id, void *receiver, void 
         }
 
         ++g_state.event_count;
-        PgrInteractionHostEvent *ev =
-            alloc_event_slot(PGR_IH_EVT_INTERACTION_EVENT, "interaction-probe");
+        PgsInteractionHostEvent *ev =
+            alloc_event_slot(PGS_IH_EVT_INTERACTION_EVENT, "interaction-probe");
         ev->ts_ms = t_ms;
         ev->elapsed_ms = elapsed_ms;
         ev->target_id = target_id;
         ev->call_id = call_id;
         ev->depth = depth;
         ev->tid = tid;
-        ev->phase = PGR_IH_PHASE_ENTER;
+        ev->phase = PGS_IH_PHASE_ENTER;
         ev->result_status = res_status;
         ev->is_return_result = 0;
         ev->result_code = res_code;
         copy_str(ev->result_name, sizeof(ev->result_name), res_name);
 
-        if (res_status == PGR_IH_RES_DECODED) {
+        if (res_status == PGS_IH_RES_DECODED) {
             publish_event(ev,
                           "{\"type\":\"interaction-event\",\"phase\":\"enter\",\"callId\":%u,"
                           "\"index\":%u,\"ts\":%" PRId64 ",\"elapsedMs\":%" PRId64 ","
@@ -2243,7 +2246,7 @@ static void observe_leave_internal(uint64_t token, void *retval, bool aborted) {
 
     const TargetDesc &td = kTargets[target_id];
     if (aborted) {if(!g_state.in_flight)g_state.deferred_cleanup_pending=false;return;}
-    if (!g_state.running || g_state.stopping || g_state.status != PGR_IH_STATUS_OBSERVING) {
+    if (!g_state.running || g_state.stopping || g_state.status != PGS_IH_STATUS_OBSERVING) {
         if (g_state.deferred_cleanup_pending && g_state.in_flight == 0) {
             unhook_direct_targets_locked();
         }
@@ -2259,15 +2262,15 @@ static void observe_leave_internal(uint64_t token, void *retval, bool aborted) {
         }
         call_id = ++g_state.next_call_id;
         ++g_state.event_count;
-        PgrInteractionHostEvent *enter_ev =
-            alloc_event_slot(PGR_IH_EVT_INTERACTION_EVENT, "interaction-probe");
+        PgsInteractionHostEvent *enter_ev =
+            alloc_event_slot(PGS_IH_EVT_INTERACTION_EVENT, "interaction-probe");
         enter_ev->ts_ms = enter_ts;
         enter_ev->elapsed_ms = enter_elapsed;
         enter_ev->target_id = target_id;
         enter_ev->call_id = call_id;
         enter_ev->depth = depth;
         enter_ev->tid = tid;
-        enter_ev->phase = PGR_IH_PHASE_ENTER;
+        enter_ev->phase = PGS_IH_PHASE_ENTER;
         publish_event(enter_ev,
                       "{\"type\":\"interaction-event\",\"phase\":\"enter\",\"callId\":%u,"
                       "\"index\":%u,\"ts\":%" PRId64 ",\"elapsedMs\":%" PRId64 ","
@@ -2288,7 +2291,7 @@ static void observe_leave_internal(uint64_t token, void *retval, bool aborted) {
     int64_t leave_elapsed = leave_ts - g_state.observe_started_ms;
     int64_t duration_ms = leave_ts >= enter_ts ? (leave_ts - enter_ts) : 0;
 
-    uint8_t ret_status = PGR_IH_RES_NONE;
+    uint8_t ret_status = PGS_IH_RES_NONE;
     int32_t ret_code = 0;
     char ret_name[64] = {};
 
@@ -2300,12 +2303,12 @@ static void observe_leave_internal(uint64_t token, void *retval, bool aborted) {
         if ((reinterpret_cast<uintptr_t>(pinned_ret) & 0x7u) != 0 ||
             *reinterpret_cast<void *const *>(pinned_ret) != rs.klass) {
             disable_return_reader_locked("return-class-mismatch");
-            ret_status = PGR_IH_RES_DISABLED;
+            ret_status = PGS_IH_RES_DISABLED;
             copy_str(ret_name, sizeof(ret_name), "return-class-mismatch");
         } else {
             int32_t code = *reinterpret_cast<const int32_t *>(
                 reinterpret_cast<const uint8_t *>(pinned_ret) + rs.offset);
-            ret_status = PGR_IH_RES_DECODED;
+            ret_status = PGS_IH_RES_DECODED;
             ret_code = code;
             copy_str(ret_name, sizeof(ret_name), "UNKNOWN");
             for (uint32_t i = 0; i < rs.literal_count; ++i) {
@@ -2318,8 +2321,8 @@ static void observe_leave_internal(uint64_t token, void *retval, bool aborted) {
     }
 
     ++g_state.event_count;
-    PgrInteractionHostEvent *leave_ev =
-        alloc_event_slot(PGR_IH_EVT_INTERACTION_EVENT, "interaction-probe");
+    PgsInteractionHostEvent *leave_ev =
+        alloc_event_slot(PGS_IH_EVT_INTERACTION_EVENT, "interaction-probe");
     leave_ev->ts_ms = leave_ts;
     leave_ev->elapsed_ms = leave_elapsed;
     leave_ev->duration_ms = duration_ms;
@@ -2327,13 +2330,13 @@ static void observe_leave_internal(uint64_t token, void *retval, bool aborted) {
     leave_ev->call_id = call_id;
     leave_ev->depth = depth;
     leave_ev->tid = tid;
-    leave_ev->phase = PGR_IH_PHASE_LEAVE;
+    leave_ev->phase = PGS_IH_PHASE_LEAVE;
     leave_ev->result_status = ret_status;
     leave_ev->is_return_result = td.read_return ? 1 : 0;
     leave_ev->result_code = ret_code;
     copy_str(leave_ev->result_name, sizeof(leave_ev->result_name), ret_name);
 
-    if (td.read_return && ret_status == PGR_IH_RES_DECODED) {
+    if (td.read_return && ret_status == PGS_IH_RES_DECODED) {
         publish_event(leave_ev,
                       "{\"type\":\"interaction-event\",\"phase\":\"leave\",\"callId\":%u,"
                       "\"index\":%u,\"ts\":%" PRId64 ",\"elapsedMs\":%" PRId64 ","
@@ -2370,11 +2373,11 @@ static void observe_leave_internal(uint64_t token, void *retval, bool aborted) {
                       g_state.targets[target_id].rva);
     }
 
-    if (g_state.event_count >= PGR_IH_LIMIT_EVENTS) {
-        finish_observation_locked(PGR_IH_STATUS_COMPLETE, "event-limit");
+    if (g_state.event_count >= PGS_IH_LIMIT_EVENTS) {
+        finish_observation_locked(PGS_IH_STATUS_COMPLETE, "event-limit");
     } else if (leave_ts >= g_state.observe_deadline_ms) {
         finish_observation_locked(
-            PGR_IH_STATUS_COMPLETE,
+            PGS_IH_STATUS_COMPLETE,
             g_state.event_count > 0 ? "observation-complete" : "no-natural-calls");
     }
 }
@@ -2384,41 +2387,41 @@ static int step_prepare_attempt_locked() {
     char reason_buf[96] = {};
     InspectResultKind kind = run_inspect_locked(reason_buf, sizeof(reason_buf));
     if (kind == kInspectSkipped) {
-        finish_observation_locked(PGR_IH_STATUS_SKIPPED, reason_buf);
-        return PGR_IH_OK;
+        finish_observation_locked(PGS_IH_STATUS_SKIPPED, reason_buf);
+        return PGS_IH_OK;
     }
     if (kind == kInspectReady) {
         if (g_state.opts.observe_runtime == 0) {
-            finish_observation_locked(PGR_IH_STATUS_COMPLETE, "metadata-only");
-            return PGR_IH_OK;
+            finish_observation_locked(PGS_IH_STATUS_COMPLETE, "metadata-only");
+            return PGS_IH_OK;
         }
         return start_observation_locked();
     }
 
     int64_t t_ms = now_ms();
-    if (g_state.attempt_count >= PGR_IH_LIMIT_ATTEMPTS ||
-        (t_ms - g_state.prepare_started_ms) >= PGR_IH_LIMIT_PREPARE_MS) {
-        finish_observation_locked(PGR_IH_STATUS_FAILED, reason_buf);
-        return PGR_IH_OK;
+    if (g_state.attempt_count >= PGS_IH_LIMIT_ATTEMPTS ||
+        (t_ms - g_state.prepare_started_ms) >= PGS_IH_LIMIT_PREPARE_MS) {
+        finish_observation_locked(PGS_IH_STATUS_FAILED, reason_buf);
+        return PGS_IH_OK;
     }
     copy_str(g_state.reason, sizeof(g_state.reason), reason_buf);
-    g_state.next_retry_ms = t_ms + PGR_IH_LIMIT_RETRY_MS;
-    return PGR_IH_OK;
+    g_state.next_retry_ms = t_ms + PGS_IH_LIMIT_RETRY_MS;
+    return PGS_IH_OK;
 }
 
-static int start_internal_locked(const PgrInteractionHostOptions *opts) {
+static int start_internal_locked(const PgsInteractionHostOptions *opts) {
     if (!g_state.configured) {
-        return PGR_IH_ERR_UNCONFIGURED;
+        return PGS_IH_ERR_UNCONFIGURED;
     }
     auto current=reinterpret_cast<FnThreadCurrent>(g_state.cfg.extra.thread_current);
     const int32_t tid=current_thread_id();
-    if(!current||!current()||(g_owner_tid&&g_owner_tid!=tid))return PGR_IH_ERR_INVALID;
+    if(!current||!current()||(g_owner_tid&&g_owner_tid!=tid))return PGS_IH_ERR_INVALID;
     if (g_state.running||g_state.in_flight||g_deferred_btxu_root.load()) {
-        return PGR_IH_ERR_BUSY;
+        return PGS_IH_ERR_BUSY;
     }
     if(opts&&(opts->observe_runtime>1||opts->read_results>1||opts->reserved0[0]||opts->reserved0[1]||
-        (opts->flags&~PGR_IH_OPT_DEGRADE_UNATTESTED_SHARED)))return PGR_IH_ERR_INVALID;
-    if(g_transport_failed)return PGR_IH_ERR_INVALID;
+        (opts->flags&~PGS_IH_OPT_DEGRADE_UNATTESTED_SHARED)))return PGS_IH_ERR_INVALID;
+    if(g_transport_failed)return PGS_IH_ERR_INVALID;
     g_owner_tid=tid;
 
     g_state.scheduled = false;
@@ -2432,7 +2435,7 @@ static int start_internal_locked(const PgrInteractionHostOptions *opts) {
 
     g_state.running = true;
     g_state.stopping = false;
-    g_state.status = PGR_IH_STATUS_PREPARING;
+    g_state.status = PGS_IH_STATUS_PREPARING;
     g_state.prepare_started_ms = now_ms();
     g_state.next_retry_ms = g_state.prepare_started_ms;
     g_state.observe_started_ms = 0;
@@ -2462,37 +2465,37 @@ static int start_internal_locked(const PgrInteractionHostOptions *opts) {
     return step_prepare_attempt_locked();
 }
 
-static int api_configure(const PgrInteractionHostConfig *cfg) {
+static int api_configure(const PgsInteractionHostConfig *cfg) {
     ScopedLock lock;
     if (g_state.running || g_state.deferred_cleanup_pending||g_state.in_flight||g_direct_installed||g_deferred_btxu_root.load()) {
-        return PGR_IH_ERR_BUSY;
+        return PGS_IH_ERR_BUSY;
     }
 
-    PgrInteractionHostConfig merged {};
-    PgrMetaExports local_exports {};
+    PgsInteractionHostConfig merged {};
+    PgsMetaExports local_exports {};
     if (cfg != nullptr) {
         merged = *cfg;
         if (cfg->binding.exports != nullptr) {
             local_exports = *cfg->binding.exports;
         }
     } else {
-        merged.flags = PGR_IH_CFG_USE_BOOTSTRAP;
+        merged.flags = PGS_IH_CFG_USE_BOOTSTRAP;
     }
 
-    if ((merged.flags & PGR_IH_CFG_USE_BOOTSTRAP) != 0) {
-        const PgrBootApi *boot = resolve_bootstrap_api();
+    if ((merged.flags & PGS_IH_CFG_USE_BOOTSTRAP) != 0) {
+        const PgsBootApi *boot = resolve_bootstrap_api();
         if (boot == nullptr || boot->snapshot == nullptr) {
-            return PGR_IH_ERR_UNCONFIGURED;
+            return PGS_IH_ERR_UNCONFIGURED;
         }
-        PgrBootBinding b {};
-        b.version = PGR_BOOT_BINDING_VERSION;
+        PgsBootBinding b {};
+        b.version = PGS_BOOT_BINDING_VERSION;
         b.size = sizeof(b);
-        if (boot->snapshot(&b) != PGR_BOOT_OK || b.status != PGR_BOOT_OK) {
-            return PGR_IH_ERR_UNCONFIGURED;
+        if (boot->snapshot(&b) != PGS_BOOT_OK || b.status != PGS_BOOT_OK) {
+            return PGS_IH_ERR_UNCONFIGURED;
         }
         local_exports = b.meta;
-        merged.binding.version = PGR_MD_CONFIG_VERSION;
-        merged.binding.size = sizeof(PgrMetaBindConfig);
+        merged.binding.version = PGS_MD_CONFIG_VERSION;
+        merged.binding.size = sizeof(PgsMetaBindConfig);
         merged.binding.module_base = b.module_base;
         merged.binding.module_size = b.module_size;
         merged.extra.thread_current = b.runtime.thread_current;
@@ -2527,65 +2530,65 @@ static int api_configure(const PgrInteractionHostConfig *cfg) {
 #endif
     }
 
-    const PgrMetaApi *meta = resolve_metadata_api();
+    const PgsMetaApi *meta = resolve_metadata_api();
     if (meta == nullptr || meta->bind == nullptr) {
-        return PGR_IH_ERR_UNCONFIGURED;
+        return PGS_IH_ERR_UNCONFIGURED;
     }
-    if(!merged.extra.thread_current||!merged.extra.gchandle_new||!merged.extra.gchandle_get_target||!merged.extra.gchandle_free)return PGR_IH_ERR_INVALID;
+    if(!merged.extra.thread_current||!merged.extra.gchandle_new||!merged.extra.gchandle_get_target||!merged.extra.gchandle_free)return PGS_IH_ERR_INVALID;
 
     if (merged.binding.module_base == nullptr && meta->resolve_module != nullptr) {
         const void *resolved_base = nullptr;
         uint64_t resolved_size = 0;
-        if (meta->resolve_module("libil2cpp.so", &resolved_base, &resolved_size) == PGR_MD_OK) {
+        if (meta->resolve_module("libil2cpp.so", &resolved_base, &resolved_size) == PGS_MD_OK) {
             merged.binding.module_base = resolved_base;
             merged.binding.module_size = resolved_size;
         }
     }
 
     g_state.meta_exports = local_exports;
-    merged.binding.version = PGR_MD_CONFIG_VERSION;
-    merged.binding.size = sizeof(PgrMetaBindConfig);
+    merged.binding.version = PGS_MD_CONFIG_VERSION;
+    merged.binding.size = sizeof(PgsMetaBindConfig);
     merged.binding.exports = &g_state.meta_exports;
 
     int brc = meta->bind(&merged.binding);
-    if (brc != PGR_MD_OK) {
-        return PGR_IH_ERR_INVALID;
+    if (brc != PGS_MD_OK) {
+        return PGS_IH_ERR_INVALID;
     }
 
     g_state.cfg = merged;
     g_state.cfg.binding.exports = &g_state.meta_exports;
     g_state.configured = true;
-    g_state.shared_owned_mask = merged.shared_owned_mask & PGR_IH_ALL_TARGETS_MASK;
-    g_state.shared_integrated_mask = merged.shared_integrated_mask & PGR_IH_ALL_TARGETS_MASK;
-    if (g_state.status == PGR_IH_STATUS_IDLE) {
+    g_state.shared_owned_mask = merged.shared_owned_mask & PGS_IH_ALL_TARGETS_MASK;
+    g_state.shared_integrated_mask = merged.shared_integrated_mask & PGS_IH_ALL_TARGETS_MASK;
+    if (g_state.status == PGS_IH_STATUS_IDLE) {
         copy_str(g_state.reason, sizeof(g_state.reason), "configured");
     }
-    return PGR_IH_OK;
+    return PGS_IH_OK;
 }
 
 static int api_schedule(int64_t delay_ms) {
     ScopedLock lock;
     if (!g_state.configured) {
-        return PGR_IH_ERR_UNCONFIGURED;
+        return PGS_IH_ERR_UNCONFIGURED;
     }
     if (g_state.running) {
-        return PGR_IH_ERR_BUSY;
+        return PGS_IH_ERR_BUSY;
     }
-    int64_t d = delay_ms >= 0 ? delay_ms : PGR_IH_SCHEDULE_DELAY_MS;
+    int64_t d = delay_ms >= 0 ? delay_ms : PGS_IH_SCHEDULE_DELAY_MS;
     g_state.scheduled = true;
     g_state.schedule_due_ms = now_ms() + d;
-    g_state.status = PGR_IH_STATUS_SCHEDULED;
+    g_state.status = PGS_IH_STATUS_SCHEDULED;
     copy_str(g_state.reason, sizeof(g_state.reason), "scheduled");
 
-    PgrInteractionHostEvent *ev =
-        alloc_event_slot(PGR_IH_EVT_SCHEDULED, "interaction-probe-scheduled");
+    PgsInteractionHostEvent *ev =
+        alloc_event_slot(PGS_IH_EVT_SCHEDULED, "interaction-probe-scheduled");
     publish_event(
         ev,
         "Metadata check in 25 seconds; event capture requires an explicit button press");
-    return PGR_IH_OK;
+    return PGS_IH_OK;
 }
 
-static int api_start(const PgrInteractionHostOptions *opts) {
+static int api_start(const PgsInteractionHostOptions *opts) {
     ScopedLock lock;
     return start_internal_locked(opts);
 }
@@ -2597,64 +2600,64 @@ static int api_stop(const char *reason) {
         g_state.scheduled = false;
         g_state.schedule_due_ms = 0;
         if (!g_state.running) {
-            g_state.status = PGR_IH_STATUS_STOPPED;
+            g_state.status = PGS_IH_STATUS_STOPPED;
             copy_str(g_state.reason, sizeof(g_state.reason), stop_reason);
             emit_transport_diagnostic("Interaction diagnostic stopped");
-            return PGR_IH_OK;
+            return PGS_IH_OK;
         }
     }
     if (!g_state.running) {
-        return PGR_IH_OK;
+        return PGS_IH_OK;
     }
     g_state.stopping = true;
-    finish_observation_locked(PGR_IH_STATUS_STOPPED, stop_reason);
-    return PGR_IH_OK;
+    finish_observation_locked(PGS_IH_STATUS_STOPPED, stop_reason);
+    return PGS_IH_OK;
 }
 
 static int api_tick(int32_t current_tid) {
-    if(current_tid<=0||current_tid!=current_thread_id())return PGR_IH_ERR_INVALID;
+    if(current_tid<=0||current_tid!=current_thread_id())return PGS_IH_ERR_INVALID;
     // Drain deferred managed ownership only on the attached preparation owner,
     // outside the native state mutex and with no borrowed return value live.
-    PgrInteractionExtraExports extra{};
-    {ScopedLock proof;if(!g_state.configured)return PGR_IH_ERR_UNCONFIGURED;
+    PgsInteractionExtraExports extra{};
+    {ScopedLock proof;if(!g_state.configured)return PGS_IH_ERR_UNCONFIGURED;
         auto cur=reinterpret_cast<FnThreadCurrent>(g_state.cfg.extra.thread_current);
-        if(!cur||!cur()||(g_owner_tid&&g_owner_tid!=current_tid))return PGR_IH_ERR_INVALID;
+        if(!cur||!cur()||(g_owner_tid&&g_owner_tid!=current_tid))return PGS_IH_ERR_INVALID;
         g_owner_tid=current_tid;extra=g_state.cfg.extra;}
     uintptr_t deferred=g_deferred_btxu_root.exchange(0);
     if(deferred)reinterpret_cast<FnGcHandleFree>(extra.gchandle_free)(deferred);
     ScopedLock lock;
     if (!g_state.configured) {
-        return PGR_IH_ERR_UNCONFIGURED;
+        return PGS_IH_ERR_UNCONFIGURED;
     }
     if(g_transport_failed){g_state.running=false;g_state.scheduled=false;g_state.stopping=true;
-        g_state.status=PGR_IH_STATUS_FAILED;g_state.installed_target_mask=0;copy_str(g_state.reason,sizeof(g_state.reason),"transport-failed");return PGR_IH_ERR_INVALID;}
+        g_state.status=PGS_IH_STATUS_FAILED;g_state.installed_target_mask=0;copy_str(g_state.reason,sizeof(g_state.reason),"transport-failed");return PGS_IH_ERR_INVALID;}
 
     if (g_state.deferred_cleanup_pending && g_state.in_flight == 0) {
         unhook_direct_targets_locked();
     }
 
     /* Check Transport 52 reader 15 and pulses 1 & 2 */
-    const PgrRuntimeTransportApi *rt = resolve_transport_api();
+    const PgsRuntimeTransportApi *rt = resolve_transport_api();
     bool diag_ready = false;
     if (rt != nullptr && rt->get_bool != nullptr) {
         int ready_val = 0;
-        if (rt->get_bool(PGR_IH_RT_BOOL_DIAGNOSTICS_READY, &ready_val) == PGR_TRANSPORT_OK) {
+        if (rt->get_bool(PGS_IH_RT_BOOL_DIAGNOSTICS_READY, &ready_val) == PGS_TRANSPORT_OK) {
             diag_ready = (ready_val != 0);
         }
     }
 
     if (rt != nullptr && rt->take_pulse != nullptr) {
         int stop_fired = 0;
-        if (rt->take_pulse(PGR_IH_RT_PULSE_STOP_REQUEST, &stop_fired) == PGR_TRANSPORT_OK &&
+        if (rt->take_pulse(PGS_IH_RT_PULSE_STOP_REQUEST, &stop_fired) == PGS_TRANSPORT_OK &&
             stop_fired != 0) {
             if (g_state.scheduled || g_state.running) {
                 g_state.scheduled = false;
                 g_state.schedule_due_ms = 0;
                 if (g_state.running) {
                     g_state.stopping = true;
-                    finish_observation_locked(PGR_IH_STATUS_STOPPED, "stopped");
+                    finish_observation_locked(PGS_IH_STATUS_STOPPED, "stopped");
                 } else {
-                    g_state.status = PGR_IH_STATUS_STOPPED;
+                    g_state.status = PGS_IH_STATUS_STOPPED;
                     copy_str(g_state.reason, sizeof(g_state.reason), "stopped");
                     emit_transport_diagnostic("Interaction diagnostic stopped");
                 }
@@ -2663,9 +2666,9 @@ static int api_tick(int32_t current_tid) {
 
         if (diag_ready && !g_state.running) {
             int trace_fired = 0;
-            if (rt->take_pulse(PGR_IH_RT_PULSE_TRACE_REQUEST, &trace_fired) == PGR_TRANSPORT_OK &&
+            if (rt->take_pulse(PGS_IH_RT_PULSE_TRACE_REQUEST, &trace_fired) == PGS_TRANSPORT_OK &&
                 trace_fired != 0) {
-                PgrInteractionHostOptions trace_opts {};
+                PgsInteractionHostOptions trace_opts {};
                 trace_opts.observe_runtime = 1;
                 trace_opts.read_results = 1;
                 start_internal_locked(&trace_opts);
@@ -2680,54 +2683,54 @@ static int api_tick(int32_t current_tid) {
         g_state.scheduled = false;
         g_state.schedule_due_ms = 0;
         if (!diag_ready) {
-            g_state.status = PGR_IH_STATUS_SKIPPED;
+            g_state.status = PGS_IH_STATUS_SKIPPED;
             copy_str(g_state.reason, sizeof(g_state.reason), "not-ready");
             emit_transport_diagnostic("Interaction diagnostic skipped (native hooks not ready)");
-            return PGR_IH_OK;
+            return PGS_IH_OK;
         }
-        PgrInteractionHostOptions meta_opts {};
+        PgsInteractionHostOptions meta_opts {};
         meta_opts.observe_runtime = 0;
         meta_opts.read_results = 0;
         return start_internal_locked(&meta_opts);
     }
 
     /* Drive prepare retry or active observation window */
-    if (g_state.running && g_state.status == PGR_IH_STATUS_PREPARING) {
-        if ((t_ms - g_state.prepare_started_ms) >= PGR_IH_LIMIT_PREPARE_MS) {
-            finish_observation_locked(PGR_IH_STATUS_FAILED, g_state.reason);
-            return PGR_IH_OK;
+    if (g_state.running && g_state.status == PGS_IH_STATUS_PREPARING) {
+        if ((t_ms - g_state.prepare_started_ms) >= PGS_IH_LIMIT_PREPARE_MS) {
+            finish_observation_locked(PGS_IH_STATUS_FAILED, g_state.reason);
+            return PGS_IH_OK;
         }
         if (t_ms >= g_state.next_retry_ms) {
             return step_prepare_attempt_locked();
         }
-    } else if (g_state.running && g_state.status == PGR_IH_STATUS_OBSERVING) {
+    } else if (g_state.running && g_state.status == PGS_IH_STATUS_OBSERVING) {
         if (t_ms >= g_state.observe_deadline_ms) {
             finish_observation_locked(
-                PGR_IH_STATUS_COMPLETE,
+                PGS_IH_STATUS_COMPLETE,
                 g_state.event_count > 0 ? "observation-complete" : "no-natural-calls");
         }
     }
 
-    return PGR_IH_OK;
+    return PGS_IH_OK;
 }
 
-static void api_on_unity_pulse(void *ctx, const PgrUnityPulse *pulse) {
+static void api_on_unity_pulse(void *ctx, const PgsUnityPulse *pulse) {
     (void)ctx;
     if (pulse == nullptr||pulse->tid<=0||pulse->tid!=current_thread_id()) {
         return;
     }
-    const PgrUnitySchedulerApi *sched = resolve_scheduler_api();
-    PgrUnitySchedulerSnapshot proof{};
+    const PgsUnitySchedulerApi *sched = resolve_scheduler_api();
+    PgsUnitySchedulerSnapshot proof{};
     if(!sched||!sched->valid||!sched->snapshot||sched->valid(pulse->generation)!=1||
-       sched->snapshot(&proof)!=PGR_US_OK||!proof.installed||proof.owner_tid!=pulse->tid)return;
+       sched->snapshot(&proof)!=PGS_US_OK||!proof.installed||proof.owner_tid!=pulse->tid)return;
     api_tick(pulse->tid);
 }
 
 static int api_shared_sites(uint32_t owned_mask, uint32_t integrated_mask) {
     ScopedLock lock;
-    g_state.shared_owned_mask = owned_mask & PGR_IH_ALL_TARGETS_MASK;
-    g_state.shared_integrated_mask = integrated_mask & PGR_IH_ALL_TARGETS_MASK;
-    return PGR_IH_OK;
+    g_state.shared_owned_mask = owned_mask & PGS_IH_ALL_TARGETS_MASK;
+    g_state.shared_integrated_mask = integrated_mask & PGS_IH_ALL_TARGETS_MASK;
+    return PGS_IH_OK;
 }
 
 static uint64_t api_observe_enter(uint32_t target_id, void *receiver, void *arg0) {
@@ -2738,9 +2741,9 @@ static void api_observe_leave(uint64_t token, void *retval) {
     observe_leave_internal(token, retval);
 }
 
-static int api_take_event(PgrInteractionHostEvent *out_event) {
+static int api_take_event(PgsInteractionHostEvent *out_event) {
     if (out_event == nullptr) {
-        return PGR_IH_ERR_INVALID;
+        return PGS_IH_ERR_INVALID;
     }
     ScopedLock lock;
     if (g_state.queue_count == 0) {
@@ -2752,9 +2755,9 @@ static int api_take_event(PgrInteractionHostEvent *out_event) {
     return 1;
 }
 
-static int api_sample(PgrInteractionHostSample *out_sample) {
+static int api_sample(PgsInteractionHostSample *out_sample) {
     if (out_sample == nullptr) {
-        return PGR_IH_ERR_INVALID;
+        return PGS_IH_ERR_INVALID;
     }
     ScopedLock lock;
     memset(out_sample, 0, sizeof(*out_sample));
@@ -2798,7 +2801,7 @@ static int api_sample(PgrInteractionHostSample *out_sample) {
     copy_str(out_sample->reason, sizeof(out_sample->reason), g_state.reason);
     copy_str(out_sample->last_diagnostic, sizeof(out_sample->last_diagnostic),
              g_state.last_diagnostic);
-    return PGR_IH_OK;
+    return PGS_IH_OK;
 }
 
 static void api_reset_for_tests() {
@@ -2806,13 +2809,13 @@ static void api_reset_for_tests() {
     if(g_direct_installed||g_state.in_flight||g_deferred_btxu_root.load())return;
     unhook_direct_targets_locked();
     memset(&g_state, 0, sizeof(g_state));
-    g_state.status = PGR_IH_STATUS_IDLE;
+    g_state.status = PGS_IH_STATUS_IDLE;
     g_owner_tid=0;g_transport_failed=false;
 }
 
-static const PgrInteractionHostApi kInteractionHostApi = {
-    PGR_IH_API_VERSION,
-    PGR_IH_FEATURE_ID,
+static const PgsInteractionHostApi kInteractionHostApi = {
+    PGS_IH_API_VERSION,
+    PGS_IH_FEATURE_ID,
     &api_configure,
     &api_schedule,
     &api_start,
@@ -2828,25 +2831,25 @@ static const PgrInteractionHostApi kInteractionHostApi = {
 };
 
 static int api_wants_target(uint32_t id) {
-    if(id>=PGR_IH_TOTAL_TARGETS)return 0;
+    if(id>=PGS_IH_TOTAL_TARGETS)return 0;
 #if !defined(_WIN32)
     if(pthread_mutex_trylock(&g_mu)!=0)return 0;
     struct Unlock{~Unlock(){pthread_mutex_unlock(&g_mu);}} unlock;
 #endif
-    if(g_transport_failed||!g_state.running||g_state.stopping||g_state.status!=PGR_IH_STATUS_OBSERVING||
+    if(g_transport_failed||!g_state.running||g_state.stopping||g_state.status!=PGS_IH_STATUS_OBSERVING||
        !(g_state.installed_target_mask&(1u<<id)))return 0;
     auto current=reinterpret_cast<FnThreadCurrent>(g_state.cfg.extra.thread_current);
     return current&&current()!=nullptr?1:0;
 }
 static void api_observe_abort(uint64_t token){observe_leave_internal(token,nullptr,true);}
-static const PgrInteractionHostApi2 kObserverApi={2,sizeof(PgrInteractionHostApi2),
+static const PgsInteractionHostApi2 kObserverApi={2,sizeof(PgsInteractionHostApi2),
     api_wants_target,api_observe_enter,api_observe_leave,api_observe_abort};
 
 }  // namespace
 
 extern "C" const void *pgs_interaction_host_api(uint32_t version) {
     if(version==2)return &kObserverApi;
-    if (version != PGR_IH_API_VERSION) {
+    if (version != PGS_IH_API_VERSION) {
         return nullptr;
     }
     return &kInteractionHostApi;

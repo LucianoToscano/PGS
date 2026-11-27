@@ -84,17 +84,37 @@ def android_tool(name):
 def run(*args):
     subprocess.run([str(a) for a in args], cwd=ROOT, check=True)
 
+def signing_setting(name, default=None, environ=None):
+    """Use PGS signing variables first; retain the existing external alias."""
+    env = os.environ if environ is None else environ
+    return env.get('PGS_' + name) or env.get('PGRAZOR_' + name) or default
+
+
 def signing_args():
-    key = Path(os.environ.get('PGRAZOR_KEYSTORE', str(BUILD/'pgrazor-development.jks')))
-    if 'PGRAZOR_KEYSTORE' in os.environ:
-        if not key.is_file() or not os.environ.get('PGRAZOR_KEY_ALIAS') or not os.environ.get('PGRAZOR_STORE_PASSWORD') or not os.environ.get('PGRAZOR_KEY_PASSWORD'):
+    configured = any(name in os.environ for name in ('PGS_KEYSTORE', 'PGRAZOR_KEYSTORE'))
+    selected = signing_setting('KEYSTORE')
+    if configured:
+        if not selected:
+            raise RuntimeError('Configured signing key path is empty')
+        key = Path(selected)
+        alias = signing_setting('KEY_ALIAS')
+        store = signing_setting('STORE_PASSWORD')
+        password = signing_setting('KEY_PASSWORD')
+        if not key.is_file() or not alias or not store or not password:
             raise RuntimeError('Configured signing key, alias or password environment variables are missing')
     else:
-        os.environ.setdefault('PGRAZOR_STORE_PASSWORD','android')
-        os.environ.setdefault('PGRAZOR_KEY_PASSWORD','android')
-        if not key.exists():
-            run('keytool','-genkeypair','-keystore',key,'-storepass:env','PGRAZOR_STORE_PASSWORD','-keypass:env','PGRAZOR_KEY_PASSWORD','-alias','pgrazor','-keyalg','RSA','-keysize','2048','-validity','3650','-dname','CN=PGS Local Development')
-    return ['--ks',key,'--ks-pass','env:PGRAZOR_STORE_PASSWORD','--key-pass','env:PGRAZOR_KEY_PASSWORD','--ks-key-alias',os.environ.get('PGRAZOR_KEY_ALIAS','pgrazor')]
+        # Reuse an existing local development key; never substitute a release key.
+        legacy_key = BUILD / 'pgrazor-development.jks'
+        key = legacy_key if legacy_key.exists() else BUILD / 'pgs-development.jks'
+        alias = signing_setting('KEY_ALIAS', 'pgrazor' if legacy_key.exists() else 'pgs')
+        store = signing_setting('STORE_PASSWORD', 'android')
+        password = signing_setting('KEY_PASSWORD', 'android')
+    os.environ['PGS_STORE_PASSWORD'] = store
+    os.environ['PGS_KEY_PASSWORD'] = password
+    if not configured and not key.exists():
+        run('keytool','-genkeypair','-keystore',key,'-storepass:env','PGS_STORE_PASSWORD','-keypass:env','PGS_KEY_PASSWORD','-alias',alias,'-keyalg','RSA','-keysize','2048','-validity','3650','-dname','CN=PGS Local Development')
+    return ['--ks',key,'--ks-pass','env:PGS_STORE_PASSWORD','--key-pass','env:PGS_KEY_PASSWORD','--ks-key-alias',alias]
+
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)

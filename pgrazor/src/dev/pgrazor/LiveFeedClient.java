@@ -30,7 +30,7 @@ public final class LiveFeedClient {
     private static final int READ_TIMEOUT_MS = 15000;
     private static final int MAX_RESPONSE_BYTES = 8 * 1024 * 1024;
     private static final int MAP_ZOOM = 15;
-    private static final String USER_AGENT = "PGRazor/0.1 (+https://github.com/jpitty03/PGRazor)";
+    private static final String USER_AGENT = "PGS/0.1 (+https://github.com/LucianoToscano/PGS)";
     private static final double KM_PER_DEGREE_LAT = 111.0;
     private static final double MAX_LON_DELTA_DEGREES = 45.0; // guards against a huge box near the poles
     /** Radius value meaning "the whole map": the viewport becomes a world box instead of a 1..5 km box. */

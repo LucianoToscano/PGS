@@ -20,4 +20,4 @@ Add screenshots or a short recording for visible UI changes; remove private info
 - [ ] Generated bindings were regenerated when applicable; compatibility limitations are documented.
 - [ ] The diff contains no game packages/assets, signing keys, private logs, account details, or generated build outputs.
 
-See [CONTRIBUTING.md](https://github.com/jpitty03/PGRazor/blob/main/CONTRIBUTING.md) for requirements. Release publishing is handled by maintainers.
+See [CONTRIBUTING.md](https://github.com/LucianoToscano/PGS/blob/main/CONTRIBUTING.md) for requirements. Release publishing is handled by maintainers.

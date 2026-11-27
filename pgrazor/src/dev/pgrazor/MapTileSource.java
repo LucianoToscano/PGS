@@ -162,7 +162,7 @@ final class MapTileSource {
         try {
             request.setConnectTimeout(8000); request.setReadTimeout(8000);
             request.setInstanceFollowRedirects(false);
-            request.setRequestProperty("User-Agent", "PGRazor/0.1 (+https://github.com/jpitty03/PGRazor)");
+            request.setRequestProperty("User-Agent", "PGS/0.1 (+https://github.com/LucianoToscano/PGS)");
             request.setRequestProperty("Accept", "image/png");
             if (request.getResponseCode() != 200) throw new IOException("Tile HTTP " + request.getResponseCode());
             byte[] bytes;

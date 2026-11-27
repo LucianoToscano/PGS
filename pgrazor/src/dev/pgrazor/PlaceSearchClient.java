@@ -62,7 +62,7 @@ public final class PlaceSearchClient {
         try {
             http.setConnectTimeout(8000); http.setReadTimeout(8000);
             http.setInstanceFollowRedirects(false);
-            http.setRequestProperty("User-Agent","PGRazor-PlaceSearch/1.0 (+https://github.com/jpitty03/PGRazor)");
+            http.setRequestProperty("User-Agent","PGS-PlaceSearch/1.0 (+https://github.com/LucianoToscano/PGS)");
             http.setRequestProperty("Accept","application/json");
             http.setRequestProperty("Accept-Language","en");
             int code=http.getResponseCode();

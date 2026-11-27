@@ -31,7 +31,7 @@ export const featureGuides = [
     category: 'Map',
     summary:
       'A full-screen map with place search, loaded nearby layers, a live location dot, and per-pin Walk or Teleport.',
-    where: 'Quick Menu > Map, or Settings > Location & Map > Location & movement > World map (full screen, in your chosen PGRazor theme).',
+    where: 'Quick Menu > Map, or Settings > Location & Map > Location & movement > World map (full screen, in your chosen PGS theme).',
     steps: [
       'Open the Quick Menu and tap Map.',
       'Search for a business, park, landmark, or address; results are biased toward the area you are viewing and selecting one centers the red destination pin.',
@@ -97,7 +97,7 @@ export const featureGuides = [
     where: 'Quick Menu > In-game Routes (experimental).',
     steps: [
       'Open In-game Routes from the Quick Menu and choose a completion limit from 1 to 50.',
-      'Start — PGRazor selects a nearby Route by travel to its start plus its length, then walks the recorded path.',
+      'Start — PGS selects a nearby Route by travel to its start plus its length, then walks the recorded path.',
       'Let it wait for the game’s reward confirmation before continuing; it can reverse reversible Routes and skips Routes already completed in that run.',
       'Tap the draggable Routes icon for the current path and run status.',
       'Press Stop to end automated movement.',
@@ -114,12 +114,12 @@ export const featureGuides = [
     title: 'Exchange gifts with Mateo',
     category: 'Automation',
     summary:
-      'On an in-game Route, let PGRazor go through Mateo’s gift exchange for you when he offers one.',
+      'On an in-game Route, let PGS go through Mateo’s gift exchange for you when he offers one.',
     where: 'Settings > Go Plus, Stops & Items > Routes > Exchange gifts with Mateo.',
     steps: [
       'Open Settings > Go Plus, Stops & Items and, under Routes, turn on Exchange gifts with Mateo. It is off by default and saved per account.',
       'Walk an in-game Route, yourself or with In-game Routes.',
-      'When Mateo offers a gift exchange at a stop, PGRazor taps him once you are in range of the stop, steps through his conversation, and accepts the exchange.',
+      'When Mateo offers a gift exchange at a stop, PGS taps him once you are in range of the stop, steps through his conversation, and accepts the exchange.',
       'It sends the gift the game suggests, without a sticker, and then opens Mateo’s gift.',
     ],
     notes: [
@@ -179,13 +179,13 @@ export const featureGuides = [
     title: 'Auto throw & catch on map',
     category: 'Catching',
     summary:
-      'Let PGRazor throw for you in encounters, or catch a tapped Pokémon straight from the map without opening the encounter.',
+      'Let PGS throw for you in encounters, or catch a tapped Pokémon straight from the map without opening the encounter.',
     where: 'Settings > Catching > Auto throw > Auto throw and Catch on map (tap Pokémon).',
     steps: [
       'In Settings > Catching > Auto throw, turn on Auto throw. It is off by default.',
       'Open an encounter as usual. Each throw uses your throw rating, curveball, selected ball, and berry priority, with Always Hit.',
       'To catch without the encounter screen, also turn on Catch on map (tap Pokémon), then tap a Pokémon on the map.',
-      'During a map catch, watch the badge near the PGRazor icon: WAIT, CATCH, RETRY, then CAUGHT or FLED. A pin sits above the Pokémon being caught.',
+      'During a map catch, watch the badge near the PGS icon: WAIT, CATCH, RETRY, then CAUGHT or FLED. A pin sits above the Pokémon being caught.',
     ],
     notes: [
       'Catch on map works for wild, lure, and incense Pokémon. Any other kind opens the normal encounter, where Auto throw takes over.',
@@ -407,7 +407,7 @@ export const featureGuides = [
     steps: [
       'Read the warning first: constant teleporting and remote catching raise the risk of an account warning or ban. Use an alt account, not your main.',
       'Open Automation and choose Shundo Sniper (Experimental).',
-      'Pick where sightings come from: the PGRazor feed, LivePokeMap with your own sign-in, or PoGoCoordinates, which is slower.',
+      'Pick where sightings come from: the PGS feed, LivePokeMap with your own sign-in, or PoGoCoordinates, which is slower.',
       'Optionally limit it with Shundo Sniper species, and set Time between teleports. In PGS candidate builds, LivePokeMap refresh offers 30 seconds to 10 minutes, with a five-minute default and timing variation; server refresh limits and Retry-After take precedence, including after settings imports.',
       'Turn on Shundo Sniper. Its card shows progress; tap Dark to black out the screen and save battery, and tap the screen to bring the game back.',
     ],
@@ -650,7 +650,7 @@ export const featureGuides = [
     ],
     notes: [
       'Special, timed, and story research stay manual, and gym bonus tasks are never deleted.',
-      'Tasks appear in the list as the game gives them to you while PGRazor runs.',
+      'Tasks appear in the list as the game gives them to you while PGS runs.',
       'Auto-catch uses your VGP+ ball and throw settings, and each throw uses a ball. Caught Pokémon follow your transfer rules, including Keep All. It works alongside VGP.',
       'If you open a research reward encounter yourself, Auto throw leaves it for you to throw by hand.',
     ],
@@ -659,11 +659,11 @@ export const featureGuides = [
     id: 'hide-overlay',
     title: 'Hide overlay',
     category: 'Interface',
-    summary: 'Make the game look stock by hiding every PGRazor control, status, and IV text.',
+    summary: 'Make the game look stock by hiding every PGS control, status, and IV text.',
     where: 'Quick Menu > Hide overlay.',
     steps: [
       'Open the Quick Menu and tap Hide overlay, then confirm.',
-      'Every PGRazor button, status bar, message, and in-game IV text disappears.',
+      'Every PGS button, status bar, message, and in-game IV text disappears.',
       'Tap the screen with three fingers at once to show them again.',
     ],
     notes: [
@@ -729,26 +729,21 @@ export const featureGuides = [
     ],
   },
   {
+    // Keep the former slug to preserve shared guide bookmarks.
     id: 'pgrazor-root',
-    title: 'PGRazor Root (experimental)',
+    title: 'PGS Root (not released)',
     category: 'Reference',
-    summary:
-      'Run PGRazor inside the official Pokémon GO app on a rooted device, with no patched game APK.',
-    where: 'A separate download: PGRazor-Root.apk from the release page.',
+    summary: 'The current PGS v0.0.1 release is non-root only. The upstream Root installer belongs to a separate project and is not a PGS update.',
+    where: 'PGS currently offers one complete signed ARM64 non-root APK through the PGS GitHub Actions workflow.',
     steps: [
-      'Check your setup: Magisk 27 or newer, KernelSU, or APatch. KernelSU and APatch also need a Zygisk provider.',
-      'Install the official Pokémon GO version named in the release notes, then install PGRazor-Root.apk and open it.',
-      'Grant the installer root access in your root manager and confirm the game version it shows matches yours.',
-      'Tap Install module, then Reboot. Installing or updating the module needs one reboot.',
-      'Open Pokémon GO. The PGRazor panel appears when the module has started.',
-      'To switch PGRazor off or on later, use the switch in the installer. It takes effect the next time the game starts, with no reboot.',
+      'Use the verified signed full PGS v0.0.1 APK for non-root installation.',
+      'Do not install an upstream Root package over PGS; it is not signed or versioned as a PGS release.',
+      'Future PGS Root releases will need their own compatibility review, compilation and real-device validation.',
     ],
     notes: [
-      'Experimental. It is tested less widely than the regular APK, and native features can still fail to load on some devices.',
-      'The game’s APK and signing certificate are not modified. The module only runs for the exact game version the release supports; on any other version PGRazor stays off.',
-      'Your on or off choice survives module updates. Switching off leaves the module installed; remove it in your root manager to uninstall.',
-      'Logs, settings backups, and account switching work as in the regular build.',
-      'PGRazor-Root-module.zip is the same module for installing through your root manager by hand.',
+      'PGS Root has not been approved for the v0.0.1 release.',
+      'Original upstream Root documentation remains a separate reference with its own attribution.',
+      'The PGS non-root APK retains its permanent signature and Android package.',
     ],
   },
   {
@@ -769,7 +764,7 @@ export const featureGuides = [
       'Saved sessions are stored encrypted on this device and excluded from settings exports. Passwords are not saved.',
       'If the sign-in choices are missing while you are signed out, Accounts > Reset sign-in choices restarts the game and asks for your date of birth again.',
       'LivePokeMap authentication is shared; its filters are separate for each profile.',
-      'Account switching also works in PGRazor Root.',
+      'Root account switching has not been validated for a PGS release.',
     ],
   },
 ];

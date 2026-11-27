@@ -1,6 +1,7 @@
 """Verify future full PGS releases inherit the monotonic Android code policy."""
 import sys
 import struct
+import os
 from pathlib import Path
 import tempfile
 import unittest
@@ -62,6 +63,36 @@ class PgsReleasePolicyTests(unittest.TestCase):
                 with zipfile.ZipFile(out) as result:
                     original = axml.inspect_manifest(result.read("AndroidManifest.xml"))
                     self.assertEqual(original["versionCode"], 2026111602)
+
+    def test_full_pgs_release_requires_preexisting_key_and_pgs_filename(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            ledger = Path(tmp) / "PGS_LAST_VERSION_CODE"
+            self.assertEqual(release_apk.release_identity(ledger),
+                             ("PGRazor.apk", None))
+            ledger.write_text("2026111603\n", encoding="utf-8")
+            with patch.dict(os.environ, {"PGRAZOR_KEYSTORE": ""}):
+                with self.assertRaises(RuntimeError):
+                    release_apk.release_identity(ledger)
+            with patch.dict(os.environ, {"PGRAZOR_KEYSTORE": "/existing/pgs.jks"}):
+                self.assertEqual(release_apk.release_identity(ledger),
+                                 ("PGS.apk", 2026111603))
+                ledger.write_text("0\n", encoding="utf-8")
+                with self.assertRaises(ValueError):
+                    release_apk.release_identity(ledger)
+
+    def test_full_pgs_release_rejects_foreign_signer(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            apk = Path(tmp) / "PGS.apk"
+            apk.write_bytes(b"fixture")
+            with patch("pgs_update.cert_digests", return_value=["other"]):
+                with self.assertRaises(RuntimeError):
+                    release_apk.verify_pgs_release_signer(apk, True)
+            self.assertFalse(apk.exists())
+            apk.write_bytes(b"fixture")
+            with patch("pgs_update.cert_digests",
+                       return_value=["d95c6bdfcbd91dc5c9cde698487c88e4994771a475e4efde4567b8d5f44e96cf"]):
+                release_apk.verify_pgs_release_signer(apk, True)
+            self.assertTrue(apk.exists())
 
 
 if __name__ == "__main__":

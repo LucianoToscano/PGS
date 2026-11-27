@@ -51,7 +51,7 @@ jobs:
         run: python -B -m unittest discover -s pgs/test -p 'test_pgs_*.py' -v
       - name: General source checks with candidate version override
         env:
-          PGS_VERSION: v0.0.3
+          PGS_VERSION: v0.0.4
         run: python -B tools/check.py
       - name: Compile Android controls (not a playable game build)
         run: python -B pgs/build.py

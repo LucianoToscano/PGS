@@ -18,6 +18,8 @@ Este certificado deve permanecer constante. Os segredos de assinatura estão no 
 | **v0.3.8-pgs.3** | Pokémon GO 0.439.0 | **2026111603** |
 | **v0.0.1** | Pokémon GO 0.439.0 | **2026111604** |
 | **v0.0.2 (candidata)** | Pokémon GO 0.439.0 | **2026111605** |
+| **v0.0.3 (candidata assinada)** | Pokémon GO 0.439.0 | **2026111606** |
+| **v0.0.4 (candidata planejada)** | Pokémon GO 0.439.0 | **2026111607** |
 
 O último código de build PGS verificado é registrado em [`pgs/PGS_LAST_VERSION_CODE`](../../pgs/PGS_LAST_VERSION_CODE). Para cada novo release completo, `pgs/release_apk.py` usa `max(codigo_do_jogo, ultimo_pgs+1)` antes de assinar o APK não-root, mantendo o `game_version_code` original para verificar a compatibilidade do módulo Root. O valor realmente assinado é acrescentado ao `build-info.json` em `apk_version_code`.
 
@@ -68,7 +70,7 @@ O símbolo interno e o joystick são mantidos exatamente como na base anterior. 
 
 ## Validação atual do candidato completo
 
-Os quatro workflows históricos de publicação/recompilação são bloqueios explícitos, somente leitura. Para validar a próxima candidata completa, abra [Validação PGS v0.0.3](https://github.com/LucianoToscano/PGS/actions/workflows/pgs-v0.0.3-candidate.yml), selecione `main` e confirme `authorized_input` somente se tiver autorização para usar a entrada de jogo verificada por hash e o certificado existente. Por padrão, a execução envia somente recibos, não um APK para download nem release público. O verificador exige nomes de artefatos PGS por padrão; conjuntos arquivados exigem `--legacy-names`. Package instalado, certificado e ledger de releases permanecem inalterados.
+Os quatro workflows históricos de publicação/recompilação são bloqueios explícitos, somente leitura. Para validar a próxima candidata completa, abra [Validação PGS v0.0.4](https://github.com/LucianoToscano/PGS/actions/workflows/pgs-v0.0.4-candidate.yml), selecione `main` e confirme `authorized_input` somente se tiver autorização para usar a entrada de jogo verificada por hash e o certificado existente. Por padrão, a execução envia somente recibos, não um APK para download nem release público. O verificador exige nomes de artefatos PGS por padrão; conjuntos arquivados exigem `--legacy-names`. Package instalado, certificado e ledger de releases permanecem inalterados.
 
 ### Configuração privada obrigatória
 
@@ -85,3 +87,8 @@ Use no PGS o modelo de anexo de release do PGBR: crie um **rascunho não publica
 A primeira build completa v0.0.3 (Actions 46054404520, código d4eb3192c505ea53e8c072cefc1703f604c21122) passou na validação estática com SHA-256 do APK `e9cae313bd3d98087ed370e211c690857c2acb18973f740faf1c814d86dda225`, 185818917 bytes, versionCode 2026111606 e o certificado existente. O APK temporário foi apagado; apenas os dois recibos foram preservados. Testes físicos e de atualização por cima ainda estão pendentes.
 
 Por padrão, o workflow continua enviando somente recibos. Se o mantenedor tiver autorização para conservar a candidata modificada e assinada neste rascunho não publicado do GitHub, marque explicitamente `authorized_input` e `retain_authorized_candidate` em main. A etapa opcional recompila e verifica independentemente o APK, remove a chave temporária e cria um novo rascunho não publicado `v0.0.3`, contendo somente `PGS.v0.0.3.apk`, `PGS.json`, `build-info.json` e `SHA256SUMS.txt`. Confere os digests dos anexos e o commit de origem; não envia o APKM original, não modifica `build-inputs`, não sobrescreve candidatos, não publica releases nem avança o ledger da versão instalada. Rascunho parcial ou conflitante exige revisão do mantenedor; não publique. O hash da nova compilação poderá diferir do registro histórico. A candidata assinada ainda não foi homologada em dispositivo nem aprovada para distribuição. Um rascunho em repositório público não equivale a repositório privado; use armazenamento privado aprovado se a autorização exigir isso. Nenhum APK é exposto por artefatos públicos de Actions.
+
+
+### Preparação da candidata v0.0.4
+
+O rascunho assinado v0.0.3 foi preservado pela execução [46057980490](https://github.com/LucianoToscano/PGS/actions/runs/46057980490), commit `004a0fa584da8fac35661aa28ff3c2622746864a`, SHA-256 do APK `4dcc5408070732de2241facafd2e624531f56ad99382aa22f1d06dcbe8277843`. O ledger registra o último código de candidata assinada verificada `2026111606`, sem declarar homologação física ou publicação. O workflow sucessor prepara `v0.0.4`, código `2026111607`, em um novo rascunho não utilizado, mantendo a assinatura existente. Ambas as autorizações continuam explícitas e os rascunhos anteriores permanecem intactos. A descrição de retenção anterior é o registro histórico da v0.0.3. Nenhum APK v0.0.4 ou teste físico é declarado antes de execução bem-sucedida.

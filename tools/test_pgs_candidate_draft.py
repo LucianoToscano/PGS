@@ -17,7 +17,7 @@ class CandidateDraftTests(unittest.TestCase):
         apk.write_bytes(b"synthetic candidate test data")
         sha = draft.digest(apk)
         receipt = {"status": "STATIC_CANDIDATE_CHECKS_PASSED", "release_asset": draft.ASSET,
-                   "bytes": apk.stat().st_size, "sha256": sha, "version_code": 2026111606,
+                   "bytes": apk.stat().st_size, "sha256": sha, "version_code": draft.PREVIOUS_CODE + 1,
                    "device_tested": False, "in_place_update_tested": False, "publish_ready": False}
         info = {"source_commit": self.commit, "device_tested": False, "game_version": self.profile["game_version"],
                 "game_version_code": self.profile["version_code"], "input_sha256": self.profile["input_sha256"],
@@ -26,6 +26,11 @@ class CandidateDraftTests(unittest.TestCase):
         (source / "build-info.json").write_text(json.dumps(info), encoding="utf-8")
         (source / "SHA256SUMS.txt").write_text(sha + "  PGS.apk\n", encoding="utf-8")
         return receipt
+
+    def test_candidate_allocation(self):
+        self.assertEqual(draft.TAG, "v0.0.4")
+        self.assertEqual(draft.PREVIOUS_CODE, 2026111606)
+        self.assertEqual(draft.ASSET, "PGS.v0.0.4.apk")
 
     def test_authorization_requires_exact_manual_main_context(self):
         valid = {"PGS_RETAIN_AUTHORIZED": "true", "GITHUB_REPOSITORY": draft.REPOSITORY,

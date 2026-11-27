@@ -20,6 +20,8 @@ This certificate must never change. Signing secrets belong in GitHub Actions and
 | v0.3.8-pgs.3 | Pokémon GO 0.439.0 | 2026111603 |
 | **v0.0.1** | Pokémon GO 0.439.0 | **2026111604** |
 | **v0.0.2 (candidate)** | Pokémon GO 0.439.0 | **2026111605** |
+| **v0.0.3 (signed candidate)** | Pokémon GO 0.439.0 | **2026111606** |
+| **v0.0.4 (planned candidate)** | Pokémon GO 0.439.0 | **2026111607** |
 
 The latest verified PGS code is tracked in [`pgs/PGS_LAST_VERSION_CODE`](../../pgs/PGS_LAST_VERSION_CODE). For each full release, `pgs/release_apk.py` uses `max(game_code, previous_pgs_code+1)` before signing the non-root APK. The original `game_version_code` is retained for Root-module compatibility checks. The actual signed code is recorded in `build-info.json` as `apk_version_code`.
 
@@ -70,7 +72,7 @@ The original in-game icon and joystick are untouched. The previous project's Ko-
 
 ## Current full-candidate path
 
-All four historical publication/rebuild workflows are inert, read-only refusals. To validate the next full candidate, use [PGS v0.0.3 candidate validation](https://github.com/LucianoToscano/PGS/actions/workflows/pgs-v0.0.3-candidate.yml), select `main`, and confirm `authorized_input` only if you are authorized to use the configured hash-pinned game input and existing signer. By default, the run uploads receipts only, not a downloadable APK or a public release. The bundle verifier expects PGS artifact names by default; archived bundles require explicit `--legacy-names`. The installed package, signer and release ledger are unchanged.
+All four historical publication/rebuild workflows are inert, read-only refusals. To validate the next full candidate, use [PGS v0.0.4 candidate validation](https://github.com/LucianoToscano/PGS/actions/workflows/pgs-v0.0.4-candidate.yml), select `main`, and confirm `authorized_input` only if you are authorized to use the configured hash-pinned game input and existing signer. By default, the run uploads receipts only, not a downloadable APK or a public release. The bundle verifier expects PGS artifact names by default; archived bundles require explicit `--legacy-names`. The installed package, signer and release ledger are unchanged.
 
 ### Required private configuration
 
@@ -87,3 +89,8 @@ Use the existing PGBR-style release-asset model in PGS: create an **unpublished 
 The first full v0.0.3 build (Actions run 46054404520, source d4eb3192c505ea53e8c072cefc1703f604c21122) passed static validation with APK SHA-256 `e9cae313bd3d98087ed370e211c690857c2acb18973f740faf1c814d86dda225`, 185818917 bytes, versionCode 2026111606 and the existing signer. Its temporary APK was deleted; only the two receipts were retained. Device and in-place update tests remain pending.
 
 The workflow still defaults to receipt-only validation. If the maintainer has authorization to retain the signed modified candidate in this unpublished GitHub draft, explicitly select both `authorized_input` and `retain_authorized_candidate` on main. The optional retention step rebuilds and independently verifies the APK, removes the temporary key, and creates a new unpublished `v0.0.3` draft containing only `PGS.v0.0.3.apk`, `PGS.json`, `build-info.json` and `SHA256SUMS.txt`. It checks the uploaded digests and source commit; it never uploads the original APKM, modifies `build-inputs`, overwrites a candidate, publishes a release or advances the installed-version ledger. A partial or conflicting draft requires maintainer review; do not publish it. The new APK hash may differ from the historical validation run. The signed candidate is not device tested or approved for distribution. A draft in a public repository is not a private repository; use approved private storage instead if required by the applicable authorization. No downloadable APK is exposed via public Actions artifacts.
+
+
+### v0.0.4 candidate preparation
+
+The signed v0.0.3 draft was retained by Actions run [46057980490](https://github.com/LucianoToscano/PGS/actions/runs/46057980490), source `004a0fa584da8fac35661aa28ff3c2622746864a`, APK SHA-256 `4dcc5408070732de2241facafd2e624531f56ad99382aa22f1d06dcbe8277843`. The ledger now records the last verified signed candidate code `2026111606`; it does not certify device testing or publication. The successor workflow targets `v0.0.4`, code `2026111607`, and a new unused draft with the existing signer. Both authorizations remain explicit and the prior drafts remain untouched. The preceding retention description is historical for v0.0.3. No v0.0.4 APK or device test is claimed before successful execution.

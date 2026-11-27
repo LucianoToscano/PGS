@@ -88,6 +88,10 @@ def check():
     for public_file in (
         "CONTRIBUTING.md",
         "CHANGELOG.md",
+        "docs/BUILDING.md",
+        "docs/ROOTED.md",
+        "docs/ARCHITECTURE.md",
+        "docs/releases/v0.0.2.md",
         "website/README.md",
         "website/src/content.js",
         "website/src/components/Footer.jsx",

@@ -48,11 +48,36 @@ async function cityRows(body,now) {
   return rows({v:1,fetched_ms:now,hundos:[],spots},now);
 }
 
+function iflowRows(body,category,now) {
+  const raid=category==="raids", list=raid?body.raids:body.items;
+  if (!Array.isArray(list)) throw Error("iflow_schema");
+  const records=new Map(), spots=[];
+  for (const p of list) {
+    const end=Date.parse(raid?p?.raid_end_at:p?.expires_at);
+    if (!Number.isFinite(end) || end<now+60000 || typeof p.id!=="string" || !/^\d{1,20}$/.test(p.id) ||
+        !Number.isFinite(p.lat) || Math.abs(p.lat)>90 || !Number.isFinite(p.lon) || Math.abs(p.lon)>180) continue;
+    if (!raid && !(Number.isSafeInteger(p.pokemon_id) && p.pokemon_id>0)) continue;
+    const record={id:p.id,source:"iflowgo",lat:p.lat,lon:p.lon,expires_ms:end};
+    if (raid) {record.boss=p.raid_pokemon_id; record.level=p.raid_level;}
+    else {
+      record.dex=p.pokemon_id;
+      if ([p.attack_iv,p.defense_iv,p.stamina_iv].every(v=>v===15) && BigInt(p.id)<(1n<<64n))
+        spots.push(["s"+BigInt(p.id).toString(16).padStart(16,"0"),p.pokemon_id,0,p.lat,p.lon,end,p.cp,p.level]);
+    }
+    records.set(p.id,record);
+  }
+  return {...rows({v:1,fetched_ms:now,hundos:[],spots},now),category,records:[...records.values()]};
+}
+
 async function collect(source, now) {
   const url = new URL(source.url);
   const city=source.kind==="city" && cityHosts.has(url.hostname) && url.pathname==="/query2.php";
+  const iflow=source.kind==="iflow" && url.hostname==="pokecoords.iflowgo.com" &&
+    ["pokemon","raids"].includes(source.category) && url.pathname==="/iflowgopokecoords/api/v1/"+(source.category==="raids"?"nearby":"pokemon-search");
   if (url.protocol !== "https:" || url.username || url.password || url.search || url.hash ||
-      (!city && !url.pathname.endsWith("/hundos.json"))) throw Error("source_url");
+      (!iflow && !city && !url.pathname.endsWith("/hundos.json"))) throw Error("source_url");
+  if (iflow) url.search=new URLSearchParams(source.category==="raids"
+    ? {lat:"40.758",lon:"-73.9855",radius_km:"2",layers:"raids",limit:"200"} : {page:"1"});
   if (city) url.search=new URLSearchParams({mons:Array.from({length:1025},(_,i)=>i+1).join(","),minIV:"100",since:"0",time:String(now)});
   const response = await fetch(url,{redirect:"error",signal:AbortSignal.timeout(12000),
     headers:{Accept:"application/json","User-Agent":"PGS-Hundo-Feed/1"}});
@@ -73,6 +98,7 @@ async function collect(source, now) {
     data+=decoder.decode(value,{stream:true});
   }
   const body=JSON.parse(data+decoder.decode());
+  if (iflow) return iflowRows(body,source.category,now);
   return city ? cityRows(body,now) : rows(body,now);
 }
 
@@ -106,7 +132,9 @@ export function feed(state,now) {
     group.push(row); nearby.set(row[1],group);
   }
   for (const s of state.entries) {
-    const count=sources[s.name]={active:0,unique:0,status:s.status,http_status:s.httpStatus || null};
+    if (s.category==="raids") continue;
+    const name=s.category==="pokemon"?"iflowgo":s.name;
+    const count=sources[name]={active:0,unique:0,status:s.status,http_status:s.httpStatus || null};
     for (const row of s.hundos || []) {
       if (row[5]<now+60000) continue;
       count.active++;
@@ -115,14 +143,14 @@ export function feed(state,now) {
   }
   for (const s of state.entries) for (const row of s.spots || []) {
     if (row[5]<now+60000) continue;
-    sources[s.name].active++;
+    sources[s.category==="pokemon"?"iflowgo":s.name].active++;
     const duplicate=(nearby.get(row[1]) || []).some(other=>{
       if (Math.abs(other[5]-row[5])>180000) return false;
       const a=Math.sin((row[3]-other[3])*radians/2)**2 +
         Math.cos(row[3]*radians)*Math.cos(other[3]*radians)*Math.sin((row[4]-other[4])*radians/2)**2;
       return a<=Math.sin(50/12742000)**2;
     });
-    if (!duplicate) { register(row); spots.push(row); sources[s.name].unique++; }
+    if (!duplicate) { register(row); spots.push(row); sources[s.category==="pokemon"?"iflowgo":s.name].unique++; }
   }
   return {v:1,fetched_ms:Math.max(...state.entries.map(s=>s.updated || 0)),interval_s:interval,
     coordinate_precision:"exact",hundos:[...hundos.values()],spots,sources};
@@ -141,13 +169,20 @@ export default {
   async fetch(request,env) {
     const path=new URL(request.url).pathname;
     const simulation=path==="/simulation/hundos.json";
-    if (!simulation && path!=="/hundos.json") return new Response(null,{status:404});
+    const category=({"/pokemon.json":"pokemon","/raids.json":"raids"})[path];
+    if (!category && !simulation && path!=="/hundos.json") return new Response(null,{status:404});
     if (!["GET","HEAD"].includes(request.method)) return new Response(null,{status:405,headers:{Allow:"GET, HEAD"}});
     const active=new Set(JSON.parse(env.SOURCES || "[]").map(s=>s.name+" "+s.url));
     const state=await env.FEED.get(simulation?"pgs-simulation-v1":stateKey,"json");
     if (!simulation && state?.entries) state.entries=state.entries.filter(s=>active.has(s.name+" "+s.url));
     if (!state?.entries?.some(s=>s.updated)) return new Response(null,{status:503,headers:{"Retry-After":"300","Cache-Control":"no-store"}});
-    const body=feed(state,Date.now());
+    let body;
+    if (category) {
+      const entry=state.entries.find(s=>s.category===category);
+      const records=(entry?.records || []).filter(r=>r.expires_ms>Date.now());
+      if (!records.length) return new Response(null,{status:404,headers:{"Cache-Control":"no-store"}});
+      body={v:1,category,source:"iflowgo",fetched_ms:entry.updated,coverage:category==="raids"?"Times Square, 2 km":"global, page 1",records};
+    } else body=feed(state,Date.now());
     if (simulation) body.simulated=true;
     return new Response(request.method==="HEAD"?null:JSON.stringify(body),{headers:{
       "Content-Type":"application/json; charset=utf-8","Cache-Control":"public, max-age=15"}});

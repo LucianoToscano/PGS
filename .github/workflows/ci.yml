@@ -46,3 +46,17 @@ jobs:
           path: dist/PGS-source-tools.zip
           if-no-files-found: error
           retention-days: 14
+      - name: Prepare standalone PGS preview APK (development key)
+        if: github.event_name == 'workflow_dispatch' || (github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository)
+        shell: pwsh
+        run: |
+          Copy-Item -LiteralPath 'pgrazor/build/pgrazor-preview.apk' -Destination 'pgrazor/build/PGS-preview.apk'
+          Get-FileHash -Algorithm SHA256 -LiteralPath 'pgrazor/build/PGS-preview.apk'
+      - name: Upload standalone PGS preview (not the game)
+        if: github.event_name == 'workflow_dispatch' || (github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository)
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: PGS-preview
+          path: pgrazor/build/PGS-preview.apk
+          if-no-files-found: error
+          retention-days: 3

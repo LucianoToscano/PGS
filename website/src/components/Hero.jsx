@@ -13,6 +13,15 @@ export default function Hero() {
             <span className="eyebrow__dot" aria-hidden="true" />
             Independent, open-source project
           </p>
+          <img
+            className="hero__wordmark"
+            src={asset('pgs-wordmark.png')}
+            alt="PGS — Pokémon GO Spoofers"
+            width="4096"
+            height="1704"
+            loading="eager"
+            decoding="async"
+          />
           <h1 className="hero__title">
             Smoother sessions.{' '}
             <span className="accent-text">One small menu.</span>

@@ -6,6 +6,8 @@ and the original attribution remain intact until migrated with proofs.
 from pathlib import Path
 import json
 import re
+import hashlib
+import struct
 
 ROOT = Path(__file__).resolve().parents[1]
 LANGUAGES = ("en", "de", "es", "fr", "pt-BR", "ru", "it", "zh-Hant", "nl", "th", "ko")
@@ -101,16 +103,52 @@ def check():
         content = (ROOT / public_file).read_text(encoding="utf-8")
         if "PGRazor" in content or "https://github.com/jpitty03/PGRazor" in content:
             problems.append(public_file + ": old name remains in public copy")
-    for logo_file in (
+    # Official graphics are original PNG files, not lossy/redrawn SVG approximations.
+    # The same original file bytes are committed for the website and branding sources.
+    expected_logos = {
+        "pgs-shield.png": (
+            "30f51e26c20ea0aba1687e4c1e22adce093b238c3879492342163f818b438300", 4096, 4096
+        ),
+        "pgs-full.png": (
+            "15716009d2d1c0e11d75ace39783c3237c1d9db2272ca7f2fad8ac2d6e20ab2e", 4096, 4096
+        ),
+        "pgs-wordmark.png": (
+            "8ad6e5d80075145154ebfc343d91469da970fa7cfa729b9f6e31479307d4b29e", 4096, 1704
+        ),
+    }
+    for basename, (expected_sha256, expected_width, expected_height) in expected_logos.items():
+        for folder in ("website/public", "pgrazor/branding"):
+            path = ROOT / folder / basename
+            if not path.is_file():
+                problems.append(str(path.relative_to(ROOT)) + ": original PNG missing")
+                continue
+            content = path.read_bytes()
+            if not content.startswith(bytes((137, 80, 78, 71, 13, 10, 26, 10))):
+                problems.append(str(path.relative_to(ROOT)) + ": not a PNG")
+                continue
+            if hashlib.sha256(content).hexdigest() != expected_sha256:
+                problems.append(str(path.relative_to(ROOT)) + ": pixels/source bytes differ from Drive original")
+            width, height = struct.unpack(">II", content[16:24])
+            if (width, height) != (expected_width, expected_height):
+                problems.append(str(path.relative_to(ROOT)) + ": resolution regressed")
+    for old_logo in (
         "website/public/logo.svg",
         "website/public/pgs-official.svg",
         "pgrazor/branding/pgs.svg",
+        "pgrazor/branding/pgrazor.svg",
     ):
-        item = ROOT / logo_file
-        if not item.is_file() or "PGS" not in item.read_text(encoding="utf-8"):
-            problems.append(logo_file + ": PGS official brand asset missing")
-    if (ROOT / "pgrazor/branding/pgrazor.svg").exists():
-        problems.append("Old public-logo path must not remain")
+        if (ROOT / old_logo).exists():
+            problems.append(old_logo + ": obsolete traced SVG remains")
+    public_references = {
+        "README.md": "website/public/pgs-full.png",
+        "website/index.html": "%BASE_URL%pgs-shield.png",
+        "website/src/components/Header.jsx": "asset('pgs-shield.png')",
+        "website/src/components/Footer.jsx": "asset('pgs-shield.png')",
+        "website/src/components/Hero.jsx": "asset('pgs-wordmark.png')",
+    }
+    for filename, wanted in public_references.items():
+        if wanted not in (ROOT / filename).read_text(encoding="utf-8"):
+            problems.append(filename + ": official PGS PNG reference missing")
     for public_file in ("website/index.html", "website/src/hooks/useTheme.js"):
         content = (ROOT / public_file).read_text(encoding="utf-8")
         if "'pgs-theme'" not in content or "'pgrazor-theme'" in content:

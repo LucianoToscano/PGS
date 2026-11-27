@@ -46,7 +46,7 @@ export default function Header({ theme, onToggleTheme, onGuide = false }) {
     <header className="site-header" ref={headerRef}>
       <div className="site-header__inner">
         <a className="brand" href={brandHref}>
-          <img className="brand__mark" src={asset('logo.svg')} alt="" width="28" height="28" />
+          <img className="brand__mark" src={asset('pgs-shield.png')} alt="" width="28" height="28" />
           <span className="brand__name">PGS</span>
         </a>
 

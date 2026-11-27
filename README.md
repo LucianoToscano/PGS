@@ -1,4 +1,4 @@
-<p align="center"><img src="website/public/pgs-official.svg" width="260" alt="PGS — Pokémon GO Spoofers"></p>
+<p align="center"><img src="website/public/pgs-full.png" width="360" alt="PGS — Pokémon GO Spoofers"></p>
 <h1 align="center">PGS — Pokémon GO Spoofers</h1>
 <p align="center">A compact Android interface for location controls and Pokémon GO automation.</p>
 

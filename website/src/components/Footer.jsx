@@ -8,7 +8,7 @@ export default function Footer({ onGuide = false }) {
       <div className="site-footer__inner">
         <div className="site-footer__top">
           <a className="brand" href={onGuide ? homeHref : '#top'}>
-            <img className="brand__mark" src={asset('logo.svg')} alt="" width="26" height="26" />
+            <img className="brand__mark" src={asset('pgs-shield.png')} alt="" width="26" height="26" />
             <span className="brand__name">PGS</span>
           </a>
           <nav className="site-footer__links" aria-label="Footer">

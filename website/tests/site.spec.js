@@ -9,6 +9,20 @@ test('PGS brand links use the PGS repository and Discord', async ({ page }) => {
   await expect(page.locator('a[href*="github.com/jpitty03/PGRazor"]')).toHaveCount(0);
 });
 
+test('official PGS originals load as high-resolution PNGs', async ({ page }) => {
+  await page.goto('./');
+  const marks = page.locator('img.brand__mark');
+  await expect(marks).toHaveCount(2);
+  for (const mark of await marks.all()) {
+    await expect.poll(() => mark.evaluate(img => [img.naturalWidth, img.naturalHeight])).toEqual([4096, 4096]);
+    await expect(mark).toHaveAttribute('src', /pgs-shield\.png$/);
+  }
+  const wordmark = page.locator('img.hero__wordmark');
+  await expect.poll(() => wordmark.evaluate(img => [img.naturalWidth, img.naturalHeight])).toEqual([4096, 1704]);
+  await expect(wordmark).toHaveAttribute('src', /pgs-wordmark\.png$/);
+  await expect(page.locator('link[rel="icon"]')).toHaveAttribute('href', /pgs-shield\.png$/);
+});
+
 test('production page loads its assets and stays within the viewport', async ({ page }) => {
   const errors = [];
   page.on('pageerror', error => errors.push(error.message));

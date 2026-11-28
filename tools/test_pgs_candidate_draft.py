@@ -92,6 +92,41 @@ class CandidateDraftTests(unittest.TestCase):
             self.assertEqual((target / "SHA256SUMS.txt").read_text(encoding="utf-8").split(),
                              [receipt["sha256"], self.request.asset])
 
+    def test_stage_verified_root_artifacts_and_combined_checksums(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            source, target = Path(tmp) / "source", Path(tmp) / "target"
+            source.mkdir()
+            target.mkdir()
+            receipt = self.fixture(source)
+            root = source / "root"
+            root.mkdir()
+            for name in draft.ROOT_NAMES[:2]:
+                (root / name).write_bytes(name.encode())
+            root_info = {"source_commit": self.commit, "device_tested": False, "publish_ready": False}
+            with patch.object(draft, "verify_root_bundle", return_value=root_info) as verify:
+                expected = draft.stage_bundle(source, target, self.profile, self.commit,
+                                              lambda *a, **k: receipt, self.request)
+            verify.assert_called_once_with(root, self.request.tag, self.commit, self.profile, receipt["sha256"])
+            self.assertEqual(set(expected), set(self.request.names) | set(draft.ROOT_NAMES))
+            sums = dict(line.split("  ", 1)[::-1] for line in
+                        (target / "SHA256SUMS.txt").read_text(encoding="utf-8").splitlines())
+            for name in (self.request.asset, *draft.ROOT_NAMES[:2]):
+                self.assertEqual(sums[name], draft.digest(target / name))
+            self.assertEqual(json.loads((target / draft.ROOT_NAMES[2]).read_text(encoding="utf-8")), root_info)
+
+    def test_invalid_root_does_not_stage_any_assets(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            source, target = Path(tmp) / "source", Path(tmp) / "target"
+            source.mkdir()
+            target.mkdir()
+            receipt = self.fixture(source)
+            (source / "root").mkdir()
+            with patch.object(draft, "verify_root_bundle", side_effect=ValueError("invalid Root")):
+                with self.assertRaises(ValueError):
+                    draft.stage_bundle(source, target, self.profile, self.commit,
+                                       lambda *a, **k: receipt, self.request)
+            self.assertEqual(list(target.iterdir()), [])
+
     def test_tampered_candidate_and_receipt_rejected(self):
         for corrupt in ("apk", "receipt", "source"):
             with self.subTest(corrupt=corrupt), tempfile.TemporaryDirectory() as tmp:

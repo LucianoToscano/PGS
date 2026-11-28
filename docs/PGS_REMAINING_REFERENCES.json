@@ -1,16 +1,16 @@
 {
   "scope": "Git-indexed regular UTF-8 text, excluding NUL-containing files and the snapshot itself",
-  "tracked_files": 2109,
-  "text_files": 1035,
-  "remaining_files": 966,
-  "remaining_occurrences": 31438,
+  "tracked_files": 2110,
+  "text_files": 1036,
+  "remaining_files": 968,
+  "remaining_occurrences": 31440,
   "remaining_by_category": {
     "documentation": 1351,
     "java": 134,
     "javascript": 9,
     "legal": 6,
     "native": 25901,
-    "other": 2367,
+    "other": 2369,
     "release_history": 61,
     "tests": 1067,
     "workflows": 542
@@ -479,6 +479,11 @@
     },
     {
       "path": "pgs/cleanup.ps1",
+      "category": "other",
+      "occurrences": 1
+    },
+    {
+      "path": "pgs/dex_bridges.py",
       "category": "other",
       "occurrences": 1
     },
@@ -4691,6 +4696,11 @@
       "path": "tools/source_bundle.py",
       "category": "other",
       "occurrences": 19
+    },
+    {
+      "path": "tools/test_dex_dependency_download.py",
+      "category": "other",
+      "occurrences": 1
     },
     {
       "path": "tools/test_i18n_catalog.py",

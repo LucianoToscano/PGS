@@ -43,6 +43,11 @@ def parse_request(data, previous_version, ledger, profile):
     keys = {"schema", "enabled", "version", "previous_version_code",
             "previous_apk_sha256", "game_version", "game_version_code",
             "input_sha256", "authorized_input", "retain_authorized_candidate"}
+    # Explicit retry metadata changes the committed request without allocating a new version.
+    if "retry_attempt" in data:
+        if type(data["retry_attempt"]) is not int or not 1 <= data["retry_attempt"] <= 100:
+            raise ValueError("Invalid explicit build retry attempt")
+        keys.add("retry_attempt")
     if (set(data) != keys or data["enabled"] is not True
             or data["authorized_input"] is not True
             or type(data["retain_authorized_candidate"]) is not bool):

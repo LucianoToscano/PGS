@@ -32,6 +32,12 @@ class BuildRequestTests(unittest.TestCase):
         self.assertEqual(request.asset, "PGS.v0.0.5.apk")
         self.assertTrue(build.authorize(request, self.env))
 
+    def test_retry_metadata_does_not_change_version_or_authorization(self):
+        self.assertEqual(self.parse(dict(self.data, retry_attempt=1)), self.parse(self.data))
+        for value in (0, -1, True, "1", 101):
+            with self.subTest(value=value), self.assertRaises(ValueError):
+                self.parse(dict(self.data, retry_attempt=value))
+
     def test_invalid_requests_fail_closed(self):
         for override in ({"enabled": False}, {"schema": True}, {"authorized_input": False},
                          {"retain_authorized_candidate": "true"}, {"version": "v0.0.4"},

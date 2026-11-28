@@ -4,6 +4,11 @@ import hashlib
 import json
 import os
 import subprocess
+import tempfile
+import time
+from datetime import datetime, timezone
+from email.utils import parsedate_to_datetime
+import urllib.error
 import urllib.request
 import zipfile
 
@@ -17,18 +22,93 @@ def sha256(path):
         return hashlib.file_digest(stream, 'sha256').hexdigest()
 
 
+CENTRAL = "https://repo.maven.apache.org/maven2/"
+CENTRAL_MIRROR = "https://maven-central.storage-download.googleapis.com/maven2/"
+TRANSIENT_HTTP = {408, 429, 500, 502, 503, 504}
+MAX_JAR_BYTES = 32 * 1024 * 1024
+MAX_RETRY_WAIT = 180
+
+
+def retry_delay(headers, attempt):
+    """Honor both forms of Retry-After; never shorten a server's requested delay."""
+    delay = 5 * (2 ** attempt)
+    value = headers.get("Retry-After") if headers else None
+    if value:
+        try:
+            if value.strip().isdigit():
+                seconds = int(value.strip())
+            else:
+                date = parsedate_to_datetime(value)
+                if date.tzinfo is None:
+                    date = date.replace(tzinfo=timezone.utc)
+                seconds = (date - datetime.now(timezone.utc)).total_seconds()
+            delay = max(delay, seconds)
+        except (ValueError, TypeError, OverflowError):
+            pass
+    if delay > MAX_RETRY_WAIT:
+        raise RuntimeError("Maven requested a longer retry delay; retry the build later")
+    return delay
+
+
+def download_pinned(item):
+    """Fetch an unchanged, pinned Maven artifact via Central or its documented mirror."""
+    url = item["url"]
+    if not url.startswith(CENTRAL):
+        raise ValueError("Unexpected Maven dependency origin")
+    relative = url.removeprefix(CENTRAL)
+    if not relative or ".." in relative.split("/") or "?" in relative or "#" in relative:
+        raise ValueError("Unexpected Maven dependency path")
+    urls = (url, CENTRAL_MIRROR + relative, url, CENTRAL_MIRROR + relative)
+    for attempt, endpoint in enumerate(urls):
+        try:
+            request = urllib.request.Request(endpoint, headers={"User-Agent": "PGS-pinned-dependency-build/1.0"})
+            with urllib.request.urlopen(request, timeout=60) as response:
+                data = response.read(MAX_JAR_BYTES + 1)
+            if len(data) > MAX_JAR_BYTES or hashlib.sha256(data).hexdigest() != item["sha256"]:
+                raise RuntimeError("Downloaded DEX dependency checksum mismatch")
+            return data
+        except urllib.error.HTTPError as error:
+            code, headers = error.code, error.headers
+            error.close()
+            if code not in TRANSIENT_HTTP or attempt == len(urls) - 1:
+                raise RuntimeError(f"Maven dependency download failed (HTTP {code})") from None
+            delay = retry_delay(headers, attempt)
+        except (urllib.error.URLError, TimeoutError, ConnectionError) as error:
+            if attempt == len(urls) - 1:
+                raise RuntimeError("Maven dependency network retry limit reached") from None
+            delay = retry_delay(None, attempt)
+        print(f"Maven dependency unavailable; retrying verified source after {delay:.0f}s", flush=True)
+        time.sleep(delay)
+    raise RuntimeError("Maven dependency download exhausted")
+
+
+def store_verified(path, data):
+    """Publish only complete verified bytes to the local dependency cache."""
+    CACHE.mkdir(parents=True, exist_ok=True)
+    with tempfile.NamedTemporaryFile(dir=CACHE, delete=False) as stream:
+        temporary = Path(stream.name)
+        try:
+            stream.write(data)
+        except BaseException:
+            stream.close()
+            temporary.unlink(missing_ok=True)
+            raise
+    try:
+        os.replace(temporary, path)
+    finally:
+        temporary.unlink(missing_ok=True)
+
+
 def dependencies(download=False):
     jars = []
     for item in json.loads((TOOLS / 'dependencies.json').read_text(encoding='utf-8')):
         path = CACHE / item['url'].rsplit('/', 1)[1]
+        if path.is_symlink():
+            raise RuntimeError('DEX build dependency must not be a symlink: ' + path.name)
         if not path.is_file():
             if not download:
                 raise RuntimeError('Missing pinned DEX build dependency: ' + path.name)
-            data = urllib.request.urlopen(item['url'], timeout=60).read()
-            if hashlib.sha256(data).hexdigest() != item['sha256']:
-                raise RuntimeError('Downloaded DEX dependency checksum mismatch')
-            CACHE.mkdir(parents=True, exist_ok=True)
-            path.write_bytes(data)
+            store_verified(path, download_pinned(item))
         if path.is_symlink() or sha256(path) != item['sha256']:
             raise RuntimeError('DEX build dependency checksum mismatch: ' + path.name)
         jars.append(path)

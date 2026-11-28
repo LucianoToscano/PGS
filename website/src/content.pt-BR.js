@@ -13,7 +13,7 @@ export const nav = [
 
 export const heroFacts = [
   { term: 'Compatibilidade', detail: 'Android ARM64 e MuMu — um único APK' },
-  { term: 'Modo Root', detail: 'Ainda não lançado na linha PGS' },
+  { term: 'Modo Root', detail: 'Instalador e módulo disponíveis' },
   { term: 'Licença', detail: 'MIT (código-fonte do PGS)' },
 ];
 
@@ -86,16 +86,16 @@ const shotTranslations = {
 export const screenshots = en.screenshots.map(shot => ({ ...shot, ...shotTranslations[shot.id] }));
 
 const stepTranslations = [
-  ['Baixar', 'Abra o release do PGS, baixe PGS.v0.0.5.apk e confira SHA256SUMS.txt. Não instale um arquivo de código-fonte ou pacote de prévia.'],
+  ['Baixar', 'Abra o release do PGS, baixe PGS.v0.0.6.apk e confira SHA256SUMS.txt. Não instale um arquivo de código-fonte ou pacote de prévia.'],
   ['Instalar', 'Abra o APK em um celular Android ARM64 ou no emulador MuMu, autorizando instalações pelo gerenciador de arquivos quando solicitado.'],
   ['Abrir', 'Inicie o Pokémon GO, toque no pequeno ícone do menu e escolha Configurações para acessar todos os controles.'],
 ];
 export const steps = en.steps.map((step, i) => ({ ...step, title: stepTranslations[i][0], body: stepTranslations[i][1] }));
 
 const faqTranslations = [
-  ['Em quais dispositivos funciona?', 'O PGS é destinado a celulares Android ARM64 e ao emulador MuMu, sem root. Uma versão PGS Root ainda não foi validada nem publicada.'],
+  ['Em quais dispositivos funciona?', 'O PGS é destinado a celulares Android ARM64 e ao emulador MuMu, sem root. A v0.0.6 também disponibiliza instalador e módulo Root separados.'],
   ['Posso instalar por cima do app da Play Store?', 'A instalação da Play Store usa outro certificado, portanto não pode ser atualizada no local pelo PGS. Apenas uma instalação existente com o certificado permanente PGS pode receber atualizações preservando seus dados.'],
-  ['Existe uma versão PGS Root?', 'Ainda não. A versão do PGS é voltada ao APK sem root. O instalador Root de outro projeto não é uma atualização PGS.'],
+  ['Existe uma versão PGS Root?', 'Sim. A v0.0.6 inclui PGS-Root.apk e PGS-Root-module.zip, com recibo de compilação e checksums. As verificações automatizadas passaram; os testes Root no aparelho foram aceitos pelo responsável, sem registros detalhados separados.'],
   ['O LivePokeMap está incluído?', 'Não. Os feeds remotos exigem uma assinatura ativa própria do LivePokeMap, contratada separadamente no serviço.'],
   ['Garante capturas ou evita banimentos?', 'Não. São modificações experimentais do cliente, sem garantia de resultado no servidor. O temporizador de espera é somente uma estimativa local.'],
   ['Funciona em qualquer versão do jogo?', 'As integrações nativas são feitas para uma versão específica do Pokémon GO. Em outra versão, recursos podem ficar indisponíveis. Confira as notas de cada release.'],

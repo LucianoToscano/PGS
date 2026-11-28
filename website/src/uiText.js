@@ -46,8 +46,8 @@ const en = {
     number: '03 / Get started', title: 'Three steps to your first session.',
     lead: 'Every release ships with a changelog, a SHA-256 checksum, and build information.',
     download: 'Download release', discord: 'Join the Discord',
-    badge: 'Stable', build: 'PGS v0.0.5 build',
-    afterBuild: 'is the stable release. Installation and opening were confirmed by the project owner; Google sign-in and in-app updating remain unverified.',
+    badge: 'Published', build: 'PGS v0.0.6 build',
+    afterBuild: 'is the latest public release. Owner screenshots confirm the in-app update from v0.0.5 and retained session/settings. Other first-audit items were accepted by the owner without separate detailed test logs.',
     faqTitle: 'Good to know',
   },
   gallery: {
@@ -121,8 +121,8 @@ const ptBR = {
     number: '03 / Como começar', title: 'Três passos para iniciar.',
     lead: 'Cada release inclui registro de mudanças, checksum SHA-256 e informações da compilação.',
     download: 'Baixar versão', discord: 'Entrar no Discord',
-    badge: 'Estável', build: 'Compilação PGS v0.0.5',
-    afterBuild: 'é a versão estável. Instalação e abertura confirmadas pelo responsável do projeto; login Google e atualização interna ainda precisam de verificação.',
+    badge: 'Publicada', build: 'Compilação PGS v0.0.6',
+    afterBuild: 'é a última versão pública. Capturas do responsável confirmam atualização interna da v0.0.5 e preservação da sessão e das configurações. Os demais itens da primeira auditoria foram aceitos pelo responsável, sem registros detalhados separados.',
     faqTitle: 'Informações importantes',
   },
   gallery: {

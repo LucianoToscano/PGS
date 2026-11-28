@@ -3,14 +3,14 @@
   "tracked_files": 2113,
   "text_files": 1039,
   "remaining_files": 971,
-  "remaining_occurrences": 31492,
+  "remaining_occurrences": 31518,
   "remaining_by_category": {
-    "documentation": 1372,
+    "documentation": 1392,
     "java": 134,
     "javascript": 9,
     "legal": 6,
     "native": 25901,
-    "other": 2370,
+    "other": 2376,
     "release_history": 61,
     "tests": 1067,
     "workflows": 572
@@ -120,12 +120,12 @@
     {
       "path": "CHANGELOG.md",
       "category": "other",
-      "occurrences": 10
+      "occurrences": 12
     },
     {
       "path": "CHANGELOG.pt-BR.md",
       "category": "other",
-      "occurrences": 7
+      "occurrences": 8
     },
     {
       "path": "CONTRIBUTING.md",
@@ -150,12 +150,12 @@
     {
       "path": "README.md",
       "category": "documentation",
-      "occurrences": 41
+      "occurrences": 43
     },
     {
       "path": "README.pt-BR.md",
       "category": "documentation",
-      "occurrences": 42
+      "occurrences": 44
     },
     {
       "path": "THIRD_PARTY.md",
@@ -250,7 +250,7 @@
     {
       "path": "docs/PGS_UPDATE_POLICY.md",
       "category": "documentation",
-      "occurrences": 56
+      "occurrences": 60
     },
     {
       "path": "docs/PGS_VERSION_MONITOR.md",
@@ -260,7 +260,7 @@
     {
       "path": "docs/ROOTED.md",
       "category": "documentation",
-      "occurrences": 35
+      "occurrences": 37
     },
     {
       "path": "docs/en/BUILDING.md",
@@ -285,12 +285,12 @@
     {
       "path": "docs/en/PGS_UPDATE_POLICY.md",
       "category": "documentation",
-      "occurrences": 60
+      "occurrences": 64
     },
     {
       "path": "docs/en/README.md",
       "category": "documentation",
-      "occurrences": 5
+      "occurrences": 6
     },
     {
       "path": "docs/en/releases/v0.0.2.md",
@@ -320,12 +320,12 @@
     {
       "path": "docs/pt-BR/PGS_UPDATE_POLICY.md",
       "category": "documentation",
-      "occurrences": 58
+      "occurrences": 62
     },
     {
       "path": "docs/pt-BR/README.md",
       "category": "documentation",
-      "occurrences": 5
+      "occurrences": 6
     },
     {
       "path": "docs/pt-BR/releases/TEMPLATE.md",
@@ -4810,12 +4810,12 @@
     {
       "path": "website/src/content.en.js",
       "category": "other",
-      "occurrences": 18
+      "occurrences": 16
     },
     {
       "path": "website/src/content.pt-BR.js",
       "category": "other",
-      "occurrences": 14
+      "occurrences": 12
     },
     {
       "path": "website/src/featureGuides.js",
@@ -4865,7 +4865,7 @@
     {
       "path": "website/tests/site.spec.js",
       "category": "other",
-      "occurrences": 14
+      "occurrences": 21
     },
     {
       "path": "website/vite.config.js",
@@ -4875,11 +4875,11 @@
   ],
   "abbreviations": {
     "remaining_files": 532,
-    "remaining_occurrences": 25814,
+    "remaining_occurrences": 25818,
     "by_form": {
       "camelcase": 5664,
       "lowercase": 3895,
-      "uppercase": 16255
+      "uppercase": 16259
     },
     "tracked_name_matches": [
       "docs/PGS_AUTO_BACKUP.md",
@@ -5167,10 +5167,10 @@
       },
       {
         "path": "docs/PGS_UPDATE_POLICY.md",
-        "occurrences": 7,
+        "occurrences": 8,
         "by_form": {
           "lowercase": 1,
-          "uppercase": 6
+          "uppercase": 7
         }
       },
       {
@@ -5183,9 +5183,10 @@
       },
       {
         "path": "docs/ROOTED.md",
-        "occurrences": 4,
+        "occurrences": 5,
         "by_form": {
-          "lowercase": 4
+          "lowercase": 4,
+          "uppercase": 1
         }
       },
       {
@@ -5220,10 +5221,10 @@
       },
       {
         "path": "docs/en/PGS_UPDATE_POLICY.md",
-        "occurrences": 10,
+        "occurrences": 11,
         "by_form": {
           "lowercase": 1,
-          "uppercase": 9
+          "uppercase": 10
         }
       },
       {
@@ -5265,10 +5266,10 @@
       },
       {
         "path": "docs/pt-BR/PGS_UPDATE_POLICY.md",
-        "occurrences": 9,
+        "occurrences": 10,
         "by_form": {
           "lowercase": 1,
-          "uppercase": 8
+          "uppercase": 9
         }
       },
       {

@@ -3,7 +3,7 @@
 
 export const links = {
   releasesLatest: 'https://github.com/LucianoToscano/PGS/releases/latest',
-  releasesCurrent: 'https://github.com/LucianoToscano/PGS/releases/tag/v0.0.5',
+  releasesCurrent: 'https://github.com/LucianoToscano/PGS/releases/tag/v0.0.6',
   github: 'https://github.com/LucianoToscano/PGS',
   discord: 'https://discord.gg/SdwU4VnfW',
 };
@@ -17,7 +17,7 @@ export const nav = [
 
 export const heroFacts = [
   { term: 'Runs on', detail: 'ARM64 Android & MuMu — one APK' },
-  { term: 'Root option', detail: 'Not yet released in the PGS line' },
+  { term: 'Root option', detail: 'Installer and module available' },
   { term: 'License', detail: 'MIT (PGS source)' },
 ];
 
@@ -98,7 +98,7 @@ export const steps = [
   {
     n: '01',
     title: 'Download',
-    body: 'Open the PGS release, download PGS.v0.0.5.apk and check SHA256SUMS.txt. Do not install a source archive or a preview package.',
+    body: 'Open the PGS release, download PGS.v0.0.6.apk and check SHA256SUMS.txt. Do not install a source archive or a preview package.',
   },
   {
     n: '02',
@@ -108,14 +108,14 @@ export const steps = [
   {
     n: '03',
     title: 'Open',
-    body: 'Launch Pokémon GO, tap the small R icon, then choose Settings for the full controls.',
+    body: 'Launch Pokémon GO, tap the small menu icon, then choose Settings for the full controls.',
   },
 ];
 
 export const faqs = [
   {
     q: 'What does it run on?',
-    a: 'PGS targets ARM64 Android phones and the MuMu emulator without root. A PGS Root release has not yet been validated or published.',
+    a: 'PGS targets ARM64 Android phones and the MuMu emulator without root. A separate Root installer and module are available in v0.0.6.',
   },
   {
     q: 'Can I install it over the Play Store app?',
@@ -123,7 +123,7 @@ export const faqs = [
   },
   {
     q: 'Is a PGS Root build available?',
-    a: 'Not yet. The PGS release targets the non-root APK. The original Root variant belongs to the upstream project, not a PGS update.',
+    a: 'Yes. v0.0.6 includes PGS-Root.apk and PGS-Root-module.zip with a separate build receipt and checksums. Automated packaging checks passed; Root device testing was accepted by the owner without separate detailed logs.',
   },
   {
     q: 'Is LivePokeMap included?',

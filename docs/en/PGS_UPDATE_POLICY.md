@@ -12,6 +12,10 @@ PGS certificate SHA-256:
 
 This certificate must never change. Signing secrets belong in GitHub Actions and **not** in the source repository. Do not generate a new JKS for future PGS updates. The build fails if the final certificate does not match.
 
+## Current public baseline — v0.0.6
+
+[PGS v0.0.6](https://github.com/LucianoToscano/PGS/releases/tag/v0.0.6) is published with base game 0.439.0 and signed non-root Android versionCode **2026111609**. The next full build must exceed this code (at least 2026111610), keep the existing package and certificate, and follow [PGS AUTO BUILD](../PGS_AUTO_BUILD.md). The in-app update from v0.0.5 was confirmed in owner screenshots; other first-audit items were accepted without separate detailed logs. Historical version-specific commands and codes below are archival, not instructions for a new candidate.
+
 ## Android versions
 
 | PGS version | Base game | Android `versionCode` |
@@ -20,6 +24,8 @@ This certificate must never change. Signing secrets belong in GitHub Actions and
 | v0.3.8-pgs.3 | Pokémon GO 0.439.0 | 2026111603 |
 | **v0.0.1** | Pokémon GO 0.439.0 | **2026111604** |
 | **v0.0.2 (candidate)** | Pokémon GO 0.439.0 | **2026111605** |
+| v0.0.5 | Pokémon GO 0.439.0 | 2026111608 |
+| **v0.0.6** | Pokémon GO 0.439.0 | **2026111609** |
 
 The latest verified PGS code is tracked in [`pgs/PGS_LAST_VERSION_CODE`](../../pgs/PGS_LAST_VERSION_CODE). For each full release, `pgs/release_apk.py` uses `max(game_code, previous_pgs_code+1)` before signing the non-root APK. The original `game_version_code` is retained for Root-module compatibility checks. The actual signed code is recorded in `build-info.json` as `apk_version_code`.
 

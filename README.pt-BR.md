@@ -24,20 +24,21 @@
 
 | Propriedade | Valor |
 |---|---|
-| Última versão estável | **PGS v0.0.5** |
-| Status | **Instalação e abertura confirmadas pelo responsável do projeto em aparelho real; login Google e atualização interna não verificados separadamente** |
+| Última versão pública | **PGS v0.0.6** |
+| Status | **Atualização interna da v0.0.5, instalação e abertura comprovadas por capturas do responsável; pendências da primeira auditoria aceitas pelo responsável** |
 | Versão de referência | [PGS v0.0.2](https://github.com/LucianoToscano/PGS/releases/tag/untagged-268fa715660bc21061a4) |
 | Jogo-base | Pokémon GO **0.439.0** |
 | Nome instalado | **Pokémon GO** |
 | Identificador Android | `com.nianticlabs.pokemongo` |
 
-A versão do PGS é independente da versão do jogo-base. A versão estável é oferecida pelo atualizador interno.
+A versão do PGS é independente da versão do jogo-base. A última versão pública é oferecida pelo atualizador interno.
 
 ## Baixar e instalar
 
-1. Acesse o [release PGS v0.0.5](https://github.com/LucianoToscano/PGS/releases/tag/v0.0.5).
-2. Baixe `PGS.v0.0.5.apk` e confira o SHA-256 em `SHA256SUMS.txt`: `fa139a05d884ae2c487f8af68673c049d7db03eaae8fca8efecc88f6cf2c4ea9`.
-3. Consulte `build-info.json` e `PGS.json`. Instalação e abertura confirmadas pelo responsável do projeto. Login Google, configurações salvas, funcionamento das funções e atualização interna ainda precisam de verificação independente.
+1. Acesse o [release PGS v0.0.6](https://github.com/LucianoToscano/PGS/releases/tag/v0.0.6).
+2. Baixe `PGS.v0.0.6.apk` e confira o SHA-256 em `SHA256SUMS.txt`: `e69ed234a34a106052343ba59b2ea62d1158a8ed72326f82e892ba5479d0ca4e`.
+3. Consulte `build-info.json` e `PGS.json`. Capturas do responsável confirmam atualização interna da v0.0.5, abertura e preservação da sessão e das configurações. O login Google e demais funções foram aceitos pelo responsável, sem registros detalhados de testes separados.
+4. Para Root, o mesmo release inclui `PGS-Root.apk`, `PGS-Root-module.zip` e `root-build-info.json`. Confira os arquivos em `SHA256SUMS.txt` e consulte o [guia Root](docs/ROOTED.md). A compilação Root passou nas verificações automatizadas; os testes no aparelho foram aceitos pelo responsável, sem documentação independente.
 
 Não confunda arquivos de código-fonte ou pacotes de prévia com o APK completo. As entradas originais de compilação devem permanecer privadas.
 

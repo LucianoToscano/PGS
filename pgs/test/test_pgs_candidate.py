@@ -117,7 +117,7 @@ class PgsCandidateTests(unittest.TestCase):
             self.verify()
 
     def test_reject_legacy_controls_dex(self):
-        self.members["classes3.dex"] = b"dex\nLdev/pgs/Control;"
+        self.members["classes3.dex"] = b"dex\nLdev/pgrazor/Control;"
         self.write()
         with self.assertRaisesRegex(ValueError, "Legacy controls"):
             self.verify()
@@ -144,7 +144,7 @@ class PgsCandidateTests(unittest.TestCase):
         self.mode["googleBrowserLogin"] = True
         self.identity["activities"] = [{"name": "dev.pgs.GoogleAuthActivity", "exported": True}]
         self.write()
-        with self.assertRaisesRegex(ValueError, "GoogleAuthActivity must be unexported"):
+        with self.assertRaisesRegex(ValueError, "Unexpected Google browser callback filter"):
             self.verify()
 
     def test_reject_duplicate_zip_entries(self):

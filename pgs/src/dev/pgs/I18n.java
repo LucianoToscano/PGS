@@ -27,7 +27,7 @@ public final class I18n {
 
     public static String language() { return active.language(); }
     /** Display-only branding: preserve catalog keys, serialized preferences and opaque arguments. */
-    private static String brand(String text) { return text == null ? "" : text.replace("PGS", "PGS"); }
+    private static String brand(String text) { return text == null ? "" : text.replace("PGRazor", "PGS"); }
     public static String t(String english) { return brand(active.text(english)); }
     public static String format(String english, Object... arguments) {
         try {
@@ -63,14 +63,14 @@ public final class I18n {
             if (english == null) return "";
             // Accept old immutable UI source labels while the compiled callers migrate.
             // Saved preferences, arbitrary arguments and game data are never rewritten.
-            String canonical = english.replace("PGS", "PGS");
+            String canonical = english.replace("PGRazor", "PGS");
             String translated = messages.get(canonical);
             return translated == null || translated.isEmpty() ? english : translated;
         }
 
         public String row(String english) {
             if (english == null) return "";
-            String canonical = english.replace("PGS", "PGS");
+            String canonical = english.replace("PGRazor", "PGS");
             String translated = messages.get(canonical);
             if (translated != null && !translated.isEmpty()) return translated;
             int split = canonical.indexOf(": ");

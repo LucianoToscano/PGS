@@ -101,11 +101,8 @@ public final class GameBridgeDispatch {
     }
     public static boolean browserSignInEnabled(){synchronized(LOCK){return !closed&&browserSignIn;}}
     public static void signIn(Activity activity,Object consumer){
-        // Gate DEX browser dispatch behind the packaging option; when disabled,
-        // leave the original GoogleSignInClient body untouched so sign-in flows
-        // through the game's default path instead of launching a browser that
-        // cannot complete OAuth for this package.
-        if(!browserSignInEnabled()) return;
+        // The DEX wrapper checks the packaging option before calling this method.
+        // Once dispatched, preserve the original helper lifecycle and cancellation.
         GameGoogleSignIn helper;
         synchronized(LOCK){helper=GOOGLE.value;}
         if(helper==null)helper=lazy(GOOGLE,GameGoogleSignIn::create,GameGoogleSignIn::shutdown);

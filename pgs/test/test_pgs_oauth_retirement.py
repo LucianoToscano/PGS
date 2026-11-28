@@ -49,41 +49,39 @@ class PgsOauthRetirementTests(unittest.TestCase):
         self.assertIn("handleRedirect(", activity)
         self.assertIn("finish()", activity)
 
-    def test_actual_retired_java_api_is_inert(self):
+    def test_actual_browser_api_rejects_unsolicited_session_operations(self):
+        # Compile the real API against the pinned Android SDK, not incomplete
+        # stubs for the previously retired implementation. Do not launch a
+        # browser or perform any network request.
+        import build
         from test_control_java import java_tools
         javac, java = java_tools()
+        if not build.ANDROID.is_file():
+            self.skipTest("Android SDK required for the real browser API")
         with tempfile.TemporaryDirectory() as folder:
             work = Path(folder)
-            sources = {
-                "android/app/Activity.java": "package android.app; public class Activity {}",
-                "android/net/Uri.java": "package android.net; public class Uri {}",
-                "RetiredAuthTest.java": """
+            control = work / "dev/pgs/Control.java"
+            control.parent.mkdir(parents=True)
+            control.write_text("package dev.pgs; public final class Control { public static void event(String a, String b) {} }", encoding="utf-8")
+            driver = work / "NoPendingAuthTest.java"
+            driver.write_text("""
 import dev.pgs.GoogleBrowserAuth;
-import android.app.Activity;
-import android.net.Uri;
-public class RetiredAuthTest {
+public final class NoPendingAuthTest {
     public static void main(String[] args) {
-        if (GoogleBrowserAuth.begin(new Activity()) != null) throw new AssertionError("begin");
-        if (GoogleBrowserAuth.handleRedirect(new Uri())) throw new AssertionError("redirect");
-        if (GoogleBrowserAuth.takeResult("synthetic") != null) throw new AssertionError("result");
+        if (GoogleBrowserAuth.handleRedirect(null)) throw new AssertionError("unsolicited redirect");
+        if (GoogleBrowserAuth.takeResult("synthetic") != null) throw new AssertionError("unsolicited result");
         GoogleBrowserAuth.cancel("synthetic");
-        GoogleBrowserAuth.onHostPaused(new Activity());
-        GoogleBrowserAuth.onHostResumed(new Activity());
+        GoogleBrowserAuth.onHostPaused(null);
+        GoogleBrowserAuth.onHostResumed(null);
         if (GoogleBrowserAuth.takeResult(null) != null) throw new AssertionError("null result");
     }
 }
-""",
-            }
-            paths = []
-            for relative, text in sources.items():
-                path = work / relative
-                path.parent.mkdir(parents=True, exist_ok=True)
-                path.write_text(text, encoding="utf-8")
-                paths.append(str(path))
-            paths.append(str(PROJECT / "src/dev/pgs/GoogleBrowserAuth.java"))
-            subprocess.run([str(javac), "-encoding", "UTF-8", "-d", str(work), *paths],
+""", encoding="utf-8")
+            subprocess.run([str(javac), "-encoding", "UTF-8", "-cp", str(build.ANDROID), "-d", str(work),
+                            str(control), str(driver), str(PROJECT / "src/dev/pgs/GoogleBrowserAuth.java")],
                            check=True, capture_output=True, timeout=30)
-            subprocess.run([str(java), "-cp", str(work), "RetiredAuthTest"],
+            import os
+            subprocess.run([str(java), "-cp", str(work) + os.pathsep + str(build.ANDROID), "NoPendingAuthTest"],
                            check=True, capture_output=True, timeout=15)
 
     def test_manual_candidate_workflow_only_uploads_receipts(self):
@@ -108,7 +106,7 @@ public class RetiredAuthTest {
         self.assertIn('test "$missing" = 0', early)
         self.assertNotIn("set -x", early)
         self.assertNotIn("private_input.py", early)
-        self.assertIn("= 2026111607", flow)
+        self.assertIn("= 2026111606", flow)
         self.assertIn("d['version_code']==2026111607", flow)
         upload = flow.split("name: Upload verification receipts only", 1)[1].split("      - name:", 1)[0]
         self.assertIn("/PGS.json", upload)

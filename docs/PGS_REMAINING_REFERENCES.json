@@ -2,18 +2,18 @@
   "scope": "Git-indexed regular UTF-8 text, excluding NUL-containing files and the snapshot itself",
   "tracked_files": 2085,
   "text_files": 1011,
-  "remaining_files": 945,
-  "remaining_occurrences": 31061,
+  "remaining_files": 942,
+  "remaining_occurrences": 31129,
   "remaining_by_category": {
+    "other": 2224,
+    "workflows": 315,
     "documentation": 1417,
-    "java": 139,
-    "javascript": 9,
     "legal": 5,
-    "native": 25901,
-    "other": 2231,
     "release_history": 61,
-    "tests": 1063,
-    "workflows": 235
+    "native": 25901,
+    "tests": 1061,
+    "java": 136,
+    "javascript": 9
   },
   "tracked_name_matches": [],
   "files": [
@@ -70,12 +70,12 @@
     {
       "path": ".github/workflows/pgs-v0.0.4-candidate.yml",
       "category": "workflows",
-      "occurrences": 77
+      "occurrences": 83
     },
     {
       "path": ".github/workflows/pgs-v0.0.4-release.yml",
       "category": "workflows",
-      "occurrences": 15
+      "occurrences": 89
     },
     {
       "path": ".github/workflows/release.yml",
@@ -2585,7 +2585,7 @@
     {
       "path": "pgs/pgs_candidate.py",
       "category": "other",
-      "occurrences": 37
+      "occurrences": 36
     },
     {
       "path": "pgs/pgs_rebrand.py",
@@ -3045,7 +3045,7 @@
     {
       "path": "pgs/src/dev/pgs/I18n.java",
       "category": "java",
-      "occurrences": 8
+      "occurrences": 5
     },
     {
       "path": "pgs/src/dev/pgs/I18nAndroid.java",
@@ -3775,7 +3775,7 @@
     {
       "path": "pgs/test/I18nTest.java",
       "category": "tests",
-      "occurrences": 9
+      "occurrences": 6
     },
     {
       "path": "pgs/test/IdleWalkTest.java",
@@ -4310,7 +4310,7 @@
     {
       "path": "pgs/test/test_pgs_candidate.py",
       "category": "tests",
-      "occurrences": 28
+      "occurrences": 27
     },
     {
       "path": "pgs/test/test_pgs_license.py",
@@ -4330,7 +4330,7 @@
     {
       "path": "pgs/test/test_pgs_oauth_retirement.py",
       "category": "tests",
-      "occurrences": 15
+      "occurrences": 17
     },
     {
       "path": "pgs/test/test_pgs_project_layout.py",
@@ -4471,21 +4471,6 @@
       "path": "pgs/test/translated-test.cjs",
       "category": "tests",
       "occurrences": 8
-    },
-    {
-      "path": "pgs/vendor/bridge-provenance.json",
-      "category": "other",
-      "occurrences": 2
-    },
-    {
-      "path": "pgs/vendor/frida-java-bridge-302a588.js",
-      "category": "other",
-      "occurrences": 2
-    },
-    {
-      "path": "pgs/vendor/patch_bridge.py",
-      "category": "other",
-      "occurrences": 2
     },
     {
       "path": "pgs/zygisk/loader.cpp",
@@ -4745,11 +4730,11 @@
   ],
   "abbreviations": {
     "remaining_files": 514,
-    "remaining_occurrences": 25611,
+    "remaining_occurrences": 25650,
     "by_form": {
-      "camelcase": 5659,
-      "lowercase": 3865,
-      "uppercase": 16087
+      "uppercase": 16124,
+      "lowercase": 3867,
+      "camelcase": 5659
     },
     "tracked_name_matches": [
       "docs/PGS_BRANDING_AUDIT.md",
@@ -4830,18 +4815,18 @@
       },
       {
         "path": ".github/workflows/pgs-v0.0.4-candidate.yml",
-        "occurrences": 51,
+        "occurrences": 52,
         "by_form": {
-          "lowercase": 1,
-          "uppercase": 50
+          "uppercase": 50,
+          "lowercase": 2
         }
       },
       {
         "path": ".github/workflows/pgs-v0.0.4-release.yml",
-        "occurrences": 4,
+        "occurrences": 42,
         "by_form": {
-          "lowercase": 1,
-          "uppercase": 3
+          "uppercase": 40,
+          "lowercase": 2
         }
       },
       {
@@ -8832,8 +8817,8 @@
         "path": "pgs/test/test_pgs_candidate.py",
         "occurrences": 11,
         "by_form": {
-          "camelcase": 1,
           "lowercase": 9,
+          "camelcase": 1,
           "uppercase": 1
         }
       },

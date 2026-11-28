@@ -107,6 +107,7 @@ class CompiledGameplayPackageTests(unittest.TestCase):
                      patch.object(nonroot, 'command', side_effect=sdk_fixture), \
                      patch.object(axml, 'inspect_manifest', return_value=info), \
                      patch.object(axml, 'patch_manifest', side_effect=lambda data: data), \
+                     patch.object(axml, 'add_google_browser_callback', side_effect=lambda data: data), \
                      patch.object(axml, 'add_account_restart_activity', side_effect=lambda data: data), \
                      patch.object(axml, 'add_install_permissions', side_effect=lambda data: data), \
                      patch.object(native_build, 'build_all', side_effect=compile_native_fixture), \

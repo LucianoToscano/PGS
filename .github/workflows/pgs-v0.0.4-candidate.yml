@@ -34,7 +34,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          test "$(cat pgs/PGS_LAST_VERSION_CODE)" = 2026111607
+          test "$(cat pgs/PGS_LAST_VERSION_CODE)" = 2026111606
           test "$(cat pgs/VERSION)" = 0.0.4
           python -B -c "import sys; sys.path.insert(0, 'tools'); from game_update import current_profile; p=current_profile(); assert p['game_version']=='0.439.0' and p['version_code']==2026111602"
       - name: Check required private configuration before installing tools
@@ -118,6 +118,7 @@ jobs:
           mapfile -t reports < <(find pgs/build/nonroot -mindepth 2 -maxdepth 2 -name report.json -type f)
           test "${#reports[@]}" = 1
           python -B pgs/release_apk.py --run "$(dirname "${reports[0]}")" --output "$RUNNER_TEMP/pgs-v004-validation"
+          python -B pgs/pgs_candidate.py "$RUNNER_TEMP/pgs-v004-validation/PGS.apk" --tag v0.0.4 --game-version 0.439.0 --game-version-code 2026111602 --previous-version-code 2026111606 > "$RUNNER_TEMP/pgs-v004-validation/PGS.json"
           python -B -c "import json, pathlib, os; d=json.loads((pathlib.Path(os.environ['RUNNER_TEMP'])/'pgs-v004-validation/PGS.json').read_text()); assert d['pgs_version']=='v0.0.4' and d['version_code']==2026111607 and d['publish_ready'] is False and d['device_tested'] is False"
       - name: Upload verification receipts only
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4

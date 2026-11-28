@@ -81,6 +81,7 @@ class PackageTests(unittest.TestCase):
                  patch.object(runtime_assets,'java_bridge',return_value=bridge), \
                  patch.object(axml,'inspect_manifest',return_value=info), \
                  patch.object(axml,'patch_manifest',side_effect=lambda data:data), \
+                 patch.object(axml, 'add_google_browser_callback', side_effect=lambda data: data), \
                  patch.object(axml,'add_account_restart_activity',side_effect=lambda data:data), \
                  patch.object(axml,'add_install_permissions',side_effect=lambda data:data), \
                  contextlib.redirect_stdout(io.StringIO()):

@@ -3,9 +3,9 @@
   "tracked_files": 2113,
   "text_files": 1039,
   "remaining_files": 971,
-  "remaining_occurrences": 31479,
+  "remaining_occurrences": 31488,
   "remaining_by_category": {
-    "documentation": 1359,
+    "documentation": 1368,
     "java": 134,
     "javascript": 9,
     "legal": 6,
@@ -220,12 +220,12 @@
     {
       "path": "docs/PGS_COMMUNITY_REVIEW.md",
       "category": "documentation",
-      "occurrences": 18
+      "occurrences": 21
     },
     {
       "path": "docs/PGS_FORK_INVENTORY.json",
       "category": "documentation",
-      "occurrences": 3
+      "occurrences": 9
     },
     {
       "path": "docs/PGS_LANGUAGES.md",

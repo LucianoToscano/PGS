@@ -2,7 +2,7 @@
   "reviewed_on": "2026-11-27",
   "upstream": "jpitty03/PGRazor",
   "base_commit": "1106592aa045759f55f594ff6968f783ff636fe9",
-  "scope": "History comparison of all 78 visible branches; source review of selected divergent changes. This is not a line-by-line security review of every fork.",
+  "scope": "History comparison of all 78 visible branches; source review of selected divergent changes. This is not a line-by-line security review of every fork. The historical coverage counts include two archived unavailable references; official navigation links are maintained separately from external provenance.",
   "counts": {
     "listed": 29,
     "accessible": 27,
@@ -608,28 +608,6 @@
       ]
     },
     {
-      "repo": "sreenushenoy07/PGS-Rooted",
-      "refs": {
-        "content": [
-          {
-            "type": "text",
-            "text": "GitHub API error 404: {\"message\":\"Not Found\",\"documentation_url\":\"https://docs.github.com/rest\",\"status\":\"404\"}"
-          }
-        ],
-        "structuredContent": {
-          "error": "GitHub API error 404: {\"message\":\"Not Found\",\"documentation_url\":\"https://docs.github.com/rest\",\"status\":\"404\"}",
-          "error_code": "NOT_FOUND",
-          "error_data": {
-            "message": "Not Found",
-            "documentation_url": "https://docs.github.com/rest",
-            "status": "404"
-          }
-        },
-        "isError": true
-      },
-      "repository_identity_unverified": true
-    },
-    {
       "repo": "Slumpz2460/PGRaz",
       "refs": [
         {
@@ -639,28 +617,34 @@
           "ahead": 0
         }
       ]
+    }
+  ],
+  "archived_unavailable_references": [
+    {
+      "attempted_repository": "sreenushenoy07/PGS-Rooted",
+      "repository_identity_unverified": true,
+      "status": "archived_unavailable",
+      "http_status": 404,
+      "last_checked_on": "2026-11-28",
+      "active": false,
+      "official_reference": {
+        "repository": "https://github.com/LucianoToscano/PGS",
+        "releases": "https://github.com/LucianoToscano/PGS/releases/latest",
+        "purpose": "Official PGS source and downloads, including Root. Not a replacement attribution or evidence of the unavailable fork's contents."
+      }
     },
     {
-      "repo": "sreenushenoy/PGS-root",
-      "refs": {
-        "content": [
-          {
-            "type": "text",
-            "text": "GitHub API error 404: {\"message\":\"Not Found\",\"documentation_url\":\"https://docs.github.com/rest\",\"status\":\"404\"}"
-          }
-        ],
-        "structuredContent": {
-          "error": "GitHub API error 404: {\"message\":\"Not Found\",\"documentation_url\":\"https://docs.github.com/rest\",\"status\":\"404\"}",
-          "error_code": "NOT_FOUND",
-          "error_data": {
-            "message": "Not Found",
-            "documentation_url": "https://docs.github.com/rest",
-            "status": "404"
-          }
-        },
-        "isError": true
-      },
-      "repository_identity_unverified": true
+      "attempted_repository": "sreenushenoy/PGS-root",
+      "repository_identity_unverified": true,
+      "status": "archived_unavailable",
+      "http_status": 404,
+      "last_checked_on": "2026-11-28",
+      "active": false,
+      "official_reference": {
+        "repository": "https://github.com/LucianoToscano/PGS",
+        "releases": "https://github.com/LucianoToscano/PGS/releases/latest",
+        "purpose": "Official PGS source and downloads, including Root. Not a replacement attribution or evidence of the unavailable fork's contents."
+      }
     }
   ]
 }

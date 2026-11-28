@@ -18,7 +18,7 @@ Foram consultadas as coleções de [issues](https://github.com/jpitty03/PGRazor/
 | Pontas ancestrais da base | 21 |
 | Pontas divergentes | 22 |
 
-A coleção de issues continha 22 objetos porque também inclui os nove PRs. A segunda página de forks estava vazia. As 78 branches foram comparadas por histórico; a revisão detalhada de código concentrou-se nas mudanças candidatas. Isso não equivale a uma auditoria linha a linha de todos os forks. Os nomes externos disponíveis foram conferidos novamente em 28/11/2026; as duas entradas indisponíveis continuam sem identidade confirmada. O [inventário de branches](PGS_FORK_INVENTORY.json) preserva os nomes, commits e diferenças encontrados.
+A coleção de issues continha 22 objetos porque também inclui os nove PRs. A segunda página de forks estava vazia. As 78 branches foram comparadas por histórico; a revisão detalhada de código concentrou-se nas mudanças candidatas. Isso não equivale a uma auditoria linha a linha de todos os forks. Os nomes externos disponíveis foram conferidos novamente em 28/11/2026. As duas entradas com resposta 404 foram arquivadas e não são mais pendências ativas. O [inventário de branches](PGS_FORK_INVENTORY.json) preserva os nomes, commits e diferenças encontrados, distinguindo a cobertura histórica das referências oficiais atuais.
 
 ## O que foi integrado
 
@@ -82,7 +82,7 @@ O arquivo `LICENSE` MIT e os avisos de terceiros permanecem preservados. Os auto
 | randrew87/PGRazorX | Pacote antigo do PR 2, com sobreposição a funções já incorporadas. |
 | ar5hil/Rasiel | Alpha antiga; necessidade de portabilidade já coberta pelo patch mais atual. |
 | Benjaminlooi ART/Vector | Já incorporado por squash no PR 11; os arquivos relevantes são iguais à base. |
-| sreenushenoy07 e sreenushenoy (identidade do repositório não confirmada) | Resposta 404; não foi possível revisar o conteúdo. |
+| Duas referências externas arquivadas (identidade não confirmada) | Resposta 404 em 28/11/2026. Para o código e os downloads atuais, utilize o [repositório oficial PGS](https://github.com/LucianoToscano/PGS) e as [releases oficiais, incluindo Root](https://github.com/LucianoToscano/PGS/releases/latest). Nenhuma contribuição é atribuída aos forks não verificados. |
 
 Quinze forks não acrescentavam commits fora do histórico já incorporado: ReneeAraujo, celestialeye, JxstMichie, vantrox, Axe2230, arisuryohei911-dot, kunal2801, dhanush-c-c, gloiae, gv2598, foxartic, privacyportalUK, Archit-barge, NPSummers e Slumpz2460. As branches padrão de outros forks também podem estar atrasadas, mesmo quando uma branch de recurso contém mudanças.
 

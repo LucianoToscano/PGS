@@ -267,6 +267,7 @@ bool real_ensure_ready() {
     require_map_field(gui_k, "customBackButtonAction", "System.Action", 0x28);
     require_map_field(gui_k, "currentState", nullptr, 0x70);
     require_map_method(gui_k, "get_IsOpen", 0, "System.Boolean");
+    require_map_method(gui_k, "get_IsTopGui", 0, "System.Boolean");
 
     require_map_field(resolve_k, "confirmBonusRow", nullptr, 0x248);
     require_map_field(resolve_k, "ekyz", "Niantic.Holoholo.Battle.BattleStatus", 0x2dc);
@@ -867,8 +868,9 @@ bool real_is_battle_active() {
     return unbox_val<bool>(call_obj(session.lobby_ui.get(),"get_BattleStarted",0));
 }
 
-bool real_poll_resolve_state(Root& out_resolve_ui, int& out_battle_status, bool& out_advanced_to_encounter) {
+bool real_poll_resolve_state(Root& out_resolve_ui, int& out_battle_status, bool& out_advanced_to_encounter, bool& out_covered) {
     out_advanced_to_encounter = false;
+    out_covered = false;
     if (!out_resolve_ui || !unity_obj_alive(out_resolve_ui.get())) {
         out_resolve_ui = find_live_unity_object(resolve_class("Niantic.Holoholo.Raid", "RaidResolveUIController"));
     }
@@ -879,6 +881,10 @@ bool real_poll_resolve_state(Root& out_resolve_ui, int& out_battle_status, bool&
     void* f_state = require_map_field(resolve_class("Niantic.Holoholo.NUI", "GuiController"), "currentState", nullptr, 0x70);
     const int32_t gui_state = read_field_val<int32_t>(gui, f_state);
     if (gui_state != 1 && gui_state != 2) return false;
+    if (gui_state == 2 && !unbox_val<bool>(call_obj(gui, "get_IsTopGui", 0))) {
+        out_covered = true;
+        return true;  // never tap rewards or dismiss a modal above them
+    }
 
     void* f_closing = require_map_field(gui_k, "ekzl", "System.Boolean", 0x338);
     if (read_field_val<uint8_t>(gui, f_closing) != 0) return false;
@@ -911,7 +917,7 @@ bool real_poll_resolve_state(Root& out_resolve_ui, int& out_battle_status, bool&
         return true;
     }
 
-    if (gui_state != 2) return true;
+    if (gui_state != 2 || session.resolve_confirmed) return true;
 
     // 1. If customBackButtonAction is CloseLeaderboard, invoke it first.
     void* f_back = require_map_field(

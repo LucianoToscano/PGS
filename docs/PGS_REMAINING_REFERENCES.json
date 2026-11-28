@@ -3,13 +3,13 @@
   "tracked_files": 2113,
   "text_files": 1039,
   "remaining_files": 971,
-  "remaining_occurrences": 31518,
+  "remaining_occurrences": 31533,
   "remaining_by_category": {
     "documentation": 1392,
     "java": 134,
     "javascript": 9,
     "legal": 6,
-    "native": 25901,
+    "native": 25916,
     "other": 2376,
     "release_history": 61,
     "tests": 1067,
@@ -735,7 +735,7 @@
     {
       "path": "pgs/native/auto_raid_runtime_test.cpp",
       "category": "native",
-      "occurrences": 156
+      "occurrences": 171
     },
     {
       "path": "pgs/native/auto_rocket.cpp",
@@ -4875,10 +4875,10 @@
   ],
   "abbreviations": {
     "remaining_files": 532,
-    "remaining_occurrences": 25818,
+    "remaining_occurrences": 25833,
     "by_form": {
       "camelcase": 5664,
-      "lowercase": 3895,
+      "lowercase": 3910,
       "uppercase": 16259
     },
     "tracked_name_matches": [
@@ -5583,10 +5583,10 @@
       },
       {
         "path": "pgs/native/auto_raid_runtime_test.cpp",
-        "occurrences": 152,
+        "occurrences": 167,
         "by_form": {
           "camelcase": 7,
-          "lowercase": 137,
+          "lowercase": 152,
           "uppercase": 8
         }
       },

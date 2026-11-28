@@ -4,6 +4,13 @@
 
 Este registro acompanha **somente** as versões do PGS. Os documentos históricos da base original permanecem disponíveis pelo histórico Git e pelos avisos legais, mas não são releases do PGS.
 
+## Em desenvolvimento — segunda auditoria
+
+- Auto Raid não avança recompensas por trás de outra janela. Ao fechar o aviso manualmente, o fluxo normal pode continuar; um prazo limitado informa o bloqueio. A classe exata da janela Lucky Egg e a recusa automática ainda não foram verificadas.
+- Evita ações duplicadas de recompensa no mesmo tick e repetição da confirmação final; preserva as regras de revogação e consumo da sessão.
+- Limita consultas de prontidão do mapa à cadência de descoberta; um novo bloqueio tem seu próprio prazo, sem herdar o tempo de busca anterior.
+- Skip Cutscenes restaura a tela de recompensas quando outra janela assume a entrada. Fixtures de regressão cobrem essas situações; não há alegação de teste físico ou medição de FPS.
+
 ## v0.0.6 — 28/11/2026
 
 - Atualização do feed de Hundos a cada 60 segundos, referências externas corrigidas e testes de regressão do Worker.

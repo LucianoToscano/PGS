@@ -2,18 +2,18 @@
   "scope": "Git-indexed regular UTF-8 text, excluding NUL-containing files and the snapshot itself",
   "tracked_files": 2109,
   "text_files": 1035,
-  "remaining_files": 965,
-  "remaining_occurrences": 31407,
+  "remaining_files": 966,
+  "remaining_occurrences": 31412,
   "remaining_by_category": {
     "documentation": 1351,
     "java": 134,
     "javascript": 9,
     "legal": 6,
     "native": 25901,
-    "other": 2352,
+    "other": 2355,
     "release_history": 61,
     "tests": 1067,
-    "workflows": 526
+    "workflows": 528
   },
   "tracked_name_matches": [],
   "files": [
@@ -50,7 +50,7 @@
     {
       "path": ".github/workflows/pgs-auto-sync.yml",
       "category": "workflows",
-      "occurrences": 11
+      "occurrences": 13
     },
     {
       "path": ".github/workflows/pgs-auto-update.yml",
@@ -4663,6 +4663,11 @@
       "occurrences": 1
     },
     {
+      "path": "tools/pgs_upstream_monitor.py",
+      "category": "other",
+      "occurrences": 2
+    },
+    {
       "path": "tools/pgs_version_monitor.py",
       "category": "other",
       "occurrences": 3
@@ -4710,7 +4715,7 @@
     {
       "path": "tools/test_pgs_upstream_monitor.py",
       "category": "other",
-      "occurrences": 1
+      "occurrences": 2
     },
     {
       "path": "tools/test_pgs_version_monitor.py",
@@ -4845,10 +4850,10 @@
   ],
   "abbreviations": {
     "remaining_files": 531,
-    "remaining_occurrences": 25801,
+    "remaining_occurrences": 25802,
     "by_form": {
       "camelcase": 5664,
-      "lowercase": 3889,
+      "lowercase": 3890,
       "uppercase": 16248
     },
     "tracked_name_matches": [
@@ -4913,9 +4918,9 @@
       },
       {
         "path": ".github/workflows/pgs-auto-sync.yml",
-        "occurrences": 3,
+        "occurrences": 4,
         "by_form": {
-          "lowercase": 1,
+          "lowercase": 2,
           "uppercase": 2
         }
       },

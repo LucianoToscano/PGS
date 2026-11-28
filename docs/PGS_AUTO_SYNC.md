@@ -1,6 +1,6 @@
 # PGS AUTO SYNC — monitoramento upstream
 
-O workflow `PGS AUTO SYNC` consulta somente a referência pública `refs/heads/main` do repositório de origem identificado no arquivo [NOTICE](../NOTICE), sem baixar código ou APKs, sem escrever no repositório e sem mesclar alterações. O resumo do GitHub Actions registra a revisão consultada e se requer revisão humana. Uma revisão diferente não implica que seja descendente da anterior.
+O workflow `PGS AUTO SYNC` consulta somente a referência pública `refs/heads/main` do repositório de origem identificado no arquivo [NOTICE](../NOTICE), sem baixar ou executar código ou APKs, sem escrever no repositório e sem mesclar alterações. Quando a revisão muda, consulta também os metadados da comparação pública: commits, resumo por mensagem, arquivos, adições/remoções, caminhos locais correspondentes e áreas prioritárias. A lista de commits ou arquivos pode ser limitada pela API; o relatório sinaliza isso e não afirma conflitos sem revisão humana. O resumo do GitHub Actions registra a revisão consultada e se requer revisão humana. Uma revisão diferente não implica que seja descendente da anterior.
 
 ## Ativação
 
@@ -16,4 +16,4 @@ O workflow `PGS AUTO SYNC` consulta somente a referência pública `refs/heads/m
 
 ## English
 
-Read-only monitoring of the original public repository recorded in NOTICE. It queries the main ref, compares the reviewed SHA, and reports whether review is needed. Manual execution is available; daily scheduled checks are enabled by default. Set PGS_AUTO_SYNC_ENABLED=false to disable the schedule. Changes to the workflow on main trigger a verification run. No source download, branch write or merge is performed.
+Read-only monitoring of the original public repository recorded in NOTICE. It queries the main ref, compares the reviewed SHA, and reports whether review is needed. Manual execution is available; daily scheduled checks are enabled by default. Set PGS_AUTO_SYNC_ENABLED=false to disable the schedule. Changes to the workflow on main trigger a verification run. For changed revisions, the report includes bounded public comparison metadata, commit-message category hints, changed files and local path review candidates. API truncation is flagged; no merge conflicts are claimed. No source download, branch write or merge is performed.

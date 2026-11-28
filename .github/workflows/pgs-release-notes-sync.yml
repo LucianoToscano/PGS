@@ -1,13 +1,6 @@
 name: PGS — Sync English release notes to verified draft
 
 on:
-  push:
-    branches: [main]
-    paths:
-      - docs/releases/v0.0.2.md
-      - docs/releases/footer.md
-      - docs/pt-BR/releases/v0.0.2.md
-      - .github/workflows/pgs-release-notes-sync.yml
   workflow_dispatch:
 
 permissions:

@@ -2,11 +2,11 @@
 <h1 align="center">PGS — Pokémon GO Spoofers</h1>
 <p align="center">A compact Android interface for location controls and Pokémon GO automation.</p>
 
-PGS, based on PGS, adds an in-game menu, an independent joystick, encounter controls, and optional automation to Pokémon GO. Settings persist across restarts, with light and dark themes.
+PGS, an independent derivative of MIT-licensed upstream code (see [NOTICE](NOTICE)), adds an in-game menu, an independent joystick, encounter controls, and optional automation to Pokémon GO. Settings persist across restarts, with light and dark themes.
 
 ## PGS community integration
 
-PGS preserves the complete PGS source tree and its MIT/third-party notices. Internal packages, saved-setting keys and the interface identity remain compatible with the PGS v0.2 line.
+PGS retains the inherited source and its MIT and third-party notices. Its active source, internal package names, asset paths and interface identity use the PGS name. Device-level migration of saved settings remains to be verified.
 
 The current candidate adds the joystick direction lock, a direct gift shortcut, configurable LivePokeMap refresh, populated wild-encounter IVs for VGP+, owned-IV refresh/layer fixes, real-GPS readiness, buddy timeout recovery and the Silver Pinap preference migration. Android packaging also works on Linux with the pinned toolchain.
 
@@ -15,7 +15,7 @@ The current candidate adds the joystick direction lock, a direct gift shortcut, 
 - In **Shundo Sniper**, choose **LivePokeMap refresh**. The default is five minutes; server limits can require a longer wait. The feed's **Global** view refreshes manually.
 - See [the PGS integration review](docs/PGS_COMMUNITY_REVIEW.md) for source attribution, what was already present, remaining proposals and validation limits.
 
-PGS candidate artifacts are produced in [this repository's Actions](https://github.com/LucianoToscano/PGS/actions). Upstream PGS download links are not PGS updates. Compilation and automated fixtures do not establish Android installation or gameplay results; those observations are recorded separately.
+PGS candidate artifacts are produced in [this repository's Actions](https://github.com/LucianoToscano/PGS/actions). Upstream download links are not PGS updates. Compilation and automated fixtures do not establish Android installation or gameplay results; those observations are recorded separately.
 
 The settings panel is grouped into Play, Automation and App cards, with an instant search field at the top. Search matches names, descriptions, categories and common synonyms (for example "fake gps" or "light mode"), and tapping a result opens the page, expands any collapsed section, and scrolls straight to that row.
 
@@ -37,18 +37,16 @@ The feature list and how-to guides live on the website, so there is one place to
 - **[Feature guides](https://lucianotoscano.github.io/PGS/?guide=all)**: where each feature is in the app and how to use it.
 - **[Changelog](CHANGELOG.md)** and [PGS releases](https://github.com/LucianoToscano/PGS/releases): PGS-only version history.
 
-## Instalação do PGS v0.0.2 (ARM64, sem root)
+## Install PGS v0.0.4 (ARM64, non-root)
 
-A nova candidata da linha PGS é **v0.0.2**, baseada no mesmo Pokémon GO **0.439.0**, com Android `versionCode=2026111605` e **a chave PGS definitiva**. Esta geração incorpora as alterações de identidade da PR #33, mantendo a logo interna do menu, o joystick, as preferências e as bibliotecas originais do jogo.
+The current test candidate is PGS v0.0.4, built from the pinned original Pokemon GO 0.439.0 input and the migrated PGS source. Android versionCode is 2026111607. The existing PGS signing certificate and Android application ID are preserved.
 
-1. Abra o [workflow de build PGS v0.0.2](https://github.com/LucianoToscano/PGS/actions/workflows/pgs-v0.0.2-release.yml), selecione uma execução **bem-sucedida na branch main**, e baixe o artefato `PGS-v0.0.2`. O GitHub pode solicitar login.
-2. Extraia o ZIP e use **`PGS v0.0.2.apk`** (jogo completo), acompanhado de `PGS.json` e `SHA256SUMS.txt`. Verifique o checksum indicado pela build antes de instalar.
-3. Instale sobre a cópia PGS já existente **sem desinstalá-la**, preservando dados. Isso exige o mesmo certificado e `versionCode` maior.
-4. Confirme instalação, abertura, login, cabeçalho **PGS v0.0.4**, Discord `https://discord.gg/SdwU4VnfW` e configurações salvas. **Ainda não existe evidência de teste físico**.
+- [Download PGS v0.0.4 (draft release)](https://github.com/LucianoToscano/PGS/releases/tag/untagged-a58384457d68bd85d972)
+- [Successful complete build](https://github.com/LucianoToscano/PGS/actions/runs/46097341845)
 
-O nome instalado permanece **Pokémon GO**, com pacote `com.nianticlabs.pokemongo`. A Play Store usa outra assinatura e não pode ser atualizada em cima pelo PGS preservando dados. O GitHub mantém o APK com espaços no artefato Actions, mas normaliza o asset do Release para `PGS.v0.0.2.apk`; os dois nomes devem compartilhar o mesmo SHA-256.
+The draft contains `PGS.v0.0.4.apk`, `PGS.json`, `build-info.json` and `SHA256SUMS.txt`. APK SHA-256: `9e48ba91d0c8e3ea9dcee2636d403bb2a335a8add74eae9dd5de1e14c917ddfc`. Draft downloads require repository access. Do not publish the original build-inputs draft.
 
-Os releases PGS só serão publicados como estáveis após testes no aparelho.
+The installed name remains Pokemon GO (`com.nianticlabs.pokemongo`). Installation, saved settings, gameplay and Google sign-in still require physical-device verification. Earlier releases remain available for reference.
 
 ## Good to know
 
@@ -92,4 +90,4 @@ website/              React site and feature guides, deployed to GitHub Pages
 
 ## License
 
-Original PGS source is available under the [MIT License](LICENSE). Third-party components retain their own licenses. Pokémon GO and its assets are not covered by this license. PGS is an independent project and is not affiliated with the game publisher.
+The inherited source and PGS contributions are available under the [MIT License](LICENSE), retaining the original copyright and [attribution](NOTICE). Third-party components retain their own licenses. Pokémon GO and its assets are not covered by this license. PGS is an independent project and is not affiliated with the game publisher.

@@ -24,29 +24,22 @@
 
 | Propriedade | Valor |
 |---|---|
-| Linha do projeto | **PGS v0.0.2** |
-| Jogo-base | Pokémon GO **0.439.0** |
-| Nome instalado | **Pokémon GO** |
+| Linha do projeto | **PGS v0.0.4** |
+| Jogo-base | Pokemon GO **0.439.0** |
+| Nome instalado | **Pokemon GO** |
 | Identificador Android | `com.nianticlabs.pokemongo` |
-| Código Android (`versionCode`) | `2026111605` |
+| Código Android (`versionCode`) | `2026111607` |
 | Assinatura | **Certificado PGS definitivo, preservado** |
 | Status | **APK completo compilado e verificado; teste físico pendente** |
 
-**PGS v0.0.2** é uma candidata em rascunho. A versão do projeto é independente da versão do jogo. O código Android deve crescer a cada APK para permitir a atualização por cima de versões anteriores do próprio PGS.
-
 ## Baixar e instalar
 
-1. Acesse a [compilação completa PGS v0.0.2](https://github.com/LucianoToscano/PGS/actions/runs/45980315394).
-2. Na seção **Artifacts**, baixe `PGS-v0.0.2`, extraia o ZIP e localize o arquivo **`PGS v0.0.2.apk`**.
-3. Confira o arquivo `SHA256SUMS.txt`. O SHA-256 esperado da candidata é `91865f6242519091a771617f962f17620405624a4a56addec0909d2cdf6b68c1`.
-4. Para atualizar um PGS compatível, instale **sem desinstalar o aplicativo anterior**, preservando dados. A assinatura e o identificador Android devem corresponder.
-5. Confira abertura, login, versão exibida, menu, Discord e configurações salvas. Esses testes físicos **ainda precisam de confirmação**.
+1. Acesse o [rascunho da v0.0.4](https://github.com/LucianoToscano/PGS/releases/tag/untagged-a58384457d68bd85d972) e baixe `PGS.v0.0.4.apk`. É necessário ter acesso ao repositório.
+2. Confira o `SHA256SUMS.txt`. O SHA-256 esperado é `9e48ba91d0c8e3ea9dcee2636d403bb2a335a8add74eae9dd5de1e14c917ddfc`.
+3. Consulte a [compilação completa aprovada](https://github.com/LucianoToscano/PGS/actions/runs/46097341845) e os recibos de validação.
+4. Teste instalação, abertura, login Google, configurações salvas e funcionamento no aparelho. A migração de preferências entre versões ainda não foi homologada.
 
-O GitHub Actions mantém o nome `PGS v0.0.2.apk`; nos anexos do GitHub Release, os espaços são normalizados, resultando em `PGS.v0.0.2.apk`. O release ainda **não está publicado como versão estável**.
-
-Não confunda o APK completo com arquivos de código-fonte ou aplicativos de prévia.
-
-A próxima compilação completa das fontes é **PGS v0.0.3**, ainda sem APK verificado. Mantenedores podem usar o [workflow autorizado de validação da candidata](https://github.com/LucianoToscano/PGS/actions/workflows/pgs-v0.0.3-candidate.yml), que envia somente recibos. O link v0.0.2 acima é de uma compilação histórica existente, não uma instrução para recompilá-la. Artefatos do Actions podem expirar.
+Os APKs anteriores permanecem preservados. O rascunho privado de entrada de compilação não deve ser publicado.
 
 ## Recursos
 

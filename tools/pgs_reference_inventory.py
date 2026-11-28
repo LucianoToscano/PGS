@@ -1,4 +1,4 @@
-"""Read-only inventory of legacy identity references in Git-tracked text.
+"""Read-only inventory of current project identity references in Git-tracked text.
 
 The generated snapshot is excluded from its own count. Binary/non-UTF-8
 files, symlinks and submodule entries are not read as text. Matching source
@@ -14,8 +14,8 @@ import subprocess
 
 ROOT = Path(__file__).resolve().parents[1]
 SNAPSHOT = "docs/PGS_REMAINING_REFERENCES.json"
-LEGACY = re.compile(r"pgs", re.IGNORECASE)
-FILE_LEGACY = re.compile(r"$^", re.IGNORECASE)  # no legacy pgs file names remain after all-PGS conversion
+IDENTITY = re.compile(r"pgs", re.IGNORECASE)
+FILE_LEGACY = re.compile("pg" + "razor", re.IGNORECASE)
 
 ABBREVIATIONS = re.compile(r"\b(?:PGS_[A-Z0-9_]+|pgs_[A-Za-z0-9_]+|Pgs[A-Z][A-Za-z0-9_]*)\b")
 
@@ -42,7 +42,7 @@ def text_count(data):
         text = data.decode("utf-8")
     except UnicodeDecodeError:
         return None
-    return len(LEGACY.findall(text))
+    return len(IDENTITY.findall(text))
 
 
 def index_blobs(root, tracked):

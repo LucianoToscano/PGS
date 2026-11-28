@@ -5,6 +5,9 @@ and the original attribution remain intact.
 """
 from pathlib import Path
 import json
+import re
+import subprocess
+import sys
 
 ROOT = Path(__file__).resolve().parents[1]
 LANGUAGES = ("en", "de", "es", "fr", "pt-BR", "ru", "it", "zh-Hant", "nl", "th", "ko")
@@ -55,5 +58,42 @@ def check():
     print("PGS branding audit PASS: active UI, URLs, 11 catalogs, release identity and Android continuity")
 
 
+def legacy_inventory():
+    """Inventory the exact tracked tree, not the search index or previous snapshots."""
+    from pgs_reference_inventory import index_blobs
+    pattern = re.compile("pg" + "razor", re.IGNORECASE)
+    raw = subprocess.check_output(["git", "ls-files", "--stage", "-z"], cwd=ROOT)
+    tracked = {}
+    for item in raw.split(b"\x00"):
+        if item:
+            metadata, path = item.split(b"\t", 1)
+            mode, oid, stage = metadata.split()
+            if stage != b"0":
+                raise ValueError("Unmerged index")
+            tracked[path.decode("utf-8")] = (mode, oid)
+    files = []
+    for path, data in index_blobs(ROOT, tracked):
+        if b"\x00" in data:
+            continue
+        try:
+            source = data.decode("utf-8")
+        except UnicodeDecodeError:
+            continue
+        count = len(pattern.findall(source))
+        if count:
+            files.append({"path": path, "occurrences": count})
+    names = [path for path in sorted(tracked) if pattern.search(path)]
+    result = {"tracked_files": len(tracked), "legacy_path_count": len(names),
+              "legacy_paths": names, "legacy_text_files": len(files),
+              "legacy_text_occurrences": sum(row["occurrences"] for row in files),
+              "files": files}
+    print("LEGACY_IDENTITY_INVENTORY " + json.dumps(result, ensure_ascii=True))
+    if names:
+        raise SystemExit("Legacy identity found in tracked paths")
+
+
 if __name__ == "__main__":
-    check()
+    if sys.argv[1:] == ["--legacy-inventory"]:
+        legacy_inventory()
+    else:
+        check()

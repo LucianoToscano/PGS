@@ -3,12 +3,12 @@
   "tracked_files": 2085,
   "text_files": 1011,
   "remaining_files": 942,
-  "remaining_occurrences": 31129,
+  "remaining_occurrences": 31111,
   "remaining_by_category": {
-    "other": 2224,
-    "workflows": 315,
-    "documentation": 1417,
-    "legal": 5,
+    "other": 2223,
+    "workflows": 313,
+    "documentation": 1400,
+    "legal": 7,
     "release_history": 61,
     "native": 25901,
     "tests": 1061,
@@ -35,7 +35,7 @@
     {
       "path": ".github/workflows/ci.yml",
       "category": "workflows",
-      "occurrences": 8
+      "occurrences": 9
     },
     {
       "path": ".github/workflows/discord-release.yml",
@@ -50,12 +50,12 @@
     {
       "path": ".github/workflows/pgs-release-notes-sync.yml",
       "category": "workflows",
-      "occurrences": 5
+      "occurrences": 4
     },
     {
       "path": ".github/workflows/pgs-v0.0.2-release.yml",
       "category": "workflows",
-      "occurrences": 15
+      "occurrences": 14
     },
     {
       "path": ".github/workflows/pgs-v0.0.3-candidate.yml",
@@ -65,7 +65,7 @@
     {
       "path": ".github/workflows/pgs-v0.0.3-release.yml",
       "category": "workflows",
-      "occurrences": 15
+      "occurrences": 14
     },
     {
       "path": ".github/workflows/pgs-v0.0.4-candidate.yml",
@@ -110,22 +110,22 @@
     {
       "path": "LICENSE",
       "category": "legal",
-      "occurrences": 1
+      "occurrences": 2
     },
     {
       "path": "NOTICE",
       "category": "legal",
-      "occurrences": 4
+      "occurrences": 5
     },
     {
       "path": "README.md",
       "category": "documentation",
-      "occurrences": 56
+      "occurrences": 48
     },
     {
       "path": "README.pt-BR.md",
       "category": "documentation",
-      "occurrences": 39
+      "occurrences": 30
     },
     {
       "path": "THIRD_PARTY.md",
@@ -4545,12 +4545,12 @@
     {
       "path": "tools/pgs_branding_audit.py",
       "category": "other",
-      "occurrences": 38
+      "occurrences": 39
     },
     {
       "path": "tools/pgs_reference_inventory.py",
       "category": "other",
-      "occurrences": 11
+      "occurrences": 9
     },
     {
       "path": "tools/pgs_version_monitor.py",
@@ -4730,10 +4730,10 @@
   ],
   "abbreviations": {
     "remaining_files": 514,
-    "remaining_occurrences": 25648,
+    "remaining_occurrences": 25650,
     "by_form": {
+      "lowercase": 3869,
       "uppercase": 16122,
-      "lowercase": 3867,
       "camelcase": 5659
     },
     "tracked_name_matches": [
@@ -4769,8 +4769,9 @@
     "files": [
       {
         "path": ".github/workflows/ci.yml",
-        "occurrences": 2,
+        "occurrences": 3,
         "by_form": {
+          "lowercase": 1,
           "uppercase": 2
         }
       },
@@ -4793,8 +4794,8 @@
         "path": ".github/workflows/pgs-v0.0.2-release.yml",
         "occurrences": 4,
         "by_form": {
-          "lowercase": 1,
-          "uppercase": 3
+          "uppercase": 3,
+          "lowercase": 1
         }
       },
       {
@@ -4809,8 +4810,8 @@
         "path": ".github/workflows/pgs-v0.0.3-release.yml",
         "occurrences": 4,
         "by_form": {
-          "lowercase": 1,
-          "uppercase": 3
+          "uppercase": 3,
+          "lowercase": 1
         }
       },
       {
@@ -8959,10 +8960,10 @@
       },
       {
         "path": "tools/pgs_branding_audit.py",
-        "occurrences": 6,
+        "occurrences": 7,
         "by_form": {
-          "lowercase": 3,
-          "uppercase": 3
+          "uppercase": 3,
+          "lowercase": 4
         }
       },
       {

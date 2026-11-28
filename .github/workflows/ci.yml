@@ -6,6 +6,15 @@ on:
 permissions:
   contents: read
 jobs:
+  identity-inventory:
+    name: Tracked legacy identity inventory
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
+      - run: python3 -B tools/pgs_branding_audit.py --legacy-inventory
   native-regressions:
     name: Native regressions (Linux)
     runs-on: ubuntu-latest

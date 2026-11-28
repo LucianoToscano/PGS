@@ -1,0 +1,87 @@
+name: PGS v0.0.6 - Publish authorized updater test
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - .github/workflows/pgs-v0.0.6-publish.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+concurrency:
+  group: pgs-v0.0.6-publish
+  cancel-in-progress: false
+jobs:
+  publish:
+    if: github.repository == 'LucianoToscano/PGS' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
+      - name: Publish exact owner-authorized candidate without altering build receipts
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(cat pgs/VERSION)" = 0.0.6
+          test "$(cat pgs/PGS_LAST_VERSION_CODE)" = 2026111609
+          endpoint="repos/$GITHUB_REPOSITORY/releases/461306036"
+          gh api "$endpoint" > "$RUNNER_TEMP/release-before.json"
+          gh api "repos/$GITHUB_REPOSITORY/releases/latest" > "$RUNNER_TEMP/latest-before.json"
+          python -B - <<'PY'
+          import json, os
+          from pathlib import Path
+          t = Path(os.environ['RUNNER_TEMP'])
+          r = json.loads((t/'release-before.json').read_text())
+          latest = json.loads((t/'latest-before.json').read_text())
+          assert r['id'] == 461306036 and r['tag_name'] == 'v0.0.6' and r['target_commitish'] == 'bbb4cbd2af18997f7db32d958d1ecb5cb3c00533'
+          assert not r['prerelease']
+          assert latest['tag_name'] == ('v0.0.5' if r['draft'] else 'v0.0.6')
+          expected = json.loads('{"build-info.json":{"id":803261170,"size":460,"digest":"sha256:df13fc7c0533250123c0248c7d40f7ec65bb7163276dce5ecbe94dc44594d62d"},"PGS-Root-module.zip":{"id":803261187,"size":6756580,"digest":"sha256:c1230cc24ed533ebfb050819d93aa96c1bbaec63e50be185aa76fcc2b52d2df1"},"PGS-Root.apk":{"id":803261172,"size":6783613,"digest":"sha256:34790c77c0f905e47e4a193562167837dd18f3b1ecf83cefd9adac2f969d3092"},"PGS.json":{"id":803261167,"size":725,"digest":"sha256:57429574fb4ba3b32090b8d4acd8b2c82f43768abc9d01b503685df0d0dcdc31"},"PGS.v0.0.6.apk":{"id":803261171,"size":186474357,"digest":"sha256:e69ed234a34a106052343ba59b2ea62d1158a8ed72326f82e892ba5479d0ca4e"},"root-build-info.json":{"id":803261186,"size":681,"digest":"sha256:a4e43e861fa57a8f597a23dede0255a8eb9a22800f23076f5aede6bb404a4181"},"SHA256SUMS.txt":{"id":803261168,"size":246,"digest":"sha256:d8d23993329e2e582434ff82b6387945562a20c4c20defddd89ff6413de8c2ca"}}')
+          actual = {a['name']: {k: a[k] for k in ('id', 'size', 'digest')} for a in r['assets']}
+          assert len(r['assets']) == len(expected) and actual == expected
+          assert all(a['state'] == 'uploaded' for a in r['assets'])
+          assert json.loads(Path('build-request.json').read_text()) == {'schema': 1, 'enabled': False}
+          PY
+          gh api -H 'Accept: application/octet-stream' "repos/$GITHUB_REPOSITORY/releases/assets/803261168" > "$RUNNER_TEMP/SHA256SUMS.txt"
+          gh api -H 'Accept: application/octet-stream' "repos/$GITHUB_REPOSITORY/releases/assets/803261167" > "$RUNNER_TEMP/PGS.json"
+          python -B - <<'PY'
+          import hashlib, json, os
+          from pathlib import Path
+          t = Path(os.environ['RUNNER_TEMP'])
+          expected = json.loads('{"build-info.json":{"id":803261170,"size":460,"digest":"sha256:df13fc7c0533250123c0248c7d40f7ec65bb7163276dce5ecbe94dc44594d62d"},"PGS-Root-module.zip":{"id":803261187,"size":6756580,"digest":"sha256:c1230cc24ed533ebfb050819d93aa96c1bbaec63e50be185aa76fcc2b52d2df1"},"PGS-Root.apk":{"id":803261172,"size":6783613,"digest":"sha256:34790c77c0f905e47e4a193562167837dd18f3b1ecf83cefd9adac2f969d3092"},"PGS.json":{"id":803261167,"size":725,"digest":"sha256:57429574fb4ba3b32090b8d4acd8b2c82f43768abc9d01b503685df0d0dcdc31"},"PGS.v0.0.6.apk":{"id":803261171,"size":186474357,"digest":"sha256:e69ed234a34a106052343ba59b2ea62d1158a8ed72326f82e892ba5479d0ca4e"},"root-build-info.json":{"id":803261186,"size":681,"digest":"sha256:a4e43e861fa57a8f597a23dede0255a8eb9a22800f23076f5aede6bb404a4181"},"SHA256SUMS.txt":{"id":803261168,"size":246,"digest":"sha256:d8d23993329e2e582434ff82b6387945562a20c4c20defddd89ff6413de8c2ca"}}')
+          for name in ('PGS.json', 'SHA256SUMS.txt'):
+              assert hashlib.sha256((t/name).read_bytes()).hexdigest() == expected[name]['digest'][7:]
+          sums = [line.split() for line in (t/'SHA256SUMS.txt').read_text().splitlines()]
+          binaries = ('PGS.v0.0.6.apk', 'PGS-Root.apk', 'PGS-Root-module.zip')
+          assert len(sums) == 3 and {name: digest for digest, name in sums} == {name: expected[name]['digest'][7:] for name in binaries}
+          p = json.loads((t/'PGS.json').read_text())
+          assert p['pgs_version'] == 'v0.0.6' and p['version_code'] == 2026111609
+          assert p['release_asset'] == binaries[0] and p['sha256'] == expected[binaries[0]]['digest'][7:]
+          assert p['bytes'] == expected[binaries[0]]['size']
+          assert p['signing_certificate_sha256'] == 'd95c6bdfcbd91dc5c9cde698487c88e4994771a475e4efde4567b8d5f44e96cf'
+          assert p['status'] == 'STATIC_CANDIDATE_CHECKS_PASSED'
+          assert all(p[k] is False for k in ('device_tested', 'in_place_update_tested', 'publish_ready'))
+          PY
+          python -B -m unittest discover -s tools -p test_pgs_release_notes.py
+          python -B tools/pgs_release_notes.py v0.0.6 --output "$RUNNER_TEMP/notes.md"
+          if [[ "$(jq -r .draft "$RUNNER_TEMP/release-before.json")" == true ]]; then
+            gh api --method PATCH "$endpoint" -F draft=false -F prerelease=false -f make_latest=true -f name='PGS v0.0.6' -F body=@"$RUNNER_TEMP/notes.md" > "$RUNNER_TEMP/published.json"
+          fi
+          gh api "repos/$GITHUB_REPOSITORY/releases/latest" > "$RUNNER_TEMP/latest-after.json"
+          python -B - <<'PY'
+          import json, os
+          from pathlib import Path
+          r = json.loads((Path(os.environ['RUNNER_TEMP'])/'latest-after.json').read_text())
+          assert r['id'] == 461306036 and r['tag_name'] == 'v0.0.6' and not r['draft'] and not r['prerelease']
+          expected = json.loads('{"build-info.json":{"id":803261170,"size":460,"digest":"sha256:df13fc7c0533250123c0248c7d40f7ec65bb7163276dce5ecbe94dc44594d62d"},"PGS-Root-module.zip":{"id":803261187,"size":6756580,"digest":"sha256:c1230cc24ed533ebfb050819d93aa96c1bbaec63e50be185aa76fcc2b52d2df1"},"PGS-Root.apk":{"id":803261172,"size":6783613,"digest":"sha256:34790c77c0f905e47e4a193562167837dd18f3b1ecf83cefd9adac2f969d3092"},"PGS.json":{"id":803261167,"size":725,"digest":"sha256:57429574fb4ba3b32090b8d4acd8b2c82f43768abc9d01b503685df0d0dcdc31"},"PGS.v0.0.6.apk":{"id":803261171,"size":186474357,"digest":"sha256:e69ed234a34a106052343ba59b2ea62d1158a8ed72326f82e892ba5479d0ca4e"},"root-build-info.json":{"id":803261186,"size":681,"digest":"sha256:a4e43e861fa57a8f597a23dede0255a8eb9a22800f23076f5aede6bb404a4181"},"SHA256SUMS.txt":{"id":803261168,"size":246,"digest":"sha256:d8d23993329e2e582434ff82b6387945562a20c4c20defddd89ff6413de8c2ca"}}')
+          assert {a['name']: {k: a[k] for k in ('id', 'size', 'digest')} for a in r['assets']} == expected
+          assert all(a['browser_download_url'] == 'https://github.com/LucianoToscano/PGS/releases/download/v0.0.6/' + a['name'] for a in r['assets'])
+          print('v0.0.6 published as latest; original verified assets unchanged')
+          PY

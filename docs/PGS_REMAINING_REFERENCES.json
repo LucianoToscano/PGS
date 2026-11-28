@@ -1,19 +1,19 @@
 {
   "scope": "Git-indexed regular UTF-8 text, excluding NUL-containing files and the snapshot itself",
-  "tracked_files": 2110,
-  "text_files": 1036,
-  "remaining_files": 968,
-  "remaining_occurrences": 31440,
+  "tracked_files": 2113,
+  "text_files": 1039,
+  "remaining_files": 971,
+  "remaining_occurrences": 31479,
   "remaining_by_category": {
-    "documentation": 1351,
+    "documentation": 1359,
     "java": 134,
     "javascript": 9,
     "legal": 6,
     "native": 25901,
-    "other": 2369,
+    "other": 2370,
     "release_history": 61,
     "tests": 1067,
-    "workflows": 542
+    "workflows": 572
   },
   "tracked_name_matches": [],
   "files": [
@@ -101,6 +101,11 @@
       "path": ".github/workflows/pgs-v0.0.5-release.yml",
       "category": "workflows",
       "occurrences": 90
+    },
+    {
+      "path": ".github/workflows/pgs-v0.0.6-publish.yml",
+      "category": "workflows",
+      "occurrences": 30
     },
     {
       "path": ".github/workflows/release.yml",
@@ -343,6 +348,11 @@
       "occurrences": 3
     },
     {
+      "path": "docs/pt-BR/releases/v0.0.6.md",
+      "category": "documentation",
+      "occurrences": 4
+    },
+    {
       "path": "docs/releases/README.md",
       "category": "documentation",
       "occurrences": 3
@@ -371,6 +381,11 @@
       "path": "docs/releases/v0.0.5.md",
       "category": "documentation",
       "occurrences": 3
+    },
+    {
+      "path": "docs/releases/v0.0.6.md",
+      "category": "documentation",
+      "occurrences": 4
     },
     {
       "path": "docs/releases/v0.2.0.md",
@@ -4720,7 +4735,7 @@
     {
       "path": "tools/test_pgs_release_notes.py",
       "category": "other",
-      "occurrences": 3
+      "occurrences": 4
     },
     {
       "path": "tools/test_pgs_upstream_monitor.py",
@@ -4859,12 +4874,12 @@
     }
   ],
   "abbreviations": {
-    "remaining_files": 531,
-    "remaining_occurrences": 25811,
+    "remaining_files": 532,
+    "remaining_occurrences": 25814,
     "by_form": {
       "camelcase": 5664,
-      "lowercase": 3893,
-      "uppercase": 16254
+      "lowercase": 3895,
+      "uppercase": 16255
     },
     "tracked_name_matches": [
       "docs/PGS_AUTO_BACKUP.md",
@@ -5013,11 +5028,19 @@
         }
       },
       {
+        "path": ".github/workflows/pgs-v0.0.6-publish.yml",
+        "occurrences": 3,
+        "by_form": {
+          "lowercase": 2,
+          "uppercase": 1
+        }
+      },
+      {
         "path": ".github/workflows/release.yml",
         "occurrences": 2,
         "by_form": {
-          "uppercase": 1,
-          "lowercase": 1
+          "lowercase": 1,
+          "uppercase": 1
         }
       },
       {

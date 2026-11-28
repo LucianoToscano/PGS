@@ -19,6 +19,6 @@ jobs:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
       - name: Verify PGS identity
         run: |
-          test "$(cat pgs/VERSION)" = "0.0.5"
-          test "$(cat pgs/PGS_LAST_VERSION_CODE)" = "2026111608"
+          test "$(cat pgs/VERSION)" = "0.0.6"
+          test "$(cat pgs/PGS_LAST_VERSION_CODE)" = "2026111609"
           grep -q 'com.nianticlabs.pokemongo' pgs/pgs_update.py

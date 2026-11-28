@@ -10,6 +10,13 @@ class ReleaseNotesTests(unittest.TestCase):
         self.assertIn("2026111608", notes)
         self.assertEqual(notes.count("# PGS v0.0.5"), 2)
 
+    def test_v006_public_updater_validation_notes(self):
+        notes = render("v0.0.6")
+        self.assertEqual(notes.count("# PGS v0.0.6"), 2)
+        self.assertIn("2026111609", notes)
+        self.assertIn("remain unverified", notes)
+        self.assertIn("ainda não foram verificados", notes)
+
     def test_invalid_version_and_missing_translation(self):
         with self.assertRaises(ValueError):
             render("../bad")

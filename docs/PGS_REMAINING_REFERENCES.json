@@ -3,14 +3,14 @@
   "tracked_files": 2110,
   "text_files": 1035,
   "remaining_files": 969,
-  "remaining_occurrences": 31498,
+  "remaining_occurrences": 31502,
   "remaining_by_category": {
     "documentation": 1433,
     "java": 139,
     "javascript": 9,
     "legal": 5,
     "native": 25901,
-    "other": 2256,
+    "other": 2260,
     "release_history": 341,
     "tests": 1069,
     "workflows": 345
@@ -4680,7 +4680,7 @@
     {
       "path": "tools/pgs_branding_audit.py",
       "category": "other",
-      "occurrences": 44
+      "occurrences": 48
     },
     {
       "path": "tools/pgs_reference_inventory.py",

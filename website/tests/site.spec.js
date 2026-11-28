@@ -74,7 +74,7 @@ test('production page loads its assets and stays within the viewport', async ({ 
   page.on('pageerror', error => errors.push(error.message));
   await page.goto('./');
   await expect(page.locator('h1')).toBeVisible();
-  await expect(page.locator('a[href="https://github.com/LucianoToscano/PGS/releases/tag/untagged-b1260bd32d692cbde42d"]').first()).toBeVisible();
+  await expect(page.locator('a[href="https://github.com/LucianoToscano/PGS/releases/latest"]').first()).toBeVisible();
   for (const image of await page.locator('img').all()) {
     await image.scrollIntoViewIfNeeded();
     await expect.poll(() => image.evaluate(img => img.complete && img.naturalWidth > 0)).toBeTruthy();
@@ -165,14 +165,14 @@ test('cooldown trigger and safe groups expand', async ({ page }) => {
   await expect(safe.getByText('Teleporting by itself')).toBeVisible();
 });
 
-test('verified PGS candidate notes accompany the latest download', async ({ page }) => {
+test('PGS release notes accompany the latest download', async ({ page }) => {
   await page.goto('./');
   const releaseNotes = page.locator(
-    '.cta__release a[href="https://github.com/LucianoToscano/PGS/releases/tag/untagged-b1260bd32d692cbde42d"]'
+    '.cta__release a[href="https://github.com/LucianoToscano/PGS/releases/tag/v0.0.5"]'
   );
   await expect(releaseNotes).toHaveCount(1);
   await expect(releaseNotes).toBeVisible();
   // It must not masquerade as the primary "latest release" call to action.
   await expect(releaseNotes).not.toHaveClass(/btn--primary/);
-  await expect(page.locator('.cta__badge')).toHaveText('Candidate');
+  await expect(page.locator('.cta__badge')).toHaveText('Stable');
 });

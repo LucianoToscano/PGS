@@ -28,7 +28,7 @@ The browser checks use the production preview server. Generated output, installe
 
 The `Website` workflow builds and checks pull requests. Changes to `website/` or the workflow on `main` also deploy to GitHub Pages. Repository Pages must use **GitHub Actions** as its source. Only the deployment job receives Pages write and OIDC permissions. It cannot publish APK releases or send release announcements.
 
-The Vite base path is `/PGS/`. Keep image links base-aware when adding screenshots. Download buttons point to the PGS v0.0.5 draft release, which requires repository access. Installation and login are not yet verified on a physical device; switch the buttons to `/releases/latest` after publishing a stable release.
+The Vite base path is `/PGS/`. Keep image links base-aware when adding screenshots. Download buttons point to `/releases/latest`; the release notes link is pinned to v0.0.5. The project owner confirmed installation and app opening on a physical device. Google sign-in and in-app update remain unverified.
 
 ## Feature guides and routing
 

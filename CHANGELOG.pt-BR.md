@@ -4,6 +4,13 @@
 
 Este registro acompanha **somente** as versões do PGS. Os documentos históricos da base original permanecem disponíveis pelo histórico Git e pelos avisos legais, mas não são releases do PGS.
 
+## v0.0.5 — 28/11/2026
+
+- APK Android completo recompilado e assinado, com pacote e certificado existentes; versionCode `2026111608`.
+- Feed de hundos do PGS configurado e login Google pelo navegador habilitado no build.
+- Instalação e abertura confirmadas pelo responsável do projeto; login Google e atualização interna ainda não verificados separadamente.
+- Release estável do GitHub para o atualizador interno existente.
+
 ## Em desenvolvimento
 
 - Identidade pública PGS consolidada no README, site, arte oficial, contribuição e documentação.

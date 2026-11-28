@@ -1,0 +1,56 @@
+name: PGS v0.0.5 - Publish owner-tested update
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - .github/workflows/pgs-v0.0.5-publish.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: pgs-v0.0.5-publish
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    if: github.repository == 'LucianoToscano/PGS' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
+      - name: Publish only the exact APK approved by the project owner
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(cat pgs/VERSION)" = 0.0.5
+          test "$(cat pgs/PGS_LAST_VERSION_CODE)" = 2026111608
+          endpoint="repos/$GITHUB_REPOSITORY/releases/461257745"
+          gh api "$endpoint" > "$RUNNER_TEMP/release-before.json"
+          python -B - <<'PY'
+          import json, os
+          from pathlib import Path
+          r=json.loads((Path(os.environ['RUNNER_TEMP'])/'release-before.json').read_text())
+          assert r['tag_name']=='v0.0.5' and r['target_commitish']=='ca7967ec4950f7fbde0e785b48205aedffcce802'
+          assert not r['prerelease']
+          assets={a['name']:a for a in r['assets']}
+          assert set(assets)=={'PGS.v0.0.5.apk','PGS.json','SHA256SUMS.txt','build-info.json'}
+          expected={'PGS.v0.0.5.apk':'fa139a05d884ae2c487f8af68673c049d7db03eaae8fca8efecc88f6cf2c4ea9','PGS.json':'3006ae3c5789e123ade1a5c37f542e293a2e9119b1f41bac56790be4054a9d17','SHA256SUMS.txt':'aeb9062fda5f4c85a5b21743bf48baeb52dcd87672ba6aa9b9a0812d5c','build-info.json':'f664939e1d1955f45a24f8af75f81c7ee8b09e1765629a15dfe3d3a608aee243'}
+          for name,sha in expected.items():
+              assert assets[name]['state']=='uploaded' and assets[name]['digest']=='sha256:'+sha
+          assert assets['PGS.v0.0.5.apk']['size']==185818917
+          PY
+          if [[ "$(jq -r .draft "$RUNNER_TEMP/release-before.json")" == true ]]; then
+            notes="$(printf '%s\n' '## PGS v0.0.5' '' 'Signed Android ARM64 APK; base game 0.439.0; Android versionCode 2026111608.' 'The project owner confirmed installation and opening on a physical device. Google sign-in, in-app update and gameplay features have not been independently verified.' '' 'Use PGS.v0.0.5.apk and SHA256SUMS.txt. The existing signing certificate is preserved.' '' '## Portugues (Brasil)' 'Instalacao e abertura confirmadas pelo responsavel do projeto. Login Google, atualizacao interna e recursos do jogo ainda nao foram verificados separadamente.' 'Baixe PGS.v0.0.5.apk e confira SHA256SUMS.txt.')"
+            gh api --method PATCH "$endpoint" -F draft=false -F prerelease=false -f make_latest=true -f body="$notes" > "$RUNNER_TEMP/published.json"
+          fi
+          gh api "repos/$GITHUB_REPOSITORY/releases/latest" --jq '.tag_name' | grep -Fx v0.0.5
+          gh api "$endpoint" --jq '{tag_name,draft,prerelease,html_url,target_commitish}'

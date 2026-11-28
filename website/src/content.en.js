@@ -2,8 +2,8 @@
 // edits (wording, new settings, extra screenshots) never touch layout code.
 
 export const links = {
-  releasesLatest: 'https://github.com/LucianoToscano/PGS/releases/tag/untagged-b1260bd32d692cbde42d',
-  releasesCurrent: 'https://github.com/LucianoToscano/PGS/releases/tag/untagged-b1260bd32d692cbde42d',
+  releasesLatest: 'https://github.com/LucianoToscano/PGS/releases/latest',
+  releasesCurrent: 'https://github.com/LucianoToscano/PGS/releases/tag/v0.0.5',
   github: 'https://github.com/LucianoToscano/PGS',
   discord: 'https://discord.gg/SdwU4VnfW',
 };
@@ -98,7 +98,7 @@ export const steps = [
   {
     n: '01',
     title: 'Download',
-    body: 'Open the PGS v0.0.5 draft release (repository access required), download PGS.v0.0.5.apk and check SHA256SUMS.txt. Do not install a source archive or a preview package.',
+    body: 'Open the PGS release, download PGS.v0.0.5.apk and check SHA256SUMS.txt. Do not install a source archive or a preview package.',
   },
   {
     n: '02',
@@ -123,7 +123,7 @@ export const faqs = [
   },
   {
     q: 'Is a PGS Root build available?',
-    a: 'Not yet. The PGS candidate targets the non-root APK. The original Root variant belongs to the upstream project, not a PGS update.',
+    a: 'Not yet. The PGS release targets the non-root APK. The original Root variant belongs to the upstream project, not a PGS update.',
   },
   {
     q: 'Is LivePokeMap included?',

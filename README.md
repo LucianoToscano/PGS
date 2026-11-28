@@ -24,20 +24,20 @@
 
 | Property | Value |
 |---|---|
-| Latest test candidate | **PGS v0.0.5** |
-| Status | **Draft — physical-device installation and Google sign-in not yet verified** |
+| Latest stable release | **PGS v0.0.5** |
+| Status | **Installation and app opening confirmed by the project owner on a physical device; Google sign-in and in-app update not separately verified** |
 | Reference candidate | [PGS v0.0.2](https://github.com/LucianoToscano/PGS/releases/tag/untagged-268fa715660bc21061a4) |
 | Base game | Pokémon GO **0.439.0** |
 | Installed app name | **Pokémon GO** |
 | Android package | `com.nianticlabs.pokemongo` |
 
-The PGS project version is distinct from the base game's version. The latest draft is a test candidate, not a published stable release.
+The PGS project version is distinct from the base game's version. The stable release is offered by the in-app updater.
 
 ## Download and install
 
-1. Open the [PGS v0.0.5 draft release](https://github.com/LucianoToscano/PGS/releases/tag/untagged-b1260bd32d692cbde42d) (repository access required).
+1. Open the [PGS v0.0.5 release](https://github.com/LucianoToscano/PGS/releases/tag/v0.0.5).
 2. Download `PGS.v0.0.5.apk` and compare its SHA-256 with `SHA256SUMS.txt`: `fa139a05d884ae2c487f8af68673c049d7db03eaae8fca8efecc88f6cf2c4ea9`.
-3. Review the attached `build-info.json` and `PGS.json`. Installation, Google sign-in, saved settings and gameplay remain to be verified on a device.
+3. Review the attached `build-info.json` and `PGS.json`. Installation and app opening were confirmed by the project owner. Google sign-in, saved settings, gameplay and in-app update remain to be verified independently.
 
 Do not mistake source archives or preview-only packages for a complete APK. Original build inputs must remain private.
 

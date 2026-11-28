@@ -1,19 +1,19 @@
 {
   "scope": "Git-indexed regular UTF-8 text, excluding NUL-containing files and the snapshot itself",
-  "tracked_files": 2085,
-  "text_files": 1011,
-  "remaining_files": 942,
-  "remaining_occurrences": 31115,
+  "tracked_files": 2087,
+  "text_files": 1013,
+  "remaining_files": 944,
+  "remaining_occurrences": 31222,
   "remaining_by_category": {
+    "other": 2239,
+    "workflows": 418,
     "documentation": 1393,
-    "java": 134,
-    "javascript": 9,
     "legal": 6,
-    "native": 25901,
-    "other": 2237,
     "release_history": 61,
+    "native": 25901,
     "tests": 1061,
-    "workflows": 313
+    "java": 134,
+    "javascript": 9
   },
   "tracked_name_matches": [],
   "files": [
@@ -78,6 +78,16 @@
       "occurrences": 89
     },
     {
+      "path": ".github/workflows/pgs-v0.0.5-publish.yml",
+      "category": "workflows",
+      "occurrences": 15
+    },
+    {
+      "path": ".github/workflows/pgs-v0.0.5-release.yml",
+      "category": "workflows",
+      "occurrences": 90
+    },
+    {
       "path": ".github/workflows/release.yml",
       "category": "workflows",
       "occurrences": 7
@@ -90,12 +100,12 @@
     {
       "path": "CHANGELOG.md",
       "category": "other",
-      "occurrences": 8
+      "occurrences": 10
     },
     {
       "path": "CHANGELOG.pt-BR.md",
       "category": "other",
-      "occurrences": 6
+      "occurrences": 7
     },
     {
       "path": "CONTRIBUTING.md",
@@ -4610,7 +4620,7 @@
     {
       "path": "website/README.md",
       "category": "other",
-      "occurrences": 18
+      "occurrences": 17
     },
     {
       "path": "website/index.html",
@@ -4729,12 +4739,12 @@
     }
   ],
   "abbreviations": {
-    "remaining_files": 514,
-    "remaining_occurrences": 25658,
+    "remaining_files": 516,
+    "remaining_occurrences": 25699,
     "by_form": {
-      "camelcase": 5659,
-      "lowercase": 3870,
-      "uppercase": 16129
+      "lowercase": 3872,
+      "uppercase": 16168,
+      "camelcase": 5659
     },
     "tracked_name_matches": [
       "docs/PGS_BRANDING_AUDIT.md",
@@ -4831,11 +4841,26 @@
         }
       },
       {
+        "path": ".github/workflows/pgs-v0.0.5-publish.yml",
+        "occurrences": 1,
+        "by_form": {
+          "uppercase": 1
+        }
+      },
+      {
+        "path": ".github/workflows/pgs-v0.0.5-release.yml",
+        "occurrences": 40,
+        "by_form": {
+          "uppercase": 38,
+          "lowercase": 2
+        }
+      },
+      {
         "path": ".github/workflows/release.yml",
         "occurrences": 2,
         "by_form": {
-          "lowercase": 1,
-          "uppercase": 1
+          "uppercase": 1,
+          "lowercase": 1
         }
       },
       {

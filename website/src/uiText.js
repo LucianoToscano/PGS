@@ -23,7 +23,7 @@ const en = {
     title1: 'Smoother sessions.',
     title2: 'One small menu.',
     lead: 'Location controls, faster catches, and optional automation for Pokémon GO. One APK for ARM64 Android and the MuMu emulator, with no root required.',
-    download: 'View test APK',
+    download: 'Download APK',
     source: 'View source on GitHub',
     shotAlt: 'PGS overlays during a Pokémon GO encounter: CP, level and IV read-out above the Pokémon, berry count, transfer shield and VGP indicator.',
     shotCaption: 'Overlays drawn over a live encounter',
@@ -45,9 +45,9 @@ const en = {
   getStarted: {
     number: '03 / Get started', title: 'Three steps to your first session.',
     lead: 'Every release ships with a changelog, a SHA-256 checksum, and build information.',
-    download: 'View test candidate', discord: 'Join the Discord',
-    badge: 'Candidate', build: 'PGS v0.0.5 build',
-    afterBuild: 'is a draft release requiring repository access. Installation and login on a phone remain unverified.',
+    download: 'Download release', discord: 'Join the Discord',
+    badge: 'Stable', build: 'PGS v0.0.5 build',
+    afterBuild: 'is the stable release. Installation and opening were confirmed by the project owner; Google sign-in and in-app updating remain unverified.',
     faqTitle: 'Good to know',
   },
   gallery: {
@@ -100,7 +100,7 @@ const ptBR = {
     eyebrow: 'Projeto independente e de código aberto',
     title1: 'Sessões mais práticas.', title2: 'Tudo em um menu.',
     lead: 'Controles de localização, capturas mais rápidas e automação opcional para Pokémon GO. Um APK para Android ARM64 e o emulador MuMu, sem root.',
-    download: 'Ver APK de teste', source: 'Ver código no GitHub',
+    download: 'Baixar APK', source: 'Ver código no GitHub',
     shotAlt: 'Painéis do PGS durante um encontro no Pokémon GO: PC, nível e IV acima do Pokémon, frutas, proteção de transferência e indicador VGP.',
     shotCaption: 'Informações exibidas durante um encontro',
   },
@@ -120,9 +120,9 @@ const ptBR = {
   getStarted: {
     number: '03 / Como começar', title: 'Três passos para iniciar.',
     lead: 'Cada release inclui registro de mudanças, checksum SHA-256 e informações da compilação.',
-    download: 'Ver versão candidata', discord: 'Entrar no Discord',
-    badge: 'Candidata', build: 'Compilação PGS v0.0.5',
-    afterBuild: 'é um release em rascunho que exige acesso ao repositório. Instalação e login no celular ainda precisam ser confirmados.',
+    download: 'Baixar versão', discord: 'Entrar no Discord',
+    badge: 'Estável', build: 'Compilação PGS v0.0.5',
+    afterBuild: 'é a versão estável. Instalação e abertura confirmadas pelo responsável do projeto; login Google e atualização interna ainda precisam de verificação.',
     faqTitle: 'Informações importantes',
   },
   gallery: {

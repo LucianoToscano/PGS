@@ -1,5 +1,12 @@
 # Changelog
 
+## PGS v0.0.5 — 2026-11-28
+
+- Recompiled and signed full Android APK, retaining the existing package and signing certificate; versionCode `2026111608`.
+- Configured the PGS hundo feed and enabled Google browser login in the build.
+- Installation and app opening confirmed by the project owner; Google sign-in and in-app update remain unverified.
+- Stable GitHub release for the existing in-app updater.
+
 ## PGS v0.0.2 (candidata — testes físicos pendentes)
 
 - Identidade PGS aplicada aos controles Java, notificações, feeds e catálogos traduzidos sem alterar dados salvos ou a logo e joystick do jogo.

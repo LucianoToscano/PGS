@@ -3,16 +3,16 @@
   "tracked_files": 2085,
   "text_files": 1011,
   "remaining_files": 945,
-  "remaining_occurrences": 31061,
+  "remaining_occurrences": 31059,
   "remaining_by_category": {
     "documentation": 1417,
     "java": 139,
     "javascript": 9,
     "legal": 5,
     "native": 25901,
-    "other": 2231,
+    "other": 2230,
     "release_history": 61,
-    "tests": 1063,
+    "tests": 1062,
     "workflows": 235
   },
   "tracked_name_matches": [],
@@ -2585,7 +2585,7 @@
     {
       "path": "pgs/pgs_candidate.py",
       "category": "other",
-      "occurrences": 37
+      "occurrences": 36
     },
     {
       "path": "pgs/pgs_rebrand.py",
@@ -4310,7 +4310,7 @@
     {
       "path": "pgs/test/test_pgs_candidate.py",
       "category": "tests",
-      "occurrences": 28
+      "occurrences": 27
     },
     {
       "path": "pgs/test/test_pgs_license.py",

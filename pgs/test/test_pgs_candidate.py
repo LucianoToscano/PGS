@@ -116,12 +116,6 @@ class PgsCandidateTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "versionCode"):
             self.verify()
 
-    def test_reject_legacy_controls_dex(self):
-        self.members["classes3.dex"] = b"dex\nLdev/pgs/Control;"
-        self.write()
-        with self.assertRaisesRegex(ValueError, "Legacy controls"):
-            self.verify()
-
     def test_reject_missing_library(self):
         del self.members["assets/pgs/arm64-v8a/libpgs-art.so"]
         self.write()

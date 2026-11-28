@@ -3,10 +3,10 @@
   "tracked_files": 2085,
   "text_files": 1011,
   "remaining_files": 942,
-  "remaining_occurrences": 31129,
+  "remaining_occurrences": 31157,
   "remaining_by_category": {
     "other": 2224,
-    "workflows": 315,
+    "workflows": 343,
     "documentation": 1417,
     "legal": 5,
     "release_history": 61,
@@ -75,7 +75,7 @@
     {
       "path": ".github/workflows/pgs-v0.0.4-release.yml",
       "category": "workflows",
-      "occurrences": 89
+      "occurrences": 117
     },
     {
       "path": ".github/workflows/release.yml",
@@ -4730,9 +4730,9 @@
   ],
   "abbreviations": {
     "remaining_files": 514,
-    "remaining_occurrences": 25650,
+    "remaining_occurrences": 25674,
     "by_form": {
-      "uppercase": 16124,
+      "uppercase": 16148,
       "lowercase": 3867,
       "camelcase": 5659
     },
@@ -4823,9 +4823,9 @@
       },
       {
         "path": ".github/workflows/pgs-v0.0.4-release.yml",
-        "occurrences": 42,
+        "occurrences": 66,
         "by_form": {
-          "uppercase": 40,
+          "uppercase": 64,
           "lowercase": 2
         }
       },

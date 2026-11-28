@@ -54,7 +54,7 @@ jobs:
         run: |
           set -euo pipefail
           missing=0
-          for name in PGS_INPUT_URL PGS_KEYSTORE_BASE64 PGS_KEY_ALIAS PGS_STORE_PASSWORD PGS_KEY_PASSWORD; do
+          for name in PGS_KEYSTORE_BASE64 PGS_KEY_ALIAS PGS_STORE_PASSWORD PGS_KEY_PASSWORD; do
             if [[ -z "${!name}" ]]; then
               echo "::error::Missing required configuration: $name. Configure the authorized repository Actions secret."
               missing=1
@@ -95,18 +95,214 @@ jobs:
       - name: Configure existing signer path
         shell: bash
         run: echo "PGS_KEYSTORE=$RUNNER_TEMP/pgs-v004-validation.jks" >> "$GITHUB_ENV"
-      - name: Validate configured private input and load existing key
+      - name: Recover and verify the existing pinned private game input
         env:
           GITHUB_TOKEN: ${{ github.token }}
           PGS_INPUT_URL: ${{ secrets.PGS_INPUT_URL }}
           PGS_KEYSTORE_BASE64: ${{ secrets.PGS_KEYSTORE_BASE64 }}
+          PGS_KEY_ALIAS: ${{ secrets.PGS_KEY_ALIAS }}
+          PGS_STORE_PASSWORD: ${{ secrets.PGS_STORE_PASSWORD }}
+          PGS_KEY_PASSWORD: ${{ secrets.PGS_KEY_PASSWORD }}
+          PGS_EXPECTED_CERT_SHA256: d95c6bdfcbd91dc5c9cde698487c88e4994771a475e4efde4567b8d5f44e96cf
         shell: bash
         run: |
           set -euo pipefail
           umask 077
-          test -n "$PGS_INPUT_URL" || { echo "::error::PGS_INPUT_URL is missing"; exit 1; }
-          test -n "$PGS_KEYSTORE_BASE64" || { echo "::error::PGS_KEYSTORE_BASE64 is missing"; exit 1; }
-          python -B tools/private_input.py
+          test "$(git rev-parse HEAD)" = "$GITHUB_SHA"
+          trap 'rm -f "$RUNNER_TEMP/pgs-sealed-source.yml" "$RUNNER_TEMP/PreparePrivateInput.java"' EXIT
+          if [[ -z "$PGS_INPUT_URL" ]]; then
+            git fetch --no-tags --depth=1 origin 0179c4046a9d3089f855ae123bc326e73893e009
+            git show 0179c4046a9d3089f855ae123bc326e73893e009:.github/workflows/pgs-languages-build.yml > "$RUNNER_TEMP/pgs-sealed-source.yml"
+            export PGS_SEALED_INPUT="$(python -B - "$RUNNER_TEMP/pgs-sealed-source.yml" <<'PY'
+          import pathlib, sys
+          lines = pathlib.Path(sys.argv[1]).read_text(encoding="utf-8").splitlines()
+          start = lines.index("          PGS_SEALED_INPUT: |") + 1
+          payload = []
+          for line in lines[start:]:
+              if not line.startswith("            "):
+                  break
+              payload.append(line[12:])
+          if len(payload) != 4 or not payload[0].startswith("format=PGS_BUILD_INPUT_V1"):
+              raise SystemExit("Invalid pinned sealed input envelope")
+          print("\n".join(payload))
+          PY
+          )"
+          fi
+          cat > "$RUNNER_TEMP/PreparePrivateInput.java" <<'PGS_JAVA'
+          import java.io.StringReader;
+          import java.net.URI;
+          import java.nio.charset.StandardCharsets;
+          import java.nio.file.Files;
+          import java.nio.file.LinkOption;
+          import java.nio.file.Path;
+          import java.nio.file.StandardOpenOption;
+          import java.nio.file.attribute.PosixFilePermissions;
+          import java.security.KeyStore;
+          import java.security.MessageDigest;
+          import java.security.PrivateKey;
+          import java.security.cert.Certificate;
+          import java.security.interfaces.RSAPublicKey;
+          import java.security.spec.MGF1ParameterSpec;
+          import java.util.Arrays;
+          import java.util.Base64;
+          import java.util.HexFormat;
+          import java.util.Map;
+          import java.util.Properties;
+          import java.util.Set;
+          import javax.crypto.Cipher;
+          import javax.crypto.spec.GCMParameterSpec;
+          import javax.crypto.spec.OAEPParameterSpec;
+          import javax.crypto.spec.PSource;
+          import javax.crypto.spec.SecretKeySpec;
+          
+          /** Runner-only input preparation. Never writes or prints the decrypted URL. */
+          public final class PreparePrivateInput {
+              private static final String FORMAT = "PGS_BUILD_INPUT_V1";
+              private static String phase = "configuration";
+          
+              private static String required(String name) {
+                  String value = System.getenv(name);
+                  if (value == null || value.isBlank()) throw new IllegalArgumentException();
+                  return value;
+              }
+          
+              private static byte[] decode(Properties data, String name) {
+                  String value = data.getProperty(name);
+                  if (value == null || value.length() > 65_536) throw new IllegalArgumentException();
+                  return Base64.getDecoder().decode(value);
+              }
+          
+              private static String unseal(PrivateKey key, int rsaBytes) throws Exception {
+                  String sealed = required("PGS_SEALED_INPUT");
+                  if (sealed.length() > 100_000) throw new IllegalArgumentException();
+                  Properties data = new Properties() {
+                      @Override public synchronized Object put(Object key, Object value) {
+                          if (containsKey(key)) throw new IllegalArgumentException();
+                          return super.put(key, value);
+                      }
+                  };
+                  data.load(new StringReader(sealed));
+                  if (!data.stringPropertyNames().equals(Set.of("format", "rsa_key", "nonce", "ciphertext"))
+                          || !FORMAT.equals(data.getProperty("format"))) throw new IllegalArgumentException();
+                  byte[] wrapped = decode(data, "rsa_key");
+                  byte[] nonce = decode(data, "nonce");
+                  byte[] ciphertext = decode(data, "ciphertext");
+                  if (wrapped.length != rsaBytes || nonce.length != 12
+                          || ciphertext.length < 17 || ciphertext.length > 32_768) {
+                      throw new IllegalArgumentException();
+                  }
+                  byte[] aesKey = null;
+                  byte[] plaintext = null;
+                  try {
+                      Cipher rsa = Cipher.getInstance("RSA/ECB/OAEPWithSHA-256AndMGF1Padding");
+                      rsa.init(Cipher.DECRYPT_MODE, key, new OAEPParameterSpec(
+                              "SHA-256", "MGF1", MGF1ParameterSpec.SHA256, PSource.PSpecified.DEFAULT));
+                      aesKey = rsa.doFinal(wrapped);
+                      if (aesKey.length != 32) throw new IllegalArgumentException();
+                      Cipher aes = Cipher.getInstance("AES/GCM/NoPadding");
+                      aes.init(Cipher.DECRYPT_MODE, new SecretKeySpec(aesKey, "AES"),
+                              new GCMParameterSpec(128, nonce));
+                      aes.updateAAD(FORMAT.getBytes(StandardCharsets.UTF_8));
+                      plaintext = aes.doFinal(ciphertext);
+                      return new String(plaintext, StandardCharsets.UTF_8);
+                  } finally {
+                      if (aesKey != null) Arrays.fill(aesKey, (byte) 0);
+                      if (plaintext != null) Arrays.fill(plaintext, (byte) 0);
+                  }
+              }
+          
+              private static void validateUrl(String url) throws Exception {
+                  if (url.length() > 32_000 || url.chars().anyMatch(c -> c <= 32 || c == 127)) {
+                      throw new IllegalArgumentException();
+                  }
+                  URI parsed = new URI(url);
+                  if (!"https".equals(parsed.getScheme()) || parsed.getHost() == null
+                          || parsed.getUserInfo() != null || parsed.getFragment() != null) {
+                      throw new IllegalArgumentException();
+                  }
+              }
+          
+              private static void prepare() throws Exception {
+                  char[] storePassword = required("PGS_STORE_PASSWORD").toCharArray();
+                  char[] keyPassword = required("PGS_KEY_PASSWORD").toCharArray();
+                  byte[] encoded = null;
+                  Path signing = null;
+                  boolean signingCreated = false;
+                  boolean success = false;
+                  try {
+                      String expected = required("PGS_EXPECTED_CERT_SHA256");
+                      if (!expected.matches("[a-f0-9]{64}")) throw new IllegalArgumentException();
+                      String alias = required("PGS_KEY_ALIAS");
+                      String base64 = required("PGS_KEYSTORE_BASE64");
+                      if (base64.length() > 8_000_000) throw new IllegalArgumentException();
+                      Path temp = Path.of(required("RUNNER_TEMP")).toRealPath();
+                      signing = Path.of(required("PGS_KEYSTORE")).toAbsolutePath().normalize();
+                      if (!signing.getParent().equals(temp) || Files.exists(signing, LinkOption.NOFOLLOW_LINKS)) {
+                          throw new IllegalArgumentException();
+                      }
+                      encoded = Base64.getDecoder().decode(base64);
+                      Files.createFile(signing, PosixFilePermissions.asFileAttribute(
+                              PosixFilePermissions.fromString("rw-------")));
+                      signingCreated = true;
+                      Files.write(signing, encoded, StandardOpenOption.WRITE);
+                      phase = "signing certificate";
+                      KeyStore store = KeyStore.getInstance(signing.toFile(), storePassword);
+                      Certificate certificate = store.getCertificate(alias);
+                      if (certificate == null || !(certificate.getPublicKey() instanceof RSAPublicKey publicKey)) {
+                          throw new IllegalArgumentException();
+                      }
+                      String actual = HexFormat.of().formatHex(MessageDigest.getInstance("SHA-256")
+                              .digest(certificate.getEncoded()));
+                      if (!MessageDigest.isEqual(expected.getBytes(StandardCharsets.US_ASCII),
+                              actual.getBytes(StandardCharsets.US_ASCII))) throw new IllegalArgumentException();
+                      if (!(store.getKey(alias, keyPassword) instanceof PrivateKey privateKey)) {
+                          throw new IllegalArgumentException();
+                      }
+                      phase = "sealed input";
+                      String url = System.getenv("PGS_INPUT_URL");
+                      if (url == null || url.isBlank()) {
+                          url = unseal(privateKey, (publicKey.getModulus().bitLength() + 7) / 8);
+                      }
+                      validateUrl(url);
+                      phase = "pinned input download";
+                      ProcessBuilder command = new ProcessBuilder("python", "-B", "tools/private_input.py");
+                      Map<String, String> child = command.environment();
+                      child.put("PGS_INPUT_URL", url);
+                      child.remove("PGS_STORE_PASSWORD");
+                      child.remove("PGS_KEY_PASSWORD");
+                      child.remove("PGS_KEY_ALIAS");
+                      child.remove("PGS_SEALED_INPUT");
+                      child.remove("PGS_EXPECTED_CERT_SHA256");
+                      // Fail with a fixed message; even future helper exceptions cannot echo the URL.
+                      command.redirectOutput(ProcessBuilder.Redirect.DISCARD);
+                      command.redirectError(ProcessBuilder.Redirect.DISCARD);
+                      Process download = command.start();
+                      child.remove("PGS_INPUT_URL");
+                      int status = download.waitFor();
+                      if (status != 0) throw new IllegalStateException();
+                      success = true;
+                      System.out.println("Pinned game input verified; temporary signing key is ready.");
+                  } finally {
+                      Arrays.fill(storePassword, '\0');
+                      Arrays.fill(keyPassword, '\0');
+                      if (encoded != null) Arrays.fill(encoded, (byte) 0);
+                      if (!success && signingCreated) Files.deleteIfExists(signing);
+                  }
+              }
+          
+              public static void main(String[] args) {
+                  try {
+                      if (args.length != 0) throw new IllegalArgumentException();
+                      prepare();
+                  } catch (Exception error) {
+                      System.err.println("Private input preparation failed at " + phase
+                              + ". Check the configured signing secrets, sealed input and pinned game profile.");
+                      System.exit(1);
+                  }
+              }
+          }
+          PGS_JAVA
+          java "$RUNNER_TEMP/PreparePrivateInput.java"
       - name: Build and verify complete candidate in runner only
         env:
           PGS_KEY_ALIAS: ${{ secrets.PGS_KEY_ALIAS }}

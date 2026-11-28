@@ -1,19 +1,19 @@
 {
   "scope": "Git-indexed regular UTF-8 text, excluding NUL-containing files and the snapshot itself",
-  "tracked_files": 2107,
-  "text_files": 1032,
-  "remaining_files": 960,
-  "remaining_occurrences": 30980,
+  "tracked_files": 2110,
+  "text_files": 1035,
+  "remaining_files": 969,
+  "remaining_occurrences": 31503,
   "remaining_by_category": {
-    "documentation": 1360,
-    "java": 184,
-    "javascript": 11,
+    "documentation": 1433,
+    "java": 139,
+    "javascript": 9,
     "legal": 5,
-    "native": 25467,
-    "other": 2267,
+    "native": 25901,
+    "other": 2261,
     "release_history": 341,
-    "tests": 1210,
-    "workflows": 135
+    "tests": 1069,
+    "workflows": 345
   },
   "tracked_name_matches": [],
   "files": [
@@ -35,7 +35,7 @@
     {
       "path": ".github/workflows/ci.yml",
       "category": "workflows",
-      "occurrences": 21
+      "occurrences": 8
     },
     {
       "path": ".github/workflows/discord-release.yml",
@@ -55,17 +55,17 @@
     {
       "path": ".github/workflows/pgs-same-package-update.yml",
       "category": "workflows",
-      "occurrences": 5
+      "occurrences": 48
     },
     {
       "path": ".github/workflows/pgs-v0.0.1-release.yml",
       "category": "workflows",
-      "occurrences": 4
+      "occurrences": 72
     },
     {
       "path": ".github/workflows/pgs-v0.0.2-release.yml",
       "category": "workflows",
-      "occurrences": 4
+      "occurrences": 74
     },
     {
       "path": ".github/workflows/pgs-v0.0.3-candidate.yml",
@@ -75,7 +75,7 @@
     {
       "path": ".github/workflows/release.yml",
       "category": "workflows",
-      "occurrences": 3
+      "occurrences": 45
     },
     {
       "path": ".gitignore",
@@ -85,7 +85,7 @@
     {
       "path": "CHANGELOG.md",
       "category": "other",
-      "occurrences": 11
+      "occurrences": 22
     },
     {
       "path": "CHANGELOG.pt-BR.md",
@@ -95,7 +95,7 @@
     {
       "path": "CONTRIBUTING.md",
       "category": "documentation",
-      "occurrences": 13
+      "occurrences": 7
     },
     {
       "path": "CONTRIBUTING.pt-BR.md",
@@ -115,7 +115,7 @@
     {
       "path": "README.md",
       "category": "documentation",
-      "occurrences": 41
+      "occurrences": 64
     },
     {
       "path": "README.pt-BR.md",
@@ -125,7 +125,7 @@
     {
       "path": "THIRD_PARTY.md",
       "category": "other",
-      "occurrences": 15
+      "occurrences": 17
     },
     {
       "path": "THIRD_PARTY_LICENSES.md",
@@ -140,12 +140,12 @@
     {
       "path": "docs/ARCHITECTURE.md",
       "category": "documentation",
-      "occurrences": 7
+      "occurrences": 8
     },
     {
       "path": "docs/BUILDING.md",
       "category": "documentation",
-      "occurrences": 19
+      "occurrences": 63
     },
     {
       "path": "docs/GAME_UPDATES.md",
@@ -160,12 +160,12 @@
     {
       "path": "docs/NATIVE_MIGRATION.md",
       "category": "documentation",
-      "occurrences": 30
+      "occurrences": 28
     },
     {
       "path": "docs/PGS_BRANDING_AUDIT.md",
       "category": "documentation",
-      "occurrences": 29
+      "occurrences": 32
     },
     {
       "path": "docs/PGS_COMMUNITY_REVIEW.md",
@@ -200,7 +200,7 @@
     {
       "path": "docs/PGS_UPDATE_POLICY.md",
       "category": "documentation",
-      "occurrences": 57
+      "occurrences": 55
     },
     {
       "path": "docs/PGS_VERSION_MONITOR.md",
@@ -210,7 +210,7 @@
     {
       "path": "docs/ROOTED.md",
       "category": "documentation",
-      "occurrences": 11
+      "occurrences": 36
     },
     {
       "path": "docs/en/BUILDING.md",
@@ -293,14 +293,9 @@
       "occurrences": 8
     },
     {
-      "path": "docs/releases/README.md",
-      "category": "documentation",
-      "occurrences": 2
-    },
-    {
       "path": "docs/releases/TEMPLATE.md",
       "category": "documentation",
-      "occurrences": 8
+      "occurrences": 7
     },
     {
       "path": "docs/releases/footer.md",
@@ -315,7 +310,7 @@
     {
       "path": "docs/releases/v0.0.2.md",
       "category": "documentation",
-      "occurrences": 15
+      "occurrences": 13
     },
     {
       "path": "docs/releases/v0.0.3.md",
@@ -475,12 +470,12 @@
     {
       "path": "pgs/AndroidManifest.xml",
       "category": "other",
-      "occurrences": 8
+      "occurrences": 6
     },
     {
       "path": "pgs/art/CMakeLists.txt",
       "category": "native",
-      "occurrences": 28
+      "occurrences": 27
     },
     {
       "path": "pgs/art/art_symbols.cpp",
@@ -508,14 +503,39 @@
       "occurrences": 7
     },
     {
+      "path": "pgs/assets/feed-icons/NOTICE.txt",
+      "category": "other",
+      "occurrences": 1
+    },
+    {
+      "path": "pgs/assets/feed-icons/provenance.json",
+      "category": "other",
+      "occurrences": 1
+    },
+    {
+      "path": "pgs/assets/map-icons/NOTICE.txt",
+      "category": "other",
+      "occurrences": 2
+    },
+    {
+      "path": "pgs/assets/map-icons/provenance.json",
+      "category": "other",
+      "occurrences": 1
+    },
+    {
       "path": "pgs/axml.py",
       "category": "other",
-      "occurrences": 13
+      "occurrences": 9
+    },
+    {
+      "path": "pgs/branding/pgs.svg",
+      "category": "other",
+      "occurrences": 1
     },
     {
       "path": "pgs/build.py",
       "category": "other",
-      "occurrences": 46
+      "occurrences": 47
     },
     {
       "path": "pgs/cleanup-rooted.ps1",
@@ -620,12 +640,17 @@
     {
       "path": "pgs/native/CMakeLists.txt",
       "category": "native",
-      "occurrences": 19
+      "occurrences": 17
     },
     {
       "path": "pgs/native/README.md",
       "category": "documentation",
-      "occurrences": 15
+      "occurrences": 7
+    },
+    {
+      "path": "pgs/native/account_host.cpp",
+      "category": "native",
+      "occurrences": 450
     },
     {
       "path": "pgs/native/account_host.h",
@@ -665,7 +690,7 @@
     {
       "path": "pgs/native/adventure_sync_test.cpp",
       "category": "tests",
-      "occurrences": 6
+      "occurrences": 5
     },
     {
       "path": "pgs/native/always_hit.cpp",
@@ -730,7 +755,7 @@
     {
       "path": "pgs/native/auto_raid.h",
       "category": "native",
-      "occurrences": 4
+      "occurrences": 5
     },
     {
       "path": "pgs/native/auto_raid_game_catch.inc",
@@ -905,7 +930,7 @@
     {
       "path": "pgs/native/camera_host.cpp",
       "category": "native",
-      "occurrences": 348
+      "occurrences": 347
     },
     {
       "path": "pgs/native/camera_host.h",
@@ -1330,7 +1355,7 @@
     {
       "path": "pgs/native/hook_engine.h",
       "category": "native",
-      "occurrences": 7
+      "occurrences": 6
     },
     {
       "path": "pgs/native/hook_engine_diag.h",
@@ -1340,7 +1365,7 @@
     {
       "path": "pgs/native/hook_engine_near_test.cpp",
       "category": "native",
-      "occurrences": 26
+      "occurrences": 20
     },
     {
       "path": "pgs/native/incense_guard.cpp",
@@ -1400,7 +1425,7 @@
     {
       "path": "pgs/native/interaction_host.cpp",
       "category": "native",
-      "occurrences": 448
+      "occurrences": 449
     },
     {
       "path": "pgs/native/interaction_host.h",
@@ -1600,7 +1625,7 @@
     {
       "path": "pgs/native/pgs.map",
       "category": "native",
-      "occurrences": 2
+      "occurrences": 1
     },
     {
       "path": "pgs/native/pgs_internal.h",
@@ -1615,7 +1640,7 @@
     {
       "path": "pgs/native/pgs_native_api.h",
       "category": "native",
-      "occurrences": 52
+      "occurrences": 51
     },
     {
       "path": "pgs/native/pgs_native_api_compat.h",
@@ -2275,7 +2300,7 @@
     {
       "path": "pgs/native/smart_catch_binding.cpp",
       "category": "native",
-      "occurrences": 237
+      "occurrences": 235
     },
     {
       "path": "pgs/native/smart_catch_binding.h",
@@ -2390,7 +2415,7 @@
     {
       "path": "pgs/native/test_runner.cpp",
       "category": "native",
-      "occurrences": 8
+      "occurrences": 6
     },
     {
       "path": "pgs/native/tests/accounts_dobby_bridge.cpp",
@@ -2590,7 +2615,7 @@
     {
       "path": "pgs/native/vgp_incense.h",
       "category": "native",
-      "occurrences": 22
+      "occurrences": 20
     },
     {
       "path": "pgs/native/vgp_maintenance.cpp",
@@ -2655,7 +2680,7 @@
     {
       "path": "pgs/native_build.py",
       "category": "other",
-      "occurrences": 19
+      "occurrences": 17
     },
     {
       "path": "pgs/native_harness.py",
@@ -2665,12 +2690,12 @@
     {
       "path": "pgs/nonroot.cmd",
       "category": "other",
-      "occurrences": 2
+      "occurrences": 5
     },
     {
       "path": "pgs/nonroot.py",
       "category": "other",
-      "occurrences": 58
+      "occurrences": 63
     },
     {
       "path": "pgs/pgs.cmd",
@@ -2685,17 +2710,17 @@
     {
       "path": "pgs/pgs_rebrand.py",
       "category": "other",
-      "occurrences": 46
+      "occurrences": 47
     },
     {
       "path": "pgs/pgs_update.py",
       "category": "other",
-      "occurrences": 18
+      "occurrences": 19
     },
     {
       "path": "pgs/release_apk.py",
       "category": "other",
-      "occurrences": 31
+      "occurrences": 28
     },
     {
       "path": "pgs/root-installer/AndroidManifest.xml",
@@ -2750,7 +2775,7 @@
     {
       "path": "pgs/root-installer/test/RootToggleTest.java",
       "category": "other",
-      "occurrences": 6
+      "occurrences": 4
     },
     {
       "path": "pgs/rooted.py",
@@ -2790,7 +2815,7 @@
     {
       "path": "pgs/runtime/native-core.js",
       "category": "javascript",
-      "occurrences": 11
+      "occurrences": 9
     },
     {
       "path": "pgs/runtime/native-transport.js",
@@ -2805,12 +2830,12 @@
     {
       "path": "pgs/runtime_assets.py",
       "category": "other",
-      "occurrences": 2
+      "occurrences": 1
     },
     {
       "path": "pgs/runtime_audit.py",
       "category": "other",
-      "occurrences": 4
+      "occurrences": 3
     },
     {
       "path": "pgs/src/dev/pgs/AccountCommandState.java",
@@ -2825,7 +2850,7 @@
     {
       "path": "pgs/src/dev/pgs/AccountProfileStore.java",
       "category": "java",
-      "occurrences": 39
+      "occurrences": 4
     },
     {
       "path": "pgs/src/dev/pgs/AccountProfiles.java",
@@ -3015,12 +3040,12 @@
     {
       "path": "pgs/src/dev/pgs/FeedTheme.java",
       "category": "other",
-      "occurrences": 6
+      "occurrences": 7
     },
     {
       "path": "pgs/src/dev/pgs/FeedUi.java",
       "category": "other",
-      "occurrences": 2
+      "occurrences": 3
     },
     {
       "path": "pgs/src/dev/pgs/GameBridgeDispatch.java",
@@ -3080,12 +3105,12 @@
     {
       "path": "pgs/src/dev/pgs/GoogleAuthActivity.java",
       "category": "other",
-      "occurrences": 2
+      "occurrences": 1
     },
     {
       "path": "pgs/src/dev/pgs/GoogleBrowserAuth.java",
       "category": "other",
-      "occurrences": 3
+      "occurrences": 4
     },
     {
       "path": "pgs/src/dev/pgs/GpxCodec.java",
@@ -3395,22 +3420,22 @@
     {
       "path": "pgs/src/dev/pgs/PogoFeedClient.java",
       "category": "other",
-      "occurrences": 1
+      "occurrences": 2
     },
     {
       "path": "pgs/src/dev/pgs/PogoFeedData.java",
       "category": "other",
-      "occurrences": 1
+      "occurrences": 2
     },
     {
       "path": "pgs/src/dev/pgs/PogoFeedDialog.java",
       "category": "other",
-      "occurrences": 4
+      "occurrences": 17
     },
     {
       "path": "pgs/src/dev/pgs/PogoFeedFilterDialog.java",
       "category": "other",
-      "occurrences": 1
+      "occurrences": 4
     },
     {
       "path": "pgs/src/dev/pgs/PogoFeedFilters.java",
@@ -3425,12 +3450,12 @@
     {
       "path": "pgs/src/dev/pgs/PogoFeedModeFilterDialog.java",
       "category": "other",
-      "occurrences": 1
+      "occurrences": 2
     },
     {
       "path": "pgs/src/dev/pgs/PogoFeedModes.java",
       "category": "other",
-      "occurrences": 1
+      "occurrences": 2
     },
     {
       "path": "pgs/src/dev/pgs/PokemonCategories.java",
@@ -3460,7 +3485,7 @@
     {
       "path": "pgs/src/dev/pgs/QuickMenu.java",
       "category": "other",
-      "occurrences": 3
+      "occurrences": 4
     },
     {
       "path": "pgs/src/dev/pgs/ResearchPreferences.java",
@@ -3495,7 +3520,7 @@
     {
       "path": "pgs/src/dev/pgs/RootedRestart.java",
       "category": "java",
-      "occurrences": 5
+      "occurrences": 3
     },
     {
       "path": "pgs/src/dev/pgs/RootedRuntime.java",
@@ -3545,12 +3570,12 @@
     {
       "path": "pgs/src/dev/pgs/SettingsBackup.java",
       "category": "other",
-      "occurrences": 11
+      "occurrences": 10
     },
     {
       "path": "pgs/src/dev/pgs/SettingsBackupRules.java",
       "category": "java",
-      "occurrences": 20
+      "occurrences": 12
     },
     {
       "path": "pgs/src/dev/pgs/SettingsPanel.java",
@@ -3660,7 +3685,7 @@
     {
       "path": "pgs/src/dev/pgs/events/EventSettings.java",
       "category": "other",
-      "occurrences": 3
+      "occurrences": 2
     },
     {
       "path": "pgs/test/AccountCommandStateTest.java",
@@ -3675,7 +3700,7 @@
     {
       "path": "pgs/test/AccountProfileStoreTest.java",
       "category": "tests",
-      "occurrences": 52
+      "occurrences": 8
     },
     {
       "path": "pgs/test/AccountSessionTransactionTest.java",
@@ -4005,7 +4030,7 @@
     {
       "path": "pgs/test/SettingsBackupRulesTest.java",
       "category": "tests",
-      "occurrences": 32
+      "occurrences": 19
     },
     {
       "path": "pgs/test/SettingsSearchTest.java",
@@ -4145,7 +4170,7 @@
     {
       "path": "pgs/test/native-camera-metadata-test.cjs",
       "category": "tests",
-      "occurrences": 15
+      "occurrences": 11
     },
     {
       "path": "pgs/test/native-camera-sampler-host-test.cjs",
@@ -4155,12 +4180,12 @@
     {
       "path": "pgs/test/native-camera-sampler-test.cjs",
       "category": "tests",
-      "occurrences": 9
+      "occurrences": 8
     },
     {
       "path": "pgs/test/native-core-test.cjs",
       "category": "tests",
-      "occurrences": 21
+      "occurrences": 9
     },
     {
       "path": "pgs/test/native-transport-host-test.cjs",
@@ -4185,7 +4210,7 @@
     {
       "path": "pgs/test/test_account_restart_lifecycle.py",
       "category": "tests",
-      "occurrences": 16
+      "occurrences": 14
     },
     {
       "path": "pgs/test/test_account_restart_manifest.py",
@@ -4210,7 +4235,7 @@
     {
       "path": "pgs/test/test_axml.py",
       "category": "tests",
-      "occurrences": 7
+      "occurrences": 5
     },
     {
       "path": "pgs/test/test_buddy_emotion_preferences_java.py",
@@ -4230,7 +4255,7 @@
     {
       "path": "pgs/test/test_compiled_gameplay.py",
       "category": "tests",
-      "occurrences": 34
+      "occurrences": 27
     },
     {
       "path": "pgs/test/test_control_java.py",
@@ -4250,7 +4275,7 @@
     {
       "path": "pgs/test/test_discord_release.py",
       "category": "tests",
-      "occurrences": 15
+      "occurrences": 14
     },
     {
       "path": "pgs/test/test_encounter_window_java.py",
@@ -4260,7 +4285,7 @@
     {
       "path": "pgs/test/test_event_settings_java.py",
       "category": "tests",
-      "occurrences": 5
+      "occurrences": 4
     },
     {
       "path": "pgs/test/test_game_bridge_dispatch_java.py",
@@ -4300,7 +4325,7 @@
     {
       "path": "pgs/test/test_game_update.py",
       "category": "tests",
-      "occurrences": 6
+      "occurrences": 5
     },
     {
       "path": "pgs/test/test_gpx_java.py",
@@ -4360,12 +4385,12 @@
     {
       "path": "pgs/test/test_log_export_java.py",
       "category": "tests",
-      "occurrences": 5
+      "occurrences": 4
     },
     {
       "path": "pgs/test/test_native_build.py",
       "category": "tests",
-      "occurrences": 15
+      "occurrences": 9
     },
     {
       "path": "pgs/test/test_native_prerequisites.py",
@@ -4385,7 +4410,7 @@
     {
       "path": "pgs/test/test_native_schemas.py",
       "category": "tests",
-      "occurrences": 3
+      "occurrences": 1
     },
     {
       "path": "pgs/test/test_one_shot_automation_java.py",
@@ -4395,12 +4420,12 @@
     {
       "path": "pgs/test/test_packaging.py",
       "category": "tests",
-      "occurrences": 18
+      "occurrences": 12
     },
     {
       "path": "pgs/test/test_pgs_build_options.py",
       "category": "tests",
-      "occurrences": 32
+      "occurrences": 21
     },
     {
       "path": "pgs/test/test_pgs_candidate.py",
@@ -4410,7 +4435,7 @@
     {
       "path": "pgs/test/test_pgs_license.py",
       "category": "tests",
-      "occurrences": 13
+      "occurrences": 9
     },
     {
       "path": "pgs/test/test_pgs_native_aliases_native.py",
@@ -4420,12 +4445,12 @@
     {
       "path": "pgs/test/test_pgs_native_identity.py",
       "category": "tests",
-      "occurrences": 85
+      "occurrences": 81
     },
     {
       "path": "pgs/test/test_pgs_oauth_retirement.py",
       "category": "tests",
-      "occurrences": 14
+      "occurrences": 15
     },
     {
       "path": "pgs/test/test_pgs_project_layout.py",
@@ -4445,12 +4470,12 @@
     {
       "path": "pgs/test/test_pgs_release_policy.py",
       "category": "tests",
-      "occurrences": 19
+      "occurrences": 18
     },
     {
       "path": "pgs/test/test_pgs_runtime_identity.py",
       "category": "tests",
-      "occurrences": 51
+      "occurrences": 54
     },
     {
       "path": "pgs/test/test_pgs_update.py",
@@ -4475,7 +4500,7 @@
     {
       "path": "pgs/test/test_release_bundle.py",
       "category": "tests",
-      "occurrences": 21
+      "occurrences": 15
     },
     {
       "path": "pgs/test/test_research_preferences_java.py",
@@ -4550,7 +4575,7 @@
     {
       "path": "pgs/test/test_source_bundle.py",
       "category": "tests",
-      "occurrences": 21
+      "occurrences": 14
     },
     {
       "path": "pgs/test/test_ui_viewport_policy_java.py",
@@ -4585,7 +4610,7 @@
     {
       "path": "pgs/zygisk/loader.cpp",
       "category": "native",
-      "occurrences": 12
+      "occurrences": 13
     },
     {
       "path": "tools/check.py",
@@ -4655,7 +4680,7 @@
     {
       "path": "tools/pgs_branding_audit.py",
       "category": "other",
-      "occurrences": 95
+      "occurrences": 49
     },
     {
       "path": "tools/pgs_reference_inventory.py",
@@ -4685,7 +4710,7 @@
     {
       "path": "tools/source_bundle.py",
       "category": "other",
-      "occurrences": 18
+      "occurrences": 19
     },
     {
       "path": "tools/test_i18n_catalog.py",
@@ -4700,17 +4725,17 @@
     {
       "path": "tools/verify_release.py",
       "category": "other",
-      "occurrences": 12
+      "occurrences": 6
     },
     {
       "path": "website/README.md",
       "category": "other",
-      "occurrences": 18
+      "occurrences": 9
     },
     {
       "path": "website/index.html",
       "category": "other",
-      "occurrences": 15
+      "occurrences": 11
     },
     {
       "path": "website/package-lock.json",
@@ -4728,9 +4753,14 @@
       "occurrences": 2
     },
     {
+      "path": "website/public/logo.svg",
+      "category": "other",
+      "occurrences": 1
+    },
+    {
       "path": "website/src/App.jsx",
       "category": "other",
-      "occurrences": 4
+      "occurrences": 8
     },
     {
       "path": "website/src/assets.js",
@@ -4738,24 +4768,44 @@
       "occurrences": 1
     },
     {
+      "path": "website/src/components/Cooldown.jsx",
+      "category": "other",
+      "occurrences": 1
+    },
+    {
       "path": "website/src/components/Footer.jsx",
       "category": "other",
-      "occurrences": 2
+      "occurrences": 3
+    },
+    {
+      "path": "website/src/components/GetStarted.jsx",
+      "category": "other",
+      "occurrences": 1
+    },
+    {
+      "path": "website/src/components/GuideIndex.jsx",
+      "category": "other",
+      "occurrences": 1
     },
     {
       "path": "website/src/components/Header.jsx",
       "category": "other",
-      "occurrences": 4
+      "occurrences": 1
     },
     {
       "path": "website/src/components/Hero.jsx",
       "category": "other",
-      "occurrences": 2
+      "occurrences": 1
     },
     {
       "path": "website/src/content.en.js",
       "category": "other",
       "occurrences": 17
+    },
+    {
+      "path": "website/src/content.js",
+      "category": "other",
+      "occurrences": 19
     },
     {
       "path": "website/src/content.pt-BR.js",
@@ -4765,7 +4815,7 @@
     {
       "path": "website/src/featureGuides.js",
       "category": "other",
-      "occurrences": 28
+      "occurrences": 27
     },
     {
       "path": "website/src/featureGuides.pt-BR.a.js",
@@ -4803,14 +4853,9 @@
       "occurrences": 24
     },
     {
-      "path": "website/tests/guides.spec.js",
-      "category": "tests",
-      "occurrences": 8
-    },
-    {
       "path": "website/tests/site.spec.js",
       "category": "other",
-      "occurrences": 11
+      "occurrences": 10
     },
     {
       "path": "website/vite.config.js",
@@ -4819,12 +4864,12 @@
     }
   ],
   "abbreviations": {
-    "remaining_files": 510,
-    "remaining_occurrences": 26188,
+    "remaining_files": 513,
+    "remaining_occurrences": 25615,
     "by_form": {
-      "camelcase": 6634,
-      "lowercase": 3858,
-      "uppercase": 15696
+      "camelcase": 5659,
+      "lowercase": 3862,
+      "uppercase": 16094
     },
     "tracked_name_matches": [
       "docs/PGS_BRANDING_AUDIT.md",
@@ -4859,9 +4904,9 @@
     "files": [
       {
         "path": ".github/workflows/ci.yml",
-        "occurrences": 6,
+        "occurrences": 2,
         "by_form": {
-          "uppercase": 6
+          "uppercase": 2
         }
       },
       {
@@ -4880,11 +4925,42 @@
         }
       },
       {
+        "path": ".github/workflows/pgs-same-package-update.yml",
+        "occurrences": 15,
+        "by_form": {
+          "lowercase": 1,
+          "uppercase": 14
+        }
+      },
+      {
+        "path": ".github/workflows/pgs-v0.0.1-release.yml",
+        "occurrences": 16,
+        "by_form": {
+          "lowercase": 1,
+          "uppercase": 15
+        }
+      },
+      {
+        "path": ".github/workflows/pgs-v0.0.2-release.yml",
+        "occurrences": 17,
+        "by_form": {
+          "lowercase": 2,
+          "uppercase": 15
+        }
+      },
+      {
         "path": ".github/workflows/pgs-v0.0.3-candidate.yml",
         "occurrences": 51,
         "by_form": {
           "lowercase": 1,
           "uppercase": 50
+        }
+      },
+      {
+        "path": ".github/workflows/release.yml",
+        "occurrences": 20,
+        "by_form": {
+          "uppercase": 20
         }
       },
       {
@@ -4896,9 +4972,9 @@
       },
       {
         "path": "CONTRIBUTING.md",
-        "occurrences": 4,
+        "occurrences": 2,
         "by_form": {
-          "uppercase": 4
+          "uppercase": 2
         }
       },
       {
@@ -4910,9 +4986,9 @@
       },
       {
         "path": "README.md",
-        "occurrences": 9,
+        "occurrences": 2,
         "by_form": {
-          "uppercase": 9
+          "uppercase": 2
         }
       },
       {
@@ -4938,9 +5014,9 @@
       },
       {
         "path": "docs/BUILDING.md",
-        "occurrences": 2,
+        "occurrences": 21,
         "by_form": {
-          "uppercase": 2
+          "uppercase": 21
         }
       },
       {
@@ -4952,18 +5028,18 @@
       },
       {
         "path": "docs/NATIVE_MIGRATION.md",
-        "occurrences": 6,
-        "by_form": {
-          "lowercase": 1,
-          "uppercase": 5
-        }
-      },
-      {
-        "path": "docs/PGS_BRANDING_AUDIT.md",
         "occurrences": 5,
         "by_form": {
           "lowercase": 1,
           "uppercase": 4
+        }
+      },
+      {
+        "path": "docs/PGS_BRANDING_AUDIT.md",
+        "occurrences": 3,
+        "by_form": {
+          "lowercase": 1,
+          "uppercase": 2
         }
       },
       {
@@ -4997,10 +5073,10 @@
       },
       {
         "path": "docs/PGS_UPDATE_POLICY.md",
-        "occurrences": 8,
+        "occurrences": 6,
         "by_form": {
           "lowercase": 1,
-          "uppercase": 7
+          "uppercase": 5
         }
       },
       {
@@ -5013,9 +5089,9 @@
       },
       {
         "path": "docs/ROOTED.md",
-        "occurrences": 2,
+        "occurrences": 4,
         "by_form": {
-          "uppercase": 2
+          "lowercase": 4
         }
       },
       {
@@ -5140,9 +5216,9 @@
       },
       {
         "path": "pgs/art/java_hooks.cpp",
-        "occurrences": 4,
+        "occurrences": 3,
         "by_form": {
-          "camelcase": 2,
+          "camelcase": 1,
           "lowercase": 2
         }
       },
@@ -5170,9 +5246,9 @@
       },
       {
         "path": "pgs/build.py",
-        "occurrences": 10,
+        "occurrences": 15,
         "by_form": {
-          "uppercase": 10
+          "uppercase": 15
         }
       },
       {
@@ -5184,34 +5260,42 @@
       },
       {
         "path": "pgs/native/CMakeLists.txt",
-        "occurrences": 16,
+        "occurrences": 15,
         "by_form": {
-          "lowercase": 13,
+          "lowercase": 12,
           "uppercase": 3
         }
       },
       {
         "path": "pgs/native/README.md",
-        "occurrences": 9,
+        "occurrences": 2,
         "by_form": {
-          "camelcase": 2,
-          "lowercase": 7
+          "lowercase": 2
+        }
+      },
+      {
+        "path": "pgs/native/account_host.cpp",
+        "occurrences": 427,
+        "by_form": {
+          "camelcase": 55,
+          "lowercase": 22,
+          "uppercase": 350
         }
       },
       {
         "path": "pgs/native/account_host.h",
-        "occurrences": 111,
+        "occurrences": 105,
         "by_form": {
-          "camelcase": 50,
+          "camelcase": 44,
           "lowercase": 2,
           "uppercase": 59
         }
       },
       {
         "path": "pgs/native/account_host_test.cpp",
-        "occurrences": 113,
+        "occurrences": 107,
         "by_form": {
-          "camelcase": 26,
+          "camelcase": 20,
           "lowercase": 19,
           "uppercase": 68
         }
@@ -5251,9 +5335,9 @@
       },
       {
         "path": "pgs/native/adventure_sync_test.cpp",
-        "occurrences": 6,
+        "occurrences": 5,
         "by_form": {
-          "lowercase": 6
+          "lowercase": 5
         }
       },
       {
@@ -5307,9 +5391,9 @@
       },
       {
         "path": "pgs/native/ar_values.cpp",
-        "occurrences": 24,
+        "occurrences": 21,
         "by_form": {
-          "camelcase": 12,
+          "camelcase": 9,
           "lowercase": 8,
           "uppercase": 4
         }
@@ -5324,9 +5408,9 @@
       },
       {
         "path": "pgs/native/auto_boost.cpp",
-        "occurrences": 20,
+        "occurrences": 16,
         "by_form": {
-          "camelcase": 12,
+          "camelcase": 8,
           "lowercase": 7,
           "uppercase": 1
         }
@@ -5348,9 +5432,9 @@
       },
       {
         "path": "pgs/native/auto_raid.cpp",
-        "occurrences": 93,
+        "occurrences": 89,
         "by_form": {
-          "camelcase": 16,
+          "camelcase": 12,
           "lowercase": 72,
           "uppercase": 5
         }
@@ -5397,18 +5481,18 @@
       },
       {
         "path": "pgs/native/auto_raid_runtime_test.cpp",
-        "occurrences": 156,
+        "occurrences": 152,
         "by_form": {
-          "camelcase": 11,
+          "camelcase": 7,
           "lowercase": 137,
           "uppercase": 8
         }
       },
       {
         "path": "pgs/native/auto_rocket.cpp",
-        "occurrences": 26,
+        "occurrences": 22,
         "by_form": {
-          "camelcase": 12,
+          "camelcase": 8,
           "lowercase": 12,
           "uppercase": 2
         }
@@ -5445,18 +5529,18 @@
       },
       {
         "path": "pgs/native/auto_throw_controller.inc",
-        "occurrences": 19,
+        "occurrences": 18,
         "by_form": {
-          "camelcase": 8,
+          "camelcase": 7,
           "lowercase": 7,
           "uppercase": 4
         }
       },
       {
         "path": "pgs/native/auto_throw_controller_test.cpp",
-        "occurrences": 29,
+        "occurrences": 28,
         "by_form": {
-          "camelcase": 8,
+          "camelcase": 7,
           "lowercase": 4,
           "uppercase": 17
         }
@@ -5480,9 +5564,9 @@
       },
       {
         "path": "pgs/native/batch_evolution.cpp",
-        "occurrences": 27,
+        "occurrences": 23,
         "by_form": {
-          "camelcase": 13,
+          "camelcase": 9,
           "lowercase": 11,
           "uppercase": 3
         }
@@ -5512,18 +5596,18 @@
       },
       {
         "path": "pgs/native/batch_evolution_runtime_test.cpp",
-        "occurrences": 21,
+        "occurrences": 17,
         "by_form": {
-          "camelcase": 9,
+          "camelcase": 5,
           "lowercase": 7,
           "uppercase": 5
         }
       },
       {
         "path": "pgs/native/battery.cpp",
-        "occurrences": 27,
+        "occurrences": 20,
         "by_form": {
-          "camelcase": 13,
+          "camelcase": 6,
           "lowercase": 6,
           "uppercase": 8
         }
@@ -5577,9 +5661,9 @@
       },
       {
         "path": "pgs/native/buddy_emotion.cpp",
-        "occurrences": 25,
+        "occurrences": 21,
         "by_form": {
-          "camelcase": 13,
+          "camelcase": 9,
           "lowercase": 9,
           "uppercase": 3
         }
@@ -5608,9 +5692,9 @@
       },
       {
         "path": "pgs/native/buddy_emotion_runtime_test.cpp",
-        "occurrences": 25,
+        "occurrences": 24,
         "by_form": {
-          "camelcase": 6,
+          "camelcase": 5,
           "lowercase": 9,
           "uppercase": 10
         }
@@ -5641,54 +5725,54 @@
       },
       {
         "path": "pgs/native/camera_host.cpp",
-        "occurrences": 348,
+        "occurrences": 338,
         "by_form": {
-          "camelcase": 74,
-          "lowercase": 20,
+          "camelcase": 65,
+          "lowercase": 19,
           "uppercase": 254
         }
       },
       {
         "path": "pgs/native/camera_host.h",
-        "occurrences": 124,
+        "occurrences": 121,
         "by_form": {
-          "camelcase": 64,
+          "camelcase": 61,
           "lowercase": 2,
           "uppercase": 58
         }
       },
       {
         "path": "pgs/native/camera_host_test.cpp",
-        "occurrences": 94,
+        "occurrences": 89,
         "by_form": {
-          "camelcase": 35,
+          "camelcase": 30,
           "lowercase": 14,
           "uppercase": 45
         }
       },
       {
         "path": "pgs/native/camera_metadata.cpp",
-        "occurrences": 149,
+        "occurrences": 128,
         "by_form": {
-          "camelcase": 48,
+          "camelcase": 27,
           "lowercase": 4,
           "uppercase": 97
         }
       },
       {
         "path": "pgs/native/camera_metadata.h",
-        "occurrences": 91,
+        "occurrences": 90,
         "by_form": {
-          "camelcase": 19,
+          "camelcase": 18,
           "lowercase": 8,
           "uppercase": 64
         }
       },
       {
         "path": "pgs/native/camera_metadata_test.cpp",
-        "occurrences": 132,
+        "occurrences": 112,
         "by_form": {
-          "camelcase": 50,
+          "camelcase": 30,
           "lowercase": 4,
           "uppercase": 78
         }
@@ -5790,9 +5874,9 @@
       },
       {
         "path": "pgs/native/catch_chance.cpp",
-        "occurrences": 28,
+        "occurrences": 24,
         "by_form": {
-          "camelcase": 13,
+          "camelcase": 9,
           "lowercase": 14,
           "uppercase": 1
         }
@@ -5807,9 +5891,9 @@
       },
       {
         "path": "pgs/native/catch_chance_runtime_test.cpp",
-        "occurrences": 28,
+        "occurrences": 27,
         "by_form": {
-          "camelcase": 3,
+          "camelcase": 2,
           "lowercase": 25
         }
       },
@@ -5938,9 +6022,9 @@
       },
       {
         "path": "pgs/native/catch_wait.cpp",
-        "occurrences": 41,
+        "occurrences": 30,
         "by_form": {
-          "camelcase": 24,
+          "camelcase": 13,
           "lowercase": 6,
           "uppercase": 11
         }
@@ -5962,44 +6046,44 @@
       },
       {
         "path": "pgs/native/catch_wait_test.cpp",
-        "occurrences": 11,
+        "occurrences": 10,
         "by_form": {
-          "camelcase": 8,
+          "camelcase": 7,
           "lowercase": 3
         }
       },
       {
         "path": "pgs/native/combat_host.cpp",
-        "occurrences": 401,
+        "occurrences": 393,
         "by_form": {
-          "camelcase": 69,
+          "camelcase": 61,
           "lowercase": 39,
           "uppercase": 293
         }
       },
       {
         "path": "pgs/native/combat_host.h",
-        "occurrences": 101,
+        "occurrences": 100,
         "by_form": {
-          "camelcase": 43,
+          "camelcase": 42,
           "lowercase": 4,
           "uppercase": 54
         }
       },
       {
         "path": "pgs/native/combat_host_test.cpp",
-        "occurrences": 142,
+        "occurrences": 140,
         "by_form": {
-          "camelcase": 19,
+          "camelcase": 17,
           "lowercase": 4,
           "uppercase": 119
         }
       },
       {
         "path": "pgs/native/cutscene_skip.cpp",
-        "occurrences": 82,
+        "occurrences": 69,
         "by_form": {
-          "camelcase": 19,
+          "camelcase": 6,
           "lowercase": 10,
           "uppercase": 53
         }
@@ -6014,9 +6098,9 @@
       },
       {
         "path": "pgs/native/cutscene_skip_test.cpp",
-        "occurrences": 16,
+        "occurrences": 15,
         "by_form": {
-          "camelcase": 4,
+          "camelcase": 3,
           "lowercase": 12
         }
       },
@@ -6118,36 +6202,36 @@
       },
       {
         "path": "pgs/native/encounter_host.cpp",
-        "occurrences": 509,
+        "occurrences": 491,
         "by_form": {
-          "camelcase": 126,
+          "camelcase": 108,
           "lowercase": 117,
           "uppercase": 266
         }
       },
       {
         "path": "pgs/native/encounter_host.h",
-        "occurrences": 72,
+        "occurrences": 71,
         "by_form": {
-          "camelcase": 34,
+          "camelcase": 33,
           "lowercase": 15,
           "uppercase": 23
         }
       },
       {
         "path": "pgs/native/encounter_host_test.cpp",
-        "occurrences": 82,
+        "occurrences": 81,
         "by_form": {
-          "camelcase": 20,
+          "camelcase": 19,
           "lowercase": 32,
           "uppercase": 30
         }
       },
       {
         "path": "pgs/native/events/event_collector.cpp",
-        "occurrences": 146,
+        "occurrences": 132,
         "by_form": {
-          "camelcase": 18,
+          "camelcase": 4,
           "lowercase": 10,
           "uppercase": 118
         }
@@ -6169,9 +6253,9 @@
       },
       {
         "path": "pgs/native/evolve_transfer.cpp",
-        "occurrences": 58,
+        "occurrences": 54,
         "by_form": {
-          "camelcase": 26,
+          "camelcase": 22,
           "lowercase": 27,
           "uppercase": 5
         }
@@ -6193,9 +6277,9 @@
       },
       {
         "path": "pgs/native/evolve_transfer_runtime_test.cpp",
-        "occurrences": 44,
+        "occurrences": 40,
         "by_form": {
-          "camelcase": 21,
+          "camelcase": 17,
           "lowercase": 19,
           "uppercase": 4
         }
@@ -6209,9 +6293,9 @@
       },
       {
         "path": "pgs/native/gift_batch.cpp",
-        "occurrences": 30,
+        "occurrences": 26,
         "by_form": {
-          "camelcase": 17,
+          "camelcase": 13,
           "lowercase": 11,
           "uppercase": 2
         }
@@ -6226,9 +6310,9 @@
       },
       {
         "path": "pgs/native/gift_batch_test.cpp",
-        "occurrences": 27,
+        "occurrences": 23,
         "by_form": {
-          "camelcase": 10,
+          "camelcase": 6,
           "lowercase": 12,
           "uppercase": 5
         }
@@ -6273,9 +6357,9 @@
       },
       {
         "path": "pgs/native/gym_repeat.cpp",
-        "occurrences": 76,
+        "occurrences": 65,
         "by_form": {
-          "camelcase": 23,
+          "camelcase": 12,
           "lowercase": 11,
           "uppercase": 42
         }
@@ -6298,9 +6382,9 @@
       },
       {
         "path": "pgs/native/gym_repeat_runtime_test.cpp",
-        "occurrences": 33,
+        "occurrences": 27,
         "by_form": {
-          "camelcase": 19,
+          "camelcase": 13,
           "lowercase": 9,
           "uppercase": 5
         }
@@ -6314,27 +6398,27 @@
       },
       {
         "path": "pgs/native/gym_runtime.cpp",
-        "occurrences": 36,
+        "occurrences": 32,
         "by_form": {
-          "camelcase": 15,
+          "camelcase": 11,
           "lowercase": 16,
           "uppercase": 5
         }
       },
       {
         "path": "pgs/native/gym_runtime_test.cpp",
-        "occurrences": 14,
+        "occurrences": 13,
         "by_form": {
-          "camelcase": 6,
+          "camelcase": 5,
           "lowercase": 4,
           "uppercase": 4
         }
       },
       {
         "path": "pgs/native/heal.cpp",
-        "occurrences": 35,
+        "occurrences": 31,
         "by_form": {
-          "camelcase": 16,
+          "camelcase": 12,
           "lowercase": 15,
           "uppercase": 4
         }
@@ -6349,9 +6433,9 @@
       },
       {
         "path": "pgs/native/heal_runtime_test.cpp",
-        "occurrences": 34,
+        "occurrences": 30,
         "by_form": {
-          "camelcase": 12,
+          "camelcase": 8,
           "lowercase": 20,
           "uppercase": 2
         }
@@ -6375,27 +6459,27 @@
       },
       {
         "path": "pgs/native/hook_engine_diag.h",
-        "occurrences": 29,
+        "occurrences": 23,
         "by_form": {
-          "camelcase": 10,
+          "camelcase": 4,
           "lowercase": 3,
           "uppercase": 16
         }
       },
       {
         "path": "pgs/native/hook_engine_near_test.cpp",
-        "occurrences": 22,
+        "occurrences": 20,
         "by_form": {
-          "camelcase": 5,
-          "lowercase": 13,
+          "camelcase": 4,
+          "lowercase": 12,
           "uppercase": 4
         }
       },
       {
         "path": "pgs/native/incense_guard.cpp",
-        "occurrences": 24,
+        "occurrences": 20,
         "by_form": {
-          "camelcase": 11,
+          "camelcase": 7,
           "lowercase": 12,
           "uppercase": 1
         }
@@ -6424,9 +6508,9 @@
       },
       {
         "path": "pgs/native/incense_guard_runtime_test.cpp",
-        "occurrences": 20,
+        "occurrences": 16,
         "by_form": {
-          "camelcase": 9,
+          "camelcase": 5,
           "lowercase": 11
         }
       },
@@ -6483,27 +6567,27 @@
       },
       {
         "path": "pgs/native/interaction_host.cpp",
-        "occurrences": 445,
+        "occurrences": 431,
         "by_form": {
-          "camelcase": 96,
+          "camelcase": 81,
           "lowercase": 48,
-          "uppercase": 301
+          "uppercase": 302
         }
       },
       {
         "path": "pgs/native/interaction_host.h",
-        "occurrences": 175,
+        "occurrences": 172,
         "by_form": {
-          "camelcase": 34,
+          "camelcase": 31,
           "lowercase": 1,
           "uppercase": 140
         }
       },
       {
         "path": "pgs/native/interaction_host_test.cpp",
-        "occurrences": 307,
+        "occurrences": 299,
         "by_form": {
-          "camelcase": 52,
+          "camelcase": 44,
           "lowercase": 10,
           "uppercase": 245
         }
@@ -6526,18 +6610,18 @@
       },
       {
         "path": "pgs/native/inventory_host.cpp",
-        "occurrences": 137,
+        "occurrences": 135,
         "by_form": {
-          "camelcase": 41,
+          "camelcase": 39,
           "lowercase": 40,
           "uppercase": 56
         }
       },
       {
         "path": "pgs/native/inventory_host.h",
-        "occurrences": 27,
+        "occurrences": 26,
         "by_form": {
-          "camelcase": 20,
+          "camelcase": 19,
           "lowercase": 1,
           "uppercase": 6
         }
@@ -6613,18 +6697,18 @@
       },
       {
         "path": "pgs/native/iv_panel.cpp",
-        "occurrences": 20,
+        "occurrences": 16,
         "by_form": {
-          "camelcase": 11,
+          "camelcase": 7,
           "lowercase": 7,
           "uppercase": 2
         }
       },
       {
         "path": "pgs/native/iv_panel_test.cpp",
-        "occurrences": 8,
+        "occurrences": 5,
         "by_form": {
-          "camelcase": 4,
+          "camelcase": 1,
           "lowercase": 4
         }
       },
@@ -6639,9 +6723,8 @@
       },
       {
         "path": "pgs/native/managed_handle_abi.h",
-        "occurrences": 17,
+        "occurrences": 14,
         "by_form": {
-          "camelcase": 3,
           "lowercase": 1,
           "uppercase": 13
         }
@@ -6656,90 +6739,83 @@
       },
       {
         "path": "pgs/native/map_auto_throw_controller.inc",
-        "occurrences": 12,
+        "occurrences": 11,
         "by_form": {
-          "camelcase": 9,
+          "camelcase": 8,
           "lowercase": 1,
           "uppercase": 2
         }
       },
       {
         "path": "pgs/native/map_auto_throw_controller_test.cpp",
-        "occurrences": 34,
+        "occurrences": 33,
         "by_form": {
-          "camelcase": 9,
+          "camelcase": 8,
           "lowercase": 3,
           "uppercase": 22
         }
       },
       {
         "path": "pgs/native/map_auto_throw_game.inc",
-        "occurrences": 29,
+        "occurrences": 27,
         "by_form": {
-          "camelcase": 12,
+          "camelcase": 10,
           "lowercase": 10,
           "uppercase": 7
         }
       },
       {
         "path": "pgs/native/map_poi.cpp",
-        "occurrences": 149,
+        "occurrences": 103,
         "by_form": {
-          "camelcase": 46,
           "lowercase": 1,
           "uppercase": 102
         }
       },
       {
         "path": "pgs/native/map_poi.h",
-        "occurrences": 76,
+        "occurrences": 47,
         "by_form": {
-          "camelcase": 29,
           "lowercase": 1,
           "uppercase": 46
         }
       },
       {
         "path": "pgs/native/map_poi_independent_test.cpp",
-        "occurrences": 17,
+        "occurrences": 11,
         "by_form": {
-          "camelcase": 6,
           "lowercase": 2,
           "uppercase": 9
         }
       },
       {
         "path": "pgs/native/map_poi_test.cpp",
-        "occurrences": 127,
+        "occurrences": 59,
         "by_form": {
-          "camelcase": 68,
           "lowercase": 4,
           "uppercase": 55
         }
       },
       {
         "path": "pgs/native/map_tap.cpp",
-        "occurrences": 67,
+        "occurrences": 54,
         "by_form": {
-          "camelcase": 13,
           "lowercase": 3,
           "uppercase": 51
         }
       },
       {
         "path": "pgs/native/map_tap.h",
-        "occurrences": 54,
+        "occurrences": 34,
         "by_form": {
-          "camelcase": 20,
           "lowercase": 2,
           "uppercase": 32
         }
       },
       {
         "path": "pgs/native/map_tap_test.cpp",
-        "occurrences": 72,
+        "occurrences": 52,
         "by_form": {
-          "camelcase": 20,
           "lowercase": 4,
           "uppercase": 48
         }
@@ -6753,9 +6829,9 @@
       },
       {
         "path": "pgs/native/max_orbs.cpp",
-        "occurrences": 14,
+        "occurrences": 11,
         "by_form": {
-          "camelcase": 7,
+          "camelcase": 4,
           "lowercase": 6,
           "uppercase": 1
         }
@@ -6776,9 +6852,9 @@
       },
       {
         "path": "pgs/native/menu_visibility.cpp",
-        "occurrences": 25,
+        "occurrences": 15,
         "by_form": {
-          "camelcase": 14,
+          "camelcase": 4,
           "lowercase": 8,
           "uppercase": 3
         }
@@ -6841,17 +6917,17 @@
       },
       {
         "path": "pgs/native/pgs_native.cpp",
-        "occurrences": 116,
+        "occurrences": 117,
         "by_form": {
-          "lowercase": 87,
+          "lowercase": 88,
           "uppercase": 29
         }
       },
       {
         "path": "pgs/native/pgs_native_api.h",
-        "occurrences": 49,
+        "occurrences": 50,
         "by_form": {
-          "lowercase": 25,
+          "lowercase": 26,
           "uppercase": 24
         }
       },
@@ -6865,9 +6941,9 @@
       },
       {
         "path": "pgs/native/profile_scroll.cpp",
-        "occurrences": 37,
+        "occurrences": 24,
         "by_form": {
-          "camelcase": 15,
+          "camelcase": 2,
           "lowercase": 5,
           "uppercase": 17
         }
@@ -6902,9 +6978,9 @@
       },
       {
         "path": "pgs/native/pvp_keep.cpp",
-        "occurrences": 64,
+        "occurrences": 56,
         "by_form": {
-          "camelcase": 15,
+          "camelcase": 7,
           "lowercase": 24,
           "uppercase": 25
         }
@@ -6976,9 +7052,9 @@
       },
       {
         "path": "pgs/native/quickball_host.cpp",
-        "occurrences": 229,
+        "occurrences": 220,
         "by_form": {
-          "camelcase": 66,
+          "camelcase": 57,
           "lowercase": 18,
           "uppercase": 145
         }
@@ -6994,45 +7070,45 @@
       },
       {
         "path": "pgs/native/quickball_host_test.cpp",
-        "occurrences": 50,
+        "occurrences": 49,
         "by_form": {
-          "camelcase": 26,
+          "camelcase": 25,
           "lowercase": 16,
           "uppercase": 8
         }
       },
       {
         "path": "pgs/native/quickball_metadata.cpp",
-        "occurrences": 96,
+        "occurrences": 78,
         "by_form": {
-          "camelcase": 42,
+          "camelcase": 24,
           "lowercase": 3,
           "uppercase": 51
         }
       },
       {
         "path": "pgs/native/quickball_metadata.h",
-        "occurrences": 342,
+        "occurrences": 340,
         "by_form": {
-          "camelcase": 22,
+          "camelcase": 20,
           "lowercase": 10,
           "uppercase": 310
         }
       },
       {
         "path": "pgs/native/quickball_metadata_test.cpp",
-        "occurrences": 71,
+        "occurrences": 66,
         "by_form": {
-          "camelcase": 22,
+          "camelcase": 17,
           "lowercase": 4,
           "uppercase": 45
         }
       },
       {
         "path": "pgs/native/remote_gym.cpp",
-        "occurrences": 33,
+        "occurrences": 29,
         "by_form": {
-          "camelcase": 13,
+          "camelcase": 9,
           "lowercase": 18,
           "uppercase": 2
         }
@@ -7062,18 +7138,18 @@
       },
       {
         "path": "pgs/native/remote_gym_runtime_test.cpp",
-        "occurrences": 26,
+        "occurrences": 25,
         "by_form": {
-          "camelcase": 8,
+          "camelcase": 7,
           "lowercase": 14,
           "uppercase": 4
         }
       },
       {
         "path": "pgs/native/research.cpp",
-        "occurrences": 64,
+        "occurrences": 60,
         "by_form": {
-          "camelcase": 17,
+          "camelcase": 13,
           "lowercase": 40,
           "uppercase": 7
         }
@@ -7179,9 +7255,9 @@
       },
       {
         "path": "pgs/native/rocket_swap.cpp",
-        "occurrences": 28,
+        "occurrences": 21,
         "by_form": {
-          "camelcase": 12,
+          "camelcase": 5,
           "lowercase": 11,
           "uppercase": 5
         }
@@ -7195,9 +7271,9 @@
       },
       {
         "path": "pgs/native/route_gift.cpp",
-        "occurrences": 37,
+        "occurrences": 30,
         "by_form": {
-          "camelcase": 13,
+          "camelcase": 6,
           "lowercase": 18,
           "uppercase": 6
         }
@@ -7325,53 +7401,53 @@
       },
       {
         "path": "pgs/native/routes_host.cpp",
-        "occurrences": 414,
+        "occurrences": 402,
         "by_form": {
-          "camelcase": 102,
+          "camelcase": 90,
           "lowercase": 13,
           "uppercase": 299
         }
       },
       {
         "path": "pgs/native/routes_host.h",
-        "occurrences": 127,
+        "occurrences": 125,
         "by_form": {
-          "camelcase": 51,
+          "camelcase": 49,
           "lowercase": 3,
           "uppercase": 73
         }
       },
       {
         "path": "pgs/native/routes_host_test.cpp",
-        "occurrences": 116,
+        "occurrences": 111,
         "by_form": {
-          "camelcase": 21,
+          "camelcase": 16,
           "lowercase": 4,
           "uppercase": 91
         }
       },
       {
         "path": "pgs/native/routes_metadata.cpp",
-        "occurrences": 39,
+        "occurrences": 28,
         "by_form": {
-          "camelcase": 20,
+          "camelcase": 9,
           "lowercase": 3,
           "uppercase": 16
         }
       },
       {
         "path": "pgs/native/routes_metadata.h",
-        "occurrences": 12,
+        "occurrences": 11,
         "by_form": {
-          "camelcase": 8,
+          "camelcase": 7,
           "lowercase": 4
         }
       },
       {
         "path": "pgs/native/routes_metadata_test.cpp",
-        "occurrences": 38,
+        "occurrences": 33,
         "by_form": {
-          "camelcase": 16,
+          "camelcase": 11,
           "lowercase": 4,
           "uppercase": 18
         }
@@ -7484,18 +7560,18 @@
       },
       {
         "path": "pgs/native/runtime_bootstrap.cpp",
-        "occurrences": 178,
+        "occurrences": 128,
         "by_form": {
-          "camelcase": 95,
+          "camelcase": 45,
           "lowercase": 2,
           "uppercase": 81
         }
       },
       {
         "path": "pgs/native/runtime_bootstrap.h",
-        "occurrences": 79,
+        "occurrences": 72,
         "by_form": {
-          "camelcase": 31,
+          "camelcase": 24,
           "lowercase": 13,
           "uppercase": 35
         }
@@ -7511,9 +7587,9 @@
       },
       {
         "path": "pgs/native/runtime_bootstrap_test.cpp",
-        "occurrences": 103,
+        "occurrences": 97,
         "by_form": {
-          "camelcase": 44,
+          "camelcase": 38,
           "lowercase": 4,
           "uppercase": 55
         }
@@ -7538,9 +7614,9 @@
       },
       {
         "path": "pgs/native/runtime_host.cpp",
-        "occurrences": 153,
+        "occurrences": 141,
         "by_form": {
-          "camelcase": 77,
+          "camelcase": 65,
           "lowercase": 39,
           "uppercase": 37
         }
@@ -7556,18 +7632,18 @@
       },
       {
         "path": "pgs/native/runtime_host_diag_test.cpp",
-        "occurrences": 72,
+        "occurrences": 70,
         "by_form": {
-          "camelcase": 24,
+          "camelcase": 22,
           "lowercase": 21,
           "uppercase": 27
         }
       },
       {
         "path": "pgs/native/runtime_host_flow_test.cpp",
-        "occurrences": 121,
+        "occurrences": 105,
         "by_form": {
-          "camelcase": 72,
+          "camelcase": 56,
           "lowercase": 25,
           "uppercase": 24
         }
@@ -7590,45 +7666,42 @@
       },
       {
         "path": "pgs/native/runtime_metadata.cpp",
-        "occurrences": 164,
+        "occurrences": 137,
         "by_form": {
-          "camelcase": 27,
           "lowercase": 3,
           "uppercase": 134
         }
       },
       {
         "path": "pgs/native/runtime_metadata.h",
-        "occurrences": 132,
+        "occurrences": 66,
         "by_form": {
-          "camelcase": 66,
           "lowercase": 3,
           "uppercase": 63
         }
       },
       {
         "path": "pgs/native/runtime_metadata_test.cpp",
-        "occurrences": 184,
+        "occurrences": 112,
         "by_form": {
-          "camelcase": 72,
           "lowercase": 4,
           "uppercase": 108
         }
       },
       {
         "path": "pgs/native/runtime_transport.cpp",
-        "occurrences": 189,
+        "occurrences": 186,
         "by_form": {
-          "camelcase": 13,
+          "camelcase": 10,
           "lowercase": 1,
           "uppercase": 175
         }
       },
       {
         "path": "pgs/native/runtime_transport.h",
-        "occurrences": 86,
+        "occurrences": 82,
         "by_form": {
-          "camelcase": 18,
+          "camelcase": 14,
           "lowercase": 2,
           "uppercase": 66
         }
@@ -7651,9 +7724,9 @@
       },
       {
         "path": "pgs/native/runtime_transport_test.cpp",
-        "occurrences": 141,
+        "occurrences": 137,
         "by_form": {
-          "camelcase": 18,
+          "camelcase": 14,
           "lowercase": 4,
           "uppercase": 119
         }
@@ -7732,9 +7805,9 @@
       },
       {
         "path": "pgs/native/session_stats.cpp",
-        "occurrences": 15,
+        "occurrences": 12,
         "by_form": {
-          "camelcase": 9,
+          "camelcase": 6,
           "lowercase": 5,
           "uppercase": 1
         }
@@ -7783,27 +7856,27 @@
       },
       {
         "path": "pgs/native/shared_host.cpp",
-        "occurrences": 242,
+        "occurrences": 226,
         "by_form": {
-          "camelcase": 104,
+          "camelcase": 88,
           "lowercase": 41,
           "uppercase": 97
         }
       },
       {
         "path": "pgs/native/shared_host.h",
-        "occurrences": 36,
+        "occurrences": 35,
         "by_form": {
-          "camelcase": 24,
+          "camelcase": 23,
           "lowercase": 1,
           "uppercase": 11
         }
       },
       {
         "path": "pgs/native/shared_host_flow_test.cpp",
-        "occurrences": 147,
+        "occurrences": 143,
         "by_form": {
-          "camelcase": 88,
+          "camelcase": 84,
           "lowercase": 33,
           "uppercase": 26
         }
@@ -7818,18 +7891,18 @@
       },
       {
         "path": "pgs/native/shared_metadata.cpp",
-        "occurrences": 635,
+        "occurrences": 606,
         "by_form": {
-          "camelcase": 43,
+          "camelcase": 14,
           "lowercase": 7,
           "uppercase": 585
         }
       },
       {
         "path": "pgs/native/shared_metadata.h",
-        "occurrences": 98,
+        "occurrences": 95,
         "by_form": {
-          "camelcase": 27,
+          "camelcase": 24,
           "lowercase": 20,
           "uppercase": 51
         }
@@ -7852,18 +7925,18 @@
       },
       {
         "path": "pgs/native/shared_metadata_test.cpp",
-        "occurrences": 68,
+        "occurrences": 63,
         "by_form": {
-          "camelcase": 17,
+          "camelcase": 12,
           "lowercase": 4,
           "uppercase": 47
         }
       },
       {
         "path": "pgs/native/shiny_scan.cpp",
-        "occurrences": 30,
+        "occurrences": 26,
         "by_form": {
-          "camelcase": 16,
+          "camelcase": 12,
           "lowercase": 9,
           "uppercase": 5
         }
@@ -7892,9 +7965,9 @@
       },
       {
         "path": "pgs/native/shundo.cpp",
-        "occurrences": 40,
+        "occurrences": 33,
         "by_form": {
-          "camelcase": 17,
+          "camelcase": 10,
           "lowercase": 9,
           "uppercase": 14
         }
@@ -7909,9 +7982,9 @@
       },
       {
         "path": "pgs/native/smart_battle.cpp",
-        "occurrences": 48,
+        "occurrences": 40,
         "by_form": {
-          "camelcase": 17,
+          "camelcase": 9,
           "lowercase": 20,
           "uppercase": 11
         }
@@ -7940,9 +8013,9 @@
       },
       {
         "path": "pgs/native/smart_catch.cpp",
-        "occurrences": 95,
+        "occurrences": 94,
         "by_form": {
-          "camelcase": 19,
+          "camelcase": 18,
           "lowercase": 24,
           "uppercase": 52
         }
@@ -7958,9 +8031,9 @@
       },
       {
         "path": "pgs/native/smart_catch_binding.cpp",
-        "occurrences": 224,
+        "occurrences": 204,
         "by_form": {
-          "camelcase": 51,
+          "camelcase": 31,
           "lowercase": 25,
           "uppercase": 148
         }
@@ -7994,9 +8067,9 @@
       },
       {
         "path": "pgs/native/smart_catch_test.cpp",
-        "occurrences": 122,
+        "occurrences": 121,
         "by_form": {
-          "camelcase": 10,
+          "camelcase": 9,
           "lowercase": 92,
           "uppercase": 20
         }
@@ -8019,9 +8092,9 @@
       },
       {
         "path": "pgs/native/spawn_host.cpp",
-        "occurrences": 86,
+        "occurrences": 84,
         "by_form": {
-          "camelcase": 23,
+          "camelcase": 21,
           "lowercase": 13,
           "uppercase": 50
         }
@@ -8081,9 +8154,9 @@
       },
       {
         "path": "pgs/native/spin_host.cpp",
-        "occurrences": 86,
+        "occurrences": 84,
         "by_form": {
-          "camelcase": 38,
+          "camelcase": 36,
           "lowercase": 7,
           "uppercase": 41
         }
@@ -8099,18 +8172,18 @@
       },
       {
         "path": "pgs/native/spin_host_test.cpp",
-        "occurrences": 45,
+        "occurrences": 43,
         "by_form": {
-          "camelcase": 26,
+          "camelcase": 24,
           "lowercase": 9,
           "uppercase": 10
         }
       },
       {
         "path": "pgs/native/storage_iv.cpp",
-        "occurrences": 40,
+        "occurrences": 31,
         "by_form": {
-          "camelcase": 17,
+          "camelcase": 8,
           "lowercase": 12,
           "uppercase": 11
         }
@@ -8161,9 +8234,9 @@
       },
       {
         "path": "pgs/native/test_runner.cpp",
-        "occurrences": 7,
+        "occurrences": 6,
         "by_form": {
-          "lowercase": 5,
+          "lowercase": 4,
           "uppercase": 2
         }
       },
@@ -8184,25 +8257,25 @@
       },
       {
         "path": "pgs/native/throws.cpp",
-        "occurrences": 33,
+        "occurrences": 31,
         "by_form": {
-          "camelcase": 27,
+          "camelcase": 25,
           "lowercase": 6
         }
       },
       {
         "path": "pgs/native/throws.h",
-        "occurrences": 13,
+        "occurrences": 12,
         "by_form": {
-          "camelcase": 11,
+          "camelcase": 10,
           "lowercase": 2
         }
       },
       {
         "path": "pgs/native/throws_test.cpp",
-        "occurrences": 15,
+        "occurrences": 13,
         "by_form": {
-          "camelcase": 9,
+          "camelcase": 7,
           "lowercase": 6
         }
       },
@@ -8330,18 +8403,18 @@
       },
       {
         "path": "pgs/native/unity_scheduler.cpp",
-        "occurrences": 66,
+        "occurrences": 63,
         "by_form": {
-          "camelcase": 24,
+          "camelcase": 21,
           "lowercase": 4,
           "uppercase": 38
         }
       },
       {
         "path": "pgs/native/unity_scheduler.h",
-        "occurrences": 50,
+        "occurrences": 47,
         "by_form": {
-          "camelcase": 34,
+          "camelcase": 31,
           "lowercase": 1,
           "uppercase": 15
         }
@@ -8357,9 +8430,9 @@
       },
       {
         "path": "pgs/native/unity_scheduler_test.cpp",
-        "occurrences": 30,
+        "occurrences": 28,
         "by_form": {
-          "camelcase": 14,
+          "camelcase": 12,
           "lowercase": 3,
           "uppercase": 13
         }
@@ -8630,10 +8703,17 @@
         }
       },
       {
-        "path": "pgs/nonroot.py",
+        "path": "pgs/nonroot.cmd",
         "occurrences": 2,
         "by_form": {
           "uppercase": 2
+        }
+      },
+      {
+        "path": "pgs/nonroot.py",
+        "occurrences": 9,
+        "by_form": {
+          "uppercase": 9
         }
       },
       {
@@ -8653,25 +8733,25 @@
       },
       {
         "path": "pgs/pgs_rebrand.py",
-        "occurrences": 18,
+        "occurrences": 19,
         "by_form": {
           "lowercase": 10,
-          "uppercase": 8
+          "uppercase": 9
         }
       },
       {
         "path": "pgs/pgs_update.py",
-        "occurrences": 4,
+        "occurrences": 5,
         "by_form": {
-          "uppercase": 4
+          "uppercase": 5
         }
       },
       {
         "path": "pgs/release_apk.py",
         "occurrences": 11,
         "by_form": {
-          "lowercase": 8,
-          "uppercase": 3
+          "lowercase": 7,
+          "uppercase": 4
         }
       },
       {
@@ -8704,9 +8784,9 @@
       },
       {
         "path": "pgs/runtime/native-camera-metadata.js",
-        "occurrences": 3,
+        "occurrences": 2,
         "by_form": {
-          "camelcase": 3
+          "camelcase": 2
         }
       },
       {
@@ -8718,9 +8798,9 @@
       },
       {
         "path": "pgs/runtime/native-core.js",
-        "occurrences": 2,
+        "occurrences": 1,
         "by_form": {
-          "lowercase": 2
+          "lowercase": 1
         }
       },
       {
@@ -8774,27 +8854,6 @@
         }
       },
       {
-        "path": "pgs/test/native-camera-metadata-test.cjs",
-        "occurrences": 4,
-        "by_form": {
-          "camelcase": 4
-        }
-      },
-      {
-        "path": "pgs/test/native-camera-sampler-test.cjs",
-        "occurrences": 1,
-        "by_form": {
-          "camelcase": 1
-        }
-      },
-      {
-        "path": "pgs/test/native-core-test.cjs",
-        "occurrences": 9,
-        "by_form": {
-          "lowercase": 9
-        }
-      },
-      {
         "path": "pgs/test/native-transport-test.cjs",
         "occurrences": 2,
         "by_form": {
@@ -8810,24 +8869,23 @@
       },
       {
         "path": "pgs/test/test_axml.py",
-        "occurrences": 5,
+        "occurrences": 3,
         "by_form": {
           "lowercase": 1,
-          "uppercase": 4
+          "uppercase": 2
         }
       },
       {
         "path": "pgs/test/test_compiled_gameplay.py",
-        "occurrences": 10,
+        "occurrences": 7,
         "by_form": {
-          "uppercase": 10
+          "uppercase": 7
         }
       },
       {
         "path": "pgs/test/test_game_update.py",
-        "occurrences": 3,
+        "occurrences": 2,
         "by_form": {
-          "lowercase": 1,
           "uppercase": 2
         }
       },
@@ -8847,16 +8905,16 @@
       },
       {
         "path": "pgs/test/test_log_export_java.py",
-        "occurrences": 2,
+        "occurrences": 1,
         "by_form": {
-          "uppercase": 2
+          "uppercase": 1
         }
       },
       {
         "path": "pgs/test/test_native_build.py",
-        "occurrences": 12,
+        "occurrences": 8,
         "by_form": {
-          "lowercase": 12
+          "lowercase": 8
         }
       },
       {
@@ -8867,25 +8925,18 @@
         }
       },
       {
-        "path": "pgs/test/test_native_schemas.py",
+        "path": "pgs/test/test_packaging.py",
         "occurrences": 2,
         "by_form": {
-          "lowercase": 2
-        }
-      },
-      {
-        "path": "pgs/test/test_packaging.py",
-        "occurrences": 8,
-        "by_form": {
-          "uppercase": 8
+          "uppercase": 2
         }
       },
       {
         "path": "pgs/test/test_pgs_build_options.py",
-        "occurrences": 21,
+        "occurrences": 7,
         "by_form": {
           "camelcase": 1,
-          "uppercase": 20
+          "uppercase": 6
         }
       },
       {
@@ -8915,11 +8966,11 @@
       },
       {
         "path": "pgs/test/test_pgs_native_identity.py",
-        "occurrences": 64,
+        "occurrences": 60,
         "by_form": {
           "camelcase": 3,
           "lowercase": 44,
-          "uppercase": 17
+          "uppercase": 13
         }
       },
       {
@@ -8959,11 +9010,11 @@
       },
       {
         "path": "pgs/test/test_pgs_release_policy.py",
-        "occurrences": 8,
+        "occurrences": 7,
         "by_form": {
           "camelcase": 1,
           "lowercase": 3,
-          "uppercase": 4
+          "uppercase": 3
         }
       },
       {
@@ -9034,10 +9085,10 @@
       },
       {
         "path": "tools/pgs_branding_audit.py",
-        "occurrences": 12,
+        "occurrences": 7,
         "by_form": {
           "lowercase": 1,
-          "uppercase": 11
+          "uppercase": 6
         }
       },
       {
@@ -9059,6 +9110,13 @@
         "occurrences": 4,
         "by_form": {
           "uppercase": 4
+        }
+      },
+      {
+        "path": "tools/private_input.py",
+        "occurrences": 3,
+        "by_form": {
+          "uppercase": 3
         }
       },
       {

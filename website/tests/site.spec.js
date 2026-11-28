@@ -168,13 +168,25 @@ test('cooldown trigger and safe groups expand', async ({ page }) => {
 test('PGS release notes accompany the latest download', async ({ page }) => {
   await page.goto('./');
   const releaseNotes = page.locator(
-    '.cta__release a[href="https://github.com/LucianoToscano/PGS/releases/tag/v0.0.5"]'
+    '.cta__release a[href="https://github.com/LucianoToscano/PGS/releases/tag/v0.0.6"]'
   );
   await expect(releaseNotes).toHaveCount(1);
   await expect(releaseNotes).toBeVisible();
   // It must not masquerade as the primary "latest release" call to action.
   await expect(releaseNotes).not.toHaveClass(/btn--primary/);
-  await expect(page.locator('.cta__badge')).toHaveText('Stable');
+  await expect(page.locator('.cta__badge')).toHaveText('Published');
+  await expect(page.getByText('PGS v0.0.6 build', { exact: true })).toBeVisible();
+  await expect(page.locator('.step__body').first()).toContainText('PGS.v0.0.6.apk');
+  const rootFaq = page.locator('.faq__item', { hasText: 'Is a PGS Root build available?' });
+  await rootFaq.locator('summary').click();
+  await expect(rootFaq).toContainText('PGS-Root-module.zip');
+  await page.goto('./?lang=pt-BR');
+  await expect(page.locator('.cta__release a')).toHaveAttribute('href', /v0\.0\.6$/);
+  await expect(page.locator('.cta__badge')).toHaveText('Publicada');
+  await expect(page.locator('.step__body').first()).toContainText('PGS.v0.0.6.apk');
+  const rootFaqPt = page.locator('.faq__item', { hasText: 'Existe uma versão PGS Root?' });
+  await rootFaqPt.locator('summary').click();
+  await expect(rootFaqPt).toContainText('PGS-Root-module.zip');
 });
 
 test('archived menu image is absent and bundled public assets resolve', async ({ page, request }) => {

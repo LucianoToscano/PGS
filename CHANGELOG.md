@@ -1,5 +1,13 @@
 # Changelog
 
+## PGS v0.0.6 — 2026-11-28
+
+- Hundo feed refresh interval set to 60 seconds; corrected external references and added Worker regression tests.
+- Improved permanent build, upstream monitoring and 90-day source backup retention; hardened pinned Maven downloads.
+- Published signed non-root APK (Android versionCode `2026111609`), Root installer and module, with verification receipts and checksums.
+- Owner screenshots confirm the in-app update from v0.0.5 and preservation of session/settings. All nine first-audit follow-ups accepted by the owner; five functional/Root items lack separate detailed test logs.
+- [Full bilingual release notes](https://github.com/LucianoToscano/PGS/releases/tag/v0.0.6).
+
 ## PGS v0.0.5 — 2026-11-28
 
 - Recompiled and signed full Android APK, retaining the existing package and signing certificate; versionCode `2026111608`.

@@ -4,6 +4,14 @@
 
 Este registro acompanha **somente** as versões do PGS. Os documentos históricos da base original permanecem disponíveis pelo histórico Git e pelos avisos legais, mas não são releases do PGS.
 
+## v0.0.6 — 28/11/2026
+
+- Atualização do feed de Hundos a cada 60 segundos, referências externas corrigidas e testes de regressão do Worker.
+- Melhorias no build permanente, monitoramento da origem e retenção de 90 dias dos backups de código; recuperação de falhas temporárias nas dependências Maven fixadas.
+- Publicados APK sem Root assinado (versionCode `2026111609`), instalador Root e módulo, com recibos e checksums.
+- Capturas do responsável confirmam atualização interna da v0.0.5 e preservação da sessão e das configurações. Nove pendências da primeira auditoria aceitas pelo responsável; cinco itens funcionais/Root não possuem registros detalhados separados.
+- [Notas bilíngues completas](https://github.com/LucianoToscano/PGS/releases/tag/v0.0.6).
+
 ## v0.0.5 — 28/11/2026
 
 - APK Android completo recompilado e assinado, com pacote e certificado existentes; versionCode `2026111608`.

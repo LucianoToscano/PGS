@@ -5,6 +5,7 @@
 - [Compilação e assinatura](BUILDING.md)
 - [Política de atualização e certificado](PGS_UPDATE_POLICY.md)
 - [Idiomas no aplicativo](PGS_LANGUAGES.md)
+- [Notas da versão pública PGS v0.0.6](releases/v0.0.6.md)
 - [Notas da candidata PGS v0.0.2](releases/v0.0.2.md)
 - [About do GitHub, workflow Website e migração técnica](PGS_REPOSITORY_SETTINGS.md)
 

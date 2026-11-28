@@ -87,7 +87,7 @@ public class RetiredAuthTest {
                            check=True, capture_output=True, timeout=15)
 
     def test_manual_candidate_workflow_only_uploads_receipts(self):
-        flow = (ROOT / ".github/workflows/pgs-v0.0.3-candidate.yml").read_text(encoding="utf-8")
+        flow = (ROOT / ".github/workflows/pgs-v0.0.4-candidate.yml").read_text(encoding="utf-8")
         self.assertIn("  workflow_dispatch:", flow)
         self.assertNotIn("\n  push:", flow)
         self.assertNotIn("\n  pull_request:", flow)
@@ -108,8 +108,8 @@ public class RetiredAuthTest {
         self.assertIn('test "$missing" = 0', early)
         self.assertNotIn("set -x", early)
         self.assertNotIn("private_input.py", early)
-        self.assertIn("= 2026111606", flow)
-        self.assertIn("d['version_code']==2026111606", flow)
+        self.assertIn("= 2026111607", flow)
+        self.assertIn("d['version_code']==2026111607", flow)
         upload = flow.split("name: Upload verification receipts only", 1)[1].split("      - name:", 1)[0]
         self.assertIn("/PGS.json", upload)
         self.assertIn("/build-info.json", upload)

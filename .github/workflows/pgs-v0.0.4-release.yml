@@ -1,0 +1,43 @@
+name: PGS v0.0.4 - Verified full APK candidate
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - .github/workflows/pgs-v0.0.4-release.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  actions: read
+
+concurrency:
+  group: pgs-v0.0.4-release-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  build:
+    name: Validate PGS identity and build controls
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    env:
+      PGS_BUILD_TOOLS: '36.0.0'
+      PGS_ANDROID_PLATFORM: android-36
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          python-version: '3.12'
+      - name: Verify PGS version identity
+        shell: bash
+        run: |
+          test "$(cat pgs/VERSION)" = "0.0.4"
+          test "$(cat pgs/PGS_LAST_VERSION_CODE)" = "2026111607"
+          grep -q 'com.nianticlabs.pokemongo' pgs/pgs_update.py
+      - name: Test PGS identity and regressions
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -B -m unittest discover -s pgs/test -p 'test_pgs_*.py' -v

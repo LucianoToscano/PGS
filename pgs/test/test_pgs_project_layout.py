@@ -30,9 +30,9 @@ class PgsProjectLayoutTests(unittest.TestCase):
         self.assertIn("-s pgs/test", flow)
         self.assertIn("pgs/build.py", flow)
         self.assertIn("pgs/rooted_installer.py", flow)
-        release = (ROOT / ".github/workflows/pgs-v0.0.2-release.yml").read_text(encoding="utf-8")
+        release = (ROOT / ".github/workflows/pgs-v0.0.4-release.yml").read_text(encoding="utf-8")
         self.assertIn("  workflow_dispatch:", release)
-        # The v0.0.2 reference release workflow is trigger-driven (push on the release branch)
+        # The v0.0.4 reference release workflow is trigger-driven (push on the release branch)
         # and also admits manual dispatch; both are legitimate in the reference.
         self.assertIn("on:", release)
 

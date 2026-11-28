@@ -1,11 +1,11 @@
 {
   "scope": "Git-indexed regular UTF-8 text, excluding NUL-containing files and the snapshot itself",
-  "tracked_files": 2083,
-  "text_files": 1009,
-  "remaining_files": 943,
-  "remaining_occurrences": 30979,
+  "tracked_files": 2085,
+  "text_files": 1011,
+  "remaining_files": 945,
+  "remaining_occurrences": 31061,
   "remaining_by_category": {
-    "documentation": 1427,
+    "documentation": 1417,
     "java": 139,
     "javascript": 9,
     "legal": 5,
@@ -13,7 +13,7 @@
     "other": 2231,
     "release_history": 61,
     "tests": 1063,
-    "workflows": 143
+    "workflows": 235
   },
   "tracked_name_matches": [],
   "files": [
@@ -68,6 +68,16 @@
       "occurrences": 15
     },
     {
+      "path": ".github/workflows/pgs-v0.0.4-candidate.yml",
+      "category": "workflows",
+      "occurrences": 77
+    },
+    {
+      "path": ".github/workflows/pgs-v0.0.4-release.yml",
+      "category": "workflows",
+      "occurrences": 15
+    },
+    {
       "path": ".github/workflows/release.yml",
       "category": "workflows",
       "occurrences": 7
@@ -110,7 +120,7 @@
     {
       "path": "README.md",
       "category": "documentation",
-      "occurrences": 62
+      "occurrences": 56
     },
     {
       "path": "README.pt-BR.md",
@@ -300,12 +310,12 @@
     {
       "path": "docs/releases/v0.0.2.md",
       "category": "documentation",
-      "occurrences": 13
+      "occurrences": 11
     },
     {
       "path": "docs/releases/v0.0.3.md",
       "category": "documentation",
-      "occurrences": 8
+      "occurrences": 6
     },
     {
       "path": "docs/releases/v0.2.0.md",
@@ -4734,12 +4744,12 @@
     }
   ],
   "abbreviations": {
-    "remaining_files": 512,
-    "remaining_occurrences": 25556,
+    "remaining_files": 514,
+    "remaining_occurrences": 25611,
     "by_form": {
       "camelcase": 5659,
-      "lowercase": 3863,
-      "uppercase": 16034
+      "lowercase": 3865,
+      "uppercase": 16087
     },
     "tracked_name_matches": [
       "docs/PGS_BRANDING_AUDIT.md",
@@ -4812,6 +4822,22 @@
       },
       {
         "path": ".github/workflows/pgs-v0.0.3-release.yml",
+        "occurrences": 4,
+        "by_form": {
+          "lowercase": 1,
+          "uppercase": 3
+        }
+      },
+      {
+        "path": ".github/workflows/pgs-v0.0.4-candidate.yml",
+        "occurrences": 51,
+        "by_form": {
+          "lowercase": 1,
+          "uppercase": 50
+        }
+      },
+      {
+        "path": ".github/workflows/pgs-v0.0.4-release.yml",
         "occurrences": 4,
         "by_form": {
           "lowercase": 1,

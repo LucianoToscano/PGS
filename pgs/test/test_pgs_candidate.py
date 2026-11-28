@@ -24,12 +24,12 @@ class PgsCandidateTests(unittest.TestCase):
         self.apk = Path(self.work.name) / "PGS.apk"
         self.identity = {
             "package": pgs_update.GAME_PACKAGE, "split": None, "applications": 1,
-            "versionName": "0.439.0", "versionCode": 2026111606,
+            "versionName": "0.439.0", "versionCode": 2026111607,
             "providers": [{"name": "dev.pgs.BootstrapProvider", "exported": False,
                            "authorities": pgs_update.GAME_PACKAGE + ".pgs.bootstrap"}],
             "activities": [],
         }
-        self.mode = {"pgsVersion": "v0.0.3", "compiledGameplay": True,
+        self.mode = {"pgsVersion": "v0.0.4", "compiledGameplay": True,
                      "gadget": False, "runtimeAbis": ["arm64-v8a", "x86_64"]}
         self.members = {
             "AndroidManifest.xml": b"synthetic manifest",
@@ -78,15 +78,15 @@ class PgsCandidateTests(unittest.TestCase):
                     archive.writestr("classes.dex", b"duplicate")
 
     def verify(self):
-        return candidate.verify(self.apk, tag="v0.0.3", game_version="0.439.0",
-                                game_version_code=2026111602, previous_version_code=2026111605)
+        return candidate.verify(self.apk, tag="v0.0.4", game_version="0.439.0",
+                                game_version_code=2026111602, previous_version_code=2026111606)
 
     def test_complete_static_candidate_never_claims_installation(self):
         self.write()
         before = self.apk.read_bytes()
         report = self.verify()
-        self.assertEqual(report["version_code"], 2026111606)
-        self.assertEqual(report["release_asset"], "PGS.v0.0.3.apk")
+        self.assertEqual(report["version_code"], 2026111607)
+        self.assertEqual(report["release_asset"], "PGS.v0.0.4.apk")
         self.assertFalse(report["device_tested"])
         self.assertFalse(report["in_place_update_tested"])
         self.assertFalse(report["publish_ready"])

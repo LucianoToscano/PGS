@@ -43,12 +43,12 @@ A nova candidata da linha PGS é **v0.0.2**, baseada no mesmo Pokémon GO **0.43
 
 1. Abra o [workflow de build PGS v0.0.2](https://github.com/LucianoToscano/PGS/actions/workflows/pgs-v0.0.2-release.yml), selecione uma execução **bem-sucedida na branch main**, e baixe o artefato `PGS-v0.0.2`. O GitHub pode solicitar login.
 2. Extraia o ZIP e use **`PGS v0.0.2.apk`** (jogo completo), acompanhado de `PGS.json` e `SHA256SUMS.txt`. Verifique o checksum indicado pela build antes de instalar.
-3. Instale sobre a cópia PGS já existente **sem desinstalá-la**, preservando dados. Isso exige o mesmo certificado e `versionCode` maior; não tente atualizar PGBR, PGSharp ou o PGS separado.
-4. Confirme instalação, abertura, login, cabeçalho **PGS v0.0.2**, Discord `https://discord.gg/SdwU4VnfW` e configurações salvas. **Ainda não existe evidência de teste físico**.
+3. Instale sobre a cópia PGS já existente **sem desinstalá-la**, preservando dados. Isso exige o mesmo certificado e `versionCode` maior.
+4. Confirme instalação, abertura, login, cabeçalho **PGS v0.0.4**, Discord `https://discord.gg/SdwU4VnfW` e configurações salvas. **Ainda não existe evidência de teste físico**.
 
 O nome instalado permanece **Pokémon GO**, com pacote `com.nianticlabs.pokemongo`. A Play Store usa outra assinatura e não pode ser atualizada em cima pelo PGS preservando dados. O GitHub mantém o APK com espaços no artefato Actions, mas normaliza o asset do Release para `PGS.v0.0.2.apk`; os dois nomes devem compartilhar o mesmo SHA-256.
 
-A **v0.0.1** permanece como candidata anterior em seu próprio workflow, e seu rascunho não deve ser modificado. Os releases PGS só serão publicados como estáveis após testes no aparelho. Créditos da base [PGS original](https://github.com/jpitty03/PGS) e licenças são preservados.
+Os releases PGS só serão publicados como estáveis após testes no aparelho.
 
 ## Good to know
 
@@ -56,7 +56,7 @@ These are experimental client modifications. Server outcomes are not guaranteed,
 
 ## Community
 
-Join the [PGS Discord](https://discord.gg/SdwU4VnfW), also linked from the settings footer. PGS acknowledges the independent upstream PGS project and its contributors.
+Join the [PGS Discord](https://discord.gg/SdwU4VnfW), also linked from the settings footer.
 
 ## Build and contribute
 

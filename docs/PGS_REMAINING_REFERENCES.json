@@ -1,15 +1,15 @@
 {
   "scope": "Git-indexed regular UTF-8 text, excluding NUL-containing files and the snapshot itself",
-  "tracked_files": 2113,
-  "text_files": 1039,
+  "tracked_files": 2116,
+  "text_files": 1042,
   "remaining_files": 971,
-  "remaining_occurrences": 31533,
+  "remaining_occurrences": 31532,
   "remaining_by_category": {
     "documentation": 1392,
     "java": 134,
     "javascript": 9,
     "legal": 6,
-    "native": 25916,
+    "native": 25915,
     "other": 2376,
     "release_history": 61,
     "tests": 1067,
@@ -810,7 +810,7 @@
     {
       "path": "pgs/native/battery.cpp",
       "category": "native",
-      "occurrences": 29
+      "occurrences": 28
     },
     {
       "path": "pgs/native/battery.h",

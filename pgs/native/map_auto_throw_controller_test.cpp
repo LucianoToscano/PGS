@@ -87,13 +87,16 @@ int main(){
   if(failure==2){result=88;rc=PGS_VR_DONE;tick();}
   if(failure==3){foreground=false;tick();foreground=true;}
   if(failure==4){fresh=false;tick();fresh=true;}
-  assert(captures==1&&roots.empty());assert(map_tap_consume(&target,true));assert(!map_tap.target);
+  assert(captures==1&&roots.empty());assert(map_tap_consume(&target,true));assert(!map_tap.target&&removes==0);
  }
  reset();begin_capture();account="two";tick();assert(captures==1&&roots.empty()&&polls==0);
  reset();ball=0;assert(map_tap_consume(&target,true));tick();tick();tick();assert(!captures&&!berries&&roots.empty());
  reset();settings="C4|0|1|75|701|0|1|5000|1";assert(!map_tap_consume(&target,true));assert(!encounters&&roots.empty());
  reset();begin_capture();rc=PGS_VR_DONE;result=2;tick(true);tick(false,1200);assert(captures==1&&roots.empty());
- reset();fail_capture=true;assert(map_tap_consume(&target,true));tick();tick();tick();tick();tick();assert(captures==1&&roots.empty());assert(map_tap_consume(&target,true));assert(!map_tap.target);
+ reset();fail_capture=true;assert(map_tap_consume(&target,true));tick();tick();tick();tick();tick();assert(captures==1&&roots.empty());assert(map_tap_consume(&target,true));assert(!map_tap.target&&removes==0);
+ // Full history falls back to manual encounters without evicting uncertain requests.
+ reset();for(uint64_t id=100;id<1124;++id)map_finished.emplace(std::make_pair(account,id),false);
+ assert(!map_tap_consume(&target,true)&&!encounters&&!removes&&roots.empty()&&map_finished.size()==1024);
  // A tap while VGP+ is busy waits, sends nothing, and starts once VGP+ is idle.
  auto wtick=[&](bool busy,int64_t delta=300){now+=delta;try{step_map_auto_throw(1,false,busy);}catch(const Failure& f){map_block(f.where);}};
  reset();assert(map_tap_consume(&target,true,true));assert(map_tap.target&&!map_tap_active());
@@ -127,6 +130,7 @@ int main(){
  reset();begin_capture();rc=PGS_VR_DONE;result=1;transfer_throws=true;tick();tick();assert(transfers==1&&roots.empty());
  // Foreground lost before the hand-off: abandoned (kept), no transfer.
  reset();begin_capture();rc=PGS_VR_DONE;result=1;transfer_rc=0;tick();foreground=false;tick();foreground=true;assert(roots.empty());
+ assert(map_tap_consume(&target,true)&&removes==2&&!map_tap.target); // confirmed even after revocation
  // A fled Pokemon is never handed off.
  reset();begin_capture();rc=PGS_VR_DONE;result=3;tick();assert(roots.empty()&&!transfers);
  reset();puts("PASS production map Auto Throw: transfer hand-off after catch, waits for VGP+, removes leftovers, inactive-command regression, explicit tap, duplicates, berry breakout, settings per attempt, off/owner/account/foreground, uncertain dedup, no balls, roots and C1-C4");

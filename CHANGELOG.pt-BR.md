@@ -6,6 +6,9 @@ Este registro acompanha **somente** as versões do PGS. Os documentos histórico
 
 ## Em desenvolvimento — segunda auditoria
 
+- Opções gráficas restauram apenas valores ainda controlados pelo módulo e restauram o asset URP anterior antes de modificar outro. Metadados opcionais de plantas não bloqueiam os demais controles. Diagnóstico informa FPS-alvo, hooks ativos e manutenção lenta sem alegar medição de FPS real.
+- Captura no mapa mantém visível um encontro não confirmado, impedindo pedidos automáticos duplicados. Apenas captura ou fuga confirmada autoriza remover o objeto restante. Histórico de segurança cheio informa a alternativa manual sem descartar resultados incertos.
+
 - Auto Raid não avança recompensas por trás de outra janela. Ao fechar o aviso manualmente, o fluxo normal pode continuar; um prazo limitado informa o bloqueio. A classe exata da janela Lucky Egg e a recusa automática ainda não foram verificadas.
 - Evita ações duplicadas de recompensa no mesmo tick e repetição da confirmação final; preserva as regras de revogação e consumo da sessão.
 - Limita consultas de prontidão do mapa à cadência de descoberta; um novo bloqueio tem seu próprio prazo, sem herdar o tempo de busca anterior.

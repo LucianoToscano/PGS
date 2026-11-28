@@ -1,5 +1,9 @@
 name: PGS AUTO BACKUP
 on:
+  push:
+    branches: [main]
+    paths:
+      - .github/workflows/pgs-auto-backup.yml
   workflow_dispatch:
   schedule:
     - cron: '43 11 * * 0'
@@ -10,7 +14,7 @@ concurrency:
   cancel-in-progress: false
 jobs:
   backup:
-    if: github.repository == 'LucianoToscano/PGS' && github.ref == 'refs/heads/main' && (github.event_name == 'workflow_dispatch' || vars.PGS_AUTO_BACKUP_ENABLED == 'true')
+    if: github.repository == 'LucianoToscano/PGS' && github.ref == 'refs/heads/main' && (github.event_name != 'schedule' || vars.PGS_AUTO_BACKUP_ENABLED != 'false')
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:

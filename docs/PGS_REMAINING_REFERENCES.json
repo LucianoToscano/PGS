@@ -3,9 +3,9 @@
   "tracked_files": 2109,
   "text_files": 1035,
   "remaining_files": 965,
-  "remaining_occurrences": 31468,
+  "remaining_occurrences": 31472,
   "remaining_by_category": {
-    "documentation": 1417,
+    "documentation": 1419,
     "java": 134,
     "javascript": 9,
     "legal": 6,
@@ -13,7 +13,7 @@
     "other": 2349,
     "release_history": 61,
     "tests": 1067,
-    "workflows": 524
+    "workflows": 526
   },
   "tracked_name_matches": [],
   "files": [
@@ -45,12 +45,12 @@
     {
       "path": ".github/workflows/pgs-auto-backup.yml",
       "category": "workflows",
-      "occurrences": 9
+      "occurrences": 10
     },
     {
       "path": ".github/workflows/pgs-auto-sync.yml",
       "category": "workflows",
-      "occurrences": 10
+      "occurrences": 11
     },
     {
       "path": ".github/workflows/pgs-auto-update.yml",
@@ -195,7 +195,7 @@
     {
       "path": "docs/PGS_AUTO_BACKUP.md",
       "category": "documentation",
-      "occurrences": 4
+      "occurrences": 5
     },
     {
       "path": "docs/PGS_AUTO_BUILD.md",
@@ -205,7 +205,7 @@
     {
       "path": "docs/PGS_AUTO_SYNC.md",
       "category": "documentation",
-      "occurrences": 5
+      "occurrences": 6
     },
     {
       "path": "docs/PGS_BRANDING_AUDIT.md",
@@ -4845,11 +4845,11 @@
   ],
   "abbreviations": {
     "remaining_files": 531,
-    "remaining_occurrences": 25797,
+    "remaining_occurrences": 25799,
     "by_form": {
       "camelcase": 5664,
       "lowercase": 3889,
-      "uppercase": 16244
+      "uppercase": 16246
     },
     "tracked_name_matches": [
       "docs/PGS_AUTO_BACKUP.md",
@@ -5078,16 +5078,16 @@
       },
       {
         "path": "docs/PGS_AUTO_BACKUP.md",
-        "occurrences": 1,
+        "occurrences": 2,
         "by_form": {
-          "uppercase": 1
+          "uppercase": 2
         }
       },
       {
         "path": "docs/PGS_AUTO_SYNC.md",
-        "occurrences": 2,
+        "occurrences": 3,
         "by_form": {
-          "uppercase": 2
+          "uppercase": 3
         }
       },
       {

@@ -4,7 +4,7 @@ Cria uma cópia temporária do código-fonte rastreado na main, usando as regras
 
 ## Uso
 
-Após integração, execute Actions → PGS AUTO BACKUP → Run workflow → main. Para permitir a execução semanal aos domingos às 11:43 UTC (08:43 em Fortaleza), configure `PGS_AUTO_BACKUP_ENABLED=true`; deixe ausente ou false para desativar o agendamento. Não depende de API paga; observe as cotas do GitHub Actions.
+Após integração, execute Actions → PGS AUTO BACKUP → Run workflow → main. A execução semanal está habilitada por padrão aos domingos às 11:43 UTC (08:43 em Fortaleza). Configure `PGS_AUTO_BACKUP_ENABLED=false` para desativar o agendamento; a execução manual e a verificação após mudança do próprio workflow na main continuam disponíveis. Não depende de API paga; observe as cotas do GitHub Actions.
 
 ## Arquivos
 
@@ -17,4 +17,4 @@ O artefato permanece disponível por 14 dias. Baixe uma cópia para armazenament
 
 ## English
 
-The optional weekly job and manual run archive tracked source only, verify the ZIP and SHA-256, record the exact commit, and retain the artifact for 14 days. Set the repository variable to true only to enable the scheduled run. It is not a complete Git/release/credential backup.
+The weekly job is enabled by default; weekly and manual runs archive tracked source only, verify the ZIP and SHA-256, record the exact commit, and retain the artifact for 14 days. Set the repository variable PGS_AUTO_BACKUP_ENABLED=false to disable scheduled runs. A main-branch change to the workflow also triggers a verification run. It is not a complete Git/release/credential backup.

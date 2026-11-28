@@ -5,7 +5,7 @@ O workflow `PGS AUTO SYNC` consulta somente a referência pública `refs/heads/m
 ## Ativação
 
 - Execução manual: Actions → PGS AUTO SYNC → Run workflow, após integração na main.
-- Agendamento: opcional, diariamente às 10:17 UTC (07:17 em Brasília/Fortaleza). O job agendado fica desativado enquanto `PGS_AUTO_SYNC_ENABLED` não for `true`.
+- Agendamento: habilitado por padrão, diariamente às 10:17 UTC (07:17 em Brasília/Fortaleza). Configure `PGS_AUTO_SYNC_ENABLED=false` para desativar o agendamento; a execução manual e a verificação após mudança do próprio workflow na main continuam disponíveis.
 - `PGS_UPSTREAM_REVIEWED_SHA`: opcional; SHA de 40 caracteres da última revisão efetivamente auditada. Se ausente, usa a base original importada.
 - Nenhum segredo, API paga ou permissão de escrita é necessário. A execução está sujeita às regras e cotas do GitHub Actions; não habilitar serviços pagos.
 
@@ -16,4 +16,4 @@ O workflow `PGS AUTO SYNC` consulta somente a referência pública `refs/heads/m
 
 ## English
 
-Read-only monitoring of the original public repository recorded in NOTICE. It queries the main ref, compares the reviewed SHA, and reports whether review is needed. Manual execution is available; daily scheduled checks are opt-in. No source download, branch write or merge is performed.
+Read-only monitoring of the original public repository recorded in NOTICE. It queries the main ref, compares the reviewed SHA, and reports whether review is needed. Manual execution is available; daily scheduled checks are enabled by default. Set PGS_AUTO_SYNC_ENABLED=false to disable the schedule. Changes to the workflow on main trigger a verification run. No source download, branch write or merge is performed.

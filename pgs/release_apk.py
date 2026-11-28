@@ -13,6 +13,7 @@ import zipfile
 import axml
 import build
 import nonroot
+import pgs_update
 import runtime_assets
 
 
@@ -153,6 +154,9 @@ def release(run, destination):
     nonroot.command(build.android_tool('zipalign'), '-c', '-P', '16', '4', signed)
     (destination/'SHA256SUMS.txt').write_text(runtime_assets.sha256(signed)+'  '+signed.name+'\n', encoding='utf8')
     (destination/'build-info.json').write_text(json.dumps({'game_version':game_version,'game_version_code':game_code,'apk_version_code':apk_version_code,'architecture':'arm64-v8a','hook_runtime_architectures':report.get('runtime_abis',[report.get('runtime_abi','arm64-v8a')]),'input_sha256':report['input_sha256'],'apk_sha256':runtime_assets.sha256(signed),'source_commit':os.environ.get('GITHUB_SHA'),'device_tested':False},indent=2)+'\n',encoding='utf8')
+    # PGS.json receipt with identity fields expected by validation workflows.
+    pgs_version = 'v' + (build.ROOT/'VERSION').read_text(encoding='utf-8').strip().removeprefix('v')
+    (destination/'PGS.json').write_text(json.dumps({'status':'STATIC_CANDIDATE_CHECKS_PASSED','apk':signed.name,'release_asset':'PGS.'+pgs_version+'.apk','bytes':signed.stat().st_size,'sha256':runtime_assets.sha256(signed),'pgs_version':pgs_version,'game_version':game_version,'game_version_code':game_code,'package':pgs_update.GAME_PACKAGE,'installed_name':'Pok\\u00e9mon GO','previous_version_code':previous_pgs_version,'version_code':apk_version_code,'signing_certificate_sha256':pgs_update.PGS_SIGNER,'controls_dex':'classes2.dex','runtime_abis':report.get('runtime_abis',[report.get('runtime_abi','arm64-v8a')]),'device_tested':False,'in_place_update_tested':False,'publish_ready':False},indent=2)+'\\n',encoding='utf8')
     unsigned.unlink(); aligned.unlink()
     print('Release candidate:', signed)
     return signed

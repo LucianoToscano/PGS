@@ -117,7 +117,7 @@ class PgsCandidateTests(unittest.TestCase):
             self.verify()
 
     def test_reject_legacy_controls_dex(self):
-        self.members["classes3.dex"] = b"dex\nLdev/pgs/Control;"
+        self.members["classes3.dex"] = b"dex\nLdev/pgrazor/Control;"
         self.write()
         with self.assertRaisesRegex(ValueError, "Legacy controls"):
             self.verify()

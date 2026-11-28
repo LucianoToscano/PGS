@@ -107,7 +107,7 @@ def verify(apk, *, tag, game_version, game_version_code, previous_version_code):
             dex = read_bounded(archive, name, MAX_DEX_BYTES)
             if not dex.startswith(b"dex\n"):
                 raise ValueError("Invalid DEX header: " + name)
-            if b"Ldev/pgs/Control;" in dex:
+            if b"Ldev/pgrazor/Control;" in dex:
                 raise ValueError("Legacy controls DEX in migrated candidate")
             if REQUIRED_CLASSES[1] in dex:
                 if not all(marker in dex for marker in REQUIRED_CLASSES):

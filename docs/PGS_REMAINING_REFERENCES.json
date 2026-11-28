@@ -3,16 +3,16 @@
   "tracked_files": 2085,
   "text_files": 1011,
   "remaining_files": 945,
-  "remaining_occurrences": 31061,
+  "remaining_occurrences": 31071,
   "remaining_by_category": {
     "documentation": 1417,
     "java": 139,
     "javascript": 9,
     "legal": 5,
     "native": 25901,
-    "other": 2231,
+    "other": 2242,
     "release_history": 61,
-    "tests": 1063,
+    "tests": 1062,
     "workflows": 235
   },
   "tracked_name_matches": [],
@@ -2585,7 +2585,7 @@
     {
       "path": "pgs/pgs_candidate.py",
       "category": "other",
-      "occurrences": 37
+      "occurrences": 36
     },
     {
       "path": "pgs/pgs_rebrand.py",
@@ -2600,7 +2600,7 @@
     {
       "path": "pgs/release_apk.py",
       "category": "other",
-      "occurrences": 28
+      "occurrences": 40
     },
     {
       "path": "pgs/root-installer/AndroidManifest.xml",
@@ -4310,7 +4310,7 @@
     {
       "path": "pgs/test/test_pgs_candidate.py",
       "category": "tests",
-      "occurrences": 28
+      "occurrences": 27
     },
     {
       "path": "pgs/test/test_pgs_license.py",
@@ -4745,11 +4745,11 @@
   ],
   "abbreviations": {
     "remaining_files": 514,
-    "remaining_occurrences": 25611,
+    "remaining_occurrences": 25619,
     "by_form": {
       "camelcase": 5659,
-      "lowercase": 3865,
-      "uppercase": 16087
+      "lowercase": 3872,
+      "uppercase": 16088
     },
     "tracked_name_matches": [
       "docs/PGS_BRANDING_AUDIT.md",
@@ -8637,10 +8637,10 @@
       },
       {
         "path": "pgs/release_apk.py",
-        "occurrences": 11,
+        "occurrences": 19,
         "by_form": {
-          "lowercase": 7,
-          "uppercase": 4
+          "lowercase": 14,
+          "uppercase": 5
         }
       },
       {

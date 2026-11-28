@@ -1,6 +1,6 @@
 """Rebrand only the verified PGS Java controls in a complete, already signed APK.
 
-The input is the known-good PGS v0.0.1 full APK, NOT an unverified
+The input is the known-good PGS v0.0.2 full APK, NOT an unverified
 Pokémon GO download. Native binaries, game DEX and resources must remain
 byte-for-byte identical when decompressed. Android package/certificate remain
 unchanged; only the PGS controls DEX, the PGS version in mode.json, and the
@@ -24,12 +24,12 @@ import build
 import nonroot
 import pgs_update
 
-SOURCE_SHA256 = "23c0c4e9f9e87676038856e76b16613c91bf4bbd04a5c8cc9eb4f317d6926ef4"
-SOURCE_VERSION_CODE = 2026111604
-TARGET_VERSION_CODE = 2026111605
+SOURCE_SHA256 = "91865f6242519091a771617f962f17620405624a4a56addec0909d2cdf6b68c1"
+SOURCE_VERSION_CODE = 2026111605
+TARGET_VERSION_CODE = 2026111606
 GAME_VERSION_NAME = "0.439.0"
-PGS_VERSION = "v0.0.2"
-TARGET_NAME = "PGS v0.0.2.apk"
+PGS_VERSION = "v0.0.3"
+TARGET_NAME = "PGS v0.0.3.apk"
 MODE = "assets/pgrazor/mode.json"
 MARKER = b"Ldev/pgrazor/Control;"
 UPDATER = b"Ldev/pgrazor/Updater;"
@@ -66,7 +66,7 @@ def module_dex_entry(archive: zipfile.ZipFile) -> str:
 def updated_mode(old: bytes) -> bytes:
     mode = json.loads(old)
     before = mode.get("pgrazorVersion")
-    if not (isinstance(before, str) and before == "v0.0.1"
+    if not (isinstance(before, str) and before == "v0.0.2"
             and mode.get("compiledGameplay") is True):
         raise ValueError("Source APK is not the expected compiled PGS candidate")
     mode["pgrazorVersion"] = PGS_VERSION
@@ -78,7 +78,7 @@ def candidate(source: Path, controls: Path, output: Path) -> dict:
     if source == output or not source.is_file() or not controls.is_file():
         raise ValueError("Existing source APK, new controls DEX and distinct output required")
     if digest(source) != SOURCE_SHA256:
-        raise ValueError("Source APK SHA-256 does not match the signed PGS v0.0.1")
+        raise ValueError("Source APK SHA-256 does not match the signed PGS v0.0.2")
     if pgs_update.cert_digests(source) != [pgs_update.PGS_SIGNER]:
         raise ValueError("Source APK has a foreign signing certificate")
     if not os.environ.get("PGRAZOR_KEYSTORE"):
@@ -87,7 +87,7 @@ def candidate(source: Path, controls: Path, output: Path) -> dict:
     if (len(new_dex) < 200_000 or not new_dex.startswith(b"dex\n")
             or MARKER not in new_dex or UPDATER not in new_dex
             or PGS_VERSION.encode() not in new_dex):
-        raise ValueError("Fresh controls DEX lacks PGS v0.0.2 classes or metadata")
+        raise ValueError("Fresh controls DEX lacks PGS v0.0.3 classes or metadata")
 
     with zipfile.ZipFile(source) as archive:
         names = archive.namelist()
@@ -159,7 +159,7 @@ def candidate(source: Path, controls: Path, output: Path) -> dict:
         raise RuntimeError("Refusing incomplete game package")
     return {
         "status": "SIGNED_COMPLETE_APK_VERIFIED",
-        "apk": output.name, "release_asset": "PGS.v0.0.2.apk",
+        "apk": output.name, "release_asset": "PGS.v0.0.3.apk",
         "bytes": output.stat().st_size,
         "sha256": digest(output), "source_apk_sha256": SOURCE_SHA256,
         "source_controls_dex": dex_name, "controls_dex_sha256": digest(controls),
@@ -184,7 +184,7 @@ def main():
         json.dumps(report, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
     (args.output.parent / "SHA256SUMS.txt").write_text(
         report["sha256"] + "  " + args.output.name + "\n", encoding="utf-8")
-    print("PGS v0.0.2 full APK signed, original game and native bytes preserved.")
+    print("PGS v0.0.3 full APK signed, original game and native bytes preserved.")
     print("APK SHA-256:", report["sha256"])
     print("Android versionCode:", report["version_code"])
     print("Device install and login NOT tested.")

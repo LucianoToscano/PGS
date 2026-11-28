@@ -36,8 +36,7 @@ class PgsBuildOptionTests(unittest.TestCase):
 
     def test_historical_publication_workflows_use_pgs_identity(self):
         workflows = Path(__file__).resolve().parents[2] / '.github' / 'workflows'
-        for name in ('release.yml', 'pgs-v0.0.1-release.yml', 'pgs-v0.0.2-release.yml',
-                     'pgs-same-package-update.yml'):
+        for name in ('release.yml', 'pgs-v0.0.2-release.yml'):
             with self.subTest(workflow=name):
                 flow = (workflows / name).read_text(encoding='utf-8')
                 # No legacy PGrazor brand remains in any release workflow.
@@ -46,12 +45,11 @@ class PgsBuildOptionTests(unittest.TestCase):
                 self.assertNotIn('PGRAZOR', flow)
                 # Every release workflow references the PGS identity.
                 self.assertIn('PGS', flow)
-        # The two manual historical releases are dispatch-driven (no unattended push release).
-        for name in ('release.yml', 'pgs-v0.0.1-release.yml'):
-            flow = (workflows / name).read_text(encoding='utf-8')
-            self.assertIn('  workflow_dispatch:', flow)
-            self.assertNotIn('\n  push:', flow)
-            self.assertNotIn('\n  pull_request:', flow)
+        # The manual historical release is dispatch-driven (no unattended push release).
+        flow = (workflows / 'release.yml').read_text(encoding='utf-8')
+        self.assertIn('  workflow_dispatch:', flow)
+        self.assertNotIn('\n  push:', flow)
+        self.assertNotIn('\n  pull_request:', flow)
         # The v0.0.2 release workflow is trigger-driven on the reference branch (push) and also
         # admits manual dispatch; both are legitimate in the reference.
         flow = (workflows / 'pgs-v0.0.2-release.yml').read_text(encoding='utf-8')

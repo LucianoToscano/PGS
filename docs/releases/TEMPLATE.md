@@ -11,4 +11,4 @@ Esta página é o modelo de **novos releases PGS**, não um release upstream. O 
 - Assinatura SHA-256: `D9:5C:6B:DF:CB:D9:1D:C5:C9:CD:E6:98:48:7C:88:E4:99:47:71:A4:75:E4:EF:DE:45:67:B8:D5:F4:4E:96:CF`
 - Instalação e login físico: pendentes até comprovação
 
-[Builds verificadas PGS](https://github.com/LucianoToscano/PGS/actions/workflows/pgs-v0.0.1-release.yml) · [Discord PGS](https://discord.gg/SdwU4VnfW)
+[Builds verificadas PGS](https://github.com/LucianoToscano/PGS/actions/workflows/release.yml) · [Discord PGS](https://discord.gg/SdwU4VnfW)

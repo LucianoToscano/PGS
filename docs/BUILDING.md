@@ -1,4 +1,4 @@
-> **PGS:** este documento inclui comandos de compilação herdados. O release PGS assinado deve ser gerado pelo [workflow próprio do PGS](https://github.com/LucianoToscano/PGS/actions/workflows/pgs-v0.0.1-release.yml) usando a chave PGS existente; não executar o workflow legado de distribuição upstream. O modo Root ainda não é publicado pelo PGS.
+> **PGS:** este documento inclui comandos de compilação herdados. O release PGS assinado deve ser gerado pelo [workflow de release do PGS](https://github.com/LucianoToscano/PGS/actions/workflows/release.yml) usando a chave PGS existente; não executar o workflow legado de distribuição upstream. O modo Root ainda não é publicado pelo PGS.
 
 # Building PGS
 

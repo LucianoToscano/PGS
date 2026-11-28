@@ -18,11 +18,4 @@ Este registro acompanha **somente** as versões do PGS. Os documentos histórico
 - SHA-256 do APK: `91865f6242519091a771617f962f17620405624a4a56addec0909d2cdf6b68c1`.
 - Release privado em rascunho. **Ainda não há confirmação de instalação e login em aparelho real.**
 
-## v0.0.1 — Primeira candidata PGS
-
-- APK completo, assinatura PGS definitiva e `versionCode=2026111604`.
-- Atualizador exclusivo do PGS, novo Discord, estatísticas e interface PGS.
-- Melhorias de joystick, mapas, IVs, Buddy e ferramentas comunitárias.
-- Compilação: https://github.com/LucianoToscano/PGS/actions/runs/45973576985
-
 Consulte [LICENSE](LICENSE) e [THIRD_PARTY.md](THIRD_PARTY.md) para os avisos e condições legais.

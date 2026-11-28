@@ -6,7 +6,7 @@ PGS, based on PGS, adds an in-game menu, an independent joystick, encounter cont
 
 ## PGS community integration
 
-PGS preserves the complete PGS source tree and its MIT/third-party notices. This fork starts from PGS **v0.3.8**, commit `1106592aa045759f55f594ff6968f783ff636fe9`, for Pokémon GO **0.439.0 / 2026111602**. Internal packages, saved-setting keys and the original interface identity remain compatible with that base.
+PGS preserves the complete PGS source tree and its MIT/third-party notices. Internal packages, saved-setting keys and the interface identity remain compatible with the PGS v0.2 line.
 
 The current candidate adds the joystick direction lock, a direct gift shortcut, configurable LivePokeMap refresh, populated wild-encounter IVs for VGP+, owned-IV refresh/layer fixes, real-GPS readiness, buddy timeout recovery and the Silver Pinap preference migration. Android packaging also works on Linux with the pinned toolchain.
 
@@ -48,7 +48,7 @@ A nova candidata da linha PGS é **v0.0.2**, baseada no mesmo Pokémon GO **0.43
 
 O nome instalado permanece **Pokémon GO**, com pacote `com.nianticlabs.pokemongo`. A Play Store usa outra assinatura e não pode ser atualizada em cima pelo PGS preservando dados. O GitHub mantém o APK com espaços no artefato Actions, mas normaliza o asset do Release para `PGS.v0.0.2.apk`; os dois nomes devem compartilhar o mesmo SHA-256.
 
-A **v0.0.1** permanece como candidata anterior em seu próprio [workflow](https://github.com/LucianoToscano/PGS/actions/workflows/pgs-v0.0.1-release.yml), e seu rascunho não deve ser modificado. Os releases PGS só serão publicados como estáveis após testes no aparelho. Créditos da base [PGS original](https://github.com/jpitty03/PGS) e licenças são preservados.
+A **v0.0.1** permanece como candidata anterior em seu próprio workflow, e seu rascunho não deve ser modificado. Os releases PGS só serão publicados como estáveis após testes no aparelho. Créditos da base [PGS original](https://github.com/jpitty03/PGS) e licenças são preservados.
 
 ## Good to know
 

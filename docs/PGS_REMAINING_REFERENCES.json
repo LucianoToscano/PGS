@@ -3,14 +3,14 @@
   "tracked_files": 2085,
   "text_files": 1011,
   "remaining_files": 942,
-  "remaining_occurrences": 31111,
+  "remaining_occurrences": 31115,
   "remaining_by_category": {
     "documentation": 1393,
     "java": 134,
     "javascript": 9,
     "legal": 6,
     "native": 25901,
-    "other": 2233,
+    "other": 2237,
     "release_history": 61,
     "tests": 1061,
     "workflows": 313
@@ -4610,12 +4610,12 @@
     {
       "path": "website/README.md",
       "category": "other",
-      "occurrences": 9
+      "occurrences": 18
     },
     {
       "path": "website/index.html",
       "category": "other",
-      "occurrences": 11
+      "occurrences": 15
     },
     {
       "path": "website/package-lock.json",
@@ -4665,22 +4665,17 @@
     {
       "path": "website/src/content.en.js",
       "category": "other",
-      "occurrences": 17
-    },
-    {
-      "path": "website/src/content.js",
-      "category": "other",
-      "occurrences": 19
+      "occurrences": 18
     },
     {
       "path": "website/src/content.pt-BR.js",
       "category": "other",
-      "occurrences": 13
+      "occurrences": 14
     },
     {
       "path": "website/src/featureGuides.js",
       "category": "other",
-      "occurrences": 27
+      "occurrences": 28
     },
     {
       "path": "website/src/featureGuides.pt-BR.a.js",
@@ -4718,9 +4713,14 @@
       "occurrences": 24
     },
     {
+      "path": "website/tests/guides.spec.js",
+      "category": "other",
+      "occurrences": 6
+    },
+    {
       "path": "website/tests/site.spec.js",
       "category": "other",
-      "occurrences": 10
+      "occurrences": 11
     },
     {
       "path": "website/vite.config.js",

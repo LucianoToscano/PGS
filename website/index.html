@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <link rel="icon" type="image/svg+xml" href="%BASE_URL%logo.svg" />
+    <link rel="icon" type="image/png" href="%BASE_URL%pgs-shield.png" />
     <title>PGS — smoother Pokémon GO sessions</title>
     <meta
       name="description"
@@ -12,6 +12,8 @@
     <meta name="color-scheme" content="dark light" />
     <meta name="theme-color" content="#141b25" />
     <link rel="canonical" href="https://lucianotoscano.github.io/PGS/" />
+    <link rel="alternate" hreflang="en" href="https://lucianotoscano.github.io/PGS/" />
+    <link rel="alternate" hreflang="pt-BR" href="https://lucianotoscano.github.io/PGS/?lang=pt-BR" />
     <meta property="og:title" content="PGS" />
     <meta
       property="og:description"
@@ -19,7 +21,7 @@
     />
     <meta property="og:type" content="website" />
     <meta property="og:url" content="https://lucianotoscano.github.io/PGS/" />
-    <meta property="og:image" content="https://lucianotoscano.github.io/PGS/images/main-menu.png" />
+    <meta property="og:image" content="https://lucianotoscano.github.io/PGS/pgs-full.png" />
     <!-- Apply the saved theme before first paint (default dark) to avoid a flash. -->
     <script>
       (function () {
@@ -30,12 +32,19 @@
           document.documentElement.dataset.theme = 'dark';
         }
         document.querySelector('meta[name="theme-color"]').content = document.documentElement.dataset.theme === 'light' ? '#f9fbfd' : '#141b25';
+        try {
+          var requested = new URLSearchParams(window.location.search).get('lang');
+          var storedLanguage = localStorage.getItem('pgs-website-language');
+          document.documentElement.lang = requested === 'pt-BR' || (!requested && storedLanguage === 'pt-BR') ? 'pt-BR' : 'en';
+        } catch (error) {
+          document.documentElement.lang = 'en';
+        }
       })();
     </script>
   </head>
   <body>
     <div id="root"></div>
-    <noscript>PGS is an open-source Android toolkit for Pokémon GO. <a href="https://github.com/LucianoToscano/PGS/actions/workflows/pgs-v0.0.2-release.yml">Download the verified PGS candidate</a>. Enable JavaScript to explore the settings guide.</noscript>
+    <noscript>PGS is an open-source Android toolkit for Pokémon GO. <a href="https://github.com/LucianoToscano/PGS/releases/tag/untagged-b1260bd32d692cbde42d">View the PGS test candidate (repository access required)</a>. Enable JavaScript to explore the settings guide.</noscript>
     <script type="module" src="/src/main.jsx"></script>
   </body>
 </html>

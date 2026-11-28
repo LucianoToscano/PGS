@@ -2,9 +2,8 @@
 // edits (wording, new settings, extra screenshots) never touch layout code.
 
 export const links = {
-  releasesLatest: 'https://github.com/LucianoToscano/PGS/actions/runs/45980315394',
-  releasesCurrent:
-    'https://github.com/LucianoToscano/PGS/actions/runs/45980315394',
+  releasesLatest: 'https://github.com/LucianoToscano/PGS/releases/tag/untagged-b1260bd32d692cbde42d',
+  releasesCurrent: 'https://github.com/LucianoToscano/PGS/releases/tag/untagged-b1260bd32d692cbde42d',
   github: 'https://github.com/LucianoToscano/PGS',
   discord: 'https://discord.gg/SdwU4VnfW',
 };
@@ -19,7 +18,7 @@ export const nav = [
 export const heroFacts = [
   { term: 'Runs on', detail: 'ARM64 Android & MuMu — one APK' },
   { term: 'Root option', detail: 'Not yet released in the PGS line' },
-  { term: 'License', detail: 'MIT (original source)' },
+  { term: 'License', detail: 'MIT (PGS source)' },
 ];
 
 // The feature preview is a settings guide, not a live app. Each group maps
@@ -99,7 +98,7 @@ export const steps = [
   {
     n: '01',
     title: 'Download',
-    body: 'Open the verified PGS v0.0.2 build, download its artifact and extract PGS v0.0.2.apk. Do not install a source archive or a preview package.',
+    body: 'Open the PGS v0.0.5 draft release (repository access required), download PGS.v0.0.5.apk and check SHA256SUMS.txt. Do not install a source archive or a preview package.',
   },
   {
     n: '02',
@@ -124,7 +123,7 @@ export const faqs = [
   },
   {
     q: 'Is a PGS Root build available?',
-    a: 'Not yet. The PGS v0.0.2 work targets the non-root APK. The original Root variant belongs to the upstream project, not a PGS update.',
+    a: 'Not yet. The PGS candidate targets the non-root APK. The original Root variant belongs to the upstream project, not a PGS update.',
   },
   {
     q: 'Is LivePokeMap included?',

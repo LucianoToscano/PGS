@@ -1,4 +1,13 @@
 import { test, expect } from '@playwright/test';
+
+test('PGS Root guide works in English and Brazilian Portuguese', async ({ page }) => {
+  await page.goto('./?guide=pgs-root');
+  await expect(page.getByRole('heading', { level: 1, name: 'PGS Root (not released)' })).toBeVisible();
+  await expect(page.locator('link[rel="canonical"]')).toHaveAttribute('href', /\?guide=pgs-root$/);
+  await page.goto('./?guide=pgs-root&lang=pt-BR');
+  await expect(page.getByRole('heading', { level: 1, name: 'PGS Root (não lançado)' })).toBeVisible();
+});
+
 import { featureGuides } from '../src/featureGuides.js';
 import { guideScreenshots } from '../src/guideScreenshots.js';
 
@@ -93,4 +102,35 @@ test('guide search narrows results and recovers from no matches', async ({ page 
   await expect(page.locator('.guide-card')).toHaveCount(0);
   await page.getByRole('button', { name: 'Clear search' }).click();
   await expect(page.locator('.guide-card')).toHaveCount(featureGuides.length);
+});
+
+import { guidesA } from '../src/featureGuides.pt-BR.a.js';
+import { guidesB } from '../src/featureGuides.pt-BR.b.js';
+import { guidesC } from '../src/featureGuides.pt-BR.c.js';
+import { guidesD } from '../src/featureGuides.pt-BR.d.js';
+
+test('Portuguese catalog covers every canonical guide and all steps and notes', () => {
+  const translations = { ...guidesA, ...guidesB, ...guidesC, ...guidesD };
+  expect(Object.keys(translations).sort()).toEqual(featureGuides.map(guide => guide.id).sort());
+  for (const guide of featureGuides) {
+    const localized = translations[guide.id];
+    expect(localized.title.length).toBeGreaterThan(2);
+    expect(localized.summary.length).toBeGreaterThan(15);
+    expect(localized.where.length).toBeGreaterThan(10);
+    expect(localized.steps.length).toBe(guide.steps.length);
+    expect(localized.notes.length).toBe(guide.notes.length);
+    expect(localized.steps.every(Boolean)).toBeTruthy();
+    expect(localized.notes.every(Boolean)).toBeTruthy();
+  }
+});
+
+test('Portuguese guide details and screenshot captions remain localized', async ({ page }) => {
+  await page.goto('./?guide=vgp-plus&lang=pt-BR');
+  await expect(page.locator('html')).toHaveAttribute('lang', 'pt-BR');
+  await expect(page.getByRole('heading', { level: 1, name: 'VGP+' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Passo a passo' })).toBeVisible();
+  await expect(page.locator('.guide-steps li')).toHaveCount(featureGuides.find(g => g.id === 'vgp-plus').steps.length);
+  await expect(page.locator('.guide-screenshots').getByText('Configurações VGP+')).toBeVisible();
+  await expect(page.locator('.guide-detail__crumbs a[href*="lang=pt-BR"]').first()).toBeVisible();
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBeTruthy();
 });

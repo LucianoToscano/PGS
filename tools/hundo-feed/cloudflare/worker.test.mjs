@@ -471,3 +471,19 @@ test("same spot ID from two sources survives differing form metadata only once",
   const data=feed({entries:[{name:"a",...entry},{name:"b",...entry,spots:[other]}]},now);
   assert.equal(data.spots.length,1);
 });
+
+test("PokeSearch PokeList v2 rejects conflicting IV, approximate and expired coordinates",async()=>{
+  const src={name:"pokesearch-pokelist",kind:"pokelist",url:"https://moonani.com/PokeList/api.v2.php",interval_s:900};
+  const data=new Map(), env={SOURCES:JSON.stringify([src]),FEED:{get:k=>JSON.parse(data.get(k)||"null"),put:(k,v)=>data.set(k,v)}};
+  const valid={iv:"100",number:25,latitude:40.1,longitude:-74.2,endTime:now+400000};
+  const original=globalThis.fetch;
+  globalThis.fetch=async url=>{
+    assert.equal(new URL(url).searchParams.get("ivMin"),"100");
+    return Response.json({pokemons:[valid,{...valid,defense:14},{...valid,approximate:true},{...valid,endTime:0}]});
+  };
+  try {
+    await worker.scheduled({},env);
+    const entry=JSON.parse(data.get("pgs-feed-v1")).entries[0];
+    assert.equal(entry.received,4); assert.equal(entry.spots.length,1); assert.equal(entry.discarded,3);
+  } finally {globalThis.fetch=original;}
+});

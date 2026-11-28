@@ -10,6 +10,7 @@ O Worker publica o contrato v1 em `/hundos.json`. O agendamento UTC dispara a ca
 | NYC, Singapore, London, Sydney, Vancouver | 600 s por cidade |
 | iFlowGo | 600 s |
 | Moonani | 900 s |
+| PokeList v2 do PokeSearch (Moonani) | 900 s |
 | GoCoords | 300 s |
 | Poke100IV | 600 s |
 | PoGoCoordinates direto | 180 s quando POGO_TOKEN está configurado |
@@ -35,3 +36,5 @@ Verifique o histórico de tempos em /status.json e os dados em /hundos.json por 
 ## Recuperação da versão anterior
 
 A versão anterior ad96424c-b507-4c26-808b-7955d86bea49 foi publicada a partir de 7776bc2. Seu cron era */5 * * * *. O operador tem uma exportação do módulo implantado, configurações, agendamentos e histórico anterior. A migração adicionou um namespace SQLite. Para recuperar o comportamento anterior preservando esse estado, prepare uma nova versão a partir do coletor de 7776bc2, mantenha a classe exportada FeedPublisher e o binding já migrado, restaure o SOURCES do backup e o cron anterior, teste e publique. O coletor anterior lê os checkpoints do mesmo KV. Verifique a primeira coleta antes de encerrar a recuperação. Esse procedimento de retorno não foi executado em produção.
+
+A rota api.v2.php usa o contrato de PokeListApiPolicy e PokeListFeedClient do repositório LucianoToscano/PokeSearch. Uma busca regional consulta até 200 unidades do provedor em torno de um spot Moonani ativo, ou Nova York na ausência de um spot. A fonte exige iv=100, coordenadas válidas e endTime futuro. O ID interno da API é tratado como spot. O PGRazor entra pelo feed v1 da Faustus Foundry e já reúne PoGoCoordinates e cinco mapas.

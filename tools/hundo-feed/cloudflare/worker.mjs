@@ -265,6 +265,27 @@ async function collect(source, now, metrics, env, previous) {
     }
     return rows({v:1,fetched_ms:now,hundos:cached,spots:[]},now);
   }
+  if (source.kind==="pokelist") {
+    if (url.href!=="https://moonani.com/PokeList/api.v2.php") throw Error("source_url");
+    const recent=previous.entries.find(e=>e.name==="moonani")?.spots?.find(r=>r[5]>now);
+    url.search=new URLSearchParams({type:"pokemon",mons:"",lat:String(recent?.[3]??40.7128),
+      lng:String(recent?.[4]??-74.006),distance:"200",iv_type:"0",ivMin:"100",ivMax:"100",_time:String(now)});
+    const {body,contentType}=await page(url,{headers:{Accept:"application/json"}});
+    if (!Array.isArray(body?.pokemons)) throw Error("invalid_feed");
+    const spawns=[];
+    for (const item of body.pokemons.slice(0,500)) {
+      if (!item || num(item.iv)!==100 || item.approximate || (item.coordinate_precision??"exact")!=="exact") continue;
+      const stats=[item.attack??item.attack_iv,item.defense??item.defense_iv,item.stamina??item.stamina_iv];
+      if (stats.some(v=>v!=null && num(v)!==15)) continue;
+      const expiry=num(item.endTime);
+      if (!Number.isSafeInteger(expiry)) continue;
+      const endMs=expiry<100000000000?expiry*1000:expiry;
+      if (endMs<now+60000 || endMs>now+7200000) continue;
+      spawns.push({attack:15,defence:15,stamina:15,pokemon_id:item.number,form:item.form,
+        lat:item.latitude,lng:item.longitude,despawn:endMs/1000,cp:item.cp,level:item.level});
+    }
+    return {...await spotsFromSpawns(spawns,body.pokemons.length,now),contentType};
+  }
   const city=source.kind==="city" && cityHosts.has(url.hostname) && url.pathname==="/query2.php";
   const moonani=source.kind==="moonani" && url.href==="https://moonani.com/PokeList/ajax.php";
   const iflow=source.kind==="iflow" && url.hostname==="pokecoords.iflowgo.com" &&
@@ -374,13 +395,13 @@ function stateOf(entry) {
 async function refresh(env) {
   const now=Date.now(), configs=configuredSources(env);
   if (!configs.length) return;
-  if (configs.length>11 || configs.some(s=>!s || !/^[a-z][a-z0-9-]{0,39}$/.test(s.name) ||
+  if (configs.length>12 || configs.some(s=>!s || !/^[a-z][a-z0-9-]{0,39}$/.test(s.name) ||
       !Number.isSafeInteger(s.interval_s) || s.interval_s<interval) ||
       new Set(configs.map(s=>s.name)).size!==configs.length) throw Error("invalid_config");
   const previous=hundoState(await env.FEED.get(stateKey,"json") || {},configs,now);
-  const budget=Number(env.MAX_UPSTREAM_REQUESTS ?? 18);
+  const budget=Number(env.MAX_UPSTREAM_REQUESTS ?? 19);
   const required=configs.reduce((n,s)=>n+(s.kind==="pogo"?2:s.kind==="iflow"?maxIflowPages:s.kind==="moonani"?MAX_MOONANI_PAGES:1),0);
-  if (!Number.isSafeInteger(budget)||budget>18||required>budget) throw Error("invalid_config");
+  if (!Number.isSafeInteger(budget)||budget>19||required>budget) throw Error("invalid_config");
   async function poll(source) {
     const old=previous.entries?.find(x=>x.name===source.name && x.url===source.url);
     const recover=old?.adapter_v!==ADAPTER_VERSION && old?.status==="offline" &&

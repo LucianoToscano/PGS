@@ -128,6 +128,7 @@ int dummy_catch_promise_obj = 209;
 
 struct FakeWorld {
     bool map_ready = true;
+    unsigned map_ready_calls = 0;
     std::string account = "trainer-1";
     int64_t game_time_ms = 1000000;
     std::vector<pgs_auto_raid::RaidCandidate> gyms;
@@ -161,6 +162,8 @@ struct FakeWorld {
     bool resolve_open = false;
     int resolve_status = pgs_auto_raid::BATTLE_STATUS_VICTORY;
     bool resolve_advance = true;
+    bool resolve_covered = false;
+    unsigned resolve_polls = 0, resolve_actions = 0;
 
     bool encounter_open = false;
     bool encounter_shiny = false;
@@ -264,12 +267,16 @@ void fake_leave_lobby(void*, void*) {
 
 bool fake_is_battle_active() { return world.battle_active; }
 
-bool fake_poll_resolve_state(Root& out_resolve_ui, int& out_battle_status, bool& out_advanced) {
+bool fake_poll_resolve_state(Root& out_resolve_ui, int& out_battle_status, bool& out_advanced, bool& out_covered) {
+    ++world.resolve_polls;
+    out_covered = false;
     if (!world.resolve_open) return false;
     out_resolve_ui = Root(&dummy_resolve_ui_obj);
     out_battle_status = world.resolve_status;
-    out_advanced = world.resolve_advance;
-    if (world.resolve_status == pgs_auto_raid::BATTLE_STATUS_VICTORY && world.resolve_advance) {
+    out_covered = world.resolve_covered;
+    out_advanced = !out_covered && !session.resolve_confirmed && world.resolve_advance;
+    if (!out_covered && !session.resolve_confirmed) ++world.resolve_actions;
+    if (world.resolve_status == pgs_auto_raid::BATTLE_STATUS_VICTORY && out_advanced) {
         world.resolve_open = false;
         world.encounter_open = true;
     }
@@ -303,7 +310,7 @@ void fake_close_encounter_summary() {
     ++world.summary_closed;
     world.encounter_open = false;
 }
-bool fake_map_ready(){return world.map_ready;}
+bool fake_map_ready(){++world.map_ready_calls;return world.map_ready;}
 bool fake_ensure_berry_ready(){return world.berry_bindings;}
 bool fake_inspect_berry(void*,void*,RaidBerrySnapshot& out){
     out={world.active_berry,world.razz,world.golden,world.berry_feedable};return world.berry_ready;
@@ -889,6 +896,47 @@ int main() {
     test_clock_override_ms+=kMapSettleMs;
     assert(!pgs_auto_raid_tick(tid,&metadata));
     assert(t_events.back().find("\"completed\":1")!=std::string::npos && test_roots.empty());
+    // Discovery never queries managed map readiness every frame; a new obstruction
+    // after a long search gets a new, bounded readiness window.
+    reset_fixture();g_test_adapter=&g_fake_adapter;
+    t_command="R1|901|1|0|1|1|45|0|1|0|0||0";
+    assert(pgs_auto_raid_tick(tid,&metadata) && world.map_ready_calls==1);
+    for (int i=0;i<20;++i) {
+        test_clock_override_ms+=20;
+        assert(pgs_auto_raid_tick(tid,&metadata));
+    }
+    assert(world.map_ready_calls==1);
+    test_clock_override_ms+=kApproachTimeoutMs+1000;world.map_ready=false;
+    assert(pgs_auto_raid_tick(tid,&metadata) && session.map_wait_started_ms==test_clock_override_ms);
+    test_clock_override_ms+=kApproachTimeoutMs;
+    assert(!pgs_auto_raid_tick(tid,&metadata) && test_roots.empty());
+
+    // A post-raid overlay blocks all reward actions. Removing the overlay resumes
+    // the ordinary rewards path; the initial battle->resolve transition acts once.
+    auto start_rewards=[&](){
+        reset_fixture();g_test_adapter=&g_fake_adapter;
+        t_command="R1|902|1|0|1|1|45|0|1|0|0||0";
+        assert(pgs_auto_raid_tick(tid,&metadata));
+        session.stage=RaidStage::Battle;session.last_step_ms=0;
+        world.resolve_open=true;world.resolve_covered=true;
+        world.resolve_status=pgs_auto_raid::BATTLE_STATUS_VICTORY;
+    };
+    start_rewards();
+    assert(pgs_auto_raid_tick(tid,&metadata) && session.stage==RaidStage::Resolve);
+    assert(session.resolve_covered && world.resolve_polls==1 && world.resolve_actions==0);
+    assert(t_events.back().find("close the prompt manually")!=std::string::npos);
+    assert(pgs_auto_raid_tick(tid,&metadata) && world.resolve_polls==1);
+    world.resolve_covered=false;test_clock_override_ms+=kActionStepMs;
+    assert(pgs_auto_raid_tick(tid,&metadata) && session.resolve_confirmed && world.resolve_actions==1);
+    assert(pgs_auto_raid_tick(tid,&metadata) && session.stage==RaidStage::Encounter);
+    pgs_auto_raid_stop(tid);assert(test_roots.empty());
+    start_rewards();assert(pgs_auto_raid_tick(tid,&metadata));
+    test_clock_override_ms+=kResolveTimeoutMs;
+    assert(!pgs_auto_raid_tick(tid,&metadata) && world.resolve_actions==0 && test_roots.empty());
+    assert(t_events.back().find("still covered by another screen")!=std::string::npos);
+    start_rewards();assert(pgs_auto_raid_tick(tid,&metadata));
+    t_foreground=false;test_clock_override_ms+=kActionStepMs;
+    assert(!pgs_auto_raid_tick(tid,&metadata) && world.resolve_polls==1 && world.resolve_actions==0 && test_roots.empty());
     auto start_berry_encounter=[&](int mode){
         reset_fixture();g_test_adapter=&g_fake_adapter;
         t_command="R2|1000|1|0|3|1|45|0|1|0|0||0|"+std::to_string(mode);

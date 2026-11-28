@@ -298,12 +298,14 @@ struct ActiveSession {
     // Lobby / battle / resolve / encounter tracking
     int64_t stage_started_ms = 0;
     int64_t last_step_ms = 0;
+    int64_t map_wait_started_ms = 0;
     int64_t last_tap_ms = 0;
     int64_t last_heartbeat_ms = 0;
     int64_t lobby_entered_ms = 0;
     int64_t promise_started_ms = 0;
     int throws_made = 0;
     bool resolve_confirmed = false;
+    bool resolve_covered = false;
     bool boss_shiny = false;
     bool uncertain_action = false;
     bool completion_shiny = false;
@@ -348,12 +350,14 @@ struct ActiveSession {
         join_invoked = false;
         stage_started_ms = 0;
         last_step_ms = 0;
+        map_wait_started_ms = 0;
         last_tap_ms = 0;
         last_heartbeat_ms = 0;
         lobby_entered_ms = 0;
         promise_started_ms = 0;
         throws_made = 0;
         resolve_confirmed = false;
+        resolve_covered = false;
         boss_shiny = false;
         uncertain_action = false;
         completion_shiny = false;
@@ -466,7 +470,7 @@ struct RuntimeAdapter {
                              int64_t& out_countdown_ms) = nullptr;
     void (*leave_lobby)(void* lobby_ui, void* raid_state) = nullptr;
     bool (*is_battle_active)() = nullptr;
-    bool (*poll_resolve_state)(Root& out_resolve_ui, int& out_battle_status, bool& out_advanced_to_encounter) = nullptr;
+    bool (*poll_resolve_state)(Root& out_resolve_ui, int& out_battle_status, bool& out_advanced_to_encounter, bool& out_covered) = nullptr;
     bool (*poll_raid_encounter)(Root& io_coord_enc,
                                 Root& io_raid_pokemon,
                                 bool& out_is_shiny,
@@ -813,6 +817,11 @@ void transition_stage(RaidStage next_stage, int64_t now_ms, const char* phase = 
     session.stage = next_stage;
     session.stage_started_ms = now_ms;
     session.last_step_ms = 0;
+    if (next_stage == RaidStage::Scan) session.map_wait_started_ms = 0;
+    if (next_stage == RaidStage::Resolve) {
+        session.resolve_confirmed = false;
+        session.resolve_covered = false;
+    }
     if (phase) {
         emit_status(session.command.token, phase, msg, tracker.completed_raids);
     }
@@ -910,12 +919,18 @@ void step_scan(const TransportPermission& perm, int64_t now_ms) {
         finish_session("stopped", "Auto-Raid stopped by user");
         return;
     }
-    if (!perm.item_access || !perm.has_coords || !adapter().map_ready()) {
-        if(now_ms-session.stage_started_ms>=kApproachTimeoutMs){
-            finish_session("error","Game did not return to map readiness after the raid action; check the game");
+    // The discovery cadence also bounds expensive managed map-readiness probes.
+    // A transient obstruction after a long scan gets its own readiness deadline.
+    auto wait_for_map = [&]() {
+        if (!session.map_wait_started_ms) session.map_wait_started_ms = now_ms;
+        if (now_ms - session.map_wait_started_ms >= kApproachTimeoutMs) {
+            finish_session("error", "Game did not return to map readiness; check the game");
             return;
         }
         maybe_emit_heartbeat(now_ms);
+    };
+    if (!perm.item_access || !perm.has_coords) {
+        wait_for_map();
         return;
     }
     if (session.last_step_ms != 0 && now_ms - session.last_step_ms < kDiscoveryScanMs) {
@@ -923,6 +938,11 @@ void step_scan(const TransportPermission& perm, int64_t now_ms) {
         return;
     }
     session.last_step_ms = now_ms;
+    if (!adapter().map_ready()) {
+        wait_for_map();
+        return;
+    }
+    session.map_wait_started_ms = 0;
     if (!session.has_anchor) {
         session.has_anchor = true;
         session.anchor_lat = perm.latitude;
@@ -1290,12 +1310,39 @@ void step_lobby(int64_t now_ms) {
 
 void step_resolve(int64_t now_ms);
 
+// A covered rewards screen is not an authorization to dismiss an arbitrary modal
+// or spend an item. Wait for the player; resume normal progression when uncovered.
+bool record_resolve_progress(int battle_status, bool advanced, bool covered, int64_t now_ms) {
+    if (covered != session.resolve_covered) {
+        session.resolve_covered = covered;
+        emit_status(session.command.token, "rewards",
+                    covered ? "Raid rewards covered by another screen; close the prompt manually"
+                            : "Raid rewards resumed", tracker.completed_raids);
+    }
+    if (covered) return false;
+    if (battle_status == pgs_auto_raid::BATTLE_STATUS_DEFEAT ||
+        battle_status == pgs_auto_raid::BATTLE_STATUS_TIMED_OUT) {
+        handle_raid_loss(battle_status == pgs_auto_raid::BATTLE_STATUS_TIMED_OUT ? "timed out" : "defeat",
+                         now_ms);
+        return false;
+    }
+    if (advanced) session.resolve_confirmed = true;
+    return true;
+}
+
 void step_battle(int64_t now_ms) {
+    if (session.last_step_ms && now_ms - session.last_step_ms < kActionStepMs) {
+        maybe_emit_heartbeat(now_ms);
+        return;
+    }
+    session.last_step_ms = now_ms;
     int battle_status = pgs_auto_raid::BATTLE_STATUS_ACTIVE;
-    bool advanced = false;
-    if (adapter().poll_resolve_state(session.resolve_ui, battle_status, advanced)) {
+    bool advanced = false, covered = false;
+    if (adapter().poll_resolve_state(session.resolve_ui, battle_status, advanced, covered)) {
         transition_stage(RaidStage::Resolve, now_ms, "rewards", "Raid battle finished; resolving outcome");
-        step_resolve(now_ms);
+        session.last_step_ms = now_ms;  // do not run a second reward action in this tick
+        if (record_resolve_progress(battle_status, advanced, covered, now_ms))
+            step_resolve(now_ms);  // may observe an already-open encounter without another reward action
         return;
     }
 
@@ -1317,7 +1364,7 @@ void step_battle(int64_t now_ms) {
 void step_resolve(int64_t now_ms) {
     bool shiny = false;
     int default_ball = 5;
-    if (adapter().poll_raid_encounter(session.coord_encounter, session.raid_map_pokemon, shiny, default_ball)) {
+    if (!session.resolve_covered && adapter().poll_raid_encounter(session.coord_encounter, session.raid_map_pokemon, shiny, default_ball)) {
         session.boss_shiny = shiny;
         transition_stage(RaidStage::Encounter, now_ms, "catching",
                          shiny ? "Shiny raid boss encountered!" : "Catching raid boss");
@@ -1325,7 +1372,9 @@ void step_resolve(int64_t now_ms) {
     }
 
     if (now_ms - session.stage_started_ms >= kResolveTimeoutMs) {
-        finish_session("error", "Raid rewards did not finish; check the game before restarting");
+        finish_session("error", session.resolve_covered
+            ? "Raid rewards still covered by another screen; close the prompt before restarting"
+            : "Raid rewards did not finish; check the game before restarting");
         return;
     }
     if (session.last_step_ms != 0 && now_ms - session.last_step_ms < kActionStepMs) {
@@ -1335,22 +1384,14 @@ void step_resolve(int64_t now_ms) {
     session.last_step_ms = now_ms;
 
     int battle_status = pgs_auto_raid::BATTLE_STATUS_UNSET;
-    bool advanced = false;
-    if (!adapter().poll_resolve_state(session.resolve_ui, battle_status, advanced)) {
+    bool advanced = false, covered = false;
+    if (!adapter().poll_resolve_state(session.resolve_ui, battle_status, advanced, covered)) {
+        if (session.resolve_covered) record_resolve_progress(battle_status, false, false, now_ms);
         maybe_emit_heartbeat(now_ms);
         return;
     }
-
-    if (battle_status == pgs_auto_raid::BATTLE_STATUS_DEFEAT ||
-        battle_status == pgs_auto_raid::BATTLE_STATUS_TIMED_OUT) {
-        handle_raid_loss(battle_status == pgs_auto_raid::BATTLE_STATUS_TIMED_OUT ? "timed out" : "defeat",
-                         now_ms);
-        return;
-    }
-    if (advanced) {
-        session.resolve_confirmed = true;
-    }
-    maybe_emit_heartbeat(now_ms);
+    if (record_resolve_progress(battle_status, advanced, covered, now_ms) || covered)
+        maybe_emit_heartbeat(now_ms);
 }
 
 void await_catch_summary(bool shiny,const std::string& message,int64_t now_ms){

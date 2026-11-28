@@ -1,5 +1,12 @@
 # Changelog
 
+## Unreleased — second audit
+
+- Auto-Raid rewards no longer advance behind a covering GUI. When the player closes the prompt, the normal flow may resume; a bounded timeout explains the blockage. The Lucky Egg dialog's exact game class and an automatic decline remain unverified.
+- Avoid duplicate reward actions in the same tick and repeated final reward confirmation; preserve the session's existing revocation and spending rules.
+- Bound managed map-readiness probes to the existing discovery cadence; a new map obstruction gets its own bounded wait instead of inheriting the elapsed scan time.
+- Cutscene skip restores the reward screen when a covering GUI takes input. Regression fixtures cover the guarded paths; no physical-device or FPS validation claimed.
+
 ## PGS v0.0.6 — 2026-11-28
 
 - Hundo feed refresh interval set to 60 seconds; corrected external references and added Worker regression tests.

@@ -137,7 +137,7 @@ void setup(){
  unity_alive=&ids[ALIVE];root_canvas=&ids[ROOT];canvas_alpha=&ids[ALPHA];
  canvas_raycasts_get=&ids[RAY_GET];canvas_raycasts=&ids[RAY_SET];
  animator_speed_get=&ids[SPEED_GET];animator_speed_set=&ids[SPEED_SET];
- raid_tap=&ids[TAP];raid_leaderboard_close=&ids[LEADER];delegate_method=&ids[METHOD];
+ raid_tap=&ids[TAP];raid_leaderboard_close=&ids[LEADER];delegate_method=&ids[METHOD];raid_top_gui=&egg_ids[E_TOP];
  delegate_target=&ids[TARGET];action_invoke=&ids[INVOKE];reflection_method=reinterpret_cast<void*>(from_reflection);
  gui_state=&ids[STATE];raid_status=&ids[RESULT];raid_canvas_field=&ids[CANVAS];
  raid_animator_field=&ids[ANIM];gui_back_action=&ids[ACTION];raid_victory=1;
@@ -171,6 +171,13 @@ int main(){
  due();assert(button.taps==1&&raid_confirmed&&contains("bonus-challenge"));
  int prior=gui.taps;due();assert(button.taps==1&&gui.taps==prior&&!contains("\"skipped\""));
  finish();assert(!canvas.raycasts&&!base.raycasts&&anim.speed==1);
+ // A reward overlay owns input. Never press behind it, and restore the canvas
+ // and animator even if the skipper had already hidden the underlying rewards.
+ setup();gui.top=false;advance_raid(true);cleared();
+ assert(gui.taps==0&&button.taps==0&&canvas.alpha==1&&anim.speed==1);
+ assert(contains("reward screen covered by another GUI"));
+ setup();prepared();gui.top=false;rowroot.active=true;due();cleared();
+ assert(gui.taps==0&&button.taps==0&&canvas.alpha==1&&base.alpha==1&&anim.speed==1);
  // A missing/destroyed confirmation must not become an early Close; failed Press restores UI.
  setup();prepared();rowroot.active=true;button.alive=false;due();assert(button.taps==0);advance_raid(false);cleared();
  setup();prepared();rowroot.active=true;fail_method=&ids[PRESS];failures=1;due();cleared();

@@ -99,7 +99,7 @@ constexpr uint64_t kRewardsOpenWaitMs=3000;
 // reward/leaderboard steps. Advance with CancelAreaTapped and the registered CloseLeaderboard action,
 // then press the active final confirmation button through its own handler. Speed up only this
 // screen's animator. Never call Close early or mutate global input/time state.
-void *raid_tap=nullptr,*raid_leaderboard_close=nullptr,*raid_status=nullptr;int32_t raid_victory=-1;
+void *raid_tap=nullptr,*raid_leaderboard_close=nullptr,*raid_status=nullptr,*raid_top_gui=nullptr;int32_t raid_victory=-1;
 void *raid_animator_field=nullptr,*raid_canvas_field=nullptr,*gui_back_action=nullptr;
 void *unity_alive=nullptr,*animator_speed_get=nullptr,*animator_speed_set=nullptr;
 void *canvas_raycasts=nullptr,*canvas_raycasts_get=nullptr;
@@ -856,6 +856,9 @@ void advance_raid(bool on){
    return;
   }
   if(state!=1&&state!=2)return;
+  // A modal above the rewards (for example an optional item offer) owns input.
+  // Restore the original screen instead of hiding it or pressing behind it.
+  if(state==2&&!raid_bool(raid_top_gui,gui)){recover_raid("reward screen covered by another GUI");return;}
   prepare_raid(gui);
   if(state!=2||pending_dialog)return;
   if(!raid_next){raid_next=now+kFastSettleMs;return;}
@@ -1061,6 +1064,7 @@ void install(){
  try{
   require(gui_state&&root_canvas&&canvas_alpha,"GuiController state");
   void *gui=class_of(api,"Niantic.Holoholo.Raid","RaidResolveUIController");
+  raid_top_gui=method(class_of(api,"Niantic.Holoholo.NUI","GuiController"),"get_IsTopGui",0);
   raid_tap=method(gui,"CancelAreaTapped",0);
   raid_leaderboard_close=method(gui,"CloseLeaderboard",0);
   canvas_raycasts=method(class_of(api,"UnityEngine","CanvasGroup"),"set_blocksRaycasts",1);

@@ -1,0 +1,123 @@
+name: PGS Android installation diagnostics
+
+on:
+  push:
+    branches: [pgs-install-diagnostics]
+    paths:
+      - .github/workflows/pgs-install-diagnostics.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  diagnose:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - uses: android-actions/setup-android@9fc6c4e9069bf8d3d10b2204b1fb8f6ef7065407 # v3
+        with:
+          packages: platform-tools
+          log-accepted-android-sdk-licenses: false
+      - name: Retrieve the exact two existing private test APKs
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p "$RUNNER_TEMP/install-diagnostics" "$RUNNER_TEMP/install-receipts"
+          cd "$RUNNER_TEMP/install-diagnostics"
+          gh api -H 'Accept: application/octet-stream' "repos/$GITHUB_REPOSITORY/releases/assets/799981607" > baseline.apk
+          gh api -H 'Accept: application/octet-stream' "repos/$GITHUB_REPOSITORY/releases/assets/802977377" > candidate.apk
+          printf '%s  %s\n' '91865f6242519091a771617f962f17620405624a4a56addec0909d2cdf6b68c1' baseline.apk 'fa139a05d884ae2c487f8af68673c049d7db03eaae8fca8efecc88f6cf2c4ea9' candidate.apk | sha256sum -c -
+      - name: Compare APKs using independent Android SDK parsers
+        shell: bash
+        run: |
+          set -euo pipefail
+          sdkmanager "build-tools;36.0.0"
+          tools="$ANDROID_SDK_ROOT/build-tools/36.0.0"
+          cd "$RUNNER_TEMP/install-diagnostics"
+          out="$RUNNER_TEMP/install-receipts"
+          for apk in baseline candidate; do
+            for command in signer alignment badging xmltree; do
+              set +e
+              case "$command" in
+                signer) "$tools/apksigner" verify --verbose --print-certs "$apk.apk" > "$out/$apk-$command.txt" 2>&1 ;;
+                alignment) "$tools/zipalign" -c -P 16 -v 4 "$apk.apk" > "$out/$apk-$command.txt" 2>&1 ;;
+                badging) "$tools/aapt2" dump badging "$apk.apk" > "$out/$apk-$command.txt" 2>&1 ;;
+                xmltree) "$tools/aapt2" dump xmltree --file AndroidManifest.xml "$apk.apk" > "$out/$apk-$command.txt" 2>&1 ;;
+              esac
+              rc=$?
+              set -e
+              echo "$apk $command exit=$rc" | tee -a "$out/status.txt"
+              if [[ "$command" != alignment && "$command" != xmltree ]]; then head -n 35 "$out/$apk-$command.txt"; fi
+              if [[ "$rc" != 0 ]]; then tail -n 30 "$out/$apk-$command.txt"; fi
+            done
+          done
+          diff -u "$out/baseline-xmltree.txt" "$out/candidate-xmltree.txt" > "$out/manifest.diff" || true
+          head -n 180 "$out/manifest.diff"
+          python - <<'PY' | tee "$out/archive-comparison.txt"
+          import zipfile
+          from collections import Counter
+          with zipfile.ZipFile('baseline.apk') as a, zipfile.ZipFile('candidate.apk') as b:
+              left, right = {i.filename:i for i in a.infolist()}, {i.filename:i for i in b.infolist()}
+              for name, z, entries in [('baseline', a, left), ('candidate', b, right)]:
+                  print(name, 'entries', len(entries), 'CRC test', z.testzip())
+                  print('Native library compression:', dict(Counter(i.compress_type for k,i in entries.items() if k.startswith('lib/') and k.endswith('.so'))))
+                  print('DEX names:', [k for k in entries if k.startswith('classes') and k.endswith('.dex')])
+                  print('resources.arsc:', entries['resources.arsc'].compress_type, entries['resources.arsc'].file_size)
+              print('Only baseline:', sorted(left.keys()-right.keys())[:100])
+              print('Only candidate:', sorted(right.keys()-left.keys())[:100])
+              changed=[k for k in left.keys() & right.keys() if (left[k].CRC,left[k].file_size,left[k].compress_type)!=(right[k].CRC,right[k].file_size,right[k].compress_type)]
+              print('Changed common entries:',len(changed), sorted(changed)[:100])
+          PY
+      - name: Install on a fresh Android emulator if compatible
+        continue-on-error: true
+        shell: bash
+        run: |
+          set -euo pipefail
+          out="$RUNNER_TEMP/install-receipts"
+          exec > >(tee "$out/emulator.txt") 2>&1
+          if [[ ! -e /dev/kvm ]]; then echo 'No hardware virtualization; device test unavailable'; exit 0; fi
+          sudo chmod a+rw /dev/kvm
+          sdkmanager "emulator" "system-images;android-35;google_apis;x86_64"
+          echo no | avdmanager create avd --force --name pgs_install_probe --package "system-images;android-35;google_apis;x86_64" --device pixel_6
+          "$ANDROID_SDK_ROOT/emulator/emulator" -avd pgs_install_probe -no-window -no-audio -no-boot-anim -gpu swiftshader_indirect -no-snapshot > "$out/emulator-boot.txt" 2>&1 &
+          trap 'adb emu kill || true' EXIT
+          timeout 240 adb wait-for-device
+          for i in $(seq 1 120); do
+            [[ "$(adb shell getprop sys.boot_completed | tr -d '\r')" = 1 ]] && break
+            sleep 3
+          done
+          test "$(adb shell getprop sys.boot_completed | tr -d '\r')" = 1
+          adb shell getprop ro.build.version.sdk
+          abis="$(adb shell getprop ro.product.cpu.abilist | tr -d '\r')"
+          echo "Supported ABIs: $abis"
+          if [[ "$abis" != *arm64-v8a* ]]; then echo 'Emulator cannot establish ARM64 compatibility; results may be ABI-specific'; fi
+          cd "$RUNNER_TEMP/install-diagnostics"
+          for apk in baseline candidate; do
+            adb uninstall com.nianticlabs.pokemongo >/dev/null 2>&1 || true
+            adb logcat -c
+            echo "Fresh install: $apk"
+            adb install "$apk.apk" 2>&1 | tee "$out/$apk-install.txt" || true
+            adb logcat -d -s PackageManager PackageInstaller PackageInstallerSession PackageParser ParsingPackageUtils > "$out/$apk-package-manager.txt" || true
+          done
+          adb uninstall com.nianticlabs.pokemongo >/dev/null 2>&1 || true
+          echo 'Update test from baseline'
+          if adb install baseline.apk; then
+            adb logcat -c
+            adb install -r candidate.apk 2>&1 | tee "$out/update-install.txt" || true
+            adb logcat -d -s PackageManager PackageInstaller PackageInstallerSession PackageParser ParsingPackageUtils > "$out/update-package-manager.txt" || true
+          fi
+      - name: Save diagnostic text only
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: PGS-install-diagnostic-receipts
+          path: ${{ runner.temp }}/install-receipts/
+          if-no-files-found: warn
+          retention-days: 3
+      - name: Remove temporary APK files
+        if: always()
+        shell: bash
+        run: rm -rf "$RUNNER_TEMP/install-diagnostics"

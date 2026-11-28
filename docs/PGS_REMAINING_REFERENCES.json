@@ -1,12 +1,12 @@
 {
   "scope": "Git-indexed regular UTF-8 text, excluding NUL-containing files and the snapshot itself",
-  "tracked_files": 2086,
-  "text_files": 1012,
-  "remaining_files": 946,
-  "remaining_occurrences": 31206,
+  "tracked_files": 2087,
+  "text_files": 1013,
+  "remaining_files": 947,
+  "remaining_occurrences": 31212,
   "remaining_by_category": {
     "other": 2229,
-    "workflows": 403,
+    "workflows": 409,
     "documentation": 1400,
     "legal": 7,
     "release_history": 61,
@@ -46,6 +46,11 @@
       "path": ".github/workflows/pgs-auto-update.yml",
       "category": "workflows",
       "occurrences": 9
+    },
+    {
+      "path": ".github/workflows/pgs-install-diagnostics.yml",
+      "category": "workflows",
+      "occurrences": 6
     },
     {
       "path": ".github/workflows/pgs-release-notes-sync.yml",
@@ -4749,10 +4754,10 @@
     }
   ],
   "abbreviations": {
-    "remaining_files": 515,
-    "remaining_occurrences": 25690,
+    "remaining_files": 516,
+    "remaining_occurrences": 25692,
     "by_form": {
-      "lowercase": 3871,
+      "lowercase": 3873,
       "uppercase": 16160,
       "camelcase": 5659
     },
@@ -4808,6 +4813,13 @@
         "by_form": {
           "lowercase": 3,
           "uppercase": 2
+        }
+      },
+      {
+        "path": ".github/workflows/pgs-install-diagnostics.yml",
+        "occurrences": 2,
+        "by_form": {
+          "lowercase": 2
         }
       },
       {

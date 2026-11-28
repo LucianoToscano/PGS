@@ -86,8 +86,10 @@ jobs:
                   if not release.get("draft"):
                       continue
                   for asset in release.get("assets", []):
-                      digest = asset.get("digest", "")
-                      if digest == "sha256:" + sys.argv[1] and asset.get("name", "").lower().endswith(".apkm"):
+                      digest = asset.get("digest") or ""
+                      # Browser uploads may have suffixes such as .apkm.1.
+                      # Exact content identity is more reliable than filename.
+                      if digest == "sha256:" + sys.argv[1] and asset.get("state") == "uploaded":
                           matches.append(asset["url"])
           if len(set(matches)) > 1:
               raise SystemExit("Multiple matching private original inputs; select one explicitly")

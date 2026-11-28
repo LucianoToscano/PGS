@@ -4824,6 +4824,7 @@
       "pgs/pgs_update.py",
       "tools/pgs_branding_audit.py",
       "tools/pgs_reference_inventory.py",
+      "tools/pgs_release_notes.py",
       "tools/pgs_version_monitor.py"
     ],
     "files": [

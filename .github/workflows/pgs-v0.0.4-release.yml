@@ -61,27 +61,49 @@ jobs:
             fi
           done
           test "$missing" = 0
-      - name: Recover and verify the exact original game input
+      - name: Find and verify original game input within this repository
         env:
           PGS_INPUT_URL: ${{ secrets.PGS_INPUT_URL }}
-          PGS_BUILD_INPUT_TOKEN: ${{ secrets.PGS_BUILD_INPUT_TOKEN }}
           GITHUB_TOKEN: ${{ github.token }}
+          GH_TOKEN: ${{ github.token }}
         shell: bash
         run: |
           set -euo pipefail
           umask 077
-          input_asset='https://api.github.com/repos/LucianoToscano/PGBR/releases/assets/794374426'
-          if [[ -z "$PGS_INPUT_URL" ]]; then
-            export PGS_INPUT_URL="$input_asset"
-          fi
-          if [[ "$PGS_INPUT_URL" == "$input_asset" && -n "$PGS_BUILD_INPUT_TOKEN" ]]; then
-            export GITHUB_TOKEN="$PGS_BUILD_INPUT_TOKEN"
-          fi
-          if ! python -B tools/private_input.py --input-only; then
-            echo "::error::Original input is unavailable. Configure PGS_BUILD_INPUT_TOKEN with read access to the private PGBR build-inputs asset, or configure PGS_INPUT_URL for an authorized copy with the same hash."
+          expected='c6d3c04c38ca2f2446957633b4fee8c93dcc9cebdbbaddc9cb9651722ef8f54f'
+          # The repository token already has access to its own draft releases.
+          # Never publish or copy the original package to another repository.
+          asset_url="$(gh api --paginate "repos/$GITHUB_REPOSITORY/releases?per_page=100" | python -B -c '
+          import json, sys
+          raw = sys.stdin.read()
+          decoder = json.JSONDecoder()
+          matches = []
+          while raw.strip():
+              raw = raw.lstrip()
+              releases, end = decoder.raw_decode(raw)
+              raw = raw[end:]
+              for release in releases:
+                  if not release.get("draft"):
+                      continue
+                  for asset in release.get("assets", []):
+                      digest = asset.get("digest", "")
+                      if digest == "sha256:" + sys.argv[1] and asset.get("name", "").lower().endswith(".apkm"):
+                          matches.append(asset["url"])
+          if len(set(matches)) > 1:
+              raise SystemExit("Multiple matching private original inputs; select one explicitly")
+          print(matches[0] if matches else "")
+          ' "$expected")"
+          if [[ -n "$asset_url" ]]; then
+            export PGS_INPUT_URL="$asset_url"
+            echo "Found exact original APKM in an unpublished release of this repository."
+          elif [[ -n "$PGS_INPUT_URL" ]]; then
+            echo "Using the explicitly configured original input."
+          else
+            echo "::error::No original APKM matching the pinned SHA-256 was found in this repository's draft releases. Restore the build-inputs asset or configure PGS_INPUT_URL."
             exit 1
           fi
-          echo "c6d3c04c38ca2f2446957633b4fee8c93dcc9cebdbbaddc9cb9651722ef8f54f  pgs/input/game.apkm" | sha256sum -c -
+          python -B tools/private_input.py --input-only
+          echo "$expected  pgs/input/game.apkm" | sha256sum -c -
       - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5
         with:
           python-version: '3.12'

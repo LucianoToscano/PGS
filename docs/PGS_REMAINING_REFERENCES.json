@@ -2,18 +2,18 @@
   "scope": "Git-indexed regular UTF-8 text, excluding NUL-containing files and the snapshot itself",
   "tracked_files": 2107,
   "text_files": 1032,
-  "remaining_files": 951,
-  "remaining_occurrences": 30237,
+  "remaining_files": 960,
+  "remaining_occurrences": 30980,
   "remaining_by_category": {
-    "documentation": 1062,
-    "java": 121,
-    "javascript": 10,
-    "legal": 6,
-    "native": 25466,
-    "other": 2190,
-    "release_history": 238,
-    "tests": 1036,
-    "workflows": 108
+    "documentation": 1360,
+    "java": 184,
+    "javascript": 11,
+    "legal": 5,
+    "native": 25467,
+    "other": 2267,
+    "release_history": 341,
+    "tests": 1210,
+    "workflows": 135
   },
   "tracked_name_matches": [],
   "files": [
@@ -70,7 +70,7 @@
     {
       "path": ".github/workflows/pgs-v0.0.3-candidate.yml",
       "category": "workflows",
-      "occurrences": 50
+      "occurrences": 77
     },
     {
       "path": ".github/workflows/release.yml",
@@ -80,7 +80,7 @@
     {
       "path": ".gitignore",
       "category": "other",
-      "occurrences": 3
+      "occurrences": 4
     },
     {
       "path": "CHANGELOG.md",
@@ -95,12 +95,12 @@
     {
       "path": "CONTRIBUTING.md",
       "category": "documentation",
-      "occurrences": 12
+      "occurrences": 13
     },
     {
       "path": "CONTRIBUTING.pt-BR.md",
       "category": "documentation",
-      "occurrences": 11
+      "occurrences": 12
     },
     {
       "path": "LICENSE",
@@ -110,17 +110,17 @@
     {
       "path": "NOTICE",
       "category": "legal",
-      "occurrences": 5
+      "occurrences": 4
     },
     {
       "path": "README.md",
       "category": "documentation",
-      "occurrences": 39
+      "occurrences": 41
     },
     {
       "path": "README.pt-BR.md",
       "category": "documentation",
-      "occurrences": 37
+      "occurrences": 39
     },
     {
       "path": "THIRD_PARTY.md",
@@ -140,7 +140,7 @@
     {
       "path": "docs/ARCHITECTURE.md",
       "category": "documentation",
-      "occurrences": 6
+      "occurrences": 7
     },
     {
       "path": "docs/BUILDING.md",
@@ -160,22 +160,22 @@
     {
       "path": "docs/NATIVE_MIGRATION.md",
       "category": "documentation",
-      "occurrences": 19
+      "occurrences": 30
     },
     {
       "path": "docs/PGS_BRANDING_AUDIT.md",
       "category": "documentation",
-      "occurrences": 22
+      "occurrences": 29
     },
     {
       "path": "docs/PGS_COMMUNITY_REVIEW.md",
       "category": "documentation",
-      "occurrences": 17
+      "occurrences": 59
     },
     {
       "path": "docs/PGS_FORK_INVENTORY.json",
       "category": "documentation",
-      "occurrences": 1
+      "occurrences": 30
     },
     {
       "path": "docs/PGS_LANGUAGES.md",
@@ -185,7 +185,7 @@
     {
       "path": "docs/PGS_NATIVE_ALIAS_INVENTORY.json",
       "category": "documentation",
-      "occurrences": 270
+      "occurrences": 395
     },
     {
       "path": "docs/PGS_OFFICIAL_LOGOS.md",
@@ -200,7 +200,7 @@
     {
       "path": "docs/PGS_UPDATE_POLICY.md",
       "category": "documentation",
-      "occurrences": 51
+      "occurrences": 57
     },
     {
       "path": "docs/PGS_VERSION_MONITOR.md",
@@ -230,12 +230,12 @@
     {
       "path": "docs/en/PGS_TECHNICAL_MIGRATION.md",
       "category": "documentation",
-      "occurrences": 98
+      "occurrences": 127
     },
     {
       "path": "docs/en/PGS_UPDATE_POLICY.md",
       "category": "documentation",
-      "occurrences": 54
+      "occurrences": 60
     },
     {
       "path": "docs/en/README.md",
@@ -265,12 +265,12 @@
     {
       "path": "docs/pt-BR/PGS_TECHNICAL_MIGRATION.md",
       "category": "documentation",
-      "occurrences": 97
+      "occurrences": 122
     },
     {
       "path": "docs/pt-BR/PGS_UPDATE_POLICY.md",
       "category": "documentation",
-      "occurrences": 52
+      "occurrences": 58
     },
     {
       "path": "docs/pt-BR/README.md",
@@ -305,12 +305,12 @@
     {
       "path": "docs/releases/footer.md",
       "category": "release_history",
-      "occurrences": 4
+      "occurrences": 5
     },
     {
       "path": "docs/releases/v0.0.1.md",
       "category": "release_history",
-      "occurrences": 14
+      "occurrences": 18
     },
     {
       "path": "docs/releases/v0.0.2.md",
@@ -325,162 +325,162 @@
     {
       "path": "docs/releases/v0.1.0-alpha.3.md",
       "category": "release_history",
-      "occurrences": 7
+      "occurrences": 12
     },
     {
       "path": "docs/releases/v0.1.0-alpha.4.md",
       "category": "release_history",
-      "occurrences": 5
+      "occurrences": 9
     },
     {
       "path": "docs/releases/v0.1.0.md",
       "category": "release_history",
-      "occurrences": 5
+      "occurrences": 9
     },
     {
       "path": "docs/releases/v0.1.1.md",
       "category": "release_history",
-      "occurrences": 5
+      "occurrences": 9
     },
     {
       "path": "docs/releases/v0.1.10.md",
       "category": "release_history",
-      "occurrences": 9
+      "occurrences": 11
     },
     {
       "path": "docs/releases/v0.1.2.md",
       "category": "release_history",
-      "occurrences": 5
+      "occurrences": 10
     },
     {
       "path": "docs/releases/v0.1.3.md",
       "category": "release_history",
-      "occurrences": 5
+      "occurrences": 10
     },
     {
       "path": "docs/releases/v0.1.4.md",
       "category": "release_history",
-      "occurrences": 5
+      "occurrences": 10
     },
     {
       "path": "docs/releases/v0.1.5.md",
       "category": "release_history",
-      "occurrences": 5
+      "occurrences": 9
     },
     {
       "path": "docs/releases/v0.1.6.md",
       "category": "release_history",
-      "occurrences": 9
+      "occurrences": 14
     },
     {
       "path": "docs/releases/v0.1.7-experimental.1.md",
       "category": "release_history",
-      "occurrences": 5
+      "occurrences": 9
     },
     {
       "path": "docs/releases/v0.1.7-experimental.2.md",
       "category": "release_history",
-      "occurrences": 5
+      "occurrences": 8
     },
     {
       "path": "docs/releases/v0.1.7-experimental.3.md",
       "category": "release_history",
-      "occurrences": 5
+      "occurrences": 8
     },
     {
       "path": "docs/releases/v0.1.7.md",
       "category": "release_history",
-      "occurrences": 5
+      "occurrences": 8
     },
     {
       "path": "docs/releases/v0.1.8.md",
       "category": "release_history",
-      "occurrences": 5
+      "occurrences": 8
     },
     {
       "path": "docs/releases/v0.1.9.md",
       "category": "release_history",
-      "occurrences": 9
+      "occurrences": 11
     },
     {
       "path": "docs/releases/v0.2.0.md",
       "category": "release_history",
-      "occurrences": 9
+      "occurrences": 12
     },
     {
       "path": "docs/releases/v0.2.1.md",
       "category": "release_history",
-      "occurrences": 9
+      "occurrences": 11
     },
     {
       "path": "docs/releases/v0.2.2.md",
       "category": "release_history",
-      "occurrences": 9
+      "occurrences": 12
     },
     {
       "path": "docs/releases/v0.2.3.md",
       "category": "release_history",
-      "occurrences": 9
+      "occurrences": 11
     },
     {
       "path": "docs/releases/v0.2.4.md",
       "category": "release_history",
-      "occurrences": 9
+      "occurrences": 11
     },
     {
       "path": "docs/releases/v0.2.5.md",
       "category": "release_history",
-      "occurrences": 9
+      "occurrences": 11
     },
     {
       "path": "docs/releases/v0.3.0.md",
       "category": "release_history",
-      "occurrences": 9
+      "occurrences": 14
     },
     {
       "path": "docs/releases/v0.3.2.md",
       "category": "release_history",
-      "occurrences": 9
+      "occurrences": 11
     },
     {
       "path": "docs/releases/v0.3.3.md",
       "category": "release_history",
-      "occurrences": 9
+      "occurrences": 13
     },
     {
       "path": "docs/releases/v0.3.4.md",
       "category": "release_history",
-      "occurrences": 9
+      "occurrences": 11
     },
     {
       "path": "docs/releases/v0.3.5.md",
       "category": "release_history",
-      "occurrences": 9
+      "occurrences": 12
     },
     {
       "path": "docs/releases/v0.3.6.md",
       "category": "release_history",
-      "occurrences": 9
+      "occurrences": 11
     },
     {
       "path": "docs/releases/v0.3.7.md",
       "category": "release_history",
-      "occurrences": 9
+      "occurrences": 12
     },
     {
       "path": "docs/releases/v0.3.8.md",
       "category": "release_history",
-      "occurrences": 9
+      "occurrences": 11
     },
     {
       "path": "pgs/AndroidManifest.xml",
       "category": "other",
-      "occurrences": 5
+      "occurrences": 8
     },
     {
       "path": "pgs/art/CMakeLists.txt",
       "category": "native",
-      "occurrences": 31
+      "occurrences": 28
     },
     {
       "path": "pgs/art/art_symbols.cpp",
@@ -505,17 +505,27 @@
     {
       "path": "pgs/art_build.py",
       "category": "other",
-      "occurrences": 8
+      "occurrences": 7
     },
     {
       "path": "pgs/axml.py",
       "category": "other",
-      "occurrences": 10
+      "occurrences": 13
     },
     {
       "path": "pgs/build.py",
       "category": "other",
-      "occurrences": 44
+      "occurrences": 46
+    },
+    {
+      "path": "pgs/cleanup-rooted.ps1",
+      "category": "other",
+      "occurrences": 1
+    },
+    {
+      "path": "pgs/cleanup.ps1",
+      "category": "other",
+      "occurrences": 1
     },
     {
       "path": "pgs/diagnostics/camera-probe.js",
@@ -610,12 +620,12 @@
     {
       "path": "pgs/native/CMakeLists.txt",
       "category": "native",
-      "occurrences": 18
+      "occurrences": 19
     },
     {
       "path": "pgs/native/README.md",
       "category": "documentation",
-      "occurrences": 14
+      "occurrences": 15
     },
     {
       "path": "pgs/native/account_host.h",
@@ -655,7 +665,7 @@
     {
       "path": "pgs/native/adventure_sync_test.cpp",
       "category": "tests",
-      "occurrences": 5
+      "occurrences": 6
     },
     {
       "path": "pgs/native/always_hit.cpp",
@@ -895,7 +905,7 @@
     {
       "path": "pgs/native/camera_host.cpp",
       "category": "native",
-      "occurrences": 347
+      "occurrences": 348
     },
     {
       "path": "pgs/native/camera_host.h",
@@ -1600,12 +1610,12 @@
     {
       "path": "pgs/native/pgs_native.cpp",
       "category": "native",
-      "occurrences": 125
+      "occurrences": 124
     },
     {
       "path": "pgs/native/pgs_native_api.h",
       "category": "native",
-      "occurrences": 54
+      "occurrences": 52
     },
     {
       "path": "pgs/native/pgs_native_api_compat.h",
@@ -1635,7 +1645,7 @@
     {
       "path": "pgs/native/pvp_icons.h",
       "category": "native",
-      "occurrences": 2
+      "occurrences": 3
     },
     {
       "path": "pgs/native/pvp_keep.cpp",
@@ -2123,6 +2133,11 @@
       "occurrences": 2
     },
     {
+      "path": "pgs/native/schema/pvp/icons/provenance.json",
+      "category": "native",
+      "occurrences": 1
+    },
+    {
       "path": "pgs/native/session_stats.cpp",
       "category": "native",
       "occurrences": 15
@@ -2375,7 +2390,7 @@
     {
       "path": "pgs/native/test_runner.cpp",
       "category": "native",
-      "occurrences": 7
+      "occurrences": 8
     },
     {
       "path": "pgs/native/tests/accounts_dobby_bridge.cpp",
@@ -2640,7 +2655,7 @@
     {
       "path": "pgs/native_build.py",
       "category": "other",
-      "occurrences": 18
+      "occurrences": 19
     },
     {
       "path": "pgs/native_harness.py",
@@ -2655,22 +2670,22 @@
     {
       "path": "pgs/nonroot.py",
       "category": "other",
-      "occurrences": 57
+      "occurrences": 58
     },
     {
       "path": "pgs/pgs.cmd",
       "category": "other",
-      "occurrences": 3
+      "occurrences": 2
     },
     {
       "path": "pgs/pgs_candidate.py",
       "category": "other",
-      "occurrences": 36
+      "occurrences": 37
     },
     {
       "path": "pgs/pgs_rebrand.py",
       "category": "other",
-      "occurrences": 39
+      "occurrences": 46
     },
     {
       "path": "pgs/pgs_update.py",
@@ -2685,12 +2700,12 @@
     {
       "path": "pgs/root-installer/AndroidManifest.xml",
       "category": "other",
-      "occurrences": 3
+      "occurrences": 4
     },
     {
       "path": "pgs/root-installer/README.md",
       "category": "documentation",
-      "occurrences": 20
+      "occurrences": 24
     },
     {
       "path": "pgs/root-installer/res/drawable/launcher_foreground.xml",
@@ -2710,7 +2725,7 @@
     {
       "path": "pgs/root-installer/src/dev/pgs/root/RootModuleState.java",
       "category": "java",
-      "occurrences": 4
+      "occurrences": 8
     },
     {
       "path": "pgs/root-installer/src/dev/pgs/root/RootShell.java",
@@ -2725,7 +2740,7 @@
     {
       "path": "pgs/root-installer/src/dev/pgs/root/RootToggleCommand.java",
       "category": "java",
-      "occurrences": 3
+      "occurrences": 13
     },
     {
       "path": "pgs/root-installer/test/RootShellTest.java",
@@ -2740,12 +2755,12 @@
     {
       "path": "pgs/rooted.py",
       "category": "other",
-      "occurrences": 47
+      "occurrences": 54
     },
     {
       "path": "pgs/rooted_installer.py",
       "category": "other",
-      "occurrences": 14
+      "occurrences": 16
     },
     {
       "path": "pgs/runtime/compiled-google-signin.js",
@@ -2775,7 +2790,7 @@
     {
       "path": "pgs/runtime/native-core.js",
       "category": "javascript",
-      "occurrences": 10
+      "occurrences": 11
     },
     {
       "path": "pgs/runtime/native-transport.js",
@@ -2795,7 +2810,7 @@
     {
       "path": "pgs/runtime_audit.py",
       "category": "other",
-      "occurrences": 2
+      "occurrences": 4
     },
     {
       "path": "pgs/src/dev/pgs/AccountCommandState.java",
@@ -2810,7 +2825,7 @@
     {
       "path": "pgs/src/dev/pgs/AccountProfileStore.java",
       "category": "java",
-      "occurrences": 21
+      "occurrences": 39
     },
     {
       "path": "pgs/src/dev/pgs/AccountProfiles.java",
@@ -2820,7 +2835,7 @@
     {
       "path": "pgs/src/dev/pgs/AccountRestartActivity.java",
       "category": "java",
-      "occurrences": 6
+      "occurrences": 7
     },
     {
       "path": "pgs/src/dev/pgs/AccountSessionTransaction.java",
@@ -2830,12 +2845,12 @@
     {
       "path": "pgs/src/dev/pgs/AccountSessionVault.java",
       "category": "java",
-      "occurrences": 1
+      "occurrences": 6
     },
     {
       "path": "pgs/src/dev/pgs/AccountSessions.java",
       "category": "java",
-      "occurrences": 3
+      "occurrences": 8
     },
     {
       "path": "pgs/src/dev/pgs/AccountsDialog.java",
@@ -2910,7 +2925,7 @@
     {
       "path": "pgs/src/dev/pgs/BootstrapProvider.java",
       "category": "java",
-      "occurrences": 38
+      "occurrences": 40
     },
     {
       "path": "pgs/src/dev/pgs/BuddyEmotionPreferences.java",
@@ -3065,12 +3080,12 @@
     {
       "path": "pgs/src/dev/pgs/GoogleAuthActivity.java",
       "category": "other",
-      "occurrences": 1
+      "occurrences": 2
     },
     {
       "path": "pgs/src/dev/pgs/GoogleBrowserAuth.java",
       "category": "other",
-      "occurrences": 2
+      "occurrences": 3
     },
     {
       "path": "pgs/src/dev/pgs/GpxCodec.java",
@@ -3125,7 +3140,7 @@
     {
       "path": "pgs/src/dev/pgs/I18n.java",
       "category": "java",
-      "occurrences": 5
+      "occurrences": 8
     },
     {
       "path": "pgs/src/dev/pgs/I18nAndroid.java",
@@ -3235,7 +3250,7 @@
     {
       "path": "pgs/src/dev/pgs/LiveFeedSession.java",
       "category": "java",
-      "occurrences": 3
+      "occurrences": 5
     },
     {
       "path": "pgs/src/dev/pgs/LocalTimeClock.java",
@@ -3480,7 +3495,7 @@
     {
       "path": "pgs/src/dev/pgs/RootedRestart.java",
       "category": "java",
-      "occurrences": 2
+      "occurrences": 5
     },
     {
       "path": "pgs/src/dev/pgs/RootedRuntime.java",
@@ -3535,7 +3550,7 @@
     {
       "path": "pgs/src/dev/pgs/SettingsBackupRules.java",
       "category": "java",
-      "occurrences": 15
+      "occurrences": 20
     },
     {
       "path": "pgs/src/dev/pgs/SettingsPanel.java",
@@ -3565,7 +3580,7 @@
     {
       "path": "pgs/src/dev/pgs/ShinyScanner.java",
       "category": "java",
-      "occurrences": 3
+      "occurrences": 5
     },
     {
       "path": "pgs/src/dev/pgs/ShundoOverlay.java",
@@ -3580,7 +3595,7 @@
     {
       "path": "pgs/src/dev/pgs/ShundoSniper.java",
       "category": "java",
-      "occurrences": 14
+      "occurrences": 15
     },
     {
       "path": "pgs/src/dev/pgs/SmartCatchPreferences.java",
@@ -3630,7 +3645,7 @@
     {
       "path": "pgs/src/dev/pgs/VgpController.java",
       "category": "java",
-      "occurrences": 3
+      "occurrences": 5
     },
     {
       "path": "pgs/src/dev/pgs/WorldMapDialog.java",
@@ -3655,12 +3670,12 @@
     {
       "path": "pgs/test/AccountProfileDataTest.java",
       "category": "tests",
-      "occurrences": 1
+      "occurrences": 9
     },
     {
       "path": "pgs/test/AccountProfileStoreTest.java",
       "category": "tests",
-      "occurrences": 32
+      "occurrences": 52
     },
     {
       "path": "pgs/test/AccountSessionTransactionTest.java",
@@ -3735,7 +3750,7 @@
     {
       "path": "pgs/test/ControlLanguageTest.java",
       "category": "tests",
-      "occurrences": 22
+      "occurrences": 23
     },
     {
       "path": "pgs/test/ControlLogRetentionTest.java",
@@ -3760,12 +3775,12 @@
     {
       "path": "pgs/test/ControlSettingsReloadTest.java",
       "category": "tests",
-      "occurrences": 1
+      "occurrences": 2
     },
     {
       "path": "pgs/test/ControlSettingsTest.java",
       "category": "tests",
-      "occurrences": 1
+      "occurrences": 2
     },
     {
       "path": "pgs/test/ControlWildEventTest.java",
@@ -3855,7 +3870,7 @@
     {
       "path": "pgs/test/I18nTest.java",
       "category": "tests",
-      "occurrences": 5
+      "occurrences": 9
     },
     {
       "path": "pgs/test/IdleWalkTest.java",
@@ -3930,7 +3945,7 @@
     {
       "path": "pgs/test/PogoFeedDataTest.java",
       "category": "tests",
-      "occurrences": 1
+      "occurrences": 2
     },
     {
       "path": "pgs/test/PogoFeedFiltersTest.java",
@@ -3990,7 +4005,7 @@
     {
       "path": "pgs/test/SettingsBackupRulesTest.java",
       "category": "tests",
-      "occurrences": 14
+      "occurrences": 32
     },
     {
       "path": "pgs/test/SettingsSearchTest.java",
@@ -4025,7 +4040,7 @@
     {
       "path": "pgs/test/UpdateRulesTest.java",
       "category": "tests",
-      "occurrences": 20
+      "occurrences": 22
     },
     {
       "path": "pgs/test/VgpControllerTest.java",
@@ -4145,7 +4160,7 @@
     {
       "path": "pgs/test/native-core-test.cjs",
       "category": "tests",
-      "occurrences": 17
+      "occurrences": 21
     },
     {
       "path": "pgs/test/native-transport-host-test.cjs",
@@ -4170,7 +4185,7 @@
     {
       "path": "pgs/test/test_account_restart_lifecycle.py",
       "category": "tests",
-      "occurrences": 15
+      "occurrences": 16
     },
     {
       "path": "pgs/test/test_account_restart_manifest.py",
@@ -4195,7 +4210,7 @@
     {
       "path": "pgs/test/test_axml.py",
       "category": "tests",
-      "occurrences": 5
+      "occurrences": 7
     },
     {
       "path": "pgs/test/test_buddy_emotion_preferences_java.py",
@@ -4215,7 +4230,7 @@
     {
       "path": "pgs/test/test_compiled_gameplay.py",
       "category": "tests",
-      "occurrences": 27
+      "occurrences": 34
     },
     {
       "path": "pgs/test/test_control_java.py",
@@ -4235,7 +4250,7 @@
     {
       "path": "pgs/test/test_discord_release.py",
       "category": "tests",
-      "occurrences": 12
+      "occurrences": 15
     },
     {
       "path": "pgs/test/test_encounter_window_java.py",
@@ -4245,7 +4260,7 @@
     {
       "path": "pgs/test/test_event_settings_java.py",
       "category": "tests",
-      "occurrences": 4
+      "occurrences": 5
     },
     {
       "path": "pgs/test/test_game_bridge_dispatch_java.py",
@@ -4345,17 +4360,17 @@
     {
       "path": "pgs/test/test_log_export_java.py",
       "category": "tests",
-      "occurrences": 4
+      "occurrences": 5
     },
     {
       "path": "pgs/test/test_native_build.py",
       "category": "tests",
-      "occurrences": 10
+      "occurrences": 15
     },
     {
       "path": "pgs/test/test_native_prerequisites.py",
       "category": "tests",
-      "occurrences": 8
+      "occurrences": 11
     },
     {
       "path": "pgs/test/test_native_runtime_bootstrap_java.py",
@@ -4380,37 +4395,37 @@
     {
       "path": "pgs/test/test_packaging.py",
       "category": "tests",
-      "occurrences": 14
+      "occurrences": 18
     },
     {
       "path": "pgs/test/test_pgs_build_options.py",
       "category": "tests",
-      "occurrences": 31
+      "occurrences": 32
     },
     {
       "path": "pgs/test/test_pgs_candidate.py",
       "category": "tests",
-      "occurrences": 26
+      "occurrences": 28
     },
     {
       "path": "pgs/test/test_pgs_license.py",
       "category": "tests",
-      "occurrences": 9
+      "occurrences": 13
     },
     {
       "path": "pgs/test/test_pgs_native_aliases_native.py",
       "category": "tests",
-      "occurrences": 7
+      "occurrences": 20
     },
     {
       "path": "pgs/test/test_pgs_native_identity.py",
       "category": "tests",
-      "occurrences": 83
+      "occurrences": 85
     },
     {
       "path": "pgs/test/test_pgs_oauth_retirement.py",
       "category": "tests",
-      "occurrences": 9
+      "occurrences": 14
     },
     {
       "path": "pgs/test/test_pgs_project_layout.py",
@@ -4420,22 +4435,22 @@
     {
       "path": "pgs/test/test_pgs_rebrand.py",
       "category": "tests",
-      "occurrences": 22
+      "occurrences": 30
     },
     {
       "path": "pgs/test/test_pgs_reference_inventory.py",
       "category": "tests",
-      "occurrences": 16
+      "occurrences": 22
     },
     {
       "path": "pgs/test/test_pgs_release_policy.py",
       "category": "tests",
-      "occurrences": 18
+      "occurrences": 19
     },
     {
       "path": "pgs/test/test_pgs_runtime_identity.py",
       "category": "tests",
-      "occurrences": 35
+      "occurrences": 51
     },
     {
       "path": "pgs/test/test_pgs_update.py",
@@ -4460,7 +4475,7 @@
     {
       "path": "pgs/test/test_release_bundle.py",
       "category": "tests",
-      "occurrences": 16
+      "occurrences": 21
     },
     {
       "path": "pgs/test/test_research_preferences_java.py",
@@ -4473,14 +4488,19 @@
       "occurrences": 3
     },
     {
+      "path": "pgs/test/test_rooted_cleanup.py",
+      "category": "tests",
+      "occurrences": 4
+    },
+    {
       "path": "pgs/test/test_rooted_installer_shell.py",
       "category": "tests",
-      "occurrences": 9
+      "occurrences": 19
     },
     {
       "path": "pgs/test/test_rooted_packaging.py",
       "category": "tests",
-      "occurrences": 3
+      "occurrences": 11
     },
     {
       "path": "pgs/test/test_route_start_java.py",
@@ -4548,9 +4568,24 @@
       "occurrences": 8
     },
     {
+      "path": "pgs/vendor/bridge-provenance.json",
+      "category": "other",
+      "occurrences": 2
+    },
+    {
+      "path": "pgs/vendor/frida-java-bridge-302a588.js",
+      "category": "other",
+      "occurrences": 2
+    },
+    {
+      "path": "pgs/vendor/patch_bridge.py",
+      "category": "other",
+      "occurrences": 2
+    },
+    {
       "path": "pgs/zygisk/loader.cpp",
       "category": "native",
-      "occurrences": 10
+      "occurrences": 12
     },
     {
       "path": "tools/check.py",
@@ -4583,6 +4618,16 @@
       "occurrences": 6
     },
     {
+      "path": "tools/hundo-feed/README.md",
+      "category": "other",
+      "occurrences": 3
+    },
+    {
+      "path": "tools/hundo-feed/hundo-feed.env.example",
+      "category": "other",
+      "occurrences": 2
+    },
+    {
       "path": "tools/hundo-feed/hundo-feed.service",
       "category": "other",
       "occurrences": 1
@@ -4590,7 +4635,7 @@
     {
       "path": "tools/hundo-feed/hundo_feed.py",
       "category": "other",
-      "occurrences": 3
+      "occurrences": 4
     },
     {
       "path": "tools/i18n_catalog.py",
@@ -4610,12 +4655,12 @@
     {
       "path": "tools/pgs_branding_audit.py",
       "category": "other",
-      "occurrences": 77
+      "occurrences": 95
     },
     {
       "path": "tools/pgs_reference_inventory.py",
       "category": "other",
-      "occurrences": 3
+      "occurrences": 11
     },
     {
       "path": "tools/pgs_version_monitor.py",
@@ -4630,12 +4675,12 @@
     {
       "path": "tools/private_input.py",
       "category": "other",
-      "occurrences": 3
+      "occurrences": 4
     },
     {
       "path": "tools/pvp_data.py",
       "category": "other",
-      "occurrences": 8
+      "occurrences": 9
     },
     {
       "path": "tools/source_bundle.py",
@@ -4655,7 +4700,7 @@
     {
       "path": "tools/verify_release.py",
       "category": "other",
-      "occurrences": 9
+      "occurrences": 12
     },
     {
       "path": "website/README.md",
@@ -4685,7 +4730,7 @@
     {
       "path": "website/src/App.jsx",
       "category": "other",
-      "occurrences": 3
+      "occurrences": 4
     },
     {
       "path": "website/src/assets.js",
@@ -4760,7 +4805,7 @@
     {
       "path": "website/tests/guides.spec.js",
       "category": "tests",
-      "occurrences": 7
+      "occurrences": 8
     },
     {
       "path": "website/tests/site.spec.js",
@@ -4774,12 +4819,12 @@
     }
   ],
   "abbreviations": {
-    "remaining_files": 508,
-    "remaining_occurrences": 25957,
+    "remaining_files": 510,
+    "remaining_occurrences": 26188,
     "by_form": {
-      "camelcase": 6632,
-      "lowercase": 3772,
-      "uppercase": 15553
+      "camelcase": 6634,
+      "lowercase": 3858,
+      "uppercase": 15696
     },
     "tracked_name_matches": [
       "docs/PGS_BRANDING_AUDIT.md",
@@ -4836,24 +4881,31 @@
       },
       {
         "path": ".github/workflows/pgs-v0.0.3-candidate.yml",
-        "occurrences": 24,
+        "occurrences": 51,
         "by_form": {
           "lowercase": 1,
-          "uppercase": 23
+          "uppercase": 50
+        }
+      },
+      {
+        "path": ".gitignore",
+        "occurrences": 1,
+        "by_form": {
+          "uppercase": 1
         }
       },
       {
         "path": "CONTRIBUTING.md",
-        "occurrences": 3,
+        "occurrences": 4,
         "by_form": {
-          "uppercase": 3
+          "uppercase": 4
         }
       },
       {
         "path": "CONTRIBUTING.pt-BR.md",
-        "occurrences": 3,
+        "occurrences": 4,
         "by_form": {
-          "uppercase": 3
+          "uppercase": 4
         }
       },
       {
@@ -4900,9 +4952,10 @@
       },
       {
         "path": "docs/NATIVE_MIGRATION.md",
-        "occurrences": 1,
+        "occurrences": 6,
         "by_form": {
-          "uppercase": 1
+          "lowercase": 1,
+          "uppercase": 5
         }
       },
       {
@@ -4922,10 +4975,10 @@
       },
       {
         "path": "docs/PGS_NATIVE_ALIAS_INVENTORY.json",
-        "occurrences": 145,
+        "occurrences": 270,
         "by_form": {
-          "lowercase": 67,
-          "uppercase": 78
+          "lowercase": 114,
+          "uppercase": 156
         }
       },
       {
@@ -4944,10 +4997,10 @@
       },
       {
         "path": "docs/PGS_UPDATE_POLICY.md",
-        "occurrences": 6,
+        "occurrences": 8,
         "by_form": {
           "lowercase": 1,
-          "uppercase": 5
+          "uppercase": 7
         }
       },
       {
@@ -4988,19 +5041,19 @@
       },
       {
         "path": "docs/en/PGS_TECHNICAL_MIGRATION.md",
-        "occurrences": 36,
+        "occurrences": 52,
         "by_form": {
-          "camelcase": 2,
-          "lowercase": 21,
-          "uppercase": 13
+          "camelcase": 3,
+          "lowercase": 32,
+          "uppercase": 17
         }
       },
       {
         "path": "docs/en/PGS_UPDATE_POLICY.md",
-        "occurrences": 8,
+        "occurrences": 10,
         "by_form": {
           "lowercase": 1,
-          "uppercase": 7
+          "uppercase": 9
         }
       },
       {
@@ -5033,19 +5086,19 @@
       },
       {
         "path": "docs/pt-BR/PGS_TECHNICAL_MIGRATION.md",
-        "occurrences": 38,
+        "occurrences": 50,
         "by_form": {
-          "camelcase": 2,
-          "lowercase": 21,
-          "uppercase": 15
+          "camelcase": 3,
+          "lowercase": 31,
+          "uppercase": 16
         }
       },
       {
         "path": "docs/pt-BR/PGS_UPDATE_POLICY.md",
-        "occurrences": 7,
+        "occurrences": 9,
         "by_form": {
           "lowercase": 1,
-          "uppercase": 6
+          "uppercase": 8
         }
       },
       {
@@ -5064,11 +5117,11 @@
       },
       {
         "path": "pgs/art/CMakeLists.txt",
-        "occurrences": 25,
+        "occurrences": 23,
         "by_form": {
           "camelcase": 4,
           "lowercase": 17,
-          "uppercase": 4
+          "uppercase": 2
         }
       },
       {
@@ -5102,10 +5155,10 @@
       },
       {
         "path": "pgs/art_build.py",
-        "occurrences": 5,
+        "occurrences": 4,
         "by_form": {
           "lowercase": 1,
-          "uppercase": 4
+          "uppercase": 3
         }
       },
       {
@@ -5131,18 +5184,18 @@
       },
       {
         "path": "pgs/native/CMakeLists.txt",
-        "occurrences": 15,
+        "occurrences": 16,
         "by_form": {
-          "lowercase": 12,
+          "lowercase": 13,
           "uppercase": 3
         }
       },
       {
         "path": "pgs/native/README.md",
-        "occurrences": 8,
+        "occurrences": 9,
         "by_form": {
           "camelcase": 2,
-          "lowercase": 6
+          "lowercase": 7
         }
       },
       {
@@ -5198,9 +5251,9 @@
       },
       {
         "path": "pgs/native/adventure_sync_test.cpp",
-        "occurrences": 5,
+        "occurrences": 6,
         "by_form": {
-          "lowercase": 5
+          "lowercase": 6
         }
       },
       {
@@ -5588,10 +5641,10 @@
       },
       {
         "path": "pgs/native/camera_host.cpp",
-        "occurrences": 347,
+        "occurrences": 348,
         "by_form": {
           "camelcase": 74,
-          "lowercase": 19,
+          "lowercase": 20,
           "uppercase": 254
         }
       },
@@ -6788,9 +6841,9 @@
       },
       {
         "path": "pgs/native/pgs_native.cpp",
-        "occurrences": 117,
+        "occurrences": 116,
         "by_form": {
-          "lowercase": 88,
+          "lowercase": 87,
           "uppercase": 29
         }
       },
@@ -8108,9 +8161,9 @@
       },
       {
         "path": "pgs/native/test_runner.cpp",
-        "occurrences": 6,
+        "occurrences": 7,
         "by_form": {
-          "lowercase": 4,
+          "lowercase": 5,
           "uppercase": 2
         }
       },
@@ -8665,9 +8718,9 @@
       },
       {
         "path": "pgs/runtime/native-core.js",
-        "occurrences": 1,
+        "occurrences": 2,
         "by_form": {
-          "lowercase": 1
+          "lowercase": 2
         }
       },
       {
@@ -8686,6 +8739,13 @@
       },
       {
         "path": "pgs/src/dev/pgs/AccountRestartActivity.java",
+        "occurrences": 3,
+        "by_form": {
+          "lowercase": 3
+        }
+      },
+      {
+        "path": "pgs/src/dev/pgs/LiveFeedSession.java",
         "occurrences": 2,
         "by_form": {
           "lowercase": 2
@@ -8729,9 +8789,9 @@
       },
       {
         "path": "pgs/test/native-core-test.cjs",
-        "occurrences": 5,
+        "occurrences": 9,
         "by_form": {
-          "lowercase": 5
+          "lowercase": 9
         }
       },
       {
@@ -8750,17 +8810,17 @@
       },
       {
         "path": "pgs/test/test_axml.py",
-        "occurrences": 3,
+        "occurrences": 5,
         "by_form": {
           "lowercase": 1,
-          "uppercase": 2
+          "uppercase": 4
         }
       },
       {
         "path": "pgs/test/test_compiled_gameplay.py",
-        "occurrences": 3,
+        "occurrences": 10,
         "by_form": {
-          "uppercase": 3
+          "uppercase": 10
         }
       },
       {
@@ -8787,23 +8847,23 @@
       },
       {
         "path": "pgs/test/test_log_export_java.py",
-        "occurrences": 1,
+        "occurrences": 2,
         "by_form": {
-          "uppercase": 1
+          "uppercase": 2
         }
       },
       {
         "path": "pgs/test/test_native_build.py",
-        "occurrences": 8,
+        "occurrences": 12,
         "by_form": {
-          "lowercase": 8
+          "lowercase": 12
         }
       },
       {
         "path": "pgs/test/test_native_prerequisites.py",
-        "occurrences": 2,
+        "occurrences": 5,
         "by_form": {
-          "uppercase": 2
+          "uppercase": 5
         }
       },
       {
@@ -8815,17 +8875,17 @@
       },
       {
         "path": "pgs/test/test_packaging.py",
-        "occurrences": 4,
+        "occurrences": 8,
         "by_form": {
-          "uppercase": 4
+          "uppercase": 8
         }
       },
       {
         "path": "pgs/test/test_pgs_build_options.py",
-        "occurrences": 20,
+        "occurrences": 21,
         "by_form": {
           "camelcase": 1,
-          "uppercase": 19
+          "uppercase": 20
         }
       },
       {
@@ -8858,16 +8918,16 @@
         "occurrences": 64,
         "by_form": {
           "camelcase": 3,
-          "lowercase": 43,
-          "uppercase": 18
+          "lowercase": 44,
+          "uppercase": 17
         }
       },
       {
         "path": "pgs/test/test_pgs_oauth_retirement.py",
-        "occurrences": 2,
+        "occurrences": 7,
         "by_form": {
           "camelcase": 1,
-          "uppercase": 1
+          "uppercase": 6
         }
       },
       {
@@ -8899,11 +8959,11 @@
       },
       {
         "path": "pgs/test/test_pgs_release_policy.py",
-        "occurrences": 7,
+        "occurrences": 8,
         "by_form": {
           "camelcase": 1,
           "lowercase": 3,
-          "uppercase": 3
+          "uppercase": 4
         }
       },
       {

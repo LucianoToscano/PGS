@@ -1,19 +1,19 @@
 {
   "scope": "Git-indexed regular UTF-8 text, excluding NUL-containing files and the snapshot itself",
-  "tracked_files": 2103,
-  "text_files": 1029,
-  "remaining_files": 960,
-  "remaining_occurrences": 31427,
+  "tracked_files": 2109,
+  "text_files": 1035,
+  "remaining_files": 965,
+  "remaining_occurrences": 31468,
   "remaining_by_category": {
-    "documentation": 1396,
+    "documentation": 1417,
     "java": 134,
     "javascript": 9,
     "legal": 6,
     "native": 25901,
-    "other": 2348,
+    "other": 2349,
     "release_history": 61,
     "tests": 1067,
-    "workflows": 505
+    "workflows": 524
   },
   "tracked_name_matches": [],
   "files": [
@@ -41,6 +41,16 @@
       "path": ".github/workflows/discord-release.yml",
       "category": "workflows",
       "occurrences": 7
+    },
+    {
+      "path": ".github/workflows/pgs-auto-backup.yml",
+      "category": "workflows",
+      "occurrences": 9
+    },
+    {
+      "path": ".github/workflows/pgs-auto-sync.yml",
+      "category": "workflows",
+      "occurrences": 10
     },
     {
       "path": ".github/workflows/pgs-auto-update.yml",
@@ -135,12 +145,12 @@
     {
       "path": "README.md",
       "category": "documentation",
-      "occurrences": 35
+      "occurrences": 41
     },
     {
       "path": "README.pt-BR.md",
       "category": "documentation",
-      "occurrences": 36
+      "occurrences": 42
     },
     {
       "path": "THIRD_PARTY.md",
@@ -183,9 +193,19 @@
       "occurrences": 28
     },
     {
+      "path": "docs/PGS_AUTO_BACKUP.md",
+      "category": "documentation",
+      "occurrences": 4
+    },
+    {
       "path": "docs/PGS_AUTO_BUILD.md",
       "category": "documentation",
       "occurrences": 1
+    },
+    {
+      "path": "docs/PGS_AUTO_SYNC.md",
+      "category": "documentation",
+      "occurrences": 5
     },
     {
       "path": "docs/PGS_BRANDING_AUDIT.md",
@@ -4688,6 +4708,11 @@
       "occurrences": 3
     },
     {
+      "path": "tools/test_pgs_upstream_monitor.py",
+      "category": "other",
+      "occurrences": 1
+    },
+    {
       "path": "tools/test_pgs_version_monitor.py",
       "category": "other",
       "occurrences": 3
@@ -4819,15 +4844,17 @@
     }
   ],
   "abbreviations": {
-    "remaining_files": 526,
-    "remaining_occurrences": 25783,
+    "remaining_files": 531,
+    "remaining_occurrences": 25797,
     "by_form": {
       "camelcase": 5664,
-      "lowercase": 3887,
-      "uppercase": 16232
+      "lowercase": 3889,
+      "uppercase": 16244
     },
     "tracked_name_matches": [
+      "docs/PGS_AUTO_BACKUP.md",
       "docs/PGS_AUTO_BUILD.md",
+      "docs/PGS_AUTO_SYNC.md",
       "docs/PGS_BRANDING_AUDIT.md",
       "docs/PGS_COMMUNITY_REVIEW.md",
       "docs/PGS_FORK_INVENTORY.json",
@@ -4858,6 +4885,7 @@
       "tools/pgs_candidate_draft.py",
       "tools/pgs_reference_inventory.py",
       "tools/pgs_release_notes.py",
+      "tools/pgs_upstream_monitor.py",
       "tools/pgs_version_monitor.py"
     ],
     "files": [
@@ -4874,6 +4902,21 @@
         "occurrences": 7,
         "by_form": {
           "uppercase": 7
+        }
+      },
+      {
+        "path": ".github/workflows/pgs-auto-backup.yml",
+        "occurrences": 1,
+        "by_form": {
+          "uppercase": 1
+        }
+      },
+      {
+        "path": ".github/workflows/pgs-auto-sync.yml",
+        "occurrences": 3,
+        "by_form": {
+          "lowercase": 1,
+          "uppercase": 2
         }
       },
       {
@@ -4985,16 +5028,16 @@
       },
       {
         "path": "README.md",
-        "occurrences": 9,
+        "occurrences": 12,
         "by_form": {
-          "uppercase": 9
+          "uppercase": 12
         }
       },
       {
         "path": "README.pt-BR.md",
-        "occurrences": 9,
+        "occurrences": 12,
         "by_form": {
-          "uppercase": 9
+          "uppercase": 12
         }
       },
       {
@@ -5031,6 +5074,20 @@
         "by_form": {
           "lowercase": 1,
           "uppercase": 4
+        }
+      },
+      {
+        "path": "docs/PGS_AUTO_BACKUP.md",
+        "occurrences": 1,
+        "by_form": {
+          "uppercase": 1
+        }
+      },
+      {
+        "path": "docs/PGS_AUTO_SYNC.md",
+        "occurrences": 2,
+        "by_form": {
+          "uppercase": 2
         }
       },
       {
@@ -9179,6 +9236,13 @@
       },
       {
         "path": "tools/test_pgs_release_notes.py",
+        "occurrences": 1,
+        "by_form": {
+          "lowercase": 1
+        }
+      },
+      {
+        "path": "tools/test_pgs_upstream_monitor.py",
         "occurrences": 1,
         "by_form": {
           "lowercase": 1

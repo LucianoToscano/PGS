@@ -1,0 +1,49 @@
+{
+  "name": "pgs-hundo-feed",
+  "main": "worker.mjs",
+  "compatibility_date": "2026-11-01",
+  "workers_dev": true,
+  "triggers": {
+    "crons": [
+      "* * * * *"
+    ]
+  },
+  "kv_namespaces": [
+    {
+      "binding": "FEED",
+      "id": "b8561838a0754fca909ac0b809ba2150"
+    }
+  ],
+  "observability": {
+    "enabled": false
+  },
+  "vars": {
+    "SOURCES": "[{\"name\":\"faustusfoundry\",\"url\":\"https://feed.faustusfoundry.com/pgrazor/hundos.json\",\"interval_s\":60},{\"name\":\"nycpokemap\",\"url\":\"https://nycpokemap.com/query2.php\",\"kind\":\"city\",\"interval_s\":600},{\"name\":\"sgpokemap\",\"url\":\"https://sgpokemap.com/query2.php\",\"kind\":\"city\",\"interval_s\":600},{\"name\":\"londonpogomap\",\"url\":\"https://londonpogomap.com/query2.php\",\"kind\":\"city\",\"interval_s\":600},{\"name\":\"sydneypogomap\",\"url\":\"https://sydneypogomap.com/query2.php\",\"kind\":\"city\",\"interval_s\":600},{\"name\":\"vanpokemap\",\"url\":\"https://vanpokemap.com/query2.php\",\"kind\":\"city\",\"interval_s\":600},{\"name\":\"iflowgo-pokemon\",\"url\":\"https://pokecoords.iflowgo.com/iflowgopokecoords/api/v1/pokemon-search\",\"kind\":\"iflow\",\"category\":\"pokemon\",\"interval_s\":600},{\"name\":\"moonani\",\"kind\":\"moonani\",\"url\":\"https://moonani.com/PokeList/ajax.php\",\"interval_s\":900},{\"name\":\"gocoords\",\"kind\":\"gocoords\",\"url\":\"https://gocoords.com/api/spawns\",\"interval_s\":300},{\"name\":\"poke100iv\",\"url\":\"https://poke100iv.com/api/pokemon\",\"kind\":\"poke100iv\",\"interval_s\":600}]"
+  },
+  "ratelimits": [
+    {
+      "name": "PUBLIC_LIMIT",
+      "namespace_id": "27112662",
+      "simple": {
+        "limit": 600,
+        "period": 60
+      }
+    }
+  ],
+  "durable_objects": {
+    "bindings": [
+      {
+        "name": "PUBLISHER",
+        "class_name": "FeedPublisher"
+      }
+    ]
+  },
+  "migrations": [
+    {
+      "tag": "pgs-publisher-v1",
+      "new_sqlite_classes": [
+        "FeedPublisher"
+      ]
+    }
+  ]
+}

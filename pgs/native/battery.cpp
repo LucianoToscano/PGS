@@ -1,4 +1,5 @@
 #include "battery.h"
+#include "battery_policy.h"
 #include "game_bindings.h"
 #include "hook_engine.h"
 #include "runtime_bootstrap.h"
@@ -22,7 +23,8 @@ namespace {
 struct Failure {const char *where;};
 void require(bool ok,const char *where){if(!ok)throw Failure{where};}
 PgsBootBinding boot{};
-bool initialized=false,busy=false,faulted=false,hooks_tried=false;uint64_t owner=0,next_apply=0;
+bool initialized=false,busy=false,faulted=false,hooks_tried=false,plants_tried=false,plants_ready=false;
+uint64_t owner=0,next_apply=0,last_slow_report=0;
 std::string hook_note;
 constexpr uint64_t kApplyEveryMs=2000;
 constexpr float kRenderScale=0.5f,kLodBias=0.5f;
@@ -117,7 +119,7 @@ void install_hooks(){
 
 // ---- Unity settings ------------------------------------------------------------------------------
 // Resolved once per process.
-void *app_get_fps=nullptr,*app_set_fps=nullptr,*quality_get_lod=nullptr,*quality_set_lod=nullptr,*graphics_pipeline=nullptr,
+void *app_get_fps=nullptr,*app_set_fps=nullptr,*quality_get_lod=nullptr,*quality_set_lod=nullptr,*graphics_pipeline=nullptr,*asset_alive=nullptr,
      *fog_get=nullptr,*fog_set=nullptr;
 void *urp_class=nullptr,*urp_get_scale=nullptr,*urp_set_scale=nullptr,*urp_get_msaa=nullptr,*urp_set_msaa=nullptr,
      *urp_get_main=nullptr,*urp_set_main=nullptr,*urp_get_extra=nullptr,*urp_set_extra=nullptr,
@@ -129,6 +131,7 @@ void bind(){
  app_get_fps=method(app,"get_targetFrameRate",0);app_set_fps=method(app,"set_targetFrameRate",1);
  quality_get_lod=method(quality,"get_lodBias",0);quality_set_lod=method(quality,"set_lodBias",1);
  graphics_pipeline=method(graphics,"get_currentRenderPipeline",0);
+ asset_alive=method(cls("UnityEngine","Object"),"op_Implicit",1);
  fog_get=method(render,"get_fog",0);fog_set=method(render,"set_fog",1);
  urp_class=cls("UnityEngine.Rendering.Universal","UniversalRenderPipelineAsset");
  urp_get_scale=method(urp_class,"get_renderScale",0);urp_set_scale=method(urp_class,"set_renderScale",1);
@@ -150,25 +153,11 @@ struct Root {
 // The active URP asset, or null when the game is not using one right now.
 void *pipeline(){void *p=invoke(graphics_pipeline,nullptr);return p&&klass(p)==urp_class?p:nullptr;}
 
-// One managed value PGS may lower: the game's value is kept in `original` while ours is applied.
-template<class T>struct Knob {
- bool applied=false;T original{},ours{};
- // Lowers it if needed, keeping the game's value. If the game has changed it since, that becomes the
- // value to put back. Returns true when something was set.
- template<class Get,class Set,class Lower>bool on(Get get,Set set,Lower lower){
-  const T now=get();
-  if(applied&&now==ours){  // still ours: follow a change in how low it should be (e.g. black screen)
-   const T want=lower(original);if(want==ours)return false;
-   ours=want;set(want);return true;
-  }
-  const T want=lower(now);
-  if(want==now){if(applied){applied=false;}return false;}  // already as low as ours: nothing to change
-  original=now;ours=want;set(want);applied=true;return true;
- }
- template<class Set>bool off(Set set){if(!applied)return false;applied=false;set(original);return true;}
-};
+using battery_policy::Knob;
 Knob<int> fps,msaa;Knob<float> scale,lod,shadow_distance;Knob<bool> main_shadows,extra_shadows,fog,hdr,opaque;
-bool held(){return fps.applied||msaa.applied||scale.applied||lod.applied||shadow_distance.applied||main_shadows.applied||
+// Root the particular URP asset whose values are saved.
+uintptr_t owned_asset=0;
+bool held(){return owned_asset||fps.applied||msaa.applied||scale.applied||lod.applied||shadow_distance.applied||main_shadows.applied||
  extra_shadows.applied||fog.applied||hdr.applied||opaque.applied||skip.load();}
 
 int get_int(void *m,void *o=nullptr){return unbox<int>(invoke(m,o));}
@@ -180,7 +169,37 @@ void set_bool(void *m,bool v,void *o=nullptr){uint8_t b=v;void *a[]={&b};invoke(
 // A boolean the low setting turns off.
 template<class Obj>bool lower_bool(Knob<bool> &k,bool on,void *get,void *set,Obj obj){
  if(on)return k.on([&]{return get_bool(get,obj());},[&](bool v){set_bool(set,v,obj());},[](bool){return false;});
- return k.off([&](bool v){set_bool(set,v,obj());});
+ return k.off([&]{return get_bool(get,obj());},[&](bool v){set_bool(set,v,obj());});
+}
+
+// Never carry saved settings from a previous URP asset into its replacement.
+void *owned_asset_target(){return owned_asset?fn<void*(*)(uintptr_t)>(boot.runtime.gchandle_get_target)(owned_asset):nullptr;}
+bool restore_asset(){
+ if(!owned_asset)return false;
+ bool changed=false;
+ void *old=owned_asset_target();void *args[]={old};
+ if(old&&unbox<uint8_t>(invoke(asset_alive,nullptr,args))){
+  auto obj=[](){return owned_asset_target();};
+  changed|=scale.off([&]{return get_float(urp_get_scale,obj());},[&](float v){set_float(urp_set_scale,v,obj());});
+  changed|=msaa.off([&]{return get_int(urp_get_msaa,obj());},[&](int v){set_int(urp_set_msaa,v,obj());});
+  changed|=shadow_distance.off([&]{return get_float(urp_get_distance,obj());},[&](float v){set_float(urp_set_distance,v,obj());});
+  changed|=lower_bool(main_shadows,false,urp_get_main,urp_set_main,obj);
+  changed|=lower_bool(extra_shadows,false,urp_get_extra,urp_set_extra,obj);
+  changed|=lower_bool(hdr,false,urp_get_hdr,urp_set_hdr,obj);
+  changed|=lower_bool(opaque,false,urp_get_opaque,urp_set_opaque,obj);
+ }else{
+  scale={};msaa={};shadow_distance={};main_shadows={};extra_shadows={};hdr={};opaque={};
+ }
+ fn<void(*)(uintptr_t)>(boot.runtime.gchandle_free)(owned_asset);owned_asset=0;
+ return changed;
+}
+bool sync_asset(const Root &current,bool want){
+ bool changed=false;
+ if(owned_asset&&(!want||owned_asset_target()!=current.get()))changed=restore_asset();
+ if(want&&current.get()&&!owned_asset){
+  owned_asset=fn<uintptr_t(*)(void*,int)>(boot.runtime.gchandle_new)(current.get(),0);require(owned_asset,"render asset GC root");
+ }
+ return changed;
 }
 
 // ---- Encounter plants ----------------------------------------------------------------------------
@@ -275,22 +294,23 @@ void apply(const Config &c){
  auto no_obj=[]()->void*{return nullptr;};
  const bool urp=asset.get()!=nullptr;
  bool changed=was_skipping!=c.quality;
+ changed|=sync_asset(asset,c.res||c.dark||c.quality);
  const float max_scale=c.dark?kDarkRenderScale:kRenderScale;
  if(c.fps)changed|=fps.on([]{return get_int(app_get_fps);},[](int v){set_int(app_set_fps,v);},[](int now){return now>0&&now<=kFrameRate?now:kFrameRate;});
- else changed|=fps.off([](int v){set_int(app_set_fps,v);});
+ else changed|=fps.off([]{return get_int(app_get_fps);},[](int v){set_int(app_set_fps,v);});
  if(c.quality)changed|=lod.on([]{return get_float(quality_get_lod);},[](float v){set_float(quality_set_lod,v);},[](float now){return now>kLodBias?kLodBias:now;});
- else changed|=lod.off([](float v){set_float(quality_set_lod,v);});
+ else changed|=lod.off([]{return get_float(quality_get_lod);},[](float v){set_float(quality_set_lod,v);});
  changed|=lower_bool(fog,c.quality,fog_get,fog_set,no_obj);
  if(urp){
   if(c.res||c.dark)changed|=scale.on([&]{return get_float(urp_get_scale,urp_obj());},[&](float v){set_float(urp_set_scale,v,urp_obj());},[&](float now){return now>max_scale?max_scale:now;});
-  else changed|=scale.off([&](float v){set_float(urp_set_scale,v,urp_obj());});
+  else changed|=scale.off([&]{return get_float(urp_get_scale,urp_obj());},[&](float v){set_float(urp_set_scale,v,urp_obj());});
   if(c.quality){
    changed|=msaa.on([&]{return get_int(urp_get_msaa,urp_obj());},[&](int v){set_int(urp_set_msaa,v,urp_obj());},[](int){return 1;});
    // A zero shadow distance stops URP drawing real-time shadows whatever the other shadow settings say.
    changed|=shadow_distance.on([&]{return get_float(urp_get_distance,urp_obj());},[&](float v){set_float(urp_set_distance,v,urp_obj());},[](float){return 0.f;});
   }else{
-   changed|=msaa.off([&](int v){set_int(urp_set_msaa,v,urp_obj());});
-   changed|=shadow_distance.off([&](float v){set_float(urp_set_distance,v,urp_obj());});
+   changed|=msaa.off([&]{return get_int(urp_get_msaa,urp_obj());},[&](int v){set_int(urp_set_msaa,v,urp_obj());});
+   changed|=shadow_distance.off([&]{return get_float(urp_get_distance,urp_obj());},[&](float v){set_float(urp_set_distance,v,urp_obj());});
   }
   changed|=lower_bool(main_shadows,c.quality,urp_get_main,urp_set_main,urp_obj);
   changed|=lower_bool(extra_shadows,c.quality,urp_get_extra,urp_set_extra,urp_obj);
@@ -298,15 +318,29 @@ void apply(const Config &c){
   changed|=lower_bool(hdr,c.quality,urp_get_hdr,urp_set_hdr,urp_obj);
   changed|=lower_bool(opaque,c.quality,urp_get_opaque,urp_set_opaque,urp_obj);
  }
- plants(c.quality);
+ // Optional plant metadata must not disable the other graphics controls.
+ if(c.quality&&!plants_tried){
+  plants_tried=true;
+  try{bind_plants();plants_ready=true;}catch(const Failure &f){event(std::string("Encounter plant optimization unavailable: ")+f.where);}
+ }
+ if(plants_ready)plants(c.quality);
  if(!changed)return;
  char text[320];
- std::snprintf(text,sizeof(text),"fps %d, render scale %.2f, lod bias %.2f, msaa %d, shadows %s/%s, shadow distance %.0f, fog %s, hdr %s, opaque texture %s, game render steps %s%s",
+ std::snprintf(text,sizeof(text),"fps target %d, render scale %.2f, lod bias %.2f, msaa %d, shadows %s/%s, shadow distance %.0f, fog %s, hdr %s, opaque texture %s, render hooks active %d/%d",
   get_int(app_get_fps),urp?get_float(urp_get_scale,urp_obj()):-1.f,get_float(quality_get_lod),urp?get_int(urp_get_msaa,urp_obj()):-1,
   urp?(get_bool(urp_get_main,urp_obj())?"on":"off"):"?",urp?(get_bool(urp_get_extra,urp_obj())?"on":"off"):"?",urp?get_float(urp_get_distance,urp_obj()):-1.f,
   get_bool(fog_get)?"on":"off",urp?(get_bool(urp_get_hdr,urp_obj())?"on":"off"):"?",urp?(get_bool(urp_get_opaque,urp_obj())?"on":"off"):"?",
-  c.quality?"skipped":"drawn",c.quality?hook_note.c_str():"");
- if(last_logged!=text){last_logged=text;event(text);}
+  c.quality?int(hooked[S_SHADOWS].load())+int(hooked[S_WATER].load())+int(hooked[S_GROUND].load()):0,S_COUNT);
+ if(last_logged!=text){last_logged=text;event(text);if(c.quality&&!hook_note.empty())event(hook_note);}
+}
+void restore_after_fault(){
+ skip.store(false);
+ auto attempt=[](auto f){try{f();}catch(...){event("Graphics restoration incomplete; restart the game if settings remain changed");}};
+ attempt([]{fps.off([]{return get_int(app_get_fps);},[](int v){set_int(app_set_fps,v);});});
+ attempt([]{lod.off([]{return get_float(quality_get_lod);},[](float v){set_float(quality_set_lod,v);});});
+ attempt([]{lower_bool(fog,false,fog_get,fog_set,[]()->void*{return nullptr;});});
+ attempt([]{restore_asset();});
+ if(plants_ready)attempt([]{plants(false);});
 }
 
 }
@@ -320,15 +354,19 @@ void pgs_battery_tick(uint64_t tid,const PgsSharedMetadataOutput *){
  try{
   if(!initialized){
    auto api=static_cast<const PgsBootApi*>(pgs_runtime_bootstrap_api(1));boot.version=1;boot.size=sizeof(boot);
-   require(api&&api->snapshot(&boot)==0,"runtime unavailable");bind();bind_plants();owner=tid;initialized=true;
+   require(api&&api->snapshot(&boot)==0,"runtime unavailable");bind();owner=tid;initialized=true;
   }
   require(fn<void*(*)()>(boot.runtime.thread_current)()!=nullptr,"owner thread not attached");
-  apply(c);
- }catch(const Failure &f){faulted=true;skip.store(false);event(std::string("Battery usage stopped: ")+f.where);}
- catch(...){faulted=true;skip.store(false);event("Battery usage stopped after an unexpected error");}
+   const uint64_t started=clock_ms();apply(c);const uint64_t ended=clock_ms();
+   if(ended>=started&&ended-started>=8&&(!last_slow_report||ended-last_slow_report>=30000)){
+    last_slow_report=ended;event("Graphics maintenance took "+std::to_string(ended-started)+" ms (not measured FPS)");
+   }
+ }catch(const Failure &f){faulted=true;skip.store(false);event(std::string("Battery usage stopped: ")+f.where);if(initialized)restore_after_fault();}
+ catch(...){faulted=true;skip.store(false);event("Battery usage stopped after an unexpected error");if(initialized)restore_after_fault();}
 }
 void pgs_battery_stop(uint64_t tid){
  skip.store(false);
- if(!initialized||faulted||tid!=owner||tid!=uint64_t(gettid()))return;
- try{apply(Config{});}catch(...){}
+ if(!initialized||tid!=owner||tid!=uint64_t(gettid()))return;
+ if(faulted){restore_after_fault();return;}
+ try{apply(Config{});}catch(...){restore_after_fault();}
 }

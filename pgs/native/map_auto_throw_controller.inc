@@ -32,15 +32,16 @@ struct MapTapSession {
     uint64_t id=0;
     MapTapPhase phase=MapTapIdle;
     int attempts=0,active_berry=0;
-    bool uncertain=false,berry_prepared=false,stop_new=false;
+    bool uncertain=false,berry_prepared=false,stop_new=false,terminal_confirmed=false;
     int64_t next_ms=0,promise_ms=0,wait_ms=0,transfer_ms=0;
 };
 MapTapSession map_tap;
 // A waiting tap owns nothing yet, so VGP+ keeps running until the tap is started.
 bool map_tap_active(){return map_tap.target&&map_tap.phase!=MapTapWaiting;}
 uint64_t map_tap_generation=0;
-// No managed roots retained by dedup. Unknown outcomes cannot be replayed by another tap.
-std::set<std::pair<std::string,uint64_t>> map_finished;
+// No managed roots retained by dedup. Unknown outcomes cannot be replayed,
+// but only a confirmed catch/flee permits removal of a leftover map object.
+std::map<std::pair<std::string,uint64_t>,bool> map_finished;
 void map_event(const char* phase,const std::string& message,int value=0){
     auto tr=transport();if(!tr||!tr->emit)return;
     const std::string json="{\"phase\":"+json_quote(phase)+",\"message\":"+json_quote(message)+
@@ -53,7 +54,7 @@ void map_reset(){++map_tap_generation;map_tap=MapTapSession{};}
 void map_done(const char* phase,const std::string& why,bool remember=false){
     map_event(phase,why);
     // A tap dropped while waiting sent no request, so the same Pokemon can be tapped again.
-    if(map_tap.phase!=MapTapWaiting&&(remember||map_tap.uncertain||map_tap.attempts)&&map_tap.id)map_finished.insert({map_tap.account,map_tap.id});
+    if(map_tap.phase!=MapTapWaiting&&(remember||map_tap.uncertain||map_tap.attempts)&&map_tap.id)map_finished.emplace(std::make_pair(map_tap.account,map_tap.id),map_tap.terminal_confirmed);
     map_reset();
 }
 void map_block(const std::string& why){map_done("stopped",why,true);}
@@ -88,12 +89,15 @@ bool map_tap_consume(void* tapped,bool gate,bool vgp_busy=false){
     if(!a.eligible(target.get()))return false;
     const std::string account=a.account();const uint64_t id=a.identity(target.get());
     if(account.empty()||!id)return false;
-    if(map_finished.count({account,id})){
-        map_event("ignored","This encounter already completed or has an unknown outcome; not retried");
-        try{if(a.remove&&a.alive(target.get()))a.remove(target.get());}catch(...){}
+    if(auto it=map_finished.find({account,id});it!=map_finished.end()){
+        map_event("ignored",it->second?"This encounter already completed; not retried":"Encounter outcome not confirmed; not retried or hidden");
+        if(it->second)try{if(a.remove&&a.alive(target.get()))a.remove(target.get());}catch(...){}
         return true;
     }
-    if(map_finished.size()>=1024)return false;
+    if(map_finished.size()>=1024){
+        map_event("stopped","Map catch safety history is full; normal manual encounter remains available");
+        return false;
+    }
     map_tap.target=std::move(target);map_tap.account=account;map_tap.id=id;
     if(vgp_busy){
         map_tap.phase=MapTapWaiting;map_tap.wait_ms=clock_ms();
@@ -124,6 +128,7 @@ void map_poll(uint64_t tid,int64_t now){
     }
     map_event("catch-result","Confirmed capture response",status);
     if(status==1||status==3){
+        map_tap.terminal_confirmed=true;
         // The game removes a wild spawn itself. A lure spawn stays standing after a map catch and
         // would look catchable again; a failure here only leaves it visible.
         try{if(a.remove&&map_tap.target&&a.alive(map_tap.target.get()))a.remove(map_tap.target.get());}catch(...){}

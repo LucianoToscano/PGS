@@ -14,6 +14,8 @@
 //                   In encounters, the grass tufts, clovers, flowers and props' blob shadows are switched
 //                   off too (they are separate objects, not part of the ground cover).
 // The game's own value is remembered before the first change (and again whenever the game changes it)
-// and put back when the setting is turned off, the config goes stale, or the module stops.
+// and put back when the setting is turned off, the config goes stale, or the module stops,
+// provided the property still contains the value owned by this module. URP ownership
+// is tied to the particular asset. Diagnostics report target FPS, not measured FPS.
 void pgs_battery_tick(uint64_t tid, const PgsSharedMetadataOutput *metadata);
 void pgs_battery_stop(uint64_t tid);

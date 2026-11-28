@@ -2,6 +2,9 @@
 
 ## Unreleased — second audit
 
+- Graphics settings restore only values still owned by the module, and restore the old URP asset before modifying its replacement. Optional plant metadata no longer blocks other graphics controls. Diagnostics distinguish target FPS, active hooks and slow maintenance duration from measured frame rates.
+- Catch on Map keeps an unconfirmed encounter visible while preventing duplicate automated requests. Only confirmed catches or flee results allow leftover removal. A full safety history reports manual fallback without evicting uncertain outcomes.
+
 - Auto-Raid rewards no longer advance behind a covering GUI. When the player closes the prompt, the normal flow may resume; a bounded timeout explains the blockage. The Lucky Egg dialog's exact game class and an automatic decline remain unverified.
 - Avoid duplicate reward actions in the same tick and repeated final reward confirmation; preserve the session's existing revocation and spending rules.
 - Bound managed map-readiness probes to the existing discovery cadence; a new map obstruction gets its own bounded wait instead of inheriting the elapsed scan time.

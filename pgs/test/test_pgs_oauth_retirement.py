@@ -97,7 +97,7 @@ public class RetiredAuthTest {
         self.assertIn("contents: read", flow)
         self.assertNotIn("contents: write", flow)
         self.assertNotIn("gh release create", flow)
-        self.assertNotIn("--google-browser-login", flow)
+        self.assertIn("--google-browser-login", flow)
         self.assertIn("test -f \"$PGS_KEYSTORE\"", flow)
         early = flow.split("name: Check required private configuration before installing tools", 1)[1].split("      - uses:", 1)[0]
         self.assertLess(flow.index("name: Check required private configuration"), flow.index("name: Install pinned toolchain"))

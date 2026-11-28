@@ -110,7 +110,7 @@ jobs:
           test -n "$PGS_KEY_ALIAS"
           test -n "$PGS_STORE_PASSWORD"
           test -n "$PGS_KEY_PASSWORD"
-          python -B pgs/nonroot.py --apk pgs/input/game.apkm
+          python -B pgs/nonroot.py --apk pgs/input/game.apkm --google-browser-login
           mapfile -t reports < <(find pgs/build/nonroot -mindepth 2 -maxdepth 2 -name report.json -type f)
           test "${#reports[@]}" = 1
           python -B pgs/release_apk.py --run "$(dirname "${reports[0]}")" --output "$RUNNER_TEMP/pgs-v003-validation"

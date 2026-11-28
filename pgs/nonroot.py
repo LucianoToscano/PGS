@@ -178,7 +178,7 @@ def assert_no_research_payload(names):
             raise RuntimeError('Compiled production build must not ship Frida bridge assets: '+name)
 
 
-def package(source, *,research_runtime=False,panel_only=False,download=False,preview=False,probe_abi=None,game_runtime_abi='auto',il2cpp_survey=False,camera_probe=False,camera_sample=False,camera_steering=False,scene_probe=False,scene_observe=False,interaction_probe=False,quick_summary=False,quick_ball=False,quick_close=False,google_browser_login=False):
+def package(source, *,research_runtime=False,panel_only=False,download=False,preview=False,probe_abi=None,game_runtime_abi='auto',il2cpp_survey=False,camera_probe=False,camera_sample=False,camera_steering=False,scene_probe=False,scene_observe=False,interaction_probe=False,quick_summary=False,quick_ball=False,quick_close=False,google_browser_login=True):
     if quick_summary: raise ValueError('--quick-summary is retired; production gameplay is compiled by default')
     if research_runtime and panel_only: raise ValueError('--research-runtime cannot be combined with --panel-only')
     if preview and not (research_runtime or panel_only): raise ValueError('Preview requires --research-runtime or --panel-only')

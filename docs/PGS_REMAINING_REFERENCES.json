@@ -1,9 +1,9 @@
 {
   "scope": "Git-indexed regular UTF-8 text, excluding NUL-containing files and the snapshot itself",
-  "tracked_files": 2082,
-  "text_files": 1008,
-  "remaining_files": 942,
-  "remaining_occurrences": 30964,
+  "tracked_files": 2083,
+  "text_files": 1009,
+  "remaining_files": 943,
+  "remaining_occurrences": 30979,
   "remaining_by_category": {
     "documentation": 1427,
     "java": 139,
@@ -13,7 +13,7 @@
     "other": 2231,
     "release_history": 61,
     "tests": 1063,
-    "workflows": 128
+    "workflows": 143
   },
   "tracked_name_matches": [],
   "files": [
@@ -61,6 +61,11 @@
       "path": ".github/workflows/pgs-v0.0.3-candidate.yml",
       "category": "workflows",
       "occurrences": 77
+    },
+    {
+      "path": ".github/workflows/pgs-v0.0.3-release.yml",
+      "category": "workflows",
+      "occurrences": 15
     },
     {
       "path": ".github/workflows/release.yml",
@@ -4729,12 +4734,12 @@
     }
   ],
   "abbreviations": {
-    "remaining_files": 511,
-    "remaining_occurrences": 25552,
+    "remaining_files": 512,
+    "remaining_occurrences": 25556,
     "by_form": {
       "camelcase": 5659,
-      "lowercase": 3862,
-      "uppercase": 16031
+      "lowercase": 3863,
+      "uppercase": 16034
     },
     "tracked_name_matches": [
       "docs/PGS_BRANDING_AUDIT.md",
@@ -4803,6 +4808,14 @@
         "by_form": {
           "lowercase": 1,
           "uppercase": 50
+        }
+      },
+      {
+        "path": ".github/workflows/pgs-v0.0.3-release.yml",
+        "occurrences": 4,
+        "by_form": {
+          "lowercase": 1,
+          "uppercase": 3
         }
       },
       {

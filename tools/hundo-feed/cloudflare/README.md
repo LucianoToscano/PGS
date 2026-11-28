@@ -19,7 +19,7 @@ Cada fonte tem prazo de 12 segundos. Até quatro fontes são consultadas em para
 
 O adaptador direto usa um token próprio em Cloudflare Secrets, no campo `POGO_TOKEN`. Consulta uma das oito regiões por rodada e revela no máximo um encontro ainda desconhecido. Somente o retorno de reveal fornece coordenadas para publicação. Resultados do mapa com coordenadas aproximadas são descartados. A integração requer uma conta autorizada para consulta e revelação. A amostragem e os limites dos provedores impedem cobertura integral.
 
-Os mapas usam atributos individuais quando fornecidos. O feed compacto de Faustus atesta os IVs e a precisão por contrato e não expõe os atributos individuais para reverificação. A lista de Hundos tem IDs de encontro e a de spots tem identificadores locais. O cliente lê ambas. Na versão 0.0.5 a espera normal entre consultas é de cinco minutos, com antecipação para um minuto após falha ou fila baixa. A confirmação de shiny ocorre no jogo.
+Os mapas usam atributos individuais quando fornecidos. O feed compacto de Faustus atesta os IVs e a precisão por contrato e não expõe os atributos individuais para reverificação. A lista de Hundos tem IDs de encontro e a de spots tem identificadores locais. O cliente lê ambas. Na versão 0.0.5 a espera normal entre consultas é de cinco minutos, com antecipação para um minuto após falha ou fila baixa. A candidata 0.0.6 passa a consultar o feed público a cada 60 segundos, inclusive com fila cheia; a cadência de cada origem e o backoff das fontes permanecem independentes. A confirmação de shiny ocorre no jogo.
 
 ## Testes e publicação
 

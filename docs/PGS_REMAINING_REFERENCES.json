@@ -3,14 +3,14 @@
   "tracked_files": 2110,
   "text_files": 1035,
   "remaining_files": 969,
-  "remaining_occurrences": 31502,
+  "remaining_occurrences": 31492,
   "remaining_by_category": {
     "documentation": 1433,
     "java": 139,
     "javascript": 9,
     "legal": 5,
     "native": 25901,
-    "other": 2260,
+    "other": 2250,
     "release_history": 341,
     "tests": 1069,
     "workflows": 345
@@ -4680,7 +4680,7 @@
     {
       "path": "tools/pgs_branding_audit.py",
       "category": "other",
-      "occurrences": 48
+      "occurrences": 38
     },
     {
       "path": "tools/pgs_reference_inventory.py",
@@ -4865,11 +4865,11 @@
   ],
   "abbreviations": {
     "remaining_files": 513,
-    "remaining_occurrences": 25615,
+    "remaining_occurrences": 25614,
     "by_form": {
       "camelcase": 5659,
-      "lowercase": 3862,
-      "uppercase": 16094
+      "lowercase": 3864,
+      "uppercase": 16091
     },
     "tracked_name_matches": [
       "docs/PGS_BRANDING_AUDIT.md",
@@ -9085,10 +9085,10 @@
       },
       {
         "path": "tools/pgs_branding_audit.py",
-        "occurrences": 7,
+        "occurrences": 6,
         "by_form": {
-          "lowercase": 1,
-          "uppercase": 6
+          "lowercase": 3,
+          "uppercase": 3
         }
       },
       {

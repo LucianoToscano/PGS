@@ -20,5 +20,5 @@ jobs:
       - name: Verify PGS identity
         run: |
           test "$(cat pgs/VERSION)" = "0.0.3"
-          test "$(cat pgs/PGS_LAST_VERSION_CODE)" = "2026111605"
+          test "$(cat pgs/PGS_LAST_VERSION_CODE)" = "2026111606"
           grep -q 'com.nianticlabs.pokemongo' pgs/pgs_update.py

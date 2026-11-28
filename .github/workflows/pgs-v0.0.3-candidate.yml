@@ -30,8 +30,8 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          test "$(cat pgs/PGS_LAST_VERSION_CODE)" = 2026111605
-          test "$(cat pgs/VERSION)" = 0.0.2
+          test "$(cat pgs/PGS_LAST_VERSION_CODE)" = 2026111606
+          test "$(cat pgs/VERSION)" = 0.0.3
           python -B -c "import sys; sys.path.insert(0, 'tools'); from game_update import current_profile; p=current_profile(); assert p['game_version']=='0.439.0' and p['version_code']==2026111602"
       - name: Check required private configuration before installing tools
         env:

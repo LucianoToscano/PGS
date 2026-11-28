@@ -1,93 +1,88 @@
-<p align="center"><img src="pgs/branding/pgs.svg" width="88" alt="PGS emblem (upstream drawing retained)"></p>
-<h1 align="center">PGS — Pokémon GO Spoofers</h1>
-<p align="center">A compact Android interface for location controls and Pokémon GO automation.</p>
+<p align="center">
+  <img src="website/public/pgs-full.png" width="360" alt="PGS — Pokémon GO Spoofers">
+</p>
 
-PGS, an independent derivative of MIT-licensed upstream code (see [NOTICE](NOTICE)), adds an in-game menu, an independent joystick, encounter controls, and optional automation to Pokémon GO. Settings persist across restarts, with light and dark themes.
+<h1 align="center">PGS</h1>
+<h3 align="center">Pokémon GO Spoofers</h3>
 
-## PGS community integration
+<p align="center">An independent Android project with location controls, a joystick, maps, and companion tools for Pokémon GO.</p>
 
-PGS retains the inherited source and its MIT and third-party notices. Its active source, internal package names, asset paths and interface identity use the PGS name. Device-level migration of saved settings remains to be verified.
+<p align="center">
+  <a href="https://github.com/LucianoToscano/PGS/actions">Builds</a> ·
+  <a href="https://github.com/LucianoToscano/PGS/releases">Releases</a> ·
+  <a href="https://discord.gg/SdwU4VnfW">PGS Discord</a> ·
+  <a href="https://lucianotoscano.github.io/PGS/">Website</a>
+</p>
 
-The current candidate adds the joystick direction lock, a direct gift shortcut, configurable LivePokeMap refresh, populated wild-encounter IVs for VGP+, owned-IV refresh/layer fixes, real-GPS readiness, buddy timeout recovery and the Silver Pinap preference migration. Android packaging also works on Linux with the pinned toolchain.
+<p align="center">
+  <strong>🌐 Languages:</strong>
+  <strong>🇺🇸 English</strong> ·
+  <a href="README.pt-BR.md">🇧🇷 Português (Brasil)</a>
+</p>
 
-- Hold the joystick centre for **1.5 seconds**, drag and release to lock direction; hold the padlock for **0.5 seconds** to stop. Leaving the map or losing the camera releases it.
-- Open **Quick Menu → Send & Open Gifts** for the existing batch dialog; press Start there when ready.
-- In **Shundo Sniper**, choose **LivePokeMap refresh**. The default is five minutes; server limits can require a longer wait. The feed's **Global** view refreshes manually.
-- See [the PGS integration review](docs/PGS_COMMUNITY_REVIEW.md) for source attribution, what was already present, remaining proposals and validation limits.
+## Current PGS version
 
-PGS candidate artifacts are produced in [this repository's Actions](https://github.com/LucianoToscano/PGS/actions). Upstream download links are not PGS updates. Compilation and automated fixtures do not establish Android installation or gameplay results; those observations are recorded separately.
+| Property | Value |
+|---|---|
+| Latest test candidate | **PGS v0.0.5** |
+| Status | **Draft — physical-device installation and Google sign-in not yet verified** |
+| Reference candidate | [PGS v0.0.2](https://github.com/LucianoToscano/PGS/releases/tag/untagged-268fa715660bc21061a4) |
+| Base game | Pokémon GO **0.439.0** |
+| Installed app name | **Pokémon GO** |
+| Android package | `com.nianticlabs.pokemongo` |
 
-The settings panel is grouped into Play, Automation and App cards, with an instant search field at the top. Search matches names, descriptions, categories and common synonyms (for example "fake gps" or "light mode"), and tapping a result opens the page, expands any collapsed section, and scrolls straight to that row.
+The PGS project version is distinct from the base game's version. The latest draft is a test candidate, not a published stable release.
 
-## PGS interface languages
+## Download and install
 
-Open **Settings → Display & Performance → Language → PGS language**, choose a language, then fully close and reopen the game. The choices are **System, Deutsch, English, Español, Français, Português, Русский, Italiano, 繁體中文, Nederlands, ภาษาไทย and 한국어**. The selected language is shared by all accounts and included in explicit settings backups. The interface keeps its current language until the process restarts.
+1. Open the [PGS v0.0.5 draft release](https://github.com/LucianoToscano/PGS/releases/tag/untagged-b1260bd32d692cbde42d) (repository access required).
+2. Download `PGS.v0.0.5.apk` and compare its SHA-256 with `SHA256SUMS.txt`: `fa139a05d884ae2c487f8af68673c049d7db03eaae8fca8efecc88f6cf2c4ea9`.
+3. Review the attached `build-info.json` and `PGS.json`. Installation, Google sign-in, saved settings and gameplay remain to be verified on a device.
 
-Translations are bundled offline. Search accepts both the selected language and the original English setting names. System follows the device language, using English if it is unsupported; Portuguese uses the Brazilian catalog and Chinese uses the Traditional Chinese catalog. This preference affects PGS menus, controls and messages. Pokémon names, user data, external service content and technical runtime diagnostics keep their original values; Pokémon GO's own language remains independent.
+Do not mistake source archives or preview-only packages for a complete APK. Original build inputs must remain private.
 
-See [the language guide and translation workflow](docs/PGS_LANGUAGES.md) for the complete language list, backup behavior, validation and translation maintenance.
+## Website and guides
 
-<p align="center"><img src="website/public/images/main-menu.png" width="320" alt="PGS dark-theme main settings menu with feature sections and Discord footer"></p>
+- [PGS website](https://lucianotoscano.github.io/PGS/)
+- [Feature guides](https://lucianotoscano.github.io/PGS/?guide=all)
+- [Website workflow](https://github.com/LucianoToscano/PGS/actions/workflows/pages.yml)
+- [Source checks](https://github.com/LucianoToscano/PGS/actions/workflows/ci.yml)
 
-## Features and guides
+## Features
 
-The feature list and how-to guides live on the website, so there is one place to keep them current:
+- Location controls, joystick, coordinates, maps, GPX routes, and cooldown estimates.
+- Session statistics, encounter counter, IV display, catching, and transfer options.
+- PokéStop, item, gift, buddy, and battle helpers.
+- Pokémon maps and feeds, optional automation, and navigation utilities.
+- Settings search, light/dark themes, saved preferences, and **12 language choices** (system + 11 languages).
 
-- **[PGS website](https://lucianotoscano.github.io/PGS/)**: overview, screenshots, and the cooldown chart.
-- **[Feature guides](https://lucianotoscano.github.io/PGS/?guide=all)**: where each feature is in the app and how to use it.
-- **[Changelog](CHANGELOG.md)** and [PGS releases](https://github.com/LucianoToscano/PGS/releases): PGS-only version history.
+Experimental features depend on the game's version and environment. They do not guarantee server-side outcomes or freedom from account restrictions.
 
-## Install PGS v0.0.4 (ARM64, non-root)
+## Documentation
 
-The current test candidate is PGS v0.0.4, built from the pinned original Pokemon GO 0.439.0 input and the migrated PGS source. Android versionCode is 2026111607. The existing PGS signing certificate and Android application ID are preserved.
+| Topic | 🇺🇸 English | 🇧🇷 Português (Brasil) |
+|---|---|---|
+| Build and verify | [Build guide](docs/en/BUILDING.md) | [Compilação](docs/pt-BR/BUILDING.md) |
+| Update and signing policy | [Updates](docs/en/PGS_UPDATE_POLICY.md) | [Atualizações](docs/pt-BR/PGS_UPDATE_POLICY.md) |
+| In-app languages | [Languages](docs/en/PGS_LANGUAGES.md) | [Idiomas](docs/pt-BR/PGS_LANGUAGES.md) |
+| Contribution guide | [Contributing](CONTRIBUTING.md) | [Como contribuir](CONTRIBUTING.pt-BR.md) |
+| Release history | [Changelog](CHANGELOG.md) | [Registro de alterações](CHANGELOG.pt-BR.md) |
+| GitHub and Website workflow | [Repository settings](docs/en/PGS_REPOSITORY_SETTINGS.md) | [Configurações do repositório](docs/pt-BR/PGS_REPOSITORY_SETTINGS.md) |
 
-- [Download PGS v0.0.4 (draft release)](https://github.com/LucianoToscano/PGS/releases/tag/untagged-a58384457d68bd85d972)
-- [Successful complete build](https://github.com/LucianoToscano/PGS/actions/runs/46097341845)
+More technical references: [Architecture](docs/ARCHITECTURE.md), [community improvements](docs/PGS_COMMUNITY_REVIEW.md), [official artwork](docs/PGS_OFFICIAL_LOGOS.md), and [repository/Pages setup](docs/PGS_REPOSITORY_SETTINGS.md). These additional technical references are not all translated yet; their language is indicated by the document itself.
 
-The draft contains `PGS.v0.0.4.apk`, `PGS.json`, `build-info.json` and `SHA256SUMS.txt`. APK SHA-256: `9e48ba91d0c8e3ea9dcee2636d403bb2a335a8add74eae9dd5de1e14c917ddfc`. Draft downloads require repository access. Do not publish the original build-inputs draft.
-
-The installed name remains Pokemon GO (`com.nianticlabs.pokemongo`). Installation, saved settings, gameplay and Google sign-in still require physical-device verification. Earlier releases remain available for reference.
-
-## Good to know
-
-These are experimental client modifications. Server outcomes are not guaranteed, the cooldown timer is a local estimate, and nothing here prevents account action by the game's publisher.
+Existing code, native libraries, Java/JNI symbols, saved-setting keys, and provenance records remain intact for update compatibility. Historical records should not be confused with current PGS releases.
 
 ## Community
 
-Join the [PGS Discord](https://discord.gg/SdwU4VnfW), also linked from the settings footer.
+**Discord:** https://discord.gg/SdwU4VnfW
 
-## Build and contribute
+**GitHub:** https://github.com/LucianoToscano/PGS
 
-- [Build, signing, release CI, and installation](docs/BUILDING.md)
-- [Architecture and compatibility](docs/ARCHITECTURE.md)
-- [Root support (upstream reference; no PGS Root release)](docs/ROOTED.md)
-- [Native migration verification and history](docs/NATIVE_MIGRATION.md)
-- [Maintainability review and refactoring priorities](docs/MAINTAINABILITY.md)
-- [Contributing and checks](CONTRIBUTING.md)
-- [Third-party notices](THIRD_PARTY.md)
+**Website:** https://lucianotoscano.github.io/PGS/
 
-```powershell
-python -B tools/check.py
-```
-
-Source CI runs device-free checks and compiles both the Android controls and the Root installer. Its downloadable artifact contains source and tools only, not a playable APK. The legacy **Android release (non-root and rooted)** workflow is intentionally blocked for PGS; only a dedicated PGS workflow may prepare a new signed game APK. Signing keys, original build inputs, and investigation logs are kept out of Git.
-
-## Repository layout
-
-```text
-.github/workflows/    Source CI, release, and website workflows
-docs/                 Build, architecture, and release notes
-pgs/src/          Android UI and control bridge
-pgs/native/       Compiled gameplay runtime and native tests
-pgs/art/          Compiled Android runtime bridges
-pgs/zygisk/       Legacy upstream Root loader (not released by PGS)
-pgs/root-installer/  Legacy upstream Root installer (not released by PGS)
-pgs/test/         Regression tests
-pgs/vendor/       Pinned dependencies, provenance, and licenses
-tools/                Checks, source packaging, release CI setup
-website/              React site and feature guides, deployed to GitHub Pages
-```
+The Website workflow has successfully built and deployed through GitHub Pages; this does not change the installed Android application. This documentation change does not alter the in-game menu artwork or joystick.
 
 ## License
 
-The inherited source and PGS contributions are available under the [MIT License](LICENSE), retaining the original copyright and [attribution](NOTICE). Third-party components retain their own licenses. Pokémon GO and its assets are not covered by this license. PGS is an independent project and is not affiliated with the game publisher.
+PGS contributions and inherited MIT-licensed source are available under the [MIT License](LICENSE). Copyright and permission notices are retained in [NOTICE](NOTICE) and LICENSE. [Third-party notices](THIRD_PARTY.md) and [additional license information](THIRD_PARTY_LICENSES.md) identify separate component terms. Pokémon GO and its assets are not covered by this license. PGS is an independent project and is not affiliated with the game publisher.

@@ -24,22 +24,29 @@
 
 | Propriedade | Valor |
 |---|---|
-| Linha do projeto | **PGS v0.0.4** |
-| Jogo-base | Pokemon GO **0.439.0** |
-| Nome instalado | **Pokemon GO** |
+| Última versão candidata | **PGS v0.0.5** |
+| Status | **Rascunho — instalação e login Google ainda não verificados no aparelho** |
+| Versão de referência | [PGS v0.0.2](https://github.com/LucianoToscano/PGS/releases/tag/untagged-268fa715660bc21061a4) |
+| Jogo-base | Pokémon GO **0.439.0** |
+| Nome instalado | **Pokémon GO** |
 | Identificador Android | `com.nianticlabs.pokemongo` |
-| Código Android (`versionCode`) | `2026111607` |
-| Assinatura | **Certificado PGS definitivo, preservado** |
-| Status | **APK completo compilado e verificado; teste físico pendente** |
+
+A versão do PGS é independente da versão do jogo-base. A última candidata é um rascunho de testes, não uma versão estável publicada.
 
 ## Baixar e instalar
 
-1. Acesse o [rascunho da v0.0.4](https://github.com/LucianoToscano/PGS/releases/tag/untagged-a58384457d68bd85d972) e baixe `PGS.v0.0.4.apk`. É necessário ter acesso ao repositório.
-2. Confira o `SHA256SUMS.txt`. O SHA-256 esperado é `9e48ba91d0c8e3ea9dcee2636d403bb2a335a8add74eae9dd5de1e14c917ddfc`.
-3. Consulte a [compilação completa aprovada](https://github.com/LucianoToscano/PGS/actions/runs/46097341845) e os recibos de validação.
-4. Teste instalação, abertura, login Google, configurações salvas e funcionamento no aparelho. A migração de preferências entre versões ainda não foi homologada.
+1. Acesse o [rascunho PGS v0.0.5](https://github.com/LucianoToscano/PGS/releases/tag/untagged-b1260bd32d692cbde42d) (requer acesso ao repositório).
+2. Baixe `PGS.v0.0.5.apk` e confira o SHA-256 em `SHA256SUMS.txt`: `fa139a05d884ae2c487f8af68673c049d7db03eaae8fca8efecc88f6cf2c4ea9`.
+3. Consulte `build-info.json` e `PGS.json`. Instalação, login Google, configurações salvas e funcionamento no aparelho ainda precisam ser verificados.
 
-Os APKs anteriores permanecem preservados. O rascunho privado de entrada de compilação não deve ser publicado.
+Não confunda arquivos de código-fonte ou pacotes de prévia com o APK completo. As entradas originais de compilação devem permanecer privadas.
+
+## Site e guias
+
+- [Site do PGS](https://lucianotoscano.github.io/PGS/)
+- [Guias de recursos](https://lucianotoscano.github.io/PGS/?guide=all)
+- [Workflow Website](https://github.com/LucianoToscano/PGS/actions/workflows/pages.yml)
+- [Verificações de código-fonte](https://github.com/LucianoToscano/PGS/actions/workflows/ci.yml)
 
 ## Recursos
 
@@ -76,8 +83,8 @@ Os arquivos de código, bibliotecas nativas, símbolos Java/JNI, preferências d
 
 O workflow Website já concluiu a compilação e publicação pelo GitHub Pages; isso não altera o aplicativo Android instalado. A logo dentro do jogo e o joystick não foram modificados por esta revisão de apresentação.
 
-## License
+## Licença
 
-As contribuições originais dos colaboradores do PGS estão sob a [licença MIT](LICENSE), com os avisos originais de copyright e permissão preservados. Consulte [NOTICE](NOTICE) para créditos e [licenças de terceiros](THIRD_PARTY_LICENSES.md) para exclusões e avisos das dependências. O PGS é independente e não possui vínculo com a desenvolvedora do jogo.
+As contribuições do PGS e o código herdado sob MIT estão disponíveis sob a [licença MIT](LICENSE), com os avisos originais de copyright e permissão preservados. Consulte [NOTICE](NOTICE), [avisos de terceiros](THIRD_PARTY.md) e [licenças de terceiros](THIRD_PARTY_LICENSES.md). Pokémon GO e seus recursos não são abrangidos por essa licença. O PGS é independente e não possui vínculo com a desenvolvedora do jogo.
 
-Original PGS source is available under the MIT License. Third-party components retain their own licenses. Pokémon GO and its assets are not covered by this license. PGS is an independent project and is not affiliated with the game publisher.
+Pokémon GO and its assets are not covered by this license.

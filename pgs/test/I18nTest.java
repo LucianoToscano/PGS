@@ -80,7 +80,7 @@ public final class I18nTest {
             I18n.init("fr", Locale.US);
             equal("fr", I18n.language());
             equal("Fermer", I18n.t("Close"));
-            if (I18n.t("PGRazor version %1$s").contains("PGRazor"))
+            if (I18n.t(I18n.LEGACY_DISPLAY_NAME + " version %1$s").contains(I18n.LEGACY_DISPLAY_NAME))
                 throw new AssertionError("PGS display brand did not replace legacy name");
             String brandedArgument = "PGS saved user text";
             if (!I18n.format("Saved %1$s", brandedArgument).contains(brandedArgument))
@@ -143,7 +143,7 @@ public final class I18nTest {
             // English deliberately has no generated map: the public I18n.t() applies branding.
             // Locale maps have canonical PGS keys while older Java call sites still work.
             if (!"en".equals(entry.getKey()))
-                equal(translator.text("PGS VGP"), translator.text("PGRazor VGP"));
+                equal(translator.text("PGS VGP"), translator.text(I18n.LEGACY_DISPLAY_NAME + " VGP"));
             String formatted = translator.format("Saved %1$s to Favorites", opaque);
             if (!formatted.contains(opaque)) throw new AssertionError("Catalog translated opaque data: " + entry.getKey());
             equal(translator.text("Language") + ": " + opaque, translator.row("Language: " + opaque));

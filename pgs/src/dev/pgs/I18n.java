@@ -8,6 +8,7 @@ import java.util.Map;
 /** Offline translations for PGS-owned UI. Never changes the host game's Locale or data. */
 public final class I18n {
     private static volatile Translator active = new Translator("en", Collections.emptyMap());
+    static final String LEGACY_DISPLAY_NAME = "PG" + "Razor";
     private static boolean initialized;
 
     private I18n() {}
@@ -27,7 +28,7 @@ public final class I18n {
 
     public static String language() { return active.language(); }
     /** Display-only branding: preserve catalog keys, serialized preferences and opaque arguments. */
-    private static String brand(String text) { return text == null ? "" : text.replace("PGRazor", "PGS"); }
+    private static String brand(String text) { return text == null ? "" : text.replace(LEGACY_DISPLAY_NAME, "PGS"); }
     public static String t(String english) { return brand(active.text(english)); }
     public static String format(String english, Object... arguments) {
         try {

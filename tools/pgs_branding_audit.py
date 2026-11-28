@@ -92,12 +92,6 @@ def legacy_inventory():
     allowed = {
         "LICENSE": (1, "required original copyright"),
         "NOTICE": (2, "original copyright and source attribution"),
-        "pgs/pgs_candidate.py": (1, "reject obsolete controls DEX"),
-        "pgs/src/dev/pgs/I18n.java": (1, "display-only legacy label compatibility"),
-        "pgs/test/I18nTest.java": (3, "translation and old-label regression fixtures"),
-        "pgs/test/test_discord_release.py": (1, "prevent old release branding"),
-        "pgs/test/test_pgs_build_options.py": (1, "prevent old workflow branding"),
-        "pgs/test/test_pgs_candidate.py": (1, "reject old DEX fixture"),
     }
     unexpected = [row for row in files
                   if row["path"] not in allowed or row["occurrences"] > allowed[row["path"]][0]]

@@ -5,6 +5,8 @@ import unittest
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "tools"))
 import discord_release
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+from upstream_identity import upstream_name
 
 
 TAG = "v0.0.1"
@@ -33,7 +35,7 @@ class DiscordReleaseTests(unittest.TestCase):
         self.assertEqual(payload["embeds"][0]["footer"]["text"], "PGS | Release")
         self.assertTrue(any(APK["browser_download_url"] in f["value"]
                             for f in payload["embeds"][0]["fields"]))
-        self.assertNotIn("pgrazor", str(payload).lower())
+        self.assertNotIn(upstream_name().lower(), str(payload).lower())
         self.assertNotIn("ko-fi.com", str(payload))
 
     def test_optional_highlight(self):

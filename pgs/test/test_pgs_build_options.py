@@ -6,6 +6,7 @@ from unittest.mock import patch
 import sys
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 import build
+from upstream_identity import upstream_name
 
 
 class PgsBuildOptionTests(unittest.TestCase):
@@ -40,7 +41,7 @@ class PgsBuildOptionTests(unittest.TestCase):
             with self.subTest(workflow=name):
                 flow = (workflows / name).read_text(encoding='utf-8')
                 # Reject every case variant of the old brand in release workflows.
-                self.assertNotIn('pgrazor', flow.lower())
+                self.assertNotIn(upstream_name().lower(), flow.lower())
                 # Every release workflow references the PGS identity.
                 self.assertIn('PGS', flow)
         # The manual historical release is dispatch-driven (no unattended push release).

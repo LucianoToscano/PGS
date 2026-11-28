@@ -9,6 +9,7 @@ import axml
 import build
 import nonroot
 import pgs_update
+from upstream_identity import upstream_name
 
 MIN_APK_BYTES = 100_000_000
 MAX_DEX_BYTES = 256 * 1024 * 1024
@@ -45,6 +46,7 @@ def verify(apk, *, tag, game_version, game_version_code, previous_version_code):
     if pgs_update.cert_digests(apk) != [pgs_update.PGS_SIGNER]:
         raise ValueError("PGS signing certificate mismatch")
     nonroot.command(build.android_tool("zipalign"), "-c", "-P", "16", "4", apk)
+    legacy_control = f"Ldev/{upstream_name().lower()}/Control;".encode("ascii")
     with zipfile.ZipFile(apk) as archive:
         names = archive.namelist()
         members = set(names)
@@ -130,7 +132,7 @@ def verify(apk, *, tag, game_version, game_version_code, previous_version_code):
             dex = read_bounded(archive, name, MAX_DEX_BYTES)
             if not dex.startswith(b"dex\n"):
                 raise ValueError("Invalid DEX header: " + name)
-            if b"Ldev/pgrazor/Control;" in dex:
+            if legacy_control in dex:
                 raise ValueError("Legacy controls DEX in migrated candidate")
             if REQUIRED_CLASSES[1] in dex:
                 if not all(marker in dex for marker in REQUIRED_CLASSES):

@@ -61,7 +61,7 @@ jobs:
     permissions:
       contents: write
     runs-on: ubuntu-24.04
-    timeout-minutes: 60
+    timeout-minutes: 90
     env:
       PGS_VERSION: ${{ needs.request.outputs.version }}
       PGS_PREVIOUS_VERSION_CODE: ${{ needs.request.outputs.previous_code }}
@@ -217,6 +217,27 @@ jobs:
           python -B pgs/release_apk.py --run "$(dirname "${reports[0]}")" --output "$RUNNER_TEMP/pgs-candidate-validation"
           python -B pgs/pgs_candidate.py "$RUNNER_TEMP/pgs-candidate-validation/PGS.apk" --tag "$PGS_VERSION" --game-version "$GAME_VERSION" --game-version-code "$GAME_VERSION_CODE" --previous-version-code "$PGS_PREVIOUS_VERSION_CODE" > "$RUNNER_TEMP/pgs-candidate-validation/PGS.json"
           python -B -c "import json, pathlib, os; d=json.loads((pathlib.Path(os.environ['RUNNER_TEMP'])/'pgs-candidate-validation/PGS.json').read_text()); assert d['pgs_version']==os.environ['PGS_VERSION'] and d['version_code']==int(os.environ['PGS_EXPECTED_VERSION_CODE']) and d['publish_ready'] is False and d['device_tested'] is False"
+      - name: Build and verify Root installer and module
+        id: root_candidate
+        continue-on-error: true
+        env:
+          PGS_KEY_ALIAS: ${{ secrets.PGS_KEY_ALIAS }}
+          PGS_STORE_PASSWORD: ${{ secrets.PGS_STORE_PASSWORD }}
+          PGS_KEY_PASSWORD: ${{ secrets.PGS_KEY_PASSWORD }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          umask 077
+          root="$RUNNER_TEMP/pgs-root-candidate-validation"
+          normal="$RUNNER_TEMP/pgs-candidate-validation"
+          mkdir "$root"
+          cp "$normal/PGS.apk" "$normal/build-info.json" "$normal/SHA256SUMS.txt" "$root/"
+          python -B pgs/rooted.py pgs/input/game.apkm --download --output "$root"
+          python -B tools/pgs_candidate_draft.py --verify-root "$root"
+          mv "$root" "$normal/root"
+      - name: Record Root candidate status
+        if: steps.root_candidate.outcome == 'failure'
+        run: echo 'Root candidate failed verification; only the separately verified non-root draft may be retained.' >> "$GITHUB_STEP_SUMMARY"
       - name: Retain authorized signed candidate in an unpublished draft
         if: needs.request.outputs.retain == 'true'
         env:
@@ -232,9 +253,13 @@ jobs:
             ${{ runner.temp }}/pgs-candidate-validation/SHA256SUMS.txt
           if-no-files-found: error
           retention-days: 14
+      - name: Require Root validation for the complete candidate workflow
+        if: steps.root_candidate.outcome == 'failure'
+        run: exit 1
       - name: Remove temporary signing key and candidate
         if: always()
         shell: bash
         run: |
           set -euo pipefail
           rm -f -- "$RUNNER_TEMP/pgs-candidate-validation.jks" "$RUNNER_TEMP/pgs-candidate-validation/PGS.apk" "$RUNNER_TEMP/pgs-candidate-validation/unsigned.apk" "$RUNNER_TEMP/pgs-candidate-validation/aligned.apk" pgs/input/game.apkm
+          rm -rf -- "$RUNNER_TEMP/pgs-root-candidate-validation" "$RUNNER_TEMP/pgs-candidate-validation/root"

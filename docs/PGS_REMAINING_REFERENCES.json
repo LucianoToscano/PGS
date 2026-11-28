@@ -2,18 +2,18 @@
   "scope": "Git-indexed regular UTF-8 text, excluding NUL-containing files and the snapshot itself",
   "tracked_files": 2109,
   "text_files": 1035,
-  "remaining_files": 965,
-  "remaining_occurrences": 31472,
+  "remaining_files": 966,
+  "remaining_occurrences": 31438,
   "remaining_by_category": {
-    "documentation": 1419,
+    "documentation": 1351,
     "java": 134,
     "javascript": 9,
     "legal": 6,
     "native": 25901,
-    "other": 2349,
+    "other": 2367,
     "release_history": 61,
     "tests": 1067,
-    "workflows": 526
+    "workflows": 542
   },
   "tracked_name_matches": [],
   "files": [
@@ -50,7 +50,7 @@
     {
       "path": ".github/workflows/pgs-auto-sync.yml",
       "category": "workflows",
-      "occurrences": 11
+      "occurrences": 13
     },
     {
       "path": ".github/workflows/pgs-auto-update.yml",
@@ -60,7 +60,7 @@
     {
       "path": ".github/workflows/pgs-build.yml",
       "category": "workflows",
-      "occurrences": 87
+      "occurrences": 101
     },
     {
       "path": ".github/workflows/pgs-release-notes-sync.yml",
@@ -215,12 +215,12 @@
     {
       "path": "docs/PGS_COMMUNITY_REVIEW.md",
       "category": "documentation",
-      "occurrences": 59
+      "occurrences": 18
     },
     {
       "path": "docs/PGS_FORK_INVENTORY.json",
       "category": "documentation",
-      "occurrences": 30
+      "occurrences": 3
     },
     {
       "path": "docs/PGS_LANGUAGES.md",
@@ -4640,7 +4640,7 @@
     {
       "path": "tools/pgs_branding_audit.py",
       "category": "other",
-      "occurrences": 44
+      "occurrences": 47
     },
     {
       "path": "tools/pgs_build_request.py",
@@ -4650,7 +4650,7 @@
     {
       "path": "tools/pgs_candidate_draft.py",
       "category": "other",
-      "occurrences": 17
+      "occurrences": 29
     },
     {
       "path": "tools/pgs_reference_inventory.py",
@@ -4661,6 +4661,11 @@
       "path": "tools/pgs_release_notes.py",
       "category": "other",
       "occurrences": 1
+    },
+    {
+      "path": "tools/pgs_upstream_monitor.py",
+      "category": "other",
+      "occurrences": 2
     },
     {
       "path": "tools/pgs_version_monitor.py",
@@ -4710,7 +4715,7 @@
     {
       "path": "tools/test_pgs_upstream_monitor.py",
       "category": "other",
-      "occurrences": 1
+      "occurrences": 2
     },
     {
       "path": "tools/test_pgs_version_monitor.py",
@@ -4845,11 +4850,11 @@
   ],
   "abbreviations": {
     "remaining_files": 531,
-    "remaining_occurrences": 25799,
+    "remaining_occurrences": 25811,
     "by_form": {
       "camelcase": 5664,
-      "lowercase": 3889,
-      "uppercase": 16246
+      "lowercase": 3893,
+      "uppercase": 16254
     },
     "tracked_name_matches": [
       "docs/PGS_AUTO_BACKUP.md",
@@ -4913,9 +4918,9 @@
       },
       {
         "path": ".github/workflows/pgs-auto-sync.yml",
-        "occurrences": 3,
+        "occurrences": 4,
         "by_form": {
-          "lowercase": 1,
+          "lowercase": 2,
           "uppercase": 2
         }
       },
@@ -4929,10 +4934,10 @@
       },
       {
         "path": ".github/workflows/pgs-build.yml",
-        "occurrences": 53,
+        "occurrences": 60,
         "by_form": {
-          "lowercase": 5,
-          "uppercase": 48
+          "lowercase": 6,
+          "uppercase": 54
         }
       },
       {
@@ -9162,10 +9167,10 @@
       },
       {
         "path": "tools/pgs_branding_audit.py",
-        "occurrences": 7,
+        "occurrences": 9,
         "by_form": {
           "lowercase": 4,
-          "uppercase": 3
+          "uppercase": 5
         }
       },
       {
@@ -9177,9 +9182,9 @@
       },
       {
         "path": "tools/pgs_candidate_draft.py",
-        "occurrences": 7,
+        "occurrences": 9,
         "by_form": {
-          "lowercase": 4,
+          "lowercase": 6,
           "uppercase": 3
         }
       },

@@ -12,9 +12,9 @@ Após integração, execute Actions → PGS AUTO BACKUP → Run workflow → mai
 - `SHA256SUMS.txt`: hash SHA-256, verificado antes do upload.
 - `SOURCE_COMMIT.txt`: commit exato do snapshot.
 
-O artefato permanece disponível por 14 dias. Baixe uma cópia para armazenamento próprio se precisar de retenção maior. O ZIP não substitui backup completo de Git, credenciais, releases ou armazenamento externo. Para verificar uma cópia em Linux, use `sha256sum -c SHA256SUMS.txt` na pasta dos três arquivos. Não restaure sobre uma árvore de trabalho com alterações locais.
+O artefato permanece disponível por 90 dias (sujeito ao limite de retenção do GitHub). Baixe uma cópia para armazenamento próprio se precisar de retenção maior. O ZIP não substitui backup completo de Git, credenciais, releases ou armazenamento externo. Para verificar uma cópia em Linux, use `sha256sum -c SHA256SUMS.txt` na pasta dos três arquivos. Não restaure sobre uma árvore de trabalho com alterações locais.
 
 
 ## English
 
-The weekly job is enabled by default; weekly and manual runs archive tracked source only, verify the ZIP and SHA-256, record the exact commit, and retain the artifact for 14 days. Set the repository variable PGS_AUTO_BACKUP_ENABLED=false to disable scheduled runs. A main-branch change to the workflow also triggers a verification run. It is not a complete Git/release/credential backup.
+The weekly job is enabled by default; weekly and manual runs archive tracked source only, verify the ZIP and SHA-256, record the exact commit, and retain the artifact for 90 days (subject to the repository retention limit). Set the repository variable PGS_AUTO_BACKUP_ENABLED=false to disable scheduled runs. A main-branch change to the workflow also triggers a verification run. It is not a complete Git/release/credential backup.

@@ -4,9 +4,9 @@ package dev.pgs;
 final class ShundoPacing {
     private ShundoPacing() {}
 
-    // The feed lists about 4000 spawns and the sniper checks about 90 an hour, so a full queue can wait
-    // 5 minutes. A short queue (a species filter, a quiet feed) or a failed read looks again after 1 minute.
-    static final long FEED_MS = 300_000, FEED_SOON_MS = 60_000;
+    // Match the public feed's one-minute publication cadence even with a full queue.
+    // This does not change the separate authenticated LivePokeMap pacing or backoff.
+    static final long FEED_MS = 60_000, FEED_SOON_MS = 60_000;
     static final int FEED_LOW_QUEUE = 20;
 
     // A broad feed does not need continuous polling. Spread refreshes around a 5-minute default;

@@ -13,6 +13,7 @@ import shutil
 import subprocess
 import sys
 import tempfile
+import zipfile
 
 from game_update import current_profile
 from pgs_build_request import REPOSITORY, authorize, load_request
@@ -31,6 +32,7 @@ def github_env():
 
 ROOT = Path(__file__).resolve().parents[1]
 SIGNER = "d95c6bdfcbd91dc5c9cde698487c88e4994771a475e4efde4567b8d5f44e96cf"
+ROOT_NAMES = ("PGS-Root.apk", "PGS-Root-module.zip", "root-build-info.json")
 
 
 def digest(path):
@@ -127,6 +129,53 @@ def safe_file(folder, name):
     return path
 
 
+def verify_root_bundle(folder, tag, commit, profile, normal_sha):
+    """Check the matching Root installer and module before permitting their retention."""
+    from verify_release import verify as verify_combined
+    if not folder.is_dir() or folder.is_symlink():
+        raise ValueError("Invalid Root candidate directory")
+    for name in ("PGS.apk", "build-info.json", "SHA256SUMS.txt", *ROOT_NAMES):
+        safe_file(folder, name)
+    actual = verify_combined(folder, tag)
+    normal = json.loads((folder / "build-info.json").read_text(encoding="utf-8"))
+    info = json.loads((folder / ROOT_NAMES[2]).read_text(encoding="utf-8"))
+    target = info["target"]
+    if (actual["PGS.apk"] != normal_sha or normal["source_commit"] != commit
+            or normal["input_sha256"] != profile["input_sha256"]
+            or normal["game_version"] != profile["game_version"]
+            or normal["game_version_code"] != profile["version_code"]
+            or normal["device_tested"] is not False
+            or target["package"] != "com.nianticlabs.pokemongo"
+            or target["versionName"] != profile["game_version"]
+            or target["versionCode"] != profile["version_code"]
+            or set(info["abis"]) != {"arm64-v8a", "x86_64"}):
+        raise ValueError("Root and non-root candidates do not share the reviewed source and game profile")
+    sys.path.insert(0, str(ROOT / "pgs"))
+    import axml
+    import nonroot
+    import pgs_update
+    from rooted_installer import installer_version_code
+    if target.get("certificateSha256") != nonroot.NIANTIC_CERT_SHA256:
+        raise ValueError("Root game target certificate differs from the original game certificate")
+    apk = folder / ROOT_NAMES[0]
+    if pgs_update.cert_digests(apk) != [SIGNER]:
+        raise ValueError("Root installer is not signed by the existing project certificate")
+    with zipfile.ZipFile(apk) as archive:
+        if archive.testzip() is not None:
+            raise ValueError("Root installer ZIP integrity failed")
+        manifest = axml.inspect_manifest(archive.read("AndroidManifest.xml"))
+    if (manifest["package"] != "dev.pgs.root" or manifest["versionName"] != tag.removeprefix("v")
+            or manifest["versionCode"] != installer_version_code(tag)):
+        raise ValueError("Root installer package or version mismatch")
+    with zipfile.ZipFile(folder / ROOT_NAMES[1]) as archive:
+        required = {"module.prop", "pgs/classes.dex", "pgs/payload.zip",
+                    "zygisk/arm64-v8a.so", "zygisk/x86_64.so"}
+        if archive.testzip() is not None or not required.issubset(archive.namelist()):
+            raise ValueError("Root module ZIP integrity or payload validation failed")
+    return dict(info, source_commit=commit, signing_certificate_sha256=SIGNER,
+                device_tested=False, publish_ready=False)
+
+
 def stage_bundle(source, target, profile, commit, verifier, request):
     apk = safe_file(source, "PGS.apk")
     receipt_path = safe_file(source, "PGS.json")
@@ -153,12 +202,24 @@ def stage_bundle(source, target, profile, commit, verifier, request):
     if (sha != receipt["sha256"] or apk.stat().st_size != receipt["bytes"]
             or sums_path.read_text(encoding="utf-8").split() != [sha, "PGS.apk"]):
         raise ValueError("Candidate checksum or size differs from its receipts")
+    root_source = source / "root"
+    root_receipt = None
+    if root_source.exists() or root_source.is_symlink():
+        root_receipt = verify_root_bundle(root_source, request.tag, commit, profile, sha)
     shutil.copyfile(apk, target / request.asset)
     shutil.copyfile(receipt_path, target / "PGS.json")
     shutil.copyfile(info_path, target / "build-info.json")
-    (target / "SHA256SUMS.txt").write_text(sha + "  " + request.asset + "\n", encoding="utf-8")
+    sums = sha + "  " + request.asset + "\n"
+    names = list(request.names)
+    if root_receipt is not None:
+        for name in ROOT_NAMES[:2]:
+            shutil.copyfile(safe_file(root_source, name), target / name)
+            sums += digest(target / name) + "  " + name + "\n"
+        (target / ROOT_NAMES[2]).write_text(json.dumps(root_receipt, indent=2) + "\n", encoding="utf-8")
+        names.extend(ROOT_NAMES)
+    (target / "SHA256SUMS.txt").write_text(sums, encoding="utf-8")
     return {name: {"size": (target / name).stat().st_size,
-                   "digest": "sha256:" + digest(target / name)} for name in request.names}
+                   "digest": "sha256:" + digest(target / name)} for name in names}
 
 
 def verify_retained(rows, expected, commit, request):
@@ -192,17 +253,25 @@ def retain(cli, env, source, profile, commit, verifier, request):
         run_gh(cli, env, ["release", "create", request.tag, "--repo", REPOSITORY,
                "--draft", "--target", commit, "--title", "PGS " + request.tag + " - device test candidate",
                "--notes", "UNPUBLISHED candidate. Static checks passed; device tests pending. Not approved for distribution.\n\nCandidata não publicada. Verificações estáticas aprovadas; testes no aparelho pendentes.\n\nSource: " + commit,
-               *[str(target / name) for name in request.names]], timeout=600)
+               *[str(target / name) for name in expected]], timeout=600)
         verify_retained(releases(cli, env), expected, commit, request)
 
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--preflight", action="store_true")
+    modes = parser.add_mutually_exclusive_group()
+    modes.add_argument("--preflight", action="store_true")
+    modes.add_argument("--verify-root", type=Path)
     args = parser.parse_args()
     try:
         request = load_request()
-        commit = authorized_commit(os.environ, request, require_retention=not args.preflight)
+        commit = authorized_commit(os.environ, request, require_retention=not (args.preflight or args.verify_root))
+        if args.verify_root:
+            source = Path(os.environ["RUNNER_TEMP"]) / "pgs-candidate-validation"
+            receipt = json.loads(safe_file(source, "PGS.json").read_text(encoding="utf-8"))
+            result = verify_root_bundle(args.verify_root, request.tag, commit, current_profile(), receipt["sha256"])
+            print(json.dumps(result, indent=2))
+            return
         cli, env = github_env()
         if args.preflight:
             require_previous_candidate(cli, env, request)
@@ -215,7 +284,7 @@ def main():
         source = Path(os.environ["RUNNER_TEMP"]) / "pgs-candidate-validation"
         retain(cli, env, source, profile, commit, pgs_candidate.verify, request)
         print("Verified candidate retained in unpublished draft:", request.tag)
-    except (ValueError, OSError, KeyError, TypeError):
+    except (ValueError, OSError, KeyError, TypeError, zipfile.BadZipFile):
         # No remote response bodies, token values, or authenticated URLs in logs.
         raise SystemExit("Candidate retention failed; check authorization, draft uniqueness, and receipt/asset integrity. Do not publish or overwrite a partial draft.") from None
 

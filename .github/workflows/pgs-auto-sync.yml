@@ -4,6 +4,9 @@ on:
     branches: [main]
     paths:
       - .github/workflows/pgs-auto-sync.yml
+      - tools/pgs_upstream_monitor.py
+      - tools/test_pgs_upstream_monitor.py
+      - NOTICE
   workflow_dispatch:
   schedule:
     - cron: '17 10 * * *'
@@ -16,7 +19,7 @@ jobs:
   monitor:
     if: github.repository == 'LucianoToscano/PGS' && github.ref == 'refs/heads/main' && (github.event_name != 'schedule' || vars.PGS_AUTO_SYNC_ENABLED != 'false')
     runs-on: ubuntu-latest
-    timeout-minutes: 3
+    timeout-minutes: 5
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
         with:

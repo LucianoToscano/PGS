@@ -12,11 +12,11 @@ public final class ShundoPacingTest {
         check(ShundoPacing.waitReason(true,true,false,true,true).startsWith("Paused"), "background or disabled location cannot teleport");
         check(!ShundoPacing.waitReason(false,true,true,true,true).isEmpty(), "adapter absent");
         check(!ShundoPacing.waitReason(true,false,true,true,true).isEmpty(), "location unknown");
-        check(ShundoPacing.feedDelay(4000, false) == ShundoPacing.FEED_MS, "a full queue waits the long interval");
-        check(ShundoPacing.feedDelay(ShundoPacing.FEED_LOW_QUEUE, false) == ShundoPacing.FEED_MS, "the threshold itself is not low");
+        check(ShundoPacing.feedDelay(4000, false) == 60_000, "a full queue refreshes every minute");
+        check(ShundoPacing.feedDelay(ShundoPacing.FEED_LOW_QUEUE, false) == ShundoPacing.FEED_MS, "the threshold also refreshes every minute");
         check(ShundoPacing.feedDelay(ShundoPacing.FEED_LOW_QUEUE - 1, false) == ShundoPacing.FEED_SOON_MS, "a short queue reads again soon");
         check(ShundoPacing.feedDelay(0, false) == ShundoPacing.FEED_SOON_MS, "an empty queue reads again soon");
-        check(ShundoPacing.feedDelay(4000, true) == ShundoPacing.FEED_SOON_MS, "a failed read retries soon");
+        check(ShundoPacing.feedDelay(4000, true) == 60_000, "a failed read does not retry faster than one minute");
 
         check(ShundoPacing.LIVE_INTERVALS.length == ShundoPacing.LIVE_INTERVAL_LABELS.length, "live interval labels match options");
         for (int s : new int[]{30, 60, 180, 300, 600})

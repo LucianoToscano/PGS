@@ -88,6 +88,40 @@ def legacy_inventory():
     provider_reference = "https://feed.faustusfoundry.com/" + pattern.pattern + "/hundos.json"
     provider_path = "tools/hundo-feed/cloudflare/wrangler.json"
     provider_exact = False
+    # Only externally verified repository names are permitted in historical audit records.
+    external_repositories = (
+        ("jpitty03", ""),
+        ("ReneeAraujo", ""),
+        ("celestialeye", ""),
+        ("JxstMichie", ""),
+        ("vantrox", ""),
+        ("Axe2230", ""),
+        ("arisuryohei911-dot", ""),
+        ("kunal2801", ""),
+        ("belalsalah74", ""),
+        ("DevPGSV", ""),
+        ("yaboi-zombies", ""),
+        ("randrew87", "X"),
+        ("Petit-Prince-dev", ""),
+        ("dhanush-c-c", ""),
+        ("gloiae", ""),
+        ("ToxSylph", ""),
+        ("Benjaminlooi", ""),
+        ("gv2598", ""),
+        ("foxartic", ""),
+        ("ar5hil", ""),
+        ("privacyportalUK", ""),
+        ("Fixuuu", ""),
+        ("7sarus", ""),
+        ("Archit-barge", "trial"),
+        ("dojistarman", "-Savant"),
+        ("NPSummers", "-Aureal"),
+        ("hugoalves6", "_Pokematrix"),
+    )
+    external_names = re.compile(r"(?<![\\w-])(?:" + "|".join(
+        re.escape(owner + "/") + pattern.pattern + re.escape(suffix)
+        for owner, suffix in external_repositories) + r")(?![\\w-])", re.IGNORECASE)
+    external_allowed = {}
     for path, data in index_blobs(ROOT, tracked):
         if b"\x00" in data:
             continue
@@ -105,6 +139,9 @@ def legacy_inventory():
                                       for row in sources) == 1)
             except (KeyError, TypeError, ValueError):
                 provider_exact = False
+        if path in ("docs/PGS_COMMUNITY_REVIEW.md", "docs/PGS_FORK_INVENTORY.json") and count:
+            if not pattern.search(external_names.sub("", source)):
+                external_allowed[path] = (count, "verified external repository names in historical provenance")
         if count:
             files.append({"path": path, "occurrences": count})
     names = [path for path in sorted(tracked) if pattern.search(path)]
@@ -118,6 +155,7 @@ def legacy_inventory():
         "LICENSE": (1, "required original copyright"),
         "NOTICE": (2, "original copyright and source attribution"),
     }
+    allowed.update(external_allowed)
     if provider_exact:
         allowed[provider_path] = (1, "exact external feed provider URL; not a project brand")
     unexpected = [row for row in files

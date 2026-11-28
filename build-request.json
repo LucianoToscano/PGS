@@ -1,1 +1,12 @@
-{"schema": 1, "enabled": false}
+{
+  "schema": 1,
+  "enabled": true,
+  "version": "v0.0.6",
+  "previous_version_code": 2026111608,
+  "previous_apk_sha256": "fa139a05d884ae2c487f8af68673c049d7db03eaae8fca8efecc88f6cf2c4ea9",
+  "game_version": "0.439.0",
+  "game_version_code": 2026111602,
+  "input_sha256": "c6d3c04c38ca2f2446957633b4fee8c93dcc9cebdbbaddc9cb9651722ef8f54f",
+  "authorized_input": true,
+  "retain_authorized_candidate": true
+}

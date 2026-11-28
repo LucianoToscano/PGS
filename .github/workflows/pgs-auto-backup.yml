@@ -46,4 +46,4 @@ jobs:
             dist/SHA256SUMS.txt
             dist/SOURCE_COMMIT.txt
           if-no-files-found: error
-          retention-days: 14
+          retention-days: 90

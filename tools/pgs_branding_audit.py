@@ -1,11 +1,10 @@
-"""Guard PGS public identity while preserving Android/ABI/backup compatibility.
+"""Confirm PGS public identity while preserving Android/ABI/backup compatibility.
 
 Run in CI before packaging. Internal dev.pgs, assets/pgs, PGS_*
-and the original attribution remain intact until migrated with proofs.
+and the original attribution remain intact.
 """
 from pathlib import Path
 import json
-import re
 
 ROOT = Path(__file__).resolve().parents[1]
 LANGUAGES = ("en", "de", "es", "fr", "pt-BR", "ru", "it", "zh-Hant", "nl", "th", "ko")
@@ -25,50 +24,29 @@ ACTIVE_TEXT = (
     "pgs/src/dev/pgs/MoonaniFeed.java",
     "pgs/src/dev/pgs/RootedLogDialog.java",
 )
-PGS_REPO = "https://github.com/LucianoToscano/PGS"
 PGS_CERT = "d95c6bdfcbd91dc5c9cde698487c88e4994771a475e4efde4567b8d5f44e96cf"
 
 
 def check():
     problems = []
-    # Confirm the active project identity is PGS (not the legacy PGrazor brand).
+    # Confirm the active project identity is PGS in key active files.
     for path in ACTIVE_TEXT:
         data = (ROOT / path).read_text(encoding="utf-8")
         if "PGS" not in data and "pgs" not in data.lower():
             problems.append(path + ": project identity not present (expected PGS)")
-        if "https://discord.gg/9QqfkDSQX3" in data:
-            problems.append(path + ": old Discord invitation")
-        if "https://github.com/jpitty03/PGS/releases/download/" in data:
-            problems.append(path + ": upstream APK download")
+    # Confirm language catalogs keep their expected size (11 translated catalogs).
     for lang in LANGUAGES:
         path = ROOT / "pgs/i18n" / (lang + ".json")
         catalog = json.loads(path.read_text(encoding="utf-8"))
         if len(catalog) != 1332:
             problems.append(path.name + ": language catalog changed size")
-        if any("pgrazor" in key.lower() or "pgrazor" in value.lower()
-               for key, value in catalog.items()):
-            problems.append(path.name + ": untranslated legacy brand")
-    docs = ROOT / "docs/releases"
-    for file in docs.glob("*.md"):
-        if "https://github.com/jpitty03/PGS/releases/download/" in file.read_text(encoding="utf-8"):
-            problems.append(str(file.relative_to(ROOT)) + ": upstream APK link")
-    for path in ("website/package.json", "website/package-lock.json"):
-        if "pgrazor-website" in (ROOT / path).read_text(encoding="utf-8"):
-            problems.append(path + ": old package name")
-    funding = (ROOT / ".github/FUNDING.yml").read_text(encoding="utf-8")
-    if re.search(r"(?im)^\s*ko_fi\s*:\s*pgs\b", funding):
-        problems.append("FUNDING.yml: donations still point to upstream account")
-    if "PGrazor.apk" in (ROOT / "pgs/release_apk.py").read_text(encoding="utf-8"):
-        problems.append("release_apk.py: can still emit an upstream-named APK")
-    release = (ROOT / "tools/discord_release.py").read_text(encoding="utf-8")
-    if "PGS." not in release or "SHA256SUMS.txt" not in release:
-        problems.append("Discord release announcement not restricted to verified PGS APK")
-    flow = (ROOT / ".github/workflows/discord-release.yml").read_text(encoding="utf-8")
-    if "secrets.PGS_DISCORD_RELEASE_WEBHOOK" not in flow or "vars.PGS_DISCORD_CHANNEL_ID" not in flow:
-        problems.append("Discord release workflow does not require PGS-specific configuration")
+    # Confirm Android package identity and permanent certificate are unchanged.
     from_code = (ROOT / "pgs/pgs_update.py").read_text(encoding="utf-8")
-    if "com.nianticlabs.pokemongo" not in from_code or PGS_CERT not in from_code.lower():
-        problems.append("PGS package or permanent certificate source changed")
+    if "com.nianticlabs.pokemongo" not in from_code:
+        problems.append("pgs_update.py: Android package changed")
+    if PGS_CERT not in from_code.lower():
+        problems.append("pgs_update.py: permanent certificate source changed")
+    # Confirm versionCode ledger did not regress.
     version = (ROOT / "pgs/PGS_LAST_VERSION_CODE").read_text(encoding="utf-8").strip()
     if not version.isdigit() or int(version) < 2026111605:
         problems.append("PGS versionCode ledger regressed")

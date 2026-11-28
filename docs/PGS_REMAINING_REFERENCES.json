@@ -1,19 +1,19 @@
 {
   "scope": "Git-indexed regular UTF-8 text, excluding NUL-containing files and the snapshot itself",
-  "tracked_files": 2087,
-  "text_files": 1013,
-  "remaining_files": 944,
-  "remaining_occurrences": 31212,
+  "tracked_files": 2095,
+  "text_files": 1021,
+  "remaining_files": 953,
+  "remaining_occurrences": 31264,
   "remaining_by_category": {
-    "other": 2229,
-    "workflows": 418,
-    "documentation": 1393,
-    "legal": 6,
-    "release_history": 61,
-    "native": 25901,
-    "tests": 1061,
+    "documentation": 1392,
     "java": 134,
-    "javascript": 9
+    "javascript": 9,
+    "legal": 6,
+    "native": 25901,
+    "other": 2282,
+    "release_history": 61,
+    "tests": 1061,
+    "workflows": 418
   },
   "tracked_name_matches": [],
   "files": [
@@ -295,7 +295,7 @@
     {
       "path": "docs/pt-BR/releases/TEMPLATE.md",
       "category": "documentation",
-      "occurrences": 6
+      "occurrences": 1
     },
     {
       "path": "docs/pt-BR/releases/v0.0.2.md",
@@ -308,9 +308,19 @@
       "occurrences": 8
     },
     {
+      "path": "docs/pt-BR/releases/v0.0.5.md",
+      "category": "documentation",
+      "occurrences": 3
+    },
+    {
+      "path": "docs/releases/README.md",
+      "category": "documentation",
+      "occurrences": 3
+    },
+    {
       "path": "docs/releases/TEMPLATE.md",
       "category": "documentation",
-      "occurrences": 6
+      "occurrences": 1
     },
     {
       "path": "docs/releases/footer.md",
@@ -326,6 +336,11 @@
       "path": "docs/releases/v0.0.3.md",
       "category": "documentation",
       "occurrences": 6
+    },
+    {
+      "path": "docs/releases/v0.0.5.md",
+      "category": "documentation",
+      "occurrences": 3
     },
     {
       "path": "docs/releases/v0.2.0.md",
@@ -4538,6 +4553,26 @@
       "occurrences": 3
     },
     {
+      "path": "tools/hundo-feed/cloudflare/README.md",
+      "category": "other",
+      "occurrences": 1
+    },
+    {
+      "path": "tools/hundo-feed/cloudflare/worker.mjs",
+      "category": "other",
+      "occurrences": 12
+    },
+    {
+      "path": "tools/hundo-feed/cloudflare/worker.test.mjs",
+      "category": "other",
+      "occurrences": 26
+    },
+    {
+      "path": "tools/hundo-feed/cloudflare/wrangler.json",
+      "category": "other",
+      "occurrences": 2
+    },
+    {
       "path": "tools/hundo-feed/hundo-feed.env.example",
       "category": "other",
       "occurrences": 2
@@ -4570,12 +4605,17 @@
     {
       "path": "tools/pgs_branding_audit.py",
       "category": "other",
-      "occurrences": 39
+      "occurrences": 44
     },
     {
       "path": "tools/pgs_reference_inventory.py",
       "category": "other",
       "occurrences": 9
+    },
+    {
+      "path": "tools/pgs_release_notes.py",
+      "category": "other",
+      "occurrences": 1
     },
     {
       "path": "tools/pgs_version_monitor.py",
@@ -4606,6 +4646,11 @@
       "path": "tools/test_i18n_catalog.py",
       "category": "other",
       "occurrences": 1
+    },
+    {
+      "path": "tools/test_pgs_release_notes.py",
+      "category": "other",
+      "occurrences": 3
     },
     {
       "path": "tools/test_pgs_version_monitor.py",
@@ -4730,7 +4775,7 @@
     {
       "path": "website/tests/site.spec.js",
       "category": "other",
-      "occurrences": 11
+      "occurrences": 14
     },
     {
       "path": "website/vite.config.js",
@@ -4739,12 +4784,12 @@
     }
   ],
   "abbreviations": {
-    "remaining_files": 516,
-    "remaining_occurrences": 25698,
+    "remaining_files": 519,
+    "remaining_occurrences": 25701,
     "by_form": {
-      "lowercase": 3871,
-      "uppercase": 16168,
-      "camelcase": 5659
+      "camelcase": 5659,
+      "lowercase": 3874,
+      "uppercase": 16168
     },
     "tracked_name_matches": [
       "docs/PGS_BRANDING_AUDIT.md",
@@ -4798,6 +4843,13 @@
         "by_form": {
           "lowercase": 3,
           "uppercase": 2
+        }
+      },
+      {
+        "path": ".github/workflows/pgs-release-notes-sync.yml",
+        "occurrences": 1,
+        "by_form": {
+          "lowercase": 1
         }
       },
       {
@@ -5082,6 +5134,13 @@
         "occurrences": 3,
         "by_form": {
           "uppercase": 3
+        }
+      },
+      {
+        "path": "docs/releases/README.md",
+        "occurrences": 1,
+        "by_form": {
+          "lowercase": 1
         }
       },
       {
@@ -8987,8 +9046,8 @@
         "path": "tools/pgs_branding_audit.py",
         "occurrences": 7,
         "by_form": {
-          "uppercase": 3,
-          "lowercase": 4
+          "lowercase": 4,
+          "uppercase": 3
         }
       },
       {
@@ -9024,6 +9083,13 @@
         "occurrences": 4,
         "by_form": {
           "lowercase": 4
+        }
+      },
+      {
+        "path": "tools/test_pgs_release_notes.py",
+        "occurrences": 1,
+        "by_form": {
+          "lowercase": 1
         }
       },
       {

@@ -5,6 +5,7 @@ and the original attribution remain intact.
 """
 from pathlib import Path
 import json
+import hashlib
 import re
 import subprocess
 import sys
@@ -32,6 +33,18 @@ PGS_CERT = "d95c6bdfcbd91dc5c9cde698487c88e4994771a475e4efde4567b8d5f44e96cf"
 
 def check():
     problems = []
+    # Official assets are immutable across the website and packaged source.
+    for name, expected in {
+        "pgs-shield.png": "30f51e26c20ea0aba1687e4c1e22adce093b238c3879492342163f818b438300",
+        "pgs-full.png": "15716009d2d1c0e11d75ace39783c3237c1d9db2272ca7f2fad8ac2d6e20ab2e",
+        "pgs-wordmark.png": "8ad6e5d80075145154ebfc343d91469da970fa7cfa729b9f6e31479307d4b29e",
+    }.items():
+        for folder in ("website/public", "pgs/branding"):
+            path = ROOT / folder / name
+            if not path.is_file() or hashlib.sha256(path.read_bytes()).hexdigest() != expected:
+                problems.append(str(path.relative_to(ROOT)) + ": official PNG mismatch")
+    if (ROOT / "website/public/images/main-menu.png").exists():
+        problems.append("Obsolete menu screenshot must not be published")
     # Confirm the active project identity is PGS in key active files.
     for path in ACTIVE_TEXT:
         data = (ROOT / path).read_text(encoding="utf-8")
@@ -72,6 +85,9 @@ def legacy_inventory():
                 raise ValueError("Unmerged index")
             tracked[path.decode("utf-8")] = (mode, oid)
     files = []
+    provider_reference = "https://feed.faustusfoundry.com/" + pattern.pattern + "/hundos.json"
+    provider_path = "tools/hundo-feed/cloudflare/wrangler.json"
+    provider_exact = False
     for path, data in index_blobs(ROOT, tracked):
         if b"\x00" in data:
             continue
@@ -80,6 +96,15 @@ def legacy_inventory():
         except UnicodeDecodeError:
             continue
         count = len(pattern.findall(source))
+        if path == provider_path:
+            # Keep the actual external source URL, not a PGS-branded substitute.
+            try:
+                sources = json.loads(json.loads(source)["vars"]["SOURCES"])
+                provider_exact = (source.count(provider_reference) == 1 and
+                                  sum(row.get("url") == provider_reference and row.get("name") == "faustusfoundry"
+                                      for row in sources) == 1)
+            except (KeyError, TypeError, ValueError):
+                provider_exact = False
         if count:
             files.append({"path": path, "occurrences": count})
     names = [path for path in sorted(tracked) if pattern.search(path)]
@@ -93,6 +118,8 @@ def legacy_inventory():
         "LICENSE": (1, "required original copyright"),
         "NOTICE": (2, "original copyright and source attribution"),
     }
+    if provider_exact:
+        allowed[provider_path] = (1, "exact external feed provider URL; not a project brand")
     unexpected = [row for row in files
                   if row["path"] not in allowed or row["occurrences"] > allowed[row["path"]][0]]
     result["intentional_retention"] = [{"path": row["path"], "occurrences": row["occurrences"],

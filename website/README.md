@@ -78,3 +78,5 @@ The site defaults to **English**. The language selector in the header supports *
 - `src/guideScreenshots.i18n.js` translates guide screenshot titles and captions without changing source images or dimensions.
 
 Update English and Brazilian Portuguese catalogs **in the same pull request** for any user-visible change. Do not translate the URL guide slugs, technical identifiers, checksum values, APK names or saved Android preferences. `npm test` checks both languages, direct links and content parity.
+
+Historical screenshots illustrate the controls only; they are not proof of the current release. The obsolete full-menu screenshot is deliberately absent. Replacements require a current, privacy-reviewed device capture.

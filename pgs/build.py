@@ -22,6 +22,18 @@ def release_version(root):
         raise ValueError('Invalid PGS version')
     return 'v' + version.removeprefix('v')
 
+LAUNCHER_BRANDING_SHA256 = "30f51e26c20ea0aba1687e4c1e22adce093b238c3879492342163f818b438300"
+LAUNCHER_BRANDING_ASSET = "pgs/branding/pgs-shield.png"
+
+
+def launcher_branding_asset():
+    """Use the verified original transparent shield."""
+    path = ROOT / "branding" / "pgs-shield.png"
+    if path.is_symlink() or not path.is_file() or hashlib.sha256(path.read_bytes()).hexdigest() != LAUNCHER_BRANDING_SHA256:
+        raise RuntimeError("Official PGS launcher PNG is missing or differs from the verified original")
+    return path
+
+
 def map_icon_assets():
     """Bundled POI marker PNGs plus the Pokemon name table for assets/pgs/map-icons.
 
@@ -132,6 +144,7 @@ def main():
     run(android_tool('aapt'),'package','-f','-M',ROOT/'AndroidManifest.xml','-I',ANDROID,'-F',unsigned)
     with zipfile.ZipFile(unsigned,'a',zipfile.ZIP_DEFLATED) as out:
         out.write(BUILD/'dex/classes.dex','classes.dex')
+        out.write(launcher_branding_asset(), 'assets/' + LAUNCHER_BRANDING_ASSET)
         for name,path in map_icon_assets().items(): out.write(path,'assets/pgs/map-icons/'+name)
         for name,path in feed_icon_assets().items(): out.write(path,'assets/pgs/feed-icons/pokemon/'+name)
     run(android_tool('zipalign'),'-f','4',unsigned,BUILD/'preview-aligned.apk')

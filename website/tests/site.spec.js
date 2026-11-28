@@ -176,3 +176,22 @@ test('PGS release notes accompany the latest download', async ({ page }) => {
   await expect(releaseNotes).not.toHaveClass(/btn--primary/);
   await expect(page.locator('.cta__badge')).toHaveText('Stable');
 });
+
+test('archived menu image is absent and bundled public assets resolve', async ({ page, request }) => {
+  await page.goto('./');
+  const base = new URL('./', page.url());
+  const missing = await request.get(new URL('images/main-menu.png', base).href);
+  // Static hosting may serve its HTML fallback for a missing asset.
+  expect(missing.ok() && (missing.headers()['content-type'] || '').startsWith('image/')).toBeFalsy();
+  const paths = new Set(['pgs-shield.png', 'pgs-wordmark.png', 'pgs-full.png']);
+  for (const path of await page.locator('main img[src], header img[src], footer img[src]').evaluateAll(
+    imgs => imgs.map(img => img.getAttribute('src'))
+  )) {
+    if (path && !/^https?:/.test(path)) paths.add(path);
+  }
+  for (const path of paths) {
+    const response = await request.get(new URL(path, base).href);
+    expect(response.ok(), path).toBeTruthy();
+    expect(response.headers()['content-type'], path).toMatch(/^image\//);
+  }
+});

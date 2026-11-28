@@ -95,17 +95,57 @@ public final class Pad {
                 if(a==MotionEvent.ACTION_UP){if(!moved&&clickable)v.performClick();return true;}return true;}
         });
     }
-    private final class RazorIcon extends View {
-        private final Paint paint=new Paint(Paint.ANTI_ALIAS_FLAG);
-        RazorIcon(Context c){super(c);setContentDescription(I18n.t("Open PGS settings. Drag to reposition."));setFocusable(true);setClickable(true);}
-        protected void onDraw(Canvas c){super.onDraw(c);float scale=Math.min(getWidth(),getHeight())/48f;c.save();c.scale(scale,scale);
-            paint.setStyle(Paint.Style.FILL);paint.setColor(surface());c.drawCircle(24,24,22.5f,paint);
-            paint.setStyle(Paint.Style.STROKE);paint.setStrokeWidth(1.3f);paint.setColor(SettingsUi.border());c.drawCircle(24,24,22.1f,paint);
-            paint.setStyle(Paint.Style.FILL);paint.setColor(ink());
-            Path r=new Path();r.moveTo(13,11);r.lineTo(29,11);r.lineTo(36,18);r.lineTo(29,26);r.lineTo(36,37);r.lineTo(26,37);r.lineTo(19,26);r.lineTo(19,37);r.lineTo(12,37);r.lineTo(17,19);r.lineTo(24,19);r.lineTo(23,22);r.lineTo(27,22);r.lineTo(30,18);r.lineTo(27,16);r.lineTo(12,16);r.close();c.drawPath(r,paint);
-            // Status dot: the launcher doubles as a quiet "spoofing on" indicator.
-            paint.setColor(Control.desiredEnabled()?accent():SettingsUi.faint());c.drawCircle(38,38,3.6f,paint);
-            c.restore();}
+    private final class PgsIcon extends View {
+        private final Paint paint = new Paint(Paint.ANTI_ALIAS_FLAG | Paint.FILTER_BITMAP_FLAG);
+        private final RectF dst = new RectF(), shadow = new RectF();
+        private final ColorFilter shadowTint = new PorterDuffColorFilter(Color.BLACK, PorterDuff.Mode.SRC_IN);
+        private final Bitmap shield;
+        PgsIcon(Context context) {
+            super(context);
+            setContentDescription(I18n.t("Open PGS settings. Drag to reposition."));
+            setFocusable(true);
+            setClickable(true);
+            Bitmap decoded = null;
+            try (java.io.InputStream input = PgAssets.open(context, "pgs/branding/pgs-shield.png")) {
+                BitmapFactory.Options options = new BitmapFactory.Options();
+                options.inSampleSize = 8;
+                decoded = BitmapFactory.decodeStream(input, null, options);
+            } catch (java.io.IOException ignored) { /* Safe PGS text fallback for older assets. */ }
+            shield = decoded;
+        }
+        @Override protected void onDraw(Canvas canvas) {
+            super.onDraw(canvas);
+            float scale = Math.min(getWidth(), getHeight()) / 48f;
+            if (scale <= 0) return;
+            canvas.save();
+            canvas.scale(scale, scale);
+            paint.setStyle(Paint.Style.FILL);
+            if (shield != null && shield.getWidth() > 0 && shield.getHeight() > 0) {
+                float ratio = Math.min(42f / shield.getWidth(), 42f / shield.getHeight());
+                float width = shield.getWidth() * ratio, height = shield.getHeight() * ratio;
+                dst.set(24-width/2, 24-height/2, 24+width/2, 24+height/2);
+                shadow.set(dst);
+                shadow.offset(1.5f, 1.5f);
+                paint.setColorFilter(shadowTint);
+                paint.setAlpha(180);
+                canvas.drawBitmap(shield, null, shadow, paint);
+                paint.setColorFilter(null);
+                paint.setAlpha(255);
+                canvas.drawBitmap(shield, null, dst, paint);
+            } else {
+                paint.setTypeface(Typeface.create("sans-serif-condensed", Typeface.BOLD));
+                paint.setTextAlign(Paint.Align.CENTER);
+                paint.setTextSize(18f);
+                paint.setColor(Color.WHITE);
+                paint.setShadowLayer(1.5f, 1.2f, 1.2f, Color.BLACK);
+                canvas.drawText("PGS", 24, 30, paint);
+                paint.clearShadowLayer();
+            }
+            // Keep the existing draggable control and status dot, without a solid background.
+            paint.setColor(Control.desiredEnabled() ? accent() : SettingsUi.faint());
+            canvas.drawCircle(40, 40, 3.3f, paint);
+            canvas.restore();
+        }
     }
 
     private long lastTick = SystemClock.elapsedRealtime(), lastLog, lastPositionCheck;
@@ -197,9 +237,9 @@ public final class Pad {
         FrameLayout.LayoutParams routesLayout=new FrameLayout.LayoutParams(dp(48),dp(48),Gravity.TOP|Gravity.RIGHT);
         routesLayout.rightMargin=dp(14);routesLayout.topMargin=dp(100);overlays.addView(gameRoutesOverlay,routesLayout);
         gameRoutesOverlay.setVisibility(View.GONE);gameRoutesDrag=OverlayDrag.attach(overlays,gameRoutesOverlay,"game-routes");
-        launcher=new RazorIcon(host);FrameLayout.LayoutParams iconLayout=new FrameLayout.LayoutParams(dp(48),dp(48),Gravity.TOP|Gravity.LEFT);iconLayout.leftMargin=dp(12);iconLayout.topMargin=dp(100);overlays.addView(launcher,iconLayout);
+        launcher=new PgsIcon(host);FrameLayout.LayoutParams iconLayout=new FrameLayout.LayoutParams(dp(48),dp(48),Gravity.TOP|Gravity.LEFT);iconLayout.leftMargin=dp(12);iconLayout.topMargin=dp(100);overlays.addView(launcher,iconLayout);
         launcher.setContentDescription(I18n.t("Open PGS quick menu. Drag to reposition."));
-        // The R launcher now toggles the compact quick menu; Settings there opens this panel full screen.
+        // The PGS launcher now toggles the compact quick menu; Settings there opens this panel full screen.
         quickMenu=new QuickMenu(host,parent,launcher,new QuickMenu.Listener(){
             public void onMap(){openWorldMap();}
             public double onCycleWalkSpeed(){double s=Control.cycleWalkSpeed();refresh();return s;}

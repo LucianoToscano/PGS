@@ -90,7 +90,7 @@ class ChecksumTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as tmp:
             extracted = nb._vendor_dir(tmp) / ('Dobby-' + nb.DOBBY_COMMIT)
             extracted.mkdir(parents=True)
-            (extracted / '.pgrazor-verified').write_text(nb.DOBBY_SHA256, encoding='utf-8')
+            (extracted / '.pgs-verified').write_text(nb.DOBBY_SHA256, encoding='utf-8')
             with self.assertRaisesRegex(RuntimeError, 'No download attempted'):
                 nb.ensure_dobby(tmp, download=False)
 
@@ -106,18 +106,16 @@ class ChecksumTests(unittest.TestCase):
             extracted.mkdir()
             source = extracted / 'fixture.txt'
             source.write_bytes(b'tampered')
-            legacy = extracted / '.pgrazor-verified'
-            current = extracted / '.pgs-verified'
-            legacy.write_text('legacy', encoding='utf-8')
+            marker = extracted / '.pgs-verified'
+            marker.write_text('legacy', encoding='utf-8')
             with patch.object(nb, 'DOBBY_SHA256', nb.sha256(archive)):
                 with self.assertRaisesRegex(RuntimeError, 'source cache changed'):
                     nb.ensure_dobby(tmp, download=False)
-                self.assertTrue(legacy.is_file())
-                self.assertFalse(current.exists())
+                self.assertTrue(marker.is_file())
                 source.write_bytes(b'fixture')
                 self.assertEqual(nb.ensure_dobby(tmp, download=False), extracted)
-                self.assertFalse(legacy.exists())
-                self.assertEqual(current.read_text(encoding='utf-8'), nb.DOBBY_SHA256)
+                self.assertFalse(marker.exists())
+                self.assertEqual(marker.read_text(encoding='utf-8'), nb.DOBBY_SHA256)
                 self.assertEqual(nb.ensure_dobby(tmp, download=False), extracted)
 
 
@@ -159,23 +157,22 @@ class ZipSafetyTests(unittest.TestCase):
 
 class ExportGuardTests(unittest.TestCase):
     def test_exact_set_passes(self):
-        nb.assert_exports({'JNI_OnLoad', 'pgs_native_api', 'pgrazor_native_api'})
+        nb.assert_exports({'JNI_OnLoad', 'pgs_native_api'})
 
     def test_missing_export_fails(self):
         with self.assertRaises(RuntimeError) as ctx:
             nb.assert_exports({'JNI_OnLoad'})
         self.assertIn('pgs_native_api', str(ctx.exception))
-        self.assertIn('pgrazor_native_api', str(ctx.exception))
 
     def test_extra_export_fails(self):
         with self.assertRaises(RuntimeError) as ctx:
-            nb.assert_exports({'JNI_OnLoad', 'pgs_native_api', 'pgrazor_native_api', 'leaked_symbol'})
+            nb.assert_exports({'JNI_OnLoad', 'pgs_native_api', 'leaked_symbol'})
         self.assertIn('leaked_symbol', str(ctx.exception))
 
     def test_parse_exports_ignores_undefined_and_local(self):
         data = _elf64(nb.ELF_MACHINE['arm64-v8a'], [
             ('JNI_OnLoad', 1, 1),
-            ('pgrazor_native_api', 1, 1),
+            ('pgs_native_api', 1, 1),
             ('pgs_native_api', 1, 1),
             ('imported_func', 1, 0),   # undefined import -> ignored
             ('local_helper', 0, 1),    # LOCAL binding -> ignored
@@ -184,7 +181,7 @@ class ExportGuardTests(unittest.TestCase):
             handle.write(data)
             path = handle.name
         try:
-            self.assertEqual(nb.dynamic_exports(path), {'JNI_OnLoad', 'pgs_native_api', 'pgrazor_native_api'})
+            self.assertEqual(nb.dynamic_exports(path), {'JNI_OnLoad', 'pgs_native_api', 'pgs_native_api'})
         finally:
             os.unlink(path)
 
@@ -200,13 +197,13 @@ class ElfValidationTests(unittest.TestCase):
     def test_valid_arm64_library_validates(self):
         path = self._write(_elf64(nb.ELF_MACHINE['arm64-v8a'], [
             ('JNI_OnLoad', 1, 1), ('pgs_native_api', 1, 1),
-            ('pgrazor_native_api', 1, 1)]))
+            ('pgs_native_api', 1, 1)]))
         nb.validate_library(path, 'arm64-v8a')
 
     def test_machine_mismatch_fails(self):
         path = self._write(_elf64(nb.ELF_MACHINE['x86_64'], [
             ('JNI_OnLoad', 1, 1), ('pgs_native_api', 1, 1),
-            ('pgrazor_native_api', 1, 1)]))
+            ('pgs_native_api', 1, 1)]))
         with self.assertRaises(RuntimeError) as ctx:
             nb.validate_library(path, 'arm64-v8a')
         self.assertIn('machine mismatch', str(ctx.exception))

@@ -65,6 +65,12 @@ public final class BootstrapProvider extends ContentProvider {
         } catch(Exception failure) {
             Control.event("compiled-java-bridges-unavailable",failure.getClass().getSimpleName());
         }
+        boolean googleBrowserLogin = false;
+        try {
+            JSONObject startupMode2=new JSONObject(readAsset(context,"pgs/mode.json"));
+            googleBrowserLogin = startupMode2.optBoolean("googleBrowserLogin", false);
+        } catch(Exception ignored) {}
+        GameBridgeDispatch.configureBrowserSignIn(googleBrowserLogin);
         if(!sessionRecovered)Control.event("account-session-recovery","Interrupted session could not be restored; sign in again. Saved profiles preserved.");
         Control.event("bootstrap", "pid="+android.os.Process.myPid()+" uid="+android.os.Process.myUid()+" process="+Application.getProcessName());
         // Native initialization must not block ContentProvider startup or the main thread.
@@ -154,7 +160,8 @@ public final class BootstrapProvider extends ContentProvider {
             File library=compiledHost&&translated?null:copyAsset(context,"pgs/"+abi+"/libfrida-gadget.so",directory,"libfrida-gadget.so");
             File bridge=compiledHost?null:copyAsset(context,"pgs/java-bridge.js",directory,"java-bridge.js");
             File script=copyAsset(context,"pgs/embedded-agent.js",directory,"embedded-agent.js");
-            JSONObject parameters=new JSONObject().put("googleBrowserLogin",false).put("startupLog",new File(directory,"gadget-startup.txt").getAbsolutePath());
+            boolean googleBrowserLogin = mode.optBoolean("googleBrowserLogin", false);
+            JSONObject parameters=new JSONObject().put("googleBrowserLogin",googleBrowserLogin).put("startupLog",new File(directory,"gadget-startup.txt").getAbsolutePath());
             if(bridge!=null)parameters.put("bridgePath",bridge.getAbsolutePath());
             parameters.put("compiledJavaBridges",mode.optBoolean("compiledJavaBridges",false));
             if(mode.optBoolean("compiledLocationGetters",false)) {
@@ -343,7 +350,7 @@ public final class BootstrapProvider extends ContentProvider {
      */
     private static File runtimeDirectory(Context context) throws IOException {
         File parent=context.getCodeCacheDir();
-        File[] stale=parent.listFiles((dir,name)->name.matches("(?:pgs|pgrazor)-[0-9]+-[0-9]+"));
+        File[] stale=parent.listFiles((dir,name)->name.matches("(?:pgs|pgs)-[0-9]+-[0-9]+"));
         if(stale!=null)for(File old:stale)deleteTree(old);
         File directory=new File(parent,"pgs-"+android.os.Process.myPid()+"-"+System.currentTimeMillis());
         if(!directory.mkdirs()) throw new IOException("Cannot create private runtime directory");

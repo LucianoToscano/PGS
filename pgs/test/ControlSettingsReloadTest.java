@@ -42,7 +42,7 @@ public final class ControlSettingsReloadTest {
         if(Control.autoBerry()!=708||Control.buddyBerry()!=708||!Control.berryPriority().equals("708")||Control.vgpEnabled()||Control.buddyAllowed())
             throw new AssertionError("Legacy single Silver Pinap migration changed its meaning or bypassed readiness");
         java.util.Properties migrated=new java.util.Properties();
-        try(java.io.FileInputStream in=new java.io.FileInputStream(new java.io.File(args[0],"pgrazor-settings-v1.properties"))){migrated.load(in);}
+        try(java.io.FileInputStream in=new java.io.FileInputStream(new java.io.File(args[0],"pgs-settings-v1.properties"))){migrated.load(in);}
         if(!"708".equals(migrated.getProperty("berryPriority"))||!"708".equals(migrated.getProperty("buddyBerry"))||migrated.containsKey("autoBerry"))
             throw new AssertionError("Legacy migration was not persisted canonically");
         Control.selectBerryPriority(705);

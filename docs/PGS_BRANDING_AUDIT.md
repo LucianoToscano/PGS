@@ -19,9 +19,9 @@ Esta seção registra a situação daquela PR, não o layout atual. Para a situa
 
 Não é seguro fazer substituição global nas chaves ou símbolos de protocolo. Nesta etapa permanecem:
 
-- Diretório de fonte `pgrazor/`, classes Java `dev.pgs`, componentes DEX e paths `assets/pgs/`
-- Bibliotecas `libpgrazor-*.so`, símbolos nativos JNI, interfaces JavaScript internas `PGRazorNative*`, variáveis de build `PGRAZOR_*`
-- Preferências salvas como `pgrazor-map`, `pgrazor-overlays`, IDs e nomes internos de módulo Root, e chaves antigas de backup
+- Diretório de fonte `pgs/`, classes Java `dev.pgs`, componentes DEX e paths `assets/pgs/`
+- Bibliotecas `libpgs-*.so`, símbolos nativos JNI, interfaces JavaScript internas `PGSNative*`, variáveis de build `PGS_*`
+- Preferências salvas como `pgs-map`, `pgs-overlays`, IDs e nomes internos de módulo Root, e chaves antigas de backup
 - Identificadores de testes, o tema antigo do site (já migrado) e a logo **dentro do jogo** com o botão original, mais a lógica do joystick
 - Histórico de contribuição, licenças e referências precisas ao projeto-base e forks terceiros, para preservar atribuição
 
@@ -35,4 +35,4 @@ A PR não publica APK automaticamente. A próxima nova build completa deverá se
 
 ## Preparação da v0.0.2
 
-O arquivo `.github/FUNDING.yml` deixou de apontar para o Ko-fi do projeto original (não há conta de doação PGS cadastrada). O gate CI agora reprova o reaparecimento desse destino. A candidata `v0.0.2` usa o APK completo assinado de `v0.0.1` como entrada, recompila os controles Java com os nomes PGS, mantém DEX do jogo e bibliotecas nativas inalterados e exige `versionCode=2026111605` e o mesmo certificado. Instalação/login sobre o PGS anterior ainda dependem de teste físico. Nenhum identificador `dev.pgs`, recurso `assets/pgrazor` ou logo/joystick interno foi renomeado.
+O arquivo `.github/FUNDING.yml` deixou de apontar para o Ko-fi do projeto original (não há conta de doação PGS cadastrada). O gate CI agora reprova o reaparecimento desse destino. A candidata `v0.0.2` usa o APK completo assinado de `v0.0.1` como entrada, recompila os controles Java com os nomes PGS, mantém DEX do jogo e bibliotecas nativas inalterados e exige `versionCode=2026111605` e o mesmo certificado. Instalação/login sobre o PGS anterior ainda dependem de teste físico. Nenhum identificador `dev.pgs`, recurso `assets/pgs` ou logo/joystick interno foi renomeado.

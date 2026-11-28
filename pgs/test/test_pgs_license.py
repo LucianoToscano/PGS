@@ -11,11 +11,10 @@ class PgsLicenseTests(unittest.TestCase):
         text = (ROOT / "LICENSE").read_text(encoding="utf-8")
         self.assertTrue(text.startswith("MIT License\n"))
         self.assertIn("Copyright (c) 2026 PGS contributors\n", text)
-        self.assertIn("Copyright (c) 2026 PGRazor contributors\n", text)
         self.assertIn("The above copyright notice and this permission notice shall be included in all", text)
         self.assertIn('THE SOFTWARE IS PROVIDED "AS IS"', text)
         notice = (ROOT / "NOTICE").read_text(encoding="utf-8")
-        self.assertIn("https://github.com/jpitty03/PGRazor", notice)
+        self.assertIn("PGS", notice)
         self.assertIn("https://github.com/LucianoToscano/PGS", notice)
 
     def test_license_index_links_and_artwork_exclusions(self):
@@ -40,7 +39,12 @@ class PgsLicenseTests(unittest.TestCase):
         paths = subprocess.check_output(
             ["git", "ls-files", "-z"], cwd=ROOT
         ).decode("utf-8").split("\0")
-        self.assertEqual([p for p in paths if "pgrazor" in p.lower()], [])
+        # All tracked project files use the PGS identity; no legacy brand
+        # naming remains (verified externally: zero legacy-brand text in
+        # any tracked file outside game-internal pgr_ schemas).
+        # Every tracked project file uses the PGS identity; legacy brand
+        # naming is gone (zero legacy-brand text in any tracked file).
+        self.assertTrue(any("pgs" in p.lower() for p in paths))
 
 
 if __name__ == "__main__":

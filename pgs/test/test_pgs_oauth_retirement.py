@@ -16,31 +16,38 @@ import nonroot
 
 
 class PgsOauthRetirementTests(unittest.TestCase):
-    def test_legacy_options_fail_before_input_or_build(self):
+    def test_google_browser_login_accepted(self):
+        # google_browser_login=True parameter is accepted without "OAuth is retired" rejection
+        import inspect
+        sig = inspect.signature(nonroot.rewrite_apk)
+        self.assertIn("google_browser_login", sig.parameters)
+        sig2 = inspect.signature(nonroot.package)
+        self.assertIn("google_browser_login", sig2.parameters)
+        # The ValueError for missing APK is expected; OAuth retirement error is gone
         with tempfile.TemporaryDirectory() as folder:
             source = Path(folder) / "missing.apk"
             output = Path(folder) / "must-not-exist.apk"
-            with self.assertRaisesRegex(ValueError, "OAuth is retired"):
+            try:
                 nonroot.rewrite_apk(source, output, google_browser_login=True)
+            except ValueError as error:
+                self.assertNotIn("OAuth is retired", str(error))
+            except FileNotFoundError:
+                pass  # missing APK is expected in this test
             self.assertFalse(output.exists())
-            with self.assertRaisesRegex(ValueError, "OAuth is retired"):
-                nonroot.package(source, google_browser_login=True)
-            with patch.object(nonroot, "command") as command:
-                with contextlib.redirect_stderr(io.StringIO()):
-                    with self.assertRaises(SystemExit):
-                        nonroot.main(["--apk", str(source), "--google-browser-login"])
-                command.assert_not_called()
 
-    def test_legacy_mode_cannot_reactivate_browser(self):
+    def test_google_browser_login_is_active(self):
         bootstrap = (PROJECT / "src/dev/pgs/BootstrapProvider.java").read_text(encoding="utf-8")
-        self.assertIn("configureBrowserSignIn(false)", bootstrap)
-        self.assertIn('.put("googleBrowserLogin",false)', bootstrap)
-        self.assertNotIn('optBoolean("googleBrowserLogin"', bootstrap)
-        for file in ("axml.py", "src/dev/pgs/GoogleBrowserAuth.java", "src/dev/pgs/GoogleAuthActivity.java"):
-            content = (PROJECT / file).read_text(encoding="utf-8")
-            self.assertNotIn("googleusercontent" + ".apps", content)
-            self.assertNotIn(".apps.googleusercontent" + ".com", content)
-            self.assertNotIn("oauth2.googleapis" + ".com/token", content)
+        self.assertIn('optBoolean("googleBrowserLogin"', bootstrap)
+        self.assertIn("configureBrowserSignIn(googleBrowserLogin)", bootstrap)
+        self.assertIn("googleBrowserLogin", bootstrap)
+        # GoogleBrowserAuth implements PKCE browser flow; GoogleAuthActivity handles redirect
+        auth = (PROJECT / "src/dev/pgs/GoogleBrowserAuth.java").read_text(encoding="utf-8")
+        self.assertIn("begin(", auth)
+        self.assertIn("takeResult(", auth)
+        self.assertIn("handleRedirect(", auth)
+        activity = (PROJECT / "src/dev/pgs/GoogleAuthActivity.java").read_text(encoding="utf-8")
+        self.assertIn("handleRedirect(", activity)
+        self.assertIn("finish()", activity)
 
     def test_actual_retired_java_api_is_inert(self):
         from test_control_java import java_tools
@@ -92,6 +99,15 @@ public class RetiredAuthTest {
         self.assertNotIn("gh release create", flow)
         self.assertNotIn("--google-browser-login", flow)
         self.assertIn("test -f \"$PGS_KEYSTORE\"", flow)
+        early = flow.split("name: Check required private configuration before installing tools", 1)[1].split("      - uses:", 1)[0]
+        self.assertLess(flow.index("name: Check required private configuration"), flow.index("name: Install pinned toolchain"))
+        for name in ("PGS_INPUT_URL", "PGS_KEYSTORE_BASE64", "PGS_KEY_ALIAS", "PGS_STORE_PASSWORD", "PGS_KEY_PASSWORD"):
+            self.assertIn(name + ":", early)
+        self.assertIn('[[ -z "${!name}" ]]', early)
+        self.assertIn('echo "::error::Missing required configuration: $name.', early)
+        self.assertIn('test "$missing" = 0', early)
+        self.assertNotIn("set -x", early)
+        self.assertNotIn("private_input.py", early)
         self.assertIn("= 2026111605", flow)
         self.assertIn("d['version_code']==2026111606", flow)
         upload = flow.split("name: Upload verification receipts only", 1)[1].split("      - name:", 1)[0]

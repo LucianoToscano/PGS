@@ -1,4 +1,4 @@
-"""Builds the standalone PGS Root installer APK (package dev.pgrazor.root).
+"""Builds the standalone PGS Root installer APK (package dev.pgs.root).
 
 The installer carries the Zygisk module zip in its assets and installs it with the phone's root
 manager (Magisk 27+, KernelSU or APatch). It is the rooted counterpart of the patched APK that
@@ -22,7 +22,7 @@ import nonroot
 
 ROOT = Path(__file__).resolve().parent
 INSTALLER_DIR = ROOT / 'root-installer'
-PACKAGE = 'dev.pgrazor.root'
+PACKAGE = 'dev.pgs.root'
 # Classes that must exist after compilation; a missing one means javac silently skipped sources.
 EXPECTED_CLASSES = ('InstallerActivity', 'RestartActivity', 'RootShell', 'RootStatus', 'InstallerConfig')
 

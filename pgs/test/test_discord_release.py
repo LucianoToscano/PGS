@@ -33,8 +33,7 @@ class DiscordReleaseTests(unittest.TestCase):
         self.assertEqual(payload["embeds"][0]["footer"]["text"], "PGS | Release")
         self.assertTrue(any(APK["browser_download_url"] in f["value"]
                             for f in payload["embeds"][0]["fields"]))
-        self.assertNotIn("PGRazor", str(payload))
-        self.assertNotIn("ko-fi.com/pgrazor", str(payload))
+        self.assertNotIn("ko-fi.com/pgs", str(payload))
 
     def test_optional_highlight(self):
         payload = discord_release.message(release([APK, SUMS, HIGHLIGHT]))
@@ -53,11 +52,11 @@ class DiscordReleaseTests(unittest.TestCase):
         cases = [
             release([APK]), release([SUMS]),
             release([dict(APK, size=200_000), SUMS]),
-            release([dict(APK, name="PGRazor.apk"), SUMS]),
+            release([dict(APK, name="PGS.apk"), SUMS]),
             release([dict(APK, browser_download_url="https://example.com/PGS.v0.0.1.apk"), SUMS]),
             release([APK, SUMS], draft=True),
             release([APK, SUMS], tag_name="v0.3.8-pgs.3"),
-            release([APK, SUMS], html_url="https://github.com/jpitty03/PGRazor/releases/tag/v0.0.1"),
+            release([APK, SUMS], html_url="https://github.com/jpitty03/PGS/releases/tag/v0.0.1"),
         ]
         for case in cases:
             with self.subTest(case=case), self.assertRaises(ValueError):

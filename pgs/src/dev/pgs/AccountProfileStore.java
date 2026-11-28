@@ -41,7 +41,7 @@ import java.util.regex.Pattern;
  * <p>The legacy single-account layout is preserved: profile {@code "default"} reads and writes its
  * files directly in {@code filesDir} (and uses unsuffixed SharedPreferences names), so existing
  * installs keep their data in place. Every other profile has a random-UUID id and is scoped under
- * {@code pgrazor-accounts-v1/profiles/<id>/}.
+ * {@code pgs-accounts-v1/profiles/<id>/}.
  *
  * <p>All writes are a single atomic, durable transaction: the new index is serialised, flushed to
  * stable storage, and only then moved into place; the in-memory snapshot is replaced only after the
@@ -334,23 +334,23 @@ public final class AccountProfileStore {
     public static String legacyStorageName(String name) {
         if (name == null) return null;
         switch (name) {
-            case "pgs-location-state-v1.txt": return "pgrazor-location-state-v1.txt";
-            case "pgs-settings-v1.properties": return "pgrazor-settings-v1.properties";
-            case "pgs-gpx-routes-v1": return "pgrazor-gpx-routes-v1";
-            case "pgs-map": return "pgrazor-map";
-            case "pgs-overlays": return "pgrazor-overlays";
-            case "pgs-saved-places-v1": return "pgrazor-saved-places-v1";
-            case "pgs-livefeed": return "pgrazor-livefeed";
-            case "pgs-pogofeed": return "pgrazor-pogofeed";
-            case "pgs-accounts-v1": return "pgrazor-accounts-v1";
-            case "pgs-logs": return "pgrazor-logs";
-            case "pgs-logs/exports": return "pgrazor-logs/exports";
-            case "pgs-diagnostics": return "pgrazor-diagnostics";
-            case "pgs-encounters": return "pgrazor-encounters";
-            case "pgs-session-stats": return "pgrazor-session-stats";
-            case "pgs-livefeed-v1": return "pgrazor-livefeed-v1";
-            case "pgs-pogofeed-v1": return "pgrazor-pogofeed-v1";
-            case "pgs-events-v1": return "pgrazor-events-v1";
+            case "pgs-location-state-v1.txt": return "pgs-location-state-v1.txt";
+            case "pgs-settings-v1.properties": return "pgs-settings-v1.properties";
+            case "pgs-gpx-routes-v1": return "pgs-gpx-routes-v1";
+            case "pgs-map": return "pgs-map";
+            case "pgs-overlays": return "pgs-overlays";
+            case "pgs-saved-places-v1": return "pgs-saved-places-v1";
+            case "pgs-livefeed": return "pgs-livefeed";
+            case "pgs-pogofeed": return "pgs-pogofeed";
+            case "pgs-accounts-v1": return "pgs-accounts-v1";
+            case "pgs-logs": return "pgs-logs";
+            case "pgs-logs/exports": return "pgs-logs/exports";
+            case "pgs-diagnostics": return "pgs-diagnostics";
+            case "pgs-encounters": return "pgs-encounters";
+            case "pgs-session-stats": return "pgs-session-stats";
+            case "pgs-livefeed-v1": return "pgs-livefeed-v1";
+            case "pgs-pogofeed-v1": return "pgs-pogofeed-v1";
+            case "pgs-events-v1": return "pgs-events-v1";
             default: return name;
         }
     }

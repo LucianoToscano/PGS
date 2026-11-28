@@ -27,15 +27,13 @@ import runtime_assets
 STANDARD = dict(quick_close=True, quick_ball=True, camera_steering=True)
 
 class CompiledGameplayRejectionTests(unittest.TestCase):
-    def test_pgs_runtime_options_keep_legacy_opt_in_compatibility(self):
+    def test_pgs_runtime_options_use_pgs_names_only(self):
         for name in ('NATIVE_PILOT', 'COMPILED_LOCATION', 'COMPILED_JAVA_BRIDGES',
                      'COMPILED_NATIVE_TRANSPORT', 'NATIVE_SELFTEST'):
             with self.subTest(name=name):
                 self.assertFalse(nonroot.runtime_flag(name, {}))
                 self.assertFalse(nonroot.runtime_flag(name, {'PGS_'+name: '0'}))
                 self.assertTrue(nonroot.runtime_flag(name, {'PGS_'+name: '1'}))
-                self.assertTrue(nonroot.runtime_flag(name, {'PGRAZOR_'+name: '1'}))
-                self.assertTrue(nonroot.runtime_flag(name, {'PGS_'+name: '0', 'PGRAZOR_'+name: '1'}))
 
     def test_production_rejects_research_modes_before_build(self):
         for name in ('il2cpp_survey','scene_probe','scene_observe','camera_sample'):
@@ -108,11 +106,11 @@ class CompiledGameplayPackageTests(unittest.TestCase):
             original_hash = runtime_assets.sha256(source)
             def compile_native_fixture(*args, **kwargs):
                 self.assertEqual(os.environ.get('PGS_NATIVE_PILOT'), '1')
-                self.assertEqual(os.environ.get('PGRAZOR_NATIVE_PILOT'), '0')
+                self.assertEqual(os.environ.get('PGS_NATIVE_PILOT'), '0')
                 return native_outputs
             for options in ({}, {'interaction_probe': True}):
                 with self.subTest(options=options), \
-                     patch.dict(os.environ, {key:'0' for key in ('PGS_NATIVE_PILOT','PGRAZOR_COMPILED_GAMEPLAY','PGRAZOR_NATIVE_PILOT','PGRAZOR_COMPILED_LOCATION','PGRAZOR_COMPILED_JAVA_BRIDGES','PGRAZOR_COMPILED_NATIVE_TRANSPORT')}), \
+                     patch.dict(os.environ, {key:'0' for key in ('PGS_NATIVE_PILOT','PGS_COMPILED_GAMEPLAY','PGS_NATIVE_PILOT','PGS_COMPILED_LOCATION','PGS_COMPILED_JAVA_BRIDGES','PGS_COMPILED_NATIVE_TRANSPORT')}), \
                      patch.object(nonroot, 'ROOT', work), patch.object(nonroot, 'validated_build', return_value=dex), \
                      patch.object(nonroot, 'inspect_set', return_value=(info['package'], source, [(source, info)], {'arm64-v8a'})), \
                      patch.object(nonroot, 'command', side_effect=sdk_fixture), \
@@ -127,7 +125,7 @@ class CompiledGameplayPackageTests(unittest.TestCase):
                      contextlib.redirect_stdout(io.StringIO()):
                     report, folder = nonroot.package(source, **options)
                     self.assertEqual(os.environ.get('PGS_NATIVE_PILOT'), '0')
-                    self.assertEqual(os.environ.get('PGRAZOR_NATIVE_PILOT'), '0')
+                    self.assertEqual(os.environ.get('PGS_NATIVE_PILOT'), '0')
 
                 self.assertEqual(json.loads((folder / 'report.json').read_text()), report)
                 self.assertEqual(report['mode'], 'compiled-gameplay')

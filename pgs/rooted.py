@@ -29,8 +29,8 @@ import runtime_assets
 ROOT = Path(__file__).resolve().parent
 ABIS = ['arm64-v8a', 'x86_64']
 TRIPLES = {'arm64-v8a': 'aarch64-linux-android28', 'x86_64': 'x86_64-linux-android28'}
-MODULE_ID = 'pgrazor'
-INSTALLER_PACKAGE = 'dev.pgrazor.root'
+MODULE_ID = 'pgs'
+INSTALLER_PACKAGE = 'dev.pgs.root'
 
 UPDATE_BINARY = '''#!/sbin/sh
 # Standard Magisk module installer (KernelSU and APatch install modules without it).
@@ -53,13 +53,13 @@ exit 0
 '''
 
 # Capability marker: an empty file that advertises this module understands the launch-time
-# PGS: On / Off switch (the loader reads pgrazor/injection-off). The installer uses its
+# PGS: On / Off switch (the loader reads pgs/injection-off). The installer uses its
 # presence to tell a toggle-aware module from an older one.
-TOGGLE_CAPABILITY = 'pgrazor/toggle-v1'
+TOGGLE_CAPABILITY = 'pgs/toggle-v1'
 
 # Soft-off flag the installer writes/removes in the live module. It is never shipped in the
 # package (a fresh install defaults to On); it only ever exists because a user turned PGS off.
-INJECTION_OFF_FLAG = 'pgrazor/injection-off'
+INJECTION_OFF_FLAG = 'pgs/injection-off'
 
 # Sourced by the root manager (Magisk / KernelSU / APatch) during install, after the zip is
 # unpacked into the staging directory $MODPATH. A module update replaces the whole module tree,
@@ -69,14 +69,14 @@ INJECTION_OFF_FLAG = 'pgrazor/injection-off'
 # same script runs whether the update is installed straight through the root manager or by the APK.
 CUSTOMIZE_SH = '''#!/system/bin/sh
 # PGS Root install customizer: preserve the user's PGS: On / Off choice across updates.
-LIVE_FLAG="/data/adb/modules/pgrazor/''' + INJECTION_OFF_FLAG + '''"
+LIVE_FLAG="/data/adb/modules/pgs/''' + INJECTION_OFF_FLAG + '''"
 STAGED_FLAG="${MODPATH}/''' + INJECTION_OFF_FLAG + '''"
 
 # The live module is the source of truth for the current switch state. Staging dirs are wiped and
 # re-extracted by the manager before this runs, so an earlier staged flag cannot be read here.
 if [ -e "${LIVE_FLAG}" ]; then
   ui_print "- PGS is switched Off on this device; keeping it Off after this update."
-  mkdir -p "${MODPATH}/pgrazor" || abort "! Cannot preserve the PGS Off switch (mkdir failed); aborting instead of silently re-enabling PGS."
+  mkdir -p "${MODPATH}/pgs" || abort "! Cannot preserve the PGS Off switch (mkdir failed); aborting instead of silently re-enabling PGS."
   : > "${STAGED_FLAG}" 2>/dev/null
   [ -f "${STAGED_FLAG}" ] || abort "! Cannot preserve the PGS Off switch; aborting instead of silently re-enabling PGS."
 else

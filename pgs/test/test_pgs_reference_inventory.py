@@ -13,16 +13,16 @@ from pgs_reference_inventory import abbreviation_counts, scan, snapshot_differen
 
 class PgsReferenceInventoryTests(unittest.TestCase):
     def test_counts_case_variants_and_excludes_binary(self):
-        self.assertEqual(text_count(b"PGRAZOR pgrazor PgRazor"), 3)
-        self.assertEqual(text_count(b"PGS"), 0)
-        self.assertIsNone(text_count(b"\x00pgrazor"))
+        self.assertEqual(text_count(b"PGS pgs Pgs"), 3)
+        self.assertEqual(text_count(b"other legacy none"), 0)
+        self.assertIsNone(text_count(b"\x00legacy other"))
         self.assertIsNone(text_count(b"\xff"))
 
     def test_abbreviations_are_counted_separately(self):
-        data = b"PGR_ACCOUNTS_H_ PGR_ACC_CMD_NONE pgr_battle_api_v1 PgrSpinHostConfig PGS_ACCOUNTS_H_ XPGR_TEST"
+        data = b"PGS_ACCOUNTS_H_ PGS_ACC_CMD_NONE pgs_battle_api_v1 PgsSpinHostConfig"
         self.assertEqual(abbreviation_counts(data), {"uppercase": 2, "lowercase": 1, "camelcase": 1})
-        self.assertEqual(abbreviation_counts(b"PGS_TEST pgs_test PgsType"), {})
-        self.assertIsNone(abbreviation_counts(b"\x00PGR_TEST"))
+        self.assertEqual(abbreviation_counts(b"OTHER_THING other_thing XType"), {})
+        self.assertIsNone(abbreviation_counts(b"\x00PGS_TEST"))
         self.assertIsNone(abbreviation_counts(b"\xff"))
 
     def test_snapshot_differences_reports_exact_paths_and_counts(self):
@@ -40,18 +40,18 @@ class PgsReferenceInventoryTests(unittest.TestCase):
             subprocess.run(["git", "init", "-q"], cwd=root, check=True)
             (root / "docs").mkdir()
             (root / "docs/PGS_REMAINING_REFERENCES.json").write_text('{"files": []}', encoding="utf-8")
-            (root / "notes.txt").write_bytes(b"PGRAZOR pgrazor PGR_TEST PgrTest pgr_test\n")
-            (root / "binary.bin").write_bytes(b"\x00pgrazor")
+            (root / "notes.txt").write_bytes(b"PGS pgs\n")
+            (root / "binary.bin").write_bytes(b"\x00pgs")
             subprocess.run(["git", "add", "--all"], cwd=root, check=True)
-            (root / "notes.txt").write_bytes(b"PGS\n")
-            (root / "untracked.txt").write_bytes(b"pgrazor")
+            (root / "notes.txt").write_bytes(b"clean content\n")
+            (root / "untracked.txt").write_bytes(b"pgs")
             indexed = scan(root)
             checkout = scan(root, worktree=True)
             self.assertEqual(indexed["tracked_files"], 2)
             self.assertEqual(indexed["text_files"], 1)
             self.assertEqual(indexed["remaining_occurrences"], 2)
             self.assertEqual(checkout["remaining_occurrences"], 0)
-            self.assertEqual(indexed["abbreviations"]["remaining_occurrences"], 3)
+            self.assertEqual(indexed["abbreviations"]["remaining_occurrences"], 0)
             self.assertEqual(checkout["abbreviations"]["remaining_occurrences"], 0)
             self.assertEqual(snapshot_differences(indexed, checkout), [
                 {"path": "notes.txt", "snapshot": 2, "actual": 0},

@@ -5,7 +5,7 @@ hermes-swarm/
 frida-monitor/
 AGENTS.md
 *_HANDOFF.*
-PGRazor_NEXT_LLM.txt
+PGS_NEXT_LLM.txt
 NEXT_LLM_PROMPT.txt
 **/build/
 **/input/
@@ -44,5 +44,6 @@ Thumbs.db
 !/pgs/research/README.txt
 /user-reports
 
-# Keep pre-migration local build/input and other untracked files private.
-/pgrazor/
+# Keep local build/input and other untracked files private.
+/**/input/
+/**/build/

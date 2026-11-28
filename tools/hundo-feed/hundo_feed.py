@@ -16,7 +16,7 @@ environment (see hundo-feed.env.example):
   POGO_REVEALS_PER_POLL        exact-coordinate reveal budget (default 1, shared across regions)
   POGO_LOOKUP_RESULTS          results requested per region (default 100; VIP allows 500)
   POGO_REVEAL_PAUSE_SECONDS    spacing between exact-coordinate requests (default 1)
-  HUNDO_OUT                    where to write the file, e.g. /var/www/example.com/pgrazor/hundos.json
+  HUNDO_OUT                    where to write the file, e.g. /var/www/example.com/pgs/hundos.json
   HUNDO_INTERVAL               seconds between polls (default 30 for LPM / 300 for PoGo, at least 15)
   HUNDO_STATE                  where the session token is kept (default /var/lib/hundo-feed/token)
 

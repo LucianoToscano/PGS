@@ -3,7 +3,7 @@ import { test, expect } from '@playwright/test';
 test('PGS Root uses its own slug and preserves old deep links', async ({ page }) => {
   await page.goto('./?guide=pgs-root');
   await expect(page.getByRole('heading', { level: 1, name: 'PGS Root (not released)' })).toBeVisible();
-  await page.goto('./?guide=pgrazor-root');
+  await page.goto('./?guide=pgs-root');
   await expect(page.getByRole('heading', { level: 1, name: 'PGS Root (not released)' })).toBeVisible();
   await expect(page.locator('link[rel="canonical"]')).toHaveAttribute('href', /\?guide=pgs-root$/);
   await page.goto('./?guide=pgs-root&lang=pt-BR');

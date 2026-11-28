@@ -15,7 +15,7 @@ class HttpsRedirect(urllib.request.HTTPRedirectHandler):
         return redirected
 
 def required_setting(name):
-    value = os.environ.get('PGS_' + name) or os.environ.get('PGRAZOR_' + name)
+    value = os.environ.get('PGS_' + name) or os.environ.get('PGS_' + name)
     if not value:
         raise SystemExit('Required PGS input/signing setting is missing: ' + name)
     return value

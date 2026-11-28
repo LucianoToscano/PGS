@@ -69,14 +69,15 @@ def fixture_with_log_activity(exported=False, intent_filter=False):
 
 
 class AxmlTests(unittest.TestCase):
-    def test_retired_google_callback_cannot_modify_manifest(self):
+    def test_google_callback_adds_auth_activity(self):
         original = axml.patch_manifest(fixture())
-        before = bytes(original)
-        with self.assertRaisesRegex(ValueError, 'OAuth is retired'):
-            axml.add_google_browser_callback(original)
-        self.assertEqual(original, before)
-        self.assertFalse(any(a['name'] == axml.GOOGLE_AUTH_ACTIVITY
-                             for a in axml.inspect_manifest(original)['activities']))
+        patched = axml.add_google_browser_callback(original)
+        info = axml.inspect_manifest(patched)
+        self.assertTrue(any(a['name'] == axml.GOOGLE_AUTH_ACTIVITY
+                            for a in info['activities']))
+        google = [a for a in info['activities'] if a['name'] == axml.GOOGLE_AUTH_ACTIVITY][0]
+        self.assertEqual(google['exported'], False)
+        self.assertNotEqual(patched, original)
 
     def test_version_and_min_sdk_inspection(self):
         data=fixture()
@@ -182,11 +183,11 @@ class AxmlTests(unittest.TestCase):
 
     def test_real_apks_and_aapt(self):
         sdk=Path(os.environ.get('ANDROID_HOME',str(Path(os.environ.get('LOCALAPPDATA',''))/'Android/Sdk')))
-        aapt=sdk/'build-tools'/(os.environ.get('PGS_BUILD_TOOLS') or os.environ.get('PGRAZOR_BUILD_TOOLS') or '36.1.0')/('aapt.exe' if os.name == 'nt' else 'aapt')
+        aapt=sdk/'build-tools'/(os.environ.get('PGS_BUILD_TOOLS') or os.environ.get('PGS_BUILD_TOOLS') or '36.1.0')/('aapt.exe' if os.name == 'nt' else 'aapt')
         if not aapt.is_file(): self.skipTest('Installed Android aapt unavailable')
         folder=ROOT/'build/axml-tests'
         folder.mkdir(parents=True,exist_ok=True)
-        android=sdk/'platforms'/(os.environ.get('PGS_ANDROID_PLATFORM') or os.environ.get('PGRAZOR_ANDROID_PLATFORM') or 'android-36.1')/'android.jar'
+        android=sdk/'platforms'/(os.environ.get('PGS_ANDROID_PLATFORM') or os.environ.get('PGS_ANDROID_PLATFORM') or 'android-36.1')/'android.jar'
         if not android.is_file(): self.skipTest('Installed Android platform unavailable')
         fixture_apk=folder/'own-manifest-fixture.apk'
         subprocess.run([str(aapt),'package','-f','-M',str(ROOT/'AndroidManifest.xml'),'-I',str(android),'-F',str(fixture_apk)],check=True,capture_output=True)

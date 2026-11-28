@@ -38,27 +38,27 @@ public final class AccountProfileStoreTest {
 
     private static void pgsLogicalStoragePreserved(File filesDir) throws Exception {
         filesDir.mkdirs();
-        File legacy = new File(filesDir, "pgrazor-settings-v1.properties");
+        File legacy = new File(filesDir, "pgs-settings-v1.properties");
         Files.write(legacy.toPath(), "existing=true".getBytes(StandardCharsets.UTF_8));
         AccountProfileStore store = new AccountProfileStore(filesDir);
         File resolved = store.dataFile(AccountProfileStore.DEFAULT_ID, "pgs-settings-v1.properties");
         check(canon(resolved).equals(canon(legacy)), "PGS logical name resolves the existing data");
         check(new String(Files.readAllBytes(resolved.toPath()), StandardCharsets.UTF_8).equals("existing=true"), "existing data is intact");
-        check(store.preferenceName(AccountProfileStore.DEFAULT_ID, "pgs-map").equals("pgrazor-map"), "legacy preferences stay accessible");
-        check(store.preferenceName(AccountProfileStore.DEFAULT_ID, "pgs-overlays").equals("pgrazor-overlays"), "legacy overlay preferences stay accessible");
+        check(store.preferenceName(AccountProfileStore.DEFAULT_ID, "pgs-map").equals("pgs-map"), "legacy preferences stay accessible");
+        check(store.preferenceName(AccountProfileStore.DEFAULT_ID, "pgs-overlays").equals("pgs-overlays"), "legacy overlay preferences stay accessible");
         Profile other = store.add("Other");
-        check(store.preferenceName(other.id, "pgs-livefeed").equals("pgrazor-livefeed__" + other.id), "profile preference isolation");
-        check(canon(store.dataFile(other.id, "pgs-gpx-routes-v1")).equals(canon(store.dataFile(other.id, "pgrazor-gpx-routes-v1"))), "profile route aliases");
+        check(store.preferenceName(other.id, "pgs-livefeed").equals("pgs-livefeed__" + other.id), "profile preference isolation");
+        check(canon(store.dataFile(other.id, "pgs-gpx-routes-v1")).equals(canon(store.dataFile(other.id, "pgs-gpx-routes-v1"))), "profile route aliases");
         check(AccountProfileStore.legacyStorageName("pgs-language-v1.properties").equals("pgs-language-v1.properties"), "already migrated data is not redirected");
-        check(AccountProfileStore.legacyStorageName("pgs-accounts-v1").equals("pgrazor-accounts-v1"), "stable pgs-accounts-v1 storage");
-        check(AccountProfileStore.legacyStorageName("pgs-logs").equals("pgrazor-logs"), "stable pgs-logs storage");
-        check(AccountProfileStore.legacyStorageName("pgs-logs/exports").equals("pgrazor-logs/exports"), "stable pgs-logs/exports storage");
-        check(AccountProfileStore.legacyStorageName("pgs-diagnostics").equals("pgrazor-diagnostics"), "stable pgs-diagnostics storage");
-        check(AccountProfileStore.legacyStorageName("pgs-encounters").equals("pgrazor-encounters"), "stable pgs-encounters storage");
-        check(AccountProfileStore.legacyStorageName("pgs-session-stats").equals("pgrazor-session-stats"), "stable pgs-session-stats storage");
-        check(AccountProfileStore.legacyStorageName("pgs-livefeed-v1").equals("pgrazor-livefeed-v1"), "stable pgs-livefeed-v1 storage");
-        check(AccountProfileStore.legacyStorageName("pgs-pogofeed-v1").equals("pgrazor-pogofeed-v1"), "stable pgs-pogofeed-v1 storage");
-        check(AccountProfileStore.legacyStorageName("pgs-events-v1").equals("pgrazor-events-v1"), "stable pgs-events-v1 storage");
+        check(AccountProfileStore.legacyStorageName("pgs-accounts-v1").equals("pgs-accounts-v1"), "stable pgs-accounts-v1 storage");
+        check(AccountProfileStore.legacyStorageName("pgs-logs").equals("pgs-logs"), "stable pgs-logs storage");
+        check(AccountProfileStore.legacyStorageName("pgs-logs/exports").equals("pgs-logs/exports"), "stable pgs-logs/exports storage");
+        check(AccountProfileStore.legacyStorageName("pgs-diagnostics").equals("pgs-diagnostics"), "stable pgs-diagnostics storage");
+        check(AccountProfileStore.legacyStorageName("pgs-encounters").equals("pgs-encounters"), "stable pgs-encounters storage");
+        check(AccountProfileStore.legacyStorageName("pgs-session-stats").equals("pgs-session-stats"), "stable pgs-session-stats storage");
+        check(AccountProfileStore.legacyStorageName("pgs-livefeed-v1").equals("pgs-livefeed-v1"), "stable pgs-livefeed-v1 storage");
+        check(AccountProfileStore.legacyStorageName("pgs-pogofeed-v1").equals("pgs-pogofeed-v1"), "stable pgs-pogofeed-v1 storage");
+        check(AccountProfileStore.legacyStorageName("pgs-events-v1").equals("pgs-events-v1"), "stable pgs-events-v1 storage");
         check(!new File(filesDir, "pgs-settings-v1.properties").exists(), "no duplicate or destructive storage migration");
     }
 
@@ -81,7 +81,7 @@ public final class AccountProfileStoreTest {
         reopened.setGlobalSettings(false, AccountProfileStore.DEFAULT_ID);
         check(!new AccountProfileStore(filesDir).globalSettings(), "turning it off persists");
         // An index written before these keys existed loads with global settings off.
-        File index = new File(new File(filesDir, "pgrazor-accounts-v1"), "index.properties");
+        File index = new File(new File(filesDir, "pgs-accounts-v1"), "index.properties");
         String text = new String(Files.readAllBytes(index.toPath()), StandardCharsets.ISO_8859_1).replaceAll("(?m)^(globalSettings|main)=.*\\R", "");
         Files.write(index.toPath(), text.getBytes(StandardCharsets.ISO_8859_1));
         AccountProfileStore legacy = new AccountProfileStore(filesDir);
@@ -91,7 +91,7 @@ public final class AccountProfileStoreTest {
     private static void legacyDefaultPreserved(File filesDir) throws Exception {
         filesDir.mkdirs();
         // A legacy file already lives directly in filesDir; it must stay reachable in place.
-        File legacy = new File(filesDir, "pgrazor-settings.json");
+        File legacy = new File(filesDir, "pgs-settings.json");
         Files.write(legacy.toPath(), "{}".getBytes(StandardCharsets.UTF_8));
 
         AccountProfileStore store = new AccountProfileStore(filesDir);
@@ -100,7 +100,7 @@ public final class AccountProfileStoreTest {
         check(AccountProfileStore.DEFAULT_ID.equals(def.id), "Default is selected at startup");
         check(!def.bound(), "Default starts unbound");
 
-        check(canon(store.dataFile(def.id, "pgrazor-settings.json")).equals(canon(legacy)),
+        check(canon(store.dataFile(def.id, "pgs-settings.json")).equals(canon(legacy)),
                 "Default data files resolve in place in filesDir");
         check(store.preferenceName(def.id, "settings").equals("settings"),
                 "Default keeps the unsuffixed legacy preference name");
@@ -183,7 +183,7 @@ public final class AccountProfileStoreTest {
         File otherFile = store.dataFile(other.id, "state.json");
         check(!canon(defFile).equals(canon(otherFile)), "Two profiles get separate data files");
         check(canon(defFile).equals(canon(new File(filesDir, "state.json"))), "Default stays in filesDir");
-        check(canon(otherFile).startsWith(canon(new File(filesDir, "pgrazor-accounts-v1"))),
+        check(canon(otherFile).startsWith(canon(new File(filesDir, "pgs-accounts-v1"))),
                 "Non-default files are scoped under the account store");
         check(otherFile.getParentFile().isDirectory(), "The scoped profile directory is created on demand");
 
@@ -194,7 +194,7 @@ public final class AccountProfileStoreTest {
     }
 
     private static void corruptionFailsClosed(File filesDir) throws Exception {
-        File base = new File(filesDir, "pgrazor-accounts-v1");
+        File base = new File(filesDir, "pgs-accounts-v1");
         base.mkdirs();
         File index = new File(base, "index.properties");
         // A valid version line but missing the required selected/ids fields: must fail, not reset.
@@ -209,7 +209,7 @@ public final class AccountProfileStoreTest {
     }
 
     private static void oversizeRejected(File filesDir) throws Exception {
-        File base = new File(filesDir, "pgrazor-accounts-v1");
+        File base = new File(filesDir, "pgs-accounts-v1");
         base.mkdirs();
         File index = new File(base, "index.properties");
         byte[] huge = new byte[AccountProfileStore.MAX_INDEX_BYTES + 1];

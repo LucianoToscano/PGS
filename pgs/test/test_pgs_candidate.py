@@ -92,14 +92,8 @@ class PgsCandidateTests(unittest.TestCase):
         self.assertFalse(report["publish_ready"])
         self.assertEqual(self.apk.read_bytes(), before)
 
-    def test_reject_legacy_only_version_metadata(self):
-        self.mode["pgrazorVersion"] = self.mode.pop("pgsVersion")
-        self.write()
-        with self.assertRaisesRegex(ValueError, "mode version"):
-            self.verify()
-
-    def test_reject_conflicting_legacy_version_metadata(self):
-        self.mode["pgrazorVersion"] = "v0.0.2"
+    def test_reject_missing_pgs_version(self):
+        self.mode.pop("pgsVersion")
         self.write()
         with self.assertRaisesRegex(ValueError, "mode version"):
             self.verify()
@@ -122,14 +116,8 @@ class PgsCandidateTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "versionCode"):
             self.verify()
 
-    def test_reject_mixed_legacy_assets(self):
-        self.members["assets/pgrazor/mode.json"] = b"{}"
-        self.write()
-        with self.assertRaisesRegex(ValueError, "layouts"):
-            self.verify()
-
     def test_reject_legacy_controls_dex(self):
-        self.members["classes3.dex"] = b"dex\nLdev/pgrazor/Control;"
+        self.members["classes3.dex"] = b"dex\nLdev/pgs/Control;"
         self.write()
         with self.assertRaisesRegex(ValueError, "Legacy controls"):
             self.verify()
@@ -149,13 +137,14 @@ class PgsCandidateTests(unittest.TestCase):
     def test_reject_enabled_experimental_oauth(self):
         self.mode["googleBrowserLogin"] = True
         self.write()
-        with self.assertRaisesRegex(ValueError, "OAuth"):
+        with self.assertRaisesRegex(ValueError, "googleBrowserLogin enabled but GoogleAuthActivity not declared"):
             self.verify()
 
     def test_reject_oauth_callback(self):
+        self.mode["googleBrowserLogin"] = True
         self.identity["activities"] = [{"name": "dev.pgs.GoogleAuthActivity", "exported": True}]
         self.write()
-        with self.assertRaisesRegex(ValueError, "OAuth callback"):
+        with self.assertRaisesRegex(ValueError, "GoogleAuthActivity must be unexported"):
             self.verify()
 
     def test_reject_duplicate_zip_entries(self):

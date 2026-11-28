@@ -87,4 +87,4 @@ The Website workflow has successfully built and deployed through GitHub Pages; t
 
 PGS contributors' original contributions are licensed under the [MIT License](LICENSE), with the original copyright and permission notices retained. See [NOTICE](NOTICE) for attribution and [third-party licenses](THIRD_PARTY_LICENSES.md) for exclusions and dependency notices. PGS is an independent project and is not affiliated with the game publisher.
 
-Original PGRazor source is available under the MIT License. Third-party components retain their own licenses. Pokémon GO and its assets are not covered by this license. PGRazor is an independent project and is not affiliated with the game publisher.
+Original PGS source is available under the MIT License. Third-party components retain their own licenses. Pokémon GO and its assets are not covered by this license. PGS is an independent project and is not affiliated with the game publisher.

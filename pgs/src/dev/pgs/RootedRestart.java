@@ -17,10 +17,10 @@ final class RootedRestart {
             // helper neither reads account data nor receives root commands, tokens or process IDs.
             try {
                 activity.startActivityForResult(new Intent().setClassName(
-                        "dev.pgrazor.root", "dev.pgs.root.RestartActivity"), 0x9A70);
+                        "dev.pgs.root", "dev.pgs.root.RestartActivity"), 0x9A70);
             } catch (android.content.ActivityNotFoundException legacyInstaller) {
                 activity.startActivityForResult(new Intent().setClassName(
-                        "dev.pgrazor.root", "dev.pgrazor.root.RestartActivity"), 0x9A70);
+                        "dev.pgs.root", "dev.pgs.root.RestartActivity"), 0x9A70);
             }
             Control.event("rooted-restart", "Installer will reopen game; switchSession=" + switchSession);
             new Handler(Looper.getMainLooper()).postDelayed(() -> {

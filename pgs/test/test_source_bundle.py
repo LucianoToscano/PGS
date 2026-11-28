@@ -34,7 +34,6 @@ class SourceBundleTests(unittest.TestCase):
             MODULE.main([])
         output=self.root/'dist/PGS-source-tools.zip'
         self.assertTrue(output.is_file())
-        self.assertFalse((self.root/'dist/PGRazor-source-tools.zip').exists())
         with zipfile.ZipFile(output) as archive:
             self.assertEqual(archive.namelist(),['README.md','native/example.cpp'])
             self.assertEqual(archive.read('README.md'),b'PGS source')
@@ -44,7 +43,6 @@ class SourceBundleTests(unittest.TestCase):
         workflow=(Path(__file__).resolve().parents[2]/'.github/workflows/ci.yml').read_text(encoding='utf-8')
         self.assertIn('name: PGS-source-tools\n',workflow)
         self.assertIn('path: dist/PGS-source-tools.zip\n',workflow)
-        self.assertNotIn('PGRazor-source-tools',workflow)
 
     def test_tracked_deletion_does_not_resurrect_source(self):
         old=self.write('old.js')

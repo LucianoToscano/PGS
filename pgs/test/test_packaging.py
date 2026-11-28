@@ -161,7 +161,7 @@ class PackageTests(unittest.TestCase):
 
     def test_current_receipt_accepts_version_and_rejects_changed_release(self):
         with tempfile.TemporaryDirectory(dir=ROOT/'build') as temp, patch.object(nonroot,'ROOT',Path(temp)), \
-             patch.dict(nonroot.build.os.environ, {'PGS_VERSION':'v0.1.6','PGRAZOR_VERSION':'v0.1.6'}):
+             patch.dict(nonroot.build.os.environ, {'PGS_VERSION':'v0.1.6','PGS_VERSION':'v0.1.6'}):
             work=Path(temp); (work/'build').mkdir(); (work/'src').mkdir()
             (work/'AndroidManifest.xml').write_text('manifest')
             (work/'VERSION').write_text('0.1.6')
@@ -173,14 +173,14 @@ class PackageTests(unittest.TestCase):
             (work/'build/build-state.json').write_text(json.dumps(state))
             self.assertEqual(nonroot.validated_build(),dex)
             # The candidate workflow sets PGS_VERSION. The legacy alias cannot override it.
-            with patch.dict(nonroot.build.os.environ, {'PGRAZOR_VERSION':'v0.1.7'}):
+            with patch.dict(nonroot.build.os.environ, {'PGS_VERSION':'v0.1.7'}):
                 self.assertEqual(nonroot.validated_build(),dex)
             with patch.dict(nonroot.build.os.environ, {'PGS_VERSION':'v0.1.7'}):
                 with self.assertRaisesRegex(RuntimeError,'version is stale'): nonroot.validated_build()
             # Verify the fallback independently of the caller's release environment.
-            with patch.dict(nonroot.build.os.environ, {'PGS_VERSION':'','PGRAZOR_VERSION':'v0.1.6'}):
+            with patch.dict(nonroot.build.os.environ, {'PGS_VERSION':'','PGS_VERSION':'v0.1.6'}):
                 self.assertEqual(nonroot.validated_build(),dex)
-                with patch.dict(nonroot.build.os.environ, {'PGRAZOR_VERSION':'v0.1.7'}):
+                with patch.dict(nonroot.build.os.environ, {'PGS_VERSION':'v0.1.7'}):
                     with self.assertRaisesRegex(RuntimeError,'version is stale'): nonroot.validated_build()
             (work/'VERSION').write_text('0.1.7')
             with self.assertRaisesRegex(RuntimeError,'classes are stale'): nonroot.validated_build()

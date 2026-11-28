@@ -54,8 +54,6 @@ def verify(apk, *, tag, game_version, game_version_code, previous_version_code):
                     "lib/arm64-v8a/libil2cpp.so", MODE}
         if not required <= members:
             raise ValueError("Missing complete game or PGS runtime entries")
-        if any(name.startswith("assets/pgrazor/") for name in names):
-            raise ValueError("Legacy and migrated runtime layouts must not be mixed")
         manifest = read_bounded(archive, "AndroidManifest.xml", 8 * 1024 * 1024)
         identity = axml.inspect_manifest(manifest)
         if (identity["package"] != pgs_update.GAME_PACKAGE or identity["split"] is not None
@@ -65,23 +63,29 @@ def verify(apk, *, tag, game_version, game_version_code, previous_version_code):
         expected_provider = {"name": "dev.pgs.BootstrapProvider", "exported": False,
                              "authorities": pgs_update.GAME_PACKAGE + ".pgs.bootstrap"}
         providers = [p for p in identity["providers"]
-                     if p["name"] in ("dev.pgs.BootstrapProvider", "dev.pgrazor.BootstrapProvider")]
+                     if p["name"] in ("dev.pgs.BootstrapProvider",)]
         if providers != [expected_provider]:
             raise ValueError("Bootstrap manifest identity mismatch")
-        if any(a["name"] in ("dev.pgs.GoogleAuthActivity", "dev.pgrazor.GoogleAuthActivity")
-               for a in identity["activities"]):
-            raise ValueError("Experimental OAuth callback is not permitted in a new candidate")
+        mode = json.loads(read_bounded(archive, MODE, 256 * 1024))
+        if not isinstance(mode, dict) or mode.get("pgsVersion") != tag:
+            raise ValueError("PGS mode version differs from the requested release")
+        # GoogleAuthActivity is the OAuth callback for browser sign-in; it is
+        # expected when googleBrowserLogin is enabled in the mode.
+        hasGoogleAuth = any(a["name"] in ("dev.pgs.GoogleAuthActivity",)
+               for a in identity["activities"])
+        if hasGoogleAuth and mode.get("googleBrowserLogin", False) is not True:
+            raise ValueError("GoogleAuthActivity declared but googleBrowserLogin not enabled")
+        for a in identity["activities"]:
+            if a["name"] == "dev.pgs.GoogleAuthActivity" and a.get("exported") is not False:
+                raise ValueError("GoogleAuthActivity must be unexported")
+        if mode.get("googleBrowserLogin", False) is True and not hasGoogleAuth:
+            raise ValueError("googleBrowserLogin enabled but GoogleAuthActivity not declared")
         _, chunks, pool, _, _ = axml._parse(manifest)
         labels = [attrs.get((axml.ANDROID_NS, "label"))
                   for _, event, name, attrs, depth in axml._walk(chunks, pool)
                   if event == "start" and name == "application" and depth == 1]
         if labels != ["Pok\u00e9mon GO"]:
             raise ValueError("Installed application label must remain Pok\u00e9mon GO")
-        mode = json.loads(read_bounded(archive, MODE, 256 * 1024))
-        if not isinstance(mode, dict) or mode.get("pgsVersion") != tag or ("pgrazorVersion" in mode and mode["pgrazorVersion"] != tag):
-            raise ValueError("PGS mode version differs from the requested release")
-        if mode.get("googleBrowserLogin", False) is not False:
-            raise ValueError("Experimental OAuth must stay disabled pending authorized PGS configuration")
         if mode.get("compiledGameplay") is not True or mode.get("gadget") is not False:
             raise ValueError("Expected a complete compiled PGS runtime")
         abis = mode.get("runtimeAbis")
@@ -103,7 +107,7 @@ def verify(apk, *, tag, game_version, game_version_code, previous_version_code):
             dex = read_bounded(archive, name, MAX_DEX_BYTES)
             if not dex.startswith(b"dex\n"):
                 raise ValueError("Invalid DEX header: " + name)
-            if b"Ldev/pgrazor/Control;" in dex:
+            if b"Ldev/pgs/Control;" in dex:
                 raise ValueError("Legacy controls DEX in migrated candidate")
             if REQUIRED_CLASSES[1] in dex:
                 if not all(marker in dex for marker in REQUIRED_CLASSES):

@@ -20,10 +20,10 @@ PATCHES = [
      '281==(2949644287&t.readU32())'),
     ('ARM64 callback first, flush its literal pool after ret, record relocated-body entry',
      'const h=new Arm64Writer(e,{pc:t});h.putBLabel("performTransition");const p=t.add(h.offset);h.putPushAllXRegisters(),h.putCallAddressWithArguments(a,["x0"]),h.putPopAllXRegisters(),h.putRet(),h.putLabel("performTransition");let f=!1,_=null,m=null;',
-     'const h=new Arm64Writer(e,{pc:t});const p=t.add(h.offset);h.putPushAllXRegisters(),h.putCallAddressWithArguments(a,["x0"]),h.putPopAllXRegisters(),h.putRet(),h.flush();const pgrazorPerformEntry=t.add(h.offset);let f=!1,_=null,m=null;'),
+     'const h=new Arm64Writer(e,{pc:t});const p=t.add(h.offset);h.putPushAllXRegisters(),h.putCallAddressWithArguments(a,["x0"]),h.putPopAllXRegisters(),h.putRet(),h.flush();const pgsPerformEntry=t.add(h.offset);let f=!1,_=null,m=null;'),
     ('ARM64 transition NativeFunction enters relocated body rather than callback',
      '),h.dispose(),f||Gt();return new NativeFunction(t,"void",["pointer"],Ee)}};function Jt',
-     '),h.dispose(),f||Gt();return new NativeFunction(pgrazorPerformEntry,"void",["pointer"],Ee)}};function Jt')
+     '),h.dispose(),f||Gt();return new NativeFunction(pgsPerformEntry,"void",["pointer"],Ee)}};function Jt')
 ]
 
 

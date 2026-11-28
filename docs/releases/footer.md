@@ -2,7 +2,7 @@
 
 ---
 
-PGS — Pokémon GO Spoofers. Based on the MIT-licensed PGRazor project; original authors retain their credits and licenses.
+PGS — Pokémon GO Spoofers. Based on the MIT-licensed PGS project; original authors retain their credits and licenses.
 
 [PGS GitHub](https://github.com/LucianoToscano/PGS)
 

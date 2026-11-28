@@ -33,6 +33,24 @@ jobs:
           test "$(cat pgs/PGS_LAST_VERSION_CODE)" = 2026111605
           test "$(cat pgs/VERSION)" = 0.0.2
           python -B -c "import sys; sys.path.insert(0, 'tools'); from game_update import current_profile; p=current_profile(); assert p['game_version']=='0.439.0' and p['version_code']==2026111602"
+      - name: Check required private configuration before installing tools
+        env:
+          PGS_INPUT_URL: ${{ secrets.PGS_INPUT_URL || secrets.PGS_INPUT_URL }}
+          PGS_KEYSTORE_BASE64: ${{ secrets.PGS_KEYSTORE_BASE64 || secrets.PGS_KEYSTORE_BASE64 }}
+          PGS_KEY_ALIAS: ${{ secrets.PGS_KEY_ALIAS || secrets.PGS_KEY_ALIAS }}
+          PGS_STORE_PASSWORD: ${{ secrets.PGS_STORE_PASSWORD || secrets.PGS_STORE_PASSWORD }}
+          PGS_KEY_PASSWORD: ${{ secrets.PGS_KEY_PASSWORD || secrets.PGS_KEY_PASSWORD }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          missing=0
+          for name in PGS_INPUT_URL PGS_KEYSTORE_BASE64 PGS_KEY_ALIAS PGS_STORE_PASSWORD PGS_KEY_PASSWORD; do
+            if [[ -z "${!name}" ]]; then
+              echo "::error::Missing required configuration: $name. Configure the authorized repository Actions secret."
+              missing=1
+            fi
+          done
+          test "$missing" = 0
       - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5
         with:
           python-version: '3.12'
@@ -70,20 +88,20 @@ jobs:
       - name: Validate configured private input and load existing key
         env:
           GITHUB_TOKEN: ${{ github.token }}
-          PGS_INPUT_URL: ${{ secrets.PGS_INPUT_URL || secrets.PGRAZOR_INPUT_URL }}
-          PGS_KEYSTORE_BASE64: ${{ secrets.PGS_KEYSTORE_BASE64 || secrets.PGRAZOR_KEYSTORE_BASE64 }}
+          PGS_INPUT_URL: ${{ secrets.PGS_INPUT_URL || secrets.PGS_INPUT_URL }}
+          PGS_KEYSTORE_BASE64: ${{ secrets.PGS_KEYSTORE_BASE64 || secrets.PGS_KEYSTORE_BASE64 }}
         shell: bash
         run: |
           set -euo pipefail
           umask 077
-          test -n "$PGS_INPUT_URL"
-          test -n "$PGS_KEYSTORE_BASE64"
+          test -n "$PGS_INPUT_URL" || { echo "::error::PGS_INPUT_URL is missing"; exit 1; }
+          test -n "$PGS_KEYSTORE_BASE64" || { echo "::error::PGS_KEYSTORE_BASE64 is missing"; exit 1; }
           python -B tools/private_input.py
       - name: Build and verify complete candidate in runner only
         env:
-          PGS_KEY_ALIAS: ${{ secrets.PGS_KEY_ALIAS || secrets.PGRAZOR_KEY_ALIAS }}
-          PGS_STORE_PASSWORD: ${{ secrets.PGS_STORE_PASSWORD || secrets.PGRAZOR_STORE_PASSWORD }}
-          PGS_KEY_PASSWORD: ${{ secrets.PGS_KEY_PASSWORD || secrets.PGRAZOR_KEY_PASSWORD }}
+          PGS_KEY_ALIAS: ${{ secrets.PGS_KEY_ALIAS || secrets.PGS_KEY_ALIAS }}
+          PGS_STORE_PASSWORD: ${{ secrets.PGS_STORE_PASSWORD || secrets.PGS_STORE_PASSWORD }}
+          PGS_KEY_PASSWORD: ${{ secrets.PGS_KEY_PASSWORD || secrets.PGS_KEY_PASSWORD }}
         shell: bash
         run: |
           set -euo pipefail

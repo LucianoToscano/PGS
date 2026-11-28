@@ -1,7 +1,7 @@
 {
   "repository": "https://github.com/PokeMiners/pogo_assets",
   "commit": "db10df75d6f6f92018d9786af0aecc238fecc4ef",
-  "license_note": "Pokemon GO artwork; not covered by PGRazor MIT license.",
+  "license_note": "Pokemon GO artwork; not covered by PGS MIT license.",
   "files": [
     {
       "name": "pogo_great_league.png",

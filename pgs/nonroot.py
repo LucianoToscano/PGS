@@ -104,12 +104,11 @@ def signature_entry(name):
     return upper=='STAMP-CERT-SHA256' or (upper.startswith('META-INF/') and (upper.endswith(('.SF','.RSA','.DSA','.EC')) or upper=='META-INF/MANIFEST.MF'))
 
 def rewrite_apk(source,destination,*,base=False,dex=None,assets=None,preview=False,google_browser_login=False,dex_replacements=None):
-    if google_browser_login: raise ValueError('Experimental browser OAuth is retired; authorized PGS configuration required')
     with zipfile.ZipFile(source) as original,zipfile.ZipFile(destination,'w') as output:
         names=original.namelist()
         # Bundled map-icon art may already ride along in our own preview input; any other pre-existing
         # PGS asset means the input was already instrumented and must be refused.
-        if any(name.startswith(('assets/pgs/', 'assets/pgrazor/')) and not (preview and name.startswith(('assets/pgs/map-icons/','assets/pgs/feed-icons/pokemon/'))) for name in names): raise ValueError('Input already has PGS assets')
+        if any(name.startswith('assets/pgs/') and not (preview and name.startswith(('assets/pgs/map-icons/','assets/pgs/feed-icons/pokemon/'))) for name in names): raise ValueError('Input already has PGS assets')
         if base:
             indices=[int(match.group(1) or '1') for name in names if (match:=re.fullmatch(r'classes(\d*)\.dex',name))]
             nextdex='classes'+str(max(indices,default=0)+1)+'.dex'
@@ -118,7 +117,7 @@ def rewrite_apk(source,destination,*,base=False,dex=None,assets=None,preview=Fal
                 for name in names:
                     if re.fullmatch(r'classes\d*\.dex',name):
                         data=original.read(name)
-                        if any(marker in data for marker in (b'Ldev/pgs/Control;', b'Ldev/pgrazor/Control;')):
+                        if any(marker in data for marker in (b'Ldev/pgs/Control;',)):
                             raise ValueError('Input already contains PGS classes')
         for item in original.infolist():
             if signature_entry(item.filename): continue
@@ -147,9 +146,9 @@ def validate_survey_options(enabled, panel_only, abi, flag='--il2cpp-survey'):
 
 
 def runtime_flag(name, environ=None):
-    """Use PGS runtime option names, while accepting existing opt-in aliases."""
+    """Read a PGS runtime option from the environment."""
     env = os.environ if environ is None else environ
-    return env.get('PGS_'+name) == '1' or env.get('PGRAZOR_'+name) == '1'
+    return env.get('PGS_'+name) == '1'
 
 
 @contextlib.contextmanager
@@ -180,14 +179,13 @@ def assert_no_research_payload(names):
         lowered=name.lower()
         if lowered.endswith('libfrida-gadget.so'):
             raise RuntimeError('Compiled production build must not ship the Frida Gadget: '+name)
-        if lowered.startswith(('assets/pgs/', 'assets/pgrazor/')) and lowered.endswith(('.js','.mjs','.cjs','.js.map')):
+        if lowered.startswith('assets/pgs/') and lowered.endswith(('.js','.mjs','.cjs','.js.map')):
             raise RuntimeError('Compiled production build must not ship PGS JavaScript: '+name)
-        if lowered in ('assets/pgs/java-bridge.js', 'assets/pgrazor/java-bridge.js') or lowered.startswith(('assets/pgs/bridge-notices/', 'assets/pgrazor/bridge-notices/')):
+        if lowered in ('assets/pgs/java-bridge.js',) or lowered.startswith(('assets/pgs/bridge-notices/',)):
             raise RuntimeError('Compiled production build must not ship Frida bridge assets: '+name)
 
 
 def package(source, *,research_runtime=False,panel_only=False,download=False,preview=False,probe_abi=None,game_runtime_abi='auto',il2cpp_survey=False,camera_probe=False,camera_sample=False,camera_steering=False,scene_probe=False,scene_observe=False,interaction_probe=False,quick_summary=False,quick_ball=False,quick_close=False,google_browser_login=False):
-    if google_browser_login: raise ValueError('Experimental browser OAuth is retired; authorized PGS configuration required')
     if quick_summary: raise ValueError('--quick-summary is retired; production gameplay is compiled by default')
     if research_runtime and panel_only: raise ValueError('--research-runtime cannot be combined with --panel-only')
     if preview and not (research_runtime or panel_only): raise ValueError('Preview requires --research-runtime or --panel-only')
@@ -217,7 +215,7 @@ def package(source, *,research_runtime=False,panel_only=False,download=False,pre
     folder=ROOT/'build/nonroot'/(dt.datetime.now().strftime('%Y%m%d-%H%M%S')+'-'+uuid.uuid4().hex[:8]); folder.mkdir(parents=True)
     inputs=input_apks(source,folder)
     package_name,base,rows,native_abis=inspect_set(inputs)
-    if preview and package_name!='dev.pgrazor.preview': raise ValueError('Probe can only use our preview package')
+    if preview and package_name!='dev.pgs.preview': raise ValueError('Probe can only use our preview package')
     if preview:
         with zipfile.ZipFile(base) as archive:
             if hashlib.sha256(archive.read('classes.dex')).hexdigest()!=runtime_assets.sha256(dex):
@@ -393,7 +391,8 @@ def package(source, *,research_runtime=False,panel_only=False,download=False,pre
     return report,folder
 
 def probe(report,folder,android,seconds=0):
-    if report['package']!='dev.pgrazor.preview' or len(report['outputs'])!=1: raise RuntimeError('Probe installation restricted to our standalone preview')
+    if report['package']!='dev.pgs.preview' or len(report['outputs'])!=1: raise RuntimeError('Probe installation restricted to our standalone preview')
+    if android is None: raise RuntimeError('Probe installation requires an attached Android device')
     report['device']={'serial':android.serial}
     for key,prop in [('model','ro.product.model'),('android','ro.build.version.release'),('sdk','ro.build.version.sdk'),('abi','ro.product.cpu.abi')]:
         report['device'][key]=android.shell('getprop',prop).strip()
@@ -402,13 +401,13 @@ def probe(report,folder,android,seconds=0):
     report['installation']='Installed PGS Preview on '+android.serial+'; game installation unchanged.'
     (folder/'report.json').write_text(json.dumps(report,indent=2),encoding='utf-8')
     # Fresh process is required to test the ContentProvider and native loader.
-    android.shell('am','force-stop','dev.pgrazor.preview')
+    android.shell('am','force-stop','dev.pgs.preview')
     log=folder/'device-test.txt'
     stream=subprocess.Popen(android.command('logcat','-v','threadtime','-T','1','PGS:I','AndroidRuntime:E','libc:F','DEBUG:F','crash_dump64:E','*:S'),stdout=subprocess.PIPE,stderr=subprocess.STDOUT,text=True,encoding='utf-8',errors='replace')
     timeout=threading.Timer(seconds,stream.terminate) if seconds else None
     if timeout: timeout.start()
     try:
-        android.shell('am','start','-n','dev.pgrazor.preview/dev.pgs.PreviewActivity')
+        android.shell('am','start','-n','dev.pgs.preview/dev.pgs.PreviewActivity')
         if report['mode']=='panel-only': print('Non-root panel-only probe launched. Location override should be unavailable.',flush=True)
         else: print('Non-root startup probe launched. Enable controls, move joystick, then pause. Expected synthetic consumer: PASS.',flush=True)
         print('Live log:',log,'(Ctrl+C stops desktop logging; the app stays installed.)',flush=True)
@@ -447,7 +446,6 @@ def main(argv=None):
     parser.add_argument('--skip-build',action='store_true',help='Use compiled module only if source/checksums still match')
     parser.add_argument('--seconds',type=float,default=0,help='Stop probe desktop logging after this many seconds; 0 waits for Ctrl+C')
     args=parser.parse_args(argv)
-    if args.google_browser_login: parser.error('Experimental browser OAuth is retired; authorized PGS configuration required')
     if args.research_runtime and args.panel_only: parser.error('--research-runtime cannot be combined with --panel-only')
     if (args.probe or args.build_probe) and not (args.research_runtime or args.panel_only): parser.error('Preview requires --research-runtime or --panel-only')
     if args.research_runtime and (args.quick_close or args.quick_ball): parser.error('Research runtime does not support retired quick gameplay scripts')

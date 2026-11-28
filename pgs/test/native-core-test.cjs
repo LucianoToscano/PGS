@@ -1,6 +1,6 @@
 const assert=require('node:assert/strict'),fs=require('node:fs'),vm=require('node:vm');
 const source=fs.readFileSync(require('node:path').join(__dirname,'../runtime/native-core.js'),'utf8');
-function fixture(path,names=['pgs_native_api','pgrazor_native_api']){
+function fixture(path,names=['pgs_native_api','pgs_native_api']){
  const memory=new Map(),calls=[],functions=new Map();let next=1000;
  class Pointer{
   constructor(address){this.address=address;}
@@ -34,11 +34,11 @@ assert.throws(()=>f.context.PGSNativeFeature(3,1,32),/ABI mismatch/);
 assert.throws(()=>f.context.PGSNativeFeature(99,1,24),/ABI mismatch/);
 f.memory.set(f.v2.address+4,40);assert.throws(()=>f.context.PGSNativeFeature(3,1,24),/ABI mismatch/);
 assert.deepEqual(f.calls.filter(c=>c[0]==='symbol'),[['symbol','pgs_native_api']]);
-let legacy=fixture('/test/native.so',['pgrazor_native_api']);
+let legacy=fixture('/test/native.so',['pgs_native_api']);
 assert.equal(legacy.context.PGSNativeFeature(3,1,24),legacy.feature);
 assert.equal(legacy.context.PGSNativeCore().install(null),0);
-assert.deepEqual(legacy.calls.filter(c=>c[0]==='symbol'),[['symbol','pgs_native_api'],['symbol','pgrazor_native_api']]);
+assert.deepEqual(legacy.calls.filter(c=>c[0]==='symbol'),[['symbol','pgs_native_api'],['symbol','pgs_native_api']]);
 let missing=fixture('/test/native.so',[]);
 assert.throws(()=>missing.context.PGSNativeCore(),/Native core factory missing/);
-assert.deepEqual(missing.calls.filter(c=>c[0]==='symbol'),[['symbol','pgs_native_api'],['symbol','pgrazor_native_api']]);
+assert.deepEqual(missing.calls.filter(c=>c[0]==='symbol'),[['symbol','pgs_native_api'],['symbol','pgs_native_api']]);
 console.log('PASS native feature discovery: primary factory, legacy fallback, missing symbol, inert default, shared load, v1 compatibility and ABI rejection');

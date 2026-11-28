@@ -89,7 +89,7 @@ public final class PogoFeedDataTest {
         PogoFeedData.Snapshot gated=PogoFeedData.parseShinies(new JSONObject().put("shinies",new JSONArray()).put("shiny_access",false),now);
         check(gated.refreshSeconds==30&&!gated.note.isEmpty(),"Default shiny interval and access status");
         System.out.println("PASS: my shinies seconds-expiry, personal flag, 64-bit ids, individual IVs");
-        // PGRazorX: country flag from the place that ends a row's details.
+        // PGSX: country flag from the place that ends a row's details.
         check(PogoFeedData.countryFlag("CP 403 · Lv 20 · 100.0% IV · M · Male · Take Down / Stomp · Saint-Sébastien-sur-Loire, Loire-Atlantique, France").equals("\uD83C\uDDEB\uD83C\uDDF7"),"France flag");
         check(PogoFeedData.countryFlag("CP 2513 · Lv 35 · Boosted · Roanoke, Texas, United States").equals("\uD83C\uDDFA\uD83C\uDDF8"),"United States flag");
         check(PogoFeedData.countryFlag("CP 523 · Yongkang, Tainan City, Taiwan").equals("\uD83C\uDDF9\uD83C\uDDFC"),"Taiwan flag");

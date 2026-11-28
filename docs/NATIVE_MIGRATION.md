@@ -145,11 +145,11 @@ unstripped binaries privately under the ignored build directory.
 
 
 
-Set `PGRAZOR_NATIVE_PILOT=1` before the usual `pgs/nonroot.py` packaging
+Set `PGS_NATIVE_PILOT=1` before the usual `pgs/nonroot.py` packaging
 
 command. First-time dependency acquisition additionally requires
 
-`PGRAZOR_NATIVE_DOWNLOAD=1`. `PGRAZOR_NATIVE_SELFTEST=1` explicitly requests the
+`PGS_NATIVE_DOWNLOAD=1`. `PGS_NATIVE_SELFTEST=1` explicitly requests the
 
 own-function Dobby test in a diagnostic pilot build. It is not a release default.
 
@@ -1384,7 +1384,7 @@ The coordinator added native Routes result observers (46), Routes tracking/locat
 
 Java now owns the translated-host mailbox timer and typed settings/action transport. The mailbox tests include exact integer tokens, malformed batch rejection, consume-before-dispatch acknowledgement, and symlink boundaries. Native guest transport remains unfinished.
 
-An opt-in build-time DEX rewrite (`PGRAZOR_COMPILED_JAVA_BRIDGES=1` with the native pilot) replaces eleven authentication, permission, dialog and service-lifecycle method bodies with compiled Java dispatch. It preserves renamed original bodies and method signatures, including private lifecycle dispatch. Both browser-enabled and original-browser paths are retained. `GameBridgeDispatch` prepares delivery on main before Unity and delegates to the existing Java helpers. The real original APK contains all eleven expected descriptors. A separate rewritten DEX fixture passed on MuMu ART (receipt `build/dex-bridge-fixtures/20261029-153832-280853/receipt.json`), testing callback identity, null Activity fallback, 64-bit flags, original exceptions and lifecycle ordering. This is boundary verification; the new game APK has not yet been built or installed. Agy reviewed the rewriter; duplicated runtime annotations on preserved bodies were removed. Its claimed sign-in fallthrough was not present in the source, and lifecycle exception ordering intentionally matches the existing adapter.
+An opt-in build-time DEX rewrite (`PGS_COMPILED_JAVA_BRIDGES=1` with the native pilot) replaces eleven authentication, permission, dialog and service-lifecycle method bodies with compiled Java dispatch. It preserves renamed original bodies and method signatures, including private lifecycle dispatch. Both browser-enabled and original-browser paths are retained. `GameBridgeDispatch` prepares delivery on main before Unity and delegates to the existing Java helpers. The real original APK contains all eleven expected descriptors. A separate rewritten DEX fixture passed on MuMu ART (receipt `build/dex-bridge-fixtures/20261029-153832-280853/receipt.json`), testing callback identity, null Activity fallback, 64-bit flags, original exceptions and lifecycle ordering. This is boundary verification; the new game APK has not yet been built or installed. Agy reviewed the rewriter; duplicated runtime annotations on preserved bodies were removed. Its claimed sign-in fallthrough was not present in the source, and lifecycle exception ordering intentionally matches the existing adapter.
 
 Catch observers (49) and shared-catch orchestration (51) remain under correction. Independent catch review found completion-after-lease, event loss and rooting defects. The first shared-catch draft moved only part of the arming policy while retaining JS selection/pruning; the coordinator rejected its broader ownership claim and requested actual integration. Do not count these drafts as completed migrations.
 
@@ -1402,7 +1402,7 @@ Rootnew57 transfer_observers.h/cpp CREATEDONLY unregistered/untested/incomplete:
 
 2026-10-29T19:03Z verification update (supersedes older pending entries):
 The installed gameplay APK remains native-overnight03; production Frida/scripts are still required. Routes host60 now passes the actual MuMu native fixture185404-224857, including capture/discovery/actions/completion/tracking and typed52 event delivery. Camera59 native fixture184922-897198 passes. BothABI builds include61sharedcatchhost and62quickballhost, but their fullflow fixtures/integration remain in progress; compilation is not acceptance.
-Compiled Location ART library and Java policy passed isolated MuMu probes184425-ffadc7 and185331-13fe47. The latter covers a warmed compiledcaller without deoptimization, nullreceiverexception and exactly-once OFF observations. Separate actualrewrittenDEX ART fixture190132-665650 passed all12existingbridges plusfive Location gettercalls/primitivevalues/nullreceiver handling. Inputgame audit rewrites49 exactcalls and inventories12 unmatchedreferences; framework/JNIcoverage limitations stayexplicit. ART/dependencies now packagingoptinPGRAZOR_COMPILED_LOCATION, five licensesonlyinAPK, fullprovenance/relinkobjects local. No productionARTAPK yet.
+Compiled Location ART library and Java policy passed isolated MuMu probes184425-ffadc7 and185331-13fe47. The latter covers a warmed compiledcaller without deoptimization, nullreceiverexception and exactly-once OFF observations. Separate actualrewrittenDEX ART fixture190132-665650 passed all12existingbridges plusfive Location gettercalls/primitivevalues/nullreceiver handling. Inputgame audit rewrites49 exactcalls and inventories12 unmatchedreferences; framework/JNIcoverage limitations stayexplicit. ART/dependencies now packagingoptinPGS_COMPILED_LOCATION, five licensesonlyinAPK, fullprovenance/relinkobjects local. No productionARTAPK yet.
 132Python tests PASS36.344s in fullcheck; Nodephasefailed stale location-toggle test extraction aftercompiledlocationguard. Rootfixedthetest tocoverlegacyhooks and assertcompiledpathinstallsnone; fullcheckrerunneeded. Packaging54PASS andJava buildPASS independently. Cleanup1900082801360 deleted0B andpreservedallpins.
 Detailed activeownership/evidence remain .artifacts/native-migration/OVERNIGHT_ACTIVE.txt. Userauthorization persists; no phone/commit/push/release andno permissionquestions.
 
@@ -1415,7 +1415,7 @@ inventory (65), combat (66), spin (67), account (68), interaction observers (69)
 the runtime host manager (70), and spawn orchestration (71). It uses compiled
 Java/ART bridges, native bootstrap and Unity scheduling, and typed native transport.
 Both ABI integration builds passed. The compiled-only APK was built and its asset
-audit passed with zero Frida or PGRazor JavaScript assets. These build results do
+audit passed with zero Frida or PGS JavaScript assets. These build results do
 not establish working gameplay.
 
 Live cutover testing on research MuMu failed. After an ARM export-veneer collision
@@ -1443,8 +1443,8 @@ dependencies, driven by native Unity scheduling and transport52 with Java/ART
 bridges. The bounded dependency audit found no remaining standard production
 factory requiring JavaScript. Research and legacy development scripts remain in
 source and are excluded from this production APK. APK audits found no Frida or
-PGRazor JavaScript assets. Both ABI libraries are stripped: the core exports only
-`JNI_OnLoad` and `pgrazor_native_api`, and the ART library only `JNI_OnLoad`.
+PGS JavaScript assets. Both ABI libraries are stripped: the core exports only
+`JNI_OnLoad` and `pgs_native_api`, and the ART library only `JNI_OnLoad`.
 
 The installed `native-cutover-final` candidate (SHA-256
 `c8a8b67a829ef1a1d34b2932fdddf0d7868c7ff796e6203e2b476c06c5241726`)
@@ -1484,7 +1484,7 @@ push or public release is claimed here.
 
 ### Final installed local artifact - 2026-10-29 21:46 UTC
 
-`native-cutover-verified/PGRazor.apk` (run `20261029-144048-be59e7c8`, SHA256 `cf229832cc078f18e50e3de8c723507d85793f1331bfce780f2e8f7e37f0766b`) is now installed on research MuMu16416, PID61867. Cold start, populated map, Pumpkaboo encounter with IV label, and return to map passed. All12 manager consumers reached ready. Final native fixture214201-352050 passed and matches the packaged x64 core. The APK audit confirms zero Frida/PGRazor-JS assets and stripped core/ART libraries with only the intended factory/JNI exports. Temporary diagnostic code is removed. See `.artifacts/native-migration/FINAL_NATIVE_CUTOVER_HANDOFF.txt` for exact verification provenance, remaining live limits, rollback and tomorrow checklist. Physical Android remains untested; the earlier intermittent missing-IV observation is retained rather than declared resolved.
+`native-cutover-verified/PGS.apk` (run `20261029-144048-be59e7c8`, SHA256 `cf229832cc078f18e50e3de8c723507d85793f1331bfce780f2e8f7e37f0766b`) is now installed on research MuMu16416, PID61867. Cold start, populated map, Pumpkaboo encounter with IV label, and return to map passed. All12 manager consumers reached ready. Final native fixture214201-352050 passed and matches the packaged x64 core. The APK audit confirms zero Frida/PGS-JS assets and stripped core/ART libraries with only the intended factory/JNI exports. Temporary diagnostic code is removed. See `.artifacts/native-migration/FINAL_NATIVE_CUTOVER_HANDOFF.txt` for exact verification provenance, remaining live limits, rollback and tomorrow checklist. Physical Android remains untested; the earlier intermittent missing-IV observation is retained rather than declared resolved.
 
 Repository retirement audit correction (after final APK delivery):
 The shipped APK is compiled-only, but repository retirement is NOT complete. No tracked source files have been deleted. Prior cleanup totals describe ignored generated APK outputs only. Legacy production packaging and JS adapters/tests remain; the release workflow still selects the legacy path. Routes/gift native schema generators consume legacy JS literals and must be detached before deleting those scripts. Research runtime dependencies and license/provenance notices must be audited separately. The source archive currently lists only tracked files and omits untracked native migration files, so it is not a complete distributable source package in this working tree. See .artifacts/native-migration/repository-retirement-audit.json. The final installed APK/hash is unchanged. This audit supersedes any implication that the entire repository was buttoned up.
@@ -1496,7 +1496,7 @@ Cleanup completed 2026-10-29 22:28 UTC (supersedes repository-retirement correct
 Deleted180 obsolete gameplay JS/adapters/adapter-only tests, including46 tracked files; verified source backup and receipt retained locally. Removed2219771 source bytes; backup729611 bytes, net1490160 bytes. No additional generated APKs eligible in cleanup222659-4059747. Retained research scripts/Frida vendor dependencies and historical native-port comments intentionally.
 Routes/gift generators now use versioned neutral JSON with unchanged generated table semantics. Default local/CI production packaging is compiled with no environment opt-ins. Gadget requires explicit --research-runtime and is rejected for retired quick gameplay. Bootstrap likewise gates research mode. Production packaging rejects research payloads. Dormant research loader strings remain in DEX: strict runtime_retired inventory remains false; production_payload_retired is true. This distinction is intentional and not evidence of a bundled interpreter.
 Portable pinned native prerequisites setup and CI wiring added; local preflight/tests PASS, fresh remote CI workflow NOT run. Complete working-tree source archive includes native additions, excludes retired sources/keys/local evidence; receipt cleanup-source-archive-receipt.json. No staging/commit/push/release.
-Final local APK: pgs/build/release/native-cleanup-final/PGRazor.apk
+Final local APK: pgs/build/release/native-cleanup-final/PGS.apk
 Run20261029-152358-9320f1cc; SHA256384043a6681fdcae2a36df6405e6c1c2f625f5f9dcaaa82279e3f7b9a069e0f4;181168710bytes.
 Installed research MuMu16416, cold PID64645, populated map visually confirmed; compiled bootstrap/location/scheduler/hosts ready, Routes service became available. No phone touched. Final cleanup APK did not repeat every gameplay scenario; prior cutover gameplay evidence and limits remain applicable, not relabeled as new verification.
 Checks: tools/check.py exit0,127Python tests + Java fixtures +21Node suites; actual native/Dobby host fixtures61/63/70 PASS receipt20261029-222611-354213, packaged x64core matches385ed6d04a4d1fcec8e744efa2bbdd6ba7c2f7cebf98de3dc04583aecb93995c. BothABI core/ART packaging verified. Source archive content checks PASS. Final install/log/screenshots and payload audit use cleanup-* evidence files.

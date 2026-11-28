@@ -87,9 +87,28 @@ def legacy_inventory():
               "legacy_paths": names, "legacy_text_files": len(files),
               "legacy_text_occurrences": sum(row["occurrences"] for row in files),
               "files": files}
+    # Explicit retention: original copyright/provenance and regression or migration checks.
+    # Keep the actual historical string where needed; never hide it by encoding the name.
+    allowed = {
+        "LICENSE": (1, "required original copyright"),
+        "NOTICE": (2, "original copyright and source attribution"),
+        "pgs/pgs_candidate.py": (1, "reject obsolete controls DEX"),
+        "pgs/src/dev/pgs/I18n.java": (1, "display-only legacy label compatibility"),
+        "pgs/test/I18nTest.java": (3, "translation and old-label regression fixtures"),
+        "pgs/test/test_discord_release.py": (1, "prevent old release branding"),
+        "pgs/test/test_pgs_build_options.py": (1, "prevent old workflow branding"),
+        "pgs/test/test_pgs_candidate.py": (1, "reject old DEX fixture"),
+    }
+    unexpected = [row for row in files
+                  if row["path"] not in allowed or row["occurrences"] > allowed[row["path"]][0]]
+    result["intentional_retention"] = [{"path": row["path"], "occurrences": row["occurrences"],
+                                       "reason": allowed[row["path"]][1]}
+                                      for row in files if row["path"] in allowed
+                                      and row["occurrences"] <= allowed[row["path"]][0]]
+    result["unexpected_legacy_files"] = unexpected
     print("LEGACY_IDENTITY_INVENTORY " + json.dumps(result, ensure_ascii=True))
-    if names:
-        raise SystemExit("Legacy identity found in tracked paths")
+    if names or unexpected:
+        raise SystemExit("Unexpected legacy identity in tracked source or paths")
 
 
 if __name__ == "__main__":

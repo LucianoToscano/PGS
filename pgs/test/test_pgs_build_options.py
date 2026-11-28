@@ -39,10 +39,8 @@ class PgsBuildOptionTests(unittest.TestCase):
         for name in ('release.yml', 'pgs-v0.0.4-release.yml'):
             with self.subTest(workflow=name):
                 flow = (workflows / name).read_text(encoding='utf-8')
-                # No legacy PGrazor brand remains in any release workflow.
+                # Reject every case variant of the old brand in release workflows.
                 self.assertNotIn('pgrazor', flow.lower())
-                self.assertNotIn('PGRazor', flow)
-                self.assertNotIn('PGRAZOR', flow)
                 # Every release workflow references the PGS identity.
                 self.assertIn('PGS', flow)
         # The manual historical release is dispatch-driven (no unattended push release).

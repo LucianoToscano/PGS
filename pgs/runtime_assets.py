@@ -12,7 +12,7 @@ ROOT=Path(__file__).resolve().parent
 VERSION='17.24.2'
 ARCHES={'arm64-v8a':'arm64','x86_64':'x86_64'}
 BRIDGE_COMMIT='302a588881b40cba300bcf3acfd35deeb3888ee5'
-BRIDGE_SHA256='da99e88a3876a269b91ed6e2a0b40fa66531279813652ffe864cfccb3c3c0b5d'
+BRIDGE_SHA256='0c33448a2c79fb2e85116a01e4314e72f60d3d35a02a274695f8f1d24ba8922c'
 
 def sha256(path):
     with open(path,'rb') as stream: return hashlib.file_digest(stream,'sha256').hexdigest()

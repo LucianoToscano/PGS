@@ -41,6 +41,12 @@ A versão do PGS é independente da versão do jogo-base. A versão estável é 
 
 Não confunda arquivos de código-fonte ou pacotes de prévia com o APK completo. As entradas originais de compilação devem permanecer privadas.
 
+## Automação do projeto
+
+- [PGS AUTO BUILD](docs/PGS_AUTO_BUILD.md) — candidatas assinadas mediante autorização.
+- [PGS AUTO BACKUP](docs/PGS_AUTO_BACKUP.md) — cópias do código-fonte e checksums.
+- [PGS AUTO SYNC](docs/PGS_AUTO_SYNC.md) — monitoramento somente leitura da origem.
+
 ## Site e guias
 
 - [Site do PGS](https://lucianotoscano.github.io/PGS/)

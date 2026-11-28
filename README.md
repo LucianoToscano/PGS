@@ -41,6 +41,12 @@ The PGS project version is distinct from the base game's version. The stable rel
 
 Do not mistake source archives or preview-only packages for a complete APK. Original build inputs must remain private.
 
+## Project automation
+
+- [PGS AUTO BUILD](docs/PGS_AUTO_BUILD.md) — authorized signed candidates only.
+- [PGS AUTO BACKUP](docs/PGS_AUTO_BACKUP.md) — source snapshots and checksums.
+- [PGS AUTO SYNC](docs/PGS_AUTO_SYNC.md) — read-only upstream revision monitoring.
+
 ## Website and guides
 
 - [PGS website](https://lucianotoscano.github.io/PGS/)

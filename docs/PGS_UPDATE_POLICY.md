@@ -63,3 +63,7 @@ A reconstrução da `v0.0.2` usa **somente** o APK completo e assinado `v0.0.1`,
 O novo workflow `.github/workflows/pgs-v0.0.2-release.yml` produz `PGS v0.0.2.apk` e os recibos verificáveis, exigindo o certificado PGS permanente, package `com.nianticlabs.pokemongo` e jogo-base `0.439.0`. O fluxo antigo de `v0.0.1` fica arquivado e não pode recompilar automaticamente a versão antiga. O GitHub Release de `v0.0.2` é criado **somente como rascunho** até testes em aparelho real.
 
 O símbolo interno e o joystick são mantidos exatamente como na base anterior. A conta Ko-fi do projeto original foi removida das opções de patrocínio PGS, sem configurar uma conta substituta não autorizada.
+
+## Permanent candidate workflow
+
+See [PGS AUTO BUILD](PGS_AUTO_BUILD.md) for explicit next-version requests, private input and signed draft-only retention. No candidate is requested by restoring the disabled workflow.

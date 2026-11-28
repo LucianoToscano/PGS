@@ -1,19 +1,19 @@
 {
   "scope": "Git-indexed regular UTF-8 text, excluding NUL-containing files and the snapshot itself",
-  "tracked_files": 2096,
-  "text_files": 1022,
-  "remaining_files": 954,
-  "remaining_occurrences": 31283,
+  "tracked_files": 2109,
+  "text_files": 1035,
+  "remaining_files": 965,
+  "remaining_occurrences": 31468,
   "remaining_by_category": {
-    "documentation": 1393,
+    "documentation": 1417,
     "java": 134,
     "javascript": 9,
     "legal": 6,
     "native": 25901,
-    "other": 2294,
+    "other": 2349,
     "release_history": 61,
     "tests": 1067,
-    "workflows": 418
+    "workflows": 524
   },
   "tracked_name_matches": [],
   "files": [
@@ -43,9 +43,24 @@
       "occurrences": 7
     },
     {
+      "path": ".github/workflows/pgs-auto-backup.yml",
+      "category": "workflows",
+      "occurrences": 9
+    },
+    {
+      "path": ".github/workflows/pgs-auto-sync.yml",
+      "category": "workflows",
+      "occurrences": 10
+    },
+    {
       "path": ".github/workflows/pgs-auto-update.yml",
       "category": "workflows",
       "occurrences": 9
+    },
+    {
+      "path": ".github/workflows/pgs-build.yml",
+      "category": "workflows",
+      "occurrences": 87
     },
     {
       "path": ".github/workflows/pgs-release-notes-sync.yml",
@@ -130,12 +145,12 @@
     {
       "path": "README.md",
       "category": "documentation",
-      "occurrences": 35
+      "occurrences": 41
     },
     {
       "path": "README.pt-BR.md",
       "category": "documentation",
-      "occurrences": 36
+      "occurrences": 42
     },
     {
       "path": "THIRD_PARTY.md",
@@ -178,6 +193,21 @@
       "occurrences": 28
     },
     {
+      "path": "docs/PGS_AUTO_BACKUP.md",
+      "category": "documentation",
+      "occurrences": 4
+    },
+    {
+      "path": "docs/PGS_AUTO_BUILD.md",
+      "category": "documentation",
+      "occurrences": 1
+    },
+    {
+      "path": "docs/PGS_AUTO_SYNC.md",
+      "category": "documentation",
+      "occurrences": 5
+    },
+    {
       "path": "docs/PGS_BRANDING_AUDIT.md",
       "category": "documentation",
       "occurrences": 32
@@ -215,7 +245,7 @@
     {
       "path": "docs/PGS_UPDATE_POLICY.md",
       "category": "documentation",
-      "occurrences": 54
+      "occurrences": 56
     },
     {
       "path": "docs/PGS_VERSION_MONITOR.md",
@@ -4613,6 +4643,16 @@
       "occurrences": 44
     },
     {
+      "path": "tools/pgs_build_request.py",
+      "category": "other",
+      "occurrences": 13
+    },
+    {
+      "path": "tools/pgs_candidate_draft.py",
+      "category": "other",
+      "occurrences": 17
+    },
+    {
       "path": "tools/pgs_reference_inventory.py",
       "category": "other",
       "occurrences": 9
@@ -4653,9 +4693,24 @@
       "occurrences": 1
     },
     {
+      "path": "tools/test_pgs_build_request.py",
+      "category": "other",
+      "occurrences": 7
+    },
+    {
+      "path": "tools/test_pgs_candidate_draft.py",
+      "category": "other",
+      "occurrences": 17
+    },
+    {
       "path": "tools/test_pgs_release_notes.py",
       "category": "other",
       "occurrences": 3
+    },
+    {
+      "path": "tools/test_pgs_upstream_monitor.py",
+      "category": "other",
+      "occurrences": 1
     },
     {
       "path": "tools/test_pgs_version_monitor.py",
@@ -4789,14 +4844,17 @@
     }
   ],
   "abbreviations": {
-    "remaining_files": 521,
-    "remaining_occurrences": 25706,
+    "remaining_files": 531,
+    "remaining_occurrences": 25797,
     "by_form": {
       "camelcase": 5664,
-      "lowercase": 3874,
-      "uppercase": 16168
+      "lowercase": 3889,
+      "uppercase": 16244
     },
     "tracked_name_matches": [
+      "docs/PGS_AUTO_BACKUP.md",
+      "docs/PGS_AUTO_BUILD.md",
+      "docs/PGS_AUTO_SYNC.md",
       "docs/PGS_BRANDING_AUDIT.md",
       "docs/PGS_COMMUNITY_REVIEW.md",
       "docs/PGS_FORK_INVENTORY.json",
@@ -4823,8 +4881,11 @@
       "pgs/pgs_rebrand.py",
       "pgs/pgs_update.py",
       "tools/pgs_branding_audit.py",
+      "tools/pgs_build_request.py",
+      "tools/pgs_candidate_draft.py",
       "tools/pgs_reference_inventory.py",
       "tools/pgs_release_notes.py",
+      "tools/pgs_upstream_monitor.py",
       "tools/pgs_version_monitor.py"
     ],
     "files": [
@@ -4844,11 +4905,34 @@
         }
       },
       {
+        "path": ".github/workflows/pgs-auto-backup.yml",
+        "occurrences": 1,
+        "by_form": {
+          "uppercase": 1
+        }
+      },
+      {
+        "path": ".github/workflows/pgs-auto-sync.yml",
+        "occurrences": 3,
+        "by_form": {
+          "lowercase": 1,
+          "uppercase": 2
+        }
+      },
+      {
         "path": ".github/workflows/pgs-auto-update.yml",
         "occurrences": 5,
         "by_form": {
           "lowercase": 3,
           "uppercase": 2
+        }
+      },
+      {
+        "path": ".github/workflows/pgs-build.yml",
+        "occurrences": 53,
+        "by_form": {
+          "lowercase": 5,
+          "uppercase": 48
         }
       },
       {
@@ -4944,16 +5028,16 @@
       },
       {
         "path": "README.md",
-        "occurrences": 9,
+        "occurrences": 12,
         "by_form": {
-          "uppercase": 9
+          "uppercase": 12
         }
       },
       {
         "path": "README.pt-BR.md",
-        "occurrences": 9,
+        "occurrences": 12,
         "by_form": {
-          "uppercase": 9
+          "uppercase": 12
         }
       },
       {
@@ -4990,6 +5074,20 @@
         "by_form": {
           "lowercase": 1,
           "uppercase": 4
+        }
+      },
+      {
+        "path": "docs/PGS_AUTO_BACKUP.md",
+        "occurrences": 1,
+        "by_form": {
+          "uppercase": 1
+        }
+      },
+      {
+        "path": "docs/PGS_AUTO_SYNC.md",
+        "occurrences": 2,
+        "by_form": {
+          "uppercase": 2
         }
       },
       {
@@ -5031,10 +5129,10 @@
       },
       {
         "path": "docs/PGS_UPDATE_POLICY.md",
-        "occurrences": 6,
+        "occurrences": 7,
         "by_form": {
           "lowercase": 1,
-          "uppercase": 5
+          "uppercase": 6
         }
       },
       {
@@ -9071,6 +9169,21 @@
         }
       },
       {
+        "path": "tools/pgs_build_request.py",
+        "occurrences": 3,
+        "by_form": {
+          "uppercase": 3
+        }
+      },
+      {
+        "path": "tools/pgs_candidate_draft.py",
+        "occurrences": 7,
+        "by_form": {
+          "lowercase": 4,
+          "uppercase": 3
+        }
+      },
+      {
         "path": "tools/pgs_reference_inventory.py",
         "occurrences": 1,
         "by_form": {
@@ -9106,7 +9219,30 @@
         }
       },
       {
+        "path": "tools/test_pgs_build_request.py",
+        "occurrences": 4,
+        "by_form": {
+          "lowercase": 1,
+          "uppercase": 3
+        }
+      },
+      {
+        "path": "tools/test_pgs_candidate_draft.py",
+        "occurrences": 9,
+        "by_form": {
+          "lowercase": 3,
+          "uppercase": 6
+        }
+      },
+      {
         "path": "tools/test_pgs_release_notes.py",
+        "occurrences": 1,
+        "by_form": {
+          "lowercase": 1
+        }
+      },
+      {
+        "path": "tools/test_pgs_upstream_monitor.py",
         "occurrences": 1,
         "by_form": {
           "lowercase": 1

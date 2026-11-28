@@ -3,9 +3,9 @@
   "tracked_files": 2113,
   "text_files": 1039,
   "remaining_files": 971,
-  "remaining_occurrences": 31488,
+  "remaining_occurrences": 31492,
   "remaining_by_category": {
-    "documentation": 1368,
+    "documentation": 1372,
     "java": 134,
     "javascript": 9,
     "legal": 6,
@@ -350,7 +350,7 @@
     {
       "path": "docs/pt-BR/releases/v0.0.6.md",
       "category": "documentation",
-      "occurrences": 4
+      "occurrences": 6
     },
     {
       "path": "docs/releases/README.md",
@@ -385,7 +385,7 @@
     {
       "path": "docs/releases/v0.0.6.md",
       "category": "documentation",
-      "occurrences": 4
+      "occurrences": 6
     },
     {
       "path": "docs/releases/v0.2.0.md",

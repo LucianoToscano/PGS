@@ -73,6 +73,9 @@ jobs:
           python -B tools/pgs_release_notes.py v0.0.6 --output "$RUNNER_TEMP/notes.md"
           if [[ "$(jq -r .draft "$RUNNER_TEMP/release-before.json")" == true ]]; then
             gh api --method PATCH "$endpoint" -F draft=false -F prerelease=false -f make_latest=true -f name='PGS v0.0.6' -F body=@"$RUNNER_TEMP/notes.md" > "$RUNNER_TEMP/published.json"
+          else
+            # Owner-approved validation notes only; never modify assets or release visibility.
+            gh api --method PATCH "$endpoint" -F body=@"$RUNNER_TEMP/notes.md" > "$RUNNER_TEMP/published.json"
           fi
           gh api "repos/$GITHUB_REPOSITORY/releases/latest" > "$RUNNER_TEMP/latest-after.json"
           python -B - <<'PY'
@@ -83,5 +86,6 @@ jobs:
           expected = json.loads('{"build-info.json":{"id":803261170,"size":460,"digest":"sha256:df13fc7c0533250123c0248c7d40f7ec65bb7163276dce5ecbe94dc44594d62d"},"PGS-Root-module.zip":{"id":803261187,"size":6756580,"digest":"sha256:c1230cc24ed533ebfb050819d93aa96c1bbaec63e50be185aa76fcc2b52d2df1"},"PGS-Root.apk":{"id":803261172,"size":6783613,"digest":"sha256:34790c77c0f905e47e4a193562167837dd18f3b1ecf83cefd9adac2f969d3092"},"PGS.json":{"id":803261167,"size":725,"digest":"sha256:57429574fb4ba3b32090b8d4acd8b2c82f43768abc9d01b503685df0d0dcdc31"},"PGS.v0.0.6.apk":{"id":803261171,"size":186474357,"digest":"sha256:e69ed234a34a106052343ba59b2ea62d1158a8ed72326f82e892ba5479d0ca4e"},"root-build-info.json":{"id":803261186,"size":681,"digest":"sha256:a4e43e861fa57a8f597a23dede0255a8eb9a22800f23076f5aede6bb404a4181"},"SHA256SUMS.txt":{"id":803261168,"size":246,"digest":"sha256:d8d23993329e2e582434ff82b6387945562a20c4c20defddd89ff6413de8c2ca"}}')
           assert {a['name']: {k: a[k] for k in ('id', 'size', 'digest')} for a in r['assets']} == expected
           assert all(a['browser_download_url'] == 'https://github.com/LucianoToscano/PGS/releases/download/v0.0.6/' + a['name'] for a in r['assets'])
-          print('v0.0.6 published as latest; original verified assets unchanged')
+          assert r['body'].strip() == (Path(os.environ['RUNNER_TEMP'])/'notes.md').read_text(encoding='utf-8').strip()
+          print('v0.0.6 latest and validation notes verified; original assets unchanged')
           PY

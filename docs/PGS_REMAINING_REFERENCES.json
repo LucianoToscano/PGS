@@ -1,17 +1,17 @@
 {
   "scope": "Git-indexed regular UTF-8 text, excluding NUL-containing files and the snapshot itself",
-  "tracked_files": 2085,
-  "text_files": 1011,
-  "remaining_files": 945,
-  "remaining_occurrences": 31125,
+  "tracked_files": 2086,
+  "text_files": 1012,
+  "remaining_files": 946,
+  "remaining_occurrences": 31206,
   "remaining_by_category": {
-    "other": 2239,
-    "workflows": 313,
+    "other": 2229,
+    "workflows": 403,
     "documentation": 1400,
     "legal": 7,
     "release_history": 61,
     "native": 25901,
-    "tests": 1061,
+    "tests": 1062,
     "java": 134,
     "javascript": 9
   },
@@ -76,6 +76,11 @@
       "path": ".github/workflows/pgs-v0.0.4-release.yml",
       "category": "workflows",
       "occurrences": 89
+    },
+    {
+      "path": ".github/workflows/pgs-v0.0.5-release.yml",
+      "category": "workflows",
+      "occurrences": 90
     },
     {
       "path": ".github/workflows/release.yml",
@@ -4315,7 +4320,7 @@
     {
       "path": "pgs/test/test_pgs_license.py",
       "category": "tests",
-      "occurrences": 9
+      "occurrences": 10
     },
     {
       "path": "pgs/test/test_pgs_native_aliases_native.py",
@@ -4560,7 +4565,7 @@
     {
       "path": "tools/pgs_branding_audit.py",
       "category": "other",
-      "occurrences": 49
+      "occurrences": 39
     },
     {
       "path": "tools/pgs_reference_inventory.py",
@@ -4744,11 +4749,11 @@
     }
   ],
   "abbreviations": {
-    "remaining_files": 514,
-    "remaining_occurrences": 25651,
+    "remaining_files": 515,
+    "remaining_occurrences": 25690,
     "by_form": {
-      "lowercase": 3870,
-      "uppercase": 16122,
+      "lowercase": 3871,
+      "uppercase": 16160,
       "camelcase": 5659
     },
     "tracked_name_matches": [
@@ -4839,6 +4844,14 @@
       },
       {
         "path": ".github/workflows/pgs-v0.0.4-release.yml",
+        "occurrences": 40,
+        "by_form": {
+          "uppercase": 38,
+          "lowercase": 2
+        }
+      },
+      {
+        "path": ".github/workflows/pgs-v0.0.5-release.yml",
         "occurrences": 40,
         "by_form": {
           "uppercase": 38,
@@ -8975,10 +8988,10 @@
       },
       {
         "path": "tools/pgs_branding_audit.py",
-        "occurrences": 8,
+        "occurrences": 7,
         "by_form": {
           "uppercase": 3,
-          "lowercase": 5
+          "lowercase": 4
         }
       },
       {

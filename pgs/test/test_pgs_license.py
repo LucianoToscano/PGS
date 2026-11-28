@@ -10,7 +10,7 @@ class PgsLicenseTests(unittest.TestCase):
     def test_project_and_original_copyright_and_mit_terms(self):
         text = (ROOT / "LICENSE").read_text(encoding="utf-8")
         self.assertTrue(text.startswith("MIT License\n"))
-        self.assertIn("Copyright (c) 2026 PGS contributors\n", text)
+        self.assertIn("Copyright (c) 2026 PGS contributors (PGS contributions)\n", text)
         self.assertIn("The above copyright notice and this permission notice shall be included in all", text)
         self.assertIn('THE SOFTWARE IS PROVIDED "AS IS"', text)
         notice = (ROOT / "NOTICE").read_text(encoding="utf-8")

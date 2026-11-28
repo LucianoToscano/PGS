@@ -3,9 +3,9 @@
   "tracked_files": 2087,
   "text_files": 1013,
   "remaining_files": 944,
-  "remaining_occurrences": 31222,
+  "remaining_occurrences": 31212,
   "remaining_by_category": {
-    "other": 2239,
+    "other": 2229,
     "workflows": 418,
     "documentation": 1393,
     "legal": 6,
@@ -4570,7 +4570,7 @@
     {
       "path": "tools/pgs_branding_audit.py",
       "category": "other",
-      "occurrences": 49
+      "occurrences": 39
     },
     {
       "path": "tools/pgs_reference_inventory.py",
@@ -4740,9 +4740,9 @@
   ],
   "abbreviations": {
     "remaining_files": 516,
-    "remaining_occurrences": 25699,
+    "remaining_occurrences": 25698,
     "by_form": {
-      "lowercase": 3872,
+      "lowercase": 3871,
       "uppercase": 16168,
       "camelcase": 5659
     },
@@ -8985,10 +8985,10 @@
       },
       {
         "path": "tools/pgs_branding_audit.py",
-        "occurrences": 8,
+        "occurrences": 7,
         "by_form": {
           "uppercase": 3,
-          "lowercase": 5
+          "lowercase": 4
         }
       },
       {

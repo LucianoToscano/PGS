@@ -13,9 +13,9 @@ ROOT = Path(__file__).resolve().parents[1]
 LANGUAGES = ("en", "de", "es", "fr", "pt-BR", "ru", "it", "zh-Hant", "nl", "th", "ko")
 ACTIVE_TEXT = (
     "tools/discord_release.py",
-    "website/src/components/GuideIndex.jsx",
-    "website/src/components/Cooldown.jsx",
-    "website/src/content.js",
+    "website/src/content.en.js",
+    "website/src/content.pt-BR.js",
+    "website/src/uiText.js",
     "pgs/AndroidManifest.xml",
     "pgs/root-installer/AndroidManifest.xml",
     "pgs/src/dev/pgs/EncounterCounter.java",

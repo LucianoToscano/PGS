@@ -43,9 +43,9 @@ jobs:
           assert not r['prerelease']
           assets={a['name']:a for a in r['assets']}
           assert set(assets)=={'PGS.v0.0.5.apk','PGS.json','SHA256SUMS.txt','build-info.json'}
-          expected={'PGS.v0.0.5.apk':'fa139a05d884ae2c487f8af68673c049d7db03eaae8fca8efecc88f6cf2c4ea9','PGS.json':'3006ae3c5789e123ade1a5c37f542e293a2e9119b1f41bac56790be4054a9d17','SHA256SUMS.txt':'aeb9062fda5f4c85a5b21743bf48baeb52dcd87672ba6aa9b9a0812d5c','build-info.json':'f664939e1d1955f45a24f8af75f81c7ee8b09e1765629a15dfe3d3a608aee243'}
+          expected={'PGS.v0.0.5.apk':'fa139a05d884ae2c487f8af68673c049d7db03eaae8fca8efecc88f6cf2c4ea9','PGS.json':'3006ae3c5789e123ade1a5c37f542e293a2e9119b1f41bac56790be4054a9d17','SHA256SUMS.txt':'aeb9062fda5f4c85a5b21743bf48baeb52dcd87672ba6aa9d4baa9b9a0812d5c','build-info.json':'f664939e1d1955f45a24f8af75f81c7ee8b09e1765629a15dfe3d3a608aee243'}
           for name,sha in expected.items():
-              assert assets[name]['state']=='uploaded' and assets[name]['digest']=='sha256:'+sha
+              assert assets[name]['state']=='uploaded' and assets[name]['digest']=='sha256:'+sha, name + ' asset identity mismatch'
           assert assets['PGS.v0.0.5.apk']['size']==185818917
           PY
           if [[ "$(jq -r .draft "$RUNNER_TEMP/release-before.json")" == true ]]; then

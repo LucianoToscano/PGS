@@ -8,9 +8,9 @@ SHA-256 and verifies extracted sources on every build. Newer upstream revisions
 were evaluated but failed the Android build; this pin is a tested starting point,
 not a statement that it is the newest or universally compatible version.
 
-Only `JNI_OnLoad`, the primary `pgs_native_api` and the preserved `pgs_native_api` alias are exported. Both factory names return the exact same ABI tables, so installed clients still work. Java uses RegisterNatives
+Only `JNI_OnLoad` and `pgs_native_api` are exported. Java uses RegisterNatives
 for `NativeCore.apiVersion()` and `policySelfcheck()`. Gameplay resolves the C
-function table documented in `pgs_native_api.h` (legacy header stays as a forwarding shim): version and size followed by
+function table documented in `pgs_native_api.h`: version and size followed by
 install, update, sample, and selftest pointers (40 bytes on both supported ABIs).
 Version 2 preserves those entries and adds `query_feature` (48 bytes total).
 Feature tables isolate throw grading, Adventure Sync, catch presentation,
@@ -60,7 +60,3 @@ final supplied dismissal Action. It adds no hooks and holds no objects beyond it
 synchronous calls. The summary/canvas fallback and transfer orchestration stay in
 the host. Run `python pgs/native_harness.py catch_completion` for its isolated
 production-library harness; device validation is tracked in `docs/NATIVE_MIGRATION.md`.
-
-## PGS hook-engine names
-
-The internal C++ hook engine exposes only the canonical source names `pgs_hook`, `pgs_unhook`, `pgs_instrument` and `pgs_hook_diag`. The private forwarding functions and source-only type/constant aliases have been retired. The standalone consumers and fixtures use matching declarations. No new ELF exports or hook targets were added. The diagnostic layout and padding arithmetic use `PgsHookDiag` and `PgsPaddingRanges`. The separate public compatibility factory remains available for previously built consumers; physical-device verification is separate.

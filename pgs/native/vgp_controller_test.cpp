@@ -1,5 +1,5 @@
 // Standalone production-table-injection harness for the feature-33 consolidated VGP controller. Never
-// linked into the app library. It dlopen()s the real libpgs-core.so, queries feature 33, then drives the
+// linked into the app library. It dlopen()s the real pgs .so, queries feature 33, then drives the
 // production controller with FAKE sibling tables (each matching its real ABI), a FAKE il2cpp GC + a FAKE
 // alive() so the orchestration can be exercised deterministically without a VM. The controller merely
 // forwards to these tables, so the fakes model only the decisions each sibling would return.

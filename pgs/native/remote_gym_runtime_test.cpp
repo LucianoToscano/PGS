@@ -14,7 +14,7 @@ pgs_gym::History shared_history;
 uintptr_t root_new(void *p,int){assert(p);auto h=next_root++;test_roots[h]=p;++allocations;return h;}
 void *root_get(uintptr_t h){return test_roots.at(h);}
 void root_free(uintptr_t h){assert(test_roots.erase(h)==1);++frees;}
-int sample(PgsRuntimeTransportSample *s){*s={};s->snapshot_fresh=fresh;s->snapshot_seq=100+(changing?samples:0);++samples;return 0;}
+int sample(PGSRuntimeTransportSample *s){*s={};s->snapshot_fresh=fresh;s->snapshot_seq=100+(changing?samples:0);++samples;return 0;}
 int get_string(uint32_t f,char *p,uint32_t cap,uint32_t *n){assert(f==12&&cap>config.size());*n=config.size();memcpy(p,config.data(),*n);return 0;}
 int get_bool(uint32_t f,int *v){assert(f==3||f==16);*v=f==3?active_flag:ready_flag;return 0;}
 int get_double(uint32_t f,double *v,int *has){assert(f<2);*has=coordinates;*v=f==0?latitude:longitude;return 0;}

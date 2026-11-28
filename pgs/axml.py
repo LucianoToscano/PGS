@@ -10,6 +10,7 @@ ANDROID_NS = 'http://schemas.android.com/apk/res/android'
 PROVIDER = 'dev.pgs.BootstrapProvider'
 LOG_ACTIVITY = 'dev.pgs.LogActivity'
 GOOGLE_AUTH_ACTIVITY = 'dev.pgs.GoogleAuthActivity'
+GOOGLE_AUTH_SCHEME = 'com.googleusercontent.apps.848232511240-dmrj3gba506c9svge2p9gq35p1fg654p'
 RESTART_ACTIVITY = 'dev.pgs.AccountRestartActivity'
 RESTART_PROCESS = ':pgs_restart'
 ATTR_IDS = {'name': 0x01010003, 'exported': 0x01010010, 'authorities': 0x01010018}
@@ -17,125 +18,57 @@ RESTART_ATTR_IDS = {'name': 0x01010003, 'exported': 0x01010010, 'process': 0x010
 
 
 def add_google_browser_callback(data):
-    """Append an unexported GoogleAuthActivity with an OAuth redirect intent-filter.
-
-    Receives the Google accounts OAuth redirect (custom scheme pgs://oauthredirect)
-    and hands it to GoogleBrowserAuth. Declared exported="false" with no process
-    override; a conflicting preexisting definition is rejected; an exactly-matching
-    safe definition is accepted and the manifest returned unchanged.
-    """
-    info = inspect_manifest(data)
-    if info['split']: raise ValueError('A base APK is required; split manifest supplied')
-    if info['applications'] != 1: raise ValueError('Expected exactly one application')
-    def qualified(name):
-        if not isinstance(name, str): return name
-        if name.startswith('.'): return info['package']+name
-        return info['package']+'.'+name if '.' not in name else name
-    header_size, chunks, pool, maps, resources = _parse(data)
-    existing = False
-    current = None
-    for _, event, name, attrs, depth in _walk(chunks, pool):
-        if event == 'start' and name == 'activity':
-            current = {'name': attrs.get((ANDROID_NS, 'name')),
-                       'exported': attrs.get((ANDROID_NS, 'exported')),
-                       'depth': depth, 'filter': False, 'filterAction': False, 'filterCategory': False, 'filterData': False}
-        elif event == 'start' and name == 'intent-filter' and current is not None:
-            current['filter'] = True
-        elif event == 'start' and name == 'action' and current is not None and current['filter']:
-            current['filterAction'] = True
-        elif event == 'start' and name == 'category' and current is not None and current['filter']:
-            current['filterCategory'] = True
-        elif event == 'start' and name == 'data' and current is not None and current['filter']:
-            current['filterData'] = True
-        if event != 'end' or name != 'activity' or current is None: continue
-        activity = current
-        current = None
-        if qualified(activity['name']) != GOOGLE_AUTH_ACTIVITY: continue
-        if (existing or activity['exported'] is not False or activity['depth'] != 2
-                or not activity['filter'] or not activity['filterAction']
-                or not activity['filterCategory'] or not activity['filterData']):
-            raise ValueError('Conflicting Google auth activity; it must be unexported with '
-                             + 'an intent-filter carrying action, category and data')
-        existing = True
-    if existing:
-        return data
-    ends = [i for i, event, name, _, depth in _walk(chunks, pool)
-            if event == 'end' and name == 'application' and depth == 1]
-    if len(ends) != 1: raise ValueError('Application end not found')
-    insert = ends[0]
+    """Opt-in prototype callback; preserve all existing components and filters."""
+    header, chunks, pool, maps, resources = _parse(data)
+    if any(a['name'] == GOOGLE_AUTH_ACTIVITY for a in inspect_manifest(data)['activities']):
+        raise ValueError('Google callback activity already exists')
     ns = pool.add(ANDROID_NS)
     prefix = pool.add('android')
-    activity_element = pool.add('activity')
-    activity_name = pool.add(GOOGLE_AUTH_ACTIVITY)
-    exported_value = pool.add('false')
-    names = {}
-    for key, resource_id in ATTR_IDS.items():
-        names[key] = next((i for i, value in enumerate(pool.strings)
-                           if value == key and i < len(resources) and resources[i] == resource_id), None)
-        if names[key] is None:
-            names[key] = len(pool.strings)
+    attr_names = {}
+    for key, resource_id in {'name': 0x01010003, 'exported': 0x01010010, 'scheme': 0x01010027}.items():
+        index = next((i for i, value in enumerate(pool.strings) if value == key and i < len(resources) and resources[i] == resource_id), None)
+        if index is None:
+            index = len(pool.strings)
             pool.strings.append(key)
-            resources.extend([0]*(names[key]+1-len(resources)))
-            resources[names[key]] = resource_id
-    line = _u32(chunks[insert][1], 8)
+            resources.extend([0] * (index + 1 - len(resources)))
+            resources[index] = resource_id
+        attr_names[key] = index
     def node(kind, payload):
-        return struct.pack('<HHIII', kind, 16, 16+len(payload), line, NO_INDEX)+payload
-    attributes = struct.pack('<IIIHBBI', ns, names['name'], activity_name, 8, 0, 3, activity_name)
-    attributes += struct.pack('<IIIHBBI', ns, names['exported'], NO_INDEX, 8, 0, 0x12, 0)
-    activity_start = node(0x102, struct.pack('<IIHHHHHH', NO_INDEX, activity_element, 20, 20, 2, 0, 0, 0)+attributes)
-    # intent-filter
-    filter_element = pool.add('intent-filter')
-    action_element = pool.add('action')
-    action_value = pool.add('android.intent.action.VIEW')
-    category_element = pool.add('category')
-    category_value = pool.add('android.intent.category.DEFAULT')
-    category_value2 = pool.add('android.intent.category.BROWSABLE')
-    data_element = pool.add('data')
-    data_scheme = pool.add('pgs')
-    filter_attrs = struct.pack('<IIIHBBI', ns, names['exported'], NO_INDEX, 8, 0, 0x12, 0)
-    filter_start = node(0x102, struct.pack('<IIHHHHHH', NO_INDEX, filter_element, 20, 20, 1, 0, 0, 0)+filter_attrs)
-    action_attrs = struct.pack('<IIIHBBI', ns, names['name'], action_value, 8, 0, 3, action_value)
-    action_start = node(0x102, struct.pack('<IIHHHHHH', NO_INDEX, action_element, 20, 20, 1, 0, 0, 0)+action_attrs)
-    action_end = node(0x103, struct.pack('<II', NO_INDEX, action_element))
-    cat_attrs1 = struct.pack('<IIIHBBI', ns, names['name'], category_value, 8, 0, 3, category_value)
-    cat_start1 = node(0x102, struct.pack('<IIHHHHHH', NO_INDEX, category_element, 20, 20, 1, 0, 0, 0)+cat_attrs1)
-    cat_end1 = node(0x103, struct.pack('<II', NO_INDEX, category_element))
-    cat_attrs2 = struct.pack('<IIIHBBI', ns, names['name'], category_value2, 8, 0, 3, category_value2)
-    cat_start2 = node(0x102, struct.pack('<IIHHHHHH', NO_INDEX, category_element, 20, 20, 1, 0, 0, 0)+cat_attrs2)
-    cat_end2 = node(0x103, struct.pack('<II', NO_INDEX, category_element))
-    data_attrs = struct.pack('<IIIHBBI', ns, pool.add('scheme'), data_scheme, 8, 0, 3, data_scheme)
-    data_start = node(0x102, struct.pack('<IIHHHHHH', NO_INDEX, data_element, 20, 20, 1, 0, 0, 0)+data_attrs)
-    data_end = node(0x103, struct.pack('<II', NO_INDEX, data_element))
-    filter_end = node(0x103, struct.pack('<II', NO_INDEX, filter_element))
-    activity_end = node(0x103, struct.pack('<II', NO_INDEX, activity_element))
-    additions = [activity_start, filter_start,
-                 action_start, action_end,
-                 cat_start1, cat_end1,
-                 cat_start2, cat_end2,
-                 data_start, data_end,
-                 filter_end, activity_end]
-    map_bytes = struct.pack('<HHI', 0x180, 8, 8+4*len(resources))+struct.pack('<'+'I'*len(resources), *resources)
+        return struct.pack('<HHIII', kind, 16, 16 + len(payload), 0, NO_INDEX) + payload
+    def start(tag, attrs=()):
+        encoded = b''
+        for key, value in attrs:
+            boolean = isinstance(value, bool)
+            index = NO_INDEX if boolean else pool.add(value)
+            encoded += struct.pack('<IIIHBBI', ns, attr_names[key], index, 8, 0, 0x12 if boolean else 3, int(value) if boolean else index)
+        return node(0x102, struct.pack('<IIHHHHHH', NO_INDEX, pool.add(tag), 20, 20, len(attrs), 0, 0, 0) + encoded)
+    def end(tag):
+        return node(0x103, struct.pack('<II', NO_INDEX, pool.add(tag)))
+    extra = [node(0x100, struct.pack('<II', prefix, ns)),
+             start('activity', [('name', GOOGLE_AUTH_ACTIVITY), ('exported', True)]), start('intent-filter')]
+    for tag, key, value in [('action', 'name', 'android.intent.action.VIEW'),
+                             ('category', 'name', 'android.intent.category.DEFAULT'),
+                             ('category', 'name', 'android.intent.category.BROWSABLE'),
+                             ('data', 'scheme', GOOGLE_AUTH_SCHEME)]:
+        extra.extend([start(tag, [(key, value)]), end(tag)])
+    extra.extend([end('intent-filter'), end('activity'), node(0x101, struct.pack('<II', prefix, ns))])
+    ends = [i for i, event, tag, _, depth in _walk(chunks, pool) if event == 'end' and tag == 'application' and depth == 1]
+    if len(ends) != 1:
+        raise ValueError('Application end not found')
+    resource_chunk = struct.pack('<HHI', 0x180, 8, 8 + 4 * len(resources)) + struct.pack('<' + 'I' * len(resources), *resources)
     output = []
     for i, (kind, raw) in enumerate(chunks):
-        if i == insert: output.extend(additions)
+        if i == ends[0]: output.extend(extra)
         if i == 0:
             output.append(pool.build())
-            if not maps: output.append(map_bytes)
-        elif kind == 0x180: output.append(map_bytes)
+            if not maps: output.append(resource_chunk)
+        elif kind == 0x180: output.append(resource_chunk)
         else: output.append(raw)
-    outer = bytearray(data[:header_size])
     body = b''.join(output)
-    struct.pack_into('<I', outer, 4, len(outer)+len(body))
-    result = bytes(outer)+body
+    outer = bytearray(data[:header])
+    struct.pack_into('<I', outer, 4, len(outer) + len(body))
+    result = bytes(outer) + body
     inspect_manifest(result)
-    _, verified_chunks, verified_pool, _, _ = _parse(result)
-    confirmed = False
-    for _, event, name, attrs, depth in _walk(verified_chunks, verified_pool):
-        if (event == 'start' and name == 'activity' and depth == 2
-                and qualified(attrs.get((ANDROID_NS, 'name'))) == GOOGLE_AUTH_ACTIVITY
-                and attrs.get((ANDROID_NS, 'exported')) is False):
-            confirmed = True
-    if not confirmed: raise ValueError('Google auth activity verification failed')
     return result
 
 
@@ -362,7 +295,7 @@ def patch_manifest(data):
         return info['package']+'.'+name if '.' not in name else name
     for provider in info['providers']:
         name = qualified(provider['name'])
-        if name in (PROVIDER, 'dev.pgs.BootstrapProvider') or any(a in str(provider['authorities'] or '').split(';') for a in (authority, info['package']+'.pgs.bootstrap')):
+        if name == PROVIDER or authority in str(provider['authorities'] or '').split(';'):
             raise ValueError('Bootstrap provider or authority already exists')
     header_size, chunks, pool, maps, resources = _parse(data)
     existing_log_activity = False

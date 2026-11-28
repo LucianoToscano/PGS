@@ -159,7 +159,7 @@ static void fake_gchandle_free(uintptr_t h) {
     }
 }
 
-/* Fake IL2CPP exports matching PgsMetaExports + PgsInteractionExtraExports */
+/* Fake IL2CPP exports matching PGS_MetaExports + PgsInteractionExtraExports */
 static void *fx_domain_get() { return g_domain_ptr; }
 static void *fx_domain_get_assemblies(void *domain, size_t *out_count) {
     if (domain == nullptr) {
@@ -377,7 +377,7 @@ static void fx_thread_detach(void *thread) {
     ++g_thread_detach_calls;
 }
 
-static int fx_seg_query(void *, const void *addr, uint64_t size, PgsMetaSegment *out) {
+static int fx_seg_query(void *, const void *addr, uint64_t size, PGS_MetaSegment *out) {
     memset(out, 0, sizeof(*out));
     uintptr_t a = reinterpret_cast<uintptr_t>(addr);
     uintptr_t base = reinterpret_cast<uintptr_t>(g_module_base);
@@ -417,7 +417,7 @@ static void *dummy_orig_btxu(void *self, const void *method) {
     return g_btxu_orig_return_value;
 }
 
-int pgs_hook(void *target, void *replacement, void **original) {
+extern "C" int pgs_hook(void *target, void *replacement, void **original) {
     ++g_total_hook_calls;
     for (uint32_t i = 0; i < g_hook_count; ++i) {
         if (g_hooks[i].target == target) {
@@ -432,7 +432,7 @@ int pgs_hook(void *target, void *replacement, void **original) {
     return DobbyHook(target,replacement,original);
 }
 
-int pgs_unhook(void *target) {++g_total_unhook_calls;return DobbyDestroy(target);}
+extern "C" int pgs_unhook(void *target) {++g_total_unhook_calls;return DobbyDestroy(target);}
 
 static void *find_installed_replacement(uint32_t target_id) {
     uintptr_t code = g_state.targets[target_id].code;
@@ -444,7 +444,7 @@ static void *find_installed_replacement(uint32_t target_id) {
     return nullptr;
 }
 
-static PgsMetaExports g_fx_meta_exports;
+static PGS_MetaExports g_fx_meta_exports;
 
 static void init_sparse_module_once() {
     if (g_module_base != nullptr) {
@@ -637,7 +637,7 @@ static void reset_fake_universe(PgsInteractionHostConfig *out_cfg) {
 
     memset(out_cfg, 0, sizeof(*out_cfg));
     out_cfg->binding.version = PGS_MD_CONFIG_VERSION;
-    out_cfg->binding.size = sizeof(PgsMetaBindConfig);
+    out_cfg->binding.size = sizeof(PGS_MetaBindConfig);
     out_cfg->binding.exports = &g_fx_meta_exports;
     out_cfg->binding.module_base = g_module_base;
     out_cfg->binding.module_size = g_module_size;
@@ -1277,7 +1277,7 @@ static void test_transport52_and_scheduler48_integration(const PgsInteractionHos
 
     /* 2. Reader 15 == true + Pulse 2 (trace request) via on_unity_pulse -> starts runtime observation */
     push_transport_snapshot(rt, 2, true, 0, 1);
-    PgsUnityPulse pulse {0, 1, 100, 0};
+    PGSUnityPulse pulse {0, 1, 100, 0};
     /* Note: if scheduler48 is not yet activated, valid(0) == 0 suppresses pulse; tick(100) runs directly */
     assert(api->tick(100) == PGS_IH_OK);
     assert(api->sample(&s) == PGS_IH_OK);
@@ -1292,7 +1292,7 @@ static void test_transport52_and_scheduler48_integration(const PgsInteractionHos
     assert(g_hook_count == 0);
 
     /* Verify Transport 52 received emitted events */
-    PgsRuntimeTransportSample rt_s {};
+    PGSRuntimeTransportSample rt_s {};
     rt_s.version = PGS_TRANSPORT_SAMPLE_VERSION;
     rt_s.size = sizeof(rt_s);
     assert(rt->sample(&rt_s) == PGS_TRANSPORT_OK);
@@ -1363,8 +1363,8 @@ int main(int argc,char **argv){
     assert(api->start(nullptr)==PGS_IH_ERR_BUSY);observer->observe_abort(token);assert(g_state.in_flight==0&&g_state.reserved_events==0);
     assert(g_total_unhook_calls==0);before=g_gc_new_calls;call0(self,nullptr);assert(g_gc_new_calls==before);
     prepared_run();assert(g_total_hook_calls==20); // immutable original reused, never re-hooked
-    g_fake_now_ms+=60001;PgsUnityPulse forged{1,1,(int32_t)gettid(),0};api->on_unity_pulse(nullptr,&forged);assert(g_state.status==PGS_IH_STATUS_OBSERVING);
-    PgsRuntimeTransportSample tr{};assert(actual_transport->sample(&tr)==0&&tr.events_emitted>10&&tr.events_dropped==0&&!tr.fault);
+    g_fake_now_ms+=60001;PGSUnityPulse forged{1,1,(int32_t)gettid(),0};api->on_unity_pulse(nullptr,&forged);assert(g_state.status==PGS_IH_STATUS_OBSERVING);
+    PGSRuntimeTransportSample tr{};assert(actual_transport->sample(&tr)==0&&tr.events_emitted>10&&tr.events_dropped==0&&!tr.fault);
     PgsInteractionHostEvent ev{};assert(api->take_event(&ev)==0); // transport mode has no backup ring
     api->stop("done");assert(roots()==0&&g_total_unhook_calls==0);
     puts("PASS interaction69 real-Dobby direct sites, API2 unwind, deferred-return root, permanent restart, owner/attachment, actual52; metadata prepared fixture only");

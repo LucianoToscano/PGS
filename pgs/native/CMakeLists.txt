@@ -194,7 +194,7 @@ target_compile_options(pgs_core PRIVATE
 
 set(PGS_VERSION_SCRIPT "${CMAKE_CURRENT_SOURCE_DIR}/pgs.map")
 target_link_options(pgs_core PRIVATE
-  "-Wl,--version-script=${PGS_VERSION_SCRIPT}" # export only JNI_OnLoad + pgs_native_api + legacy pgs_native_api
+  "-Wl,--version-script=${PGS_VERSION_SCRIPT}" # export only JNI_OnLoad + pgs_native_api
   "-Wl,--exclude-libs,ALL"                         # keep Dobby's static symbols unexported
   "-Wl,-z,defs"                                    # no undefined symbols at link time
   "-Wl,--gc-sections")
@@ -206,5 +206,4 @@ if(ANDROID_LOG_LIB)
   target_link_libraries(pgs_core PRIVATE ${ANDROID_LOG_LIB})
 endif()
 
-# Full-layout PGS build: Java bootstrap and JNI registration use the same new library identity.
 set_target_properties(pgs_core PROPERTIES OUTPUT_NAME "pgs-core")

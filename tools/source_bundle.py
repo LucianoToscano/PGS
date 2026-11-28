@@ -25,7 +25,7 @@ def validate(root,name):
     parts={part.lower() for part in path.parts}
     if path.is_absolute() or '..' in path.parts or '\\' in name or ':' in name:
         raise ValueError('Unsafe archive path: '+name)
-    if (path.suffix.lower() in BLOCKED or parts & DENIED or path.name=='build-retention.json' or
+    if (path.suffix.lower() in BLOCKED or parts & DENIED or name=='pgs/build-retention.json' or
         any(part.startswith(('.env','login-info-')) or any(word in part for word in
           ('handoff','credential','secret','private-key')) for part in parts)):
         raise ValueError('Private/generated source refused: '+name)

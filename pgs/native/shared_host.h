@@ -47,7 +47,7 @@ struct PgsSharedHostApi {
  int (*sample)(PgsSharedHostSample*);
  int (*next_event)(PgsSharedHostEvent*);
  const PgsSharedMetadataOutput *(*metadata)();
- void (*on_unity_pulse)(void*,const PgsUnityPulse*);
+ void (*on_unity_pulse)(void*,const PGSUnityPulse*);
 };
 static_assert(sizeof(PgsSharedHostApi)==72,"LP64 API");
 // One transfer executor, policy epoch and FIFO owner for catch and VGP hosts.

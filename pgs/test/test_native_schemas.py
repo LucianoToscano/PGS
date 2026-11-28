@@ -27,7 +27,6 @@ def body_digest(text):
     # Excludes only whole-line comments; all C++ tables, row comments, indices,
     # declarations, ordering, byte values and literal types remain covered.
     body = '\n'.join(line for line in text.splitlines() if not line.startswith('//')) + '\n'
-    body = body.replace('pgs_routes_schema', 'pgr_routes_schema').replace('pgs_shared_gift', 'pgr_shared_gift')
     return hashlib.sha256(body.encode()).hexdigest()
 
 
@@ -42,7 +41,7 @@ class NativeSchemaTests(unittest.TestCase):
         self.assertEqual((len(classes), len(fields), len(methods)), (15, 24, 18))
         self.assertEqual(list(indices.values()), list(range(15)))
         output = ROUTES.render(source)
-        self.assertEqual(body_digest(output), '62f8bec89eed5027cfdefd983fe0907a21cf342bd8f74c1d50d65a4716be00cd')
+        self.assertEqual(body_digest(output), 'c34e80c122356469b31633bafb4dbc1f10cceb8c57c413569d4fe26dbe3cee30')
         # read_text normalizes line endings so a CRLF checkout of the LF
         # header still matches; raw bytes would differ under core.autocrlf.
         self.assertEqual(output, ROUTES.OUTPUT.read_text(encoding='utf-8'))
@@ -51,7 +50,7 @@ class NativeSchemaTests(unittest.TestCase):
         values = GIFTS.parse(json.dumps(self.gifts))
         self.assertEqual((len(values['GIFT_TYPES']), len(values['GIFT_CODE'])), (11, 36))
         output = GIFTS.render(values)
-        self.assertEqual(body_digest(output), '5976a53f4fc5ad462a3c1dd420e085278ed27c8cbd5202577ce1d99fa01b4330')
+        self.assertEqual(body_digest(output), 'a46cdbaa271de2c1aa7a17629a8fe9e9afc2460457553b0ba9466dfede09ad52')
         self.assertEqual(output, GIFTS.OUTPUT.read_text(encoding='utf-8'))
 
     def test_production_inputs_are_neutral_json(self):

@@ -29,7 +29,7 @@ int emit(uint32_t op,const int64_t *n,uint32_t nc,const PgsRuntimeTransportStrin
  opcodes.push_back(op);if(op==44){assert(nc==1&&sc==1&&n[0]>=0&&n[0]<=1);}if(op==17){assert(!nc&&sc==1);assert(std::string(s[0].ptr,s[0].len)=="Pokestop spin");}if(op==19){assert(!nc&&sc==2);assert(std::string(s[0].ptr,s[0].len)=="quick-close");payloads.emplace_back(s[1].ptr,s[1].len);}return 0;
 }
 int get_bool(uint32_t index,int *out){assert(index==24);*out=allowed;return 0;}
-int transport_sample(PgsRuntimeTransportSample *p){*p={};p->snapshot_fresh=fresh;++sample_calls;p->snapshot_seq=race_always?sample_calls:(race_once&&sample_calls==1?1:2);return 0;}
+int transport_sample(PGSRuntimeTransportSample *p){*p={};p->snapshot_fresh=fresh;++sample_calls;p->snapshot_seq=race_always?sample_calls:(race_once&&sample_calls==1?1:2);return 0;}
 int valid(uint64_t g){return g==9;}
 int shared_sample(PgsSharedHostSample *p){*p={};p->hook_frames=7;return 0;}
 const PgsSpinCameraApi camera_table{1,sizeof(PgsSpinCameraApi),camera_install,camera_update,camera_tick,camera_read};
@@ -63,7 +63,7 @@ void scenario(unsigned mode){
  std::thread wrong([&]{assert(a->tick(c.owner_tid,4,0)==PGS_SPH_OFF_OWNER);});wrong.join();
  if(mode==4){quick_sample.cooldown_serial=2;quick_sample.request_serial=1;quick_sample.last_tid=c.owner_tid;quick_sample.last_gui_state=2;
   assert(a->tick(c.owner_tid,4,0)==0);unsigned cooldowns=0;for(auto op:opcodes)cooldowns+=op==17;assert(cooldowns==2);assert(!payloads.empty());
-  PgsUnityPulse pulse{9,5,int32_t(c.owner_tid),0};a->on_unity_pulse(nullptr,&pulse);assert(quick_opener==7);
+  PGSUnityPulse pulse{9,5,int32_t(c.owner_tid),0};a->on_unity_pulse(nullptr,&pulse);assert(quick_opener==7);
   // A 150ms opening stall must not revoke the pending spin's epoch.
   auto epoch=transport_epoch;usleep(150000);assert(a->tick(c.owner_tid,6,0)==0);
   assert(transport_epoch==epoch&&quick_allowed==1&&quick_lease>500);

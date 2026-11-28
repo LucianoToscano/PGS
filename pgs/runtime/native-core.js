@@ -16,9 +16,7 @@
   const library=open(Memory.allocUtf8String(root.PGSNativeCorePath),2);
   if(library.isNull())throw Error('Native core dlopen failed');
   trace('native-core: load complete');
-  // Prefer the PGS ABI factory. Existing native clients retain the old export.
-  let address=symbol(library,Memory.allocUtf8String('pgs_native_api'));
-  if(address.isNull())address=symbol(library,Memory.allocUtf8String('pgs_native_api'));
+  const address=symbol(library,Memory.allocUtf8String('pgs_native_api'));
   if(address.isNull())throw Error('Native core factory missing');
   trace('native-core: factory '+address);
   const get=new NativeFunction(address,'pointer',['uint']);

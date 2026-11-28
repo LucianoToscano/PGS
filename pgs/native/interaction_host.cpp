@@ -24,11 +24,6 @@
 #include "spin_host.h"
 #include "transfer_observers.h"
 
-#if defined(PGS_INTERACTION_HOST_STANDALONE_TEST) && (defined(__GNUC__) || defined(__clang__))
-int pgs_hook(void *target, void *replacement, void **original) __attribute__((weak));
-int pgs_unhook(void *target) __attribute__((weak));
-#endif
-
 namespace {
 
 #if defined(__GNUC__) || defined(__clang__)
@@ -45,17 +40,19 @@ extern "C" const void *pgs_shared_host_api(uint32_t version) PGS_WEAK;
 extern "C" const void *pgs_spin_host_api(uint32_t version) PGS_WEAK;
 extern "C" const void *pgs_catch_observers_api(uint32_t version) PGS_WEAK;
 extern "C" const void *pgs_transfer_observers_api(uint32_t version) PGS_WEAK;
+extern "C" int pgs_hook(void *target, void *replacement, void **original) PGS_WEAK;
+extern "C" int pgs_unhook(void *target) PGS_WEAK;
 
-static const PgsMetaApi *resolve_metadata_api() {
+static const PGS_MetaApi *resolve_metadata_api() {
     if (pgs_runtime_metadata_api != nullptr) {
-        return static_cast<const PgsMetaApi *>(
+        return static_cast<const PGS_MetaApi *>(
             pgs_runtime_metadata_api(PGS_MD_API_VERSION));
     }
 #if !defined(_WIN32) && defined(PGS_INTERACTION_HOST_STANDALONE_TEST)
     using Fn = const void *(*)(uint32_t);
     auto fn = reinterpret_cast<Fn>(dlsym(RTLD_DEFAULT, "pgs_runtime_metadata_api"));
     if (fn != nullptr) {
-        return static_cast<const PgsMetaApi *>(fn(PGS_MD_API_VERSION));
+        return static_cast<const PGS_MetaApi *>(fn(PGS_MD_API_VERSION));
     }
 #endif
     return nullptr;
@@ -411,7 +408,7 @@ using HookRet0Fn = void *(*)(void *, const void *);
 
 struct HostState {
     bool configured;
-    PgsMetaExports meta_exports;
+    PGS_MetaExports meta_exports;
     PgsInteractionHostConfig cfg;
 
     /* Scheduled metadata check state */
@@ -627,7 +624,7 @@ static void emit_transport_running(bool running) {
 }
 
 static PgsInteractionHostEvent *alloc_event_slot(uint32_t type, const char *channel) {
-    PgsRuntimeTransportSample sample{};const auto *rt=resolve_transport_api();
+    PGSRuntimeTransportSample sample{};const auto *rt=resolve_transport_api();
     const bool transported=rt&&rt->sample&&rt->sample(&sample)==PGS_TRANSPORT_OK;
     uint32_t idx = (g_state.queue_head + g_state.queue_count) % kEventQueueCapacity;
     if (!transported&&g_state.queue_count == kEventQueueCapacity) {
@@ -878,7 +875,7 @@ enum InspectResultKind {
 };
 
 static InspectResultKind run_inspect_locked(char *out_reason, size_t reason_cap) {
-    const PgsMetaApi *meta = resolve_metadata_api();
+    const PGS_MetaApi *meta = resolve_metadata_api();
     if (meta == nullptr) {
         copy_str(out_reason, reason_cap, "metadata-api-unavailable");
         return kInspectRetry;
@@ -916,7 +913,7 @@ static InspectResultKind run_inspect_locked(char *out_reason, size_t reason_cap)
     const void *debug_addr = g_state.cfg.debug_code_address != nullptr
                                  ? g_state.cfg.debug_code_address
                                  : g_state.meta_exports.debug_get_method_info;
-    PgsMetaCodeQuery dcq {};
+    PGS_MetaCodeQuery dcq {};
     dcq.version = PGS_MD_QUERY_VERSION;
     dcq.size = sizeof(dcq);
     dcq.address = debug_addr;
@@ -1100,7 +1097,7 @@ static InspectResultKind run_inspect_locked(char *out_reason, size_t reason_cap)
             if (kClasses[c].exact_lookup_only) {
                 ResolvedTargetState &ts = g_state.targets[PGS_IH_TGT_POKEBALL_BTXU];
                 ts.klass = klass;
-                PgsMetaMethodQuery mq {};
+                PGS_MetaMethodQuery mq {};
                 mq.version = PGS_MD_QUERY_VERSION;
                 mq.size = sizeof(mq);
                 mq.owner = klass;
@@ -1114,7 +1111,7 @@ static InspectResultKind run_inspect_locked(char *out_reason, size_t reason_cap)
                 mq.prologue = kBtxuWords;
                 mq.prologue_len = PGS_IH_BTXU_PROLOGUE_BYTES;
 
-                PgsMetaMethodResult mres {};
+                PGS_MetaMethodResult mres {};
                 int vrc = meta->validate_method(&mq, &mres);
                 if (vrc != PGS_MD_OK) {
                     if (vrc == PGS_MD_ERR_NOT_FOUND) {
@@ -1291,7 +1288,7 @@ static InspectResultKind run_inspect_locked(char *out_reason, size_t reason_cap)
                     uintptr_t m_rva = 0;
 
                     if (code_ptr != nullptr) {
-                        PgsMetaCodeQuery cq {};
+                        PGS_MetaCodeQuery cq {};
                         cq.version = PGS_MD_QUERY_VERSION;
                         cq.size = sizeof(cq);
                         cq.address = code_ptr;
@@ -2472,7 +2469,7 @@ static int api_configure(const PgsInteractionHostConfig *cfg) {
     }
 
     PgsInteractionHostConfig merged {};
-    PgsMetaExports local_exports {};
+    PGS_MetaExports local_exports {};
     if (cfg != nullptr) {
         merged = *cfg;
         if (cfg->binding.exports != nullptr) {
@@ -2495,7 +2492,7 @@ static int api_configure(const PgsInteractionHostConfig *cfg) {
         }
         local_exports = b.meta;
         merged.binding.version = PGS_MD_CONFIG_VERSION;
-        merged.binding.size = sizeof(PgsMetaBindConfig);
+        merged.binding.size = sizeof(PGS_MetaBindConfig);
         merged.binding.module_base = b.module_base;
         merged.binding.module_size = b.module_size;
         merged.extra.thread_current = b.runtime.thread_current;
@@ -2530,7 +2527,7 @@ static int api_configure(const PgsInteractionHostConfig *cfg) {
 #endif
     }
 
-    const PgsMetaApi *meta = resolve_metadata_api();
+    const PGS_MetaApi *meta = resolve_metadata_api();
     if (meta == nullptr || meta->bind == nullptr) {
         return PGS_IH_ERR_UNCONFIGURED;
     }
@@ -2547,7 +2544,7 @@ static int api_configure(const PgsInteractionHostConfig *cfg) {
 
     g_state.meta_exports = local_exports;
     merged.binding.version = PGS_MD_CONFIG_VERSION;
-    merged.binding.size = sizeof(PgsMetaBindConfig);
+    merged.binding.size = sizeof(PGS_MetaBindConfig);
     merged.binding.exports = &g_state.meta_exports;
 
     int brc = meta->bind(&merged.binding);
@@ -2714,7 +2711,7 @@ static int api_tick(int32_t current_tid) {
     return PGS_IH_OK;
 }
 
-static void api_on_unity_pulse(void *ctx, const PgsUnityPulse *pulse) {
+static void api_on_unity_pulse(void *ctx, const PGSUnityPulse *pulse) {
     (void)ctx;
     if (pulse == nullptr||pulse->tid<=0||pulse->tid!=current_thread_id()) {
         return;

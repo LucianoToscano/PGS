@@ -18,7 +18,7 @@
 // (query_feature(15,1)), installs against two real NOP-padded "methods" (so Dobby has
 // room) with the exact SetPokemonUI / DoUpdate ABIs, and drives capture with a fake managed
 // heap (classes, methods, fields, boxed value returns and System.String objects). No test
-// claims are made here; the coordinator builds and runs this against libpgs-core.so after
+// claims are made here; the coordinator builds and runs this against libpgs.so after
 // registering query_feature case 15.
 
 namespace {
@@ -568,7 +568,7 @@ int run_shared_mode(void *lib) {
 }  // namespace
 
 int main(int argc, char **argv) {
-  const char *so_path = argc > 1 ? argv[1] : "./libpgs-core.so";
+  const char *so_path = argc > 1 ? argv[1] : "./libpgs.so";
   void *lib = ::dlopen(so_path, RTLD_NOW | RTLD_LOCAL);
   if (!lib) {
     std::fprintf(stderr, "dlopen(%s) failed: %s\n", so_path, ::dlerror());

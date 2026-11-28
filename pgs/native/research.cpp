@@ -48,9 +48,9 @@ void *klass(void *o){require(o,"null object");return fn<void*(*)(void*)>(boot.ru
 std::string class_name(void *o){return fn<const char*(*)(void*)>(exp("class_get_name"))(klass(o));}
 void *cls(const char *ns,const char *name){
  static std::map<std::string,void*> cache;std::string key=std::string(ns)+"."+name;auto it=cache.find(key);if(it!=cache.end())return it->second;
- const auto *api=static_cast<const PgsMetaApi*>(pgs_runtime_metadata_api(1));require(api,"metadata API");
- PgsMetaClassQuery q{};q.version=1;q.size=sizeof(q);q.name_space=ns;q.name=name;q.canonical_match=PGS_MD_MATCH_EXACT;
- PgsMetaClassResult out{};require(api->resolve_class(&q,&out)==0,name);return cache[key]=const_cast<void*>(out.klass);
+ const auto *api=static_cast<const PGS_MetaApi*>(pgs_runtime_metadata_api(1));require(api,"metadata API");
+ PGS_MetaClassQuery q{};q.version=1;q.size=sizeof(q);q.name_space=ns;q.name=name;q.canonical_match=PGS_MD_MATCH_EXACT;
+ PGS_MetaClassResult out{};require(api->resolve_class(&q,&out)==0,name);return cache[key]=const_cast<void*>(out.klass);
 }
 std::string typename_of(void *type){char *p=fn<char*(*)(void*)>(boot.meta.type_get_name)(type);require(p,"type name");std::string s=p;fn<void(*)(void*)>(boot.meta.mem_free)(p);return s;}
 void *field_info(void *o,const char *name){void *f=fn<void*(*)(void*,const char*)>(boot.meta.class_get_field_from_name)(klass(o),name);require(f,name);require(!(fn<int(*)(void*)>(boot.meta.field_get_flags)(f)&0x10),name);return f;}
@@ -103,7 +103,7 @@ void status(const char *phase,const std::string &message,const std::string &temp
  event("{\"kind\":\"research\",\"phase\":"+quote(phase)+",\"template\":"+quote(templ)+",\"message\":"+quote(message)+"}");}
 // The snapshot config, read between two equal fresh samples. Invalid or stale means no actions.
 pgs_research::Config config(){
- pgs_research::Config c;auto tr=transport();if(!tr)return c;PgsRuntimeTransportSample a{},z{};
+ pgs_research::Config c;auto tr=transport();if(!tr)return c;PGSRuntimeTransportSample a{},z{};
  if(tr->sample(&a)||!a.snapshot_fresh||a.fault)return c;
  static char s[pgs_research::kMaxTemplates*(pgs_research::kMaxTemplateBytes+1)+16];uint32_t n=0;
  if(tr->get_string(13,s,sizeof(s),&n)||n>=sizeof(s))return c;

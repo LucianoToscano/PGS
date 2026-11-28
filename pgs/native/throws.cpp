@@ -319,7 +319,7 @@ static_assert(sizeof(PgsThrowApi) == 40, "throw API ABI");
 }  // namespace
 
 const void *pgs_throws_api(uint32_t version) {
-    static const PgsMapThrowApi map_api{2,sizeof(PgsMapThrowApi),pgs_map_throw_value};
+    static const PGS_MapThrowApi map_api{2,sizeof(PGS_MapThrowApi),pgs_map_throw_value};
     return version==1?static_cast<const void*>(&g_api):version==2?static_cast<const void*>(&map_api):nullptr;
 }
 

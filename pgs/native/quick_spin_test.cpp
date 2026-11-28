@@ -14,7 +14,7 @@
 // through the exported pgs_native_api v2 registry (query_feature(11,1)), installs
 // against four real NOP-padded "methods" (so Dobby has room), and drives the native
 // request/dismiss flow with a fake managed heap. No test claims are made here; the
-// coordinator builds and runs this against libpgs-core.so.
+// coordinator builds and runs this against libpgs.so.
 
 namespace {
 
@@ -195,7 +195,7 @@ PgsQuickSpinSample take_sample(const PgsQuickSpinApi *api) {
 }  // namespace
 
 int main(int argc, char **argv) {
-  const char *so_path = argc > 1 ? argv[1] : "./libpgs-core.so";
+  const char *so_path = argc > 1 ? argv[1] : "./libpgs.so";
   void *lib = ::dlopen(so_path, RTLD_NOW | RTLD_LOCAL);
   if (!lib) {
     std::fprintf(stderr, "dlopen(%s) failed: %s\n", so_path, ::dlerror());

@@ -111,7 +111,7 @@ extern "C" const void *pgs_quickball_host_api(uint32_t version){
 }
 static PgsSharedMetadataOutput md;
 static PgsSharedMetaExtraExports extra;
-static PgsMetaExports meta;
+static PGS_MetaExports meta;
 static PgsEncounterHostConfig config(){
  md.version=2;md.size=sizeof(md);md.optional[OPT_BERRIES]=PGS_SHARED_OPT_AVAILABLE;md.optional[OPT_ITEMS]=PGS_SHARED_OPT_AVAILABLE;
  md.classes[6]=&c_bool;md.methods[5]=&m_alive;

@@ -1,6 +1,6 @@
 # Continuidade das atualizações do PGS
 
-O PGS **não** muda de identificador. O arquivo se chama `PGS.apk`, mas o pacote e o nome instalado continuam sendo `com.nianticlabs.pokemongo` e **Pokémon GO**, respectivamente. Outras instalações e aplicativos existentes no aparelho não devem ser modificados.
+O PGS **não** muda de identificador. O arquivo se chama `PGS.apk`, mas o pacote e o nome instalado continuam sendo `com.nianticlabs.pokemongo` e **Pokémon GO**, respectivamente. PGBR, PGSharp e PGS não devem ser modificados.
 
 ## Identidade de assinatura definitiva
 
@@ -32,9 +32,9 @@ A versão v0.3.8-pgs.3 foi gerada e assinada em [GitHub Actions #45963966748](ht
 
 ## Proteção do caminho de release completo
 
-O código `pgs/release_apk.py` agora distingue o PGS pelo seu ledger `PGS_LAST_VERSION_CODE`: exige a variável `PGS_KEYSTORE` apontando para a chave existente, gera `PGS.apk` e rejeita o binário se o SHA-256 do certificado não for o definido para PGS. Se o ledger PGS não existir, o processo é **bloqueado**; não será gerado um instalador com identificação externa com a assinatura PGS.
+O código `pgs/release_apk.py` agora distingue o PGS pelo seu ledger `PGS_LAST_VERSION_CODE`: exige a variável `PGS_KEYSTORE` apontando para a chave existente, gera `PGS.apk` e rejeita o binário se o SHA-256 do certificado não for o definido para PGS. Se o ledger PGS não existir, o processo é **bloqueado**; não será gerado nenhum `PGS.apk` com a assinatura PGS.
 
-O workflow de publicação upstream e os workflows antigos de recompilação PGS estão explicitamente desativados nas fontes atuais. As implementações originais e os registros das compilações permanecem no histórico Git. Os pacotes assinados anteriormente não foram alterados.
+O workflow herdado `Android release (non-root and rooted)` está **explicitamente bloqueado no repositório PGS**, porque ainda é específico do PGS e não deve publicar pacotes com nomes ou segredos de assinatura misturados. O PGS usa agora o workflow próprio `.github/workflows/pgs-v0.0.1-release.yml`, validado para gerar APK completo com os controles Java recompilados, mantendo os demais arquivos do APK anterior por hash. O bloqueio não modifica nem elimina o instalador v0.3.8-pgs.3 já assinado.
 
 Os testes automatizados cobrem a recusa de chaves ausentes, de `versionCode` inválido e de certificados divergentes. **Eles não substituem a validação de uma build completa e sua instalação física.**
 
@@ -60,16 +60,6 @@ O release v0.0.1 permanece em **draft** até confirmação real de instalação 
 
 A reconstrução da `v0.0.2` usa **somente** o APK completo e assinado `v0.0.1`, confirmado com SHA-256 `23c0c4e9f9e87676038856e76b16613c91bf4bbd04a5c8cc9eb4f317d6926ef4` (Actions #45973576985). Atualiza o DEX PGS e o campo interno da versão, mantendo o restante dos arquivos do jogo integralmente igual, verificado por hashes de cada entrada. Nenhum download do APKMirror é efetuado. O novo `versionCode=2026111605` impede regressão; a próxima geração deverá usar código **2026111606 ou maior**.
 
-A compilação histórica v0.0.2 produziu um APK completo assinado e recibos de verificação, com certificado PGS permanente, package `com.nianticlabs.pokemongo` e jogo `0.439.0`. O release existente permanece em rascunho. A execução verificada é https://github.com/LucianoToscano/PGS/actions/runs/45980315394; o artefato de Actions tem prazo de expiração.
+O novo workflow `.github/workflows/pgs-v0.0.2-release.yml` produz `PGS v0.0.2.apk` e os recibos verificáveis, exigindo o certificado PGS permanente, package `com.nianticlabs.pokemongo` e jogo-base `0.439.0`. O fluxo antigo de `v0.0.1` fica arquivado e não pode recompilar automaticamente a versão antiga. O GitHub Release de `v0.0.2` é criado **somente como rascunho** até testes em aparelho real.
 
 O símbolo interno e o joystick são mantidos exatamente como na base anterior. A conta Ko-fi do projeto original foi removida das opções de patrocínio PGS, sem configurar uma conta substituta não autorizada.
-
-## Validação atual do candidato completo
-
-Os quatro workflows históricos de publicação/recompilação são bloqueios explícitos, somente leitura. Para validar a próxima candidata completa, abra [Validação PGS v0.0.3](https://github.com/LucianoToscano/PGS/actions/workflows/pgs-v0.0.3-candidate.yml), selecione `main` e confirme `authorized_input` somente se tiver autorização para usar a entrada de jogo verificada por hash e o certificado existente. A execução envia somente recibos, não um APK para download nem release público. O verificador exige nomes de artefatos PGS por padrão; conjuntos arquivados exigem `--legacy-names`. Package instalado, certificado e ledger de releases permanecem inalterados.
-
-### Configuração privada obrigatória
-
-A execução v0.0.3 [46047731065](https://github.com/LucianoToscano/PGS/actions/runs/46047731065) passou nas verificações de código, mas parou porque `PGS_INPUT_URL` estava vazio. Uma verificação antecipada agora informa os nomes das configurações ausentes antes de instalar as ferramentas. Ela nunca imprime valores secretos nem grava a chave de assinatura. Os aliases de assinatura existentes permanecem aceitos. Configure o segredo Actions `PGS_INPUT_URL` com um endereço HTTPS autorizado para a entrada original exata do jogo selecionada em `pgs/native/schema/game/current.json` (0.439.0). SHA-256 esperado da entrada: `c6d3c04c38ca2f2446957633b4fee8c93dcc9cebdbbaddc9cb9651722ef8f54f`. Não substitua por APK já modificado, não altere o hash para aceitar outro arquivo e não versione URL ou credenciais. O certificado existente permanece inalterado. O mantenedor precisa fornecer essa entrada autorizada; uma alteração de código não resolve um segredo vazio.
-
-A prévia independente de testes passa a usar `dev.pgs.preview`. É uma instalação Android separada do pacote anterior; os dados da prévia antiga não são migrados automaticamente e o pacote anterior não é desinstalado. Identidades do jogo e do instalador Root permanecem inalteradas. A limpeza reconhece recibos históricos de prévia. Os exemplos de configuração do feed usam o caminho PGS para novas implantações; o endpoint de produção permanece inalterado até verificação independente.

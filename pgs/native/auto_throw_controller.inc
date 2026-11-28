@@ -48,7 +48,7 @@ struct ManualThrowPermission {PgsCatchChanceOptions config;bool foreground=false
 ManualThrowPermission throw_permission() {
     ManualThrowPermission p;auto tr=transport();
     if(!tr||!tr->sample||!tr->get_string||!tr->get_bool)return p;
-    PgsRuntimeTransportSample a{},z{};int foreground=0;char raw[96]{};uint32_t n=0;
+    PGSRuntimeTransportSample a{},z{};int foreground=0;char raw[96]{};uint32_t n=0;
     if(tr->sample(&a)||!a.snapshot_fresh||a.fault)return p;
     if(tr->get_string(15,raw,sizeof(raw),&n)||n>=sizeof(raw)||tr->get_bool(3,&foreground))return p;
     raw[n]=0;

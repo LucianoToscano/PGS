@@ -12,23 +12,12 @@ import json
 
 ROOT = Path(__file__).resolve().parent
 
-def build_setting(primary, default=None, environ=None):
-    """Read a PGS build setting from the environment without side effects.
-
-    Values are selected without modifying the process environment, so existing
-    GitHub Actions secrets and SDK configurations are not rewritten. Empty
-    values behave as unset. These are NON-SECRET build options only.
-    """
-    env = os.environ if environ is None else environ
-    return env.get(primary) or default
-
-
 def source_fingerprints(root):
     paths = [*sorted((root/'src').rglob('*.java')), root/'VERSION', root/'AndroidManifest.xml']
     return {p.relative_to(root).as_posix(): hashlib.sha256(p.read_bytes()).hexdigest() for p in paths}
 
 def release_version(root):
-    version = build_setting('PGS_VERSION', (root/'VERSION').read_text(encoding='utf-8').strip())
+    version = os.environ.get('PGS_VERSION', (root/'VERSION').read_text(encoding='utf-8').strip())
     if not re.fullmatch(r'v?[0-9]+\.[0-9]+\.[0-9]+(?:-[A-Za-z0-9.-]+)?', version):
         raise ValueError('Invalid PGS version')
     return 'v' + version.removeprefix('v')
@@ -69,8 +58,8 @@ def feed_icon_assets():
     return icons
 
 SDK = Path(os.environ.get('ANDROID_HOME', str(Path(os.environ.get('LOCALAPPDATA', str(Path.home()))) / 'Android/Sdk')))
-TOOLS = SDK / 'build-tools' / build_setting('PGS_BUILD_TOOLS', '36.1.0')
-ANDROID = SDK / 'platforms' / build_setting('PGS_ANDROID_PLATFORM', 'android-36.1') / 'android.jar'
+TOOLS = SDK / 'build-tools' / os.environ.get('PGS_BUILD_TOOLS', '36.1.0')
+ANDROID = SDK / 'platforms' / os.environ.get('PGS_ANDROID_PLATFORM', 'android-36.1') / 'android.jar'
 BUILD = ROOT / 'build'
 
 def android_tool(name):
@@ -84,37 +73,17 @@ def android_tool(name):
 def run(*args):
     subprocess.run([str(a) for a in args], cwd=ROOT, check=True)
 
-def signing_setting(name, default=None, environ=None):
-    """Read a PGS signing variable from the environment without side effects."""
-    env = os.environ if environ is None else environ
-    return env.get('PGS_' + name) or default
-
-
 def signing_args():
-    configured = any(name in os.environ for name in ('PGS_KEYSTORE',))
-    selected = signing_setting('KEYSTORE')
-    if configured:
-        if not selected:
-            raise RuntimeError('Configured signing key path is empty')
-        key = Path(selected)
-        alias = signing_setting('KEY_ALIAS')
-        store = signing_setting('STORE_PASSWORD')
-        password = signing_setting('KEY_PASSWORD')
-        if not key.is_file() or not alias or not store or not password:
+    key = Path(os.environ.get('PGS_KEYSTORE', str(BUILD/'pgs-development.jks')))
+    if 'PGS_KEYSTORE' in os.environ:
+        if not key.is_file() or not os.environ.get('PGS_KEY_ALIAS') or not os.environ.get('PGS_STORE_PASSWORD') or not os.environ.get('PGS_KEY_PASSWORD'):
             raise RuntimeError('Configured signing key, alias or password environment variables are missing')
     else:
-        # Reuse an existing local development key; never substitute a release key.
-        legacy_key = BUILD / 'pgs-development.jks'
-        key = legacy_key if legacy_key.exists() else BUILD / 'pgs-development.jks'
-        alias = signing_setting('KEY_ALIAS', 'pgs' if legacy_key.exists() else 'pgs')
-        store = signing_setting('STORE_PASSWORD', 'android')
-        password = signing_setting('KEY_PASSWORD', 'android')
-    os.environ['PGS_STORE_PASSWORD'] = store
-    os.environ['PGS_KEY_PASSWORD'] = password
-    if not configured and not key.exists():
-        run('keytool','-genkeypair','-keystore',key,'-storepass:env','PGS_STORE_PASSWORD','-keypass:env','PGS_KEY_PASSWORD','-alias',alias,'-keyalg','RSA','-keysize','2048','-validity','3650','-dname','CN=PGS Local Development')
-    return ['--ks',key,'--ks-pass','env:PGS_STORE_PASSWORD','--key-pass','env:PGS_KEY_PASSWORD','--ks-key-alias',alias]
-
+        os.environ.setdefault('PGS_STORE_PASSWORD','android')
+        os.environ.setdefault('PGS_KEY_PASSWORD','android')
+        if not key.exists():
+            run('keytool','-genkeypair','-keystore',key,'-storepass:env','PGS_STORE_PASSWORD','-keypass:env','PGS_KEY_PASSWORD','-alias','pgs','-keyalg','RSA','-keysize','2048','-validity','3650','-dname','CN=PGS Local Development')
+    return ['--ks',key,'--ks-pass','env:PGS_STORE_PASSWORD','--key-pass','env:PGS_KEY_PASSWORD','--ks-key-alias',os.environ.get('PGS_KEY_ALIAS','pgs')]
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)

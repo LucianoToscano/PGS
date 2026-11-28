@@ -45,7 +45,7 @@ def gadget(abi,download=False):
             verify_elf(binary,abi); return binary,metadata
         raise RuntimeError('Cached Gadget checksum mismatch: '+str(binary))
     if not download:
-        raise RuntimeError('Missing official Gadget runtime. Run pgs.cmd with --download-runtime from normal PowerShell, or supply the verified cache. No download attempted.')
+        raise RuntimeError('Missing official Gadget runtime. Run nonroot.cmd with --download-runtime from normal PowerShell, or supply the verified cache. No download attempted.')
     with get(f'https://api.github.com/repos/frida/frida/releases/tags/{VERSION}') as response:
         release=json.load(response)
     asset=next((a for a in release['assets'] if a['name']==name),None)

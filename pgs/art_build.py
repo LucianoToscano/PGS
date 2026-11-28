@@ -69,9 +69,7 @@ def resolve_pinned_ndk(root, revision, explicit_env, fallback_name, environ=None
 
 
 def resolve_art_ndk(root, environ=None):
-    env = os.environ if environ is None else environ
-    key = 'PGS_ART_NDK'
-    return resolve_pinned_ndk(root, NDK_VERSION, key, 'android-ndk-r29', env)
+    return resolve_pinned_ndk(root, NDK_VERSION, 'PGS_ART_NDK', 'android-ndk-r29', environ)
 
 
 def run(args):
@@ -187,7 +185,7 @@ def build_all(root, abis, cache=None):
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--abi', action='append', choices=native_build.DEFAULT_ABIS)
-    parser.add_argument('--cache', type=Path, help='Pinned cache (PGS_NATIVE_DEPS; legacy name accepted)')
+    parser.add_argument('--cache', type=Path, help='Pinned dependency cache (or PGS_NATIVE_DEPS)')
     parser.add_argument('--check', action='store_true', help='Verify offline prerequisites without compiling')
     args = parser.parse_args()
     root = Path(__file__).resolve().parent

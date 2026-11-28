@@ -41,9 +41,9 @@ struct Root {
 void *klass(void *o){require(o,"null object");return fn<void*(*)(void*)>(boot.runtime.object_get_class)(o);}
 void *cls(const char *ns,const char *name){
  static std::map<std::string,void*> cache;std::string key=std::string(ns)+"."+name;auto it=cache.find(key);if(it!=cache.end())return it->second;
- const auto *api=static_cast<const PgsMetaApi*>(pgs_runtime_metadata_api(1));require(api,"metadata API");
- PgsMetaClassQuery q{};q.version=1;q.size=sizeof(q);q.name_space=ns;q.name=name;q.canonical_match=PGS_MD_MATCH_EXACT;
- PgsMetaClassResult out{};require(api->resolve_class(&q,&out)==0,name);return cache[key]=const_cast<void*>(out.klass);
+ const auto *api=static_cast<const PGS_MetaApi*>(pgs_runtime_metadata_api(1));require(api,"metadata API");
+ PGS_MetaClassQuery q{};q.version=1;q.size=sizeof(q);q.name_space=ns;q.name=name;q.canonical_match=PGS_MD_MATCH_EXACT;
+ PGS_MetaClassResult out{};require(api->resolve_class(&q,&out)==0,name);return cache[key]=const_cast<void*>(out.klass);
 }
 std::string typename_of(void *type){char *p=fn<char*(*)(void*)>(boot.meta.type_get_name)(type);require(p,"type name");std::string s=p;fn<void(*)(void*)>(boot.meta.mem_free)(p);return s;}
 void *field_info(void *k,const char *name){void *f=fn<void*(*)(void*,const char*)>(boot.meta.class_get_field_from_name)(k,name);require(f,name);require(!(fn<int(*)(void*)>(boot.meta.field_get_flags)(f)&0x10),name);return f;}
@@ -68,7 +68,7 @@ const PgsRuntimeTransportApi *transport(){return static_cast<const PgsRuntimeTra
 void event(const std::string &json){auto tr=transport();if(!tr||!tr->emit)return;PgsRuntimeTransportString s[]={{"route-gift",10},{json.c_str(),uint32_t(json.size())}};tr->emit(19,nullptr,0,s,2);}
 void status(const char *phase,const std::string &message){event(std::string("{\"phase\":\"")+phase+"\",\"message\":\""+message+"\"}");}
 bool configured(){
- auto tr=transport();if(!tr||!tr->sample||!tr->get_string)return false;PgsRuntimeTransportSample a{};
+ auto tr=transport();if(!tr||!tr->sample||!tr->get_string)return false;PGSRuntimeTransportSample a{};
  if(tr->sample(&a)||!a.snapshot_fresh||a.fault)return false;
  char s[16];uint32_t n=0;bool on=false;
  return tr->get_string(24,s,sizeof(s),&n)==0&&n<sizeof(s)&&pgs_route_gift::parse_config(s,n,on)&&on;
@@ -89,10 +89,10 @@ void hook_exit(void *self,const void *m){
  reinterpret_cast<Exit>(orig_exit.load(std::memory_order_acquire))(self,m);
 }
 void *validate_hook(void *k,const char *name,int params,uint64_t rva,const uint8_t *bytes){
- const auto *api=static_cast<const PgsMetaApi*>(pgs_runtime_metadata_api(1));require(api&&api->validate_method,"metadata validate");
- PgsMetaMethodQuery q{};q.version=1;q.size=sizeof(q);q.owner=k;q.name=name;q.return_type="System.Void";q.return_match=PGS_MD_MATCH_EXACT;
+ const auto *api=static_cast<const PGS_MetaApi*>(pgs_runtime_metadata_api(1));require(api&&api->validate_method,"metadata validate");
+ PGS_MetaMethodQuery q{};q.version=1;q.size=sizeof(q);q.owner=k;q.name=name;q.return_type="System.Void";q.return_match=PGS_MD_MATCH_EXACT;
  q.param_count=params;q.expected_code=static_cast<const char*>(boot.module_base)+rva;q.prologue=bytes;q.prologue_len=24;
- PgsMetaMethodResult r{};require(api->validate_method(&q,&r)==0&&r.code,name);return const_cast<void*>(r.code);
+ PGS_MetaMethodResult r{};require(api->validate_method(&q,&r)==0&&r.code,name);return const_cast<void*>(r.code);
 }
 void install(){
  void *state=cls("Niantic.Holoholo.NpcEncounter","NpcEncounterState");

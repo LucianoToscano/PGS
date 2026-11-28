@@ -212,7 +212,7 @@ SkipPolicy parse_policy(const char *s,uint32_t n){
  return {};
 }
 SkipPolicy configured(){
- auto tr=transport();char s[16];uint32_t n=0;PgsRuntimeTransportSample a{};
+ auto tr=transport();char s[16];uint32_t n=0;PGSRuntimeTransportSample a{};
  if(!tr||tr->sample(&a)||!a.snapshot_fresh||a.fault)return {};
  return tr->get_string(17,s,sizeof(s),&n)==0?parse_policy(s,n):SkipPolicy{};
 }
@@ -908,9 +908,9 @@ void finish_dialog(){
  catch(...){status("error","Rocket dialogue could not be completed");}
 }
 
-void *class_of(const PgsMetaApi *api,const char *ns,const char *name){
- PgsMetaClassQuery q{};q.version=1;q.size=sizeof(q);q.name_space=ns;q.name=name;q.canonical_match=PGS_MD_MATCH_EXACT;
- PgsMetaClassResult r{};require(api->resolve_class(&q,&r)==0,name);return const_cast<void*>(r.klass);
+void *class_of(const PGS_MetaApi *api,const char *ns,const char *name){
+ PGS_MetaClassQuery q{};q.version=1;q.size=sizeof(q);q.name_space=ns;q.name=name;q.canonical_match=PGS_MD_MATCH_EXACT;
+ PGS_MetaClassResult r{};require(api->resolve_class(&q,&r)==0,name);return const_cast<void*>(r.klass);
 }
 // The instance field of k whose type is exactly type_name; there must be one.
 void *field_of_type(void *k,const char *type_name){
@@ -924,13 +924,13 @@ void *field_of_type(void *k,const char *type_name){
 }
 struct Target {Kind kind;void *owner;const char *name;unsigned params;uint64_t rva;const uint8_t *prologue;void *replacement;bool returns_promise;const char *return_prefix=nullptr;};
 
-bool hook(const PgsMetaApi *api,const Target &t,std::string &why){
- PgsMetaMethodQuery q{};q.version=1;q.size=sizeof(q);q.owner=t.owner;q.name=t.name;
+bool hook(const PGS_MetaApi *api,const Target &t,std::string &why){
+ PGS_MetaMethodQuery q{};q.version=1;q.size=sizeof(q);q.owner=t.owner;q.name=t.name;
  if(t.return_prefix){q.return_type=t.return_prefix;q.return_match=PGS_MD_MATCH_PREFIX;}
  else{q.return_type=t.returns_promise?"Niantic.Promises.IPromise":"System.Void";q.return_match=PGS_MD_MATCH_EXACT;}
  q.param_count=t.params;
  q.expected_code=static_cast<const char*>(boot.module_base)+t.rva;q.prologue=t.prologue;q.prologue_len=24;
- PgsMetaMethodResult r{};const int rc=api->validate_method(&q,&r);
+ PGS_MetaMethodResult r{};const int rc=api->validate_method(&q,&r);
  if(rc!=0||!r.code){why+=std::string(why.empty()?"":", ")+kNames[t.kind]+" (code "+std::to_string(rc)+")";return false;}
  void *o=nullptr;const int hr=pgs_hook(const_cast<void*>(r.code),t.replacement,&o);
  if(hr!=0||!o){why+=std::string(why.empty()?"":", ")+kNames[t.kind]+" (hook)";return false;}
@@ -938,7 +938,7 @@ bool hook(const PgsMetaApi *api,const Target &t,std::string &why){
 }
 
 void install(){
- const auto *api=static_cast<const PgsMetaApi*>(pgs_runtime_metadata_api(1));require(api&&api->resolve_class&&api->validate_method,"metadata API");
+ const auto *api=static_cast<const PGS_MetaApi*>(pgs_runtime_metadata_api(1));require(api&&api->resolve_class&&api->validate_method,"metadata API");
  require(boot.module_base,"il2cpp module");
  promise_class=class_of(api,"Niantic.Promises","Promise");
  auto method=[&](void *k,const char *name,int n){void *m=fn<void*(*)(void*,const char*,int)>(boot.meta.class_get_method_from_name)(k,name,n);require(m,name);return m;};
@@ -1015,9 +1015,9 @@ void install(){
   // ShowPokemonInfo is validated like a hook target; a prologue mismatch is accepted only when it is
   // the Quick Catch bridge's own hook at exactly that address.
   void *show_code=const_cast<char*>(static_cast<const char*>(boot.module_base))+PGS_GAME_CUTSCENE_SKIP_CPP_SHOW_INFO_RVA;
-  PgsMetaMethodQuery q{};q.version=1;q.size=sizeof(q);q.owner=info_service;q.name="ShowPokemonInfo";
+  PGS_MetaMethodQuery q{};q.version=1;q.size=sizeof(q);q.owner=info_service;q.name="ShowPokemonInfo";
   q.return_type="System.Void";q.return_match=PGS_MD_MATCH_EXACT;q.param_count=10;q.expected_code=show_code;q.prologue=p_show_info;q.prologue_len=24;
-  PgsMetaMethodResult r{};const int rc=api->validate_method(&q,&r);
+  PGS_MetaMethodResult r{};const int rc=api->validate_method(&q,&r);
   const bool shared=rc==PGS_MD_ERR_PROLOGUE&&pgs_catch_presentation_attached(show_code);
   if(rc!=0&&!shared)missing+=std::string(missing.empty()?"":", ")+"pokemon-info (code "+std::to_string(rc)+")";
   else if(const int br=pgs_catch_presentation_set_bypass(bypass_show_info,show_code))missing+=std::string(missing.empty()?"":", ")+"pokemon-info (bridge "+std::to_string(br)+")";
@@ -1197,10 +1197,10 @@ void install(){
   class_name_fn=exp("class_get_name");class_namespace_fn=exp("class_get_namespace");
   static const uint8_t p_gui[]=PGS_GAME_CUTSCENE_SKIP_CPP_GUI_OPEN_FINGERPRINT;
   static_assert(sizeof(p_gui)==24,"24-byte prologue");
-  PgsMetaMethodQuery q{};q.version=1;q.size=sizeof(q);q.owner=class_of(api,"Niantic.Holoholo.NUI","GuiController");q.name="Open";
+  PGS_MetaMethodQuery q{};q.version=1;q.size=sizeof(q);q.owner=class_of(api,"Niantic.Holoholo.NUI","GuiController");q.name="Open";
   q.return_type="System.Void";q.return_match=PGS_MD_MATCH_EXACT;q.param_count=0;
   q.expected_code=static_cast<const char*>(boot.module_base)+PGS_GAME_CUTSCENE_SKIP_CPP_GUI_OPEN_RVA;q.prologue=p_gui;q.prologue_len=24;
-  PgsMetaMethodResult r{};const int rc=api->validate_method(&q,&r);
+  PGS_MetaMethodResult r{};const int rc=api->validate_method(&q,&r);
   void *o=nullptr;
   if(rc!=0||!r.code)status("warning","Screen trace unavailable (code "+std::to_string(rc)+")");
   else if(pgs_hook(const_cast<void*>(r.code),reinterpret_cast<void*>(hook_gui_open),&o)!=0||!o)status("warning","Screen trace unavailable (hook)");
@@ -1223,7 +1223,7 @@ void mark_safety_seen(){
  if(!safety_resolved){
   safety_resolved=true;
   try{
-   const auto *api=static_cast<const PgsMetaApi*>(pgs_runtime_metadata_api(1));require(api&&api->resolve_class,"metadata API");
+   const auto *api=static_cast<const PGS_MetaApi*>(pgs_runtime_metadata_api(1));require(api&&api->resolve_class,"metadata API");
    auto method=[&](void *k,const char *name,int n){void *m=fn<void*(*)(void*,const char*,int)>(boot.meta.class_get_method_from_name)(k,name,n);require(m,name);return m;};
    safety_set=method(class_of(api,"Niantic.Holoholo.PersistentData","Preferences"),"set_DayLastSeenAwarenessSafetyPopUp",1);
    safety_today=method(class_of(api,"Niantic.Holoholo","TimeUtil"),"GetUniqueIndexForToday",0);

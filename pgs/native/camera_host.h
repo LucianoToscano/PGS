@@ -98,7 +98,7 @@ typedef struct PgsCameraHostConfig {
   int32_t expected_layer;
   const void *module_base;
   uint64_t module_size;
-  const PgsMetaExports *meta_exports;
+  const PGS_MetaExports *meta_exports;
   const PgsCameraMetaExtra *meta_extra;
   pgs_meta_seg_fn seg_query;
   void *seg_ctx;
@@ -195,8 +195,8 @@ typedef struct PgsCameraHostApi {
   int (*next_event)(PgsCameraHostEvent *out_event);
   int (*stop)(const char *reason);
   int (*sample)(PgsCameraHostSample *out_sample);
-  void (*on_unity_begin)(void *ctx, const PgsUnityPulse *pulse);
-  void (*on_unity_end)(void *ctx, const PgsUnityPulse *pulse);
+  void (*on_unity_begin)(void *ctx, const PGSUnityPulse *pulse);
+  void (*on_unity_end)(void *ctx, const PGSUnityPulse *pulse);
   void (*bind_core_handle)(void *lib_handle);
 } PgsCameraHostApi;
 

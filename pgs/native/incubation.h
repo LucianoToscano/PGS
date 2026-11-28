@@ -1,7 +1,7 @@
 #pragma once
 #include <stdint.h>
 
-// PGS native module: unlimited-incubator auto-incubation (feature id 9).
+// PGS native migration: unlimited-incubator auto-incubation (feature id 9).
 //
 // Full port of runtime/features/incubation.js. The JS factory only ever drives the
 // single permanent "unlimited" incubator, confirms every assignment through the live
@@ -66,7 +66,7 @@ enum {
     PGS_INC_STATUS_NO_FREE       = 8,  /* "Unlimited incubator in use or unavailable" */
     PGS_INC_STATUS_NO_EGGS       = 9,  /* "No eggs waiting" */
     PGS_INC_STATUS_STARTING      = 10, /* "Starting <distance> km egg" */
-    PGS_INC_STATUS_ERROR_RETRY   = 11,  /* "Incubation unavailable; toggle off/on to retry" */
+    PGS_INC_STATUS_ERROR_RETRY   = 11  /* "Incubation unavailable; toggle off/on to retry" */
 };
 
 // Step of the most recent fail-closed error (sample.fault_step), so a log shows where it stopped.
@@ -79,7 +79,7 @@ enum {
     PGS_INC_FAULT_EGGS           = 5,  /* item bag / egg list read */
     PGS_INC_FAULT_EGG_LIMIT      = 6,  /* more Pokemon and eggs than MAX_EGGS */
     PGS_INC_FAULT_SERVICE        = 7,  /* incubator service resolve */
-    PGS_INC_FAULT_REQUEST        = 8,   /* PutEggInIncubator call or its result */
+    PGS_INC_FAULT_REQUEST        = 8   /* PutEggInIncubator call or its result */
 };
 
 // Status codes returned by every table function. 0 == success.
@@ -88,7 +88,7 @@ enum {
     PGS_INC_ERR_NULL_ARG  = 1,  /* required pointer argument was null */
     PGS_INC_ERR_BAD_CONFIG= 2,  /* config header/size/pointer/literal invalid */
     PGS_INC_ERR_ALREADY_BOUND = 3, /* install() called again with a different config */
-    PGS_INC_ERR_NOT_INSTALLED = 6,  /* operation needs a successful install() */
+    PGS_INC_ERR_NOT_INSTALLED = 6  /* operation needs a successful install() */
 };
 
 // Install-time configuration, packed by the JS adapter after its metadata validation.

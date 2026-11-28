@@ -307,7 +307,7 @@ final class FeedTheme {
             ? android.R.style.Theme_Material_Dialog_Alert : android.R.style.Theme_Material_Light_Dialog_Alert);
     }
     /**
-     * UI: a dialog is drawn once before its OnShowListener restyles it, so for a frame the stock Material
+     * PGSX: a dialog is drawn once before its OnShowListener restyles it, so for a frame the stock Material
      * dialog showed through. Every dialog built on this context (its layout is inflated through it) holds back that
      * first frame until the show listener has run; at most a few frames are held, so a dialog is never left blank.
      */

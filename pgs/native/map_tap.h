@@ -47,7 +47,7 @@ extern "C" {
 
 static_assert(sizeof(void *) == 8, "MapTap native ABI requires LP64");
 
-enum PgsMapTapFeatureInfo {
+enum PGS_MapTapFeatureInfo {
   PGS_MAP_TAP_FEATURE_ID = 13,
   PGS_MAP_TAP_API_VERSION = 1,
   PGS_MAP_TAP_CONFIG_VERSION = 1,
@@ -57,7 +57,7 @@ enum PgsMapTapFeatureInfo {
 };
 
 // install()/update()/drain()/sample()/disable() status codes.
-enum PgsMapTapStatus {
+enum PGS_MapTapStatus {
   PGS_MAP_TAP_OK = 0,
   PGS_MAP_TAP_EMPTY = 1,  // drain(): no event was available (not an error)
   PGS_MAP_TAP_ERR_INVALID_ARG = -1,
@@ -73,8 +73,8 @@ enum PgsMapTapStatus {
   PGS_MAP_TAP_ERR_BAD_MODE = -11
 };
 
-// Pull-only runtime error codes surfaced through PgsMapTapSample.last_error_code.
-enum PgsMapTapRuntimeError {
+// Pull-only runtime error codes surfaced through PGS_MapTapSample.last_error_code.
+enum PGS_MapTapRuntimeError {
   PGS_MAP_TAP_RUNTIME_NONE = 0,
   PGS_MAP_TAP_RUNTIME_POSITION_NONFINITE = 1,
   PGS_MAP_TAP_RUNTIME_LOCATION_NONFINITE = 2,
@@ -90,7 +90,7 @@ enum PgsMapTapRuntimeError {
 };
 
 // Fixed LP64 layout: 8-byte header + 12 pointers = 104 bytes.
-struct PgsMapTapConfig {
+struct PGS_MapTapConfig {
   uint32_t version;
   uint32_t size;
 
@@ -115,12 +115,12 @@ struct PgsMapTapConfig {
   void *latlng_class;        // LatLng   (boxed GetWorldLocation return must be exactly this class)
 };
 
-static_assert(sizeof(PgsMapTapConfig) == 104,
-              "PgsMapTapConfig must remain 104 bytes on LP64");
+static_assert(sizeof(PGS_MapTapConfig) == 104,
+              "PGS_MapTapConfig must remain 104 bytes on LP64");
 
 // Fixed LP64 layout: 48 bytes. One captured tap coordinate. Plain POD: a queued event
 // carries no managed reference, so drain() copies it out without any GC interaction.
-struct PgsMapTapEvent {
+struct PGS_MapTapEvent {
   int32_t mode;       // 1..3, the policy mode active when the tap was captured
   uint32_t reserved;  // zero
   uint64_t epoch;     // full policy epoch; never truncate JS safe integers
@@ -130,11 +130,11 @@ struct PgsMapTapEvent {
   uint64_t boottime_ms; // capture time, preserving double-tap timing across queued delivery
 };
 
-static_assert(sizeof(PgsMapTapEvent) == 48,
-              "PgsMapTapEvent must remain 48 bytes on LP64");
+static_assert(sizeof(PGS_MapTapEvent) == 48,
+              "PGS_MapTapEvent must remain 48 bytes on LP64");
 
 // Fixed LP64 layout: 64 bytes. Pull-only telemetry; the native layer never calls JS.
-struct PgsMapTapSample {
+struct PGS_MapTapSample {
   uint32_t version;
   uint32_t size;
   uint32_t owned_root_count;  // GC roots in flight right now (finish guard)
@@ -143,33 +143,33 @@ struct PgsMapTapSample {
   uint32_t dropped_serial;    // captures abandoned (stale policy / invalid data)
   uint32_t error_serial;      // runtime errors observed
   uint32_t overflow_serial;   // fail-closed queue overflows
-  uint32_t last_error_code;   // PgsMapTapRuntimeError
+  uint32_t last_error_code;   // PGS_MapTapRuntimeError
   uint32_t fault;             // 1 once latched (feature reports map-tap-unavailable)
   uint64_t last_tid;          // owner tid of the last event / error
   uint64_t active_generation; // non-zero while a capture scope is live
   uint64_t reserved;
 };
 
-static_assert(sizeof(PgsMapTapSample) == 64,
-              "PgsMapTapSample must remain 64 bytes on LP64");
+static_assert(sizeof(PGS_MapTapSample) == 64,
+              "PGS_MapTapSample must remain 64 bytes on LP64");
 
 // Fixed LP64 layout: 8-byte header + 5 function pointers = 48 bytes.
-struct PgsMapTapApi {
+struct PGS_MapTapApi {
   uint32_t version;
   uint32_t size;
-  int (*install)(const PgsMapTapConfig *config);
+  int (*install)(const PGS_MapTapConfig *config);
   int (*update)(int enabled,
                 uint64_t remaining_lease_ms,
                 uint64_t proven_tid,
                 uint64_t epoch,
                 int mode);
-  int (*drain)(PgsMapTapEvent *out_event);  // pops ONE event; PGS_MAP_TAP_EMPTY when none
-  int (*sample)(PgsMapTapSample *out_sample);
+  int (*drain)(PGS_MapTapEvent *out_event);  // pops ONE event; PGS_MAP_TAP_EMPTY when none
+  int (*sample)(PGS_MapTapSample *out_sample);
   int (*disable)(void);
 };
 
-static_assert(sizeof(PgsMapTapApi) == 48,
-              "PgsMapTapApi must remain a 48-byte version-1 table");
+static_assert(sizeof(PGS_MapTapApi) == 48,
+              "PGS_MapTapApi must remain a 48-byte version-1 table");
 
 // Standard feature getter. Returns a pointer to the static const 48-byte table when
 // `version` == 1, otherwise NULL. Registered by the dispatcher as case 13.

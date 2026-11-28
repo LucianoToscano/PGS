@@ -790,24 +790,24 @@ bool install_hook_group(const HookEntry *entries, size_t count) {
 
 bool install_gym_next(){
  if(g_gym_next_ready)return true;
- const auto *api=api_table<PgsMetaApi>(pgs_runtime_metadata_api(1));
+ const auto *api=api_table<PGS_MetaApi>(pgs_runtime_metadata_api(1));
  if(!api||!api->resolve_class||!api->validate_method)return false;
  const auto *boot=api_table<PgsBootApi>(pgs_runtime_bootstrap_api(1));PgsBootBinding binding{};
  if(!boot||!boot->snapshot||boot->snapshot(&binding)!=0||!binding.module_base)return false;
  auto klass=[&](const char *ns,const char *name)->void*{
-  PgsMetaClassQuery q{};q.version=1;q.size=sizeof(q);q.name_space=ns;q.name=name;q.canonical_match=PGS_MD_MATCH_EXACT;
-  PgsMetaClassResult r{};return api->resolve_class(&q,&r)==0?const_cast<void*>(r.klass):nullptr;};
+  PGS_MetaClassQuery q{};q.version=1;q.size=sizeof(q);q.name_space=ns;q.name=name;q.canonical_match=PGS_MD_MATCH_EXACT;
+  PGS_MetaClassResult r{};return api->resolve_class(&q,&r)==0?const_cast<void*>(r.klass):nullptr;};
  void *k=klass("Niantic.Holoholo.Gym.Battle","GymBattleContinueGuiController");
  void *base=klass("Niantic.Holoholo.NUI","GuiController");if(!k||!base)return false;
  auto method=[&](void *owner,const char *name,const char *ret,const char *p0=nullptr,const char *p1=nullptr){
-  PgsMetaMethodQuery q{};q.version=1;q.size=sizeof(q);q.owner=owner;q.name=name;q.return_type=ret;
+  PGS_MetaMethodQuery q{};q.version=1;q.size=sizeof(q);q.owner=owner;q.name=name;q.return_type=ret;
   q.param_count=p1?2:p0?1:0;q.param_types[0]=p0;q.param_types[1]=p1;
   q.return_match=q.param_match[0]=q.param_match[1]=PGS_MD_MATCH_EXACT;
   if(owner==k&&std::strcmp(name,"HandleDismissComplete")==0){static const uint8_t bytes[]=PGS_GAME_COMBAT_HOST_CPP_BYTES_FINGERPRINT;q.expected_code=static_cast<const char*>(binding.module_base)+PGS_GAME_COMBAT_HOST_CPP_GYMBATTLECONTINUEGUICONTROLLER_HANDLEDISMISSCOMPLETE_RVA;q.prologue=bytes;q.prologue_len=sizeof(bytes);}
   if(owner==k&&std::strcmp(name,"Initialize")==0){static const uint8_t bytes[]=PGS_GAME_COMBAT_HOST_CPP_BYTES_FINGERPRINT_2;q.expected_code=static_cast<const char*>(binding.module_base)+PGS_GAME_COMBAT_HOST_CPP_GYMBATTLECONTINUEGUICONTROLLER_INITIALIZE_RVA;q.prologue=bytes;q.prologue_len=sizeof(bytes);}
   if(owner==k&&std::strcmp(name,"LeaveBattle")==0){static const uint8_t bytes[]=PGS_GAME_COMBAT_HOST_CPP_BYTES_FINGERPRINT_3;q.expected_code=static_cast<const char*>(binding.module_base)+PGS_GAME_COMBAT_HOST_CPP_GYMBATTLECONTINUEGUICONTROLLER_LEAVEBATTLE_RVA;q.prologue=bytes;q.prologue_len=sizeof(bytes);}
   if(owner==k&&std::strcmp(name,"ContinueToNextBattle")==0){static const uint8_t bytes[]=PGS_GAME_COMBAT_HOST_CPP_BYTES_FINGERPRINT_4;q.expected_code=static_cast<const char*>(binding.module_base)+PGS_GAME_COMBAT_HOST_CPP_GYMBATTLECONTINUEGUICONTROLLER_CONTINUETONEXTBATTLE_RVA;q.prologue=bytes;q.prologue_len=sizeof(bytes);}
-  PgsMetaMethodResult r{};if(api->validate_method(&q,&r)!=0)return PgsMetaMethodResult{};return r;};
+  PGS_MetaMethodResult r{};if(api->validate_method(&q,&r)!=0)return PGS_MetaMethodResult{};return r;};
  auto init=method(k,"Initialize","System.Void","Holoholo.Rpc.GymDefenderProto","System.Int32");
  auto press=method(k,"ContinueToNextBattle","System.Void");
  auto leave=method(k,"LeaveBattle","System.Void");
@@ -1508,7 +1508,7 @@ void poll_transport_options() {
     const auto *tr = transport_api();
     if (!tr || !tr->sample || !tr->get_bool || !tr->get_int) return;
 
-    PgsRuntimeTransportSample a{}, z{};
+    PGSRuntimeTransportSample a{}, z{};
     if (tr->sample(&a) != 0 || !a.snapshot_fresh) {
         api_revoke();
         return;
@@ -1727,7 +1727,7 @@ int api_next_event(PgsCombatHostEvent *out, char *json_buf, uint32_t json_cap) {
     return 1;
 }
 
-void api_on_unity_pulse(void * /*ctx*/, const PgsUnityPulse *pulse) {
+void api_on_unity_pulse(void * /*ctx*/, const PGSUnityPulse *pulse) {
     if (!pulse || pulse->tid <= 0) {
         return;
     }

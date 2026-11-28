@@ -16,9 +16,9 @@ final class AccountProfileData {
         File fileRoot=files.getCanonicalFile(),prefRoot=sharedPrefs.getCanonicalFile();
         List<Path> targets=new ArrayList<>();
         if(AccountProfileStore.DEFAULT_ID.equals(id)){
-            for(String name:FILES)for(String suffix:new String[]{"",".bak",".new"})collect(fileRoot,new File(fileRoot,AccountProfileStore.legacyStorageName(name)+suffix),targets,0);
+            for(String name:FILES)for(String suffix:new String[]{"",".bak",".new"})collect(fileRoot,new File(fileRoot,name+suffix),targets,0);
         }else{
-            collect(fileRoot,new File(new File(new File(fileRoot,AccountProfileStore.legacyStorageName("pgs-accounts-v1")),"profiles"),id),targets,0);
+            collect(fileRoot,new File(new File(new File(fileRoot,"pgs-accounts-v1"),"profiles"),id),targets,0);
         }
         for(String scope:PREFS)for(String suffix:new String[]{".xml",".xml.bak"}){
             collect(prefRoot,new File(prefRoot,store.preferenceName(id,scope)+suffix),targets,0);

@@ -51,9 +51,9 @@ void *klass(void *o){require(o,"null object");return fn<void*(*)(void*)>(boot.ru
 std::string class_name(void *o){return fn<const char*(*)(void*)>(exp("class_get_name"))(klass(o));}
 std::string typename_of(const void *type){char *p=fn<char*(*)(const void*)>(boot.meta.type_get_name)(type);require(p,"type name");std::string s=p;fn<void(*)(void*)>(boot.meta.mem_free)(p);return s;}
 void *cls(const char *ns,const char *name){
- const auto *api=static_cast<const PgsMetaApi*>(pgs_runtime_metadata_api(1));require(api,"metadata API");
- PgsMetaClassQuery q{};q.version=1;q.size=sizeof(q);q.name_space=ns;q.name=name;q.canonical_match=PGS_MD_MATCH_EXACT;
- PgsMetaClassResult out{};require(api->resolve_class(&q,&out)==0,name);return const_cast<void*>(out.klass);
+ const auto *api=static_cast<const PGS_MetaApi*>(pgs_runtime_metadata_api(1));require(api,"metadata API");
+ PGS_MetaClassQuery q{};q.version=1;q.size=sizeof(q);q.name_space=ns;q.name=name;q.canonical_match=PGS_MD_MATCH_EXACT;
+ PGS_MetaClassResult out{};require(api->resolve_class(&q,&out)==0,name);return const_cast<void*>(out.klass);
 }
 void *method(void *o,const char *name,int count){void *m=fn<void*(*)(void*,const char*,int)>(boot.meta.class_get_method_from_name)(klass(o),name,count);require(m,name);return m;}
 void *invoke(void *m,void *o,void **args=nullptr){void *ex=nullptr;void *v=fn<void*(*)(void*,void*,void**,void**)>(boot.runtime.runtime_invoke)(m,o,args,&ex);require(!ex,"managed call failed");return v;}
@@ -80,7 +80,7 @@ struct Config : PgsCatchChanceOptions {int grade=0;bool curve=false;};
 // "C3|show|auto|target|berry|safari|autoThrow|cooldownMs" (C1/C2 accepted) plus throw settings
 // (throw allowed bool 29, curve bool 34, grade int 7).
 Config config(){
- Config c;auto tr=transport();PgsRuntimeTransportSample a{};if(!tr||tr->sample(&a)||!a.snapshot_fresh||a.fault)return c;
+ Config c;auto tr=transport();PGSRuntimeTransportSample a{};if(!tr||tr->sample(&a)||!a.snapshot_fresh||a.fault)return c;
  char s[96];uint32_t n=0;if(tr->get_string(15,s,sizeof(s),&n)||n<8||n>=sizeof(s))return c;s[n]=0;
  static_cast<PgsCatchChanceOptions&>(c)=pgs_parse_catch_chance(s);if(!c.valid)return c;
  int allowed=0,curve=0;int32_t grade=0;

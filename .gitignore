@@ -43,7 +43,3 @@ Thumbs.db
 *.gpx
 !/pgs/research/README.txt
 /user-reports
-
-# Keep local build/input and other untracked files private.
-/**/input/
-/**/build/

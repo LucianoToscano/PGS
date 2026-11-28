@@ -268,7 +268,7 @@ void *thread_current() {
   ++thread_checks;
   return attached && (!detach_at || thread_checks < detach_at) ? &thread_token : nullptr;
 }
-int segment(void *, const void *address, uint64_t length, PgsMetaSegment *out) {
+int segment(void *, const void *address, uint64_t length, PGS_MetaSegment *out) {
   *out = {};
   uintptr_t a = reinterpret_cast<uintptr_t>(address), base = reinterpret_cast<uintptr_t>(module_base);
   if (a < base || a - base > module_size || !length || length > module_size - (a - base)) return 0;
@@ -278,8 +278,8 @@ int segment(void *, const void *address, uint64_t length, PgsMetaSegment *out) {
   return 0;
 }
 
-PgsMetaExports exports() {
-  PgsMetaExports e{};
+PGS_MetaExports exports() {
+  PGS_MetaExports e{};
   e.domain_get = reinterpret_cast<void *>(domain_get);
   e.domain_get_assemblies = reinterpret_cast<void *>(domain_assemblies);
   e.assembly_get_image = reinterpret_cast<void *>(assembly_image);
@@ -516,7 +516,7 @@ int main(int argc, char **argv) {
          api->output_size == sizeof(PgsCameraMetaOutput));
 
   build_fixture();
-  PgsMetaExports e = exports();
+  PGS_MetaExports e = exports();
   extra_cfg.version = 1;
   extra_cfg.size = sizeof(PgsCameraMetaExtra);
   extra_cfg.image_get_name = reinterpret_cast<void *>(image_get_name);
@@ -537,7 +537,7 @@ int main(int argc, char **argv) {
   config.version = 1;
   config.size = sizeof(PgsCameraMetaConfig);
   config.binding.version = 1;
-  config.binding.size = sizeof(PgsMetaBindConfig);
+  config.binding.size = sizeof(PGS_MetaBindConfig);
   config.binding.exports = &e;
   config.binding.module_base = module_base;
   config.binding.module_size = module_size;
@@ -559,18 +559,18 @@ int main(int argc, char **argv) {
   ok_continuous();  // repeated calls preserve feature47 binding idempotently
 
   // Legacy passive discover does not require these feature47-only exports.
-  const decltype(&PgsMetaExports::domain_get) unused[] = {
-    &PgsMetaExports::class_get_type,&PgsMetaExports::field_get_offset,&PgsMetaExports::class_from_type,
-    &PgsMetaExports::class_is_enum,&PgsMetaExports::class_enum_basetype,&PgsMetaExports::class_get_methods,
-    &PgsMetaExports::class_get_nested_types,&PgsMetaExports::class_get_declaring_type};
+  const decltype(&PGS_MetaExports::domain_get) unused[] = {
+    &PGS_MetaExports::class_get_type,&PGS_MetaExports::field_get_offset,&PGS_MetaExports::class_from_type,
+    &PGS_MetaExports::class_is_enum,&PGS_MetaExports::class_enum_basetype,&PGS_MetaExports::class_get_methods,
+    &PGS_MetaExports::class_get_nested_types,&PGS_MetaExports::class_get_declaring_type};
   for(auto member:unused){auto partial=e;partial.*member=nullptr;auto c=config;
     c.binding.exports=&partial;c.sample_camera=0;c.continuous=0;PgsCameraMetaOutput out{};
     assert(api->resolve(&c,&out)==PGS_CAM_OK&&out.target_count==4&&out.execute);
   }
   // Continuous-only metadata absence must not disable bounded sampling.
-  const decltype(&PgsMetaExports::domain_get) continuous_only[] = {
-    &PgsMetaExports::method_is_generic,&PgsMetaExports::method_is_inflated,
-    &PgsMetaExports::method_get_param,&PgsMetaExports::debug_get_method_info};
+  const decltype(&PGS_MetaExports::domain_get) continuous_only[] = {
+    &PGS_MetaExports::method_is_generic,&PGS_MetaExports::method_is_inflated,
+    &PGS_MetaExports::method_get_param,&PGS_MetaExports::debug_get_method_info};
   for(auto member:continuous_only){auto partial=e;partial.*member=nullptr;auto c=config;
     c.binding.exports=&partial;c.sample_camera=1;c.continuous=0;PgsCameraMetaOutput out{};
     assert(api->resolve(&c,&out)==PGS_CAM_OK&&out.target_count==5&&out.fields[0]);
@@ -580,7 +580,7 @@ int main(int argc, char **argv) {
     assert(api->resolve(&c,&out)==PGS_CAM_OK&&out.get_main_camera_address);
     // Partial-export range validation must reject writable non-executable code
     // before dereferencing GC fingerprint bytes, despite valid metadata.
-    c.binding.seg_query=[](void *,const void *address,uint64_t length,PgsMetaSegment *seg)->int{
+    c.binding.seg_query=[](void *,const void *address,uint64_t length,PGS_MetaSegment *seg)->int{
       *seg={};seg->found=seg->readable=seg->writable=1;seg->seg_base=address;seg->seg_size=length;return 0;};
     expect_unavailable("gc-handle-abi-unverified",&c);
   }

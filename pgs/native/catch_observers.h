@@ -3,7 +3,7 @@
 
 #include "catch_animation.h"  // PgsSpeedApi v1: feature49 DELEGATES the speed attempt to feature8.
 
-// PGS native module: catch OBSERVERS ownership (feature id 49, API 1).
+// PGS native migration: catch OBSERVERS ownership (feature id 49, API 1).
 //
 // Ports the remaining production Gum observers of diagnostics/quick-ball.js that this
 // stage still left in JS: the btxu result observer (ordinary-ball response caller path,

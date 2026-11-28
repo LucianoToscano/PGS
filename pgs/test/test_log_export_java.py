@@ -12,7 +12,9 @@ ROOT = Path(__file__).resolve().parents[1]
 class LogExportJavaTests(unittest.TestCase):
     def test_bundle(self):
         sdk = Path(os.environ.get('ANDROID_HOME', str(Path(os.environ.get('LOCALAPPDATA', str(Path.home()))) / 'Android/Sdk')))
-        android = sdk / 'platforms' / (os.environ.get('PGS_ANDROID_PLATFORM') or os.environ.get('PGS_ANDROID_PLATFORM') or 'android-36.1') / 'android.jar'
+        android = sdk / 'platforms' / os.environ.get('PGS_ANDROID_PLATFORM', 'android-36.1') / 'android.jar'
+        if not android.is_file():
+            self.skipTest('Android SDK platform not available')
         json_sources = sorted((sdk / 'sources').glob('android-*/org/json'), reverse=True)
         if not json_sources:
             self.skipTest('Android SDK JSON sources required')

@@ -58,9 +58,9 @@ const PgsBootApi *bootstrap_api() {
   return api;
 }
 
-const PgsMetaApi *metadata_api() {
-  const auto *api = static_cast<const PgsMetaApi *>(pgs_runtime_metadata_api(PGS_MD_API_VERSION));
-  if (!api || api->version != PGS_MD_API_VERSION || api->size != sizeof(PgsMetaApi) ||
+const PGS_MetaApi *metadata_api() {
+  const auto *api = static_cast<const PGS_MetaApi *>(pgs_runtime_metadata_api(PGS_MD_API_VERSION));
+  if (!api || api->version != PGS_MD_API_VERSION || api->size != sizeof(PGS_MetaApi) ||
       !api->resolve_class || !api->validate_field || !api->validate_method)
     return nullptr;
   return api;
@@ -74,15 +74,15 @@ bool on_owner_thread(uint64_t owner, void *thread_current) {
 }
 
 // resolve_class(ns,name) with the ns.name EXACT canonical default. *out gets the Il2CppClass*.
-int resolve_class(const PgsMetaApi *md, const char *ns, const char *name, void **out) {
-  PgsMetaClassQuery q{};
+int resolve_class(const PGS_MetaApi *md, const char *ns, const char *name, void **out) {
+  PGS_MetaClassQuery q{};
   q.version = PGS_MD_QUERY_VERSION;
   q.size = sizeof(q);
   q.name_space = ns;
   q.name = name;
   q.canonical = nullptr;  // null -> ns.name EXACT
   q.canonical_match = PGS_MD_MATCH_EXACT;
-  PgsMetaClassResult r{};
+  PGS_MetaClassResult r{};
   int rc = md->resolve_class(&q, &r);
   if (rc) {diagnostic(name,rc);return rc;}
   *out = const_cast<void *>(r.klass);
@@ -90,10 +90,10 @@ int resolve_class(const PgsMetaApi *md, const char *ns, const char *name, void *
 }
 
 // validate_field at an EXACT offset. type_class (the field's type class, e.g. the enum class) is optional.
-int validate_field(const PgsMetaApi *md, const void *owner, const char *name, uint64_t offset,
+int validate_field(const PGS_MetaApi *md, const void *owner, const char *name, uint64_t offset,
                    uint32_t kind, uint32_t value_size, const char *type_name, void **out,
                    void **type_class) {
-  PgsMetaFieldQuery q{};
+  PGS_MetaFieldQuery q{};
   q.version = PGS_MD_QUERY_VERSION;
   q.size = sizeof(q);
   q.owner = owner;
@@ -103,7 +103,7 @@ int validate_field(const PgsMetaApi *md, const void *owner, const char *name, ui
   q.value_size = value_size;
   q.type_name = type_name;
   q.type_match = type_name ? PGS_MD_MATCH_EXACT : PGS_MD_MATCH_ANY;
-  PgsMetaFieldResult r{};
+  PGS_MetaFieldResult r{};
   int rc = md->validate_field(&q, &r);
   if (rc) {diagnostic(name,rc);return rc;}
   *out = const_cast<void *>(r.field);
@@ -114,7 +114,7 @@ int validate_field(const PgsMetaApi *md, const void *owner, const char *name, ui
 // Structural by-name field resolve for the slots whose exact offset is not pinned by the research
 // artifact. This is still real runtime metadata (NOT a guessed address): the field must exist on the
 // owner and its parent must equal the owner. See smart-binding-notes.txt.
-int resolve_field_byname(const PgsBootRuntimeExports &, const PgsMetaExports &ex, const void *owner,
+int resolve_field_byname(const PgsBootRuntimeExports &, const PGS_MetaExports &ex, const void *owner,
                          const char *name, void **out) {
   auto by_name = reinterpret_cast<void *(*)(const void *, const char *)>(ex.class_get_field_from_name);
   auto parent = reinterpret_cast<void *(*)(const void *)>(ex.field_get_parent);
@@ -125,9 +125,9 @@ int resolve_field_byname(const PgsBootRuntimeExports &, const PgsMetaExports &ex
   return 0;
 }
 
-int validate_method(const PgsMetaApi *md, const void *owner, const char *name, const char *return_type,
+int validate_method(const PGS_MetaApi *md, const void *owner, const char *name, const char *return_type,
                     uint32_t param_count, const char *param0, uint32_t is_static, void **out,const char *param1=nullptr) {
-  PgsMetaMethodQuery q{};
+  PGS_MetaMethodQuery q{};
   q.version = PGS_MD_QUERY_VERSION;
   q.size = sizeof(q);
   q.owner = owner;
@@ -139,7 +139,7 @@ int validate_method(const PgsMetaApi *md, const void *owner, const char *name, c
   if (param_count >= 2) { q.param_types[1] = param1; q.param_match[1] = param1 ? PGS_MD_MATCH_EXACT : PGS_MD_MATCH_ANY; }
   q.is_static = is_static;
   q.allow_inflated = 0;
-  PgsMetaMethodResult r{};
+  PGS_MetaMethodResult r{};
   int rc = md->validate_method(&q, &r);
   if (rc) {diagnostic(name,rc);return rc;}
   *out = const_cast<void *>(r.method);
@@ -149,7 +149,7 @@ int validate_method(const PgsMetaApi *md, const void *owner, const char *name, c
 // Read a static enum literal value (field_static_get_value on a validated public-static-literal field),
 // mirroring quickball_metadata read_enum_literal. No guessed RPC id: the value comes straight from the
 // bound game image. Returns true and writes *out on success.
-bool read_enum_literal(const PgsMetaExports &ex, const PgsBootRuntimeExports &rt, const void *owner,
+bool read_enum_literal(const PGS_MetaExports &ex, const PgsBootRuntimeExports &rt, const void *owner,
                        const char *lit, int32_t *out) {
   auto by_name = reinterpret_cast<void *(*)(const void *, const char *)>(ex.class_get_field_from_name);
   auto parent = reinterpret_cast<void *(*)(const void *)>(ex.field_get_parent);
@@ -205,7 +205,7 @@ int pgs_smart_ensure_bound(uint64_t owner) {
 
   const PgsBootApi *boot = bootstrap_api();
   if (!boot) return PGS_SMARTBIND_ERR_NO_BOOTSTRAP;
-  const PgsMetaApi *md = metadata_api();
+  const PGS_MetaApi *md = metadata_api();
   if (!md) return PGS_SMARTBIND_ERR_NO_METADATA;
 
   // Pull-only snapshot: never binds/mutates. NOT_READY is a positive, retriable state.
@@ -216,7 +216,7 @@ int pgs_smart_ensure_bound(uint64_t owner) {
   if (brc == PGS_BOOT_NOT_READY) return PGS_SMARTBIND_NOT_READY;
   if (brc != PGS_BOOT_OK) return PGS_SMARTBIND_ERR_NO_BOOTSTRAP;
 
-  const PgsMetaExports &ex = snap.meta;
+  const PGS_MetaExports &ex = snap.meta;
   const PgsBootRuntimeExports &rt = snap.runtime;
   if (!snap.handle) return PGS_SMARTBIND_ERR_EXPORT;
   if (!on_owner_thread(owner, rt.thread_current)) return PGS_SMARTBIND_ERR_OWNER;
@@ -408,7 +408,7 @@ int pgs_smart_ensure_bound(uint64_t owner) {
 namespace {
 std::mutex g_incense_mutex;
 int g_incense_rc = 1;  // 1 not tried / not ready, 0 bound, negative failed for this process
-PgsVgpIncense g_kinds[kPgsVgpKinds]{};
+PgsVgpIncense g_kinds[kPgrVgpKinds]{};
 int g_kind_count = 0;
 // Map spawn kinds besides wild and incense that VGP+ catches. Each must pass the same checks as map
 // tap-to-catch: the wild encounter call, one stored *EncounterOutProto with a known success value and a
@@ -417,7 +417,7 @@ const char *const kExtraKinds[] = {"TroyDiskMapPlacePokemon", "StationMapPokemon
                                    "DailyEncounterMapPokemon"};
 
 void publish_kind(const PgsVgpIncense &v) {
-  if (g_kind_count >= kPgsVgpKinds) return;
+  if (g_kind_count >= kPgrVgpKinds) return;
   g_kinds[g_kind_count] = v;
   g_pgs_vgp_kinds[g_kind_count].store(&g_kinds[g_kind_count], std::memory_order_release);
   if (!g_pgs_vgp_incense.load(std::memory_order_acquire))
@@ -448,7 +448,7 @@ void *kind_method(const PgsBootBinding &snap, void *klass, void *base, const cha
 }
 
 // Validates one spawn kind by name; empty on success, else why it is left out.
-std::string bind_kind(const PgsBootBinding &snap, const PgsMetaApi *md, void *base, const char *name, PgsVgpIncense *out) {
+std::string bind_kind(const PgsBootBinding &snap, const PGS_MetaApi *md, void *base, const char *name, PgsVgpIncense *out) {
   PgsVgpIncense v{};
   v.base = base;
   if (resolve_class(md, "Niantic.Holoholo.Map", name, &v.klass) || !v.klass) return "class missing";
@@ -499,7 +499,7 @@ std::string bind_kind(const PgsBootBinding &snap, const PgsMetaApi *md, void *ba
   *out = v;
   return "";
 }
-int bind_incense(const PgsBootBinding &snap, const PgsMetaApi *md, PgsVgpIncense &v);
+int bind_incense(const PgsBootBinding &snap, const PGS_MetaApi *md, PgsVgpIncense &v);
 }
 
 int pgs_vgp_incense_bind(uint64_t owner) {
@@ -507,7 +507,7 @@ int pgs_vgp_incense_bind(uint64_t owner) {
   if (!lock.owns_lock()) return 1;
   if (g_incense_rc <= 0) return g_incense_rc;
   const PgsBootApi *boot = bootstrap_api();
-  const PgsMetaApi *md = metadata_api();
+  const PGS_MetaApi *md = metadata_api();
   if (!boot || !md) return 1;
   PgsBootBinding snap{};
   snap.version = PGS_BOOT_BINDING_VERSION;
@@ -544,7 +544,7 @@ int pgs_vgp_incense_bind(uint64_t owner) {
 }
 
 namespace {
-int bind_incense(const PgsBootBinding &snap, const PgsMetaApi *md, PgsVgpIncense &v) {
+int bind_incense(const PgsBootBinding &snap, const PGS_MetaApi *md, PgsVgpIncense &v) {
   auto fail = [](int rc, const char *what) {
     __android_log_print(ANDROID_LOG_WARN, "PGSSmartCatch", "Incense VGP support unavailable (%s)", what);
     return rc;

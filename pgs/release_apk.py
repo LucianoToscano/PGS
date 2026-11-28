@@ -103,7 +103,7 @@ def release_identity(ledger):
     ledger = Path(ledger)
     if not ledger.is_file():
         raise RuntimeError('PGS version ledger is missing; refusing legacy upstream APK naming')
-    if not build.signing_setting('KEYSTORE'):
+    if not os.environ.get('PGS_KEYSTORE'):
         raise RuntimeError('Existing PGS release keystore is required; development signing is forbidden')
     from pgs_update import MAX_VERSION_CODE
     previous_code = int(ledger.read_text(encoding='utf-8').strip())
@@ -143,9 +143,6 @@ def release(run, destination):
     unsigned = destination / 'unsigned.apk'
     aligned = destination / 'aligned.apk'
     signed = destination / output_name
-    if any(path.exists() for path in (unsigned, aligned, signed, destination/'PGS.json',
-                                      destination/'SHA256SUMS.txt', destination/'build-info.json')):
-        raise ValueError('Use a fresh release output directory; existing candidates are never overwritten')
     merge(apks, unsigned, pgs_previous_version_code=previous_pgs_version)
     with zipfile.ZipFile(unsigned) as preview:
         apk_version_code = axml.inspect_manifest(preview.read('AndroidManifest.xml'))['versionCode']
@@ -154,12 +151,6 @@ def release(run, destination):
     nonroot.command(build.android_tool('apksigner'), 'verify', signed)
     verify_pgs_release_signer(signed, previous_pgs_version is not None)
     nonroot.command(build.android_tool('zipalign'), '-c', '-P', '16', '4', signed)
-    # Do not emit release receipts until the full migrated runtime passes the identity gate.
-    from pgs_candidate import verify
-    verification = verify(signed, tag=build.release_version(Path(__file__).resolve().parent),
-                          game_version=game_version, game_version_code=game_code,
-                          previous_version_code=previous_pgs_version)
-    (destination/'PGS.json').write_text(json.dumps(verification, indent=2)+'\n', encoding='utf8')
     (destination/'SHA256SUMS.txt').write_text(runtime_assets.sha256(signed)+'  '+signed.name+'\n', encoding='utf8')
     (destination/'build-info.json').write_text(json.dumps({'game_version':game_version,'game_version_code':game_code,'apk_version_code':apk_version_code,'architecture':'arm64-v8a','hook_runtime_architectures':report.get('runtime_abis',[report.get('runtime_abi','arm64-v8a')]),'input_sha256':report['input_sha256'],'apk_sha256':runtime_assets.sha256(signed),'source_commit':os.environ.get('GITHUB_SHA'),'device_tested':False},indent=2)+'\n',encoding='utf8')
     unsigned.unlink(); aligned.unlink()

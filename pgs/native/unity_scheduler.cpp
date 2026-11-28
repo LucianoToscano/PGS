@@ -38,13 +38,13 @@ void *invoke_body(void *entry){
  if(!address||(address&3u))return nullptr;
  uint32_t word=0;std::memcpy(&word,entry,sizeof(word)); // verify_metadata proved export executable
  if((word&0xfc000000u)!=0x14000000u)return entry;
- const auto *metadata=static_cast<const PgsMetaApi*>(pgs_runtime_metadata_api(1));
+ const auto *metadata=static_cast<const PGS_MetaApi*>(pgs_runtime_metadata_api(1));
  if(!metadata||metadata->version!=1||metadata->size!=sizeof(*metadata)||!metadata->validate_code)return nullptr;
  uintptr_t seen[8]{};
  for(unsigned hop=0;hop<8;++hop){
   for(unsigned prior=0;prior<hop;++prior)if(seen[prior]==address)return nullptr;
   seen[hop]=address;
-  PgsMetaCodeQuery check{1,sizeof(check),reinterpret_cast<void*>(address),4,nullptr,0,0};
+  PGS_MetaCodeQuery check{1,sizeof(check),reinterpret_cast<void*>(address),4,nullptr,0,0};
   if(metadata->validate_code(&check)!=PGS_MD_OK)return nullptr;
   std::memcpy(&word,reinterpret_cast<void*>(address),sizeof(word));
   if((word&0xfc000000u)!=0x14000000u){
@@ -83,7 +83,7 @@ void pulse(const void *method,void *object,void **,int32_t count,uint64_t entere
  if(depth!=1||method!=config.execute_tasks||object||count!=0)return;
  const int32_t tid=static_cast<int32_t>(gettid());
  if(tid!=config.expected_owner_tid||!config.thread_current())return;
- PgsUnityPulse frame{};
+ PGSUnityPulse frame{};
  {
   // Serialize the diagnostic tuple, never a managed call or subscriber.
   std::lock_guard<std::mutex> guard(state_mutex);

@@ -1,5 +1,5 @@
 /*
- * PGS native module: Adventure Sync popup suppression.
+ * PGS native migration: Adventure Sync popup suppression.
  *
  * Feature id 2 of the native pilot. The gameplay runtime resolves this feature's
  * table through the coordinator-owned loader (root.PGSNativeFeature(2, version,
@@ -59,7 +59,7 @@ enum {
     PGS_ADVSYNC_ERR_BAD_LEASE = 5,      /* lease was 0 or exceeded the max */
     PGS_ADVSYNC_ERR_NO_CLOCK = 6,       /* CLOCK_BOOTTIME was unavailable */
     PGS_ADVSYNC_ERR_NOT_INSTALLED = 7,  /* operation needs a successful install() */
-    PGS_ADVSYNC_ERR_SELFTEST = 8,        /* a self-check assertion failed */
+    PGS_ADVSYNC_ERR_SELFTEST = 8        /* a self-check assertion failed */
 };
 
 /*

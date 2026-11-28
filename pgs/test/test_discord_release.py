@@ -33,7 +33,8 @@ class DiscordReleaseTests(unittest.TestCase):
         self.assertEqual(payload["embeds"][0]["footer"]["text"], "PGS | Release")
         self.assertTrue(any(APK["browser_download_url"] in f["value"]
                             for f in payload["embeds"][0]["fields"]))
-        self.assertNotIn("ko-fi.com/pgs", str(payload))
+        self.assertNotIn("pgrazor", str(payload).lower())
+        self.assertNotIn("ko-fi.com", str(payload))
 
     def test_optional_highlight(self):
         payload = discord_release.message(release([APK, SUMS, HIGHLIGHT]))

@@ -729,19 +729,19 @@ export const featureGuides = [
     ],
   },
   {
-    // The old shared URL is redirected in App.jsx; new public URLs use PGS.
+    // Keep the former slug to preserve shared guide bookmarks.
     id: 'pgs-root',
     title: 'PGS Root (not released)',
     category: 'Reference',
-    summary: 'The current PGS v0.0.2 release is non-root only. The upstream Root installer belongs to a separate project and is not a PGS update.',
+    summary: 'The current PGS v0.0.1 release is non-root only. The upstream Root installer belongs to a separate project and is not a PGS update.',
     where: 'PGS currently offers one complete signed ARM64 non-root APK through the PGS GitHub Actions workflow.',
     steps: [
-      'Use the verified signed full PGS v0.0.2 APK for non-root installation.',
+      'Use the verified signed full PGS v0.0.1 APK for non-root installation.',
       'Do not install an upstream Root package over PGS; it is not signed or versioned as a PGS release.',
       'Future PGS Root releases will need their own compatibility review, compilation and real-device validation.',
     ],
     notes: [
-      'PGS Root has not been approved for the v0.0.2 release.',
+      'PGS Root has not been approved for the v0.0.1 release.',
       'Original upstream Root documentation remains a separate reference with its own attribution.',
       'The PGS non-root APK retains its permanent signature and Android package.',
     ],

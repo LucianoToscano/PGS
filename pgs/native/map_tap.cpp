@@ -80,7 +80,7 @@ std::mutex g_state_mutex;
 std::atomic<bool> g_installed{false};
 bool g_install_attempted = false;  // install mutex; partially installed hooks stay alive
 int g_install_error = PGS_MAP_TAP_ERR_NOT_INSTALLED;
-PgsMapTapConfig g_bound_config{};
+PGS_MapTapConfig g_bound_config{};
 std::atomic<TapHookFn> g_orig_tap{nullptr};
 std::atomic<PositionHookFn> g_orig_position{nullptr};
 
@@ -104,7 +104,7 @@ uint32_t g_inflight_roots = 0;    // GC roots held by an in-flight capture (fini
 int g_fault = 0;                  // latched after a fatal runtime fault
 
 // Bounded POD ring. Two quick taps are both retained; drain() pops one at a time.
-PgsMapTapEvent g_queue[PGS_MAP_TAP_QUEUE_CAPACITY]{};
+PGS_MapTapEvent g_queue[PGS_MAP_TAP_QUEUE_CAPACITY]{};
 uint32_t g_q_head = 0;
 uint32_t g_q_tail = 0;
 uint32_t g_q_count = 0;
@@ -173,7 +173,7 @@ void flush_queue_locked() {
   g_q_count = 0;
 }
 
-bool enqueue_locked(const PgsMapTapEvent &ev) {
+bool enqueue_locked(const PGS_MapTapEvent &ev) {
   if (g_q_count >= PGS_MAP_TAP_QUEUE_CAPACITY) {
     return false;
   }
@@ -342,7 +342,7 @@ void capture_coordinate(const ResolvedConfig &cfg, ScopedRoot &map_root, void *o
     return;
   }
 
-  PgsMapTapEvent ev{};
+  PGS_MapTapEvent ev{};
   ev.mode = mode;
   ev.epoch = epoch;
   ev.latitude = lat;
@@ -476,7 +476,7 @@ uint8_t hook_position(void *self, MapFloat2 pos, void *out_vec3, const void *met
 // Install.
 // ---------------------------------------------------------------------------
 
-bool validate_config(const PgsMapTapConfig *config, int *out_rc) {
+bool validate_config(const PGS_MapTapConfig *config, int *out_rc) {
   if (config == nullptr) {
     *out_rc = PGS_MAP_TAP_ERR_INVALID_ARG;
     return false;
@@ -485,7 +485,7 @@ bool validate_config(const PgsMapTapConfig *config, int *out_rc) {
     *out_rc = PGS_MAP_TAP_ERR_BAD_VERSION;
     return false;
   }
-  if (config->size != sizeof(PgsMapTapConfig)) {
+  if (config->size != sizeof(PGS_MapTapConfig)) {
     *out_rc = PGS_MAP_TAP_ERR_BAD_SIZE;
     return false;
   }
@@ -509,7 +509,7 @@ bool validate_config(const PgsMapTapConfig *config, int *out_rc) {
   return true;
 }
 
-ResolvedConfig resolve_config(const PgsMapTapConfig *c) {
+ResolvedConfig resolve_config(const PGS_MapTapConfig *c) {
   ResolvedConfig r{};
   r.gchandle_new = reinterpret_cast<GcHandleNewFn>(c->gchandle_new);
   r.gchandle_get_target = reinterpret_cast<GcHandleGetTargetFn>(c->gchandle_get_target);
@@ -526,7 +526,7 @@ ResolvedConfig resolve_config(const PgsMapTapConfig *c) {
   return r;
 }
 
-int api_install(const PgsMapTapConfig *config) {
+int api_install(const PGS_MapTapConfig *config) {
   int validation_rc = PGS_MAP_TAP_OK;
   if (!validate_config(config, &validation_rc)) {
     return validation_rc;
@@ -669,7 +669,7 @@ int api_disable(void) {
 // collapse two taps into one -- drain() pops exactly one event per call.
 // ---------------------------------------------------------------------------
 
-int api_drain(PgsMapTapEvent *out_event) {
+int api_drain(PGS_MapTapEvent *out_event) {
   if (out_event == nullptr) {
     return PGS_MAP_TAP_ERR_INVALID_ARG;
   }
@@ -688,13 +688,13 @@ int api_drain(PgsMapTapEvent *out_event) {
   return PGS_MAP_TAP_OK;
 }
 
-int api_sample(PgsMapTapSample *out_sample) {
+int api_sample(PGS_MapTapSample *out_sample) {
   if (out_sample == nullptr) {
     return PGS_MAP_TAP_ERR_INVALID_ARG;
   }
   std::lock_guard<std::mutex> lock(g_state_mutex);
   out_sample->version = PGS_MAP_TAP_SAMPLE_VERSION;
-  out_sample->size = sizeof(PgsMapTapSample);
+  out_sample->size = sizeof(PGS_MapTapSample);
   out_sample->owned_root_count = owned_root_count_locked();
   out_sample->queued_count = g_q_count;
   out_sample->captured_serial = g_captured_serial;
@@ -709,9 +709,9 @@ int api_sample(PgsMapTapSample *out_sample) {
   return PGS_MAP_TAP_OK;
 }
 
-const PgsMapTapApi kApiTable = {
+const PGS_MapTapApi kApiTable = {
     PGS_MAP_TAP_API_VERSION,
-    static_cast<uint32_t>(sizeof(PgsMapTapApi)),
+    static_cast<uint32_t>(sizeof(PGS_MapTapApi)),
     &api_install,
     &api_update,
     &api_drain,

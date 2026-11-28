@@ -34,9 +34,9 @@ int pending_species=0,pending_form=0;
 void *klass(void *o){require(o,"missing managed object");return fn<void*(*)(void*)>(boot.runtime.object_get_class)(o);}
 std::string type_name(void *t){char *p=fn<char*(*)(void*)>(boot.meta.type_get_name)(t);require(p,"missing managed type name");std::string s=p;fn<void(*)(void*)>(boot.meta.mem_free)(p);return s;}
 void *cls(const char *ns,const char *name){
- const auto *api=static_cast<const PgsMetaApi*>(pgs_runtime_metadata_api(1));require(api,"metadata API unavailable");
- PgsMetaClassQuery q{};q.version=1;q.size=sizeof(q);q.name_space=ns;q.name=name;q.canonical_match=PGS_MD_MATCH_EXACT;
- PgsMetaClassResult out{};require(api->resolve_class(&q,&out)==0,name);return const_cast<void*>(out.klass);
+ const auto *api=static_cast<const PGS_MetaApi*>(pgs_runtime_metadata_api(1));require(api,"metadata API unavailable");
+ PGS_MetaClassQuery q{};q.version=1;q.size=sizeof(q);q.name_space=ns;q.name=name;q.canonical_match=PGS_MD_MATCH_EXACT;
+ PGS_MetaClassResult out{};require(api->resolve_class(&q,&out)==0,name);return const_cast<void*>(out.klass);
 }
 void *method(void *k,const char *name,const char *ret){
  void *m=fn<void*(*)(void*,const char*,int)>(boot.meta.class_get_method_from_name)(k,name,0);require(m,name);
@@ -95,7 +95,7 @@ bool pgs_incense_guard_tick(uint64_t tid,const PgsSharedMetadataOutput *metadata
  if(owner&&owner!=tid)return true;
  auto tr=static_cast<const PgsRuntimeTransportApi*>(pgs_runtime_transport_api(1));
  char text[257]{};uint32_t length=0;pgs_incense_guard::Settings settings;
- PgsRuntimeTransportSample before{},after{};
+ PGSRuntimeTransportSample before{},after{};
  bool valid=tr&&tr->sample(&before)==0&&before.snapshot_fresh&&!before.fault&&tr->get_string(12,text,sizeof(text),&length)==0&&pgs_incense_guard::parse(text,length,settings)&&tr->sample(&after)==0&&after.snapshot_fresh&&!after.fault&&before.snapshot_seq==after.snapshot_seq;
  if(!valid){if(active){blocked=true;status("Incense observer settings unavailable; automatic catches paused");}return active;}
  if(!settings.active){pgs_incense_guard_stop(tid);return false;}

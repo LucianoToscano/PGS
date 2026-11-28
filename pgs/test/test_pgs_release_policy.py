@@ -70,7 +70,7 @@ class PgsReleasePolicyTests(unittest.TestCase):
             with self.assertRaisesRegex(RuntimeError, "PGS version ledger"):
                 release_apk.release_identity(ledger)
             ledger.write_text("2026111603\n", encoding="utf-8")
-            with patch.dict(os.environ, {"PGS_KEYSTORE": "", "PGS_KEYSTORE": ""}):
+            with patch.dict(os.environ, {"PGS_KEYSTORE": ""}):
                 with self.assertRaises(RuntimeError):
                     release_apk.release_identity(ledger)
             with patch.dict(os.environ, {"PGS_KEYSTORE": "/existing/pgs.jks"}):

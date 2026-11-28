@@ -30,7 +30,7 @@ NIANTIC_CERT_SHA256='944bda466eaf64be1c93896d5c8e9a454a07c8d8fcbc4adeeefb3545b33
 
 def require_clean_game_certificate(digests):
     if digests != [NIANTIC_CERT_SHA256]:
-        raise ValueError('Game input is not signed with the verified Niantic certificate. Use a clean original APK/APKM; modified or debug-signed builds are not a valid baseline.')
+        raise ValueError('Game input is not signed with the verified Niantic certificate. Use a clean original APK/APKM; modified PGSharp/debug-signed builds are not a valid baseline.')
 
 def command(*args, capture=False):
     return subprocess.run([str(a) for a in args],check=True,text=True,encoding='utf-8',errors='replace',capture_output=capture)
@@ -115,10 +115,8 @@ def rewrite_apk(source,destination,*,base=False,dex=None,assets=None,preview=Fal
             if not indices: raise ValueError('Base APK contains no classes.dex')
             if not preview:
                 for name in names:
-                    if re.fullmatch(r'classes\d*\.dex',name):
-                        data=original.read(name)
-                        if any(marker in data for marker in (b'Ldev/pgs/Control;',)):
-                            raise ValueError('Input already contains PGS classes')
+                    if re.fullmatch(r'classes\d*\.dex',name) and b'Ldev/pgs/Control;' in original.read(name):
+                        raise ValueError('Input already contains PGS classes')
         for item in original.infolist():
             if signature_entry(item.filename): continue
             if base and dex_replacements and item.filename in dex_replacements:
@@ -127,6 +125,7 @@ def rewrite_apk(source,destination,*,base=False,dex=None,assets=None,preview=Fal
             if base and assets and item.filename in assets: continue  # re-added from the current asset set below; prevents duplicate entries
             if base and item.filename=='AndroidManifest.xml':
                 manifest=axml.patch_manifest(original.read(item))
+                if google_browser_login: manifest=axml.add_google_browser_callback(manifest)
                 # Cold-process account switches need the isolated restart helper in every base build;
                 # an exactly-matching definition (our preview manifest) is accepted and left unchanged.
                 manifest=axml.add_account_restart_activity(manifest)
@@ -143,12 +142,6 @@ def rewrite_apk(source,destination,*,base=False,dex=None,assets=None,preview=Fal
 def validate_survey_options(enabled, panel_only, abi, flag='--il2cpp-survey'):
     if enabled and (panel_only or abi not in ('arm64-v8a', 'auto')):
         raise ValueError(flag+' requires the research runtime on the native arm64-v8a process; panel-only and non-ARM64 builds are unsupported')
-
-
-def runtime_flag(name, environ=None):
-    """Read a PGS runtime option from the environment."""
-    env = os.environ if environ is None else environ
-    return env.get('PGS_'+name) == '1'
 
 
 @contextlib.contextmanager
@@ -181,7 +174,7 @@ def assert_no_research_payload(names):
             raise RuntimeError('Compiled production build must not ship the Frida Gadget: '+name)
         if lowered.startswith('assets/pgs/') and lowered.endswith(('.js','.mjs','.cjs','.js.map')):
             raise RuntimeError('Compiled production build must not ship PGS JavaScript: '+name)
-        if lowered in ('assets/pgs/java-bridge.js',) or lowered.startswith(('assets/pgs/bridge-notices/',)):
+        if lowered=='assets/pgs/java-bridge.js' or lowered.startswith('assets/pgs/bridge-notices/'):
             raise RuntimeError('Compiled production build must not ship Frida bridge assets: '+name)
 
 
@@ -197,8 +190,8 @@ def package(source, *,research_runtime=False,panel_only=False,download=False,pre
             raise ValueError('Compiled gameplay does not support research survey, scene or passive camera diagnostics; use --research-runtime')
         quick_close = quick_ball = camera_steering = True
     quick_summary = compiled_gameplay
-    compiled_location = compiled_gameplay or (research_runtime and runtime_flag('COMPILED_LOCATION'))
-    if compiled_location and not compiled_gameplay and (preview or not runtime_flag('NATIVE_PILOT') or not runtime_flag('COMPILED_JAVA_BRIDGES')):
+    compiled_location = compiled_gameplay or (research_runtime and os.environ.get('PGS_COMPILED_LOCATION') == '1')
+    if compiled_location and not compiled_gameplay and (preview or os.environ.get('PGS_NATIVE_PILOT') != '1' or os.environ.get('PGS_COMPILED_JAVA_BRIDGES') != '1'):
         raise ValueError('Compiled Location requires a native pilot and compiled Java bridges')
     scene_probe=bool(scene_probe or scene_observe)
     if camera_sample and camera_steering: raise ValueError('--camera-steering and --camera-sample cannot be combined')
@@ -230,12 +223,12 @@ def package(source, *,research_runtime=False,panel_only=False,download=False,pre
     # Compiled-only gameplay carries no Gadget runtime; bootstrap takes the compiled production path.
     if compiled_gameplay: mode['gadget']=False; mode['compiledGameplay']=True
     if research_runtime: mode['researchRuntime']=True
-    native_pilot = compiled_gameplay or (research_runtime and runtime_flag('NATIVE_PILOT'))
+    native_pilot = compiled_gameplay or (research_runtime and os.environ.get('PGS_NATIVE_PILOT') == '1')
     if native_pilot: mode['nativePilot'] = True
-    if compiled_gameplay or (research_runtime and runtime_flag('COMPILED_NATIVE_TRANSPORT')):
+    if compiled_gameplay or (research_runtime and os.environ.get('PGS_COMPILED_NATIVE_TRANSPORT')=='1'):
         if not native_pilot or preview: raise ValueError('Compiled native transport requires a production native pilot')
         mode['compiledNativeTransport']=True
-    compiled_java_bridges = compiled_gameplay or (native_pilot and not preview and runtime_flag('COMPILED_JAVA_BRIDGES'))
+    compiled_java_bridges = compiled_gameplay or (native_pilot and not preview and os.environ.get('PGS_COMPILED_JAVA_BRIDGES') == '1')
     compiled_catch_wait = compiled_java_bridges and quick_close
     if compiled_catch_wait: mode['compiledCatchWait']=True
     if compiled_location: mode['compiledLocationGetters']=True
@@ -244,7 +237,7 @@ def package(source, *,research_runtime=False,panel_only=False,download=False,pre
         import dex_bridges
         dex_replacements,dex_bridge_receipt=dex_bridges.rewrite(base,folder/'java-bridges',download=download)
         mode['compiledJavaBridges']=True
-    if native_pilot and runtime_flag('NATIVE_SELFTEST'): mode['nativeSelftest'] = True
+    if native_pilot and os.environ.get('PGS_NATIVE_SELFTEST') == '1': mode['nativeSelftest'] = True
     if il2cpp_survey: mode['il2cppSurvey']=True
     if camera_probe: mode['cameraProbe']=True
     if camera_sample: mode['cameraSample']=True
@@ -255,6 +248,7 @@ def package(source, *,research_runtime=False,panel_only=False,download=False,pre
     if quick_summary: mode['quickSummary']=True
     if quick_close: mode['quickClose']=True
     if quick_ball: mode['quickBall']=True
+    if google_browser_login: mode['googleBrowserLogin']=True
     assets={'assets/pgs/mode.json':json.dumps(mode).encode()}
     if native_pilot:
         import native_build
@@ -392,7 +386,7 @@ def package(source, *,research_runtime=False,panel_only=False,download=False,pre
 
 def probe(report,folder,android,seconds=0):
     if report['package']!='dev.pgs.preview' or len(report['outputs'])!=1: raise RuntimeError('Probe installation restricted to our standalone preview')
-    if android is None: raise RuntimeError('Probe installation requires an attached Android device')
+    if android is None: raise RuntimeError('Probe requires an attached Android device')
     report['device']={'serial':android.serial}
     for key,prop in [('model','ro.product.model'),('android','ro.build.version.release'),('sdk','ro.build.version.sdk'),('abi','ro.product.cpu.abi')]:
         report['device'][key]=android.shell('getprop',prop).strip()
@@ -441,7 +435,7 @@ def main(argv=None):
     parser.add_argument('--interaction-probe',action='store_true',help='Opt-in interaction metadata probe with later user-requested observation; native ARM64, optionally with camera steering')
     parser.add_argument('--quick-close',action='store_true',help='Compatibility flag: compiled production includes quick close by default')
     parser.add_argument('--quick-ball',action='store_true',help='Compatibility flag: compiled production includes quick ball by default')
-    parser.add_argument('--google-browser-login',action='store_true',help='Retired option; rejected pending authorized PGS OAuth configuration')
+    parser.add_argument('--google-browser-login',action='store_true',help='Opt-in experimental Google browser sign-in')
     parser.add_argument('--download-runtime',action='store_true',help='Fetch pinned build dependencies and, for explicit research builds, the verified Gadget asset')
     parser.add_argument('--skip-build',action='store_true',help='Use compiled module only if source/checksums still match')
     parser.add_argument('--seconds',type=float,default=0,help='Stop probe desktop logging after this many seconds; 0 waits for Ctrl+C')
@@ -495,6 +489,7 @@ def main(argv=None):
     if args.interaction_probe: options['interaction_probe']=True
     if args.quick_close: options['quick_close']=True
     if args.quick_ball: options['quick_ball']=True
+    if args.google_browser_login: options['google_browser_login']=True
     report,folder=package(source,panel_only=args.panel_only,download=args.download_runtime,preview=preview,probe_abi=abi,**options)
     cleanup_generated_builds()
     if args.probe: probe(report,folder,android,args.seconds)

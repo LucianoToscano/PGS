@@ -232,8 +232,8 @@ void map_install_hook(){
     g_pgs_vgp_marker_map_pokemon.store(base,std::memory_order_release);
     void* method=require_map_method(base,"OnTap",2,"System.Void","System.Object","System.EventArgs");
     void* code=nullptr;std::memcpy(&code,method,sizeof(code));
-    auto api=static_cast<const PgsMetaApi*>(pgs_runtime_metadata_api(1));
-    PgsMetaCodeQuery query{1,sizeof(query),code,16,nullptr,0,0};require(api&&api->validate_code(&query)==0,"Map tap code validation failed");
+    auto api=static_cast<const PGS_MetaApi*>(pgs_runtime_metadata_api(1));
+    PGS_MetaCodeQuery query{1,sizeof(query),code,16,nullptr,0,0};require(api&&api->validate_code(&query)==0,"Map tap code validation failed");
     require(pgs_hook(code,reinterpret_cast<void*>(map_tap_hook),reinterpret_cast<void**>(&map_original))==0&&map_original,"Map tap hook unavailable");
     map_hook_ready=true;map_event("ready","Map tap catch hook installed");
 }

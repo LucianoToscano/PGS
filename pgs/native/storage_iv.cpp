@@ -59,7 +59,7 @@ void status(const char *phase,const std::string &message){event(std::string("{\"
 // 1 level and attack/defense/stamina, 2 level and percent, 3 all three, 4 all three and a second row
 // with the PvP crest and rank); anything else means off.
 int configured_mode(){
- auto tr=transport();char s[16];uint32_t n=0;PgsRuntimeTransportSample a{};
+ auto tr=transport();char s[16];uint32_t n=0;PGSRuntimeTransportSample a{};
  if(!tr||tr->sample(&a)||!a.snapshot_fresh||a.fault)return 0;
  if(tr->get_string(14,s,sizeof(s),&n)||n!=8||std::memcmp(s,"S2|",3)!=0||s[3]<'0'||s[3]>'4')return 0;
  return s[3]-'0';
@@ -77,9 +77,9 @@ bool register_sized(const void *type){
  return false;
 }
 void *class_of(const char *ns,const char *name){
- const auto *api=static_cast<const PgsMetaApi*>(pgs_runtime_metadata_api(1));require(api,"metadata API");
- PgsMetaClassQuery q{};q.version=1;q.size=sizeof(q);q.name_space=ns;q.name=name;q.canonical_match=PGS_MD_MATCH_EXACT;
- PgsMetaClassResult r{};require(api->resolve_class(&q,&r)==0,name);return const_cast<void*>(r.klass);
+ const auto *api=static_cast<const PGS_MetaApi*>(pgs_runtime_metadata_api(1));require(api,"metadata API");
+ PGS_MetaClassQuery q{};q.version=1;q.size=sizeof(q);q.name_space=ns;q.name=name;q.canonical_match=PGS_MD_MATCH_EXACT;
+ PGS_MetaClassResult r{};require(api->resolve_class(&q,&r)==0,name);return const_cast<void*>(r.klass);
 }
 // The non-generic overload of ns.owner.name whose parameters are exactly p0[, p1].
 void *overload(const char *ns,const char *owner,const char *name,const char *p0,const char *p1=nullptr){
@@ -368,14 +368,14 @@ void hook_initialize(void *self,void *initializer,const void *info){
 }
 
 void install(){
- const auto *api=static_cast<const PgsMetaApi*>(pgs_runtime_metadata_api(1));require(api&&api->resolve_class&&api->validate_method,"metadata API");
+ const auto *api=static_cast<const PGS_MetaApi*>(pgs_runtime_metadata_api(1));require(api&&api->resolve_class&&api->validate_method,"metadata API");
  require(boot.module_base,"il2cpp module");
- PgsMetaClassQuery cq{};cq.version=1;cq.size=sizeof(cq);cq.name_space="Niantic.Holoholo.UI";cq.name="PokemonInventoryCellView";cq.canonical_match=PGS_MD_MATCH_EXACT;
- PgsMetaClassResult cr{};require(api->resolve_class(&cq,&cr)==0,"PokemonInventoryCellView");
+ PGS_MetaClassQuery cq{};cq.version=1;cq.size=sizeof(cq);cq.name_space="Niantic.Holoholo.UI";cq.name="PokemonInventoryCellView";cq.canonical_match=PGS_MD_MATCH_EXACT;
+ PGS_MetaClassResult cr{};require(api->resolve_class(&cq,&cr)==0,"PokemonInventoryCellView");
  static const uint8_t prologue[]=PGS_GAME_STORAGE_IV_CPP_POKEMONINVENTORYCELLVIEW_INITIALIZE_FINGERPRINT;
- PgsMetaMethodQuery q{};q.version=1;q.size=sizeof(q);q.owner=cr.klass;q.name="Initialize";q.return_type="System.Void";q.return_match=PGS_MD_MATCH_EXACT;q.param_count=1;
+ PGS_MetaMethodQuery q{};q.version=1;q.size=sizeof(q);q.owner=cr.klass;q.name="Initialize";q.return_type="System.Void";q.return_match=PGS_MD_MATCH_EXACT;q.param_count=1;
  q.expected_code=static_cast<const char*>(boot.module_base)+PGS_GAME_STORAGE_IV_CPP_POKEMONINVENTORYCELLVIEW_INITIALIZE_RVA;q.prologue=prologue;q.prologue_len=sizeof(prologue);
- PgsMetaMethodResult r{};const int rc_validate=api->validate_method(&q,&r);
+ PGS_MetaMethodResult r{};const int rc_validate=api->validate_method(&q,&r);
  if(rc_validate!=0||!r.code){
   // Name the signature the game has, so a changed method can be told from a moved one.
   static std::string why;why="Initialize signature (code "+std::to_string(rc_validate)+")";

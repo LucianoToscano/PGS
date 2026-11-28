@@ -41,7 +41,7 @@ class EventSettingsJavaTests(unittest.TestCase):
                 source.parent.mkdir(parents=True, exist_ok=True)
                 source.write_text(text, encoding='utf-8')
                 sources.append(source)
-            sources += [ROOT/'src/dev/pgs/AccountProfileStore.java', ROOT/'src/dev/pgs/events/EventSettings.java', ROOT/'test/EventSettingsTest.java']
+            sources += [ROOT/'src/dev/pgs/events/EventSettings.java', ROOT/'test/EventSettingsTest.java']
             compiled = subprocess.run([str(compiler), '-encoding', 'UTF-8', '-d', str(work/'classes'),
                                        *map(str, sources)], capture_output=True, text=True, timeout=60)
             self.assertEqual(compiled.returncode, 0, compiled.stdout + compiled.stderr)

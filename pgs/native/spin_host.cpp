@@ -86,7 +86,7 @@ int update(const PgsSpinHostOptions *p){
 }
 void poll(uint64_t t){
  if(!(config.flags&PGS_SPH_TRANSPORT)||t<last_poll+50)return;last_poll=t;
- PgsRuntimeTransportSample before{},after{};int enabled=0;const auto tr=transport();
+ PGSRuntimeTransportSample before{},after{};int enabled=0;const auto tr=transport();
  // A settings publication between reads is not a revocation. Retry a bounded
  // number of times; stale, disabled, or unreadable transport still fails closed.
  bool fresh=false;
@@ -142,7 +142,7 @@ int tick(uint64_t tid,uint64_t sequence,uint64_t opener){
 }
 int sample(PgsSpinHostSample *s){if(!s)return PGS_SPH_BAD_CONFIG;*s={1,sizeof(*s),uint32_t(configured.load()),caps.load(),uint32_t(stopping.load()),owned.load(),camera_error.load(),quick_error.load(),configured?config.owner_tid:0,ticks.load()};return 0;}
 int next_event(PgsSpinHostEvent *e){if(!e)return PGS_SPH_BAD_CONFIG;std::lock_guard<std::mutex> lock(event_mutex);if(!count){*e={};return PGS_SPH_EMPTY;}*e=events[head];head=(head+1)%32;--count;return 0;}
-void pulse(void*,const PgsUnityPulse *p){if(!p||p->reserved||p->tid<=0)return;auto scheduler=static_cast<const PgsUnitySchedulerApi*>(pgs_unity_scheduler_api(2));if(!scheduler||scheduler->valid(p->generation)!=1)return;
+void pulse(void*,const PGSUnityPulse *p){if(!p||p->reserved||p->tid<=0)return;auto scheduler=static_cast<const PgsUnitySchedulerApi*>(pgs_unity_scheduler_api(2));if(!scheduler||scheduler->valid(p->generation)!=1)return;
  uint64_t opener=1;auto shared=static_cast<const PgsSharedHostApi*>(pgs_shared_host_api(1));PgsSharedHostSample s{};if(shared&&!shared->sample(&s))opener=s.hook_frames;tick(p->tid,p->sequence,opener);
 }
 const PgsSpinHostApi api{1,sizeof(PgsSpinHostApi),configure,update,tick,stop,sample,next_event,pulse};

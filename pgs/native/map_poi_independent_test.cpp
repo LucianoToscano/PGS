@@ -16,8 +16,8 @@ struct MovingHeap {
 };
 MovingHeap heaps[256];int heapIndex=0,relocations=0,fortCalls=0,aliveCalls=0,managedCalls=0;
 std::map<uintptr_t,void*> roots;uintptr_t nextRoot=100;size_t peakRoots=0;
-const PgsMapPoiApi *testedApi=nullptr;PgsMapPoiOutput *activeOutput=nullptr;
-PgsMapPoiRequest activeRequest{};
+const PGS_MapPoiApi *testedApi=nullptr;PGS_MapPoiOutput *activeOutput=nullptr;
+PGS_MapPoiRequest activeRequest{};
 bool reenterOnStopCleanup=false,expireCandidate=false,expireAliveCleanup=false,expired=false;
 int reentryStatus=0;bool reentered=false;
 MovingHeap &h(){return heaps[heapIndex];}
@@ -89,7 +89,7 @@ int runIndependent(const char *scenario){
  c.object_get_virtual_method=reinterpret_cast<void*>(&movingVirtual);c.string_length=reinterpret_cast<void*>(&movingStrLength);c.string_chars=reinterpret_cast<void*>(&movingChars);
  assert(testedApi->install(&c)==0);
  activeRequest.version=1;activeRequest.size=sizeof(activeRequest);activeRequest.tid=static_cast<uint64_t>(gettid());activeRequest.remaining_ms=2500;activeRequest.wall_ms=2000;
- auto output=std::unique_ptr<PgsMapPoiOutput>(new PgsMapPoiOutput{});activeOutput=output.get();
+ auto output=std::unique_ptr<PGS_MapPoiOutput>(new PGS_MapPoiOutput{});activeOutput=output.get();
  const bool candidate=std::strcmp(scenario,"expire-candidate")==0,alive=std::strcmp(scenario,"expire-alive-cleanup")==0,invalid=std::strcmp(scenario,"invalid-bool")==0;
  if(candidate||alive){activeRequest.remaining_ms=50;expireCandidate=candidate;expireAliveCleanup=alive;}
  if(invalid)h().stop.alive=2;
@@ -124,6 +124,6 @@ int main(int argc,char **argv){
  void *library=dlopen(argv[1],RTLD_NOW|RTLD_LOCAL);if(!library){std::puts(dlerror());return 2;}
  auto get=reinterpret_cast<const void*(*)(uint32_t)>(dlsym(library,"pgs_native_api"));
  auto core=get?static_cast<const pgs_native_api_v2*>(get(2)):nullptr;assert(core&&core->query_feature(42,99)==nullptr);
- testedApi=static_cast<const PgsMapPoiApi*>(core->query_feature(42,1));assert(testedApi&&testedApi->size==24);
+ testedApi=static_cast<const PGS_MapPoiApi*>(core->query_feature(42,1));assert(testedApi&&testedApi->size==24);
  return runIndependent(argc==3?argv[2]:"moving");
 }

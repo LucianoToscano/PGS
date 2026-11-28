@@ -56,12 +56,6 @@ _MAX_EXTRACT_BYTES = 500_000_000
 # --------------------------------------------------------------------------- #
 # Hashing helpers
 # --------------------------------------------------------------------------- #
-def _enabled(primary, env=None):
-    """Enable a PGS build option from the environment."""
-    values = os.environ if env is None else env
-    return values.get(primary) == '1'
-
-
 def sha256(path):
     with open(path, 'rb') as stream:
         return hashlib.file_digest(stream, 'sha256').hexdigest()
@@ -229,7 +223,6 @@ def ensure_dobby(root, download=False):
     archive = vendor / ('dobby-' + DOBBY_COMMIT + '.zip')
     extracted = vendor / ('Dobby-' + DOBBY_COMMIT)
     marker = extracted / '.pgs-verified'
-    legacy_marker = extracted / '.pgs-verified'
 
     if not archive.is_file():
         if not download:
@@ -248,9 +241,6 @@ def ensure_dobby(root, download=False):
     # Never trust a marker alone: validate the actual compiler inputs against the
     # verified archive on every build. Refuse altered caches instead of deleting them.
     if extracted.exists():
-        for receipt in (marker, legacy_marker):
-            if receipt.is_symlink() or (receipt.exists() and not receipt.is_file()):
-                raise RuntimeError('Invalid Dobby verification marker: ' + str(receipt))
         with zipfile.ZipFile(archive) as package:
             expected = set()
             for info, target in _safe_members(package, vendor):
@@ -258,14 +248,8 @@ def ensure_dobby(root, download=False):
                 expected.add(target)
                 if target.is_symlink() or not target.is_file() or target.read_bytes() != package.read(info):
                     raise RuntimeError('Dobby source cache changed: ' + str(target))
-            actual = {p.resolve() for p in extracted.rglob('*') if p.is_file() and p not in (marker, legacy_marker)}
+            actual = {p.resolve() for p in extracted.rglob('*') if p.is_file() and p != marker}
             if actual != expected: raise RuntimeError('Unexpected files in Dobby source cache')
-        # Rename only our disposable receipt after independent archive and source verification.
-        if not marker.exists():
-            with marker.open('x', encoding='utf-8') as receipt:
-                receipt.write(DOBBY_SHA256)
-        if legacy_marker.exists():
-            legacy_marker.unlink()
         return extracted
     safe_extract(archive, vendor)
     if not extracted.is_dir():
@@ -517,18 +501,18 @@ def _locate_built_library(build_dir):
 def build_all(root, abis=DEFAULT_ABIS, download=False):
     """Build every requested ABI; return {abi: Path to stripped .so}.
 
-    Opt-in: requires PGS_NATIVE_PILOT=1 (old environment variable is accepted). Shared NDK/CMake/Ninja/Dobby
+    Opt-in: requires PGS_NATIVE_PILOT=1. Shared NDK/CMake/Ninja/Dobby
     resolution is done once and reused across ABIs.
     """
-    if not _enabled(_PILOT_ENV):
+    if os.environ.get(_PILOT_ENV) != '1':
         raise RuntimeError(
-            'Native pilot build is opt-in. Set ' + _PILOT_ENV + '=1.')
+            'Native pilot build is opt-in. Set ' + _PILOT_ENV + '=1 to enable it.')
     root = Path(root).resolve()
     schema_generator=root.parent/'tools/game_update.py'
     if not schema_generator.is_file():
         raise RuntimeError('Missing game binding profile generator')
     subprocess.run([sys.executable,'-B',str(schema_generator),'generate','--check'],check=True,timeout=30)
-    download = download or _enabled(_DOWNLOAD_ENV)
+    download = download or os.environ.get(_DOWNLOAD_ENV) == '1'
     abis = list(dict.fromkeys(abis))
     if not abis:
         raise RuntimeError('No ABIs requested')
@@ -550,7 +534,7 @@ def build_all(root, abis=DEFAULT_ABIS, download=False):
 def main(argv=None):
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--root', type=Path, default=Path(__file__).resolve().parent,
-                        help='PGS project source root (default: this file\'s directory)')
+                        help='pgs project root (default: this file\'s directory)')
     parser.add_argument('--abi', action='append', dest='abis', choices=sorted(ELF_MACHINE),
                         help='ABI to build; repeat for several (default: all release ABIs)')
     parser.add_argument('--download', action='store_true',

@@ -81,8 +81,8 @@ final class AccountProfiles {
     /** The PGS settings file: the main account's while global settings are on. */
     static final String SETTINGS_FILE="pgs-settings-v1.properties";
     static File file(Context context,String name){
-        if(store==null)return new File(context.getFilesDir(),AccountProfileStore.legacyStorageName(name));
-        try{return store.dataFile(AccountProfileStore.legacyStorageName(SETTINGS_FILE).equals(AccountProfileStore.legacyStorageName(name))?store.settingsOwner(startupId):startupId,name);}
+        if(store==null)return new File(context.getFilesDir(),name);
+        try{return store.dataFile(SETTINGS_FILE.equals(name)?store.settingsOwner(startupId):startupId,name);}
         catch(IOException error){throw new IllegalStateException("Cannot open account storage",error);}
     }
     static boolean globalSettings(){return store!=null&&store.globalSettings();}
@@ -112,7 +112,7 @@ final class AccountProfiles {
         });
     }
     static SharedPreferences preferences(Context context,String scope){
-        SharedPreferences prefs=context.getSharedPreferences(store==null?AccountProfileStore.legacyStorageName(scope):store.preferenceName(startupId,scope),Context.MODE_PRIVATE);
+        SharedPreferences prefs=context.getSharedPreferences(store==null?scope:store.preferenceName(startupId,scope),Context.MODE_PRIVATE);
         openPreferences.add(prefs);return prefs;
     }
     private static void flush() throws IOException {

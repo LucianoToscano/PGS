@@ -15,7 +15,7 @@
 // makes NO managed/il2cpp call -- it is pure bounded typed bookkeeping -- so the meaningful actual-native test
 // is this process-level harness resolved through the exported pgs_native_api v2 registry
 // (query_feature(52,1)), NOT a Dobby attach (there is no target). The coordinator builds and runs it against
-// libpgs-core.so after registering query_feature case 52 and linking runtime_transport.cpp. It exercises frame
+// libpgs.so after registering query_feature case 52 and linking runtime_transport.cpp. It exercises frame
 // malformation, snapshot staleness/freshness, guarded getters, coord null sentinel, exact 64-bit scalars,
 // pulse edges, event ordering/drain-cap/overflow/byte-budget, consume-before-dispatch (no replay), and stop.
 
@@ -117,8 +117,8 @@ std::vector<Ev> drain(uint32_t cap, uint32_t *count_out = nullptr, uint64_t *gen
   return events;
 }
 
-PgsRuntimeTransportSample sample() {
-  PgsRuntimeTransportSample s{};
+PGSRuntimeTransportSample sample() {
+  PGSRuntimeTransportSample s{};
   assert(g_api->sample(&s) == PGS_TRANSPORT_OK && s.version == 1 && s.size == sizeof(s));
   return s;
 }
@@ -142,7 +142,7 @@ PgsRuntimeTransportConfig make_config() {
 }  // namespace
 
 int main(int argc, char **argv) {
-  const char *so_path = argc > 1 ? argv[1] : "./libpgs-core.so";
+  const char *so_path = argc > 1 ? argv[1] : "./libpgs.so";
   void *lib = ::dlopen(so_path, RTLD_NOW | RTLD_LOCAL);
   if (!lib) { std::fprintf(stderr, "dlopen(%s) failed: %s\n", so_path, ::dlerror()); return 1; }
   auto getter = reinterpret_cast<GetApiFn>(::dlsym(lib, "pgs_native_api"));
@@ -155,8 +155,8 @@ int main(int argc, char **argv) {
   g_api = api;
 
   std::printf("ABI sizes: config=%zu sample=%zu table=%zu\n",
-              sizeof(PgsRuntimeTransportConfig), sizeof(PgsRuntimeTransportSample), sizeof(PgsRuntimeTransportApi));
-  assert(sizeof(PgsRuntimeTransportConfig) == 32 && sizeof(PgsRuntimeTransportSample) == 88 &&
+              sizeof(PgsRuntimeTransportConfig), sizeof(PGSRuntimeTransportSample), sizeof(PgsRuntimeTransportApi));
+  assert(sizeof(PgsRuntimeTransportConfig) == 32 && sizeof(PGSRuntimeTransportSample) == 88 &&
          sizeof(PgsRuntimeTransportApi) == 96);
 
   PgsRuntimeTransportConfig cfg = make_config();

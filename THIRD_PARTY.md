@@ -1,8 +1,6 @@
 # Third-party components
 
-See also the [PGS license index](THIRD_PARTY_LICENSES.md) and [NOTICE](NOTICE).
-
-The project MIT license applies to its original code, not the following components or the original game.
+PGS's MIT license applies to its original code, not the following components or the original game.
 
 - The opt-in native pilot statically links [Dobby](https://github.com/jmpews/Dobby/tree/0932d69c320e786672361ab53825ba8f4245e9d3), under Apache-2.0. Its pinned source is downloaded only on request, verified by SHA-256, and its LICENSE is included in pilot APKs under `assets/pgs/native-notices/`. Normal packages do not include this optional component.
 
@@ -12,11 +10,11 @@ The project MIT license applies to its original code, not the following componen
 - **Frida Gadget 17.24.2** is fetched from the [official Frida release](https://github.com/frida/frida/releases/tag/17.24.2) when explicitly requested, with GitHub-provided SHA-256 verification. It is not committed here. See [Frida's source and licenses](https://github.com/frida/frida).
 - **frida-java-bridge**, distributed with frida-tools 14.10.4, is retained under `pgs/vendor/`. The local derivative reproduces upstream commit `302a588881b40cba300bcf3acfd35deeb3888ee5`. Upstream declares `LGPL-2.0 WITH WxWindows-exception-3.1`. The original bundle, exact patch script, hash provenance, distribution license, and [notice](pgs/vendor/NOTICE.txt) are included. Embedded dependency notices remain in the bundle.
 - Android SDK build tools and the JDK are external build prerequisites and are not redistributed in source artifacts.
-- Pokémon GO code, artwork, names, and assets remain with their respective rights holders. Original game builds are user-supplied private inputs. Selected map icons are copied unchanged and base-species names are extracted from [PokeMiners/pogo_assets](https://github.com/PokeMiners/pogo_assets); their pinned upstream paths and hashes are recorded in `pgs/assets/map-icons/provenance.json`. These images and names are game content, excluded from The project MIT license. The upstream repository attributes the artwork to The Pokémon Company and Niantic.
+- Pokémon GO code, artwork, names, and assets remain with their respective rights holders. Original game builds are user-supplied private inputs. Selected map icons are copied unchanged and base-species names are extracted from [PokeMiners/pogo_assets](https://github.com/PokeMiners/pogo_assets); their pinned upstream paths and hashes are recorded in `pgs/assets/map-icons/provenance.json`. These images and names are game content, excluded from PGS's MIT license. The upstream repository attributes the artwork to The Pokémon Company and Niantic.
 
 - PvP keep uses base stats, evolutions and overall league rankings from [PvPoke](https://github.com/pvpoke/pvpoke) (MIT), pinned at a commit recorded in `pgs/native/schema/pvp/provenance.json`, with its license in `pgs/native/schema/pvp/LICENSE-PvPoke.txt`. `tools/pvp_data.py` derives the compact snapshot and the generated native table from it.
 
-- Feed base-species sprites are copied unchanged from [PokeAPI/sprites](https://github.com/PokeAPI/sprites), pinned at `97a7832d307311c0e1c6ea9035308bf80cc94f81`. Paths and SHA-256 hashes are recorded in `pgs/assets/feed-icons/provenance.json`. Pokémon artwork belongs to its respective rights holders and is excluded from The project MIT license.
+- Feed base-species sprites are copied unchanged from [PokeAPI/sprites](https://github.com/PokeAPI/sprites), pinned at `97a7832d307311c0e1c6ea9035308bf80cc94f81`. Paths and SHA-256 hashes are recorded in `pgs/assets/feed-icons/provenance.json`. Pokémon artwork belongs to its respective rights holders and is excluded from PGS's MIT license.
 
 - The optional build-time DEX bridge rewriter uses **dexlib2 2.5.2** (BSD-3-Clause), **Guava 27.1-android** and **failureaccess 1.0.1** (Apache-2.0), and **JSR-305 3.0.2** (BSD-3-Clause). These tools are not embedded in APKs. Exact Maven URLs and SHA-256 pins are recorded in `tools/dex_bridge/dependencies.json`; upstream sources are https://github.com/JesusFreke/smali and https://github.com/google/guava.
 

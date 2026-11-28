@@ -294,7 +294,7 @@ int api_selftest() {
     return status;
 }
 
-// Ordered, read-only table shared by PGS and compatibility factories. Never reordered.
+// Ordered, read-only table advertised by pgs_native_api(). Never reordered.
 const pgs_native_api_v1 g_api = {
     PGS_NATIVE_API_VERSION,
     static_cast<uint32_t>(sizeof(pgs_native_api_v1)),
@@ -397,7 +397,7 @@ static_assert(sizeof(pgs_native_api_v2) == 48, "v2 ABI");
 extern "C" __attribute__((visibility("default")))
 const void *pgs_native_api(uint32_t version) {
     if (version == 2) return &g_api_v2;
-    if (version != PGS_NATIVE_API_VERSION) return nullptr; // exact match only
+    if (version != PGS_NATIVE_API_VERSION) return nullptr; // exact match only in the pilot
     return &g_api;
 }
 

@@ -19,27 +19,27 @@
 // managed exceptions surface through runtime_invoke's exc out-param, never a C++ throw. No mutex is held
 // across a managed call.
 
-static_assert(sizeof(PgsMapPoiConfig) == 408, "config 408");
-static_assert(offsetof(PgsMapPoiConfig, f_incDone) == 392, "config incident end");     // 8 + 48*8
-static_assert(sizeof(PgsMapPoiRequest) == 32, "request 32");
-static_assert(sizeof(PgsMapPoiPoint) == 576, "point 576");
-static_assert(sizeof(PgsMapPoiOutput) == 294928, "output 294928");
-static_assert(sizeof(PgsMapPoiApi) == 24, "table 24");
-static_assert(offsetof(PgsMapPoiConfig, runtime_invoke) == 8, "config body start");
-static_assert(offsetof(PgsMapPoiConfig, class_stop) == 120, "config classes");   // 8 + 14*8
-static_assert(offsetof(PgsMapPoiConfig, f_fortId) == 192, "config mandatory fields"); // 8 + 23*8
-static_assert(offsetof(PgsMapPoiConfig, m_team) == 256, "config optional start");     // 8 + 31*8
-static_assert(offsetof(PgsMapPoiConfig, f_bossId) == 320, "config optional end");     // 8 + 39*8
-static_assert(offsetof(PgsMapPoiRequest, tid) == 8, "request tid");
-static_assert(offsetof(PgsMapPoiRequest, remaining_ms) == 16, "request remaining");
-static_assert(offsetof(PgsMapPoiRequest, wall_ms) == 24, "request wall");
-static_assert(offsetof(PgsMapPoiPoint, lat) == 16, "point lat");
-static_assert(offsetof(PgsMapPoiPoint, raid_end) == 32, "point raid_end");
-static_assert(offsetof(PgsMapPoiPoint, team_id) == 48, "point team_id");
-static_assert(offsetof(PgsMapPoiPoint, id) == 64, "point id");
-static_assert(offsetof(PgsMapPoiOutput, status) == 8, "output status");
-static_assert(offsetof(PgsMapPoiOutput, count) == 12, "output count");
-static_assert(offsetof(PgsMapPoiOutput, points) == 16, "output points");
+static_assert(sizeof(PGS_MapPoiConfig) == 408, "config 408");
+static_assert(offsetof(PGS_MapPoiConfig, f_incDone) == 392, "config incident end");     // 8 + 48*8
+static_assert(sizeof(PGS_MapPoiRequest) == 32, "request 32");
+static_assert(sizeof(PGS_MapPoiPoint) == 576, "point 576");
+static_assert(sizeof(PGS_MapPoiOutput) == 294928, "output 294928");
+static_assert(sizeof(PGS_MapPoiApi) == 24, "table 24");
+static_assert(offsetof(PGS_MapPoiConfig, runtime_invoke) == 8, "config body start");
+static_assert(offsetof(PGS_MapPoiConfig, class_stop) == 120, "config classes");   // 8 + 14*8
+static_assert(offsetof(PGS_MapPoiConfig, f_fortId) == 192, "config mandatory fields"); // 8 + 23*8
+static_assert(offsetof(PGS_MapPoiConfig, m_team) == 256, "config optional start");     // 8 + 31*8
+static_assert(offsetof(PGS_MapPoiConfig, f_bossId) == 320, "config optional end");     // 8 + 39*8
+static_assert(offsetof(PGS_MapPoiRequest, tid) == 8, "request tid");
+static_assert(offsetof(PGS_MapPoiRequest, remaining_ms) == 16, "request remaining");
+static_assert(offsetof(PGS_MapPoiRequest, wall_ms) == 24, "request wall");
+static_assert(offsetof(PGS_MapPoiPoint, lat) == 16, "point lat");
+static_assert(offsetof(PGS_MapPoiPoint, raid_end) == 32, "point raid_end");
+static_assert(offsetof(PGS_MapPoiPoint, team_id) == 48, "point team_id");
+static_assert(offsetof(PGS_MapPoiPoint, id) == 64, "point id");
+static_assert(offsetof(PGS_MapPoiOutput, status) == 8, "output status");
+static_assert(offsetof(PGS_MapPoiOutput, count) == 12, "output count");
+static_assert(offsetof(PGS_MapPoiOutput, points) == 16, "output points");
 
 namespace {
 
@@ -65,7 +65,7 @@ using ThreadCur  = void *(*)();
 
 std::mutex g_install_mutex;
 std::mutex g_state_mutex;
-PgsMapPoiConfig g_cfg{};
+PGS_MapPoiConfig g_cfg{};
 std::atomic<bool> g_installed{false};
 
 // Which optional groups the installed config enables (computed once at install).
@@ -204,9 +204,9 @@ struct Id {
 };
 
 // True if `id` already appears among the first `count` emitted points (dedup across stop/gym, like legacy).
-bool already_seen(const PgsMapPoiOutput *out, uint32_t count, const Id &id) {
+bool already_seen(const PGS_MapPoiOutput *out, uint32_t count, const Id &id) {
   for (uint32_t i = 0; i < count; ++i) {
-    const PgsMapPoiPoint &p = out->points[i];
+    const PGS_MapPoiPoint &p = out->points[i];
     if (static_cast<int32_t>(p.id_length) != id.length) continue;
     if (std::memcmp(p.id, id.chars, static_cast<size_t>(id.length) * sizeof(uint16_t)) == 0) return true;
   }
@@ -217,7 +217,7 @@ bool already_seen(const PgsMapPoiOutput *out, uint32_t count, const Id &id) {
 // incident from PokestopDisplays (else the legacy PokestopDisplay) sets FLAG_INCIDENT, its raw
 // IncidentDisplayType in `incident` and its end in raid_end. Each read is isolated: anything unexpected
 // only omits the incident. Pure field reads (no managed call).
-bool read_display(void *display, uint64_t wall, PgsMapPoiPoint *pt) {
+bool read_display(void *display, uint64_t wall, PGS_MapPoiPoint *pt) {
   if (!is_exact(display, g_cfg.class_display)) return false;
   auto get = reinterpret_cast<FieldGet>(g_cfg.field_get_value);
   int32_t type = 0; int64_t end = 0; uint8_t hide = 0, done = 0;
@@ -229,7 +229,7 @@ bool read_display(void *display, uint64_t wall, PgsMapPoiPoint *pt) {
   pt->raid_end = static_cast<double>(end);
   return true;
 }
-void read_optional_incident_data(const Root &fort, PgsMapPoiPoint *pt, uint64_t wall) {
+void read_optional_incident_data(const Root &fort, PGS_MapPoiPoint *pt, uint64_t wall) {
   void *list = nullptr;
   if (field_ptr(fort, g_cfg.f_displays, &list) && list) {
     void *array = nullptr; int32_t count = 0;
@@ -248,7 +248,7 @@ void read_optional_incident_data(const Root &fort, PgsMapPoiPoint *pt, uint64_t 
 }
 // The stop's own IsIncidentActive() then drops an incident the player already beat (the fort data
 // keeps it until the server refreshes; the stop marks it complete locally, as the game map shows).
-int read_optional_incident(const Root &obj, const Root &fort, PgsMapPoiPoint *pt, uint64_t wall, uint64_t deadline) {
+int read_optional_incident(const Root &obj, const Root &fort, PGS_MapPoiPoint *pt, uint64_t wall, uint64_t deadline) {
   if (!g_has_incident) return PGS_MP_OK;
   read_optional_incident_data(fort, pt, wall);
   if (!(pt->flags & PGS_MP_FLAG_INCIDENT)) return PGS_MP_OK;
@@ -264,7 +264,7 @@ int read_optional_incident(const Root &obj, const Root &fort, PgsMapPoiPoint *pt
 
 // Optional gym fields. Each read is isolated: a throw / bad class / out-of-range value only omits the field.
 // `raid` is already rooted and proven; `obj` is the rooted candidate (team is invoked on it).
-int read_optional_gym(const Root &obj, const Root &fort, PgsMapPoiPoint *pt, uint64_t wall, uint64_t deadline) {
+int read_optional_gym(const Root &obj, const Root &fort, PGS_MapPoiPoint *pt, uint64_t wall, uint64_t deadline) {
   int err = PGS_MP_OK;
   if (!within_window(deadline, &err)) return err;
   // team: non-virtual instance invoke on the candidate -> boxed enum (exact class_teamBox, value size 4).
@@ -340,8 +340,8 @@ int read_optional_gym(const Root &obj, const Root &fort, PgsMapPoiPoint *pt, uin
 
 // Walk one POI class, appending accepted points to out->points starting at *count. Returns a scan status:
 // PGS_MP_OK keeps walking, PGS_MP_SKIP is a benign expiry (abort empty), negative is a fault (abort empty).
-int scan_class(void *klass, uint32_t kind, const PgsMapPoiRequest *request, uint64_t deadline,
-               PgsMapPoiOutput *out, uint32_t *count) {
+int scan_class(void *klass, uint32_t kind, const PGS_MapPoiRequest *request, uint64_t deadline,
+               PGS_MapPoiOutput *out, uint32_t *count) {
   int err = PGS_MP_OK;
   if (!within_window(deadline, &err)) return err;
 
@@ -448,7 +448,7 @@ int scan_class(void *klass, uint32_t kind, const PgsMapPoiRequest *request, uint
 
     // Commit the point into the caller's buffer (provisional: *count is stamped into out->count only on the
     // final success gate, so an expiry/fault after this still publishes nothing).
-    PgsMapPoiPoint *pt = &out->points[*count];
+    PGS_MapPoiPoint *pt = &out->points[*count];
     std::memset(pt, 0, sizeof(*pt));
     pt->kind = kind;
     pt->id_length = static_cast<uint32_t>(id.length);
@@ -468,10 +468,10 @@ int scan_class(void *klass, uint32_t kind, const PgsMapPoiRequest *request, uint
   return PGS_MP_OK;
 }
 
-void init_output(PgsMapPoiOutput *out) {
+void init_output(PGS_MapPoiOutput *out) {
   std::memset(out, 0, sizeof(*out));
   out->version = PGS_MP_OUTPUT_VERSION;
-  out->size = sizeof(PgsMapPoiOutput);
+  out->size = sizeof(PGS_MapPoiOutput);
 }
 
 // Supplied tid must be nonzero AND equal the current OS tid BEFORE the owner is latched; a later foreign tid
@@ -485,11 +485,11 @@ bool owner_ready(uint64_t tid) {
   return g_owner_tid.load(std::memory_order_acquire) == tid;
 }
 
-bool check_request(const PgsMapPoiRequest *request, int *rc) {
+bool check_request(const PGS_MapPoiRequest *request, int *rc) {
   if (!g_installed.load(std::memory_order_acquire)) { *rc = PGS_MP_ERR_NOT_INSTALLED; return false; }
   if (request == nullptr) { *rc = PGS_MP_ERR_NULL_ARG; return false; }
   if (request->version != PGS_MP_REQUEST_VERSION) { *rc = PGS_MP_ERR_BAD_VERSION; return false; }
-  if (request->size != sizeof(PgsMapPoiRequest)) { *rc = PGS_MP_ERR_BAD_SIZE; return false; }
+  if (request->size != sizeof(PGS_MapPoiRequest)) { *rc = PGS_MP_ERR_BAD_SIZE; return false; }
   if (!is_safe_ms(request->wall_ms)) { *rc = PGS_MP_ERR_BAD_CONFIG; return false; }
   *rc = PGS_MP_OK;
   return true;
@@ -505,14 +505,14 @@ bool group_ok(void *const *ptrs, const int *slots, int n, bool *enabled) {
   return true;
 }
 
-bool validate_config(const PgsMapPoiConfig *c, int *rc, bool *team, bool *slots, bool *level, bool *boss,
+bool validate_config(const PGS_MapPoiConfig *c, int *rc, bool *team, bool *slots, bool *level, bool *boss,
                      bool *incident) {
   if (c == nullptr) { *rc = PGS_MP_ERR_NULL_ARG; return false; }
   if (c->version != PGS_MP_CONFIG_VERSION) { *rc = PGS_MP_ERR_BAD_VERSION; return false; }
-  if (c->size != sizeof(PgsMapPoiConfig)) { *rc = PGS_MP_ERR_BAD_SIZE; return false; }
+  if (c->size != sizeof(PGS_MapPoiConfig)) { *rc = PGS_MP_ERR_BAD_SIZE; return false; }
 
   void *ptrs[kTotalPtrCount];
-  std::memcpy(ptrs, reinterpret_cast<const unsigned char *>(c) + offsetof(PgsMapPoiConfig, runtime_invoke),
+  std::memcpy(ptrs, reinterpret_cast<const unsigned char *>(c) + offsetof(PGS_MapPoiConfig, runtime_invoke),
               sizeof(ptrs));
   for (int i = 0; i < kMandatoryPtrCount; ++i)
     if (ptrs[i] == nullptr) { *rc = PGS_MP_ERR_MISSING_PTR; return false; }
@@ -531,7 +531,7 @@ bool validate_config(const PgsMapPoiConfig *c, int *rc, bool *team, bool *slots,
   return true;
 }
 
-int api_install(const PgsMapPoiConfig *config) {
+int api_install(const PGS_MapPoiConfig *config) {
   int rc = PGS_MP_OK;
   bool team = false, slots = false, level = false, boss = false, incident = false;
   if (!validate_config(config, &rc, &team, &slots, &level, &boss, &incident)) return rc;
@@ -557,7 +557,7 @@ int api_install(const PgsMapPoiConfig *config) {
   return 0;
 }
 
-int api_scan(const PgsMapPoiRequest *request, PgsMapPoiOutput *out) {
+int api_scan(const PGS_MapPoiRequest *request, PGS_MapPoiOutput *out) {
   if (out == nullptr) return PGS_MP_ERR_NULL_ARG;  // cannot report
   init_output(out);
   int rc = PGS_MP_OK;
@@ -578,7 +578,7 @@ int api_scan(const PgsMapPoiRequest *request, PgsMapPoiOutput *out) {
   BusyExit busy_exit;
   // Reentrant managed calls may reuse the caller's output buffer. Keep provisional
   // rows private until every managed root has been released and the lease rechecked.
-  std::unique_ptr<PgsMapPoiOutput> staged(new (std::nothrow) PgsMapPoiOutput{});
+  std::unique_ptr<PGS_MapPoiOutput> staged(new (std::nothrow) PGS_MapPoiOutput{});
   if (!staged) { out->status = PGS_MP_ERR_ALLOCATION; return out->status; }
 
   // All managed work (and its roots) lives in this block; every Root is destroyed before the final gate.
@@ -597,13 +597,13 @@ int api_scan(const PgsMapPoiRequest *request, PgsMapPoiOutput *out) {
   if (!within_window(deadline, &status)) { out->status = status; return status; }
 
   out->count = count;
-  std::memcpy(out->points, staged->points, count * sizeof(PgsMapPoiPoint));
+  std::memcpy(out->points, staged->points, count * sizeof(PGS_MapPoiPoint));
   out->status = PGS_MP_OK;
   return PGS_MP_OK;
 }
 
-const PgsMapPoiApi kApiTable = {
-    PGS_MP_API_VERSION, static_cast<uint32_t>(sizeof(PgsMapPoiApi)),
+const PGS_MapPoiApi kApiTable = {
+    PGS_MP_API_VERSION, static_cast<uint32_t>(sizeof(PGS_MapPoiApi)),
     &api_install, &api_scan,
 };
 

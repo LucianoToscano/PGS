@@ -15,7 +15,7 @@
 // the exported pgs_native_api v2 registry (query_feature(13,1)), installs against
 // two real NOP-padded "methods" (so Dobby has room) with the exact by-value Vector2 +
 // out Vector3 + MethodInfo ABI, and drives capture with a fake managed heap. No test
-// claims are made here; the coordinator builds and runs this against libpgs-core.so.
+// claims are made here; the coordinator builds and runs this against libpgs.so.
 
 namespace {
 
@@ -65,7 +65,7 @@ void *fake_object_get_class(void *obj) {
 void *fake_object_unbox(void *obj) { return &static_cast<FakeLatLng *>(obj)->lat; }
 
 // Hooks the capture path can drive mid-call (lease expiry / epoch change / disable).
-const PgsMapTapApi *g_api = nullptr;
+const PGS_MapTapApi *g_api = nullptr;
 uint64_t g_owner = 0;
 bool g_invoke_bumps_epoch = false;
 bool g_invoke_disables = false;
@@ -132,10 +132,10 @@ __attribute__((noinline)) uint8_t target_position(void *self, TestFloat2 pos, vo
 
 uint64_t this_tid() { return static_cast<uint64_t>(static_cast<pid_t>(::gettid())); }
 
-PgsMapTapConfig make_config() {
-  PgsMapTapConfig c{};
+PGS_MapTapConfig make_config() {
+  PGS_MapTapConfig c{};
   c.version = 1;
-  c.size = sizeof(PgsMapTapConfig);
+  c.size = sizeof(PGS_MapTapConfig);
   c.gchandle_new = reinterpret_cast<void *>(&fake_gchandle_new);
   c.gchandle_get_target = reinterpret_cast<void *>(&fake_gchandle_get_target);
   c.gchandle_free = reinterpret_cast<void *>(&fake_gchandle_free);
@@ -151,16 +151,16 @@ PgsMapTapConfig make_config() {
   return c;
 }
 
-PgsMapTapSample take_sample(const PgsMapTapApi *api) {
-  PgsMapTapSample s{};
+PGS_MapTapSample take_sample(const PGS_MapTapApi *api) {
+  PGS_MapTapSample s{};
   assert(api->sample(&s) == PGS_MAP_TAP_OK);
-  assert(s.version == 1 && s.size == sizeof(PgsMapTapSample));
+  assert(s.version == 1 && s.size == sizeof(PGS_MapTapSample));
   return s;
 }
 
-int drain_all(const PgsMapTapApi *api, PgsMapTapEvent *out, int max) {
+int drain_all(const PGS_MapTapApi *api, PGS_MapTapEvent *out, int max) {
   int n = 0;
-  PgsMapTapEvent ev{};
+  PGS_MapTapEvent ev{};
   while (n < max && api->drain(&ev) == PGS_MAP_TAP_OK) out[n++] = ev;
   // No further events remain.
   assert(api->drain(&ev) == PGS_MAP_TAP_EMPTY);
@@ -170,7 +170,7 @@ int drain_all(const PgsMapTapApi *api, PgsMapTapEvent *out, int max) {
 }  // namespace
 
 int main(int argc, char **argv) {
-  const char *so_path = argc > 1 ? argv[1] : "./libpgs-core.so";
+  const char *so_path = argc > 1 ? argv[1] : "./libpgs.so";
   void *lib = ::dlopen(so_path, RTLD_NOW | RTLD_LOCAL);
   if (!lib) {
     std::fprintf(stderr, "dlopen(%s) failed: %s\n", so_path, ::dlerror());
@@ -185,20 +185,20 @@ int main(int argc, char **argv) {
   const auto *core = static_cast<const pgs_native_api_v2 *>(getter(2));
   assert(core && core->size == 48);
   assert(core->query_feature(13, 99) == nullptr);  // exact version only
-  const auto *api = static_cast<const PgsMapTapApi *>(core->query_feature(13, 1));
-  assert(api != nullptr && api->version == 1 && api->size == sizeof(PgsMapTapApi));
+  const auto *api = static_cast<const PGS_MapTapApi *>(core->query_feature(13, 1));
+  assert(api != nullptr && api->version == 1 && api->size == sizeof(PGS_MapTapApi));
   g_api = api;
 
   const uint64_t tid = this_tid();
   g_owner = tid;
-  PgsMapTapConfig cfg = make_config();
+  PGS_MapTapConfig cfg = make_config();
 
   // Validation before install.
   assert(api->install(nullptr) == PGS_MAP_TAP_ERR_INVALID_ARG);
-  PgsMapTapConfig bad = cfg;
+  PGS_MapTapConfig bad = cfg;
   bad.version = 2;
   assert(api->install(&bad) == PGS_MAP_TAP_ERR_BAD_VERSION);
-  bad = cfg; bad.size = sizeof(PgsMapTapConfig) - 1;
+  bad = cfg; bad.size = sizeof(PGS_MapTapConfig) - 1;
   assert(api->install(&bad) == PGS_MAP_TAP_ERR_BAD_SIZE);
   bad = cfg; bad.map_class = nullptr;
   assert(api->install(&bad) == PGS_MAP_TAP_ERR_MISSING_PTR);
@@ -206,7 +206,7 @@ int main(int argc, char **argv) {
   assert(api->install(&bad) == PGS_MAP_TAP_ERR_DUPLICATE_TARGET);
 
   // Not installed yet.
-  PgsMapTapEvent ev{};
+  PGS_MapTapEvent ev{};
   assert(api->update(1, 1000, tid, 1, 1) == PGS_MAP_TAP_ERR_NOT_INSTALLED);
   assert(api->drain(&ev) == PGS_MAP_TAP_ERR_NOT_INSTALLED);
   assert(api->disable() == PGS_MAP_TAP_ERR_NOT_INSTALLED);
@@ -245,9 +245,9 @@ int main(int argc, char **argv) {
   g_tap_drives_position = 1;
   call_tap(&ground, &dummy_sender, &dummy_ea, &dummy_method);
   assert(g_pos_log.x == g_drive_pos.x && g_pos_log.y == g_drive_pos.y);  // by-value Vector2 forwarded
-  PgsMapTapSample s = take_sample(api);
+  PGS_MapTapSample s = take_sample(api);
   assert(s.captured_serial == 1 && s.queued_count == 1 && s.owned_root_count == 0);
-  PgsMapTapEvent got[PGS_MAP_TAP_QUEUE_CAPACITY];
+  PGS_MapTapEvent got[PGS_MAP_TAP_QUEUE_CAPACITY];
   int n = drain_all(api, got, PGS_MAP_TAP_QUEUE_CAPACITY);
   assert(n == 1 && got[0].mode == 2 && got[0].epoch == 1);
   assert(std::fabs(got[0].latitude - 37.5) < 1e-9 && std::fabs(got[0].longitude + 122.3) < 1e-9);
@@ -339,7 +339,7 @@ int main(int argc, char **argv) {
   std::thread([&]() {
     assert(api->update(1, 2000, this_tid(), 9, 1) == PGS_MAP_TAP_ERR_INVALID_ARG);
     (void)call_position(&map, g_drive_pos, g_out_source, &dummy_method);  // not owner: chains only
-    PgsMapTapSample fs{};
+    PGS_MapTapSample fs{};
     api->sample(&fs);  // pure sample must not free anything
   }).join();
   assert(g_live.empty());

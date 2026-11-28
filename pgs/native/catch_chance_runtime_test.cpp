@@ -62,7 +62,7 @@ void *managed_call(void *m,void *o,void **args,void **exc){
  if(name=="get_CanUseWildBallInEncounter"){boxed.b=eligible;return &boxed;}
  assert(false);return nullptr;
 }
-int sample(PgsRuntimeTransportSample *out){*out={};out->snapshot_fresh=fresh;return 0;}
+int sample(PGSRuntimeTransportSample *out){*out={};out->snapshot_fresh=fresh;return 0;}
 int get_string(uint32_t slot,char *out,uint32_t cap,uint32_t *len){assert(slot==15&&cap>settings.size());*len=settings.size();std::memcpy(out,settings.data(),*len);return 0;}
 int get_bool(uint32_t,int *out){*out=0;return 0;}
 int get_int(uint32_t,int32_t *out){*out=0;return 0;}

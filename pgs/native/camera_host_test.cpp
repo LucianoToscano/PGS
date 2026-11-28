@@ -492,7 +492,7 @@ int verify_scheduler(const PgsUnitySchedulerConfig *c){return c&&c->version==2&&
 void run_execute(){using Fn=decltype(&fake_runtime_invoke);Fn volatile invoke=&fake_runtime_invoke;void *exception=nullptr;assert(invoke(g_slot_methods[M_EXECUTE_TASKS],nullptr,nullptr,&exception)==nullptr&&!exception);}
 
 int fake_seg_query(void *, const void *addr, uint64_t size,
-                   PgsMetaSegment *out) {
+                   PGS_MetaSegment *out) {
   *out = {};
   uintptr_t a = reinterpret_cast<uintptr_t>(addr);
   uintptr_t base = reinterpret_cast<uintptr_t>(g_module_base);
@@ -543,7 +543,7 @@ void restore_module_fingerprints() {
   write_u32(PGS_CAM_MAIN_CAMERA_RVA + 4u, kGetMainCameraWords[1]);
 }
 
-PgsMetaExports g_meta_exports = {};
+PGS_MetaExports g_meta_exports = {};
 PgsCameraMetaExtra g_meta_extra = {};
 
 void build_universe() {
@@ -805,9 +805,9 @@ int main(int argc, char **argv) {
 
   // Bind Feature 47 once with the canonical exports & segment resolver.
   const auto *md47 =
-      static_cast<const PgsMetaApi *>(core->query_feature(47u, 1u));
+      static_cast<const PGS_MetaApi *>(core->query_feature(47u, 1u));
   assert(md47 != nullptr);
-  PgsMetaBindConfig bind_cfg = {};
+  PGS_MetaBindConfig bind_cfg = {};
   bind_cfg.version = PGS_MD_CONFIG_VERSION;
   bind_cfg.size = sizeof(bind_cfg);
   bind_cfg.exports = &g_meta_exports;
@@ -879,7 +879,7 @@ int main(int argc, char **argv) {
    puts("PASS64 actual52 sustained131 headings/no adapter queue, coherent settings, OFF/stale gates, mid-sample snapshot revocation, queue backpressure stop");return 0;
   }
   // No fabricated manual or subscriber pulse authorizes continuous sampling.
-  PgsUnityPulse invalid{g_generation+1,1,gettid(),0};api->on_unity_begin(nullptr,&invalid);api->on_unity_end(nullptr,&invalid);assert(sample().matches==0);
+  PGSUnityPulse invalid{g_generation+1,1,gettid(),0};api->on_unity_begin(nullptr,&invalid);api->on_unity_end(nullptr,&invalid);assert(sample().matches==0);
   // Warmup and subsequent getter calls inside original ExecuteTasks never sample.
   for(int i=0;i<4;++i){renew();run_execute();}assert(sample().sample_count==0);
   int before=g_invokes;

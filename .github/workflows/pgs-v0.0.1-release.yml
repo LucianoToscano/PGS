@@ -1,17 +1,201 @@
-# Archived implementation and exact build history:
-# https://github.com/LucianoToscano/PGS/blob/5824214bdba54178b968d5239537dfc93f1fe114/.github/workflows/pgs-v0.0.1-release.yml
-name: PGS v0.0.1 - archived (no rebuild)
+name: PGS v0.0.1 - archive (manual only)
+
 on:
   workflow_dispatch:
+
 permissions:
   contents: read
+  actions: read
+
+concurrency:
+  group: pgs-v0.0.1-release-${{ github.ref }}
+  cancel-in-progress: false
+
 jobs:
-  archived:
-    runs-on: ubuntu-latest
-    timeout-minutes: 2
+  build:
+    name: Recompile PGS Java controls in the signed complete APK
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    env:
+      PGS_BUILD_TOOLS: '36.0.0'
+      PGS_ANDROID_PLATFORM: android-36
+      PGS_VERSION: v0.0.1
+      PGS_KEY_ALIAS: ${{ secrets.PGS_KEY_ALIAS || secrets.PGS_KEY_ALIAS }}
+      PGS_STORE_PASSWORD: ${{ secrets.PGS_STORE_PASSWORD || secrets.PGS_STORE_PASSWORD }}
+      PGS_KEY_PASSWORD: ${{ secrets.PGS_KEY_PASSWORD || secrets.PGS_KEY_PASSWORD }}
     steps:
-      - name: Refuse historical controls-only rebuild on migrated sources
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
+      - name: Prevent obsolete v0.0.1 rebuilds from newer PGS sources
         shell: bash
         run: |
-          echo "::error::This historical release cannot be rebuilt from current sources. Use the authorized full PGS candidate validation workflow."
-          exit 1
+          test "$(cat pgs/VERSION)" = "0.0.1" || {
+            echo "::error::v0.0.1 is historical; use the v0.0.2 release workflow."
+            exit 1
+          }
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5
+        with:
+          python-version: '3.12'
+      - uses: actions/setup-java@cf277c60eb25467037889841efdb72551f06f6c3 # v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - uses: android-actions/setup-android@9fc6c4e9069bf8d3d10b2204b1fb8f6ef7065407 # v3
+        with:
+          packages: platform-tools
+          log-accepted-android-sdk-licenses: false
+      - name: Prepare Android build tools
+        shell: bash
+        run: |
+          set -euo pipefail
+          sdkmanager "platforms;android-36" "build-tools;36.0.0"
+          printf 'ANDROID_HOME=%s\n' "$ANDROID_SDK_ROOT" >> "$GITHUB_ENV"
+          test -x "$ANDROID_SDK_ROOT/build-tools/36.0.0/apksigner"
+      - name: Test PGS identity and in-place update regressions
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -B -m unittest discover -s pgs/test -p 'test_pgs_*.py' -v
+      - name: Retrieve complete signed PGS v0.3.8-pgs.3
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
+        with:
+          name: PGS-v0.3.8-pgs.3
+          run-id: 45963966748
+          github-token: ${{ github.token }}
+          path: prebuilt
+      - name: Verify source APK exact SHA-256 before modification
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -s prebuilt/PGS.apk
+          echo '1e42c50f84afe5edf9570dfa808ba5e4be99b64d3ae28199b7316981c7414d4c  prebuilt/PGS.apk' | sha256sum -c -
+      - name: Load existing PGS signing key (no new keystore)
+        env:
+          SIGNING_KEY_B64: ${{ secrets.PGS_KEYSTORE_BASE64 || secrets.PGS_KEYSTORE_BASE64 }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          umask 077
+          test -n "$SIGNING_KEY_B64"
+          python -B - <<'PY'
+          import base64, os
+          from pathlib import Path
+          path = Path(os.environ['RUNNER_TEMP']) / 'pgs-v0.0.1-release.jks'
+          path.write_bytes(base64.b64decode(os.environ['SIGNING_KEY_B64'], validate=True))
+          path.chmod(0o600)
+          PY
+          printf 'PGS_KEYSTORE=%s/pgs-v0.0.1-release.jks\n' "$RUNNER_TEMP" >> "$GITHUB_ENV"
+      - name: Compile all current PGS Java controls and module DEX
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -B pgs/build.py
+          test -s pgs/build/pgs.dex
+      - name: Repack full signed APK, preserving native/game assets
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -B pgs/pgs_rebrand.py \
+            --source prebuilt/PGS.apk \
+            --controls pgs/build/pgs.dex \
+            --output 'dist/PGS/PGS v0.0.1.apk'
+          cd dist/PGS
+          sha256sum -c SHA256SUMS.txt
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          result = json.loads(Path('PGS.json').read_text(encoding='utf-8'))
+          assert result['apk'] == 'PGS v0.0.1.apk'
+          assert result['release_asset'] == 'PGS.v0.0.1.apk'
+          assert result['package'] == 'com.nianticlabs.pokemongo'
+          assert result['version_code'] == 2026111604
+          assert result['signing_certificate_sha256'] == 'd95c6bdfcbd91dc5c9cde698487c88e4994771a475e4efde4567b8d5f44e96cf'
+          assert result['device_tested'] is False
+          assert (Path(result['apk']).stat().st_size > 100_000_000)
+          PY
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: PGS-v0.0.1
+          path: |
+            dist/PGS/PGS v0.0.1.apk
+            dist/PGS/PGS.json
+            dist/PGS/SHA256SUMS.txt
+          if-no-files-found: error
+          compression-level: 0
+          retention-days: 14
+      - name: Erase temporary PGS signing key
+        if: always()
+        shell: bash
+        run: rm -f "$RUNNER_TEMP/pgs-v0.0.1-release.jks"
+
+  draft-release:
+    name: Create GitHub release draft (not published)
+    needs: build
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    permissions:
+      contents: write
+      actions: read
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
+        with:
+          name: PGS-v0.0.1
+          path: release
+      - name: Verify archive and receipts before creating the draft
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd release
+          test -s 'PGS v0.0.1.apk'
+          test -s PGS.json
+          sha256sum -c SHA256SUMS.txt
+          python - <<'PY'
+          import json, os
+          data = json.load(open('PGS.json', encoding='utf-8'))
+          assert data['source_commit'] == os.environ['GITHUB_SHA']
+          assert data['package'] == 'com.nianticlabs.pokemongo'
+          assert data['version_code'] == 2026111604
+          assert data['release_asset'] == 'PGS.v0.0.1.apk'
+          assert data['device_tested'] is False
+          PY
+          # GitHub Release normalizes spaces in asset names to dots. Keep
+          # the requested space-containing filename in Actions artifacts;
+          # use the actual canonical release name for in-app updates and sums.
+          mv 'PGS v0.0.1.apk' PGS.v0.0.1.apk
+          current_sha="$(cut -d ' ' -f1 SHA256SUMS.txt)"
+          printf '%s  PGS.v0.0.1.apk\n' "$current_sha" > SHA256SUMS.txt
+          sha256sum -c SHA256SUMS.txt
+      - name: Assemble draft v0.0.1 with verified full APK
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+        run: |
+          set -euo pipefail
+          release_state="$(gh api "repos/$GH_REPO/releases?per_page=100" --jq '.[] | select(.tag_name == "v0.0.1") | .draft' | head -n 1)"
+          if [ "$release_state" = "false" ]; then
+            echo 'The v0.0.1 release is published. Refusing to replace publicly distributed assets.'
+            exit 1
+          fi
+          if [ "$release_state" = "true" ]; then
+            echo 'Updating the existing v0.0.1 draft with the verified corrected PGS APK.'
+            gh release upload v0.0.1 \
+              release/PGS.v0.0.1.apk release/PGS.json release/SHA256SUMS.txt \
+              --clobber --repo "$GH_REPO"
+          else
+            cat docs/releases/v0.0.1.md docs/releases/footer.md > "$RUNNER_TEMP/pgs-notes.md"
+            gh release create v0.0.1 \
+              release/PGS.v0.0.1.apk release/PGS.json release/SHA256SUMS.txt \
+              --repo "$GH_REPO" --target "$GITHUB_SHA" --title 'PGS v0.0.1' \
+              --draft --notes-file "$RUNNER_TEMP/pgs-notes.md"
+          fi
+          # Pin the still-private draft to the exact source commit of this APK.
+          gh release edit v0.0.1 --repo "$GH_REPO" --target "$GITHUB_SHA"
+          release_target="$(gh api "repos/$GH_REPO/releases?per_page=100" --jq '.[] | select(.tag_name == "v0.0.1" and .draft) | .target_commitish' | head -n 1)"
+          test "$release_target" = "$GITHUB_SHA"
+          echo "PGS v0.0.1 draft targets the exact source commit: $release_target"

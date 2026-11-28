@@ -1,17 +1,16 @@
 import { steps, faqs, links } from '../content.js';
 import { ArrowIcon } from './Icons.jsx';
-import { ui } from '../uiText.js';
 
 export default function GetStarted() {
   return (
     <section className="section" id="get-started" aria-labelledby="get-started-heading">
       <div className="section__head">
-        <p className="section__num">{ui.getStarted.number}</p>
+        <p className="section__num">03 / Get started</p>
         <h2 id="get-started-heading" className="section__title">
-          {ui.getStarted.title}
+          Three steps to your first session.
         </h2>
         <p className="section__lead">
-          {ui.getStarted.lead}
+          Every release ships with a changelog, a SHA-256 checksum, and build information.
         </p>
       </div>
 
@@ -27,21 +26,22 @@ export default function GetStarted() {
 
       <div className="cta">
         <a className="btn btn--primary" href={links.releasesLatest}>
-          {ui.getStarted.download}
+          Download verified candidate
           <ArrowIcon />
         </a>
         <a className="btn btn--ghost" href={links.discord}>
-          {ui.getStarted.discord}
+          Join the Discord
         </a>
       </div>
 
       <p className="cta__release">
-        <span className="cta__badge">{ui.getStarted.badge}</span>
-        <a href={links.releasesCurrent}>{ui.getStarted.build}</a> {ui.getStarted.afterBuild}
+        <span className="cta__badge">Candidate</span>
+        The verified{' '}
+        <a href={links.releasesCurrent}>PGS v0.0.2 build</a> is a complete signed APK candidate. Installation and login testing on a phone are pending.
       </p>
 
       <div className="faq">
-        <h3 className="faq__heading">{ui.getStarted.faqTitle}</h3>
+        <h3 className="faq__heading">Good to know</h3>
         {faqs.map((item) => (
           <details className="faq__item" key={item.q}>
             <summary>

@@ -163,8 +163,8 @@ void *fake_invoke(const void *method, void *obj, void **args, void **exc) {
   return nullptr;
 }
 
-PgsMapPoiConfig make_config(bool team, bool slots, bool level, bool boss) {
-  PgsMapPoiConfig c{};
+PGS_MapPoiConfig make_config(bool team, bool slots, bool level, bool boss) {
+  PGS_MapPoiConfig c{};
   c.version = PGS_MP_CONFIG_VERSION;
   c.size = sizeof(c);
   c.runtime_invoke = reinterpret_cast<void *>(&fake_invoke);
@@ -207,8 +207,8 @@ PgsMapPoiConfig make_config(bool team, bool slots, bool level, bool boss) {
 
 uint64_t this_tid() { return static_cast<uint64_t>(static_cast<pid_t>(::gettid())); }
 
-PgsMapPoiRequest make_request(uint64_t tid, uint64_t remaining, uint64_t wall) {
-  PgsMapPoiRequest r{};
+PGS_MapPoiRequest make_request(uint64_t tid, uint64_t remaining, uint64_t wall) {
+  PGS_MapPoiRequest r{};
   r.version = PGS_MP_REQUEST_VERSION;
   r.size = sizeof(r);
   r.tid = tid;
@@ -239,20 +239,20 @@ void reset() {
   g_thread = reinterpret_cast<void *>(0x7700);
 }
 
-bool id_is(const PgsMapPoiPoint &p, const char *ascii) {
+bool id_is(const PGS_MapPoiPoint &p, const char *ascii) {
   size_t n = std::strlen(ascii);
   if (p.id_length != n) return false;
   for (size_t i = 0; i < n; ++i) if (p.id[i] != static_cast<uint16_t>(ascii[i])) return false;
   return true;
 }
 
-const PgsMapPoiApi *g_api = nullptr;
+const PGS_MapPoiApi *g_api = nullptr;
 const uint64_t WALL = 1000000;  // host wall clock for the raid window
 
 }  // namespace
 
 int main(int argc, char **argv) {
-  const char *so_path = argc > 1 ? argv[1] : "./libpgs-core.so";
+  const char *so_path = argc > 1 ? argv[1] : "./libpgs.so";
   void *lib = ::dlopen(so_path, RTLD_NOW | RTLD_LOCAL);
   if (!lib) { std::fprintf(stderr, "dlopen(%s) failed: %s\n", so_path, ::dlerror()); return 1; }
   auto getter = reinterpret_cast<GetApiFn>(::dlsym(lib, "pgs_native_api"));
@@ -260,61 +260,61 @@ int main(int argc, char **argv) {
   const auto *core = static_cast<const pgs_native_api_v2 *>(getter(2));
   assert(core && core->size == 48);
   assert(core->query_feature(42, 99) == nullptr);
-  const auto *api = static_cast<const PgsMapPoiApi *>(core->query_feature(42, 1));
-  assert(api && api->version == 1 && api->size == sizeof(PgsMapPoiApi));
+  const auto *api = static_cast<const PGS_MapPoiApi *>(core->query_feature(42, 1));
+  assert(api && api->version == 1 && api->size == sizeof(PGS_MapPoiApi));
   g_api = api;
 
   // 0. ABI layout.
   std::printf("ABI sizes: config=%zu request=%zu point=%zu output=%zu table=%zu\n",
-              sizeof(PgsMapPoiConfig), sizeof(PgsMapPoiRequest), sizeof(PgsMapPoiPoint),
-              sizeof(PgsMapPoiOutput), sizeof(PgsMapPoiApi));
-  assert(sizeof(PgsMapPoiConfig) == 408 && sizeof(PgsMapPoiRequest) == 32 &&
-         sizeof(PgsMapPoiPoint) == 576 && sizeof(PgsMapPoiOutput) == 294928 &&
-         sizeof(PgsMapPoiApi) == 24);
-  assert(offsetof(PgsMapPoiConfig, f_bossId) == 320 && offsetof(PgsMapPoiConfig, f_incDone) == 392);
-  assert(offsetof(PgsMapPoiPoint, incident) == 12);
-  assert(offsetof(PgsMapPoiRequest, wall_ms) == 24);
-  assert(offsetof(PgsMapPoiPoint, id) == 64 && offsetof(PgsMapPoiPoint, raid_end) == 32);
-  assert(offsetof(PgsMapPoiOutput, points) == 16 && offsetof(PgsMapPoiOutput, count) == 12);
+              sizeof(PGS_MapPoiConfig), sizeof(PGS_MapPoiRequest), sizeof(PGS_MapPoiPoint),
+              sizeof(PGS_MapPoiOutput), sizeof(PGS_MapPoiApi));
+  assert(sizeof(PGS_MapPoiConfig) == 408 && sizeof(PGS_MapPoiRequest) == 32 &&
+         sizeof(PGS_MapPoiPoint) == 576 && sizeof(PGS_MapPoiOutput) == 294928 &&
+         sizeof(PGS_MapPoiApi) == 24);
+  assert(offsetof(PGS_MapPoiConfig, f_bossId) == 320 && offsetof(PGS_MapPoiConfig, f_incDone) == 392);
+  assert(offsetof(PGS_MapPoiPoint, incident) == 12);
+  assert(offsetof(PGS_MapPoiRequest, wall_ms) == 24);
+  assert(offsetof(PGS_MapPoiPoint, id) == 64 && offsetof(PGS_MapPoiPoint, raid_end) == 32);
+  assert(offsetof(PGS_MapPoiOutput, points) == 16 && offsetof(PGS_MapPoiOutput, count) == 12);
 
   const uint64_t tid = this_tid();
   // The output is heap-allocated (294928 bytes); never a stack object inside the module or the harness.
-  PgsMapPoiOutput *out = new PgsMapPoiOutput{};
-  PgsMapPoiConfig full = make_config(true, true, true, true);
+  PGS_MapPoiOutput *out = new PGS_MapPoiOutput{};
+  PGS_MapPoiConfig full = make_config(true, true, true, true);
 
   // 1. install validation: header, mandatory ptr, partial optional groups (rejected, NOT committed).
   assert(api->install(nullptr) == PGS_MP_ERR_NULL_ARG);
-  { PgsMapPoiConfig b = full; b.version = 2; assert(api->install(&b) == PGS_MP_ERR_BAD_VERSION); }
-  { PgsMapPoiConfig b = full; b.size = sizeof(b) - 1; assert(api->install(&b) == PGS_MP_ERR_BAD_SIZE); }
-  { PgsMapPoiConfig b = full; b.runtime_invoke = nullptr; assert(api->install(&b) == PGS_MP_ERR_MISSING_PTR); }
-  { PgsMapPoiConfig b = full; b.f_hidden = nullptr; assert(api->install(&b) == PGS_MP_ERR_MISSING_PTR); }
-  { PgsMapPoiConfig b = full; b.m_team = nullptr; assert(api->install(&b) == PGS_MP_ERR_BAD_CONFIG); }      // team partial
-  { PgsMapPoiConfig b = full; b.f_slots = nullptr; assert(api->install(&b) == PGS_MP_ERR_BAD_CONFIG); }     // slots partial
-  { PgsMapPoiConfig b = full; b.class_boss = nullptr; assert(api->install(&b) == PGS_MP_ERR_BAD_CONFIG); }  // boss partial
-  { PgsMapPoiConfig b = full; b.f_incEnd = &f_end; assert(api->install(&b) == PGS_MP_ERR_BAD_CONFIG); }     // incident partial
+  { PGS_MapPoiConfig b = full; b.version = 2; assert(api->install(&b) == PGS_MP_ERR_BAD_VERSION); }
+  { PGS_MapPoiConfig b = full; b.size = sizeof(b) - 1; assert(api->install(&b) == PGS_MP_ERR_BAD_SIZE); }
+  { PGS_MapPoiConfig b = full; b.runtime_invoke = nullptr; assert(api->install(&b) == PGS_MP_ERR_MISSING_PTR); }
+  { PGS_MapPoiConfig b = full; b.f_hidden = nullptr; assert(api->install(&b) == PGS_MP_ERR_MISSING_PTR); }
+  { PGS_MapPoiConfig b = full; b.m_team = nullptr; assert(api->install(&b) == PGS_MP_ERR_BAD_CONFIG); }      // team partial
+  { PGS_MapPoiConfig b = full; b.f_slots = nullptr; assert(api->install(&b) == PGS_MP_ERR_BAD_CONFIG); }     // slots partial
+  { PGS_MapPoiConfig b = full; b.class_boss = nullptr; assert(api->install(&b) == PGS_MP_ERR_BAD_CONFIG); }  // boss partial
+  { PGS_MapPoiConfig b = full; b.f_incEnd = &f_end; assert(api->install(&b) == PGS_MP_ERR_BAD_CONFIG); }     // incident partial
   // not-installed: scan refuses with an initialised empty output.
   {
-    PgsMapPoiRequest r = make_request(tid, 2000, WALL);
+    PGS_MapPoiRequest r = make_request(tid, 2000, WALL);
     assert(api->scan(&r, out) == PGS_MP_ERR_NOT_INSTALLED);
     assert(out->version == 1 && out->size == sizeof(*out) && out->count == 0 && out->status == PGS_MP_ERR_NOT_INSTALLED);
   }
   assert(api->install(&full) == 0);
   assert(api->install(&full) == 0);  // idempotent
-  { PgsMapPoiConfig b = full; b.class_gym = &cls_other; assert(api->install(&b) == PGS_MP_ERR_RECONFIG); }
+  { PGS_MapPoiConfig b = full; b.class_gym = &cls_other; assert(api->install(&b) == PGS_MP_ERR_RECONFIG); }
   // A config that disables optional groups (all-null) is a DIFFERENT config -> reconfig, never silently swapped.
-  { PgsMapPoiConfig b = make_config(false, false, false, false); assert(api->install(&b) == PGS_MP_ERR_RECONFIG); }
+  { PGS_MapPoiConfig b = make_config(false, false, false, false); assert(api->install(&b) == PGS_MP_ERR_RECONFIG); }
 
   // 2. owner / attached-thread / lease gates: no managed work, output empty.
   reset();
   {
-    PgsMapPoiRequest bad = make_request(tid + 7, 2000, WALL);
+    PGS_MapPoiRequest bad = make_request(tid + 7, 2000, WALL);
     assert(api->scan(&bad, out) == PGS_MP_SKIP && g_invokes == 0 && out->count == 0);
-    PgsMapPoiRequest zero = make_request(0, 2000, WALL);
+    PGS_MapPoiRequest zero = make_request(0, 2000, WALL);
     assert(api->scan(&zero, out) == PGS_MP_SKIP && g_invokes == 0);
-    PgsMapPoiRequest closed = make_request(tid, 0, WALL);
+    PGS_MapPoiRequest closed = make_request(tid, 0, WALL);
     assert(api->scan(&closed, out) == PGS_MP_SKIP && g_invokes == 0);  // latches owner, lease closed
     g_thread = nullptr;  // Unity thread not attached
-    PgsMapPoiRequest r = make_request(tid, 2000, WALL);
+    PGS_MapPoiRequest r = make_request(tid, 2000, WALL);
     assert(api->scan(&r, out) == PGS_MP_SKIP && g_invokes == 0);
     g_thread = reinterpret_cast<void *>(0x7700);
     assert(api->scan(nullptr, out) == PGS_MP_ERR_NULL_ARG);
@@ -341,12 +341,12 @@ int main(int argc, char **argv) {
     static FakeArray sa{&cls_objarray, 0, 0, 2, {&stop0, &stop1}};
     static FakeArray ga{&cls_objarray, 0, 0, 1, {&gym0}};
     g_stopArray = &sa; g_gymArray = &ga;
-    PgsMapPoiRequest r = make_request(tid, 2000, WALL);
+    PGS_MapPoiRequest r = make_request(tid, 2000, WALL);
     assert(api->scan(&r, out) == PGS_MP_OK && out->count == 3 && out->status == PGS_MP_OK);
     assert(out->points[0].kind == PGS_MP_KIND_STOP && id_is(out->points[0], "stopA"));
     assert(out->points[0].lat == 10.0 && out->points[0].lon == 20.0 && out->points[0].flags == 0);
     assert(out->points[1].kind == PGS_MP_KIND_STOP && id_is(out->points[1], "stopB"));
-    const PgsMapPoiPoint &g = out->points[2];
+    const PGS_MapPoiPoint &g = out->points[2];
     assert(g.kind == PGS_MP_KIND_GYM && id_is(g, "gymA"));
     assert((g.flags & PGS_MP_FLAG_TEAM) && g.team_id == 2);
     assert((g.flags & PGS_MP_FLAG_SLOTS) && g.slots == 3);
@@ -366,7 +366,7 @@ int main(int argc, char **argv) {
     static FakeArray sa{&cls_objarray, 0, 0, 1, {&stop0}};
     static FakeArray ga{&cls_objarray, 0, 0, 1, {&dupGym}};
     g_stopArray = &sa; g_gymArray = &ga;
-    PgsMapPoiRequest r = make_request(tid, 2000, WALL);
+    PGS_MapPoiRequest r = make_request(tid, 2000, WALL);
     assert(api->scan(&r, out) == PGS_MP_OK && out->count == 1 && id_is(out->points[0], "stopA"));
     assert(g_handles.empty());
   }
@@ -393,7 +393,7 @@ int main(int argc, char **argv) {
     static FakeArray sa{&cls_objarray, 0, 0, 9,
                         {nullptr, &wrong, &dead, &nf, &ni, &ei, &bc, &nc, &stop0}};
     g_stopArray = &sa;
-    PgsMapPoiRequest r = make_request(tid, 2000, WALL);
+    PGS_MapPoiRequest r = make_request(tid, 2000, WALL);
     assert(api->scan(&r, out) == PGS_MP_OK && out->count == 1 && id_is(out->points[0], "stopA"));
     assert(g_handles.empty());
   }
@@ -403,7 +403,7 @@ int main(int argc, char **argv) {
   {
     static FakeArray big{&cls_objarray, 0, 0, static_cast<uint64_t>(PGS_MP_MAX_ARRAY) + 1, {}};
     g_stopArray = &big;
-    PgsMapPoiRequest r = make_request(tid, 2000, WALL);
+    PGS_MapPoiRequest r = make_request(tid, 2000, WALL);
     assert(api->scan(&r, out) == PGS_MP_ERR_BAD_COUNT && out->count == 0);
     assert(g_handles.empty());
   }
@@ -425,7 +425,7 @@ int main(int argc, char **argv) {
       big.slots[i] = &cands[i];
     }
     g_stopArray = &big;
-    PgsMapPoiRequest r = make_request(tid, 2500, WALL);
+    PGS_MapPoiRequest r = make_request(tid, 2500, WALL);
     assert(api->scan(&r, out) == PGS_MP_OK && out->count == 512);
     assert(g_handles.empty());
   }
@@ -441,9 +441,9 @@ int main(int argc, char **argv) {
     static FakeCandidate gc{&cls_gym, 1, &gf, 1};
     static FakeArray ga{&cls_objarray, 0, 0, 1, {&gc}};
     g_gymArray = &ga;
-    PgsMapPoiRequest r = make_request(tid, 2000, WALL);
+    PGS_MapPoiRequest r = make_request(tid, 2000, WALL);
     assert(api->scan(&r, out) == PGS_MP_OK && out->count == 1);
-    const PgsMapPoiPoint &p = out->points[0];
+    const PGS_MapPoiPoint &p = out->points[0];
     has_raid_out = p.raid_end != 0.0;
     egg_out = (p.flags & PGS_MP_FLAG_EGG) != 0;
     assert(g_handles.empty());
@@ -474,9 +474,9 @@ int main(int argc, char **argv) {
     static FakeArray ga{&cls_objarray, 0, 0, 1, {&gc}};
     g_gymArray = &ga;
     g_throw_method = &m_team;  // team invoke throws -> omit team only (NOT a fault)
-    PgsMapPoiRequest r = make_request(tid, 2000, WALL);
+    PGS_MapPoiRequest r = make_request(tid, 2000, WALL);
     assert(api->scan(&r, out) == PGS_MP_OK && out->count == 1);
-    const PgsMapPoiPoint &p = out->points[0];
+    const PGS_MapPoiPoint &p = out->points[0];
     assert(!(p.flags & PGS_MP_FLAG_TEAM));
     assert(!(p.flags & PGS_MP_FLAG_SLOTS));
     assert(!(p.flags & PGS_MP_FLAG_BOSS));
@@ -494,7 +494,7 @@ int main(int argc, char **argv) {
     static FakeArray ga{&cls_objarray, 0, 0, 1, {&gc}};
     g_gymArray = &ga;
     g_team_ret = nullptr;  // team invoke returns null box -> no team
-    PgsMapPoiRequest r = make_request(tid, 2000, WALL);
+    PGS_MapPoiRequest r = make_request(tid, 2000, WALL);
     assert(api->scan(&r, out) == PGS_MP_OK && out->count == 1);
     assert(out->points[0].flags == 0 && out->points[0].raid_end == 0.0);
     assert(g_handles.empty());
@@ -512,7 +512,7 @@ int main(int argc, char **argv) {
       sa.klass = &cls_other;
       sa.data[0] = reinterpret_cast<void *>(0xdeadbeef);  // poison the stale slot
     };
-    PgsMapPoiRequest r = make_request(tid, 2000, WALL);
+    PGS_MapPoiRequest r = make_request(tid, 2000, WALL);
     assert(api->scan(&r, out) == PGS_MP_OK && out->count == 2);
     assert(id_is(out->points[0], "stopA") && id_is(out->points[1], "stopB"));
     assert(g_handles.empty());
@@ -537,7 +537,7 @@ int main(int argc, char **argv) {
       gf.klass = &cls_other;
       gf.lat = -999.0;  // poison the stale fort
     };
-    PgsMapPoiRequest r = make_request(tid, 2000, WALL);
+    PGS_MapPoiRequest r = make_request(tid, 2000, WALL);
     assert(api->scan(&r, out) == PGS_MP_OK && out->count == 1);
     assert(out->points[0].lat == 12.0 && out->points[0].lon == 34.0);
     assert(out->points[0].raid_end == static_cast<double>(WALL + 1000));
@@ -550,7 +550,7 @@ int main(int argc, char **argv) {
     static FakeArray sa{&cls_objarray, 0, 0, 1, {&stop0}};
     g_stopArray = &sa;
     g_gcnew_fail = n;
-    PgsMapPoiRequest r = make_request(tid, 2000, WALL);
+    PGS_MapPoiRequest r = make_request(tid, 2000, WALL);
     int rc = api->scan(&r, out);
     if (n <= g_gcnew_calls) { assert(rc < 0 && out->count == 0); }
     else { assert(rc == PGS_MP_OK); }
@@ -565,7 +565,7 @@ int main(int argc, char **argv) {
     static FakeArray sa{&cls_objarray, 0, 0, 1, {&stop0}};
     g_stopArray = &sa;
     g_throw_method = thrower;
-    PgsMapPoiRequest r = make_request(tid, 2000, WALL);
+    PGS_MapPoiRequest r = make_request(tid, 2000, WALL);
     assert(api->scan(&r, out) == PGS_MP_ERR_MANAGED && out->count == 0 && g_handles.empty());
   }
 
@@ -575,7 +575,7 @@ int main(int argc, char **argv) {
     static FakeArray sa{&cls_objarray, 0, 0, 1, {&stop0}};
     g_stopArray = &sa;
     g_oneshot_arrlen = []() { ::usleep(4000); };  // blow past the 1 ms lease before the final gate
-    PgsMapPoiRequest r = make_request(tid, 1, WALL);
+    PGS_MapPoiRequest r = make_request(tid, 1, WALL);
     assert(api->scan(&r, out) == PGS_MP_SKIP && out->count == 0 && g_handles.empty());
   }
 
@@ -587,12 +587,12 @@ int main(int argc, char **argv) {
     int nested = 99;
     g_oneshot_on = &m_alive;
     g_oneshot = [&]() {
-      PgsMapPoiOutput *inner = new PgsMapPoiOutput{};
-      PgsMapPoiRequest ri = make_request(this_tid(), 2000, WALL);
+      PGS_MapPoiOutput *inner = new PGS_MapPoiOutput{};
+      PGS_MapPoiRequest ri = make_request(this_tid(), 2000, WALL);
       nested = g_api->scan(&ri, inner);
       delete inner;
     };
-    PgsMapPoiRequest r = make_request(tid, 2000, WALL);
+    PGS_MapPoiRequest r = make_request(tid, 2000, WALL);
     assert(api->scan(&r, out) == PGS_MP_OK && nested == PGS_MP_ERR_BUSY && out->count == 1);
     assert(g_handles.empty());
   }
@@ -614,7 +614,7 @@ int main(int argc, char **argv) {
       big.slots[i] = &cands[i];
     }
     g_stopArray = &big;
-    PgsMapPoiRequest r = make_request(tid, 2500, WALL);
+    PGS_MapPoiRequest r = make_request(tid, 2500, WALL);
     assert(api->scan(&r, out) == PGS_MP_OK && out->count == 512);
     assert(g_max_live <= 8 && "live roots must be bounded per record, not grow with point count");
     assert(g_handles.empty());
@@ -625,8 +625,8 @@ int main(int argc, char **argv) {
   {
     int worker_rc = 123;
     std::thread worker([&]() {
-      PgsMapPoiOutput *wout = new PgsMapPoiOutput{};
-      PgsMapPoiRequest wr = make_request(this_tid(), 2000, WALL);
+      PGS_MapPoiOutput *wout = new PGS_MapPoiOutput{};
+      PGS_MapPoiRequest wr = make_request(this_tid(), 2000, WALL);
       worker_rc = g_api->scan(&wr, wout);
       delete wout;
     });

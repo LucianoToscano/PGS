@@ -29,7 +29,7 @@ Obj completed,original_result;
 bool result_bypassed=false;
 Obj *reenter_hatch=nullptr;
 bool throw_after_completion=false;
-int policy_sample(PgsRuntimeTransportSample *out){*out={};out->snapshot_fresh=1;return 0;}
+int policy_sample(PGSRuntimeTransportSample *out){*out={};out->snapshot_fresh=1;return 0;}
 int policy_string(uint32_t field,char *out,uint32_t cap,uint32_t *len){
  assert(field==17&&cap>=policy_text.size());
  *len=uint32_t(policy_text.size());std::memcpy(out,policy_text.data(),*len);return 0;

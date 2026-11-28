@@ -105,7 +105,7 @@ struct HostState {
 
   bool configured = false;
   PgsCameraHostConfig cfg = {};
-  PgsMetaExports boot_meta_exports = {};
+  PGS_MetaExports boot_meta_exports = {};
   PgsCameraMetaExtra boot_meta_extra = {};
 
   bool active = false;
@@ -223,9 +223,6 @@ const pgs_native_api_v2 *resolve_native_api() {
     typedef const void *(*NativeApiFn)(uint32_t);
     auto fn = reinterpret_cast<NativeApiFn>(
         dlsym(g_state.core_handle, "pgs_native_api"));
-    if (fn == nullptr) {
-      fn = reinterpret_cast<NativeApiFn>(dlsym(g_state.core_handle, "pgs_native_api"));
-    }
     if (fn != nullptr) {
       return static_cast<const pgs_native_api_v2 *>(fn(2u));
     }
@@ -478,7 +475,7 @@ void append_json_str(char *dst, size_t cap, size_t *pos, const char *s) {
 uint64_t remaining_lease_ms(double now);
 bool transport_current(){
  if(!(g_state.cfg.flags&PGS_CH_FLAG_USE_TRANSPORT))return true;
- const auto rt=resolve_transport_api();PgsRuntimeTransportSample sample{};
+ const auto rt=resolve_transport_api();PGSRuntimeTransportSample sample{};
  return rt&&rt->sample(&sample)==0&&sample.snapshot_fresh&&!sample.fault&&sample.snapshot_seq==g_state.transport_sequence&&sample.generation==g_state.transport_generation;
 }
 void transport_result(int rc){if(rc!=0){g_state.last_error=PGS_CH_ERR_INTERNAL;g_state.stop_requested.store(true,std::memory_order_release);g_state.lease_until_ms=0;}}
@@ -539,7 +536,7 @@ void emit_transport_heading(double yaw_degrees, int32_t camera_id,
 
 void sync_transport_demand(double now) {
  if(!(g_state.cfg.flags&PGS_CH_FLAG_USE_TRANSPORT))return;
- const auto rt=resolve_transport_api();PgsRuntimeTransportSample before{},after{};int steering=0,buddy=0,pulse=0;
+ const auto rt=resolve_transport_api();PGSRuntimeTransportSample before{},after{};int steering=0,buddy=0,pulse=0;
  bool fresh=rt&&rt->sample(&before)==0&&before.snapshot_fresh&&!before.fault;
  if(fresh)fresh=rt->get_bool(kTransportBoolCameraSteering,&steering)==0&&rt->get_bool(kTransportBoolBuddySampling,&buddy)==0&&rt->take_pulse(kTransportPulseCameraSample,&pulse)==0;
  if(fresh)fresh=rt->sample(&after)==0&&after.snapshot_fresh&&!after.fault&&before.snapshot_seq==after.snapshot_seq&&before.generation==after.generation;
@@ -1254,7 +1251,7 @@ void execute_sample_locked(uint64_t tid, void *rig_receiver,
   // Bounded diagnostic sampling (and local continuous fallback when test seams
   // are active).
   const PgsCameraMetaExtra *ex = g_state.cfg.meta_extra;
-  const PgsMetaExports *me = g_state.cfg.meta_exports;
+  const PGS_MetaExports *me = g_state.cfg.meta_exports;
   auto thread_current =
       reinterpret_cast<Il2CppThreadCurrentFn>(g_state.cfg.thread_current);
   auto runtime_invoke =
@@ -1861,7 +1858,7 @@ int attempt_prepare(double now) {
   mcfg.version = PGS_CAM_CFG_VERSION;
   mcfg.size = sizeof(mcfg);
   mcfg.binding.version = PGS_MD_CONFIG_VERSION;
-  mcfg.binding.size = sizeof(PgsMetaBindConfig);
+  mcfg.binding.size = sizeof(PGS_MetaBindConfig);
   mcfg.binding.exports = g_state.cfg.meta_exports;
   mcfg.binding.module_base = g_state.cfg.module_base;
   mcfg.binding.module_size = g_state.cfg.module_size;
@@ -1913,7 +1910,7 @@ int attempt_prepare(double now) {
   if (g_state.sample_camera && g_state.continuous) {
     const PgsCameraSamplerApi *sampler = resolve_sampler_api();
     const PgsCameraMetaExtra *ex = g_state.cfg.meta_extra;
-    const PgsMetaExports *me = g_state.cfg.meta_exports;
+    const PGS_MetaExports *me = g_state.cfg.meta_exports;
     if (!sampler || !sampler->install || !ex || !me) {
       finish_observation("unavailable", "native-camera-sampler-unavailable",
                          nullptr, false, false);
@@ -2414,13 +2411,13 @@ int api_sample(PgsCameraHostSample *out_sample) {
   return PGS_CH_OK;
 }
 
-bool valid_pulse(const PgsUnityPulse *p){
+bool valid_pulse(const PGSUnityPulse *p){
  if(!p||p->reserved||p->tid<=0||uint64_t(p->tid)!=current_tid())return false;
  const auto core=resolve_native_api();const auto scheduler=core&&core->query_feature?static_cast<const PgsUnitySchedulerApi*>(core->query_feature(48,2)):nullptr;
  auto thread=reinterpret_cast<Il2CppThreadCurrentFn>(g_state.cfg.thread_current);
  return scheduler&&scheduler->valid(p->generation)==1&&thread&&thread();
 }
-void api_on_unity_begin(void *ctx, const PgsUnityPulse *pulse) {
+void api_on_unity_begin(void *ctx, const PGSUnityPulse *pulse) {
   (void)ctx;
   StateGuard guard;if(!guard.entered)return;
   if(!valid_pulse(pulse))return;
@@ -2456,7 +2453,7 @@ void api_on_unity_begin(void *ctx, const PgsUnityPulse *pulse) {
   }
 }
 
-void api_on_unity_end(void *ctx, const PgsUnityPulse *pulse) {
+void api_on_unity_end(void *ctx, const PGSUnityPulse *pulse) {
   (void)ctx;
   StateGuard guard;if(!guard.entered)return;
   if(!valid_pulse(pulse))return;

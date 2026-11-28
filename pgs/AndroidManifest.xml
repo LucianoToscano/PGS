@@ -5,14 +5,6 @@
   <application android:label="PGS Preview (test-only)" android:theme="@android:style/Theme.Material.Light.NoActionBar" android:debuggable="true" android:allowBackup="false">
     <activity android:name="dev.pgs.LogActivity" android:exported="false" />
     <activity android:name="dev.pgs.AccountRestartActivity" android:exported="false" android:process=":pgs_restart" />
-    <activity android:name="dev.pgs.GoogleAuthActivity" android:exported="false">
-        <intent-filter>
-            <action android:name="android.intent.action.VIEW" />
-            <category android:name="android.intent.category.DEFAULT" />
-            <category android:name="android.intent.category.BROWSABLE" />
-            <data android:scheme="pgs" />
-        </intent-filter>
-    </activity>
     <activity android:name="dev.pgs.PreviewActivity" android:exported="true">
       <intent-filter><action android:name="android.intent.action.MAIN" /><category android:name="android.intent.category.LAUNCHER" /></intent-filter>
     </activity>

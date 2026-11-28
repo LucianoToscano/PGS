@@ -128,7 +128,7 @@ struct PgsRoutesHostConfig {
   uint32_t reserved0;                 // off 12  == 0
   const void *module_base;            // off 16  libil2cpp.so base (optional if bootstrap54 ready)
   uint64_t module_size;               // off 24  libil2cpp.so byte size
-  const PgsMetaExports *meta_exports; // off 32  31 metadata exports for 47/53
+  const PGS_MetaExports *meta_exports; // off 32  31 metadata exports for 47/53
   pgs_meta_seg_fn seg_query;          // off 40  optional fixture segment callback (nullptr in prod)
   void *seg_ctx;                      // off 48  optional fixture segment context
 
@@ -243,7 +243,7 @@ struct PgsRoutesHostApi {
   // Read pull-only telemetry snapshot (any thread).
   int (*sample)(PgsRoutesHostSample *out);
   // Feature 48 (unity_scheduler) PgsUnityWork subscriber callback entry point.
-  void (*on_unity_pulse)(void *context, const PgsUnityPulse *pulse);
+  void (*on_unity_pulse)(void *context, const PGSUnityPulse *pulse);
 };
 
 static_assert(sizeof(PgsRoutesHostApi) == 64, "PgsRoutesHostApi must remain a 64-byte version-1 table");

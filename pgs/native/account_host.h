@@ -181,7 +181,7 @@ typedef struct PgsAccountHostConfig {
   uint64_t owner_tid;
   const void *module_base;
   uint64_t module_size;
-  const PgsMetaExports *meta_exports;
+  const PGS_MetaExports *meta_exports;
   const PgsAccountHostRuntime *runtime;
   const PgsSharedMetadataOutput *shared_metadata;
   const PgsAccountHostItemsLookup *items_lookup;
@@ -238,7 +238,7 @@ typedef struct PgsAccountHostEvent {
 } PgsAccountHostEvent;
 
 // Fixed 80-byte Feature 68 API vtable.
-typedef struct PgsAccountHostApi {
+typedef struct PGSAccountHostApi {
   uint32_t version;
   uint32_t size;
   int (*configure)(const PgsAccountHostConfig *config);
@@ -249,8 +249,8 @@ typedef struct PgsAccountHostApi {
   int (*stop)(void);
   int (*sample)(PgsAccountHostSample *out);
   int (*next_event)(PgsAccountHostEvent *out);
-  void (*on_unity_pulse)(void *ctx, const PgsUnityPulse *pulse);
-} PgsAccountHostApi;
+  void (*on_unity_pulse)(void *ctx, const PGSUnityPulse *pulse);
+} PGSAccountHostApi;
 
 #if defined(__cplusplus) && (defined(__LP64__) || defined(_LP64) || defined(__aarch64__) || defined(__x86_64__))
 static_assert(sizeof(PgsAccountHostRuntime) == 192, "PgsAccountHostRuntime size must be 192 bytes");
@@ -260,7 +260,7 @@ static_assert(sizeof(PgsAccountHostConfig) == 96, "PgsAccountHostConfig size mus
 static_assert(sizeof(PgsAccountHostOptions) == 48, "PgsAccountHostOptions size must be 48 bytes");
 static_assert(sizeof(PgsAccountHostSample) == 72, "PgsAccountHostSample size must be 72 bytes");
 static_assert(sizeof(PgsAccountHostEvent) == 2048, "PgsAccountHostEvent size must be 2048 bytes");
-static_assert(sizeof(PgsAccountHostApi) == 80, "PgsAccountHostApi size must be 80 bytes");
+static_assert(sizeof(PGSAccountHostApi) == 80, "PGSAccountHostApi size must be 80 bytes");
 #endif
 
 const void *pgs_account_host_api(uint32_t version);

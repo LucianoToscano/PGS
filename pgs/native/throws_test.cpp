@@ -27,8 +27,8 @@ int main(int argc,char **argv){
  auto get=reinterpret_cast<const void *(*)(uint32_t)>(dlsym(lib,"pgs_native_api"));
  auto core=get?static_cast<const pgs_native_api_v2 *>(get(2)):nullptr;
  auto api=core?static_cast<const PgsThrowApi *>(core->query_feature(1,1)):nullptr;
- auto map_api=core?static_cast<const PgsMapThrowApi*>(core->query_feature(1,2)):nullptr;
- if(!api||api->size!=40||!map_api||map_api->size!=sizeof(PgsMapThrowApi))return 3;
+ auto map_api=core?static_cast<const PGS_MapThrowApi*>(core->query_feature(1,2)):nullptr;
+ if(!api||api->size!=40||!map_api||map_api->size!=sizeof(PGS_MapThrowApi))return 3;
  PgsThrowConfig config{1,sizeof(config),reinterpret_cast<void *>(&submit),reinterpret_cast<void *>(&hit),
   &ball_class,&owner_class,reinterpret_cast<void *>(&klass),reinterpret_cast<void *>(&assignable),reinterpret_cast<void *>(&field),&bread_field};
  if(api->install(&config)||api->install(&config))return 4;

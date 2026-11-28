@@ -30,7 +30,7 @@ struct PgsInventoryHostApi {
  int (*next_event)(PgsInventoryHostEvent*);
  void (*request_item_poll)();
  void *(*acquire_item_service)(); // owned root; caller must release through IL2CPP
- void (*on_unity_pulse)(void*,const PgsUnityPulse*);
+ void (*on_unity_pulse)(void*,const PGSUnityPulse*);
  int (*visibility_site)(uint32_t);
  void (*on_visibility)(void*,uint64_t);
 };

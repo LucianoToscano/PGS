@@ -1,7 +1,7 @@
 #pragma once
 #include <cstdint>
 
-// PGS native module: throw grade / curveball policy (feature id 1).
+// PGS native migration: throw grade / curveball policy (feature id 1).
 //
 // Mirrors the throw-rewriting policy in diagnostics/quick-ball.js (throwWords /
 // throwForRoute). The JS adapter resolves and validates every il2cpp pointer
@@ -64,4 +64,4 @@ const void *pgs_throws_api(uint32_t version);
 // Native map Auto Throw: same rating/variety RNG and lease, with no scene ball.
 bool pgs_map_throw_value(PgsThrowValue* value);
 
-struct PgsMapThrowApi {uint32_t version,size;bool (*value)(PgsThrowValue*);};
+struct PGS_MapThrowApi {uint32_t version,size;bool (*value)(PgsThrowValue*);};

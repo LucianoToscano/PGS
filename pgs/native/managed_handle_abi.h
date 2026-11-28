@@ -4,13 +4,13 @@
 #include <cstring>
 // Supported Unity6000.3.22f1 ARM64 pointer-width GC handle ABI. Read-only proof;
 // no GC operation occurs before all code ranges and instruction words match.
-inline int pgs_pointer_handles(const PgsMetaApi *md,const void *create,const void *get,const void *free){
+inline int pgs_pointer_handles(const PGS_MetaApi *md,const void *create,const void *get,const void *free){
  auto words=[&](uintptr_t address,const uint32_t *expected,uint32_t count){
-  PgsMetaCodeQuery q{};q.version=1;q.size=sizeof(q);q.address=reinterpret_cast<void *>(address);
+  PGS_MetaCodeQuery q{};q.version=1;q.size=sizeof(q);q.address=reinterpret_cast<void *>(address);
   q.length=count*4;q.prologue=expected;q.prologue_len=count*4;return md->validate_code(&q)==0;
  };
  auto branch=[&](uintptr_t address)->uintptr_t{
-  PgsMetaCodeQuery q{};q.version=1;q.size=sizeof(q);q.address=reinterpret_cast<void *>(address);q.length=4;
+  PGS_MetaCodeQuery q{};q.version=1;q.size=sizeof(q);q.address=reinterpret_cast<void *>(address);q.length=4;
   if(md->validate_code(&q))return 0;
   uint32_t op;std::memcpy(&op,q.address,4);if((op>>26)!=5)return 0;
   int64_t delta=int64_t(op&0x3ffffff);if(delta&0x2000000)delta-=0x4000000;delta*=4;

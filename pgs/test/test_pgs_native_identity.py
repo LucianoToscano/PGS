@@ -69,9 +69,14 @@ class PgsNativeRenameTests(unittest.TestCase):
     def test_new_build_options_use_pgs_names_only(self):
         self.assertEqual(native_build._PILOT_ENV, "PGS_NATIVE_PILOT")
         self.assertEqual(native_build._DOWNLOAD_ENV, "PGS_NATIVE_DOWNLOAD")
-        self.assertFalse(native_build._enabled("PGS_NATIVE_PILOT", {}))
-        self.assertTrue(native_build._enabled("PGS_NATIVE_PILOT", {"PGS_NATIVE_PILOT": "1"}))
-        self.assertFalse(native_build._enabled("PGS_NATIVE_PILOT", {"PGS_NATIVE_PILOT": "0"}))
+        # Pilot is opt-in via PGS_NATIVE_PILOT=1 in the environment (no extra helper).
+        from unittest.mock import patch
+        with patch.dict(native_build.os.environ, {}, clear=True):
+            self.assertNotEqual(native_build.os.environ.get(native_build._PILOT_ENV), "1")
+        with patch.dict(native_build.os.environ, {native_build._PILOT_ENV: "1"}, clear=True):
+            self.assertEqual(native_build.os.environ.get(native_build._PILOT_ENV), "1")
+        with patch.dict(native_build.os.environ, {native_build._PILOT_ENV: "0"}, clear=True):
+            self.assertNotEqual(native_build.os.environ.get(native_build._PILOT_ENV), "1")
 
     def test_first_party_native_sources_use_pgs_api_header(self):
         old = b'#include "pgs_native_api.h"'

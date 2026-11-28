@@ -38,7 +38,7 @@ extern "C" {
 
 static_assert(sizeof(void *) == 8, "MapPoi native ABI requires LP64");
 
-enum PgsMapPoiInfo {
+enum PGS_MapPoiInfo {
   PGS_MP_FEATURE_ID      = 42,
   PGS_MP_API_VERSION     = 1,
   PGS_MP_CONFIG_VERSION  = 1,
@@ -53,7 +53,7 @@ enum PgsMapPoiInfo {
 
 // scan() return == out.status: 1 SNAPSHOT (count points published) / 0 REFUSED (benign gate/lease; count 0) /
 // negative FAULT (count 0). install() returns 0 on success; negatives are faults.
-enum PgsMapPoiStatus {
+enum PGS_MapPoiStatus {
   PGS_MP_OK                = 1,   // snapshot published (count may be 0)
   PGS_MP_SKIP              = 0,   // benign refuse: owner mismatch / unattached thread / closed/expired lease
   PGS_MP_ERR_NULL_ARG      = -1,
@@ -73,13 +73,13 @@ enum PgsMapPoiStatus {
 };
 
 // Point.kind: the enumerated POI class.
-enum PgsMapPoiKind {
+enum PGS_MapPoiKind {
   PGS_MP_KIND_STOP = 0,
   PGS_MP_KIND_GYM  = 1
 };
 
 // Point.flags: which optional fields carry a value. Missing optional field -> bit clear + 0 value.
-enum PgsMapPoiFlags {
+enum PGS_MapPoiFlags {
   PGS_MP_FLAG_TEAM  = 1,   // team_id valid
   PGS_MP_FLAG_SLOTS = 2,   // slots valid (0..6)
   PGS_MP_FLAG_LEVEL = 4,   // level valid (raw signed enum)
@@ -97,9 +97,9 @@ enum PgsMapPoiFlags {
 // A partially-populated group is rejected (PGS_MP_ERR_BAD_CONFIG); an all-null group simply disables that
 // optional field. Every pointer is an already-validated il2cpp export / Il2CppClass* / MethodInfo* /
 // Il2CppFieldInfo* packed by the host. No hook address. Reordering is forbidden.
-struct PgsMapPoiConfig {
+struct PGS_MapPoiConfig {
   uint32_t version;  // == PGS_MP_CONFIG_VERSION
-  uint32_t size;     // == sizeof(PgsMapPoiConfig)
+  uint32_t size;     // == sizeof(PGS_MapPoiConfig)
 
   // il2cpp runtime exports (slots 0-13).
   void *runtime_invoke;            // 0  void*     (MethodInfo*, void* obj, void** params, void** exc)
@@ -165,26 +165,26 @@ struct PgsMapPoiConfig {
                           //    false once the player beat it (the game's own local completion), like the map
 };
 
-static_assert(sizeof(PgsMapPoiConfig) == 408, "PgsMapPoiConfig must remain 408 bytes on LP64");
+static_assert(sizeof(PGS_MapPoiConfig) == 408, "PGS_MapPoiConfig must remain 408 bytes on LP64");
 
 // Fixed LP64 request (32 bytes). tid is the proven owner tid (nonzero and == the current OS tid). remaining_ms
 // is the residual lease (clamped to PGS_MP_MAX_LEASE_MS; 0 refuses). wall_ms is the host wall clock in ms
 // (Date.now()) used only for the active-raid window comparison -- never for the lease.
-struct PgsMapPoiRequest {
+struct PGS_MapPoiRequest {
   uint32_t version;      // off 0  == PGS_MP_REQUEST_VERSION
-  uint32_t size;         // off 4  == sizeof(PgsMapPoiRequest)
+  uint32_t size;         // off 4  == sizeof(PGS_MapPoiRequest)
   uint64_t tid;          // off 8  proven owner tid
   uint64_t remaining_ms; // off 16 residual lease; clamped, 0 refuses
   uint64_t wall_ms;      // off 24 host wall clock ms for the raid window (Date.now())
 };
 
-static_assert(sizeof(PgsMapPoiRequest) == 32, "PgsMapPoiRequest must remain 32 bytes on LP64");
+static_assert(sizeof(PGS_MapPoiRequest) == 32, "PGS_MapPoiRequest must remain 32 bytes on LP64");
 
 // Fixed LP64 point (576 bytes). Scalar only: the id is copied UTF16 (NOT NUL terminated; use id_length). A
 // stop carries only kind/id/lat/lon; a gym may additionally carry the optional fields flagged in `flags`.
-struct PgsMapPoiPoint {
-  uint32_t kind;       // off 0  PgsMapPoiKind
-  uint32_t flags;      // off 4  PgsMapPoiFlags bitset
+struct PGS_MapPoiPoint {
+  uint32_t kind;       // off 0  PGS_MapPoiKind
+  uint32_t flags;      // off 4  PGS_MapPoiFlags bitset
   uint32_t id_length;  // off 8  UTF16 units in id (1..256)
   uint32_t incident;   // off 12 stop: raw IncidentDisplayType of its active incident (FLAG_INCIDENT), else 0
   double lat;          // off 16 latitude (|lat| <= 90)
@@ -198,34 +198,34 @@ struct PgsMapPoiPoint {
   uint16_t id[PGS_MP_MAX_ID]; // off 64 copied UTF16 fort id
 };
 
-static_assert(sizeof(PgsMapPoiPoint) == 576, "PgsMapPoiPoint must remain 576 bytes on LP64");
+static_assert(sizeof(PGS_MapPoiPoint) == 576, "PGS_MapPoiPoint must remain 576 bytes on LP64");
 
 // Fixed LP64 output (294928 bytes). Always fully zeroed on entry (header re-stamped). status mirrors the
 // return. On a positive return the first `count` points are valid; the rest stay zero. On a 0 refuse / a
 // negative fault count stays 0.
-struct PgsMapPoiOutput {
+struct PGS_MapPoiOutput {
   uint32_t version;  // off 0  == PGS_MP_OUTPUT_VERSION
-  uint32_t size;     // off 4  == sizeof(PgsMapPoiOutput)
+  uint32_t size;     // off 4  == sizeof(PGS_MapPoiOutput)
   int32_t status;    // off 8  == the scan() return
   uint32_t count;    // off 12 number of valid points (<= PGS_MP_MAX_POINTS)
-  PgsMapPoiPoint points[PGS_MP_MAX_POINTS]; // off 16
+  PGS_MapPoiPoint points[PGS_MP_MAX_POINTS]; // off 16
 };
 
-static_assert(sizeof(PgsMapPoiOutput) == 294928, "PgsMapPoiOutput must remain 294928 bytes on LP64");
+static_assert(sizeof(PGS_MapPoiOutput) == 294928, "PGS_MapPoiOutput must remain 294928 bytes on LP64");
 
 // Fixed LP64 table: 8-byte header + 2 function pointers = 24 bytes.
-struct PgsMapPoiApi {
+struct PGS_MapPoiApi {
   uint32_t version;  // == PGS_MP_API_VERSION
-  uint32_t size;     // == sizeof(PgsMapPoiApi)
+  uint32_t size;     // == sizeof(PGS_MapPoiApi)
   // Verify + publish the immutable config once for the process lifetime. Idempotent for an identical config;
   // a different config returns PGS_MP_ERR_RECONFIG. A null mandatory pointer, a bad header or a partial
   // optional group is rejected (fail closed). No hook is installed.
-  int (*install)(const PgsMapPoiConfig *config);
+  int (*install)(const PGS_MapPoiConfig *config);
   // Owner-thread read-only snapshot. See the file header for the full contract. 1 / 0 / negative.
-  int (*scan)(const PgsMapPoiRequest *request, PgsMapPoiOutput *out);
+  int (*scan)(const PGS_MapPoiRequest *request, PGS_MapPoiOutput *out);
 };
 
-static_assert(sizeof(PgsMapPoiApi) == 24, "PgsMapPoiApi must remain a 24-byte version-1 table");
+static_assert(sizeof(PGS_MapPoiApi) == 24, "PGS_MapPoiApi must remain a 24-byte version-1 table");
 
 // Hidden getter. NOT exported by the version script; the coordinator registers it in query_feature under
 // feature id 42 and answers only on an exact version match.

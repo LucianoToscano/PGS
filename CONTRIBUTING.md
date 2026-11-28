@@ -1,6 +1,4 @@
-# Contributing to PGS
-
-**Languages:** 🇺🇸 English · [🇧🇷 Português (Brasil)](CONTRIBUTING.pt-BR.md)
+# Contributing
 
 For the React showcase and its independent GitHub Pages workflow, see [website development](website/README.md). Website pushes publish the site, not an APK release.
 
@@ -13,7 +11,7 @@ Before requesting review:
 - Describe the problem and resulting behavior. For a fix, include reproduction steps and the expected result; link a relevant issue when one exists.
 - Explain meaningful implementation choices, compatibility changes, and known limitations. Include screenshots or a short recording for visible UI changes, with private information removed.
 - Add a concise entry under **Unreleased** in [CHANGELOG.md](CHANGELOG.md) for user-facing app changes. Follow the [release-note conventions](docs/releases/README.md); omit website-only changes and test/build details. Documentation-only or internal tooling changes do not need a changelog entry unless they affect users.
-- Update [README.md](README.md), [README.pt-BR.md](README.pt-BR.md) and relevant usage guides in the same PR when adding, changing, or removing a feature. Update website feature descriptions/guides when affected, and distinguish unreleased behavior from the published app. If documentation does not need changing, say why in the PR.
+- Update [README.md](README.md) and relevant usage guides in the same PR when adding, changing, or removing a feature. Update website feature descriptions/guides when affected, and distinguish unreleased behavior from the published app. If documentation does not need changing, say why in the PR.
 - Add or update meaningful regression tests for behavior changes, including relevant error and cancellation paths. Documentation-only and minor cosmetic changes do not require artificial tests. Explain any test coverage that is unavailable.
 - Run the relevant checks below and report exact commands and results. Separate automated results, compilation, and actual device observations; list anything not tested and why.
 - Review the final diff for unrelated edits, generated files, private data, and obsolete code introduced by the change.
@@ -32,13 +30,13 @@ Do not submit game APKs/assets, signing keys, private logs, account details, or 
 
 Native changes must validate metadata and preserve foreground/map leases, GC ownership, cancellation, and error handling. Destructive inventory automation must keep uncertain data and honor selected protection rules. Never use an automated test to spend balls, transfer live Pokémon, or change a user's inventory.
 
-Use PGS for every public display name. New source and builds use the `dev.pgs` Java namespace; retain explicitly documented legacy ABI and storage compatibility contracts. Preserve the public `Control` bridge API and existing saved-setting keys when moving code into smaller classes. Changes to the supported game version need updated contracts and explicit device testing.
+Use PGS for display names and `dev.pgs` for Java packages. Preserve the public `Control` bridge API and existing saved-setting keys when moving code into smaller classes. Changes to the supported game version need updated contracts and explicit device testing.
 
 APK publishing is a maintainer operation, not a pull-request workflow. See [BUILDING.md](docs/BUILDING.md).
 
 ## Adding or separating a feature
 
-Keep both `README.md` (English) and `README.pt-BR.md` (Brazilian Portuguese) in sync for every feature addition, change, or removal. Update the matching bilingual guides when applicable. Update the feature table and relevant usage instructions, and distinguish unreleased behavior from published releases.
+Keep `README.md` up to date with every feature addition, change, or removal in the same change. Update the feature table and relevant usage instructions, and distinguish unreleased behavior from published releases.
 
 - Start with the [architecture map](docs/ARCHITECTURE.md) and [maintainability guide](docs/MAINTAINABILITY.md). Keep policy, UI, and native contracts separate where existing boundaries allow it.
 - Give each runtime module explicit dependencies and ownership of its timers, hooks, and retained objects. Construction must not initialize game classes; installation belongs on the required thread.
@@ -49,10 +47,4 @@ Keep both `README.md` (English) and `README.pt-BR.md` (Brazilian Portuguese) in 
 
 For game-version compatibility work, follow [GAME_UPDATES.md](docs/GAME_UPDATES.md). Update the selected version profile and regenerate covered headers instead of editing generated headers directly. Review remaining hand-maintained bindings too; a signature match alone does not establish compatibility.
 
-CI uses the PGS environment names. For new local builds use `PGS_BUILD_TOOLS=36.0.0` and `PGS_ANDROID_PLATFORM=android-36`; the old variables still work. The build version can be selected with `PGS_VERSION` (or legacy `PGS_VERSION`). If both spellings are present, the PGS value wins. Local defaults still select the installed 36.1 SDK. Keep generated outputs ignored, and use `pgs/cleanup.ps1` after packaging with deployed/rollback retention pins preserved.
-
-## Documentation and website languages
-
-English is the canonical language for GitHub PR titles, issue titles, commit messages, release notes, and project documentation. Provide Brazilian Portuguese counterparts for public-facing README, changelog, contribution instructions, and the core build/update/language guides. When editing those files, update both languages in the same pull request. Preserve APK versions, `versionCode`, SHA-256 hashes, command names, file paths, and legal notices verbatim.
-
-The website defaults to English and offers a Brazilian Portuguese language switch. Keep translated content, navigational labels, URL routing, and screen-reader labels in sync. Do not claim untranslated feature guides are translated. In-game localization is managed separately by `pgs/i18n/` and is not changed by website-language work.
+CI sets `PGS_BUILD_TOOLS=36.0.0` and `PGS_ANDROID_PLATFORM=android-36`. Set those locally when reproducing CI; local defaults currently select the installed 36.1 SDK. Keep generated outputs ignored, and use `pgs/cleanup.ps1` after packaging with deployed/rollback retention pins preserved.

@@ -33,7 +33,7 @@ std::atomic<Update> original_update{nullptr};
 std::atomic<bool> ready{false},stopped{false};
 std::atomic<uint64_t> owner{0};
 PgsBootBinding binding{};
-const PgsMetaApi *metadata=nullptr;
+const PGS_MetaApi *metadata=nullptr;
 const void *controller_class=nullptr,*response_class=nullptr,*string_class=nullptr;
 const void *loot_class=nullptr,*loot_item_class=nullptr,*species_class=nullptr,*item_class=nullptr,*int32_class=nullptr;
 struct RepeatedLayout {const void *klass=nullptr,*array_class=nullptr;};
@@ -128,16 +128,16 @@ bool decode_rewards(void *reward,Record &r) {
   return true;
 }
 int resolve(const char *ns,const char *name,const void **out) {
-  PgsMetaClassQuery q{};q.version=1;q.size=sizeof(q);q.name_space=ns;q.name=name;
-  PgsMetaClassResult r{};int rc=metadata->resolve_class(&q,&r);if(!rc)*out=r.klass;return rc;
+  PGS_MetaClassQuery q{};q.version=1;q.size=sizeof(q);q.name_space=ns;q.name=name;
+  PGS_MetaClassResult r{};int rc=metadata->resolve_class(&q,&r);if(!rc)*out=r.klass;return rc;
 }
-int check_field(const void *klass,const char *name,uint64_t offset,uint32_t kind,uint32_t bytes,const char *type=nullptr,PgsMetaFieldResult *output=nullptr) {
-  PgsMetaFieldQuery q{};q.version=1;q.size=sizeof(q);q.owner=klass;q.name=name;q.offset=offset;
+int check_field(const void *klass,const char *name,uint64_t offset,uint32_t kind,uint32_t bytes,const char *type=nullptr,PGS_MetaFieldResult *output=nullptr) {
+  PGS_MetaFieldQuery q{};q.version=1;q.size=sizeof(q);q.owner=klass;q.name=name;q.offset=offset;
   q.forbidden_mask=0x50;q.kind=kind;q.value_size=bytes;q.type_name=type;q.type_match=PGS_MD_MATCH_EXACT;
-  PgsMetaFieldResult r{};int rc=metadata->validate_field(&q,&r);if(!rc&&output)*output=r;return rc;
+  PGS_MetaFieldResult r{};int rc=metadata->validate_field(&q,&r);if(!rc&&output)*output=r;return rc;
 }
 int repeated_layout(const void *owner_class,const char *name,uint64_t offset,RepeatedLayout &layout) {
-  PgsMetaFieldResult r{},array{};
+  PGS_MetaFieldResult r{},array{};
   int rc=check_field(owner_class,name,offset,PGS_MD_FIELD_REF,0,nullptr,&r);if(rc)return rc;
   layout.klass=r.type_class;if(!layout.klass)return -20;
   if((rc=check_field(layout.klass,PGS_GAME_EVENTS_EVENT_COLLECTOR_CPP_ARRAY_NAME,PGS_GAME_EVENTS_EVENT_COLLECTOR_CPP_ARRAY_OFFSET,PGS_MD_FIELD_REF,0,nullptr,&array))||
@@ -314,21 +314,21 @@ void result_hook(void *self,void *target,void *response,const void *mi){
   clear_attempt();
 }
 int validate_method(const void *klass,const char *name,const char *ret,std::initializer_list<const char*>args,
-                    uint64_t rva,const unsigned char (&prefix)[16],PgsMetaMethodResult &r){
-  PgsMetaMethodQuery q{};q.version=1;q.size=sizeof(q);q.owner=klass;q.name=name;q.return_type=ret;q.return_match=PGS_MD_MATCH_EXACT;
+                    uint64_t rva,const unsigned char (&prefix)[16],PGS_MetaMethodResult &r){
+  PGS_MetaMethodQuery q{};q.version=1;q.size=sizeof(q);q.owner=klass;q.name=name;q.return_type=ret;q.return_match=PGS_MD_MATCH_EXACT;
   q.param_count=uint32_t(args.size());unsigned i=0;for(auto a:args){q.param_types[i]=a;q.param_match[i++]=PGS_MD_MATCH_EXACT;}
   q.expected_code=static_cast<const unsigned char*>(binding.module_base)+rva;q.prologue=prefix;q.prologue_len=16;
   return metadata->validate_method(&q,&r);
 }
 int validate_export(void *p,uint64_t rva,const unsigned char (&bytes)[16]){
   if(p!=static_cast<const unsigned char*>(binding.module_base)+rva)return -40;
-  PgsMetaCodeQuery q{};q.version=1;q.size=sizeof(q);q.address=p;q.length=16;q.prologue=bytes;q.prologue_len=16;return metadata->validate_code(&q);
+  PGS_MetaCodeQuery q{};q.version=1;q.size=sizeof(q);q.address=p;q.length=16;q.prologue=bytes;q.prologue_len=16;return metadata->validate_code(&q);
 }
 int install(uint64_t tid){
   auto boot=static_cast<const PgsBootApi*>(pgs_runtime_bootstrap_api(1));if(!boot)return 1;
   binding={};binding.version=1;binding.size=sizeof(binding);int rc=boot->snapshot(&binding);if(rc)return rc>0?1:rc;
   if(!binding.runtime.thread_current||!reinterpret_cast<Current>(binding.runtime.thread_current)())return 1;
-  metadata=static_cast<const PgsMetaApi*>(pgs_runtime_metadata_api(1));if(!metadata)return -2;
+  metadata=static_cast<const PGS_MetaApi*>(pgs_runtime_metadata_api(1));if(!metadata)return -2;
   const void *&service=service_class;
   struct Cls{const char *ns,*name;const void **out;};
   Cls classes[]={{"Niantic.Holoholo.Services.DynamicTappables","DynamicTappablesSession",&session_class},{"Niantic.Holoholo.Services.DynamicTappables","DynamicTappableBehaviorService",&service},{"","DynamicTappableController",&controller_class},{"Holoholo.Rpc","ProcessTappableOutProto",&response_class},{"Holoholo.Rpc","TappableEncounterProto",&encounter_class},{"System","String",&string_class},{"System","Int32",&int32_class},{"Holoholo.Rpc","LootProto",&loot_class},{"Holoholo.Rpc","LootItemProto",&loot_item_class},{"Holoholo.Rpc","HoloPokemonId",&species_class},{"Holoholo.Rpc","Item",&item_class}};
@@ -343,7 +343,7 @@ int install(uint64_t tid){
    {loot_item_class,PGS_GAME_EVENTS_EVENT_COLLECTOR_CPP_COUNT_NAME_2,PGS_GAME_EVENTS_EVENT_COLLECTOR_CPP_COUNT_OFFSET_2,PGS_MD_FIELD_VALUE,4,"System.Int32"},{loot_item_class,PGS_GAME_EVENTS_EVENT_COLLECTOR_CPP_CSYX_NAME,PGS_GAME_EVENTS_EVENT_COLLECTOR_CPP_CSYX_OFFSET,PGS_MD_FIELD_REF,0,"System.Object"},{loot_item_class,PGS_GAME_EVENTS_EVENT_COLLECTOR_CPP_CSYY_NAME,PGS_GAME_EVENTS_EVENT_COLLECTOR_CPP_CSYY_OFFSET,PGS_MD_FIELD_ENUM_I32,4,nullptr},
    {int32_class,PGS_GAME_EVENTS_EVENT_COLLECTOR_CPP_M_VALUE_NAME,PGS_GAME_EVENTS_EVENT_COLLECTOR_CPP_M_VALUE_OFFSET,PGS_MD_FIELD_VALUE,4,"System.Int32"},{species_class,PGS_GAME_EVENTS_EVENT_COLLECTOR_CPP_VALUE___NAME,PGS_GAME_EVENTS_EVENT_COLLECTOR_CPP_VALUE___OFFSET,PGS_MD_FIELD_VALUE,4,"System.Int32"},{item_class,PGS_GAME_EVENTS_EVENT_COLLECTOR_CPP_VALUE___NAME,PGS_GAME_EVENTS_EVENT_COLLECTOR_CPP_VALUE___OFFSET,PGS_MD_FIELD_VALUE,4,"System.Int32"}};
   for(auto &f:fields)if((rc=check_field(f.k,f.n,f.off,f.kind,f.size,f.type)))return rc;
-  PgsMetaFieldResult list{},array{};
+  PGS_MetaFieldResult list{},array{};
   if((rc=check_field(session_class,PGS_GAME_EVENTS_EVENT_COLLECTOR_CPP_VISIBLETAPPABLES_NAME,PGS_GAME_EVENTS_EVENT_COLLECTOR_CPP_VISIBLETAPPABLES_OFFSET,PGS_MD_FIELD_REF,0,nullptr,&list)))return rc;
   list_class=list.type_class;
   if((rc=check_field(list_class,PGS_GAME_EVENTS_EVENT_COLLECTOR_CPP_ITEMS_NAME,PGS_GAME_EVENTS_EVENT_COLLECTOR_CPP_ITEMS_OFFSET,PGS_MD_FIELD_REF,0,nullptr,&array))||
@@ -351,7 +351,7 @@ int install(uint64_t tid){
   list_array_class=array.type_class;
   if(!list_class||!list_array_class)return -41;
   if((rc=repeated_layout(response_class,"Reward",PGS_GAME_EVENTS_EVENT_COLLECTOR_CPP_REWARD_OFFSET,reward_layout))||(rc=repeated_layout(loot_class,"LootItem",PGS_GAME_EVENTS_EVENT_COLLECTOR_CPP_LOOTITEM_OFFSET,items_layout)))return rc;
-  PgsMetaFieldResult cases{};if((rc=check_field(loot_item_class,PGS_GAME_EVENTS_EVENT_COLLECTOR_CPP_CSYY_NAME,PGS_GAME_EVENTS_EVENT_COLLECTOR_CPP_CSYY_OFFSET,PGS_MD_FIELD_ENUM_I32,4,nullptr,&cases)))return rc;
+  PGS_MetaFieldResult cases{};if((rc=check_field(loot_item_class,PGS_GAME_EVENTS_EVENT_COLLECTOR_CPP_CSYY_NAME,PGS_GAME_EVENTS_EVENT_COLLECTOR_CPP_CSYY_OFFSET,PGS_MD_FIELD_ENUM_I32,4,nullptr,&cases)))return rc;
   if(!constant(cases.type_class,"Item",1)||!constant(cases.type_class,"PokemonCandy",4)||!constant(cases.type_class,"XlCandy",11)||!constant(item_class,"RareCandy",1301)||!constant(item_class,"XlRareCandy",1302))return -42;
   const unsigned char new_pre[16]=PGS_GAME_EVENTS_EVENT_COLLECTOR_CPP_NEW_PRE_FINGERPRINT;
   const unsigned char get_pre[16]=PGS_GAME_EVENTS_EVENT_COLLECTOR_CPP_GET_PRE_FINGERPRINT;
@@ -365,7 +365,7 @@ int install(uint64_t tid){
   const unsigned char encounter_pre[16]=PGS_GAME_EVENTS_EVENT_COLLECTOR_CPP_ENCOUNTER_PRE_FINGERPRINT;
   const unsigned char update_pre[16]=PGS_GAME_EVENTS_EVENT_COLLECTOR_CPP_UPDATE_PRE_FINGERPRINT;
   const unsigned char visible_pre[16]=PGS_GAME_EVENTS_EVENT_COLLECTOR_CPP_VISIBLE_PRE_FINGERPRINT;
-  PgsMetaMethodResult tap{},result{},enc{},update{},session_tap{},visible{};
+  PGS_MetaMethodResult tap{},result{},enc{},update{},session_tap{},visible{};
   const char *iface="Niantic.Holoholo.Services.DynamicTappables.IDynamicTappable";
   if((rc=validate_method(service,"ProcessTappableTapped","System.Void",{iface,"System.Boolean"},PGS_GAME_EVENTS_EVENT_COLLECTOR_CPP_DYNAMICTAPPABLEBEHAVIORSERVICE_PROCESSTAPPABLETAPPED_RVA,tap_pre,tap))||
      (rc=validate_method(service,PGS_GAME_EVENTS_EVENT_COLLECTOR_CPP_BFTV_NAME,"System.Void",{iface,"Holoholo.Rpc.ProcessTappableOutProto"},PGS_GAME_EVENTS_EVENT_COLLECTOR_CPP_DYNAMICTAPPABLEBEHAVIORSERVICE_BFTV_RVA,result_pre,result))||

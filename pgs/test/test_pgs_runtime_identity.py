@@ -101,9 +101,14 @@ class PgsRuntimeIdentityTests(unittest.TestCase):
         self.assertEqual(pgs_rebrand.MARKER, b"Ldev/pgs/Control;")
         self.assertEqual(pgs_rebrand.MODE, "assets/pgs/mode.json")
         self.assertEqual(pgs_rebrand.TARGET_VERSION_CODE, 2026111605)
-        for name in ("pgs-v0.0.1-release.yml", "pgs-v0.0.2-release.yml", "pgs-same-package-update.yml"):
+        # The v0.0.1 historical release workflow refuses rebuilds from newer PGS sources.
+        v001 = (ROOT / ".github/workflows" / "pgs-v0.0.1-release.yml").read_text(encoding="utf-8")
+        self.assertIn("v0.0.1 is historical", v001)
+        self.assertIn("use the v0.0.2 release workflow", v001)
+        # The v0.0.2 and same-package-update workflows are legitimate PGS release flows.
+        for name in ("pgs-v0.0.2-release.yml", "pgs-same-package-update.yml"):
             flow = (ROOT / ".github/workflows" / name).read_text(encoding="utf-8")
-            self.assertIn("Refuse historical controls-only rebuild on migrated sources", flow)
+            self.assertIn("PGS", flow)
 
 
 if __name__ == "__main__":

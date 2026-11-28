@@ -35,7 +35,7 @@ PgsSharedCatchApi fixture_sh{};PgsSummaryCompletionApi fixture_sc{};PgsDetailsCo
 PgsDetailsRecoveryApi fixture_dr{};PgsCatchDiscoveryApi fixture_cd{};PgsCatchCanvasApi fixture_cv{};
 PgsCatchCompletionApi fixture_cc{};PgsCatchApi fixture_bridge{};PgsTransferExecApi fixture_tx{};
 PgsTransferFactsApi fixture_tf{};PgsTransferObserversApi fixture_to{};PgsUnitySchedulerApi fixture_scheduler{};
-PgsSharedMetadataApi fixture_md_api{};PgsBootApi fixture_boot{};PgsMetaApi fixture_meta{};
+PgsSharedMetadataApi fixture_md_api{};PgsBootApi fixture_boot{};PGS_MetaApi fixture_meta{};
 PgsRuntimeTransportApi fixture_transport{};PgsTransferApi fixture_transfer_policy{};
 const void *fixture_interaction_table=nullptr;
 extern "C" const void *fixture_interaction_api(uint32_t version){return version==2?fixture_interaction_table:nullptr;}
@@ -56,7 +56,7 @@ SHIM(fixture_metadata_api,PgsSharedMetadataApi,fixture_md_api)
 SHIM(fixture_transport_api,PgsRuntimeTransportApi,fixture_transport)
 SHIM(fixture_transfer_policy_api,PgsTransferApi,fixture_transfer_policy)
 SHIM(fixture_boot_api,PgsBootApi,fixture_boot)
-SHIM(fixture_meta_api,PgsMetaApi,fixture_meta)
+SHIM(fixture_meta_api,PGS_MetaApi,fixture_meta)
 #undef SHIM
 int fixture_hook(void *address,void *replacement,void **original){return DobbyHook(address,replacement,original);}
 // The optional shadow / Max transfer facts live in transfer_facts.cpp, which this fixture replaces.
@@ -236,13 +236,13 @@ int main(int argc,char **argv){assert(argc==2||argc==3);void *lib=dlopen(argv[1]
  LOAD(fixture_dr,PgsDetailsRecoveryApi,38,1) LOAD(fixture_cd,PgsCatchDiscoveryApi,40,1) LOAD(fixture_cv,PgsCatchCanvasApi,39,1)
  LOAD(fixture_cc,PgsCatchCompletionApi,24,1) LOAD(fixture_bridge,PgsCatchApi,3,1) LOAD(fixture_tx,PgsTransferExecApi,23,1)
  LOAD(fixture_tf,PgsTransferFactsApi,35,1) LOAD(fixture_to,PgsTransferObserversApi,57,1) LOAD(fixture_scheduler,PgsUnitySchedulerApi,48,2)
- LOAD(fixture_boot,PgsBootApi,54,1) LOAD(fixture_meta,PgsMetaApi,47,1)
+ LOAD(fixture_boot,PgsBootApi,54,1) LOAD(fixture_meta,PGS_MetaApi,47,1)
  LOAD(fixture_transport,PgsRuntimeTransportApi,52,1) LOAD(fixture_transfer_policy,PgsTransferApi,4,1)
 #undef LOAD
  fixture_interaction_table=core->query_feature(69,2);assert(fixture_interaction_table);
  using namespace test;prepare();if(argc==3){prepare_details();if(std::strcmp(argv[2],"recovery")==0||std::strcmp(argv[2],"scene")==0){prepare_recovery();scene_only=std::strcmp(argv[2],"scene")==0;}if(std::strcmp(argv[2],"direct")==0)prepare_direct();}fixture_md_api={2,sizeof(fixture_md_api),sizeof(PgsSharedMetadataConfig),sizeof(PgsSharedMetadataOutput),resolve};host=static_cast<const PgsSharedHostApi*>(fixture_host_api(1));
  assert(host->configure(nullptr)==1);assert(!snapshot().ready&&!snapshot().fault);
- PgsMetaExports exp{};exp.class_get_type=reinterpret_cast<void*>(class_type);PgsSharedMetaExtraExports ex{};ex.type_get_object=reinterpret_cast<void*>(type_get_object);ex.array_length=reinterpret_cast<void*>(array_length);ex.gchandle_new=reinterpret_cast<void*>(gc_new);ex.gchandle_get_target=reinterpret_cast<void*>(gc_get);ex.gchandle_free=reinterpret_cast<void*>(gc_free);
+ PGS_MetaExports exp{};exp.class_get_type=reinterpret_cast<void*>(class_type);PgsSharedMetaExtraExports ex{};ex.type_get_object=reinterpret_cast<void*>(type_get_object);ex.array_length=reinterpret_cast<void*>(array_length);ex.gchandle_new=reinterpret_cast<void*>(gc_new);ex.gchandle_get_target=reinterpret_cast<void*>(gc_get);ex.gchandle_free=reinterpret_cast<void*>(gc_free);
  PgsSharedHostConfig config{1,sizeof(config)};config.metadata.version=2;config.metadata.size=sizeof(config.metadata);config.metadata.binding.exports=&exp;config.metadata.extra=&ex;config.metadata.owner_tid=gettid();config.metadata.thread_current=reinterpret_cast<void*>(attached);config.object_get_class=reinterpret_cast<void*>(object_class);config.field_get_value=reinterpret_cast<void*>(field_read);config.runtime_invoke=reinterpret_cast<void*>(runtime);config.object_unbox=reinterpret_cast<void*>(unbox);config.exclusive_hooks=1;
  config.string_length=reinterpret_cast<void*>(string_length);const bool transport_mode=argc==3&&std::strcmp(argv[2],"transport")==0;
  if(transport_mode){PgsRuntimeTransportConfig transport_config{1,sizeof(transport_config),1000,256,10000,65536,0,0};assert(fixture_transport.install(&transport_config)==0);config.transport_flags=1;}

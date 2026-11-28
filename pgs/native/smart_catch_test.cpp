@@ -28,7 +28,7 @@ int emit(uint32_t op,const int64_t*,uint32_t,const PgsRuntimeTransportString *s,
 uint64_t encounter=0xfedcba9876543210ULL, sent_encounter=0;
 int req_item=0;uint64_t req_encounter=0;void *req_spawn=nullptr;
 std::string config="1;1;1;0;1;1500;30;3;1;";
-int sample(PgsRuntimeTransportSample *out){out->snapshot_fresh=fresh;out->fault=0;return 0;}
+int sample(PGSRuntimeTransportSample *out){out->snapshot_fresh=fresh;out->fault=0;return 0;}
 int get_bool(uint32_t field,int *out){assert(field==36||field==38);*out=field==36?allowed:visible;return 0;}
 int get_string(uint32_t field,char *out,uint32_t cap,uint32_t *len){assert(field==7);*len=config.size();if(cap<config.size())return -1;memcpy(out,config.data(),config.size());return 0;}
 PgsRuntimeTransportApi transport{};

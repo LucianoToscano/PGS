@@ -41,9 +41,9 @@ struct Root {
 void *klass(void *o){require(o,"null object");return fn<void*(*)(void*)>(boot.runtime.object_get_class)(o);}
 void *cls(const char *ns,const char *name){
  static std::map<std::string,void*> cache;const std::string key=std::string(ns)+"."+name;auto it=cache.find(key);if(it!=cache.end())return it->second;
- const auto *api=static_cast<const PgsMetaApi*>(pgs_runtime_metadata_api(1));require(api,"metadata API");
- PgsMetaClassQuery q{};q.version=1;q.size=sizeof(q);q.name_space=ns;q.name=name;q.canonical_match=PGS_MD_MATCH_EXACT;
- PgsMetaClassResult out{};require(api->resolve_class(&q,&out)==0,name);return cache[key]=const_cast<void*>(out.klass);
+ const auto *api=static_cast<const PGS_MetaApi*>(pgs_runtime_metadata_api(1));require(api,"metadata API");
+ PGS_MetaClassQuery q{};q.version=1;q.size=sizeof(q);q.name_space=ns;q.name=name;q.canonical_match=PGS_MD_MATCH_EXACT;
+ PGS_MetaClassResult out{};require(api->resolve_class(&q,&out)==0,name);return cache[key]=const_cast<void*>(out.klass);
 }
 std::string typename_of(void *type){char *p=fn<char*(*)(void*)>(boot.meta.type_get_name)(type);require(p,"type name");std::string s=p;fn<void(*)(void*)>(boot.meta.mem_free)(p);return s;}
 void *method(void *k,const char *name,int count){
@@ -92,7 +92,7 @@ struct Config {uint64_t request=0,id=0;int dex=0;double lat=0,lon=0;bool go=fals
 // anything malformed or stale means off. go turns 1 once a found shiny can be caught without cooldown;
 // until then the encounter is held.
 Config configured(){
- Config c;auto tr=transport();PgsRuntimeTransportSample a{};char s[128]{};uint32_t n=0;
+ Config c;auto tr=transport();PGSRuntimeTransportSample a{};char s[128]{};uint32_t n=0;
  if(!tr||tr->sample(&a)||!a.snapshot_fresh||a.fault||tr->get_string(19,s,sizeof(s)-1,&n)||n>=sizeof(s))return c;
  s[n]=0;unsigned long long request=0,id=0;int go=0,running=0,dex=0;double lat=0,lon=0;char tail=0;
  if(std::sscanf(s,"S1|%llu|%llu|%d|%d%c",&request,&id,&go,&running,&tail)==4){
@@ -404,10 +404,10 @@ void hook_gym_selected(void *self,void *gym,void *flag,void *done,void *context,
  reinterpret_cast<void(*)(void*,void*,void*,void*,void*,void*,const void*)>(orig_gym.load(std::memory_order_acquire))(self,gym,flag,done,context,recovery,m);
 }
 bool pin(void *owner,const char *name,unsigned params,uint64_t rva,const uint8_t *prologue,void *replacement,std::atomic<void*> &original){
- const auto *api=static_cast<const PgsMetaApi*>(pgs_runtime_metadata_api(1));if(!api)return false;
- PgsMetaMethodQuery q{};q.version=1;q.size=sizeof(q);q.owner=owner;q.name=name;q.return_type="System.Void";q.return_match=PGS_MD_MATCH_EXACT;
+ const auto *api=static_cast<const PGS_MetaApi*>(pgs_runtime_metadata_api(1));if(!api)return false;
+ PGS_MetaMethodQuery q{};q.version=1;q.size=sizeof(q);q.owner=owner;q.name=name;q.return_type="System.Void";q.return_match=PGS_MD_MATCH_EXACT;
  q.param_count=params;q.expected_code=static_cast<const char*>(boot.module_base)+rva;q.prologue=prologue;q.prologue_len=24;
- PgsMetaMethodResult r{};if(api->validate_method(&q,&r)!=0||!r.code)return false;
+ PGS_MetaMethodResult r{};if(api->validate_method(&q,&r)!=0||!r.code)return false;
  void *o=nullptr;if(pgs_hook(const_cast<void*>(r.code),replacement,&o)!=0||!o)return false;
  original.store(o,std::memory_order_release);return true;
 }

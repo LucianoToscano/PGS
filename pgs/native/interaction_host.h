@@ -160,7 +160,7 @@ enum {
     PGS_IH_RES_DISABLED = 4,
 };
 
-/* Extra reflection/runtime exports outside Feature 47's 31 PgsMetaExports */
+/* Extra reflection/runtime exports outside Feature 47's 31 PGS_MetaExports */
 typedef struct PgsInteractionExtraExports {
     void *image_get_name;         /* const char *(*)(const void *image) */
     void *class_get_name;         /* const char *(*)(void *klass) */
@@ -181,7 +181,7 @@ typedef struct PgsInteractionExtraExports {
 } PgsInteractionExtraExports;
 
 typedef struct PgsInteractionHostConfig {
-    PgsMetaBindConfig binding;        /* 64B: Feature 47 bind config (exports + module_base/size + seg_query) */
+    PGS_MetaBindConfig binding;        /* 64B: Feature 47 bind config (exports + module_base/size + seg_query) */
     PgsInteractionExtraExports extra; /* 128B: Extra reflection + thread + GC handle exports */
     const void *debug_code_address;   /* Optional override for debug_get_method_info code check in fixture; null -> binding.exports->debug_get_method_info */
     void *now_ms_fn;                  /* int64_t (*)(void); null -> clock_gettime(CLOCK_MONOTONIC) */
@@ -267,7 +267,7 @@ typedef struct PgsInteractionHostApi {
     int (*start)(const PgsInteractionHostOptions *opts);
     int (*stop)(const char *reason);
     int (*tick)(int32_t current_tid);
-    void (*on_unity_pulse)(void *ctx, const PgsUnityPulse *pulse);
+    void (*on_unity_pulse)(void *ctx, const PGSUnityPulse *pulse);
     int (*shared_sites)(uint32_t owned_mask, uint32_t integrated_mask);
     uint64_t (*observe_enter)(uint32_t target_id, void *receiver, void *arg0);
     void (*observe_leave)(uint64_t token, void *retval);

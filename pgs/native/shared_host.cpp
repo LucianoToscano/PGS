@@ -46,7 +46,7 @@ const auto bridge=table<PgsCatchApi>(pgs_catch_presentation_api(1));
 const auto transport=table<PgsRuntimeTransportApi>(pgs_runtime_transport_api(1));
 const auto transfer_policy=table<PgsTransferApi>(pgs_transfer_policy_api(1));
 PgsSharedHostConfig cfg{},accepted_config{};
-PgsMetaExports exports{};
+PGS_MetaExports exports{};
 PgsSharedMetaExtraExports extra{};
 PgsSharedMetadataOutput md{};
 std::mutex setup_mutex,options_mutex,event_mutex;
@@ -94,7 +94,7 @@ void fault(int rc){failed=true;stopping=true;emit(8,0,rc);}
 struct Gate {uint32_t flags,protect,count,keep_iv;uint64_t epoch,remaining;std::array<int32_t,2000> ids;};
 Gate gate(){Gate g{};std::lock_guard<std::mutex> lock(options_mutex);g.flags=options.flags;g.protect=options.protect;g.keep_iv=options.keep_iv;g.epoch=options.epoch;g.count=options.keep_count;std::copy_n(keep.begin(),g.count,g.ids.begin());const auto n=now();g.remaining=!stopping&&!failed&&(g.flags&PGS_SHH_ALLOWED)&&n&&n<deadline?std::min<uint64_t>(2500,deadline-n):0;return g;}
 bool scheduler_current(){return !pulse_generation||table<PgsUnitySchedulerApi>(pgs_unity_scheduler_api(2))->valid(pulse_generation)==1;}
-bool transport_current(){if(!(cfg.transport_flags&1))return true;PgsRuntimeTransportSample s{};return transport->sample(&s)==0&&s.snapshot_fresh&&!s.fault&&s.snapshot_seq==transport_sequence&&s.generation==transport_generation;}
+bool transport_current(){if(!(cfg.transport_flags&1))return true;PGSRuntimeTransportSample s{};return transport->sample(&s)==0&&s.snapshot_fresh&&!s.fault&&s.snapshot_seq==transport_sequence&&s.generation==transport_generation;}
 bool refresh_transport_current();
 bool current(uint64_t epoch){if(!owned()||!scheduler_current()||!refresh_transport_current())return false;const auto g=gate();return g.remaining&&g.epoch==epoch;}
 const char *keep_reason(int code){static const char *reasons[]={"none","keep-all","invalid-keep-list","unknown-species","custom-keep-list","unknown-iv","unknown-category","unknown-size","favorite-or-egg","iv-at-least-cutoff","protected-rare","protected-shiny","protected-event","protected-background","protected-xxs","protected-xxl","invalid-native-input","native-transfer-blocked","pvp-rank","protected-zero-iv","protected-costume","protected-shadow","protected-dynamax","protected-gigantamax"};return code>=0&&code<24?reasons[code]:"native-transfer-blocked";}
@@ -116,7 +116,7 @@ void transport_event(uint32_t kind,uint64_t slot,int status,uint32_t flags,int b
 }
 bool parse_keep(const char *text,uint32_t bytes,std::array<int32_t,2000>&ids,uint32_t &count){count=0;if(bytes>10000)return false;std::array<bool,2001> seen{};uint32_t at=0;while(at<bytes){if(text[at]<'1'||text[at]>'9')return false;int value=0;unsigned digits=0;while(at<bytes&&text[at]>='0'&&text[at]<='9'){if(++digits>4)return false;value=value*10+text[at++]-'0';}if(value>2000||seen[value]||count==2000)return false;seen[value]=true;ids[count++]=value;if(at==bytes)break;if(text[at++]!=','||at==bytes)return false;}std::sort(ids.begin(),ids.begin()+count);return true;}
 int update(const PgsSharedHostOptions*);
-void poll_transport(){if(!(cfg.transport_flags&1))return;PgsRuntimeTransportSample start{},end{};int dismiss=0,allow_transfer=0,keep_all=0;int32_t protect=2047;char text[10000];uint32_t len=0,count=0,keep_iv=0;std::array<int32_t,2000> ids{};
+void poll_transport(){if(!(cfg.transport_flags&1))return;PGSRuntimeTransportSample start{},end{};int dismiss=0,allow_transfer=0,keep_all=0;int32_t protect=2047;char text[10000];uint32_t len=0,count=0,keep_iv=0;std::array<int32_t,2000> ids{};
  bool fresh=transport->sample(&start)==0&&start.snapshot_fresh&&!start.fault;
  if(fresh)fresh=transport->get_bool(25,&dismiss)==0&&transport->get_bool(5,&allow_transfer)==0&&transport->get_bool(35,&keep_all)==0&&transport->get_int(8,&protect)==0;
  bool valid_keep=true;if(fresh){const int rc=transport->get_string(4,text,sizeof(text),&len);if(rc==PGS_TRANSPORT_ERR_RANGE){valid_keep=false;len=0;}else if(rc)fresh=false;else valid_keep=parse_keep(text,len,ids,count);}
@@ -493,8 +493,8 @@ struct OkCalls {bool tried=false,ok=false;void *(*field)(void*,const char*)=null
 bool ok_calls_ready(){
  if(ok_calls.tried)return ok_calls.ok;ok_calls.tried=true;
  PgsBootBinding b{};if(table<PgsBootApi>(pgs_runtime_bootstrap_api(1))->snapshot(&b)||!b.handle)return false;
- const auto meta=table<PgsMetaApi>(pgs_runtime_metadata_api(1));
- auto find=[&](const char *ns,const char *name)->void*{PgsMetaClassQuery q{1,sizeof(q)};q.name_space=ns;q.name=name;PgsMetaClassResult r{};return meta->resolve_class(&q,&r)?nullptr:const_cast<void*>(r.klass);};
+ const auto meta=table<PGS_MetaApi>(pgs_runtime_metadata_api(1));
+ auto find=[&](const char *ns,const char *name)->void*{PGS_MetaClassQuery q{1,sizeof(q)};q.name_space=ns;q.name=name;PGS_MetaClassResult r{};return meta->resolve_class(&q,&r)?nullptr:const_cast<void*>(r.klass);};
  // The summary's OK is the game's own PgoButton (Pixel, 2026-11-20); Unity's Button is kept as a fallback.
  void *button=find("UnityEngine.UI","Button"),*pgo=find("Niantic.Holoholo.UI","PgoButton"),*component=find("UnityEngine","Component");
  auto methods=reinterpret_cast<void*(*)(void*,void**)>(dlsym(b.handle,"il2cpp_class_get_methods"));
@@ -603,16 +603,16 @@ int configure(const PgsSharedHostConfig *input);
 // path never probes, attaches a thread, or accepts an unvalidated address.
 std::atomic_flag default_busy=ATOMIC_FLAG_INIT;
 PgsSharedHostConfig default_config{};
-PgsMetaExports default_exports{};
+PGS_MetaExports default_exports{};
 PgsSharedMetaExtraExports default_extra{};
 bool default_built=false;
 int install_summary_alpha(){
- const auto meta=table<PgsMetaApi>(pgs_runtime_metadata_api(1));
- auto klass=[&](const char *ns,const char *name)->const void*{PgsMetaClassQuery q{1,sizeof(q)};q.name_space=ns;q.name=name;PgsMetaClassResult r{};return meta->resolve_class(&q,&r)?nullptr:r.klass;};
+ const auto meta=table<PGS_MetaApi>(pgs_runtime_metadata_api(1));
+ auto klass=[&](const char *ns,const char *name)->const void*{PGS_MetaClassQuery q{1,sizeof(q)};q.name_space=ns;q.name=name;PGS_MetaClassResult r{};return meta->resolve_class(&q,&r)?nullptr:r.klass;};
  const void *group=klass("UnityEngine","CanvasGroup"),*object=klass("UnityEngine","Object");
  if(!group||!object)return -1;
- PgsMetaFieldQuery q{1,sizeof(q)};q.owner=c(0);q.name="cachedRootCanvasGroup";q.offset=PGS_GAME_SHARED_HOST_CPP_CACHEDROOTCANVASGROUP_OFFSET;q.forbidden_mask=0x50;q.kind=PGS_MD_FIELD_REF;q.type_name="UnityEngine.CanvasGroup";
- PgsMetaFieldResult root{},native{};if(meta->validate_field(&q,&root))return -2;
+ PGS_MetaFieldQuery q{1,sizeof(q)};q.owner=c(0);q.name="cachedRootCanvasGroup";q.offset=PGS_GAME_SHARED_HOST_CPP_CACHEDROOTCANVASGROUP_OFFSET;q.forbidden_mask=0x50;q.kind=PGS_MD_FIELD_REF;q.type_name="UnityEngine.CanvasGroup";
+ PGS_MetaFieldResult root{},native{};if(meta->validate_field(&q,&root))return -2;
  q.owner=object;q.name="m_CachedPtr";q.offset=PGS_GAME_SHARED_HOST_CPP_M_CACHEDPTR_OFFSET;q.kind=PGS_MD_FIELD_VALUE;q.value_size=8;q.type_name="System.IntPtr";
  if(meta->validate_field(&q,&native))return -3;
  PgsBootBinding binding{};if(table<PgsBootApi>(pgs_runtime_bootstrap_api(1))->snapshot(&binding)||!binding.handle)return -4;
@@ -629,10 +629,10 @@ int configure_default(){
   const int rc=boot->snapshot(&b);if(rc)return rc>0?1:rc;
   if(!b.handle||!b.module_base||!b.module_size||!b.runtime.thread_current)return -7;
   if(!reinterpret_cast<void *(*)()>(b.runtime.thread_current)())return 1;
-  const auto metadata=table<PgsMetaApi>(pgs_runtime_metadata_api(1));
+  const auto metadata=table<PGS_MetaApi>(pgs_runtime_metadata_api(1));
   int export_error=0;
   auto symbol=[&](const char *name){char full[80];std::snprintf(full,sizeof(full),"il2cpp_%s",name);void *address=dlsym(b.handle,full);
-   if(address){PgsMetaCodeQuery q{1,sizeof(q),address,4,nullptr,0,0};if(metadata->validate_code(&q)!=0){export_error=-7;return static_cast<void*>(nullptr);}}
+   if(address){PGS_MetaCodeQuery q{1,sizeof(q),address,4,nullptr,0,0};if(metadata->validate_code(&q)!=0){export_error=-7;return static_cast<void*>(nullptr);}}
    return address;};
   PgsSharedMetaExtraExports e{};
   e.field_static_get_value=b.runtime.field_static_get_value;e.gchandle_new=b.runtime.gchandle_new;e.gchandle_get_target=b.runtime.gchandle_get_target;e.gchandle_free=b.runtime.gchandle_free;
@@ -654,7 +654,7 @@ int configure_default(){
 int configure(const PgsSharedHostConfig *input){
  if(!input)return configure_default();
  if(!input||input->version!=1||input->size!=sizeof(*input)||input->exclusive_hooks!=1||(input->transport_flags&~1u)||!input->object_get_class||!input->field_get_value||!input->runtime_invoke||!input->object_unbox||!input->metadata.binding.exports||!input->metadata.extra)return -1;
- if(input->transport_flags&1){PgsRuntimeTransportSample snapshot{};if(transport->sample(&snapshot)!=0||snapshot.fault)return -6;}
+ if(input->transport_flags&1){PGSRuntimeTransportSample snapshot{};if(transport->sample(&snapshot)!=0||snapshot.fault)return -6;}
  if(input->metadata.owner_tid!=tid())return -2;
  std::lock_guard<std::mutex> lock(setup_mutex);if(failed)return -3;if(ready)return std::memcmp(input,&accepted_config,sizeof(*input))==0?0:-4;
  cfg=*input;exports=*input->metadata.binding.exports;extra=*input->metadata.extra;cfg.metadata.binding.exports=&exports;cfg.metadata.extra=&extra;
@@ -669,7 +669,7 @@ int update(const PgsSharedHostOptions *input){if(!input||input->version!=1||inpu
 int sample(PgsSharedHostSample *out){if(!out)return -1;*out={1,sizeof(*out),uint32_t(ready.load()),capabilities.load(),uint32_t(stopping.load()),uint32_t(failed.load()),record_count.load(),root_count.load(),owner.load(),ticks.load(),frames.load()};return 0;}
 int next_event(PgsSharedHostEvent *out){if(!out)return -1;std::lock_guard<std::mutex> lock(event_mutex);if(!event_count){*out={};return 0;}*out=events[event_head];event_head=(event_head+1)%events.size();--event_count;return 1;}
 const PgsSharedMetadataOutput *metadata(){return ready?&md:nullptr;}
-void pulse(void*,const PgsUnityPulse *p){if(!p||p->reserved||p->tid<=0)return;auto scheduler=table<PgsUnitySchedulerApi>(pgs_unity_scheduler_api(2));if(!scheduler||scheduler->valid(p->generation)!=1)return;const auto previous=pulse_generation;pulse_generation=p->generation;try{tick(uint64_t(p->tid),p->sequence);}catch(...){fault(-11);}pulse_generation=previous;}
+void pulse(void*,const PGSUnityPulse *p){if(!p||p->reserved||p->tid<=0)return;auto scheduler=table<PgsUnitySchedulerApi>(pgs_unity_scheduler_api(2));if(!scheduler||scheduler->valid(p->generation)!=1)return;const auto previous=pulse_generation;pulse_generation=p->generation;try{tick(uint64_t(p->tid),p->sequence);}catch(...){fault(-11);}pulse_generation=previous;}
 const PgsSharedHostApi api{1,sizeof(api),configure,update,tick,stop,sample,next_event,metadata,pulse};
 const PgsSharedHostTransferApi transfer_api{2,sizeof(transfer_api),transfer_ready,external_submit,external_next_event};
 }

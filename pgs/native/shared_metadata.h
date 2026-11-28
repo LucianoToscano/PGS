@@ -466,7 +466,7 @@ enum PgsSharedOptional {
 };
 
 // resolve() status (0 == OK). Negatives below -29 are this module's; others propagate feature-47
-// PgsMetaStatus codes verbatim. Note: PGS_MD_ERR_NOT_FOUND (-9) is returned ONLY when assemblies are 0
+// PGS_MetaStatus codes verbatim. Note: PGS_MD_ERR_NOT_FOUND (-9) is returned ONLY when assemblies are 0
 // or a required class is not yet loaded internally; resolve maps that to NOT_READY (+1).
 // Missing required members return -33 and are never treated as cold-start retry.
 enum PgsSharedMetaStatus {
@@ -504,7 +504,7 @@ static_assert(sizeof(PgsSharedMetaExtraExports) == 112, "14 LP64 extra exports")
 
 struct PgsSharedMetadataConfig {
   uint32_t version, size;      // == 2, == sizeof(PgsSharedMetadataConfig)
-  PgsMetaBindConfig binding;   // 31 core exports + module range (+ optional fixture seg_query)
+  PGS_MetaBindConfig binding;   // 31 core exports + module range (+ optional fixture seg_query)
   void *thread_current;        // il2cpp_thread_current export (caller-attached; checked != null)
   uint64_t owner_tid;          // gettid() of the attached caller thread
   const PgsSharedMetaExtraExports *extra; // mandatory extra exports
@@ -513,7 +513,7 @@ static_assert(sizeof(PgsSharedMetadataConfig) == 96, "LP64 config (API 2)");
 
 struct PgsSharedFieldMetaEntry {
   uint64_t offset;
-  uint32_t kind;               // PgsMetaFieldKind (1=ref, 2=value, 3=enum-int32)
+  uint32_t kind;               // PGS_MetaFieldKind (1=ref, 2=value, 3=enum-int32)
   uint32_t size;               // value size when kind==2, else 0
   char name[64];
   char owner[128];

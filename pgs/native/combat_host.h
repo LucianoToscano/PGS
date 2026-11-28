@@ -193,7 +193,7 @@ struct PgsCombatHostApi {
     int (*next_event)(PgsCombatHostEvent *out, char *json_buf, uint32_t json_cap);
 
     // Feature 48 API 2 compatible post-original pulse callback.
-    void (*on_unity_pulse)(void *ctx, const PgsUnityPulse *pulse);
+    void (*on_unity_pulse)(void *ctx, const PGSUnityPulse *pulse);
 };
 
 #if defined(__cplusplus) && (__SIZEOF_POINTER__ == 8)

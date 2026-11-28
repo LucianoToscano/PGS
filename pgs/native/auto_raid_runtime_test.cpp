@@ -51,7 +51,7 @@ double t_lat = 37.7749;
 double t_lon = -122.4194;
 std::vector<std::string> t_events;
 
-int fake_transport_sample(PgsRuntimeTransportSample* out) {
+int fake_transport_sample(PGSRuntimeTransportSample* out) {
     *out = {};
     out->snapshot_fresh = t_fresh ? 1 : 0;
     out->fault = t_fault ? 1 : 0;
@@ -105,13 +105,13 @@ int fake_bootstrap_snapshot(PgsBootBinding* out) {
     return 0;
 }
 
-int fake_meta_resolve_class(const PgsMetaClassQuery*, PgsMetaClassResult*) {
+int fake_meta_resolve_class(const PGS_MetaClassQuery*, PGS_MetaClassResult*) {
     return -1; // Simulate missing class on raw metadata path
 }
 
 PgsRuntimeTransportApi g_transport_api{};
 PgsBootApi g_boot_api{};
-PgsMetaApi g_meta_api{};
+PGS_MetaApi g_meta_api{};
 PgsVgpResultsApi g_results_api{};
 
 // Fake managed game world for the runtime adapter

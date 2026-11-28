@@ -34,14 +34,14 @@ void set_position(void *self,float value,int axis,const void *method){
  if(self&&self==refresh_scroll&&axis==1&&value==1.0f)return;
  original_position(self,value,axis,method);
 }
-const void *resolve(const PgsMetaApi *api,const char *ns,const char *name){
- PgsMetaClassQuery q{1,sizeof(q),ns,name,nullptr,PGS_MD_MATCH_EXACT,0};
- PgsMetaClassResult out{};
+const void *resolve(const PGS_MetaApi *api,const char *ns,const char *name){
+ PGS_MetaClassQuery q{1,sizeof(q),ns,name,nullptr,PGS_MD_MATCH_EXACT,0};
+ PGS_MetaClassResult out{};
  return api->resolve_class(&q,&out)==0?out.klass:nullptr;
 }
-bool method(const PgsMetaApi *api,const void *owner,const char *name,const char *p0,const char *p1,PgsMetaMethodResult &out){
+bool method(const PGS_MetaApi *api,const void *owner,const char *name,const char *p0,const char *p1,PGS_MetaMethodResult &out){
  if(!owner)return false;
- PgsMetaMethodQuery q{};q.version=1;q.size=sizeof(q);q.owner=owner;q.name=name;
+ PGS_MetaMethodQuery q{};q.version=1;q.size=sizeof(q);q.owner=owner;q.name=name;
  q.return_type="System.Void";q.return_match=PGS_MD_MATCH_EXACT;
  q.param_count=p1?2:1;q.param_types[0]=p0;q.param_match[0]=p1?PGS_MD_MATCH_EXACT:PGS_MD_MATCH_SUFFIX;
  if(p1){q.param_types[1]=p1;q.param_match[1]=PGS_MD_MATCH_EXACT;}
@@ -53,15 +53,15 @@ void pgs_profile_scroll_install(){
  const auto *bootstrap=static_cast<const PgsBootApi*>(pgs_runtime_bootstrap_api(1));
  PgsBootBinding b{};b.version=1;b.size=sizeof(b);
  if(!bootstrap||bootstrap->snapshot(&b)!=0)return;
- const auto *api=static_cast<const PgsMetaApi*>(pgs_runtime_metadata_api(1));
+ const auto *api=static_cast<const PGS_MetaApi*>(pgs_runtime_metadata_api(1));
  if(!api)return;
  installed=true; // Optional: unsupported metadata must not disable gameplay.
  const void *page=resolve(api,"Niantic.Holoholo.UI","PlayerProfilePage");
  const void *base=resolve(api,"Niantic.Holoholo.UI","GUISubPageBase");
  const void *scroll=resolve(api,"Niantic.Holoholo.Widget","ScrollRectBase");
- PgsMetaMethodResult update{},position{};
- PgsMetaFieldQuery fq{1,sizeof(fq),base,PGS_GAME_PROFILE_SCROLL_CPP_SCROLLRECT_NAME,PGS_GAME_PROFILE_SCROLL_CPP_SCROLLRECT_OFFSET,0x50,0,PGS_MD_FIELD_REF,0,"Niantic.Holoholo.Widget.ScrollRectEx",PGS_MD_MATCH_EXACT,0};
- PgsMetaFieldResult field{};
+ PGS_MetaMethodResult update{},position{};
+ PGS_MetaFieldQuery fq{1,sizeof(fq),base,PGS_GAME_PROFILE_SCROLL_CPP_SCROLLRECT_NAME,PGS_GAME_PROFILE_SCROLL_CPP_SCROLLRECT_OFFSET,0x50,0,PGS_MD_FIELD_REF,0,"Niantic.Holoholo.Widget.ScrollRectEx",PGS_MD_MATCH_EXACT,0};
+ PGS_MetaFieldResult field{};
  bool ok=page&&base&&scroll&&api->validate_field(&fq,&field)==0&&
   method(api,page,PGS_GAME_PROFILE_SCROLL_CPP_PLAYER_INFO_UPDATE_NAME,"PlayerInfo",nullptr,update)&&method(api,scroll,PGS_GAME_PROFILE_SCROLL_CPP_SCROLL_POSITION_NAME,"System.Single","System.Int32",position);
  if(ok){
@@ -71,14 +71,14 @@ void pgs_profile_scroll_install(){
   ok=klass&&reinterpret_cast<int(*)(void*,int*)>(b.meta.class_value_size)(klass,&align)==32&&align==8;
   const char *names[]={"<PlayerProto>k__BackingField","<PlayerStats>k__BackingField",PGS_GAME_PROFILE_SCROLL_CPP_PLAYER_INFO_DAYS_NAME,"<PlayerDay>k__BackingField"};
   for(unsigned i=0;ok&&i<4;i++){
-   PgsMetaFieldQuery q{1,sizeof(q),klass,names[i],PGS_GAME_PROFILE_SCROLL_CPP_PLAYER_INFO_FIRST_FIELD_OFFSET+i*8,0x50,0,i==3?PGS_MD_FIELD_VALUE:PGS_MD_FIELD_REF,i==3?8u:0u,i==3?"System.Int64":nullptr,i==3?PGS_MD_MATCH_EXACT:PGS_MD_MATCH_ANY,0};
-   PgsMetaFieldResult out{};ok=api->validate_field(&q,&out)==0;
+   PGS_MetaFieldQuery q{1,sizeof(q),klass,names[i],PGS_GAME_PROFILE_SCROLL_CPP_PLAYER_INFO_FIRST_FIELD_OFFSET+i*8,0x50,0,i==3?PGS_MD_FIELD_VALUE:PGS_MD_FIELD_REF,i==3?8u:0u,i==3?"System.Int64":nullptr,i==3?PGS_MD_MATCH_EXACT:PGS_MD_MATCH_ANY,0};
+   PGS_MetaFieldResult out{};ok=api->validate_field(&q,&out)==0;
   }
  }
  void *update_code=nullptr,*position_code=nullptr;
  if(ok){
   memcpy(&update_code,update.method,sizeof(void*));memcpy(&position_code,position.method,sizeof(void*));
-  PgsMetaCodeQuery a{1,sizeof(a),update_code,16,nullptr,0,0},c{1,sizeof(c),position_code,16,nullptr,0,0};
+  PGS_MetaCodeQuery a{1,sizeof(a),update_code,16,nullptr,0,0},c{1,sizeof(c),position_code,16,nullptr,0,0};
   ok=api->validate_code(&a)==0&&api->validate_code(&c)==0;
  }
  if(ok){

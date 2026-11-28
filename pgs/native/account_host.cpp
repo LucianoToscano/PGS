@@ -18,7 +18,7 @@ namespace {
 
 using namespace pgs_shared_meta;
 
-// --- Pokémon GO 0.435.1 ARM64 method RVAs and checked 24-byte prologues ---
+// --- Pokï¿½mon GO 0.435.1 ARM64 method RVAs and checked 24-byte prologues ---
 constexpr uint64_t kRvaPlayerGetId        = PGS_GAME_ACCOUNT_HOST_CPP_KRVAPLAYERGETID_RVA; // 0x92cb930
 constexpr uint64_t kRvaPlayerGetName      = PGS_GAME_ACCOUNT_HOST_CPP_KRVAPLAYERGETNAME_RVA; // 0x92cbbb4
 constexpr uint64_t kRvaAuthIsConnected    = PGS_GAME_ACCOUNT_HOST_CPP_KRVAAUTHISCONNECTED_RVA; // 0xc3b2900
@@ -75,9 +75,9 @@ const pgs_advsync_api_v1 *advsync_api() {
   return (p && p->version == 1 && p->size == sizeof(pgs_advsync_api_v1)) ? p : nullptr;
 }
 
-const PgsMetaApi *meta_api() {
-  const auto *p = static_cast<const PgsMetaApi *>(pgs_runtime_metadata_api(1));
-  return (p && p->version == 1 && p->size == sizeof(PgsMetaApi)) ? p : nullptr;
+const PGS_MetaApi *meta_api() {
+  const auto *p = static_cast<const PGS_MetaApi *>(pgs_runtime_metadata_api(1));
+  return (p && p->version == 1 && p->size == sizeof(PGS_MetaApi)) ? p : nullptr;
 }
 
 const PgsBootApi *boot_api() {
@@ -241,7 +241,7 @@ struct HostState {
   uint32_t cfg_flags = 0;
   const void *module_base = nullptr;
   uint64_t module_size = 0;
-  PgsMetaExports meta_exports{};
+  PGS_MetaExports meta_exports{};
   PgsAccountHostRuntime runtime{};
 
   // Accounts policy state (protected by policy_mu)
@@ -446,7 +446,7 @@ struct EffectiveConfig {
   uint64_t owner_tid = 0;
   const void *module_base = nullptr;
   uint64_t module_size = 0;
-  PgsMetaExports meta{};
+  PGS_MetaExports meta{};
   PgsAccountHostRuntime runtime{};
   bool has_lookup = false;
   bool lookup_known = false;
@@ -550,7 +550,7 @@ int build_effective_config(const PgsAccountHostConfig *cfg, EffectiveConfig *out
   }
   if (!has_substituted) {
     const void *const *meta_slots = reinterpret_cast<const void *const *>(&out->meta);
-    if (!check_all_pointers_non_null(meta_slots, sizeof(PgsMetaExports) / sizeof(void *))) {
+    if (!check_all_pointers_non_null(meta_slots, sizeof(PGS_MetaExports) / sizeof(void *))) {
       return PGS_ACH_ERR_BAD_CONFIG;
     }
   }
@@ -601,13 +601,13 @@ int build_effective_config(const PgsAccountHostConfig *cfg, EffectiveConfig *out
   return PGS_ACH_OK;
 }
 
-int resolve_class_47(const PgsMetaApi *md, const char *full_name, void **out_klass) {
+int resolve_class_47(const PGS_MetaApi *md, const char *full_name, void **out_klass) {
   *out_klass = nullptr;
   const char *dot = std::strrchr(full_name, '.');
   std::string ns = dot ? std::string(full_name, static_cast<size_t>(dot - full_name)) : std::string();
   const char *name = dot ? (dot + 1) : full_name;
 
-  PgsMetaClassQuery q{};
+  PGS_MetaClassQuery q{};
   q.version = PGS_MD_QUERY_VERSION;
   q.size = sizeof(q);
   q.name_space = ns.c_str();
@@ -615,17 +615,17 @@ int resolve_class_47(const PgsMetaApi *md, const char *full_name, void **out_kla
   q.canonical = full_name;
   q.canonical_match = PGS_MD_MATCH_EXACT;
 
-  PgsMetaClassResult r{};
+  PGS_MetaClassResult r{};
   int rc = md->resolve_class(&q, &r);
   if (rc != PGS_MD_OK || !r.klass) return metadata_status(rc,true);
   *out_klass = const_cast<void *>(r.klass);
   return PGS_ACH_OK;
 }
 
-int validate_field_47(const PgsMetaApi *md, const void *owner, const char *name, uint64_t offset,
+int validate_field_47(const PGS_MetaApi *md, const void *owner, const char *name, uint64_t offset,
                       void **out_field) {
   if (out_field) *out_field = nullptr;
-  PgsMetaFieldQuery q{};
+  PGS_MetaFieldQuery q{};
   q.version = PGS_MD_QUERY_VERSION;
   q.size = sizeof(q);
   q.owner = owner;
@@ -638,14 +638,14 @@ int validate_field_47(const PgsMetaApi *md, const void *owner, const char *name,
   q.type_name = nullptr;
   q.type_match = PGS_MD_MATCH_ANY;
 
-  PgsMetaFieldResult r{};
+  PGS_MetaFieldResult r{};
   int rc = md->validate_field(&q, &r);
   if (rc != PGS_MD_OK || !r.field || r.offset != offset) return metadata_status(rc);
   if (out_field) *out_field = const_cast<void *>(r.field);
   return PGS_ACH_OK;
 }
 
-int validate_method_47(const PgsMetaApi *md, const EffectiveConfig &ec, const void *owner,
+int validate_method_47(const PGS_MetaApi *md, const EffectiveConfig &ec, const void *owner,
                        const char *name, uint32_t param_count, bool allow_static,
                        uint64_t rva, const unsigned char *prefix, uint32_t prefix_len,
                        void **out_method, void **out_code) {
@@ -677,7 +677,7 @@ int validate_method_47(const PgsMetaApi *md, const EffectiveConfig &ec, const vo
   bool is_static = (mflags & 0x10u) != 0;
   if (!allow_static && is_static) return PGS_ACH_ERR_METADATA;
 
-  PgsMetaMethodQuery q{};
+  PGS_MetaMethodQuery q{};
   q.version = PGS_MD_QUERY_VERSION;
   q.size = sizeof(q);
   q.owner = owner;
@@ -691,14 +691,14 @@ int validate_method_47(const PgsMetaApi *md, const EffectiveConfig &ec, const vo
   q.prologue = prefix;
   q.prologue_len = prefix_len;
 
-  PgsMetaMethodResult r{};
+  PGS_MetaMethodResult r{};
   int rc = md->validate_method(&q, &r);
   if (rc != PGS_MD_OK || r.method != raw_m || r.code != expected_code) {
     return metadata_status(rc);
   }
 
   // Also run explicit Feature 47 validate_code check on the 24-byte prologue.
-  PgsMetaCodeQuery cq{};
+  PGS_MetaCodeQuery cq{};
   cq.version = PGS_MD_QUERY_VERSION;
   cq.size = sizeof(cq);
   cq.address = expected_code;
@@ -737,7 +737,7 @@ int validate_enum_literal(const EffectiveConfig &ec, const void *enum_class, con
   return PGS_ACH_OK;
 }
 
-int resolve_accounts_metadata(const PgsMetaApi *md, const EffectiveConfig &ec,
+int resolve_accounts_metadata(const PGS_MetaApi *md, const EffectiveConfig &ec,
                               PgsAccountHostMetadataOutput *out) {
   out->accounts_valid = 0;
   out->accounts_error = PGS_ACH_ERR_METADATA;
@@ -830,7 +830,7 @@ int resolve_accounts_metadata(const PgsMetaApi *md, const EffectiveConfig &ec,
   return PGS_ACH_OK;
 }
 
-int resolve_advsync_metadata(const PgsMetaApi *md, const EffectiveConfig &ec,
+int resolve_advsync_metadata(const PGS_MetaApi *md, const EffectiveConfig &ec,
                              PgsAccountHostMetadataOutput *out) {
   out->advsync_valid = 0;
   out->advsync_error = PGS_ACH_ERR_METADATA;
@@ -896,7 +896,7 @@ int resolve_metadata_internal(const EffectiveConfig &ec, PgsAccountHostMetadataO
     return PGS_ACH_ERR_METADATA;
   }
 
-  PgsMetaBindConfig bind_cfg{};
+  PGS_MetaBindConfig bind_cfg{};
   bind_cfg.version = PGS_MD_CONFIG_VERSION;
   bind_cfg.size = sizeof(bind_cfg);
   bind_cfg.exports = &ec.meta;
@@ -1283,7 +1283,7 @@ void poll_transport52() {
   const auto *tr = transport_api();
   if (!tr) return;
 
-  PgsRuntimeTransportSample before{}, after{};
+  PGSRuntimeTransportSample before{}, after{};
   if (tr->sample(&before) != PGS_TRANSPORT_OK || !before.snapshot_fresh || before.fault) {
     PgsAccountHostOptions off{};
     off.version = PGS_ACH_OPTIONS_VERSION;
@@ -1477,16 +1477,16 @@ int api_next_event(PgsAccountHostEvent *out) {
   return PGS_ACH_OK;
 }
 
-void api_on_unity_pulse(void *, const PgsUnityPulse *pulse) {
+void api_on_unity_pulse(void *, const PGSUnityPulse *pulse) {
   if (!pulse || pulse->reserved != 0 || pulse->tid <= 0) return;
   const auto *sched2 = scheduler_api2();
   if(!sched2||!sched2->valid||sched2->valid(pulse->generation)!=1)return;
   (void)api_tick(static_cast<uint64_t>(pulse->tid));
 }
 
-const PgsAccountHostApi kApi = {
+const PGSAccountHostApi kApi = {
     PGS_ACCOUNT_HOST_API_VERSION,
-    sizeof(PgsAccountHostApi),
+    sizeof(PGSAccountHostApi),
     api_configure,
     api_resolve_metadata,
     api_set_options,

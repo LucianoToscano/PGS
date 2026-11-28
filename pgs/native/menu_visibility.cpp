@@ -67,8 +67,8 @@ void dismiss_menu(void *self,const void *method){
  if(controller_handle&&gc_target(controller_handle)==self)retain_controller(nullptr);
  original_dismiss(self,method);
 }
-bool resolve_method(const PgsMetaApi *api,const void *owner,const char *name,const char *ret,PgsMetaMethodResult &out){
- PgsMetaMethodQuery q{};q.version=1;q.size=sizeof(q);q.owner=owner;q.name=name;
+bool resolve_method(const PGS_MetaApi *api,const void *owner,const char *name,const char *ret,PGS_MetaMethodResult &out){
+ PGS_MetaMethodQuery q{};q.version=1;q.size=sizeof(q);q.owner=owner;q.name=name;
  q.return_type=ret;q.return_match=PGS_MD_MATCH_EXACT;q.param_count=0;
  q.is_static=0;
  return api->validate_method(&q,&out)==0;
@@ -76,12 +76,12 @@ bool resolve_method(const PgsMetaApi *api,const void *owner,const char *name,con
 void install(){
  const auto *boot=static_cast<const PgsBootApi*>(pgs_runtime_bootstrap_api(1));
  PgsBootBinding b{};b.version=1;b.size=sizeof(b);
- const auto *api=static_cast<const PgsMetaApi*>(pgs_runtime_metadata_api(1));
+ const auto *api=static_cast<const PGS_MetaApi*>(pgs_runtime_metadata_api(1));
  if(!boot||!api||boot->snapshot(&b)!=0)return;
  attempted=true;
- PgsMetaClassQuery cq{1,sizeof(cq),"Niantic.Holoholo.Map.UI","MainMenuGuiController",nullptr,PGS_MD_MATCH_EXACT,0};
- PgsMetaClassResult cls{},base{};PgsMetaMethodResult op{},cl{},init{},get{},dismiss{},top{},vis{},opened{};
- PgsMetaClassQuery bq{1,sizeof(bq),"Niantic.Holoholo.NUI","GuiController",nullptr,PGS_MD_MATCH_EXACT,0};
+ PGS_MetaClassQuery cq{1,sizeof(cq),"Niantic.Holoholo.Map.UI","MainMenuGuiController",nullptr,PGS_MD_MATCH_EXACT,0};
+ PGS_MetaClassResult cls{},base{};PGS_MetaMethodResult op{},cl{},init{},get{},dismiss{},top{},vis{},opened{};
+ PGS_MetaClassQuery bq{1,sizeof(bq),"Niantic.Holoholo.NUI","GuiController",nullptr,PGS_MD_MATCH_EXACT,0};
  bool ok=api->resolve_class(&cq,&cls)==0&&
   api->resolve_class(&bq,&base)==0&&
   resolve_method(api,base.klass,"get_IsTopGui","System.Boolean",top)&&
@@ -97,8 +97,8 @@ void install(){
   memcpy(&op_code,op.method,sizeof(void*));memcpy(&cl_code,cl.method,sizeof(void*));
   memcpy(&init_code,init.method,sizeof(void*));
   memcpy(&dismiss_code,dismiss.method,sizeof(void*));
-  PgsMetaCodeQuery a{1,sizeof(a),op_code,16,nullptr,0,0},c{1,sizeof(c),cl_code,16,nullptr,0,0},i{1,sizeof(i),init_code,16,nullptr,0,0};
-  PgsMetaCodeQuery d{1,sizeof(d),dismiss_code,16,nullptr,0,0};
+  PGS_MetaCodeQuery a{1,sizeof(a),op_code,16,nullptr,0,0},c{1,sizeof(c),cl_code,16,nullptr,0,0},i{1,sizeof(i),init_code,16,nullptr,0,0};
+  PGS_MetaCodeQuery d{1,sizeof(d),dismiss_code,16,nullptr,0,0};
   ok=api->validate_code(&a)==0&&api->validate_code(&c)==0&&api->validate_code(&i)==0&&api->validate_code(&d)==0;
  }
  if(ok){

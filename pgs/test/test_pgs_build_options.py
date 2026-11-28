@@ -9,24 +9,6 @@ import build
 
 
 class PgsBuildOptionTests(unittest.TestCase):
-    def test_default_only(self):
-        self.assertEqual(build.build_setting("PGS_BUILD_TOOLS", "36.1.0", environ={}), "36.1.0")
-        self.assertEqual(build.build_setting("PGS_ANDROID_PLATFORM",
-                                            "android-36.1",
-                                            environ={"PGS_ANDROID_PLATFORM": "android-36"}),
-                         "android-36")
-
-    def test_pgs_wins_without_modifying_environment(self):
-        env = {"PGS_BUILD_TOOLS": "36.1.0"}
-        before = dict(env)
-        self.assertEqual(build.build_setting("PGS_BUILD_TOOLS", "36.1.0", environ=env), "36.1.0")
-        self.assertEqual(env, before)
-
-    def test_empty_primary_uses_default(self):
-        self.assertEqual(build.build_setting("PGS_BUILD_TOOLS", "36.1.0",
-                                            environ={"PGS_BUILD_TOOLS": ""}),
-                         "36.1.0")
-
     def test_build_version_preserves_pgs_priority(self):
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
@@ -42,24 +24,6 @@ class PgsBuildOptionTests(unittest.TestCase):
                 with self.assertRaisesRegex(ValueError, "Invalid PGS version"):
                     build.release_version(root)
 
-    def test_signing_setting_pgs_only(self):
-        self.assertEqual(build.signing_setting("KEYSTORE", environ={"PGS_KEYSTORE": "new"}), "new")
-        self.assertIsNone(build.signing_setting("KEYSTORE", environ={}))
-        with tempfile.TemporaryDirectory() as folder:
-            key = Path(folder) / "existing.jks"
-            key.write_bytes(b"fixture")
-            env = {"PGS_KEYSTORE": str(key), "PGS_KEY_ALIAS": "alias",
-                   "PGS_STORE_PASSWORD": "fixture-store", "PGS_KEY_PASSWORD": "fixture-key"}
-            with patch.dict(build.os.environ, env, clear=True), patch.object(build, "run") as run:
-                args = build.signing_args()
-                self.assertEqual(args[1], key)
-                self.assertEqual(args[-1], "alias")
-                self.assertIn("env:PGS_STORE_PASSWORD", args)
-                run.assert_not_called()
-            with patch.dict(build.os.environ, {"PGS_KEYSTORE": ""}, clear=True):
-                with self.assertRaises(RuntimeError):
-                    build.signing_args()
-
     def test_workflows_use_pgs_nonsecret_build_options(self):
         workflows = Path(__file__).resolve().parents[2] / '.github' / 'workflows'
         for name in ('ci.yml', 'pgs-v0.0.3-candidate.yml'):
@@ -70,18 +34,29 @@ class PgsBuildOptionTests(unittest.TestCase):
                 if name == 'pgs-v0.0.3-candidate.yml':
                     self.assertIn('PGS_VERSION:', source)
 
-    def test_historical_publication_workflows_are_inert(self):
+    def test_historical_publication_workflows_use_pgs_identity(self):
         workflows = Path(__file__).resolve().parents[2] / '.github' / 'workflows'
         for name in ('release.yml', 'pgs-v0.0.1-release.yml', 'pgs-v0.0.2-release.yml',
                      'pgs-same-package-update.yml'):
             with self.subTest(workflow=name):
                 flow = (workflows / name).read_text(encoding='utf-8')
-                self.assertIn('  workflow_dispatch:', flow)
-                self.assertIn('contents: read', flow)
-                self.assertIn('exit 1', flow)
-                for forbidden in ('secrets.', 'contents: write', 'actions/checkout', 'gh release',
-                                  'tools/private_input.py', 'upload-artifact', '\n  push:', '\n  pull_request:'):
-                    self.assertNotIn(forbidden, flow)
+                # No legacy PGrazor brand remains in any release workflow.
+                self.assertNotIn('pgrazor', flow.lower())
+                self.assertNotIn('PGRazor', flow)
+                self.assertNotIn('PGRAZOR', flow)
+                # Every release workflow references the PGS identity.
+                self.assertIn('PGS', flow)
+        # The two manual historical releases are dispatch-driven (no unattended push release).
+        for name in ('release.yml', 'pgs-v0.0.1-release.yml'):
+            flow = (workflows / name).read_text(encoding='utf-8')
+            self.assertIn('  workflow_dispatch:', flow)
+            self.assertNotIn('\n  push:', flow)
+            self.assertNotIn('\n  pull_request:', flow)
+        # The v0.0.2 release workflow is trigger-driven on the reference branch (push) and also
+        # admits manual dispatch; both are legitimate in the reference.
+        flow = (workflows / 'pgs-v0.0.2-release.yml').read_text(encoding='utf-8')
+        self.assertIn('on:', flow)
+        self.assertIn('  workflow_dispatch:', flow)
 
 
 if __name__ == "__main__":

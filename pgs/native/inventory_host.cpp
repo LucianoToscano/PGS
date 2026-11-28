@@ -118,7 +118,7 @@ int update(const PgsInventoryHostOptions *p){
  if(permission_changed)event("gift-permission","\"mask\":"+std::to_string(p->gift_mask)+",\"allowed\":"+(p->gift_allowed?"true":"false"));return 0;
 }
 void poll_policy(){
- if(!(flags&1))return;auto tr=transport();PgsRuntimeTransportSample a{},z{};PgsInventoryHostOptions p{};p.version=1;p.size=sizeof(p);p.lease_ms=100;
+ if(!(flags&1))return;auto tr=transport();PGSRuntimeTransportSample a{},z{};PgsInventoryHostOptions p{};p.version=1;p.size=sizeof(p);p.lease_ms=100;
  auto b=[&](unsigned i){int v=0;return tr->get_bool(i,&v)==0&&v==1;};auto n=[&](unsigned i){int32_t v=0;return tr->get_int(i,&v)==0?v:0;};
  if(tr->sample(&a)||!a.snapshot_fresh){p.lease_ms=0;update(&p);return;}
  p.item_enabled=b(17);p.item_allowed=b(16);int mode=n(3);p.item_catalog=mode>=0&&mode<=2?mode:0;p.buddy_allowed=b(8);p.buddy_berry=n(1);
@@ -321,7 +321,7 @@ int stop(){stopping.store(true);{std::lock_guard<std::mutex> lock(policy_lock);d
 int sample(PgsInventoryHostSample *s){if(!s)return -2;refresh_roots();*s={1,sizeof(*s),uint32_t(configured.load()),uint32_t(installed.load()&&!stopping.load()&&caps.load()==63&&faults.load()==0),caps.load(),uint32_t(stopping.load()),roots.load(),faults.load(),owner.load(),ticks.load()};return 0;}
 int next_event(PgsInventoryHostEvent *out){if(!out)return -2;std::lock_guard<std::mutex> lock(event_lock);if(!event_count)return 1;*out={};out->version=1;out->size=sizeof(*out);out->sequence=++event_seq;auto &s=event_queue[event_head];memcpy(out->json,s.c_str(),s.size()+1);s.clear();event_head=(event_head+1)%64;--event_count;return 0;}
 void request_item_poll(){force_poll.store(true);}void *acquire_item_service(){return (caps.load()&PGS_IH_ITEMS)&&!stopping.load()&&owner.load()==uint64_t(gettid())?items()->service_acquire():nullptr;}
-void on_pulse(void*,const PgsUnityPulse *pulse){auto api=static_cast<const PgsUnitySchedulerApi*>(pgs_unity_scheduler_api(2));if(pulse&&api&&api->valid(pulse->generation)==1)tick(pulse->tid);}
+void on_pulse(void*,const PGSUnityPulse *pulse){auto api=static_cast<const PgsUnitySchedulerApi*>(pgs_unity_scheduler_api(2));if(pulse&&api&&api->valid(pulse->generation)==1)tick(pulse->tid);}
 bool cleanup_available(){
  if(!configured.load()||!installed.load()||stopping.load()||!(caps.load()&PGS_IH_ITEMS)||(faults.load()&PGS_IH_ITEMS))return false;
  std::lock_guard<std::mutex> lock(policy_lock);

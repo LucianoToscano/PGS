@@ -55,7 +55,7 @@ int tr_get_double(uint32_t,double*,int*){ return PGS_TRANSPORT_STALE; }
 int tr_get_string(uint32_t,char*,uint32_t,uint32_t*){ return PGS_TRANSPORT_STALE; }
 int tr_get_cmd(char*,uint32_t,uint32_t*,char*,uint32_t,uint32_t*){ return PGS_TRANSPORT_STALE; }
 int tr_take_pulse(uint32_t,int*){ return PGS_TRANSPORT_STALE; }
-int tr_sample(PgsRuntimeTransportSample *out){
+int tr_sample(PGSRuntimeTransportSample *out){
   if(!out) return PGS_TRANSPORT_ERR_NULL_ARG; *out={};
   out->version=PGS_TRANSPORT_SAMPLE_VERSION; out->size=sizeof(*out);
   out->snapshot_fresh=uint32_t(g_transport_fresh); out->fault=uint32_t(g_transport_fault); return 0;
@@ -92,7 +92,7 @@ int sc_diag(PgsUnitySchedulerDiag *o){
 }
 PgsUnitySchedulerApi  sched2{2,sizeof(PgsUnitySchedulerApi),sc_install,sc_activate,sc_revoke,sc_valid,sc_snapshot};
 PgsUnitySchedulerApi4 sched4{4,sizeof(PgsUnitySchedulerApi4),sc_install,sc_activate,sc_revoke,sc_valid,sc_snapshot,sc_exec_gen,sc_diag};
-PgsMetaApi metadata{};  // referenced only by verify(), which the failing install never calls
+PGS_MetaApi metadata{};  // referenced only by verify(), which the failing install never calls
 
 const void *scheduler_api(uint32_t v){ if(v==2) return &sched2; if(v==4) return &sched4; return nullptr; }
 const void *transport_api(uint32_t){ return &transport; }

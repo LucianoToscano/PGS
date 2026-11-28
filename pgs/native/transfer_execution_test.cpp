@@ -18,7 +18,7 @@
 // controller against a fake managed heap (classes/methods/fields, GetPokemon identity lookup,
 // ReleasePokemon with optional null/throw/synchronous callbacks). The module installs NO hook and
 // re-runs the REAL feature-4 transfer_policy decide() in the same library. The 10 s timeout case
-// waits 11 s against the production clock. The coordinator builds and runs this against libpgs-core.so
+// waits 11 s against the production clock. The coordinator builds and runs this against libpgs.so
 // after registering query_feature case 23 and linking transfer_execution.cpp.
 
 namespace {
@@ -211,7 +211,7 @@ PgsTransferExecRequest make_req(Scene &s, uint64_t id, const PgsTransferInput &i
 }  // namespace
 
 int main(int argc, char **argv) {
-  const char *so_path = argc > 1 ? argv[1] : "./libpgs-core.so";
+  const char *so_path = argc > 1 ? argv[1] : "./libpgs.so";
   void *lib = ::dlopen(so_path, RTLD_NOW | RTLD_LOCAL);
   if (!lib) { std::fprintf(stderr, "dlopen(%s) failed: %s\n", so_path, ::dlerror()); return 1; }
   auto getter = reinterpret_cast<GetApiFn>(::dlsym(lib, "pgs_native_api"));

@@ -48,13 +48,13 @@ using fn_debug_method_info = bool (*)(void *, void *);
 // ---- bound resolver singleton (metadata is read-only + process-lifetime stable) ---------------
 struct State {
   bool bound = false;
-  PgsMetaExports exports{};
+  PGS_MetaExports exports{};
   const void *module_base = nullptr;
   uint64_t module_size = 0;
   pgs_meta_seg_fn seg_query = nullptr;
   void *seg_ctx = nullptr;
 
-  PgsMetaSample sample{};
+  PGS_MetaSample sample{};
 };
 
 State g;
@@ -125,7 +125,7 @@ int phdr_cb(struct dl_phdr_info *info, size_t, void *data) {
   }
   return 0;
 }
-int default_seg(void *, const void *addr, uint64_t size, PgsMetaSegment *out) {
+int default_seg(void *, const void *addr, uint64_t size, PGS_MetaSegment *out) {
   std::memset(out, 0, sizeof(*out));
   uintptr_t a = reinterpret_cast<uintptr_t>(addr);
   if(!range(a,size))return -1;
@@ -165,7 +165,7 @@ int default_seg(void *, const void *addr, uint64_t size, PgsMetaSegment *out) {
   return 0;
 }
 #else
-int default_seg(void *, const void *, uint64_t, PgsMetaSegment *out) {
+int default_seg(void *, const void *, uint64_t, PGS_MetaSegment *out) {
   std::memset(out, 0, sizeof(*out));
   return -1;  // no supported resolver off-Linux; callers must inject seg_query
 }
@@ -179,7 +179,7 @@ int check_code(const void *address, uint64_t length, const void *prologue, uint3
   uintptr_t base = reinterpret_cast<uintptr_t>(g.module_base);
   if (!contains(base,g.module_size,a,length)) return PGS_MD_ERR_CODE_RANGE;
 
-  PgsMetaSegment seg{};
+  PGS_MetaSegment seg{};
   if (g.seg_query(g.seg_ctx, address, length, &seg) != 0) return PGS_MD_ERR_SEGMENT;
   if(seg.found!=1||seg.readable!=1||seg.host_exec>1||seg.elf_exec>1||seg.writable>1||seg.reserved||
      !(seg.host_exec||(!seg.writable&&seg.elf_exec)))return PGS_MD_ERR_SEGMENT;
@@ -195,11 +195,11 @@ int check_code(const void *address, uint64_t length, const void *prologue, uint3
 }
 
 // ================================================================================================
-int api_bind(const PgsMetaBindConfig *config) {
+int api_bind(const PGS_MetaBindConfig *config) {
   ApiGuard guard;if(!guard)return PGS_MD_ERR_BUSY;
   if (config == nullptr || config->exports == nullptr) return fail(PGS_MD_ERR_NULL_ARG);
   if (config->version != PGS_MD_CONFIG_VERSION) return fail(PGS_MD_ERR_BAD_VERSION);
-  if (config->size != sizeof(PgsMetaBindConfig)) return fail(PGS_MD_ERR_BAD_SIZE);
+  if (config->size != sizeof(PGS_MetaBindConfig)) return fail(PGS_MD_ERR_BAD_SIZE);
   if (config->module_base == nullptr || config->module_size == 0) return fail(PGS_MD_ERR_MISSING_EXPORT);
   if(!range(reinterpret_cast<uintptr_t>(config->module_base),config->module_size))return fail(PGS_MD_ERR_CODE_RANGE);
   if(config->reserved)return fail(PGS_MD_ERR_BAD_SIZE);
@@ -207,14 +207,14 @@ int api_bind(const PgsMetaBindConfig *config) {
     (config->debug_prologue_len&&!config->debug_prologue))return fail(PGS_MD_ERR_PROLOGUE);
 
   const void *const *slots = reinterpret_cast<const void *const *>(config->exports);
-  const size_t count = sizeof(PgsMetaExports) / sizeof(void *);
+  const size_t count = sizeof(PGS_MetaExports) / sizeof(void *);
   for (size_t i = 0; i < count; ++i)
     if (slots[i] == nullptr) return fail(PGS_MD_ERR_MISSING_EXPORT);
 
   pgs_meta_seg_fn seg = config->seg_query ? config->seg_query : &default_seg;
 
   if (g.bound) {  // immutable runtime identity; optional code proof belongs to this call
-    if (std::memcmp(&g.exports, config->exports, sizeof(PgsMetaExports)) != 0 ||
+    if (std::memcmp(&g.exports, config->exports, sizeof(PGS_MetaExports)) != 0 ||
         g.module_base != config->module_base || g.module_size != config->module_size ||
         g.seg_query != seg || g.seg_ctx != config->seg_ctx)
       return fail(PGS_MD_ERR_BOUND_MISMATCH);
@@ -249,12 +249,12 @@ int api_bind(const PgsMetaBindConfig *config) {
   return PGS_MD_OK;
 }
 
-int api_resolve_class(const PgsMetaClassQuery *q, PgsMetaClassResult *out) {
+int api_resolve_class(const PGS_MetaClassQuery *q, PGS_MetaClassResult *out) {
   if(out)*out={};
   ApiGuard guard;if(!guard)return PGS_MD_ERR_BUSY;
   if (q == nullptr || out == nullptr) return fail(PGS_MD_ERR_NULL_ARG);
   if (q->version != PGS_MD_QUERY_VERSION) return fail(PGS_MD_ERR_BAD_VERSION);
-  if (q->size != sizeof(PgsMetaClassQuery)) return fail(PGS_MD_ERR_BAD_SIZE);
+  if (q->size != sizeof(PGS_MetaClassQuery)) return fail(PGS_MD_ERR_BAD_SIZE);
   if (!g.bound) return fail(PGS_MD_ERR_NOT_BOUND);
 
   std::string ns, name;
@@ -299,20 +299,20 @@ int api_resolve_class(const PgsMetaClassQuery *q, PgsMetaClassResult *out) {
   if (found == nullptr) return fail(PGS_MD_ERR_NOT_FOUND);
 
   out->version = PGS_MD_QUERY_VERSION;
-  out->size = sizeof(PgsMetaClassResult);
+  out->size = sizeof(PGS_MetaClassResult);
   out->klass = found;
   out->type = get_type(found);
   ++g.sample.classes_resolved;
   return PGS_MD_OK;
 }
 
-int api_validate_field(const PgsMetaFieldQuery *q, PgsMetaFieldResult *out) {
+int api_validate_field(const PGS_MetaFieldQuery *q, PGS_MetaFieldResult *out) {
   if(out)*out={};
   ApiGuard guard;if(!guard)return PGS_MD_ERR_BUSY;
   if (q == nullptr || out == nullptr || q->owner == nullptr || q->name == nullptr)
     return fail(PGS_MD_ERR_NULL_ARG);
   if (q->version != PGS_MD_QUERY_VERSION) return fail(PGS_MD_ERR_BAD_VERSION);
-  if (q->size != sizeof(PgsMetaFieldQuery)) return fail(PGS_MD_ERR_BAD_SIZE);
+  if (q->size != sizeof(PGS_MetaFieldQuery)) return fail(PGS_MD_ERR_BAD_SIZE);
   if (!g.bound) return fail(PGS_MD_ERR_NOT_BOUND);
 
   std::string name;
@@ -381,7 +381,7 @@ int api_validate_field(const PgsMetaFieldQuery *q, PgsMetaFieldResult *out) {
   }
 
   out->version = PGS_MD_QUERY_VERSION;
-  out->size = sizeof(PgsMetaFieldResult);
+  out->size = sizeof(PGS_MetaFieldResult);
   out->field = f;
   out->type = type;
   out->type_class = type_class;
@@ -392,13 +392,13 @@ int api_validate_field(const PgsMetaFieldQuery *q, PgsMetaFieldResult *out) {
   return PGS_MD_OK;
 }
 
-int api_validate_method(const PgsMetaMethodQuery *q, PgsMetaMethodResult *out) {
+int api_validate_method(const PGS_MetaMethodQuery *q, PGS_MetaMethodResult *out) {
   if(out)*out={};
   ApiGuard guard;if(!guard)return PGS_MD_ERR_BUSY;
   if (q == nullptr || out == nullptr || q->owner == nullptr || q->name == nullptr)
     return fail(PGS_MD_ERR_NULL_ARG);
   if (q->version != PGS_MD_QUERY_VERSION) return fail(PGS_MD_ERR_BAD_VERSION);
-  if (q->size != sizeof(PgsMetaMethodQuery)) return fail(PGS_MD_ERR_BAD_SIZE);
+  if (q->size != sizeof(PGS_MetaMethodQuery)) return fail(PGS_MD_ERR_BAD_SIZE);
   if (!g.bound) return fail(PGS_MD_ERR_NOT_BOUND);
   if (q->param_count > PGS_MD_PARAM_MAX) return fail(PGS_MD_ERR_LIMIT);
 
@@ -458,7 +458,7 @@ int api_validate_method(const PgsMetaMethodQuery *q, PgsMetaMethodResult *out) {
   }
 
   out->version = PGS_MD_QUERY_VERSION;
-  out->size = sizeof(PgsMetaMethodResult);
+  out->size = sizeof(PGS_MetaMethodResult);
   out->method = m;
   out->code = code;
   out->flags = flags;
@@ -468,11 +468,11 @@ int api_validate_method(const PgsMetaMethodQuery *q, PgsMetaMethodResult *out) {
   return PGS_MD_OK;
 }
 
-int api_validate_code(const PgsMetaCodeQuery *q) {
+int api_validate_code(const PGS_MetaCodeQuery *q) {
   ApiGuard guard;if(!guard)return PGS_MD_ERR_BUSY;
   if (q == nullptr) return fail(PGS_MD_ERR_NULL_ARG);
   if (q->version != PGS_MD_QUERY_VERSION) return fail(PGS_MD_ERR_BAD_VERSION);
-  if (q->size != sizeof(PgsMetaCodeQuery)) return fail(PGS_MD_ERR_BAD_SIZE);
+  if (q->size != sizeof(PGS_MetaCodeQuery)) return fail(PGS_MD_ERR_BAD_SIZE);
   if (!g.bound) return fail(PGS_MD_ERR_NOT_BOUND);
   int rc = check_code(q->address, q->length, q->prologue, q->prologue_len);
   if (rc != PGS_MD_OK) return fail(rc);
@@ -518,19 +518,19 @@ int api_resolve_module(const char *soname, const void **base, uint64_t *size) {
 #endif
 }
 
-int api_sample(PgsMetaSample *out) {
+int api_sample(PGS_MetaSample *out) {
   if(out)*out={};
   ApiGuard guard;if(!guard)return PGS_MD_ERR_BUSY;
   if (out == nullptr) return PGS_MD_ERR_NULL_ARG;
   g.sample.version = PGS_MD_SAMPLE_VERSION;
-  g.sample.size = sizeof(PgsMetaSample);
+  g.sample.size = sizeof(PGS_MetaSample);
   *out = g.sample;
   return PGS_MD_OK;
 }
 
-const PgsMetaApi g_api = {
+const PGS_MetaApi g_api = {
     PGS_MD_API_VERSION,
-    sizeof(PgsMetaApi),
+    sizeof(PGS_MetaApi),
     api_bind,
     api_resolve_class,
     api_validate_field,

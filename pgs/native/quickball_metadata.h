@@ -36,7 +36,7 @@ enum PgsQuickballMetaInfo {
   PGS_QB_OUTCOME_MAX  = 6    // LITERALS: CatchError/Success/Escape/Flee/Missed/ItemReplacement
 };
 
-// Precise negative classifications beyond the feature47 PgsMetaStatus set (returned by resolve()).
+// Precise negative classifications beyond the feature47 PGS_MetaStatus set (returned by resolve()).
 enum PgsQuickballStatus {
   PGS_QB_NOT_READY = 1, // mandatory classes/domain assemblies not ready; output cleared, retry
   PGS_QB_ERR_EXTRA_MISSING = -34,  // extra config null/bad-version OR a mandatory extra primitive null
@@ -430,7 +430,7 @@ struct PgsQuickballExtra {
 // Config mirrors feature53's shape/semantics plus the typed extra block (API 2).
 struct PgsQuickballMetaConfig {
   uint32_t version, size;
-  PgsMetaBindConfig binding;
+  PGS_MetaBindConfig binding;
   void *thread_current;
   uint64_t owner_tid;
   const PgsQuickballExtra *extra;

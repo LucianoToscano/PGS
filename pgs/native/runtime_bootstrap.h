@@ -1,7 +1,7 @@
 #pragma once
 #include <stddef.h>
 #include <stdint.h>
-#include "runtime_metadata.h" // PgsMetaExports / pgs_meta_seg_fn (feature47) reused directly
+#include "runtime_metadata.h" // PGS_MetaExports / pgs_meta_seg_fn (feature47) reused directly
 
 // Feature 54 (API 1). COMPILED native IL2CPP bootstrap binding. This is the compiled C++ replacement
 // for the Frida Module/export DISCOVERY embedded in runtime/native-core.js (Module.getGlobalExportByName
@@ -53,7 +53,7 @@ enum PgsBootInfo {
 // managed domain not yet available). Environment failures permanently poison this owner. Caller argument/config faults and BUSY
 // leave the existing state untouched. On any non-OK status the binding output is cleared except its
 // {version,size,status,detail} header. For bind/resolve failures detail carries the underlying feature 47
-// PgsMetaStatus; for PGS_BOOT_NOT_READY detail carries a PgsBootLoaderDetail localizing a rooted-namespace
+// PGS_MetaStatus; for PGS_BOOT_NOT_READY detail carries a PgsBootLoaderDetail localizing a rooted-namespace
 // loader fallback failure (0 == ordinary not-loaded-yet wait); otherwise detail is 0.
 enum PgsBootStatus {
   PGS_BOOT_OK                 = 0,
@@ -66,8 +66,8 @@ enum PgsBootStatus {
   PGS_BOOT_ERR_MISSING_EXPORT = -6,  // a required il2cpp export dlsym'd to null (unsupported build)
   PGS_BOOT_ERR_MODULE_RANGE   = -7,  // module base/size null, zero, or overflowing
   PGS_BOOT_ERR_NO_METADATA    = -8,  // feature 47 getter absent or wrong ABI version
-  PGS_BOOT_ERR_BIND           = -9,  // feature 47 bind failed/mismatch (detail = PgsMetaStatus)
-  PGS_BOOT_ERR_RESOLVE        = -10, // ExecuteTasks class/method validation failed (detail = PgsMetaStatus)
+  PGS_BOOT_ERR_BIND           = -9,  // feature 47 bind failed/mismatch (detail = PGS_MetaStatus)
+  PGS_BOOT_ERR_RESOLVE        = -10, // ExecuteTasks class/method validation failed (detail = PGS_MetaStatus)
   PGS_BOOT_ERR_THREAD         = -11, // il2cpp_thread_attach returned null after domain was up
   PGS_BOOT_ERR_EXPORT_CODE    = -13, // production export outside validated executable module
   PGS_BOOT_ERR_POISONED       = -12  // reserved. Once poisoned, probe()/snapshot() REPLAY the original
@@ -80,7 +80,7 @@ enum PgsBootStatus {
 // wait (library not mapped yet, managed domain not up, or caller not yet attached) and carries no
 // loader fault. The non-zero codes localize a rooted-payload loader failure so a device report that
 // stays "pending" is actionable instead of opaque. These are deliberately POSITIVE and never collide
-// with the NEGATIVE PgsMetaStatus values that populate detail on BIND/RESOLVE failures. Keep these in
+// with the NEGATIVE PGS_MetaStatus values that populate detail on BIND/RESOLVE failures. Keep these in
 // sync with NativeRuntimeBootstrap.java's loader reason decoder.
 enum PgsBootLoaderDetail {
   PGS_BOOT_LD_IMAGE_PENDING   = 0,    // soname not yet mapped (or domain/thread pending); retriable wait
@@ -165,7 +165,7 @@ struct PgsBootBinding {
   uint32_t version;                // == PGS_BOOT_BINDING_VERSION
   uint32_t size;                   // == sizeof(PgsBootBinding)
   int32_t status;                  // mirrors the probe()/snapshot() return
-  int32_t detail;                  // underlying PgsMetaStatus for BIND/RESOLVE failures, else 0
+  int32_t detail;                  // underlying PGS_MetaStatus for BIND/RESOLVE failures, else 0
   uint32_t flags;                  // bit0: probe attached+detached a native worker thread this call
   uint32_t reserved;               // 0
   void *handle;                    // opaque dlopen handle (kept for process lifetime; never dlclosed)
@@ -174,7 +174,7 @@ struct PgsBootBinding {
   const void *domain;              // il2cpp_domain_get() at bind time
   const void *execute_tasks;       // validated UnitySynchronizationContext.ExecuteTasks MethodInfo*
   const void *execute_tasks_code;  // compiled address when exec_code_rva was supplied, else null
-  PgsMetaExports meta;             // the 31 discovered metadata exports (feed feature 47 bind directly)
+  PGS_MetaExports meta;             // the 31 discovered metadata exports (feed feature 47 bind directly)
   PgsBootRuntimeExports runtime;   // the extra runtime/gameplay/scheduler exports
 };
 static_assert(sizeof(PgsBootBinding) == 480, "PgsBootBinding must remain 480 bytes on LP64");

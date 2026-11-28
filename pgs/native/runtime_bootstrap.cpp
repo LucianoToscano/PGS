@@ -108,46 +108,46 @@ const char kExecNamespace[] = "UnityEngine";
 const char kExecClass[]     = "UnitySynchronizationContext";
 const char kExecMethod[]    = "ExecuteTasks";
 
-// Strict supported il2cpp export names, in the FIXED order of PgsMetaExports / PgsBootRuntimeExports.
+// Strict supported il2cpp export names, in the FIXED order of PGS_MetaExports / PgsBootRuntimeExports.
 // This is the single reviewable list of symbols dlsym'd from the real libil2cpp. The fixture harness
 // maps these names to fake functions through the dlsym test seam; it does not need a real library.
 struct SymSlot { size_t off; const char *name; };
 
 const SymSlot kMetaSyms[] = {
-  {offsetof(PgsMetaExports, domain_get),                 "il2cpp_domain_get"},
-  {offsetof(PgsMetaExports, domain_get_assemblies),      "il2cpp_domain_get_assemblies"},
-  {offsetof(PgsMetaExports, assembly_get_image),         "il2cpp_assembly_get_image"},
-  {offsetof(PgsMetaExports, class_from_name),            "il2cpp_class_from_name"},
-  {offsetof(PgsMetaExports, class_get_type),             "il2cpp_class_get_type"},
-  {offsetof(PgsMetaExports, type_get_name),              "il2cpp_type_get_name"},
-  {offsetof(PgsMetaExports, mem_free),                   "il2cpp_free"},
-  {offsetof(PgsMetaExports, class_get_field_from_name),  "il2cpp_class_get_field_from_name"},
-  {offsetof(PgsMetaExports, field_get_parent),           "il2cpp_field_get_parent"},
-  {offsetof(PgsMetaExports, field_get_flags),            "il2cpp_field_get_flags"},
-  {offsetof(PgsMetaExports, field_get_offset),           "il2cpp_field_get_offset"},
-  {offsetof(PgsMetaExports, field_get_type),             "il2cpp_field_get_type"},
-  {offsetof(PgsMetaExports, class_from_type),            "il2cpp_class_from_type"},
-  {offsetof(PgsMetaExports, class_is_valuetype),         "il2cpp_class_is_valuetype"},
-  {offsetof(PgsMetaExports, class_is_enum),              "il2cpp_class_is_enum"},
-  {offsetof(PgsMetaExports, class_enum_basetype),        "il2cpp_class_enum_basetype"},
-  {offsetof(PgsMetaExports, class_value_size),           "il2cpp_class_value_size"},
-  {offsetof(PgsMetaExports, class_get_method_from_name), "il2cpp_class_get_method_from_name"},
-  {offsetof(PgsMetaExports, method_get_class),           "il2cpp_method_get_class"},
-  {offsetof(PgsMetaExports, method_get_name),            "il2cpp_method_get_name"},
-  {offsetof(PgsMetaExports, method_get_flags),           "il2cpp_method_get_flags"},
-  {offsetof(PgsMetaExports, method_get_param_count),     "il2cpp_method_get_param_count"},
-  {offsetof(PgsMetaExports, method_get_param),           "il2cpp_method_get_param"},
-  {offsetof(PgsMetaExports, method_get_return_type),     "il2cpp_method_get_return_type"},
-  {offsetof(PgsMetaExports, method_is_generic),          "il2cpp_method_is_generic"},
-  {offsetof(PgsMetaExports, method_is_inflated),         "il2cpp_method_is_inflated"},
-  {offsetof(PgsMetaExports, debug_get_method_info),      "il2cpp_debug_get_method_info"},
-  {offsetof(PgsMetaExports, class_is_assignable_from),   "il2cpp_class_is_assignable_from"},
-  {offsetof(PgsMetaExports, class_get_methods),          "il2cpp_class_get_methods"},
-  {offsetof(PgsMetaExports, class_get_nested_types),     "il2cpp_class_get_nested_types"},
-  {offsetof(PgsMetaExports, class_get_declaring_type),   "il2cpp_class_get_declaring_type"},
+  {offsetof(PGS_MetaExports, domain_get),                 "il2cpp_domain_get"},
+  {offsetof(PGS_MetaExports, domain_get_assemblies),      "il2cpp_domain_get_assemblies"},
+  {offsetof(PGS_MetaExports, assembly_get_image),         "il2cpp_assembly_get_image"},
+  {offsetof(PGS_MetaExports, class_from_name),            "il2cpp_class_from_name"},
+  {offsetof(PGS_MetaExports, class_get_type),             "il2cpp_class_get_type"},
+  {offsetof(PGS_MetaExports, type_get_name),              "il2cpp_type_get_name"},
+  {offsetof(PGS_MetaExports, mem_free),                   "il2cpp_free"},
+  {offsetof(PGS_MetaExports, class_get_field_from_name),  "il2cpp_class_get_field_from_name"},
+  {offsetof(PGS_MetaExports, field_get_parent),           "il2cpp_field_get_parent"},
+  {offsetof(PGS_MetaExports, field_get_flags),            "il2cpp_field_get_flags"},
+  {offsetof(PGS_MetaExports, field_get_offset),           "il2cpp_field_get_offset"},
+  {offsetof(PGS_MetaExports, field_get_type),             "il2cpp_field_get_type"},
+  {offsetof(PGS_MetaExports, class_from_type),            "il2cpp_class_from_type"},
+  {offsetof(PGS_MetaExports, class_is_valuetype),         "il2cpp_class_is_valuetype"},
+  {offsetof(PGS_MetaExports, class_is_enum),              "il2cpp_class_is_enum"},
+  {offsetof(PGS_MetaExports, class_enum_basetype),        "il2cpp_class_enum_basetype"},
+  {offsetof(PGS_MetaExports, class_value_size),           "il2cpp_class_value_size"},
+  {offsetof(PGS_MetaExports, class_get_method_from_name), "il2cpp_class_get_method_from_name"},
+  {offsetof(PGS_MetaExports, method_get_class),           "il2cpp_method_get_class"},
+  {offsetof(PGS_MetaExports, method_get_name),            "il2cpp_method_get_name"},
+  {offsetof(PGS_MetaExports, method_get_flags),           "il2cpp_method_get_flags"},
+  {offsetof(PGS_MetaExports, method_get_param_count),     "il2cpp_method_get_param_count"},
+  {offsetof(PGS_MetaExports, method_get_param),           "il2cpp_method_get_param"},
+  {offsetof(PGS_MetaExports, method_get_return_type),     "il2cpp_method_get_return_type"},
+  {offsetof(PGS_MetaExports, method_is_generic),          "il2cpp_method_is_generic"},
+  {offsetof(PGS_MetaExports, method_is_inflated),         "il2cpp_method_is_inflated"},
+  {offsetof(PGS_MetaExports, debug_get_method_info),      "il2cpp_debug_get_method_info"},
+  {offsetof(PGS_MetaExports, class_is_assignable_from),   "il2cpp_class_is_assignable_from"},
+  {offsetof(PGS_MetaExports, class_get_methods),          "il2cpp_class_get_methods"},
+  {offsetof(PGS_MetaExports, class_get_nested_types),     "il2cpp_class_get_nested_types"},
+  {offsetof(PGS_MetaExports, class_get_declaring_type),   "il2cpp_class_get_declaring_type"},
 };
-static_assert(sizeof(kMetaSyms) / sizeof(kMetaSyms[0]) == sizeof(PgsMetaExports) / sizeof(void *),
-              "metadata symbol table must cover every PgsMetaExports slot");
+static_assert(sizeof(kMetaSyms) / sizeof(kMetaSyms[0]) == sizeof(PGS_MetaExports) / sizeof(void *),
+              "metadata symbol table must cover every PGS_MetaExports slot");
 
 const SymSlot kRuntimeSyms[] = {
   {offsetof(PgsBootRuntimeExports, runtime_invoke),              "il2cpp_runtime_invoke"},
@@ -229,7 +229,7 @@ void *resolve_sym(const PgsBootConfig *cfg, void *handle, const char *name) {
   return cfg->dlsym_fn ? cfg->dlsym_fn(cfg->seam_ctx, handle, name) : ::dlsym(handle, name);
 }
 
-bool resolve_symbols(const PgsBootConfig *cfg, void *handle, PgsMetaExports *meta,
+bool resolve_symbols(const PgsBootConfig *cfg, void *handle, PGS_MetaExports *meta,
                      PgsBootRuntimeExports *rt) {
   for (const SymSlot &slot : kMetaSyms) {
     void *s = resolve_sym(cfg, handle, slot.name);
@@ -247,15 +247,15 @@ bool resolve_symbols(const PgsBootConfig *cfg, void *handle, PgsMetaExports *met
 // Resolve+validate ExecuteTasks THROUGH feature 47. Binds 47 with the DEFAULT segment resolver and NO
 // debug prologue in production (cfg->seg_query/seg_ctx null) so the config is identical to Routes 53's;
 // 47's bind is idempotent for an identical config, so both owners coexist. Returns 0 on success, or a
-// PgsBootStatus (ERR_BIND / ERR_RESOLVE) with *detail set to the underlying PgsMetaStatus.
-int resolve_execute_tasks(const PgsBootConfig *cfg, const PgsMetaApi *md, const PgsMetaExports *meta,
+// PgsBootStatus (ERR_BIND / ERR_RESOLVE) with *detail set to the underlying PGS_MetaStatus.
+int resolve_execute_tasks(const PgsBootConfig *cfg, const PGS_MetaApi *md, const PGS_MetaExports *meta,
                           const void *base, uint64_t size, const void **out_method,
                           const void **out_code, int *detail) {
   *out_method = nullptr;
   *out_code = nullptr;
   *detail = 0;
 
-  PgsMetaBindConfig bc{};
+  PGS_MetaBindConfig bc{};
   bc.version = PGS_MD_CONFIG_VERSION;
   bc.size = sizeof(bc);
   bc.exports = meta;
@@ -271,21 +271,21 @@ int resolve_execute_tasks(const PgsBootConfig *cfg, const PgsMetaApi *md, const 
     return PGS_BOOT_ERR_BIND;
   }
 
-  PgsMetaClassQuery cq{};
+  PGS_MetaClassQuery cq{};
   cq.version = PGS_MD_QUERY_VERSION;
   cq.size = sizeof(cq);
   cq.name_space = cfg->exec_namespace ? cfg->exec_namespace : kExecNamespace;
   cq.name = cfg->exec_class ? cfg->exec_class : kExecClass;
   cq.canonical = cfg->exec_canonical; // null -> ns.name EXACT (feature 47 default)
   cq.canonical_match = cfg->exec_canonical ? PGS_MD_MATCH_EXACT : PGS_MD_MATCH_ANY;
-  PgsMetaClassResult cr{};
+  PGS_MetaClassResult cr{};
   rc = md->resolve_class(&cq, &cr);
   if (rc != 0) {
     *detail = rc;
     return PGS_BOOT_ERR_RESOLVE;
   }
 
-  PgsMetaMethodQuery mq{};
+  PGS_MetaMethodQuery mq{};
   mq.version = PGS_MD_QUERY_VERSION;
   mq.size = sizeof(mq);
   mq.owner = cr.klass;
@@ -305,7 +305,7 @@ int resolve_execute_tasks(const PgsBootConfig *cfg, const PgsMetaApi *md, const 
     mq.prologue = cfg->exec_prologue;
     mq.prologue_len = cfg->exec_prologue_len;
   }
-  PgsMetaMethodResult mr{};
+  PGS_MetaMethodResult mr{};
   rc = md->validate_method(&mq, &mr);
   if (rc != 0) {
     *detail = rc;
@@ -398,15 +398,15 @@ int api_probe(const PgsBootConfig *cfg, PgsBootBinding *out) {
   }
 
   // 2. dlsym the strict supported export set. A missing export is an unsupported build -> fail closed.
-  PgsMetaExports meta{};
+  PGS_MetaExports meta{};
   PgsBootRuntimeExports rt{};
   if (!resolve_symbols(cfg, handle, &meta, &rt)) return poison(out, PGS_BOOT_ERR_MISSING_EXPORT, 0);
 
   // 3. feature 47 metadata API.
   const void *raw = cfg->metadata_fn ? cfg->metadata_fn(cfg->seam_ctx, PGS_MD_API_VERSION)
                                      : pgs_runtime_metadata_api(PGS_MD_API_VERSION);
-  const PgsMetaApi *md = static_cast<const PgsMetaApi *>(raw);
-  if (md == nullptr || md->version != PGS_MD_API_VERSION || md->size != sizeof(PgsMetaApi) ||
+  const PGS_MetaApi *md = static_cast<const PGS_MetaApi *>(raw);
+  if (md == nullptr || md->version != PGS_MD_API_VERSION || md->size != sizeof(PGS_MetaApi) ||
       !md->bind || !md->resolve_module || !md->resolve_class || !md->validate_method || !md->validate_code)
     return poison(out, PGS_BOOT_ERR_NO_METADATA, 0);
 
@@ -423,21 +423,21 @@ int api_probe(const PgsBootConfig *cfg, PgsBootBinding *out) {
   // Validate real dlsym addresses BEFORE calling domain/thread functions. Native
   // fixture callbacks intentionally live outside their synthetic module image.
   if(!cfg->dlopen_fn&&!cfg->dlsym_fn&&!cfg->module_fn&&!cfg->metadata_fn&&!cfg->seg_query){
-    PgsMetaBindConfig binding{};binding.version=1;binding.size=sizeof(binding);
+    PGS_MetaBindConfig binding{};binding.version=1;binding.size=sizeof(binding);
     binding.exports=&meta;binding.module_base=base;binding.module_size=size;
     const int bound=md->bind(&binding);
     if(bound==PGS_MD_ERR_BUSY){fill_header(out,PGS_BOOT_ERR_BUSY,bound);return PGS_BOOT_ERR_BUSY;}
     if(bound)return poison(out,PGS_BOOT_ERR_BIND,bound);
     for(const auto &entry:kMetaSyms){
       const void *address=nullptr;std::memcpy(&address,reinterpret_cast<const char *>(&meta)+entry.off,sizeof(address));
-      PgsMetaCodeQuery query{};query.version=1;query.size=sizeof(query);query.address=address;query.length=4;
+      PGS_MetaCodeQuery query{};query.version=1;query.size=sizeof(query);query.address=address;query.length=4;
       const int checked=md->validate_code(&query);
       if(checked==PGS_MD_ERR_BUSY){fill_header(out,PGS_BOOT_ERR_BUSY,checked);return PGS_BOOT_ERR_BUSY;}
       if(checked)return poison(out,PGS_BOOT_ERR_EXPORT_CODE,checked);
     }
     for(const auto &entry:kRuntimeSyms){
       const void *address=nullptr;std::memcpy(&address,reinterpret_cast<const char *>(&rt)+entry.off,sizeof(address));
-      PgsMetaCodeQuery query{};query.version=1;query.size=sizeof(query);query.address=address;query.length=4;
+      PGS_MetaCodeQuery query{};query.version=1;query.size=sizeof(query);query.address=address;query.length=4;
       const int checked=md->validate_code(&query);
       if(checked==PGS_MD_ERR_BUSY){fill_header(out,PGS_BOOT_ERR_BUSY,checked);return PGS_BOOT_ERR_BUSY;}
       if(checked)return poison(out,PGS_BOOT_ERR_EXPORT_CODE,checked);

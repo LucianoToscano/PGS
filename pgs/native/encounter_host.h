@@ -62,7 +62,7 @@ struct PgsEncounterHostConfig {
   const PgsSharedMetadataOutput *resolved_metadata; // 16
   const PgsSharedMetaExtraExports *extra_exports;   // 24
 
-  // IL2CPP runtime exports not in PgsMetaExports / PgsSharedMetaExtraExports (slots 2..10).
+  // IL2CPP runtime exports not in PGS_MetaExports / PgsSharedMetaExtraExports (slots 2..10).
   void *runtime_invoke;         // 32: void* (MethodInfo*, void* obj, void** params, void** exc)
   void *object_get_class;       // 40: void* (void* obj)
   void *object_unbox;           // 48: void* (void* boxed)

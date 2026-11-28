@@ -171,7 +171,7 @@ PgsSpinCameraConfig make_valid_config() {
 } // namespace
 
 int main(int argc, char **argv) {
-    const char *so_path = argc > 1 ? argv[1] : "./libpgs-core.so";
+    const char *so_path = argc > 1 ? argv[1] : "./libpgs.so";
     void *lib = ::dlopen(so_path, RTLD_NOW | RTLD_LOCAL);
     if (!lib) {
         std::fprintf(stderr, "dlopen(%s) failed: %s\n", so_path, ::dlerror());

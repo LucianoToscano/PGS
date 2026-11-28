@@ -40,9 +40,9 @@ std::string normalize(const char *name) {
   return out;
 }
 
-int validate(const PgsMetaApi *md, void *owner, const char *name, uint64_t offset, uint32_t kind, uint32_t size,
+int validate(const PGS_MetaApi *md, void *owner, const char *name, uint64_t offset, uint32_t kind, uint32_t size,
              const char *type, void **out, void **type_class = nullptr) {
-  PgsMetaFieldQuery q{};
+  PGS_MetaFieldQuery q{};
   q.version = PGS_MD_QUERY_VERSION;
   q.size = sizeof(q);
   q.owner = owner;
@@ -52,7 +52,7 @@ int validate(const PgsMetaApi *md, void *owner, const char *name, uint64_t offse
   q.value_size = size;
   q.type_name = type;
   q.type_match = type ? PGS_MD_MATCH_EXACT : PGS_MD_MATCH_ANY;
-  PgsMetaFieldResult r{};
+  PGS_MetaFieldResult r{};
   const int rc = md->validate_field(&q, &r);
   if (rc) return rc;
   *out = const_cast<void *>(r.field);
@@ -60,14 +60,14 @@ int validate(const PgsMetaApi *md, void *owner, const char *name, uint64_t offse
   return 0;
 }
 
-int resolve(const PgsMetaApi *md, const char *ns, const char *name, void **out) {
-  PgsMetaClassQuery q{};
+int resolve(const PGS_MetaApi *md, const char *ns, const char *name, void **out) {
+  PGS_MetaClassQuery q{};
   q.version = PGS_MD_QUERY_VERSION;
   q.size = sizeof(q);
   q.name_space = ns;
   q.name = name;
   q.canonical_match = PGS_MD_MATCH_EXACT;
-  PgsMetaClassResult r{};
+  PGS_MetaClassResult r{};
   const int rc = md->resolve_class(&q, &r);
   if (!rc) *out = const_cast<void *>(r.klass);
   return rc;
@@ -81,8 +81,8 @@ int fail(const char *what) {
 
 int bind(uint64_t owner) {
   const auto *boot = static_cast<const PgsBootApi *>(pgs_runtime_bootstrap_api(PGS_BOOT_API_VERSION));
-  const auto *md = static_cast<const PgsMetaApi *>(pgs_runtime_metadata_api(PGS_MD_API_VERSION));
-  if (!boot || !md || boot->size != sizeof(PgsBootApi) || md->size != sizeof(PgsMetaApi)) return 0;
+  const auto *md = static_cast<const PGS_MetaApi *>(pgs_runtime_metadata_api(PGS_MD_API_VERSION));
+  if (!boot || !md || boot->size != sizeof(PgsBootApi) || md->size != sizeof(PGS_MetaApi)) return 0;
   PgsBootBinding snap{};
   snap.version = PGS_BOOT_BINDING_VERSION;
   snap.size = sizeof(snap);

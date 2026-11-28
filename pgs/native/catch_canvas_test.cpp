@@ -23,7 +23,7 @@
 //     a set_CanvasGroupVisible invoked by runtime_invoke -- routed back through the SAME hooked compiled
 //     function so a managed set-false is never masked and a post-release set-true is never re-hidden.
 // The module installs its one hook and NEVER calls back into JS; the coordinator builds and runs this
-// against libpgs-core.so after registering query_feature case 39 and linking catch_canvas.cpp (+ a Dobby
+// against libpgs.so after registering query_feature case 39 and linking catch_canvas.cpp (+ a Dobby
 // bridge if the host test harness needs one).
 
 namespace {
@@ -188,7 +188,7 @@ PgsCatchCanvasSample sample() {
 }  // namespace
 
 int main(int argc, char **argv) {
-  const char *so_path = argc > 1 ? argv[1] : "./libpgs-core.so";
+  const char *so_path = argc > 1 ? argv[1] : "./libpgs.so";
   void *lib = ::dlopen(so_path, RTLD_NOW | RTLD_LOCAL);
   if (!lib) { std::fprintf(stderr, "dlopen(%s) failed: %s\n", so_path, ::dlerror()); return 1; }
   auto getter = reinterpret_cast<GetApiFn>(::dlsym(lib, "pgs_native_api"));

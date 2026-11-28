@@ -29,9 +29,9 @@ struct Root {
 };
 void *klass(void *o){require(o);return fn<void*(*)(void*)>(boot.runtime.object_get_class)(o);}
 void *cls(const char *ns,const char *name){
- auto api=static_cast<const PgsMetaApi*>(pgs_runtime_metadata_api(1));require(api);
- PgsMetaClassQuery q{};q.version=1;q.size=sizeof(q);q.name_space=ns;q.name=name;q.canonical_match=PGS_MD_MATCH_EXACT;
- PgsMetaClassResult r{};require(api->resolve_class(&q,&r)==0&&r.klass);return const_cast<void*>(r.klass);
+ auto api=static_cast<const PGS_MetaApi*>(pgs_runtime_metadata_api(1));require(api);
+ PGS_MetaClassQuery q{};q.version=1;q.size=sizeof(q);q.name_space=ns;q.name=name;q.canonical_match=PGS_MD_MATCH_EXACT;
+ PGS_MetaClassResult r{};require(api->resolve_class(&q,&r)==0&&r.klass);return const_cast<void*>(r.klass);
 }
 void *method(void *k,const char *name,int n){auto m=fn<void*(*)(void*,const char*,int)>(boot.meta.class_get_method_from_name)(k,name,n);require(m);return m;}
 void *field(void *k,const char *name){auto f=fn<void*(*)(void*,const char*)>(boot.meta.class_get_field_from_name)(k,name);require(f);return f;}

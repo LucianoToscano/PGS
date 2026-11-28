@@ -1,11 +1,13 @@
 /*
  * Stable C ABI for the PGS native migration pilot.
  *
- * Native clients resolve `pgs_native_api` with the ABI version they were built
- * against, and (on an exact match) receive a pointer to a read-only, ordered
- * function table prefixed by a {version, size} header. Fields are never
- * reordered or removed; a new ABI version only appends fields and bumps
- * PGS_NATIVE_API_VERSION.
+ * The gameplay runtime resolves the single exported symbol `pgs_native_api`,
+ * calls it with the ABI version it was built against, and (on an exact match)
+ * receives a pointer to a read-only, ordered function table prefixed by a
+ * {version, size} header. Fields are never reordered or removed; a new ABI
+ * version only appends fields and bumps PGS_NATIVE_API_VERSION.
+ *
+ * This header is the contract. Nothing else in the library is exported.
  */
 #ifndef PGS_NATIVE_API_H
 #define PGS_NATIVE_API_H
@@ -16,7 +18,7 @@
 extern "C" {
 #endif
 
-/* Current version shared by both PGS and compatibility factories. */
+/* Current table version. pgs_native_api() only answers an exact match in the pilot. */
 #define PGS_NATIVE_API_VERSION 1u
 
 /* Fixed radius floor (metres) applied while the spawn policy is active. */
@@ -101,9 +103,7 @@ typedef struct pgs_native_api_v2 {
  * PGS_NATIVE_API_VERSION, otherwise NULL. The returned table lives for the
  * process lifetime and must not be freed or modified by the caller.
  */
-/* Primary PGS C factory. */
 const void *pgs_native_api(uint32_t version);
-
 
 #ifdef __cplusplus
 } /* extern "C" */

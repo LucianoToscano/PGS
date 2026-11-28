@@ -135,11 +135,9 @@ class GameUpdateTests(unittest.TestCase):
         rendered = update.render((update.SCHEMA / 'catch_wait.h.in').read_text(), profile['modules']['catch_wait'], profile['bindings'])
         self.assertEqual(rendered, (ROOT / 'pgs/native/catch_wait_schema.h').read_text())
         tokens = re.sub(r'\s+', '', re.sub(r'//[^\n]*', '', rendered))
-        # Compare the original signed-metadata golden with only the namespace spelling normalized.
-        tokens = tokens.replace('pgs_catch_wait_schema', 'pgr_catch_wait_schema')
         # Golden from the 0.437.0 bindings checked against signed game metadata/code.
         self.assertEqual(hashlib.sha256(tokens.encode()).hexdigest(),
-                         '94ca64f5ba47733a1e341efb11219709ecc3fd65de86a15edd74bc4c3aa4020e')
+                         '618cfaa910d6256de61fb5a8fb4898294de89a4e3507f08e04453c09ee9ea292')
 
 
 if __name__ == '__main__':

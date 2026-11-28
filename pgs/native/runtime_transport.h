@@ -132,9 +132,9 @@ struct PgsRuntimeTransportConfig {
 static_assert(sizeof(PgsRuntimeTransportConfig) == 32, "config must remain 32 bytes on LP64");
 
 // Fixed LP64 telemetry gauge (88 bytes). Pull-only; the native layer never calls the host.
-struct PgsRuntimeTransportSample {
+struct PGSRuntimeTransportSample {
   uint32_t version;            // == PGS_TRANSPORT_SAMPLE_VERSION
-  uint32_t size;               // == sizeof(PgsRuntimeTransportSample)
+  uint32_t size;               // == sizeof(PGSRuntimeTransportSample)
   uint64_t snapshots_accepted; // bumps on each validated snapshot push
   uint64_t snapshots_rejected; // bumps on each rejected snapshot frame
   uint64_t events_emitted;     // bumps on each accepted emit()
@@ -149,7 +149,7 @@ struct PgsRuntimeTransportSample {
   uint32_t fault;              // 1 if overflow/malformed input was ever latched
 };
 
-static_assert(sizeof(PgsRuntimeTransportSample) == 88, "sample must remain 88 bytes on LP64");
+static_assert(sizeof(PGSRuntimeTransportSample) == 88, "sample must remain 88 bytes on LP64");
 
 // A producer-supplied string argument (gameplay owns the storage for the duration of the emit() call only;
 // native copies it). ptr may be null iff len == 0.
@@ -207,7 +207,7 @@ struct PgsRuntimeTransportApi {
   // last take_pulse for this pulse id. STALE snapshot yields OK with *out_fired == 0 (legacy client default).
   int (*take_pulse)(uint32_t pulse, int *out_fired);
 
-  int (*sample)(PgsRuntimeTransportSample *out);
+  int (*sample)(PGSRuntimeTransportSample *out);
 
   // Stop: mark stopped (snapshot getters go STALE), clear the queue, bump the session generation. A later
   // install()/exchange() does not auto-restart gameplay; the host owns restart. Any thread; no callback.

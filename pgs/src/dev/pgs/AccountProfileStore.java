@@ -59,7 +59,7 @@ public final class AccountProfileStore {
     /** Largest index file the loader will accept, as a corruption/foreign-file guard. */
     public static final int MAX_INDEX_BYTES = 128 * 1024;
 
-    private static final String DIR = legacyStorageName("pgs-accounts-v1");
+    private static final String DIR = "pgs-accounts-v1";
     private static final String PROFILES_DIR = "profiles";
     private static final String INDEX_NAME = "index.properties";
     private static final String INDEX_VERSION = "1";
@@ -330,35 +330,9 @@ public final class AccountProfileStore {
      * default profile maps to {@code filesDir/name} in place; every other profile is scoped under its
      * own directory, which is created on demand.
      */
-    /** Stable physical storage IDs. New PGS logical names never orphan old files. */
-    public static String legacyStorageName(String name) {
-        if (name == null) return null;
-        switch (name) {
-            case "pgs-location-state-v1.txt": return "pgs-location-state-v1.txt";
-            case "pgs-settings-v1.properties": return "pgs-settings-v1.properties";
-            case "pgs-gpx-routes-v1": return "pgs-gpx-routes-v1";
-            case "pgs-map": return "pgs-map";
-            case "pgs-overlays": return "pgs-overlays";
-            case "pgs-saved-places-v1": return "pgs-saved-places-v1";
-            case "pgs-livefeed": return "pgs-livefeed";
-            case "pgs-pogofeed": return "pgs-pogofeed";
-            case "pgs-accounts-v1": return "pgs-accounts-v1";
-            case "pgs-logs": return "pgs-logs";
-            case "pgs-logs/exports": return "pgs-logs/exports";
-            case "pgs-diagnostics": return "pgs-diagnostics";
-            case "pgs-encounters": return "pgs-encounters";
-            case "pgs-session-stats": return "pgs-session-stats";
-            case "pgs-livefeed-v1": return "pgs-livefeed-v1";
-            case "pgs-pogofeed-v1": return "pgs-pogofeed-v1";
-            case "pgs-events-v1": return "pgs-events-v1";
-            default: return name;
-        }
-    }
-
     public synchronized File dataFile(String profileId, String name) throws IOException {
         requireKnownId(profileId);
         if (!isSafeName(name)) throw new IOException("Unsafe data file name.");
-        name = legacyStorageName(name);
         File target;
         if (DEFAULT_ID.equals(profileId)) {
             target = new File(filesDir, name);
@@ -382,7 +356,6 @@ public final class AccountProfileStore {
     public synchronized String preferenceName(String profileId, String scope) {
         requireKnownId(profileId);
         if (!isSafeName(scope)) throw new IllegalArgumentException("Unsafe preference scope.");
-        scope = legacyStorageName(scope);
         if (DEFAULT_ID.equals(profileId)) return scope;
         return scope + "__" + profileId;
     }
@@ -479,7 +452,7 @@ public final class AccountProfileStore {
         props.setProperty(KEY_IDS, ids.toString());
 
         ByteArrayOutputStream buffer = new ByteArrayOutputStream();
-        props.store(buffer, "PGS account index v" + INDEX_VERSION + " - no secrets stored");
+        props.store(buffer, "pgs account index v" + INDEX_VERSION + " - no secrets stored");
         byte[] bytes = buffer.toByteArray();
         if (bytes.length > MAX_INDEX_BYTES) throw new IOException("Index would exceed the size bound.");
 

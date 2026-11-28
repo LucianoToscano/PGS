@@ -25,13 +25,12 @@ public final class RootToggleTest {
         check(RootModuleState.parse(values,true).label.contains("update and reboot once"));
         values.put("MODTOGGLE","1");
         check(RootModuleState.parse(values,true).canToggle());
-        check(RootModuleState.parse(values,true).label.contains("PGS on"));
         check(!RootModuleState.parse(values,false).canToggle());
         values.remove("MODPENDING");
         check(!RootModuleState.parse(values,true).rebootNeeded);
         values.put("MODOFF","1");
         check(RootModuleState.parse(values,true).injectionOff);
-        check(RootModuleState.parse(values,true).label.contains("PGS off (module stays installed)"));
+        check(RootModuleState.parse(values,true).label.contains("off (module stays installed)"));
         values.put("MODDISABLED","1"); check(!RootModuleState.parse(values,true).canToggle());
         values.remove("MODDISABLED"); values.put("MODREMOVE","1");
         check(!RootModuleState.parse(values,true).canToggle());

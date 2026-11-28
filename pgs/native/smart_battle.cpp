@@ -60,9 +60,9 @@ struct Root {
 };
 void *klass(void *o){require(o,"null object");return fn<void*(*)(void*)>(boot.runtime.object_get_class)(o);}
 void *cls(const char *ns,const char *name){
- const auto *api=static_cast<const PgsMetaApi*>(pgs_runtime_metadata_api(1));require(api,"metadata API");
- PgsMetaClassQuery q{};q.version=1;q.size=sizeof(q);q.name_space=ns;q.name=name;q.canonical_match=PGS_MD_MATCH_EXACT;
- PgsMetaClassResult out{};require(api->resolve_class(&q,&out)==0,name);return const_cast<void*>(out.klass);
+ const auto *api=static_cast<const PGS_MetaApi*>(pgs_runtime_metadata_api(1));require(api,"metadata API");
+ PGS_MetaClassQuery q{};q.version=1;q.size=sizeof(q);q.name_space=ns;q.name=name;q.canonical_match=PGS_MD_MATCH_EXACT;
+ PGS_MetaClassResult out{};require(api->resolve_class(&q,&out)==0,name);return const_cast<void*>(out.klass);
 }
 std::string typename_of(void *type){char *p=fn<char*(*)(void*)>(boot.meta.type_get_name)(type);require(p,"type name");std::string s=p;fn<void(*)(void*)>(boot.meta.mem_free)(p);return s;}
 void *method(void *k,const char *name,int count){void *m=fn<void*(*)(void*,const char*,int)>(boot.meta.class_get_method_from_name)(k,name,count);require(m,name);return m;}
@@ -108,12 +108,12 @@ void status(const char *phase,const std::string &message){event(std::string("{\"
 
 // "F1|enabled"; anything else (or a stale snapshot) means off.
 bool configured(){
- auto tr=transport();PgsRuntimeTransportSample a{};char s[16]{};uint32_t n=0;
+ auto tr=transport();PGSRuntimeTransportSample a{};char s[16]{};uint32_t n=0;
  if(!tr||tr->sample(&a)||!a.snapshot_fresh||a.fault||tr->get_string(21,s,sizeof(s)-1,&n)||n!=4||std::memcmp(s,"F1|1",4)!=0)return false;
  int active=0,ready=0;tr->get_bool(3,&active);tr->get_bool(16,&ready);return active&&ready;
 }
 pgs_smart_party::HealingPolicy healing_policy(){
- auto tr=transport();PgsRuntimeTransportSample a{};char s[64]{};uint32_t n=0;
+ auto tr=transport();PGSRuntimeTransportSample a{};char s[64]{};uint32_t n=0;
  if(!tr||tr->sample(&a)||!a.snapshot_fresh||a.fault||tr->get_string(18,s,sizeof(s)-1,&n)||n>=sizeof(s))return {};
  int active=0,ready=0;
  if(tr->get_bool(3,&active)||tr->get_bool(16,&ready)||!active||!ready)return {};
@@ -550,10 +550,10 @@ void battle_step(){
 
 // ---- Install ---------------------------------------------------------------------------------
 template<class F>void install_hook(void *k,const char *name,int params,const char *ret,uint64_t rva,const uint8_t *prologue,F hook,std::atomic<F> &slot,void **method_out=nullptr){
- const auto *api=static_cast<const PgsMetaApi*>(pgs_runtime_metadata_api(1));require(api&&api->validate_method,"metadata API");
- PgsMetaMethodQuery q{};q.version=1;q.size=sizeof(q);q.owner=k;q.name=name;q.return_type=ret;q.return_match=PGS_MD_MATCH_EXACT;q.param_count=params;
+ const auto *api=static_cast<const PGS_MetaApi*>(pgs_runtime_metadata_api(1));require(api&&api->validate_method,"metadata API");
+ PGS_MetaMethodQuery q{};q.version=1;q.size=sizeof(q);q.owner=k;q.name=name;q.return_type=ret;q.return_match=PGS_MD_MATCH_EXACT;q.param_count=params;
  q.expected_code=static_cast<const char*>(boot.module_base)+rva;q.prologue=prologue;q.prologue_len=24;
- PgsMetaMethodResult r{};require(api->validate_method(&q,&r)==0&&r.code,name);
+ PGS_MetaMethodResult r{};require(api->validate_method(&q,&r)==0&&r.code,name);
  if(method_out)*method_out=method(k,name,params);
  void *o=nullptr;require(pgs_hook(const_cast<void*>(r.code),reinterpret_cast<void*>(hook),&o)==0&&o,name);
  slot.store(reinterpret_cast<F>(o),std::memory_order_release);

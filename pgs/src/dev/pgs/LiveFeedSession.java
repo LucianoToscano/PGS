@@ -25,7 +25,6 @@ import javax.crypto.spec.GCMParameterSpec;
  */
 public final class LiveFeedSession {
     private static final String PREFS = "pgs-livefeed-v1";
-    // Existing AndroidKeyStore aliases must remain unchanged to decrypt saved tokens.
     private static final String KEY_ALIAS_DEFAULT = "pgs_livefeed_token_v1";
     private static final String KEY_CIPHERTEXT = "token_ct";
     private static final String KEY_IV = "token_iv";
@@ -46,7 +45,7 @@ public final class LiveFeedSession {
     }
 
     private LiveFeedSession(Context context, String prefs, String keyAlias) {
-        preferences = context.getApplicationContext().getSharedPreferences(AccountProfileStore.legacyStorageName(prefs), Context.MODE_PRIVATE);
+        preferences = context.getApplicationContext().getSharedPreferences(prefs, Context.MODE_PRIVATE);
         this.keyAlias = keyAlias;
     }
 

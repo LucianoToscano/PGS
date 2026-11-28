@@ -212,7 +212,7 @@ public final class PogoFeedClient {
     }
 
     /**
-     * UI: one search in another mode of the site (Raids, Quests, Weather, Rocket, Power Spots).
+     * PGSX: one search in another mode of the site (Raids, Quests, Weather, Rocket, Power Spots).
      * Same auth and error handling as the Pokémon search; the rows come back locked (reveal codes).
      */
     public PogoFeedData.Snapshot fetchMode(PogoFeedModes.Mode mode, org.json.JSONObject spec, double lat, double lon,

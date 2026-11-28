@@ -17,7 +17,7 @@
 // cross-boundary data is compiled primitive fields plus length-prefixed, UTF-8-validated bytes.
 
 static_assert(sizeof(PgsRuntimeTransportConfig) == 32, "config must be 32 bytes");
-static_assert(sizeof(PgsRuntimeTransportSample) == 88, "sample must be 88 bytes");
+static_assert(sizeof(PGSRuntimeTransportSample) == 88, "sample must be 88 bytes");
 static_assert(sizeof(PgsRuntimeTransportApi) == 96, "table must be 96 bytes");
 
 namespace {
@@ -549,7 +549,7 @@ int api_take_pulse(uint32_t pulse, int *out_fired) {
   return PGS_TRANSPORT_OK;
 }
 
-int api_sample(PgsRuntimeTransportSample *out) {
+int api_sample(PGSRuntimeTransportSample *out) {
   if (out == nullptr) return PGS_TRANSPORT_ERR_NULL_ARG;
   uint32_t depth = 0, bytes = 0, fresh = 0;
   uint64_t gen = 0, snap_seq = 0;
@@ -564,7 +564,7 @@ int api_sample(PgsRuntimeTransportSample *out) {
     snap_seq = g_snapshot.valid ? g_snapshot.seq : 0;
   }
   out->version = PGS_TRANSPORT_SAMPLE_VERSION;
-  out->size = sizeof(PgsRuntimeTransportSample);
+  out->size = sizeof(PGSRuntimeTransportSample);
   out->snapshots_accepted = g_snap_ok.load(std::memory_order_relaxed);
   out->snapshots_rejected = g_snap_bad.load(std::memory_order_relaxed);
   out->events_emitted = g_emitted.load(std::memory_order_relaxed);

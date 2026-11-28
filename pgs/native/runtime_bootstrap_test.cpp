@@ -157,7 +157,7 @@ int seam_module(void *, const char *soname, const void **base, uint64_t *size) {
   return 0;
 }
 const void *seam_metadata(void *, uint32_t version) { return core->query_feature(47, version); }
-int seam_segment(void *, const void *address, uint64_t length, PgsMetaSegment *out) {
+int seam_segment(void *, const void *address, uint64_t length, PGS_MetaSegment *out) {
   *out = {};
   uintptr_t a = reinterpret_cast<uintptr_t>(address), base = reinterpret_cast<uintptr_t>(module_base);
   if (a < base || a - base > module_size || !length || length > module_size - (a - base)) return 0;
@@ -393,12 +393,12 @@ int main(int argc, char **argv) {
   // 10. feature 47 bind mismatch surfaces as ERR_BIND with the precise detail. Pre-bind 47 with a
   //     DIFFERENT module range so feature 54's compatible-config bind is rejected.
   run("bind mismatch poison", [] {
-    const PgsMetaApi *md = static_cast<const PgsMetaApi *>(core->query_feature(47, 1));
-    PgsMetaExports e{};
+    const PGS_MetaApi *md = static_cast<const PGS_MetaApi *>(core->query_feature(47, 1));
+    PGS_MetaExports e{};
     void *stub = reinterpret_cast<void *>(&unused_stub);
-    for (size_t i = 0; i < sizeof(PgsMetaExports) / sizeof(void *); ++i)
+    for (size_t i = 0; i < sizeof(PGS_MetaExports) / sizeof(void *); ++i)
       reinterpret_cast<void **>(&e)[i] = stub;
-    PgsMetaBindConfig bc{};
+    PGS_MetaBindConfig bc{};
     bc.version = PGS_MD_CONFIG_VERSION;
     bc.size = sizeof(bc);
     bc.exports = &e;

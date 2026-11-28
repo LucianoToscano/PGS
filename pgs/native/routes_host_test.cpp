@@ -534,7 +534,7 @@ void *fake_runtime_invoke(const void *method_raw, void *obj, void **args, void *
   return nullptr;
 }
 
-int fixture_seg_query(void *, const void *address, uint64_t length, PgsMetaSegment *out) {
+int fixture_seg_query(void *, const void *address, uint64_t length, PGS_MetaSegment *out) {
   *out = {};
   uintptr_t a = reinterpret_cast<uintptr_t>(address);
   uintptr_t base = reinterpret_cast<uintptr_t>(g_module_base);
@@ -548,8 +548,8 @@ int fixture_seg_query(void *, const void *address, uint64_t length, PgsMetaSegme
   return 0;
 }
 
-PgsMetaExports make_meta_exports() {
-  PgsMetaExports e{};
+PGS_MetaExports make_meta_exports() {
+  PGS_MetaExports e{};
   e.domain_get = reinterpret_cast<void *>(&fake_domain_get);
   e.domain_get_assemblies = reinterpret_cast<void *>(&fake_domain_assemblies);
   e.assembly_get_image = reinterpret_cast<void *>(&fake_assembly_image);
@@ -808,7 +808,7 @@ int main(int argc, char **argv) {
 
 
   setup_fixture_world();
-  PgsMetaExports meta_exports = make_meta_exports();
+  PGS_MetaExports meta_exports = make_meta_exports();
 
   // Compute bounds around fixture_location so libunity.so containment check succeeds.
   const uintptr_t loc_addr = reinterpret_cast<uintptr_t>(&fixture_location);
@@ -1121,7 +1121,7 @@ int main(int argc, char **argv) {
   {
     PgsRoutesHostSample before{}, after{};
     assert(host->sample(&before) == PGS_RH_OK);
-    PgsUnityPulse pulse{};
+    PGSUnityPulse pulse{};
     pulse.generation = 1;
     pulse.sequence = 1;
     pulse.tid = static_cast<int32_t>(self_tid());

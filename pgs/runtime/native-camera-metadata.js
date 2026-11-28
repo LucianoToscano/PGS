@@ -7,7 +7,7 @@
 // throws with no fallback.
 (function(root){
  'use strict';
- // feature47's 31 il2cpp metadata exports in fixed PgsMetaExports slot order.
+ // feature47's 31 il2cpp metadata exports in fixed PGS_MetaExports slot order.
  // Slots with bit -2 are unused feature47-only dependencies, optional without a presence bit.
  // Slots with bit >= 0 are camera-optional (vector-field, sampleCamera, or continuous gates) and are
  // resolved via opt() so native resolve() can classify their absence with the exact camera-probe reason.

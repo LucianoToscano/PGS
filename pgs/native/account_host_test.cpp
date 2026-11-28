@@ -320,8 +320,8 @@ decltype(&fixture_adv_update) volatile call_adv_update = &fixture_adv_update;
 
 // --- Fake IL2CPP exports -----------------------------------------------------------
 void *fake_domain_get() {
- if(stop_during_metadata){stop_during_metadata=false;auto host=static_cast<const PgsAccountHostApi*>(pgs_account_host_api(1));assert(host->stop()==0);}
- if(reenter_metadata){reenter_metadata=false;PgsAccountHostMetadataOutput out;std::memset(&out,0xa5,sizeof(out));auto host=static_cast<const PgsAccountHostApi*>(pgs_account_host_api(1));assert(host->resolve_metadata(reentry_config,&out)==PGS_ACH_ERR_BUSY);PgsAccountHostMetadataOutput zero{};assert(!std::memcmp(&out,&zero,sizeof(out)));assert(host->configure(reentry_config)==PGS_ACH_ERR_BUSY);}
+ if(stop_during_metadata){stop_during_metadata=false;auto host=static_cast<const PGSAccountHostApi*>(pgs_account_host_api(1));assert(host->stop()==0);}
+ if(reenter_metadata){reenter_metadata=false;PgsAccountHostMetadataOutput out;std::memset(&out,0xa5,sizeof(out));auto host=static_cast<const PGSAccountHostApi*>(pgs_account_host_api(1));assert(host->resolve_metadata(reentry_config,&out)==PGS_ACH_ERR_BUSY);PgsAccountHostMetadataOutput zero{};assert(!std::memcmp(&out,&zero,sizeof(out)));assert(host->configure(reentry_config)==PGS_ACH_ERR_BUSY);}
  return &g_domain_token;
 }
 void *fake_domain_assemblies(void *, size_t *count) {
@@ -400,7 +400,7 @@ void *fake_class_get_methods(void *, void **) { return nullptr; }
 void *fake_class_get_nested(void *, void **) { return nullptr; }
 void *fake_class_get_declaring(void *) { return nullptr; }
 
-int fake_seg_query(void *, const void *addr, uint64_t size, PgsMetaSegment *out) {
+int fake_seg_query(void *, const void *addr, uint64_t size, PGS_MetaSegment *out) {
   std::memset(out, 0, sizeof(*out));
   uintptr_t a = reinterpret_cast<uintptr_t>(addr);
   uintptr_t base = reinterpret_cast<uintptr_t>(g_module_base);
@@ -529,7 +529,7 @@ void *fake_runtime_invoke(void *method_raw, void *self, void **args, void **exc)
   return nullptr;
 }
 
-PgsMetaExports g_meta_exports{};
+PGS_MetaExports g_meta_exports{};
 PgsAccountHostRuntime g_runtime{};
 PgsSharedMetadataOutput g_shared_md{};
 
@@ -731,8 +731,8 @@ int main(int argc, char **argv) {
   g_core = static_cast<const pgs_native_api_v2 *>(get_api(2));
   assert(g_core && g_core->query_feature);
 
-  const auto *host = static_cast<const PgsAccountHostApi *>(pgs_account_host_api(1));
-  assert(host && host->version == 1 && host->size == sizeof(PgsAccountHostApi));
+  const auto *host = static_cast<const PGSAccountHostApi *>(pgs_account_host_api(1));
+  assert(host && host->version == 1 && host->size == sizeof(PGSAccountHostApi));
   assert(pgs_account_host_api(2) == nullptr);
 
   setup_universe();

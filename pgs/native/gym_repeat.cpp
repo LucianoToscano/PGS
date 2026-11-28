@@ -154,10 +154,10 @@ uint64_t g_badge_scan=0;
 
 void *klass(void *o) { require(o, "null object"); return fn<void *(*)(void *)>(boot.runtime.object_get_class)(o); }
 void *cls(const char *ns, const char *name) {
-    const auto *api = static_cast<const PgsMetaApi *>(pgs_runtime_metadata_api(1));
+    const auto *api = static_cast<const PGS_MetaApi *>(pgs_runtime_metadata_api(1));
     require(api && api->resolve_class, "metadata API");
-    PgsMetaClassQuery q{}; q.version = 1; q.size = sizeof(q); q.name_space = ns; q.name = name; q.canonical_match = PGS_MD_MATCH_EXACT;
-    PgsMetaClassResult out{}; require(api->resolve_class(&q, &out) == 0, name);
+    PGS_MetaClassQuery q{}; q.version = 1; q.size = sizeof(q); q.name_space = ns; q.name = name; q.canonical_match = PGS_MD_MATCH_EXACT;
+    PGS_MetaClassResult out{}; require(api->resolve_class(&q, &out) == 0, name);
     return const_cast<void *>(out.klass);
 }
 void *method_named(void *k, const char *name, int count) {
@@ -300,13 +300,13 @@ Gate read_gate() {
     g.foreground = !g_faulted.load(std::memory_order_acquire);
     const auto *tr = transport();
     if (!tr || !tr->sample || !tr->get_bool) { g.fresh = false; return g; }
-    PgsRuntimeTransportSample a{};
+    PGSRuntimeTransportSample a{};
     if (tr->sample(&a) != 0 || !a.snapshot_fresh || a.fault) { g.fresh = false; return g; }
     int enabled = 0, active = 0, battles = 0;
     tr->get_bool(40, &enabled);
     tr->get_bool(3, &active);
     tr->get_bool(6, &battles);
-    PgsRuntimeTransportSample z{};
+    PGSRuntimeTransportSample z{};
     if (tr->sample(&z) != 0 || !z.snapshot_fresh || z.snapshot_seq != a.snapshot_seq || z.fault || z.generation != a.generation) { g.fresh = false; return g; }
     g.enabled = enabled == 1;
     g.active = active == 1;
@@ -454,15 +454,15 @@ struct Bind { Slot slot; void *repl; };
 
 void *validate_hook(void *k, const char *name, const char *ret, int pcount,
                     const char *p0, const char *p1, uint64_t rva, const uint8_t *bytes, size_t len, void **code_out) {
-    const auto *api = static_cast<const PgsMetaApi *>(pgs_runtime_metadata_api(1));
+    const auto *api = static_cast<const PGS_MetaApi *>(pgs_runtime_metadata_api(1));
     require(api && api->validate_method, "metadata validate");
-    PgsMetaMethodQuery q{}; q.version = 1; q.size = sizeof(q); q.owner = k; q.name = name;
+    PGS_MetaMethodQuery q{}; q.version = 1; q.size = sizeof(q); q.owner = k; q.name = name;
     q.return_type = ret; q.return_match = PGS_MD_MATCH_EXACT;
     q.param_count = pcount; q.param_types[0] = p0; q.param_types[1] = p1;
     q.param_match[0] = q.param_match[1] = PGS_MD_MATCH_EXACT;
     q.expected_code = static_cast<const char *>(boot.module_base) + rva;
     q.prologue = bytes; q.prologue_len = uint32_t(len);
-    PgsMetaMethodResult r{};
+    PGS_MetaMethodResult r{};
     if (api->validate_method(&q, &r) != 0) return nullptr;
     if (code_out) *code_out = const_cast<void *>(r.code);
     return const_cast<void *>(r.method);
@@ -545,7 +545,7 @@ void drain_events(uint64_t now, const Gate &g) {
                     if (policy.state == ST_ARMED) {
                         g_gym_fort_id.assign(e.fort);
                         g_account_hash = e.account;
-                        PgsRuntimeTransportSample snap{}; transport()->sample(&snap); g_generation = snap.generation;
+                        PGSRuntimeTransportSample snap{}; transport()->sample(&snap); g_generation = snap.generation;
                         ++g_sessions;
                     }
                 }
@@ -597,7 +597,7 @@ void map_status_to_end(GymStatus st) {
 bool action_allowed() {
     if (g_cancel.load() || g_manual_cancel) { policy.on_manual_cancel(); return false; }
     if (!policy.gate_ok(read_gate())) return false;
-    PgsRuntimeTransportSample snap{};
+    PGSRuntimeTransportSample snap{};
     const auto *tr = transport();
     if (!tr || tr->sample(&snap) || snap.generation != g_generation) { policy.on_account_change(); return false; }
     const auto account = player_id_hash();
@@ -829,7 +829,7 @@ int api_tick(uint64_t proven_tid) {
         const uint64_t pid = player_id_hash();
         if (!pid || pid != g_account_hash) policy.on_account_change();
 
-        PgsRuntimeTransportSample snap{};
+        PGSRuntimeTransportSample snap{};
         if (transport()->sample(&snap) || snap.generation != g_generation) policy.on_account_change();
         if(policy.state==ST_WON && now>policy.deadline)policy.end_session(END_TIMEOUT);
         if (policy.gate_ok(read_gate()) && settle_gym_badge(now)) {

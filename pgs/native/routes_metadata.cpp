@@ -11,15 +11,15 @@ bool attached(const PgsRoutesMetadataConfig &c){
     return c.owner_tid&&c.owner_tid==static_cast<uint64_t>(gettid())&&
         reinterpret_cast<void *(*)()>(c.thread_current)()!=nullptr;
 }
-const PgsMetaApi *metadata(){return static_cast<const PgsMetaApi *>(pgs_runtime_metadata_api(1));}
+const PGS_MetaApi *metadata(){return static_cast<const PGS_MetaApi *>(pgs_runtime_metadata_api(1));}
 int class_index(const char *key){for(uint32_t i=0;i<kClassCount;i++)if(!std::strcmp(kClasses[i].key,key))return static_cast<int>(i);return -1;}
 int field_index(uint32_t owner,const char *name){for(uint32_t i=0;i<kFieldCount;i++)if(kFields[i].owner==owner&&!std::strcmp(kFields[i].name,name))return static_cast<int>(i);return -1;}
 int method_index(const char *key){for(uint32_t i=0;i<kMethodCount;i++)if(!std::strcmp(kMethods[i].key,key))return static_cast<int>(i);return -1;}
-int method(const PgsMetaApi *md,const void *owner,const char *name,const char *ret,const char *arg,bool inflated,const void **out){
-    PgsMetaMethodQuery q{};q.version=1;q.size=sizeof(q);q.owner=owner;q.name=name;q.return_type=ret;
+int method(const PGS_MetaApi *md,const void *owner,const char *name,const char *ret,const char *arg,bool inflated,const void **out){
+    PGS_MetaMethodQuery q{};q.version=1;q.size=sizeof(q);q.owner=owner;q.name=name;q.return_type=ret;
     q.return_match=ret?PGS_MD_MATCH_EXACT:PGS_MD_MATCH_ANY;q.param_count=arg?1:0;
     q.param_types[0]=arg;q.param_match[0]=arg?PGS_MD_MATCH_EXACT:PGS_MD_MATCH_ANY;q.allow_inflated=inflated?1:0;
-    PgsMetaMethodResult r{};int rc=md->validate_method(&q,&r);if(!rc)*out=r.method;return rc;
+    PGS_MetaMethodResult r{};int rc=md->validate_method(&q,&r);if(!rc)*out=r.method;return rc;
 }
 int resolve(const PgsRoutesMetadataConfig *input,PgsRoutesMetadataOutput *out){
     if(!out)return -1;
@@ -37,7 +37,7 @@ int resolve(const PgsRoutesMetadataConfig *input,PgsRoutesMetadataOutput *out){
     if(!c.binding.seg_query&&(thread_address<module_base||thread_address-module_base>c.binding.module_size||
         4>c.binding.module_size-(thread_address-module_base)))return PGS_MD_ERR_CODE_RANGE;
     if(!attached(c))return -30;
-    const auto *md=metadata();if(!md||md->version!=1||md->size!=sizeof(PgsMetaApi))return -31;
+    const auto *md=metadata();if(!md||md->version!=1||md->size!=sizeof(PGS_MetaApi))return -31;
     if(!c.binding.seg_query){
         // Frida reports a page-rounded mapping, whereas the compiled resolver
         // reports the PT_LOAD extent. Bind the canonical extent used by54 too.
@@ -53,17 +53,17 @@ int resolve(const PgsRoutesMetadataConfig *input,PgsRoutesMetadataOutput *out){
     const void *field_classes[kFieldCount]{};
     for(uint32_t i=0;i<kClassCount;i++){
         if(!attached(c))return -30;
-        const auto &s=kClasses[i];PgsMetaClassQuery q{};q.version=1;q.size=sizeof(q);
+        const auto &s=kClasses[i];PGS_MetaClassQuery q{};q.version=1;q.size=sizeof(q);
         q.name_space=s.name_space;q.name=s.name;q.canonical=s.canonical;q.canonical_match=PGS_MD_MATCH_EXACT;
-        PgsMetaClassResult r{};if((rc=md->resolve_class(&q,&r)))return rc;result.classes[i]=r.klass;
+        PGS_MetaClassResult r{};if((rc=md->resolve_class(&q,&r)))return rc;result.classes[i]=r.klass;
     }
     for(uint32_t i=0;i<kFieldCount;i++){
         if(!attached(c))return -30;
         const auto &s=kFields[i];if(s.owner>=kClassCount)return -32;
-        PgsMetaFieldQuery q{};q.version=1;q.size=sizeof(q);q.owner=result.classes[s.owner];q.name=s.name;
+        PGS_MetaFieldQuery q{};q.version=1;q.size=sizeof(q);q.owner=result.classes[s.owner];q.name=s.name;
         q.offset=s.offset;q.forbidden_mask=0x50;q.kind=s.kind;q.value_size=s.value_size;
         q.type_name=s.type_name;q.type_match=s.type_name?PGS_MD_MATCH_EXACT:PGS_MD_MATCH_ANY;
-        PgsMetaFieldResult r{};if((rc=md->validate_field(&q,&r)))return rc;
+        PGS_MetaFieldResult r{};if((rc=md->validate_field(&q,&r)))return rc;
         result.fields[i]=r.field;field_classes[i]=r.type_class;
     }
     for(uint32_t i=0;i<kMethodCount;i++){
@@ -90,7 +90,7 @@ int resolve(const PgsRoutesMetadataConfig *input,PgsRoutesMetadataOutput *out){
     if(base>UINTPTR_MAX-PGS_GAME_ROUTES_METADATA_CPP_ROUTECONSUMPTIONSERVICE_BIYU_RVA)return -33;
     const void *confirm_code=nullptr;std::memcpy(&confirm_code,result.methods[confirm],sizeof(confirm_code));
     if(reinterpret_cast<uintptr_t>(confirm_code)!=base+PGS_GAME_ROUTES_METADATA_CPP_ROUTECONSUMPTIONSERVICE_BIYU_RVA)return -33;
-    PgsMetaCodeQuery code{};code.version=1;code.size=sizeof(code);code.address=reinterpret_cast<const void *>(base+PGS_GAME_ROUTES_METADATA_CPP_ROUTECONSUMPTIONSERVICE_BIYU_RVA);
+    PGS_MetaCodeQuery code{};code.version=1;code.size=sizeof(code);code.address=reinterpret_cast<const void *>(base+PGS_GAME_ROUTES_METADATA_CPP_ROUTECONSUMPTIONSERVICE_BIYU_RVA);
     code.length=sizeof(confirm_prefix);code.prologue=confirm_prefix;code.prologue_len=sizeof(confirm_prefix);
     if((rc=md->validate_code(&code)))return rc;
     if(!attached(c))return -30;

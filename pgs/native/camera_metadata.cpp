@@ -12,8 +12,8 @@ using namespace pgs_camera_schema;
 
 std::mutex g_resolving;
 
-const PgsMetaApi *metadata() {
-  return static_cast<const PgsMetaApi *>(pgs_runtime_metadata_api(1));
+const PGS_MetaApi *metadata() {
+  return static_cast<const PGS_MetaApi *>(pgs_runtime_metadata_api(1));
 }
 
 const PgsBootApi *bootstrap() {
@@ -67,17 +67,17 @@ int set_status_reason(PgsCameraMetaOutput *out, int32_t status, const char *fmt,
   return status;
 }
 
-bool mandatory_meta_exports_ok(const PgsMetaExports &e) {
-  // Exact legacy SIGNATURES subset carried by PgsMetaExports. Extra47-only
+bool mandatory_meta_exports_ok(const PGS_MetaExports &e) {
+  // Exact legacy SIGNATURES subset carried by PGS_MetaExports. Extra47-only
   // dependencies may be absent without removing passive camera capabilities.
   return e.domain_get && e.domain_get_assemblies && e.assembly_get_image && e.class_from_name &&
          e.type_get_name && e.mem_free && e.class_get_method_from_name && e.method_get_class &&
          e.method_get_name && e.method_get_flags && e.method_get_param_count && e.method_get_return_type;
 }
 
-bool all_meta_exports_ok(const PgsMetaExports &e) {
+bool all_meta_exports_ok(const PGS_MetaExports &e) {
   const void *const *slots = reinterpret_cast<const void *const *>(&e);
-  for (size_t i = 0; i < sizeof(PgsMetaExports) / sizeof(void *); ++i)
+  for (size_t i = 0; i < sizeof(PGS_MetaExports) / sizeof(void *); ++i)
     if (!slots[i]) return false;
   return true;
 }
@@ -91,7 +91,7 @@ const void *add_off(const void *p, uint64_t off) {
 // Independent default range proof for a partial metadata export table. Same
 // readable/host-exec or nonwritable ELF-PF_X rule as feature47, without binding
 // invented export pointers into its immutable singleton.
-int partial_segment(const void *address,uint64_t length,PgsMetaSegment *out) {
+int partial_segment(const void *address,uint64_t length,PGS_MetaSegment *out) {
   *out={};const uintptr_t a=reinterpret_cast<uintptr_t>(address);
   if(!length||length>UINTPTR_MAX-a)return -1;
   FILE *fp=std::fopen("/proc/self/maps","re");if(!fp)return -1;
@@ -119,11 +119,11 @@ int partial_segment(const void *address,uint64_t length,PgsMetaSegment *out) {
   return 0;
 }
 
-int check_code_span(const PgsMetaApi *md, bool md_bound, const PgsCameraMetaConfig &c,
+int check_code_span(const PGS_MetaApi *md, bool md_bound, const PgsCameraMetaConfig &c,
                     const void *address, uint64_t length, const void *prologue, uint32_t prologue_len) {
   if (!address || !length || length > PGS_MD_CODE_MAX) return PGS_MD_ERR_CODE_RANGE;
   if (md_bound) {
-    PgsMetaCodeQuery q{};
+    PGS_MetaCodeQuery q{};
     q.version = 1;
     q.size = sizeof(q);
     q.address = address;
@@ -137,7 +137,7 @@ int check_code_span(const PgsMetaApi *md, bool md_bound, const PgsCameraMetaConf
   if ((a & 3u) != 0 || a < base || a - base > c.binding.module_size ||
       length > c.binding.module_size - (a - base))
     return PGS_MD_ERR_CODE_RANGE;
-  PgsMetaSegment seg{};
+  PGS_MetaSegment seg{};
   const int segment_rc=c.binding.seg_query?c.binding.seg_query(c.binding.seg_ctx,address,length,&seg):partial_segment(address,length,&seg);
   if(segment_rc!=0)return PGS_MD_ERR_SEGMENT;
   if (seg.found != 1 || seg.readable != 1 || seg.host_exec > 1 || seg.elf_exec > 1 ||
@@ -155,19 +155,19 @@ int check_code_span(const PgsMetaApi *md, bool md_bound, const PgsCameraMetaConf
   return 0;
 }
 
-bool code_readable(const PgsMetaApi *md, bool md_bound, const PgsCameraMetaConfig &c,
+bool code_readable(const PGS_MetaApi *md, bool md_bound, const PgsCameraMetaConfig &c,
                    const void *addr, uint64_t len) {
   return check_code_span(md, md_bound, c, addr, len, nullptr, 0) == 0;
 }
 
-bool code_words(const PgsMetaApi *md, bool md_bound, const PgsCameraMetaConfig &c,
+bool code_words(const PGS_MetaApi *md, bool md_bound, const PgsCameraMetaConfig &c,
                 const void *addr, const uint32_t *words, uint32_t count) {
   if (!addr || !words || !count) return false;
   return check_code_span(md, md_bound, c, addr, static_cast<uint64_t>(count) * 4u,
                          words, count * 4u) == 0;
 }
 
-const void *branch_target(const PgsMetaApi *md, bool md_bound, const PgsCameraMetaConfig &c,
+const void *branch_target(const PGS_MetaApi *md, bool md_bound, const PgsCameraMetaConfig &c,
                           const void *addr) {
   if (!code_readable(md, md_bound, c, addr, 4)) return nullptr;
   uint32_t word = *reinterpret_cast<const uint32_t *>(addr);
@@ -192,7 +192,7 @@ const void *branch_target(const PgsMetaApi *md, bool md_bound, const PgsCameraMe
 
 // pointerHandleAbi (camera-probe.js lines 80..111): read-only code fingerprint of
 // il2cpp_gchandle_new / il2cpp_gchandle_get_target / il2cpp_gchandle_free.
-bool pointer_handle_abi(const PgsMetaApi *md, bool md_bound, const PgsCameraMetaConfig &c) {
+bool pointer_handle_abi(const PGS_MetaApi *md, bool md_bound, const PgsCameraMetaConfig &c) {
   const PgsCameraMetaExtra *ex = c.extra;
   if (!ex->gchandle_new || !ex->gchandle_get_target || !ex->gchandle_free) return false;
   if (!code_words(md, md_bound, c, ex->gchandle_new, kGcCreateWords, kGcCreateWordCount)) return false;
@@ -210,7 +210,7 @@ bool pointer_handle_abi(const PgsMetaApi *md, bool md_bound, const PgsCameraMeta
 // Validate a continuous map-gate method (get_MainCamera, get_cullingMask, NameToLayer) preserving
 // camera-probe.js evaluation order (throw on null/overlong string or type; unavailable on missing or
 // signature mismatch) and also verifying through feature 47's validate_method.
-int validate_map_gate_method(const PgsMetaApi *md, bool md_bound, const PgsCameraMetaConfig &c, const void *owner,
+int validate_map_gate_method(const PGS_MetaApi *md, bool md_bound, const PgsCameraMetaConfig &c, const void *owner,
                              const char *key, const char *want_ret, uint32_t is_static,
                              uint32_t param_count, const char *param0_type,
                              PgsCameraMetaOutput *out, const void **method_out) {
@@ -257,7 +257,7 @@ int validate_map_gate_method(const PgsMetaApi *md, bool md_bound, const PgsCamer
   }
 
   // Also run through feature 47's structural validator to confirm agreement and record telemetry.
-  PgsMetaMethodQuery mq{};
+  PGS_MetaMethodQuery mq{};
   mq.version = 1;
   mq.size = sizeof(mq);
   mq.owner = owner;
@@ -271,7 +271,7 @@ int validate_map_gate_method(const PgsMetaApi *md, bool md_bound, const PgsCamer
   }
   mq.is_static = is_static;
   mq.allow_inflated = 0;
-  PgsMetaMethodResult mr{};
+  PGS_MetaMethodResult mr{};
   rc = md_bound?md->validate_method(&mq, &mr):0;
   if (rc != 0 || (md_bound && mr.method != m))
     return set_status_reason(out, PGS_CAM_UNAVAILABLE, "map-gate-signature-mismatch:%s", key);
@@ -286,7 +286,7 @@ int resolve(const PgsCameraMetaConfig *input, PgsCameraMetaOutput *out) {
   if (!input || input->version != PGS_CAM_CFG_VERSION || input->size != sizeof(*input) ||
       !input->thread_current || input->sample_camera > 1u || input->continuous > 1u ||
       !input->binding.exports || input->binding.version != PGS_MD_CONFIG_VERSION ||
-      input->binding.size != sizeof(PgsMetaBindConfig) || input->binding.reserved != 0)
+      input->binding.size != sizeof(PGS_MetaBindConfig) || input->binding.reserved != 0)
     return PGS_MD_ERR_BAD_VERSION;
   if (!input->extra || input->extra->version != PGS_CAM_EXTRA_VERSION ||
       input->extra->size != sizeof(PgsCameraMetaExtra) || input->extra->reserved != 0 ||
@@ -298,7 +298,7 @@ int resolve(const PgsCameraMetaConfig *input, PgsCameraMetaOutput *out) {
 
   PgsCameraMetaConfig c = *input;
   PgsCameraMetaExtra extra_copy = *input->extra;
-  PgsMetaExports exports_copy = *input->binding.exports;
+  PGS_MetaExports exports_copy = *input->binding.exports;
   c.extra = &extra_copy;
   c.binding.exports = &exports_copy;
 
@@ -313,8 +313,8 @@ int resolve(const PgsCameraMetaConfig *input, PgsCameraMetaOutput *out) {
   if (!mandatory_meta_exports_ok(exports_copy)) return PGS_MD_ERR_MISSING_EXPORT;
   if (!attached(c)) return PGS_CAM_ERR_ATTACH;
 
-  const PgsMetaApi *md = metadata();
-  if (!md || md->version != 1 || md->size != sizeof(PgsMetaApi)) return PGS_CAM_ERR_METADATA;
+  const PGS_MetaApi *md = metadata();
+  if (!md || md->version != 1 || md->size != sizeof(PGS_MetaApi)) return PGS_CAM_ERR_METADATA;
 
   if (!c.binding.seg_query) {
     // Frida reports a page-rounded mapping; feature 47 reports the canonical PT_LOAD extent

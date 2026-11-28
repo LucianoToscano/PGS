@@ -11,7 +11,7 @@ import org.json.JSONException;
 import org.json.JSONObject;
 
 /**
- * UI: the search modes of pogocoordinates.com/search besides Pokémon (Raids, Quests, Weather,
+ * PGSX: the search modes of pogocoordinates.com/search besides Pokémon (Raids, Quests, Weather,
  * Rocket, Power Spots). Each mode has its own endpoint on the coordinates API and its own filter spec,
  * captured from the site's search page:
  * <ul>

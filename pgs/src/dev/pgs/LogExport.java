@@ -46,13 +46,13 @@ public final class LogExport {
                 Map<String,?> all=AccountProfiles.preferences(context,scopes[i]).getAll();
                 JSONObject group=new JSONObject();
                 for(String key:keys[i])if(all.containsKey(key))group.put(key,all.get(key));
-                groups.put(AccountProfileStore.legacyStorageName(scopes[i]),group);
+                groups.put(scopes[i],group);
             }
             JSONObject events=new JSONObject();
             events.put("halloween_2026.box_collector",dev.pgs.events.EventSettings.boxCollectorRequested(context));
             events.put("go_wild_november_2026.vgp_plus_safari",dev.pgs.events.EventSettings.wildVgpSafari(context));
             events.put("go_wild_november_2026.auto_ball_safari",dev.pgs.events.EventSettings.wildAutoBallSafari(context));
-            groups.put(AccountProfileStore.legacyStorageName("pgs-events-v1"),events);
+            groups.put("pgs-events-v1",events);
             return groups;
         } catch(JSONException error) { throw new IOException("Cannot capture preferences",error); }
     }
@@ -110,8 +110,8 @@ public final class LogExport {
     }
     public static File copyToExternal(Context context,File file,boolean includeSettings) throws IOException {
         if(file==null) throw new IOException("No log is available");
-        File dir=context.getExternalFilesDir(AccountProfileStore.legacyStorageName("pgs-logs"));
-        if(dir==null) dir=new File(context.getFilesDir(),AccountProfileStore.legacyStorageName("pgs-logs/exports"));
+        File dir=context.getExternalFilesDir("pgs-logs");
+        if(dir==null) dir=new File(context.getFilesDir(),"pgs-logs/exports");
         if(!dir.isDirectory() && !dir.mkdirs()) throw new IOException("Cannot create export folder");
         String name=includeSettings?file.getName().replaceFirst("\\.txt$","")+".zip":file.getName();
         File dest=new File(dir,name),temp=new File(dir,name+".tmp");

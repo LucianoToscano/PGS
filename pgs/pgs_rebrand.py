@@ -65,7 +65,9 @@ def module_dex_entry(archive: zipfile.ZipFile) -> str:
 
 def updated_mode(old: bytes) -> bytes:
     mode = json.loads(old)
-    if mode.get("pgsVersion") != "v0.0.1" or mode.get("compiledGameplay") is not True:
+    before = mode.get("pgsVersion")
+    if not (isinstance(before, str) and before == "v0.0.1"
+            and mode.get("compiledGameplay") is True):
         raise ValueError("Source APK is not the expected compiled PGS candidate")
     mode["pgsVersion"] = PGS_VERSION
     return json.dumps(mode, separators=(",", ":"), ensure_ascii=False).encode("utf-8")
@@ -79,7 +81,7 @@ def candidate(source: Path, controls: Path, output: Path) -> dict:
         raise ValueError("Source APK SHA-256 does not match the signed PGS v0.0.1")
     if pgs_update.cert_digests(source) != [pgs_update.PGS_SIGNER]:
         raise ValueError("Source APK has a foreign signing certificate")
-    if not build.signing_setting("KEYSTORE"):
+    if not os.environ.get("PGS_KEYSTORE"):
         raise ValueError("Existing PGS signing keystore is mandatory")
     new_dex = controls.read_bytes()
     if (len(new_dex) < 200_000 or not new_dex.startswith(b"dex\n")

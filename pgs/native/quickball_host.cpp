@@ -28,7 +28,7 @@ std::atomic<uint64_t> policy_revision{1};
 std::atomic<uint32_t> capabilities{0},sites{0},owned_count{0};
 std::atomic<uint32_t> optional_faults{0};
 std::atomic<int> fault{0},meta_error{0};
-PgsQuickballMetaConfig mc{};PgsQuickballExtra extra{};PgsMetaExports me{};
+PgsQuickballMetaConfig mc{};PgsQuickballExtra extra{};PGS_MetaExports me{};
 PgsQuickballHostRuntime rt{};PgsQuickballMetaOutput md{};
 uint32_t flags=0;bool bootstrap=false,binding_ready=false,install_attempted=false;
 PgsQuickballHostOptions options{};uint64_t option_deadline=0,metadata_retry=0;
@@ -41,7 +41,7 @@ const PgsObsApi *obs(){return static_cast<const PgsObsApi*>(pgs_catch_observers_
 const PgsThrowApi *throws(){return static_cast<const PgsThrowApi*>(pgs_throws_api(1));}
 const PgsAlwaysHitApi *hit(){return static_cast<const PgsAlwaysHitApi*>(pgs_always_hit_api(1));}
 const PgsArThrowApi *ar(){return static_cast<const PgsArThrowApi*>(pgs_ar_throw_api(1));}
-const PgsMapTapApi *map(){return static_cast<const PgsMapTapApi*>(pgs_map_tap_api(1));}
+const PGS_MapTapApi *map(){return static_cast<const PGS_MapTapApi*>(pgs_map_tap_api(1));}
 const PgsIvDisplayApi *iv(){return static_cast<const PgsIvDisplayApi*>(pgs_iv_display_api(1));}
 const PgsRuntimeTransportApi *transport(){return static_cast<const PgsRuntimeTransportApi*>(pgs_runtime_transport_api(1));}
 bool now(uint64_t *v){timespec t{};if(clock_gettime(CLOCK_BOOTTIME,&t)||t.tv_sec<0)return false;*v=uint64_t(t.tv_sec)*1000+uint64_t(t.tv_nsec)/1000000;return true;}
@@ -259,7 +259,7 @@ int install_leaves(){
   rc=ar()->install(&c);if(rc)optional_failure(PGS_QBH_AR,"ar-throw-unavailable",rc);else capabilities.fetch_or(PGS_QBH_AR);
  }
  if(group(GROUP_MAPTAP)){
-  PgsMapTapConfig c{1,sizeof(c),rt.gchandle_new,rt.gchandle_get_target,rt.gchandle_free,rt.object_get_class,rt.runtime_invoke,
+  PGS_MapTapConfig c{1,sizeof(c),rt.gchandle_new,rt.gchandle_get_target,rt.gchandle_free,rt.object_get_class,rt.runtime_invoke,
    rt.object_unbox,code(23),code(24),method(25),klass(C_GROUND),klass(C_MAPVIEW),klass(C_LATLNG)};
   rc=map()->install(&c);if(rc)optional_failure(PGS_QBH_MAP,"map-tap-unavailable",rc);else capabilities.fetch_or(PGS_QBH_MAP);
  }
@@ -318,7 +318,7 @@ std::atomic<bool> preview_wanted{false};
 std::atomic<bool> transfer_wanted{false};
 void poll_options(){
  if(!(flags&PGS_QBH_TRANSPORT))return;
- const auto *tr=transport();PgsRuntimeTransportSample before{},after{};
+ const auto *tr=transport();PGSRuntimeTransportSample before{},after{};
  PgsQuickballHostOptions p{};p.version=1;p.size=sizeof(p);p.lease_ms=100;
  auto b=[&](uint32_t i){int v=0;return tr->get_bool(i,&v)==0&&v==1;};
  auto n=[&](uint32_t i){int32_t v=0;return tr->get_int(i,&v)==0?v:0;};
@@ -413,8 +413,8 @@ void drain_iv(){
 }
 void drain_map(const PgsQuickballHostOptions &p,uint64_t deadline){
  if(optional_faults.load()&PGS_QBH_MAP)return;
- PgsMapTapSample s{};int status=map()->sample(&s);if(status||s.fault){optional_failure(PGS_QBH_MAP,"map-tap-unavailable",status?status:int(s.fault));return;}
- for(unsigned i=0;i<16;++i){PgsMapTapEvent e{};int rc=map()->drain(&e);if(rc==PGS_MAP_TAP_EMPTY)break;if(rc){optional_failure(PGS_QBH_MAP,"map-tap-unavailable",rc);return;}
+ PGS_MapTapSample s{};int status=map()->sample(&s);if(status||s.fault){optional_failure(PGS_QBH_MAP,"map-tap-unavailable",status?status:int(s.fault));return;}
+ for(unsigned i=0;i<16;++i){PGS_MapTapEvent e{};int rc=map()->drain(&e);if(rc==PGS_MAP_TAP_EMPTY)break;if(rc){optional_failure(PGS_QBH_MAP,"map-tap-unavailable",rc);return;}
   uint64_t t=0;if(stopping.load()||!p.map_allowed||!now(&t)||t>=deadline||e.mode!=int32_t(p.map_mode)||e.epoch!=p.map_epoch)continue;
   event("map-tap","\"mode\":"+std::to_string(e.mode)+",\"epoch\":"+std::to_string(e.epoch)+",\"latitude\":"+std::to_string(e.latitude)+",\"longitude\":"+std::to_string(e.longitude),e.boottime_ms);
   int64_t args[]={double_bits(e.latitude),double_bits(e.longitude),e.mode,int64_t(e.epoch),double_bits(double(e.boottime_ms))};emit_action(10,args,5,nullptr,0);
@@ -428,7 +428,7 @@ void drain_counters(){
   hit_cursor=s.applied;hit_normal_cursor=s.normalized;hit_error_cursor=s.errors;event("always-hit-applied","\"applied\":"+quote(std::to_string(s.applied).c_str())+",\"normalized\":"+quote(std::to_string(s.normalized).c_str())+",\"errors\":"+quote(std::to_string(s.errors).c_str()));}}
 }
 void update_owned(){
- uint32_t count=0;PgsSpeedSample a{};PgsObsSample b{};PgsMapTapSample c{};PgsIvDisplaySample d{};
+ uint32_t count=0;PgsSpeedSample a{};PgsObsSample b{};PGS_MapTapSample c{};PgsIvDisplaySample d{};
  if(has(PGS_QBH_SPEED)){if(speed()->sample(&a))++count;else count+=a.owned;}
  if(has(PGS_QBH_OBSERVERS)){if(obs()->sample(&b))++count;else count+=b.seen_count;}
  if(has(PGS_QBH_MAP)){if(map()->sample(&c))++count;else count+=c.owned_root_count;}
@@ -516,7 +516,7 @@ int end_catch(uint64_t token,uint64_t tid){
  if(!has(PGS_QBH_IV)||tid!=owner.load()||!attached(tid))return PGS_QBH_OFF_OWNER;
  return iv()->end_catch(token,tid);
 }
-void on_pulse(void *,const PgsUnityPulse *pulse){if(pulse&&pulse->tid>0&&pulse->generation){
+void on_pulse(void *,const PGSUnityPulse *pulse){if(pulse&&pulse->tid>0&&pulse->generation){
  const auto *api=static_cast<const PgsUnitySchedulerApi*>(pgs_unity_scheduler_api(2));if(api&&api->valid(pulse->generation)==1)tick(uint64_t(pulse->tid));}}
 const PgsQuickballHostApi api{1,sizeof(PgsQuickballHostApi),configure,set_options,shared_sites,tick,stop,sample,next_event,rewrite_submit,begin_catch,end_catch,on_pulse};
 }

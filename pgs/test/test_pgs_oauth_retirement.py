@@ -35,12 +35,12 @@ class PgsOauthRetirementTests(unittest.TestCase):
                 pass  # missing APK is expected in this test
             self.assertFalse(output.exists())
 
-    def test_google_browser_login_is_active(self):
+    def test_google_browser_login_reads_mode(self):
         bootstrap = (PROJECT / "src/dev/pgs/BootstrapProvider.java").read_text(encoding="utf-8")
+        # Reference v0.0.2 reads googleBrowserLogin from pgs/mode.json (opt-in, default false).
         self.assertIn('optBoolean("googleBrowserLogin"', bootstrap)
-        self.assertIn("configureBrowserSignIn(googleBrowserLogin)", bootstrap)
-        self.assertIn("googleBrowserLogin", bootstrap)
-        # GoogleBrowserAuth implements PKCE browser flow; GoogleAuthActivity handles redirect
+        self.assertIn("configureBrowserSignIn(", bootstrap)
+        # GoogleBrowserAuth and GoogleAuthActivity exist as callback scaffolding.
         auth = (PROJECT / "src/dev/pgs/GoogleBrowserAuth.java").read_text(encoding="utf-8")
         self.assertIn("begin(", auth)
         self.assertIn("takeResult(", auth)

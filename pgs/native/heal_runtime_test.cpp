@@ -27,7 +27,7 @@ int when=0,threshold=50;bool revive=true,full=true;
 int stock_count[6]={10,10,10,10,10,10};int sends=0,polls=0,scans=0;
 int sent_item=0;uint64_t sent_id=0;bool answered=false;
 std::function<void()> lookup_callback;
-PgsBootBinding binding{};PgsBootApi boot_api{};PgsMetaApi meta_api{};
+PgsBootBinding binding{};PgsBootApi boot_api{};PGS_MetaApi meta_api{};
 PgsRuntimeTransportApi transport_api{};PgsVgpResultsApi results_api{};PgsSharedMetadataOutput metadata{};
 Object *map_obj,*container_obj,*bag_obj,*items_obj,*list_obj,*promise_obj;
 std::vector<Object*> pokemon;
@@ -58,7 +58,7 @@ void *current_thread(){return &metadata;}
 void *class_type(void *p){return p;}
 void *type_object(void *p){return p;}
 void *array_new(void *,uintptr_t n){assert(n<50);return object("Array");}
-int resolve_class(const PgsMetaClassQuery *q,PgsMetaClassResult *r){*r={};r->klass=type(std::string(q->name_space)+"."+q->name);return 0;}
+int resolve_class(const PGS_MetaClassQuery *q,PGS_MetaClassResult *r){*r={};r->klass=type(std::string(q->name_space)+"."+q->name);return 0;}
 int boot_snapshot(PgsBootBinding *out){*out=binding;return 0;}
 void *invoke(void *m,void *,void **args,void **exception){
  *exception=nullptr;const std::string n=*static_cast<std::string*>(m);
@@ -72,7 +72,7 @@ void *invoke(void *m,void *,void **args,void **exception){
  if(n=="UseItemOnPokemon"){assert(permission&&enabled&&fresh&&active&&ready&&(when!=1||on_map));++sends;sent_item=*static_cast<int*>(args[0]);sent_id=*static_cast<uint64_t*>(args[1]);assert(stock_count[sent_item-1]>0);--stock_count[sent_item-1];answered=false;return promise_obj;}
  assert(false);return nullptr;
 }
-int sample(PgsRuntimeTransportSample *out){*out={};out->snapshot_fresh=fresh;out->snapshot_seq=1;return 0;}
+int sample(PGSRuntimeTransportSample *out){*out={};out->snapshot_fresh=fresh;out->snapshot_seq=1;return 0;}
 int get_bool(uint32_t id,int *out){*out=id==3?active:id==16?ready:id==38?on_map:0;return 0;}
 int get_string(uint32_t id,char *out,uint32_t cap,uint32_t *length){assert(id==18);std::string s="H2|"+std::to_string(enabled)+"|"+std::to_string(when)+"|"+std::to_string(threshold)+"|"+std::to_string(revive)+"|"+std::to_string(full);assert(s.size()<cap);memcpy(out,s.data(),s.size());*length=s.size();return 0;}
 int emit(uint32_t,const int64_t*,uint32_t,const PgsRuntimeTransportString*,uint32_t){return 0;}

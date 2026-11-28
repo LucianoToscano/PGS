@@ -18,7 +18,7 @@ constexpr uint32_t kApiVersion=2;
 
 std::mutex resolving;
 
-const PgsMetaApi *metadata() { return static_cast<const PgsMetaApi *>(pgs_runtime_metadata_api(1)); }
+const PGS_MetaApi *metadata() { return static_cast<const PGS_MetaApi *>(pgs_runtime_metadata_api(1)); }
 
 bool attached(const PgsSharedMetadataConfig &c) {
   return c.owner_tid && c.owner_tid == static_cast<uint64_t>(gettid()) &&
@@ -26,8 +26,8 @@ bool attached(const PgsSharedMetadataConfig &c) {
 }
 
 struct Ctx {
-  const PgsMetaApi *md;
-  const PgsMetaExports *core;
+  const PGS_MetaApi *md;
+  const PGS_MetaExports *core;
   const PgsSharedMetaExtraExports *ex;
   uintptr_t module_base;
   PgsSharedMetadataOutput *out;
@@ -210,10 +210,10 @@ bool pred_vgp_capture_resp(const std::string &s) {
 int raw_field(Ctx &c, const void *owner, const char *name, uint64_t off, const void **field_out,
               const void **type_out = nullptr, const void **tc_out = nullptr) {
   if (!owner) return set_err(c, PGS_MD_ERR_NOT_FOUND, "field-mismatch", name);
-  PgsMetaFieldQuery q{}; q.version = 1; q.size = sizeof(q);
+  PGS_MetaFieldQuery q{}; q.version = 1; q.size = sizeof(q);
   q.owner = owner; q.name = name; q.offset = off;
   q.forbidden_mask = 0x50; q.required_mask = 0; q.kind = PGS_MD_FIELD_ANY;
-  PgsMetaFieldResult r{};
+  PGS_MetaFieldResult r{};
   int rc = c.md->validate_field(&q, &r);
   if (rc) return set_err(c, rc, "field-mismatch", name);
   if (field_out) *field_out = r.field;
@@ -225,10 +225,10 @@ int raw_field(Ctx &c, const void *owner, const char *name, uint64_t off, const v
 int ref_field(Ctx &c, const void *owner, const char *name, uint64_t off, const void **field_out,
               const void **tc_out = nullptr) {
   if (!owner) return set_err(c, PGS_MD_ERR_NOT_FOUND, "field-mismatch", name);
-  PgsMetaFieldQuery q{}; q.version = 1; q.size = sizeof(q);
+  PGS_MetaFieldQuery q{}; q.version = 1; q.size = sizeof(q);
   q.owner = owner; q.name = name; q.offset = off;
   q.forbidden_mask = 0x50; q.required_mask = 0; q.kind = PGS_MD_FIELD_REF;
-  PgsMetaFieldResult r{};
+  PGS_MetaFieldResult r{};
   int rc = c.md->validate_field(&q, &r);
   if (rc) return set_err(c, rc, rc == PGS_MD_ERR_KIND ? "field-not-reference" : "field-mismatch", name);
   record_field_meta(c, owner, name, off, PGS_MD_FIELD_REF, 0);
@@ -240,10 +240,10 @@ int ref_field(Ctx &c, const void *owner, const char *name, uint64_t off, const v
 int enum_i32_field(Ctx &c, const void *owner, const char *name, uint64_t off, const void **field_out,
                    const void **tc_out = nullptr) {
   if (!owner) return set_err(c, PGS_MD_ERR_NOT_FOUND, "field-mismatch", name);
-  PgsMetaFieldQuery q{}; q.version = 1; q.size = sizeof(q);
+  PGS_MetaFieldQuery q{}; q.version = 1; q.size = sizeof(q);
   q.owner = owner; q.name = name; q.offset = off;
   q.forbidden_mask = 0x50; q.required_mask = 0; q.kind = PGS_MD_FIELD_ENUM_I32;
-  PgsMetaFieldResult r{};
+  PGS_MetaFieldResult r{};
   int rc = c.md->validate_field(&q, &r);
   if (rc) return set_err(c, rc, (rc == PGS_MD_ERR_KIND || rc == PGS_MD_ERR_SIZE) ? "enum-abi" : "field-mismatch", name);
   record_field_meta(c, owner, name, off, PGS_MD_FIELD_ENUM_I32, 0);
@@ -255,11 +255,11 @@ int enum_i32_field(Ctx &c, const void *owner, const char *name, uint64_t off, co
 int typed_field(Ctx &c, const void *owner, const char *name, uint64_t off, const char *type_name,
                 const char *err_prefix, const void **field_out, const void **tc_out = nullptr) {
   if (!owner) return set_err(c, PGS_MD_ERR_NOT_FOUND, err_prefix, name);
-  PgsMetaFieldQuery q{}; q.version = 1; q.size = sizeof(q);
+  PGS_MetaFieldQuery q{}; q.version = 1; q.size = sizeof(q);
   q.owner = owner; q.name = name; q.offset = off;
   q.forbidden_mask = 0x50; q.required_mask = 0; q.kind = PGS_MD_FIELD_ANY;
   q.type_name = type_name; q.type_match = PGS_MD_MATCH_EXACT;
-  PgsMetaFieldResult r{};
+  PGS_MetaFieldResult r{};
   int rc = c.md->validate_field(&q, &r);
   if (rc) return set_err(c, rc, rc == PGS_MD_ERR_TYPE ? err_prefix : "field-mismatch", name);
   if (field_out) *field_out = r.field;
@@ -270,11 +270,11 @@ int typed_field(Ctx &c, const void *owner, const char *name, uint64_t off, const
 int scalar_field(Ctx &c, const void *owner, const char *name, uint64_t off, const char *type_name,
                  uint32_t sz, const char *err_prefix, const void **field_out) {
   if (!owner) return set_err(c, PGS_MD_ERR_NOT_FOUND, err_prefix, name);
-  PgsMetaFieldQuery q{}; q.version = 1; q.size = sizeof(q);
+  PGS_MetaFieldQuery q{}; q.version = 1; q.size = sizeof(q);
   q.owner = owner; q.name = name; q.offset = off;
   q.forbidden_mask = 0x50; q.required_mask = 0; q.kind = PGS_MD_FIELD_VALUE; q.value_size = sz;
   q.type_name = type_name; q.type_match = PGS_MD_MATCH_EXACT;
-  PgsMetaFieldResult r{};
+  PGS_MetaFieldResult r{};
   int rc = c.md->validate_field(&q, &r);
   if (rc) return set_err(c, rc, err_prefix, name);
   if (field_out) *field_out = r.field;
@@ -291,7 +291,7 @@ int check_method_ex(Ctx &c, const void *owner, const char *name, const char *ret
                     uint64_t rva, const unsigned char *pro, uint32_t plen,
                     const void **m_out, const void **code_out = nullptr) {
   if (!owner) return set_err(c, PGS_MD_ERR_NOT_FOUND, "method-mismatch", name);
-  PgsMetaMethodQuery q{}; q.version = 1; q.size = sizeof(q);
+  PGS_MetaMethodQuery q{}; q.version = 1; q.size = sizeof(q);
   q.owner = owner; q.name = name;
   q.return_type = ret_exact;
   q.return_match = ret_exact ? PGS_MD_MATCH_EXACT : PGS_MD_MATCH_ANY;
@@ -307,7 +307,7 @@ int check_method_ex(Ctx &c, const void *owner, const char *name, const char *ret
     q.expected_code = reinterpret_cast<const void *>(c.module_base + rva);
     q.prologue = pro; q.prologue_len = plen;
   }
-  PgsMetaMethodResult r{};
+  PGS_MetaMethodResult r{};
   int rc = c.md->validate_method(&q, &r);
   if (rc) return set_err(c, rc, "method-mismatch", name);
 
@@ -1245,18 +1245,18 @@ int do_buddy(Ctx &c) {
 // ---------------------------------------------------------------------------------------------------
 // Mandatory pointerHandleAbi (gchandle_new / gchandle_get_target / gchandle_free code fingerprint).
 // ---------------------------------------------------------------------------------------------------
-int pointer_handle_abi(const PgsMetaApi *md, const PgsSharedMetaExtraExports *ex) {
+int pointer_handle_abi(const PGS_MetaApi *md, const PgsSharedMetaExtraExports *ex) {
   return pgs_pointer_handles(md,ex->gchandle_new,ex->gchandle_get_target,ex->gchandle_free)==0
       ? PGS_MD_OK : PGS_SHARED_ERR_GC_ABI;
 }
-bool valid_binding_range(const PgsMetaBindConfig &binding) {
+bool valid_binding_range(const PGS_MetaBindConfig &binding) {
   const uintptr_t base=reinterpret_cast<uintptr_t>(binding.module_base);
   return base&&binding.module_size&&binding.module_size<=UINTPTR_MAX-base;
 }
-int resolve_class(const PgsMetaApi *md,const ClassSpec &s,const void **klass) {
-  *klass=nullptr; PgsMetaClassQuery q{};q.version=PGS_MD_QUERY_VERSION;q.size=sizeof(q);
+int resolve_class(const PGS_MetaApi *md,const ClassSpec &s,const void **klass) {
+  *klass=nullptr; PGS_MetaClassQuery q{};q.version=PGS_MD_QUERY_VERSION;q.size=sizeof(q);
   q.name_space=s.name_space;q.name=s.name;q.canonical=s.canonical;q.canonical_match=PGS_MD_MATCH_EXACT;
-  PgsMetaClassResult result{};int rc=md->resolve_class(&q,&result);
+  PGS_MetaClassResult result{};int rc=md->resolve_class(&q,&result);
   if(!rc)*klass=result.klass;return rc;
 }
 
@@ -1297,14 +1297,14 @@ int resolve(const PgsSharedMetadataConfig *input, PgsSharedMetadataOutput *out) 
       input->extra->gchandle_free == nullptr) {
     return (final_rc = PGS_SHARED_ERR_CONFIG);
   }
-  const PgsMetaApi *md = metadata();
-  if (md == nullptr || md->version != PGS_MD_API_VERSION || md->size != sizeof(PgsMetaApi)) {
+  const PGS_MetaApi *md = metadata();
+  if (md == nullptr || md->version != PGS_MD_API_VERSION || md->size != sizeof(PGS_MetaApi)) {
     return (final_rc = PGS_SHARED_ERR_CONFIG);
   }
-  const PgsMetaExports *core = input->binding.exports;
+  const PGS_MetaExports *core = input->binding.exports;
   if (core == nullptr) return (final_rc = PGS_MD_ERR_NULL_ARG);
   if (!valid_binding_range(input->binding)) return (final_rc = PGS_MD_ERR_CODE_RANGE);
-  PgsMetaBindConfig bind = input->binding;
+  PGS_MetaBindConfig bind = input->binding;
   if (!bind.seg_query) {
     const uintptr_t base=reinterpret_cast<uintptr_t>(bind.module_base);
     const uintptr_t thread=reinterpret_cast<uintptr_t>(input->thread_current);
@@ -1340,11 +1340,11 @@ int resolve(const PgsSharedMetadataConfig *input, PgsSharedMetadataOutput *out) 
   for (size_t i = 0; i < kFieldCount; i++) {
     if (!attached(*input)) return (final_rc = PGS_SHARED_ERR_ATTACH);
     const FieldSpec &s = kFields[i];
-    PgsMetaFieldQuery spec{};spec.version=PGS_MD_QUERY_VERSION;spec.size=sizeof(spec);
+    PGS_MetaFieldQuery spec{};spec.version=PGS_MD_QUERY_VERSION;spec.size=sizeof(spec);
     spec.owner=out->classes[s.owner];spec.name=s.name;spec.offset=s.offset;
     spec.forbidden_mask=0x50;spec.kind=s.kind;spec.type_name=s.type_name;
     spec.type_match=s.type_name?PGS_MD_MATCH_EXACT:PGS_MD_MATCH_ANY;spec.value_size=s.value_size;
-    PgsMetaFieldResult resolved{};rc=md->validate_field(&spec,&resolved);
+    PGS_MetaFieldResult resolved{};rc=md->validate_field(&spec,&resolved);
     if (rc != PGS_MD_OK) return (final_rc = map_required_err(rc));
     out->fields[i] = resolved.field;
     out->field_types[i] = resolved.type;
@@ -1356,7 +1356,7 @@ int resolve(const PgsSharedMetadataConfig *input, PgsSharedMetadataOutput *out) 
   for (size_t i = 0; i < kMethodCount; i++) {
     if (!attached(*input)) return (final_rc = PGS_SHARED_ERR_ATTACH);
     const MethodSpec &s = kMethods[i];
-    PgsMetaMethodQuery spec{};spec.version=PGS_MD_QUERY_VERSION;spec.size=sizeof(spec);
+    PGS_MetaMethodQuery spec{};spec.version=PGS_MD_QUERY_VERSION;spec.size=sizeof(spec);
     spec.owner=out->classes[s.owner];spec.name=s.name;spec.param_count=s.param_count;
     spec.is_static=s.is_static;spec.return_type=s.return_type;spec.return_match=PGS_MD_MATCH_EXACT;
     spec.param_types[0]=s.param0;spec.param_types[1]=s.param1;
@@ -1367,7 +1367,7 @@ int resolve(const PgsSharedMetadataConfig *input, PgsSharedMetadataOutput *out) 
       spec.expected_code=reinterpret_cast<const void *>(base+s.code_rva);
       spec.prologue=s.prologue;spec.prologue_len=s.prologue_len;
     }
-    PgsMetaMethodResult resolved{};rc=md->validate_method(&spec,&resolved);
+    PGS_MetaMethodResult resolved{};rc=md->validate_method(&spec,&resolved);
     if (rc != PGS_MD_OK) return (final_rc = map_required_err(rc));
     out->methods[i] = resolved.method;
     out->method_code[i] = resolved.code;

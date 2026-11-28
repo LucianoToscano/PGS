@@ -45,7 +45,6 @@ void rename(String id,String name){} void selectVerified(String id){} void activ
 void prepareSwitch(String id){} Profile add(String name){return new Profile();}
 java.io.File dataFile(String id,String name) throws java.io.IOException{return null;}
 String preferenceName(String id,String scope){return scope;}
-static String legacyStorageName(String name){return name==null?null:name.replaceFirst("^pgs-","pgs-");}
 static final String DEFAULT_ID="default";boolean globalSettings(){return false;}String mainId(){return DEFAULT_ID;}
 String settingsOwner(String id){return id;}void setGlobalSettings(boolean on,String main){}}''',
     'dev/pgs/AccountSessions.java': '''package dev.pgs; class AccountSessions {

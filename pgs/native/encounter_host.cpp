@@ -125,7 +125,7 @@ static uint32_t g_event_count = 0;
 // Resolved IL2CPP Exports & Host State
 // ============================================================================
 struct ResolvedExports {
-  PgsMetaExports meta;
+  PGS_MetaExports meta;
   PgsSharedMetaExtraExports extra;
   void *(*thread_current)(void);
   void *(*runtime_invoke)(const void *method, void *obj, void **params, void **exc);
@@ -185,7 +185,7 @@ static uint32_t g_keep_species_count = 0;
 
 // Leaf API pointers
 static const pgs_berry_api_v1 *g_berries = nullptr;
-static const PgsMapPoiApi *g_map_poi = nullptr;
+static const PGS_MapPoiApi *g_map_poi = nullptr;
 static const PgsVgpPolicyApi *g_vp = nullptr;
 static const PgsVgpActionsApi *g_va = nullptr;
 static const PgsVgpMarkerApi *g_vmk = nullptr;
@@ -206,7 +206,7 @@ static void *g_berry_response_class = nullptr;
 static bool g_ticking = false;
 static bool g_direct_transport = false;
 // Heap-allocated 294,928-byte MapPOI output buffer (never on stack)
-static PgsMapPoiOutput *g_map_poi_out = nullptr;
+static PGS_MapPoiOutput *g_map_poi_out = nullptr;
 
 // VGP -> Transfer active handoff state (4 owned GC handles from PGS_VGC_EV_TRANSFER_READY)
 struct ActiveVgpTransfer {
@@ -1264,9 +1264,9 @@ static void tick_map_poi(uint64_t tid, uint64_t now_ms, uint64_t lease_ms) {
   if (g_last_map_poi_ms != 0 && (now_ms - g_last_map_poi_ms) < 2000ULL) return;
   g_last_map_poi_ms = now_ms;
 
-  PgsMapPoiRequest req = {};
+  PGS_MapPoiRequest req = {};
   req.version = PGS_MP_REQUEST_VERSION;
-  req.size = sizeof(PgsMapPoiRequest);
+  req.size = sizeof(PGS_MapPoiRequest);
   req.tid = tid;
   req.remaining_ms = lease_ms;
   req.wall_ms = wall_clock_ms();
@@ -1288,7 +1288,7 @@ static void tick_map_poi(uint64_t tid, uint64_t now_ms, uint64_t lease_ms) {
   if (count > PGS_MP_MAX_POINTS) count = PGS_MP_MAX_POINTS;
 
   for (uint32_t i = 0; i < count && pos + 2048 < sizeof(s_poi_json); ++i) {
-    const PgsMapPoiPoint &pt = g_map_poi_out->points[i];
+    const PGS_MapPoiPoint &pt = g_map_poi_out->points[i];
     if (i > 0) s_poi_json[pos++] = ',';
     char id_buf[1600];
     uint32_t id_len = pt.id_length <= PGS_MP_MAX_ID ? pt.id_length : PGS_MP_MAX_ID;
@@ -1380,7 +1380,7 @@ static void sync_from_transport(uint64_t tid) {
   const PgsRuntimeTransportApi *t = transport_api();
   if (!t || !t->sample || !t->get_bool || !t->get_int || !t->get_double || !t->get_string) return;
 
-  PgsRuntimeTransportSample start = {PGS_TRANSPORT_SAMPLE_VERSION, sizeof(start)};
+  PGSRuntimeTransportSample start = {PGS_TRANSPORT_SAMPLE_VERSION, sizeof(start)};
   if (t->sample(&start) != PGS_TRANSPORT_OK || start.snapshots_accepted == 0) {
     if (!g_direct_transport) return;
     start = {};
@@ -1477,7 +1477,7 @@ static void sync_from_transport(uint64_t tid) {
   if(fresh && t->get_string(25,keep_iv_buf,sizeof(keep_iv_buf),&keep_iv_len)==PGS_TRANSPORT_OK && keep_iv_len<sizeof(keep_iv_buf))
     pending_keep_iv=pgs_transfer_keep_iv_parse(keep_iv_buf,keep_iv_len);
 
-  PgsRuntimeTransportSample end = {PGS_TRANSPORT_SAMPLE_VERSION, sizeof(end)};
+  PGSRuntimeTransportSample end = {PGS_TRANSPORT_SAMPLE_VERSION, sizeof(end)};
   if (!fresh || t->sample(&end) != PGS_TRANSPORT_OK || end.snapshot_fresh == 0 ||
       end.fault != 0 || end.snapshot_seq != start.snapshot_seq ||
       end.generation != start.generation) {
@@ -1604,20 +1604,20 @@ static int install_berries_leaf() {
   return PGS_EH_OK;
 }
 
-static void map_poi_incident_fields(PgsMapPoiConfig *cfg);
+static void map_poi_incident_fields(PGS_MapPoiConfig *cfg);
 static int install_map_poi_leaf(bool *out_has_extra) {
   if (out_has_extra) *out_has_extra = false;
   if (g_md.optional[OPT_MAP_POI] != PGS_SHARED_OPT_AVAILABLE ||
       g_md.optional[OPT_VGP] != PGS_SHARED_OPT_AVAILABLE) {
     return PGS_EH_ERR_METADATA;
   }
-  const auto *api = static_cast<const PgsMapPoiApi *>(
+  const auto *api = static_cast<const PGS_MapPoiApi *>(
       pgs_map_poi_api(PGS_MP_API_VERSION));
   if (!api || !api->install) return PGS_EH_ERR_LEAF;
 
-  PgsMapPoiConfig mcfg = {};
+  PGS_MapPoiConfig mcfg = {};
   mcfg.version = PGS_MP_CONFIG_VERSION;
-  mcfg.size = sizeof(PgsMapPoiConfig);
+  mcfg.size = sizeof(PGS_MapPoiConfig);
   mcfg.runtime_invoke = reinterpret_cast<void *>(g_exp.runtime_invoke);
   mcfg.object_get_class = reinterpret_cast<void *>(g_exp.object_get_class);
   mcfg.field_get_value = reinterpret_cast<void *>(g_exp.field_get_value);
@@ -1691,7 +1691,7 @@ static int install_map_poi_leaf(bool *out_has_extra) {
   if (rc != 0) return PGS_EH_ERR_LEAF;
 
   if (!g_map_poi_out) {
-    g_map_poi_out = static_cast<PgsMapPoiOutput *>(calloc(1, sizeof(PgsMapPoiOutput)));
+    g_map_poi_out = static_cast<PGS_MapPoiOutput *>(calloc(1, sizeof(PGS_MapPoiOutput)));
     if (!g_map_poi_out) return PGS_EH_ERR_LEAF;
   }
   g_map_poi = api;
@@ -1701,7 +1701,7 @@ static int install_map_poi_leaf(bool *out_has_extra) {
 
 // Optional stop incident group for the map scan (Team GO Rocket invasions etc.), resolved by name with
 // exact type checks. Any miss leaves the whole group null, which only turns the incident field off.
-static void map_poi_incident_fields(PgsMapPoiConfig *cfg) {
+static void map_poi_incident_fields(PGS_MapPoiConfig *cfg) {
   const auto &m = g_exp.meta;
   if (!m.class_get_field_from_name || !m.field_get_type || !m.class_from_type || !m.type_get_name ||
       !m.mem_free || !m.field_get_flags) return;
@@ -2224,8 +2224,8 @@ static int api_configure(const PgsEncounterHostConfig *config) {
     if (b.handle) {
       auto sym = [&](const char *n) {
         void *p=dlsym(b.handle,n);
-        const auto *mdapi=static_cast<const PgsMetaApi*>(pgs_runtime_metadata_api(1));
-        PgsMetaCodeQuery q{1,sizeof(q),p,4,nullptr,0,0};
+        const auto *mdapi=static_cast<const PGS_MetaApi*>(pgs_runtime_metadata_api(1));
+        PGS_MetaCodeQuery q{1,sizeof(q),p,4,nullptr,0,0};
         return p && mdapi && mdapi->validate_code(&q)==0 ? p : nullptr;
       };
       if (!exp.field_set_value_object) {
@@ -2280,7 +2280,7 @@ static int api_configure(const PgsEncounterHostConfig *config) {
       mcfg.version = 2u;
       mcfg.size = sizeof(PgsSharedMetadataConfig);
       mcfg.binding.version = PGS_MD_CONFIG_VERSION;
-      mcfg.binding.size = sizeof(PgsMetaBindConfig);
+      mcfg.binding.size = sizeof(PGS_MetaBindConfig);
       mcfg.binding.exports = &exp.meta;
       mcfg.binding.module_base = b.module_base;
       mcfg.binding.module_size = b.module_size;

@@ -146,7 +146,7 @@ int main(int argc,char **argv){
  core=static_cast<const pgs_native_api_v2*>(get(2));assert(core&&core->query_feature(62,1)&&!core->query_feature(62,2));
  host=static_cast<const PgsQuickballHostApi*>(pgs_quickball_host_api(1));assert(host&&host->size==96);
  initialize();wrapped_btxu();assert(learned_caller);
- PgsMetaExports meta_exports{};meta_exports.class_get_type=reinterpret_cast<void*>(type_object);
+ PGS_MetaExports meta_exports{};meta_exports.class_get_type=reinterpret_cast<void*>(type_object);
  meta_exports.class_get_field_from_name=reinterpret_cast<void*>(max_field_by_name);
  meta_exports.field_get_parent=reinterpret_cast<void*>(max_parent);
  meta_exports.field_get_flags=reinterpret_cast<void*>(max_flags);

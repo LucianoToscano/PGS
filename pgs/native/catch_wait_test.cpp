@@ -38,7 +38,7 @@ void static_get(const void *f,void *out){assert(f==&literal);*static_cast<int32_
 const char *class_name(const void *k){return k==&klass[0]?"edc":"other";}
 void *nested_class(const void *k,void **it){if(k!=&klass[1]||*it)return nullptr;*it=&klass[0];return &klass[0];}
 const void *declaring(const void *k){return k==&klass[0]?&klass[1]:nullptr;}
-int segment(void *,const void *p,uint64_t n,PgsMetaSegment *out){*out={};auto a=reinterpret_cast<uintptr_t>(p),b=reinterpret_cast<uintptr_t>(module);
+int segment(void *,const void *p,uint64_t n,PGS_MetaSegment *out){*out={};auto a=reinterpret_cast<uintptr_t>(p),b=reinterpret_cast<uintptr_t>(module);
  if(a>=b&&a-b<=module_size&&n<=module_size-(a-b)){out->found=out->readable=out->host_exec=1;out->seg_base=module;out->seg_size=module_size;}return 0;}
 template<class T>void put(Object &o,size_t off,T value){std::memcpy(o.bytes+off,&value,sizeof(value));}
 float duration(){float out;std::memcpy(&out,wait_object.bytes+0x10,4);return out;}

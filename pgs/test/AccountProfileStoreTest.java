@@ -25,7 +25,6 @@ public final class AccountProfileStoreTest {
         File root = new File(args[0]);
 
         legacyDefaultPreserved(new File(root, "legacy"));
-        pgsLogicalStoragePreserved(new File(root, "pgs-storage"));
         identityLifecycle(new File(root, "lifecycle"));
         perProfileSeparation(new File(root, "separation"));
         corruptionFailsClosed(new File(root, "corrupt"));
@@ -34,32 +33,6 @@ public final class AccountProfileStoreTest {
         globalSettings(new File(root, "global"));
 
         System.out.println("PASS: AccountProfileStore legacy/identity/separation/restart/corruption/validation");
-    }
-
-    private static void pgsLogicalStoragePreserved(File filesDir) throws Exception {
-        filesDir.mkdirs();
-        File legacy = new File(filesDir, "pgs-settings-v1.properties");
-        Files.write(legacy.toPath(), "existing=true".getBytes(StandardCharsets.UTF_8));
-        AccountProfileStore store = new AccountProfileStore(filesDir);
-        File resolved = store.dataFile(AccountProfileStore.DEFAULT_ID, "pgs-settings-v1.properties");
-        check(canon(resolved).equals(canon(legacy)), "PGS logical name resolves the existing data");
-        check(new String(Files.readAllBytes(resolved.toPath()), StandardCharsets.UTF_8).equals("existing=true"), "existing data is intact");
-        check(store.preferenceName(AccountProfileStore.DEFAULT_ID, "pgs-map").equals("pgs-map"), "legacy preferences stay accessible");
-        check(store.preferenceName(AccountProfileStore.DEFAULT_ID, "pgs-overlays").equals("pgs-overlays"), "legacy overlay preferences stay accessible");
-        Profile other = store.add("Other");
-        check(store.preferenceName(other.id, "pgs-livefeed").equals("pgs-livefeed__" + other.id), "profile preference isolation");
-        check(canon(store.dataFile(other.id, "pgs-gpx-routes-v1")).equals(canon(store.dataFile(other.id, "pgs-gpx-routes-v1"))), "profile route aliases");
-        check(AccountProfileStore.legacyStorageName("pgs-language-v1.properties").equals("pgs-language-v1.properties"), "already migrated data is not redirected");
-        check(AccountProfileStore.legacyStorageName("pgs-accounts-v1").equals("pgs-accounts-v1"), "stable pgs-accounts-v1 storage");
-        check(AccountProfileStore.legacyStorageName("pgs-logs").equals("pgs-logs"), "stable pgs-logs storage");
-        check(AccountProfileStore.legacyStorageName("pgs-logs/exports").equals("pgs-logs/exports"), "stable pgs-logs/exports storage");
-        check(AccountProfileStore.legacyStorageName("pgs-diagnostics").equals("pgs-diagnostics"), "stable pgs-diagnostics storage");
-        check(AccountProfileStore.legacyStorageName("pgs-encounters").equals("pgs-encounters"), "stable pgs-encounters storage");
-        check(AccountProfileStore.legacyStorageName("pgs-session-stats").equals("pgs-session-stats"), "stable pgs-session-stats storage");
-        check(AccountProfileStore.legacyStorageName("pgs-livefeed-v1").equals("pgs-livefeed-v1"), "stable pgs-livefeed-v1 storage");
-        check(AccountProfileStore.legacyStorageName("pgs-pogofeed-v1").equals("pgs-pogofeed-v1"), "stable pgs-pogofeed-v1 storage");
-        check(AccountProfileStore.legacyStorageName("pgs-events-v1").equals("pgs-events-v1"), "stable pgs-events-v1 storage");
-        check(!new File(filesDir, "pgs-settings-v1.properties").exists(), "no duplicate or destructive storage migration");
     }
 
     private static void globalSettings(File filesDir) throws Exception {

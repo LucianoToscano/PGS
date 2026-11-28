@@ -4,7 +4,7 @@
 // Battery usage. Transport string slot 20 carries "B2|<low resolution>|<20 fps>|<low quality>|<black
 // screen>" (each 0 or 1). While a setting is on, this module keeps the game's Unity graphics at the lower
 // value, re-applied every few seconds because the game sets some of them itself:
-//   black screen:   The PGS black screen covers the game, so a 0.25 render scale (frame rate kept);
+//   black screen:   PGS's black screen covers the game, so a 0.25 render scale (frame rate kept);
 //   low resolution: the URP asset's renderScale at most 0.5 (the 3D view is drawn smaller, then scaled up);
 //   20 fps:         Application.targetFrameRate 20 (the game's own default is 30 on Android);
 //   low quality:    no fog, HDR, opaque-texture copy, MSAA or URP shadows (zero shadow distance),

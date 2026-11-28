@@ -117,7 +117,7 @@ public class AccountProfiles {
  public static java.io.File directory;
  public static void init(android.app.Application app){}
  public static boolean allowed(){return true;}
- public static java.io.File file(android.app.Application app,String name){return new java.io.File(directory==null?app.getFilesDir():directory,AccountProfileStore.legacyStorageName(name));}
+ public static java.io.File file(android.app.Application app,String name){return new java.io.File(directory==null?app.getFilesDir():directory,name);}
  public static String command(){return "";}
  public static String[] commandSnapshot(){return new String[]{"", "0"};}
  public static void identity(String id,String name){}
@@ -248,7 +248,7 @@ class ControlJavaTests(unittest.TestCase):
                 source.write_text(text, encoding='utf-8')
                 sources.append(source)
             sources.extend(ROOT / 'src/dev/pgs' / name for name in (
-                'Control.java', 'AccountProfileStore.java', 'MapCatchStatus.java', 'MotionEngine.java', 'LocationState.java', 'GameRoutesController.java',
+                'Control.java', 'MapCatchStatus.java', 'MotionEngine.java', 'LocationState.java', 'GameRoutesController.java',
                 'CameraHeadingState.java', 'CameraSteering.java', 'JoystickVisibilityState.java',
                 'BerryPriority.java', 'MapTapSequence.java', 'CooldownState.java', 'LanguagePrefs.java', 'I18n.java',
                 'VgpController.java', 'CatchOutcomeController.java', 'SettingsWriter.java', 'SmartCatchPreferences.java', 'GymAutomationPreferences.java', 'BuddyEmotionPreferences.java', 'ResearchPreferences.java'))

@@ -223,7 +223,7 @@ char* type_name(void* type){
     size_t n=strlen(name)+1;char* copy=static_cast<char*>(malloc(n));assert(copy);memcpy(copy,name,n);return copy;
 }
 void type_free(void* p){free(p);}
-int resolve_class(const PgsMetaClassQuery* q,PgsMetaClassResult* out){
+int resolve_class(const PGS_MetaClassQuery* q,PGS_MetaClassResult* out){
     assert(q&&out);
     if(!strcmp(q->name_space,"Holoholo.Rpc")&&!strcmp(q->name,"EvolvePokemonOutProto"))out->klass=&response_class;
     else if(!strcmp(q->name_space,"Holoholo.Rpc")&&!strcmp(q->name,"PokemonProto"))out->klass=&evolved_class;
@@ -231,7 +231,7 @@ int resolve_class(const PgsMetaClassQuery* q,PgsMetaClassResult* out){
     else return -1;
     out->version=1;out->size=sizeof(*out);return 0;
 }
-int sample(PgsRuntimeTransportSample* out){
+int sample(PGSRuntimeTransportSample* out){
     *out={};out->snapshot_fresh=fresh;out->fault=fault;
     out->snapshot_seq=100+(sequence_change?sample_count:0);++sample_count;return 0;
 }
@@ -258,7 +258,7 @@ int poll(void* promise,uint32_t phase,uint64_t tid,PgsVgpResultsResult* out){
 }
 PgsRuntimeTransportApi transport{};
 PgsVgpResultsApi results{1,sizeof(PgsVgpResultsApi),nullptr,poll,nullptr};
-PgsMetaApi metadata{};
+PGS_MetaApi metadata{};
 
 void fixture(){
     assert(roots.empty());next_handle=1;allocations=frees=polls=0;events.clear();

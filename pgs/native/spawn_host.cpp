@@ -66,7 +66,7 @@ int tick(uint64_t tid){
  if(stopping){disable();return PGS_SPAH_STOPPED;}if(!installed){int rc=prepare(tid);if(rc)return rc;}
  if(tid!=owner_tid.load()||!thread_current||!reinterpret_cast<void*(*)()>(thread_current)())return PGS_SPAH_OFF_OWNER;
  ++ticks;auto t=now();if(!t){fault(PGS_SPAH_UNAVAILABLE);return PGS_SPAH_UNAVAILABLE;}
- if(flags&PGS_SPAH_TRANSPORT){auto tr=transport();PgsRuntimeTransportSample a{},b{};int allowed=0,enabled=0;
+ if(flags&PGS_SPAH_TRANSPORT){auto tr=transport();PGSRuntimeTransportSample a{},b{};int allowed=0,enabled=0;
   bool coherent=tr&&!tr->sample(&a)&&a.snapshot_fresh&&!a.fault&&!tr->get_bool(27,&allowed)&&!tr->get_bool(28,&enabled)&&!tr->sample(&b)&&b.snapshot_fresh&&!b.fault&&a.snapshot_seq==b.snapshot_seq;
   PgsSpawnHostOptions p{1,sizeof(p),uint32_t(coherent&&enabled==1),uint32_t(coherent&&allowed==1),coherent?100u:0u,0};update(&p);
  }
@@ -83,7 +83,7 @@ int tick(uint64_t tid){
 }
 int sample(PgsSpawnHostSample *s){if(!s)return PGS_SPAH_BAD_CONFIG;pgs_spawn_snapshot v{};auto l=leaf();if(l&&l->sample)l->sample(&v);*s={1,sizeof(*s),uint32_t(configured.load()),uint32_t(installed.load()),uint32_t(stopping.load()),uint32_t(ready.load()),error.load(),leaf_error.load(),owner_tid.load(),ticks.load(),v.original,v.effective,v.count};return 0;}
 int next(PgsSpawnHostEvent *e){if(!e)return PGS_SPAH_BAD_CONFIG;std::lock_guard<std::mutex> lock(event_mutex);if(!count){*e={};return PGS_SPAH_EMPTY;}*e=events[head];head=(head+1)%32;--count;return 0;}
-void pulse(void*,const PgsUnityPulse *p){if(!p||p->reserved||p->tid<=0)return;auto a=static_cast<const PgsUnitySchedulerApi*>(pgs_unity_scheduler_api(2));if(a&&a->valid(p->generation)==1)tick(p->tid);}
+void pulse(void*,const PGSUnityPulse *p){if(!p||p->reserved||p->tid<=0)return;auto a=static_cast<const PgsUnitySchedulerApi*>(pgs_unity_scheduler_api(2));if(a&&a->valid(p->generation)==1)tick(p->tid);}
 const PgsSpawnHostApi api{1,sizeof(api),configure,update,tick,stop,sample,next,pulse};
 }
 extern "C" const void *pgs_spawn_host_api(uint32_t version){return version==1?&api:nullptr;}

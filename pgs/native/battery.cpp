@@ -34,10 +34,10 @@ constexpr float kDarkRenderScale=0.25f;
 uint64_t clock_ms(){timespec t{};clock_gettime(CLOCK_BOOTTIME,&t);return uint64_t(t.tv_sec)*1000+t.tv_nsec/1000000;}
 template<class F>F fn(const void *p){require(p,"missing runtime export");return reinterpret_cast<F>(const_cast<void*>(p));}
 void *klass(void *o){require(o,"null object");return fn<void*(*)(void*)>(boot.runtime.object_get_class)(o);}
-const PgsMetaApi *metadata(){const auto *api=static_cast<const PgsMetaApi*>(pgs_runtime_metadata_api(1));require(api&&api->resolve_class&&api->validate_method,"metadata API");return api;}
+const PGS_MetaApi *metadata(){const auto *api=static_cast<const PGS_MetaApi*>(pgs_runtime_metadata_api(1));require(api&&api->resolve_class&&api->validate_method,"metadata API");return api;}
 void *cls(const char *ns,const char *name){
- PgsMetaClassQuery q{};q.version=1;q.size=sizeof(q);q.name_space=ns;q.name=name;q.canonical_match=PGS_MD_MATCH_EXACT;
- PgsMetaClassResult out{};require(metadata()->resolve_class(&q,&out)==0,name);return const_cast<void*>(out.klass);
+ PGS_MetaClassQuery q{};q.version=1;q.size=sizeof(q);q.name_space=ns;q.name=name;q.canonical_match=PGS_MD_MATCH_EXACT;
+ PGS_MetaClassResult out{};require(metadata()->resolve_class(&q,&out)==0,name);return const_cast<void*>(out.klass);
 }
 void *method(void *k,const char *name,int count){
  void *m=fn<void*(*)(void*,const char*,int)>(boot.meta.class_get_method_from_name)(k,name,count);require(m,name);
@@ -54,7 +54,7 @@ void event(const std::string &message){
 struct Config {bool res=false,fps=false,quality=false,dark=false;};
 // "B2|r|f|q|d"; anything malformed or stale means everything off (the game's values come back).
 Config configured(){
- Config c;auto tr=transport();PgsRuntimeTransportSample a{};char s[16]{};uint32_t n=0;
+ Config c;auto tr=transport();PGSRuntimeTransportSample a{};char s[16]{};uint32_t n=0;
  if(!tr||tr->sample(&a)||!a.snapshot_fresh||a.fault||tr->get_string(20,s,sizeof(s)-1,&n)||n!=10)return c;
  if(std::memcmp(s,"B2|",3)||s[4]!='|'||s[6]!='|'||s[8]!='|')return c;
  for(int i:{3,5,7,9})if(s[i]!='0'&&s[i]!='1')return c;
@@ -102,10 +102,10 @@ void install_hooks(){
  for(const Target &t:targets){
   try{
    require(boot.module_base,"il2cpp module");
-   PgsMetaMethodQuery q{};q.version=1;q.size=sizeof(q);q.owner=cls(t.ns,t.owner);q.name=t.name;
+   PGS_MetaMethodQuery q{};q.version=1;q.size=sizeof(q);q.owner=cls(t.ns,t.owner);q.name=t.name;
    q.return_type="System.Void";q.return_match=PGS_MD_MATCH_EXACT;q.param_count=t.params;
    q.expected_code=static_cast<const char*>(boot.module_base)+t.rva;q.prologue=t.prologue;q.prologue_len=24;
-   PgsMetaMethodResult r{};const int rc=metadata()->validate_method(&q,&r);
+   PGS_MetaMethodResult r{};const int rc=metadata()->validate_method(&q,&r);
    if(rc!=0||!r.code){missing+=std::string(missing.empty()?"":", ")+kStepNames[t.step]+" (code "+std::to_string(rc)+")";continue;}
    void *o=nullptr;
    if(pgs_hook(const_cast<void*>(r.code),t.replacement,&o)!=0||!o){missing+=std::string(missing.empty()?"":", ")+kStepNames[t.step]+" (hook)";continue;}

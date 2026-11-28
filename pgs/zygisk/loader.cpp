@@ -103,7 +103,7 @@ public:
         }
         int dir = api_->getModuleDir();
         if (dir >= 0 && faccessat(dir, "pgs/injection-off", F_OK, 0) == 0) {
-            LOGI("PGS switched off (injection-off marker present); skipping injection for this launch");
+            LOGI("PGS switched off (pgs/injection-off present); skipping injection for this launch");
             target_ = false;
             return;
         }

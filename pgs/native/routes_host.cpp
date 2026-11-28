@@ -611,7 +611,7 @@ std::mutex g_event_mutex;
 bool g_configured = false;
 bool g_use_bootstrap_only = false;
 PgsRoutesHostConfig g_cfg{};
-PgsMetaExports g_cfg_meta_exports{};
+PGS_MetaExports g_cfg_meta_exports{};
 
 std::atomic<bool> g_meta_ready{false};
 std::atomic<bool> g_services_ready{false};
@@ -677,8 +677,8 @@ const PgsRoutesTrackingApi *tracking_api() {
 const PgsRoutesMetadataApi *routes_meta_api() {
   return static_cast<const PgsRoutesMetadataApi *>(pgs_routes_metadata_api(1));
 }
-const PgsMetaApi *runtime_meta_api() {
-  return static_cast<const PgsMetaApi *>(pgs_runtime_metadata_api(1));
+const PGS_MetaApi *runtime_meta_api() {
+  return static_cast<const PGS_MetaApi *>(pgs_runtime_metadata_api(1));
 }
 const PgsBootApi *bootstrap_api() {
   return static_cast<const PgsBootApi *>(pgs_runtime_bootstrap_api(1));
@@ -859,7 +859,7 @@ void emit_simple_reason_event(uint32_t kind, const char *reason) {
 struct EffectiveBindings {
   const void *module_base = nullptr;
   uint64_t module_size = 0;
-  PgsMetaExports meta{};
+  PGS_MetaExports meta{};
   pgs_meta_seg_fn seg_query = nullptr;
   void *seg_ctx = nullptr;
   void *runtime_invoke = nullptr;
@@ -893,7 +893,7 @@ struct EffectiveBindings {
 
 bool resolve_effective_bindings(EffectiveBindings *out, std::string *err_reason) {
   PgsRoutesHostConfig local_cfg{};
-  PgsMetaExports local_meta{};
+  PGS_MetaExports local_meta{};
   bool configured = false;
   bool boot_only = false;
   {
@@ -995,7 +995,7 @@ bool resolve_effective_bindings(EffectiveBindings *out, std::string *err_reason)
   return true;
 }
 
-bool validate_hook_code(const PgsMetaApi *md, const EffectiveBindings &eb, const void *method_info,
+bool validate_hook_code(const PGS_MetaApi *md, const EffectiveBindings &eb, const void *method_info,
                         uint64_t rva, const unsigned char *prefix, uint32_t prefix_len,
                         const void **out_addr, const char *label, std::string *err_reason) {
   const uintptr_t base = reinterpret_cast<uintptr_t>(eb.module_base);
@@ -1015,7 +1015,7 @@ bool validate_hook_code(const PgsMetaApi *md, const EffectiveBindings &eb, const
     return false;
   }
   if (!g_leaves_installed) {
-    PgsMetaCodeQuery q{};
+    PGS_MetaCodeQuery q{};
     q.version = 1;
     q.size = sizeof(q);
     q.address = addr;
@@ -1074,7 +1074,7 @@ bool validate_observer_hook_shape(const EffectiveBindings &eb, const void *metho
   return true;
 }
 
-void install_tracking_diagnostics(const PgsMetaApi *md, const EffectiveBindings &eb,
+void install_tracking_diagnostics(const PGS_MetaApi *md, const EffectiveBindings &eb,
                                   const PgsRoutesMetadataOutput &meta_out) {
   const auto *trk = tracking_api();
   if (!trk || trk->version != 1 || trk->size != sizeof(PgsRoutesTrackingApi) || !trk->install || !trk->installed) {
@@ -1156,7 +1156,7 @@ void install_tracking_diagnostics(const PgsMetaApi *md, const EffectiveBindings 
     return;
   }
   if (!eb.seg_query) {
-    PgsMetaCodeQuery rq{};
+    PGS_MetaCodeQuery rq{};
     rq.version = 1;
     rq.size = sizeof(rq);
     rq.address = eb.resolve_icall;
@@ -1229,7 +1229,7 @@ bool init_metadata_and_leaves(uint64_t tid, std::string *err_reason) {
   const auto *svc = services_api();
   const auto *obs = observers_api();
   if (!rmd || rmd->version != 1 || rmd->size != sizeof(PgsRoutesMetadataApi) || !rmd->resolve ||
-      !md || md->version != 1 || md->size != sizeof(PgsMetaApi) ||
+      !md || md->version != 1 || md->size != sizeof(PGS_MetaApi) ||
       !act || act->version != 1 || act->size != sizeof(PgsRoutesActionsApi) || !act->install ||
       !dsc || dsc->version != 1 || dsc->size != sizeof(PgsRoutesDiscoveryApi) || !dsc->install ||
       !svc || svc->version != 1 || svc->size != sizeof(PgsRoutesServicesApi) || !svc->install ||
@@ -1922,7 +1922,7 @@ int api_configure(const PgsRoutesHostConfig *config) {
       cmp_b.meta_exports = nullptr;
       bool meta_same = (config->meta_exports == nullptr && g_cfg.meta_exports == nullptr) ||
                        (config->meta_exports != nullptr && g_cfg.meta_exports != nullptr &&
-                        std::memcmp(config->meta_exports, &g_cfg_meta_exports, sizeof(PgsMetaExports)) == 0);
+                        std::memcmp(config->meta_exports, &g_cfg_meta_exports, sizeof(PGS_MetaExports)) == 0);
       if (std::memcmp(&cmp_a, &cmp_b, sizeof(PgsRoutesHostConfig)) == 0 && meta_same) return PGS_RH_OK;
     }
     return PGS_RH_ERR_RECONFIG;
@@ -2383,7 +2383,7 @@ int api_sample(PgsRoutesHostSample *out) {
   return PGS_RH_OK;
 }
 
-void api_on_unity_pulse(void *, const PgsUnityPulse *pulse) {
+void api_on_unity_pulse(void *, const PGSUnityPulse *pulse) {
   if (!pulse || pulse->tid <= 0) return;
   api_tick(static_cast<uint64_t>(pulse->tid));
 }

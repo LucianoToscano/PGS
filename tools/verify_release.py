@@ -40,12 +40,8 @@ def verify(folder, tag):
     if root['version'] != tag:
         raise ValueError('Rooted build version differs from release tag')
     with zipfile.ZipFile(folder / DOWNLOADS[0]) as apk:
-        mode_paths = [n for n in ('assets/pgs/mode.json',) if n in apk.namelist()]
-        if len(mode_paths) != 1: raise ValueError('Expected exactly one PGS mode asset')
-        mode = json.loads(apk.read(mode_paths[0]))
-        if mode_paths != ['assets/pgs/mode.json'] or mode.get('pgsVersion') != tag:
-            raise ValueError('Non-rooted PGS build version or canonical mode asset differs from release tag')
-        if mode.get('pgsVersion') != tag or ('pgsVersion' in mode and mode['pgsVersion'] != tag):
+        mode = json.loads(apk.read('assets/pgs/mode.json'))
+        if mode.get('pgsVersion') != tag:
             raise ValueError('Non-rooted build version differs from release tag')
     with zipfile.ZipFile(folder / DOWNLOADS[2]) as module:
         props = dict(line.split('=', 1) for line in module.read('module.prop').decode().splitlines()

@@ -1,4 +1,5 @@
-/* Export primary PGS factory; hide all others. */
+/* Linker version script: export only the JNI entry point and the C API factory.
+ * Everything else (Dobby internals, policy state, JNI thunks) stays local/hidden. */
 {
   global:
     JNI_OnLoad;

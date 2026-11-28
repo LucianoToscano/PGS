@@ -68,7 +68,7 @@ bool species_list(const std::string &text,int32_t *ids,uint32_t &count){
 }
 bool read_config(std::string &text,PgsSmartSettings &settings){
  const auto *t=static_cast<const PgsRuntimeTransportApi*>(pgs_runtime_transport_api(1));
- PgsRuntimeTransportSample sample{};sample.version=1;sample.size=sizeof(sample);
+ PGSRuntimeTransportSample sample{};sample.version=1;sample.size=sizeof(sample);
  char buf[PGS_SMART_CONFIG_MAX+1];uint32_t len=0;int allowed=0;
  if(!t||t->sample(&sample)!=0||!sample.snapshot_fresh||sample.fault||
     t->get_bool(36,&allowed)!=0||!allowed||t->get_string(7,buf,sizeof(buf),&len)!=0||len>PGS_SMART_CONFIG_MAX)return false;

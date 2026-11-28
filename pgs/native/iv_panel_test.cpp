@@ -43,7 +43,7 @@ void *next_method(const void *,void **iterator) {
 const char *method_name(void *value) { return static_cast<Method*>(value)->name; }
 const void *method_param(void *,unsigned index) { return index==0?"System.Type":"System.Boolean"; }
 char *type_name(const void *value) { return strdup(static_cast<const char*>(value)); }
-int resolve(const PgsMetaClassQuery *query,PgsMetaClassResult *out) {
+int resolve(const PGS_MetaClassQuery *query,PGS_MetaClassResult *out) {
  if (!std::strcmp(query->name,"Canvas")) out->klass=&canvas_class;
  else if (!std::strcmp(query->name,"Component")) out->klass=&component_class;
  else if (!std::strcmp(query->name,"GameObject")) out->klass=&game_object_class;
@@ -51,7 +51,7 @@ int resolve(const PgsMetaClassQuery *query,PgsMetaClassResult *out) {
  else return -1;
  return 0;
 }
-PgsMetaApi metadata{};
+PGS_MetaApi metadata{};
 Object *go(Object *o) { return o->game_object?o->game_object:o; }
 void *managed(void *value,void *self,void **args,void **exception) {
  *exception=nullptr;const char *name=static_cast<Method*>(value)->name;

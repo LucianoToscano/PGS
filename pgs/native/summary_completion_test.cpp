@@ -17,7 +17,7 @@
 // controller against a fake managed heap (gui/state/response/action objects, field reads, a static
 // op_Implicit "alive" probe that returns a boxed System.Boolean, and a GuiController.Dismiss() that
 // advances currentState and can throw or re-enter). The module installs NO hook and NEVER calls back
-// into JS. The coordinator builds and runs this against libpgs-core.so after registering query_feature
+// into JS. The coordinator builds and runs this against libpgs.so after registering query_feature
 // case 36 and linking summary_completion.cpp.
 
 namespace {
@@ -192,7 +192,7 @@ int vok(PgsSummaryCompletionRequest r) { return g_api->validate(&r); }
 }  // namespace
 
 int main(int argc, char **argv) {
-  const char *so_path = argc > 1 ? argv[1] : "./libpgs-core.so";
+  const char *so_path = argc > 1 ? argv[1] : "./libpgs.so";
   void *lib = ::dlopen(so_path, RTLD_NOW | RTLD_LOCAL);
   if (!lib) { std::fprintf(stderr, "dlopen(%s) failed: %s\n", so_path, ::dlerror()); return 1; }
   auto getter = reinterpret_cast<GetApiFn>(::dlsym(lib, "pgs_native_api"));

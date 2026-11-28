@@ -192,7 +192,7 @@ TransportPermission read_permission() {
     const PgsRuntimeTransportApi* tr = transport();
     if (!tr || !tr->sample || !tr->get_string || !tr->get_bool || !tr->get_double) return p;
 
-    PgsRuntimeTransportSample a{}, z{};
+    PGSRuntimeTransportSample a{}, z{};
     if (tr->sample(&a) != 0 || !a.snapshot_fresh || a.fault) return p;
 
     char raw[1280]{};
@@ -513,15 +513,15 @@ void* resolve_class_optional(const char* ns, const char* name) {
     auto it = cache.find(key);
     if (it != cache.end()) return it->second;
 
-    const auto* api = static_cast<const PgsMetaApi*>(pgs_runtime_metadata_api(1));
+    const auto* api = static_cast<const PGS_MetaApi*>(pgs_runtime_metadata_api(1));
     require(api != nullptr, "metadata API unavailable");
-    PgsMetaClassQuery q{};
+    PGS_MetaClassQuery q{};
     q.version = 1;
     q.size = sizeof(q);
     q.name_space = ns;
     q.name = name;
     q.canonical_match = PGS_MD_MATCH_EXACT;
-    PgsMetaClassResult out{};
+    PGS_MetaClassResult out{};
     if (api->resolve_class(&q, &out) != 0 || !out.klass) {
         return nullptr;
     }

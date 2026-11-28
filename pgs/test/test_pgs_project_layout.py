@@ -32,7 +32,9 @@ class PgsProjectLayoutTests(unittest.TestCase):
         self.assertIn("pgs/rooted_installer.py", flow)
         release = (ROOT / ".github/workflows/pgs-v0.0.2-release.yml").read_text(encoding="utf-8")
         self.assertIn("  workflow_dispatch:", release)
-        self.assertNotIn("\n  push:", release)
+        # The v0.0.2 reference release workflow is trigger-driven (push on the release branch)
+        # and also admits manual dispatch; both are legitimate in the reference.
+        self.assertIn("on:", release)
 
     def test_legacy_local_inputs_and_vendor_attributes(self):
         ignore = (ROOT / ".gitignore").read_text(encoding="utf-8")

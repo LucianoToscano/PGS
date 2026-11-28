@@ -203,7 +203,7 @@ struct PgsCameraMetaExtra {
 
 struct PgsCameraMetaConfig {
   uint32_t version, size;               // 0..7    (1, 112)
-  PgsMetaBindConfig binding;            // 8..71   (64 bytes, feature 47 bind config)
+  PGS_MetaBindConfig binding;            // 8..71   (64 bytes, feature 47 bind config)
   void *thread_current;                 // 72..79  mandatory (il2cpp_thread_current)
   uint64_t owner_tid;                   // 80..87  gettid() of attached caller thread
   const void *domain;                   // 88..95  optional explicit domain (null -> domain_get())

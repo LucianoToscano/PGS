@@ -51,14 +51,14 @@ __attribute__((noinline)) void *fixture_convert(const void *method,void *object,
  if(exception)*exception=(method!=&execute_token||managed_exception)?&exception_token:nullptr;
  return (method!=&execute_token||unexpected_result)?&result_token:nullptr;
 }
-void begin(void *,const PgsUnityPulse *p){
+void begin(void *,const PGSUnityPulse *p){
  assert(api3->executing_generation(gettid())==0);
  assert(p->generation==generation&&p->tid==gettid()&&attached&&p->reserved==0);
  assert(api->valid(p->generation)==1);++begins;order.push_back(1);
  if(nested_callback){nested_callback=false;void *e=nullptr;assert(call_invoke(&execute_token,nullptr,nullptr,&e)==nullptr);assert(e==nullptr);}
  if(revoke_callback){revoke_callback=false;assert(api->revoke(p->generation)==0);}
 }
-void end(void *,const PgsUnityPulse *p){assert(api3->executing_generation(gettid())==0);assert(api->valid(p->generation)==1);++ends;order.push_back(2);}
+void end(void *,const PGSUnityPulse *p){assert(api3->executing_generation(gettid())==0);assert(api->valid(p->generation)==1);++ends;order.push_back(2);}
 void invoke(){void *e=nullptr;assert(call_invoke(&execute_token,nullptr,nullptr,&e)==nullptr);assert(e==nullptr);}
 }
 int main(int argc,char **argv){

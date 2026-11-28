@@ -10,8 +10,8 @@ using namespace pgs_quickball_schema;
 
 std::mutex g_resolving;
 
-const PgsMetaApi *metadata() {
-  return static_cast<const PgsMetaApi *>(pgs_runtime_metadata_api(1));
+const PGS_MetaApi *metadata() {
+  return static_cast<const PGS_MetaApi *>(pgs_runtime_metadata_api(1));
 }
 
 bool attached(const PgsQuickballMetaConfig &c) {
@@ -58,9 +58,9 @@ int decode_hex(const char *hex, unsigned char *out, int cap) {
 }
 
 // Validate one schema method (signature + optional pinned code address + prologue) via feature47.
-int validate_method(const PgsMetaApi *md, const PgsQuickballMetaConfig &c, const MethodSpec &s,
+int validate_method(const PGS_MetaApi *md, const PgsQuickballMetaConfig &c, const MethodSpec &s,
                     const void *owner, const void **out, const void **code_out) {
-  PgsMetaMethodQuery q{};
+  PGS_MetaMethodQuery q{};
   q.version = 1;
   q.size = sizeof(q);
   q.owner = owner;
@@ -88,7 +88,7 @@ int validate_method(const PgsMetaApi *md, const PgsQuickballMetaConfig &c, const
     q.prologue = prologue;
     q.prologue_len = static_cast<uint32_t>(len);
   }
-  PgsMetaMethodResult r{};
+  PGS_MetaMethodResult r{};
   int rc = md->validate_method(&q, &r);
   if (rc) return rc;
   // TryCapture return must match /^Niantic\.Promises\.IPromise(?:`1)?<Holoholo\.Rpc\.CatchPokemonOutProto>$/.
@@ -105,9 +105,9 @@ int validate_method(const PgsMetaApi *md, const PgsQuickballMetaConfig &c, const
   return 0;
 }
 
-int validate_field(const PgsMetaApi *md, const FieldSpec &s, const void *owner, const void **out,
+int validate_field(const PGS_MetaApi *md, const FieldSpec &s, const void *owner, const void **out,
                    const void **type_class) {
-  PgsMetaFieldQuery q{};
+  PGS_MetaFieldQuery q{};
   q.version = 1;
   q.size = sizeof(q);
   q.owner = owner;
@@ -119,7 +119,7 @@ int validate_field(const PgsMetaApi *md, const FieldSpec &s, const void *owner, 
   q.value_size = s.value_size;
   q.type_name = s.type_name;
   q.type_match = s.type_name ? PGS_MD_MATCH_EXACT : PGS_MD_MATCH_ANY;
-  PgsMetaFieldResult r{};
+  PGS_MetaFieldResult r{};
   int rc = md->validate_field(&q, &r);
   if (!rc) { *out = r.field; if (type_class) *type_class = r.type_class; }
   return rc;
@@ -169,9 +169,9 @@ const void *add_off(const void *p, uint64_t off) {
   return reinterpret_cast<const void *>(a + off);
 }
 
-bool code_readable(const PgsMetaApi *md, const void *addr, uint64_t len) {
+bool code_readable(const PGS_MetaApi *md, const void *addr, uint64_t len) {
   if (!addr) return false;
-  PgsMetaCodeQuery q{};
+  PGS_MetaCodeQuery q{};
   q.version = 1;
   q.size = sizeof(q);
   q.address = addr;
@@ -179,9 +179,9 @@ bool code_readable(const PgsMetaApi *md, const void *addr, uint64_t len) {
   return md->validate_code(&q) == 0;
 }
 
-bool code_words(const PgsMetaApi *md, const void *addr, const uint32_t *words, uint32_t count) {
+bool code_words(const PGS_MetaApi *md, const void *addr, const uint32_t *words, uint32_t count) {
   if (!addr || !words || !count) return false;
-  PgsMetaCodeQuery q{};
+  PGS_MetaCodeQuery q{};
   q.version = 1;
   q.size = sizeof(q);
   q.address = addr;
@@ -191,7 +191,7 @@ bool code_words(const PgsMetaApi *md, const void *addr, const uint32_t *words, u
   return md->validate_code(&q) == 0;
 }
 
-const void *branch_target(const PgsMetaApi *md, const void *addr) {
+const void *branch_target(const PGS_MetaApi *md, const void *addr) {
   if (!code_readable(md, addr, 4)) return nullptr;
   uint32_t word = *reinterpret_cast<const uint32_t *>(addr);
   if ((word >> 26) != 5u) return nullptr;  // AArch64 B imm26, never BL or indirect
@@ -215,7 +215,7 @@ const void *branch_target(const PgsMetaApi *md, const void *addr) {
 
 // pointerHandleAbi (prepare lines 109..140): read-only code fingerprint of il2cpp_gchandle_new /
 // _get_target / _free. No GC handle is created.
-bool pointer_handle_abi(const PgsMetaApi *md, const PgsQuickballExtra *ex) {
+bool pointer_handle_abi(const PGS_MetaApi *md, const PgsQuickballExtra *ex) {
   if (!code_words(md, ex->gchandle_new, kGcCreateWords, kGcCreateWordCount)) return false;
   const void *create_body = branch_target(md, add_off(ex->gchandle_new, kGcCreateBranchOff));
   const void *get_body = branch_target(md, ex->gchandle_get_target);
@@ -386,7 +386,7 @@ int resolve(const PgsQuickballMetaConfig *input, PgsQuickballMetaOutput *out) {
     return PGS_MD_ERR_CODE_RANGE;
   if (!attached(c)) return -30;
   const auto *md = metadata();
-  if (!md || md->version != 1 || md->size != sizeof(PgsMetaApi)) return -31;
+  if (!md || md->version != 1 || md->size != sizeof(PGS_MetaApi)) return -31;
 
   if (!c.binding.seg_query) {
     // Frida reports a page-rounded mapping; the compiled resolver reports the PT_LOAD extent. Bind
@@ -418,14 +418,14 @@ int resolve(const PgsQuickballMetaConfig *input, PgsQuickballMetaOutput *out) {
   for (uint32_t i = 0; i < kClassCount; i++) {
     if (!attached(c)) return -30;
     const auto &s = kClasses[i];
-    PgsMetaClassQuery q{};
+    PGS_MetaClassQuery q{};
     q.version = 1;
     q.size = sizeof(q);
     q.name_space = s.name_space;
     q.name = s.name;
     q.canonical = s.canonical;
     q.canonical_match = PGS_MD_MATCH_EXACT;
-    PgsMetaClassResult r{};
+    PGS_MetaClassResult r{};
     rc = md->resolve_class(&q, &r);
     if (!rc) {
       result.classes[i] = r.klass;
@@ -487,7 +487,7 @@ int resolve(const PgsQuickballMetaConfig *input, PgsQuickballMetaOutput *out) {
       if (len <= 0) return -32;
       const uintptr_t b = reinterpret_cast<uintptr_t>(c.binding.module_base);
       if (b > UINTPTR_MAX - kCallerCheckRva) return -33;
-      PgsMetaCodeQuery code{};
+      PGS_MetaCodeQuery code{};
       code.version = 1;
       code.size = sizeof(code);
       code.address = reinterpret_cast<const void *>(b + kCallerCheckRva);

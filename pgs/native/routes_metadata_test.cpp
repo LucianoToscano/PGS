@@ -99,13 +99,13 @@ bool assignable(void *,void *){return false;}
 void *enumerate(void *,void **){return nullptr;}
 void *declaring(void *){return nullptr;}
 void *thread_current(){++thread_checks;return attached&&(!detach_at||thread_checks<detach_at)?&thread_token:nullptr;}
-int segment(void *,const void *address,uint64_t length,PgsMetaSegment *out){
+int segment(void *,const void *address,uint64_t length,PGS_MetaSegment *out){
  *out={};uintptr_t a=reinterpret_cast<uintptr_t>(address),base=reinterpret_cast<uintptr_t>(module_base);
  if(a<base||a-base>module_size||!length||length>module_size-(a-base))return 0;
  out->found=out->readable=out->host_exec=out->writable=1;out->seg_base=module_base;out->seg_size=module_size;return 0;
 }
-PgsMetaExports exports(){
- PgsMetaExports e{};
+PGS_MetaExports exports(){
+ PGS_MetaExports e{};
  e.domain_get=reinterpret_cast<void *>(domain_get);e.domain_get_assemblies=reinterpret_cast<void *>(domain_assemblies);
  e.assembly_get_image=reinterpret_cast<void *>(assembly_image);e.class_from_name=reinterpret_cast<void *>(class_from_name);
  e.class_get_type=reinterpret_cast<void *>(class_type);e.type_get_name=reinterpret_cast<void *>(type_name);e.mem_free=reinterpret_cast<void *>(mem_free);
@@ -183,8 +183,8 @@ int main(int argc,char **argv){
  auto *core=static_cast<const pgs_native_api_v2 *>(get(2));assert(core&&core->query_feature&&!core->query_feature(53,2));
  api=static_cast<const PgsRoutesMetadataApi *>(core->query_feature(53,1));
  assert(api&&api->version==1&&api->size==24&&api->config_size==88&&api->output_size==504);
- build_fixture();PgsMetaExports e=exports();config.version=1;config.size=sizeof(config);
- config.binding.version=1;config.binding.size=sizeof(PgsMetaBindConfig);config.binding.exports=&e;
+ build_fixture();PGS_MetaExports e=exports();config.version=1;config.size=sizeof(config);
+ config.binding.version=1;config.binding.size=sizeof(PGS_MetaBindConfig);config.binding.exports=&e;
  config.binding.module_base=module_base;config.binding.module_size=module_size;config.binding.seg_query=segment;
  config.thread_current=reinterpret_cast<void *>(thread_current);config.owner_tid=gettid();
  success();success(); // immutable binding and repeated accessor pointer identity

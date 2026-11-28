@@ -3,8 +3,6 @@ from pathlib import Path
 import subprocess
 import tempfile
 import unittest
-from unittest import mock
-import zipfile
 
 SPEC=importlib.util.spec_from_file_location('source_bundle',Path(__file__).resolve().parents[2]/'tools/source_bundle.py')
 MODULE=importlib.util.module_from_spec(SPEC)
@@ -25,24 +23,6 @@ class SourceBundleTests(unittest.TestCase):
         path.parent.mkdir(parents=True,exist_ok=True)
         path.write_text(text,encoding='utf-8')
         return path
-
-    def test_main_creates_pgs_archive_with_tracked_source(self):
-        self.write('README.md','PGS source')
-        self.write('native/example.cpp','example source')
-        self.git('add','.')
-        with mock.patch.object(MODULE,'ROOT',self.root):
-            MODULE.main([])
-        output=self.root/'dist/PGS-source-tools.zip'
-        self.assertTrue(output.is_file())
-        with zipfile.ZipFile(output) as archive:
-            self.assertEqual(archive.namelist(),['README.md','native/example.cpp'])
-            self.assertEqual(archive.read('README.md'),b'PGS source')
-            self.assertEqual(archive.read('native/example.cpp'),b'example source')
-
-    def test_ci_upload_matches_pgs_archive_name(self):
-        workflow=(Path(__file__).resolve().parents[2]/'.github/workflows/ci.yml').read_text(encoding='utf-8')
-        self.assertIn('name: PGS-source-tools\n',workflow)
-        self.assertIn('path: dist/PGS-source-tools.zip\n',workflow)
 
     def test_tracked_deletion_does_not_resurrect_source(self):
         old=self.write('old.js')

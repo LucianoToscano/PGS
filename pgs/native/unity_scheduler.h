@@ -22,7 +22,7 @@ enum PgsUnitySchedulerStatus {
 constexpr uint32_t PGS_US_MAX_SUBSCRIBERS=16;
 using PgsUnityInvoke=void *(*)(const void *,void *,void **,void **);
 using PgsUnityConvert=void *(*)(const void *,void *,void **,int32_t,void **);
-struct PgsUnityPulse {
+struct PGSUnityPulse {
  uint64_t generation, sequence;
  int32_t tid;
  uint32_t reserved;
@@ -37,7 +37,7 @@ struct PgsUnityPulse {
 // They may call managed functions. They MUST NOT throw C++ exceptions or unload
 // code. On revoke, callbacks must test valid(generation) after managed operations
 // before mutation. Revoke prevents subsequent dispatch, not an in-flight action.
-using PgsUnityWork=void (*)(void *,const PgsUnityPulse *);
+using PgsUnityWork=void (*)(void *,const PGSUnityPulse *);
 struct PgsUnitySubscriber { PgsUnityWork begin,end; void *context; };
 struct PgsUnitySchedulerConfig {
  uint32_t version,size;
@@ -113,7 +113,7 @@ struct PgsUnitySchedulerApi4 {
 static_assert(sizeof(PgsUnitySchedulerApi4)==64,"Scheduler inspection ABI4");
 static_assert(sizeof(PgsUnitySchedulerApi3)==56,"Scheduler inspection ABI3");
 static_assert(sizeof(void *)==8,"Scheduler requires LP64");
-static_assert(sizeof(PgsUnityPulse)==24,"Pulse ABI");
+static_assert(sizeof(PGSUnityPulse)==24,"Pulse ABI");
 static_assert(sizeof(PgsUnitySubscriber)==24,"Subscriber ABI");
 static_assert(sizeof(PgsUnitySchedulerConfig)==448,"Config ABI");
 static_assert(sizeof(PgsUnitySchedulerSnapshot)==32,"Snapshot ABI");

@@ -16,7 +16,7 @@ int test_objects[8]{};
 bool test_active = true, test_map = true, test_fresh = true;
 bool test_coordinates = true, test_changing_sequence = false;
 unsigned test_samples = 0;
-int test_sample(PgsRuntimeTransportSample *out) {
+int test_sample(PGSRuntimeTransportSample *out) {
  *out = {};
  out->snapshot_fresh = test_fresh;
  out->snapshot_seq = 100 + (test_changing_sequence ? test_samples : 0);

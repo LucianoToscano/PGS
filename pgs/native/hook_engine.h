@@ -4,7 +4,6 @@
 #include <cstdint>
 // All native modules share Dobby's process-global trampoline registry. Serialize
 // mutations even when independent feature adapters initialize on different threads.
-// PGS-first internal hook API (not part of the public ELF export surface).
 int pgs_hook(void *address, void *replacement, void **original);
 int pgs_unhook(void *address);
 int pgs_instrument(void *address, dobby_instrument_callback_t callback);

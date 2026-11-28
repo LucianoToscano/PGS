@@ -1,7 +1,7 @@
 #pragma once
 #include <stdint.h>
 
-// PGS native module: inventory item catalog + auto-recycle (feature id 14).
+// PGS native migration: inventory item catalog + auto-recycle (feature id 14).
 //
 // Full native port of runtime/features/items.js. The JS factory resolves the single
 // IItemInventoryService through the game's own Map/DiContainer (an optional path), builds

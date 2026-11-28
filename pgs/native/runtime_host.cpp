@@ -41,7 +41,7 @@ const auto wait_host=as<PgsCatchWaitApi>(pgs_catch_wait_api(1));
 const auto spawn=as<PgsSpawnHostApi>(pgs_spawn_host_api(1));
 const auto camera=as<PgsCameraHostApi>(pgs_camera_host_api(1));
 const auto combat=as<PgsCombatHostApi>(pgs_combat_host_api(1));
-const auto account=as<PgsAccountHostApi>(pgs_account_host_api(1));
+const auto account=as<PGSAccountHostApi>(pgs_account_host_api(1));
 const auto interaction=as<PgsInteractionHostApi>(pgs_interaction_host_api(1));
 const auto encounter=as<PgsEncounterHostApi>(pgs_encounter_host_api(1));
 constexpr uint32_t pending_mask=0;
@@ -84,14 +84,14 @@ int verify(const PgsUnitySchedulerConfig *c){
  c->execute_tasks!=b.execute_tasks||c->runtime_invoke!=b.runtime.runtime_invoke||
  c->runtime_invoke_convert_args!=b.runtime.runtime_invoke_convert_args||
  reinterpret_cast<void*>(c->thread_current)!=b.runtime.thread_current)return 0;
- const auto md=as<PgsMetaApi>(pgs_runtime_metadata_api(1));
+ const auto md=as<PGS_MetaApi>(pgs_runtime_metadata_api(1));
  const void *addresses[]={c->runtime_invoke,c->runtime_invoke_convert_args,b.runtime.thread_current};
- for(const void *address:addresses){PgsMetaCodeQuery q{1,sizeof(q),address,4,nullptr,0,0};if(md->validate_code(&q))return 0;}
- if(b.execute_tasks_code){PgsMetaCodeQuery q{1,sizeof(q),b.execute_tasks_code,4,nullptr,0,0};if(md->validate_code(&q))return 0;}
- PgsMetaClassQuery cq{1,sizeof(cq),"UnityEngine","UnitySynchronizationContext","UnityEngine.UnitySynchronizationContext",PGS_MD_MATCH_EXACT,0};
- PgsMetaClassResult klass{};if(md->resolve_class(&cq,&klass))return 0;
- PgsMetaMethodQuery mq{};mq.version=1;mq.size=sizeof(mq);mq.owner=klass.klass;mq.name="ExecuteTasks";mq.return_type="System.Void";mq.return_match=PGS_MD_MATCH_EXACT;mq.is_static=1;
- PgsMetaMethodResult method{};return md->validate_method(&mq,&method)==0&&method.method==b.execute_tasks;
+ for(const void *address:addresses){PGS_MetaCodeQuery q{1,sizeof(q),address,4,nullptr,0,0};if(md->validate_code(&q))return 0;}
+ if(b.execute_tasks_code){PGS_MetaCodeQuery q{1,sizeof(q),b.execute_tasks_code,4,nullptr,0,0};if(md->validate_code(&q))return 0;}
+ PGS_MetaClassQuery cq{1,sizeof(cq),"UnityEngine","UnitySynchronizationContext","UnityEngine.UnitySynchronizationContext",PGS_MD_MATCH_EXACT,0};
+ PGS_MetaClassResult klass{};if(md->resolve_class(&cq,&klass))return 0;
+ PGS_MetaMethodQuery mq{};mq.version=1;mq.size=sizeof(mq);mq.owner=klass.klass;mq.name="ExecuteTasks";mq.return_type="System.Void";mq.return_match=PGS_MD_MATCH_EXACT;mq.is_static=1;
+ PGS_MetaMethodResult method{};return md->validate_method(&mq,&method)==0&&method.method==b.execute_tasks;
 }
 void stop_host(unsigned i){if(!slots[i].configured.load(std::memory_order_acquire))return;
  switch(i){case 0:routes->stop(uint64_t(gettid()));break;case 1:shared->stop();break;case 2:quick->stop();break;case 3:encounter->stop(uint64_t(gettid()));break;case 4:camera->stop("manager-stop");break;case 5:inventory->stop();break;case 6:combat->stop(uint64_t(gettid()));break;case 7:spin->stop();break;case 8:account->stop();break;case 9:interaction->stop("manager-stop");break;case 10:wait_host->stop();break;case 11:spawn->stop();break;}
@@ -157,7 +157,7 @@ void observe(unsigned i){auto &s=slots[i];uint32_t ready=0,cap=0,owned=0;int err
 }
 void wait_tick(bool cleanup){
  const auto tr=as<PgsRuntimeTransportApi>(pgs_runtime_transport_api(1));
- if(!cleanup){PgsRuntimeTransportSample before{},after{};int allowed=0;
+ if(!cleanup){PGSRuntimeTransportSample before{},after{};int allowed=0;
   const bool fresh=!tr->sample(&before)&&before.snapshot_fresh&&!before.fault&&
    !tr->get_bool(25,&allowed)&&!tr->sample(&after)&&after.snapshot_fresh&&!after.fault&&
    before.snapshot_seq==after.snapshot_seq&&before.generation==after.generation;
@@ -179,14 +179,14 @@ void collector_status_key(const PgsEventCollectorState &s,bool stopped,char *jso
     (unsigned long long)s.attempted,(unsigned long long)s.completed,(unsigned long long)s.failed,
     (unsigned long long)s.skipped_encounters,(unsigned long long)s.candy,(unsigned long long)s.rare_candy);
 }
-void pulse(void*,const PgsUnityPulse *p){
+void pulse(void*,const PGSUnityPulse *p){
  if(!p||p->reserved||p->tid!=gettid()||!attached()||p->generation!=generation.load()||scheduler->valid(p->generation)!=1)return;
  if(pulse_busy.test_and_set(std::memory_order_acquire))return;
  struct Clear{~Clear(){pulse_busy.clear(std::memory_order_release);}} clear;
  ++pulses;const uint64_t time=clock_ms();if(!time){fault=-8;stopping=true;}
  {
   const auto tr=as<PgsRuntimeTransportApi>(pgs_runtime_transport_api(1));
-  PgsRuntimeTransportSample before{},after{};int enabled=0,has_lat=0,has_lng=0;
+  PGSRuntimeTransportSample before{},after{};int enabled=0,has_lat=0,has_lng=0;
   double lat=NAN,lng=NAN;
   const bool fresh=!stopping.load()&&!tr->sample(&before)&&before.snapshot_fresh&&!before.fault&&
    !tr->get_bool(39,&enabled)&&!tr->get_double(0,&lat,&has_lat)&&!tr->get_double(1,&lng,&has_lng)&&has_lat&&has_lng&&
@@ -338,7 +338,7 @@ int configure(const PgsRuntimeHostConfig *c){
  PgsBootBinding b{};const auto boot=as<PgsBootApi>(pgs_runtime_bootstrap_api(1));const int status=boot->snapshot(&b);
  if(status){if(status<0)emit_startup("bootstrap",pgs_rtd_boot_reason(status),status,b.detail,false);else emit_startup("bootstrap","not-ready",1,0,false);return status>0?1:status;}
  if(!b.runtime.thread_current||!reinterpret_cast<void*(*)()>(b.runtime.thread_current)()){emit_startup("attach","not-attached",-2,0,false);return -2;}
- PgsRuntimeTransportSample transport{};
+ PGSRuntimeTransportSample transport{};
  if(as<PgsRuntimeTransportApi>(pgs_runtime_transport_api(1))->sample(&transport)!=0){emit_startup("transport","unavailable",1,0,false);return 1;}
  if(transport.fault){emit_startup("transport","faulted",-6,0,false);return -6;}
  if(!transport.snapshot_fresh){emit_startup("transport","stale",1,0,false);return 1;}

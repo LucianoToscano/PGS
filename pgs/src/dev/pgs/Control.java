@@ -1019,7 +1019,7 @@ public final class Control {
         hostApplication=app;
         vgp.setApplication(app);
         try {
-            File dir = new File(app.getFilesDir(), AccountProfileStore.legacyStorageName("pgs-logs"));
+            File dir = new File(app.getFilesDir(), "pgs-logs");
             if (!dir.isDirectory() && !dir.mkdirs()) throw new IOException("Cannot create log folder");
             logFile = new File(dir, new SimpleDateFormat("yyyyMMdd-HHmmss-SSS", Locale.US).format(new Date()) + ".txt");
             log = new PrintWriter(new FileOutputStream(logFile), true);
@@ -1711,8 +1711,8 @@ public final class Control {
     private static void recoverRunLogs(Application app) {
       synchronized(logLock) {
         try {
-            File[] files=new File(app.getFilesDir(),AccountProfileStore.legacyStorageName("pgs-logs")).listFiles((dir,name)->name.endsWith(".txt"));
-            File destination=app.getExternalFilesDir(AccountProfileStore.legacyStorageName("pgs-diagnostics"));
+            File[] files=new File(app.getFilesDir(),"pgs-logs").listFiles((dir,name)->name.endsWith(".txt"));
+            File destination=app.getExternalFilesDir("pgs-diagnostics");
             if(files==null||destination==null)return;
             if(!destination.isDirectory()&&!destination.mkdirs())return;
             java.util.Arrays.sort(files,(a,b)->b.getName().compareTo(a.getName()));
@@ -1733,7 +1733,7 @@ public final class Control {
                     }
                 }
             }
-            synchronized(logLock){pruneLogs(new File(app.getFilesDir(),AccountProfileStore.legacyStorageName("pgs-logs")),logFile,6);}
+            synchronized(logLock){pruneLogs(new File(app.getFilesDir(),"pgs-logs"),logFile,6);}
             pruneLogs(destination,null,6);
             event("log-recovery","Recent run tails saved; retaining six log segments and six diagnostic tails");
         }catch(IOException|RuntimeException error){event("log-recovery-error",error.toString());}

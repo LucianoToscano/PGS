@@ -1127,7 +1127,7 @@ int main(int argc, char **argv) {
         g_execute_mode=4;execute();
         // More events than the diagnostic queue capacity, regularly drained by52.
         for(int n=0;n<300;++n){g_execute_mode=1;execute();g_execute_mode=2;execute();settings(true,true,false);}
-        PgsRuntimeTransportSample ts{};assert(g_transport->sample(&ts)==0&&ts.events_emitted>600&&ts.events_dropped==0&&!ts.fault);
+        PGSRuntimeTransportSample ts{};assert(g_transport->sample(&ts)==0&&ts.events_emitted>600&&ts.events_dropped==0&&!ts.fault);
         assert(drain_all(host).empty());assert(scheduler->revoke(generation)==0);
         call_target_bt_sc0_enter(&g_raid_scope,nullptr,nullptr,nullptr);
         assert(host->sample(&s)==0&&!s.battle_scope_active&&g_live_gc_handles==0);
@@ -1316,7 +1316,7 @@ int main(int argc, char **argv) {
     // --- 8. Scheduler 48 `on_unity_pulse` + `revoke()` + `stop(tid)` Cleanup -------
     assert(host->sample(&s) == PGS_CBH_OK);
     const uint64_t ticks_before = s.ticks;
-    PgsUnityPulse pulse{1, 1, static_cast<int32_t>(tid), 0};
+    PGSUnityPulse pulse{1, 1, static_cast<int32_t>(tid), 0};
     host->on_unity_pulse(nullptr, &pulse);
     assert(host->sample(&s) == PGS_CBH_OK);
     assert(s.ticks == ticks_before + 1);

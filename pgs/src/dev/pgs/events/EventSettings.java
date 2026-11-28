@@ -2,7 +2,6 @@ package dev.pgs.events;
 
 import android.content.Context;
 import android.content.SharedPreferences;
-import dev.pgs.AccountProfileStore;
 
 /** Event preferences are separate from Control; runtime capability is never persisted. */
 public final class EventSettings {
@@ -29,7 +28,7 @@ public final class EventSettings {
     private EventSettings() {}
 
     private static SharedPreferences preferences(Context context) {
-        return context.getApplicationContext().getSharedPreferences(AccountProfileStore.legacyStorageName(FILE), Context.MODE_PRIVATE);
+        return context.getApplicationContext().getSharedPreferences(FILE, Context.MODE_PRIVATE);
     }
 
     // --- Nearby box collector ------------------------------------------------

@@ -1,7 +1,7 @@
 // JNI glue for dev.pgs.NativeCore.
 //
 // RegisterNatives binds validation, owner-thread bootstrap and read-only health methods.
-// The version script publishes JNI_OnLoad, pgs_native_api and its legacy alias.
+// The version script publishes only JNI_OnLoad and pgs_native_api.
 
 #include <jni.h>
 

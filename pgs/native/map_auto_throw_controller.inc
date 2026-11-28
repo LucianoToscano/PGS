@@ -59,7 +59,7 @@ void map_done(const char* phase,const std::string& why,bool remember=false){
 void map_block(const std::string& why){map_done("stopped",why,true);}
 struct MapTapPermission {PgsCatchChanceOptions config;bool foreground=false,coherent=false;};
 MapTapPermission map_permission(){
-    MapTapPermission p;auto tr=transport();PgsRuntimeTransportSample a{},z{};char raw[96]{};uint32_t n=0;int fg=0;
+    MapTapPermission p;auto tr=transport();PGSRuntimeTransportSample a{},z{};char raw[96]{};uint32_t n=0;int fg=0;
     if(!tr||!tr->sample||!tr->get_string||!tr->get_bool||tr->sample(&a)||!a.snapshot_fresh||a.fault)return p;
     if(tr->get_string(15,raw,sizeof(raw),&n)||n>=sizeof(raw)||tr->get_bool(3,&fg))return p;
     if(tr->sample(&z)||!z.snapshot_fresh||z.fault||a.snapshot_seq!=z.snapshot_seq)return p;

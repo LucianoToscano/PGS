@@ -18,9 +18,6 @@ static uintptr_t replacement(uintptr_t) { return 99; }
 namespace padding_check {
 constexpr uintptr_t base = 0x7000000000, begin = base + 0x45fd3a0, end = base + 0xe296c10;
 constexpr PgsPaddingRanges wide = pgs_padding_ranges(begin, end, 16384);
-constexpr PgsPaddingRanges pgsWide = pgs_padding_ranges(begin, end, 16384);
-static_assert(pgsWide.before_lo == wide.before_lo && pgsWide.after_hi == wide.after_hi,
-              "PGS padding aliases must preserve the legacy arithmetic");
 constexpr PgsPaddingRanges narrow = pgs_padding_ranges(begin, end, 4096);
 static_assert(wide.before_lo == base + 0x45fc000 && wide.before_hi == begin, "ELF-aligned lead");
 static_assert(narrow.before_lo == base + 0x45fd000 && narrow.before_hi == begin, "4K-aligned lead");

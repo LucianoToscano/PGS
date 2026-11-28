@@ -6,7 +6,7 @@ PGS has three layers:
 2. Compiled Java/ART bridges own game lifecycle, permission and location integration. `NativeRuntimeTransport` exchanges typed settings and events with native feature52.
 3. The C++ runtime manager70 drives native hosts60–71 and catch-wait58 on the verified Unity thread. Native metadata, observers and short foreground/map leases gate gameplay operations.
 
-Normal production packaging includes no Frida runtime or legacy research JavaScript assets. Explicit `--research-runtime` builds retain the embedded agent and the dependencies required by supported survey, scene, interaction and camera probes. Research scripts are outside the production runtime.
+Normal production packaging includes no Frida runtime or PGS JavaScript assets. Explicit `--research-runtime` builds retain the embedded agent and the dependencies required by supported survey, scene, interaction and camera probes. Research scripts are outside the production runtime.
 
 `nonroot.py` injects the controls and runtime into a user-supplied original game package. `release_apk.py` assembles the supported ARM64 package set into a single signed APK. Game files are inputs, not repository source. Device monitoring and historical investigations are maintained outside the repository.
 

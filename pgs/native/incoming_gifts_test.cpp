@@ -16,7 +16,7 @@
 // table through the exported pgs_native_api v2 registry (query_feature(17,1)) and drives the
 // controller against a fake managed heap (classes, methods, fields, boxed-bool returns and
 // System.String objects). The module installs NO hook, so there is no Dobby surface to exercise.
-// No test claims are made here; the coordinator builds and runs this against libpgs-core.so after
+// No test claims are made here; the coordinator builds and runs this against libpgs.so after
 // registering query_feature case 17.
 
 namespace {
@@ -273,7 +273,7 @@ FakeGui make_ready_gui(FakeString *sender, FakeDetails *details, FakeSelectable 
 }  // namespace
 
 int main(int argc, char **argv) {
-  const char *so_path = argc > 1 ? argv[1] : "./libpgs-core.so";
+  const char *so_path = argc > 1 ? argv[1] : "./libpgs.so";
   void *lib = ::dlopen(so_path, RTLD_NOW | RTLD_LOCAL);
   if (!lib) {
     std::fprintf(stderr, "dlopen(%s) failed: %s\n", so_path, ::dlerror());

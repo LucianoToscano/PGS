@@ -1,7 +1,5 @@
 # Native runtime pilot
 
-> Historical engineering record from the original runtime migration. Preserve the commands, evidence, artifact names and dated results below as historical records. For current PGS source paths, build settings, compatibility contracts and candidate status, use [the current technical migration notes](en/PGS_TECHNICAL_MIGRATION.md) and the repository's CONTRIBUTING guide.
-
 
 
 This branch introduces an opt-in compiled native library. Normal packages still

@@ -1,7 +1,7 @@
 #pragma once
 #include <stdint.h>
 
-// PGS native module: buddy auto-feeding (feature id 12).
+// PGS native migration: buddy auto-feeding (feature id 12).
 //
 // Full native port of runtime/features/buddy.js. The JS factory resolves the single
 // BuddyStatsService through the game's own Map/DiContainer, confirms a chosen buddy and

@@ -155,10 +155,10 @@ void *field_type(void *p){return klass_of(static_cast<F*>(p)->type);}
 char *type_name(void *p){return strdup(static_cast<K*>(p)->name.c_str());}
 void static_value(void *p,void *out){auto n=static_cast<F*>(p)->name;*static_cast<int*>(out)=n=="LEAVE_GYM"?0:n=="LEAVE_BATTLE"?1:2;}
 
-int resolve_class(const PgsMetaClassQuery *q, PgsMetaClassResult *out) {
+int resolve_class(const PGS_MetaClassQuery *q, PGS_MetaClassResult *out) {
     *out = {}; out->klass = klass_of(std::string(q->name_space) + "." + q->name); out->type = out->klass; return 0;
 }
-int validate_method(const PgsMetaMethodQuery *q, PgsMetaMethodResult *out) {
+int validate_method(const PGS_MetaMethodQuery *q, PGS_MetaMethodResult *out) {
     *out = {};
     if(fail_validation)return -1;
     void *code = nullptr;
@@ -178,7 +178,7 @@ int validate_method(const PgsMetaMethodQuery *q, PgsMetaMethodResult *out) {
 }
 
 // --- fake transport ---------------------------------------------------------------
-int tr_sample(PgsRuntimeTransportSample *out) { *out = {}; out->snapshot_fresh = tr_fresh; out->fault = 0; out->snapshot_seq = tr_seq; out->generation=tr_generation; return 0; }
+int tr_sample(PGSRuntimeTransportSample *out) { *out = {}; out->snapshot_fresh = tr_fresh; out->fault = 0; out->snapshot_seq = tr_seq; out->generation=tr_generation; return 0; }
 int tr_bool(uint32_t id, int *out) { *out = id == 40 ? tr_enabled : id == 3 ? tr_active : id == 6 ? tr_battles : id==38 ? tr_map : 0; return 0; }
 int tr_double(uint32_t, double *out, int *has) { *out = 0; if (has) *has = 1; return 0; }
 int tr_emit(uint32_t, const int64_t *, uint32_t, const PgsRuntimeTransportString *s, uint32_t n) {
@@ -187,7 +187,7 @@ int tr_emit(uint32_t, const int64_t *, uint32_t, const PgsRuntimeTransportString
 }
 
 PgsBootApi boot_api{};
-PgsMetaApi meta_api{};
+PGS_MetaApi meta_api{};
 PgsRuntimeTransportApi transport_api{};
 
 int boot_snapshot(PgsBootBinding *out) { *out = fixture_boot; return 0; }

@@ -56,8 +56,7 @@ public final class BootstrapProvider extends ContentProvider {
         try {
             JSONObject startupMode=new JSONObject(readAsset(context,"pgs/mode.json"));
             if(startupMode.optBoolean("compiledJavaBridges",false)) {
-                // Retired prototype: older saved mode flags must never re-enable it.
-                GameBridgeDispatch.configureBrowserSignIn(false);
+                GameBridgeDispatch.configureBrowserSignIn(startupMode.optBoolean("googleBrowserLogin",false));
                 try { GameBridgeDispatch.prepareDelivery(); }
                 catch(Throwable failure) { Control.event("location-delivery-error","Compiled bridge preparation failed: "+failure.getClass().getSimpleName()); }
                 Control.event("compiled-java-bridges-ready","DEX authentication, permissions and service lifecycle dispatch enabled");
@@ -65,12 +64,6 @@ public final class BootstrapProvider extends ContentProvider {
         } catch(Exception failure) {
             Control.event("compiled-java-bridges-unavailable",failure.getClass().getSimpleName());
         }
-        boolean googleBrowserLogin = false;
-        try {
-            JSONObject startupMode2=new JSONObject(readAsset(context,"pgs/mode.json"));
-            googleBrowserLogin = startupMode2.optBoolean("googleBrowserLogin", false);
-        } catch(Exception ignored) {}
-        GameBridgeDispatch.configureBrowserSignIn(googleBrowserLogin);
         if(!sessionRecovered)Control.event("account-session-recovery","Interrupted session could not be restored; sign in again. Saved profiles preserved.");
         Control.event("bootstrap", "pid="+android.os.Process.myPid()+" uid="+android.os.Process.myUid()+" process="+Application.getProcessName());
         // Native initialization must not block ContentProvider startup or the main thread.
@@ -160,8 +153,7 @@ public final class BootstrapProvider extends ContentProvider {
             File library=compiledHost&&translated?null:copyAsset(context,"pgs/"+abi+"/libfrida-gadget.so",directory,"libfrida-gadget.so");
             File bridge=compiledHost?null:copyAsset(context,"pgs/java-bridge.js",directory,"java-bridge.js");
             File script=copyAsset(context,"pgs/embedded-agent.js",directory,"embedded-agent.js");
-            boolean googleBrowserLogin = mode.optBoolean("googleBrowserLogin", false);
-            JSONObject parameters=new JSONObject().put("googleBrowserLogin",googleBrowserLogin).put("startupLog",new File(directory,"gadget-startup.txt").getAbsolutePath());
+            JSONObject parameters=new JSONObject().put("googleBrowserLogin",mode.optBoolean("googleBrowserLogin",false)).put("startupLog",new File(directory,"gadget-startup.txt").getAbsolutePath());
             if(bridge!=null)parameters.put("bridgePath",bridge.getAbsolutePath());
             parameters.put("compiledJavaBridges",mode.optBoolean("compiledJavaBridges",false));
             if(mode.optBoolean("compiledLocationGetters",false)) {
@@ -345,12 +337,12 @@ public final class BootstrapProvider extends ContentProvider {
     }
     /**
      * A new folder for this run's native libraries, after removing the folders earlier runs left behind
-     * (5 MB each). Only this process's startup reaches here. Fixed Root cache directories do not
-     * match the session-folder pattern and are kept for compatibility and rollback.
+     * (5 MB each). Only this process's startup reaches here. PGS Root's fixed pgs-root folder does
+     * not match the name and is kept.
      */
     private static File runtimeDirectory(Context context) throws IOException {
         File parent=context.getCodeCacheDir();
-        File[] stale=parent.listFiles((dir,name)->name.matches("(?:pgs|pgs)-[0-9]+-[0-9]+"));
+        File[] stale=parent.listFiles((dir,name)->name.matches("pgs-[0-9]+-[0-9]+"));
         if(stale!=null)for(File old:stale)deleteTree(old);
         File directory=new File(parent,"pgs-"+android.os.Process.myPid()+"-"+System.currentTimeMillis());
         if(!directory.mkdirs()) throw new IOException("Cannot create private runtime directory");

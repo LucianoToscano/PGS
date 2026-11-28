@@ -29,7 +29,7 @@ bool test_sequence_change = false;
 unsigned test_samples = 0;
 std::string test_config = "1;1;703;50;0";
 
-int test_sample(PgsRuntimeTransportSample* out) {
+int test_sample(PGSRuntimeTransportSample* out) {
     *out = {};
     out->snapshot_fresh = test_fresh;
     out->snapshot_seq = 100 + (test_sequence_change ? test_samples : 0);

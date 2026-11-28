@@ -32,7 +32,7 @@ extern "C" {
 
 static_assert(sizeof(void *) == 8, "RuntimeMetadata native ABI requires LP64");
 
-enum PgsMetaInfo {
+enum PGS_MetaInfo {
   PGS_MD_FEATURE_ID     = 47,
   PGS_MD_API_VERSION    = 1,
   PGS_MD_CONFIG_VERSION = 1,
@@ -51,7 +51,7 @@ enum PgsMetaInfo {
 // Every table function returns 0 on success/VALID, or one of these PRECISE negative classifications
 // (a direct 1:1 map of the throw-reasons in quick-close prepare, so a failing feature can be told
 // exactly which structural check failed).
-enum PgsMetaStatus {
+enum PGS_MetaStatus {
   PGS_MD_OK                 = 0,
   PGS_MD_ERR_NULL_ARG       = -1,
   PGS_MD_ERR_BAD_VERSION    = -2,
@@ -83,7 +83,7 @@ enum PgsMetaStatus {
 
 // Field KIND selector (validate_field). ANY = offset/flags only (quick-close raw()); REF = reference
 // field (refField); VALUE = value-type field (valueField); ENUM_I32 = Int32-backed enum (enumI32Field).
-enum PgsMetaFieldKind {
+enum PGS_MetaFieldKind {
   PGS_MD_FIELD_ANY      = 0,
   PGS_MD_FIELD_REF      = 1,
   PGS_MD_FIELD_VALUE    = 2,
@@ -93,7 +93,7 @@ enum PgsMetaFieldKind {
 // Type-name match mode for field/return/param type strings. EXACT is the quick-close default; the
 // others cover the regex predicates quick-close uses for generic/inflated collection types. Full
 // regex predicates remain the caller's responsibility (see contract note 1).
-enum PgsMetaMatch {
+enum PGS_MetaMatch {
   PGS_MD_MATCH_ANY      = 0,  // type string null -> skip the check
   PGS_MD_MATCH_EXACT    = 1,
   PGS_MD_MATCH_PREFIX   = 2,
@@ -106,7 +106,7 @@ enum PgsMetaMatch {
 // with PF_X covers the range (translated ARM64 guest code the host mapped read-only under Houdini).
 // Flags must be0/1; ELF fallback additionally requires writable==0. Unreleased API1
 // appends writable/reserved to preserve prior field offsets; rebuild every caller.
-struct PgsMetaSegment {
+struct PGS_MetaSegment {
   uint32_t found;
   uint32_t readable;
   uint32_t host_exec;
@@ -116,18 +116,18 @@ struct PgsMetaSegment {
   uint32_t writable; // host mapping writable: cannot authorize non-exec guest fallback
   uint32_t reserved; // zero
 };
-static_assert(sizeof(PgsMetaSegment) == 40, "PgsMetaSegment is 40 bytes on LP64 (unreleased API1)");
+static_assert(sizeof(PGS_MetaSegment) == 40, "PGS_MetaSegment is 40 bytes on LP64 (unreleased API1)");
 
 // Pluggable segment resolver. ctx is BindConfig.seg_ctx. Returns 0 if the lookup was performed
 // (out.found says whether the range was contained), negative on a resolver fault. Injected as a
 // native C++ function pointer only; never a value crossing JSON.
-typedef int (*pgs_meta_seg_fn)(void *ctx, const void *addr, uint64_t size, PgsMetaSegment *out);
+typedef int (*pgs_meta_seg_fn)(void *ctx, const void *addr, uint64_t size, PGS_MetaSegment *out);
 
 // The 31 mandatory il2cpp exports, in fixed order, stored as void* and reinterpret_cast in the impl
 // (matching the routes_actions/catch_completion config style). Only metadata-discovery exports; NO
 // runtime_invoke / field_static_get_value / gchandle_* here by design. Resolved by the host via
 // dlopen/dlsym on the real libil2cpp, or supplied as fixtures by the compiled harness.
-struct PgsMetaExports {
+struct PGS_MetaExports {
   void *domain_get;                 //  0  void* (void)
   void *domain_get_assemblies;      //  1  void* (void* domain, size_t* count)
   void *assembly_get_image;         //  2  void* (void* assembly)
@@ -160,7 +160,7 @@ struct PgsMetaExports {
   void *class_get_nested_types;     // 29  void* (void* klass, void** iter)
   void *class_get_declaring_type;   // 30  void* (void* klass)
 };
-static_assert(sizeof(PgsMetaExports) == 248, "PgsMetaExports must remain 31 LP64 pointers");
+static_assert(sizeof(PGS_MetaExports) == 248, "PGS_MetaExports must remain 31 LP64 pointers");
 
 // bind() configuration. exports + the REAL loaded-module range are mandatory. seg_query null uses the
 // default /proc/self/maps + dl_iterate_phdr resolver; debug_prologue_len 0 skips
@@ -168,10 +168,10 @@ static_assert(sizeof(PgsMetaExports) == 248, "PgsMetaExports must remain 31 LP64
 // on this call. Optional prologue proof is revalidated on every bind, not part of
 // immutable identity (exports/module/segment resolver). A stronger later proof
 // may coexist with bootstrap's zero-length proof; bad proof never changes binding.
-struct PgsMetaBindConfig {
+struct PGS_MetaBindConfig {
   uint32_t version;              // == PGS_MD_CONFIG_VERSION
-  uint32_t size;                 // == sizeof(PgsMetaBindConfig)
-  const PgsMetaExports *exports; // mandatory; every listed export must be non-null
+  uint32_t size;                 // == sizeof(PGS_MetaBindConfig)
+  const PGS_MetaExports *exports; // mandatory; every listed export must be non-null
   const void *module_base;       // real il2cpp module mapping base (not a guessed address)
   uint64_t module_size;          // module mapping size (> 0)
   pgs_meta_seg_fn seg_query;     // null -> default resolver
@@ -180,46 +180,46 @@ struct PgsMetaBindConfig {
   uint32_t debug_prologue_len;   // 0 -> skip the debug_get_method_info ABI check
   uint32_t reserved;             // 0
 };
-static_assert(sizeof(PgsMetaBindConfig) == 64, "PgsMetaBindConfig must remain 64 bytes on LP64");
+static_assert(sizeof(PGS_MetaBindConfig) == 64, "PGS_MetaBindConfig must remain 64 bytes on LP64");
 
-struct PgsMetaClassQuery {
+struct PGS_MetaClassQuery {
   uint32_t version;         // == PGS_MD_QUERY_VERSION
-  uint32_t size;            // == sizeof(PgsMetaClassQuery)
+  uint32_t size;            // == sizeof(PGS_MetaClassQuery)
   const char *name_space;   // namespace (may be ""), e.g. "Niantic.Holoholo.NUI"
   const char *name;         // short class name, e.g. "GuiController"
   const char *canonical;    // optional full type_get_name expectation; null -> ns.name EXACT
-  uint32_t canonical_match; // PgsMetaMatch for canonical (0 -> EXACT when canonical non-null)
+  uint32_t canonical_match; // PGS_MetaMatch for canonical (0 -> EXACT when canonical non-null)
   uint32_t reserved;
 };
-static_assert(sizeof(PgsMetaClassQuery) == 40, "PgsMetaClassQuery must remain 40 bytes on LP64");
+static_assert(sizeof(PGS_MetaClassQuery) == 40, "PGS_MetaClassQuery must remain 40 bytes on LP64");
 
-struct PgsMetaClassResult {
+struct PGS_MetaClassResult {
   uint32_t version;    // == PGS_MD_QUERY_VERSION
-  uint32_t size;       // == sizeof(PgsMetaClassResult)
+  uint32_t size;       // == sizeof(PGS_MetaClassResult)
   const void *klass;   // validated Il2CppClass*
   const void *type;    // class_get_type(klass)
 };
-static_assert(sizeof(PgsMetaClassResult) == 24, "PgsMetaClassResult must remain 24 bytes on LP64");
+static_assert(sizeof(PGS_MetaClassResult) == 24, "PGS_MetaClassResult must remain 24 bytes on LP64");
 
-struct PgsMetaFieldQuery {
+struct PGS_MetaFieldQuery {
   uint32_t version;       // == PGS_MD_QUERY_VERSION
-  uint32_t size;          // == sizeof(PgsMetaFieldQuery)
+  uint32_t size;          // == sizeof(PGS_MetaFieldQuery)
   const void *owner;      // Il2CppClass* (from resolve_class); field_get_parent must equal this
   const char *name;       // field name
   uint64_t offset;        // required exact field_get_offset
   uint32_t forbidden_mask;// flag bits that must be CLEAR (quick-close raw(): 0x50; literal paths vary)
   uint32_t required_mask; // flag bits that must be SET (quick-close enum-literal: 0x8050)
-  uint32_t kind;          // PgsMetaFieldKind
+  uint32_t kind;          // PGS_MetaFieldKind
   uint32_t value_size;    // VALUE kind: required size; 0 -> accept 4 or 8 (quick-close valueField)
   const char *type_name;  // optional field type name; null -> skip
-  uint32_t type_match;    // PgsMetaMatch for type_name
+  uint32_t type_match;    // PGS_MetaMatch for type_name
   uint32_t reserved;
 };
-static_assert(sizeof(PgsMetaFieldQuery) == 64, "PgsMetaFieldQuery must remain 64 bytes on LP64");
+static_assert(sizeof(PGS_MetaFieldQuery) == 64, "PGS_MetaFieldQuery must remain 64 bytes on LP64");
 
-struct PgsMetaFieldResult {
+struct PGS_MetaFieldResult {
   uint32_t version;        // == PGS_MD_QUERY_VERSION
-  uint32_t size;           // == sizeof(PgsMetaFieldResult)
+  uint32_t size;           // == sizeof(PGS_MetaFieldResult)
   const void *field;       // validated FieldInfo*
   const void *type;        // field_get_type(field)
   const void *type_class;  // class_from_type(type) (null for some encodings)
@@ -227,18 +227,18 @@ struct PgsMetaFieldResult {
   uint32_t flags;          // field_get_flags(field)
   uint32_t value_size;     // value-type size when KIND=VALUE/ENUM_I32, else 0
 };
-static_assert(sizeof(PgsMetaFieldResult) == 48, "PgsMetaFieldResult must remain 48 bytes on LP64");
+static_assert(sizeof(PGS_MetaFieldResult) == 48, "PGS_MetaFieldResult must remain 48 bytes on LP64");
 
-struct PgsMetaMethodQuery {
+struct PGS_MetaMethodQuery {
   uint32_t version;       // == PGS_MD_QUERY_VERSION
-  uint32_t size;          // == sizeof(PgsMetaMethodQuery)
+  uint32_t size;          // == sizeof(PGS_MetaMethodQuery)
   const void *owner;      // Il2CppClass*; method_get_class must equal this
   const char *name;       // method name (also exact-compared against method_get_name)
   const char *return_type;// optional return type name; null -> skip
-  uint32_t return_match;  // PgsMetaMatch for return_type
+  uint32_t return_match;  // PGS_MetaMatch for return_type
   uint32_t param_count;   // expected param count (passed to class_get_method_from_name)
   const char *param_types[PGS_MD_PARAM_MAX]; // per-param type name; entry null -> skip that param
-  uint32_t param_match[PGS_MD_PARAM_MAX];    // PgsMetaMatch per param
+  uint32_t param_match[PGS_MD_PARAM_MAX];    // PGS_MetaMatch per param
   uint32_t is_static;     // required static(1)/instance(0)
   uint32_t allow_inflated;// 0 reject inflated; generic is ALWAYS rejected
   const void *expected_code; // optional expected compiled address (module_base+rva); null -> skip
@@ -246,11 +246,11 @@ struct PgsMetaMethodQuery {
   uint32_t prologue_len;  // prologue length (1..PGS_MD_PROLOGUE_MAX; also the executable range)
   uint32_t reserved;
 };
-static_assert(sizeof(PgsMetaMethodQuery) == 264, "PgsMetaMethodQuery must remain 264 bytes on LP64");
+static_assert(sizeof(PGS_MetaMethodQuery) == 264, "PGS_MetaMethodQuery must remain 264 bytes on LP64");
 
-struct PgsMetaMethodResult {
+struct PGS_MetaMethodResult {
   uint32_t version;    // == PGS_MD_QUERY_VERSION
-  uint32_t size;       // == sizeof(PgsMetaMethodResult)
+  uint32_t size;       // == sizeof(PGS_MetaMethodResult)
   const void *method;  // validated MethodInfo*
   const void *code;    // compiled address (debug_get_method_info) when expected_code was supplied
   uint32_t flags;      // method_get_flags
@@ -258,24 +258,24 @@ struct PgsMetaMethodResult {
   uint32_t param_count;
   uint32_t reserved;
 };
-static_assert(sizeof(PgsMetaMethodResult) == 40, "PgsMetaMethodResult must remain 40 bytes on LP64");
+static_assert(sizeof(PGS_MetaMethodResult) == 40, "PGS_MetaMethodResult must remain 40 bytes on LP64");
 
 // Standalone executable-range + prologue check (the quick-close executable()+checkBytes port). Used
 // on its own for code whose MethodInfo is not involved (e.g. a resolved export address).
-struct PgsMetaCodeQuery {
+struct PGS_MetaCodeQuery {
   uint32_t version;     // == PGS_MD_QUERY_VERSION
-  uint32_t size;        // == sizeof(PgsMetaCodeQuery)
+  uint32_t size;        // == sizeof(PGS_MetaCodeQuery)
   const void *address;  // code address (must be in-module, 4-byte aligned)
   uint64_t length;      // executable range length (1..PGS_MD_CODE_MAX)
   const void *prologue; // optional prologue bytes; null -> skip
   uint32_t prologue_len;// 0 -> skip; else 1..min(length,PGS_MD_PROLOGUE_MAX)
   uint32_t reserved;
 };
-static_assert(sizeof(PgsMetaCodeQuery) == 40, "PgsMetaCodeQuery must remain 40 bytes on LP64");
+static_assert(sizeof(PGS_MetaCodeQuery) == 40, "PGS_MetaCodeQuery must remain 40 bytes on LP64");
 
-struct PgsMetaSample {
+struct PGS_MetaSample {
   uint32_t version;           // == PGS_MD_SAMPLE_VERSION
-  uint32_t size;              // == sizeof(PgsMetaSample)
+  uint32_t size;              // == sizeof(PGS_MetaSample)
   uint64_t classes_resolved;  // successful resolve_class
   uint64_t fields_validated;  // successful validate_field
   uint64_t methods_validated; // successful validate_method
@@ -284,21 +284,21 @@ struct PgsMetaSample {
   uint32_t bound;             // 1 after a successful bind
   uint32_t reserved;
 };
-static_assert(sizeof(PgsMetaSample) == 56, "PgsMetaSample must remain 56 bytes on LP64");
+static_assert(sizeof(PGS_MetaSample) == 56, "PGS_MetaSample must remain 56 bytes on LP64");
 
 // Fixed LP64 table: 8-byte header + 7 function pointers = 64 bytes.
-struct PgsMetaApi {
+struct PGS_MetaApi {
   uint32_t version;  // == PGS_MD_API_VERSION
-  uint32_t size;     // == sizeof(PgsMetaApi)
-  int (*bind)(const PgsMetaBindConfig *config);
-  int (*resolve_class)(const PgsMetaClassQuery *query, PgsMetaClassResult *out);
-  int (*validate_field)(const PgsMetaFieldQuery *query, PgsMetaFieldResult *out);
-  int (*validate_method)(const PgsMetaMethodQuery *query, PgsMetaMethodResult *out);
-  int (*validate_code)(const PgsMetaCodeQuery *query);
+  uint32_t size;     // == sizeof(PGS_MetaApi)
+  int (*bind)(const PGS_MetaBindConfig *config);
+  int (*resolve_class)(const PGS_MetaClassQuery *query, PGS_MetaClassResult *out);
+  int (*validate_field)(const PGS_MetaFieldQuery *query, PGS_MetaFieldResult *out);
+  int (*validate_method)(const PGS_MetaMethodQuery *query, PGS_MetaMethodResult *out);
+  int (*validate_code)(const PGS_MetaCodeQuery *query);
   int (*resolve_module)(const char *soname, const void **base, uint64_t *size);
-  int (*sample)(PgsMetaSample *out);
+  int (*sample)(PGS_MetaSample *out);
 };
-static_assert(sizeof(PgsMetaApi) == 64, "PgsMetaApi must remain a 64-byte version-1 table");
+static_assert(sizeof(PGS_MetaApi) == 64, "PGS_MetaApi must remain a 64-byte version-1 table");
 
 // Hidden getter. NOT exported by the version script; the coordinator registers it in query_feature
 // under feature id 47 and answers only on an exact version match.

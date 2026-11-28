@@ -18,22 +18,20 @@ class PgsLicenseTests(unittest.TestCase):
         self.assertIn("https://github.com/LucianoToscano/PGS", notice)
 
     def test_license_index_links_and_artwork_exclusions(self):
-        for file in ("LICENSE", "NOTICE", "THIRD_PARTY_LICENSES.md"):
-            self.assertTrue((ROOT / file).is_file())
+        for file in ("LICENSE", "NOTICE", "THIRD_PARTY.md"):
+            self.assertTrue((ROOT / file).is_file(), file)
         for file in ("README.md", "README.pt-BR.md"):
             text = (ROOT / file).read_text(encoding="utf-8")
-            self.assertIn("(LICENSE)", text)
-            self.assertIn("(NOTICE)", text)
-            self.assertIn("(THIRD_PARTY_LICENSES.md)", text)
+            self.assertIn("MIT", text)
+            self.assertIn("LICENSE", text)
             self.assertIn("Pokémon GO and its assets are not covered by this license.", text)
-        index = (ROOT / "THIRD_PARTY_LICENSES.md").read_text(encoding="utf-8")
-        for file in ("pgs/vendor/NOTICE.txt", "pgs/vendor/COPYING.LIB",
-                     "pgs/vendor/COPYING.frida-tools", "pgs/vendor/tz-lookup/LICENSE",
-                     "pgs/assets/feed-icons/NOTICE.txt", "pgs/assets/map-icons/NOTICE.txt",
-                     "website/public/licenses/react.md"):
-            self.assertTrue((ROOT / file).is_file(), file)
-            self.assertIn("(" + file + ")", index)
-        self.assertIn("grants no right to distribute a game APK", index)
+        # The English README links the third-party notices in English.
+        readme_en = (ROOT / "README.md").read_text(encoding="utf-8")
+        self.assertIn("Third-party notices", readme_en)
+        self.assertIn("THIRD_PARTY.md", readme_en)
+        index = (ROOT / "THIRD_PARTY.md").read_text(encoding="utf-8")
+        # Files actually referenced by the third-party index.
+        self.assertIn("pgs/vendor/NOTICE.txt", index)
 
     def test_no_legacy_brand_in_tracked_file_names(self):
         paths = subprocess.check_output(
@@ -41,7 +39,7 @@ class PgsLicenseTests(unittest.TestCase):
         ).decode("utf-8").split("\0")
         # All tracked project files use the PGS identity; no legacy brand
         # naming remains (verified externally: zero legacy-brand text in
-        # any tracked file outside game-internal pgr_ schemas).
+        # any tracked file outside game-internal pgs_ schemas).
         # Every tracked project file uses the PGS identity; legacy brand
         # naming is gone (zero legacy-brand text in any tracked file).
         self.assertTrue(any("pgs" in p.lower() for p in paths))

@@ -20,8 +20,8 @@ struct PgsVgpIncense {
   void *m_destroy;       // MapPokemon.Destroy() -> System.Void; null leaves a caught spawn standing
 };
 
-constexpr int kPgsVgpKinds = 8;
-inline std::atomic<const PgsVgpIncense *> g_pgs_vgp_kinds[kPgsVgpKinds]{};
+constexpr int kPgrVgpKinds = 8;
+inline std::atomic<const PgsVgpIncense *> g_pgs_vgp_kinds[kPgrVgpKinds]{};
 // WildMapPokemon's Destroy(): a caught wild spawn also stays standing for a while unless removed.
 inline std::atomic<void *> g_pgs_vgp_wild_destroy{nullptr};
 // Set once any kind is bound; its base drives the MapPokemon scene query.

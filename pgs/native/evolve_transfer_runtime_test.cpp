@@ -94,9 +94,9 @@ void *invoke_fixture(void *method,void *receiver,void **args,void **ex){
  }
  assert(false&&"unexpected managed invoke");return nullptr;
 }
-int metadata_class(const PgsMetaClassQuery*q,PgsMetaClassResult*out){out->klass=type(std::string(q->name_space)+"."+q->name);return 0;}
+int metadata_class(const PGS_MetaClassQuery*q,PGS_MetaClassResult*out){out->klass=type(std::string(q->name_space)+"."+q->name);return 0;}
 int bootstrap(PgsBootBinding*out){*out=fixture_boot;return 0;}
-int transport_sample(PgsRuntimeTransportSample*out){*out={};out->snapshot_fresh=fresh;out->snapshot_seq=1;return 0;}
+int transport_sample(PGSRuntimeTransportSample*out){*out={};out->snapshot_fresh=fresh;out->snapshot_seq=1;return 0;}
 int transport_string(uint32_t id,char*out,uint32_t cap,uint32_t*len){std::string s=id==22?config:id==4?keep_config:id==16?pvp_config:"";if(cap<=s.size())return -1;memcpy(out,s.c_str(),s.size()+1);*len=s.size();return 0;}
 int transport_bool(uint32_t id,int*out){*out=id==5?allowed:id==35?keep_all:1;return 0;}
 int transport_int(uint32_t,int32_t*out){*out=protect;return 0;}
@@ -110,7 +110,7 @@ int poll_response(void*,uint32_t,uint64_t,PgsVgpResultsResult*out){*out={};if(po
  response->data["Result"]=result_status;response->data["EvolvedPokemon"]=reinterpret_cast<uint64_t>(evolved);response->data["CandyAwarded"]=1;
  evolved->data["id_"]=returned_id;evolved->data["pokemonId_"]=returned_species;out->value_handle=gc_new(response,0);return PGS_VR_DONE;
 }
-PgsRuntimeTransportApi transport_api{};PgsMetaApi meta_api{};PgsBootApi boot_api{};PgsSharedHostApi host_api{};PgsSharedHostTransferApi broker_api{};PgsTransferFactsApi facts_api{};PgsVgpResultsApi result_api{};
+PgsRuntimeTransportApi transport_api{};PGS_MetaApi meta_api{};PgsBootApi boot_api{};PgsSharedHostApi host_api{};PgsSharedHostTransferApi broker_api{};PgsTransferFactsApi facts_api{};PgsVgpResultsApi result_api{};
 void fixture(){
  queue.clear();job=Job{};assert(handles.empty());seen.clear();objects.clear();inventory.clear();messages.clear();initialized=false;busy=false;owner=0;boot={};md=nullptr;
  move_on_root=false;iv_attack=1;iv_defense=2;iv_stamina=3;config="1|1|0|1|";keep_config="";pvp_config="P2|0|0|0|150";allowed=fresh=true;keep_all=pvp_protected=response_ready=poll_error=foreign_bag=batch_busy=not_evolvable=special=cancel_during_check=change_account=false;synchronous=true;protect=127;stock=100;cost=12;evolution_calls=release_calls=0;next_target=2;returned_id=10;returned_species=2;result_status=1;

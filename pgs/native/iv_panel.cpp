@@ -38,9 +38,9 @@ template<class T>T unbox(void *o){require(o,"boxed value");T v{};auto p=fn<void*
 void *managed_string(const std::string &s){void *v=fn<void*(*)(const char*)>(boot.runtime.string_new)(s.c_str());require(v,"string");return v;}
 std::string class_name(void *o){return fn<const char*(*)(void*)>(exp("class_get_name"))(klass(o));}
 void *class_of(const char *ns,const char *name){
- const auto *api=static_cast<const PgsMetaApi*>(pgs_runtime_metadata_api(1));require(api,"metadata API");
- PgsMetaClassQuery q{};q.version=1;q.size=sizeof(q);q.name_space=ns;q.name=name;q.canonical_match=PGS_MD_MATCH_EXACT;
- PgsMetaClassResult r{};require(api->resolve_class(&q,&r)==0,name);return const_cast<void*>(r.klass);
+ const auto *api=static_cast<const PGS_MetaApi*>(pgs_runtime_metadata_api(1));require(api,"metadata API");
+ PGS_MetaClassQuery q{};q.version=1;q.size=sizeof(q);q.name_space=ns;q.name=name;q.canonical_match=PGS_MD_MATCH_EXACT;
+ PGS_MetaClassResult r{};require(api->resolve_class(&q,&r)==0,name);return const_cast<void*>(r.klass);
 }
 // The non-generic overload of ns.owner.name whose parameters are exactly p0[, p1[, p2]].
 void *overload(const char *ns,const char *owner,const char *name,const char *p0,const char *p1=nullptr,const char *p2=nullptr){
@@ -96,7 +96,7 @@ std::string tier_color(int sum){
 // The format chosen for this screen from "S2|<storage>|<encounter>|<details>": 1 level and
 // attack/defense/stamina, 2 level and percent, 3 all three. Level and percent when unreadable.
 int format(bool owned){
- auto tr=transport();char s[16];uint32_t n=0;PgsRuntimeTransportSample a{};
+ auto tr=transport();char s[16];uint32_t n=0;PGSRuntimeTransportSample a{};
  if(!tr||tr->sample(&a)||!a.snapshot_fresh||a.fault)return 2;
  if(tr->get_string(14,s,sizeof(s),&n)||n!=8||std::memcmp(s,"S2|",3)!=0)return 2;
  const char c=s[owned?7:5];return c>='1'&&c<='4'?c-'0':2;

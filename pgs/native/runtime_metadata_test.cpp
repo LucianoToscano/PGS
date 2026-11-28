@@ -41,7 +41,7 @@ std::vector<ClassReg> g_classes;
 std::vector<FField *> g_fields;
 std::vector<FMethod *> g_methods;
 
-const PgsMetaApi *g_api_test=nullptr;
+const PGS_MetaApi *g_api_test=nullptr;
 bool g_reenter=false;
 int g_domain_tok = 0;
 int g_imgA = 0, g_imgB = 0;
@@ -52,9 +52,9 @@ size_t g_asm_count = 2;
 // ---- fixture il2cpp exports -------------------------------------------------------------------
 void *fx_domain_get() {
  if(g_reenter){
-   PgsMetaSample sample{};sample.bound=9;
+   PGS_MetaSample sample{};sample.bound=9;
    assert(g_api_test->sample(&sample)==PGS_MD_ERR_BUSY&&sample.bound==0);
-   std::thread concurrent([]{PgsMetaSample other{};assert(g_api_test->sample(&other)==PGS_MD_ERR_BUSY);});
+   std::thread concurrent([]{PGS_MetaSample other{};assert(g_api_test->sample(&other)==PGS_MD_ERR_BUSY);});
    concurrent.join();
  }
  return &g_domain_tok;
@@ -107,8 +107,8 @@ void *fx_get_methods(void *, void **) { return nullptr; }
 void *fx_get_nested(void *, void **) { return nullptr; }
 void *fx_declaring(void *) { return nullptr; }
 
-PgsMetaExports make_exports() {
-  PgsMetaExports e{};
+PGS_MetaExports make_exports() {
+  PGS_MetaExports e{};
   e.domain_get = reinterpret_cast<void *>(&fx_domain_get);
   e.domain_get_assemblies = reinterpret_cast<void *>(&fx_domain_assemblies);
   e.assembly_get_image = reinterpret_cast<void *>(&fx_assembly_image);
@@ -147,7 +147,7 @@ PgsMetaExports make_exports() {
 alignas(64) unsigned char g_mod_buf[4096];
 bool g_readable = true, g_host_exec = true, g_elf_exec = false,g_writable=false;
 int g_segment_mode=0;
-int fake_seg(void *, const void *addr, uint64_t size, PgsMetaSegment *out) {
+int fake_seg(void *, const void *addr, uint64_t size, PGS_MetaSegment *out) {
   std::memset(out, 0, sizeof(*out));
   uintptr_t a = reinterpret_cast<uintptr_t>(addr), base = reinterpret_cast<uintptr_t>(g_mod_buf);
   if (a >= base && a + size <= base + sizeof(g_mod_buf)) {
@@ -169,16 +169,16 @@ int fake_seg(void *, const void *addr, uint64_t size, PgsMetaSegment *out) {
 }
 
 // helpers
-PgsMetaFieldQuery fq(const void *owner, const char *name, uint64_t off, uint32_t forb, uint32_t req,
+PGS_MetaFieldQuery fq(const void *owner, const char *name, uint64_t off, uint32_t forb, uint32_t req,
                      uint32_t kind, uint32_t vsize, const char *tn, uint32_t tm) {
-  PgsMetaFieldQuery q{};
+  PGS_MetaFieldQuery q{};
   q.version = 1; q.size = sizeof(q); q.owner = owner; q.name = name; q.offset = off;
   q.forbidden_mask = forb; q.required_mask = req; q.kind = kind; q.value_size = vsize;
   q.type_name = tn; q.type_match = tm;
   return q;
 }
-PgsMetaClassQuery cq(const char *ns, const char *name, const char *canon) {
-  PgsMetaClassQuery q{};
+PGS_MetaClassQuery cq(const char *ns, const char *name, const char *canon) {
+  PGS_MetaClassQuery q{};
   q.version = 1; q.size = sizeof(q); q.name_space = ns; q.name = name; q.canonical = canon;
   return q;
 }
@@ -186,7 +186,7 @@ PgsMetaClassQuery cq(const char *ns, const char *name, const char *canon) {
 }  // namespace
 
 int main(int argc, char **argv) {
-  const char *so = argc > 1 ? argv[1] : "./libpgs-core.so";
+  const char *so = argc > 1 ? argv[1] : "./libpgs.so";
   void *lib = ::dlopen(so, RTLD_NOW | RTLD_LOCAL);
   if (!lib) { std::fprintf(stderr, "dlopen(%s) failed: %s\n", so, ::dlerror()); return 1; }
   auto getter = reinterpret_cast<GetApiFn>(::dlsym(lib, "pgs_native_api"));
@@ -194,16 +194,16 @@ int main(int argc, char **argv) {
   const auto *core = static_cast<const pgs_native_api_v2 *>(getter(2));
   assert(core && core->query_feature);
   assert(core->query_feature(47, 99) == nullptr);
-  const auto *api = static_cast<const PgsMetaApi *>(core->query_feature(47, 1));
-  assert(api && api->version == 1 && api->size == sizeof(PgsMetaApi));g_api_test=api;
-  assert(sizeof(PgsMetaSegment)==40);
+  const auto *api = static_cast<const PGS_MetaApi *>(core->query_feature(47, 1));
+  assert(api && api->version == 1 && api->size == sizeof(PGS_MetaApi));g_api_test=api;
+  assert(sizeof(PGS_MetaSegment)==40);
 
   std::printf("ABI sizes: exports=%zu bind=%zu classQ=%zu fieldQ=%zu methodQ=%zu codeQ=%zu table=%zu\n",
-              sizeof(PgsMetaExports), sizeof(PgsMetaBindConfig), sizeof(PgsMetaClassQuery),
-              sizeof(PgsMetaFieldQuery), sizeof(PgsMetaMethodQuery), sizeof(PgsMetaCodeQuery),
-              sizeof(PgsMetaApi));
-  assert(sizeof(PgsMetaExports) == 248 && sizeof(PgsMetaBindConfig) == 64 &&
-         sizeof(PgsMetaMethodQuery) == 264 && sizeof(PgsMetaApi) == 64);
+              sizeof(PGS_MetaExports), sizeof(PGS_MetaBindConfig), sizeof(PGS_MetaClassQuery),
+              sizeof(PGS_MetaFieldQuery), sizeof(PGS_MetaMethodQuery), sizeof(PGS_MetaCodeQuery),
+              sizeof(PGS_MetaApi));
+  assert(sizeof(PGS_MetaExports) == 248 && sizeof(PGS_MetaBindConfig) == 64 &&
+         sizeof(PGS_MetaMethodQuery) == 264 && sizeof(PGS_MetaApi) == 64);
 
   // ---- fake type/class universe ----
   FType t_int32{"System.Int32", nullptr};
@@ -256,22 +256,22 @@ int main(int argc, char **argv) {
   FMethod m_inf{"Inflated", &c_gui, 0, 0, 0, &t_void, {}, false, true, nullptr};
   g_methods = {&m_dismiss, &m_impl, &m_gen, &m_inf};
 
-  PgsMetaExports exports = make_exports();
-  PgsMetaBindConfig cfg{};
+  PGS_MetaExports exports = make_exports();
+  PGS_MetaBindConfig cfg{};
   cfg.version = 1; cfg.size = sizeof(cfg); cfg.exports = &exports;
   cfg.module_base = g_mod_buf; cfg.module_size = sizeof(g_mod_buf);
   cfg.seg_query = &fake_seg; cfg.seg_ctx = nullptr;
 
   // 1. bind header/export/idempotency/mismatch.
-  { PgsMetaClassQuery q = cq("Niantic.Holoholo.NUI", "GuiController", nullptr); PgsMetaClassResult r{};
+  { PGS_MetaClassQuery q = cq("Niantic.Holoholo.NUI", "GuiController", nullptr); PGS_MetaClassResult r{};
     assert(api->resolve_class(&q, &r) == PGS_MD_ERR_NOT_BOUND); }
   assert(api->bind(nullptr) == PGS_MD_ERR_NULL_ARG);
-  { PgsMetaBindConfig b = cfg; b.version = 2; assert(api->bind(&b) == PGS_MD_ERR_BAD_VERSION); }
-  { PgsMetaBindConfig b = cfg; b.size = sizeof(b) - 1; assert(api->bind(&b) == PGS_MD_ERR_BAD_SIZE); }
-  { PgsMetaExports e2 = exports; e2.type_get_name = nullptr; PgsMetaBindConfig b = cfg; b.exports = &e2;
+  { PGS_MetaBindConfig b = cfg; b.version = 2; assert(api->bind(&b) == PGS_MD_ERR_BAD_VERSION); }
+  { PGS_MetaBindConfig b = cfg; b.size = sizeof(b) - 1; assert(api->bind(&b) == PGS_MD_ERR_BAD_SIZE); }
+  { PGS_MetaExports e2 = exports; e2.type_get_name = nullptr; PGS_MetaBindConfig b = cfg; b.exports = &e2;
     assert(api->bind(&b) == PGS_MD_ERR_MISSING_EXPORT); }
-  { PgsMetaBindConfig b = cfg; b.module_base = nullptr; assert(api->bind(&b) == PGS_MD_ERR_MISSING_EXPORT); }
-  {PgsMetaBindConfig b=cfg;b.module_base=reinterpret_cast<void *>(UINTPTR_MAX-3);b.module_size=8;
+  { PGS_MetaBindConfig b = cfg; b.module_base = nullptr; assert(api->bind(&b) == PGS_MD_ERR_MISSING_EXPORT); }
+  {PGS_MetaBindConfig b=cfg;b.module_base=reinterpret_cast<void *>(UINTPTR_MAX-3);b.module_size=8;
    assert(api->bind(&b)==PGS_MD_ERR_CODE_RANGE);}
   // Separate process proves bootstrap-first then schema-specific validation.
   // Exercise the production maps resolver across adjacent, differently protected VMAs.
@@ -281,9 +281,9 @@ int main(int argc, char **argv) {
         MAP_PRIVATE|MAP_ANONYMOUS,-1,0));assert(pages!=MAP_FAILED);
     assert(mprotect(pages,page,PROT_READ|PROT_EXEC)==0);
     assert(mprotect(pages+page,page,PROT_READ|PROT_WRITE|PROT_EXEC)==0);
-    PgsMetaBindConfig b=cfg;b.module_base=pages;b.module_size=page*2;b.seg_query=nullptr;
+    PGS_MetaBindConfig b=cfg;b.module_base=pages;b.module_size=page*2;b.seg_query=nullptr;
     assert(api->bind(&b)==PGS_MD_OK);
-    PgsMetaCodeQuery q{};q.version=1;q.size=sizeof(q);q.address=pages+page-8;q.length=24;
+    PGS_MetaCodeQuery q{};q.version=1;q.size=sizeof(q);q.address=pages+page-8;q.length=24;
     assert(api->validate_code(&q)==PGS_MD_OK);
     // Anonymous non-executable memory has no ELF executable-segment proof.
     assert(mprotect(pages+page,page,PROT_READ)==0);
@@ -296,8 +296,8 @@ int main(int argc, char **argv) {
     assert(munmap(pages,page)==0);_exit(0);
    }int status=0;assert(waitpid(child,&status,0)==child&&WIFEXITED(status)&&WEXITSTATUS(status)==0);}
   {pid_t child=fork();assert(child>=0);if(child==0){
-    PgsMetaExports local=exports;local.debug_get_method_info=CODE;
-    PgsMetaBindConfig b=cfg;b.exports=&local;
+    PGS_MetaExports local=exports;local.debug_get_method_info=CODE;
+    PGS_MetaBindConfig b=cfg;b.exports=&local;
     assert(api->bind(&b)==PGS_MD_OK);
     b.debug_prologue=PRO;b.debug_prologue_len=sizeof(PRO);
     assert(api->bind(&b)==PGS_MD_OK);
@@ -310,28 +310,28 @@ int main(int argc, char **argv) {
    }int status=0;assert(waitpid(child,&status,0)==child&&WIFEXITED(status)&&WEXITSTATUS(status)==0);}
   assert(api->bind(&cfg) == PGS_MD_OK);
   assert(api->bind(&cfg) == PGS_MD_OK);  // idempotent
-  { PgsMetaBindConfig b = cfg; b.module_size = 1; assert(api->bind(&b) == PGS_MD_ERR_BOUND_MISMATCH); }
+  { PGS_MetaBindConfig b = cfg; b.module_size = 1; assert(api->bind(&b) == PGS_MD_ERR_BOUND_MISMATCH); }
 
   // 2. resolve_class success / canonical / not-found / duplicate / limits.
-  { PgsMetaClassQuery q = cq("Niantic.Holoholo.NUI", "GuiController", nullptr); PgsMetaClassResult r{};
+  { PGS_MetaClassQuery q = cq("Niantic.Holoholo.NUI", "GuiController", nullptr); PGS_MetaClassResult r{};
     assert(api->resolve_class(&q, &r) == PGS_MD_OK && r.klass == &c_gui && r.type == &t_gui); }
-  { PgsMetaClassQuery q = cq("Niantic.Holoholo.NUI", "GuiController",
-                             "Niantic.Holoholo.NUI.GuiController"); PgsMetaClassResult r{};
+  { PGS_MetaClassQuery q = cq("Niantic.Holoholo.NUI", "GuiController",
+                             "Niantic.Holoholo.NUI.GuiController"); PGS_MetaClassResult r{};
     assert(api->resolve_class(&q, &r) == PGS_MD_OK); }
-  { PgsMetaClassQuery q = cq("Niantic.Holoholo.NUI", "Missing", nullptr); PgsMetaClassResult r{};
+  { PGS_MetaClassQuery q = cq("Niantic.Holoholo.NUI", "Missing", nullptr); PGS_MetaClassResult r{};
     assert(api->resolve_class(&q, &r) == PGS_MD_ERR_NOT_FOUND); }
-  { PgsMetaClassQuery q = cq("Bad.Ns", "Weird", nullptr); PgsMetaClassResult r{};  // full name mismatches
+  { PGS_MetaClassQuery q = cq("Bad.Ns", "Weird", nullptr); PGS_MetaClassResult r{};  // full name mismatches
     assert(api->resolve_class(&q, &r) == PGS_MD_ERR_NAME_MISMATCH); }
-  { PgsMetaClassQuery q = cq("DupNs", "Dup", nullptr); PgsMetaClassResult r{};  // two images, two handles
+  { PGS_MetaClassQuery q = cq("DupNs", "Dup", nullptr); PGS_MetaClassResult r{};  // two images, two handles
     assert(api->resolve_class(&q, &r) == PGS_MD_ERR_DUPLICATE); }
-  { std::string big(300, 'x'); PgsMetaClassQuery q = cq("Ns", big.c_str(), nullptr); PgsMetaClassResult r{};
+  { std::string big(300, 'x'); PGS_MetaClassQuery q = cq("Ns", big.c_str(), nullptr); PGS_MetaClassResult r{};
     assert(api->resolve_class(&q, &r) == PGS_MD_ERR_NAME_TOO_LONG); }
   { g_asm_count = PGS_MD_ASM_MAX + 1; for (size_t i = 2; i < g_asm_count; ++i) g_asms[i] = IMGA;
-    PgsMetaClassQuery q = cq("Niantic.Holoholo.NUI", "GuiController", nullptr); PgsMetaClassResult r{};
+    PGS_MetaClassQuery q = cq("Niantic.Holoholo.NUI", "GuiController", nullptr); PGS_MetaClassResult r{};
     assert(api->resolve_class(&q, &r) == PGS_MD_ERR_LIMIT); g_asm_count = 2; }
 
   // 3. validate_field: enum-int32 / value / ref / literal + every classified failure.
-  { PgsMetaFieldResult r{};
+  { PGS_MetaFieldResult r{};
     auto q = fq(&c_gui, "currentState", 0x70, 0x50, 0, PGS_MD_FIELD_ENUM_I32, 0, nullptr, 0);
     assert(api->validate_field(&q, &r) == PGS_MD_OK && r.field == &f_state && r.value_size == 4);
     q = fq(&c_gui, "caughtId", 0x20, 0x50, 0, PGS_MD_FIELD_VALUE, 8, "System.UInt64", PGS_MD_MATCH_EXACT);
@@ -361,13 +361,13 @@ int main(int argc, char **argv) {
     assert(api->validate_field(&q, &r) == PGS_MD_ERR_TYPE); }
 
   // 4. validate_method: instance+code, static, and every classified failure.
-  { PgsMetaMethodResult r{};
-    PgsMetaMethodQuery q{}; q.version = 1; q.size = sizeof(q); q.owner = &c_gui; q.name = "Dismiss";
+  { PGS_MetaMethodResult r{};
+    PGS_MetaMethodQuery q{}; q.version = 1; q.size = sizeof(q); q.owner = &c_gui; q.name = "Dismiss";
     q.return_type = "System.Void"; q.return_match = PGS_MD_MATCH_EXACT; q.param_count = 0; q.is_static = 0;
     q.expected_code = CODE; q.prologue = PRO; q.prologue_len = sizeof(PRO);
     assert(api->validate_method(&q, &r) == PGS_MD_OK && r.method == &m_dismiss && r.code == CODE);
 
-    PgsMetaMethodQuery s{}; s.version = 1; s.size = sizeof(s); s.owner = &c_gui; s.name = "op_Implicit";
+    PGS_MetaMethodQuery s{}; s.version = 1; s.size = sizeof(s); s.owner = &c_gui; s.name = "op_Implicit";
     s.return_type = "System.Boolean"; s.return_match = PGS_MD_MATCH_EXACT; s.param_count = 1; s.is_static = 1;
     s.param_types[0] = "UnityEngine.Object"; s.param_match[0] = PGS_MD_MATCH_EXACT;
     assert(api->validate_method(&s, &r) == PGS_MD_OK);
@@ -375,7 +375,7 @@ int main(int argc, char **argv) {
     assert(api->validate_method(&s, &r) == PGS_MD_OK);
 
     // failures reuse Dismiss with one field perturbed each:
-    auto base = [&]() { PgsMetaMethodQuery b{}; b.version = 1; b.size = sizeof(b); b.owner = &c_gui;
+    auto base = [&]() { PGS_MetaMethodQuery b{}; b.version = 1; b.size = sizeof(b); b.owner = &c_gui;
       b.name = "Dismiss"; b.return_type = "System.Void"; b.return_match = PGS_MD_MATCH_EXACT;
       b.param_count = 0; b.is_static = 0; return b; };
     { auto b = base(); b.name = "Ghost"; assert(api->validate_method(&b, &r) == PGS_MD_ERR_NOT_FOUND); }
@@ -393,7 +393,7 @@ int main(int argc, char **argv) {
       assert(api->validate_method(&b, &r) == PGS_MD_ERR_PROLOGUE); } }
 
   // 5. validate_code: success, host-exec off + elf-exec on (Houdini guest), and each failure.
-  { PgsMetaCodeQuery q{}; q.version = 1; q.size = sizeof(q); q.address = CODE; q.length = sizeof(PRO);
+  { PGS_MetaCodeQuery q{}; q.version = 1; q.size = sizeof(q); q.address = CODE; q.length = sizeof(PRO);
     q.prologue = PRO; q.prologue_len = sizeof(PRO);
     assert(api->validate_code(&q) == PGS_MD_OK);
     g_host_exec = false; g_elf_exec = true;  // translated ARM64 guest code mapped read-only
@@ -403,7 +403,7 @@ int main(int argc, char **argv) {
     g_readable = false; g_elf_exec = true;     // not readable -> rejected
     assert(api->validate_code(&q) == PGS_MD_ERR_SEGMENT);
     g_readable = true; g_host_exec = true; g_elf_exec = false;  // restore
-    PgsMetaCodeQuery bad = q; bad.address = g_mod_buf + 65;  // misaligned
+    PGS_MetaCodeQuery bad = q; bad.address = g_mod_buf + 65;  // misaligned
     assert(api->validate_code(&bad) == PGS_MD_ERR_CODE_RANGE);
     bad = q; bad.address = g_mod_buf + sizeof(g_mod_buf) - 4;  // aligned but runs past module
     assert(api->validate_code(&bad) == PGS_MD_ERR_CODE_RANGE);
@@ -412,7 +412,7 @@ int main(int argc, char **argv) {
     bad = q; bad.prologue = WRONG; assert(api->validate_code(&bad) == PGS_MD_ERR_PROLOGUE); }
 
   // Corrective regressions: segment lower bounds/overflow/boolean validation.
-  {PgsMetaCodeQuery q{};q.version=1;q.size=sizeof(q);q.address=CODE;q.length=sizeof(PRO);
+  {PGS_MetaCodeQuery q{};q.version=1;q.size=sizeof(q);q.address=CODE;q.length=sizeof(PRO);
    for(int mode=1;mode<=7;mode++){g_segment_mode=mode;assert(api->validate_code(&q)==PGS_MD_ERR_SEGMENT);}
    g_segment_mode=0;g_host_exec=false;g_elf_exec=true;g_writable=true;
    assert(api->validate_code(&q)==PGS_MD_ERR_SEGMENT);
@@ -422,26 +422,26 @@ int main(int argc, char **argv) {
    assert(api->validate_code(&q)==PGS_MD_ERR_CODE_RANGE);
   }
   // Failure never leaves stale successful metadata outputs, including bad headers.
-  {PgsMetaClassQuery q=cq("Niantic.Holoholo.NUI","GuiController",nullptr);PgsMetaClassResult r{};
+  {PGS_MetaClassQuery q=cq("Niantic.Holoholo.NUI","GuiController",nullptr);PGS_MetaClassResult r{};
    assert(api->resolve_class(&q,&r)==0&&r.klass);q.version=2;
    assert(api->resolve_class(&q,&r)==PGS_MD_ERR_BAD_VERSION&&!r.klass&&!r.type&&r.version==0);
-   PgsMetaFieldResult f{};std::memset(&f,0xa5,sizeof(f));assert(api->validate_field(nullptr,&f)==PGS_MD_ERR_NULL_ARG&&!f.field&&!f.type);
-   PgsMetaMethodResult m{};std::memset(&m,0xa5,sizeof(m));assert(api->validate_method(nullptr,&m)==PGS_MD_ERR_NULL_ARG&&!m.method&&!m.code);
+   PGS_MetaFieldResult f{};std::memset(&f,0xa5,sizeof(f));assert(api->validate_field(nullptr,&f)==PGS_MD_ERR_NULL_ARG&&!f.field&&!f.type);
+   PGS_MetaMethodResult m{};std::memset(&m,0xa5,sizeof(m));assert(api->validate_method(nullptr,&m)==PGS_MD_ERR_NULL_ARG&&!m.method&&!m.code);
   }
   // Guard page immediately follows the NAME_MAX-byte nonterminated input.
   {long page=sysconf(_SC_PAGESIZE);assert(page>=PGS_MD_NAME_MAX);
    void *mapping=mmap(nullptr,page*2,PROT_READ|PROT_WRITE,MAP_PRIVATE|MAP_ANONYMOUS,-1,0);assert(mapping!=MAP_FAILED);
    assert(mprotect(static_cast<char *>(mapping)+page,page,PROT_NONE)==0);
    char *name=static_cast<char *>(mapping)+page-PGS_MD_NAME_MAX;std::memset(name,'x',PGS_MD_NAME_MAX);
-   PgsMetaClassQuery q=cq("Ns",name,nullptr);PgsMetaClassResult r{};
+   PGS_MetaClassQuery q=cq("Ns",name,nullptr);PGS_MetaClassResult r{};
    assert(api->resolve_class(&q,&r)==PGS_MD_ERR_NAME_TOO_LONG);
-   auto f=fq(&c_gui,"caughtId",0x20,0x50,0,PGS_MD_FIELD_VALUE,8,name,PGS_MD_MATCH_EXACT);PgsMetaFieldResult fr{};
+   auto f=fq(&c_gui,"caughtId",0x20,0x50,0,PGS_MD_FIELD_VALUE,8,name,PGS_MD_MATCH_EXACT);PGS_MetaFieldResult fr{};
    assert(api->validate_field(&f,&fr)==PGS_MD_ERR_TYPE&&!fr.field);
    assert(munmap(mapping,page*2)==0);
   }
   // Reentrant and competing-thread callbacks return BUSY without shared counter writes.
-  {PgsMetaSample before{},after{};assert(api->sample(&before)==0);g_reenter=true;
-   PgsMetaClassQuery q=cq("Niantic.Holoholo.NUI","GuiController",nullptr);PgsMetaClassResult r{};
+  {PGS_MetaSample before{},after{};assert(api->sample(&before)==0);g_reenter=true;
+   PGS_MetaClassQuery q=cq("Niantic.Holoholo.NUI","GuiController",nullptr);PGS_MetaClassResult r{};
    assert(api->resolve_class(&q,&r)==0);g_reenter=false;assert(api->sample(&after)==0);
    assert(after.failures==before.failures&&after.classes_resolved==before.classes_resolved+1);
   }
@@ -461,7 +461,7 @@ int main(int argc, char **argv) {
   }
 
   // 6. telemetry is coherent (bound, counts advanced, failures recorded).
-  { PgsMetaSample s{}; assert(api->sample(&s) == PGS_MD_OK);
+  { PGS_MetaSample s{}; assert(api->sample(&s) == PGS_MD_OK);
     assert(s.bound == 1 && s.classes_resolved >= 2 && s.fields_validated >= 4 &&
            s.methods_validated >= 3 && s.code_checks >= 3 && s.failures > 0); }
 

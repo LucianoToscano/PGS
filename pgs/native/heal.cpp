@@ -106,9 +106,9 @@ struct Root {
 };
 void *klass(void *o){require(o,"null object");return fn<void*(*)(void*)>(boot.runtime.object_get_class)(o);}
 void *cls(const char *ns,const char *name){
- const auto *api=static_cast<const PgsMetaApi*>(pgs_runtime_metadata_api(1));require(api,"metadata API");
- PgsMetaClassQuery q{};q.version=1;q.size=sizeof(q);q.name_space=ns;q.name=name;q.canonical_match=PGS_MD_MATCH_EXACT;
- PgsMetaClassResult out{};require(api->resolve_class(&q,&out)==0,name);return const_cast<void*>(out.klass);
+ const auto *api=static_cast<const PGS_MetaApi*>(pgs_runtime_metadata_api(1));require(api,"metadata API");
+ PGS_MetaClassQuery q{};q.version=1;q.size=sizeof(q);q.name_space=ns;q.name=name;q.canonical_match=PGS_MD_MATCH_EXACT;
+ PGS_MetaClassResult out{};require(api->resolve_class(&q,&out)==0,name);return const_cast<void*>(out.klass);
 }
 std::string typename_of(void *type){char *p=fn<char*(*)(void*)>(boot.meta.type_get_name)(type);require(p,"type name");std::string s=p;fn<void(*)(void*)>(boot.meta.mem_free)(p);return s;}
 void *method(void *k,const char *name,int count){void *m=fn<void*(*)(void*,const char*,int)>(boot.meta.class_get_method_from_name)(k,name,count);require(m,name);return m;}
@@ -140,7 +140,7 @@ void status(const char *phase,const std::string &message){event(std::string("{\"
 struct Config {bool on=false;int when=0,threshold=50;bool revive=true,full=false;};  // when: 0 after battle, 1 periodic, 2 both
 // "H2|enabled|when|threshold|revive|full"; anything else (or a stale snapshot) means off.
 Config configured(bool &on_map){
- Config c;on_map=false;auto tr=transport();PgsRuntimeTransportSample a{};char s[64]{};uint32_t n=0;
+ Config c;on_map=false;auto tr=transport();PGSRuntimeTransportSample a{};char s[64]{};uint32_t n=0;
  if(!tr||tr->sample(&a)||!a.snapshot_fresh||a.fault||tr->get_string(18,s,sizeof(s)-1,&n)||n>=sizeof(s))return c;
  s[n]=0;int e=0,w=0,t=0,r=0,f=0;
  if(std::sscanf(s,"H2|%d|%d|%d|%d|%d",&e,&w,&t,&r,&f)!=5||(e!=0&&e!=1)||w<0||w>2||(t!=25&&t!=50&&t!=75&&t!=100)||(r!=0&&r!=1)||(f!=0&&f!=1))return c;

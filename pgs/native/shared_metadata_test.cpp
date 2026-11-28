@@ -124,13 +124,13 @@ bool assignable(void *, void *) { return false; }
 void *enumerate(void *, void **) { return nullptr; }
 void *declaring(void *) { return nullptr; }
 void *thread_current() { ++thread_checks; return attached && (!detach_at || thread_checks < detach_at) ? &thread_token : nullptr; }
-int segment(void *, const void *address, uint64_t length, PgsMetaSegment *out) {
+int segment(void *, const void *address, uint64_t length, PGS_MetaSegment *out) {
   *out = {}; uintptr_t a = reinterpret_cast<uintptr_t>(address), base = reinterpret_cast<uintptr_t>(module_base);
   if (a < base || a - base > module_size || !length || length > module_size - (a - base)) return 0;
   out->found = out->readable = out->host_exec = out->writable = 1; out->seg_base = module_base; out->seg_size = module_size; return 0;
 }
-PgsMetaExports exports() {
-  PgsMetaExports e{};
+PGS_MetaExports exports() {
+  PGS_MetaExports e{};
   e.domain_get = reinterpret_cast<void *>(domain_get); e.domain_get_assemblies = reinterpret_cast<void *>(domain_assemblies);
   e.assembly_get_image = reinterpret_cast<void *>(assembly_image); e.class_from_name = reinterpret_cast<void *>(class_from_name);
   e.class_get_type = reinterpret_cast<void *>(class_type); e.type_get_name = reinterpret_cast<void *>(type_name); e.mem_free = reinterpret_cast<void *>(mem_free);
@@ -241,13 +241,13 @@ int main(int argc, char **argv) {
   assert(api && api->version == 2 && api->size == 24 && api->config_size == 96 && api->output_size == 67304);
 
   build_fixture();
-  PgsMetaExports e = exports();
+  PGS_MetaExports e = exports();
   e.debug_get_method_info=module_base+0x7000;
   config.version = 2; config.size = sizeof(config);
   extra.field_static_get_value=reinterpret_cast<void*>(static_value);
   extra.gchandle_new=module_base+gc_new_rva;extra.gchandle_get_target=module_base+gc_get_rva;extra.gchandle_free=module_base+gc_free_rva;
   config.extra=&extra;assert(sizeof(extra)==112);
-  config.binding.version = 1; config.binding.size = sizeof(PgsMetaBindConfig); config.binding.exports = &e;
+  config.binding.version = 1; config.binding.size = sizeof(PGS_MetaBindConfig); config.binding.exports = &e;
   config.binding.module_base = module_base; config.binding.module_size = module_size; config.binding.seg_query = segment;
   config.binding.debug_prologue=debug_trampoline;config.binding.debug_prologue_len=sizeof(debug_trampoline);
   config.thread_current = reinterpret_cast<void *>(thread_current); config.owner_tid = gettid();

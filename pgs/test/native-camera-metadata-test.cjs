@@ -1,7 +1,7 @@
 // VM boundary and camera-probe integration test for Feature 59 (API 1): the real compiled resolver
 // is covered by camera_metadata_test.cpp. This test drives native-camera-metadata.js against a fake
-// host, verifies it marshals the 31 feature47 exports + PgsCameraMetaExtra + module range + thread
-// accessor + domain/mode flags into the 112-byte PgsCameraMetaConfig and 112-byte PgsCameraMetaExtra,
+// host, verifies it marshals the 31 feature47 exports + PgrCameraMetaExtra + module range + thread
+// accessor + domain/mode flags into the 112-byte PgrCameraMetaConfig and 112-byte PgrCameraMetaExtra,
 // maps the 368-byte output into the exact discover() return shapes across passive, sampleCamera, and
 // continuous modes, and proves camera-probe.js native selection has no fallback on native failure.
 const assert=require('node:assert/strict'),fs=require('node:fs'),vm=require('node:vm');
@@ -249,7 +249,7 @@ assert.throws(()=>fixture({nullMethod:5}).run(),/native-camera-metadata-null:met
 assert.throws(()=>fixture({status:-30}).run(),/native-camera-metadata-resolve:-30/);
 assert.throws(()=>fixture({status:-35}).run(),/native-camera-metadata-resolve:-35/);
 
-// 6) All 20 optional export presence bits in PgsCameraExport.
+// 6) All 20 optional export presence bits in PgrCameraExport.
 for(const name of Object.keys(NATIVE_OPTIONAL_BITS)){
  assert.throws(()=>fixture({missingOptional:'il2cpp_'+name,status:-99}).run(),/native-camera-metadata-resolve:-99/);
 }

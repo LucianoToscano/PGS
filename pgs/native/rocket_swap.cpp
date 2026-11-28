@@ -51,7 +51,7 @@ void status(const char *phase,const std::string &message){event(std::string("{\"
 
 // Team GO Rocket automation on: active, rocketAllowed and any rocketOptions bit, from one fresh snapshot.
 bool configured(){
- auto tr=transport();PgsRuntimeTransportSample a{},z{};
+ auto tr=transport();PGSRuntimeTransportSample a{},z{};
  if(!tr||tr->sample(&a)||!a.snapshot_fresh||a.fault)return false;
  int active=0,allowed=0;int32_t options=0;
  if(tr->get_bool(3,&active)||tr->get_bool(26,&allowed)||tr->get_int(6,&options))return false;
@@ -107,12 +107,12 @@ void step(){
  next_try=now+kSettleMs;  // buttons not ready yet
 }
 
-void *class_of(const PgsMetaApi *api,const char *ns,const char *name){
- PgsMetaClassQuery q{};q.version=1;q.size=sizeof(q);q.name_space=ns;q.name=name;q.canonical_match=PGS_MD_MATCH_EXACT;
- PgsMetaClassResult r{};require(api->resolve_class(&q,&r)==0,name);return const_cast<void*>(r.klass);
+void *class_of(const PGS_MetaApi *api,const char *ns,const char *name){
+ PGS_MetaClassQuery q{};q.version=1;q.size=sizeof(q);q.name_space=ns;q.name=name;q.canonical_match=PGS_MD_MATCH_EXACT;
+ PGS_MetaClassResult r{};require(api->resolve_class(&q,&r)==0,name);return const_cast<void*>(r.klass);
 }
 void install(){
- const auto *api=static_cast<const PgsMetaApi*>(pgs_runtime_metadata_api(1));require(api&&api->resolve_class&&api->validate_method,"metadata API");
+ const auto *api=static_cast<const PGS_MetaApi*>(pgs_runtime_metadata_api(1));require(api&&api->resolve_class&&api->validate_method,"metadata API");
  require(boot.module_base,"il2cpp module");
  void *widget=class_of(api,"Niantic.Holoholo.Combat.UI","CombatVNextSwapPromptWidget");
  void *button=class_of(api,"Niantic.Holoholo.VNext","SwapButtonVNext");
@@ -136,9 +136,9 @@ void install(){
  require(prompt_list,"swap button list");
  static const uint8_t prologue[]=PGS_GAME_ROCKET_SWAP_CPP_SHOW_PROMPT_FINGERPRINT;
  static_assert(sizeof(prologue)==24,"24-byte prologue");
- PgsMetaMethodQuery q{};q.version=1;q.size=sizeof(q);q.owner=widget;q.name="ShowPromptWidget";q.return_type="System.Void";q.return_match=PGS_MD_MATCH_EXACT;q.param_count=0;
+ PGS_MetaMethodQuery q{};q.version=1;q.size=sizeof(q);q.owner=widget;q.name="ShowPromptWidget";q.return_type="System.Void";q.return_match=PGS_MD_MATCH_EXACT;q.param_count=0;
  q.expected_code=static_cast<const char*>(boot.module_base)+PGS_GAME_ROCKET_SWAP_CPP_SHOW_PROMPT_RVA;q.prologue=prologue;q.prologue_len=sizeof(prologue);
- PgsMetaMethodResult r{};const int rc=api->validate_method(&q,&r);
+ PGS_MetaMethodResult r{};const int rc=api->validate_method(&q,&r);
  require(rc==0&&r.code,"ShowPromptWidget signature");
  void *o=nullptr;require(pgs_hook(const_cast<void*>(r.code),reinterpret_cast<void*>(hook_show),&o)==0&&o,"ShowPromptWidget hook");
  original.store(reinterpret_cast<Show>(o),std::memory_order_release);

@@ -31,10 +31,12 @@ PGS_CERT = "d95c6bdfcbd91dc5c9cde698487c88e4994771a475e4efde4567b8d5f44e96cf"
 
 def check():
     problems = []
+    LEGACY_BRANDS = ("pgrazor", "PGRazor", "PGRAZOR", "PgRazor", "dev.pgrazor", "libpgrazor", "pgrazorVersion")
     for path in ACTIVE_TEXT:
         data = (ROOT / path).read_text(encoding="utf-8")
-        if "PGS" in data:
-            problems.append(path + ": legacy brand appears in active content")
+        for brand in LEGACY_BRANDS:
+            if brand in data:
+                problems.append(path + ": legacy brand " + brand + " appears in active content")
         if "https://discord.gg/9QqfkDSQX3" in data:
             problems.append(path + ": old Discord invitation")
         if "https://github.com/jpitty03/PGS/releases/download/" in data:
@@ -44,19 +46,19 @@ def check():
         catalog = json.loads(path.read_text(encoding="utf-8"))
         if len(catalog) != 1332:
             problems.append(path.name + ": language catalog changed size")
-        if any("PGS" in key or "PGS" in value for key, value in catalog.items()):
-            problems.append(path.name + ": untranslated public brand")
+        if any(any(brand in key or brand in value for brand in LEGACY_BRANDS) for key, value in catalog.items()):
+            problems.append(path.name + ": untranslated legacy brand")
     docs = ROOT / "docs/releases"
     for file in docs.glob("*.md"):
         if "https://github.com/jpitty03/PGS/releases/download/" in file.read_text(encoding="utf-8"):
             problems.append(str(file.relative_to(ROOT)) + ": upstream APK link")
     for path in ("website/package.json", "website/package-lock.json"):
-        if "pgs-website" in (ROOT / path).read_text(encoding="utf-8"):
+        if "pgrazor-website" in (ROOT / path).read_text(encoding="utf-8"):
             problems.append(path + ": old package name")
     funding = (ROOT / ".github/FUNDING.yml").read_text(encoding="utf-8")
     if re.search(r"(?im)^\s*ko_fi\s*:\s*pgs\b", funding):
         problems.append("FUNDING.yml: donations still point to upstream account")
-    if "PGS.apk" in (ROOT / "pgs/release_apk.py").read_text(encoding="utf-8"):
+    if "PGrazor.apk" in (ROOT / "pgs/release_apk.py").read_text(encoding="utf-8"):
         problems.append("release_apk.py: can still emit an upstream-named APK")
     release = (ROOT / "tools/discord_release.py").read_text(encoding="utf-8")
     if "PGS." not in release or "SHA256SUMS.txt" not in release:

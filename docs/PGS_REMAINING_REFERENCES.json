@@ -2,15 +2,15 @@
   "scope": "Git-indexed regular UTF-8 text, excluding NUL-containing files and the snapshot itself",
   "tracked_files": 2085,
   "text_files": 1011,
-  "remaining_files": 945,
-  "remaining_occurrences": 31117,
+  "remaining_files": 942,
+  "remaining_occurrences": 31111,
   "remaining_by_category": {
     "documentation": 1393,
     "java": 134,
     "javascript": 9,
     "legal": 6,
     "native": 25901,
-    "other": 2239,
+    "other": 2233,
     "release_history": 61,
     "tests": 1061,
     "workflows": 313
@@ -4640,7 +4640,7 @@
     {
       "path": "website/src/App.jsx",
       "category": "other",
-      "occurrences": 8
+      "occurrences": 2
     },
     {
       "path": "website/src/assets.js",
@@ -4648,34 +4648,19 @@
       "occurrences": 1
     },
     {
-      "path": "website/src/components/Cooldown.jsx",
-      "category": "other",
-      "occurrences": 1
-    },
-    {
       "path": "website/src/components/Footer.jsx",
       "category": "other",
-      "occurrences": 3
-    },
-    {
-      "path": "website/src/components/GetStarted.jsx",
-      "category": "other",
-      "occurrences": 1
-    },
-    {
-      "path": "website/src/components/GuideIndex.jsx",
-      "category": "other",
-      "occurrences": 1
+      "occurrences": 2
     },
     {
       "path": "website/src/components/Header.jsx",
       "category": "other",
-      "occurrences": 1
+      "occurrences": 4
     },
     {
       "path": "website/src/components/Hero.jsx",
       "category": "other",
-      "occurrences": 1
+      "occurrences": 2
     },
     {
       "path": "website/src/content.en.js",

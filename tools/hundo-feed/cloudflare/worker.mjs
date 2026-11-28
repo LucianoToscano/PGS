@@ -471,11 +471,24 @@ export function feed(state,now) {
 // One named object serializes scheduled writes across Cloudflare locations.
 export class FeedPublisher {
   constructor(ctx,env) { this.ctx=ctx; this.env=env; }
+  // The alarm keeps minute publication running while cron changes propagate.
+  // Cron and alarm share the same in-flight promise and persisted minute check.
+  async arm() {
+    const storage=this.ctx.storage;
+    if (await storage.getAlarm()===null) await storage.setAlarm((Math.floor(Date.now()/60000)+1)*60000+3000);
+  }
+  async runOnce() {
+    if (!this.running) this.running=this.publish().finally(()=>{this.running=null;});
+    await this.running;
+  }
+  async alarm() {
+    try { await this.runOnce(); } finally { await this.arm(); }
+  }
   async fetch(request) {
     const storage=this.ctx.storage;
+    await this.arm();
     if (request.method==="POST") {
-      if (!this.running) this.running=this.publish().finally(()=>{this.running=null;});
-      await this.running;
+      await this.runOnce();
       return new Response(null,{status:204});
     }
     const snapshot=await storage.get(stateKey);

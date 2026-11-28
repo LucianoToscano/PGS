@@ -1,6 +1,6 @@
 # Feed de Hundos do PGS
 
-O Worker publica o contrato v1 em `/hundos.json`. O agendamento UTC dispara a cada minuto. O Durable Object SQLite `FeedPublisher`, com nome fixo, serializa as coletas e persiste a última publicação. O KV `FEED` fornece o estado anterior na migração e recebe checkpoints em minutos múltiplos de 15. As leituras públicas têm cache de 15 segundos. A filtragem exige ao menos 60 segundos restantes ao montar a resposta.
+O Worker publica o contrato v1 em `/hundos.json`. O agendamento UTC dispara a cada minuto. O Durable Object SQLite `FeedPublisher`, com nome fixo, serializa as coletas e persiste a última publicação. Um alarme do mesmo objeto mantém a cadência durante a propagação de mudanças do cron. Os dois compartilham a mesma trava e a mesma verificação de minuto. O KV `FEED` fornece o estado anterior na migração e recebe checkpoints em minutos múltiplos de 15. As leituras públicas têm cache de 15 segundos. A filtragem exige ao menos 60 segundos restantes ao montar a resposta.
 
 ## Fontes
 

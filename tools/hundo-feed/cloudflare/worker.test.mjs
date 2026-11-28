@@ -445,7 +445,7 @@ test("one serialized publication per minute and only revealed perfect encounters
   const {FeedPublisher}=await import("./worker.mjs");
   const data=new Map(), requests=[];
   const env={POGO_TOKEN:"fixture",SOURCES:"[]",FEED:{get:async()=>null,put:async()=>{}}};
-  const publisher=new FeedPublisher({storage:{get:k=>data.get(k),put:(k,v)=>data.set(k,v)}},env);
+  const publisher=new FeedPublisher({storage:{get:k=>data.get(k),put:(k,v)=>data.set(k,v),getAlarm:async()=>null,setAlarm:async()=>{}}},env);
   const original=globalThis.fetch;
   globalThis.fetch=async(url,init)=>{
     requests.push(String(url));
@@ -457,7 +457,7 @@ test("one serialized publication per minute and only revealed perfect encounters
   };
   try {
     const trigger=new Request("https://internal/refresh",{method:"POST"});
-    await Promise.all([publisher.fetch(trigger),publisher.fetch(trigger)]);
+    await Promise.all([publisher.fetch(trigger),publisher.fetch(trigger),publisher.alarm()]);
     await publisher.fetch(trigger);
     const state=await (await publisher.fetch(new Request("https://internal/snapshot"))).json();
     assert.equal(requests.length,2);

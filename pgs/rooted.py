@@ -166,6 +166,7 @@ def payload_assets(download=False):
     sources = art_receipt.get('license_sources', [])
     if len(sources) != len(names): raise RuntimeError('All five ART dependency licenses required')
     for name, source in zip(names, sources): assets['pgs/art-notices/' + name] = Path(source)
+    assets[build.LAUNCHER_BRANDING_ASSET] = build.launcher_branding_asset()
     for name, path in build.map_icon_assets().items(): assets['pgs/map-icons/' + name] = Path(path)
     for name, path in build.feed_icon_assets().items(): assets['pgs/feed-icons/pokemon/' + name] = Path(path)
     return assets

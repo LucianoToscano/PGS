@@ -1,18 +1,18 @@
 {
   "scope": "Git-indexed regular UTF-8 text, excluding NUL-containing files and the snapshot itself",
-  "tracked_files": 2095,
-  "text_files": 1021,
-  "remaining_files": 953,
-  "remaining_occurrences": 31264,
+  "tracked_files": 2096,
+  "text_files": 1022,
+  "remaining_files": 954,
+  "remaining_occurrences": 31283,
   "remaining_by_category": {
-    "documentation": 1392,
+    "documentation": 1393,
     "java": 134,
     "javascript": 9,
     "legal": 6,
     "native": 25901,
-    "other": 2282,
+    "other": 2294,
     "release_history": 61,
-    "tests": 1061,
+    "tests": 1067,
     "workflows": 418
   },
   "tracked_name_matches": [],
@@ -205,7 +205,7 @@
     {
       "path": "docs/PGS_OFFICIAL_LOGOS.md",
       "category": "documentation",
-      "occurrences": 11
+      "occurrences": 12
     },
     {
       "path": "docs/PGS_REPOSITORY_SETTINGS.md",
@@ -440,7 +440,7 @@
     {
       "path": "pgs/build.py",
       "category": "other",
-      "occurrences": 47
+      "occurrences": 51
     },
     {
       "path": "pgs/cleanup-rooted.ps1",
@@ -3310,7 +3310,7 @@
     {
       "path": "pgs/src/dev/pgs/Pad.java",
       "category": "other",
-      "occurrences": 7
+      "occurrences": 15
     },
     {
       "path": "pgs/src/dev/pgs/PgAssets.java",
@@ -4338,6 +4338,11 @@
       "occurrences": 27
     },
     {
+      "path": "pgs/test/test_pgs_launcher_branding.py",
+      "category": "tests",
+      "occurrences": 6
+    },
+    {
       "path": "pgs/test/test_pgs_license.py",
       "category": "tests",
       "occurrences": 9
@@ -4784,10 +4789,10 @@
     }
   ],
   "abbreviations": {
-    "remaining_files": 519,
-    "remaining_occurrences": 25701,
+    "remaining_files": 521,
+    "remaining_occurrences": 25706,
     "by_form": {
-      "camelcase": 5659,
+      "camelcase": 5664,
       "lowercase": 3874,
       "uppercase": 16168
     },
@@ -8806,6 +8811,13 @@
         }
       },
       {
+        "path": "pgs/src/dev/pgs/Pad.java",
+        "occurrences": 3,
+        "by_form": {
+          "camelcase": 3
+        }
+      },
+      {
         "path": "pgs/test/camera-probe-test.cjs",
         "occurrences": 2,
         "by_form": {
@@ -8905,6 +8917,13 @@
           "lowercase": 9,
           "camelcase": 1,
           "uppercase": 1
+        }
+      },
+      {
+        "path": "pgs/test/test_pgs_launcher_branding.py",
+        "occurrences": 2,
+        "by_form": {
+          "camelcase": 2
         }
       },
       {

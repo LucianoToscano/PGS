@@ -108,7 +108,7 @@ def rewrite_apk(source,destination,*,base=False,dex=None,assets=None,preview=Fal
         names=original.namelist()
         # Bundled map-icon art may already ride along in our own preview input; any other pre-existing
         # PGS asset means the input was already instrumented and must be refused.
-        if any(name.startswith('assets/pgs/') and not (preview and name.startswith(('assets/pgs/map-icons/','assets/pgs/feed-icons/pokemon/'))) for name in names): raise ValueError('Input already has PGS assets')
+        if any(name.startswith('assets/pgs/') and not (preview and (name == 'assets/' + build.LAUNCHER_BRANDING_ASSET or name.startswith(('assets/pgs/map-icons/','assets/pgs/feed-icons/pokemon/')))) for name in names): raise ValueError('Input already has PGS assets')
         if base:
             indices=[int(match.group(1) or '1') for name in names if (match:=re.fullmatch(r'classes(\d*)\.dex',name))]
             nextdex='classes'+str(max(indices,default=0)+1)+'.dex'
@@ -290,6 +290,7 @@ def package(source, *,research_runtime=False,panel_only=False,download=False,pre
                           'relinking':'Retain the recorded local ART build session and pinned source trees for LGPL relinking; debug objects are not APK assets.',
                           'runtime_validation':'UNTESTED'}
     # POI marker art loaded by the Java map via AssetManager at pgs/map-icons/<name>.
+    assets['assets/' + build.LAUNCHER_BRANDING_ASSET] = build.launcher_branding_asset()
     for icon_name,icon_path in build.map_icon_assets().items(): assets['assets/pgs/map-icons/'+icon_name]=icon_path
     for icon_name,icon_path in build.feed_icon_assets().items(): assets['assets/pgs/feed-icons/pokemon/'+icon_name]=icon_path
     certificates=[]

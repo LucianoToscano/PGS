@@ -19,7 +19,9 @@ Estas são as **três imagens originais** fornecidas pelo projeto, copiadas **se
 - As imagens da pasta `website/public/` são usadas diretamente pelo GitHub Pages e pelo README.
 - As três cópias byte a byte iguais em `pgs/branding/` servem como arquivos de marca do PGS dentro da árvore principal. O Git deduplica blobs idênticos.
 - Como os arquivos são brancos com **transparência**, o site usa um fundo escuro para exibi-los em ambos os temas.
-- A logo dentro do jogo e o joystick **não são alterados** por esta atualização.
+- A próxima compilação inclui o escudo oficial transparente no botão flutuante de 48 dp, com sombra lateral, amostragem da imagem e fallback textual PGS. O arraste, o clique, o indicador de estado e o joystick permanecem como antes. O instalador Root usa um monograma próprio; não altera o ícone do jogo instalado.
 - A numeração do PGS, o package Android e o certificado de assinatura não dependem destas imagens.
+
+**Validação pendente:** compilar e verificar em aparelho o contraste nos mapas claro/escuro e a abertura do menu. Esta alteração de código não modifica APKs já publicados.
 
 Substituições futuras só devem ser feitas após comparar os bytes com uma versão autorizada pelo responsável do projeto e atualizar os testes de integridade.
